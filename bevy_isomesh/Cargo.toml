@@ -1,0 +1,63 @@
+[package]
+name = "bevy_isomesh"
+description = "Bevy integration for isomesh: signed distance field in, Bevy Mesh out."
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ladvien/isomesh"
+authors = ["C. Thomas Brittain <cthomasbrittain@yahoo.com>"]
+
+# Deliberately its own workspace, not a member of the root one. In a shared
+# workspace Cargo's feature unification hands `glam` the `std`, `serde`,
+# `bytemuck` and `encase` features that Bevy asks for, so `cargo test` in the
+# root would stop testing what a consumer of `isomesh` actually gets.
+[workspace]
+
+[dependencies]
+isomesh = { path = "../crates/isomesh" }
+
+# Leaf crates, never the `bevy` umbrella. Bevy 0.17-0.19 carved `bevy_camera`,
+# `bevy_light`, `bevy_shader`, `bevy_mesh` and `bevy_material` out of
+# `bevy_render` precisely so an integration like this one can exist without
+# dragging in the renderer. A consumer doing CPU-only meshing into a `Mesh`
+# asset never compiles it.
+bevy_asset = "0.19"
+bevy_mesh = "0.19"
+
+[features]
+default = []
+# Pulls in the renderer. Nothing needs it yet; the GPU path arrives with
+# GPU-001 and the plugin with B-003.
+gpu = ["dep:bevy_render"]
+
+[dependencies.bevy_render]
+version = "0.19"
+optional = true
+
+# Examples only. Dev-dependencies are not propagated to consumers, so nothing
+# here reaches anyone depending on this crate.
+#
+# Note the absence of "x11": that is a Linux windowing backend and this project
+# targets macOS/Metal, where `bevy_winit` needs no extra feature flag.
+[dev-dependencies]
+bevy = "0.19"
+
+[lints.rust]
+missing_docs = "warn"
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+
+# Meshing in a debug build is 20-50x slower and will make you think something is
+# wrong with the algorithm rather than with the profile. Examples are always run
+# with --release, and this keeps a debug run merely slow rather than unusable.
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.dev]
+opt-level = 1

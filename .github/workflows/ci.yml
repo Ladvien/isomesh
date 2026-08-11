@@ -83,6 +83,32 @@ jobs:
       - name: doc tests
         run: cargo test --workspace --doc
 
+  bevy:
+    name: bevy_isomesh (separate workspace)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: system deps for bevy
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libudev-dev
+      # This job is the whole reason the examples live in this crate rather than
+      # in a separate one nothing ever builds. `block-mesh`'s examples are pinned
+      # to bevy 0.13 and `fast-surface-nets`' to bevy 0.7, both because no CI
+      # ever compiled them.
+      #
+      # `check --all-targets` rather than `build --examples`: it type-checks
+      # every example, which is what catches API rot, without paying to codegen
+      # and link a full Bevy app on every push. Swap it for `build` the moment
+      # something here can fail at link time rather than at type-check time.
+      - name: check (lib, examples, tests)
+        working-directory: bevy_isomesh
+        run: cargo check --all-targets
+      - name: clippy
+        working-directory: bevy_isomesh
+        run: cargo clippy --all-targets -- -D warnings
+      - name: test
+        working-directory: bevy_isomesh
+        run: cargo test
+
   msrv:
     name: msrv (rust-version in Cargo.toml)
     runs-on: ubuntu-latest
