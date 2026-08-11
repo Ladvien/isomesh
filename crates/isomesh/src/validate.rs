@@ -35,8 +35,10 @@ use core::fmt;
 
 use crate::{MeshBuffer, Real};
 
+mod determinism;
 mod self_intersection;
 
+pub use determinism::{DeterminismReport, Divergence, RunPair, check_determinism};
 pub use self_intersection::{SelfIntersectionReport, self_intersections};
 
 /// Thresholds for the two metrics that have units.
