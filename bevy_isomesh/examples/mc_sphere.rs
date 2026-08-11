@@ -89,7 +89,11 @@ fn change_resolution(
         const HIGH: u32 = 81;
         let steps = (HIGH - LOW) / 2 + 1;
         let phase = capture.taken % (steps * 2);
-        let step = if phase < steps { phase } else { steps * 2 - phase - 1 };
+        let step = if phase < steps {
+            phase
+        } else {
+            steps * 2 - phase - 1
+        };
         resolution.0 = LOW + step * 2;
         return;
     }

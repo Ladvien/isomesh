@@ -14,7 +14,7 @@
 
 ## Status
 
-Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Nineteen tickets done, fifty-three open.
+Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty tickets done, fifty-two open.
 
 | | |
 |---|---|
@@ -100,6 +100,22 @@ Surface Nets places exactly one vertex per cell. Where two sheets of the surface
 Notice that the Euler identity now reads **`!! differs`**. That is correct: the identity's precondition is a *closed manifold*, and Surface Nets' output here is not one. The condition under which the assertion should fail is recorded next to the assertion, so when it does fail nobody mistakes it for a regression.
 
 This is the crate's actual pitch. Not "the meshes look right" — a wrong mesh looks right — but that every mesh is measured, the measurements are in the test suite, and the ones that contradict the documentation are written down.
+
+---
+
+## Where a mesh stops being a manifold
+
+![Marching Cubes and Surface Nets on the capped gyroid, non-manifold features marked](docs/screenshots/e111-manifold-check-gyroid-sn.png)
+
+*`manifold_check` — the capped gyroid at 19³ under Surface Nets. Every red sphere is a non-manifold vertex and every red line a non-manifold edge, drawn where the validator found them: 39 edges and 61 vertices, clustered around the tunnel mouths where two sheets of surface share a cell. The same field and grid under Marching Cubes reports `0` on every counter and `MANIFOLD, CLOSED` ([screenshot](docs/screenshots/e111-manifold-check-gyroid-mc.png)).*
+
+A count tells you a mesh is broken without telling you where, and the two most useful findings in this project were both about *where*. The marks come from `validate_features`, which returns the offending edges and vertices from the **same pass** that produced the numbers beside them — so the picture and the caption cannot drift apart.
+
+```bash
+cd bevy_isomesh && cargo run --example manifold_check --release
+```
+
+`1`–`7` field · `A` algorithm · `B` boundary overlay · `[` `]` resolution.
 
 ---
 

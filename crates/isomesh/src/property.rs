@@ -29,7 +29,7 @@ use proptest::prelude::*;
 
 use crate::fields::Sphere;
 use crate::validate::{
-    SelfIntersectionReport, ValidateConfig, self_intersections, validate_indexed,
+    SelfIntersectionReport, ValidateConfig, self_intersections, validate_features,
 };
 use crate::vec3;
 use crate::{Real, RuntimeShape3, Sdf, Shape3};
@@ -237,7 +237,7 @@ pub(crate) fn assert_extracted_mesh_is_valid(
     cell_size: f64,
     gate: SurfaceGate,
 ) -> SelfIntersectionReport {
-    let report = validate_indexed(
+    let (report, features) = validate_features(
         positions,
         indices,
         &ValidateConfig::from_cell_size(cell_size).expect("valid cell size"),
@@ -245,6 +245,31 @@ pub(crate) fn assert_extracted_mesh_is_valid(
     assert!(
         !report.has_structural_errors(),
         "{label}: malformed mesh\n{report}"
+    );
+
+    // The lists and the counts come from one pass, so they cannot disagree --
+    // but E-111 draws the lists beside the counts, so a drift here would put a
+    // wrong picture next to a right number. Checked on every case the bundle
+    // sees, which is over a thousand generated meshes.
+    assert_eq!(
+        features.edges.len() as u64,
+        report.non_manifold_edges,
+        "{label}: non-manifold edge list disagrees with the count\n{report}"
+    );
+    assert_eq!(
+        features.vertices.len() as u64,
+        report.non_manifold_vertices,
+        "{label}: non-manifold vertex list disagrees with the count\n{report}"
+    );
+    assert_eq!(
+        features.boundary_edges.len() as u64,
+        report.boundary_edges,
+        "{label}: boundary edge list disagrees with the count\n{report}"
+    );
+    assert_eq!(
+        features.inconsistently_oriented_edges.len() as u64,
+        report.inconsistently_oriented_edges,
+        "{label}: orientation list disagrees with the count\n{report}"
     );
     match gate {
         SurfaceGate::Closed => assert!(

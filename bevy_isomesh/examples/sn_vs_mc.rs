@@ -144,7 +144,11 @@ fn controls(
         const HIGH: u32 = 57;
         let steps = (HIGH - LOW) / 2 + 1;
         let phase = capture.taken % (steps * 2);
-        let step = if phase < steps { phase } else { steps * 2 - phase - 1 };
+        let step = if phase < steps {
+            phase
+        } else {
+            steps * 2 - phase - 1
+        };
         demo.samples = LOW + step * 2;
         if flags.field < FIELDS.len() {
             demo.field = flags.field;

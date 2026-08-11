@@ -103,7 +103,6 @@ the point** — they're how someone decides whether this crate is usable.
 | ☐ | **E-108** | `subgrid_features` — letters carved thinner than a voxel; toggle and watch them vanish | A-014 |
 | ☐ | **E-109** | `sharp_features` — live slider on the normal-deviation threshold, through to over-sharpening | A-007 |
 | ☐ | **E-110** | `qef_clamp` — clamp toggle, live self-intersections/1k, offending triangles in red | A-009 |
-| ☐ | **E-111** | `manifold_check` — non-manifold edges as thick red lines, across all fields × algorithms | T-001 |
 | ☐ | **E-112** | `precision_f32_vs_f64` — same field at ~1e6 offsets; f32 cracks, f64 doesn't. Condition number in the HUD. | A-007 |
 | ☐ | **E-113** | `normal_estimation` — three panels, lit; differences live in the speculars, not the wireframe | A-012 |
 | ☐ | **E-114** | `hermite_debug` — crossings, normals, solved vertex, cell box as gizmos. The view you debug A-007 in. | A-006 |

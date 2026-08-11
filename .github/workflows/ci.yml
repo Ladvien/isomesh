@@ -106,6 +106,14 @@ jobs:
       # every example, which is what catches API rot, without paying to codegen
       # and link a full Bevy app on every push. Swap it for `build` the moment
       # something here can fail at link time rather than at type-check time.
+      # The lint job's `cargo fmt --all --check` runs from the root, and the root
+      # workspace EXCLUDES bevy_isomesh -- so until this line, nothing had ever
+      # checked this crate's formatting. Found when a routine `cargo fmt` here
+      # reformatted an example that had been committed unformatted.
+      - name: rustfmt
+        working-directory: bevy_isomesh
+        run: cargo fmt --all --check
+
       - name: check (lib, examples, tests)
         working-directory: bevy_isomesh
         run: cargo check --all-targets

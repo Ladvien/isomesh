@@ -464,6 +464,33 @@ impl Dsu {
     }
 }
 
+/// Which features of a mesh offend, as vertex indices rather than as counts.
+///
+/// Produced by [`validate_features`]. Every list is in the same order the
+/// validator visits them -- edges ascending by `[lo, hi]`, vertices ascending --
+/// so this is a pure function of the mesh's values, exactly like [`MeshReport`].
+///
+/// Indices, not positions: the caller already has the position buffer, and
+/// handing back copies would mean a consumer could hold geometry that no longer
+/// matches the mesh it came from.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct NonManifoldFeatures {
+    /// Edges used by **three or more** faces, as `[lo, hi]` vertex indices.
+    /// Length equals [`MeshReport::non_manifold_edges`].
+    pub edges: Vec<[u32; 2]>,
+    /// Vertices whose incident-face link is not a single fan -- the bowtie that
+    /// only the link walk catches. Length equals
+    /// [`MeshReport::non_manifold_vertices`].
+    pub vertices: Vec<u32>,
+    /// Edges used by **exactly one** face: the mesh's boundary. Not a defect on
+    /// an open field, which is why it is kept separate from `edges`. Length
+    /// equals [`MeshReport::boundary_edges`].
+    pub boundary_edges: Vec<[u32; 2]>,
+    /// Edges whose two faces traverse them the *same* way round. Length equals
+    /// [`MeshReport::inconsistently_oriented_edges`].
+    pub inconsistently_oriented_edges: Vec<[u32; 2]>,
+}
+
 /// Validate an indexed triangle mesh.
 ///
 /// Never panics on a malformed mesh, never returns an error, and never
@@ -483,6 +510,32 @@ pub fn validate_indexed<R: Real>(
     indices: &[u32],
     cfg: &ValidateConfig,
 ) -> MeshReport {
+    validate_features(positions, indices, cfg).0
+}
+
+/// [`validate_indexed`], plus **which** features offend rather than only how
+/// many.
+///
+/// A count cannot be drawn. `E-111` renders non-manifold edges as red lines and
+/// non-manifold vertices as red spheres, and for that to mean anything the
+/// geometry on screen and the number in the HUD have to come from the same pass
+/// -- otherwise the picture and the caption can disagree and nobody can tell
+/// which is wrong.
+///
+/// So this is not a second implementation. It **is** the implementation;
+/// [`validate_indexed`] calls it and drops the second half. The lists are
+/// collected unconditionally rather than behind a flag, which costs nothing on
+/// the common path: a clean mesh leaves every one of them empty, and an empty
+/// [`Vec`] does not allocate.
+///
+/// The same argument as [`self_intersections`]: report the offenders, not just
+/// the tally, because the caller is the one who knows what to do with them.
+pub fn validate_features<R: Real>(
+    positions: &[[R; 3]],
+    indices: &[u32],
+    cfg: &ValidateConfig,
+) -> (MeshReport, NonManifoldFeatures) {
+    let mut features = NonManifoldFeatures::default();
     let vertex_count = positions.len();
     let mut report = MeshReport {
         vertices: vertex_count as u64,
@@ -584,6 +637,7 @@ pub fn validate_indexed<R: Real>(
         match run.len() {
             1 => {
                 report.boundary_edges += 1;
+                features.boundary_edges.push([lo, hi]);
                 on_boundary[lo as usize] = true;
                 on_boundary[hi as usize] = true;
                 boundary_dsu.union(lo, hi);
@@ -591,9 +645,13 @@ pub fn validate_indexed<R: Real>(
             2 => {
                 if run[0].3 == run[1].3 {
                     report.inconsistently_oriented_edges += 1;
+                    features.inconsistently_oriented_edges.push([lo, hi]);
                 }
             }
-            _ => report.non_manifold_edges += 1,
+            _ => {
+                report.non_manifold_edges += 1;
+                features.edges.push([lo, hi]);
+            }
         }
 
         // Faces meeting along this edge are in the same component regardless of
@@ -686,6 +744,7 @@ pub fn validate_indexed<R: Real>(
             roots.dedup();
             if branching || roots.len() > 1 {
                 report.non_manifold_vertices += 1;
+                features.vertices.push(v);
             }
 
             start = end;
@@ -796,7 +855,7 @@ pub fn validate_indexed<R: Real>(
         }
     }
 
-    report
+    (report, features)
 }
 
 /// Floor to an `i64` lattice coordinate.
