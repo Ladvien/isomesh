@@ -55,8 +55,8 @@ fn a_single_inside_corner_faces_outward() {
 
     let midpoint = |e: u8| {
         let [a, b] = EDGE_CORNERS[e as usize];
-        let pa = super::corner_offset(a);
-        let pb = super::corner_offset(b);
+        let pa = crate::cube::corner_offset(a);
+        let pb = crate::cube::corner_offset(b);
         [
             f64::from(pa[0] + pb[0]) * 0.5,
             f64::from(pa[1] + pb[1]) * 0.5,

@@ -18,6 +18,7 @@ mod tests;
 
 use alloc::vec::Vec;
 
+use crate::cube::corner_offset;
 use crate::vec3;
 use crate::{MeshSink, Real, Sdf, Shape3};
 
@@ -237,15 +238,6 @@ impl<R: Real> Default for MarchingCubes<R> {
     fn default() -> Self {
         Self::new()
     }
-}
-
-#[inline]
-fn corner_offset(corner: u8) -> [u32; 3] {
-    [
-        u32::from(corner & 1),
-        u32::from((corner >> 1) & 1),
-        u32::from((corner >> 2) & 1),
-    ]
 }
 
 #[inline]

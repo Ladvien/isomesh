@@ -48,11 +48,13 @@ extern crate std;
 
 pub mod fields;
 pub mod mc;
+pub mod sn;
 pub mod validate;
 
 #[cfg(test)]
 mod property;
 
+mod cube;
 mod mesh;
 mod real;
 mod sdf;
