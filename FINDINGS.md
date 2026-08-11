@@ -209,6 +209,7 @@ Rules with no incident behind them get ignored. These all have one.
 | Pin known defects as non-zero assertions rather than excluding them | M-4 — the numbers only move when someone means them to |
 | Single-grid timings measure dispatch latency; sweep resolution and report the fixed cost | V-6 |
 | Treat any published cross-paper ratio below ~2× as noise | V-7 |
+| A green local run on one platform is not a green build. CI is the first real test of anything platform-shaped, and it will find things a local pass structurally cannot | First push: every job passed except `bevy_isomesh` on Linux, where Bevy 0.19's default Wayland backend needs `libwayland-dev` / `libxkbcommon-dev`. No such package exists on macOS, so no amount of local verification could have caught it |
 
 ---
 

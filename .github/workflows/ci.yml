@@ -88,8 +88,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Bevy 0.19 enables Wayland by default on Linux, so `wayland-sys`'s build
+      # script needs the dev packages even though CI only type-checks and never
+      # opens a window. None of these exist on macOS, which is why a local
+      # verification could not have caught it.
       - name: system deps for bevy
-        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libudev-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
       # This job is the whole reason the examples live in this crate rather than
       # in a separate one nothing ever builds. `block-mesh`'s examples are pinned
       # to bevy 0.13 and `fast-surface-nets`' to bevy 0.7, both because no CI
