@@ -47,6 +47,7 @@ extern crate alloc;
 extern crate std;
 
 pub mod fields;
+pub mod validate;
 
 mod mesh;
 mod real;

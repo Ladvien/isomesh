@@ -144,12 +144,36 @@ genuinely wants vector types.
 
 Every extraction algorithm ships with these before it counts as done:
 
-- **Closed-surface property test.** Mesh a sphere SDF. Assert `V - E + F == 2`. This catches the
-  entire class of case-table errors.
+- **Validity gate, chosen by the field — not one blanket rule.** A blanket `V - E + F == 2` is
+  unsatisfiable on two of the seven test fields and must not be written that way: `gyroid` is triply
+  periodic, so any finite sampling box cuts it and the result *has boundary*, and `fbm_terrain` is a
+  heightfield that leaves through the sides by construction. Neither has an Euler characteristic
+  derivable a priori, and inventing one violates rule 5. Each field publishes `ReferenceField`
+  metadata and the harness reads it:
+
+  ```
+  closed fields (closed_in_domain)  → report.is_closed()
+  open fields                       → report.is_manifold()
+  χ asserted                        → only where expected_euler() is Some
+  otherwise                         → record the observed χ in the golden fixture
+  ```
+
+  `is_closed()` already folds in the parity check: for any closed orientable surface `χ = 2 - 2g`, so
+  χ must be even even when the genus itself is unknown. There must be no `if field == gyroid` anywhere
+  in test code.
 - **Index bounds + degenerate triangle test.** No index ≥ vertex count; no triangle with two equal
-  indices; no zero-area triangle above epsilon.
-- **Manifold test.** Every edge is shared by exactly 2 faces. Report the count of violations, don't
-  just assert — the number is interesting.
+  indices. **Degenerate (near-zero-area) triangles are a recorded metric, not a gate** — Marching Cubes
+  genuinely emits slivers whenever a grid corner value sits near zero. That's the algorithm, not a bug.
+- **Manifold test.** Report counts, don't just assert — the numbers are interesting. Note the split:
+  `non_manifold_edges` counts edges with **≥3** faces and `boundary_edges` counts edges with **exactly
+  1**. Lumping them together as "≠ 2" double-counts and makes zero unachievable for any open mesh,
+  which includes every individual chunk.
+- **Orientation test.** Every interior edge traversed in *opposite* directions by its two faces. A
+  transcribed case table with one flipped triangle passes χ, edge-manifoldness *and* vertex-manifoldness
+  while being inside out — this is the only check that sees it.
+- **Non-manifold vertices need the link walk, not a count.** "Incident faces == incident edges" reports
+  a bowtie as clean: two cones sharing an apex have `2k` of each, every edge has exactly 2 faces, and χ
+  can come out right. Walk the connected components of the incident-face link.
 - **Self-intersection count per 1,000 triangles.** Not a pass/fail; a recorded metric. Dual methods
   are expected to be non-zero, and the measured question is how much the cell clamp reduces it.
 - **Determinism.** Same input twice → byte-identical output. Guard against `HashMap` iteration order
