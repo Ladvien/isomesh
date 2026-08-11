@@ -18,6 +18,23 @@ voxel game and a CAD tool, which is the constraint that decides almost every des
 
 ## Where the work comes from
 
+**`FINDINGS.md` is the epistemic state.** Before acting on anything "known" — a performance figure,
+an algorithm property, a claim about what some crate does — look for it there. If it isn't there, it
+hasn't been checked, and you should say so rather than assume. Cite the tier (**M** measured here,
+**V** verified from a primary source, **R** reported, **F** folklore) whenever a claim justifies a
+decision.
+
+**Adding to it is part of the work, not overhead.** Any of these earns an entry, in the same commit:
+
+- A measurement contradicts something written down — in a doc, a ticket, a comment, or this file.
+  **The contradiction is the finding.**
+- You verify or fail to verify an external claim.
+- You discover a property that wasn't predicted (the Euler identity in ✗1 is the model).
+- A failure produces a rule that should stop it recurring — add it to Part 5, with the incident.
+
+Falsified entries are never deleted. They record which *sources* to distrust, which is worth more
+than the individual fact.
+
 **`BACKLOG.md` is the work queue and the state.** Take the topmost unblocked, unchecked ticket; don't
 cherry-pick. Check the box in the same commit that does the work. If you can't finish a ticket, leave
 it unchecked, add a `> BLOCKED:` line saying exactly what's in the way, and move to the next unblocked
