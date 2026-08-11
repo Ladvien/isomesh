@@ -49,6 +49,9 @@ extern crate std;
 pub mod fields;
 pub mod validate;
 
+#[cfg(test)]
+mod property;
+
 mod mesh;
 mod real;
 mod sdf;

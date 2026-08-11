@@ -18,3 +18,9 @@ workspace = true
 # `libm` is used unconditionally rather than behind a `std` switch so there is
 # exactly one float backend and one set of results. Justification in CLAUDE.md.
 libm = { workspace = true }
+
+[dev-dependencies]
+# Dev-dependencies are not propagated to consumers, so this does not touch
+# rule 3's budget -- `cargo tree -p isomesh -e normal` is still two packages.
+# Pinned at the version whose MSRV matches ours exactly.
+proptest = "1.11"
