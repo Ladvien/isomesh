@@ -218,6 +218,15 @@ cargo tree -p isomesh -e normal      # expect: isomesh + libm. Nothing else.
                                      # criterion's whole trees once T-005 and T-006 land.
 cargo metadata --format-version 1 | grep -c '"name":"bevy' # expect: 0
 
+# benchmarks -- always release, and always via `cargo bench`
+cargo bench --bench extract              # criterion, per-algorithm regression timings
+cargo bench --bench resolution_sweep     # 16^3..256^3, fits t = a + b*n^3, writes
+                                         # docs/measurements/resolution_sweep.csv
+# The sweep is a no-op under `cargo test`. It guards on the `--bench` argument
+# cargo passes, because `--all-targets` re-selects bench targets even though the
+# manifest sets `test = false`, and a debug-build sweep takes minutes and would
+# overwrite the committed CSV.
+
 # gpu
 cargo test -p isomesh-gpu
 

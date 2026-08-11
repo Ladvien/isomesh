@@ -14,7 +14,7 @@
 
 ## Status
 
-Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Eighteen tickets done, fifty-four open.
+Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Nineteen tickets done, fifty-three open.
 
 | | |
 |---|---|
@@ -73,6 +73,18 @@ Watch the bottom row. **The triangle counts differ by exactly `2χ` — four, on
 
 Verified across five fields × three resolutions, including a two-component field where `χ = 4` so the difference is **8** and cannot be confused with a constant. What Surface Nets actually buys is quad connectivity and one vertex per *cell* rather than per *edge* — not fewer triangles.
 
+And it is not the cheaper method by time either, which took a benchmark to find out. The two curves are not parallel — one converges and the other degrades:
+
+| samples per axis | 16 | 48 | 64 | 128 | 256 |
+|---|---:|---:|---:|---:|---:|
+| **MC** ms | 0.090 | 1.251 | 2.246 | 10.195 | **80.257** |
+| **SN** ms | 0.038 | 0.976 | 2.425 | 20.006 | **221.223** |
+| SN / MC | 0.42 | 0.78 | 1.08 | 1.96 | **2.76** |
+
+Surface Nets wins below roughly 48³ and loses steadily above it. Marching Cubes' per-sample cost *falls* from 21.9 to 4.78 ns as the `O(n²)` surface term amortises away, then holds flat; Surface Nets' sits near 9 ns and then *climbs* to 13.19. Its fitted `t = a + b·n³` even comes back with a **negative** fixed cost, which is impossible and is the model saying its cost grows faster than `n³`. Sphere, f32, single thread, Apple M5 — one machine, so treat the mechanism as unconfirmed. Raw data in `docs/measurements/resolution_sweep.csv`.
+
+So both halves of the usual case for Surface Nets — fewer triangles, lower cost — are falsified by measurement in this repository. What it actually buys is quad connectivity and one vertex per cell.
+
 The corners are the real difference, and they are why dual contouring is next.
 
 ---
@@ -81,7 +93,7 @@ The corners are the real difference, and they are why dual contouring is next.
 
 ![Surface Nets against Marching Cubes on a capped gyroid](docs/gifs/sn-vs-mc-gyroid.gif)
 
-*The capped gyroid — triply periodic, high genus. Marching Cubes stays manifold; Surface Nets does not.*
+*The capped gyroid — triply periodic, high genus. Marching Cubes stays manifold here; Surface Nets does not.*
 
 Surface Nets places exactly one vertex per cell. Where two sheets of the surface pass through the same cell they are forced to share it, and the result is non-manifold — **42 non-manifold edges at 25³** in the sequence above, against Marching Cubes' zero at every resolution in it. The literature calls this dual contouring's *"actual structural defect"*, fixed architecturally by vertex splitting rather than by patching.
 
@@ -105,7 +117,7 @@ Every extraction algorithm ships with these before it counts as done. They are o
 | Signed volume | global inversion, which nothing else here can see |
 | Hausdorff distance, both directions, and mean absolute error | a mesh that is perfectly valid and in the wrong place. Only the reverse direction sees *missing* geometry — deleting one face of a test octahedron leaves the forward number bit-identical |
 
-`FINDINGS.md` is the epistemic state: what is believed, how strongly, and on what evidence, with tiers for measured-here, verified-from-primary-source, reported, and folklore. Thirteen entries are in the falsified section, several of them corrections to this project's own documents.
+`FINDINGS.md` is the epistemic state: what is believed, how strongly, and on what evidence, with tiers for measured-here, verified-from-primary-source, reported, and folklore. Fifteen entries are in the falsified section, several of them corrections to this project's own documents.
 
 ---
 
@@ -139,7 +151,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 190 tests
+cargo test -p isomesh                    # 191 tests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh

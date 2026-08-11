@@ -222,6 +222,76 @@ where that bites.
 Twice now the false comment has been an *architectural* claim ("nothing calls this", "every vertex has
 four neighbours") rather than a factual slip, which is the kind that shapes later decisions.
 
+### ✗15 — "Marching Cubes is unconditionally manifold"
+
+**Believed because:** every measurement in this repo said so. M-4 contrasts Surface Nets'
+non-manifoldness against *"Marching Cubes' zero at every resolution"*, the README says *"Marching Cubes
+stays manifold"*, and the mechanism looked airtight — MC places vertices on grid **edges** rather than
+one per cell, so the multi-sheet argument that sinks SN does not apply. `SurfaceGate::Closed`'s own doc
+comment asserted it.
+**Falsified by:** T-005b's `marching_cubes_meshes_sphere_unions`, on its first run against a fresh
+proptest seed — during T-006, which is a nice demonstration that the property tests keep working after
+the ticket that wrote them.
+**Result:** a union of three spheres at `h = 2/3` gives **2 non-manifold edges and 3 non-manifold
+vertices** on a mesh that is otherwise perfect: closed, `χ = 2`, one component, consistently oriented,
+zero boundary edges.
+
+**What's true instead:** MC is manifold when the grid **resolves** the surface. Where the surface
+*pinches* inside a single cell — two lobes of a union meeting at sub-cell scale — the shared grid edge
+ends up carrying four faces. Refinement fixes it, and sharply:
+
+| n | 7 | 9 | 13 | 17 | 25 | 33 | 49 | 65 |
+|---|---|---|---|---|---|---|---|---|
+| non-manifold edges | **2** | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+
+**Consequence:** the property suite's gate is renamed from `ClosedAllowingMultiSheet` to
+**`ClosedAllowingUnresolvedTopology`** and now covers MC on generated fields too, because the condition
+was never about the algorithm — it is about whether the grid resolves the field. The strict gate is
+still asserted where it is actually true, on the seven reference fields in `mc/tests.rs`. The exact
+counts are pinned in both directions by
+`an_under_resolved_pinch_makes_marching_cubes_non_manifold`, following M-4's precedent: the defect is
+an assertion, not an exclusion, so it fails if it spreads *and* if it silently disappears.
+**Would be shown wrong by:** the same field at `h = 2/3` coming back manifold, or any *resolved* field
+coming back non-manifold under MC.
+**Worth noting for G-001:** a chunk boundary is a place where a surface can be under-resolved relative
+to the chunk it lands in. This is a plausible source of seam defects later.
+
+### ✗14 — "Surface Nets is the cheapest thing in the family and the natural default"
+
+**Believed because:** this repo's own algorithm catalog states it as the engine verdict —
+`docs/research/2026-08-10-meshing-algorithm-catalog-v2.md:163`, *"cheapest thing in the family and the
+natural default"* — reinforced by the same folklore ✗1 already corrected once.
+**Tested by:** T-006's resolution sweep, `cargo bench --bench resolution_sweep`. Sphere, `f32`, single
+thread, median of 5 timed runs after 2 warm-ups, identical grid and reused output buffers for both
+algorithms. Raw data committed at `docs/measurements/resolution_sweep.csv`.
+**Result:** Surface Nets is cheaper only below about 48³. The crossover sits between 48³ and 64³, and
+past it Surface Nets loses steadily and then sharply:
+
+| n | MC ms | SN ms | SN/MC | MC ns/sample | SN ns/sample |
+|---:|---:|---:|---:|---:|---:|
+| 16 | 0.090 | 0.038 | **0.42** | 21.88 | 9.17 |
+| 32 | 0.601 | 0.296 | **0.49** | 18.33 | 9.04 |
+| 48 | 1.251 | 0.976 | **0.78** | 11.31 | 8.82 |
+| 64 | 2.246 | 2.425 | 1.08 | 8.57 | 9.25 |
+| 128 | 10.195 | 20.006 | 1.96 | 4.86 | 9.54 |
+| 192 | 33.898 | 70.432 | 2.08 | 4.79 | 9.95 |
+| 256 | 80.257 | **221.223** | **2.76** | **4.78** | **13.19** |
+
+**What's true instead:** the two curves are not parallel — one converges and the other degrades.
+Marching Cubes' per-sample cost *falls* from 21.9 to 4.78 ns as the `O(n²)` surface term amortises
+away, then is flat from 128³ on. Surface Nets' is flat at ~9 ns to 128³ and then *rises*, reaching
+13.19 ns/sample at 256³ — a 33% jump from 192³ alone.
+
+**Consequence:** taken with ✗1, which showed Surface Nets emits `2χ` *more* triangles rather than
+fewer, **both halves of the case for Surface Nets as the default are now falsified by measurement in
+this repo.** What it actually retains is quad connectivity and one vertex per cell — a topology
+argument, not a cost one. M-001's shootout must not present it as the cheap baseline, and the choice of
+a default extractor for the game should be revisited.
+
+**Would be shown wrong by:** a machine where Surface Nets' per-sample cost stays flat to 256³, which
+would localise this to one cache hierarchy rather than to the algorithm. **This is a one-machine
+result** — Apple M5, single thread — and nothing here has been run elsewhere. See O-11.
+
 ---
 
 ## Part 2 — Measured here (tier M)
@@ -246,6 +316,11 @@ four neighbours") rather than a factual slip, which is the kind that shapes late
 | M-16 | **The even-`χ` parity check is not independent of manifoldness — it is a corollary of it.** `χ = 2 − 2g` holds for a closed *orientable manifold*, so a gate that waives manifoldness and keeps parity is incoherent. Measured: SN on a generated convex body gives **`χ = 1`** with one non-manifold edge and zero boundary edges | T-005b. Cost one wrong gate before it was noticed; `SurfaceGate::ClosedAllowingMultiSheet` now documents the omission rather than leaving it to be rediscovered |
 | M-17 | **A case-table entry naming an *uncut* edge is caught inside the crate, before any mesh exists** — `edge_crossing`'s `is_inside(a) != is_inside(b)` precondition fires. Real defence, but it is a `debug_assert`, so it is absent from a release build | T-005b. The mutation check therefore confines its wrong-edge corruption to *cut* edges, which is both the plausible transcription error and the one that actually reaches the validity gate |
 | M-18 | **`quantise`'s weld lattice collapses beyond ~105 world units, and it is a performance cliff rather than a correctness one.** It scales absolute coordinates by `1/(h·1e-4)` — 160,000 at `h = 0.0625` — so it passes `f32`'s exact-integer range at `2²⁴·weld_epsilon ≈ 104.86`. Measured: at `p = 104` two cells one apart stay distinct; at `p = 105` they collapse; by `p = 1000` a whole region is one bucket. **Correctness survives** — coarsening only *merges* buckets, and the 27-neighbour probe plus exact distance test still finds every duplicate — but the scan degrades toward quadratic, silently, at exactly the coordinates G-001 chunking and G-007 streaming produce. `TriangleGrid` is immune because it quantises *relative* to its own AABB origin, which is the fix pattern | T-005b follow-up, ✗13. Ticketed as T-008 |
+| M-19 | **There is no meaningful fixed cost on the CPU extraction path, and the prediction saying so was written down before the run.** MC's fitted `a` is `0.49 ms` against a largest measured run of `80.3 ms` — **0.61%**. V-6's "73% of a published 64³ figure was fixed launch overhead" is a *GPU dispatch* property and does not transfer; the "stop trusting single-grid numbers" rule belongs to Phase 6, not here. **Caveat that matters:** `a` is 543% of the *smallest* measured run, so the fit must not be extrapolated below 16³ — down there the `O(n²)` surface term dominates | T-006, `benches/resolution_sweep.rs`. The prediction is in that file's module docs, committed before the first measurement |
+| M-20 | **Marching Cubes' marginal cost is `4.75 ns/sample` — `211 M samples/s`, single-threaded, `f32`, Apple M5.** Per-sample cost is flat within 2% from 128³ upward, `r² = 0.99986` | T-006. Against V-3's `5.42 G voxel/s` on an RTX 2080 Ti that is a **~26× gap**, which is the number the Phase 6 GPU decision should be argued from rather than from folklore |
+| M-21 | **Surface Nets is not `O(n³)` over this range; Marching Cubes is.** SN's fitted intercept is **negative** — `−3.13 ms` full sweep, `−7.32 ms` on the tail — which is physically impossible and is the signature of a curve convex in `n³`. `r² = 0.9899` against MC's `0.99986`. Per-sample cost rises `9.0 → 13.19 ns` while MC's falls and flattens | T-006. Cause unmeasured — see O-11. This is why ✗14's gap widens rather than staying constant |
+| M-22 | **✗1's identity holds at every resolution to 256³**: `V_sn − V_mc = 2` and `F_sn − F_mc = 4` exactly, nine resolutions, `χ = 2`. The original table topped out at 49³, so this is corroboration at **5× the resolution** and 16.8 M samples | T-006's sweep, which records vertex and triangle counts alongside the timings |
+| M-23 | **`f64` costs 8–10% on extraction paths with no matrix solve in them.** At 65³ on a sphere: MC `1.3928 ms` (f32) against `1.5083 ms` (f64), **+8.3%**; SN `2.3625` against `2.6036`, **+10.2%**. Not the 2× a naive "twice the bytes" guess suggests, because the work is dominated by field evaluation and branchy table lookup rather than by memory bandwidth | T-006, `benches/extract.rs`, the `precision` group. **Partially answers O-8** for the non-QEF paths; A-007's solve is where `AᵀA` squares the condition number and the answer may differ |
 
 ---
 
@@ -289,9 +364,10 @@ Each has the test that would settle it. **An open question with no proposed test
 | O-5 | Do mesh shaders work on macOS/Metal? | GPU-007 capability probe | **Sources contradict:** wgpu's spec table lists MSL as *planned*; the tracking issue says the Metal HAL backend merged. Neither is trustworthy until probed |
 | O-6 | What is amortized meshing cost per frame under continuous editing? | E-206 under a deliberately overloaded queue | The only number a game cares about, and no paper reports it |
 | O-7 | What fraction of *our* pipeline is contouring vs everything else? | M-003 | V-4 says 54% for someone else's code with no physics. Ours is probably worse |
-| O-8 | Does DC's vertex placement need f64 in practice, or is f32 enough? | E-112, with the QEF condition number in the HUD | `M = AᵀA` squares the condition number. **Half answered by V-18**: the original paper measures f32 error ~1 on flat regions at 256³, and recommends f64. Still open for *our* fields, *our* resolutions, and the closed-form three-plane rule — which sidesteps `AᵀA` entirely and may not degrade the same way |
+| O-8 | Does DC's vertex placement need f64 in practice, or is f32 enough? | E-112, with the QEF condition number in the HUD | `M = AᵀA` squares the condition number. **Half answered by V-18**: the original paper measures f32 error ~1 on flat regions at 256³, and recommends f64. **Partially answered by M-23**: on extraction paths with no solve, `f64` costs only 8–10% of wall time, so precision is cheap where there is no QEF. Still open for the vertex solve itself, and for *our* fields at *our* resolutions — which sidesteps `AᵀA` entirely and may not degrade the same way |
 | O-9 | How much does T-003's gradient-flow chord **over**-estimate distance at a concave seam? | A comparison against nearest-point search over a dense surface point cloud, or E-104 once DC lands | The chord follows `∇f` to the zero set, which near `csg_difference`'s seam can land further away than the true nearest point. The bias direction is known and safe for a "below X" gate; the *magnitude* is not measured, and M-001's shootout column would inherit it. `csg_difference` measured forward `0.0833` at 33³ — how much of that is seam bias is unknown |
 | O-10 | What is Surface Nets' non-manifold **rate** as a function of feature thickness over `h`? | A-010, which must drive it to zero; a sweep over a slab of shrinking thickness would answer it sooner | M-15 established it is a resolution effect rather than a topology one, and M-4 has counts at two resolutions on two fields. Nobody has the curve. It decides whether SN is usable at game resolutions or needs A-010 first |
+| O-11 | **Why does Surface Nets go superlinear in `n³` while Marching Cubes does not?** | A profile or cache-miss counter at 192³ vs 256³, or simply re-running T-006's sweep on another machine — `big` (Ryzen 9 5900X) would separate algorithm from cache hierarchy for the cost of one `cargo bench` | M-21 measures the effect (`9.0 → 13.19 ns/sample`, with the sharp step between 192³ and 256³) without explaining it. The hypothesis is working-set: SN gathers the four cells around each crossed edge, one of those strides being `n²` apart, which at 256³ is 65,536 cells. **Untested.** ✗14's verdict rests on this being a property of the algorithm rather than of one machine, so it is the highest-value cheap experiment currently open |
 
 ---
 
@@ -323,6 +399,11 @@ Rules with no incident behind them get ignored. These all have one.
 | **A test double is evidence only if it is pinned to the thing it stands in for.** Write the equivalence test first, and make it bit-exact | T-005b — the case-table mutation check runs a corrupted table through a local marcher. Without `the_double_reproduces_marching_cubes` comparing the two bit-for-bit on the *uncorrupted* table, a corrupted-table failure would be indistinguishable from the double having drifted |
 | **Before waiving a property in a gate, check what else was resting on it.** Derived checks fail with their premise | M-16 — a gate that waived manifoldness kept the even-`χ` assertion, which is a *corollary* of manifoldness. It failed on the first non-manifold mesh it saw, and the assertion was the bug, not the mesh |
 | When a mutation test passes for the wrong reason, the message tells you: **check where the panic came from, not just that there was one** | M-17 — the wrong-edge corruption first tripped `edge_crossing`'s precondition deep inside the crate, so the validity gate under test was never reached. `should_panic` alone would have called that a pass |
+| **Write the prediction into the benchmark before the first run**, in the file, committed. Then the result cannot be rationalised afterwards | M-19 — T-006 predicted `a ≈ 0` on the CPU path from the fact that V-6's 73% figure is GPU dispatch overhead. It came out at 0.61%. Had it come out large, the prediction being on record is what would have forced the awkward question instead of a tidy story |
+| **A fitted coefficient means nothing until it is compared to the data's own range.** Report it against both ends | M-19 — MC's `a` is 0.61% of the largest run and 543% of the smallest. Either number alone tells a different and misleading story; the pair says "negligible at scale, do not extrapolate below the range" |
+| **A physically impossible fitted parameter is the model telling you it is wrong.** Do not report it as a value | M-21 — Surface Nets' fitted fixed cost is *negative*. Reported as "there is no fixed cost" it would be nonsense; read correctly it says the cost grows faster than `n³` and the whole two-term model does not apply |
+| **A property that has held in every measurement so far is still a hypothesis, not a mechanism.** Say which condition it depends on | ✗15 — "MC is manifold" held on seven reference fields at every resolution ever tried, and the mechanism offered for it (vertices on edges, not one per cell) was real but insufficient. The true condition is "the grid resolves the surface", which nothing had stated |
+| Before believing a performance verdict, ask **how many machines it has run on.** One is a hypothesis | ✗14 — Surface Nets loses to Marching Cubes by 2.76× at 256³ on an Apple M5, and the mechanism is probably cache. That is a strong result and a weak generalisation until it runs somewhere else (O-11) |
 
 ---
 

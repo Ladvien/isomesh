@@ -24,3 +24,43 @@ libm = { workspace = true }
 # rule 3's budget -- `cargo tree -p isomesh -e normal` is still two packages.
 # Pinned at the version whose MSRV matches ours exactly.
 proptest = "1.11"
+
+# T-006. Held at 0.7 deliberately: criterion 0.8 declares `rust-version = 1.86`
+# and this workspace promises 1.85. The `msrv` CI job runs
+# `cargo check --workspace --all-targets`, which includes benches, so a newer
+# criterion would break the promise rather than merely inconvenience a bench.
+# 0.7 declares 1.80.
+#
+# `default-features = false` drops `rayon` and `plotters`. Neither earns its
+# tree here: the benchmarks are single-threaded by construction because that is
+# what a per-chunk meshing budget looks like, and the numbers this ticket exists
+# to produce go to CSV under docs/measurements/, not to generated HTML.
+# `cargo_bench_support` is what makes `cargo bench` work at all.
+criterion = { version = "0.7", default-features = false, features = [
+    "cargo_bench_support",
+] }
+
+# Both are `harness = false` because criterion supplies its own main, and the
+# resolution sweep supplies one of its own -- see benches/resolution_sweep.rs.
+#
+# `test = false` is necessary and NOT sufficient, which was worth finding out
+# the hard way. CI runs `cargo test --workspace --all-targets`, and an explicit
+# `--all-targets` re-selects bench targets regardless of this flag -- measured:
+# the sweep ran anyway, in a debug build, for minutes, and overwrote the
+# committed CSV with numbers 62x slower than the release ones.
+#
+# The flag stays because it is right for ordinary `cargo test`. What actually
+# stops it is the `--bench` guard at the top of `resolution_sweep`'s `main`:
+# cargo passes `--bench` under `cargo bench` and passes nothing under
+# `cargo test`, which is the same discriminator criterion uses internally.
+# Benches are still compiled by the `check`/`clippy --all-targets` jobs, so they
+# cannot rot.
+[[bench]]
+name = "extract"
+harness = false
+test = false
+
+[[bench]]
+name = "resolution_sweep"
+harness = false
+test = false
