@@ -49,6 +49,8 @@ impl Plugin for CommonPlugin {
             .init_resource::<DemoStats>()
             .init_resource::<FrameTimes>()
             .init_resource::<AutoScreenshot>()
+            .init_resource::<Capture>()
+            .init_resource::<Spin>()
             // PreStartup, not Startup: system order within a schedule is
             // unspecified, so an example's own `Startup` system that wants to
             // adjust the camera would sometimes run before the camera existed
@@ -56,7 +58,7 @@ impl Plugin for CommonPlugin {
             // "the camera exists by the time your Startup runs" a guarantee
             // rather than a coin flip.
             .add_systems(PreStartup, (spawn_camera, spawn_light, spawn_hud))
-            .add_systems(Update, auto_screenshot)
+            .add_systems(Update, (auto_screenshot, capture_sequence))
             .add_systems(
                 Update,
                 (
@@ -78,6 +80,8 @@ pub struct ViewFlags {
     pub wireframe: bool,
     pub normals: bool,
     pub grid: bool,
+    /// Freezes automatic camera motion. Manual orbit still works, so a paused
+    /// view can still be inspected.
     pub paused: bool,
     /// Set for one frame when `R` is pressed.
     pub remesh_requested: bool,
@@ -178,6 +182,83 @@ fn auto_screenshot(
     }
 }
 
+/// Captures a numbered frame sequence, for turning an example into a GIF.
+///
+/// `ISOMESH_CAPTURE=<dir>` writes `frame_0000.png` onward and exits when the
+/// sequence is complete. `ISOMESH_CAPTURE_FRAMES` and `ISOMESH_CAPTURE_EVERY`
+/// tune length and stride.
+///
+/// A still shows what a mesh looks like; only a sequence shows what changing a
+/// parameter *does*, which is the thing a reader of the README is actually
+/// trying to find out.
+#[derive(Resource)]
+pub struct Capture {
+    dir: Option<String>,
+    total: u32,
+    every: u32,
+    /// Frames captured so far. Examples read this to drive a parameter sweep in
+    /// step with the capture rather than with wall-clock time, so the sequence
+    /// is reproducible.
+    pub taken: u32,
+    elapsed: u32,
+    settle: u32,
+}
+
+impl Default for Capture {
+    fn default() -> Self {
+        let number = |key: &str, fallback: u32| {
+            std::env::var(key)
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(fallback)
+        };
+        Self {
+            dir: std::env::var("ISOMESH_CAPTURE").ok(),
+            total: number("ISOMESH_CAPTURE_FRAMES", 60),
+            every: number("ISOMESH_CAPTURE_EVERY", 3).max(1),
+            taken: 0,
+            elapsed: 0,
+            // Long enough for the window, the first extraction and the asset
+            // upload to settle, so frame zero is not a grey rectangle.
+            settle: number("ISOMESH_CAPTURE_SETTLE", 45),
+        }
+    }
+}
+
+impl Capture {
+    /// Whether a sequence is being recorded.
+    #[must_use]
+    pub fn is_active(&self) -> bool {
+        self.dir.is_some()
+    }
+}
+
+fn capture_sequence(
+    mut capture: ResMut<Capture>,
+    mut commands: Commands,
+    mut exit: MessageWriter<AppExit>,
+) {
+    let Some(dir) = capture.dir.clone() else {
+        return;
+    };
+    capture.elapsed += 1;
+    if capture.elapsed <= capture.settle {
+        return;
+    }
+    if (capture.elapsed - capture.settle) % capture.every != 0 {
+        return;
+    }
+    if capture.taken >= capture.total {
+        exit.write(AppExit::Success);
+        return;
+    }
+    let path = format!("{dir}/frame_{:04}.png", capture.taken);
+    commands
+        .spawn(Screenshot::primary_window())
+        .observe(save_to_disk(path));
+    capture.taken += 1;
+}
+
 /// Marks the mesh an example wants wireframed and normal-drawn.
 #[derive(Component)]
 pub struct DemoMesh;
@@ -206,6 +287,21 @@ impl Default for OrbitCamera {
             yaw: 0.6,
             pitch: 0.4,
         }
+    }
+}
+
+/// Radians of automatic yaw per frame, from `ISOMESH_SPIN`.
+#[derive(Resource)]
+struct Spin(f32);
+
+impl Default for Spin {
+    fn default() -> Self {
+        Self(
+            std::env::var("ISOMESH_SPIN")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0.0),
+        )
     }
 }
 
@@ -256,9 +352,14 @@ fn orbit_camera(
     mouse: Res<ButtonInput<MouseButton>>,
     motion: Res<AccumulatedMouseMotion>,
     scroll: Res<AccumulatedMouseScroll>,
+    spin: Res<Spin>,
+    flags: Res<ViewFlags>,
     mut query: Query<(&mut OrbitCamera, &mut Transform)>,
 ) {
     for (mut orbit, mut transform) in &mut query {
+        if !flags.paused {
+            orbit.yaw += spin.0;
+        }
         if mouse.pressed(MouseButton::Left) {
             orbit.yaw -= motion.delta.x * 0.005;
             orbit.pitch = (orbit.pitch - motion.delta.y * 0.005).clamp(-1.5, 1.5);

@@ -46,7 +46,7 @@ use std::time::Instant;
 
 use bevy::prelude::*;
 use bevy_isomesh::MeshBuilder;
-use common::{CommonPlugin, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
+use common::{Capture, CommonPlugin, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
 use isomesh::fields::{BoxExact, ReferenceField, Sphere, Torus};
 use isomesh::mc::MarchingCubes;
 use isomesh::sn::SurfaceNets;
@@ -73,7 +73,13 @@ enum Side {
     SurfaceNets,
 }
 
-const FIELDS: [&str; 4] = ["sphere", "box_exact", "torus", "csg_difference"];
+const FIELDS: [&str; 5] = [
+    "sphere",
+    "box_exact",
+    "torus",
+    "csg_difference",
+    "gyroid (high genus)",
+];
 const MIN_SAMPLES: u32 = 5;
 const MAX_SAMPLES: u32 = 97;
 
@@ -124,7 +130,28 @@ fn setup(
     });
 }
 
-fn controls(keys: Res<ButtonInput<KeyCode>>, flags: Res<ViewFlags>, mut demo: ResMut<Demo>) {
+fn controls(
+    keys: Res<ButtonInput<KeyCode>>,
+    flags: Res<ViewFlags>,
+    capture: Res<Capture>,
+    mut demo: ResMut<Demo>,
+) {
+    // While recording, sweep resolution in step with the captured frames, so the
+    // sequence shows F_sn - F_mc holding at 2*chi across the whole range rather
+    // than at one grid size.
+    if capture.is_active() {
+        const LOW: u32 = 9;
+        const HIGH: u32 = 57;
+        let steps = (HIGH - LOW) / 2 + 1;
+        let phase = capture.taken % (steps * 2);
+        let step = if phase < steps { phase } else { steps * 2 - phase - 1 };
+        demo.samples = LOW + step * 2;
+        if flags.field < FIELDS.len() {
+            demo.field = flags.field;
+        }
+        return;
+    }
+
     if keys.just_pressed(KeyCode::BracketRight) {
         demo.samples = (demo.samples + 2).min(MAX_SAMPLES);
     }
@@ -196,6 +223,7 @@ fn remesh(
     materials: Res<Materials>,
     mut commands: Commands,
     mut query: Query<(&mut Mesh3d, &mut Transform, &Side)>,
+    mut camera: Query<&mut OrbitCamera>,
     mut last: Local<Option<(usize, u32, u32)>>,
 ) {
     let key = (demo.field, demo.samples, demo.smoothing);
@@ -209,6 +237,15 @@ fn remesh(
         2 => extract_pair(&Torus::<f32>::canonical(), demo.samples, demo.smoothing),
         3 => extract_pair(
             &isomesh::fields::csg_difference::<f32>(),
+            demo.samples,
+            demo.smoothing,
+        ),
+        // The capped gyroid is where naive surface nets stops being manifold:
+        // two sheets of the surface pass through one cell and are forced to
+        // share its single vertex. The non-manifold row in the HUD is that
+        // defect, measured live rather than described.
+        4 => extract_pair(
+            &isomesh::fields::capped_gyroid::<f32>(),
             demo.samples,
             demo.smoothing,
         ),
@@ -271,8 +308,12 @@ fn remesh(
         ),
     ];
 
-    // Side by side, each shifted half a domain apart.
+    // Side by side, each shifted half a domain apart. The camera follows,
+    // because the gyroid's domain is three and a half times the others'.
     let offset = width * 0.62;
+    for mut orbit in &mut camera {
+        orbit.radius = width * 2.75;
+    }
     let pairs = [
         (Side::MarchingCubes, mc.builder, -offset),
         (Side::SurfaceNets, sn.builder, offset),

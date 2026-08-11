@@ -22,7 +22,7 @@ use std::time::Instant;
 
 use bevy::prelude::*;
 use bevy_isomesh::MeshBuilder;
-use common::{CommonPlugin, DemoDomain, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
+use common::{Capture, CommonPlugin, DemoDomain, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
 use isomesh::fields::{ReferenceField, Sphere};
 use isomesh::mc::MarchingCubes;
 use isomesh::validate::{ValidateConfig, validate_indexed};
@@ -77,7 +77,23 @@ fn setup(
 #[derive(Resource)]
 struct SurfaceMaterial(Handle<StandardMaterial>);
 
-fn change_resolution(keys: Res<ButtonInput<KeyCode>>, mut resolution: ResMut<Resolution>) {
+fn change_resolution(
+    keys: Res<ButtonInput<KeyCode>>,
+    capture: Res<Capture>,
+    mut resolution: ResMut<Resolution>,
+) {
+    // While recording, sweep the resolution in step with the captured frames
+    // rather than with wall-clock time, so the sequence is reproducible.
+    if capture.is_active() {
+        const LOW: u32 = 9;
+        const HIGH: u32 = 81;
+        let steps = (HIGH - LOW) / 2 + 1;
+        let phase = capture.taken % (steps * 2);
+        let step = if phase < steps { phase } else { steps * 2 - phase - 1 };
+        resolution.0 = LOW + step * 2;
+        return;
+    }
+
     // A cell count that is a multiple of 4 puts grid samples exactly on the unit
     // sphere, which is a real and visible effect -- it produces zero-area
     // slivers. Stepping by 2 samples walks through both kinds so you can see it.
