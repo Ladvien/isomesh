@@ -61,7 +61,8 @@ pub struct RuntimeShape3 {
 impl RuntimeShape3 {
     /// # Errors
     ///
-    /// [`Error::ShapeOverflow`] if `sx * sy * sz` does not fit in `u32`. This is
+    /// [`Error::ShapeOverflow`](crate::Error::ShapeOverflow) if `sx * sy * sz` does
+    /// not fit in `u32`. This is
     /// reported rather than wrapped because a silent wrap aliases distinct cells
     /// onto the same index and produces a mesh no validity test can catch — the
     /// topology comes out self-consistent, it is just not the field's.

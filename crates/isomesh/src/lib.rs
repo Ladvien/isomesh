@@ -47,6 +47,7 @@ extern crate alloc;
 extern crate std;
 
 pub mod fields;
+pub mod hermite;
 pub mod mc;
 pub mod sn;
 pub mod validate;
