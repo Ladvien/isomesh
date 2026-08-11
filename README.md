@@ -14,7 +14,7 @@
 
 ## Status
 
-Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty-three tickets done, forty-nine open.
+Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty-four tickets done, forty-eight open.
 
 | | |
 |---|---|
@@ -180,7 +180,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 212 tests
+cargo test -p isomesh                    # 213 tests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh

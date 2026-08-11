@@ -548,3 +548,72 @@ mesh report
   non-finite positions            0
   ------------------------------------------------------------
   MANIFOLD, CLOSED";
+
+/// T-008: the weld lattice must not care where in the world the mesh is.
+///
+/// `quantise` narrows through `as_f32`, which stops distinguishing consecutive
+/// integers above `2²⁴`. Scaled by `1/weld_epsilon` — 160,000 at `h = 0.0625` —
+/// an *absolute* coordinate crosses that at about 105 world units (M-18). Past
+/// it, neighbouring cells merge and the 27-cell probe degrades toward comparing
+/// everything with everything.
+///
+/// **The count alone cannot see this**, which is why the assertion is on the
+/// occupancy. Coarsening only ever merges buckets, the probe still covers them
+/// and the exact distance test still runs, so `duplicate_vertices` stays right
+/// while the scan slides toward quadratic. A test that checked only the answer
+/// would have passed against the broken version.
+#[test]
+fn the_weld_lattice_does_not_collapse_far_from_the_origin() {
+    use crate::fields::ReferenceField as _;
+    let field = crate::fields::Sphere::<f64>::canonical();
+    let (lo, _) = field.domain();
+    let cell_size = 4.0 / 32.0;
+    let shape = crate::RuntimeShape3::new([33; 3]).expect("valid shape");
+    let mut mc = crate::mc::MarchingCubes::<f64>::new();
+    let mut mesh = MeshBuffer::<f64>::new();
+    mc.extract(&field, &shape, lo, cell_size, &mut mesh)
+        .expect("extraction");
+    let cfg = ValidateConfig::from_cell_size(cell_size).expect("valid spacing");
+
+    let at = |offset: f64| {
+        let moved: Vec<[f64; 3]> = mesh
+            .positions
+            .iter()
+            .map(|p| [p[0] + offset, p[1] + offset, p[2] + offset])
+            .collect();
+        validate_indexed(&moved, &mesh.indices, &cfg)
+    };
+
+    let home = at(0.0);
+    let far = at(1.0e4);
+    let further = at(1.0e6);
+
+    std::println!(
+        "measured: T-008 weld buckets for {} vertices -- origin {}, +1e4 {}, +1e6 {}",
+        mesh.vertex_count(),
+        home.weld_buckets,
+        far.weld_buckets,
+        further.weld_buckets
+    );
+
+    // The answer is unchanged, which is the part that was already true.
+    assert_eq!(home.duplicate_vertices, far.duplicate_vertices);
+    assert_eq!(home.duplicate_vertices, further.duplicate_vertices);
+
+    // The occupancy is unchanged, which is the part T-008 fixed. Every vertex
+    // of an extracted sphere is its own bucket, so a collapse is unmissable.
+    assert_eq!(
+        home.weld_buckets, far.weld_buckets,
+        "the lattice collapsed at 1e4"
+    );
+    assert_eq!(
+        home.weld_buckets, further.weld_buckets,
+        "the lattice collapsed at 1e6"
+    );
+    assert!(
+        home.weld_buckets as usize > mesh.vertex_count() * 9 / 10,
+        "a sphere's vertices should be spread across buckets, got {} for {}",
+        home.weld_buckets,
+        mesh.vertex_count()
+    );
+}

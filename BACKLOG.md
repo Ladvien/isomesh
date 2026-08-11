@@ -37,7 +37,6 @@ before T-001 passes** — an algorithm without a validity harness is an algorith
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **T-008** | **Quantise the weld lattice relative to the mesh, not to the world origin.** `validate.rs`'s `quantise` scales absolute coordinates by `1/(h·1e-4)` and narrows through `as_f32`, so consecutive lattice cells stop being distinguishable past `2²⁴·weld_epsilon` — **measured at ~105 world units for `h = 0.0625`** (M-18). Correctness survives, since coarsening only merges buckets and the exact distance test still runs; the duplicate scan silently degrades toward quadratic. Subtract the mesh AABB minimum before scaling, exactly as `validate/tri_grid.rs` already does. **Acceptance:** a test placing the same mesh at the origin and at a world offset of `1e4` reports **identical** `duplicate_vertices` *and* comparable bucket occupancy — assert on the occupancy, or the test passes today. | S | T-001 |
 | ☐ | **T-007** | **Golden-hash regression.** Stable hash of (positions, normals, indices) for each (algorithm, field, resolution). Committed as a JSON fixture. **Acceptance:** a deliberate one-bit change to a case table fails the test with a useful message naming which combination drifted. | S | T-004 |
 
 ---

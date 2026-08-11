@@ -209,6 +209,23 @@ pub struct MeshReport {
     /// because they are different bugs: this one is a case table emitting a
     /// collapsed triangle, that one is two edge crossings converging.
     pub repeated_index_triangles: u64,
+    /// Distinct cells the weld lattice put vertices in.
+    ///
+    /// A diagnostic rather than a violation, and it exists because the duplicate
+    /// scan's *cost* has a failure mode its *answer* does not. The lattice
+    /// quantises through `as_f32`, which stops distinguishing consecutive
+    /// integers above `2²⁴`; if the scale ever pushed coordinates past that,
+    /// cells would silently merge, every vertex would land in a handful of
+    /// buckets and the 27-cell probe would degrade toward comparing everything
+    /// with everything — while still returning the right count, because the
+    /// exact distance test runs regardless.
+    ///
+    /// Quantising relative to the mesh's own bounds is what prevents that
+    /// (T-008, M-18), and this is the number that proves it: on a well-spread
+    /// mesh it tracks the vertex count, and a collapse shows up here and
+    /// nowhere else.
+    pub weld_buckets: u64,
+
     /// Vertices having an earlier vertex within `weld_epsilon`.
     ///
     /// Equivalently, how many a first-fit welder could remove. Defined against
@@ -554,6 +571,7 @@ pub fn validate_features<R: Real>(
         degenerate_triangles: 0,
         repeated_index_triangles: 0,
         duplicate_vertices: 0,
+        weld_buckets: 0,
         unreferenced_vertices: 0,
         out_of_range_indices: 0,
         trailing_indices: (indices.len() % 3) as u64,
@@ -790,26 +808,66 @@ pub fn validate_features<R: Real>(
         let inv_eps = eps.recip();
         let eps_sq = eps * eps;
 
+        // The lattice is anchored to the mesh's own minimum corner, not to the
+        // world origin, and that is load-bearing rather than tidy.
+        //
+        // `quantise` narrows through `as_f32`, which stops distinguishing
+        // consecutive integers above `2²⁴`. The scale here is `1/weld_epsilon`,
+        // which is `1/(h·1e-4)` — a factor of 160,000 at `h = 0.0625` — so an
+        // *absolute* coordinate crosses that ceiling at about **105 world
+        // units** (M-18, measured). Past it neighbouring cells collapse into
+        // one, and the failure is invisible in the answer: coarsening only
+        // merges buckets, the 27-cell probe still covers them and the exact
+        // distance test still runs, so `duplicate_vertices` stays correct while
+        // the scan slides toward quadratic.
+        //
+        // A chunked world reaches 105 units almost immediately, which is why
+        // this is fixed before G-001 rather than after it. Subtracting the
+        // minimum makes the scale depend on the mesh's *extent* instead of its
+        // position, and an extent that large would be a mesh nobody could weld
+        // meaningfully anyway. Same reasoning as `tri_grid`, which is relative
+        // for the same reason.
+        let mut anchor = [R::INFINITY; 3];
+        for p in positions {
+            for (a, slot) in anchor.iter_mut().enumerate() {
+                if p[a].is_finite() && p[a] < *slot {
+                    *slot = p[a];
+                }
+            }
+        }
+        for slot in &mut anchor {
+            if !slot.is_finite() {
+                *slot = R::ZERO;
+            }
+        }
+        let key_of = |p: [R; 3]| {
+            [
+                quantise((p[0] - anchor[0]) * inv_eps),
+                quantise((p[1] - anchor[1]) * inv_eps),
+                quantise((p[2] - anchor[2]) * inv_eps),
+            ]
+        };
+
         let mut cells: Vec<([i64; 3], u32)> = (0..vertex_count)
-            .map(|i| {
-                let p = positions[i];
-                let q = [
-                    quantise(p[0] * inv_eps),
-                    quantise(p[1] * inv_eps),
-                    quantise(p[2] * inv_eps),
-                ];
-                (q, i as u32)
-            })
+            .map(|i| (key_of(positions[i]), i as u32))
             .collect();
         cells.sort_unstable();
 
+        {
+            let mut distinct = 0u64;
+            let mut previous: Option<[i64; 3]> = None;
+            for (k, _) in &cells {
+                if previous != Some(*k) {
+                    distinct += 1;
+                    previous = Some(*k);
+                }
+            }
+            report.weld_buckets = distinct;
+        }
+
         for v in 0..vertex_count as u32 {
             let p = positions[v as usize];
-            let base = [
-                quantise(p[0] * inv_eps),
-                quantise(p[1] * inv_eps),
-                quantise(p[2] * inv_eps),
-            ];
+            let base = key_of(p);
             let mut found = false;
             'probe: for dz in -1..=1i64 {
                 for dy in -1..=1i64 {
