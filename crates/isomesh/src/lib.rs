@@ -45,3 +45,13 @@ extern crate alloc;
 // The test harness itself needs `std`; the library never does.
 #[cfg(test)]
 extern crate std;
+
+mod mesh;
+mod real;
+mod sdf;
+mod shape;
+
+pub use mesh::{MeshBuffer, MeshSink};
+pub use real::Real;
+pub use sdf::Sdf;
+pub use shape::{ConstShape3, RuntimeShape3, Shape3};
