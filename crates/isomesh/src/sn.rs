@@ -19,10 +19,16 @@
 //!   Cubes' 9.
 //! - **Rounded corners, genuinely.** A vertex placed at the centroid of its
 //!   cell's edge crossings cannot sit on a sharp feature, because an average of
-//!   points on a corner's two faces lands between them. Measured on `box_exact`:
-//!   the nearest vertex to the corner `(1,1,1)` is 1.15 cells away. That is not
-//!   a defect to fix here — it is exactly what dual contouring changes, and it
-//!   is the whole point of E-104.
+//!   points on a corner's two faces lands between them. Measured on `box_exact`
+//!   at 33³: the nearest vertex to the corner `(1,1,1)` is 1.15 cells away. That
+//!   is not a defect to fix here — it is exactly what dual contouring changes,
+//!   and it is the whole point of E-104.
+//!
+//!   Worth knowing before drawing conclusions from that number: Marching Cubes
+//!   does *worse* on the same measurement (1.41 cells), because `box_exact` is
+//!   exactly zero across its entire boundary and a grid plane on a box face
+//!   therefore classifies as outside. See
+//!   `neither_method_reaches_a_box_corner_and_the_reason_is_the_grid`.
 //!
 //! # The structural limit
 //!

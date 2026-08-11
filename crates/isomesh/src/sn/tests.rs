@@ -105,6 +105,44 @@ fn a_meshed_torus_has_genus_one() {
     assert_eq!(report.genus, Some(1), "{report}");
 }
 
+/// Two disjoint unit-ish spheres: a closed surface with two components, so
+/// `χ = 4`. Included because the identity is stated in terms of `χ` and every
+/// other reference field has `χ` of 2 or 0 — without a `χ = 4` case the tests
+/// could not tell `2χ` from "always 4".
+#[derive(Clone, Copy, Debug)]
+struct TwoSpheres;
+
+impl Sdf for TwoSpheres {
+    type Scalar = f64;
+    fn sample(&self, p: [f64; 3]) -> f64 {
+        let left = Sphere::<f64> {
+            center: [-1.0, 0.0, 0.0],
+            radius: 0.6,
+        };
+        let right = Sphere::<f64> {
+            center: [1.0, 0.0, 0.0],
+            radius: 0.6,
+        };
+        left.sample(p).min(right.sample(p))
+    }
+}
+
+impl ReferenceField for TwoSpheres {
+    const NAME: &'static str = "two_spheres";
+    fn domain(&self) -> ([f64; 3], [f64; 3]) {
+        ([-2.0; 3], [2.0; 3])
+    }
+    fn closed_in_domain(&self) -> bool {
+        true
+    }
+    fn expected_euler(&self) -> Option<i64> {
+        Some(4) // two components, each a sphere
+    }
+    fn is_exact_distance(&self) -> bool {
+        true
+    }
+}
+
 /// **Surface Nets and Marching Cubes produce the same triangle count, up to
 /// `2χ`.** Measured on four fields, exact every time.
 ///
@@ -137,14 +175,24 @@ fn triangle_counts_track_marching_cubes_up_to_two_chi() {
             "{name}: the two methods must agree on topology"
         );
 
+        let chi = sn_report.euler_characteristic;
         let difference = sn_mesh.triangle_count() as i64 - mc_mesh.triangle_count() as i64;
         assert_eq!(
             difference,
-            2 * sn_report.euler_characteristic,
-            "{name}: SN {} vs MC {}, chi {}",
+            2 * chi,
+            "{name} at {samples}: F_sn {} vs F_mc {}, chi {chi}",
             sn_mesh.triangle_count(),
             mc_mesh.triangle_count(),
-            sn_report.euler_characteristic
+        );
+        // The vertex form of the same identity: F = 2V - 2*chi for both, so a
+        // triangle gap of 2*chi is a vertex gap of chi.
+        let vertex_difference = sn_mesh.vertex_count() as i64 - mc_mesh.vertex_count() as i64;
+        assert_eq!(
+            vertex_difference,
+            chi,
+            "{name} at {samples}: V_sn {} vs V_mc {}, chi {chi}",
+            sn_mesh.vertex_count(),
+            mc_mesh.vertex_count(),
         );
 
         std::println!(
@@ -157,14 +205,21 @@ fn triangle_counts_track_marching_cubes_up_to_two_chi() {
         );
     }
 
-    check("sphere", &Sphere::<f64>::canonical(), 33);
-    check("torus", &Torus::<f64>::canonical(), 49);
-    check("box_exact", &BoxExact::<f64>::canonical(), 33);
-    check(
-        "csg_difference",
-        &crate::fields::csg_difference::<f64>(),
-        41,
-    );
+    // Three resolutions each, and a chi = 4 field, so the identity is tested as
+    // `2*chi` rather than as the constant 4 that three of these fields share.
+    for samples in [17u32, 25, 33] {
+        check("sphere", &Sphere::<f64>::canonical(), samples);
+        check("box_exact", &BoxExact::<f64>::canonical(), samples);
+        check("two_spheres", &TwoSpheres, samples);
+    }
+    for samples in [33u32, 41, 49] {
+        check("torus", &Torus::<f64>::canonical(), samples);
+        check(
+            "csg_difference",
+            &crate::fields::csg_difference::<f64>(),
+            samples,
+        );
+    }
 }
 
 /// Vertex degree, recorded rather than bounded.
@@ -267,6 +322,62 @@ fn a_box_has_its_corners_rounded_off() {
         nearest > h * 0.25,
         "the corner was reproduced exactly, which surface nets cannot do: {nearest}"
     );
+}
+
+/// How close each method gets to a box corner — and the grid-alignment trap
+/// that makes the obvious answer wrong.
+///
+/// **`box_exact` is exactly zero across its entire boundary**, not just at the
+/// surface in a limit sense: `f(1,0,0)`, `f(1,1,0)` and `f(1,1,1)` are all `+0`.
+/// Since zero classifies as *outside*, a grid plane lying on a box face is
+/// entirely outside, and the sign change happens a whole cell further in. So on
+/// a grid-aligned box, **Marching Cubes lands further from the corner than
+/// Surface Nets does** — the opposite of what "MC puts vertices on edges so it
+/// can hit the corner" suggests.
+///
+/// That is a real trap for anyone benchmarking sharp-feature recovery on an
+/// axis-aligned box: the answer is decided by the zero-classification rule
+/// rather than by the algorithm. Over the `[-2, 2]` domain, 25 and 33 samples
+/// are both grid-aligned; 27 is not.
+///
+/// What survives as a robust statement, and what E-104 has to beat: **Surface
+/// Nets cannot reach a corner at any resolution**, because its vertex is the
+/// centroid of its cell's edge crossings and an average of points on a corner's
+/// faces lies strictly inside it.
+#[test]
+fn neither_method_reaches_a_box_corner_and_the_reason_is_the_grid() {
+    let field = BoxExact::<f64>::canonical();
+    let corner = [1.0f64, 1.0, 1.0];
+    let nearest = |mesh: &MeshBuffer<f64>| {
+        mesh.positions
+            .iter()
+            .map(|p| vec3::length(vec3::sub(*p, corner)))
+            .fold(f64::INFINITY, f64::min)
+    };
+
+    for (samples, aligned) in [(25u32, true), (27, false), (33, true)] {
+        let (sn_mesh, h) = mesh(&field, samples, 0);
+        let (mc_mesh, _) = mesh_with_mc(&field, samples);
+        let (sn_gap, mc_gap) = (nearest(&sn_mesh), nearest(&mc_mesh));
+
+        std::println!(
+            "measured: box_exact at {samples}^3 (h = {h:.4}, {}) -> nearest vertex to (1,1,1): \
+             marching cubes {mc_gap:.4} ({:.2} cells), surface nets {sn_gap:.4} ({:.2} cells)",
+            if aligned {
+                "grid-aligned"
+            } else {
+                "not aligned"
+            },
+            mc_gap / h,
+            sn_gap / h,
+        );
+
+        // The robust claim. Everything else here is a recorded measurement.
+        assert!(
+            sn_gap > h * 0.25,
+            "{samples}: surface nets should not reach the corner, got {sn_gap}"
+        );
+    }
 }
 
 #[test]

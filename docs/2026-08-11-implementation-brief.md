@@ -136,8 +136,40 @@ smoothed. Simpler than MC and it's what most engines actually ship — and, per 
 **it has no credible published timings anywhere**, which is what makes stage 7 worth doing.
 
 **Exit criterion:** same three property tests. Plus `surface_nets_sphere` renders next to MC on the
-same field with a triangle-count readout — the counts should differ substantially and both meshes
-should be closed.
+same field with vertex- and triangle-count readouts, and both meshes closed.
+
+> **CORRECTED 2026-08-11 (A-004).** This ticket originally said the counts "should differ
+> substantially." That was wrong, and the measurement caught it. For a closed manifold surface meshed
+> on the same grid, both counts are pinned by Euler:
+>
+> ```
+> V_sn = V_mc + χ          F_sn = F_mc + 2χ
+> ```
+>
+> Exactly, at every resolution. MC emits one vertex per crossed grid edge (`V_mc = C`); SN emits one
+> vertex per surface cell and two triangles per crossed edge (`F_sn = 2C`); and `F = 2V − 2χ` on any
+> closed triangulated manifold. The middle step is the combinatorial fact that **surface cells =
+> crossed edges + χ** — verified numerically on sphere (χ=2), torus (χ=0), box (χ=2) and two disjoint
+> spheres (χ=4) at three resolutions each.
+>
+> So Surface Nets' "one vertex per cell" does **not** buy fewer vertices than MC's "one vertex per
+> crossed edge." At 49³ on a sphere the two differ by 2 vertices — a constant set by topology, not by
+> resolution. SN's real wins are quad connectivity and a cheaper inner loop, not output size. Assert
+> the identity, not an inequality.
+>
+> **Where the identity legitimately breaks** — document these next to the assertion so a future
+> failure gets read correctly rather than "fixed":
+> 1. **Boundary.** It needs closed meshes. The moment a surface is clipped by the grid — i.e. **as
+>    soon as G-001 chunking lands** — `3F = 2E` fails and the identity goes with it. Expect this and
+>    scope the assertion to whole-volume meshing.
+> 2. **Welding.** A-013 dedup beyond the edge cache lowers `V_mc` and breaks both equalities.
+> 3. **Differing χ.** If MC and MC33 disagree on an ambiguous face they have different χ; use each
+>    mesh's own χ, don't share one.
+> 4. **Non-manifold cells.** Already handled — gyroid and fbm_terrain are excluded and pinned.
+>
+> Worth stating explicitly: `V_mc = C` makes this a **correctness test for MC's edge-vertex cache**.
+> A single cache miss emitting a duplicate vertex for a shared grid edge breaks it. That is a broader
+> class of bug caught than the identity itself is interesting.
 
 ---
 

@@ -49,7 +49,13 @@ impl Plugin for CommonPlugin {
             .init_resource::<DemoStats>()
             .init_resource::<FrameTimes>()
             .init_resource::<AutoScreenshot>()
-            .add_systems(Startup, (spawn_camera, spawn_light, spawn_hud))
+            // PreStartup, not Startup: system order within a schedule is
+            // unspecified, so an example's own `Startup` system that wants to
+            // adjust the camera would sometimes run before the camera existed
+            // and silently lose its settings. Spawning a schedule earlier makes
+            // "the camera exists by the time your Startup runs" a guarantee
+            // rather than a coin flip.
+            .add_systems(PreStartup, (spawn_camera, spawn_light, spawn_hud))
             .add_systems(Update, auto_screenshot)
             .add_systems(
                 Update,
@@ -95,7 +101,10 @@ impl Default for ViewFlags {
             grid: !has("nogrid"),
             paused: false,
             remesh_requested: false,
-            field: 0,
+            field: std::env::var("ISOMESH_FIELD")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0),
         }
     }
 }
@@ -486,6 +495,7 @@ fn draw_domain(flags: Res<ViewFlags>, query: Query<&DemoDomain>, mut gizmos: Giz
 
 /// A material that shows shape rather than texture — the thing every one of
 /// these examples is actually about.
+#[allow(dead_code)] // Each example compiles its own copy of this module.
 pub fn surface_material(materials: &mut Assets<StandardMaterial>) -> Handle<StandardMaterial> {
     materials.add(StandardMaterial {
         base_color: Color::srgb(0.72, 0.76, 0.82),
