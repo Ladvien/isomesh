@@ -37,7 +37,6 @@ before T-001 passes** — an algorithm without a validity harness is an algorith
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **T-003** | **Accuracy harness.** One-sided and symmetric Hausdorff distance from the mesh to an analytic SDF, sampled on triangle centroids and vertices. Also mean absolute error. **Acceptance:** a unit sphere meshed at 64³ has max error below one cell diagonal. | M | I-003 |
 | ☐ | **T-005b** | **Property tests over extraction.** Wire T-005a's generators × grid sizes × algorithms through `assert_extracted_mesh_is_valid`, and verify the suite fails when a case-table entry is corrupted. **Acceptance:** the mutation check — a property test that can't fail is decoration. | S | T-005a, A-001 |
 | ☐ | **T-006** | **Benchmark harness.** `criterion`, plus a resolution sweep that fits `t = a + b·n³` and **reports `a` separately**. CSV out to `docs/measurements/`. Rationale in the speed analysis: 73% of a published 64³ figure was fixed launch overhead. **Acceptance:** sweep runs 16³→256³ and prints the fitted fixed cost. | M | I-003 |
 | ☐ | **T-007** | **Golden-hash regression.** Stable hash of (positions, normals, indices) for each (algorithm, field, resolution). Committed as a JSON fixture. **Acceptance:** a deliberate one-bit change to a case table fails the test with a useful message naming which combination drifted. | S | T-004 |

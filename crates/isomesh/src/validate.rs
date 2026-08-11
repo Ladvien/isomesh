@@ -35,9 +35,12 @@ use core::fmt;
 
 use crate::{MeshBuffer, Real};
 
+mod accuracy;
 mod determinism;
 mod self_intersection;
+mod tri_grid;
 
+pub use accuracy::{AccuracyConfig, AccuracyReport, DistanceStats, accuracy};
 pub use determinism::{DeterminismReport, Divergence, RunPair, check_determinism};
 pub use self_intersection::{SelfIntersectionReport, self_intersections};
 

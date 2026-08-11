@@ -32,13 +32,7 @@ use crate::vec3;
 /// Tolerance for deciding two triangles are coplanar, relative to `cell_size`.
 const COPLANAR_EPSILON_REL: f64 = 1e-6;
 
-/// Broadphase blow-up guard, in grid cells touched per triangle.
-///
-/// With a `cell_size` matching the extraction grid, a triangle spans at most a
-/// couple of cells per axis. Wildly more means the caller passed a spacing that
-/// does not describe this mesh, and the grid would grow until it exhausted
-/// memory. Better to say so.
-const MAX_CELLS_PER_TRIANGLE: usize = 512;
+use super::tri_grid::{MAX_CELLS_PER_TRIANGLE, cell_of};
 
 /// Which triangles pass through which.
 #[derive(Clone, Debug, PartialEq)]
@@ -309,14 +303,6 @@ fn triangle<R: Real>(positions: &[[R; 3]], t: [u32; 3]) -> [[R; 3]; 3] {
 #[inline]
 fn shares_a_vertex(a: [u32; 3], b: [u32; 3]) -> bool {
     a.iter().any(|x| b.contains(x))
-}
-
-/// Floor to a grid coordinate. A non-finite input lands in cell zero and is
-/// filtered out by the normal check before it can matter.
-#[inline]
-fn cell_of<R: Real>(scaled: R) -> i64 {
-    let f = scaled.floor();
-    if f.is_finite() { f.as_f32() as i64 } else { 0 }
 }
 
 /// Exact triangle-triangle overlap.

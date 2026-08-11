@@ -14,11 +14,11 @@
 
 ## Status
 
-Early. Two extraction algorithms, a validity harness, and a Bevy bridge. Sixteen tickets done, fifty-six open.
+Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Seventeen tickets done, fifty-four open.
 
 | | |
 |---|---|
-| **Working** | Marching Cubes · Surface Nets · Hermite data · mesh validity harness · self-intersection counter · determinism harness · seven reference fields · property-test scaffolding · Bevy 0.19 bridge |
+| **Working** | Marching Cubes · Surface Nets · Hermite data · mesh validity harness · accuracy harness · self-intersection counter · determinism harness · seven reference fields · property-test scaffolding · Bevy 0.19 bridge |
 | **Not yet** | Dual contouring (next) · MC33 · marching tetrahedra · greedy quads · chunking · LOD / Transvoxel · vertex welding · colliders · GPU path · benchmarks |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
@@ -103,6 +103,7 @@ Every extraction algorithm ships with these before it counts as done. They are o
 | Self-intersections per 1,000 triangles | reported as a rate, never as a fraction-of-meshes, which saturates with chunk size |
 | Determinism | compared bit-wise via `total_cmp`, because `==` is wrong in both directions on floats |
 | Signed volume | global inversion, which nothing else here can see |
+| Hausdorff distance, both directions, and mean absolute error | a mesh that is perfectly valid and in the wrong place. Only the reverse direction sees *missing* geometry — deleting one face of a test octahedron leaves the forward number bit-identical |
 
 `FINDINGS.md` is the epistemic state: what is believed, how strongly, and on what evidence, with tiers for measured-here, verified-from-primary-source, reported, and folklore. Ten entries are in the falsified section, several of them corrections to this project's own documents.
 
@@ -138,7 +139,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 164 tests
+cargo test -p isomesh                    # 181 tests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
