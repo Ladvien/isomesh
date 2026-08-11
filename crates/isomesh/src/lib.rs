@@ -53,6 +53,7 @@ mod mesh;
 mod real;
 mod sdf;
 mod shape;
+mod vec3;
 
 pub use mesh::{MeshBuffer, MeshSink};
 pub use real::Real;

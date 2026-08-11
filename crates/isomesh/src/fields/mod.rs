@@ -29,6 +29,7 @@
 
 mod noise;
 
+use crate::vec3::{length, scale, sub};
 use crate::{Real, Sdf};
 
 /// What a validity or accuracy harness needs to know about a field before it can
@@ -888,27 +889,6 @@ impl<R: Real> ReferenceField for FbmTerrain<R> {
     fn is_exact_distance(&self) -> bool {
         false
     }
-}
-
-// ─── tiny vector helpers ────────────────────────────────────────────────────
-//
-// Deliberately not a math library. Three functions, used only inside this
-// module; anything that wants real vector types can wait until there is real
-// vector math to do.
-
-#[inline]
-fn sub<R: Real>(a: [R; 3], b: [R; 3]) -> [R; 3] {
-    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
-}
-
-#[inline]
-fn scale<R: Real>(a: [R; 3], s: R) -> [R; 3] {
-    [a[0] * s, a[1] * s, a[2] * s]
-}
-
-#[inline]
-fn length<R: Real>(a: [R; 3]) -> R {
-    (a[0] * a[0] + a[1] * a[1] + a[2] * a[2]).sqrt()
 }
 
 #[cfg(test)]

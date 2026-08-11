@@ -35,6 +35,10 @@ use core::fmt;
 
 use crate::{MeshBuffer, Real};
 
+mod self_intersection;
+
+pub use self_intersection::{SelfIntersectionReport, self_intersections};
+
 /// Thresholds for the two metrics that have units.
 ///
 /// There is deliberately **no `Default`**. An absolute area or weld distance is
