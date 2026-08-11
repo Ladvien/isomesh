@@ -34,6 +34,8 @@ use crate::validate::{
 use crate::vec3;
 use crate::{Real, RuntimeShape3, Sdf, Shape3};
 
+mod extraction;
+
 /// Half-extent of the box every generated field lives inside.
 const DOMAIN: f64 = 2.0;
 
@@ -159,6 +161,50 @@ pub(crate) fn resolution() -> impl Strategy<Value = [u32; 3]> {
 
 // ─── the assertion bundle ───────────────────────────────────────────────────
 
+/// Which validity gate a mesh is held to.
+///
+/// Deliberately an enum rather than a `bool`, and deliberately three cases: a
+/// blanket gate is unsatisfiable for at least one field *and* at least one
+/// algorithm, so the caller has to name which one applies and why.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SurfaceGate {
+    /// A closed, oriented 2-manifold. **The gate for a closed field meshed by a
+    /// method that cannot put two surface sheets in one cell** — Marching Cubes,
+    /// which places vertices on grid edges, is one.
+    Closed,
+    /// A 2-manifold, possibly with boundary. **The gate for an open field**, and
+    /// for any single chunk once G-001 lands.
+    Manifold,
+    /// Closed, correctly oriented and wholly inside the grid, but *permitted* to
+    /// be non-manifold.
+    ///
+    /// **The gate for one-vertex-per-cell methods**, i.e. Surface Nets and plain
+    /// Dual Contouring. Where two sheets of the surface pass through one cell
+    /// they are forced to share its single vertex, and the result is
+    /// non-manifold by construction — the literature calls this DC's *"actual
+    /// structural defect"*, and A-010 is the ticket that fixes it
+    /// architecturally by vertex splitting.
+    ///
+    /// M-4 measured this on `gyroid` and `fbm_terrain` and read it as a
+    /// high-genus/open-field effect. T-005b found it on a **convex body**, so it
+    /// is not about topology at all: any surface with a feature thinner than one
+    /// cell triggers it. That is why this gate exists rather than a
+    /// `if field == gyroid` in the sweep.
+    ///
+    /// What is still asserted is everything that has nothing to do with sheet
+    /// sharing: no structural errors, no boundary (the surface did not leave the
+    /// grid), and consistent winding.
+    ///
+    /// **The even-`χ` parity check is deliberately *not* asserted here**, and
+    /// that is not an oversight. `χ = 2 − 2g` — hence `χ` even — holds for a
+    /// closed *orientable manifold*, so parity is a corollary of manifoldness
+    /// rather than an independent check. Waiving manifoldness and keeping the
+    /// parity check is incoherent, and measurably so: Surface Nets on a generated
+    /// convex body produces `χ = 1` with one non-manifold edge and zero boundary
+    /// edges. A-010 is where this becomes assertable again.
+    ClosedAllowingMultiSheet,
+}
+
 /// Everything an algorithm ticket must assert about a mesh it produced.
 ///
 /// Returns the self-intersection report rather than gating on it: dual methods
@@ -166,14 +212,14 @@ pub(crate) fn resolution() -> impl Strategy<Value = [u32; 3]> {
 /// what the cell clamp changes. Callers assert whatever they know about their
 /// own algorithm.
 ///
-/// `expect_closed` comes from the field, never from the caller's intuition —
-/// see `ReferenceField::closed_in_domain`.
+/// `gate` comes from the field and the algorithm, never from the caller's
+/// intuition — see `ReferenceField::closed_in_domain` and [`SurfaceGate`].
 pub(crate) fn assert_extracted_mesh_is_valid(
     label: &str,
     positions: &[[f64; 3]],
     indices: &[u32],
     cell_size: f64,
-    expect_closed: bool,
+    gate: SurfaceGate,
 ) -> SelfIntersectionReport {
     let report = validate_indexed(
         positions,
@@ -184,16 +230,25 @@ pub(crate) fn assert_extracted_mesh_is_valid(
         !report.has_structural_errors(),
         "{label}: malformed mesh\n{report}"
     );
-    if expect_closed {
-        assert!(
+    match gate {
+        SurfaceGate::Closed => assert!(
             report.is_closed(),
             "{label}: expected a closed surface\n{report}"
-        );
-    } else {
-        assert!(
+        ),
+        SurfaceGate::Manifold => assert!(
             report.is_manifold(),
             "{label}: expected a manifold with boundary\n{report}"
-        );
+        ),
+        SurfaceGate::ClosedAllowingMultiSheet => {
+            assert_eq!(
+                report.boundary_edges, 0,
+                "{label}: the surface left the grid\n{report}"
+            );
+            assert_eq!(
+                report.inconsistently_oriented_edges, 0,
+                "{label}: inconsistent winding\n{report}"
+            );
+        }
     }
     self_intersections(positions, indices, cell_size).expect("self-intersection scan")
 }
@@ -296,7 +351,13 @@ mod tests {
             [0.0, -1.0, 0.0],
         ];
         let indices = [0, 1, 2, 0, 1, 3, 0, 1, 4];
-        assert_extracted_mesh_is_valid("negative control", &positions, &indices, 1.0, true);
+        assert_extracted_mesh_is_valid(
+            "negative control",
+            &positions,
+            &indices,
+            1.0,
+            SurfaceGate::Closed,
+        );
     }
 
     /// And that it rejects malformed input before it reaches the topology.
@@ -305,7 +366,13 @@ mod tests {
     fn the_mesh_bundle_rejects_a_bad_index() {
         let positions = vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0f64]];
         let indices = [0, 1, 9];
-        assert_extracted_mesh_is_valid("negative control", &positions, &indices, 1.0, false);
+        assert_extracted_mesh_is_valid(
+            "negative control",
+            &positions,
+            &indices,
+            1.0,
+            SurfaceGate::Manifold,
+        );
     }
 
     /// A well-formed closed mesh passes, so the bundle is not merely a
@@ -319,7 +386,13 @@ mod tests {
             [-1.0, -1.0, 1.0],
         ];
         let indices = [0, 1, 2, 0, 2, 3, 0, 3, 1, 1, 3, 2];
-        let si = assert_extracted_mesh_is_valid("tetrahedron", &positions, &indices, 1.0, true);
+        let si = assert_extracted_mesh_is_valid(
+            "tetrahedron",
+            &positions,
+            &indices,
+            1.0,
+            SurfaceGate::Closed,
+        );
         assert!(si.is_intersection_free(), "{si}");
     }
 }

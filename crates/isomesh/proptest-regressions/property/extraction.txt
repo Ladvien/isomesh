@@ -1,0 +1,10 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc d2050c98a0cca489f70d0a8554a9ad615728620eee9e9d7576f1a69e1f2abf7e # shrinks to field = ConvexBody { planes: [HalfSpace { normal: [-0.32965078459841207, 0.9355763371733091, -0.12659888441461875], offset: 0.0 }], bound: Sphere { center: [0.0, 0.0, 0.0], radius: 1.5 } }, size = [7, 7, 7]
+cc 2e9f16624fbdf5f4390b9c535182b400093004bfe70cc40a04e75e59b54c87c0 # shrinks to field = SphereUnion { spheres: [Sphere { center: [-0.39516576589582075, 0.21368224195064064, -0.12786661814618186], radius: 0.8822489237287218 }, Sphere { center: [0.0, -0.1933195480530369, 0.15225878691747238], radius: 0.5760790448066615 }] }, size = [6, 6, 6]
+cc be7dbb18a0c154c2b19ae602429ac9aab5282bcfe4104142eb1d460274f53b88 # shrinks to field = SphereUnion { spheres: [Sphere { center: [-0.11249104616165255, 0.20699552873617202, 0.0], radius: 0.25 }, Sphere { center: [0.8595232825415435, -0.4895752104400581, 0.0], radius: 0.737281670134338 }] }, size = [10, 10, 10]
+cc 21e8c50ddda5ee119b59796af84c91beccf1899ffe9d2e3935da736031e06636 # shrinks to field = ConvexBody { planes: [HalfSpace { normal: [0.9278335280687874, 0.1460191973819192, -0.34322490904269587], offset: -0.6607908153041699 }], bound: Sphere { center: [0.0, 0.0, 0.0], radius: 1.5 } }, size = [7, 7, 7]
