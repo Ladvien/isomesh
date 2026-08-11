@@ -94,7 +94,6 @@ the point** — they're how someone decides whether this crate is usable.
 | | ID | Example | Blocked by |
 |---|---|---|---|
 | ☐ | **E-102** | `mc33_ambiguity` — split screen, holes vs closed, Euler χ in the HUD for both | A-002 |
-| ☐ | **E-104** | `dual_contouring_cube` — **the money shot.** `box_exact` + `csg_difference`: SN rounds the corners, DC holds them. README image. **Must use a box that is not grid-aligned**: `box_exact` is exactly zero across its whole boundary, so on an aligned grid this measures the zero-classification rule rather than the algorithm. Over the ±2 domain 25³ and 33³ are aligned; 27³ is not. | A-007 |
 | ☐ | **E-105** | `marching_tetrahedra` — same field, much higher triangle count | A-003 |
 | ☐ | **E-106** | `greedy_quads` — the blocky path, quads before/after merge | A-005 |
 | ☐ | **E-107** | `transvoxel_seams` — two LODs adjacent, toggle transition cells. **Commit both screenshots.** | A-011 |

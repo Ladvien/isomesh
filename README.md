@@ -14,7 +14,7 @@
 
 ## Status
 
-Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty-two tickets done, fifty open.
+Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty-three tickets done, forty-nine open.
 
 | | |
 |---|---|
@@ -84,6 +84,10 @@ And it is not the cheaper method by time either, which took a benchmark to find 
 Surface Nets wins below roughly 48³ and loses steadily above it. Marching Cubes' per-sample cost *falls* from 21.9 to 4.78 ns as the `O(n²)` surface term amortises away, then holds flat; Surface Nets' sits near 9 ns and then *climbs* to 13.19. Its fitted `t = a + b·n³` even comes back with a **negative** fixed cost, which is impossible and is the model saying its cost grows faster than `n³`. Sphere, f32, single thread, Apple M5 — one machine, so treat the mechanism as unconfirmed. Raw data in `docs/measurements/resolution_sweep.csv`.
 
 So both halves of the usual case for Surface Nets — fewer triangles, lower cost — are falsified by measurement in this repository. What it actually buys is quad connectivity and one vertex per cell.
+
+![Surface Nets against Dual Contouring on a box](docs/screenshots/e104-dual-contouring-box.png)
+
+*`dual_contouring_cube` — the same box, the same 19³ grid, the same edge crossings. Surface Nets on the left, Dual Contouring on the right. The only difference between the two meshes is one function: where a cell's vertex goes. Both emit **972 triangles** with identical connectivity. On [`csg_difference`](docs/screenshots/e104-dual-contouring-csg.png) the concave seam holds too.*
 
 The corners are the real difference, and dual contouring is what closes them. Measured on `box_exact` at 27³ — a resolution deliberately **not** aligned to the box faces, since on an aligned grid this measures the sign-classification rule rather than the algorithm:
 
