@@ -112,6 +112,36 @@ impl<R: Real> HermiteCell<R> {
         Self { crossings, mask }
     }
 
+    /// Build a cell from explicit `(edge, crossing)` pairs.
+    ///
+    /// Internal, and it exists for one reason: the dual-contouring vertex rule
+    /// is a piece of linear algebra whose interesting cases — three orthogonal
+    /// planes, a rank-1 flat region, a lattice rotation applied to both input
+    /// and expected output — are stated as *planes*, not as a field and a grid.
+    /// Reaching them through [`from_corners`](Self::from_corners) would mean
+    /// hand-designing an SDF for each, and the test would then be exercising the
+    /// SDF as much as the solve.
+    ///
+    /// Edges outside `0..EDGE_COUNT` are ignored rather than rejected: this
+    /// takes a fixed test fixture, not user input.
+    #[cfg(test)]
+    pub(crate) fn from_crossings(pairs: &[(u8, HermiteCrossing<R>)]) -> Self {
+        let mut cell = Self {
+            crossings: [HermiteCrossing {
+                position: [R::ZERO; 3],
+                normal: [R::ZERO; 3],
+            }; EDGE_COUNT],
+            mask: 0,
+        };
+        for &(edge, crossing) in pairs {
+            if (edge as usize) < EDGE_COUNT {
+                cell.crossings[edge as usize] = crossing;
+                cell.mask |= 1 << edge;
+            }
+        }
+        cell
+    }
+
     /// How many edges the surface crosses.
     #[must_use]
     pub fn len(&self) -> usize {

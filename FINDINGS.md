@@ -222,6 +222,30 @@ where that bites.
 Twice now the false comment has been an *architectural* claim ("nothing calls this", "every vertex has
 four neighbours") rather than a factual slip, which is the kind that shapes later decisions.
 
+### ✗16 — "glam 0.32 lands with A-007's vertex solve"
+
+**Believed because:** stated in four places — `CLAUDE.md`'s crate layout ("Deps: libm today; glam 0.32
+joins it at A-007. Nothing else, ever.") and its dependency-justification section, `BACKLOG.md`'s A-007
+ticket, `BACKLOG_ARCHIVE.md`'s I-001 note, and ✗10 itself, which deferred glam to A-007 on the grounds
+that "the 3×3 solve is the first thing that actually needs matrix math".
+**Tested by:** reading glam 0.32.1's source before adding the dependency.
+**Result:** **glam has no scalar abstraction.** `Mat3` lives in `src/f32/mat3.rs` and `DMat3` in
+`src/f64/dmat3.rs` as separate concrete types, `lib.rs` re-exports per-scalar modules, and there is no
+generic `Mat3<T>` and no trait spanning the two. The only `pub trait` in the crate is `FloatExt`, a
+scalar extension trait.
+
+**What's true instead:** the premise was right and the conclusion did not follow. The solve *does* need
+matrix math — but this crate is generic over `Real`, which spans `f32` **and** `f64`, and glam's types
+do not. Using it would mean a bridge trait with two impls forwarding every operation, which is more
+code than the 3×3 adjugate it would wrap, adds a dependency, and puts two float backends inside one
+solve — the exact thing the `libm` justification rejects.
+
+So the 3×3 lives in `dc/solve.rs` as a six-entry symmetric matrix over `[R; 3]`, about 40 lines, and
+**the crate stays at one dependency.** The "as light as possible" pitch survives A-007 intact.
+**Would be shown wrong by:** glam gaining a generic scalar parameter, or this crate dropping `f64`.
+**Note this is ✗10's second correction.** ✗10 moved glam from "day one" to "A-007"; the deferral target
+was wrong too. The recurring error is reasoning about glam from its reputation rather than its API.
+
 ### ✗15 — "Marching Cubes is unconditionally manifold"
 
 **Believed because:** every measurement in this repo said so. M-4 contrasts Surface Nets'
@@ -321,6 +345,7 @@ result** — Apple M5, single thread — and nothing here has been run elsewhere
 | M-21 | **Surface Nets is not `O(n³)` over this range; Marching Cubes is.** SN's fitted intercept is **negative** — `−3.13 ms` full sweep, `−7.32 ms` on the tail — which is physically impossible and is the signature of a curve convex in `n³`. `r² = 0.9899` against MC's `0.99986`. Per-sample cost rises `9.0 → 13.19 ns` while MC's falls and flattens | T-006. Cause unmeasured — see O-11. This is why ✗14's gap widens rather than staying constant |
 | M-22 | **✗1's identity holds at every resolution to 256³**: `V_sn − V_mc = 2` and `F_sn − F_mc = 4` exactly, nine resolutions, `χ = 2`. The original table topped out at 49³, so this is corroboration at **5× the resolution** and 16.8 M samples | T-006's sweep, which records vertex and triangle counts alongside the timings |
 | M-23 | **`f64` costs 8–10% on extraction paths with no matrix solve in them.** At 65³ on a sphere: MC `1.3928 ms` (f32) against `1.5083 ms` (f64), **+8.3%**; SN `2.3625` against `2.6036`, **+10.2%**. Not the 2× a naive "twice the bytes" guess suggests, because the work is dominated by field evaluation and branchy table lookup rather than by memory bandwidth | T-006, `benches/extract.rs`, the `precision` group. **Partially answers O-8** for the non-QEF paths; A-007's solve is where `AᵀA` squares the condition number and the answer may differ |
+| M-24 | **Bit-exact lattice equivariance needs magnitude-ordered *products*, not just sums.** The audit prescribes "magnitude-sorted 3-term dot products", which is necessary and **not sufficient**: a cofactor expansion of `det(M+λI)` along a fixed row selects three of the six entries *by position*, so relabelling the axes evaluates a different expression. Measured **19 ULP** disagreement under a cyclic permutation, on all three fixtures, with the dots already sorted. Fixed by the symmetric determinant form with magnitude-ordered 3-factor products — FP multiplication is commutative but not associative, so `(a·b)·c ≠ (b·c)·a`. Now **72/72** rotation×fixture cases are bit-identical | A-007, `the_vertex_is_bit_exactly_equivariant_under_lattice_rotations`, which failed before the fix |
 
 ---
 
@@ -404,6 +429,8 @@ Rules with no incident behind them get ignored. These all have one.
 | **A physically impossible fitted parameter is the model telling you it is wrong.** Do not report it as a value | M-21 — Surface Nets' fitted fixed cost is *negative*. Reported as "there is no fixed cost" it would be nonsense; read correctly it says the cost grows faster than `n³` and the whole two-term model does not apply |
 | **A property that has held in every measurement so far is still a hypothesis, not a mechanism.** Say which condition it depends on | ✗15 — "MC is manifold" held on seven reference fields at every resolution ever tried, and the mechanism offered for it (vertices on edges, not one per cell) was real but insufficient. The true condition is "the grid resolves the surface", which nothing had stated |
 | **A workspace that is excluded from the root is excluded from the root's CI commands too.** Check each one separately | E-111 — the lint job runs `cargo fmt --all --check` from the root, which excludes `bevy_isomesh`, so that crate's formatting had never been checked in 20 tickets and an example was committed unformatted. `cargo check`/`clippy`/`test` had their own steps in the bevy job; `fmt` was the one nobody noticed was missing |
+| **A remedy stated for one operation does not cover the pipeline.** If a property is claimed end-to-end, check every reduction in it | M-24 — the audit's "magnitude-sorted dot products" is real and insufficient; the determinant needed the same treatment, and nothing said so. The equivariance test caught it because it asserted bit-equality rather than a tolerance |
+| **Read a dependency's API before believing what it is for.** Reputation is not a type signature | ✗16 — glam is "the" Rust math library and was written into four documents as A-007's dependency. It has no generic scalar, so it cannot serve a crate generic over `f32` and `f64` |
 | Before believing a performance verdict, ask **how many machines it has run on.** One is a hypothesis | ✗14 — Surface Nets loses to Marching Cubes by 2.76× at 256³ on an Apple M5, and the mechanism is probably cache. That is a strong result and a weak generalisation until it runs somewhere else (O-11) |
 
 ---

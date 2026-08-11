@@ -46,6 +46,7 @@ extern crate alloc;
 #[cfg(test)]
 extern crate std;
 
+pub mod dc;
 pub mod fields;
 pub mod hermite;
 pub mod mc;

@@ -91,7 +91,8 @@ isomesh/
   Cargo.toml            [workspace] members = ["crates/*"], exclude = ["bevy_isomesh"]
   crates/
     isomesh/            core. no_std + alloc, unconditionally. examples/ = headless, write OBJ.
-                        Deps: libm today; glam 0.32 joins it at A-007. Nothing else, ever.
+                        Deps: libm. Only libm — see ✗16; glam cannot serve a crate
+                        generic over f32 and f64.
     isomesh-gpu/        + wgpu 29.0.3. API takes &wgpu::Device / &Queue / &mut CommandEncoder.
   bevy_isomesh/         EXCLUDED from the root workspace. Own Cargo.lock. ALL Bevy examples here.
   docs/research/        the papers-derived research. Read-only unless asked.
@@ -149,11 +150,18 @@ It costs nothing at run time: `libm::sqrtf` compiles to `fsqrt` on aarch64+neon 
 x86-64+sse2 (verified in `libm-0.2.16/src/math/arch/{aarch64,x86}.rs`). `libm` itself has zero
 dependencies and is maintained under `rust-lang/compiler-builtins`.
 
-**`glam` 0.32 — not yet declared.** Rule 1 sanctions it as the internal math library, but nothing has
-needed it yet: the fields are scalar (all math is on `Real`) and `validate.rs` needs one hand-written
-cross product over `[R; 3]`. Declaring it before use would be an unused dependency, which is the
-placeholder the one-path rule rejects. It lands with A-007's QEF solve, which is the first code that
-genuinely wants vector types.
+**`glam` — not declared, and no longer expected to be.** Rule 1 sanctions it as the internal math
+library and ✗10 deferred it to A-007's solve, on the grounds that a 3×3 solve is the first thing that
+genuinely wants matrix types. The premise held; the conclusion did not.
+
+**glam has no scalar abstraction** (✗16, verified in glam 0.32.1's source): `Mat3` is `f32`, `DMat3` is
+`f64`, they live in separate modules, and there is no generic `Mat3<T>` nor any trait spanning them.
+This crate is generic over `Real`, which is both. Using glam would mean a bridge trait with two impls
+forwarding every operation — more code than the 3×3 adjugate it would wrap, plus a dependency, plus two
+float backends inside one solve, which is exactly what the `libm` justification rejects.
+
+So A-007's solve is a six-entry symmetric matrix over `[R; 3]` in `dc/solve.rs`, and **the crate stays
+at one dependency**. Revisit only if glam gains a generic scalar or this crate drops `f64`.
 
 ---
 
