@@ -116,7 +116,7 @@ Still zero Bevy. This is the machinery a game needs, living in the core crate wh
 | | | *Done, and the CI job landed with it.* Committed as one stack with B-002, because `lib.rs` names the sink module and splitting would mean committing a reference to a file that does not exist. CI runs `cargo check --all-targets` in this workspace rather than `build --examples`: it type-checks every example, which is what catches the API rot that pinned `block-mesh` to bevy 0.13, without paying to codegen and link a full Bevy app on every push. *Verified on resolve:* glam **0.32.1**, encase **0.12.0**, wgpu-types **29.0.4** — matching CLAUDE.md's pins. No `x11` (that is Linux; this targets macOS/Metal). | | |
 | ☑ | **B-002** | **`MeshSink` → Bevy `Mesh`.** Write straight into attribute arrays, no intermediate copy. Correct `Indices::U32`, `PrimitiveTopology::TriangleList`, positions/normals/UVs. | M | B-001 |
 | ☐ | **B-003** | **Plugin and component API.** `IsomeshPlugin`, a `VoxelVolume` component, a `NeedsRemesh` marker, systems that consume the frame budget from G-006 and drive `AsyncComputeTaskPool` so meshing is off the main thread. **Acceptance:** meshing a large volume does not stall the render loop — show it in the frame-time graph. | L | B-002, G-006 |
-| ☐ | **B-004** | **`examples/common/`.** Orbit camera, HUD (rolling 30-frame medians, not instantaneous), universal keybindings (`W` wire, `N` normals, `G` grid, `Space` pause, `R` remesh, `F12` screenshot, `Esc` quit), field picker. Build this **before** any example — it's what makes 27 examples cheap. | M | B-002 |
+| ☑ | **B-004** | **`examples/common/`.** Orbit camera, HUD (rolling 30-frame medians, not instantaneous), universal keybindings (`W` wire, `N` normals, `G` grid, `Space` pause, `R` remesh, `F12` screenshot, `Esc` quit), field picker. Build this **before** any example — it's what makes 27 examples cheap. | M | B-002 |
 
 ---
 
@@ -129,7 +129,8 @@ the point** — they're how someone decides whether this crate is usable.
 
 | | ID | Example | Blocked by |
 |---|---|---|---|
-| ☐ | **E-101** | `mc_sphere` — MC baseline, wireframe toggle | A-001, B-004 |
+| ☑ | **E-101** | `mc_sphere` — MC baseline, wireframe toggle | A-001, B-004 |
+| | | *Runs, and was verified by running it — not by type-checking it.* Screenshots committed to `docs/screenshots/`. The HUD reports the **validity harness live on the mesh being rendered**: 1158 verts, 2312 tris (matching A-001's committed measurement), χ=2, 0 non-manifold edges, 0 boundary edges, MANIFOLD CLOSED, 0.158 ms extract at 60 fps. `[`/`]` change resolution live. | |
 | ☐ | **E-102** | `mc33_ambiguity` — split screen, holes vs closed, Euler χ in the HUD for both | A-002 |
 | ☐ | **E-103** | `surface_nets_sphere` — SN next to MC, triangle counts | A-004 |
 | ☐ | **E-104** | `dual_contouring_cube` — **the money shot.** `box_exact` + `csg_difference`: SN rounds the corners, DC holds them. README image. | A-007 |

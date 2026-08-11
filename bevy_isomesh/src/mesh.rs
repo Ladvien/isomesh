@@ -77,6 +77,28 @@ impl MeshBuilder {
         self.indices.len() / 3
     }
 
+    /// The positions written so far.
+    ///
+    /// Present so a caller can run the core crate's validity harness on exactly
+    /// the data it is about to hand to the renderer, rather than on a
+    /// reconstruction of it.
+    #[must_use]
+    pub fn positions(&self) -> &[[f32; 3]] {
+        &self.positions
+    }
+
+    /// The normals written so far.
+    #[must_use]
+    pub fn normals(&self) -> &[[f32; 3]] {
+        &self.normals
+    }
+
+    /// The flat index triples written so far.
+    #[must_use]
+    pub fn indices(&self) -> &[u32] {
+        &self.indices
+    }
+
     /// Hand the arrays to a Bevy [`Mesh`], by move.
     ///
     /// Consuming rather than borrowing is deliberate: a `Mesh` owns its vertex
