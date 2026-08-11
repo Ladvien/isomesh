@@ -184,32 +184,36 @@ DC needs, per edge crossing: the position **and the surface normal there**. Stor
 `(position: [Real;3], normal: [Real;3])` per crossing, up to 12 per cell. This is the input to the
 vertex solve and the thing that makes sharp features recoverable at all.
 
-### Default vertex rule — closed-form, three planes
+### The vertex rule — one unconditional path
 
-Use this before reaching for a general QEF. It is exactly rotation-equivariant, needs no iterative
-solve, and avoids squaring the condition number:
-
-```
-c  = (p₁+p₂+p₃)/3          dᵢ = nᵢ·(pᵢ−c)
-x  = c + [ d₁(n₂×n₃) + d₂(n₃×n₁) + d₃(n₁×n₂) ] / [ n₁·(n₂×n₃) ]
-```
-
-Falls back when the triple product is near zero (near-parallel planes) — that's the degenerate case,
-and it should route to the regularized form below rather than producing a huge coordinate.
-
-### General case — regularized normal equations
-
-For >3 planes, or when the closed form degenerates:
+> **Corrected 2026-08-11 — see FINDINGS ✗12.** This section previously described a three-plane
+> closed-form rule that "falls back when the triple product is near zero", and a separate general form
+> for the degenerate case. That split was a misreading of the audit doc it cites: the audit gives the
+> regularized form below as *"branch-free, handles all degeneracies… no data-dependent branch"*, and
+> its own diagnosis is that a data-dependent branch is precisely what makes DC pop. A-007 and A-008 are
+> merged; there is one path.
 
 ```
-M = Σ nᵢnᵢᵀ        g = Σ dᵢnᵢ        λ ≈ 0.01
+c = centroid of the crossing positions      dᵢ = nᵢ·(pᵢ−c)
+M = Σ nᵢnᵢᵀ        g = Σ dᵢnᵢ        λ = 0.01
 x = c + adj(M + λI)·g / det(M + λI)
 ```
 
-`λ` is the regularizer that keeps under-determined cells (flat regions, where `M` is rank 1) from
-flying off. Note that `M = AᵀA` squares the condition number — this is the exact reason the QR/Givens
-formulation exists in the literature. In `f32` it will bite; in `f64` it mostly won't. **Measure it**:
-the `precision_f32_vs_f64` example exists for this.
+Always, for any number of planes. `λ` is the regularizer that keeps under-determined cells (flat
+regions, where `M` is rank 1) from flying off, and `λ = 0.01` is not a free parameter — it is the value
+that reproduces DC's `σ = 0.1` SVD truncation *smoothly*. Equivariant because `RIRᵀ = I`.
+
+Two requirements that are easy to drop and expensive to debug:
+
+- **Magnitude-sort the three terms of each dot product.** Measured 4328/9600 equivariance failures
+  unsorted, **0/9600** sorted. Without it the guarantee does not hold in `f32`.
+- Note that `M = AᵀA` squares the condition number — this is the exact reason the QR/Givens formulation
+  exists in the literature. In `f32` it will bite; in `f64` it mostly won't. **Measure it**: the
+  `precision_f32_vs_f64` example exists for this.
+
+The three-plane Cramer form is *not* kept as a fast path. The audit measures it as strictly worse in the
+tail than the form above (p99 7.23e−04 vs 1.81e−04; max 3.6e−01 vs 6.4e−04), so it buys nothing to
+offset the branch it would reintroduce.
 
 ### The clamp — do not skip this
 

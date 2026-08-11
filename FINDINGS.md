@@ -154,6 +154,48 @@ knowingly rather than against a test that could never go green.
 **Would be shown wrong by:** any field producing `boundary_edges > 0` from A-001 on a closed field, or
 any non-zero `face_disagreements`.
 
+### ✗12 — "The equivariant vertex rule needs a fast three-plane path with a fallback"
+
+**Believed because:** `BACKLOG.md` split it into A-007 ("the three-plane rotation-equivariant rule…
+falls through to A-008 when the triple product is near zero") and A-008 ("for >3 planes and degenerate
+cells"), and the brief says "falls back when the triple product is near zero (near-parallel planes)".
+The crate architecture doc says the same in a third phrasing: "fall back to the regularized
+normal-equation form only for >3 planes".
+**Tested by:** reading the audit doc all three of them cite —
+`docs/research/2026-08-10-adjacent-math-transfer-audit.md:182-219`.
+**Result:** the audit gives the Tikhonov-adjugate form as the *production* form and describes it as
+"branch-free, handles all degeneracies", closing with "**no eigendecomposition, no SVD, no iteration,
+no data-dependent branch**". It is a single unconditional path in the source, not a fallback arm.
+
+Worse, the audit's diagnosis of *why Dual Contouring pops* is the branch itself: DC's hard SVD
+truncation at σ < 0.1 is a discontinuous branch, and over 20,000 trials seeded at the threshold in f32
+the rank branch disagreed after a rotation in **454 cases**, with `‖f(Rx) − Rf(x)‖` median **2.13** and
+max **9.10** — a several-cell vertex pop from an infinitesimal rotation. A triple-product threshold is
+the same construction with a different discriminant, so the split would have reintroduced the exact
+failure the rule exists to remove.
+
+The measured equivariance residual (f32, coordinates in [0,256], 4000 random cells) also shows the
+"fast path" is not the accurate one:
+
+| rule | median | p99 | max |
+|---|---:|---:|---:|
+| DC normal equations | 6.80e−05 | 2.48e−01 | 5.6e+02 |
+| dual basis (Cramer) | 1.61e−05 | 7.23e−04 | 3.6e−01 |
+| **Tikhonov adjugate** | **1.59e−05** | **1.81e−04** | **6.4e−04** |
+
+Tikhonov dominates Cramer on both tail columns, so nothing is traded away by dropping the three-plane
+form. The two paths also do not agree to within noise, which means the branch would have been
+*observable* in the output.
+
+**Consequence:** A-007 and A-008 merged into one ticket with one unconditional path. Two requirements
+the audit states and no ticket had recorded are now in it: **magnitude-sorted 3-term dot products**
+(4328/9600 equivariance failures unsorted, **0/9600** sorted — the guarantee does not hold in f32
+without this), and the derivation of **λ = 0.01** as the value that reproduces DC's σ = 0.1 truncation
+smoothly. The corpus circulates three constants — 0.01, 0.1, and σ=0.1 — and an implementer reading
+only the algorithm catalog would have picked 0.1.
+**Would be shown wrong by:** a measured configuration where the adjugate form is less accurate or less
+equivariant than the Cramer form, or where `det(M + λI)` is small enough at λ = 0.01 to matter.
+
 ---
 
 ## Part 2 — Measured here (tier M)
@@ -238,6 +280,7 @@ Rules with no incident behind them get ignored. These all have one.
 | A green local run on one platform is not a green build. CI is the first real test of anything platform-shaped, and it will find things a local pass structurally cannot | First push: every job passed except `bevy_isomesh` on Linux, where Bevy 0.19's default Wayland backend needs `libwayland-dev` / `libxkbcommon-dev`. No such package exists on macOS, so no amount of local verification could have caught it |
 | **A ticket's acceptance criterion is itself a claim about the code. Check it against the code before starting the ticket, not after.** | ✗11 — A-002 carried an `L`-sized acceptance criterion that the existing test suite had already made unsatisfiable. Nothing flagged it, because acceptance criteria are read as instructions rather than as assertions to verify |
 | A property that falls out of *how a table was constructed* outranks folklore about the algorithm the table implements | ✗11 — "MC produces holes" is true of a transcribed table and false of a derived one; the distinction is invisible if you reason about "Marching Cubes" rather than about this code |
+| **When a ticket paraphrases a research doc, re-read the doc.** A paraphrase can invert the property that made the technique worth adopting | ✗12 — "branch-free, handles all degeneracies" became "falls through when the triple product is near zero" across three documents, turning the rule's central guarantee into its opposite |
 
 ---
 
