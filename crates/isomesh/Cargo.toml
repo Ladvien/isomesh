@@ -1,0 +1,20 @@
+[package]
+name = "isomesh"
+description = "Engine-agnostic isosurface extraction: signed distance field in, triangles out. no_std, f32 and f64, no math library in the public API."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# The crate's only dependency. `core` has no sqrt/floor/sin/cos on stable, and
+# `libm` is used unconditionally rather than behind a `std` switch so there is
+# exactly one float backend and one set of results. Justification in CLAUDE.md.
+libm = { workspace = true }

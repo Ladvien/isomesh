@@ -1,0 +1,50 @@
+[workspace]
+# Resolver 3 is mandatory, not optional: a *virtual* manifest has no `edition` to
+# infer the resolver from, so omitting this silently falls back to resolver 1.
+resolver = "3"
+members = ["crates/*"]
+# `bevy_isomesh` is its own workspace. In a shared one, Cargo's feature
+# unification leaks Bevy's features into this lockfile and `cargo test` stops
+# testing what consumers actually get. See CLAUDE.md.
+exclude = ["bevy_isomesh"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ladvien/isomesh"
+authors = ["C. Thomas Brittain <cthomasbrittain@yahoo.com>"]
+categories = ["graphics", "game-development", "no-std", "rendering", "mathematics"]
+keywords = ["isosurface", "voxel", "marching-cubes", "dual-contouring", "sdf"]
+
+[workspace.dependencies]
+libm = { version = "0.2", default-features = false }
+
+[workspace.lints.rust]
+# Mechanically enforces BACKLOG's "Public items have doc comments" under -D warnings.
+missing_docs = "warn"
+missing_debug_implementations = "warn"
+unreachable_pub = "warn"
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+# Mechanically enforces the no-stubs rule: a placeholder cannot be committed.
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+float_cmp = "warn"
+# `clippy::pedantic` is deliberately absent. On a numerics crate it fights the
+# domain -- `cast_precision_loss` fires on every f64->f32 narrowing and
+# `many_single_char_names` fires on QEF code that is literally n1,n2,n3,d1,d2,d3
+# from the adjacent-math audit. The result is a wall of #[allow]s.
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
+[profile.bench]
+inherits = "release"
+# criterion and samply want frame pointers.
+debug = true
