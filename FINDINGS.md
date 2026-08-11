@@ -128,6 +128,32 @@ navmesh rebuild. Both were asserted as gaps in this project's v2 catalog and cor
 it means the crate carries zero exposure to glam's ~quarterly breaking releases until it buys
 something. Consumers need no conversion impls either — `glam::Vec3::from([f32; 3])` already exists.
 
+### ✗11 — "Plain MC has ambiguous faces and produces holes"
+
+**Believed because:** stated in this repo's own implementation brief (Stage 2, "Plain MC has ambiguous
+faces and produces holes"), carried into `BACKLOG.md`'s A-002 acceptance criterion, and near-universal
+folklore about Marching Cubes.
+**Tested by:** `validate_table()` (`mc/mod.rs:319`), which checks all 256 cases structurally, and the
+assertion `assert_eq!(report.face_disagreements, 0)` at `mc/tests.rs:30`.
+**Result:** zero face disagreements, across all 256 cases.
+**What's true instead:** holes require two cells sharing a face to *disagree* about how the surface
+crosses it. In this implementation a face's segments are a function of that face's own four corner
+signs and nothing else — the two cells meeting on a face read the same four corners, so they cannot
+disagree. The property is structural, not empirical, and it falls out of the table being **derived at
+compile time by walking each face counter-clockwise** rather than transcribed from a diagram.
+
+The folklore is not wrong about Marching Cubes in general; it is wrong about *this* Marching Cubes.
+Lorensen & Cline's original table was transcribed per-case and its ambiguous cases were resolved
+inconsistently between complementary configurations, which is where the holes came from.
+
+**Consequence:** A-002's acceptance criterion was unsatisfiable and has been re-scoped. MC33's
+remaining value is topological agreement with the trilinear interpolant — a genuinely different
+surface on ambiguous faces, measurable as a **χ difference** — not crack-fixing. The research is
+explicit that a game wants *consistency* over topological fidelity, so the `L` slot is now spent
+knowingly rather than against a test that could never go green.
+**Would be shown wrong by:** any field producing `boundary_edges > 0` from A-001 on a closed field, or
+any non-zero `face_disagreements`.
+
 ---
 
 ## Part 2 — Measured here (tier M)
@@ -210,6 +236,8 @@ Rules with no incident behind them get ignored. These all have one.
 | Single-grid timings measure dispatch latency; sweep resolution and report the fixed cost | V-6 |
 | Treat any published cross-paper ratio below ~2× as noise | V-7 |
 | A green local run on one platform is not a green build. CI is the first real test of anything platform-shaped, and it will find things a local pass structurally cannot | First push: every job passed except `bevy_isomesh` on Linux, where Bevy 0.19's default Wayland backend needs `libwayland-dev` / `libxkbcommon-dev`. No such package exists on macOS, so no amount of local verification could have caught it |
+| **A ticket's acceptance criterion is itself a claim about the code. Check it against the code before starting the ticket, not after.** | ✗11 — A-002 carried an `L`-sized acceptance criterion that the existing test suite had already made unsatisfiable. Nothing flagged it, because acceptance criteria are read as instructions rather than as assertions to verify |
+| A property that falls out of *how a table was constructed* outranks folklore about the algorithm the table implements | ✗11 — "MC produces holes" is true of a transcribed table and false of a derived one; the distinction is invisible if you reason about "Marching Cubes" rather than about this code |
 
 ---
 
