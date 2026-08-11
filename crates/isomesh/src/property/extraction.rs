@@ -73,6 +73,14 @@ fn grid_for(size: [u32; 3]) -> (RuntimeShape3, [f64; 3], f64) {
 
 /// Extract with Marching Cubes and run the bundle over the result. Returns the
 /// triangle count, so the caller can also assert the mesh is not empty.
+///
+/// Not the strict [`SurfaceGate::Closed`] gate, and that is a measured decision
+/// rather than a concession: `an_under_resolved_pinch_makes_marching_cubes_non_manifold`
+/// exhibits a generated union whose surface pinches inside one cell at
+/// `h = 2/3`, giving 2 non-manifold edges on a mesh that is otherwise closed,
+/// oriented and `χ = 2`. The generators reach `h = 2/3`, so the strict gate is
+/// simply false here. It still holds — and is still asserted — on the seven
+/// reference fields at their own resolutions, in `mc/tests.rs`.
 fn check_mc<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usize {
     let (shape, origin, cell_size) = grid_for(size);
     let mut mc = MarchingCubes::<f64>::new();
@@ -84,7 +92,7 @@ fn check_mc<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usi
         &out.positions,
         &out.indices,
         cell_size,
-        SurfaceGate::Closed,
+        SurfaceGate::ClosedAllowingUnresolvedTopology,
     );
     out.triangle_count()
 }
@@ -92,7 +100,7 @@ fn check_mc<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usi
 /// Extract with Surface Nets and run the bundle over the result.
 ///
 /// A weaker gate than [`check_mc`]'s, and the reason is measured rather than
-/// assumed — see [`SurfaceGate::ClosedAllowingMultiSheet`]. Surface Nets places
+/// assumed — see [`SurfaceGate::ClosedAllowingUnresolvedTopology`]. Surface Nets places
 /// one vertex per cell, so any feature thinner than a cell forces two sheets to
 /// share a vertex and the mesh is non-manifold by construction. Everything that
 /// is *not* a consequence of that is still asserted.
@@ -107,7 +115,7 @@ fn check_sn<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usi
         &out.positions,
         &out.indices,
         cell_size,
-        SurfaceGate::ClosedAllowingMultiSheet,
+        SurfaceGate::ClosedAllowingUnresolvedTopology,
     );
     out.triangle_count()
 }
@@ -487,4 +495,75 @@ fn the_uncorrupted_table_passes_the_same_bundle() {
         cell_size,
         SurfaceGate::Closed,
     );
+}
+
+/// Marching Cubes is **not** unconditionally manifold, and this is the case
+/// that showed it.
+///
+/// Found by `marching_cubes_meshes_sphere_unions` on a fresh proptest seed, then
+/// reduced. Three spheres whose union pinches inside a single cell at
+/// `h = 2/3`: the surface touches itself, the shared grid edge ends up used by
+/// four faces, and the result is closed, correctly oriented, `χ = 2` — and
+/// non-manifold.
+///
+/// Pinned in both directions, following M-4's precedent of asserting a known
+/// defect as a non-zero count rather than excluding it: the counts at 7³ are
+/// exact, and every refinement from 9³ up is exactly zero. So this fails if the
+/// defect ever spreads *and* if it ever silently disappears.
+#[test]
+fn an_under_resolved_pinch_makes_marching_cubes_non_manifold() {
+    use crate::fields::Sphere;
+
+    let field = super::SphereUnion {
+        spheres: alloc::vec![
+            Sphere {
+                center: [
+                    0.216_424_612_766_318_28,
+                    0.529_307_710_262_215_2,
+                    -0.804_663_039_989_917_6
+                ],
+                radius: 0.619_553_810_790_568_1,
+            },
+            Sphere {
+                center: [0.514_601_202_644_422_7, 0.230_953_855_883_975_85, 0.0],
+                radius: 0.495_969_042_463_108_13,
+            },
+            Sphere {
+                center: [0.449_324_060_565_480_9, -0.870_601_428_657_975_9, 0.0],
+                radius: 0.875_530_864_840_149_2,
+            },
+        ],
+    };
+
+    let report_at = |n: u32| {
+        let (shape, origin, h) = grid_for([n; 3]);
+        let mut mc = MarchingCubes::<f64>::new();
+        let mut out = MeshBuffer::<f64>::new();
+        mc.extract(&field, &shape, origin, h, &mut out)
+            .expect("extraction");
+        validate_indexed(
+            &out.positions,
+            &out.indices,
+            &ValidateConfig::from_cell_size(h).expect("valid cell size"),
+        )
+    };
+
+    let coarse = report_at(7);
+    assert_eq!(coarse.non_manifold_edges, 2, "{coarse}");
+    assert_eq!(coarse.non_manifold_vertices, 3, "{coarse}");
+    // Closed and correctly oriented even so — which is exactly why only the link
+    // walk catches it.
+    assert_eq!(coarse.boundary_edges, 0, "{coarse}");
+    assert_eq!(coarse.inconsistently_oriented_edges, 0, "{coarse}");
+    assert_eq!(coarse.euler_characteristic, 2, "{coarse}");
+
+    for n in [9u32, 13, 17, 25, 33, 49, 65] {
+        let r = report_at(n);
+        assert_eq!(
+            r.non_manifold_edges, 0,
+            "n={n} should resolve the pinch\n{r}"
+        );
+        assert_eq!(r.non_manifold_vertices, 0, "n={n}\n{r}");
+        assert!(r.is_closed(), "n={n}\n{r}");
+    }
 }
