@@ -24,10 +24,11 @@ mod sealed {
 /// narrows a scalar internally; narrowing happens only where a caller asks for
 /// it, through [`Real::as_f32`].
 ///
-/// Note the direction of the conversion bounds: `Real: From<f32>` widens *into*
-/// the scalar, and there is deliberately no `Self: Into<f32>`. That latter bound
-/// is what disqualifies `fast-surface-nets` for CAD, and repeating it would
-/// foreclose `f64` for exactly the same reason.
+/// Note the direction of the conversions: [`from_f64`](Real::from_f64) builds a
+/// scalar at the target's own precision, and [`as_f32`](Real::as_f32) narrows on
+/// the way out to a caller who asked for it. There is deliberately **no**
+/// `Self: Into<f32>` bound — that is what disqualifies `fast-surface-nets` for
+/// CAD, and having it would foreclose `f64` here for exactly the same reason.
 ///
 /// # Float backend
 ///
@@ -62,7 +63,6 @@ pub trait Real:
     + Div<Output = Self>
     + DivAssign
     + Neg<Output = Self>
-    + From<f32>
     + Send
     + Sync
     + 'static
@@ -163,6 +163,20 @@ pub trait Real:
 
     // ── conversion ──────────────────────────────────────────────────────────
 
+    /// Build a scalar from a literal, **at this type's own precision**.
+    ///
+    /// This is how every constant in the crate is written. The obvious
+    /// alternative — a `From<f32>` supertrait — silently stores `f32`-accurate
+    /// constants in an `f64` field, so a torus asked for in `f64` would come back
+    /// with a minor radius of `0.30000001192092896`. That is a CAD consumer
+    /// getting `f32` geometry after explicitly asking not to.
+    ///
+    /// For `f64` this is the identity. For `f32` it rounds the literal once, to
+    /// the nearest `f32` — which is the correct constant for that precision, not
+    /// a loss of one.
+    #[must_use]
+    fn from_f64(value: f64) -> Self;
+
     /// Narrow to `f32`.
     ///
     /// **Lossy for `f64`**, and infallible: values outside `f32`'s range become
@@ -241,6 +255,12 @@ macro_rules! impl_real {
             #[inline]
             fn total_cmp(&self, other: &Self) -> Ordering {
                 <$ty>::total_cmp(self, other)
+            }
+
+            #[inline]
+            #[allow(clippy::unnecessary_cast)] // Identity for f64; rounds once for f32.
+            fn from_f64(value: f64) -> Self {
+                value as $ty
             }
 
             #[inline]
@@ -340,18 +360,23 @@ mod tests {
         assert!((Real::cos(1.0f64) - 0.540_302_305_868_139_7).abs() <= 4.0 * f64::EPSILON);
     }
 
-    /// Exercises the `Real: From<f32>` supertrait through the bound rather than
-    /// through an inherent impl, which is the thing that actually has to hold
-    /// for both scalars.
+    /// The reason `from_f64` exists rather than a `From<f32>` supertrait: a
+    /// literal must land at the *target's* precision. With `From<f32>` the `f64`
+    /// column below would read `0.30000001192092896`, so an `f64` field would
+    /// carry `f32`-accurate geometry — precisely what a CAD consumer asked not to
+    /// get by choosing `f64`.
     #[test]
-    fn from_f32_widens_exactly() {
-        fn widen<R: Real>(x: f32) -> R {
-            R::from(x)
+    fn from_f64_builds_at_the_targets_precision() {
+        fn literal<R: Real>() -> R {
+            R::from_f64(0.3)
         }
-        let narrow = 0.1f32;
-        assert_eq!(widen::<f64>(narrow), f64::from(narrow));
-        assert_eq!(widen::<f64>(narrow).as_f32(), narrow);
-        assert_eq!(widen::<f32>(narrow), narrow);
+        assert_eq!(literal::<f64>(), 0.3f64);
+        assert_eq!(literal::<f32>(), 0.3f32);
+        assert_ne!(literal::<f64>(), f64::from(0.3f32));
+
+        // Exact values are exact in both.
+        assert_eq!(<f64 as Real>::from_f64(0.75), 0.75f64);
+        assert_eq!(<f32 as Real>::from_f64(0.75), 0.75f32);
     }
 
     /// Pins the documented lossy, infallible behaviour of the one narrowing

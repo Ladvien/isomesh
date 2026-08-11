@@ -46,6 +46,8 @@ extern crate alloc;
 #[cfg(test)]
 extern crate std;
 
+pub mod fields;
+
 mod mesh;
 mod real;
 mod sdf;
