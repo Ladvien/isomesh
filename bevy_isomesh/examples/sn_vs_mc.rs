@@ -150,15 +150,17 @@ fn extract_pair<F: Sdf<Scalar = f32> + ReferenceField>(
     field: &F,
     samples: u32,
     smoothing: u32,
-) -> (Extraction, Extraction, f32) {
+) -> Option<(Extraction, Extraction, f32)> {
     let (min, max) = field.domain();
     let cell_size = (max[0] - min[0]) / (samples - 1) as f32;
-    let shape = RuntimeShape3::new([samples; 3]);
-    let cfg = ValidateConfig::from_cell_size(f64::from(cell_size));
+    let shape = RuntimeShape3::new([samples; 3]).ok()?;
+    let cfg = ValidateConfig::from_cell_size(f64::from(cell_size)).ok()?;
 
     let mut mc_builder = MeshBuilder::new();
     let started = Instant::now();
-    MarchingCubes::<f32>::new().extract(field, &shape, min, cell_size, &mut mc_builder);
+    MarchingCubes::<f32>::new()
+        .extract(field, &shape, min, cell_size, &mut mc_builder)
+        .ok()?;
     let mc_millis = started.elapsed().as_secs_f64() * 1000.0;
     let mc_report = validate_indexed(mc_builder.positions(), mc_builder.indices(), &cfg);
 
@@ -166,11 +168,12 @@ fn extract_pair<F: Sdf<Scalar = f32> + ReferenceField>(
     sn.set_smoothing_passes(smoothing);
     let mut sn_builder = MeshBuilder::new();
     let started = Instant::now();
-    sn.extract(field, &shape, min, cell_size, &mut sn_builder);
+    sn.extract(field, &shape, min, cell_size, &mut sn_builder)
+        .ok()?;
     let sn_millis = started.elapsed().as_secs_f64() * 1000.0;
     let sn_report = validate_indexed(sn_builder.positions(), sn_builder.indices(), &cfg);
 
-    (
+    Some((
         Extraction {
             builder: mc_builder,
             report: mc_report,
@@ -182,7 +185,7 @@ fn extract_pair<F: Sdf<Scalar = f32> + ReferenceField>(
             millis: sn_millis,
         },
         max[0] - min[0],
-    )
+    ))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -201,7 +204,7 @@ fn remesh(
     }
     *last = Some(key);
 
-    let (mc, sn, width) = match demo.field {
+    let extracted = match demo.field {
         1 => extract_pair(&BoxExact::<f32>::canonical(), demo.samples, demo.smoothing),
         2 => extract_pair(&Torus::<f32>::canonical(), demo.samples, demo.smoothing),
         3 => extract_pair(
@@ -210,6 +213,14 @@ fn remesh(
             demo.smoothing,
         ),
         _ => extract_pair(&Sphere::<f32>::canonical(), demo.samples, demo.smoothing),
+    };
+    let Some((mc, sn, width)) = extracted else {
+        error!("extraction rejected at {} samples/axis", demo.samples);
+        stats.extra = vec![format!(
+            "extraction rejected at {} samples/axis",
+            demo.samples
+        )];
+        return;
     };
 
     let difference = sn.builder.triangle_count() as i64 - mc.builder.triangle_count() as i64;

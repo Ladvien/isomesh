@@ -42,10 +42,11 @@ use table::{CASES, EDGE_AXIS, EDGE_CORNERS, NO_EDGE, is_inside};
 /// let mut out = MeshBuffer::<f32>::new();
 ///
 /// // 33 samples per axis spans 32 cells over [-2, 2].
-/// let shape = RuntimeShape3::new([33; 3]);
-/// mc.extract(&Sphere::<f32>::canonical(), &shape, [-2.0; 3], 0.125, &mut out);
+/// let shape = RuntimeShape3::new([33; 3])?;
+/// mc.extract(&Sphere::<f32>::canonical(), &shape, [-2.0; 3], 0.125, &mut out)?;
 ///
 /// assert!(out.triangle_count() > 0);
+/// # Ok::<(), isomesh::Error>(())
 /// ```
 #[derive(Debug)]
 pub struct MarchingCubes<R: Real> {
@@ -85,10 +86,15 @@ impl<R: Real> MarchingCubes<R> {
     /// Vertices are shared between cells that meet on a grid edge, so the output
     /// is a properly connected surface rather than a triangle soup.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// If `shape` has fewer than two samples on any axis — there would be no
-    /// cell to march — or if the sample count exceeds `u32`.
+    /// [`Error::GridTooSmall`](crate::Error::GridTooSmall) if any axis has fewer
+    /// than two samples, since then there is no cell to march.
+    /// [`Error::IndexSpaceExhausted`](crate::Error::IndexSpaceExhausted) if the
+    /// grid could produce more vertices than a `u32` can address — Marching
+    /// Cubes places one per crossed grid edge, so the bound is three per sample.
+    /// Checked up front, which is what lets the per-vertex path stay a
+    /// `debug_assert!`.
     pub fn extract<S, M>(
         &mut self,
         sdf: &S,
@@ -96,16 +102,20 @@ impl<R: Real> MarchingCubes<R> {
         origin: [R; 3],
         cell_size: R,
         out: &mut M,
-    ) where
+    ) -> crate::Result<()>
+    where
         S: Sdf<Scalar = R>,
         M: MeshSink<Scalar = R>,
     {
         let size = shape.size();
-        assert!(
-            size[0] >= 2 && size[1] >= 2 && size[2] >= 2,
-            "marching cubes needs at least two samples per axis, got {size:?}"
-        );
+        if size[0] < 2 || size[1] < 2 || size[2] < 2 {
+            return Err(crate::Error::GridTooSmall { size });
+        }
         let sample_count = shape.element_count();
+        let bound = 3u64 * sample_count as u64;
+        if bound > u64::from(u32::MAX) {
+            return Err(crate::Error::IndexSpaceExhausted { needed: bound });
+        }
 
         // ── sample once per grid point ──────────────────────────────────────
         self.values.clear();
@@ -169,6 +179,8 @@ impl<R: Real> MarchingCubes<R> {
                 }
             }
         }
+
+        Ok(())
     }
 
     /// The vertex on one cut edge of one cell, creating it if this is the first

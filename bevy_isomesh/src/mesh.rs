@@ -22,8 +22,8 @@ use isomesh::{MeshBuffer, MeshSink};
 ///
 /// let mut builder = MeshBuilder::new();
 /// let mut mc = MarchingCubes::<f32>::new();
-/// let shape = RuntimeShape3::new([33; 3]);
-/// mc.extract(&Sphere::<f32>::canonical(), &shape, [-2.0; 3], 0.125, &mut builder);
+/// let shape = RuntimeShape3::new([33; 3]).expect("valid shape");
+/// mc.extract(&Sphere::<f32>::canonical(), &shape, [-2.0; 3], 0.125, &mut builder).expect("extraction");
 ///
 /// let mesh = builder.into_mesh();
 /// assert!(mesh.count_vertices() > 0);
@@ -215,14 +215,15 @@ mod tests {
     fn sphere_builder() -> MeshBuilder {
         let mut builder = MeshBuilder::new();
         let mut mc = MarchingCubes::<f32>::new();
-        let shape = RuntimeShape3::new([17; 3]);
+        let shape = RuntimeShape3::new([17; 3]).expect("valid shape");
         mc.extract(
             &Sphere::<f32>::canonical(),
             &shape,
             [-2.0; 3],
             4.0 / 16.0,
             &mut builder,
-        );
+        )
+        .expect("extraction");
         builder
     }
 
@@ -261,7 +262,8 @@ mod tests {
         let report = isomesh::validate::validate_indexed(
             &positions,
             &indices,
-            &isomesh::validate::ValidateConfig::from_cell_size(f64::from(4.0f32 / 16.0)),
+            &isomesh::validate::ValidateConfig::from_cell_size(f64::from(4.0f32 / 16.0))
+                .expect("valid cell size"),
         );
         assert!(report.is_closed(), "{report}");
         assert_eq!(report.euler_characteristic, 2, "{report}");
@@ -281,14 +283,15 @@ mod tests {
     fn buffer_conversion_matches_the_builder() {
         let mut buffer = MeshBuffer::<f32>::new();
         let mut mc = MarchingCubes::<f32>::new();
-        let shape = RuntimeShape3::new([17; 3]);
+        let shape = RuntimeShape3::new([17; 3]).expect("valid shape");
         mc.extract(
             &Sphere::<f32>::canonical(),
             &shape,
             [-2.0; 3],
             4.0 / 16.0,
             &mut buffer,
-        );
+        )
+        .expect("extraction");
         let mesh = to_bevy_mesh(&buffer);
         assert_eq!(mesh.count_vertices(), buffer.vertex_count());
         assert_eq!(

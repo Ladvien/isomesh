@@ -68,10 +68,11 @@ use crate::{MeshSink, Real, Sdf, Shape3};
 ///
 /// let mut sn = SurfaceNets::<f32>::new();
 /// let mut out = MeshBuffer::<f32>::new();
-/// let shape = RuntimeShape3::new([33; 3]);
-/// sn.extract(&Sphere::<f32>::canonical(), &shape, [-2.0; 3], 0.125, &mut out);
+/// let shape = RuntimeShape3::new([33; 3])?;
+/// sn.extract(&Sphere::<f32>::canonical(), &shape, [-2.0; 3], 0.125, &mut out)?;
 ///
 /// assert!(out.triangle_count() > 0);
+/// # Ok::<(), isomesh::Error>(())
 /// ```
 #[derive(Debug)]
 pub struct SurfaceNets<R: Real> {
@@ -132,9 +133,12 @@ impl<R: Real> SurfaceNets<R> {
     /// The quad structure is still visible in the output — each pair shares a
     /// diagonal.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// If `shape` has fewer than two samples on any axis.
+    /// [`Error::GridTooSmall`](crate::Error::GridTooSmall) if any axis has fewer
+    /// than two samples. Surface Nets places at most one vertex per cell, and a
+    /// cell count always fits `u32` when a sample count does, so there is no
+    /// index-space case here.
     pub fn extract<S, M>(
         &mut self,
         sdf: &S,
@@ -142,15 +146,15 @@ impl<R: Real> SurfaceNets<R> {
         origin: [R; 3],
         cell_size: R,
         out: &mut M,
-    ) where
+    ) -> crate::Result<()>
+    where
         S: Sdf<Scalar = R>,
         M: MeshSink<Scalar = R>,
     {
         let size = shape.size();
-        assert!(
-            size[0] >= 2 && size[1] >= 2 && size[2] >= 2,
-            "surface nets needs at least two samples per axis, got {size:?}"
-        );
+        if size[0] < 2 || size[1] < 2 || size[2] < 2 {
+            return Err(crate::Error::GridTooSmall { size });
+        }
 
         self.sample(sdf, shape, origin, cell_size);
 
@@ -168,6 +172,8 @@ impl<R: Real> SurfaceNets<R> {
         self.smooth(cells);
         self.emit_vertices(sdf, cells, out);
         self.emit_quads(shape, cells, out);
+
+        Ok(())
     }
 
     fn sample<S: Sdf<Scalar = R>>(

@@ -11,7 +11,7 @@ use alloc::vec::Vec;
 use alloc::{format, string::String};
 
 fn cfg() -> ValidateConfig {
-    ValidateConfig::from_cell_size(1.0)
+    ValidateConfig::from_cell_size(1.0).expect("valid cell size")
 }
 
 // ─── clean fixtures ─────────────────────────────────────────────────────────
@@ -294,7 +294,7 @@ fn near_duplicate_is_detected_at_one_epsilon_and_not_at_a_quarter_of_it() {
 
     // A quarter of the cell size gives a quarter of the weld epsilon, which the
     // same pair no longer falls inside.
-    let fine = ValidateConfig::from_cell_size(coarse.cell_size * 0.25);
+    let fine = ValidateConfig::from_cell_size(coarse.cell_size * 0.25).expect("valid cell size");
     assert!(half_eps > fine.weld_epsilon);
     assert_eq!(validate_indexed(&p, &idx, &fine).duplicate_vertices, 0);
 }
@@ -444,9 +444,20 @@ fn mesh_buffer_normal_count_is_checked() {
 }
 
 #[test]
-#[should_panic(expected = "finite positive cell size")]
 fn config_rejects_a_meaningless_scale() {
-    let _ = ValidateConfig::from_cell_size(0.0);
+    for bad in [0.0, -1.0, f64::NAN, f64::INFINITY] {
+        let error = ValidateConfig::from_cell_size(bad)
+            .expect_err("a meaningless spacing makes every threshold meaningless");
+        assert!(
+            matches!(error, crate::Error::InvalidCellSize { .. }),
+            "{error}"
+        );
+    }
+    // And the invalid state is unrepresentable: the fields are private, so the
+    // checked constructor is the only way to obtain one.
+    let good = ValidateConfig::from_cell_size(0.5).expect("valid");
+    assert!((good.cell_size() - 0.5).abs() < f64::EPSILON);
+    assert!(good.weld_epsilon() > 0.0 && good.area_epsilon_rel() > 0.0);
 }
 
 #[test]

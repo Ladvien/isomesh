@@ -178,7 +178,7 @@ pub(crate) fn assert_extracted_mesh_is_valid(
     let report = validate_indexed(
         positions,
         indices,
-        &ValidateConfig::from_cell_size(cell_size),
+        &ValidateConfig::from_cell_size(cell_size).expect("valid cell size"),
     );
     assert!(
         !report.has_structural_errors(),
@@ -195,7 +195,7 @@ pub(crate) fn assert_extracted_mesh_is_valid(
             "{label}: expected a manifold with boundary\n{report}"
         );
     }
-    self_intersections(positions, indices, cell_size)
+    self_intersections(positions, indices, cell_size).expect("self-intersection scan")
 }
 
 #[cfg(test)]
@@ -256,7 +256,7 @@ mod tests {
         /// hand-written fixture checks at [3, 5, 7], over a thousand shapes.
         #[test]
         fn grid_indices_round_trip(size in resolution()) {
-            let shape = RuntimeShape3::new(size);
+            let shape = RuntimeShape3::new(size).expect("generated sizes fit u32");
             for i in 0..shape.element_count() as u32 {
                 prop_assert_eq!(shape.linearize(shape.delinearize(i)), i);
             }

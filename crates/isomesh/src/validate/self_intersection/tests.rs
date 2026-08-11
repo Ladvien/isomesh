@@ -31,7 +31,7 @@ fn crossing_triangles_are_detected() {
         [1.5, 1.5, 0.0],
     ];
     let idx = vec![0, 1, 2, 3, 4, 5];
-    let r = self_intersections(&p, &idx, H);
+    let r = self_intersections(&p, &idx, H).expect("self intersections");
 
     assert_eq!(r.pairs, [[0, 1]]);
     assert_eq!(r.count(), 1);
@@ -53,7 +53,7 @@ fn edge_adjacent_triangles_are_not_counted() {
     // Both use the edge {0, 1}, folded out of plane so this is not merely the
     // coplanar case in disguise.
     let idx = vec![0, 1, 2, 0, 1, 3];
-    let r = self_intersections(&p, &idx, H);
+    let r = self_intersections(&p, &idx, H).expect("self intersections");
 
     assert!(r.is_intersection_free(), "{r}");
     assert_eq!(r.adjacent_pairs_skipped, 1);
@@ -73,7 +73,7 @@ fn vertex_adjacent_triangles_are_not_counted() {
         [-1.0, -1.0, 0.0],
     ];
     let idx = vec![0, 1, 2, 0, 3, 4];
-    let r = self_intersections(&p, &idx, H);
+    let r = self_intersections(&p, &idx, H).expect("self intersections");
 
     assert!(r.is_intersection_free(), "{r}");
     assert_eq!(r.adjacent_pairs_skipped, 1);
@@ -90,7 +90,7 @@ fn distant_triangles_are_not_counted() {
         [50.0, 51.0, 50.0],
     ];
     let idx = vec![0, 1, 2, 3, 4, 5];
-    let r = self_intersections(&p, &idx, H);
+    let r = self_intersections(&p, &idx, H).expect("self intersections");
 
     assert!(r.is_intersection_free());
     // The grid separated them, so the exact test never ran.
@@ -110,7 +110,7 @@ fn coplanar_overlapping_triangles_are_detected() {
         [0.5, 2.5, 0.0],
     ];
     let idx = vec![0, 1, 2, 3, 4, 5];
-    let r = self_intersections(&p, &idx, H);
+    let r = self_intersections(&p, &idx, H).expect("self intersections");
 
     assert_eq!(r.count(), 1, "{r}");
 }
@@ -126,7 +126,7 @@ fn coplanar_disjoint_triangles_are_not_counted() {
         [3.0, 4.0, 0.0],
     ];
     let idx = vec![0, 1, 2, 3, 4, 5];
-    let r = self_intersections(&p, &idx, H);
+    let r = self_intersections(&p, &idx, H).expect("self intersections");
 
     assert!(r.is_intersection_free(), "{r}");
 }
@@ -145,7 +145,7 @@ fn coplanar_touching_triangles_are_not_counted() {
     ];
     // Distinct indices, so the adjacency filter does not hide the geometry.
     let idx = vec![0, 1, 2, 3, 4, 5];
-    let r = self_intersections(&p, &idx, H);
+    let r = self_intersections(&p, &idx, H).expect("self intersections");
 
     assert!(r.is_intersection_free(), "{r}");
     assert_eq!(r.adjacent_pairs_skipped, 0, "these share no index");
@@ -163,7 +163,7 @@ fn a_tetrahedron_is_intersection_free() {
         [-1.0, -1.0, 1.0],
     ];
     let idx = vec![0, 1, 2, 0, 2, 3, 0, 3, 1, 1, 3, 2];
-    let r = self_intersections(&p, &idx, H);
+    let r = self_intersections(&p, &idx, H).expect("self intersections");
 
     assert!(r.is_intersection_free(), "{r}");
     assert_eq!(r.triangles, 4);
@@ -177,7 +177,7 @@ fn a_tetrahedron_is_intersection_free() {
 #[test]
 fn a_torus_grid_is_intersection_free() {
     let (p, idx) = torus_grid(12, 8);
-    let r = self_intersections(&p, &idx, 0.25);
+    let r = self_intersections(&p, &idx, 0.25).expect("self intersections");
 
     assert!(r.is_intersection_free(), "{r}");
     assert_eq!(r.triangles, 192);
@@ -227,7 +227,7 @@ fn degenerate_triangles_are_excluded_and_reported() {
         [0.5, 0.0, 1.0],
     ];
     let idx = vec![0, 1, 2, 3, 4, 5];
-    let r = self_intersections(&p, &idx, H);
+    let r = self_intersections(&p, &idx, H).expect("self intersections");
 
     assert_eq!(r.degenerate_triangles, 1);
     assert_eq!(r.tested_pairs, 0);
@@ -239,13 +239,13 @@ fn degenerate_triangles_are_excluded_and_reported() {
 #[test]
 fn the_rate_is_per_thousand_triangles() {
     let empty: alloc::vec::Vec<[f64; 3]> = alloc::vec::Vec::new();
-    let r = self_intersections(&empty, &[], H);
+    let r = self_intersections(&empty, &[], H).expect("self intersections");
     assert_eq!(r.triangles, 0);
     assert_eq!(r.per_thousand_triangles(), 0.0, "no divide by zero");
     assert!(r.is_intersection_free());
 
     let (p, idx) = torus_grid(12, 8);
-    let r = self_intersections(&p, &idx, 0.25);
+    let r = self_intersections(&p, &idx, 0.25).expect("self intersections");
     assert_eq!(r.per_thousand_triangles(), 0.0);
 }
 
@@ -254,15 +254,15 @@ fn malformed_indices_do_not_panic() {
     let p = vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0f64]];
     // Out of range, a repeated index, and a trailing partial triangle.
     let idx = vec![0, 1, 9, 0, 1, 1, 0, 1, 2, 0];
-    let r = self_intersections(&p, &idx, H);
+    let r = self_intersections(&p, &idx, H).expect("self intersections");
     assert_eq!(r.triangles, 1, "only the well-formed triangle survives");
 }
 
 #[test]
 fn results_are_deterministic() {
     let (p, idx) = torus_grid(10, 6);
-    let a = self_intersections(&p, &idx, 0.25);
-    let b = self_intersections(&p, &idx, 0.25);
+    let a = self_intersections(&p, &idx, 0.25).expect("self intersections");
+    let b = self_intersections(&p, &idx, 0.25).expect("self intersections");
     assert_eq!(a, b);
     assert_eq!(alloc::format!("{a}"), alloc::format!("{b}"));
 }
@@ -282,7 +282,7 @@ fn pairs_come_back_sorted_so_they_can_be_bucketed_later() {
         [0.5, 0.5, 1.5],
     ];
     let idx = vec![0, 1, 2, 3, 4, 5, 6, 7, 8];
-    let r = self_intersections(&p, &idx, 2.0);
+    let r = self_intersections(&p, &idx, 2.0).expect("self intersections");
 
     assert!(r.count() >= 2, "{r}");
     let mut sorted = r.pairs.clone();
@@ -294,18 +294,21 @@ fn pairs_come_back_sorted_so_they_can_be_bucketed_later() {
 }
 
 #[test]
-#[should_panic(expected = "finite positive cell size")]
 fn a_meaningless_cell_size_is_rejected() {
     let p = vec![[0.0, 0.0, 0.0f64]];
-    let _ = self_intersections(&p, &[], 0.0);
+    let error = self_intersections(&p, &[], 0.0).expect_err("zero is not a spacing");
+    assert_eq!(error, crate::Error::InvalidCellSize { value: 0.0 });
 }
 
 /// The blow-up guard. A spacing far finer than the mesh would grow the grid
 /// until it exhausted memory, so it says so instead.
 #[test]
-#[should_panic(expected = "does not describe this mesh")]
 fn a_cell_size_that_does_not_describe_the_mesh_is_rejected() {
     let p = vec![[0.0, 0.0, 0.0], [1000.0, 0.0, 0.0], [0.0, 1000.0, 0.0f64]];
     let idx = vec![0, 1, 2];
-    let _ = self_intersections(&p, &idx, 1e-3);
+    let error = self_intersections(&p, &idx, 1e-3).expect_err("spacing far finer than the mesh");
+    assert!(
+        matches!(error, crate::Error::CellSizeMismatch { .. }),
+        "{error}"
+    );
 }

@@ -26,11 +26,12 @@ fn mesh<F: Sdf<Scalar = f64> + ReferenceField>(
     let mut out = MeshBuffer::<f64>::new();
     sn.extract(
         field,
-        &RuntimeShape3::new([samples; 3]),
+        &RuntimeShape3::new([samples; 3]).expect("valid shape"),
         lo,
         cell_size,
         &mut out,
-    );
+    )
+    .expect("extraction");
     (out, cell_size)
 }
 
@@ -44,11 +45,12 @@ fn mesh_with_mc<F: Sdf<Scalar = f64> + ReferenceField>(
     let mut out = MeshBuffer::<f64>::new();
     mc.extract(
         field,
-        &RuntimeShape3::new([samples; 3]),
+        &RuntimeShape3::new([samples; 3]).expect("valid shape"),
         lo,
         cell_size,
         &mut out,
-    );
+    )
+    .expect("extraction");
     (out, cell_size)
 }
 
@@ -70,7 +72,7 @@ fn a_meshed_sphere_is_closed() {
         let report = validate_indexed(
             &out.positions,
             &out.indices,
-            &ValidateConfig::from_cell_size(h),
+            &ValidateConfig::from_cell_size(h).expect("valid cell size"),
         );
         assert!(out.triangle_count() > 0);
         assert!(report.is_closed(), "{samples} samples:\n{report}");
@@ -98,7 +100,7 @@ fn a_meshed_torus_has_genus_one() {
     let report = validate_indexed(
         &out.positions,
         &out.indices,
-        &ValidateConfig::from_cell_size(h),
+        &ValidateConfig::from_cell_size(h).expect("valid cell size"),
     );
     assert!(report.is_closed(), "{report}");
     assert_eq!(report.euler_characteristic, 0, "{report}");
@@ -165,7 +167,7 @@ fn triangle_counts_track_marching_cubes_up_to_two_chi() {
     fn check<F: Sdf<Scalar = f64> + ReferenceField>(name: &str, field: &F, samples: u32) {
         let (sn_mesh, h) = mesh(field, samples, 0);
         let (mc_mesh, _) = mesh_with_mc(field, samples);
-        let cfg = ValidateConfig::from_cell_size(h);
+        let cfg = ValidateConfig::from_cell_size(h).expect("valid cell size");
         let sn_report = validate_indexed(&sn_mesh.positions, &sn_mesh.indices, &cfg);
         let mc_report = validate_indexed(&mc_mesh.positions, &mc_mesh.indices, &cfg);
 
@@ -253,12 +255,12 @@ fn smoothing_keeps_the_surface_closed() {
         let report = validate_indexed(
             &out.positions,
             &out.indices,
-            &ValidateConfig::from_cell_size(h),
+            &ValidateConfig::from_cell_size(h).expect("valid cell size"),
         );
         assert!(report.is_closed(), "{passes} passes:\n{report}");
         assert_eq!(report.euler_characteristic, 2, "{passes} passes:\n{report}");
 
-        let si = self_intersections(&out.positions, &out.indices, h);
+        let si = self_intersections(&out.positions, &out.indices, h).expect("self intersections");
         std::println!(
             "measured: sphere at 25^3, {passes} smoothing passes -> \
              {:.3} intersecting pairs per 1000 triangles",
@@ -300,7 +302,7 @@ fn a_box_has_its_corners_rounded_off() {
     let report = validate_indexed(
         &out.positions,
         &out.indices,
-        &ValidateConfig::from_cell_size(h),
+        &ValidateConfig::from_cell_size(h).expect("valid cell size"),
     );
     assert!(report.is_closed(), "{report}");
 
@@ -385,11 +387,12 @@ fn surface_nets_is_deterministic() {
     let field = Sphere::<f64>::canonical();
     let (lo, hi) = field.domain();
     let cell_size = (hi[0] - lo[0]) / 24.0;
-    let shape = RuntimeShape3::new([25; 3]);
+    let shape = RuntimeShape3::new([25; 3]).expect("valid shape");
     let mut sn = SurfaceNets::<f64>::new();
 
     let report = check_determinism(|out: &mut MeshBuffer<f64>| {
-        sn.extract(&field, &shape, lo, cell_size, out);
+        sn.extract(&field, &shape, lo, cell_size, out)
+            .expect("extraction");
     });
     assert!(report.is_deterministic(), "{report}");
     assert!(report.triangles > 0);
@@ -402,7 +405,7 @@ fn every_closed_reference_field_meshes_cleanly() {
         let report = validate_indexed(
             &out.positions,
             &out.indices,
-            &ValidateConfig::from_cell_size(h),
+            &ValidateConfig::from_cell_size(h).expect("valid cell size"),
         );
         assert!(out.triangle_count() > 0, "{name} produced nothing");
         if field.closed_in_domain() {
@@ -452,7 +455,7 @@ fn multi_sheet_cells_expose_the_one_vertex_per_cell_limit() {
         let report = validate_indexed(
             &out.positions,
             &out.indices,
-            &ValidateConfig::from_cell_size(h),
+            &ValidateConfig::from_cell_size(h).expect("valid cell size"),
         );
 
         std::println!(
@@ -490,11 +493,12 @@ fn f32_and_f64_both_extract() {
     let mut out = MeshBuffer::<f32>::new();
     sn.extract(
         &Sphere::<f32>::canonical(),
-        &RuntimeShape3::new([17; 3]),
+        &RuntimeShape3::new([17; 3]).expect("valid shape"),
         [-2.0; 3],
         4.0 / 16.0,
         &mut out,
-    );
+    )
+    .expect("extraction");
     assert!(out.triangle_count() > 0);
 }
 
@@ -508,26 +512,31 @@ fn a_field_with_no_surface_produces_no_triangles() {
     let mut out = MeshBuffer::<f64>::new();
     sn.extract(
         &field,
-        &RuntimeShape3::new([9; 3]),
+        &RuntimeShape3::new([9; 3]).expect("valid shape"),
         [-2.0; 3],
         0.5,
         &mut out,
-    );
+    )
+    .expect("extraction");
     assert_eq!(out.triangle_count(), 0);
 }
 
 #[test]
-#[should_panic(expected = "at least two samples per axis")]
 fn a_degenerate_grid_is_rejected() {
     let mut sn = SurfaceNets::<f64>::new();
     let mut out = MeshBuffer::<f64>::new();
-    sn.extract(
-        &Sphere::<f64>::canonical(),
-        &RuntimeShape3::new([1, 4, 4]),
-        [-2.0; 3],
-        0.5,
-        &mut out,
-    );
+    let shape = RuntimeShape3::new([1, 4, 4]).expect("valid shape");
+    let error = sn
+        .extract(
+            &Sphere::<f64>::canonical(),
+            &shape,
+            [-2.0; 3],
+            0.5,
+            &mut out,
+        )
+        .expect_err("a one-sample axis contains no cell");
+    assert_eq!(error, crate::Error::GridTooSmall { size: [1, 4, 4] });
+    assert!(out.is_empty(), "nothing should have been written");
 }
 
 /// Vertices are shared, so the count tracks crossed *cells* rather than

@@ -111,20 +111,32 @@ fn remesh(
     let (min, max) = field.domain();
     let samples = resolution.0;
     let cell_size = (max[0] - min[0]) / (samples - 1) as f32;
-    let shape = RuntimeShape3::new([samples; 3]);
+    // Every fallible call is handled rather than unwrapped: a demo that aborts
+    // on a bad parameter teaches nothing about the parameter.
+    let shape = match RuntimeShape3::new([samples; 3]) {
+        Ok(shape) => shape,
+        Err(error) => {
+            error!("grid {samples}^3 rejected: {error}");
+            return;
+        }
+    };
 
     let mut builder = MeshBuilder::new();
     let started = Instant::now();
-    mc.extract(&field, &shape, min, cell_size, &mut builder);
+    if let Err(error) = mc.extract(&field, &shape, min, cell_size, &mut builder) {
+        error!("extraction failed at {samples}^3: {error}");
+        stats.extra = vec![format!("extraction failed: {error}")];
+        return;
+    }
     let extract_ms = started.elapsed().as_secs_f64() * 1000.0;
 
     // The claim the example exists to make, checked on the mesh being shown
     // rather than asserted in prose.
-    let report = validate_indexed(
-        builder.positions(),
-        builder.indices(),
-        &ValidateConfig::from_cell_size(f64::from(cell_size)),
-    );
+    let Ok(cfg) = ValidateConfig::from_cell_size(f64::from(cell_size)) else {
+        error!("cell size {cell_size} is not a usable spacing");
+        return;
+    };
+    let report = validate_indexed(builder.positions(), builder.indices(), &cfg);
 
     stats.title = "E-101  marching cubes on a sphere".into();
     stats.vertices = builder.vertex_count();

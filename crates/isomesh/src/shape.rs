@@ -59,27 +59,25 @@ pub struct RuntimeShape3 {
 }
 
 impl RuntimeShape3 {
-    /// # Panics
+    /// # Errors
     ///
-    /// If `sx * sy * sz` overflows `u32`. This is a panic rather than a
-    /// `checked_` return because a silent wrap here aliases distinct cells onto
-    /// the same index and produces a mesh that no validity test can catch — the
-    /// topology is self-consistent, it is just not the topology of the field.
-    /// The message names all three dimensions and the product.
-    #[must_use]
-    pub fn new(size: [u32; 3]) -> Self {
-        let product = size[0]
+    /// [`Error::ShapeOverflow`] if `sx * sy * sz` does not fit in `u32`. This is
+    /// reported rather than wrapped because a silent wrap aliases distinct cells
+    /// onto the same index and produces a mesh no validity test can catch — the
+    /// topology comes out self-consistent, it is just not the field's.
+    pub fn new(size: [u32; 3]) -> crate::Result<Self> {
+        let fits = size[0]
             .checked_mul(size[1])
-            .and_then(|xy| xy.checked_mul(size[2]));
-        assert!(
-            product.is_some(),
-            "RuntimeShape3 size {size:?} overflows u32: {} * {} * {} = {}",
-            size[0],
-            size[1],
-            size[2],
-            u64::from(size[0]) * u64::from(size[1]) * u64::from(size[2]),
-        );
-        Self { size }
+            .and_then(|xy| xy.checked_mul(size[2]))
+            .is_some();
+        if fits {
+            Ok(Self { size })
+        } else {
+            Err(crate::Error::ShapeOverflow {
+                size,
+                product: u64::from(size[0]) * u64::from(size[1]) * u64::from(size[2]),
+            })
+        }
     }
 }
 
@@ -194,7 +192,7 @@ mod tests {
 
     #[test]
     fn runtime_shape_round_trips_non_cubic() {
-        let shape = RuntimeShape3::new([SX, SY, SZ]);
+        let shape = RuntimeShape3::new([SX, SY, SZ]).expect("valid shape");
         for i in 0..N {
             assert_eq!(shape.linearize(shape.delinearize(i)), i);
         }
@@ -218,7 +216,7 @@ mod tests {
     /// sentence in a doc comment.
     #[test]
     fn x_is_the_contiguous_axis() {
-        let shape = RuntimeShape3::new([SX, SY, SZ]);
+        let shape = RuntimeShape3::new([SX, SY, SZ]).expect("valid shape");
         assert_eq!(shape.linearize([1, 0, 0]), 1);
         assert_eq!(shape.linearize([0, 1, 0]), SX);
         assert_eq!(shape.linearize([0, 0, 1]), SX * SY);
@@ -227,7 +225,7 @@ mod tests {
     /// Keeps the two implementations from drifting apart.
     #[test]
     fn runtime_and_const_shapes_agree() {
-        let runtime = RuntimeShape3::new([SX, SY, SZ]);
+        let runtime = RuntimeShape3::new([SX, SY, SZ]).expect("valid shape");
         let constant = ConstShape3::<SX, SY, SZ>::new();
         assert_eq!(runtime.size(), constant.size());
         assert_eq!(runtime.element_count(), constant.element_count());
@@ -241,20 +239,31 @@ mod tests {
 
     #[test]
     fn element_count_is_the_product() {
-        assert_eq!(RuntimeShape3::new([SX, SY, SZ]).element_count(), 105);
+        assert_eq!(
+            RuntimeShape3::new([SX, SY, SZ])
+                .expect("valid shape")
+                .element_count(),
+            105
+        );
         assert_eq!(ConstShape3::<SX, SY, SZ>::new().element_count(), 105);
     }
 
     #[test]
-    #[should_panic(expected = "overflows u32")]
     fn runtime_shape_rejects_overflow() {
-        let _ = RuntimeShape3::new([u32::MAX, 2, 2]);
+        let error = RuntimeShape3::new([u32::MAX, 2, 2]).expect_err("should not fit in u32");
+        assert!(
+            matches!(error, crate::Error::ShapeOverflow { .. }),
+            "{error}"
+        );
+        // The message has to name the numbers, or it is a worse panic.
+        let text = alloc::format!("{error}");
+        assert!(text.contains("4294967295"), "{text}");
     }
 
     #[test]
     fn shape3_is_dyn_compatible() {
         const _: Option<&dyn Shape3> = None;
-        let shape = RuntimeShape3::new([SX, SY, SZ]);
+        let shape = RuntimeShape3::new([SX, SY, SZ]).expect("valid shape");
         let dynamic: &dyn Shape3 = &shape;
         assert_eq!(dynamic.linearize([0, 1, 0]), SX);
     }

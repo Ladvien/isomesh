@@ -148,21 +148,22 @@ impl fmt::Display for SelfIntersectionReport {
 /// Triangles with malformed indices are skipped, exactly as in the validity
 /// harness, so a broken mesh yields a report rather than a panic.
 ///
-/// # Panics
+/// # Errors
 ///
-/// If `cell_size` is not finite and positive, or if the grid would need more
-/// than a few hundred cells for a single triangle — which means the spacing does
-/// not describe this mesh.
-#[must_use]
+/// [`Error::InvalidCellSize`](crate::Error::InvalidCellSize) if `cell_size` is
+/// not finite and positive, and
+/// [`Error::CellSizeMismatch`](crate::Error::CellSizeMismatch) if a single
+/// triangle spans more grid cells than the guard allows — which means the
+/// spacing does not describe this mesh, and the broadphase would otherwise grow
+/// until it exhausted memory.
 pub fn self_intersections<R: Real>(
     positions: &[[R; 3]],
     indices: &[u32],
     cell_size: f64,
-) -> SelfIntersectionReport {
-    assert!(
-        cell_size.is_finite() && cell_size > 0.0,
-        "self_intersections needs a finite positive cell size, got {cell_size}"
-    );
+) -> crate::Result<SelfIntersectionReport> {
+    if !cell_size.is_finite() || cell_size <= 0.0 {
+        return Err(crate::Error::InvalidCellSize { value: cell_size });
+    }
 
     // Same face filter as the validity harness: an out-of-range index cannot be
     // dereferenced and a repeated index has no plane.
@@ -226,11 +227,13 @@ pub fn self_intersections<R: Real>(
         ];
         let span =
             (hi[0] - lo[0] + 1) as u128 * (hi[1] - lo[1] + 1) as u128 * (hi[2] - lo[2] + 1) as u128;
-        assert!(
-            span <= MAX_CELLS_PER_TRIANGLE as u128,
-            "triangle {ti} spans {span} grid cells at cell_size {cell_size}; \
-             that spacing does not describe this mesh"
-        );
+        if span > MAX_CELLS_PER_TRIANGLE as u128 {
+            return Err(crate::Error::CellSizeMismatch {
+                triangle: ti as u64,
+                cells: span,
+                cell_size,
+            });
+        }
         for z in lo[2]..=hi[2] {
             for y in lo[1]..=hi[1] {
                 for x in lo[0]..=hi[0] {
@@ -282,7 +285,7 @@ pub fn self_intersections<R: Real>(
         }
     }
 
-    report
+    Ok(report)
 }
 
 #[inline]

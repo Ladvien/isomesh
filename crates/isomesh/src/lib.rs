@@ -55,12 +55,14 @@ pub mod validate;
 mod property;
 
 mod cube;
+mod error;
 mod mesh;
 mod real;
 mod sdf;
 mod shape;
 mod vec3;
 
+pub use error::{Error, Result};
 pub use mesh::{MeshBuffer, MeshSink};
 pub use real::Real;
 pub use sdf::Sdf;

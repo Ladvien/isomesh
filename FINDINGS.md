@@ -196,6 +196,7 @@ Rules with no incident behind them get ignored. These all have one.
 
 | Rule | Earned from |
 |---|---|
+| A typed error at the call site is louder than an abort — make the invalid state unrepresentable where you can, report it where you can't, and never substitute a default | The no-panic rule, reconciled with "fail loudly": `ValidateConfig` has private fields and one checked constructor, so the validator needs no runtime guard at all |
 | Corpus presence is decided by `catalog_read`, never by `distill_search` | ✗4 — 342 documents readable but unsearchable |
 | **Never guess a DOI or arXiv ID.** Look it up or stop | A subagent guessed an ID from memory and downloaded an unrelated condensed-matter physics paper under a meshing DOI |
 | Verify the *source* separately from the *number* | ✗7 — right figure, wrong attribution |

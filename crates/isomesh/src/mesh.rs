@@ -173,9 +173,12 @@ impl<R: Real> MeshSink for MeshBuffer<R> {
     #[inline]
     fn vertex(&mut self, position: [R; 3], normal: [R; 3]) -> u32 {
         let index = self.positions.len();
-        // Loud rather than silent: `as u32` would wrap and produce a mesh whose
-        // topology is self-consistent and simply not the field's.
-        assert!(
+        // A `debug_assert!` rather than a check on the hot path: the extractors
+        // bound their vertex count against `u32` before they start, and return
+        // `Error::IndexSpaceExhausted` if it could not fit. This catches a sink
+        // driven directly past the limit, in the builds where that is worth
+        // paying for.
+        debug_assert!(
             index < u32::MAX as usize,
             "MeshBuffer exceeded the u32 index space at {index} vertices"
         );

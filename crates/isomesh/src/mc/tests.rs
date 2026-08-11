@@ -247,8 +247,9 @@ fn mesh<F: Sdf<Scalar = f64> + ReferenceField>(field: &F, samples: u32) -> (Mesh
     let cell_size = (hi[0] - lo[0]) / f64::from(samples - 1);
     let mut mc = MarchingCubes::<f64>::new();
     let mut out = MeshBuffer::<f64>::new();
-    let shape = RuntimeShape3::new([samples; 3]);
-    mc.extract(field, &shape, lo, cell_size, &mut out);
+    let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
+    mc.extract(field, &shape, lo, cell_size, &mut out)
+        .expect("extraction");
     (out, cell_size)
 }
 
@@ -274,7 +275,7 @@ fn a_meshed_sphere_is_closed() {
         let report = validate_indexed(
             &out.positions,
             &out.indices,
-            &ValidateConfig::from_cell_size(h),
+            &ValidateConfig::from_cell_size(h).expect("valid cell size"),
         );
         assert!(out.triangle_count() > 0);
         assert!(report.is_closed(), "{samples} samples:\n{report}");
@@ -313,7 +314,7 @@ fn a_meshed_torus_has_genus_one() {
     let report = validate_indexed(
         &out.positions,
         &out.indices,
-        &ValidateConfig::from_cell_size(h),
+        &ValidateConfig::from_cell_size(h).expect("valid cell size"),
     );
     assert!(report.is_closed(), "{report}");
     assert_eq!(report.euler_characteristic, 0, "{report}");
@@ -327,7 +328,7 @@ fn sharp_and_concave_fields_stay_manifold() {
     let report = validate_indexed(
         &out.positions,
         &out.indices,
-        &ValidateConfig::from_cell_size(h),
+        &ValidateConfig::from_cell_size(h).expect("valid cell size"),
     );
     assert!(report.is_closed(), "box_exact:\n{report}");
 
@@ -336,7 +337,7 @@ fn sharp_and_concave_fields_stay_manifold() {
     let report = validate_indexed(
         &out.positions,
         &out.indices,
-        &ValidateConfig::from_cell_size(h),
+        &ValidateConfig::from_cell_size(h).expect("valid cell size"),
     );
     assert!(report.is_closed(), "csg_difference:\n{report}");
     assert_eq!(report.euler_characteristic, 2, "csg_difference:\n{report}");
@@ -354,7 +355,7 @@ fn the_capped_gyroid_is_closed_and_its_genus_is_recorded() {
     let report = validate_indexed(
         &out.positions,
         &out.indices,
-        &ValidateConfig::from_cell_size(h),
+        &ValidateConfig::from_cell_size(h).expect("valid cell size"),
     );
     assert!(report.is_closed(), "{report}");
     assert_eq!(
@@ -375,11 +376,12 @@ fn marching_cubes_is_deterministic() {
     let field = Sphere::<f64>::canonical();
     let (lo, hi) = field.domain();
     let cell_size = (hi[0] - lo[0]) / 24.0;
-    let shape = RuntimeShape3::new([25; 3]);
+    let shape = RuntimeShape3::new([25; 3]).expect("valid shape");
     let mut mc = MarchingCubes::<f64>::new();
 
     let report = check_determinism(|out: &mut MeshBuffer<f64>| {
-        mc.extract(&field, &shape, lo, cell_size, out);
+        mc.extract(&field, &shape, lo, cell_size, out)
+            .expect("extraction");
     });
     assert!(report.is_deterministic(), "{report}");
     assert!(report.triangles > 0);
@@ -397,11 +399,11 @@ fn marching_cubes_is_deterministic() {
 fn a_meshed_sphere_does_not_self_intersect() {
     let field = Sphere::<f64>::canonical();
     let (out, h) = mesh(&field, 27);
-    let si = self_intersections(&out.positions, &out.indices, h);
+    let si = self_intersections(&out.positions, &out.indices, h).expect("self intersections");
     let report = validate_indexed(
         &out.positions,
         &out.indices,
-        &ValidateConfig::from_cell_size(h),
+        &ValidateConfig::from_cell_size(h).expect("valid cell size"),
     );
     std::println!(
         "measured: marching cubes on sphere at 27^3 -> {:.3} intersecting pairs per 1000 triangles, \
@@ -432,9 +434,9 @@ fn samples_exactly_on_the_surface_produce_slivers_but_not_holes() {
     let report = validate_indexed(
         &out.positions,
         &out.indices,
-        &ValidateConfig::from_cell_size(h),
+        &ValidateConfig::from_cell_size(h).expect("valid cell size"),
     );
-    let si = self_intersections(&out.positions, &out.indices, h);
+    let si = self_intersections(&out.positions, &out.indices, h).expect("self intersections");
 
     std::println!(
         "measured: sphere at 25^3 (30 lattice points exactly on the surface) -> \
@@ -459,7 +461,7 @@ fn every_closed_reference_field_meshes_cleanly() {
         let report = validate_indexed(
             &out.positions,
             &out.indices,
-            &ValidateConfig::from_cell_size(h),
+            &ValidateConfig::from_cell_size(h).expect("valid cell size"),
         );
         assert!(out.triangle_count() > 0, "{name} produced nothing");
         if field.closed_in_domain() {
@@ -498,14 +500,15 @@ fn every_closed_reference_field_meshes_cleanly() {
 fn f32_and_f64_both_extract() {
     let mut mc = MarchingCubes::<f32>::new();
     let mut out = MeshBuffer::<f32>::new();
-    let shape = RuntimeShape3::new([17; 3]);
+    let shape = RuntimeShape3::new([17; 3]).expect("valid shape");
     mc.extract(
         &Sphere::<f32>::canonical(),
         &shape,
         [-2.0; 3],
         4.0 / 16.0,
         &mut out,
-    );
+    )
+    .expect("extraction");
     assert!(out.triangle_count() > 0);
 }
 
@@ -518,25 +521,29 @@ fn a_field_with_no_surface_produces_no_triangles() {
     };
     let mut mc = MarchingCubes::<f64>::new();
     let mut out = MeshBuffer::<f64>::new();
-    let shape = RuntimeShape3::new([9; 3]);
-    mc.extract(&field, &shape, [-2.0; 3], 0.5, &mut out);
+    let shape = RuntimeShape3::new([9; 3]).expect("valid shape");
+    mc.extract(&field, &shape, [-2.0; 3], 0.5, &mut out)
+        .expect("extraction");
     assert_eq!(out.triangle_count(), 0);
     assert_eq!(out.vertex_count(), 0);
 }
 
 #[test]
-#[should_panic(expected = "at least two samples per axis")]
 fn a_degenerate_grid_is_rejected() {
     let mut mc = MarchingCubes::<f64>::new();
     let mut out = MeshBuffer::<f64>::new();
-    let shape = RuntimeShape3::new([1, 4, 4]);
-    mc.extract(
-        &Sphere::<f64>::canonical(),
-        &shape,
-        [-2.0; 3],
-        0.5,
-        &mut out,
-    );
+    let shape = RuntimeShape3::new([1, 4, 4]).expect("valid shape");
+    let error = mc
+        .extract(
+            &Sphere::<f64>::canonical(),
+            &shape,
+            [-2.0; 3],
+            0.5,
+            &mut out,
+        )
+        .expect_err("a one-sample axis contains no cell");
+    assert_eq!(error, crate::Error::GridTooSmall { size: [1, 4, 4] });
+    assert!(out.is_empty(), "nothing should have been written");
 }
 
 /// Vertices are shared between neighbouring cells; without that the output would

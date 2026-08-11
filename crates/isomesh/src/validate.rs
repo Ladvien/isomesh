@@ -49,12 +49,9 @@ pub use self_intersection::{SelfIntersectionReport, self_intersections};
 /// the grid spacing and both thresholds follow from it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ValidateConfig {
-    /// Grid spacing `h`, in world units. Every threshold is relative to it.
-    pub cell_size: f64,
-    /// Two vertices closer together than this count as duplicates.
-    pub weld_epsilon: f64,
-    /// A triangle is degenerate when `area <= area_epsilon_rel · cell_size²`.
-    pub area_epsilon_rel: f64,
+    cell_size: f64,
+    weld_epsilon: f64,
+    area_epsilon_rel: f64,
 }
 
 impl ValidateConfig {
@@ -79,22 +76,43 @@ impl ValidateConfig {
 
     /// The only constructor. Derives both thresholds from the grid spacing.
     ///
-    /// # Panics
+    /// Fields are private and this is the sole way in, so a `ValidateConfig`
+    /// that exists is a valid one. That is why [`validate_indexed`] needs no
+    /// runtime check of its own: the invalid state is unrepresentable rather
+    /// than merely reported.
     ///
-    /// If `cell_size` is not finite and positive. A zero or negative spacing
-    /// would make both thresholds meaningless, and silently validating against a
-    /// meaningless threshold is worse than stopping.
-    #[must_use]
-    pub fn from_cell_size(cell_size: f64) -> Self {
-        assert!(
-            cell_size.is_finite() && cell_size > 0.0,
-            "ValidateConfig::from_cell_size needs a finite positive cell size, got {cell_size}"
-        );
-        Self {
+    /// # Errors
+    ///
+    /// [`Error::InvalidCellSize`](crate::Error::InvalidCellSize) if `cell_size`
+    /// is not finite and positive. Every threshold here is relative to the
+    /// spacing, so a meaningless spacing makes them all meaningless.
+    pub fn from_cell_size(cell_size: f64) -> crate::Result<Self> {
+        if !cell_size.is_finite() || cell_size <= 0.0 {
+            return Err(crate::Error::InvalidCellSize { value: cell_size });
+        }
+        Ok(Self {
             cell_size,
             weld_epsilon: cell_size * Self::WELD_EPSILON_REL,
             area_epsilon_rel: Self::AREA_EPSILON_REL,
-        }
+        })
+    }
+
+    /// Grid spacing `h`, in world units. Every threshold is relative to it.
+    #[must_use]
+    pub fn cell_size(&self) -> f64 {
+        self.cell_size
+    }
+
+    /// Two vertices closer together than this count as duplicates.
+    #[must_use]
+    pub fn weld_epsilon(&self) -> f64 {
+        self.weld_epsilon
+    }
+
+    /// A triangle is degenerate when `area <= area_epsilon_rel · cell_size²`.
+    #[must_use]
+    pub fn area_epsilon_rel(&self) -> f64 {
+        self.area_epsilon_rel
     }
 }
 
@@ -454,28 +472,14 @@ impl Dsu {
 /// generates them, a GPU path reads them back from a buffer, and an engine
 /// wrapper holds them as attribute arrays.
 ///
-/// # Panics
-///
-/// If `cfg.weld_epsilon` is not finite and positive, or `cfg.cell_size` is not
-/// finite and positive. Those are the caller's own thresholds, not the mesh's
-/// data, and validating against a meaningless threshold is worse than stopping.
+/// Cannot fail: a [`ValidateConfig`] can only be built through its checked
+/// constructor, so there is no invalid threshold to guard against here.
 #[must_use]
 pub fn validate_indexed<R: Real>(
     positions: &[[R; 3]],
     indices: &[u32],
     cfg: &ValidateConfig,
 ) -> MeshReport {
-    assert!(
-        cfg.cell_size.is_finite() && cfg.cell_size > 0.0,
-        "ValidateConfig::cell_size must be finite and positive, got {}",
-        cfg.cell_size
-    );
-    assert!(
-        cfg.weld_epsilon.is_finite() && cfg.weld_epsilon > 0.0,
-        "ValidateConfig::weld_epsilon must be finite and positive, got {}",
-        cfg.weld_epsilon
-    );
-
     let vertex_count = positions.len();
     let mut report = MeshReport {
         vertices: vertex_count as u64,
