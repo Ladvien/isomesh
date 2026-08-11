@@ -196,6 +196,32 @@ only the algorithm catalog would have picked 0.1.
 **Would be shown wrong by:** a measured configuration where the adjugate form is less accurate or less
 equivariant than the Cramer form, or where `det(M + λI)` is small enough at λ = 0.01 to matter.
 
+### ✗13 — "`Real::as_f32` is the only narrowing operation in the crate, and the crate itself never calls it"
+
+**Believed because:** stated in `real.rs`'s own doc comment for `as_f32`, which frames it as an output
+convenience — "it exists for consumers writing into an `f32` vertex buffer".
+**Tested by:** `grep -rn "as_f32()" crates/isomesh/src/`.
+**Result:** **three** call sites, none of them a consumer and none of them writing a vertex buffer:
+
+| site | purpose |
+|---|---|
+| `fields/noise.rs:82` `lattice_index` | Perlin lattice coordinate |
+| `validate.rs:810` `quantise` | duplicate-vertex bucketing |
+| `validate/tri_grid.rs:60` `cell_of` | spatial-grid binning |
+
+All three are the same idiom, `f.as_f32() as iN` — a float→integer narrowing. Two predate this
+session, so the doc comment has been false since I-002.
+
+**Why this is more than a tidiness point.** The doc's framing hides the property that actually matters
+at these call sites: `as_f32` on an `f64` is exact only up to `2²⁴`, so using it as an integer
+narrowing step carries a silent lattice cliff. `noise.rs` knows this and guards with a
+`LATTICE_LIMIT` debug assertion; the other two did not, and nothing said they should. See M-18 for
+where that bites.
+**Consequence:** the doc comment corrected in place, and T-008 opened for the one exposed call site.
+**Method rule earned:** ✗3's, again — a doc comment the code disproves is worse than no doc comment.
+Twice now the false comment has been an *architectural* claim ("nothing calls this", "every vertex has
+four neighbours") rather than a factual slip, which is the kind that shapes later decisions.
+
 ---
 
 ## Part 2 — Measured here (tier M)
@@ -219,6 +245,7 @@ equivariant than the Cramer form, or where `det(M + λI)` is small enough at λ 
 | M-15 | **Surface Nets' non-manifoldness is a resolution effect, not a topology effect.** M-4 measured it on `gyroid` (48 edges) and `fbm_terrain` (15) and read it as a high-genus / open-field property. T-005b finds it on a randomly generated **convex body** — 1–2 non-manifold edges, 3–4 non-manifold vertices, zero boundary edges. Any feature thinner than one cell forces two sheets through it | T-005b, `surface_nets_meshes_convex_bodies`. This is why the sweep has a named `SurfaceGate` rather than a per-field exception |
 | M-16 | **The even-`χ` parity check is not independent of manifoldness — it is a corollary of it.** `χ = 2 − 2g` holds for a closed *orientable manifold*, so a gate that waives manifoldness and keeps parity is incoherent. Measured: SN on a generated convex body gives **`χ = 1`** with one non-manifold edge and zero boundary edges | T-005b. Cost one wrong gate before it was noticed; `SurfaceGate::ClosedAllowingMultiSheet` now documents the omission rather than leaving it to be rediscovered |
 | M-17 | **A case-table entry naming an *uncut* edge is caught inside the crate, before any mesh exists** — `edge_crossing`'s `is_inside(a) != is_inside(b)` precondition fires. Real defence, but it is a `debug_assert`, so it is absent from a release build | T-005b. The mutation check therefore confines its wrong-edge corruption to *cut* edges, which is both the plausible transcription error and the one that actually reaches the validity gate |
+| M-18 | **`quantise`'s weld lattice collapses beyond ~105 world units, and it is a performance cliff rather than a correctness one.** It scales absolute coordinates by `1/(h·1e-4)` — 160,000 at `h = 0.0625` — so it passes `f32`'s exact-integer range at `2²⁴·weld_epsilon ≈ 104.86`. Measured: at `p = 104` two cells one apart stay distinct; at `p = 105` they collapse; by `p = 1000` a whole region is one bucket. **Correctness survives** — coarsening only *merges* buckets, and the 27-neighbour probe plus exact distance test still finds every duplicate — but the scan degrades toward quadratic, silently, at exactly the coordinates G-001 chunking and G-007 streaming produce. `TriangleGrid` is immune because it quantises *relative* to its own AABB origin, which is the fix pattern | T-005b follow-up, ✗13. Ticketed as T-008 |
 
 ---
 
@@ -263,6 +290,8 @@ Each has the test that would settle it. **An open question with no proposed test
 | O-6 | What is amortized meshing cost per frame under continuous editing? | E-206 under a deliberately overloaded queue | The only number a game cares about, and no paper reports it |
 | O-7 | What fraction of *our* pipeline is contouring vs everything else? | M-003 | V-4 says 54% for someone else's code with no physics. Ours is probably worse |
 | O-8 | Does DC's vertex placement need f64 in practice, or is f32 enough? | E-112, with the QEF condition number in the HUD | `M = AᵀA` squares the condition number. **Half answered by V-18**: the original paper measures f32 error ~1 on flat regions at 256³, and recommends f64. Still open for *our* fields, *our* resolutions, and the closed-form three-plane rule — which sidesteps `AᵀA` entirely and may not degrade the same way |
+| O-9 | How much does T-003's gradient-flow chord **over**-estimate distance at a concave seam? | A comparison against nearest-point search over a dense surface point cloud, or E-104 once DC lands | The chord follows `∇f` to the zero set, which near `csg_difference`'s seam can land further away than the true nearest point. The bias direction is known and safe for a "below X" gate; the *magnitude* is not measured, and M-001's shootout column would inherit it. `csg_difference` measured forward `0.0833` at 33³ — how much of that is seam bias is unknown |
+| O-10 | What is Surface Nets' non-manifold **rate** as a function of feature thickness over `h`? | A-010, which must drive it to zero; a sweep over a slab of shrinking thickness would answer it sooner | M-15 established it is a resolution effect rather than a topology one, and M-4 has counts at two resolutions on two fields. Nobody has the curve. It decides whether SN is usable at game resolutions or needs A-010 first |
 
 ---
 

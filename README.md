@@ -14,7 +14,7 @@
 
 ## Status
 
-Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Eighteen tickets done, fifty-three open.
+Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Eighteen tickets done, fifty-four open.
 
 | | |
 |---|---|
@@ -105,7 +105,7 @@ Every extraction algorithm ships with these before it counts as done. They are o
 | Signed volume | global inversion, which nothing else here can see |
 | Hausdorff distance, both directions, and mean absolute error | a mesh that is perfectly valid and in the wrong place. Only the reverse direction sees *missing* geometry — deleting one face of a test octahedron leaves the forward number bit-identical |
 
-`FINDINGS.md` is the epistemic state: what is believed, how strongly, and on what evidence, with tiers for measured-here, verified-from-primary-source, reported, and folklore. Twelve entries are in the falsified section, several of them corrections to this project's own documents.
+`FINDINGS.md` is the epistemic state: what is believed, how strongly, and on what evidence, with tiers for measured-here, verified-from-primary-source, reported, and folklore. Thirteen entries are in the falsified section, several of them corrections to this project's own documents.
 
 ---
 

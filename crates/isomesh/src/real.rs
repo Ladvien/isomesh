@@ -180,11 +180,23 @@ pub trait Real:
     /// Narrow to `f32`.
     ///
     /// **Lossy for `f64`**, and infallible: values outside `f32`'s range become
-    /// infinite and roughly 29 bits of mantissa are discarded. This is the only
-    /// narrowing operation in the crate, and the crate itself never calls it —
-    /// it exists for consumers writing into an `f32` vertex buffer. A CAD
-    /// consumer that needs `f64` output should use a
-    /// [`MeshSink`](crate::MeshSink) with `Scalar = f64` and never call this.
+    /// infinite and roughly 29 bits of mantissa are discarded. It exists for
+    /// consumers writing into an `f32` vertex buffer; a CAD consumer that needs
+    /// `f64` output should use a [`MeshSink`](crate::MeshSink) with
+    /// `Scalar = f64` and never call this.
+    ///
+    /// # Integers survive only to `2²⁴`
+    ///
+    /// The crate also uses this internally as the narrowing step of
+    /// `f.as_f32() as iN`, to turn a scaled coordinate into a lattice index —
+    /// `fields/noise.rs`, `validate.rs` and `validate/tri_grid.rs` all do it.
+    /// Consecutive integers stop being distinguishable above `2²⁴`, so **scale
+    /// relative to a local origin, not absolute world coordinates**, or bound the
+    /// input as `noise.rs` does. `validate.rs`'s weld lattice does neither and
+    /// degrades past ~105 world units — see FINDINGS ✗13 and M-18, and T-008.
+    ///
+    /// (This doc previously claimed the crate never calls this. It has had three
+    /// internal callers since I-002.)
     #[must_use]
     fn as_f32(self) -> f32;
 }
