@@ -14,12 +14,12 @@
 
 ## Status
 
-Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty tickets done, fifty-two open.
+Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty-one tickets done, fifty-one open.
 
 | | |
 |---|---|
-| **Working** | Marching Cubes · Surface Nets · Hermite data · mesh validity harness · accuracy harness · self-intersection counter · determinism harness · seven reference fields · property-test scaffolding · Bevy 0.19 bridge |
-| **Not yet** | Dual contouring (next) · MC33 · marching tetrahedra · greedy quads · chunking · LOD / Transvoxel · vertex welding · colliders · GPU path · benchmarks |
+| **Working** | Marching Cubes · Surface Nets · **Dual Contouring** · Hermite data · mesh validity harness · accuracy harness · self-intersection counter · determinism harness · seven reference fields · property-test scaffolding · Bevy 0.19 bridge |
+| **Not yet** | MC33 · marching tetrahedra · greedy quads · chunking · LOD / Transvoxel · vertex welding · colliders · GPU path · benchmarks |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
 Not published to crates.io. Version `0.0.0`.
@@ -85,7 +85,14 @@ Surface Nets wins below roughly 48³ and loses steadily above it. Marching Cubes
 
 So both halves of the usual case for Surface Nets — fewer triangles, lower cost — are falsified by measurement in this repository. What it actually buys is quad connectivity and one vertex per cell.
 
-The corners are the real difference, and they are why dual contouring is next.
+The corners are the real difference, and dual contouring is what closes them. Measured on `box_exact` at 27³ — a resolution deliberately **not** aligned to the box faces, since on an aligned grid this measures the sign-classification rule rather than the algorithm:
+
+| nearest vertex to the corner `(1,1,1)` | world | cells |
+|---|---:|---:|
+| Surface Nets | 0.0888 | **0.58** |
+| Dual Contouring | 0.0009 | **0.01** |
+
+It costs about **3%** over Surface Nets to do it, and the two meshes are otherwise the same mesh: identical index buffers, and 864 of 1016 vertices agreeing to within `2e-15` cells. Only the 152 on edges and corners move.
 
 ---
 
@@ -133,7 +140,7 @@ Every extraction algorithm ships with these before it counts as done. They are o
 | Signed volume | global inversion, which nothing else here can see |
 | Hausdorff distance, both directions, and mean absolute error | a mesh that is perfectly valid and in the wrong place. Only the reverse direction sees *missing* geometry — deleting one face of a test octahedron leaves the forward number bit-identical |
 
-`FINDINGS.md` is the epistemic state: what is believed, how strongly, and on what evidence, with tiers for measured-here, verified-from-primary-source, reported, and folklore. Fifteen entries are in the falsified section, several of them corrections to this project's own documents.
+`FINDINGS.md` is the epistemic state: what is believed, how strongly, and on what evidence, with tiers for measured-here, verified-from-primary-source, reported, and folklore. Sixteen entries are in the falsified section, several of them corrections to this project's own documents.
 
 ---
 
@@ -167,7 +174,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 191 tests
+cargo test -p isomesh                    # 210 tests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh

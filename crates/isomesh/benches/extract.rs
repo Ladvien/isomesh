@@ -28,6 +28,7 @@ mod common;
 use std::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
+use isomesh::dc::DualContouring;
 use isomesh::fields::{BoxExact, ReferenceField, Sphere, Torus};
 use isomesh::mc::MarchingCubes;
 use isomesh::sn::SurfaceNets;
@@ -80,6 +81,27 @@ where
     });
 }
 
+fn bench_dc<R, F>(c: &mut Criterion, label: &str, field: F, samples: u32)
+where
+    R: Real,
+    F: ReferenceField + Sdf<Scalar = R>,
+{
+    let (shape, origin, h) = common::grid(&field, samples);
+    let mut dc = DualContouring::<R>::new();
+    let mut out = MeshBuffer::<R>::new();
+    dc.extract(&field, &shape, origin, h, &mut out)
+        .expect("extraction");
+
+    c.bench_function(label, |b| {
+        b.iter(|| {
+            out.reset();
+            dc.extract(&field, &shape, origin, h, &mut out)
+                .expect("extraction");
+            black_box(out.triangle_count())
+        });
+    });
+}
+
 fn algorithms(c: &mut Criterion) {
     for n in COMPARISON_SAMPLES {
         bench_mc(
@@ -115,6 +137,24 @@ fn algorithms(c: &mut Criterion) {
         bench_sn(
             c,
             &format!("sn/box_exact/f32/{n}"),
+            BoxExact::<f32>::canonical(),
+            n,
+        );
+        bench_dc(
+            c,
+            &format!("dc/sphere/f32/{n}"),
+            Sphere::<f32>::canonical(),
+            n,
+        );
+        bench_dc(
+            c,
+            &format!("dc/torus/f32/{n}"),
+            Torus::<f32>::canonical(),
+            n,
+        );
+        bench_dc(
+            c,
+            &format!("dc/box_exact/f32/{n}"),
             BoxExact::<f32>::canonical(),
             n,
         );

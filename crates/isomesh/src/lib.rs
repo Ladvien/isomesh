@@ -57,6 +57,7 @@ pub mod validate;
 mod property;
 
 mod cube;
+mod dual;
 mod error;
 mod mesh;
 mod real;

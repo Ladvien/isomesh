@@ -41,6 +41,7 @@ use std::hint::black_box;
 use std::path::PathBuf;
 use std::time::Instant;
 
+use isomesh::dc::DualContouring;
 use isomesh::fields::Sphere;
 use isomesh::mc::MarchingCubes;
 use isomesh::sn::SurfaceNets;
@@ -135,6 +136,26 @@ impl Extractor for SurfaceNets<Scalar> {
     }
 }
 
+impl Extractor for DualContouring<Scalar> {
+    const NAME: &'static str = "dc";
+
+    fn new() -> Self {
+        Self::new()
+    }
+
+    fn extract_into(
+        &mut self,
+        field: &Sphere<Scalar>,
+        shape: &RuntimeShape3,
+        origin: [Scalar; 3],
+        cell_size: Scalar,
+        out: &mut MeshBuffer<Scalar>,
+    ) {
+        self.extract(field, shape, origin, cell_size, out)
+            .expect("extraction");
+    }
+}
+
 fn main() {
     // Cargo passes `--bench` under `cargo bench` and passes no arguments at all
     // under `cargo test`. CI runs `cargo test --workspace --all-targets`, which
@@ -155,6 +176,7 @@ fn main() {
 
     let mut rows = sweep::<MarchingCubes<Scalar>>();
     rows.extend(sweep::<SurfaceNets<Scalar>>());
+    rows.extend(sweep::<DualContouring<Scalar>>());
 
     let path = write_csv(&rows);
     println!("\nwrote {}", path.display());
@@ -240,7 +262,7 @@ fn fit(xs: &[f64], ts: &[f64]) -> (f64, f64, f64) {
 }
 
 fn report(rows: &[Row]) {
-    for algorithm in ["mc", "sn"] {
+    for algorithm in ["mc", "sn", "dc"] {
         let all: Vec<&Row> = rows.iter().filter(|r| r.algorithm == algorithm).collect();
         let tail: Vec<&Row> = all
             .iter()

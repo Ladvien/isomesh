@@ -35,6 +35,7 @@ use proptest::prelude::*;
 
 use super::{DOMAIN, SurfaceGate, assert_extracted_mesh_is_valid, convex_body, sphere_union};
 use crate::cube::{corner_offset, edge_crossing};
+use crate::dc::DualContouring;
 use crate::mc::MarchingCubes;
 use crate::mc::table::{CASES, EDGE_AXIS, EDGE_CORNERS, McCase, corner_inside, is_inside};
 use crate::sn::SurfaceNets;
@@ -120,6 +121,28 @@ fn check_sn<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usi
     out.triangle_count()
 }
 
+/// Extract with Dual Contouring and run the bundle over the result.
+///
+/// Same gate as Surface Nets, and for the same reason: the two share the dual
+/// topology, so Dual Contouring inherits one-vertex-per-cell and is non-manifold
+/// wherever two sheets meet in a cell. What is different is that its vertex can
+/// also leave its own cell, which is A-009's subject rather than this gate's.
+fn check_dc<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usize {
+    let (shape, origin, cell_size) = grid_for(size);
+    let mut dc = DualContouring::<f64>::new();
+    let mut out = MeshBuffer::<f64>::new();
+    dc.extract(field, &shape, origin, cell_size, &mut out)
+        .expect("extraction");
+    assert_extracted_mesh_is_valid(
+        label,
+        &out.positions,
+        &out.indices,
+        cell_size,
+        SurfaceGate::ClosedAllowingUnresolvedTopology,
+    );
+    out.triangle_count()
+}
+
 /// The radius of the largest sphere in a generated union.
 ///
 /// An object comfortably larger than the grid spacing **must** be found. Without
@@ -171,6 +194,23 @@ proptest! {
     #[test]
     fn surface_nets_meshes_convex_bodies(field in convex_body(), size in extraction_resolution()) {
         check_sn("sn / convex body", &field, size);
+    }
+
+    #[test]
+    fn dual_contouring_meshes_sphere_unions(field in sphere_union(), size in extraction_resolution()) {
+        let tris = check_dc("dc / sphere union", &field, size);
+        if largest_radius(&field) >= 2.0 * spacing_for(size) {
+            prop_assert!(tris > 0, "a resolvable sphere was missed entirely");
+        }
+    }
+
+    /// The generator that matters most for this algorithm: a convex body is an
+    /// intersection of half-spaces, so it is *all* sharp edges and corners --
+    /// exactly the geometry the solve exists for and the geometry most likely to
+    /// send a vertex somewhere absurd.
+    #[test]
+    fn dual_contouring_meshes_convex_bodies(field in convex_body(), size in extraction_resolution()) {
+        check_dc("dc / convex body", &field, size);
     }
 }
 
