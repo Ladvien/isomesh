@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    name: fmt, clippy, docs, dependency gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: rustfmt
+        run: cargo fmt --all --check
+
+      - name: clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # `missing_docs` is a workspace lint, so clippy already covers the
+      # "public items have doc comments" rule. This covers the other half:
+      # links that point at nothing, which clippy does not see.
+      - name: rustdoc
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --workspace --no-deps
+
+      # The three claims the crate is built on. Each fails loudly and prints
+      # what it actually found, because a silent pass here is how a dependency
+      # policy stops meaning anything.
+      - name: dependency gates
+        run: |
+          set -euo pipefail
+
+          # `-e normal` is load-bearing: cargo's default edges are
+          # normal,build,dev, so the bare command would count proptest's and
+          # criterion's whole trees once those land as dev-dependencies.
+          echo '--- isomesh must resolve to exactly two packages ---'
+          cargo tree -p isomesh -e normal
+          count=$(cargo tree -p isomesh -e normal --prefix none | sort -u | grep -c .)
+          if [ "$count" -ne 2 ]; then
+            echo "::error::isomesh resolved to $count packages, expected 2 (isomesh, libm)"
+            exit 1
+          fi
+
+          echo '--- rule 2: no bevy anywhere under crates/ ---'
+          if grep -ril bevy crates/; then
+            echo "::error::rule 2 violated: 'bevy' appears under crates/ (listed above)"
+            exit 1
+          fi
+
+          echo '--- and none in the resolved graph ---'
+          bevy=$(cargo metadata --format-version 1 | grep -c '"name":"bevy' || true)
+          if [ "$bevy" -ne 0 ]; then
+            echo "::error::$bevy bevy packages in the root workspace graph, expected 0"
+            exit 1
+          fi
+
+  test:
+    name: test (${{ matrix.os }})
+    # Both platforms, deliberately. The crate routes every transcendental
+    # through `libm` rather than `std` specifically so that results are
+    # bit-identical across operating systems, which is what makes committed
+    # golden hashes portable. Running the suite on Linux and macOS is what
+    # turns that from a claim into a checked one.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: test
+        run: cargo test --workspace --all-targets
+      - name: doc tests
+        run: cargo test --workspace --doc
+
+  msrv:
+    name: msrv (rust-version in Cargo.toml)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # `rust-version = "1.85"` is a claim the manifest makes to consumers.
+      # Nothing else checks it, and it is the kind of thing that quietly stops
+      # being true.
+      - name: read the declared MSRV
+        id: msrv
+        run: |
+          set -euo pipefail
+          version=$(cargo metadata --format-version 1 --no-deps \
+            | tr ',' '\n' | grep '"rust_version"' | head -1 | cut -d'"' -f4)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "declared MSRV: $version"
+      - name: install it
+        run: rustup toolchain install ${{ steps.msrv.outputs.version }} --profile minimal
+      - name: check
+        run: cargo +${{ steps.msrv.outputs.version }} check --workspace --all-targets
