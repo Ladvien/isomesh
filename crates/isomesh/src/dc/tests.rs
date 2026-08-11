@@ -10,14 +10,34 @@ use crate::{MeshBuffer, RuntimeShape3, Sdf};
 
 /// Mesh a reference field at `samples` per axis, the same convention the rest of
 /// the suite uses: `shape` counts samples, so `n` spans `n - 1` cells.
+///
+/// Uses the shipped default, which includes the cell clamp.
 fn mesh_dc<F: Sdf<Scalar = f64> + ReferenceField>(
     field: &F,
     samples: u32,
+) -> (MeshBuffer<f64>, f64) {
+    mesh_dc_with(field, samples, crate::dc::Clamp::ToCell)
+}
+
+/// As [`mesh_dc`], with the clamp chosen explicitly.
+///
+/// Tests that characterise the *vertex rule* use [`Clamp::None`], because the
+/// clamp box is the cell shrunk by `CLAMP_EPSILON` and therefore nudges any
+/// vertex sitting exactly *on* a cell face by `5e-5` cells. That is nothing
+/// geometrically and it is fatal to a bit-comparison — and on a **grid-aligned**
+/// `box_exact` it is most of the mesh, since the box faces coincide with grid
+/// planes. Over the ±2 domain a grid is aligned when `n - 1` is a multiple of 4,
+/// which 17 and 33 are.
+fn mesh_dc_with<F: Sdf<Scalar = f64> + ReferenceField>(
+    field: &F,
+    samples: u32,
+    clamp: crate::dc::Clamp,
 ) -> (MeshBuffer<f64>, f64) {
     let (lo, hi) = field.domain();
     let cell_size = (hi[0] - lo[0]) / f64::from(samples - 1);
     let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
     let mut dc = DualContouring::<f64>::new();
+    dc.set_clamp(clamp);
     let mut out = MeshBuffer::<f64>::new();
     dc.extract(field, &shape, lo, cell_size, &mut out)
         .expect("extraction");
@@ -61,7 +81,7 @@ fn nearest_vertex(mesh: &MeshBuffer<f64>, target: [f64; 3]) -> f64 {
 fn topology_is_identical_to_surface_nets() {
     for samples in [17u32, 27, 33] {
         let field = BoxExact::<f64>::canonical();
-        let (dc, _) = mesh_dc(&field, samples);
+        let (dc, _) = mesh_dc_with(&field, samples, crate::dc::Clamp::None);
         let (sn, _) = mesh_sn(&field, samples);
 
         assert_eq!(
@@ -116,7 +136,7 @@ fn topology_is_identical_to_surface_nets() {
 fn dual_contouring_moves_only_the_feature_vertices() {
     let field = BoxExact::<f64>::canonical();
     let samples = 27;
-    let (dc, cell_size) = mesh_dc(&field, samples);
+    let (dc, cell_size) = mesh_dc_with(&field, samples, crate::dc::Clamp::None);
     let (sn, _) = mesh_sn(&field, samples);
 
     /// Below this (in cells) two vertices are the same point computed twice.
@@ -272,4 +292,146 @@ fn edge_cases_are_handled_rather_than_panicking() {
     dc.extract(&field, &away, [50.0; 3], 0.1, &mut out)
         .expect("extraction");
     assert_eq!(out.triangle_count(), 0);
+}
+
+// ─── A-009: the cell clamp ──────────────────────────────────────────────────
+
+/// **The experiment A-009 exists for**, on all seven reference fields.
+///
+/// Reports λ — intersecting pairs per 1,000 triangles — with the clamp off and
+/// on, plus what the clamp costs in sharpness. λ and not `p`, the
+/// fraction-of-meshes-with-any: `p = 1 − e^{−λT}` saturates with chunk size, so
+/// a large enough chunk reads `p ≈ 1` for any λ > 0 and the statistic stops
+/// meaning anything.
+///
+/// The literature review states the decision rule in advance, which is why this
+/// is an experiment rather than a demonstration:
+///
+/// - **λ → 0** — the failures were unclamped placement. Fixed, at some
+///   sharp-feature cost, and guaranteed intersection-free extraction is
+///   available.
+/// - **λ unchanged** — the failures are in *connectivity*: multiple sheets
+///   through one cell, which is the structural defect A-010 fixes architecturally
+///   rather than by patching.
+#[test]
+fn the_clamp_measured_on_every_reference_field() {
+    use crate::dc::Clamp;
+    use crate::validate::self_intersections;
+
+    let samples = 33u32;
+    std::println!(
+        "measured: A-009 cell clamp at {samples}^3 -- lambda = intersecting pairs per 1,000 triangles"
+    );
+    std::println!(
+        "  {:16} {:>8} {:>12} {:>12} {:>14} {:>9}",
+        "field",
+        "tris",
+        "lambda off",
+        "lambda on",
+        "outside/verts",
+        "max cells"
+    );
+
+    crate::for_each_reference_field!(f64, |name, field| {
+        let (lo, hi) = field.domain();
+        let cell_size = (hi[0] - lo[0]) / f64::from(samples - 1);
+        let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
+
+        let measure = |clamp: Clamp| {
+            let mut dc = DualContouring::<f64>::new();
+            dc.set_clamp(clamp);
+            let mut out = MeshBuffer::<f64>::new();
+            dc.extract(&field, &shape, lo, cell_size, &mut out)
+                .expect("extraction");
+            let si = self_intersections(&out.positions, &out.indices, cell_size)
+                .expect("self-intersection scan");
+            (out, si)
+        };
+
+        let (unclamped, si_off) = measure(Clamp::None);
+        let (clamped, si_on) = measure(Clamp::ToCell);
+
+        // How far the clamp moved each vertex, in cells.
+        //
+        // Counted against a threshold rather than by bit-inequality, and the
+        // difference is not cosmetic: the clamp box is the cell shrunk by
+        // `CLAMP_EPSILON`, so a vertex sitting exactly *on* a cell face gets nudged
+        // by `5e-5` cells and a bitwise count calls that "clamped". On a
+        // grid-aligned `box_exact` that is most of the mesh, and the column then
+        // reads as though the solve were flinging vertices everywhere when it is
+        // doing nothing of the kind. What the guarantee is about is vertices that
+        // were genuinely *outside*.
+        let displacement: alloc::vec::Vec<f64> = unclamped
+            .positions
+            .iter()
+            .zip(&clamped.positions)
+            .map(|(a, b)| {
+                ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt()
+                    / cell_size
+            })
+            .collect();
+        let outside = displacement.iter().filter(|d| **d > 1e-3).count();
+        let worst = displacement.iter().copied().fold(0.0f64, f64::max);
+
+        std::println!(
+            "  {name:16} {:>8} {:>12.3} {:>12.3} {:>7}/{:<6} {:>9.2}",
+            clamped.triangle_count(),
+            si_off.per_thousand_triangles(),
+            si_on.per_thousand_triangles(),
+            outside,
+            clamped.vertex_count(),
+            worst
+        );
+
+        // The clamp must never make things worse, on any field.
+        assert!(
+            si_on.per_thousand_triangles() <= si_off.per_thousand_triangles(),
+            "{name}: the clamp increased lambda, {} -> {}",
+            si_off.per_thousand_triangles(),
+            si_on.per_thousand_triangles()
+        );
+        // Topology is untouched by where a vertex sits.
+        assert_eq!(
+            unclamped.indices, clamped.indices,
+            "{name}: the clamp changed connectivity"
+        );
+    });
+}
+
+/// What the clamp costs at the feature it exists to preserve.
+///
+/// The corner of `box_exact` is where the unclamped solve does its best work, so
+/// it is where a constraint is most likely to hurt. Measured at 27³, off the
+/// aligned grid, for E-103's reason.
+#[test]
+fn the_clamp_cost_in_sharpness_is_measured() {
+    use crate::dc::Clamp;
+
+    let field = BoxExact::<f64>::canonical();
+    let samples = 27u32;
+    let (lo, hi) = field.domain();
+    let cell_size = (hi[0] - lo[0]) / f64::from(samples - 1);
+    let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
+
+    let gap = |clamp: Clamp| {
+        let mut dc = DualContouring::<f64>::new();
+        dc.set_clamp(clamp);
+        let mut out = MeshBuffer::<f64>::new();
+        dc.extract(&field, &shape, lo, cell_size, &mut out)
+            .expect("extraction");
+        nearest_vertex(&out, [1.0, 1.0, 1.0]) / cell_size
+    };
+
+    let off = gap(Clamp::None);
+    let on = gap(Clamp::ToCell);
+    std::println!(
+        "measured: A-009 sharpness cost on box_exact at {samples}^3 -> corner gap {off:.4} cells unclamped, {on:.4} cells clamped"
+    );
+
+    // Whatever it costs, the clamped result must still beat Surface Nets' 0.58
+    // cells, or the clamp has given the feature back.
+    assert!(
+        on < 0.2,
+        "the clamp must not surrender the corner: {on:.4} cells"
+    );
 }

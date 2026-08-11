@@ -59,7 +59,43 @@ use crate::{MeshSink, Real, Sdf, Shape3};
 #[derive(Debug)]
 pub struct DualContouring<R: Real> {
     mesher: DualMesher<R>,
+    rule: Qef,
 }
+
+/// Whether a solved vertex is confined to the cell that produced it.
+///
+/// Surface Nets' centroid is inside its cell by construction. A solved vertex is
+/// not, and **a vertex outside its own cell is how a dual method
+/// self-intersects** — the cells no longer partition space, so two patches can
+/// overlap.
+///
+/// Manson & Schaefer's guarantee is exactly this constraint:
+///
+/// > As long as the dual vertices lie within their corresponding cells, this
+/// > process cannot produce any inverted tetrahedra and creates a partition of
+/// > space… Since our decomposition is one-to-one, our surface cannot intersect
+/// > itself.
+///
+/// A-009 measured what it costs here; the numbers are on that ticket's archive
+/// entry and in M-28.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Clamp {
+    /// Leave the vertex where the solve put it.
+    ///
+    /// The baseline A-007 shipped, and what the clamp is measured against.
+    None,
+    /// Confine it to the cell, shrunk about its centre by `(1 − ε)`.
+    #[default]
+    ToCell,
+}
+
+/// How far inside the cell the clamp keeps a vertex, as a fraction of the cell.
+///
+/// The literature's `(1 − ε)` with `ε = 1e-4`: the cell is scaled about its own
+/// centre, so the vertex stays *strictly* interior rather than landing on a face
+/// it shares with a neighbour. Strictness is what rules out the degenerate
+/// coincidences the partition argument would otherwise have to handle.
+pub const CLAMP_EPSILON: f64 = 1e-4;
 
 /// The Dual Contouring vertex rule: the regularized plane-intersection solve.
 ///
@@ -67,7 +103,10 @@ pub struct DualContouring<R: Real> {
 /// crossing — and hands it to [`solve::solve`]. All of the mathematics, and all
 /// of the justification for this particular form of it, is in that module.
 #[derive(Clone, Copy, Debug, Default)]
-pub struct Qef;
+pub struct Qef {
+    /// Whether to confine the result to its cell.
+    pub clamp: Clamp,
+}
 
 impl<R: Real> VertexRule<R> for Qef {
     fn place<S: Sdf<Scalar = R>>(
@@ -87,7 +126,28 @@ impl<R: Real> VertexRule<R> for Qef {
         // the corner samples the engine already took, so this adds field
         // evaluations only where the surface actually is.
         let cell = HermiteCell::from_corners(sdf, corner, cell_origin, cell_size);
-        solve::solve(&cell)
+        let x = solve::solve(&cell)?;
+
+        match self.clamp {
+            Clamp::None => Some(x),
+            Clamp::ToCell => {
+                // The cell, scaled about its centre by (1 - eps).
+                //
+                // `min`/`max` is a *continuous* operation, which is the reason
+                // this does not reintroduce the failure ✗12 is about: a vertex
+                // pushed against a wall slides along it as the field moves,
+                // where an SVD rank branch jumps. Clamping costs sharpness, not
+                // stability.
+                let half = cell_size * R::HALF;
+                let inset = half * R::from_f64(1.0 - CLAMP_EPSILON);
+                let mut out = x;
+                for (axis, slot) in out.iter_mut().enumerate() {
+                    let centre = cell_origin[axis] + half;
+                    *slot = slot.clamp(centre - inset, centre + inset);
+                }
+                Some(out)
+            }
+        }
     }
 }
 
@@ -97,7 +157,18 @@ impl<R: Real> DualContouring<R> {
     pub const fn new() -> Self {
         Self {
             mesher: DualMesher::new(),
+            rule: Qef {
+                clamp: Clamp::ToCell,
+            },
         }
+    }
+
+    /// Whether solved vertices are confined to their own cells.
+    ///
+    /// Defaults to [`Clamp::ToCell`]. See [`Clamp`] for why, and A-009's archive
+    /// entry for what it measured.
+    pub fn set_clamp(&mut self, clamp: Clamp) {
+        self.rule.clamp = clamp;
     }
 
     /// Extract the zero level set into `out`.
@@ -129,7 +200,7 @@ impl<R: Real> DualContouring<R> {
         M: MeshSink<Scalar = R>,
     {
         self.mesher
-            .extract(&Qef, sdf, shape, origin, cell_size, out)
+            .extract(&self.rule, sdf, shape, origin, cell_size, out)
     }
 }
 

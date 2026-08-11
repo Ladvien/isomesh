@@ -14,7 +14,7 @@
 
 ## Status
 
-Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty-one tickets done, fifty-one open.
+Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty-two tickets done, fifty open.
 
 | | |
 |---|---|
@@ -91,6 +91,8 @@ The corners are the real difference, and dual contouring is what closes them. Me
 |---|---:|---:|
 | Surface Nets | 0.0888 | **0.58** |
 | Dual Contouring | 0.0009 | **0.01** |
+
+Guaranteed intersection-free extraction turns out to be free, which is not what the folklore predicts. Confining each solved vertex to its own cell drives self-intersections to **exactly zero** on five of the seven test fields — `torus` goes 2.66 → 0 pairs per 1,000 triangles — and the corner above measures **identically** clamped or not, because a convex corner's solution is already inside its cell. What survives the clamp is 3.12 on the gyroid and 13.84 on fbm terrain, and those are precisely the two fields where two sheets of surface share a cell: a connectivity defect, not a placement one.
 
 It costs about **3%** over Surface Nets to do it, and the two meshes are otherwise the same mesh: identical index buffers, and 864 of 1016 vertices agreeing to within `2e-15` cells. Only the 152 on edges and corners move.
 
@@ -174,7 +176,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 210 tests
+cargo test -p isomesh                    # 212 tests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
