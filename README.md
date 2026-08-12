@@ -131,6 +131,33 @@ cd bevy_isomesh && cargo run --example manifold_check --release
 
 ---
 
+## Digging, with the numbers a game actually cares about
+
+![Carving a tunnel into terrain, with the re-meshed chunks outlined](docs/screenshots/e202-game-dig.png)
+
+*`game_dig` — first person, left click to carve. The blue boxes are the chunks the **last edit** re-meshed: 3 of them, in `0.41 ms`. Nine chunks are resident; the other six were not touched and were not looked at.*
+
+This is the first example where the mesh is rebuilt while someone is holding the mouse down, and it exists to put two numbers on screen that no benchmark can produce:
+
+- **E1 — `265 of 1,728 cells in the brush's bounding box actually re-mesh, 15.3%.`** That is the number the entire incremental story rests on. If it were 100%, being clever about which cells changed would buy nothing over re-meshing the whole box.
+- **The trap next to it: `756 cells moved a sample.`** Counting *value* changes rather than *output* changes reads 43% and says incremental meshing is barely worth it; counting output says 15%. The ratio here is `2.85×`, and it was measured offline at 2.8–3.7× before anyone drove it with a mouse.
+
+Edits compose rather than mutate — the field is a stack of brushes over the terrain, which is what makes undo a re-fold of the log rather than a snapshot. So every field sample walks every brush, and the cost grows. Measured over a scripted 60-carve run, median ms per re-meshed chunk:
+
+| edits in the log | 1–15 | 16–30 | 31–45 | 46–60 |
+|---|---|---|---|---|
+| ms per chunk | 0.158 | 0.354 | 0.525 | 0.589 |
+
+**3.7× for 7× the log, and flattening** — real, and not proportional, which is weaker than "every sample walks every brush" makes it sound.
+
+```bash
+cd bevy_isomesh && cargo run --example game_dig --release
+```
+
+`LMB` carve · `RMB` fill · `WASD`/`QE` move · `[` `]` radius · `X` clear the log · `C` chunk outlines.
+
+---
+
 ## A crack between two chunks, and welding it shut
 
 ![Two chunks of a torus, meshed independently, with the open seam marked in red](docs/screenshots/e115-chunk-seam-unwelded.png)
@@ -220,12 +247,13 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 283 tests
+cargo test -p isomesh                    # 286 tests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
 cargo run --example marching_cubes_sphere --release             # the first GIF
 cargo run --example surface_nets_vs_marching_cubes --release    # the second and third
+cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires
 ```

@@ -326,3 +326,76 @@ fn surface_nets_chunks_agree_on_shared_cell_vertices() {
     // of them stopping short, which is the failure a 1-cell overlap prevents.
     assert!(!near_a.is_empty() && !near_b.is_empty());
 }
+
+/// **`cell_of` inverts `world_of_sample` in a cell's interior, and not reliably
+/// on its corner — which is M-32 wearing a different hat.**
+///
+/// `world_of_sample` computes `origin + h·sample` and `cell_of` computes
+/// `floor((p − origin) / h)`. Those are inverse by algebra and not by IEEE: at
+/// `h = 4/35` the round trip through a corner of cell `[7, -3, 12]` comes back
+/// `[6, -4, 12]`, because the division lands a hair under the integer and
+/// `floor` takes it down. At `h = 0.125` it round-trips exactly, and that is the
+/// same power-of-two/not divide M-32 measured at chunk seams.
+///
+/// No epsilon is added to paper over it. A point *exactly* on a cell boundary
+/// belongs to either cell by convention, and at a non-power-of-two spacing
+/// "exactly on" is not a decidable question — snapping would trade a visible
+/// ambiguity for an invisible one. Callers that need a cell *range* pad it,
+/// which is what E-202 does with the brush radius.
+///
+/// Recorded in both directions: the interior is asserted, the corner is
+/// measured, so this fails if the interior ever breaks *and* if the corner
+/// silently starts working.
+#[test]
+fn cell_of_inverts_world_of_sample_inside_a_cell() {
+    let cells = [[0i64, 0, 0], [7, -3, 12], [-19, 40, -1]];
+    // `power_of_two` rather than comparing the spacing back to a literal: the
+    // property is about the divide, not about a particular number.
+    for (spacing, name, power_of_two) in [(0.125f64, "0.125", true), (4.0 / 35.0, "4/35", false)] {
+        let l = layout(spacing);
+        let mut exact_corners = 0usize;
+        for cell in cells {
+            let corner = l.world_of_sample(cell);
+            if l.cell_of(corner) == cell {
+                exact_corners += 1;
+            }
+            // The interior is unambiguous at any spacing, and is what a caller
+            // converting a bounding box actually needs.
+            let inside = [
+                corner[0] + l.cell_size() * 0.5,
+                corner[1] + l.cell_size() * 0.5,
+                corner[2] + l.cell_size() * 0.5,
+            ];
+            assert_eq!(l.cell_of(inside), cell, "h = {name}, interior of {cell:?}");
+        }
+        std::println!(
+            "measured: h = {name} -- {exact_corners} of {} cell corners round-trip exactly",
+            cells.len()
+        );
+        let expected = if power_of_two { cells.len() } else { 1 };
+        assert_eq!(exact_corners, expected, "h = {name}");
+    }
+}
+
+#[test]
+fn cell_of_agrees_with_chunk_of() {
+    let l = layout(0.125);
+    let n = i64::from(l.cells());
+    for point in [[0.0f64, 0.0, 0.0], [1.3, -0.7, 2.9], [-3.1, 0.2, -0.4]] {
+        let cell = l.cell_of(point);
+        let expected = l.chunk_of(point);
+        let from_cell = crate::chunk::ChunkId::new([
+            cell[0].div_euclid(n) as i32,
+            cell[1].div_euclid(n) as i32,
+            cell[2].div_euclid(n) as i32,
+        ]);
+        assert_eq!(from_cell, expected, "{point:?}");
+    }
+}
+
+#[test]
+fn cell_of_does_not_wrap_on_a_non_finite_point() {
+    let l = layout(0.125);
+    assert_eq!(l.cell_of([f64::NAN, f64::INFINITY, 0.0])[0], 0);
+    assert_eq!(l.cell_of([f64::NAN, f64::INFINITY, 0.0])[1], 0);
+}

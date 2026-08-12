@@ -107,7 +107,6 @@ These use the algorithms the way a game does: chunked, edited, budgeted, collide
 | | ID | Example | What it has to prove | Blocked by |
 |---|---|---|---|---|
 | ☐ | **E-201** | `game_terrain_stream` — walk a large fBm world, chunks stream by distance | Sustained 60 fps while streaming. HUD: chunks resident, meshing ms/frame, MB. | G-007, B-003 |
-| ☐ | **E-202** | `game_dig` — first-person, click to carve tunnels | The core Minecraft/Deep Rock loop. Re-mesh is imperceptible. Chunks-touched count on screen. | G-002, G-003 |
 | ☐ | **E-203** | `game_walk` — character controller on meshed terrain, parry3d colliders | **The acid test.** Walk every chunk seam. No falling through, no invisible walls. If this fails, G-001's overlap is wrong. | G-005, E-201 |
 | ☐ | **E-204** | `game_destruction` — shoot a wall, it craters, debris becomes rigid bodies | Runtime fragments are correct physics bodies, not pre-fractured props. Carve a spiral and a hollow shell — that's where decomposition fails. | G-005, G-003 |
 | ☐ | **E-205** | `game_lod_flyover` — fly out and back across LOD transitions | No popping, no cracks, no hitching. Transvoxel doing its job at speed. | G-004, A-011 |

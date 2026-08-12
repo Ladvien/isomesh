@@ -208,6 +208,34 @@ impl<R: Real> ChunkLayout<R> {
         ChunkId { coords }
     }
 
+    /// The global **cell** index a world point falls in.
+    ///
+    /// The inverse of [`world_of_sample`](Self::world_of_sample) at cell
+    /// granularity, and the quantity
+    /// [`mark_edit`](dirty::mark_edit) takes: a brush converts its bounding box
+    /// to a cell range with this, and the range is inclusive, so a box spanning
+    /// one cell gives the same index twice.
+    ///
+    /// It exists because the alternative is every caller writing
+    /// `floor((p - origin) / h)` by hand, and that is the arithmetic M-32 is
+    /// about — the reason `mesh_dirty` hands the caller a `sample_origin`
+    /// instead of letting it compute one. A non-finite coordinate lands in cell
+    /// zero on that axis rather than wrapping.
+    #[must_use]
+    pub fn cell_of(&self, point: [R; 3]) -> [i64; 3] {
+        let inv = self.cell_size.recip();
+        let mut cells = [0i64; 3];
+        for (axis, slot) in cells.iter_mut().enumerate() {
+            let cell = ((point[axis] - self.origin[axis]) * inv).floor();
+            *slot = if cell.is_finite() {
+                cell.as_f32() as i64
+            } else {
+                0
+            };
+        }
+        cells
+    }
+
     /// Global sample index of a chunk-local sample.
     #[must_use]
     pub fn global_sample(&self, id: ChunkId, local: [u32; 3]) -> [i64; 3] {
