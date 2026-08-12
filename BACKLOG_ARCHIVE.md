@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-49 tickets. Line numbers are stable until something above them is edited — grep the ID if
+50 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -316,3 +316,8 @@ implementation contradicted the ticket.
 | | | *The coincidence the seam rests on:* a vertex at `c = 0` moves by **exactly** `w`, which is precisely the displacement `TransitionCell` gives its half-resolution face. Not approximately — the same quantity, added once on each side. |
 | | | *Only selected faces taper.* A face with no coarser neighbour must not move, or the block pulls away from a same-resolution neighbour and opens a seam where there was none — asserted, because it is the obvious thing to get wrong when the six faces are handled as one. |
 | | | *Normals are deliberately left alone.* The taper is a shear of at most `w` over one cell; re-deriving normals from it would report the shear's geometry rather than the field's. A caller wanting otherwise says so through `normals::recompute`. |
+| ☑ | **E-107** | `transvoxel_seams` — two LODs adjacent, toggle transition cells. **Commit both screenshots.** | — | A-011b |
+| | | *Both screenshots committed, and reproducible from a command line rather than a keypress* — `ISOMESH_TRANSITIONS` joins `ISOMESH_FIELD`, `ISOMESH_SAMPLES` and `ISOMESH_VIEW` for exactly that reason. The pair reads **184 unmatched boundary edges** against **0**, with 310 orange triangles doing the work. |
+| | | ***The field had to change for the crack to be visible, and that is worth knowing.*** On a sphere at these resolutions the gap is real, countable and about `0.03` world units wide — the HUD reports it and you cannot see it, because both blocks approximate the same circle on the seam plane and differ only by the sagitta. The gyroid crosses the seam with enough curvature that the two resolutions genuinely disagree, and the crack becomes a jagged hole you see straight through. **High curvature across the seam is what turns a countable crack into a visible one.** |
+| | | *An empty `MeshBuffer` is never handed to Bevy.* With the toggle off there are no transition triangles, and uploading a zero-vertex mesh made `bevy_render`'s slab allocator report a use-after-free and render **the entire frame black** — not just that entity. An empty part now keeps its previous mesh and is hidden. Worth recording: the failure had no obvious connection to its cause. |
+| | | *The camera sizes itself from the field's extent.* A fixed radius put it **inside** the gyroid, whose domain is several times the other fields'. |

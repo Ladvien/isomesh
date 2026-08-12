@@ -14,7 +14,7 @@
 
 ## Status
 
-Early. Six extraction algorithms, three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, and a Bevy bridge. Forty-nine tickets done, thirty-two open.
+Early. Six extraction algorithms, three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, and a Bevy bridge. Fifty tickets done, thirty-one open.
 
 | | |
 |---|---|
@@ -297,6 +297,28 @@ cd bevy_isomesh && cargo run --example marching_cubes_ambiguity --release
 
 ---
 
+## Two levels of detail, and the crack between them
+
+![A gyroid meshed at two resolutions with a jagged gap down the seam](docs/screenshots/e107-transvoxel-seam-cracked.png)
+
+![The same pair with transition cells bridging the seam in orange](docs/screenshots/e107-transvoxel-seam-stitched.png)
+
+*`transvoxel_seams` — one field, two blocks, the left at full resolution and the right at half. Meshed independently they do not meet: **184 unmatched boundary edges** lie in the seam plane and you can see straight through them. Transition cells take that to **0**, and the orange band is the 310 triangles doing it.*
+
+Both counts are taken **in the seam plane only** — each block is legitimately open at its outer borders, so a global boundary count would drown the signal.
+
+The stitch has a **width**, and that is not cosmetic. A zero-width transition patch also closes the crack — Lengyel says so explicitly — and closing it is *all* it does: every one of its vertices lies in the seam plane, so the patch stands **exactly** perpendicular to the surface it is stitching and shades as a hard crease. Measured: `|cos|` against the surface normal is `0.000` at zero width and `1.000` at `w = 2^(k−2)`. Giving it a width means the coarse block's boundary cells have to be scaled inward by the same amount, which is Lengyel's Equation 4.2 — and written in the block's own cells rather than level-0 cells, the level index cancels out of it entirely.
+
+The property underneath all of it is bit-exactness: a crossing on a half-resolution edge lands on **precisely** the vertex the coarse neighbour's own Marching Cubes pass produced, at every spacing tried including `4/14`. An earlier version of that arithmetic was off by `1.11e-16`, which is a crack no weld can close — a weld merges vertices it can see are the same, and those two are not.
+
+```bash
+cd bevy_isomesh && cargo run --example transvoxel_seams --release
+```
+
+`T` transitions · `1`–`4` field · `[` `]` resolution.
+
+---
+
 ## Handing a mesh to a physics engine
 
 `parry3d`'s constructor is not a validity check. Its only documented failure is an empty index buffer — measured, it accepts a zero-area triangle and it accepts a two-chunk mesh with an unwelded seam. A renderer draws that seam correctly; a physics engine reads it as a hole and a character walks through the floor.
@@ -383,6 +405,7 @@ cargo run --example manifold_check --release                    # the red marks,
 cargo run --example normal_estimation --release                 # three identical meshes, three shadings
 cargo run --example marching_tetrahedra --release               # 3x the triangles, and what they buy
 cargo run --example greedy_quads --release                      # 5014 quads down to 1089
+cargo run --example transvoxel_seams --release                  # the LOD crack, and T to close it
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires
