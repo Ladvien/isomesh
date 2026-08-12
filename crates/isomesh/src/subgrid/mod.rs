@@ -51,3 +51,4 @@
 //! exactly that against A-003's own table, on all sixteen tet configurations.
 
 pub mod coordinates;
+pub mod curves;
