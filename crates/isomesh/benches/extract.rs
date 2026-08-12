@@ -31,6 +31,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use isomesh::dual_contouring::DualContouring;
 use isomesh::fields::{BoxExact, ReferenceField, Sphere, Torus, capped_gyroid};
 use isomesh::marching_cubes::{FaceAmbiguity, MarchingCubes};
+use isomesh::marching_tetrahedra::MarchingTetrahedra;
 use isomesh::surface_nets::SurfaceNets;
 use isomesh::{MeshBuffer, Real, Sdf};
 
@@ -129,6 +130,28 @@ where
     });
 }
 
+/// Marching Tetrahedra, for M-001's shootout row.
+fn bench_mt<R, F>(c: &mut Criterion, label: &str, field: F, samples: u32)
+where
+    R: Real,
+    F: ReferenceField + Sdf<Scalar = R>,
+{
+    let (shape, origin, h) = common::grid(&field, samples);
+    let mut mt = MarchingTetrahedra::<R>::new();
+    let mut out = MeshBuffer::<R>::new();
+    mt.extract(&field, &shape, origin, h, &mut out)
+        .expect("extraction");
+
+    c.bench_function(label, |b| {
+        b.iter(|| {
+            out.reset();
+            mt.extract(&field, &shape, origin, h, &mut out)
+                .expect("extraction");
+            black_box(out.triangle_count())
+        });
+    });
+}
+
 fn algorithms(c: &mut Criterion) {
     for n in COMPARISON_SAMPLES {
         bench_mc(
@@ -164,6 +187,24 @@ fn algorithms(c: &mut Criterion) {
         bench_sn(
             c,
             &format!("surface_nets/box_exact/f32/{n}"),
+            BoxExact::<f32>::canonical(),
+            n,
+        );
+        bench_mt(
+            c,
+            &format!("marching_tetrahedra/sphere/f32/{n}"),
+            Sphere::<f32>::canonical(),
+            n,
+        );
+        bench_mt(
+            c,
+            &format!("marching_tetrahedra/torus/f32/{n}"),
+            Torus::<f32>::canonical(),
+            n,
+        );
+        bench_mt(
+            c,
+            &format!("marching_tetrahedra/box_exact/f32/{n}"),
             BoxExact::<f32>::canonical(),
             n,
         );

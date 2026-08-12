@@ -40,6 +40,7 @@ use crate::marching_cubes::table::{
     CASES, EDGE_AXIS, EDGE_CORNERS, McCase, corner_inside, is_inside,
 };
 use crate::marching_cubes::{FaceAmbiguity, MarchingCubes};
+use crate::marching_tetrahedra::MarchingTetrahedra;
 use crate::surface_nets::SurfaceNets;
 use crate::validate::{ValidateConfig, validate_indexed};
 use crate::{MeshBuffer, MeshSink, RuntimeShape3, Sdf, Shape3, vec3};
@@ -123,6 +124,29 @@ fn check_mc33<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> u
     mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
     let mut out = MeshBuffer::<f64>::new();
     mc.extract(field, &shape, origin, cell_size, &mut out)
+        .expect("extraction");
+    assert_extracted_mesh_is_valid(
+        label,
+        &out.positions,
+        &out.indices,
+        cell_size,
+        SurfaceGate::Closed,
+    );
+    out.triangle_count()
+}
+
+/// Extract with Marching Tetrahedra and run the bundle over the result.
+///
+/// **The strict gate**, like Marching Cubes' — and here it is not merely
+/// observed to hold, it is structural. A tetrahedron's four values determine its
+/// linear interpolant, so there is no ambiguity to resolve and no fan to choose;
+/// the triangulation of every case is forced. If this ever fails it is a much
+/// louder finding than the same failure would be for a cube-based method.
+fn check_mt<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usize {
+    let (shape, origin, cell_size) = grid_for(size);
+    let mut mt = MarchingTetrahedra::<f64>::new();
+    let mut out = MeshBuffer::<f64>::new();
+    mt.extract(field, &shape, origin, cell_size, &mut out)
         .expect("extraction");
     assert_extracted_mesh_is_valid(
         label,
@@ -233,6 +257,19 @@ proptest! {
     #[test]
     fn the_decider_meshes_convex_bodies(field in convex_body(), size in extraction_resolution()) {
         check_mc33("mc33 / convex body", &field, size);
+    }
+
+    #[test]
+    fn marching_tetrahedra_meshes_sphere_unions(field in sphere_union(), size in extraction_resolution()) {
+        let tris = check_mt("mt / sphere union", &field, size);
+        if largest_radius(&field) >= 2.0 * spacing_for(size) {
+            prop_assert!(tris > 0, "a resolvable sphere was missed entirely");
+        }
+    }
+
+    #[test]
+    fn marching_tetrahedra_meshes_convex_bodies(field in convex_body(), size in extraction_resolution()) {
+        check_mt("mt / convex body", &field, size);
     }
 
     #[test]

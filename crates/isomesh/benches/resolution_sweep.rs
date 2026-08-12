@@ -44,6 +44,7 @@ use std::time::Instant;
 use isomesh::dual_contouring::DualContouring;
 use isomesh::fields::Sphere;
 use isomesh::marching_cubes::MarchingCubes;
+use isomesh::marching_tetrahedra::MarchingTetrahedra;
 use isomesh::surface_nets::SurfaceNets;
 use isomesh::{MeshBuffer, RuntimeShape3};
 
@@ -98,6 +99,34 @@ trait Extractor {
 
 impl Extractor for MarchingCubes<Scalar> {
     const NAME: &'static str = "marching_cubes";
+
+    fn new() -> Self {
+        Self::new()
+    }
+
+    fn extract_into(
+        &mut self,
+        field: &Sphere<Scalar>,
+        shape: &RuntimeShape3,
+        origin: [Scalar; 3],
+        cell_size: Scalar,
+        out: &mut MeshBuffer<Scalar>,
+    ) {
+        self.extract(field, shape, origin, cell_size, out)
+            .expect("extraction");
+    }
+}
+
+/// Present, and deliberately **not** swept by `main`.
+///
+/// Adding a fourth row would rewrite `docs/measurements/resolution_sweep.csv`,
+/// and that file is committed evidence: ✗14, M-19, M-20, M-21, M-22 and O-11's
+/// cross-machine comparison all quote exact figures from it. Re-running the
+/// sweep to add Marching Tetrahedra would move every one of those by measurement
+/// noise, so the row waits for M-001, which is the ticket that re-measures the
+/// whole family in one process and one run on purpose.
+impl Extractor for MarchingTetrahedra<Scalar> {
+    const NAME: &'static str = "marching_tetrahedra";
 
     fn new() -> Self {
         Self::new()

@@ -52,6 +52,7 @@ pub mod dual_contouring;
 pub mod fields;
 pub mod hermite;
 pub mod marching_cubes;
+pub mod marching_tetrahedra;
 pub mod surface_nets;
 pub mod validate;
 pub mod weld;

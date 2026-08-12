@@ -60,6 +60,7 @@ use alloc::vec::Vec;
 use crate::dual_contouring::DualContouring;
 use crate::fields::ReferenceField;
 use crate::marching_cubes::{FaceAmbiguity, MarchingCubes};
+use crate::marching_tetrahedra::MarchingTetrahedra;
 use crate::surface_nets::SurfaceNets;
 use crate::{MeshBuffer, RuntimeShape3, Sdf};
 
@@ -141,14 +142,16 @@ fn hash_mesh(mesh: &MeshBuffer<f64>) -> u64 {
 enum Algorithm {
     MarchingCubes,
     MarchingCubes33,
+    MarchingTetrahedra,
     SurfaceNets,
     DualContouring,
 }
 
 impl Algorithm {
-    const ALL: [Self; 4] = [
+    const ALL: [Self; 5] = [
         Self::MarchingCubes,
         Self::MarchingCubes33,
+        Self::MarchingTetrahedra,
         Self::SurfaceNets,
         Self::DualContouring,
     ];
@@ -157,6 +160,7 @@ impl Algorithm {
         match self {
             Self::MarchingCubes => "marching_cubes",
             Self::MarchingCubes33 => "marching_cubes+decider",
+            Self::MarchingTetrahedra => "marching_tetrahedra",
             Self::SurfaceNets => "surface_nets",
             Self::DualContouring => "dual_contouring",
         }
@@ -191,6 +195,9 @@ where
             mc.extract(field, &shape, lo, cell_size, &mut out)
                 .expect("extraction");
         }
+        Algorithm::MarchingTetrahedra => MarchingTetrahedra::<f64>::new()
+            .extract(field, &shape, lo, cell_size, &mut out)
+            .expect("extraction"),
         Algorithm::SurfaceNets => SurfaceNets::<f64>::new()
             .extract(field, &shape, lo, cell_size, &mut out)
             .expect("extraction"),
