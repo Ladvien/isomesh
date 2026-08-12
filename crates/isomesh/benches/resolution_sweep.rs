@@ -199,7 +199,7 @@ fn main() {
 
     println!("resolution sweep — sphere, f32, {TIMED_RUNS} timed runs per point\n");
     println!(
-        "{:<4} {:>8} {:>12} {:>12} {:>10} {:>10}",
+        "{:<20} {:>8} {:>12} {:>12} {:>10} {:>10}",
         "alg", "samples", "n^3", "median ms", "verts", "tris"
     );
 
@@ -244,7 +244,7 @@ fn sweep<E: Extractor>() -> Vec<Row> {
         let median_ms = times[times.len() / 2].as_secs_f64() * 1e3;
         let n_cubed = f64::from(n).powi(3);
         println!(
-            "{:<4} {n:>8} {n_cubed:>12.0} {median_ms:>12.3} {:>10} {:>10}",
+            "{:<20} {n:>8} {n_cubed:>12.0} {median_ms:>12.3} {:>10} {:>10}",
             E::NAME,
             mesh.vertex_count(),
             mesh.triangle_count()
@@ -290,9 +290,34 @@ fn fit(xs: &[f64], ts: &[f64]) -> (f64, f64, f64) {
     (a, b, r2)
 }
 
+/// Report every algorithm actually present in `rows`, in first-seen order.
+///
+/// **Derived from the rows rather than listed**, and that is the fix for a live
+/// defect rather than a style preference: this used to filter on a hard-coded
+/// `["mc", "sn", "dc"]` while `Extractor::NAME` had been spelled out to
+/// `marching_cubes` / `surface_nets` / `dual_contouring`. Every selection came
+/// back empty, `fit` divided by zero, and the whole `t = a + b·n³` block printed
+/// `NaN` — silently, because nothing asserts on a benchmark's stdout. A list that
+/// can drift from the thing it names will eventually drift from it.
+fn algorithms_in(rows: &[Row]) -> Vec<&'static str> {
+    let mut seen: Vec<&'static str> = Vec::new();
+    for row in rows {
+        if !seen.contains(&row.algorithm) {
+            seen.push(row.algorithm);
+        }
+    }
+    seen
+}
+
 fn report(rows: &[Row]) {
-    for algorithm in ["mc", "sn", "dc"] {
+    for algorithm in algorithms_in(rows) {
         let all: Vec<&Row> = rows.iter().filter(|r| r.algorithm == algorithm).collect();
+        // A fit needs two points to have a slope at all; below that `fit`
+        // divides by zero and prints NaN, which reads like a measurement.
+        if all.len() < 2 {
+            println!("\n{algorithm}:  {} point(s) — too few to fit", all.len());
+            continue;
+        }
         let tail: Vec<&Row> = all
             .iter()
             .copied()
