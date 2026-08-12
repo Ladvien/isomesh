@@ -57,7 +57,7 @@ pub(crate) trait VertexRule<R: Real> {
 /// Scratch and stages shared by every dual method.
 ///
 /// Owns its buffers for the same reason
-/// [`MarchingCubes`](crate::mc::MarchingCubes) does: the real workload re-meshes
+/// [`MarchingCubes`](crate::marching_cubes::MarchingCubes) does: the real workload re-meshes
 /// thousands of chunks and allocation dominates.
 #[derive(Debug)]
 pub(crate) struct DualMesher<R: Real> {

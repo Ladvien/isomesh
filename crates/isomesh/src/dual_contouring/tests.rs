@@ -4,7 +4,7 @@
 
 use super::DualContouring;
 use crate::fields::{BoxExact, ReferenceField, Sphere};
-use crate::sn::SurfaceNets;
+use crate::surface_nets::SurfaceNets;
 use crate::validate::{ValidateConfig, check_determinism, validate_indexed};
 use crate::{MeshBuffer, RuntimeShape3, Sdf};
 
@@ -16,7 +16,7 @@ fn mesh_dc<F: Sdf<Scalar = f64> + ReferenceField>(
     field: &F,
     samples: u32,
 ) -> (MeshBuffer<f64>, f64) {
-    mesh_dc_with(field, samples, crate::dc::Clamp::ToCell)
+    mesh_dc_with(field, samples, crate::dual_contouring::Clamp::ToCell)
 }
 
 /// As [`mesh_dc`], with the clamp chosen explicitly.
@@ -31,7 +31,7 @@ fn mesh_dc<F: Sdf<Scalar = f64> + ReferenceField>(
 fn mesh_dc_with<F: Sdf<Scalar = f64> + ReferenceField>(
     field: &F,
     samples: u32,
-    clamp: crate::dc::Clamp,
+    clamp: crate::dual_contouring::Clamp,
 ) -> (MeshBuffer<f64>, f64) {
     let (lo, hi) = field.domain();
     let cell_size = (hi[0] - lo[0]) / f64::from(samples - 1);
@@ -81,7 +81,7 @@ fn nearest_vertex(mesh: &MeshBuffer<f64>, target: [f64; 3]) -> f64 {
 fn topology_is_identical_to_surface_nets() {
     for samples in [17u32, 27, 33] {
         let field = BoxExact::<f64>::canonical();
-        let (dc, _) = mesh_dc_with(&field, samples, crate::dc::Clamp::None);
+        let (dc, _) = mesh_dc_with(&field, samples, crate::dual_contouring::Clamp::None);
         let (sn, _) = mesh_sn(&field, samples);
 
         assert_eq!(
@@ -136,7 +136,7 @@ fn topology_is_identical_to_surface_nets() {
 fn dual_contouring_moves_only_the_feature_vertices() {
     let field = BoxExact::<f64>::canonical();
     let samples = 27;
-    let (dc, cell_size) = mesh_dc_with(&field, samples, crate::dc::Clamp::None);
+    let (dc, cell_size) = mesh_dc_with(&field, samples, crate::dual_contouring::Clamp::None);
     let (sn, _) = mesh_sn(&field, samples);
 
     /// Below this (in cells) two vertices are the same point computed twice.
@@ -315,7 +315,7 @@ fn edge_cases_are_handled_rather_than_panicking() {
 ///   rather than by patching.
 #[test]
 fn the_clamp_measured_on_every_reference_field() {
-    use crate::dc::Clamp;
+    use crate::dual_contouring::Clamp;
     use crate::validate::self_intersections;
 
     let samples = 33u32;
@@ -405,7 +405,7 @@ fn the_clamp_measured_on_every_reference_field() {
 /// aligned grid, for E-103's reason.
 #[test]
 fn the_clamp_cost_in_sharpness_is_measured() {
-    use crate::dc::Clamp;
+    use crate::dual_contouring::Clamp;
 
     let field = BoxExact::<f64>::canonical();
     let samples = 27u32;

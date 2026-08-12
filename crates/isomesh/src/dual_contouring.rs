@@ -1,6 +1,6 @@
 //! Dual Contouring — the sharp-feature method.
 //!
-//! Same topology as [`SurfaceNets`](crate::sn::SurfaceNets), different vertex.
+//! Same topology as [`SurfaceNets`](crate::surface_nets::SurfaceNets), different vertex.
 //! That sentence is the whole algorithm, and it is not a simplification: V-19
 //! records that the original paper's method *is* one vertex per sign-changing
 //! cube and one quad per sign-changing edge, with only placement differing. Both
@@ -14,7 +14,7 @@
 //!
 //! ```
 //! use isomesh::{MeshBuffer, RuntimeShape3};
-//! use isomesh::dc::DualContouring;
+//! use isomesh::dual_contouring::DualContouring;
 //! use isomesh::fields::BoxExact;
 //!
 //! let mut dc = DualContouring::<f32>::new();
@@ -53,7 +53,7 @@ use crate::{MeshSink, Real, Sdf, Shape3};
 /// Owns its scratch buffers; reuse it across chunks.
 ///
 /// Deliberately exposes no smoothing control, unlike
-/// [`SurfaceNets`](crate::sn::SurfaceNets): a Laplacian pass averages each vertex
+/// [`SurfaceNets`](crate::surface_nets::SurfaceNets): a Laplacian pass averages each vertex
 /// with its neighbours, which is exactly the operation that destroys the sharp
 /// feature the solve just recovered.
 #[derive(Debug)]

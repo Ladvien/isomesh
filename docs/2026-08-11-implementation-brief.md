@@ -105,13 +105,13 @@ Two paths, both worth having because the examples compare them:
 - Euler characteristic `V - E + F == 2` on a closed sphere at 3 resolutions.
 - Every edge shared by exactly 2 faces; violation count reported and equal to 0.
 - Deterministic: same input twice → identical buffers.
-- Example `mc_sphere` runs.
+- Example `marching_cubes_sphere` runs.
 
 ---
 
-## Stage 2 — MC33 / the asymptotic decider
+## Stage 2 — Marching Cubes 33 / the asymptotic decider
 
-Plain MC has ambiguous faces and produces holes. This is the fix, and it's small.
+Plain Marching Cubes has ambiguous faces and produces holes. This is the fix, and it's small.
 
 For a face with corner values `f00, f10, f11, f01`, the bilinear interpolant's saddle value is
 
@@ -123,14 +123,14 @@ The sign of `S` decides whether the two positive corners connect across the face
 Guard the denominator near zero. Interior ambiguity needs the trilinear body saddle as well — the
 catalog doc covers which of the 6 ambiguous cases need it.
 
-**Exit criterion:** the `mc33_ambiguity` example shows a field that holes under plain MC and is closed
-under MC33, and the Euler test passes on that field *only* with MC33 enabled. A test that passes both
+**Exit criterion:** the `marching_cubes_ambiguity` example shows a field that holes under plain Marching Cubes and is closed
+under Marching Cubes 33, and the Euler test passes on that field *only* with Marching Cubes 33 enabled. A test that passes both
 ways isn't testing this.
 
 > **CORRECTED at A-001 (✗11) and again at A-002.** Three of the five claims above are wrong for this
 > codebase. The formula survives; the framing, the guard and the exit criterion do not.
 >
-> 1. **"Plain MC has ambiguous faces and produces holes" — false here (✗11).** Holes need two cells
+> 1. **"Plain Marching Cubes has ambiguous faces and produces holes" — false here (✗11).** Holes need two cells
 >    sharing a face to *disagree* about how the surface crosses it. This table is derived at compile
 >    time by walking each face counter-clockwise, so a face's segments are a function of that face's
 >    own four corner signs and nothing else. `validate_table()` checks all 256 cases and
@@ -149,7 +149,7 @@ ways isn't testing this.
 >    Custodio et al. (2013) show Chernyaev's interior test is wrong for case 13.5 and that Lewiner's
 >    implementation omits cases 10 and 12, so there is no correct published table to transcribe.
 > 5. **"It's small" — true, and measurably so.** Measured at A-002: on five of the seven reference
->    fields an ambiguous face **never occurs at all**, so MC33 and MC are bit-identical there. It
+>    fields an ambiguous face **never occurs at all**, so Marching Cubes 33 and Marching Cubes are bit-identical there. It
 >    fires on 0.5% of gyroid's surface cells and 1.5% of fbm_terrain's.
 
 ---
@@ -157,10 +157,10 @@ ways isn't testing this.
 ## Stage 3 — Surface Nets
 
 One vertex per cell containing a sign change, placed at the centroid of the edge crossings, then
-smoothed. Simpler than MC and it's what most engines actually ship — and, per the speed analysis,
+smoothed. Simpler than Marching Cubes and it's what most engines actually ship — and, per the speed analysis,
 **it has no credible published timings anywhere**, which is what makes stage 7 worth doing.
 
-**Exit criterion:** same three property tests. Plus `surface_nets_sphere` renders next to MC on the
+**Exit criterion:** same three property tests. Plus `surface_nets_sphere` renders next to Marching Cubes on the
 same field with vertex- and triangle-count readouts, and both meshes closed.
 
 > **CORRECTED 2026-08-11 (A-004).** This ticket originally said the counts "should differ
@@ -171,15 +171,15 @@ same field with vertex- and triangle-count readouts, and both meshes closed.
 > V_sn = V_mc + χ          F_sn = F_mc + 2χ
 > ```
 >
-> Exactly, at every resolution. MC emits one vertex per crossed grid edge (`V_mc = C`); SN emits one
+> Exactly, at every resolution. Marching Cubes emits one vertex per crossed grid edge (`V_mc = C`); Surface Nets emits one
 > vertex per surface cell and two triangles per crossed edge (`F_sn = 2C`); and `F = 2V − 2χ` on any
 > closed triangulated manifold. The middle step is the combinatorial fact that **surface cells =
 > crossed edges + χ** — verified numerically on sphere (χ=2), torus (χ=0), box (χ=2) and two disjoint
 > spheres (χ=4) at three resolutions each.
 >
-> So Surface Nets' "one vertex per cell" does **not** buy fewer vertices than MC's "one vertex per
+> So Surface Nets' "one vertex per cell" does **not** buy fewer vertices than Marching Cubes' "one vertex per
 > crossed edge." At 49³ on a sphere the two differ by 2 vertices — a constant set by topology, not by
-> resolution. SN's real wins are quad connectivity and a cheaper inner loop, not output size. Assert
+> resolution. Surface Nets' real wins are quad connectivity and a cheaper inner loop, not output size. Assert
 > the identity, not an inequality.
 >
 > **Where the identity legitimately breaks** — document these next to the assertion so a future
@@ -188,11 +188,11 @@ same field with vertex- and triangle-count readouts, and both meshes closed.
 >    soon as G-001 chunking lands** — `3F = 2E` fails and the identity goes with it. Expect this and
 >    scope the assertion to whole-volume meshing.
 > 2. **Welding.** A-013 dedup beyond the edge cache lowers `V_mc` and breaks both equalities.
-> 3. **Differing χ.** If MC and MC33 disagree on an ambiguous face they have different χ; use each
+> 3. **Differing χ.** If Marching Cubes and Marching Cubes 33 disagree on an ambiguous face they have different χ; use each
 >    mesh's own χ, don't share one.
 > 4. **Non-manifold cells.** Already handled — gyroid and fbm_terrain are excluded and pinned.
 >
-> Worth stating explicitly: `V_mc = C` makes this a **correctness test for MC's edge-vertex cache**.
+> Worth stating explicitly: `V_mc = C` makes this a **correctness test for Marching Cubes' edge-vertex cache**.
 > A single cache miss emitting a duplicate vertex for a shared grid edge breaks it. That is a broader
 > class of bug caught than the identity itself is interesting.
 
@@ -205,7 +205,7 @@ This is the CAD-differentiating stage and the one with real math in it. Read
 
 ### Hermite data
 
-DC needs, per edge crossing: the position **and the surface normal there**. Store as
+Dual Contouring needs, per edge crossing: the position **and the surface normal there**. Store as
 `(position: [Real;3], normal: [Real;3])` per crossing, up to 12 per cell. This is the input to the
 vertex solve and the thing that makes sharp features recoverable at all.
 
@@ -215,7 +215,7 @@ vertex solve and the thing that makes sharp features recoverable at all.
 > closed-form rule that "falls back when the triple product is near zero", and a separate general form
 > for the degenerate case. That split was a misreading of the audit doc it cites: the audit gives the
 > regularized form below as *"branch-free, handles all degeneracies… no data-dependent branch"*, and
-> its own diagnosis is that a data-dependent branch is precisely what makes DC pop. A-007 and A-008 are
+> its own diagnosis is that a data-dependent branch is precisely what makes Dual Contouring pop. A-007 and A-008 are
 > merged; there is one path.
 
 ```
@@ -226,7 +226,7 @@ x = c + adj(M + λI)·g / det(M + λI)
 
 Always, for any number of planes. `λ` is the regularizer that keeps under-determined cells (flat
 regions, where `M` is rank 1) from flying off, and `λ = 0.01` is not a free parameter — it is the value
-that reproduces DC's `σ = 0.1` SVD truncation *smoothly*. Equivariant because `RIRᵀ = I`.
+that reproduces Dual Contouring's `σ = 0.1` SVD truncation *smoothly*. Equivariant because `RIRᵀ = I`.
 
 Two requirements that are easy to drop and expensive to debug:
 
@@ -246,7 +246,7 @@ offset the branch it would reintroduce.
 self-intersections per 1,000 triangles, with and without.
 
 This is item 2 on the opportunities list, and it is the cheapest experiment in the whole project.
-Measured context from the research: ODC (2024) reports Manifold DC at **100% of models
+Measured context from the research: ODC (2024) reports Manifold Dual Contouring at **100% of models
 self-intersecting** vs ODC at **0 of 1500**. If the clamp gets you most of the way there, guaranteed
 intersection-free extraction feeds convex decomposition that can't fail — and CoACD's measured
 **49% → 80%** improvement in downstream manipulation success is what's on the other side of that.

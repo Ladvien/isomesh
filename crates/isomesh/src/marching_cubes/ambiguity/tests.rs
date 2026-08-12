@@ -19,7 +19,7 @@ use alloc::vec::Vec;
 
 use super::{FaceAmbiguity, face_is_joined, joined_mask};
 use crate::cube::{face_corners, is_inside};
-use crate::mc::table::{AMBIGUOUS_FACES, face_bit};
+use crate::marching_cubes::table::{AMBIGUOUS_FACES, face_bit};
 
 // ─── anchors ────────────────────────────────────────────────────────────────
 

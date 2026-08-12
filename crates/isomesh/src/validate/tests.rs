@@ -569,7 +569,7 @@ fn the_weld_lattice_does_not_collapse_far_from_the_origin() {
     let (lo, _) = field.domain();
     let cell_size = 4.0 / 32.0;
     let shape = crate::RuntimeShape3::new([33; 3]).expect("valid shape");
-    let mut mc = crate::mc::MarchingCubes::<f64>::new();
+    let mut mc = crate::marching_cubes::MarchingCubes::<f64>::new();
     let mut mesh = MeshBuffer::<f64>::new();
     mc.extract(&field, &shape, lo, cell_size, &mut mesh)
         .expect("extraction");

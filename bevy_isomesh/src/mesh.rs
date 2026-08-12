@@ -17,7 +17,7 @@ use isomesh::{MeshBuffer, MeshSink};
 /// ```
 /// use bevy_isomesh::MeshBuilder;
 /// use isomesh::fields::Sphere;
-/// use isomesh::mc::MarchingCubes;
+/// use isomesh::marching_cubes::MarchingCubes;
 /// use isomesh::RuntimeShape3;
 ///
 /// let mut builder = MeshBuilder::new();
@@ -210,7 +210,7 @@ mod tests {
     use super::*;
     use isomesh::RuntimeShape3;
     use isomesh::fields::Sphere;
-    use isomesh::mc::MarchingCubes;
+    use isomesh::marching_cubes::MarchingCubes;
 
     fn sphere_builder() -> MeshBuilder {
         let mut builder = MeshBuilder::new();

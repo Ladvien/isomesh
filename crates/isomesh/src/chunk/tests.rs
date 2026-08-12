@@ -5,8 +5,8 @@ use alloc::vec::Vec;
 
 use super::{ChunkId, ChunkLayout};
 use crate::fields::Sphere;
-use crate::mc::MarchingCubes;
-use crate::sn::SurfaceNets;
+use crate::marching_cubes::MarchingCubes;
+use crate::surface_nets::SurfaceNets;
 use crate::validate::{ValidateConfig, validate_indexed};
 use crate::{MeshBuffer, Sdf};
 

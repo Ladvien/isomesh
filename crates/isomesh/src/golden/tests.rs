@@ -50,7 +50,8 @@ fn as_pairs(entries: &[Entry]) -> Vec<(String, String)> {
 /// exactly what is committed.
 ///
 /// On a mismatch this names each combination that drifted and prints both
-/// values, because "a hash changed" is useless and "`dc/gyroid/33` went from
+/// values, because "a hash changed" is useless and "`dual_contouring/gyroid/33`
+/// went from
 /// 10584 to 10580 triangles" is a bug report.
 ///
 /// Regenerate deliberately with `ISOMESH_BLESS=1`, and read the diff.
@@ -114,7 +115,7 @@ fn golden_hashes_are_unchanged() {
 fn a_corrupted_case_table_changes_the_hash_and_names_the_combination() {
     use crate::RuntimeShape3;
     use crate::fields::{ReferenceField, Sphere};
-    use crate::mc::table::CASES;
+    use crate::marching_cubes::table::CASES;
     use crate::property::extraction::march_with_table;
 
     let field = Sphere::<f64>::canonical();
@@ -127,14 +128,14 @@ fn a_corrupted_case_table_changes_the_hash_and_names_the_combination() {
     let honest_hash = hash_mesh(&honest);
 
     // The double reproduces the real extractor, so this must equal the committed
-    // `mc/sphere/17` hash. If it does not, the golden fixture and the mutation
+    // `marching_cubes/sphere/17` hash. If it does not, the golden fixture and the mutation
     // check are describing different code and neither means anything.
     let committed = read_fixture();
     let want = committed
         .iter()
-        .find(|(k, _)| k == "mc/sphere/17")
+        .find(|(k, _)| k == "marching_cubes/sphere/17")
         .map(|(_, v)| v.clone())
-        .expect("mc/sphere/17 in the fixture");
+        .expect("marching_cubes/sphere/17 in the fixture");
     assert!(
         want.contains(&format!("hash {honest_hash:016x}")),
         "the test double disagrees with the committed hash: {want} vs {honest_hash:016x}"
@@ -159,9 +160,9 @@ fn a_corrupted_case_table_changes_the_hash_and_names_the_combination() {
 
     // And the failure message has to be useful, not just present.
     let message = format!(
-        "  mc/sphere/{samples}\n    was ... hash {honest_hash:016x}\n    now ... hash {corrupted_hash:016x}"
+        "  marching_cubes/sphere/{samples}\n    was ... hash {honest_hash:016x}\n    now ... hash {corrupted_hash:016x}"
     );
-    assert!(message.contains("mc/sphere/17"), "{message}");
+    assert!(message.contains("marching_cubes/sphere/17"), "{message}");
     std::println!(
         "measured: T-007 mutation check -- flipping one triangle in case {victim} moved the hash {honest_hash:016x} -> {corrupted_hash:016x}"
     );

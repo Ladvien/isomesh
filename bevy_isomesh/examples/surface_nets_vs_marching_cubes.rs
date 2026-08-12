@@ -1,7 +1,7 @@
 //! E-103 — Surface Nets beside Marching Cubes, on the same field.
 //!
 //! ```bash
-//! cd bevy_isomesh && cargo run --example sn_vs_mc --release
+//! cd bevy_isomesh && cargo run --example surface_nets_vs_marching_cubes --release
 //! ```
 //!
 //! Left is Marching Cubes, right is Surface Nets. `1`–`4` switch field, `[` and
@@ -48,8 +48,8 @@ use bevy::prelude::*;
 use bevy_isomesh::MeshBuilder;
 use common::{Capture, CommonPlugin, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
 use isomesh::fields::{BoxExact, ReferenceField, Sphere, Torus};
-use isomesh::mc::MarchingCubes;
-use isomesh::sn::SurfaceNets;
+use isomesh::marching_cubes::MarchingCubes;
+use isomesh::surface_nets::SurfaceNets;
 use isomesh::validate::{MeshReport, ValidateConfig, validate_indexed};
 use isomesh::{RuntimeShape3, Sdf};
 

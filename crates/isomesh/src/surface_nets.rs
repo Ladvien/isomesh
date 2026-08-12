@@ -54,11 +54,11 @@ use crate::{MeshSink, Real, Sdf, Shape3};
 /// Surface Nets over a sampled grid.
 ///
 /// Owns its scratch buffers, for the same reason
-/// [`MarchingCubes`](crate::mc::MarchingCubes) does: the real workload re-meshes
+/// [`MarchingCubes`](crate::marching_cubes::MarchingCubes) does: the real workload re-meshes
 /// thousands of chunks and allocation dominates.
 ///
 /// The topology — one vertex per crossed cell, one quad per crossed edge — is
-/// shared with [`DualContouring`](crate::dc::DualContouring) and lives in
+/// shared with [`DualContouring`](crate::dual_contouring::DualContouring) and lives in
 /// `crate::dual`. This type is that engine plus [`Centroid`], and the centroid
 /// is the whole of what makes it Surface Nets rather than dual contouring.
 ///
@@ -67,7 +67,7 @@ use crate::{MeshSink, Real, Sdf, Shape3};
 /// ```
 /// use isomesh::{MeshBuffer, RuntimeShape3};
 /// use isomesh::fields::Sphere;
-/// use isomesh::sn::SurfaceNets;
+/// use isomesh::surface_nets::SurfaceNets;
 ///
 /// let mut sn = SurfaceNets::<f32>::new();
 /// let mut out = MeshBuffer::<f32>::new();
@@ -91,7 +91,7 @@ pub struct SurfaceNets<R: Real> {
 /// It cannot represent a sharp feature, and not by accident: an average of
 /// points lying on a corner's two faces lands between them, never on the corner.
 /// Measured on `box_exact` at 33³, the nearest vertex to `(1,1,1)` is 1.15 cells
-/// away. That is the gap [`DualContouring`](crate::dc::DualContouring) closes.
+/// away. That is the gap [`DualContouring`](crate::dual_contouring::DualContouring) closes.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Centroid;
 

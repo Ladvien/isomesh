@@ -119,7 +119,7 @@ pub const fn edge_on_face(edge: u8, axis: usize, side: u8) -> bool {
 /// or a corner share no *pair* of edges. So a mesh edge joining two cut cube
 /// edges that share no face can be emitted by exactly one cell — which is what
 /// makes such a chord safe from the collision A-015 is about. See
-/// [`crate::mc::table::CENTROID_BASE`].
+/// [`crate::marching_cubes::table::CENTROID_BASE`].
 #[inline]
 #[must_use]
 pub const fn edges_share_a_face(a: u8, b: u8) -> bool {

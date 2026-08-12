@@ -35,10 +35,12 @@ use proptest::prelude::*;
 
 use super::{DOMAIN, SurfaceGate, assert_extracted_mesh_is_valid, convex_body, sphere_union};
 use crate::cube::{corner_offset, edge_crossing};
-use crate::dc::DualContouring;
-use crate::mc::table::{CASES, EDGE_AXIS, EDGE_CORNERS, McCase, corner_inside, is_inside};
-use crate::mc::{FaceAmbiguity, MarchingCubes};
-use crate::sn::SurfaceNets;
+use crate::dual_contouring::DualContouring;
+use crate::marching_cubes::table::{
+    CASES, EDGE_AXIS, EDGE_CORNERS, McCase, corner_inside, is_inside,
+};
+use crate::marching_cubes::{FaceAmbiguity, MarchingCubes};
+use crate::surface_nets::SurfaceNets;
 use crate::validate::{ValidateConfig, validate_indexed};
 use crate::{MeshBuffer, MeshSink, RuntimeShape3, Sdf, Shape3, vec3};
 

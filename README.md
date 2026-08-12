@@ -18,8 +18,8 @@ Early. Two extraction algorithms, a validity harness, an accuracy harness, and a
 
 | | |
 |---|---|
-| **Working** | Marching Cubes · **MC33's asymptotic decider** · Surface Nets · **Dual Contouring** · Hermite data · mesh validity harness · accuracy harness · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property-test scaffolding · Bevy 0.19 bridge |
-| **Not yet** | MC33's interior test · marching tetrahedra · greedy quads · LOD / Transvoxel · vertex welding · colliders · GPU path · benchmarks |
+| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Surface Nets · **Dual Contouring** · Hermite data · mesh validity harness · accuracy harness · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property-test scaffolding · Bevy 0.19 bridge |
+| **Not yet** | Marching Cubes 33's interior test · marching tetrahedra · greedy quads · LOD / Transvoxel · vertex welding · colliders · GPU path · benchmarks |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
 Not published to crates.io. Version `0.0.0`.
@@ -184,8 +184,8 @@ cargo test -p isomesh                    # 244 tests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
-cargo run --example mc_sphere --release  # the first GIF
-cargo run --example sn_vs_mc --release   # the second and third
+cargo run --example marching_cubes_sphere --release  # the first GIF
+cargo run --example surface_nets_vs_marching_cubes --release   # the second and third
 ```
 
 **Always `--release`.** A debug build meshes 20–50× slower and will convince you something is wrong with the algorithm.
@@ -196,7 +196,7 @@ Any example can be captured without a keyboard, which is how the GIFs above were
 
 ```bash
 ISOMESH_CAPTURE=/tmp/frames ISOMESH_FIELD=4 ISOMESH_VIEW=wire,nogrid \
-  cargo run --example sn_vs_mc --release
+  cargo run --example surface_nets_vs_marching_cubes --release
 ```
 
 ---

@@ -1,11 +1,11 @@
 //! E-101 — Marching Cubes, the baseline.
 //!
-//! A sphere meshed with [`isomesh::mc::MarchingCubes`], with a wireframe toggle
+//! A sphere meshed with [`isomesh::marching_cubes::MarchingCubes`], with a wireframe toggle
 //! and a live resolution slider on the `[` and `]` keys. The first thing in this
 //! project you can actually look at.
 //!
 //! ```bash
-//! cd bevy_isomesh && cargo run --example mc_sphere --release
+//! cd bevy_isomesh && cargo run --example marching_cubes_sphere --release
 //! ```
 //!
 //! **Always `--release`.** A debug build meshes 20-50x slower and will convince
@@ -24,7 +24,7 @@ use bevy::prelude::*;
 use bevy_isomesh::MeshBuilder;
 use common::{Capture, CommonPlugin, DemoDomain, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
 use isomesh::fields::{ReferenceField, Sphere};
-use isomesh::mc::MarchingCubes;
+use isomesh::marching_cubes::MarchingCubes;
 use isomesh::validate::{ValidateConfig, validate_indexed};
 use isomesh::{RuntimeShape3, Shape3};
 

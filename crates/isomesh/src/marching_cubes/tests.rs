@@ -575,7 +575,7 @@ fn the_table_reports_render() {
 
 // ─── A-002: the asymptotic decider ──────────────────────────────────────────
 //
-// The face rule and its own arithmetic are tested in `mc::ambiguity::tests`.
+// The face rule and its own arithmetic are tested in `marching_cubes::ambiguity::tests`.
 // What is tested here is the table it feeds and the meshes that come out.
 
 /// Every case at every resolution mask — 16,384 combinations, against the same
@@ -1064,7 +1064,8 @@ fn census<F: Sdf<Scalar = f64>>(field: &F, origin: [f64; 3], h: f64, samples: u3
                 }
                 out.ambiguous_cells += 1;
                 out.joined_faces += u64::from(
-                    crate::mc::ambiguity::joined_mask(&corner_value, ambiguous).count_ones(),
+                    crate::marching_cubes::ambiguity::joined_mask(&corner_value, ambiguous)
+                        .count_ones(),
                 );
             }
         }
@@ -1081,7 +1082,7 @@ fn census<F: Sdf<Scalar = f64>>(field: &F, origin: [f64; 3], h: f64, samples: u3
 fn global_mesh_edges(base: [i64; 3], case: u8, mask: u8) -> Vec<[(i64, i64, i64, u8); 2]> {
     let entry = triangulate(segment_links(case, mask));
     let key = |code: u8| -> (i64, i64, i64, u8) {
-        if crate::mc::table::is_centroid(code) {
+        if crate::marching_cubes::table::is_centroid(code) {
             return (base[0], base[1], base[2], code);
         }
         let [c, _] = EDGE_CORNERS[code as usize];
@@ -1277,8 +1278,8 @@ fn the_decider_at_a_chunk_seam_is_measured() {
                 let scale = d02.abs().max(d13.abs()).max(f64::MIN_POSITIVE);
                 closest_margin = closest_margin.min((d02 - d13).abs() / scale);
 
-                if crate::mc::ambiguity::face_is_joined(va)
-                    != crate::mc::ambiguity::face_is_joined(vb)
+                if crate::marching_cubes::ambiguity::face_is_joined(va)
+                    != crate::marching_cubes::ambiguity::face_is_joined(vb)
                 {
                     decision_flips += 1;
                 }

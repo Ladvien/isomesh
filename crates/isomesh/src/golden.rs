@@ -57,10 +57,10 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use crate::dc::DualContouring;
+use crate::dual_contouring::DualContouring;
 use crate::fields::ReferenceField;
-use crate::mc::{FaceAmbiguity, MarchingCubes};
-use crate::sn::SurfaceNets;
+use crate::marching_cubes::{FaceAmbiguity, MarchingCubes};
+use crate::surface_nets::SurfaceNets;
 use crate::{MeshBuffer, RuntimeShape3, Sdf};
 
 /// Resolutions every field is hashed at, in samples per axis.
@@ -131,11 +131,12 @@ fn hash_mesh(mesh: &MeshBuffer<f64>) -> u64 {
 
 /// The extractors, by name.
 ///
-/// `mc33` is `MarchingCubes` with [`FaceAmbiguity::AsymptoticDecider`] rather
-/// than a separate type, so it is a fourth *row* here and not a fourth
-/// algorithm. Its hashes match `mc`'s on every field where no ambiguous face
-/// occurs, which on the reference set is five of the seven — that agreement is
-/// itself pinned by the fixture.
+/// `marching_cubes+decider` is `MarchingCubes` with
+/// [`FaceAmbiguity::AsymptoticDecider`] rather than a separate type, so it is a
+/// fourth *row* here and not a fourth algorithm. Its hashes match plain
+/// `marching_cubes`'s on every field where no ambiguous face occurs, which on the
+/// reference set is five of the seven — that agreement is itself pinned by the
+/// fixture.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Algorithm {
     MarchingCubes,
@@ -154,10 +155,10 @@ impl Algorithm {
 
     fn name(self) -> &'static str {
         match self {
-            Self::MarchingCubes => "mc",
-            Self::MarchingCubes33 => "mc33",
-            Self::SurfaceNets => "sn",
-            Self::DualContouring => "dc",
+            Self::MarchingCubes => "marching_cubes",
+            Self::MarchingCubes33 => "marching_cubes+decider",
+            Self::SurfaceNets => "surface_nets",
+            Self::DualContouring => "dual_contouring",
         }
     }
 }

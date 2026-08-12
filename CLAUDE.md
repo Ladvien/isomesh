@@ -164,7 +164,7 @@ This crate is generic over `Real`, which is both. Using glam would mean a bridge
 forwarding every operation — more code than the 3×3 adjugate it would wrap, plus a dependency, plus two
 float backends inside one solve, which is exactly what the `libm` justification rejects.
 
-So A-007's solve is a six-entry symmetric matrix over `[R; 3]` in `dc/solve.rs`, and **the crate stays
+So A-007's solve is a six-entry symmetric matrix over `[R; 3]` in `dual_contouring/solve.rs`, and **the crate stays
 at one dependency**. Revisit only if glam gains a generic scalar or this crate drops `f64`.
 
 ---
@@ -250,7 +250,7 @@ cargo bench --bench resolution_sweep     # 16^3..256^3, fits t = a + b*n^3, writ
 cargo test -p isomesh-gpu
 
 # bevy side — separate workspace, run from its directory
-cd bevy_isomesh && cargo run --example mc_sphere --release
+cd bevy_isomesh && cargo run --example marching_cubes_sphere --release
 cd bevy_isomesh && cargo build --examples
 ```
 

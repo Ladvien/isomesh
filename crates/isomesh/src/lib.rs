@@ -48,11 +48,11 @@ extern crate std;
 
 pub mod brush;
 pub mod chunk;
-pub mod dc;
+pub mod dual_contouring;
 pub mod fields;
 pub mod hermite;
-pub mod mc;
-pub mod sn;
+pub mod marching_cubes;
+pub mod surface_nets;
 pub mod validate;
 
 #[cfg(test)]

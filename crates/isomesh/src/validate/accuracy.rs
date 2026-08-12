@@ -328,7 +328,7 @@ impl<R: Real> fmt::Display for AccuracyReport<R> {
 /// `shape`, `origin` and `cfg.cell_size()` describe the **seed lattice** for the
 /// reverse direction. Normally they are the same grid the mesh was extracted on,
 /// which is why the parameter list mirrors
-/// [`MarchingCubes::extract`](crate::mc::MarchingCubes::extract) — the caller
+/// [`MarchingCubes::extract`](crate::marching_cubes::MarchingCubes::extract) — the caller
 /// already has those values in hand. Nothing requires it: passing a coarser
 /// shape samples the reverse direction more cheaply.
 ///

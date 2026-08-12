@@ -13,8 +13,8 @@ use alloc::vec::Vec;
 use super::super::tri_grid::{TriangleGrid, point_triangle_distance_squared};
 use super::{AccuracyConfig, accuracy};
 use crate::fields::{BoxExact, ReferenceField, Sphere};
-use crate::mc::MarchingCubes;
-use crate::sn::SurfaceNets;
+use crate::marching_cubes::MarchingCubes;
+use crate::surface_nets::SurfaceNets;
 use crate::{MeshBuffer, RuntimeShape3, Sdf};
 
 // ─── fixtures ───────────────────────────────────────────────────────────────

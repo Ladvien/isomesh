@@ -41,10 +41,10 @@ use std::hint::black_box;
 use std::path::PathBuf;
 use std::time::Instant;
 
-use isomesh::dc::DualContouring;
+use isomesh::dual_contouring::DualContouring;
 use isomesh::fields::Sphere;
-use isomesh::mc::MarchingCubes;
-use isomesh::sn::SurfaceNets;
+use isomesh::marching_cubes::MarchingCubes;
+use isomesh::surface_nets::SurfaceNets;
 use isomesh::{MeshBuffer, RuntimeShape3};
 
 /// Samples per axis. Spans the 16³→256³ range the ticket asks for, with enough
@@ -97,7 +97,7 @@ trait Extractor {
 }
 
 impl Extractor for MarchingCubes<Scalar> {
-    const NAME: &'static str = "mc";
+    const NAME: &'static str = "marching_cubes";
 
     fn new() -> Self {
         Self::new()
@@ -117,7 +117,7 @@ impl Extractor for MarchingCubes<Scalar> {
 }
 
 impl Extractor for SurfaceNets<Scalar> {
-    const NAME: &'static str = "sn";
+    const NAME: &'static str = "surface_nets";
 
     fn new() -> Self {
         Self::new()
@@ -137,7 +137,7 @@ impl Extractor for SurfaceNets<Scalar> {
 }
 
 impl Extractor for DualContouring<Scalar> {
-    const NAME: &'static str = "dc";
+    const NAME: &'static str = "dual_contouring";
 
     fn new() -> Self {
         Self::new()

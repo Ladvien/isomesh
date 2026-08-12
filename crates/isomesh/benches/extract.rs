@@ -28,10 +28,10 @@ mod common;
 use std::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
-use isomesh::dc::DualContouring;
+use isomesh::dual_contouring::DualContouring;
 use isomesh::fields::{BoxExact, ReferenceField, Sphere, Torus, capped_gyroid};
-use isomesh::mc::{FaceAmbiguity, MarchingCubes};
-use isomesh::sn::SurfaceNets;
+use isomesh::marching_cubes::{FaceAmbiguity, MarchingCubes};
+use isomesh::surface_nets::SurfaceNets;
 use isomesh::{MeshBuffer, Real, Sdf};
 
 /// Resolutions the per-field comparison runs at, in samples per axis.
@@ -133,55 +133,55 @@ fn algorithms(c: &mut Criterion) {
     for n in COMPARISON_SAMPLES {
         bench_mc(
             c,
-            &format!("mc/sphere/f32/{n}"),
+            &format!("marching_cubes/sphere/f32/{n}"),
             Sphere::<f32>::canonical(),
             n,
         );
         bench_sn(
             c,
-            &format!("sn/sphere/f32/{n}"),
+            &format!("surface_nets/sphere/f32/{n}"),
             Sphere::<f32>::canonical(),
             n,
         );
         bench_mc(
             c,
-            &format!("mc/torus/f32/{n}"),
+            &format!("marching_cubes/torus/f32/{n}"),
             Torus::<f32>::canonical(),
             n,
         );
         bench_sn(
             c,
-            &format!("sn/torus/f32/{n}"),
+            &format!("surface_nets/torus/f32/{n}"),
             Torus::<f32>::canonical(),
             n,
         );
         bench_mc(
             c,
-            &format!("mc/box_exact/f32/{n}"),
+            &format!("marching_cubes/box_exact/f32/{n}"),
             BoxExact::<f32>::canonical(),
             n,
         );
         bench_sn(
             c,
-            &format!("sn/box_exact/f32/{n}"),
+            &format!("surface_nets/box_exact/f32/{n}"),
             BoxExact::<f32>::canonical(),
             n,
         );
         bench_dc(
             c,
-            &format!("dc/sphere/f32/{n}"),
+            &format!("dual_contouring/sphere/f32/{n}"),
             Sphere::<f32>::canonical(),
             n,
         );
         bench_dc(
             c,
-            &format!("dc/torus/f32/{n}"),
+            &format!("dual_contouring/torus/f32/{n}"),
             Torus::<f32>::canonical(),
             n,
         );
         bench_dc(
             c,
-            &format!("dc/box_exact/f32/{n}"),
+            &format!("dual_contouring/box_exact/f32/{n}"),
             BoxExact::<f32>::canonical(),
             n,
         );
@@ -201,25 +201,25 @@ fn decider(c: &mut Criterion) {
     for n in COMPARISON_SAMPLES {
         bench_mc(
             c,
-            &format!("decider/mc/sphere/f32/{n}"),
+            &format!("decider/marching_cubes/sphere/f32/{n}"),
             Sphere::<f32>::canonical(),
             n,
         );
         bench_mc33(
             c,
-            &format!("decider/mc33/sphere/f32/{n}"),
+            &format!("decider/marching_cubes+decider/sphere/f32/{n}"),
             Sphere::<f32>::canonical(),
             n,
         );
         bench_mc(
             c,
-            &format!("decider/mc/gyroid/f32/{n}"),
+            &format!("decider/marching_cubes/gyroid/f32/{n}"),
             capped_gyroid::<f32>(),
             n,
         );
         bench_mc33(
             c,
-            &format!("decider/mc33/gyroid/f32/{n}"),
+            &format!("decider/marching_cubes+decider/gyroid/f32/{n}"),
             capped_gyroid::<f32>(),
             n,
         );
@@ -229,10 +229,30 @@ fn decider(c: &mut Criterion) {
 /// The same field and grid at both widths. Any difference is the cost of `f64`
 /// on a path with no matrix solve in it.
 fn precision(c: &mut Criterion) {
-    bench_mc(c, "precision/mc/sphere/f32", Sphere::<f32>::canonical(), 65);
-    bench_mc(c, "precision/mc/sphere/f64", Sphere::<f64>::canonical(), 65);
-    bench_sn(c, "precision/sn/sphere/f32", Sphere::<f32>::canonical(), 65);
-    bench_sn(c, "precision/sn/sphere/f64", Sphere::<f64>::canonical(), 65);
+    bench_mc(
+        c,
+        "precision/marching_cubes/sphere/f32",
+        Sphere::<f32>::canonical(),
+        65,
+    );
+    bench_mc(
+        c,
+        "precision/marching_cubes/sphere/f64",
+        Sphere::<f64>::canonical(),
+        65,
+    );
+    bench_sn(
+        c,
+        "precision/surface_nets/sphere/f32",
+        Sphere::<f32>::canonical(),
+        65,
+    );
+    bench_sn(
+        c,
+        "precision/surface_nets/sphere/f64",
+        Sphere::<f64>::canonical(),
+        65,
+    );
 }
 
 criterion_group!(benches, algorithms, decider, precision);

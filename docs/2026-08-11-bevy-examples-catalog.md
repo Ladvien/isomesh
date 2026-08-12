@@ -41,7 +41,7 @@ chase ghosts.
 | `Esc` | quit |
 
 **Test fields.** One shared `fields.rs` so comparisons are apples-to-apples: `sphere`, `torus`,
-`box_exact` (sharp edges — the DC discriminator), `csg_difference` (box minus sphere, concave sharp
+`box_exact` (sharp edges — the Dual Contouring discriminator), `csg_difference` (box minus sphere, concave sharp
 edges), `fbm_terrain`, `thin_plate` (sub-voxel feature), `gyroid` (high genus, stresses topology).
 
 **Screenshot on `F12`** is not a nicety. Several examples below are *visual* acceptance tests, and the
@@ -53,11 +53,11 @@ before/after pair belongs in the commit.
 
 | # | Example | Demonstrates | What you see |
 |---|---|---|---|
-| 1 | `mc_sphere` | Marching Cubes baseline | A sphere. `W` shows the characteristic MC triangle pattern with varying triangle sizes per cell. The reference every other example is judged against. |
-| 2 | `mc33_ambiguity` | Ambiguous face resolution | Split screen. Left: plain MC, with **visible holes** on the ambiguous configuration. Right: MC33, closed. HUD shows the Euler characteristic for each — 2 on the right, not 2 on the left. |
-| 3 | `surface_nets_sphere` | Surface Nets vs MC | Same field, side by side, with triangle counts. SN's dual mesh is visibly more regular under `W`. |
-| 4 | `dual_contouring_cube` | **Sharp features** | `box_exact` and `csg_difference`. Surface Nets rounds the corners into mush; DC holds them crisp. This is the single most persuasive image the project will produce — put it in the README. |
-| 5 | `marching_tetrahedra` | MT and its cost | Same sphere. HUD triangle count is dramatically higher than MC on the identical field. Shows why MT is chosen for guarantees, not for budget. |
+| 1 | `marching_cubes_sphere` | Marching Cubes baseline | A sphere. `W` shows the characteristic Marching Cubes triangle pattern with varying triangle sizes per cell. The reference every other example is judged against. |
+| 2 | `marching_cubes_ambiguity` | Ambiguous face resolution | Split screen. Left: plain Marching Cubes, with **visible holes** on the ambiguous configuration. Right: Marching Cubes 33, closed. HUD shows the Euler characteristic for each — 2 on the right, not 2 on the left. |
+| 3 | `surface_nets_sphere` | Surface Nets vs Marching Cubes | Same field, side by side, with triangle counts. Surface Nets' dual mesh is visibly more regular under `W`. |
+| 4 | `dual_contouring_cube` | **Sharp features** | `box_exact` and `csg_difference`. Surface Nets rounds the corners into mush; Dual Contouring holds them crisp. This is the single most persuasive image the project will produce — put it in the README. |
+| 5 | `marching_tetrahedra` | MT and its cost | Same sphere. HUD triangle count is dramatically higher than Marching Cubes on the identical field. Shows why MT is chosen for guarantees, not for budget. |
 | 6 | `subgrid_mt` | **Sub-voxel features** | A stone wall with letters carved into it, where the stroke width is *thinner than one voxel*. Classic marching cannot resolve this at all — toggle between the two and the text vanishes. |
 | 7 | `transvoxel_seams` | LOD transitions | Two adjacent chunks at different resolutions. Toggle transition cells: cracks appear, cracks vanish. Screenshot both. |
 | 8 | `greedy_quads` | The blocky path | Minecraft-style output on the same field, for the budget axis of the tradeoff table. Quad count before/after merging. |
@@ -75,7 +75,7 @@ These are why someone picks one algorithm over another. Each is a live A/B, not 
 | 11 | `manifold_check` | Topological soundness | Non-manifold edges drawn as thick red lines, non-manifold vertices as red spheres. Run it across all six test fields and all four algorithms. |
 | 12 | `precision_f32_vs_f64` | Why CAD needs f64 | The same field evaluated at large coordinate offsets (e.g. 1e6). f32 visibly cracks and jitters; f64 doesn't. HUD shows the QEF matrix condition number. |
 | 13 | `normal_estimation` | Three normal strategies | Analytic gradient vs central differences vs area-weighted face normals, three panels, lit. Differences show up in specular highlights on curved regions, not in wireframe. |
-| 14 | `hermite_debug` | What DC actually operates on | Gizmo view: edge crossings as dots, surface normals as lines, the solved cell vertex as a larger dot, the cell as a wire box. The debug view you'll live in while stage 4 is broken. |
+| 14 | `hermite_debug` | What Dual Contouring actually operates on | Gizmo view: edge crossings as dots, surface normals as lines, the solved cell vertex as a larger dot, the cell as a wire box. The debug view you'll live in while stage 4 is broken. |
 
 ---
 
@@ -99,7 +99,7 @@ The examples that prove the crate is usable for a real game, not just a paper.
 
 | # | Example | Demonstrates | What you see |
 |---|---|---|---|
-| 22 | `bench_shootout` | **The comparison that doesn't exist** | MC / MC33 / SN / DC / MT on identical fields and grids. On-screen table: ms, verts, tris, non-manifold edges, self-int per 1k, Hausdorff error vs analytic. Writes CSV to `docs/measurements/`. |
+| 22 | `bench_shootout` | **The comparison that doesn't exist** | Marching Cubes / Marching Cubes 33 / Surface Nets / Dual Contouring / MT on identical fields and grids. On-screen table: ms, verts, tris, non-manifold edges, self-int per 1k, Hausdorff error vs analytic. Writes CSV to `docs/measurements/`. |
 | 23 | `bench_resolution_sweep` | Fixed cost vs marginal cost | Time vs grid size, 16³ → 256³, plotted live. Fits `t = a + b·n³` and **prints `a`**. In the published FlexiCubes numbers 73% of the 64³ time was fixed overhead — expect to find the same and to stop trusting single-grid comparisons. |
 | 24 | `bench_stage_breakdown` | Where the time actually goes | Stacked bar: contour / normals / weld / collider build / GPU upload. Grosso & Zint measured contouring at 68 ms against 58 ms of halfedge construction — **the contour is 54% of a usable mesh**. Find out what yours is before optimizing anything. |
 

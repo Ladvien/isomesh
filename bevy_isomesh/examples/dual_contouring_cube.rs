@@ -46,9 +46,9 @@ use std::time::Instant;
 use bevy::prelude::*;
 use bevy_isomesh::MeshBuilder;
 use common::{Capture, CommonPlugin, DemoDomain, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
-use isomesh::dc::{Clamp, DualContouring};
+use isomesh::dual_contouring::{Clamp, DualContouring};
 use isomesh::fields::{BoxExact, ReferenceField, csg_difference};
-use isomesh::sn::SurfaceNets;
+use isomesh::surface_nets::SurfaceNets;
 use isomesh::{RuntimeShape3, Sdf};
 
 /// Samples per axis.

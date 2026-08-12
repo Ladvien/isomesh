@@ -46,8 +46,8 @@ use bevy::prelude::*;
 use bevy_isomesh::MeshBuilder;
 use common::{Capture, CommonPlugin, DemoDomain, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
 use isomesh::fields::ReferenceField;
-use isomesh::mc::MarchingCubes;
-use isomesh::sn::SurfaceNets;
+use isomesh::marching_cubes::MarchingCubes;
+use isomesh::surface_nets::SurfaceNets;
 use isomesh::validate::{ValidateConfig, validate_features};
 use isomesh::{RuntimeShape3, Sdf};
 
@@ -200,7 +200,7 @@ fn controls(
 /// The `for_each_reference_field!` sweep would be the obvious way to reach all
 /// seven fields, but it expands to seven concrete blocks and this needs to pick
 /// *one* at runtime — so the field index is matched here instead, which is the
-/// same shape `sn_vs_mc` uses.
+/// same shape `surface_nets_vs_marching_cubes` uses.
 #[allow(clippy::too_many_arguments)]
 fn remesh(
     resolution: Res<Resolution>,

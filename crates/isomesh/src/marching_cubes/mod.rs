@@ -42,7 +42,7 @@ use table::{
 /// ```
 /// use isomesh::{MeshBuffer, RuntimeShape3};
 /// use isomesh::fields::Sphere;
-/// use isomesh::mc::MarchingCubes;
+/// use isomesh::marching_cubes::MarchingCubes;
 ///
 /// let mut mc = MarchingCubes::<f32>::new();
 /// let mut out = MeshBuffer::<f32>::new();

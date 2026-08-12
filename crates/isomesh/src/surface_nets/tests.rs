@@ -10,7 +10,7 @@ use alloc::vec::Vec;
 
 use super::SurfaceNets;
 use crate::fields::{BoxExact, ReferenceField, Sphere, Torus};
-use crate::mc::MarchingCubes;
+use crate::marching_cubes::MarchingCubes;
 use crate::validate::{ValidateConfig, check_determinism, self_intersections, validate_indexed};
 use crate::{MeshBuffer, RuntimeShape3, Sdf, vec3};
 
