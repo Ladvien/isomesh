@@ -47,8 +47,9 @@ criterion = { version = "0.7", default-features = false, features = [
 # it still uses plain arrays there -- so a conversion adds one line at the call
 # site and nothing else. What it would add to the *manifest* is a pre-1.0 version
 # to track: parry migrated off nalgebra onto glam/glamx in 0.26.0 and now wants
-# glam ^0.33, where Bevy 0.19 pins ^0.32. The core crate stays at one dependency
-# in every configuration instead.
+# glam ^0.33, where the engine version this workspace pins against wants ^0.32 --
+# the skew documented in CLAUDE.md's hard version pins. The core crate stays at
+# one dependency in every configuration instead.
 #
 # Here it earns its place by making G-005's acceptance real: the test builds an
 # actual `TriMesh` from a carved field and runs parry's own

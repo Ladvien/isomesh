@@ -21,8 +21,10 @@
 //! - **The core crate stays at one dependency in every configuration.** An
 //!   optional dependency is still a version this manifest has to track, and
 //!   `parry3d` is pre-1.0 and moving fast — it migrated off nalgebra onto
-//!   glam/glamx in 0.26.0, which is why it wants glam `^0.33` while Bevy 0.19
-//!   pins `^0.32`.
+//!   glam/glamx in 0.26.0, which is why it wants glam `^0.33` where the engine
+//!   version this workspace pins against wants `^0.32`. That skew is documented
+//!   in `CLAUDE.md`'s hard version pins and is the reason every public signature
+//!   here is an array.
 //! - **The acceptance criterion is still met, and by parry itself.**
 //!   `a_carved_shape_builds_a_parry_trimesh` builds a real `TriMesh` from a
 //!   carved field and runs parry's own topology check on it. A dev-dependency
