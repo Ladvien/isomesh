@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**36 tickets archived, 40 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**37 tickets archived, 40 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -71,7 +71,7 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **A-011** | **Transvoxel transition cells.** Half-resolution transition cells at LOD boundaries. **Acceptance:** two adjacent chunks at differing LOD produce zero boundary gaps — assert on the geometry, then confirm visually in E-107. | L | A-001 |
+| ☐ | **A-011b** | **Transvoxel extraction and the seam.** Place the transition cell's vertices in world space, emit its triangles, and stitch a full-resolution chunk to a half-resolution neighbour. **Acceptance:** two adjacent chunks at differing LOD produce zero boundary gaps — assert on the geometry, then confirm visually in E-107. A crossing on one of the four half-resolution edges must land where the coarse neighbour's own Marching Cubes pass would put it, or the seam does not close; `transvoxel::table::is_half_resolution` is what marks them. Lengyel's transition width is a free parameter and **zero is legal geometrically and wrong visually** — §4.3 says a zero width "leads to severe shading problems", so pick one and record why. | M | A-011a |
 | ☐ | **A-012** | **Normal estimation strategies.** Analytic gradient / central differences / area-weighted face normals, selectable. **Acceptance:** all three produce unit-length normals; analytic and central-difference agree within tolerance on `sphere`. | S | A-001 |
 | ☐ | **A-014** | **Subgrid Marching Tetrahedra.** Integer edge-intersection counts instead of vertex signs — resolves features finer than one cell. The differentiator; do it after the usual suspects are solid. | L | A-003 |
 | ☐ | **A-002b** | **Marching Cubes 33 interior ambiguity — the trilinear body saddle.** Deliberately deferred at A-002, on evidence, not forgotten. Three reasons. (1) `catalog-v2.md:107` is explicit: *"Skip the interior test; spend the budget on chunk seams"* — a game needs topological *consistency*, which A-001 already has, over *correctness*. (2) **There is no correct published table to transcribe.** Custodio et al. 2013 (`10.1016/j.cag.2013.04.004` §5.1) prove Chernyaev's interior test tracks a quadratic where the true saddle trajectory is hyperbolic with an asymptote, so case 13.5.2 is misread as 13.5.1 — counterexample values in their Appendix A — and Lewiner's reference implementation omits disambiguation for cases 10 and 12 entirely. Rule 5 forbids inventing the missing one. (3) The v1 catalog prices it: the decider is *"~free"*, the guaranteed version is **730 subcases in the LUT**. Also needs cell-interior vertices for tunnels, which the grid-edge-keyed vertex cache has no slot for. **Acceptance:** a cell where the body saddle says "tunnel", meshed as a tunnel, with the sign tracked by Custodio's correction rather than Chernyaev's `F(t)`. | L | A-002 |
@@ -84,7 +84,7 @@ Still zero Bevy. This is the machinery a game needs, living in the core crate wh
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **G-004** | **Field-derived LOD.** Mip the field (not the mesh), mesh at level N. **Acceptance:** LOD 0..3 all mesh cleanly; LOD *k* has roughly 1/8^k the cells. Pairs with A-011 for the seams. | M | A-011, G-001 |
+| ☐ | **G-004** | **Field-derived LOD.** Mip the field (not the mesh), mesh at level N. **Acceptance:** LOD 0..3 all mesh cleanly; LOD *k* has roughly 1/8^k the cells. Pairs with A-011 for the seams. | M | A-011b, G-001 |
 | ☐ | **G-005** | **Collider export.** `MeshBuffer` → `parry3d::TriMesh` (`Vec<[u32;3]>` indices — parry takes plain arrays). Behind an optional `parry` feature. Optional convex decomposition path. **Acceptance:** a carved shape builds a `TriMesh` without error and passes parry's own validity check. **A-013 landed, so this is unblocked** — and note a chunked collider must be welded first or parry sees a seam of unshared vertices. | M | A-013 |
 | ☐ | **G-006** | **Frame-budget scheduler.** `mesh_within_budget(ms)` — process the dirty queue until a time budget is exhausted, resume next call. Priority by camera distance. This is the constraint a real game actually operates under and the reason "how fast is the algorithm" is the wrong question. | M | G-002 |
 | ☐ | **G-007** | **Chunk streaming.** Load/unload by camera distance with hysteresis so chunks at the boundary don't thrash. | M | G-004, G-006 |
@@ -110,7 +110,7 @@ the point** — they're how someone decides whether this crate is usable.
 |---|---|---|---|
 | ☐ | **E-105** | `marching_tetrahedra` — same field, much higher triangle count | A-003 |
 | ☐ | **E-106** | `greedy_quads` — the blocky path, quads before/after merge | A-005 |
-| ☐ | **E-107** | `transvoxel_seams` — two LODs adjacent, toggle transition cells. **Commit both screenshots.** | A-011 |
+| ☐ | **E-107** | `transvoxel_seams` — two LODs adjacent, toggle transition cells. **Commit both screenshots.** | A-011b |
 | ☐ | **E-108** | `subgrid_features` — letters carved thinner than a voxel; toggle and watch them vanish | A-014 |
 | ☐ | **E-109** | `sharp_features` — live slider on the normal-deviation threshold, through to over-sharpening | A-007 |
 | ☐ | **E-110** | `qef_clamp` — clamp toggle, live self-intersections/1k, offending triangles in red | A-009 |
@@ -127,7 +127,7 @@ These use the algorithms the way a game does: chunked, edited, budgeted, collide
 | ☐ | **E-201** | `game_terrain_stream` — walk a large fBm world, chunks stream by distance | Sustained 60 fps while streaming. HUD: chunks resident, meshing ms/frame, MB. | G-007, B-003 |
 | ☐ | **E-203** | `game_walk` — character controller on meshed terrain, parry3d colliders | **The acid test.** Walk every chunk seam. No falling through, no invisible walls. If this fails, G-001's overlap is wrong. | G-005, E-201 |
 | ☐ | **E-204** | `game_destruction` — shoot a wall, it craters, debris becomes rigid bodies | Runtime fragments are correct physics bodies, not pre-fractured props. Carve a spiral and a hollow shell — that's where decomposition fails. | G-005, G-003 |
-| ☐ | **E-205** | `game_lod_flyover` — fly out and back across LOD transitions | No popping, no cracks, no hitching. Transvoxel doing its job at speed. | G-004, A-011 |
+| ☐ | **E-205** | `game_lod_flyover` — fly out and back across LOD transitions | No popping, no cracks, no hitching. Transvoxel doing its job at speed. | G-004, A-011b |
 | ☐ | **E-206** | `game_budget` — a deliberately overloaded edit queue under a frame budget | Frame time stays flat while the backlog drains. **Amortized cost per frame is the number no paper measures and the only one a game cares about.** | G-006 |
 | ☐ | **E-207** | `game_editor` — sculpt with brushes, undo/redo over an op log | The CAD/editor use case. Undo is a re-fold of the log, not a snapshot. | G-003 |
 | ☐ | **E-208** | `game_paint` — spray colour on a wall, then blow a hole through it | Paint on the remaining wall is exactly where you sprayed it. Row 4 of the opportunities table. | G-003, B-002 |
