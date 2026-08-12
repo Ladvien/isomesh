@@ -56,6 +56,7 @@ pub mod manifold_dual_contouring;
 pub mod marching_cubes;
 pub mod marching_tetrahedra;
 pub mod normals;
+pub mod subgrid;
 pub mod surface_nets;
 pub mod transvoxel;
 pub mod validate;

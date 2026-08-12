@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**38 tickets archived, 39 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**39 tickets archived, 40 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -93,7 +93,8 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 > - A block therefore carries **up to seven meshes**: the primary one plus a transition mesh per face,
 >   each rendered only when that neighbour is coarser. So this is a `MeshBuffer` per face, not one
 >   buffer — which is an API decision this ticket has to make and G-001's chunk story has to accept.
-| ☐ | **A-014** | **Subgrid Marching Tetrahedra.** Integer edge-intersection counts instead of vertex signs — resolves features finer than one cell. The differentiator; do it after the usual suspects are solid. | L | A-003 |
+| ☐ | **A-014b** | **Subgrid MT — boundary curves and the surface fill.** Reconstruct the curves on a tet's boundary from arbitrary edge coordinates (§3.1), then fill them with an intersection-free surface using the paper's Steiner-point rules (§3.2–3.3). **Acceptance:** conforming across tet boundaries by construction, asserted on a two-tet fixture; and a configuration that `decompose` rejects still meshes. A-014a's `decompose` returning `None` is exactly the signal that this path is needed, and 95.6% of normal configurations with counts up to 3 are in that state (M-67). | L | A-014a |
+| ☐ | **A-014c** | **All-roots edge finding, and the extractor.** §4.3.2 — find *every* zero along a grid edge, exactly for analytic fields or by 1D sampling for black-box ones, then wire A-014b into an extractor. **Acceptance:** `thin_plate` at a resolution where greedy quads returns zero triangles comes back with the sheet. Note §1.3: 1D marching *"can of course miss intersections, [but] we are no worse off than classic marching"* — so the sampled path is a legitimate primary, not a fallback. | L | A-014b |
 | ☐ | **A-002b** | **Marching Cubes 33 interior ambiguity — the trilinear body saddle.** Deliberately deferred at A-002, on evidence, not forgotten. Three reasons. (1) `catalog-v2.md:107` is explicit: *"Skip the interior test; spend the budget on chunk seams"* — a game needs topological *consistency*, which A-001 already has, over *correctness*. (2) **There is no correct published table to transcribe.** Custodio et al. 2013 (`10.1016/j.cag.2013.04.004` §5.1) prove Chernyaev's interior test tracks a quadratic where the true saddle trajectory is hyperbolic with an asymptote, so case 13.5.2 is misread as 13.5.1 — counterexample values in their Appendix A — and Lewiner's reference implementation omits disambiguation for cases 10 and 12 entirely. Rule 5 forbids inventing the missing one. (3) The v1 catalog prices it: the decider is *"~free"*, the guaranteed version is **730 subcases in the LUT**. Also needs cell-interior vertices for tunnels, which the grid-edge-keyed vertex cache has no slot for. **Acceptance:** a cell where the body saddle says "tunnel", meshed as a tunnel, with the sign tracked by Custodio's correction rather than Chernyaev's `F(t)`. | L | A-002 |
 
 ---
@@ -131,7 +132,7 @@ the point** — they're how someone decides whether this crate is usable.
 | ☐ | **E-105** | `marching_tetrahedra` — same field, much higher triangle count | A-003 |
 | ☐ | **E-106** | `greedy_quads` — the blocky path, quads before/after merge | A-005 |
 | ☐ | **E-107** | `transvoxel_seams` — two LODs adjacent, toggle transition cells. **Commit both screenshots.** | A-011b |
-| ☐ | **E-108** | `subgrid_features` — letters carved thinner than a voxel; toggle and watch them vanish | A-014 |
+| ☐ | **E-108** | `subgrid_features` — letters carved thinner than a voxel; toggle and watch them vanish | A-014c |
 | ☐ | **E-109** | `sharp_features` — live slider on the normal-deviation threshold, through to over-sharpening | A-007 |
 | ☐ | **E-110** | `qef_clamp` — clamp toggle, live self-intersections/1k, offending triangles in red | A-009 |
 | ☐ | **E-112** | `precision_f32_vs_f64` — same field at ~1e6 offsets; f32 cracks, f64 doesn't. Condition number in the HUD. | A-007 |
