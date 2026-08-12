@@ -26,4 +26,5 @@
 //! across a real full-resolution/half-resolution chunk pair.
 
 pub mod cell;
+pub mod inset;
 pub mod table;

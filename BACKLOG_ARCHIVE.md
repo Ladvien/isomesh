@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-48 tickets. Line numbers are stable until something above them is edited — grep the ID if
+49 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -310,3 +310,9 @@ implementation contradicted the ticket.
 | | | ***Two winding tests were written before either meant anything***, both reporting the identical count in both fan orders because they dotted a face normal against a gradient exactly perpendicular to it. That earned a method rule: **a test that gives the same answer when you invert what it tests is not measuring it**, and flipping the code and re-running is the cheapest check that a test has power at all. |
 | | | *A-011c was referenced in M-74 as a dependency and then **not** created, because that reading was wrong:* the gap closes at zero width, so the width is a follow-up after all. A-011c now exists as the shading ticket, carrying Eq 4.2 and the per-face-mesh API consequence. |
 | | | *One centroid fan per cycle, which is A-015's rule and matters more here than on a cube:* a transition cell sits between two differently-resolved blocks, which is exactly where a chord two cells could both name is likeliest. |
+| ☑ | **A-011c** | **Transvoxel transition width in a chunked renderer.** Equation 4.2 — the coarse block's boundary cells scaled inward to make room for the transition cells. **Acceptance:** the seam still shows zero gaps at `w(k) = 2^(k−2)`, and the patch normals are no longer perpendicular to the surface. | M | A-011b, G-004 |
+| | | ***M-77: the level index cancels.*** Equation 4.2 is published in **level-0** cell units, which is where its `2^−k` comes from. Written in the block's *own* cells it becomes `Δ = (1 − c)·w` for `c < 1`, `0` for `1 ≤ c ≤ s − 1`, `(s − 1 − c)·w` beyond — a linear taper across the first and last cell and nothing between, with no level index at all. Measured at `w = 2^(k−2)`: **0 gaps at the fine plane, 0 at the coarse plane**, and the patch's best `\|cos\|` against the surface normal **1.000** against M-74's **0.000** at zero width. |
+| | | *A **post-pass**, and the cancellation is what allows it.* A block does not know which of its neighbours are coarser when it is meshed, and that changes while it is resident — which is exactly why §4.4 stores *two* positions per boundary vertex. Here the primary mesh is the un-inset one and `inset_boundary` produces the secondary from it, so extraction never has to know. |
+| | | *The coincidence the seam rests on:* a vertex at `c = 0` moves by **exactly** `w`, which is precisely the displacement `TransitionCell` gives its half-resolution face. Not approximately — the same quantity, added once on each side. |
+| | | *Only selected faces taper.* A face with no coarser neighbour must not move, or the block pulls away from a same-resolution neighbour and opens a seam where there was none — asserted, because it is the obvious thing to get wrong when the six faces are handled as one. |
+| | | *Normals are deliberately left alone.* The taper is a shear of at most `w` over one cell; re-deriving normals from it would report the shear's geometry rather than the field's. A caller wanting otherwise says so through `normals::recompute`. |

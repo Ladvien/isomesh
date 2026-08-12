@@ -14,12 +14,12 @@
 
 ## Status
 
-Early. Six extraction algorithms, three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, and a Bevy bridge. Forty-eight tickets done, thirty-three open.
+Early. Six extraction algorithms, three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, and a Bevy bridge. Forty-nine tickets done, thirty-two open.
 
 | | |
 |---|---|
 | **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **six-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · Bevy 0.19 bridge |
-| **Not yet** | Marching Cubes 33's interior test · subgrid Marching Tetrahedra *(encoding done, reconstruction not)* · Transvoxel *(seams close; the shading width needs Eq 4.2)* · chunk streaming · convex decomposition · GPU path |
+| **Not yet** | Marching Cubes 33's interior test · subgrid Marching Tetrahedra *(encoding done, reconstruction not)* · chunk streaming · convex decomposition · GPU path |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
 Not published to crates.io. Version `0.0.0`.
@@ -372,7 +372,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 377 tests, plus 10 doctests
+cargo test -p isomesh                    # 382 tests, plus 10 doctests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
