@@ -64,3 +64,8 @@ test = false
 name = "resolution_sweep"
 harness = false
 test = false
+
+[[bench]]
+name = "shootout"
+harness = false
+test = false
