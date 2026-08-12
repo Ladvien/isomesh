@@ -14,11 +14,11 @@
 
 ## Status
 
-Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty-six tickets done, forty-six open.
+Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty-seven tickets done, forty-five open.
 
 | | |
 |---|---|
-| **Working** | Marching Cubes · Surface Nets · **Dual Contouring** · Hermite data · mesh validity harness · accuracy harness · chunk coordinates · self-intersection counter · determinism harness · seven reference fields · property-test scaffolding · Bevy 0.19 bridge |
+| **Working** | Marching Cubes · Surface Nets · **Dual Contouring** · Hermite data · mesh validity harness · accuracy harness · chunk coordinates · dirty-set re-meshing · self-intersection counter · determinism harness · seven reference fields · property-test scaffolding · Bevy 0.19 bridge |
 | **Not yet** | MC33 · marching tetrahedra · greedy quads · LOD / Transvoxel · vertex welding · colliders · GPU path · benchmarks |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
@@ -181,7 +181,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 227 tests
+cargo test -p isomesh                    # 234 tests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh

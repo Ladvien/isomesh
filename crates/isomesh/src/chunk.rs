@@ -32,6 +32,8 @@
 //! The corresponding gate change is that a per-chunk mesh is held to
 //! `is_manifold`, never `is_closed`.
 
+pub mod dirty;
+
 use crate::{Real, RuntimeShape3};
 
 /// Integer coordinates of a chunk on the chunk lattice.
