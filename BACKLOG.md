@@ -1,8 +1,13 @@
 # isomesh — BACKLOG
 
-**Updated:** 2026-08-11
-**Companions:** `CLAUDE.md` (rules), `docs/2026-08-11-implementation-brief.md` (the how),
+**Updated:** 2026-08-12
+**Companions:** `CLAUDE.md` (rules), `FINDINGS.md` (what we know and how well),
+`BACKLOG_ARCHIVE.md` (completed tickets + why they changed),
+`docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
+
+**35 tickets archived, 41 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+attached — read that before re-litigating a decision this project already made.
 
 ---
 
@@ -15,6 +20,11 @@
 4. If a ticket can't be finished, leave it unchecked, add a `> BLOCKED:` line under it saying exactly
    what's in the way, and move to the next unblocked ticket. Do not half-finish and check the box.
 5. If a ticket turns out to be wrong or to need splitting, edit it and say so in the commit.
+6. **On completion, move the row to `BACKLOG_ARCHIVE.md`** with an indented annotation recording any
+   amendment, deviation or falsified premise. The annotation is the point; the checkmark is not.
+7. **New tickets** slot in by dependency, not by number. A ticket split after the fact takes a letter
+   suffix (`T-005a`/`T-005b`, `A-002`/`A-002b`); a genuinely new one takes the next free number in its
+   series even if that puts it out of numeric order (`A-015`).
 
 ### Definition of done — applies to every ticket
 
@@ -28,30 +38,34 @@
 - Any perf claim has a committed benchmark that produced it.
 - Public items have doc comments. Anything with a sign convention, a coordinate order, or a winding
   order says so **in the doc comment**, not in a code comment.
+- **`FINDINGS.md` updated in the same commit** if the ticket measured something, contradicted
+  something written down, or earned a method rule. A measurement that only exists in a commit message
+  is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
 
 ---
 
-## Phase 0 — Foundation and the test harness
+## Phase 0 — Foundation and the test harness ✅ complete
 
-Everything downstream is cheap if this is right and expensive if it isn't. **Do not start Phase 1
-before T-001 passes** — an algorithm without a validity harness is an algorithm you can't trust.
-
-| | ID | Ticket | Size | Blocked by |
-|---|---|---|---|---|
+All eleven tickets archived (I-001..I-004, T-001..T-008). The bet paid: every algorithm since has
+been cheap to validate because the harness predated it.
 
 ---
 
 ## Phase 1 — The usual suspects
 
-Each algorithm ticket is done when: it passes T-001 with zero violations on all seven test fields, at
-three resolutions; T-004 determinism passes; T-005 covers it; and a benchmark exists.
+Each algorithm ticket is done when: T-001 reports **no unexplained violations** on all seven test
+fields at three resolutions; T-004 determinism passes; T-005 covers it; and a benchmark exists.
+
+> **Amended 2026-08-12.** This originally said "zero violations on all seven fields." M-4 falsified
+> that as a universal gate: Surface Nets is *legitimately* non-manifold where one cell carries two
+> sheets (48 edges on capped gyroid, 15 on fbm_terrain), and those counts are pinned as **non-zero
+> assertions** precisely so they can't drift silently. A known defect with a pinned number and a
+> ticket that owns it (A-010) satisfies this gate. An unexplained one does not.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **A-003** | **Marching Tetrahedra.** 6-tet decomposition of the cube (document which one — the choice affects the output). Unambiguous by construction, so this is the topological reference the others get compared against. Expect a large triangle count; record it. | M | A-001 |
-| ☐ | **A-005** | **Greedy quads / blocky.** Binary occupancy, per-face masks, greedy merge. The budget end of the tradeoff table and the comparison baseline for triangle counts. | M | T-001 |
 | ☐ | **A-010** | **Manifold Dual Contouring.** Vertex splitting so each cell can emit >1 vertex where topology demands it. **Acceptance:** `non_manifold_edges == 0` on `gyroid` and `csg_difference`, where plain Dual Contouring will not manage it. | L | A-007 |
 | ☐ | **A-011** | **Transvoxel transition cells.** Half-resolution transition cells at LOD boundaries. **Acceptance:** two adjacent chunks at differing LOD produce zero boundary gaps — assert on the geometry, then confirm visually in E-107. | L | A-001 |
 | ☐ | **A-012** | **Normal estimation strategies.** Analytic gradient / central differences / area-weighted face normals, selectable. **Acceptance:** all three produce unit-length normals; analytic and central-difference agree within tolerance on `sphere`. | S | A-001 |
@@ -121,10 +135,9 @@ These use the algorithms the way a game does: chunked, edited, budgeted, collide
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **M-001** | **`bench_shootout`** — Marching Cubes / Marching Cubes 33 / Surface Nets / Dual Contouring / MT, identical fields and grids, one process, one run. Table: ms, verts, tris, non-manifold edges, self-int/1k, Hausdorff. CSV to `docs/measurements/`. **This comparison does not exist in the literature for post-2020 hardware.** | M | A-001..A-004, T-006 |
 | ☐ | **M-002** | **`bench_resolution_sweep`** — 16³→256³, live plot, fits `t = a + b·n³`, **prints `a`**. Expect a large fixed cost at small grids and stop trusting single-grid numbers thereafter. | S | T-006 |
-| ☐ | **M-003** | **`bench_stage_breakdown`** — stacked bar: contour / normals / weld / collider / upload. Published comparison: contouring 68 ms vs halfedge construction 58 ms — **the contour was 54% of a usable mesh.** Find your ratio before optimizing anything. | M | G-005, M-001 |
-| ☐ | **M-004** | **Write up M-001..M-003** as `docs/research/YYYY-MM-DD-measured-comparison.md`. Numbers, method, hardware, and what surprised you. This is publishable on its own. | S | M-003 |
+| ☐ | **M-003** | **`bench_stage_breakdown`** — stacked bar: contour / normals / weld / collider / upload. Published comparison: contouring 68 ms vs halfedge construction 58 ms — **the contour was 54% of a usable mesh.** Find your ratio before optimizing anything. | M | G-005, M-001a |
+| ☐ | **M-004** | **Write up M-001a..M-003** as `docs/research/YYYY-MM-DD-measured-comparison.md`. Numbers, method, hardware, and what surprised you. This is publishable on its own. | S | M-003 |
 
 ---
 
@@ -136,7 +149,7 @@ numbers, or you won't be able to tell what the port bought you.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **GPU-001** | `isomesh-gpu` skeleton, `wgpu 29.0.3`. Public API takes `&wgpu::Device` / `&Queue` / `&mut CommandEncoder`. **Never a Bevy type.** | M | M-001 |
+| ☐ | **GPU-001** | `isomesh-gpu` skeleton, `wgpu 29.0.3`. Public API takes `&wgpu::Device` / `&Queue` / `&mut CommandEncoder`. **Never a Bevy type.** | M | M-001a |
 | ☐ | **GPU-002** | Shader composition: `include_str!` + ~40-line `#include`/`#ifdef` preprocessor. **Not `naga_oil`** — see `CLAUDE.md`. | S | GPU-001 |
 | ☐ | **GPU-003** | naga CI validation of every shader permutation. No GPU required. ~30 lines, highest value-per-line in the repo. | S | GPU-002 |
 | ☐ | **GPU-004** | Compute-shader Marching Cubes + readback. **Headless harness first, no Bevy in the room** — if it can't run against raw wgpu, the abstraction leaked. | L | GPU-003 |
@@ -153,7 +166,11 @@ Recorded so they don't get picked up early, and so it's clear they weren't forgo
 
 - Nanite-style mesh-space cluster simplification — the research concludes it can't be repaired
   edit-proportionally (no local validity certificate). Field-derived LOD is the bet instead.
-- Networked/concurrent editing — depends on G-003's commutativity result landing first.
+- Networked/concurrent editing — **precondition resolved.** G-003 landed with commutativity measured
+  over all 40,320 orderings; record the verdict here and promote this to a real ticket or close it out
+  explicitly. Leaving it as a pending "depends on" after the dependency has landed is how a decision
+  gets silently dropped.
 - Neural / differentiable extraction (FlexiCubes, TetWeave) — different problem, different crate.
-- Publishing to crates.io — **but reserve the name with a 0.0.0 placeholder early.** `megamesh` was
-  taken 48 hours before we checked.
+- Publishing to crates.io. **But `I-005 — reserve the name` is now overdue, not deferred.** Publish a
+  `0.0.0` placeholder. `megamesh` was taken 48 hours before we checked it; `isomesh` has been sitting
+  unreserved for a day with a public repo pointing at it. Ten minutes, unbounded downside.

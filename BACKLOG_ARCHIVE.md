@@ -7,7 +7,53 @@ outright contradicted during implementation, and the reason is recorded on the r
 the commit log. Where a ticket's premise turned out to be false, `FINDINGS.md` carries the falsified
 entry and this file carries what the ticket did about it.
 
-**Archived:** 2026-08-11
+**Archived:** continuously since 2026-08-11. Rows are in completion order, not numeric order.
+
+## Index
+
+35 tickets. Line numbers are stable until something above them is edited — grep the ID if
+they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
+implementation contradicted the ticket.
+
+| ID | What it was |
+|---|---|
+| [`I-001`](#L14) | Workspace skeleton |
+| [`I-002`](#L16) | Core traits |
+| [`I-003`](#L18) | Shared test fields |
+| [`T-001`](#L21) | Mesh validity harness |
+| [`T-002`](#L24) | Self-intersection counter |
+| [`T-004`](#L27) | Determinism harness |
+| [`T-005a`](#L30) | Property-test scaffolding |
+| [`I-004`](#L32) | CI |
+| [`A-001`](#L35) | Marching Cubes |
+| [`A-004`](#L39) | Surface Nets |
+| [`B-001`](#L42) | Crate skeleton |
+| [`B-002`](#L44) | `MeshSink` → Bevy `Mesh` |
+| [`B-004`](#L45) | `examples/common/` |
+| [`A-006`](#L51) | Hermite data extraction |
+| [`T-003`](#L52) | Accuracy harness |
+| [`T-005b`](#L58) | Property tests over extraction |
+| [`T-006`](#L66) | Benchmark harness |
+| [`A-007`](#L79) | Dual Contouring — the vertex solve |
+| [`A-009`](#L86) | The cell clamp + measurement |
+| [`T-008`](#L99) | Quantise the weld lattice relative to the mesh, not to the world origin |
+| [`T-007`](#L104) | Golden-hash regression |
+| [`G-001`](#L111) | Chunk abstraction |
+| [`G-002`](#L119) | Dirty-set re-meshing |
+| [`G-003`](#L126) | Brush operations |
+| [`A-002`](#L134) | Marching Cubes 33 / asymptotic decider |
+| [`A-015`](#L147) | Chord-free cycle triangulation |
+| [`N-001`](#L155) | Spell the algorithm names out |
+| [`A-013`](#L161) | Vertex welding and dedup |
+| `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
+| `E-103` | *(title not auto-extracted — grep `**E-103**`)* |
+| `E-111` | *(title not auto-extracted — grep `**E-111**`)* |
+| `E-104` | *(title not auto-extracted — grep `**E-104**`)* |
+| `E-102` | *(title not auto-extracted — grep `**E-102**`)* |
+| `E-115` | *(title not auto-extracted — grep `**E-115**`)* |
+| `E-202` | *(title not auto-extracted — grep `**E-202**`)* |
+
+---
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
@@ -180,3 +226,26 @@ entry and this file carries what the ticket did about it.
 | | | ***`ISOMESH_AUTOCARVE` exists because a screenshot cannot click.*** The acceptance criterion is about what happens while someone is holding the mouse down, so without a scripted path the example could have been committed compiling, rendering, and silently not carving at all. It drives the same code path a click does, prints one line per edit, and the committed screenshot is of a tunnel that was actually dug. |
 | | | ***A claim in the module docs was wrong and the measurement corrected it.*** "Every field sample walks the whole log, so ms/edit grows with it" is true about the mechanism and implies proportionality that does not hold. Measured over 60 carves, median ms per re-meshed chunk: **0.158 / 0.354 / 0.525 / 0.589** for logs of 1–15 / 16–30 / 31–45 / 46–60 — **3.7× for 7× the log, and flattening.** The docs now carry the table and stop short of claiming why, which has not been measured. |
 | | | *Two API additions, each with a first consumer rather than a guess.* `ChunkLayout::cell_of` converts a world point to a global cell index, which is what `mark_edit` takes and what every brush-driven edit needs; writing `floor((p − origin)/h)` by hand at each call site is the arithmetic M-32 is about. Its test caught immediately that it does **not** round-trip through a cell corner at a non-power-of-two spacing (M-49). And the spacing here is `0.125` deliberately: each chunk is its own `Mesh3d` with no weld, so it uses the power-of-two case where M-32 says the seam is already exact. |
+| ☑ | **A-003** | **Marching Tetrahedra.** 6-tet decomposition of the cube (document which one — the choice affects the output). Unambiguous by construction, so this is the topological reference the others get compared against. Expect a large triangle count; record it. | M | A-001 |
+| | | ***Derived, because there was nothing to transcribe.*** Doi & Koide 1991 has no DOI, is not in the local corpus and could not be obtained — the same situation as A-001 and the same answer. The decomposition is **Kuhn's / Freudenthal's**: the six monotone paths from corner 0 to corner 7, one per axis ordering, every one containing the main diagonal. Winding is computed rather than tabulated, by cross product against the direction away from an inside corner in doubled integer coordinates, so it is exact at compile time; a separate test recomputes it from the geometry independently. |
+| | | ***The five-tetrahedron tiling is rejected for a reason, not a preference.*** It is cheaper and **chiral** — neighbours must alternate handedness or their shared face is split by two different diagonals, which is a crack. Kuhn's needs no alternation: this cell splits its `+x` face on `1–7` and the next splits its `−x` face on `0–6`, and those are the same two world points. Asserted on all three axes. |
+| | | ***Both published figures are wrong for this implementation (M-51).*** "2–3× more vertices" measures **2.86–3.91×** and covers only the two roughest fields; `box_exact` is 3.91×. Lewiner et al.'s "weaker geometrical accuracy" measures **4.3%** — symmetric Hausdorff `1.4386e-3` against Marching Cubes' `1.3798e-3` on a unit sphere at 64³. So the trade is **~3× the triangles for ~4% worse geometry**, sharper than either source gives. The Marching Cubes figure reproduces M-10's `1.380e-3` exactly. |
+| | | ***P-1 was confirmed where its assumption holds and exceeded where it does not, and two attempts to explain the gap both failed (M-52, O-15).*** Orientation does not move the ratio — four plane orientations agree within 1%. Curvature does not either — a sphere swept 0.3 to 1.8 converges *down* onto P-1's 2.99 as it flattens, where flatness ought to push it toward the plane's 3.94. A plane and a large sphere are the same shape at cell scale and differ by 30%. Recorded as an open question rather than a third guess. |
+| | | *It takes the strict `SurfaceGate::Closed` in the property suite, and here that is structural rather than observed:* a tetrahedron's four values determine its linear interpolant, so there is no ambiguity to resolve and no fan to choose. That is what makes it the topological reference the others are compared against — worth having after a session that found two topology defects in Marching Cubes by reasoning about one algorithm against itself. |
+| | | *Golden fixture 84 → 105 rows. The resolution sweep gets an `Extractor` impl and is deliberately **not** wired into its `main()`:* adding a row would rewrite the committed CSV that ✗14, M-19, M-20, M-21, M-22 and O-11 all quote exact figures from. That re-measurement belongs to **M-001**, which A-003 now unblocks. |
+| ☑ | **M-001a** | **`bench_shootout` — the four that already exist.** Marching Cubes / Marching Cubes 33 / Surface Nets / Dual Contouring, identical fields and grids, one process, one run. Table: ms, verts, tris, non-manifold edges, self-int/1k, Hausdorff. CSV to `docs/measurements/`. **Split out 2026-08-12: this is unblocked today.** The comparison does not exist in the literature for post-2020 hardware, and Surface Nets has no credible published timings at all (V-17) — there is no reason for the publishable result to wait on a fifth algorithm that is a baseline rather than a contender. | M | A-007, T-006 |
+| ☑ | **M-001b** | **Add the Marching Tetrahedra row** to the shootout, and settle O-13 / O-14 against their pre-registered values (3.0× vertices; ≈2.6e-3 Hausdorff at 64³). | S | M-001a, A-003 |
+| | | *Done together, because the split's premise expired.* M-001a was carved out on the grounds that "there is no reason for the publishable result to wait on a fifth algorithm" — A-003 landed the same day, so the bench was written with the Marching Tetrahedra row from the start and both tickets close on one commit. |
+| | | ***The headline is that Marching Cubes wins the property nobody credits it with (M-53).*** Seven fields, two grids, one process: it and the decider are the only entries with **both** zero non-manifold edges and zero self-intersections. Marching Tetrahedra is manifold and self-intersects (3.405 per 1k on `csg_difference`); Surface Nets is intersection-free and non-manifold (128 edges); Dual Contouring is neither. Three of the four corners of that 2×2 are occupied, and the crude baseline holds the good one. |
+| | | ***Dual Contouring wins the property it was built for by two orders of magnitude (M-54).*** Symmetric Hausdorff at 65³ against Marching Cubes: `box_exact` **101×**, `thin_plate` **77.9×**, `csg_difference` 3.7× — and `sphere` 1.2×, `torus` 1.6×. Two orders of magnitude exactly where the features are sharp and nothing at all where they are not. |
+| | | ***O-13 confirmed exactly, O-14 falsified (M-55).*** The vertex ratio is `3.036 / 3.026 / 3.003` at 33/49/65³, converging from above onto the predicted 3.0. The Hausdorff prediction of `2.6e-3` and `1.86×` measures **1.4386e-3** and **1.043×** — and Marching Tetrahedra beats Surface Nets (2.251e-3) rather than losing to it. The clause flagged as counterintuitive, "more vertices **and** worse accuracy", is the half that does not hold. |
+| | | *Three cross-checks that this table measures what earlier tickets measured.* Dual Contouring's `13.837` and `3.118` per 1k reproduce **M-28**'s clamped `fbm_terrain` and `gyroid` exactly; Surface Nets' triangle ratio of `0.977–1.001` is **✗1**'s `F_sn = F_mc + 2χ` from the other side; Marching Tetrahedra's `2.902–3.937` spread is **M-52**'s octant rule. |
+| | | *Two columns are conditional on the fields' own metadata, not the bench's opinion.* Hausdorff only where `is_exact_distance()` — the quantity T-003 computes against `gyroid` is not a distance and printing it would invent a number. Self-intersection at 33³ only: an all-pairs test behind a broadphase, against meshes carrying up to ~126,000 triangles. |
+| | | *The timing column is deliberately the weaker one and says so in the module docs.* Three timed runs across 70 points, so it is a few percent noisy — the decider reads 0.89× on `sphere` where it must be 1.00×. `resolution_sweep` stays the timing authority and this is the topology authority. What the column does support is the shape: the decider is free (M-42), and **Surface Nets is slower than Marching Cubes on every field**, which is ✗14 arriving a third time. |
+| ☑ | **A-005** | **Greedy quads / blocky.** Binary occupancy, per-face masks, greedy merge. The budget end of the tradeoff table and the comparison baseline for triangle counts. | M | T-001 |
+| | | ***The published `2.76×` is one scene's number, and the range is `1.70×` to `256×` (M-56).*** Same occupancy, merge on against merge off: `gyroid` 1.70×, `sphere` 1.94×, `torus` 2.69×, `fbm_terrain` 4.60×, `csg_difference` 10.64×, `box_exact` **256×** — six quads at every resolution, 12 triangles at 17³, 33³ and 65³ alike. Predicted before running that it would not reproduce as a constant and that a box would collapse while a sphere would not. Third source in this repo whose single figure turns out to be field-dependent, after ✗14 and M-51. |
+| | | ***Greedy merging manufactures T-junctions and no weld removes them (M-57).*** Split vertices are deliberate — a cube corner has three normals — so the raw buffer is open: five edges per merged quad, four unshared. A-013's weld closes it wherever quads meet corner to corner and **cannot** close a T-junction, because the vertex where several short quads meet does not exist on the long quad's edge. Sphere at 33³: boundary `2568 → 768`, 70% closed. `box_exact`: `24 → 0`, closed, `χ = 2` — the control that makes this a mechanism rather than an observation. |
+| | | *So the T-001 gate is met conditionally and the condition is stated rather than waived:* welded, and on a field whose merge leaves no T-junctions. That is the honest reading of "passes the validity suite" for an algorithm whose output is deliberately not a manifold index buffer, and it is why the tests weld before validating instead of asserting on the raw output. |
+| | | *One sample per cell centre, not eight corners.* A blocky mesher's premise is that a cell is one thing; asking eight corners and reducing them to one bit would be doing Marching Cubes' work and discarding the answer. The consequence is measured rather than assumed: `thin_plate` is 0.4 cells thick and comes back with **zero triangles**, because no cell centre is inside it. A feature thinner than a cell does not exist to this algorithm. |
+| | | *The domain boundary is capped* — a cell outside the grid counts as empty, so a solid cell at the edge emits a face. That differs from every other extractor here, which lets the surface leave through the sides, and it is correct for this one: a blocky mesh of a half-filled box is a closed box. `fbm_terrain` therefore comes back closed here and open under Marching Cubes, which is a difference in what the algorithms are. |
+| | | *Normals cost nothing:* `±1` on one axis, exactly, with no gradient evaluation anywhere, where every other extractor calls `Sdf::gradient` once per vertex. Golden fixture 105 → 126 rows. Not added to M-001's shootout: it meshes a **different surface**, so its Hausdorff against the true isosurface is not comparable with the others' and a row there would invite exactly the wrong comparison. |
