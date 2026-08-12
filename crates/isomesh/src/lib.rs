@@ -54,6 +54,8 @@ pub mod sn;
 pub mod validate;
 
 #[cfg(test)]
+mod golden;
+#[cfg(test)]
 mod property;
 
 mod cube;

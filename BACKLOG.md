@@ -37,7 +37,6 @@ before T-001 passes** — an algorithm without a validity harness is an algorith
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **T-007** | **Golden-hash regression.** Stable hash of (positions, normals, indices) for each (algorithm, field, resolution). Committed as a JSON fixture. **Acceptance:** a deliberate one-bit change to a case table fails the test with a useful message naming which combination drifted. | S | T-004 |
 
 ---
 

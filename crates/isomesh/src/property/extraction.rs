@@ -223,7 +223,7 @@ proptest! {
 /// extractor does not take a table parameter, and
 /// [`the_double_reproduces_marching_cubes`] for the guard that keeps this
 /// honest.
-fn march_with_table<S: Sdf<Scalar = f64>>(
+pub(crate) fn march_with_table<S: Sdf<Scalar = f64>>(
     sdf: &S,
     shape: &RuntimeShape3,
     origin: [f64; 3],

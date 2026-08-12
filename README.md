@@ -14,7 +14,7 @@
 
 ## Status
 
-Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty-four tickets done, forty-eight open.
+Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty-five tickets done, forty-seven open.
 
 | | |
 |---|---|
@@ -143,6 +143,7 @@ Every extraction algorithm ships with these before it counts as done. They are o
 | Edge orientation consistency | a single flipped triangle, which passes χ *and* both manifold checks while being inside out |
 | Self-intersections per 1,000 triangles | reported as a rate, never as a fraction-of-meshes, which saturates with chunk size |
 | Determinism | compared bit-wise via `total_cmp`, because `==` is wrong in both directions on floats |
+| Golden hashes over 63 (algorithm, field, resolution) combinations | a change that is topologically identical, geometrically indistinguishable and statistically invisible — the silent diff every other check shrugs at |
 | Signed volume | global inversion, which nothing else here can see |
 | Hausdorff distance, both directions, and mean absolute error | a mesh that is perfectly valid and in the wrong place. Only the reverse direction sees *missing* geometry — deleting one face of a test octahedron leaves the forward number bit-identical |
 
@@ -180,7 +181,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 213 tests
+cargo test -p isomesh                    # 218 tests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh

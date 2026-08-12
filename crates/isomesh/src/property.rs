@@ -34,7 +34,7 @@ use crate::validate::{
 use crate::vec3;
 use crate::{Real, RuntimeShape3, Sdf, Shape3};
 
-mod extraction;
+pub(crate) mod extraction;
 
 /// Half-extent of the box every generated field lives inside.
 const DOMAIN: f64 = 2.0;
