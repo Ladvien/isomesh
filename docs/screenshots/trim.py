@@ -7,7 +7,7 @@ margin, top-anchored, so the HUD and the meshes are both kept.
 import sys
 from PIL import Image
 
-def trim(path, out, margin=48):
+def trim(path, out, margin=72):
     im = Image.open(path).convert("RGB")
     w, h = im.size
     bg = im.getpixel((w - 4, h - 4))          # a corner that is always empty
@@ -15,9 +15,12 @@ def trim(path, out, margin=48):
     last = 0
     for y in range(h):
         row_has_content = False
-        for x in range(0, w, 4):              # every 4th column is plenty
+        for x in range(0, w, 2):              # every 2nd column
             p = px[x, y]
-            if abs(p[0]-bg[0]) + abs(p[1]-bg[1]) + abs(p[2]-bg[2]) > 12:
+            # A low threshold on purpose: a dark wireframe edge against a dark
+            # background is exactly the content most likely to be clipped, and the
+            # first version of this script clipped it.
+            if abs(p[0]-bg[0]) + abs(p[1]-bg[1]) + abs(p[2]-bg[2]) > 6:
                 row_has_content = True
                 break
         if row_has_content:

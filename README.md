@@ -194,6 +194,10 @@ No paper since 2020 benchmarks Marching Cubes against Surface Nets against Dual 
 
 Three of the four corners of that 2×2 are occupied, and **the crude baseline holds the good one**. What Dual Contouring buys instead is accuracy exactly where the features are sharp — symmetric Hausdorff at 65³ against Marching Cubes: `box_exact` **101×** better, `thin_plate` **77.9×**, against `sphere` **1.2×** and `torus` **1.6×**. Two orders of magnitude on a corner and nothing at all on a sphere.
 
+![The same sphere wireframed under Marching Cubes and Marching Tetrahedra](docs/screenshots/e105-marching-tetrahedra-sphere.png)
+
+*`marching_tetrahedra` — one sphere, one 17³ grid, two algorithms. 270 vertices against 830, 536 triangles against 1,656. The wireframe is on by default because that is the only place the difference lives.*
+
 Marching Tetrahedra costs **2.87–3.91×** the triangles — the published "2–3×" covers only the two roughest fields — for **4.3%** worse geometry, where the source it is usually attributed to reads far stronger than that. And it is *better* than Marching Cubes on sharp fields, because its extra edge families sample a corner from more directions.
 
 ```bash
@@ -327,6 +331,7 @@ cargo run --example surface_nets_vs_marching_cubes --release    # the second and
 cargo run --example dual_contouring_cube --release              # the sharp-feature comparison
 cargo run --example manifold_check --release                    # the red marks, and A to make them go
 cargo run --example normal_estimation --release                 # three identical meshes, three shadings
+cargo run --example marching_tetrahedra --release               # 3x the triangles, and what they buy
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires

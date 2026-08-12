@@ -129,7 +129,6 @@ the point** — they're how someone decides whether this crate is usable.
 
 | | ID | Example | Blocked by |
 |---|---|---|---|
-| ☐ | **E-105** | `marching_tetrahedra` — same field, much higher triangle count | A-003 |
 | ☐ | **E-106** | `greedy_quads` — the blocky path, quads before/after merge | A-005 |
 | ☐ | **E-107** | `transvoxel_seams` — two LODs adjacent, toggle transition cells. **Commit both screenshots.** | A-011b |
 | ☐ | **E-108** | `subgrid_features` — letters carved thinner than a voxel; toggle and watch them vanish | A-014c |
