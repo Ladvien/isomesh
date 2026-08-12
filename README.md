@@ -14,12 +14,12 @@
 
 ## Status
 
-Early. Six extraction algorithms, a validity harness, an accuracy harness, a measured shootout between them, and a Bevy bridge. Forty-one tickets done, forty open.
+Early. Six extraction algorithms, three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, and a Bevy bridge. Forty-two tickets done, thirty-six open.
 
 | | |
 |---|---|
 | **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **five-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · Bevy 0.19 bridge |
-| **Not yet** | Marching Cubes 33's interior test · subgrid Marching Tetrahedra · LOD · Transvoxel *(case table done, extraction not)* · colliders · normal-estimation strategies · GPU path |
+| **Not yet** | Marching Cubes 33's interior test · subgrid Marching Tetrahedra · LOD · Transvoxel *(case table done, extraction not)* · colliders · GPU path |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
 Not published to crates.io. Version `0.0.0`.
@@ -148,6 +148,24 @@ Three things this measured that were not what the tickets predicted:
 - **The cost is zero on five of the seven fields**, and about **5%** of the run time on the other two. Only `gyroid` and `fbm_terrain` ever need a second vertex in a cell, and their rate *falls* with resolution — 3.13% → 2.05% → 0.53% at 17³/25³/33³. Nielson's published *"about 1.3%"* counts entries in the case table, not cells in a scene. Triangle counts are unchanged: splitting moves vertices without adding quads.
 - **Self-intersections get worse, not better** — `gyroid` 3.118 → 5.669 per 1,000 triangles, `fbm_terrain` 13.837 → 15.434. The prediction registered before the run said the opposite. Two vertices in one cell is exactly what breaks the within-cell partition the clamp's guarantee rests on, and a 2024 result reporting Manifold Dual Contouring as 100% self-intersecting was on the record the whole time.
 - **A second, unrelated non-manifold mechanism exists.** The dual of a manifold surface is a manifold *complex*, and an index buffer cannot hold two distinct edges between one pair of vertices, so parallel dual edges collapse into one edge with four faces. The property suite found it by shrinking to the exact same three-sphere fixture that falsified unconditional manifoldness for Marching Cubes. It is identified by arithmetic rather than by eye: a collapse costs exactly one edge, so `χ_dual − χ_mc == non_manifold_edges`, measured `1 − 0 == 1` at `h = 2/3` and `0 == 0` at every finer grid.
+
+---
+
+## Which way does the surface face
+
+Three answers, and they are not the same answer. Ask the **field** for its gradient; **difference** the field, which is all a sampled voxel buffer can offer; or take the **area-weighted average of the incident triangles**, which is all a mesh can offer. `normals::recompute` re-derives a finished `MeshBuffer` under any of them, so the choice survives welding and merging instead of being baked in by whichever extractor ran.
+
+Differencing at the cell size — the case a game without an analytic field is stuck with — costs under half a degree, and converges the way it must:
+
+| grid | worst | mean |
+|---|---|---|
+| 17³ | 0.460° | 0.299° |
+| 33³ | 0.121° | 0.079° |
+| 65³ | 0.031° | 0.020° |
+
+Successive ratios 3.76 and 3.92, so `h²`, asserted as a range rather than admired in a log.
+
+The third strategy is where it gets interesting. Area-weighted normals track the field closely on smooth geometry and **cannot** on sharp geometry, because a corner vertex gets the average of three face normals where the field's gradient gives one of them. On a sphere the mean disagreement falls 3.25° → 2.16° → 1.08° across those grids and on a torus 11.65° → 6.07° → 2.45°. On `box_exact` the *worst* disagreement is **35.796° at all three resolutions, identical to six figures** — refining a grid does not soften a corner. That invariance is the assertion; the constant is just the box's corner.
 
 ---
 
@@ -290,7 +308,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 337 tests, plus 10 doctests
+cargo test -p isomesh                    # 345 tests, plus 10 doctests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
