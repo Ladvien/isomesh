@@ -445,33 +445,36 @@ fn the_accuracy_against_marching_cubes_is_measured() {
     assert!(mt_h.is_finite() && mc_h.is_finite());
 }
 
-/// **Orientation does not move the ratio, and curvature does not either.**
+/// **O-15 resolved: the ratio is `4.0` in one octant, `2.0` with a mixed-sign
+/// normal, and P-1's `2.992` is the average over both.**
 ///
-/// P-1 predicts `2.992` by weighting the seven edge families by `E[|n·e|]` over
-/// uniformly random surface orientations. The seven reference fields measure
-/// `2.86–3.91×`, so something separates them, and the two obvious candidates are
-/// both wrong — recorded here because a falsified hypothesis is worth more than
-/// an unexamined one.
+/// P-1 weights the seven edge families by `E[|n·e|]`. Written out for a single
+/// plane of normal `n`, the crossings are `Σ|nᵢ|` on the three axis families,
+/// `Σ|nᵢ + nⱼ|` on the three face diagonals and `|nₓ + n_y + n_z|` on the body
+/// diagonal. When every component shares a sign nothing cancels and those sum to
+/// **exactly `4·Σ|nᵢ|`**, so the ratio is `4.0` for *any* orientation within one
+/// octant. With mixed signs the diagonal terms cancel and it falls to `2.0`.
 ///
-/// **Orientation**: a plane at four orientations, from axis-aligned to generic,
-/// gives `3.919 / 3.939 / 3.945 / 3.943`. Flat within a percent.
+/// That is why the first version of this test found orientation irrelevant: all
+/// four normals it tried lay in one octant, which is a set the answer is
+/// constant on. It also explains the reference-field spread without any new
+/// mechanism — `box_exact`'s faces are axis-aligned single-octant normals
+/// (measured 3.91), a sphere samples every octant (3.04), and `gyroid` sits just
+/// below the isotropic average because its normals favour the cancelling ones.
 ///
-/// **Curvature**: a sphere swept from radius `0.3` to `1.8` on the same grid
-/// gives `3.036 / 3.046 / 3.026 / 2.995 / 2.981` — converging *down* onto P-1's
-/// `2.99` as it flattens, when a locally flatter sphere ought to approach the
-/// plane's `3.94` if flatness were the variable.
+/// **Predicted before running**, from the algebra above: `4.0` for one-octant
+/// normals and `2.0` for mixed-sign ones.
 ///
-/// So a plane sits at `3.94` and a sphere at `3.0` while being locally the same
-/// shape at cell scale, and **nothing measured here explains the gap**. What can
-/// be said is empirical: flat-faced fields (`box_exact` 3.91, `thin_plate` 3.84,
-/// `csg_difference` 3.83) sit at the plane end, smooth closed ones (`sphere` and
-/// `torus` 3.04) at P-1's value, and the rough high-genus ones (`gyroid` and
-/// `fbm_terrain` 2.87) below it. See O-15.
+/// Measured: one-octant `3.919–3.945`, within 2% of the prediction across every
+/// orientation tried. Mixed-sign `1.980–2.265` — the cancellation is confirmed
+/// and the spread is wider, so the continuum model gets the *mechanism* exactly
+/// and carries a discretisation term it does not model. The bound below is set
+/// from the measurement rather than from the prediction, because pretending
+/// otherwise would be fitting the tolerance to the hope.
 #[test]
-fn orientation_does_not_move_the_vertex_ratio() {
+fn the_vertex_ratio_is_four_in_one_octant_and_two_across_a_sign_change() {
     use crate::marching_cubes::MarchingCubes;
 
-    /// A plane through the origin with the given unit normal.
     struct Plane([f64; 3]);
     impl Sdf for Plane {
         type Scalar = f64;
@@ -486,16 +489,10 @@ fn orientation_does_not_move_the_vertex_ratio() {
     let samples = 49u32;
     let h = 4.0 / f64::from(samples - 1);
     let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
-    let inv3 = 1.0 / 3.0f64.sqrt();
     let inv2 = 1.0 / 2.0f64.sqrt();
+    let inv3 = 1.0 / 3.0f64.sqrt();
 
-    let mut ratios = Vec::new();
-    for (name, normal) in [
-        ("axis-aligned  (0,0,1)", [0.0, 0.0, 1.0]),
-        ("face diagonal (0,1,1)", [0.0, inv2, inv2]),
-        ("body diagonal (1,1,1)", [inv3, inv3, inv3]),
-        ("generic", [0.3714, 0.5571, 0.7428]),
-    ] {
+    let measure = |normal: [f64; 3]| -> f64 {
         let field = Plane(normal);
         let mut mc = MeshBuffer::<f64>::new();
         MarchingCubes::<f64>::new()
@@ -505,24 +502,29 @@ fn orientation_does_not_move_the_vertex_ratio() {
         MarchingTetrahedra::<f64>::new()
             .extract(&field, &shape, [-2.0; 3], h, &mut mt)
             .expect("extraction");
-        let ratio = mt.vertex_count() as f64 / mc.vertex_count() as f64;
-        ratios.push((name, ratio));
-        std::println!(
-            "measured: plane {name} -- marching cubes {} verts, marching tetrahedra {} ({ratio:.3}x)",
-            mc.vertex_count(),
-            mt.vertex_count()
-        );
-    }
+        mt.vertex_count() as f64 / mc.vertex_count() as f64
+    };
 
-    // Pinned as *insensitivity*: every orientation within 1% of every other.
-    // This fails if orientation ever starts mattering, which would be the thing
-    // that explains the gap.
-    let lo = ratios.iter().map(|(_, r)| *r).fold(f64::INFINITY, f64::min);
-    let hi = ratios.iter().map(|(_, r)| *r).fold(0.0f64, f64::max);
-    assert!(
-        hi / lo < 1.01,
-        "orientation moved the ratio: {lo:.3} to {hi:.3}"
-    );
-    // And all of them sit at the flat-field end, well above P-1's 2.99.
-    assert!(lo > 3.8, "a plane should cost ~3.9x, got {lo:.3}");
+    let one_octant = [
+        ("axis-aligned  ( 0, 0, 1)", [0.0, 0.0, 1.0]),
+        ("face diagonal ( 0, 1, 1)", [0.0, inv2, inv2]),
+        ("body diagonal ( 1, 1, 1)", [inv3, inv3, inv3]),
+        ("generic       (.37,.56,.74)", [0.3714, 0.5571, 0.7428]),
+    ];
+    let mixed = [
+        ("mixed sign    ( 1,-1, 0)", [inv2, -inv2, 0.0]),
+        ("mixed sign    ( 1, 1,-1)", [inv3, inv3, -inv3]),
+        ("mixed sign    (-1, 1, 1)", [-inv3, inv3, inv3]),
+    ];
+
+    for (name, n) in one_octant {
+        let r = measure(n);
+        std::println!("measured: plane {name} -> {r:.3}x   (predicted 4.0)");
+        assert!((3.8..4.05).contains(&r), "{name}: {r:.3}");
+    }
+    for (name, n) in mixed {
+        let r = measure(n);
+        std::println!("measured: plane {name} -> {r:.3}x   (predicted 2.0)");
+        assert!((1.9..2.35).contains(&r), "{name}: {r:.3}");
+    }
 }
