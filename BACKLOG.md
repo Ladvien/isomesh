@@ -19,6 +19,9 @@
 ### Definition of done — applies to every ticket
 
 - Code compiles with no warnings. `cargo clippy -- -D warnings` clean.
+- **`RUSTDOCFLAGS=-D warnings cargo doc --workspace --no-deps` clean.** A third of the lint job, and
+  the third that clippy and fmt do not cover — it is what catches a doc link pointing at nothing, or
+  at a private item. Added at A-002, which shipped one and found out from CI.
 - `cargo test -p isomesh` green. `cargo fmt` applied.
 - **`grep -ri bevy crates/` returns nothing.** Non-negotiable — see `CLAUDE.md` rule 2.
 - Any algorithm ticket also passes the T-001 validity suite. No exceptions, no "I'll add tests later."

@@ -222,6 +222,13 @@ No GPU needed, runs in CI, catches "works on Metal, explodes on DX12."
 ## Commands
 
 ```bash
+# the lint job, in full. clippy and fmt are two of its three steps; the third
+# catches doc links that point at nothing or at a private item, and nothing else
+# does. Run all three before pushing.
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
+
 # core — must stay tiny
 cargo test -p isomesh
 cargo tree -p isomesh -e normal      # expect: isomesh + libm. Nothing else.
