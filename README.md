@@ -14,12 +14,12 @@
 
 ## Status
 
-Early. Six extraction algorithms, a validity harness, an accuracy harness, a measured shootout between them, and a Bevy bridge. Forty tickets done, thirty-seven open.
+Early. Six extraction algorithms, a validity harness, an accuracy harness, a measured shootout between them, and a Bevy bridge. Forty-one tickets done, forty open.
 
 | | |
 |---|---|
 | **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **five-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · Bevy 0.19 bridge |
-| **Not yet** | Marching Cubes 33's interior test · subgrid Marching Tetrahedra · LOD / Transvoxel · colliders · normal-estimation strategies · GPU path |
+| **Not yet** | Marching Cubes 33's interior test · subgrid Marching Tetrahedra · LOD · Transvoxel *(case table done, extraction not)* · colliders · normal-estimation strategies · GPU path |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
 Not published to crates.io. Version `0.0.0`.
@@ -290,7 +290,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 326 tests, plus 10 doctests
+cargo test -p isomesh                    # 337 tests, plus 10 doctests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
