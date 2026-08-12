@@ -399,3 +399,239 @@ fn cell_of_does_not_wrap_on_a_non_finite_point() {
     assert_eq!(l.cell_of([f64::NAN, f64::INFINITY, 0.0])[0], 0);
     assert_eq!(l.cell_of([f64::NAN, f64::INFINITY, 0.0])[1], 0);
 }
+
+// ─── G-004: field-derived LOD ───────────────────────────────────────────────
+
+/// **The property that makes field-derived LOD free**, and the reason it is a
+/// property rather than a hope.
+///
+/// A level-`k` sample must land **bit-identically** on the level-0 sample `2^k`
+/// times its index. Doubling a float is exact in IEEE and so is doubling a small
+/// integer, so `(h·2^k)·s` and `h·(2^k·s)` are the same real number rounded the
+/// same way — but M-32 and M-49 both caught this crate assuming an algebraic
+/// identity that IEEE did not honour, so it is asserted rather than argued.
+///
+/// If it failed, an LOD boundary would show a crack from coordinate drift alone,
+/// before any transition-cell work (A-011b) had a chance to be wrong.
+#[test]
+fn every_coarse_sample_lands_exactly_on_a_fine_one() {
+    // Exact comparison on purpose: this pins a bit-level coincidence.
+    #![allow(clippy::float_cmp)]
+    for cell_size in [0.125, 4.0 / 35.0, 0.1, 1.0 / 3.0] {
+        let fine = layout(cell_size);
+        for level in 0..4u32 {
+            let coarse = fine.at_lod(level).expect("valid level");
+            let step = 1i64 << level;
+            for s in [-9i64, -1, 0, 1, 5, 33, 128] {
+                let sample = [s, s + 2, s - 3];
+                let at_coarse = coarse.world_of_sample(sample);
+                let at_fine =
+                    fine.world_of_sample([sample[0] * step, sample[1] * step, sample[2] * step]);
+                assert_eq!(
+                    at_coarse, at_fine,
+                    "h={cell_size} level={level} sample={sample:?}"
+                );
+            }
+        }
+    }
+}
+
+/// Level `k` doubles the spacing `k` times and keeps the cell count, so one
+/// chunk covers `8^k` times the volume — which is the acceptance criterion's
+/// "LOD *k* has roughly 1/8^k the cells" seen from the other side: covering a
+/// fixed world takes that many fewer cells.
+#[test]
+fn each_level_covers_eight_times_the_volume_of_the_last() {
+    // Exact: doubling is exact, so this is not an approximate claim.
+    #![allow(clippy::float_cmp)]
+    let base = layout(0.125);
+    for level in 0..4u32 {
+        let lod = base.at_lod(level).expect("valid level");
+        assert_eq!(lod.cells(), base.cells(), "cell count must not change");
+        assert_eq!(
+            lod.cell_size(),
+            base.cell_size() * f64::from(1u32 << level),
+            "level {level}"
+        );
+
+        // Cells needed to cover one fixed world extent, per axis.
+        let extent = 8.0f64;
+        let per_axis = extent / lod.cell_size();
+        let expected = extent / base.cell_size() / f64::from(1u32 << level);
+        assert_eq!(per_axis, expected, "level {level}");
+    }
+}
+
+/// An unrepresentable level is refused rather than saturated.
+#[test]
+fn a_level_that_overflows_the_spacing_is_rejected() {
+    let base = layout(1.0);
+    assert!(base.at_lod(64).is_ok(), "2^64 is still finite in f64");
+    assert!(
+        matches!(base.at_lod(2048), Err(crate::Error::InvalidCellSize { .. })),
+        "a spacing doubled to infinity must be reported"
+    );
+}
+
+/// **G-004's acceptance:** LOD 0..3 all mesh cleanly, and the cell count falls
+/// by `8^k`.
+///
+/// The measurement worth having is the one the acceptance does *not* ask for:
+/// **triangles fall by `4^k`, not `8^k`.** Cells fill a volume and a surface does
+/// not, so each level buys `8x` the sampling work back and only `4x` the
+/// rendering. That gap is the whole economics of LOD and it is why the ticket's
+/// own figure is about cells.
+#[test]
+fn every_level_meshes_cleanly_and_the_counts_fall_as_predicted() {
+    use crate::fields::ReferenceField;
+
+    let field = Sphere::<f64>::canonical();
+    let (lo, _hi) = field.domain();
+    // 64 cells of 0.0625 spans the whole 4-unit domain at level 0.
+    let base = ChunkLayout::<f64>::new(64, 0.0625, lo).expect("valid layout");
+
+    let mut rows: Vec<(u32, u64, usize, usize)> = Vec::new();
+    for level in 0..4u32 {
+        // Keep the *world* extent fixed: halve the cell count as the spacing
+        // doubles, so every level meshes the same region.
+        let cells = 64u32 >> level;
+        let lod = ChunkLayout::<f64>::new(cells, base.cell_size(), lo)
+            .expect("valid layout")
+            .at_lod(level)
+            .expect("valid level");
+        let shape = lod.sample_shape().expect("valid shape");
+
+        let mut out = MeshBuffer::<f64>::new();
+        MarchingCubes::<f64>::new()
+            .extract(&field, &shape, lo, lod.cell_size(), &mut out)
+            .expect("extraction");
+
+        let report = validate_indexed(
+            &out.positions,
+            &out.indices,
+            &ValidateConfig::from_cell_size(lod.cell_size()).expect("valid cell size"),
+        );
+        assert!(report.is_closed(), "level {level}:\n{report}");
+        assert_eq!(report.euler_characteristic, 2, "level {level}:\n{report}");
+        assert_eq!(report.non_manifold_edges, 0, "level {level}:\n{report}");
+
+        let cells_total = u64::from(cells).pow(3);
+        rows.push((level, cells_total, out.vertex_count(), out.triangle_count()));
+    }
+
+    for (level, cells, vertices, triangles) in &rows {
+        std::println!("lod {level}: {cells} cells, {vertices} vertices, {triangles} triangles");
+    }
+
+    // Cells: exactly 1/8 per level, by construction.
+    for pair in rows.windows(2) {
+        assert_eq!(pair[0].1, pair[1].1 * 8, "cells must fall by 8 per level");
+    }
+
+    // Triangles: about 1/4 per level, because the surface is two-dimensional.
+    //
+    // The ratios drift *upward* as the grid stops resolving the sphere --
+    // measured 4.114, 4.313, 5.154 -- and that drift is the interesting part.
+    // "Triangles scale with area over h squared" is a continuum claim, and by the
+    // coarsest level the sphere is four cells across, where a staircase of 104
+    // triangles is no longer approximating anything smoothly. So the tight claim
+    // is asserted only where its premise holds, and the loose one everywhere.
+    let ratios: Vec<f64> = rows
+        .windows(2)
+        .map(|pair| pair[0].3 as f64 / pair[1].3 as f64)
+        .collect();
+    for (step, ratio) in ratios.iter().enumerate() {
+        std::println!("lod {step} -> {}: triangles fell {ratio:.3}x", step + 1);
+    }
+
+    for (step, ratio) in ratios.iter().enumerate() {
+        assert!(
+            (3.0..6.0).contains(ratio),
+            "lod {step} -> {}: {ratio:.3}x is not even roughly a quartering",
+            step + 1
+        );
+    }
+    // Where the grid still resolves the surface -- 32 and 16 cells across a unit
+    // sphere -- the quartering is tight.
+    for (step, ratio) in ratios.iter().take(2).enumerate() {
+        assert!(
+            (3.8..4.6).contains(ratio),
+            "lod {step} -> {}: {ratio:.3}x, expected a tight quartering while the grid resolves",
+            step + 1
+        );
+    }
+    // And it is looser at the coarsest step, which is the finding rather than a
+    // tolerance. If this ever tightens, the continuum model reaches further than
+    // measured and that is worth knowing.
+    let coarsest = *ratios.last().expect("three steps");
+    assert!(
+        coarsest > ratios[0],
+        "the quartering did not degrade as the grid stopped resolving: {ratios:?}"
+    );
+}
+
+/// **What LOD costs, and it is not what the ticket assumed.**
+///
+/// Written first as `a_feature_thinner_than_the_coarse_spacing_disappears`,
+/// asserting the plate is gone by the coarsest level. It is not: measured
+/// **4,088 → 1,016 → 248 → 56** triangles across levels 0–3, still 56 at
+/// `h = 0.5` where the plate is a fraction of a cell thick.
+///
+/// The correction is the finding. Marching Cubes samples **corners** and cuts
+/// **edges**, so a slab thinner than a cell is not missed — it is *aliased*.
+/// Whichever edges happen to straddle it still register a sign change, and what
+/// comes back is a partial, holey remnant rather than nothing. A-005 measured the
+/// same field returning **zero** triangles under greedy quads, which asks one
+/// question per cell *centre* and therefore does miss it cleanly.
+///
+/// For a streamed world that is the worse of the two behaviours: a feature that
+/// vanishes at a known distance can be faded, and one that disintegrates into a
+/// resolution-dependent scatter pops. It is also the concrete cost A-014's
+/// subgrid work exists to remove — see M-67, where 95.6% of the configurations a
+/// tet can be in are invisible to a sign test.
+#[test]
+fn a_sub_cell_feature_aliases_under_coarsening_rather_than_vanishing() {
+    use crate::fields::{ReferenceField, ThinPlate};
+
+    let field = ThinPlate::<f64>::canonical();
+    let (lo, hi) = field.domain();
+    let base = ChunkLayout::<f64>::new(64, (hi[0] - lo[0]) / 64.0, lo).expect("valid layout");
+
+    let mut counts = Vec::new();
+    for level in 0..4u32 {
+        let cells = 64u32 >> level;
+        let lod = ChunkLayout::<f64>::new(cells, base.cell_size(), lo)
+            .expect("valid layout")
+            .at_lod(level)
+            .expect("valid level");
+        let shape = lod.sample_shape().expect("valid shape");
+        let mut out = MeshBuffer::<f64>::new();
+        MarchingCubes::<f64>::new()
+            .extract(&field, &shape, lo, lod.cell_size(), &mut out)
+            .expect("extraction");
+        std::println!(
+            "thin_plate at lod {level} (h = {:.4}): {} triangles",
+            lod.cell_size(),
+            out.triangle_count()
+        );
+        counts.push(out.triangle_count());
+    }
+
+    assert!(counts[0] > 0, "the plate must exist at full resolution");
+
+    // It thins out sharply -- the feature is genuinely being lost.
+    for pair in counts.windows(2) {
+        let ratio = pair[0] as f64 / pair[1] as f64;
+        assert!(
+            ratio > 3.0,
+            "the plate is not being lost at all: {counts:?}"
+        );
+    }
+
+    // And yet it never reaches zero, which is the whole point of this test.
+    assert!(
+        counts.iter().all(|c| *c > 0),
+        "the plate vanished cleanly, which would make this crate's LOD story \
+         easier than it is: {counts:?}"
+    );
+}

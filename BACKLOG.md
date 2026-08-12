@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**46 tickets archived, 34 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**47 tickets archived, 33 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -71,14 +71,13 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **A-011b** | **Transvoxel extraction and the seam.** Place the transition cell's vertices in world space, emit its triangles, and stitch a full-resolution chunk to a half-resolution neighbour. **Acceptance:** two adjacent chunks at differing LOD produce zero boundary gaps — assert on the geometry, then confirm visually in E-107. A crossing on one of the four half-resolution edges must land where the coarse neighbour's own Marching Cubes pass would put it, or the seam does not close; `transvoxel::table::is_half_resolution` is what marks them. Lengyel's transition width is a free parameter and **zero is legal geometrically and wrong visually** — §4.3 says a zero width "leads to severe shading problems", so pick one and record why. | M | G-004, A-011a |
+| ☐ | **A-011b** | **Transvoxel extraction and the seam.** Place the transition cell's vertices in world space, emit its triangles, and stitch a full-resolution chunk to a half-resolution neighbour. **Acceptance:** two adjacent chunks at differing LOD produce zero boundary gaps — assert on the geometry, then confirm visually in E-107. A crossing on one of the four half-resolution edges must land where the coarse neighbour's own Marching Cubes pass would put it, or the seam does not close; `transvoxel::table::is_half_resolution` is what marks them. Lengyel's transition width is a free parameter and **zero is legal geometrically and wrong visually** — §4.3 says a zero width "leads to severe shading problems", so pick one and record why. | M | A-011a |
 
-> **BLOCKED: needs G-004's LOD levels to assert against, and G-004 was listed as blocked by this
-> ticket.** That is a dependency inversion, not a real cycle — G-004's own acceptance ("LOD 0..3 all
-> mesh cleanly; LOD *k* has roughly 1/8^k the cells") says nothing about seams, so it does not need
-> transition cells. Its "Pairs with A-011 for the seams" is a note about what comes next, and it had
-> been written into the *Blocked by* column. **Corrected below: G-004 depends on G-001 only, and this
-> ticket depends on G-004.**
+> **UNBLOCKED 2026-08-12: G-004 landed.** `ChunkLayout::at_lod` gives the levels to assert against, and
+> M-70 supplies the precondition — a level-`k` sample position is **bit-identical** to the level-0 sample
+> it sits on, at every spacing tried, so no crack at an LOD boundary can come from coordinate drift.
+> (The original block was a dependency inversion: G-004's acceptance says nothing about seams, and its
+> "pairs with A-011b" note had been written into the *Blocked by* column.)
 >
 > Read while scoping, so the next attempt does not have to (Lengyel 2010 §4.3–4.4):
 > - **Transition width** is a free global parameter. His implementation uses `w(k) = 2^(k-2)` for LOD
@@ -105,7 +104,6 @@ Still zero Bevy. This is the machinery a game needs, living in the core crate wh
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **G-004** | **Field-derived LOD.** Mip the field (not the mesh), mesh at level N. **Acceptance:** LOD 0..3 all mesh cleanly; LOD *k* has roughly 1/8^k the cells. Pairs with A-011b for the seams — **a note, not a dependency**; this ticket's acceptance says nothing about seams and it was blocking A-011b in error. | M | G-001 |
 | ☐ | **G-006** | **Frame-budget scheduler.** `mesh_within_budget(ms)` — process the dirty queue until a time budget is exhausted, resume next call. Priority by camera distance. This is the constraint a real game actually operates under and the reason "how fast is the algorithm" is the wrong question. | M | G-002 |
 | ☐ | **G-007** | **Chunk streaming.** Load/unload by camera distance with hysteresis so chunks at the boundary don't thrash. | M | G-004, G-006 |
 

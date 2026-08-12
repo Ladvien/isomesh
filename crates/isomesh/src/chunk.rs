@@ -118,6 +118,42 @@ impl<R: Real> ChunkLayout<R> {
         self.cell_size
     }
 
+    /// The same layout, coarsened by `level` powers of two.
+    ///
+    /// **LOD comes from the field, not from the mesh.** Level `k` keeps the chunk
+    /// size in *cells* and doubles the spacing `k` times, so one chunk covers
+    /// `2^k` times the world extent per axis and `8^k` times the volume. Nothing
+    /// is simplified, decimated or repaired: the coarse mesh is what the
+    /// extractor produces from a coarser sampling of the same field, which is
+    /// why an edit needs no hierarchy repair at all.
+    ///
+    /// `docs/research/2026-08-11-novel-gameplay-opportunities.md` calls this the
+    /// architectural decision five of its rows hang off, and names the property
+    /// that earns it: a subdivision that is *"a pure function of coordinates"* is
+    /// **canonical by construction**, so *"the tree after updates is the same as
+    /// the one built from scratch."*
+    ///
+    /// Here that property is not merely argued, it is exact:
+    /// `every_coarse_sample_lands_exactly_on_a_fine_one` asserts that a level-`k`
+    /// sample position is **bit-identical** to the level-0 position of the sample
+    /// `2^k` times its index. Doubling is exact in IEEE, so no coordinate drift
+    /// can open a crack at an LOD boundary — which is the precondition A-011b's
+    /// transition cells are built on.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidCellSize`](crate::Error::InvalidCellSize) if doubling
+    /// `level` times overflows to infinity. Reported rather than saturated: a
+    /// silently clamped level would mesh a different world than the caller asked
+    /// for and look plausible doing it.
+    pub fn at_lod(&self, level: u32) -> crate::Result<Self> {
+        let mut cell_size = self.cell_size;
+        for _ in 0..level {
+            cell_size = cell_size + cell_size;
+        }
+        Self::new(self.cells, cell_size, self.origin)
+    }
+
     /// The sample grid one chunk is meshed on: `cells + 1` per axis.
     ///
     /// The `+ 1` is the positive-face overlap. Pass this straight to an
