@@ -77,11 +77,10 @@ And it is not the cheaper method by time either, which took a benchmark to find 
 
 | samples per axis | 16 | 48 | 64 | 128 | 256 |
 |---|---:|---:|---:|---:|---:|
-| **MC** ms | 0.090 | 1.251 | 2.246 | 10.195 | **80.257** |
-| **SN** ms | 0.038 | 0.976 | 2.425 | 20.006 | **221.223** |
-| SN / MC | 0.42 | 0.78 | 1.08 | 1.96 | **2.76** |
+| SN / MC — **Apple M5** | 0.34 | 0.74 | 1.06 | 1.94 | **2.65** |
+| SN / MC — **Ryzen 9 5900X** | 2.46 | 3.06 | 3.36 | 4.16 | **3.72** |
 
-Surface Nets wins below roughly 48³ and loses steadily above it. Marching Cubes' per-sample cost *falls* from 21.9 to 4.78 ns as the `O(n²)` surface term amortises away, then holds flat; Surface Nets' sits near 9 ns and then *climbs* to 13.19. Its fitted `t = a + b·n³` even comes back with a **negative** fixed cost, which is impossible and is the model saying its cost grows faster than `n³`. Sphere, f32, single thread, Apple M5 — one machine, so treat the mechanism as unconfirmed. Raw data in `docs/measurements/resolution_sweep.csv`.
+Surface Nets loses, and it loses on both machines — **run on two, not one**. What does *not* transfer is the shape. On the M5 Surface Nets wins below roughly 48³ because Marching Cubes' per-sample cost starts at 25 ns and falls to 4.78 as the `O(n²)` surface term amortises away; on Zen 3 that fall never happens — Marching Cubes is flat at 13–15 ns from 16³ up — so Surface Nets is behind at **every** resolution measured and there is no crossover at all. Surface Nets' per-sample cost climbs on both (8.4 → 12.7 ns on the M5, 37.4 → 49.1 on Zen 3), which is what makes the verdict an algorithm property rather than one cache hierarchy. Sphere, f32, single thread. Raw data in `docs/measurements/resolution_sweep.csv` and `resolution_sweep-ryzen9-5900x.csv`.
 
 So both halves of the usual case for Surface Nets — fewer triangles, lower cost — are falsified by measurement in this repository. What it actually buys is quad connectivity and one vertex per cell.
 
