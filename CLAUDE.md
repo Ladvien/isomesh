@@ -90,7 +90,10 @@ Platform here is **macOS / arm64 → Metal**. Two consequences:
 isomesh/
   Cargo.toml            [workspace] members = ["crates/*"], exclude = ["bevy_isomesh"]
   crates/
-    isomesh/            core. no_std + alloc, unconditionally. examples/ = headless, write OBJ.
+    isomesh/            core. no_std + alloc, unconditionally. Tests are inline
+                        `#[cfg(test)] mod tests;` siblings; there is no examples/ here
+                        and there is not meant to be — every example is a Bevy one and
+                        lives in bevy_isomesh/, so CI compiles it.
                         Deps: libm. Only libm — see ✗16; glam cannot serve a crate
                         generic over f32 and f64.
     isomesh-gpu/        + wgpu 29.0.3. API takes &wgpu::Device / &Queue / &mut CommandEncoder.

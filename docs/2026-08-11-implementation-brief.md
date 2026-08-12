@@ -187,7 +187,11 @@ same field with vertex- and triangle-count readouts, and both meshes closed.
 > 1. **Boundary.** It needs closed meshes. The moment a surface is clipped by the grid — i.e. **as
 >    soon as G-001 chunking lands** — `3F = 2E` fails and the identity goes with it. Expect this and
 >    scope the assertion to whole-volume meshing.
-> 2. **Welding.** A-013 dedup beyond the edge cache lowers `V_mc` and breaks both equalities.
+> 2. **Welding.** A-013 dedup beyond the edge cache lowers `V_mc` and breaks both equalities — but
+>    **only where there is something to dedup**, which A-013 measured (M-48) and is rarer than this
+>    implies: on an unchunked mesh a weld removes a vertex only where a grid *sample* lands on the
+>    isosurface, 48 of 654 on `sphere` at 25³ and zero at 17³ and 33³. Chunking is the case that
+>    reliably breaks it.
 > 3. **Differing χ.** If Marching Cubes and Marching Cubes 33 disagree on an ambiguous face they have different χ; use each
 >    mesh's own χ, don't share one.
 > 4. **Non-manifold cells.** Already handled — gyroid and fbm_terrain are excluded and pinned.

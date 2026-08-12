@@ -2,15 +2,24 @@
 //!
 //! # What this is for, and what it is not for
 //!
-//! Within a single volume nothing needs welding: Marching Cubes keys its
-//! vertices on the grid edge they sit on and the dual methods key theirs on the
-//! cell, so a shared vertex is shared *by construction* and every reference
-//! mesh reports `duplicate_vertices == 0`. Dong et al. (2018,
-//! `10.1109/icra.2018.8463157`) reach the same conclusion from the other end —
-//! their whole contribution is distributing vertices on discrete edges so that
-//! duplicates cannot be allocated in the first place.
+//! Within a single volume *almost* nothing needs welding: Marching Cubes keys
+//! its vertices on the grid edge they sit on and the dual methods key theirs on
+//! the cell, so a shared vertex is shared by construction. Dong et al. (2018,
+//! `10.1109/icra.2018.8463157`) reach the same design from the other end — their
+//! whole contribution is distributing vertices on discrete edges so duplicates
+//! cannot be allocated in the first place.
 //!
-//! **The duplicates are at chunk seams.** Two chunks meshed independently each
+//! The word "almost" is measured (M-48) and replaced a flat "nothing" that was
+//! written here and was wrong. The edge cache shares vertices between cells
+//! meeting on a grid **edge**, and that is all it can do. When a grid **sample**
+//! lands on the isosurface, `t` is 0 or 1 and the crossing sits *at that
+//! sample*, so every cut edge meeting there places its own vertex at the same
+//! point and nothing shares them. On `sphere` at 25³ that is 48 vertices and 96
+//! collapsed triangles — and the 96 is exactly the degenerate-sliver count A-001
+//! recorded for that resolution, so **welding also removes that class of
+//! sliver**, which nobody predicted.
+//!
+//! **The bulk of the duplicates are still at chunk seams.** Two chunks meshed independently each
 //! compute the vertices on their shared plane, so every seam vertex exists
 //! twice, and no amount of care inside one extraction removes it. That is what
 //! this module is for, and it is why [`crate::chunk`] had to land first.

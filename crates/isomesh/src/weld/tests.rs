@@ -11,7 +11,7 @@ use alloc::vec::Vec;
 
 use super::{WeldReport, Welder};
 use crate::chunk::{ChunkId, ChunkLayout};
-use crate::fields::Sphere;
+use crate::fields::{ReferenceField, Sphere};
 use crate::marching_cubes::MarchingCubes;
 use crate::validate::{ValidateConfig, check_determinism, validate_indexed};
 use crate::{Error, MeshBuffer, Sdf};
@@ -383,4 +383,64 @@ fn the_validator_bounds_the_weld_rather_than_predicting_it() {
     std::println!("measured: chain -- validator counted {counted}, weld removed {removed}");
     assert_eq!(counted, 2, "the validator counts 1 and 2 as duplicates");
     assert_eq!(removed, 1, "the weld only removes 1");
+}
+
+/// **A whole-volume mesh is not always weld-free, and the exception is exactly
+/// the sliver case A-001 already recorded (M-48).**
+///
+/// The edge-vertex cache shares a vertex between the cells that meet on a grid
+/// *edge*, and that is all it can do. When a grid **sample** lands on the
+/// isosurface, `t` is 0 or 1 and the crossing sits *at that sample* — so every
+/// cut edge meeting there places its own vertex at the same point, and they are
+/// on different edges, so nothing shares them. Welding merges them, and the
+/// triangles that used two of them collapse.
+///
+/// On `sphere` at 25³ that removes **48 vertices and 96 triangles**, and the 96
+/// is not a coincidence: it is exactly the degenerate-sliver count A-001
+/// measured at that resolution from the 30 lattice points that sit exactly on
+/// the unit sphere. **Welding is therefore a fix for that class of sliver**,
+/// which was not predicted.
+///
+/// Pinned in both directions, following M-4. A field not listed here welds to
+/// nothing, and that is asserted too.
+#[test]
+fn a_whole_volume_mesh_welds_only_where_a_sample_sits_on_the_surface() {
+    let mut found: Vec<(&str, u32, usize, usize)> = Vec::new();
+    crate::for_each_reference_field!(f64, |name, field| {
+        for samples in [17u32, 25, 33] {
+            let (lo, hi) = field.domain();
+            let h = (hi[0] - lo[0]) / f64::from(samples - 1);
+            let shape = crate::RuntimeShape3::new([samples; 3]).expect("valid shape");
+            let mut mesh = MeshBuffer::<f64>::new();
+            MarchingCubes::<f64>::new()
+                .extract(&field, &shape, lo, h, &mut mesh)
+                .expect("extraction");
+            if mesh.is_empty() {
+                continue;
+            }
+            let report = Welder::<f64>::new()
+                .weld(&mut mesh, h * ValidateConfig::WELD_EPSILON_REL)
+                .expect("valid epsilon");
+            if !report.is_noop() {
+                found.push((
+                    name,
+                    samples,
+                    report.vertices_removed(),
+                    report.triangles_collapsed,
+                ));
+            }
+        }
+    });
+
+    std::println!("measured: whole-volume welds (field, n, vertices, triangles) = {found:?}");
+    assert_eq!(
+        found,
+        vec![
+            ("sphere", 25, 48, 96),
+            ("gyroid", 17, 2, 4),
+            ("gyroid", 25, 2, 4),
+            ("gyroid", 33, 2, 4),
+            ("fbm_terrain", 33, 1, 2),
+        ]
+    );
 }

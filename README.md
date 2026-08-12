@@ -6,7 +6,7 @@
 
 `isomesh` has to serve both a real-time voxel game and a CAD tool. That single constraint decides almost everything about it: no math library appears in a public signature, output buffers are caller-provided and reusable, the scalar type is generic over `f32` and `f64`, and the core crate has exactly one dependency.
 
-![Marching Cubes on a sphere, sweeping resolution](docs/gifs/mc-sphere-resolution-sweep.gif)
+![Marching Cubes on a sphere, sweeping resolution](docs/gifs/marching-cubes-sphere-resolution-sweep.gif)
 
 *Marching Cubes over a sphere SDF, resolution sweeping from 9³ to 81³. The readout is not decoration — it is the crate's own validity harness, re-run on the mesh being displayed every time it changes. `χ = 2`, zero non-manifold edges, zero boundary edges, every frame.*
 
@@ -63,7 +63,7 @@ Anything implementing `Sdf` works as input; anything implementing `MeshSink` wor
 
 ## Two algorithms, side by side
 
-![Surface Nets against Marching Cubes on a box](docs/gifs/sn-vs-mc-box.gif)
+![Surface Nets against Marching Cubes on a box](docs/gifs/surface-nets-vs-marching-cubes-box.gif)
 
 *Marching Cubes (grey) and Surface Nets (tan) on the same box SDF at the same resolution, sweeping 9³ to 57³.*
 
@@ -103,7 +103,7 @@ It costs about **3%** over Surface Nets to do it, and the two meshes are otherwi
 
 ## Where an algorithm breaks, measured rather than described
 
-![Surface Nets against Marching Cubes on a capped gyroid](docs/gifs/sn-vs-mc-gyroid.gif)
+![Surface Nets against Marching Cubes on a capped gyroid](docs/gifs/surface-nets-vs-marching-cubes-gyroid.gif)
 
 *The capped gyroid — triply periodic, high genus. Marching Cubes stays manifold here; Surface Nets does not.*
 
@@ -117,9 +117,9 @@ This is the crate's actual pitch. Not "the meshes look right" — a wrong mesh l
 
 ## Where a mesh stops being a manifold
 
-![Marching Cubes and Surface Nets on the capped gyroid, non-manifold features marked](docs/screenshots/e111-manifold-check-gyroid-sn.png)
+![Marching Cubes and Surface Nets on the capped gyroid, non-manifold features marked](docs/screenshots/e111-manifold-check-gyroid-surface-nets.png)
 
-*`manifold_check` — the capped gyroid at 19³ under Surface Nets. Every red sphere is a non-manifold vertex and every red line a non-manifold edge, drawn where the validator found them: 39 edges and 61 vertices, clustered around the tunnel mouths where two sheets of surface share a cell. The same field and grid under Marching Cubes reports `0` on every counter and `MANIFOLD, CLOSED` ([screenshot](docs/screenshots/e111-manifold-check-gyroid-mc.png)).*
+*`manifold_check` — the capped gyroid at 19³ under Surface Nets. Every red sphere is a non-manifold vertex and every red line a non-manifold edge, drawn where the validator found them: 39 edges and 61 vertices, clustered around the tunnel mouths where two sheets of surface share a cell. The same field and grid under Marching Cubes reports `0` on every counter and `MANIFOLD, CLOSED` ([screenshot](docs/screenshots/e111-manifold-check-gyroid-marching-cubes.png)).*
 
 A count tells you a mesh is broken without telling you where, and the two most useful findings in this project were both about *where*. The marks come from `validate_features`, which returns the offending edges and vertices from the **same pass** that produced the numbers beside them — so the picture and the caption cannot drift apart.
 
