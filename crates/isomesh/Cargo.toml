@@ -39,6 +39,22 @@ proptest = "1.11"
 criterion = { version = "0.7", default-features = false, features = [
     "cargo_bench_support",
 ] }
+# G-005. A **dev**-dependency rather than the optional `parry` feature the ticket
+# asked for, and that is a deviation with a reason.
+#
+# `parry3d` takes `Vec<[u32; 3]>` for its index buffer -- the architecture
+# research calls it "the most math-opinionated crate in the ecosystem" and notes
+# it still uses plain arrays there -- so a conversion adds one line at the call
+# site and nothing else. What it would add to the *manifest* is a pre-1.0 version
+# to track: parry migrated off nalgebra onto glam/glamx in 0.26.0 and now wants
+# glam ^0.33, where Bevy 0.19 pins ^0.32. The core crate stays at one dependency
+# in every configuration instead.
+#
+# Here it earns its place by making G-005's acceptance real: the test builds an
+# actual `TriMesh` from a carved field and runs parry's own
+# `TriMeshFlags::HALF_EDGE_TOPOLOGY` and `ORIENTED` checks over it, rather than
+# this crate asserting against its own idea of what parry wants.
+parry3d = "0.30"
 
 # Both are `harness = false` because criterion supplies its own main, and the
 # resolution sweep supplies one of its own -- see benches/resolution_sweep.rs.

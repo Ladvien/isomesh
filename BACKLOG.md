@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**45 tickets archived, 35 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**46 tickets archived, 34 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -106,7 +106,6 @@ Still zero Bevy. This is the machinery a game needs, living in the core crate wh
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
 | ☐ | **G-004** | **Field-derived LOD.** Mip the field (not the mesh), mesh at level N. **Acceptance:** LOD 0..3 all mesh cleanly; LOD *k* has roughly 1/8^k the cells. Pairs with A-011b for the seams — **a note, not a dependency**; this ticket's acceptance says nothing about seams and it was blocking A-011b in error. | M | G-001 |
-| ☐ | **G-005** | **Collider export.** `MeshBuffer` → `parry3d::TriMesh` (`Vec<[u32;3]>` indices — parry takes plain arrays). Behind an optional `parry` feature. Optional convex decomposition path. **Acceptance:** a carved shape builds a `TriMesh` without error and passes parry's own validity check. **A-013 landed, so this is unblocked** — and note a chunked collider must be welded first or parry sees a seam of unshared vertices. | M | A-013 |
 | ☐ | **G-006** | **Frame-budget scheduler.** `mesh_within_budget(ms)` — process the dirty queue until a time budget is exhausted, resume next call. Priority by camera distance. This is the constraint a real game actually operates under and the reason "how fast is the algorithm" is the wrong question. | M | G-002 |
 | ☐ | **G-007** | **Chunk streaming.** Load/unload by camera distance with hysteresis so chunks at the boundary don't thrash. | M | G-004, G-006 |
 

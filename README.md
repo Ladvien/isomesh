@@ -14,12 +14,12 @@
 
 ## Status
 
-Early. Six extraction algorithms, three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, and a Bevy bridge. Forty-five tickets done, thirty-five open.
+Early. Six extraction algorithms, three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, and a Bevy bridge. Forty-six tickets done, thirty-four open.
 
 | | |
 |---|---|
-| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **five-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · Bevy 0.19 bridge |
-| **Not yet** | Marching Cubes 33's interior test · subgrid Marching Tetrahedra · LOD · Transvoxel *(case table done, extraction not)* · colliders · GPU path |
+| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **six-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · **collider readiness** · Bevy 0.19 bridge |
+| **Not yet** | Marching Cubes 33's interior test · subgrid Marching Tetrahedra *(encoding done, reconstruction not)* · LOD · Transvoxel *(case table done, extraction not)* · convex decomposition · GPU path |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
 Not published to crates.io. Version `0.0.0`.
@@ -297,6 +297,32 @@ cd bevy_isomesh && cargo run --example marching_cubes_ambiguity --release
 
 ---
 
+## Handing a mesh to a physics engine
+
+`parry3d`'s constructor is not a validity check. Its only documented failure is an empty index buffer — measured, it accepts a zero-area triangle and it accepts a two-chunk mesh with an unwelded seam. A renderer draws that seam correctly; a physics engine reads it as a hole and a character walks through the floor.
+
+So `collider::readiness` reads the validator's report through a collider's eyes and says which of three different things you have:
+
+| | means |
+|---|---|
+| `is_usable()` | parry will take it and behave — no trailing index, no out-of-range index, no non-finite position |
+| `is_seam_free()` | no duplicate vertices, so nothing was assembled from chunks without welding |
+| `supports_inside_outside()` | closed, manifold and consistently oriented, so parry's `ORIENTED` pseudo-normals mean something |
+
+They are three predicates rather than one because **a single chunk of a streamed world is open by construction** and is still a perfectly good collider — it just cannot answer "is this point inside". Folding them together would make every chunk in a real world read as broken.
+
+The seam, measured: two adjacent chunks of a torus concatenated give **36 duplicate vertices and 180 boundary edges**. After welding, **0 and 108** — and those 108 are the slab's own outer border, which is genuinely open. The weld closed exactly the 72 that were the seam.
+
+The crate takes no dependency on parry to do this. It emits the `Vec<[u32; 3]>` parry already wants, and the conversion is one line at the call site:
+
+```rust
+let indices = isomesh::collider::triangle_indices(&mesh);
+let vertices = mesh.positions.iter().map(|p| Vector::new(p[0], p[1], p[2])).collect();
+let trimesh = TriMesh::new(vertices, indices)?;
+```
+
+---
+
 ## What gets checked
 
 Every extraction algorithm ships with these before it counts as done. They are ordinary public API, not test-only, because a consumer baking colliders wants them too.
@@ -346,7 +372,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 354 tests, plus 10 doctests
+cargo test -p isomesh                    # 361 tests, plus 10 doctests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh

@@ -48,6 +48,7 @@ extern crate std;
 
 pub mod brush;
 pub mod chunk;
+pub mod collider;
 pub mod dual_contouring;
 pub mod fields;
 pub mod greedy_quads;
