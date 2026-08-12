@@ -50,6 +50,7 @@ pub mod brush;
 pub mod chunk;
 pub mod dual_contouring;
 pub mod fields;
+pub mod greedy_quads;
 pub mod hermite;
 pub mod marching_cubes;
 pub mod marching_tetrahedra;

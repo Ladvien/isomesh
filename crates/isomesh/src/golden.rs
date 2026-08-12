@@ -59,6 +59,7 @@ use alloc::vec::Vec;
 
 use crate::dual_contouring::DualContouring;
 use crate::fields::ReferenceField;
+use crate::greedy_quads::GreedyQuads;
 use crate::marching_cubes::{FaceAmbiguity, MarchingCubes};
 use crate::marching_tetrahedra::MarchingTetrahedra;
 use crate::surface_nets::SurfaceNets;
@@ -140,6 +141,7 @@ fn hash_mesh(mesh: &MeshBuffer<f64>) -> u64 {
 /// fixture.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Algorithm {
+    GreedyQuads,
     MarchingCubes,
     MarchingCubes33,
     MarchingTetrahedra,
@@ -148,7 +150,8 @@ enum Algorithm {
 }
 
 impl Algorithm {
-    const ALL: [Self; 5] = [
+    const ALL: [Self; 6] = [
+        Self::GreedyQuads,
         Self::MarchingCubes,
         Self::MarchingCubes33,
         Self::MarchingTetrahedra,
@@ -158,6 +161,7 @@ impl Algorithm {
 
     fn name(self) -> &'static str {
         match self {
+            Self::GreedyQuads => "greedy_quads",
             Self::MarchingCubes => "marching_cubes",
             Self::MarchingCubes33 => "marching_cubes+decider",
             Self::MarchingTetrahedra => "marching_tetrahedra",
@@ -186,6 +190,9 @@ where
     let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
     let mut out = MeshBuffer::<f64>::new();
     match algorithm {
+        Algorithm::GreedyQuads => GreedyQuads::<f64>::new()
+            .extract(field, &shape, lo, cell_size, &mut out)
+            .expect("extraction"),
         Algorithm::MarchingCubes => MarchingCubes::<f64>::new()
             .extract(field, &shape, lo, cell_size, &mut out)
             .expect("extraction"),

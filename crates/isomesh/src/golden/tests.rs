@@ -220,9 +220,9 @@ fn the_committed_fixture_is_canonically_formatted() {
 #[test]
 fn every_combination_is_covered() {
     let entries = compute_all();
-    // 7 fields x 5 algorithm rows x 3 resolutions. `marching_cubes+decider` is a
+    // 7 fields x 6 algorithm rows x 3 resolutions. `marching_cubes+decider` is a
     // row rather than an algorithm — Marching Cubes with the decider switched on.
-    assert_eq!(entries.len(), 7 * 5 * 3, "{} combinations", entries.len());
+    assert_eq!(entries.len(), 7 * 6 * 3, "{} combinations", entries.len());
     let unique: Vec<String> = {
         let mut keys: Vec<String> = as_pairs(&entries).into_iter().map(|(k, _)| k).collect();
         keys.sort();
