@@ -73,16 +73,19 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 |---|---|---|---|---|
 | ☐ | **A-011b** | **Transvoxel extraction and the seam.** Place the transition cell's vertices in world space, emit its triangles, and stitch a full-resolution chunk to a half-resolution neighbour. **Acceptance:** two adjacent chunks at differing LOD produce zero boundary gaps — assert on the geometry, then confirm visually in E-107. A crossing on one of the four half-resolution edges must land where the coarse neighbour's own Marching Cubes pass would put it, or the seam does not close; `transvoxel::table::is_half_resolution` is what marks them. Lengyel's transition width is a free parameter and **zero is legal geometrically and wrong visually** — §4.3 says a zero width "leads to severe shading problems", so pick one and record why. | M | A-011a |
 
-> **UNBLOCKED 2026-08-12: G-004 landed.** `ChunkLayout::at_lod` gives the levels to assert against, and
-> M-70 supplies the precondition — a level-`k` sample position is **bit-identical** to the level-0 sample
-> it sits on, at every spacing tried, so no crack at an LOD boundary can come from coordinate drift.
-> (The original block was a dependency inversion: G-004's acceptance says nothing about seams, and its
-> "pairs with A-011b" note had been written into the *Blocked by* column.)
+> **IN PROGRESS.** `transvoxel::cell::TransitionCell` places the crossings and the seam identity is
+> asserted: every half-resolution crossing lands **bit-identically** on a vertex the coarse
+> neighbour's Marching Cubes pass produced — 56 of them on a sphere at `h = 1/8`, 24 on a torus at
+> `h = 4/14`. That was not free; see M-73 for the version that put a `1.11e-16` crack in the seam.
+>
+> What remains: triangulate the cycles `table::transition_links` gives, wind them consistently with
+> the two neighbouring chunks, and assert zero gaps across a real full-resolution/half-resolution pair.
 >
 > Read while scoping, so the next attempt does not have to (Lengyel 2010 §4.3–4.4):
 > - **Transition width** is a free global parameter. His implementation uses `w(k) = 2^(k-2)` for LOD
->   index `k`, i.e. half the adjacent full-resolution cell. **Zero width is legal geometrically and
->   wrong visually** — §4.3 says it "leads to severe shading problems".
+>   index `k`, i.e. half the adjacent full-resolution cell. **Zero width is legal geometrically** —
+>   §4.3 says a zero width still "seamlessly stitch[es] multiresolution meshes together" but "leads to
+>   severe shading problems", so a first version can close the gap and defer the shading.
 > - **Regular cells on a low-resolution block's boundary must be scaled inward to make room**, so every
 >   boundary vertex carries *two* positions: primary (no transition rendered) and secondary (transition
 >   rendered). Equation 4.2: `Δx = (1 − 2^−k·x)·w(k)` for `x < 2^k`, `0` in the middle, and

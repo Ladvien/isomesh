@@ -16,8 +16,14 @@
 //!
 //! # Status
 //!
-//! A-011a — the case table — is here. A-011b is the extraction path and the
-//! two-chunk seam assertion; nothing in this module places a vertex in world
-//! space yet.
+//! A-011a — the case table — is here, and so is [`cell`], which places a
+//! transition cell's crossings in world space and asserts the identity the seam
+//! rests on: a half-resolution crossing lands **bit-identically** on a vertex the
+//! coarse neighbour's Marching Cubes pass produced.
+//!
+//! What A-011b still needs is the triangulation — winding the cycles
+//! [`table::transition_links`] gives into triangles, and asserting zero gaps
+//! across a real full-resolution/half-resolution chunk pair.
 
+pub mod cell;
 pub mod table;
