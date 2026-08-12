@@ -1,8 +1,12 @@
 //! E-111 — where a mesh stops being a manifold, drawn on the mesh.
 //!
-//! Every reference field, both extractors, with the offending topology drawn in
+//! Every reference field, three extractors, with the offending topology drawn in
 //! place: **non-manifold edges as thick red lines, non-manifold vertices as red
 //! spheres, boundary edges in amber.**
+//!
+//! Since A-010 this is also the before-and-after picture: cycle `A` from surface
+//! nets to dual contouring to **manifold dual contouring** on the gyroid and the
+//! red marks go away. That is M-58 as a picture rather than a count.
 //!
 //! ```bash
 //! cd bevy_isomesh && cargo run --example manifold_check --release
@@ -46,6 +50,8 @@ use bevy::prelude::*;
 use bevy_isomesh::MeshBuilder;
 use common::{Capture, CommonPlugin, DemoDomain, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
 use isomesh::fields::ReferenceField;
+use isomesh::dual_contouring::DualContouring;
+use isomesh::manifold_dual_contouring::ManifoldDualContouring;
 use isomesh::marching_cubes::MarchingCubes;
 use isomesh::surface_nets::SurfaceNets;
 use isomesh::validate::{ValidateConfig, validate_features};
@@ -68,6 +74,8 @@ const MAX_SAMPLES: u32 = 97;
 enum Algorithm {
     MarchingCubes,
     SurfaceNets,
+    DualContouring,
+    ManifoldDualContouring,
 }
 
 impl Algorithm {
@@ -75,10 +83,12 @@ impl Algorithm {
         match self {
             Self::MarchingCubes => "marching cubes",
             Self::SurfaceNets => "surface nets",
+            Self::DualContouring => "dual contouring",
+            Self::ManifoldDualContouring => "manifold dual contouring",
         }
     }
 
-    /// `ISOMESH_ALGORITHM=mc|sn`, so a capture needs no keyboard — the same
+    /// `ISOMESH_ALGORITHM=mc|sn|dc|mdc`, so a capture needs no keyboard — the same
     /// reason `ISOMESH_FIELD` and `ISOMESH_VIEW` exist. Defaults to surface
     /// nets, which is the one with something to show.
     fn from_env() -> Self {
@@ -87,14 +97,20 @@ impl Algorithm {
             .as_str()
         {
             "mc" | "marching_cubes" => Self::MarchingCubes,
+            "dc" | "dual_contouring" => Self::DualContouring,
+            "mdc" | "manifold_dual_contouring" => Self::ManifoldDualContouring,
             _ => Self::SurfaceNets,
         }
     }
 
+    /// Ordered so `A` walks the finding: the two one-vertex-per-cell methods
+    /// that pinch, then the one that does not, then back to the reference.
     fn toggled(self) -> Self {
         match self {
+            Self::SurfaceNets => Self::DualContouring,
+            Self::DualContouring => Self::ManifoldDualContouring,
+            Self::ManifoldDualContouring => Self::MarchingCubes,
             Self::MarchingCubes => Self::SurfaceNets,
-            Self::SurfaceNets => Self::MarchingCubes,
         }
     }
 }
@@ -318,6 +334,12 @@ where
         }
         Algorithm::SurfaceNets => {
             SurfaceNets::<f32>::new().extract(field, &shape, min, cell_size, &mut builder)
+        }
+        Algorithm::DualContouring => {
+            DualContouring::<f32>::new().extract(field, &shape, min, cell_size, &mut builder)
+        }
+        Algorithm::ManifoldDualContouring => {
+            ManifoldDualContouring::<f32>::new().extract(field, &shape, min, cell_size, &mut builder)
         }
     };
     if let Err(error) = extracted {

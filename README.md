@@ -14,12 +14,12 @@
 
 ## Status
 
-Early. Two extraction algorithms, a validity harness, an accuracy harness, and a Bevy bridge. Twenty-eight tickets done, forty-four open.
+Early. Six extraction algorithms, a validity harness, an accuracy harness, a measured shootout between them, and a Bevy bridge. Forty tickets done, thirty-seven open.
 
 | | |
 |---|---|
-| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Surface Nets · **Dual Contouring** · Hermite data · mesh validity harness · accuracy harness · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property-test scaffolding · vertex welding · Bevy 0.19 bridge |
-| **Not yet** | Marching Cubes 33's interior test · marching tetrahedra · greedy quads · LOD / Transvoxel · colliders · GPU path · benchmarks |
+| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **five-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · Bevy 0.19 bridge |
+| **Not yet** | Marching Cubes 33's interior test · subgrid Marching Tetrahedra · LOD / Transvoxel · colliders · normal-estimation strategies · GPU path |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
 Not published to crates.io. Version `0.0.0`.
@@ -107,7 +107,7 @@ It costs about **3%** over Surface Nets to do it, and the two meshes are otherwi
 
 *The capped gyroid — triply periodic, high genus. Marching Cubes stays manifold here; Surface Nets does not.*
 
-Surface Nets places exactly one vertex per cell. Where two sheets of the surface pass through the same cell they are forced to share it, and the result is non-manifold — **42 non-manifold edges at 25³** in the sequence above, against Marching Cubes' zero at every resolution in it. The literature calls this dual contouring's *"actual structural defect"*, fixed architecturally by vertex splitting rather than by patching.
+Surface Nets places exactly one vertex per cell. Where two sheets of the surface pass through the same cell they are forced to share it, and the result is non-manifold — **42 non-manifold edges at 25³** in the sequence above, against Marching Cubes' zero at every resolution in it. The literature review calls this dual contouring's *"actual structural defect"*. It is fixed below, and the fix has a cost that is also measured.
 
 Notice that the Euler identity now reads **`!! differs`**. That is correct: the identity's precondition is a *closed manifold*, and Surface Nets' output here is not one. The condition under which the assertion should fail is recorded next to the assertion, so when it does fail nobody mistakes it for a regression.
 
@@ -128,6 +128,49 @@ cd bevy_isomesh && cargo run --example manifold_check --release
 ```
 
 `1`–`7` field · `A` algorithm · `B` boundary overlay · `[` `]` resolution.
+
+---
+
+## Splitting the vertex, and what it costs
+
+![The capped gyroid under Dual Contouring, covered in red non-manifold marks](docs/screenshots/e111-manifold-check-gyroid-dual-contouring.png)
+
+![The same field and grid under Manifold Dual Contouring, with no marks at all](docs/screenshots/e111-manifold-check-gyroid-manifold-dual-contouring.png)
+
+*The same field, the same 19³ grid, one algorithm apart. **Dual Contouring: 39 non-manifold edges, 61 non-manifold vertices, `χ = -10`, one component.** **Manifold Dual Contouring: zero, zero, `χ = -2`, seven components** — and the same 3,276 triangles. Press `A` in `manifold_check` to switch between them.*
+
+One vertex per cell is the defect. The fix is one vertex per **surface component**: the cell's cut edges are partitioned into the cycles the Marching Cubes table already links them into, and each cycle gets its own QEF solve. Ju's own paper describes it and credits it to Nielson — the output is the *dual* of the Marching Cubes surface, so it inherits Marching Cubes' topology.
+
+That inheritance is asserted, not assumed. On every closed field at 17³, 25³ and 33³ the dual reproduces Marching Cubes' Euler characteristic **and its component count** exactly. Look again at the two captions: the pinch was not only breaking the index buffer, it was **fusing seven pieces into one and misreporting `χ` by eight**.
+
+Three things this measured that were not what the tickets predicted:
+
+- **The cost is zero on five of the seven fields**, and about **5%** of the run time on the other two. Only `gyroid` and `fbm_terrain` ever need a second vertex in a cell, and their rate *falls* with resolution — 3.13% → 2.05% → 0.53% at 17³/25³/33³. Nielson's published *"about 1.3%"* counts entries in the case table, not cells in a scene. Triangle counts are unchanged: splitting moves vertices without adding quads.
+- **Self-intersections get worse, not better** — `gyroid` 3.118 → 5.669 per 1,000 triangles, `fbm_terrain` 13.837 → 15.434. The prediction registered before the run said the opposite. Two vertices in one cell is exactly what breaks the within-cell partition the clamp's guarantee rests on, and a 2024 result reporting Manifold Dual Contouring as 100% self-intersecting was on the record the whole time.
+- **A second, unrelated non-manifold mechanism exists.** The dual of a manifold surface is a manifold *complex*, and an index buffer cannot hold two distinct edges between one pair of vertices, so parallel dual edges collapse into one edge with four faces. The property suite found it by shrinking to the exact same three-sphere fixture that falsified unconditional manifoldness for Marching Cubes. It is identified by arithmetic rather than by eye: a collapse costs exactly one edge, so `χ_dual − χ_mc == non_manifold_edges`, measured `1 − 0 == 1` at `h = 2/3` and `0 == 0` at every finer grid.
+
+---
+
+## Six algorithms, one process, one run
+
+No paper since 2020 benchmarks Marching Cubes against Surface Nets against Dual Contouring, and Surface Nets has no credible published timings at all. So they are measured here — seven fields, two grids, six algorithms, one process — and the headline is not what the folklore says.
+
+| | manifold | intersection-free |
+|---|---|---|
+| Marching Cubes | ✅ | ✅ |
+| Marching Cubes + decider | ✅ | ✅ |
+| Marching Tetrahedra | ✅ | ❌ 3.405 / 1k on `csg_difference` |
+| Surface Nets | ❌ 128 edges | ✅ |
+| Dual Contouring | ❌ 128 edges | ❌ 13.837 / 1k on `fbm_terrain` |
+| **Manifold Dual Contouring** | ✅ | ❌ 15.434 / 1k on `fbm_terrain` |
+
+Three of the four corners of that 2×2 are occupied, and **the crude baseline holds the good one**. What Dual Contouring buys instead is accuracy exactly where the features are sharp — symmetric Hausdorff at 65³ against Marching Cubes: `box_exact` **101×** better, `thin_plate` **77.9×**, against `sphere` **1.2×** and `torus` **1.6×**. Two orders of magnitude on a corner and nothing at all on a sphere.
+
+Marching Tetrahedra costs **2.87–3.91×** the triangles — the published "2–3×" covers only the two roughest fields — for **4.3%** worse geometry, where the source it is usually attributed to reads far stronger than that. And it is *better* than Marching Cubes on sharp fields, because its extra edge families sample a corner from more directions.
+
+```bash
+cargo bench --bench shootout        # writes docs/measurements/shootout.csv
+```
 
 ---
 
@@ -209,11 +252,11 @@ Every extraction algorithm ships with these before it counts as done. They are o
 | Edge orientation consistency | a single flipped triangle, which passes χ *and* both manifold checks while being inside out |
 | Self-intersections per 1,000 triangles | reported as a rate, never as a fraction-of-meshes, which saturates with chunk size |
 | Determinism | compared bit-wise via `total_cmp`, because `==` is wrong in both directions on floats |
-| Golden hashes over 63 (algorithm, field, resolution) combinations | a change that is topologically identical, geometrically indistinguishable and statistically invisible — the silent diff every other check shrugs at |
+| Golden hashes over 147 (algorithm, field, resolution) combinations | a change that is topologically identical, geometrically indistinguishable and statistically invisible — the silent diff every other check shrugs at |
 | Signed volume | global inversion, which nothing else here can see |
 | Hausdorff distance, both directions, and mean absolute error | a mesh that is perfectly valid and in the wrong place. Only the reverse direction sees *missing* geometry — deleting one face of a test octahedron leaves the forward number bit-identical |
 
-`FINDINGS.md` is the epistemic state: what is believed, how strongly, and on what evidence, with tiers for measured-here, verified-from-primary-source, reported, and folklore. Sixteen entries are in the falsified section, several of them corrections to this project's own documents.
+`FINDINGS.md` is the epistemic state: what is believed, how strongly, and on what evidence, with tiers for measured-here, verified-from-primary-source, reported, and folklore. Seventeen entries are in the falsified section, several of them corrections to this project's own documents, and the predictions are registered *before* the measurement so a wrong one stays on the record.
 
 ---
 
@@ -247,12 +290,14 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 286 tests
+cargo test -p isomesh                    # 326 tests, plus 10 doctests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
 cargo run --example marching_cubes_sphere --release             # the first GIF
 cargo run --example surface_nets_vs_marching_cubes --release    # the second and third
+cargo run --example dual_contouring_cube --release              # the sharp-feature comparison
+cargo run --example manifold_check --release                    # the red marks, and A to make them go
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires

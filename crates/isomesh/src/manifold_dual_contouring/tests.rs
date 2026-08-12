@@ -283,6 +283,19 @@ fn euler_characteristic_matches_marching_cubes_on_closed_fields() {
                     mdc_chi, mc_chi,
                     "{name} at {samples}^3: marching cubes chi {mc_chi}, dual {mdc_chi}"
                 );
+
+                // Components too, and this is the sharper half. Where plain Dual
+                // Contouring pinches, the shared vertex **fuses pieces that
+                // Marching Cubes keeps apart** — the gyroid at 19^3 reads one
+                // component under Dual Contouring and seven under both Marching
+                // Cubes and this. So the pinch was not only a topological defect
+                // in the index buffer, it was reporting the wrong object.
+                let mc_parts = report_of(&mc_out, h).components;
+                let mdc_parts = report_of(&mdc, h).components;
+                assert_eq!(
+                    mdc_parts, mc_parts,
+                    "{name} at {samples}^3: marching cubes {mc_parts} components, dual {mdc_parts}"
+                );
                 checked += 1;
             }
         }
