@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-50 tickets. Line numbers are stable until something above them is edited — grep the ID if
+51 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -321,3 +321,9 @@ implementation contradicted the ticket.
 | | | ***The field had to change for the crack to be visible, and that is worth knowing.*** On a sphere at these resolutions the gap is real, countable and about `0.03` world units wide — the HUD reports it and you cannot see it, because both blocks approximate the same circle on the seam plane and differ only by the sagitta. The gyroid crosses the seam with enough curvature that the two resolutions genuinely disagree, and the crack becomes a jagged hole you see straight through. **High curvature across the seam is what turns a countable crack into a visible one.** |
 | | | *An empty `MeshBuffer` is never handed to Bevy.* With the toggle off there are no transition triangles, and uploading a zero-vertex mesh made `bevy_render`'s slab allocator report a use-after-free and render **the entire frame black** — not just that entity. An empty part now keeps its previous mesh and is hidden. Worth recording: the failure had no obvious connection to its cause. |
 | | | *The camera sizes itself from the field's extent.* A fixed radius put it **inside** the gyroid, whose domain is several times the other fields'. |
+| ☑ | **G-006** | **Frame-budget scheduler.** `mesh_within_budget(ms)` — process the dirty queue until a time budget is exhausted, resume next call. Priority by camera distance. | M | G-002 |
+| | | ***The signature the ticket asked for is unimplementable, and the constraint improved it (M-78).*** `core` has no `Instant`, so a `no_std` crate cannot accept a millisecond budget without either a `std` feature — two paths, which this crate does not do — or a number it cannot compare against anything. `DirtySet::mesh_within_budget` therefore takes `spend: FnMut() -> bool` and the caller owns the clock: `\|\| start.elapsed() < budget`. |
+| | | ***`spend` is consulted after each chunk, never before***, and that is a deliberate trade rather than an oversight. Checking first means a budget too small for a single chunk drains **nothing, forever**, while the queue grows — a livelock that presents as a memory leak. Overshooting by at most one chunk is the price. `a_budget_that_is_already_gone_still_meshes_one_chunk` pins it with a predicate that always returns `false`. |
+| | | *Nearest-first by **squared** distance* — the ordering is identical and the square root is not free per chunk per frame — with ties broken by `ChunkId`, so the schedule is a pure function of the set's contents and the camera position and never of insertion order. `equidistant_chunks_break_ties_deterministically` inserts six equidistant chunks in six rotations and requires the same schedule from each. |
+| | | *The unprocessed remainder goes back into the set in its own sorted order*, so a partial pass leaves `DirtySet` in exactly the state a fresh one would be. Every chunk is meshed once and only once across passes, asserted by draining a ten-chunk queue three at a time and comparing against `0..10`. |
+| | | *The callback still receives `ChunkLayout::sample_origin`'s answer* rather than one the caller recomputed — the same guarantee `mesh_dirty` gives, for M-32's reason. |

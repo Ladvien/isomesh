@@ -85,6 +85,92 @@ impl DirtySet {
         self.chunks.clear();
     }
 
+    /// Re-mesh dirty chunks nearest a point first, stopping when the caller says
+    /// the budget is gone, and **keeping the rest for next time**.
+    ///
+    /// This is the operation a game actually performs. `mesh_dirty` answers "how
+    /// long does the whole queue take", which is the wrong question — a frame has
+    /// a budget whether the queue fits in it or not, and what matters is that the
+    /// frame time stays flat while the backlog drains.
+    ///
+    /// # The clock belongs to the caller
+    ///
+    /// The ticket asked for `mesh_within_budget(ms)`. **A `no_std` crate cannot
+    /// read a clock** — `core` has no `Instant`, and taking a milliseconds
+    /// argument would mean either a `std` feature (two paths, which this crate
+    /// does not do) or a lie. So the budget is a predicate the caller owns:
+    /// `spend` returns `true` while there is budget left, and a caller with a
+    /// `std` clock writes `|| start.elapsed() < budget`.
+    ///
+    /// # It always meshes at least one chunk
+    ///
+    /// `spend` is consulted **after** each chunk, never before. A budget too
+    /// small for a single chunk would otherwise drain nothing, forever, while the
+    /// queue grew — a livelock that looks like a leak. Overshooting by at most
+    /// one chunk is the price, and it is the right way round: a queue that cannot
+    /// make progress is a worse failure than a frame that runs long.
+    ///
+    /// # Order
+    ///
+    /// Nearest first, by squared distance from `camera` to each chunk's centre —
+    /// squared, because the ordering is the same and the square root is not free
+    /// per chunk per frame. Ties break by [`ChunkId`], so the order is a pure
+    /// function of the set's contents and the camera position, never of insertion
+    /// order. `Real::total_cmp` does the comparing, as everywhere else in this
+    /// crate that sorts floats.
+    pub fn mesh_within_budget<R, F, B>(
+        &mut self,
+        layout: &ChunkLayout<R>,
+        camera: [R; 3],
+        mut mesh: F,
+        mut spend: B,
+    ) -> BudgetReport
+    where
+        R: Real,
+        F: FnMut(ChunkId, [R; 3]),
+        B: FnMut() -> bool,
+    {
+        if self.chunks.is_empty() {
+            return BudgetReport::default();
+        }
+
+        let half = layout.cell_size() * R::from_f64(f64::from(layout.cells()) * 0.5);
+        let mut order: Vec<(R, ChunkId)> = self
+            .chunks
+            .iter()
+            .map(|id| {
+                let base = layout.sample_origin(*id);
+                let mut d = R::ZERO;
+                for axis in 0..3 {
+                    let centre = base[axis] + half;
+                    let delta = centre - camera[axis];
+                    d += delta * delta;
+                }
+                (d, *id)
+            })
+            .collect();
+        order.sort_by(|a, b| a.0.total_cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
+
+        let mut meshed = 0usize;
+        for (_, id) in &order {
+            mesh(*id, layout.sample_origin(*id));
+            meshed += 1;
+            if !spend() {
+                break;
+            }
+        }
+
+        // Keep what was not reached, in the set's own sorted order.
+        let mut kept: Vec<ChunkId> = order[meshed..].iter().map(|(_, id)| *id).collect();
+        kept.sort_unstable();
+        self.chunks = kept;
+
+        BudgetReport {
+            meshed,
+            remaining: self.chunks.len(),
+        }
+    }
+
     /// Re-mesh every dirty chunk, then clear the set.
     ///
     /// `mesh` is called once per chunk with that chunk's id and the world origin
@@ -106,6 +192,23 @@ impl DirtySet {
         let done = self.chunks.len();
         self.chunks.clear();
         done
+    }
+}
+
+/// What one budgeted pass got through.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct BudgetReport {
+    /// Chunks re-meshed this call.
+    pub meshed: usize,
+    /// Chunks still queued when the budget ran out.
+    pub remaining: usize,
+}
+
+impl BudgetReport {
+    /// Whether the queue drained completely.
+    #[must_use]
+    pub fn is_drained(&self) -> bool {
+        self.remaining == 0
     }
 }
 

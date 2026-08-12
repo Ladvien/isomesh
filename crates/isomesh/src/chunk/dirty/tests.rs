@@ -3,7 +3,7 @@
 
 use alloc::vec::Vec;
 
-use super::{DirtySet, EditReport, mark_edit};
+use super::{BudgetReport, DirtySet, EditReport, mark_edit};
 use crate::chunk::{ChunkId, ChunkLayout};
 use crate::fields::{BoxExact, Difference, Sphere};
 
@@ -248,4 +248,166 @@ fn dirtied_chunks_overlap_the_region() {
         );
     }
     assert_eq!(dirty.len() as u64, report.dirty_chunks);
+}
+
+// ─── G-006: the frame budget ────────────────────────────────────────────────
+
+/// Nearest first, and the order is a pure function of the contents and the
+/// camera — never of the order edits arrived.
+#[test]
+fn a_budgeted_pass_meshes_nearest_first() {
+    let layout = ChunkLayout::<f64>::new(8, 0.125, [0.0; 3]).expect("valid layout");
+    let mut set = DirtySet::new();
+    // Inserted deliberately out of distance order.
+    for coords in [[3, 0, 0], [0, 0, 0], [2, 0, 0], [1, 0, 0]] {
+        set.insert(ChunkId::new(coords));
+    }
+
+    let mut visited = Vec::new();
+    let report = set.mesh_within_budget(
+        &layout,
+        [0.0; 3],
+        |id, _| visited.push(id.coords[0]),
+        || true,
+    );
+    assert_eq!(visited, alloc::vec![0, 1, 2, 3]);
+    assert_eq!(report.meshed, 4);
+    assert!(report.is_drained());
+
+    // From the far side, the order reverses.
+    let mut set = DirtySet::new();
+    for coords in [[3, 0, 0], [0, 0, 0], [2, 0, 0], [1, 0, 0]] {
+        set.insert(ChunkId::new(coords));
+    }
+    let mut visited = Vec::new();
+    set.mesh_within_budget(
+        &layout,
+        [10.0, 0.0, 0.0],
+        |id, _| visited.push(id.coords[0]),
+        || true,
+    );
+    assert_eq!(visited, alloc::vec![3, 2, 1, 0]);
+}
+
+/// The budget stops the pass and the remainder survives to the next call, with
+/// nothing lost and nothing done twice.
+#[test]
+fn an_exhausted_budget_leaves_the_rest_for_next_time() {
+    let layout = ChunkLayout::<f64>::new(8, 0.125, [0.0; 3]).expect("valid layout");
+    let mut set = DirtySet::new();
+    for x in 0..10i32 {
+        set.insert(ChunkId::new([x, 0, 0]));
+    }
+
+    let mut all = Vec::new();
+    let mut passes = 0;
+    while !set.is_empty() {
+        let mut this_pass = 0;
+        let report = set.mesh_within_budget(
+            &layout,
+            [0.0; 3],
+            |id, _| all.push(id.coords[0]),
+            || {
+                this_pass += 1;
+                this_pass < 3
+            },
+        );
+        assert!(report.meshed > 0, "a pass must always make progress");
+        passes += 1;
+        assert!(passes <= 10, "the queue is not draining");
+    }
+
+    // Every chunk exactly once, in distance order across the passes.
+    assert_eq!(all, (0..10).collect::<Vec<i32>>());
+}
+
+/// **A budget too small for one chunk must still make progress.**
+///
+/// Consulting `spend` *before* a chunk instead of after would drain nothing,
+/// forever, while the queue grew — a livelock that presents as a memory leak.
+/// Overshooting by at most one chunk is the price and it is the right way round.
+#[test]
+fn a_budget_that_is_already_gone_still_meshes_one_chunk() {
+    let layout = ChunkLayout::<f64>::new(8, 0.125, [0.0; 3]).expect("valid layout");
+    let mut set = DirtySet::new();
+    for x in 0..4i32 {
+        set.insert(ChunkId::new([x, 0, 0]));
+    }
+
+    let mut passes = 0;
+    while !set.is_empty() {
+        let report = set.mesh_within_budget(&layout, [0.0; 3], |_, _| {}, || false);
+        assert_eq!(report.meshed, 1, "exactly one, never zero");
+        passes += 1;
+        assert!(passes <= 4, "the queue is not draining");
+    }
+    assert_eq!(passes, 4);
+}
+
+/// Ties break by `ChunkId`, so equidistant chunks have a defined order rather
+/// than whatever the sort happened to do.
+#[test]
+fn equidistant_chunks_break_ties_deterministically() {
+    let layout = ChunkLayout::<f64>::new(8, 0.125, [0.0; 3]).expect("valid layout");
+    // Six chunks the same distance from the origin-centred camera.
+    let ring = [
+        [1, 0, 0],
+        [-1, 0, 0],
+        [0, 1, 0],
+        [0, -1, 0],
+        [0, 0, 1],
+        [0, 0, -1],
+    ];
+
+    let mut orders = Vec::new();
+    for start in 0..ring.len() {
+        let mut set = DirtySet::new();
+        // Insert in a rotated order each time.
+        for k in 0..ring.len() {
+            set.insert(ChunkId::new(ring[(start + k) % ring.len()]));
+        }
+        let centre = layout.cell_size() * 4.0;
+        let mut visited = Vec::new();
+        set.mesh_within_budget(
+            &layout,
+            [centre, centre, centre],
+            |id, _| visited.push(id.coords),
+            || true,
+        );
+        orders.push(visited);
+    }
+    for window in orders.windows(2) {
+        assert_eq!(
+            window[0], window[1],
+            "insertion order leaked into the schedule"
+        );
+    }
+}
+
+/// The origin handed to the mesh callback is the layout's, not one the caller
+/// recomputed — the same guarantee `mesh_dirty` gives, and for M-32's reason.
+#[test]
+fn the_budgeted_pass_supplies_the_layouts_own_origin() {
+    // Exact: the whole point is that the caller never does this arithmetic.
+    #![allow(clippy::float_cmp)]
+    let layout = ChunkLayout::<f64>::new(8, 4.0 / 35.0, [-1.0; 3]).expect("valid layout");
+    let mut set = DirtySet::new();
+    let id = ChunkId::new([2, -1, 3]);
+    set.insert(id);
+
+    let mut seen = None;
+    set.mesh_within_budget(&layout, [0.0; 3], |_, origin| seen = Some(origin), || true);
+    assert_eq!(seen, Some(layout.sample_origin(id)));
+}
+
+/// An empty queue is not an error and does no work.
+#[test]
+fn an_empty_queue_meshes_nothing() {
+    let layout = ChunkLayout::<f64>::new(8, 0.125, [0.0; 3]).expect("valid layout");
+    let mut set = DirtySet::new();
+    let mut called = 0;
+    let report = set.mesh_within_budget(&layout, [0.0; 3], |_, _| called += 1, || true);
+    assert_eq!(called, 0);
+    assert_eq!(report, BudgetReport::default());
+    assert!(report.is_drained());
 }
