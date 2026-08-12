@@ -36,6 +36,7 @@ use proptest::prelude::*;
 use super::{DOMAIN, SurfaceGate, assert_extracted_mesh_is_valid, convex_body, sphere_union};
 use crate::cube::{corner_offset, edge_crossing};
 use crate::dual_contouring::DualContouring;
+use crate::manifold_dual_contouring::ManifoldDualContouring;
 use crate::marching_cubes::table::{
     CASES, EDGE_AXIS, EDGE_CORNERS, McCase, corner_inside, is_inside,
 };
@@ -203,6 +204,40 @@ fn check_dc<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usi
     out.triangle_count()
 }
 
+/// Extract with Manifold Dual Contouring and run the bundle over the result.
+///
+/// **Not the strict gate, and the reason is a finding rather than a concession.**
+/// A-010 removes the one-vertex-per-cell pinch completely — every reference
+/// field is manifold at every tested resolution, where Surface Nets and plain
+/// Dual Contouring are not. The strict gate was tried here first and failed, on
+/// a *second and unrelated* mechanism: the dual of a manifold surface is a
+/// manifold **complex**, but an indexed triangle mesh has no way to carry two
+/// distinct edges between the same pair of vertices, so a pair of parallel dual
+/// edges collapses into one edge with four faces.
+///
+/// It is pinned exactly, in both directions, by
+/// `the_parallel_dual_edge_collapse_is_the_only_residue` in the algorithm's own
+/// tests — including the arithmetic that identifies it, `chi_dual − chi_mc ==
+/// non_manifold_edges`. See M-58 and O-16.
+///
+/// What is still asserted is everything else: closed, no boundary, consistent
+/// winding, no structural errors.
+fn check_mdc<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usize {
+    let (shape, origin, cell_size) = grid_for(size);
+    let mut mdc = ManifoldDualContouring::<f64>::new();
+    let mut out = MeshBuffer::<f64>::new();
+    mdc.extract(field, &shape, origin, cell_size, &mut out)
+        .expect("extraction");
+    assert_extracted_mesh_is_valid(
+        label,
+        &out.positions,
+        &out.indices,
+        cell_size,
+        SurfaceGate::ClosedAllowingUnresolvedTopology,
+    );
+    out.triangle_count()
+}
+
 /// The radius of the largest sphere in a generated union.
 ///
 /// An object comfortably larger than the grid spacing **must** be found. Without
@@ -300,6 +335,19 @@ proptest! {
     #[test]
     fn dual_contouring_meshes_convex_bodies(field in convex_body(), size in extraction_resolution()) {
         check_dc("dc / convex body", &field, size);
+    }
+
+    #[test]
+    fn manifold_dual_contouring_meshes_sphere_unions(field in sphere_union(), size in extraction_resolution()) {
+        let tris = check_mdc("mdc / sphere union", &field, size);
+        if largest_radius(&field) >= 2.0 * spacing_for(size) {
+            prop_assert!(tris > 0, "a resolvable sphere was missed entirely");
+        }
+    }
+
+    #[test]
+    fn manifold_dual_contouring_meshes_convex_bodies(field in convex_body(), size in extraction_resolution()) {
+        check_mdc("mdc / convex body", &field, size);
     }
 }
 

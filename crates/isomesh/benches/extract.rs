@@ -30,6 +30,7 @@ use std::hint::black_box;
 use criterion::{Criterion, criterion_group, criterion_main};
 use isomesh::dual_contouring::DualContouring;
 use isomesh::fields::{BoxExact, ReferenceField, Sphere, Torus, capped_gyroid};
+use isomesh::manifold_dual_contouring::ManifoldDualContouring;
 use isomesh::marching_cubes::{FaceAmbiguity, MarchingCubes};
 use isomesh::marching_tetrahedra::MarchingTetrahedra;
 use isomesh::surface_nets::SurfaceNets;
@@ -97,6 +98,31 @@ where
         b.iter(|| {
             out.reset();
             dc.extract(&field, &shape, origin, h, &mut out)
+                .expect("extraction");
+            black_box(out.triangle_count())
+        });
+    });
+}
+
+/// Manifold Dual Contouring.
+///
+/// Paired with [`bench_dc`] on the same fields on purpose: the two differ only
+/// in the per-cycle split, so the gap is what A-010's manifold guarantee costs.
+fn bench_mdc<R, F>(c: &mut Criterion, label: &str, field: F, samples: u32)
+where
+    R: Real,
+    F: ReferenceField + Sdf<Scalar = R>,
+{
+    let (shape, origin, h) = common::grid(&field, samples);
+    let mut mdc = ManifoldDualContouring::<R>::new();
+    let mut out = MeshBuffer::<R>::new();
+    mdc.extract(&field, &shape, origin, h, &mut out)
+        .expect("extraction");
+
+    c.bench_function(label, |b| {
+        b.iter(|| {
+            out.reset();
+            mdc.extract(&field, &shape, origin, h, &mut out)
                 .expect("extraction");
             black_box(out.triangle_count())
         });
@@ -223,6 +249,24 @@ fn algorithms(c: &mut Criterion) {
         bench_dc(
             c,
             &format!("dual_contouring/box_exact/f32/{n}"),
+            BoxExact::<f32>::canonical(),
+            n,
+        );
+        bench_mdc(
+            c,
+            &format!("manifold_dual_contouring/sphere/f32/{n}"),
+            Sphere::<f32>::canonical(),
+            n,
+        );
+        bench_mdc(
+            c,
+            &format!("manifold_dual_contouring/torus/f32/{n}"),
+            Torus::<f32>::canonical(),
+            n,
+        );
+        bench_mdc(
+            c,
+            &format!("manifold_dual_contouring/box_exact/f32/{n}"),
             BoxExact::<f32>::canonical(),
             n,
         );

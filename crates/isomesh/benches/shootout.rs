@@ -60,6 +60,7 @@ use std::time::Instant;
 
 use isomesh::dual_contouring::DualContouring;
 use isomesh::fields::ReferenceField;
+use isomesh::manifold_dual_contouring::ManifoldDualContouring;
 use isomesh::marching_cubes::{FaceAmbiguity, MarchingCubes};
 use isomesh::marching_tetrahedra::MarchingTetrahedra;
 use isomesh::surface_nets::SurfaceNets;
@@ -94,15 +95,17 @@ enum Algorithm {
     MarchingTetrahedra,
     SurfaceNets,
     DualContouring,
+    ManifoldDualContouring,
 }
 
 impl Algorithm {
-    const ALL: [Self; 5] = [
+    const ALL: [Self; 6] = [
         Self::MarchingCubes,
         Self::MarchingCubesDecider,
         Self::MarchingTetrahedra,
         Self::SurfaceNets,
         Self::DualContouring,
+        Self::ManifoldDualContouring,
     ];
 
     fn name(self) -> &'static str {
@@ -112,6 +115,7 @@ impl Algorithm {
             Self::MarchingTetrahedra => "marching_tetrahedra",
             Self::SurfaceNets => "surface_nets",
             Self::DualContouring => "dual_contouring",
+            Self::ManifoldDualContouring => "manifold_dual_contouring",
         }
     }
 
@@ -143,6 +147,9 @@ impl Algorithm {
                 .extract(field, shape, origin, cell_size, out)
                 .expect("extraction"),
             Self::DualContouring => DualContouring::<Scalar>::new()
+                .extract(field, shape, origin, cell_size, out)
+                .expect("extraction"),
+            Self::ManifoldDualContouring => ManifoldDualContouring::<Scalar>::new()
                 .extract(field, shape, origin, cell_size, out)
                 .expect("extraction"),
         }
@@ -314,8 +321,8 @@ fn report(rows: &[Row]) {
 
     println!("\n--- ratios against marching_cubes, per field, at 65^3 ---");
     println!(
-        "{:<14} {:>10} {:>10} {:>10} {:>10}",
-        "field", "mc33 tris", "mt tris", "sn tris", "dc tris"
+        "{:<14} {:>10} {:>10} {:>10} {:>10} {:>10}",
+        "field", "mc33 tris", "mt tris", "sn tris", "dc tris", "mdc tris"
     );
     isomesh::for_each_reference_field!(f64, |name, _field| {
         if let Some(mc) = at(name, "marching_cubes", 65) {
@@ -326,11 +333,12 @@ fn report(rows: &[Row]) {
                 )
             };
             println!(
-                "{name:<14} {} {} {} {}",
+                "{name:<14} {} {} {} {} {}",
                 ratio("marching_cubes+decider"),
                 ratio("marching_tetrahedra"),
                 ratio("surface_nets"),
-                ratio("dual_contouring")
+                ratio("dual_contouring"),
+                ratio("manifold_dual_contouring")
             );
         }
     });

@@ -37,7 +37,7 @@ use crate::{Real, RuntimeShape3, Sdf, Shape3};
 pub(crate) mod extraction;
 
 /// Half-extent of the box every generated field lives inside.
-const DOMAIN: f64 = 2.0;
+pub(crate) const DOMAIN: f64 = 2.0;
 
 // ─── randomized fields ──────────────────────────────────────────────────────
 

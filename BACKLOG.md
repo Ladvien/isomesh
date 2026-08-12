@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**35 tickets archived, 41 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**36 tickets archived, 40 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -62,11 +62,15 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 > that as a universal gate: Surface Nets is *legitimately* non-manifold where one cell carries two
 > sheets (48 edges on capped gyroid, 15 on fbm_terrain), and those counts are pinned as **non-zero
 > assertions** precisely so they can't drift silently. A known defect with a pinned number and a
-> ticket that owns it (A-010) satisfies this gate. An unexplained one does not.
+> ticket that owns it satisfies this gate. An unexplained one does not.
+>
+> **A-010 has since landed and closed that owner.** Surface Nets' and Dual Contouring's counts stay
+> pinned as non-zero — they are properties of one-vertex-per-cell, not bugs — and
+> `manifold_dual_contouring` is the entry that takes the zero. Its own residue is M-59's parallel-edge
+> collapse, pinned at one edge on the ✗15 fixture and zero everywhere else, owned by O-16.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **A-010** | **Manifold Dual Contouring.** Vertex splitting so each cell can emit >1 vertex where topology demands it. **Acceptance:** `non_manifold_edges == 0` on `gyroid` and `csg_difference`, where plain Dual Contouring will not manage it. | L | A-007 |
 | ☐ | **A-011** | **Transvoxel transition cells.** Half-resolution transition cells at LOD boundaries. **Acceptance:** two adjacent chunks at differing LOD produce zero boundary gaps — assert on the geometry, then confirm visually in E-107. | L | A-001 |
 | ☐ | **A-012** | **Normal estimation strategies.** Analytic gradient / central differences / area-weighted face normals, selectable. **Acceptance:** all three produce unit-length normals; analytic and central-difference agree within tolerance on `sphere`. | S | A-001 |
 | ☐ | **A-014** | **Subgrid Marching Tetrahedra.** Integer edge-intersection counts instead of vertex signs — resolves features finer than one cell. The differentiator; do it after the usual suspects are solid. | L | A-003 |

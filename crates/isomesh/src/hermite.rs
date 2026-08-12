@@ -142,6 +142,27 @@ impl<R: Real> HermiteCell<R> {
         cell
     }
 
+    /// The same crossings, restricted to the edges in `edges`.
+    ///
+    /// Bit `e` of `edges` keeps edge `e`; edges this cell does not cut stay
+    /// uncut. Everything derived from the cell — [`len`](Self::len),
+    /// [`iter`](Self::iter), [`centroid`](Self::centroid), and the vertex solve —
+    /// then sees only that subset.
+    ///
+    /// This is what turns one cell into several vertices. A cell the surface
+    /// passes through twice has its cut edges partitioned into **surface
+    /// components**, and solving each component's edges separately puts a vertex
+    /// on each sheet instead of one vertex shared between them. See
+    /// [`ManifoldDualContouring`](crate::manifold_dual_contouring::ManifoldDualContouring),
+    /// which is the only caller that needs it and the reason it exists.
+    #[must_use]
+    pub fn restricted(&self, edges: u16) -> Self {
+        Self {
+            crossings: self.crossings,
+            mask: self.mask & edges,
+        }
+    }
+
     /// How many edges the surface crosses.
     #[must_use]
     pub fn len(&self) -> usize {

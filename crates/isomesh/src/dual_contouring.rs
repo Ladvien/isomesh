@@ -44,7 +44,7 @@
 
 pub mod solve;
 
-use crate::dual::{DualMesher, VertexRule};
+use crate::dual::{CellVertices, DualMesher, VertexRule};
 use crate::hermite::HermiteCell;
 use crate::{MeshSink, Real, Sdf, Shape3};
 
@@ -109,6 +109,12 @@ pub struct Qef {
 }
 
 impl<R: Real> VertexRule<R> for Qef {
+    /// One vertex owning the whole cell.
+    ///
+    /// Where two sheets share a cell they share this vertex, and the mesh pinches
+    /// — the structural defect A-010 lifts by solving the QEF per surface
+    /// component instead. See
+    /// [`ManifoldDualContouring`](crate::manifold_dual_contouring::ManifoldDualContouring).
     fn place<S: Sdf<Scalar = R>>(
         &self,
         sdf: &S,
@@ -116,7 +122,8 @@ impl<R: Real> VertexRule<R> for Qef {
         base: [u32; 3],
         origin: [R; 3],
         cell_size: R,
-    ) -> Option<[R; 3]> {
+        out: &mut CellVertices<R>,
+    ) {
         let cell_origin = [
             origin[0] + cell_size * R::from_f64(f64::from(base[0])),
             origin[1] + cell_size * R::from_f64(f64::from(base[1])),
@@ -126,27 +133,42 @@ impl<R: Real> VertexRule<R> for Qef {
         // the corner samples the engine already took, so this adds field
         // evaluations only where the surface actually is.
         let cell = HermiteCell::from_corners(sdf, corner, cell_origin, cell_size);
-        let x = solve::solve(&cell)?;
+        let Some(x) = solve::solve(&cell) else {
+            return;
+        };
+        out.push_whole_cell(apply_clamp(self.clamp, x, cell_origin, cell_size));
+    }
+}
 
-        match self.clamp {
-            Clamp::None => Some(x),
-            Clamp::ToCell => {
-                // The cell, scaled about its centre by (1 - eps).
-                //
-                // `min`/`max` is a *continuous* operation, which is the reason
-                // this does not reintroduce the failure ✗12 is about: a vertex
-                // pushed against a wall slides along it as the field moves,
-                // where an SVD rank branch jumps. Clamping costs sharpness, not
-                // stability.
-                let half = cell_size * R::HALF;
-                let inset = half * R::from_f64(1.0 - CLAMP_EPSILON);
-                let mut out = x;
-                for (axis, slot) in out.iter_mut().enumerate() {
-                    let centre = cell_origin[axis] + half;
-                    *slot = slot.clamp(centre - inset, centre + inset);
-                }
-                Some(out)
+/// Confine a solved vertex to its own cell, if the rule says to.
+///
+/// Shared by [`Qef`] and
+/// [`CycleQef`](crate::manifold_dual_contouring::CycleQef) so the two cannot
+/// disagree about what "inside the cell" means — a disagreement that would show
+/// up only as a self-intersection count nobody could account for.
+///
+/// The cell is scaled about its own centre by `(1 − ε)`. `min`/`max` is a
+/// *continuous* operation, which is the reason this does not reintroduce the
+/// failure ✗12 is about: a vertex pushed against a wall slides along it as the
+/// field moves, where an SVD rank branch jumps. Clamping costs sharpness, not
+/// stability.
+pub(crate) fn apply_clamp<R: Real>(
+    clamp: Clamp,
+    x: [R; 3],
+    cell_origin: [R; 3],
+    cell_size: R,
+) -> [R; 3] {
+    match clamp {
+        Clamp::None => x,
+        Clamp::ToCell => {
+            let half = cell_size * R::HALF;
+            let inset = half * R::from_f64(1.0 - CLAMP_EPSILON);
+            let mut out = x;
+            for (axis, slot) in out.iter_mut().enumerate() {
+                let centre = cell_origin[axis] + half;
+                *slot = slot.clamp(centre - inset, centre + inset);
             }
+            out
         }
     }
 }

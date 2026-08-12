@@ -48,7 +48,7 @@
 //! should be reported with its hardware and grid attached.
 
 use crate::cube::{EDGE_CORNERS, corner_offset, edge_crossing, is_inside};
-use crate::dual::{DualMesher, VertexRule};
+use crate::dual::{CellVertices, DualMesher, VertexRule};
 use crate::{MeshSink, Real, Sdf, Shape3};
 
 /// Surface Nets over a sampled grid.
@@ -96,6 +96,10 @@ pub struct SurfaceNets<R: Real> {
 pub struct Centroid;
 
 impl<R: Real> VertexRule<R> for Centroid {
+    /// One vertex owning the whole cell — Surface Nets does not separate sheets,
+    /// which is exactly the limitation A-010 measured and
+    /// [`ManifoldDualContouring`](crate::manifold_dual_contouring::ManifoldDualContouring)
+    /// lifts.
     fn place<S: Sdf<Scalar = R>>(
         &self,
         _sdf: &S,
@@ -103,7 +107,8 @@ impl<R: Real> VertexRule<R> for Centroid {
         base: [u32; 3],
         origin: [R; 3],
         cell_size: R,
-    ) -> Option<[R; 3]> {
+        out: &mut CellVertices<R>,
+    ) {
         let mut sum = [R::ZERO; 3];
         let mut crossings = 0u32;
         for [lo, hi] in EDGE_CORNERS {
@@ -125,15 +130,15 @@ impl<R: Real> VertexRule<R> for Centroid {
         // outside one.
         debug_assert!(crossings > 0);
         if crossings == 0 {
-            return None;
+            return;
         }
 
         let inv = R::from_f64(f64::from(crossings)).recip();
-        Some([
+        out.push_whole_cell([
             origin[0] + cell_size * (R::from_f64(f64::from(base[0])) + sum[0] * inv),
             origin[1] + cell_size * (R::from_f64(f64::from(base[1])) + sum[1] * inv),
             origin[2] + cell_size * (R::from_f64(f64::from(base[2])) + sum[2] * inv),
-        ])
+        ]);
     }
 }
 

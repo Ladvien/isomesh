@@ -60,6 +60,7 @@ use alloc::vec::Vec;
 use crate::dual_contouring::DualContouring;
 use crate::fields::ReferenceField;
 use crate::greedy_quads::GreedyQuads;
+use crate::manifold_dual_contouring::ManifoldDualContouring;
 use crate::marching_cubes::{FaceAmbiguity, MarchingCubes};
 use crate::marching_tetrahedra::MarchingTetrahedra;
 use crate::surface_nets::SurfaceNets;
@@ -147,16 +148,18 @@ enum Algorithm {
     MarchingTetrahedra,
     SurfaceNets,
     DualContouring,
+    ManifoldDualContouring,
 }
 
 impl Algorithm {
-    const ALL: [Self; 6] = [
+    const ALL: [Self; 7] = [
         Self::GreedyQuads,
         Self::MarchingCubes,
         Self::MarchingCubes33,
         Self::MarchingTetrahedra,
         Self::SurfaceNets,
         Self::DualContouring,
+        Self::ManifoldDualContouring,
     ];
 
     fn name(self) -> &'static str {
@@ -167,6 +170,7 @@ impl Algorithm {
             Self::MarchingTetrahedra => "marching_tetrahedra",
             Self::SurfaceNets => "surface_nets",
             Self::DualContouring => "dual_contouring",
+            Self::ManifoldDualContouring => "manifold_dual_contouring",
         }
     }
 }
@@ -209,6 +213,9 @@ where
             .extract(field, &shape, lo, cell_size, &mut out)
             .expect("extraction"),
         Algorithm::DualContouring => DualContouring::<f64>::new()
+            .extract(field, &shape, lo, cell_size, &mut out)
+            .expect("extraction"),
+        Algorithm::ManifoldDualContouring => ManifoldDualContouring::<f64>::new()
             .extract(field, &shape, lo, cell_size, &mut out)
             .expect("extraction"),
     }
