@@ -113,7 +113,7 @@ pub const FACE_COUNT: usize = 6;
 /// The bit a face occupies in a resolution mask: `axis * 2 + side`.
 ///
 /// Stated once here because [`segment_links`], [`AMBIGUOUS_FACES`],
-/// [`super::ambiguity::joined_mask`] and the validator all have to agree about
+/// [`super::ambiguity`]'s mask builder and the validator all have to agree about
 /// it, and a transposition between any two of them would be invisible in the
 /// output.
 #[inline]
