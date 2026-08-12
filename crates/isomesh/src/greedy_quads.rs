@@ -86,7 +86,28 @@ pub struct GreedyQuads<R: Real> {
     solid: Vec<bool>,
     /// Scratch for one 2D slice's face mask.
     mask: Vec<bool>,
+    merge: Merge,
     _scalar: core::marker::PhantomData<R>,
+}
+
+/// Whether adjacent coplanar faces are merged into one quad.
+///
+/// [`Off`](Merge::Off) is **face culling**: one quad per visible cell face, no
+/// merging. It is the baseline the published `2.76x` saving is quoted against,
+/// and it exists here as a setting rather than as a second implementation for a
+/// specific reason — the test that measured M-56 originally re-derived the
+/// unmerged count with its own copy of the occupancy and visibility logic, which
+/// is two paths that can drift apart while still agreeing on the day they were
+/// written. E-106 needed the unmerged *mesh* rather than a count, and one switch
+/// serves both.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Merge {
+    /// Merge greedily: widest run along `u`, then as many full-width rows along
+    /// `v` as continue it. The default, and the algorithm's whole point.
+    #[default]
+    Greedy,
+    /// One quad per visible face.
+    Off,
 }
 
 impl<R: Real> GreedyQuads<R> {
@@ -96,8 +117,17 @@ impl<R: Real> GreedyQuads<R> {
         Self {
             solid: Vec::new(),
             mask: Vec::new(),
+            merge: Merge::Greedy,
             _scalar: core::marker::PhantomData,
         }
+    }
+
+    /// Whether coplanar faces are merged. Defaults to [`Merge::Greedy`].
+    ///
+    /// [`Merge::Off`] is the face-culling baseline; see [`Merge`] for why it is a
+    /// setting rather than a separate function.
+    pub fn set_merge(&mut self, merge: Merge) {
+        self.merge = merge;
     }
 
     /// Extract the blocky surface into `out`.
@@ -211,17 +241,19 @@ impl<R: Real> GreedyQuads<R> {
                                 continue;
                             }
                             let mut width = 1usize;
-                            while a + width < du && self.mask[a + width + du * b] {
-                                width += 1;
-                            }
                             let mut height = 1usize;
-                            'grow: while b + height < dv {
-                                for k in 0..width {
-                                    if !self.mask[a + k + du * (b + height)] {
-                                        break 'grow;
-                                    }
+                            if self.merge == Merge::Greedy {
+                                while a + width < du && self.mask[a + width + du * b] {
+                                    width += 1;
                                 }
-                                height += 1;
+                                'grow: while b + height < dv {
+                                    for k in 0..width {
+                                        if !self.mask[a + k + du * (b + height)] {
+                                            break 'grow;
+                                        }
+                                    }
+                                    height += 1;
+                                }
                             }
                             for row in 0..height {
                                 for k in 0..width {

@@ -12,7 +12,7 @@ use crate::fields::{BoxExact, ReferenceField, Sphere};
 use crate::marching_cubes::MarchingCubes;
 use crate::validate::{ValidateConfig, check_determinism, validate_indexed};
 use crate::weld::Welder;
-use crate::{MeshBuffer, RuntimeShape3, Sdf, Shape3, vec3};
+use crate::{MeshBuffer, RuntimeShape3, Sdf, vec3};
 
 fn mesh<F: Sdf<Scalar = f64> + ReferenceField>(field: &F, samples: u32) -> (MeshBuffer<f64>, f64) {
     let (lo, hi) = field.domain();
@@ -198,49 +198,27 @@ fn the_saving_over_face_culling_is_measured() {
 }
 
 /// Face culling: one quad per visible cell face, no merging. The baseline the
-/// published `2.76×` is measured against.
+/// published `2.76x` is measured against.
+///
+/// **This used to be a second implementation** — its own occupancy sampling, its
+/// own neighbour test, its own face count — which agreed with the real extractor
+/// on the day it was written and had nothing keeping it that way. A-005's own
+/// finding is that the unmerged count is the denominator of every ratio in M-56,
+/// so a drift here would move numbers this repo has published. E-106 needed the
+/// unmerged *mesh* rather than a count, and `Merge::Off` now serves both.
 fn face_culled_triangles<F: Sdf<Scalar = f64>>(
     field: &F,
     shape: &RuntimeShape3,
     origin: [f64; 3],
     h: f64,
 ) -> usize {
-    let size = shape.size();
-    let cells = [size[0] - 1, size[1] - 1, size[2] - 1];
-    let solid = |c: [i64; 3]| -> bool {
-        for axis in 0..3 {
-            if c[axis] < 0 || c[axis] >= i64::from(cells[axis]) {
-                return false;
-            }
-        }
-        let p = [
-            origin[0] + h * (c[0] as f64 + 0.5),
-            origin[1] + h * (c[1] as f64 + 0.5),
-            origin[2] + h * (c[2] as f64 + 0.5),
-        ];
-        crate::cube::is_inside(field.sample(p))
-    };
-
-    let mut faces = 0usize;
-    for z in 0..cells[2] as i64 {
-        for y in 0..cells[1] as i64 {
-            for x in 0..cells[0] as i64 {
-                if !solid([x, y, z]) {
-                    continue;
-                }
-                for axis in 0..3 {
-                    for step in [1i64, -1] {
-                        let mut n = [x, y, z];
-                        n[axis] += step;
-                        if !solid(n) {
-                            faces += 1;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    faces * 2
+    let mut out = MeshBuffer::<f64>::new();
+    let mut mesher = GreedyQuads::<f64>::new();
+    mesher.set_merge(crate::greedy_quads::Merge::Off);
+    mesher
+        .extract(field, shape, origin, h, &mut out)
+        .expect("extraction");
+    out.triangle_count()
 }
 
 /// The blocky surface is a different surface; the counts say by how much.

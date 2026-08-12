@@ -14,7 +14,7 @@
 
 ## Status
 
-Early. Six extraction algorithms, three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, and a Bevy bridge. Forty-two tickets done, thirty-six open.
+Early. Six extraction algorithms, three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, and a Bevy bridge. Forty-five tickets done, thirty-five open.
 
 | | |
 |---|---|
@@ -206,6 +206,30 @@ cargo bench --bench shootout        # writes docs/measurements/shootout.csv
 
 ---
 
+## The blocky path, and a published number that is one scene's
+
+![Blocky terrain meshed twice: every cell face, then merged into large quads](docs/screenshots/e106-greedy-quads-terrain.png)
+
+*`greedy_quads` — the same fBm terrain and the same occupancy, meshed twice. Left, one quad per visible cell face: **5,014 quads**. Right, coplanar runs merged: **1,089**, and that side wall is two triangles. The wireframe is the demo, because the two surfaces are identical.*
+
+Greedy meshing is quoted everywhere as **2.76× fewer triangles than face culling**, from one UE5 benchmark. Measured across seven fields at one resolution, it is not a constant:
+
+| `gyroid` | `sphere` | `torus` | `fbm_terrain` | `csg_difference` | `box_exact` |
+|---|---|---|---|---|---|
+| 1.70× | 1.94× | 2.69× | 4.60× | 10.64× | **256×** |
+
+Merging pays for **flat runs**. A grid-aligned box collapses to six quads at every resolution — twelve triangles at 17³, 33³ and 65³ alike — while a sphere's staircase is short runs and barely merges. The published figure happens to land beside `torus`. This was predicted before the measurement, for exactly that reason.
+
+Two limitations are on display rather than hidden. `thin_plate` returns **zero triangles**: it is 0.4 cells thick and this algorithm asks one question per cell, so a feature thinner than a cell does not exist to it. And the mesh is deliberately **open** — a cube corner needs three normals, so vertices are split, and welding closes it everywhere except a T-junction, where a long quad butts against several short ones and the vertex they meet at simply is not on the long quad's edge.
+
+```bash
+cd bevy_isomesh && cargo run --example greedy_quads --release
+```
+
+`1`–`6` field · `[` `]` resolution. Press `2` then `]` to watch the right panel stay at twelve triangles while the left one grows.
+
+---
+
 ## Digging, with the numbers a game actually cares about
 
 ![Carving a tunnel into terrain, with the re-meshed chunks outlined](docs/screenshots/e202-game-dig.png)
@@ -322,7 +346,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 345 tests, plus 10 doctests
+cargo test -p isomesh                    # 354 tests, plus 10 doctests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
@@ -332,6 +356,7 @@ cargo run --example dual_contouring_cube --release              # the sharp-feat
 cargo run --example manifold_check --release                    # the red marks, and A to make them go
 cargo run --example normal_estimation --release                 # three identical meshes, three shadings
 cargo run --example marching_tetrahedra --release               # 3x the triangles, and what they buy
+cargo run --example greedy_quads --release                      # 5014 quads down to 1089
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires

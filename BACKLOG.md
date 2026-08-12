@@ -129,7 +129,6 @@ the point** — they're how someone decides whether this crate is usable.
 
 | | ID | Example | Blocked by |
 |---|---|---|---|
-| ☐ | **E-106** | `greedy_quads` — the blocky path, quads before/after merge | A-005 |
 | ☐ | **E-107** | `transvoxel_seams` — two LODs adjacent, toggle transition cells. **Commit both screenshots.** | A-011b |
 | ☐ | **E-108** | `subgrid_features` — letters carved thinner than a voxel; toggle and watch them vanish | A-014c |
 | ☐ | **E-109** | `sharp_features` — live slider on the normal-deviation threshold, through to over-sharpening | A-007 |
