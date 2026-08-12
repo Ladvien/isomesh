@@ -444,3 +444,85 @@ fn the_accuracy_against_marching_cubes_is_measured() {
     );
     assert!(mt_h.is_finite() && mc_h.is_finite());
 }
+
+/// **Orientation does not move the ratio, and curvature does not either.**
+///
+/// P-1 predicts `2.992` by weighting the seven edge families by `E[|n·e|]` over
+/// uniformly random surface orientations. The seven reference fields measure
+/// `2.86–3.91×`, so something separates them, and the two obvious candidates are
+/// both wrong — recorded here because a falsified hypothesis is worth more than
+/// an unexamined one.
+///
+/// **Orientation**: a plane at four orientations, from axis-aligned to generic,
+/// gives `3.919 / 3.939 / 3.945 / 3.943`. Flat within a percent.
+///
+/// **Curvature**: a sphere swept from radius `0.3` to `1.8` on the same grid
+/// gives `3.036 / 3.046 / 3.026 / 2.995 / 2.981` — converging *down* onto P-1's
+/// `2.99` as it flattens, when a locally flatter sphere ought to approach the
+/// plane's `3.94` if flatness were the variable.
+///
+/// So a plane sits at `3.94` and a sphere at `3.0` while being locally the same
+/// shape at cell scale, and **nothing measured here explains the gap**. What can
+/// be said is empirical: flat-faced fields (`box_exact` 3.91, `thin_plate` 3.84,
+/// `csg_difference` 3.83) sit at the plane end, smooth closed ones (`sphere` and
+/// `torus` 3.04) at P-1's value, and the rough high-genus ones (`gyroid` and
+/// `fbm_terrain` 2.87) below it. See O-15.
+#[test]
+fn orientation_does_not_move_the_vertex_ratio() {
+    use crate::marching_cubes::MarchingCubes;
+
+    /// A plane through the origin with the given unit normal.
+    struct Plane([f64; 3]);
+    impl Sdf for Plane {
+        type Scalar = f64;
+        fn sample(&self, p: [f64; 3]) -> f64 {
+            p[0] * self.0[0] + p[1] * self.0[1] + p[2] * self.0[2]
+        }
+        fn gradient(&self, _p: [f64; 3]) -> [f64; 3] {
+            self.0
+        }
+    }
+
+    let samples = 49u32;
+    let h = 4.0 / f64::from(samples - 1);
+    let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
+    let inv3 = 1.0 / 3.0f64.sqrt();
+    let inv2 = 1.0 / 2.0f64.sqrt();
+
+    let mut ratios = Vec::new();
+    for (name, normal) in [
+        ("axis-aligned  (0,0,1)", [0.0, 0.0, 1.0]),
+        ("face diagonal (0,1,1)", [0.0, inv2, inv2]),
+        ("body diagonal (1,1,1)", [inv3, inv3, inv3]),
+        ("generic", [0.3714, 0.5571, 0.7428]),
+    ] {
+        let field = Plane(normal);
+        let mut mc = MeshBuffer::<f64>::new();
+        MarchingCubes::<f64>::new()
+            .extract(&field, &shape, [-2.0; 3], h, &mut mc)
+            .expect("extraction");
+        let mut mt = MeshBuffer::<f64>::new();
+        MarchingTetrahedra::<f64>::new()
+            .extract(&field, &shape, [-2.0; 3], h, &mut mt)
+            .expect("extraction");
+        let ratio = mt.vertex_count() as f64 / mc.vertex_count() as f64;
+        ratios.push((name, ratio));
+        std::println!(
+            "measured: plane {name} -- marching cubes {} verts, marching tetrahedra {} ({ratio:.3}x)",
+            mc.vertex_count(),
+            mt.vertex_count()
+        );
+    }
+
+    // Pinned as *insensitivity*: every orientation within 1% of every other.
+    // This fails if orientation ever starts mattering, which would be the thing
+    // that explains the gap.
+    let lo = ratios.iter().map(|(_, r)| *r).fold(f64::INFINITY, f64::min);
+    let hi = ratios.iter().map(|(_, r)| *r).fold(0.0f64, f64::max);
+    assert!(
+        hi / lo < 1.01,
+        "orientation moved the ratio: {lo:.3} to {hi:.3}"
+    );
+    // And all of them sit at the flat-field end, well above P-1's 2.99.
+    assert!(lo > 3.8, "a plane should cost ~3.9x, got {lo:.3}");
+}
