@@ -504,3 +504,138 @@ fn a_patch_with_width_is_wound_away_from_the_solid() {
         agree + disagree
     );
 }
+
+// ─── A-011b's acceptance: two chunks at differing LOD ───────────────────────
+
+/// Boundary edges lying wholly in the seam plane.
+///
+/// The two chunks are legitimately open at their *outer* borders — the surface
+/// leaves through the sides, as every chunk in a streamed world does — so a
+/// global boundary-edge count says nothing. Only the seam is the question.
+fn gaps_in_the_seam_plane(mesh: &MeshBuffer<f64>, seam_x: f64, h: f64) -> usize {
+    // Exact on purpose. Every vertex in the seam plane got there by an
+    // interpolation whose endpoints both sit at `seam_x`, so its x is that value
+    // identically -- and a tolerance here would sweep in vertices *near* the
+    // plane and count gaps that are not seam gaps.
+    #![allow(clippy::float_cmp)]
+    let cfg = crate::validate::ValidateConfig::from_cell_size(h).expect("valid cell size");
+    let (_report, features) =
+        crate::validate::validate_features(&mesh.positions, &mesh.indices, &cfg);
+    features
+        .boundary_edges
+        .iter()
+        .filter(|[a, b]| {
+            mesh.positions[*a as usize][0] == seam_x && mesh.positions[*b as usize][0] == seam_x
+        })
+        .count()
+}
+
+/// **A-011b's acceptance criterion:** two adjacent chunks at differing LOD
+/// produce zero boundary gaps.
+///
+/// A full-resolution block over `x ∈ [-2, 0]` at `h = 1/8` meets a
+/// half-resolution one over `x ∈ [0, 2]` at `2h`. Meshed independently they do
+/// not meet: the fine side ends on a contour of 32×32 sub-squares and the coarse
+/// side on one of 16×16 squares, and the difference is a ring of unmatched
+/// boundary edges lying in the seam plane — a crack you can see the sky through.
+/// Transition cells along the shared face close it.
+///
+/// Asserted **in both directions**, because a test that only checks the fixed
+/// case would still pass if the two resolutions had stopped disagreeing.
+///
+/// The width is zero here, which is Lengyel §4.3's own position: a zero width
+/// *"still produce\[s\] results that seamlessly stitch multiresolution meshes
+/// together"* — it is the **shading** it costs (M-74), not the stitch. A non-zero
+/// width additionally needs his Equation 4.2 to scale the coarse block's boundary
+/// cells inward, or the transition cells overlap them; that is what the ticket
+/// still carries.
+#[test]
+fn transition_cells_close_the_gap_between_two_resolutions() {
+    // Exact: a seam either closes or it does not.
+    #![allow(clippy::float_cmp)]
+    let field = Sphere::<f64>::canonical();
+    let fine_h = 0.125;
+    let coarse_h = fine_h + fine_h;
+    let seam_x = 0.0;
+    let grid_origin = [-2.0, -2.0, -2.0];
+
+    // The full-resolution block: x in [-2, 0], y and z across the domain.
+    let fine_shape = RuntimeShape3::new([17, 33, 33]).expect("valid shape");
+    let mut fine = MeshBuffer::<f64>::new();
+    MarchingCubes::<f64>::new()
+        .extract(&field, &fine_shape, grid_origin, fine_h, &mut fine)
+        .expect("extraction");
+
+    // The half-resolution block: x in [0, 2], same y and z extent at twice the
+    // spacing.
+    let coarse_shape = RuntimeShape3::new([9, 17, 17]).expect("valid shape");
+    let mut coarse = MeshBuffer::<f64>::new();
+    MarchingCubes::<f64>::new()
+        .extract(
+            &field,
+            &coarse_shape,
+            [seam_x, -2.0, -2.0],
+            coarse_h,
+            &mut coarse,
+        )
+        .expect("extraction");
+
+    assert!(fine.triangle_count() > 0 && coarse.triangle_count() > 0);
+
+    // Without transition cells.
+    let mut plain = MeshBuffer::<f64>::new();
+    plain.append(&fine);
+    plain.append(&coarse);
+    crate::weld::Welder::<f64>::new()
+        .weld(&mut plain, fine_h * 1e-6)
+        .expect("weld");
+    let before = gaps_in_the_seam_plane(&plain, seam_x, fine_h);
+
+    // With them: one transition cell per coarse cell face on the seam, spanning
+    // two fine cells on each in-plane axis.
+    let mut stitched = MeshBuffer::<f64>::new();
+    stitched.append(&fine);
+    stitched.append(&coarse);
+    let mut patches = 0usize;
+    for jz in 0..16i64 {
+        for jy in 0..16i64 {
+            let cell = TransitionCell::sample(
+                &field,
+                grid_origin,
+                fine_h,
+                [16, 2 * jy, 2 * jz],
+                1,
+                2,
+                0.0,
+            );
+            let mut patch = MeshBuffer::<f64>::new();
+            cell.emit(&field, 0, &mut patch);
+            if patch.triangle_count() > 0 {
+                patches += 1;
+                stitched.append(&patch);
+            }
+        }
+    }
+    crate::weld::Welder::<f64>::new()
+        .weld(&mut stitched, fine_h * 1e-6)
+        .expect("weld");
+    let after = gaps_in_the_seam_plane(&stitched, seam_x, fine_h);
+
+    std::println!(
+        "seam-plane boundary edges: {before} without transition cells, {after} with \
+         ({patches} patches emitted)"
+    );
+
+    assert!(
+        patches > 0,
+        "no transition cell was cut — the fixture misses the surface"
+    );
+    assert!(
+        before > 0,
+        "the two resolutions already agreed, so this proves nothing"
+    );
+    assert_eq!(
+        after, 0,
+        "the seam still has {after} unmatched boundary edges"
+    );
+}
