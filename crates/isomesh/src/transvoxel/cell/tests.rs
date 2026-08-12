@@ -58,7 +58,7 @@ fn the_half_resolution_crossings_are_the_coarse_neighbours_vertices() {
                 2 * i64::from(iu),
                 2 * i64::from(iv),
             ];
-            let cell = TransitionCell::sample(&field, lo, fine_h, base, 1, 2);
+            let cell = TransitionCell::sample(&field, lo, fine_h, base, 1, 2, 0.0);
 
             for (edge, position) in cell.crossings() {
                 if !is_half_resolution(edge) {
@@ -118,7 +118,7 @@ fn the_identity_survives_a_non_power_of_two_spacing() {
                 2 * i64::from(iu),
                 2 * i64::from(iv),
             ];
-            let cell = TransitionCell::sample(&field, lo, fine_h, base, 1, 2);
+            let cell = TransitionCell::sample(&field, lo, fine_h, base, 1, 2, 0.0);
             for (edge, position) in cell.crossings() {
                 if !is_half_resolution(edge) {
                     continue;
@@ -144,7 +144,7 @@ fn the_corner_samples_are_the_coarse_grid_and_the_rest_are_not() {
     let step = 0.125;
     let grid_origin = [-2.0, -2.0, -2.0];
     let base = [4i64, 6, 2];
-    let cell = TransitionCell::sample(&field, grid_origin, step, base, 1, 2);
+    let cell = TransitionCell::sample(&field, grid_origin, step, base, 1, 2, 0.0);
 
     let at = |index: [i64; 3]| {
         [
@@ -173,7 +173,7 @@ fn a_crossing_exists_exactly_where_the_signs_differ() {
     let field = Sphere::<f64>::canonical();
     let mut seen_cut = 0usize;
     for i in 0..12i64 {
-        let cell = TransitionCell::sample(&field, [-2.0; 3], 0.125, [8 + i, 12, 18], 0, 1);
+        let cell = TransitionCell::sample(&field, [-2.0; 3], 0.125, [8 + i, 12, 18], 0, 1, 0.0);
         for edge in 0..16u8 {
             let crossing = cell.crossing(edge);
             assert_eq!(crossing.is_some(), cell.is_cut(edge), "edge {edge}");
@@ -204,7 +204,7 @@ fn a_crossing_exists_exactly_where_the_signs_differ() {
 #[test]
 fn the_case_index_matches_the_tables_convention() {
     let field = Sphere::<f64>::canonical();
-    let cell = TransitionCell::sample(&field, [-2.0; 3], 0.25, [6, 6, 8], 0, 1);
+    let cell = TransitionCell::sample(&field, [-2.0; 3], 0.25, [6, 6, 8], 0, 1, 0.0);
     let case = cell.case();
     for s in 0..SAMPLE_COUNT {
         assert_eq!(
@@ -225,11 +225,11 @@ fn the_case_index_matches_the_tables_convention() {
 fn a_cell_the_surface_misses_has_no_centroid() {
     let field = Sphere::<f64>::canonical();
     // Well outside the unit sphere.
-    let cell = TransitionCell::sample(&field, [-2.0; 3], 0.05, [72, 72, 72], 0, 1);
+    let cell = TransitionCell::sample(&field, [-2.0; 3], 0.05, [72, 72, 72], 0, 1, 0.0);
     assert!(cell.crossings().next().is_none());
     assert_eq!(cell.centroid(), None);
 
-    let on_surface = TransitionCell::sample(&field, [-2.0; 3], 0.125, [8, 16, 16], 1, 2);
+    let on_surface = TransitionCell::sample(&field, [-2.0; 3], 0.125, [8, 16, 16], 1, 2, 0.0);
     let crossings: Vec<_> = on_surface.crossings().collect();
     if !crossings.is_empty() {
         assert!(on_surface.centroid().is_some());
@@ -273,7 +273,7 @@ fn a_zero_width_patch_is_edge_on_to_the_surface_and_cannot_be_wound() {
     let mut faces = 0usize;
     for iv in 0..16i64 {
         for iu in 0..16i64 {
-            let cell = TransitionCell::sample(&field, lo, fine_h, [16, 2 * iu, 2 * iv], 1, 2);
+            let cell = TransitionCell::sample(&field, lo, fine_h, [16, 2 * iu, 2 * iv], 1, 2, 0.0);
             let mut patch = MeshBuffer::<f64>::new();
             cell.emit(&field, 0, &mut patch);
             if patch.triangle_count() == 0 {
@@ -339,7 +339,7 @@ fn every_crossing_reaches_a_triangle() {
     let mut cells = 0usize;
     for iv in 0..16i64 {
         for iu in 0..16i64 {
-            let cell = TransitionCell::sample(&field, lo, 0.125, [16, 2 * iu, 2 * iv], 1, 2);
+            let cell = TransitionCell::sample(&field, lo, 0.125, [16, 2 * iu, 2 * iv], 1, 2, 0.0);
             let crossings: Vec<[f64; 3]> = cell.crossings().map(|(_, p)| p).collect();
             if crossings.is_empty() {
                 continue;
@@ -374,4 +374,133 @@ fn every_crossing_reaches_a_triangle() {
     }
     assert!(cells > 0, "no transition cell was cut");
     std::println!("{cells} transition cells triangulated, every crossing used");
+}
+
+// ─── the width, and the winding it makes decidable ──────────────────────────
+
+/// The width displaces the half-resolution face and **nothing else**.
+///
+/// Every full-resolution crossing must be exactly where it was at zero width,
+/// and every half-resolution one must be exactly that far along the face normal.
+/// If the width leaked into the fine side, the seam identity M-73 established
+/// would break the moment a width was chosen.
+#[test]
+fn the_width_displaces_only_the_half_resolution_face() {
+    // Exact: the displacement is a single addition, not an approximation.
+    #![allow(clippy::float_cmp)]
+    let field = Sphere::<f64>::canonical();
+    let (lo, _hi) = field.domain();
+    let width = 0.0625;
+
+    let mut fine_checked = 0usize;
+    let mut coarse_checked = 0usize;
+    for iv in 0..16i64 {
+        for iu in 0..16i64 {
+            let base = [16, 2 * iu, 2 * iv];
+            let flat = TransitionCell::sample(&field, lo, 0.125, base, 1, 2, 0.0);
+            let thick = TransitionCell::sample(&field, lo, 0.125, base, 1, 2, width);
+
+            // Same field, same samples, so the same cut edges.
+            assert_eq!(flat.case(), thick.case());
+
+            for edge in 0..16u8 {
+                let (Some(a), Some(b)) = (flat.crossing(edge), thick.crossing(edge)) else {
+                    continue;
+                };
+                if is_half_resolution(edge) {
+                    coarse_checked += 1;
+                    assert_eq!(
+                        b[0],
+                        a[0] + width,
+                        "edge {edge} moved wrong along the normal"
+                    );
+                    assert_eq!([b[1], b[2]], [a[1], a[2]], "edge {edge} moved in-plane");
+                } else {
+                    fine_checked += 1;
+                    assert_eq!(a, b, "edge {edge} is on the fine face and must not move");
+                }
+            }
+        }
+    }
+    std::println!(
+        "{fine_checked} fine crossings unmoved, {coarse_checked} coarse crossings displaced by \
+         exactly the width"
+    );
+    assert!(fine_checked > 0 && coarse_checked > 0);
+}
+
+/// **The winding, decidable at last.**
+///
+/// M-74 showed a zero-width patch is exactly perpendicular to the surface, so no
+/// test against the field gradient could orient it. Give it a width and the patch
+/// becomes a ribbon spanning from the fine face to the coarse one, which has a
+/// normal — and that normal must point away from the solid, like every other face
+/// this crate emits.
+///
+/// The width is deliberately large here (half the coarse cell, Lengyel's own
+/// `w(k) = 2^(k−2)`) so the ribbon is well-conditioned rather than a sliver.
+#[test]
+fn a_patch_with_width_is_wound_away_from_the_solid() {
+    let field = Sphere::<f64>::canonical();
+    let (lo, _hi) = field.domain();
+    let fine_h = 0.125;
+    // The coarse cell is 2*fine_h; Lengyel's width is half of it.
+    let width = fine_h;
+
+    let mut agree = 0usize;
+    let mut disagree = 0usize;
+    let mut worst_alignment = 0.0f64;
+    for iv in 0..16i64 {
+        for iu in 0..16i64 {
+            let cell =
+                TransitionCell::sample(&field, lo, fine_h, [16, 2 * iu, 2 * iv], 1, 2, width);
+            let mut patch = MeshBuffer::<f64>::new();
+            cell.emit(&field, 0, &mut patch);
+            if patch.triangle_count() == 0 {
+                continue;
+            }
+
+            for tri in patch.indices.chunks_exact(3) {
+                let a = patch.positions[tri[0] as usize];
+                let b = patch.positions[tri[1] as usize];
+                let c = patch.positions[tri[2] as usize];
+                let n = crate::vec3::cross(crate::vec3::sub(b, a), crate::vec3::sub(c, a));
+                let len2 = crate::vec3::length_squared(n);
+                if len2 == 0.0 {
+                    continue;
+                }
+                let centre = [
+                    (a[0] + b[0] + c[0]) / 3.0,
+                    (a[1] + b[1] + c[1]) / 3.0,
+                    (a[2] + b[2] + c[2]) / 3.0,
+                ];
+                let g = field.gradient(centre);
+                let cos = crate::vec3::dot(n, g) / (len2.sqrt() * crate::vec3::length(g));
+                worst_alignment = worst_alignment.max(cos.abs());
+                if cos > 0.0 {
+                    agree += 1;
+                } else {
+                    disagree += 1;
+                }
+            }
+        }
+    }
+
+    std::println!(
+        "width {width}: {agree} faces outward, {disagree} inward; best |cos| against the \
+         surface normal {worst_alignment:.3}"
+    );
+    assert!(agree + disagree > 0, "no patch was produced");
+    // The ribbon now has a normal to speak of at all -- M-74's zero-width case
+    // measured exactly 0 here.
+    assert!(
+        worst_alignment > 0.1,
+        "the patch is still edge-on: best |cos| {worst_alignment:.3e}"
+    );
+    assert_eq!(
+        disagree,
+        0,
+        "{disagree} of {} faces point into the solid",
+        agree + disagree
+    );
 }

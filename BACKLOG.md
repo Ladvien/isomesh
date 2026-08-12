@@ -73,40 +73,30 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 |---|---|---|---|---|
 | ☐ | **A-011b** | **Transvoxel extraction and the seam.** Place the transition cell's vertices in world space, emit its triangles, and stitch a full-resolution chunk to a half-resolution neighbour. **Acceptance:** two adjacent chunks at differing LOD produce zero boundary gaps — assert on the geometry, then confirm visually in E-107. A crossing on one of the four half-resolution edges must land where the coarse neighbour's own Marching Cubes pass would put it, or the seam does not close; `transvoxel::table::is_half_resolution` is what marks them. Lengyel's transition width is a free parameter and **zero is legal geometrically and wrong visually** — §4.3 says a zero width "leads to severe shading problems", so pick one and record why. | M | A-011a |
 
-> **IN PROGRESS, and the remaining work is now known to be larger than the ticket implies.**
-> `transvoxel::cell::TransitionCell` samples a face, places its sixteen crossings, and triangulates the
-> cycles `table::transition_links` gives — one centroid fan per cycle, A-015's rule, because a
-> transition cell sits between two differently-resolved blocks where a chord collision is likeliest.
->
-> Two things are established and two are not.
+> **IN PROGRESS.** `transvoxel::cell::TransitionCell` samples a face, places its sixteen crossings at a
+> signed transition width, and triangulates the cycles `table::transition_links` gives — one centroid
+> fan per cycle, A-015's rule, because a transition cell sits between two differently-resolved blocks
+> where a chord two cells could both name is likeliest.
 >
 > **Established.** The seam identity: every half-resolution crossing lands **bit-identically** on a
-> vertex the coarse neighbour's Marching Cubes pass produced — 56 of them on a sphere at `h = 1/8`, 24
-> on a torus at `h = 4/14`. That was not free; see M-73 for the version that put a `1.11e-16` crack in
-> it. And every crossing reaches a triangle, so no cut edge is dropped.
+> vertex the coarse neighbour's Marching Cubes pass produced — 56 on a sphere at `h = 1/8`, 24 on a
+> torus at `h = 4/14` (M-73). Every crossing reaches a triangle, so no cut edge is dropped. The width
+> displaces the half-resolution face and nothing else — 88 fine crossings unmoved, 56 coarse displaced
+> by exactly the width (M-75). And the winding faces away from the solid on 144 of 144 faces, which is
+> only a decidable question once the width exists (M-74, M-75).
 >
-> **Not established.** *Winding*, and it cannot be until the width lands: M-74 measured a zero-width
-> patch as **exactly** perpendicular to the surface, so no test against the field gradient can decide
-> its orientation. And the *two-chunk zero-gap assertion*, which needs the width for the same reason.
+> **What remains** is the two-chunk assertion: mesh a full-resolution chunk and a half-resolution
+> neighbour, insert transition cells along the shared face, and assert zero boundary gaps across it.
+> That needs **Lengyel's Equation 4.2** — the coarse block's boundary cells must be scaled inward by
+> the same width, or the transition cells overlap them:
 >
-> **So the split changed.** Zero width was going to close the gap and defer the shading; M-74 shows the
-> width is what gives the patch a normal at all. A-011c is therefore a dependency of finishing this,
-> not a follow-up to it.
->
-> Read while scoping, so the next attempt does not have to (Lengyel 2010 §4.3–4.4):
-> - **Transition width** is a free global parameter. His implementation uses `w(k) = 2^(k-2)` for LOD
->   index `k`, i.e. half the adjacent full-resolution cell. **Zero width is legal geometrically** —
->   §4.3 says a zero width still "seamlessly stitch[es] multiresolution meshes together" but "leads to
->   severe shading problems", so a first version can close the gap and defer the shading.
-> - **Regular cells on a low-resolution block's boundary must be scaled inward to make room**, so every
->   boundary vertex carries *two* positions: primary (no transition rendered) and secondary (transition
->   rendered). Equation 4.2: `Δx = (1 − 2^−k·x)·w(k)` for `x < 2^k`, `0` in the middle, and
->   `(s − 1 − 2^−k·x)·w(k)` for `x > 2^k(s−1)`, with `s` the block size in cells. Applied to regular-cell
->   vertices **and to vertices on a transition cell's half-resolution face**, but *not* to its
->   full-resolution face.
+> - `Δx = (1 − 2^−k·x)·w(k)` for `x < 2^k`, `0` in the middle, and `(s − 1 − 2^−k·x)·w(k)` for
+>   `x > 2^k(s−1)`, with `s` the block size in cells. Applied to regular-cell vertices **and** to a
+>   transition cell's half-resolution face, but *not* to its full-resolution face.
 > - A block therefore carries **up to seven meshes**: the primary one plus a transition mesh per face,
->   each rendered only when that neighbour is coarser. So this is a `MeshBuffer` per face, not one
->   buffer — which is an API decision this ticket has to make and G-001's chunk story has to accept.
+>   each rendered only when that neighbour is coarser. That is a `MeshBuffer` per face rather than one
+>   buffer, and it is an API decision this ticket has to make and G-001's chunk story has to accept.
+>
 | ☐ | **A-014b** | **Subgrid MT — boundary curves and the surface fill.** Reconstruct the curves on a tet's boundary from arbitrary edge coordinates (§3.1), then fill them with an intersection-free surface using the paper's Steiner-point rules (§3.2–3.3). **Acceptance:** conforming across tet boundaries by construction, asserted on a two-tet fixture; and a configuration that `decompose` rejects still meshes. A-014a's `decompose` returning `None` is exactly the signal that this path is needed, and 95.6% of normal configurations with counts up to 3 are in that state (M-67). | L | A-014a |
 | ☐ | **A-014c** | **All-roots edge finding, and the extractor.** §4.3.2 — find *every* zero along a grid edge, exactly for analytic fields or by 1D sampling for black-box ones, then wire A-014b into an extractor. **Acceptance:** `thin_plate` at a resolution where greedy quads returns zero triangles comes back with the sheet. Note §1.3: 1D marching *"can of course miss intersections, [but] we are no worse off than classic marching"* — so the sampled path is a legitimate primary, not a fallback. | L | A-014b |
 | ☐ | **A-002b** | **Marching Cubes 33 interior ambiguity — the trilinear body saddle.** Deliberately deferred at A-002, on evidence, not forgotten. Three reasons. (1) `catalog-v2.md:107` is explicit: *"Skip the interior test; spend the budget on chunk seams"* — a game needs topological *consistency*, which A-001 already has, over *correctness*. (2) **There is no correct published table to transcribe.** Custodio et al. 2013 (`10.1016/j.cag.2013.04.004` §5.1) prove Chernyaev's interior test tracks a quadratic where the true saddle trajectory is hyperbolic with an asymptote, so case 13.5.2 is misread as 13.5.1 — counterexample values in their Appendix A — and Lewiner's reference implementation omits disambiguation for cases 10 and 12 entirely. Rule 5 forbids inventing the missing one. (3) The v1 catalog prices it: the decider is *"~free"*, the guaranteed version is **730 subcases in the LUT**. Also needs cell-interior vertices for tunnels, which the grid-edge-keyed vertex cache has no slot for. **Acceptance:** a cell where the body saddle says "tunnel", meshed as a tunnel, with the sign tracked by Custodio's correction rather than Chernyaev's `F(t)`. | L | A-002 |
