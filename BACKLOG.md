@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**37 tickets archived, 40 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**38 tickets archived, 39 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -71,8 +71,28 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **A-011b** | **Transvoxel extraction and the seam.** Place the transition cell's vertices in world space, emit its triangles, and stitch a full-resolution chunk to a half-resolution neighbour. **Acceptance:** two adjacent chunks at differing LOD produce zero boundary gaps — assert on the geometry, then confirm visually in E-107. A crossing on one of the four half-resolution edges must land where the coarse neighbour's own Marching Cubes pass would put it, or the seam does not close; `transvoxel::table::is_half_resolution` is what marks them. Lengyel's transition width is a free parameter and **zero is legal geometrically and wrong visually** — §4.3 says a zero width "leads to severe shading problems", so pick one and record why. | M | A-011a |
-| ☐ | **A-012** | **Normal estimation strategies.** Analytic gradient / central differences / area-weighted face normals, selectable. **Acceptance:** all three produce unit-length normals; analytic and central-difference agree within tolerance on `sphere`. | S | A-001 |
+| ☐ | **A-011b** | **Transvoxel extraction and the seam.** Place the transition cell's vertices in world space, emit its triangles, and stitch a full-resolution chunk to a half-resolution neighbour. **Acceptance:** two adjacent chunks at differing LOD produce zero boundary gaps — assert on the geometry, then confirm visually in E-107. A crossing on one of the four half-resolution edges must land where the coarse neighbour's own Marching Cubes pass would put it, or the seam does not close; `transvoxel::table::is_half_resolution` is what marks them. Lengyel's transition width is a free parameter and **zero is legal geometrically and wrong visually** — §4.3 says a zero width "leads to severe shading problems", so pick one and record why. | M | G-004, A-011a |
+
+> **BLOCKED: needs G-004's LOD levels to assert against, and G-004 was listed as blocked by this
+> ticket.** That is a dependency inversion, not a real cycle — G-004's own acceptance ("LOD 0..3 all
+> mesh cleanly; LOD *k* has roughly 1/8^k the cells") says nothing about seams, so it does not need
+> transition cells. Its "Pairs with A-011 for the seams" is a note about what comes next, and it had
+> been written into the *Blocked by* column. **Corrected below: G-004 depends on G-001 only, and this
+> ticket depends on G-004.**
+>
+> Read while scoping, so the next attempt does not have to (Lengyel 2010 §4.3–4.4):
+> - **Transition width** is a free global parameter. His implementation uses `w(k) = 2^(k-2)` for LOD
+>   index `k`, i.e. half the adjacent full-resolution cell. **Zero width is legal geometrically and
+>   wrong visually** — §4.3 says it "leads to severe shading problems".
+> - **Regular cells on a low-resolution block's boundary must be scaled inward to make room**, so every
+>   boundary vertex carries *two* positions: primary (no transition rendered) and secondary (transition
+>   rendered). Equation 4.2: `Δx = (1 − 2^−k·x)·w(k)` for `x < 2^k`, `0` in the middle, and
+>   `(s − 1 − 2^−k·x)·w(k)` for `x > 2^k(s−1)`, with `s` the block size in cells. Applied to regular-cell
+>   vertices **and to vertices on a transition cell's half-resolution face**, but *not* to its
+>   full-resolution face.
+> - A block therefore carries **up to seven meshes**: the primary one plus a transition mesh per face,
+>   each rendered only when that neighbour is coarser. So this is a `MeshBuffer` per face, not one
+>   buffer — which is an API decision this ticket has to make and G-001's chunk story has to accept.
 | ☐ | **A-014** | **Subgrid Marching Tetrahedra.** Integer edge-intersection counts instead of vertex signs — resolves features finer than one cell. The differentiator; do it after the usual suspects are solid. | L | A-003 |
 | ☐ | **A-002b** | **Marching Cubes 33 interior ambiguity — the trilinear body saddle.** Deliberately deferred at A-002, on evidence, not forgotten. Three reasons. (1) `catalog-v2.md:107` is explicit: *"Skip the interior test; spend the budget on chunk seams"* — a game needs topological *consistency*, which A-001 already has, over *correctness*. (2) **There is no correct published table to transcribe.** Custodio et al. 2013 (`10.1016/j.cag.2013.04.004` §5.1) prove Chernyaev's interior test tracks a quadratic where the true saddle trajectory is hyperbolic with an asymptote, so case 13.5.2 is misread as 13.5.1 — counterexample values in their Appendix A — and Lewiner's reference implementation omits disambiguation for cases 10 and 12 entirely. Rule 5 forbids inventing the missing one. (3) The v1 catalog prices it: the decider is *"~free"*, the guaranteed version is **730 subcases in the LUT**. Also needs cell-interior vertices for tunnels, which the grid-edge-keyed vertex cache has no slot for. **Acceptance:** a cell where the body saddle says "tunnel", meshed as a tunnel, with the sign tracked by Custodio's correction rather than Chernyaev's `F(t)`. | L | A-002 |
 
@@ -84,7 +104,7 @@ Still zero Bevy. This is the machinery a game needs, living in the core crate wh
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **G-004** | **Field-derived LOD.** Mip the field (not the mesh), mesh at level N. **Acceptance:** LOD 0..3 all mesh cleanly; LOD *k* has roughly 1/8^k the cells. Pairs with A-011 for the seams. | M | A-011b, G-001 |
+| ☐ | **G-004** | **Field-derived LOD.** Mip the field (not the mesh), mesh at level N. **Acceptance:** LOD 0..3 all mesh cleanly; LOD *k* has roughly 1/8^k the cells. Pairs with A-011b for the seams — **a note, not a dependency**; this ticket's acceptance says nothing about seams and it was blocking A-011b in error. | M | G-001 |
 | ☐ | **G-005** | **Collider export.** `MeshBuffer` → `parry3d::TriMesh` (`Vec<[u32;3]>` indices — parry takes plain arrays). Behind an optional `parry` feature. Optional convex decomposition path. **Acceptance:** a carved shape builds a `TriMesh` without error and passes parry's own validity check. **A-013 landed, so this is unblocked** — and note a chunked collider must be welded first or parry sees a seam of unshared vertices. | M | A-013 |
 | ☐ | **G-006** | **Frame-budget scheduler.** `mesh_within_budget(ms)` — process the dirty queue until a time budget is exhausted, resume next call. Priority by camera distance. This is the constraint a real game actually operates under and the reason "how fast is the algorithm" is the wrong question. | M | G-002 |
 | ☐ | **G-007** | **Chunk streaming.** Load/unload by camera distance with hysteresis so chunks at the boundary don't thrash. | M | G-004, G-006 |

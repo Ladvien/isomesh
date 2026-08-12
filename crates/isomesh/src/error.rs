@@ -84,6 +84,21 @@ pub enum Error {
         /// The spacing given.
         cell_size: f64,
     },
+
+    /// A vertex whose normal cannot be derived, so there is nothing to normalise.
+    ///
+    /// A zero or non-finite field gradient, or — under
+    /// [`AreaWeightedFaces`](crate::normals::NormalStrategy::AreaWeightedFaces) —
+    /// a vertex whose incident triangles have no area, or which no triangle
+    /// references at all.
+    ///
+    /// Reported rather than substituted. Writing `[0, 0, 1]` there gives a mesh
+    /// that renders and is wrong in a way nothing downstream can attribute, which
+    /// is exactly the class of bug the one-path rule exists to prevent.
+    DegenerateNormal {
+        /// Index of the offending vertex.
+        vertex: u64,
+    },
 }
 
 impl fmt::Display for Error {
@@ -117,6 +132,10 @@ impl fmt::Display for Error {
                 f,
                 "triangle {triangle} spans {cells} grid cells at cell size {cell_size}; \
                  that spacing does not describe this mesh"
+            ),
+            Self::DegenerateNormal { vertex } => write!(
+                f,
+                "vertex {vertex} has no normal to derive: a zero gradient, or no incident area"
             ),
         }
     }
