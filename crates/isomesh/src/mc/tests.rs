@@ -14,9 +14,10 @@ use alloc::{format, vec};
 
 use super::reference::{BOURKE_EDGE_TABLE, BOURKE_TRI_TABLE};
 use super::table::{
-    CASES, EDGE_CORNERS, EDGE_COUNT, MAX_TRIANGLES, NO_EDGE, corner_inside, is_inside,
+    AMBIGUOUS_FACES, CASES, EDGE_CORNERS, EDGE_COUNT, MAX_TRIANGLES, NO_EDGE, corner_inside,
+    face_bit, face_corners, is_inside, segment_links, triangulate,
 };
-use super::{MarchingCubes, validate_table};
+use super::{FaceAmbiguity, MarchingCubes, validate_decider_table, validate_table};
 use crate::fields::{BoxExact, CappedGyroid, CsgDifference, ReferenceField, Sphere, Torus};
 use crate::validate::{ValidateConfig, check_determinism, self_intersections, validate_indexed};
 use crate::{MeshBuffer, RuntimeShape3, Sdf, vec3};
@@ -570,4 +571,731 @@ fn the_table_reports_render() {
     assert!(is_inside(-1.0f64));
     assert!(!is_inside(0.0f64));
     assert!(corner_inside(0b0000_0001, 0));
+}
+
+// ─── A-002: the asymptotic decider ──────────────────────────────────────────
+//
+// The face rule and its own arithmetic are tested in `mc::ambiguity::tests`.
+// What is tested here is the table it feeds and the meshes that come out.
+
+/// Every case at every resolution mask — 16,384 combinations, against the same
+/// five structural properties the 256-entry table is held to.
+///
+/// The face-locality check is the load-bearing one and it is now keyed on the
+/// face's decision bit as well as its corner signs. That is still the crack-free
+/// property, because the decision is a function of the four sample values the
+/// two cells share.
+#[test]
+fn the_decider_table_is_structurally_sound() {
+    let report = validate_decider_table();
+    assert!(report.is_sound(), "{report:?}");
+    assert_eq!(report.face_disagreements, 0, "cracks: {report:?}");
+}
+
+/// The shipped table is the mask-zero construction. This is one of the two
+/// assertions that make the table lookup in `extract` a memo rather than a
+/// second rule.
+#[test]
+fn the_separate_mask_reproduces_the_derived_table() {
+    for case in 0..=255u8 {
+        let built = triangulate(segment_links(case, 0));
+        assert_eq!(built.count, CASES[case as usize].count, "case {case}");
+        assert_eq!(
+            built.triangles, CASES[case as usize].triangles,
+            "case {case}"
+        );
+    }
+}
+
+/// And the other: on a case with no ambiguous face, no mask changes anything.
+/// `validate_decider_table` proves this per face; this proves it per case, which
+/// is the form `extract` actually relies on.
+#[test]
+fn masks_are_ignored_on_unambiguous_faces() {
+    let mut unambiguous = 0usize;
+    for case in 0..=255u8 {
+        if AMBIGUOUS_FACES[case as usize] != 0 {
+            continue;
+        }
+        unambiguous += 1;
+        for mask in 0..64u8 {
+            assert_eq!(
+                segment_links(case, mask),
+                segment_links(case, 0),
+                "case {case} mask {mask}"
+            );
+        }
+    }
+    // Recorded: how much of the table the memo covers.
+    std::println!("measured: {unambiguous} of 256 cases have no ambiguous face");
+    assert!(unambiguous > 0);
+}
+
+/// `AMBIGUOUS_FACES` is derived from the whole case; the validator's own test
+/// derives ambiguity from a single face's 4-bit pattern. They must agree, or one
+/// of the two is describing a different set of faces than it claims.
+#[test]
+fn ambiguous_faces_agrees_with_the_face_pattern() {
+    for case in 0..=255u8 {
+        let mut expected = 0u8;
+        for axis in 0..3usize {
+            for side in 0..2u8 {
+                let c = face_corners(axis, side);
+                let mut pattern = 0usize;
+                for (k, &corner) in c.iter().enumerate() {
+                    if corner_inside(case, corner) {
+                        pattern |= 1 << k;
+                    }
+                }
+                if pattern == 0b0101 || pattern == 0b1010 {
+                    expected |= face_bit(axis, side);
+                }
+            }
+        }
+        assert_eq!(AMBIGUOUS_FACES[case as usize], expected, "case {case}");
+    }
+}
+
+/// Recorded, not gated, exactly as `no_case_exceeds_the_triangle_bound` records
+/// the separated table's five.
+///
+/// **Predicted before running: 10.** Joining faces can merge cycles, and the
+/// longest cycle possible uses all twelve cut edges, which fan-triangulates to
+/// ten. If the measurement disagrees, the prediction was wrong and the number
+/// below is the finding.
+#[test]
+fn the_decider_does_not_exceed_the_triangle_bound() {
+    let report = validate_decider_table();
+    std::println!(
+        "measured: the decider's worst case is {} triangles (separated table: {})",
+        report.max_triangles,
+        validate_table().max_triangles
+    );
+    assert!(
+        report.max_triangles as usize <= MAX_TRIANGLES,
+        "{} exceeds MAX_TRIANGLES = {MAX_TRIANGLES}",
+        report.max_triangles
+    );
+    assert_eq!(report.max_triangles, 10);
+}
+
+/// **A-002's acceptance criterion.** A cell configuration with an ambiguous face
+/// on which the two rules report different Euler characteristics.
+///
+/// The fixture is *searched*, not chosen: this repo has twice had a fixture
+/// picked for looking like it exercised a property sit in the region where the
+/// property does not apply (M-32, M-38). Every one of the 256 cases is tried,
+/// and the census of which ones differ is printed alongside the assertion.
+#[test]
+fn the_decider_and_marching_cubes_disagree_about_chi() {
+    let mut differing = Vec::new();
+    let mut first: Option<(u8, i64, i64)> = None;
+
+    for case in 0..=255u8 {
+        if AMBIGUOUS_FACES[case as usize] == 0 {
+            continue;
+        }
+        // Deep inside, shallow outside: d_in = 4 against d_out = 1, so every
+        // ambiguous face of this case comes out joined.
+        let field = one_cell(case, -2.0, 1.0);
+        let separate = chi_of(&field, FaceAmbiguity::Separate);
+        let decided = chi_of(&field, FaceAmbiguity::AsymptoticDecider);
+        if separate != decided {
+            differing.push(case);
+            if first.is_none() {
+                first = Some((case, separate, decided));
+            }
+        }
+    }
+
+    std::println!(
+        "measured: {} of 256 cases change chi under the decider at d_in > d_out; \
+         first is case {:?}",
+        differing.len(),
+        first
+    );
+
+    let (case, separate, decided) = first.expect("no case changed chi — the decider does nothing");
+    // Pinned in both directions: this fails if the difference disappears and if
+    // either value moves. Case 6 is corners 1 and 2 inside — diagonally opposite
+    // on the z = 0 face, and on no other face together, so it has exactly one
+    // ambiguous face. Separated, that face cuts off each corner with its own
+    // triangle: two discs, chi = 2. Joined, the two become one disc, chi = 1.
+    assert_eq!(case, 0b0000_0110);
+    assert_eq!(separate, 2);
+    assert_eq!(decided, 1);
+    assert_eq!(differing.len(), 88);
+}
+
+/// Every reference field under the decider, through the gate its own metadata
+/// selects — with one property held out.
+///
+/// **`is_closed()` is deliberately not the gate here, and manifoldness is not
+/// asserted in this test.** `is_closed()` folds in manifoldness, and
+/// manifoldness under the decider is owned by the *fan*, not by the ambiguity
+/// rule — see `the_fan_lets_adjacent_cells_share_an_interior_chord`, which shows
+/// plain Marching Cubes has the identical defect at the identical rate. Asserting
+/// it here would attribute A-001's problem to A-002. It is pinned instead, in
+/// both directions and per field, by `the_decider_non_manifold_census_is_pinned`.
+///
+/// What is asserted is everything the ambiguity rule *is* responsible for:
+/// crack-freeness on closed fields, consistent orientation, and the published
+/// Euler characteristic. Following M-16, no even-χ parity check is made here,
+/// because parity is a corollary of manifoldness and manifoldness is held out.
+#[test]
+fn every_closed_reference_field_meshes_cleanly_under_the_decider() {
+    crate::for_each_reference_field!(f64, |name, field| {
+        for samples in [17u32, 25, 33] {
+            let Some((decided, separate, tris, mc_tris)) = decider_pair(&field, samples) else {
+                continue;
+            };
+
+            // The gate is the field's own metadata, never the test's opinion.
+            // `fbm_terrain` leaves through the sides by construction, so its
+            // boundary edges are the field, not a crack.
+            if field.closed_in_domain() {
+                assert_eq!(
+                    decided.boundary_edges, 0,
+                    "{name} at {samples}^3 has cracks:\n{decided}"
+                );
+            }
+            assert_eq!(
+                decided.inconsistently_oriented_edges, 0,
+                "{name} at {samples}^3:\n{decided}"
+            );
+            if let Some(chi) = field.expected_euler() {
+                assert_eq!(
+                    decided.euler_characteristic, chi,
+                    "{name} at {samples}^3:\n{decided}"
+                );
+            }
+            std::println!(
+                "measured: {name} at {samples}^3 -> chi {} (mc {}), tris {tris} (mc {mc_tris}), \
+                 non-manifold edges {} (mc {}), boundary {} (mc {})",
+                decided.euler_characteristic,
+                separate.euler_characteristic,
+                decided.non_manifold_edges,
+                separate.non_manifold_edges,
+                decided.boundary_edges,
+                separate.boundary_edges,
+            );
+        }
+    });
+}
+
+/// The whole non-manifold census, pinned in both directions.
+///
+/// Six of the seven fields are bit-for-bit identical between the two rules at
+/// all three resolutions — the decider only fires where an ambiguous face
+/// actually occurs, and on these fields that is almost nowhere. The one entry
+/// that is not zero is the fan chord collision of
+/// `the_fan_lets_adjacent_cells_share_an_interior_chord`, reached at one
+/// resolution of one field. It fails if that spreads *and* if it silently
+/// disappears, following M-4.
+#[test]
+fn the_decider_non_manifold_census_is_pinned() {
+    let mut offenders: Vec<(&str, u32, u64, u64)> = Vec::new();
+    crate::for_each_reference_field!(f64, |name, field| {
+        for samples in [17u32, 25, 33] {
+            let Some((decided, separate, _, _)) = decider_pair(&field, samples) else {
+                continue;
+            };
+            if decided.non_manifold_edges != 0 || separate.non_manifold_edges != 0 {
+                offenders.push((
+                    name,
+                    samples,
+                    decided.non_manifold_edges,
+                    separate.non_manifold_edges,
+                ));
+            }
+        }
+    });
+    std::println!("measured: non-manifold census (field, n, decider, mc) = {offenders:?}");
+    assert_eq!(offenders, vec![("gyroid", 25, 2, 0)]);
+}
+
+/// How often the rule even fires. Custodio et al. (2013) report that real-world
+/// data is dominated by the unambiguous configurations; this is that claim
+/// against this crate's own seven fields, which is the only version of it that
+/// can justify a decision here.
+#[test]
+fn the_ambiguous_face_census_is_recorded() {
+    crate::for_each_reference_field!(f64, |name, field| {
+        let samples = 33u32;
+        let (lo, hi) = field.domain();
+        let h = (hi[0] - lo[0]) / f64::from(samples - 1);
+        let census = census(&field, lo, h, samples);
+        std::println!(
+            "measured: {name} at {samples}^3 -> {} surface cells, {} with an ambiguous face \
+             ({:.3}%), {} faces joined by the decider",
+            census.surface_cells,
+            census.ambiguous_cells,
+            100.0 * census.ambiguous_cells as f64 / census.surface_cells.max(1) as f64,
+            census.joined_faces,
+        );
+    });
+}
+
+#[test]
+fn the_decider_is_deterministic() {
+    let field = crate::fields::capped_gyroid::<f64>();
+    let (lo, hi) = field.domain();
+    let samples = 33u32;
+    let h = (hi[0] - lo[0]) / f64::from(samples - 1);
+    let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
+    let report = check_determinism(|out: &mut MeshBuffer<f64>| {
+        let mut mc = MarchingCubes::<f64>::new();
+        mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+        mc.extract(&field, &shape, lo, h, out).expect("extract");
+    });
+    assert!(report.is_deterministic(), "{report}");
+}
+
+/// The decider joins where plain Marching Cubes separates, so the surfaces it
+/// produces on ambiguous faces are different ones — self-intersections are a
+/// recorded metric, not a gate, and this records them.
+#[test]
+fn the_decider_self_intersection_count_is_recorded() {
+    let field = crate::fields::capped_gyroid::<f64>();
+    let (lo, hi) = field.domain();
+    let samples = 33u32;
+    let h = (hi[0] - lo[0]) / f64::from(samples - 1);
+    let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
+
+    let mut out = MeshBuffer::<f64>::new();
+    let mut mc = MarchingCubes::<f64>::new();
+    mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+    mc.extract(&field, &shape, lo, h, &mut out)
+        .expect("extract");
+
+    let report = self_intersections(&out.positions, &out.indices, h).expect("grid fits");
+    std::println!(
+        "measured: gyroid at {samples}^3 under the decider -> {:.4} self-intersections per 1k \
+         triangles",
+        report.per_thousand_triangles()
+    );
+}
+
+// ─── A-002 helpers ──────────────────────────────────────────────────────────
+
+/// The trilinear interpolant of a small value grid, as a field.
+///
+/// The decider's whole claim is agreement with the trilinear interpolant, so a
+/// fixture built to test it should *be* one. Sampling at a grid point returns
+/// that point's stored value exactly, and the gradient is analytic — nothing
+/// approximate sits between the fixture and the result.
+struct Trilinear {
+    size: [usize; 3],
+    values: Vec<f64>,
+}
+
+impl Trilinear {
+    /// Cell index and local coordinate for one axis, clamped so the interpolant
+    /// extends smoothly past the grid rather than folding.
+    fn split(&self, p: f64, axis: usize) -> (usize, f64) {
+        let last = self.size[axis] - 2;
+        let i = libm::floor(p);
+        let i = if i < 0.0 {
+            0
+        } else if i as usize > last {
+            last
+        } else {
+            i as usize
+        };
+        (i, p - i as f64)
+    }
+
+    fn corner(&self, base: [usize; 3], d: [usize; 3]) -> f64 {
+        let x = base[0] + d[0];
+        let y = base[1] + d[1];
+        let z = base[2] + d[2];
+        self.values[x + y * self.size[0] + z * self.size[0] * self.size[1]]
+    }
+}
+
+impl Sdf for Trilinear {
+    type Scalar = f64;
+
+    fn sample(&self, p: [f64; 3]) -> f64 {
+        let (i, u) = self.split(p[0], 0);
+        let (j, v) = self.split(p[1], 1);
+        let (k, w) = self.split(p[2], 2);
+        let mut total = 0.0;
+        for (a, wu) in [(0usize, 1.0 - u), (1, u)] {
+            for (b, wv) in [(0usize, 1.0 - v), (1, v)] {
+                for (c, ww) in [(0usize, 1.0 - w), (1, w)] {
+                    total += self.corner([i, j, k], [a, b, c]) * wu * wv * ww;
+                }
+            }
+        }
+        total
+    }
+
+    fn gradient(&self, p: [f64; 3]) -> [f64; 3] {
+        let (i, u) = self.split(p[0], 0);
+        let (j, v) = self.split(p[1], 1);
+        let (k, w) = self.split(p[2], 2);
+        let mut g = [0.0f64; 3];
+        for (a, wu, du) in [(0usize, 1.0 - u, -1.0), (1, u, 1.0)] {
+            for (b, wv, dv) in [(0usize, 1.0 - v, -1.0), (1, v, 1.0)] {
+                for (c, ww, dw) in [(0usize, 1.0 - w, -1.0), (1, w, 1.0)] {
+                    let value = self.corner([i, j, k], [a, b, c]);
+                    g[0] += value * du * wv * ww;
+                    g[1] += value * wu * dv * ww;
+                    g[2] += value * wu * wv * dw;
+                }
+            }
+        }
+        g
+    }
+}
+
+/// A single cell whose corner signs are `case`, inside corners at `inside` and
+/// outside ones at `outside`.
+fn one_cell(case: u8, inside: f64, outside: f64) -> Trilinear {
+    let mut values = vec![0.0f64; 8];
+    for (c, slot) in values.iter_mut().enumerate() {
+        *slot = if corner_inside(case, c as u8) {
+            inside
+        } else {
+            outside
+        };
+    }
+    Trilinear {
+        size: [2, 2, 2],
+        values,
+    }
+}
+
+/// The Euler characteristic of one cell's patch under a given rule.
+fn chi_of(field: &Trilinear, rule: FaceAmbiguity) -> i64 {
+    let shape = RuntimeShape3::new([
+        field.size[0] as u32,
+        field.size[1] as u32,
+        field.size[2] as u32,
+    ])
+    .expect("valid shape");
+    let mut out = MeshBuffer::<f64>::new();
+    let mut mc = MarchingCubes::<f64>::new();
+    mc.set_face_ambiguity(rule);
+    mc.extract(field, &shape, [0.0; 3], 1.0, &mut out)
+        .expect("extract");
+    validate_indexed(
+        &out.positions,
+        &out.indices,
+        &ValidateConfig::from_cell_size(1.0).expect("valid cell size"),
+    )
+    .euler_characteristic
+}
+
+/// One field at one resolution, meshed both ways: `(decider report, plain MC
+/// report, decider triangles, plain MC triangles)`, or `None` where the field
+/// produces no surface at that resolution.
+fn decider_pair<F: Sdf<Scalar = f64> + ReferenceField>(
+    field: &F,
+    samples: u32,
+) -> Option<(
+    crate::validate::MeshReport,
+    crate::validate::MeshReport,
+    usize,
+    usize,
+)> {
+    let (lo, hi) = field.domain();
+    let h = (hi[0] - lo[0]) / f64::from(samples - 1);
+    let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
+    let cfg = ValidateConfig::from_cell_size(h).expect("valid cell size");
+
+    let mut out = MeshBuffer::<f64>::new();
+    let mut mc = MarchingCubes::<f64>::new();
+    mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+    mc.extract(field, &shape, lo, h, &mut out).expect("extract");
+    if out.triangle_count() == 0 {
+        return None;
+    }
+
+    let mut plain = MeshBuffer::<f64>::new();
+    MarchingCubes::<f64>::new()
+        .extract(field, &shape, lo, h, &mut plain)
+        .expect("extract");
+
+    Some((
+        validate_indexed(&out.positions, &out.indices, &cfg),
+        validate_indexed(&plain.positions, &plain.indices, &cfg),
+        out.triangle_count(),
+        plain.triangle_count(),
+    ))
+}
+
+#[derive(Default)]
+struct Census {
+    surface_cells: u64,
+    ambiguous_cells: u64,
+    joined_faces: u64,
+}
+
+/// Walk the same grid `extract` walks and count how often the decider has
+/// anything to decide, and how often it answers "joined".
+fn census<F: Sdf<Scalar = f64>>(field: &F, origin: [f64; 3], h: f64, samples: u32) -> Census {
+    let mut out = Census::default();
+    for z in 0..samples - 1 {
+        for y in 0..samples - 1 {
+            for x in 0..samples - 1 {
+                let mut corner_value = [0.0f64; 8];
+                let mut case = 0u8;
+                for (c, slot) in corner_value.iter_mut().enumerate() {
+                    let o = crate::cube::corner_offset(c as u8);
+                    *slot = field.sample([
+                        origin[0] + h * f64::from(x + o[0]),
+                        origin[1] + h * f64::from(y + o[1]),
+                        origin[2] + h * f64::from(z + o[2]),
+                    ]);
+                    if is_inside(*slot) {
+                        case |= 1 << c;
+                    }
+                }
+                if case == 0 || case == 255 {
+                    continue;
+                }
+                out.surface_cells += 1;
+                let ambiguous = AMBIGUOUS_FACES[case as usize];
+                if ambiguous == 0 {
+                    continue;
+                }
+                out.ambiguous_cells += 1;
+                out.joined_faces += u64::from(
+                    crate::mc::ambiguity::joined_mask(&corner_value, ambiguous).count_ones(),
+                );
+            }
+        }
+    }
+    out
+}
+
+/// Every undirected mesh edge one cell contributes, in **global** terms — a cut
+/// cube edge identified by its lower sample and its axis, so two cells naming
+/// the same cube edge produce the same key.
+fn global_mesh_edges(base: [i64; 3], case: u8, mask: u8) -> Vec<[(i64, i64, i64, u8); 2]> {
+    let entry = triangulate(segment_links(case, mask));
+    let key = |e: u8| -> (i64, i64, i64, u8) {
+        let [c, _] = EDGE_CORNERS[e as usize];
+        let o = crate::cube::corner_offset(c);
+        (
+            base[0] + i64::from(o[0]),
+            base[1] + i64::from(o[1]),
+            base[2] + i64::from(o[2]),
+            super::table::EDGE_AXIS[e as usize],
+        )
+    };
+    let mut out = Vec::new();
+    for t in &entry.triangles[..entry.count as usize] {
+        for k in 0..3 {
+            let a = key(t[k]);
+            let b = key(t[(k + 1) % 3]);
+            out.push(if a <= b { [a, b] } else { [b, a] });
+        }
+    }
+    out
+}
+
+/// **The fan lets two adjacent cells pick the same interior diagonal**, which
+/// puts four triangles on one mesh edge.
+///
+/// This is not the decider's doing. Any triangulation of a `k`-gon that adds no
+/// vertices has `k − 3` interior chords, and nothing local stops two neighbours
+/// choosing the same one — so the exhaustive two-cell search below finds it at
+/// **exactly the same rate under Marching Cubes' own separated rule.** It is the
+/// second, purely combinatorial mechanism behind ✗15, which attributed MC's
+/// non-manifoldness entirely to sub-cell pinching.
+///
+/// Two cells stacked along z share the face `z = 1` and have twelve samples
+/// between them, so all 4,096 sign patterns fit in a loop. Recorded in both
+/// directions, following M-4: the defect is an assertion, not an exclusion, so
+/// this fails if it spreads *and* if it silently disappears. A-015 is the ticket
+/// to remove it.
+#[test]
+fn the_fan_lets_adjacent_cells_share_an_interior_chord() {
+    for (label, joined) in [("separate (A-001)", false), ("decider (A-002)", true)] {
+        let mut worst = 0usize;
+        let mut occurrences = 0usize;
+        let mut first: Option<(u32, u8, u8)> = None;
+
+        for bits in 0..(1u32 << 12) {
+            // Sample (x, y, z), z in 0..3, at bit x + 2y + 4z.
+            let inside = |x: u32, y: u32, z: u32| bits >> (x + 2 * y + 4 * z) & 1 == 1;
+            let mut all = Vec::new();
+            let mut cases = [0u8; 2];
+            for z0 in 0..2u32 {
+                let mut case = 0u8;
+                for k in 0..8u8 {
+                    let o = crate::cube::corner_offset(k);
+                    if inside(o[0], o[1], o[2] + z0) {
+                        case |= 1 << k;
+                    }
+                }
+                cases[z0 as usize] = case;
+                if case == 0 || case == 255 {
+                    continue;
+                }
+                let mask = if joined {
+                    AMBIGUOUS_FACES[case as usize]
+                } else {
+                    0
+                };
+                all.extend(global_mesh_edges([0, 0, i64::from(z0)], case, mask));
+            }
+
+            all.sort_unstable();
+            let mut i = 0usize;
+            while i < all.len() {
+                let mut j = i;
+                while j < all.len() && all[j] == all[i] {
+                    j += 1;
+                }
+                worst = worst.max(j - i);
+                if j - i > 2 {
+                    occurrences += 1;
+                    if first.is_none() {
+                        first = Some((bits, cases[0], cases[1]));
+                    }
+                }
+                i = j;
+            }
+        }
+
+        std::println!(
+            "measured: {label}: worst faces on one mesh edge = {worst}, {occurrences} of 4096 \
+             two-cell sign patterns affected, first at {first:?}"
+        );
+        // Identical under both rules, which is the whole point: the fan owns
+        // this, not the ambiguity rule.
+        assert_eq!(worst, 4, "{label}");
+        assert_eq!(occurrences, 12, "{label}");
+    }
+}
+
+/// **Does the asymptotic decider widen M-32's chunk-seam problem?**
+///
+/// M-32 measured that two adjacent chunks compute their shared sample plane as
+/// `(o + h·cn) + h·n` and `o + h·(c+1)n` — equal by algebra, not by IEEE — and
+/// that 22% of random `(origin, h, cells, chunk)` combinations disagree by an
+/// ulp. Under plain Marching Cubes that is a rounding error: the sample values
+/// shift by an ulp and the vertex on the seam moves by a fraction of a cell.
+///
+/// The decider raises the stakes, because it turns those values into a
+/// **discrete** choice. A flipped choice is not a shifted vertex — it is two
+/// chunks building genuinely different surfaces on a face they share, which is a
+/// crack. A-002 creates that question and must not leave it to inference.
+///
+/// The faces examined are the ones that actually straddle a seam: all four
+/// corners lie *in* the shared plane, so both chunks read all four through the
+/// arithmetic that differs. Planes where the two expressions agree bit for bit
+/// are skipped, since they measure nothing — M-32's own method rule.
+///
+/// Two things are counted, because they fail differently. A **sign
+/// disagreement** — the ulp moving a corner across zero — is a crack under
+/// *plain* Marching Cubes too, since it changes the case index. A **decision
+/// flip** is the one the decider adds. The closest margin any ambiguous seam
+/// face came to flipping is recorded, because a count of zero says nothing about
+/// how nearly it happened.
+#[test]
+fn the_decider_at_a_chunk_seam_is_measured() {
+    let field = crate::fields::capped_gyroid::<f64>();
+
+    // A plain xorshift, so the sweep is reproducible without a dependency.
+    let mut state = 0x2545_f491_4f6c_dd1du64;
+    let mut next = || {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        (state >> 11) as f64 / (1u64 << 53) as f64
+    };
+
+    let mut divergent_planes = 0usize;
+    let mut seam_faces = 0usize;
+    let mut sign_disagreements = 0usize;
+    let mut ambiguous_faces = 0usize;
+    let mut decision_flips = 0usize;
+    let mut closest_margin = f64::INFINITY;
+
+    for _ in 0..8_000 {
+        let o = -4.0 + 8.0 * next();
+        let cells = 4 + (next() * 13.0) as u32;
+        // Coarse relative to the gyroid's own period, which is where an
+        // ambiguous face is reachable at all — at fine spacings the surface is
+        // resolved and the configuration essentially does not occur.
+        let h = 0.4 + next();
+        let chunk = (next() * 16.0) as i64 - 8;
+
+        let span = h * f64::from(cells);
+        let plane_a = (o + span * chunk as f64) + span;
+        let plane_b = o + span * (chunk + 1) as f64;
+        if plane_a.to_bits() == plane_b.to_bits() || plane_a.abs() > 6.0 {
+            continue;
+        }
+        divergent_planes += 1;
+
+        let corners = |x: f64, y: f64, z: f64| {
+            [
+                field.sample([x, y, z]),
+                field.sample([x, y + h, z]),
+                field.sample([x, y + h, z + h]),
+                field.sample([x, y, z + h]),
+            ]
+        };
+        let ambiguous = |v: &[f64; 4]| {
+            is_inside(v[0]) == is_inside(v[2])
+                && is_inside(v[1]) == is_inside(v[3])
+                && is_inside(v[0]) != is_inside(v[1])
+        };
+
+        let steps = 24i32;
+        for iy in -steps..steps {
+            for iz in -steps..steps {
+                let y = f64::from(iy) * h;
+                let z = f64::from(iz) * h;
+                let va = corners(plane_a, y, z);
+                let vb = corners(plane_b, y, z);
+                seam_faces += 1;
+
+                if (0..4).any(|k| is_inside(va[k]) != is_inside(vb[k])) {
+                    // Worse than a flipped decider, and not the decider's doing:
+                    // the two chunks disagree about the case index itself.
+                    sign_disagreements += 1;
+                    continue;
+                }
+                if !ambiguous(&va) {
+                    continue;
+                }
+                ambiguous_faces += 1;
+
+                // How near the decision sat to its own boundary.
+                let d02 = va[0] * va[2];
+                let d13 = va[1] * va[3];
+                let scale = d02.abs().max(d13.abs()).max(f64::MIN_POSITIVE);
+                closest_margin = closest_margin.min((d02 - d13).abs() / scale);
+
+                if crate::mc::ambiguity::face_is_joined(va)
+                    != crate::mc::ambiguity::face_is_joined(vb)
+                {
+                    decision_flips += 1;
+                }
+            }
+        }
+    }
+
+    std::println!(
+        "measured: {divergent_planes} seam planes where the two expressions differ bit for bit, \
+         {seam_faces} faces on them, {sign_disagreements} where the ulp moved a corner across zero, \
+         {ambiguous_faces} ambiguous, {decision_flips} where the decider flipped; \
+         closest relative margin {closest_margin:.3e}"
+    );
+
+    // The sweep has to actually reach the configuration, or it proves nothing —
+    // the trap this repo has fallen into twice (M-32, M-38).
+    assert!(
+        ambiguous_faces > 100,
+        "only {ambiguous_faces} ambiguous seam faces reached; the sweep is not measuring this"
+    );
+    assert_eq!(sign_disagreements, 0);
+    assert_eq!(decision_flips, 0);
 }

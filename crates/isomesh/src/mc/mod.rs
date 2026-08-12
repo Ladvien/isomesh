@@ -9,6 +9,7 @@
 //! on all 256 cases; `matches_the_published_table` in the tests demonstrates
 //! that against an independently parsed copy.
 
+pub mod ambiguity;
 pub mod table;
 
 #[cfg(test)]
@@ -22,7 +23,12 @@ use crate::cube::corner_offset;
 use crate::vec3;
 use crate::{MeshSink, Real, Sdf, Shape3};
 
-use table::{CASES, EDGE_AXIS, EDGE_CORNERS, NO_EDGE, is_inside};
+pub use ambiguity::FaceAmbiguity;
+
+use ambiguity::joined_mask;
+use table::{
+    AMBIGUOUS_FACES, CASES, EDGE_AXIS, EDGE_CORNERS, NO_EDGE, is_inside, segment_links, triangulate,
+};
 
 /// Marching Cubes over a sampled grid.
 ///
@@ -54,6 +60,7 @@ pub struct MarchingCubes<R: Real> {
     /// One slot per (sample, axis): the vertex sitting on that grid edge, or
     /// [`u32::MAX`].
     edge_vertices: Vec<u32>,
+    face_ambiguity: FaceAmbiguity,
 }
 
 impl<R: Real> MarchingCubes<R> {
@@ -63,7 +70,18 @@ impl<R: Real> MarchingCubes<R> {
         Self {
             values: Vec::new(),
             edge_vertices: Vec::new(),
+            face_ambiguity: FaceAmbiguity::Separate,
         }
+    }
+
+    /// How ambiguous faces are resolved.
+    ///
+    /// Defaults to [`FaceAmbiguity::Separate`], which is Marching Cubes proper.
+    /// [`FaceAmbiguity::AsymptoticDecider`] is A-002's MC33 face rule; see
+    /// [`ambiguity`] for the mathematics and A-002's archive entry for what the
+    /// difference measures.
+    pub fn set_face_ambiguity(&mut self, face_ambiguity: FaceAmbiguity) {
+        self.face_ambiguity = face_ambiguity;
     }
 
     /// Extract the zero level set into `out`.
@@ -154,7 +172,23 @@ impl<R: Real> MarchingCubes<R> {
                         }
                     }
 
-                    let entry = &CASES[case as usize];
+                    // The triangulation for this cell. Under `Separate` that is
+                    // the derived table verbatim; under `AsymptoticDecider` it is
+                    // the same construction with the ambiguous faces re-paired by
+                    // the bilinear saddle. A cell with no ambiguous face reads
+                    // the table either way, which is a memo and not a second
+                    // rule: `masks_are_ignored_on_unambiguous_faces` proves the
+                    // two agree, and `the_separate_mask_reproduces_the_derived
+                    // _table` proves the table is the mask-zero construction.
+                    let ambiguous = match self.face_ambiguity {
+                        FaceAmbiguity::Separate => 0,
+                        FaceAmbiguity::AsymptoticDecider => AMBIGUOUS_FACES[case as usize],
+                    };
+                    let entry = if ambiguous == 0 {
+                        CASES[case as usize]
+                    } else {
+                        triangulate(segment_links(case, joined_mask(&corner_value, ambiguous)))
+                    };
                     if entry.count == 0 {
                         continue;
                     }
@@ -300,6 +334,15 @@ impl TableReport {
     }
 }
 
+/// `(face, that face's 4-corner pattern, that face's decision) -> its segments`.
+///
+/// The decision index is masked by whether the face is *actually* ambiguous, so
+/// a set bit on a face that has no choice shares a slot with the same face at
+/// bit clear. A disagreement in that slot is therefore the report of a mask bit
+/// having had an effect where it must not — which is what licenses the table
+/// lookup in [`MarchingCubes::extract`] for cells with no ambiguous face.
+type FaceMemo = [[[Option<[u8; table::EDGE_COUNT]>; 2]; 16]; 6];
+
 /// Check all 256 cases structurally, without consulting any reference table.
 ///
 /// This is the brief's second defence, and it is the one that does not depend on
@@ -315,96 +358,151 @@ impl TableReport {
 ///   That last one is the crack-free property: two cells meeting on a face see
 ///   the same four corners, so if the segments are a function of those corners
 ///   the cells cannot disagree.
+///
+/// This checks the shipped [`CASES`] array, at the all-separate resolution.
+/// [`validate_decider_table`] is the same checks over every resolution mask.
 #[must_use]
 pub fn validate_table() -> TableReport {
-    use table::{EDGE_COUNT, corner_inside, edge_index, face_corners, segment_links};
-
     let mut report = TableReport::default();
-
-    // (face, that face's 4-corner pattern) -> the segments it produced.
-    let mut face_seen: [[Option<[u8; EDGE_COUNT]>; 16]; 6] = [[None; 16]; 6];
-
+    let mut face_seen: FaceMemo = [[[None; 2]; 16]; 6];
     for case in 0..=255u8 {
-        let entry = &CASES[case as usize];
-        report.max_triangles = report.max_triangles.max(u64::from(entry.count));
+        check_case(case, 0, &CASES[case as usize], &mut report, &mut face_seen);
+    }
+    report
+}
 
-        let mut cut = [false; EDGE_COUNT];
-        for (e, slot) in cut.iter_mut().enumerate() {
-            let [a, b] = EDGE_CORNERS[e];
-            *slot = corner_inside(case, a) != corner_inside(case, b);
+/// The same checks, over all 256 cases **and** all 64 face-resolution masks.
+///
+/// 16,384 combinations, which is what A-002 has to be sound over rather than
+/// just the 256 the compile-time table covers. The face-locality property is the
+/// one that matters here and it is stronger than it looks: two cells meeting on
+/// a face agree about that face's corner signs *and*, because the decider is a
+/// function of the four shared sample values, about its decision bit — so if the
+/// segments are a function of `(pattern, bit)` the cells still cannot disagree.
+///
+/// `max_triangles` is recorded rather than gated, as in [`validate_table`]; the
+/// crossed pairing can produce longer cycles than the separated one.
+#[must_use]
+pub fn validate_decider_table() -> TableReport {
+    let mut report = TableReport::default();
+    let mut face_seen: FaceMemo = [[[None; 2]; 16]; 6];
+    for case in 0..=255u8 {
+        for mask in 0..(1u8 << table::FACE_COUNT) {
+            let entry = triangulate(segment_links(case, mask));
+            check_case(case, mask, &entry, &mut report, &mut face_seen);
         }
+    }
+    report
+}
 
-        let mut used = [false; EDGE_COUNT];
-        for tri in &entry.triangles[..entry.count as usize] {
-            if tri[0] == tri[1] || tri[1] == tri[2] || tri[0] == tri[2] {
-                report.degenerate_triangles += 1;
-            }
-            for &e in tri {
-                if !cut[e as usize] {
-                    report.triangles_on_uncut_edges += 1;
-                }
-                used[e as usize] = true;
-            }
+/// Is a face with this 4-corner pattern ambiguous?
+///
+/// True when the signs alternate around the ring, which is the only way a face
+/// gets four cut edges and so the only way it has a pairing to choose. Written
+/// against the pattern rather than [`table::AMBIGUOUS_FACES`] so the check below
+/// stays honest about consulting nothing but the face's own corners;
+/// `ambiguous_faces_agrees_with_the_face_pattern` ties the two together.
+const fn pattern_is_ambiguous(pattern: usize) -> bool {
+    pattern == 0b0101 || pattern == 0b1010
+}
+
+fn check_case(
+    case: u8,
+    mask: u8,
+    entry: &table::McCase,
+    report: &mut TableReport,
+    face_seen: &mut FaceMemo,
+) {
+    use table::{EDGE_COUNT, corner_inside, edge_index, face_bit, face_corners};
+
+    report.max_triangles = report.max_triangles.max(u64::from(entry.count));
+
+    let mut cut = [false; EDGE_COUNT];
+    for (e, slot) in cut.iter_mut().enumerate() {
+        let [a, b] = EDGE_CORNERS[e];
+        *slot = corner_inside(case, a) != corner_inside(case, b);
+    }
+
+    let mut used = [false; EDGE_COUNT];
+    for tri in &entry.triangles[..entry.count as usize] {
+        if tri[0] == tri[1] || tri[1] == tri[2] || tri[0] == tri[2] {
+            report.degenerate_triangles += 1;
         }
-        if used != cut {
-            report.cut_edge_mismatch += 1;
-        }
-
-        let links = segment_links(case);
-        let mut incoming = [0u8; EDGE_COUNT];
-        for e in 0..EDGE_COUNT {
-            if links[e] != NO_EDGE {
-                incoming[links[e] as usize] += 1;
+        for &e in tri {
+            if !cut[e as usize] {
+                report.triangles_on_uncut_edges += 1;
             }
+            used[e as usize] = true;
         }
-        for e in 0..EDGE_COUNT {
-            let out_degree = u8::from(links[e] != NO_EDGE);
-            if cut[e] != (out_degree == 1) || incoming[e] != out_degree {
-                report.bad_segment_degree += 1;
-            }
+    }
+    if used != cut {
+        report.cut_edge_mismatch += 1;
+    }
+
+    let links = segment_links(case, mask);
+    let mut incoming = [0u8; EDGE_COUNT];
+    for e in 0..EDGE_COUNT {
+        if links[e] != NO_EDGE {
+            incoming[links[e] as usize] += 1;
         }
-
-        // Recompute each face's segments in isolation and check they depend on
-        // nothing but that face's own corners.
-        let mut f = 0usize;
-        for axis in 0..3usize {
-            for side in 0..2u8 {
-                let c = face_corners(axis, side);
-                let mut pattern = 0usize;
-                for (k, &corner) in c.iter().enumerate() {
-                    if corner_inside(case, corner) {
-                        pattern |= 1 << k;
-                    }
-                }
-
-                let mut segments = [NO_EDGE; EDGE_COUNT];
-                if let Some(start) = (0..4).find(|&k| !corner_inside(case, c[k])) {
-                    let mut entry_edge = NO_EDGE;
-                    for j in 0..4 {
-                        let p = c[(start + j) % 4];
-                        let q = c[(start + j + 1) % 4];
-                        match (corner_inside(case, p), corner_inside(case, q)) {
-                            (false, true) => entry_edge = edge_index(p, q),
-                            (true, false) => {
-                                segments[entry_edge as usize] = edge_index(p, q);
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-
-                match face_seen[f][pattern] {
-                    None => face_seen[f][pattern] = Some(segments),
-                    Some(previous) => {
-                        if previous != segments {
-                            report.face_disagreements += 1;
-                        }
-                    }
-                }
-                f += 1;
-            }
+    }
+    for e in 0..EDGE_COUNT {
+        let out_degree = u8::from(links[e] != NO_EDGE);
+        if cut[e] != (out_degree == 1) || incoming[e] != out_degree {
+            report.bad_segment_degree += 1;
         }
     }
 
-    report
+    // Recompute each face's segments in isolation and check they depend on
+    // nothing but that face's own corners and that face's own decision bit.
+    for axis in 0..3usize {
+        for side in 0..2u8 {
+            let f = axis * 2 + side as usize;
+            let c = face_corners(axis, side);
+            let mut pattern = 0usize;
+            for (k, &corner) in c.iter().enumerate() {
+                if corner_inside(case, corner) {
+                    pattern |= 1 << k;
+                }
+            }
+            let bit =
+                usize::from(mask & face_bit(axis, side) != 0 && pattern_is_ambiguous(pattern));
+
+            let mut segments = [NO_EDGE; EDGE_COUNT];
+            if let Some(start) = (0..4).find(|&k| !corner_inside(case, c[k])) {
+                let mut entries = [NO_EDGE; 2];
+                let mut exits = [NO_EDGE; 2];
+                let mut pairs = 0usize;
+                for j in 0..4 {
+                    let p = c[(start + j) % 4];
+                    let q = c[(start + j + 1) % 4];
+                    match (corner_inside(case, p), corner_inside(case, q)) {
+                        (false, true) => entries[pairs] = edge_index(p, q),
+                        (true, false) => {
+                            exits[pairs] = edge_index(p, q);
+                            pairs += 1;
+                        }
+                        _ => {}
+                    }
+                }
+                if pairs == 2 && bit == 1 {
+                    segments[entries[0] as usize] = exits[1];
+                    segments[entries[1] as usize] = exits[0];
+                } else {
+                    for n in 0..pairs {
+                        segments[entries[n] as usize] = exits[n];
+                    }
+                }
+            }
+
+            match face_seen[f][pattern][bit] {
+                None => face_seen[f][pattern][bit] = Some(segments),
+                Some(previous) => {
+                    if previous != segments {
+                        report.face_disagreements += 1;
+                    }
+                }
+            }
+        }
+    }
 }

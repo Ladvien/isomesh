@@ -52,19 +52,34 @@
 //! # The one real choice
 //!
 //! Step 2 resolves an ambiguous face — one with two diagonally opposite inside
-//! corners — by **separating the inside corners**, since each run of inside
-//! corners is cut off by its own segment. Both pairings are crack-free as long
-//! as the rule is applied consistently, which is why this is a decision rather
-//! than a fact. Marching Cubes proper has no way to do better; MC33's asymptotic
-//! decider replaces this rule with one that reads the bilinear saddle, and that
-//! is A-002's ticket.
+//! corners — by pairing each entry with the exit that closes its own run, which
+//! **separates the inside corners**. Both pairings are crack-free as long as the
+//! rule is applied consistently, which is why this is a decision rather than a
+//! fact.
 //!
-//! Interior ambiguity is likewise left alone: where a cell could host either two
-//! separate sheets or a tunnel, this construction produces separate sheets.
-//! Custodio et al. (2013) put the practical cost in perspective — the vast
-//! majority of real-world cells match the unambiguous configurations, and a game
-//! needs topological *consistency*, which this has, rather than topological
-//! *correctness*, which needs the interior test.
+//! That decision is now a parameter. [`segment_links`] takes a six-bit mask, one
+//! bit per face, selecting the crossed pairing — which joins the inside corners
+//! instead — on the faces whose bit is set. [`CASES`] is the all-zero mask, so
+//! Marching Cubes proper is unchanged; A-002's asymptotic decider computes the
+//! mask per cell from the bilinear saddle, in [`super::ambiguity`]. Bits set on
+//! a face that is not ambiguous have no effect, because such a face has at most
+//! one entry and so no pairing to choose; `masks_are_ignored_on_unambiguous_faces`
+//! is the proof, and it is what makes the table lookup a legitimate memo rather
+//! than a second rule.
+//!
+//! Only a face with **four** cut edges has a choice. A face has 0, 2 or 4 cut
+//! edges and nothing else, and four requires alternating signs around the ring —
+//! [`AMBIGUOUS_FACES`] records exactly which faces those are, per case.
+//!
+//! # Interior ambiguity is not resolved here
+//!
+//! Where a cell could host either two separate sheets or a tunnel, this
+//! construction produces separate sheets, under either mask. Resolving it needs
+//! Chernyaev's body-saddle test, which is **deliberately not implemented** — see
+//! A-002b in the backlog. Custodio et al. (2013) put the practical cost in
+//! perspective: the vast majority of real-world cells match the unambiguous
+//! configurations, and a game needs topological *consistency*, which this has,
+//! rather than topological *correctness*, which needs the interior test.
 
 // Cube topology and the sign rule live in `crate::cube`, shared with every
 // other extractor. Re-exported here because this module's docs and the table
@@ -92,7 +107,24 @@ pub struct McCase {
     pub triangles: [[u8; 3]; MAX_TRIANGLES],
 }
 
+/// A cube has six faces, so a per-face decision is six bits.
+pub const FACE_COUNT: usize = 6;
+
+/// The bit a face occupies in a resolution mask: `axis * 2 + side`.
+///
+/// Stated once here because [`segment_links`], [`AMBIGUOUS_FACES`],
+/// [`super::ambiguity::joined_mask`] and the validator all have to agree about
+/// it, and a transposition between any two of them would be invisible in the
+/// output.
+#[inline]
+#[must_use]
+pub const fn face_bit(axis: usize, side: u8) -> u8 {
+    1 << (axis * 2 + side as usize)
+}
+
 /// All 256 configurations, built during compilation.
+///
+/// The all-separate resolution — mask zero — which is Marching Cubes proper.
 pub static CASES: [McCase; 256] = build_cases();
 
 const fn build_cases() -> [McCase; 256] {
@@ -102,7 +134,44 @@ const fn build_cases() -> [McCase; 256] {
     }; 256];
     let mut case = 0usize;
     while case < 256 {
-        out[case] = build_case(case as u8);
+        out[case] = triangulate(segment_links(case as u8, 0));
+        case += 1;
+    }
+    out
+}
+
+/// Which of a case's faces are ambiguous, as a mask over [`face_bit`].
+///
+/// A face is ambiguous when its four corner signs alternate around the ring, so
+/// all four of its edges are cut and the two inside corners can be joined or
+/// separated. Those are the only faces on which [`segment_links`]'s mask does
+/// anything.
+pub static AMBIGUOUS_FACES: [u8; 256] = build_ambiguous_faces();
+
+const fn build_ambiguous_faces() -> [u8; 256] {
+    let mut out = [0u8; 256];
+    let mut case = 0usize;
+    while case < 256 {
+        let mut mask = 0u8;
+        let mut axis = 0usize;
+        while axis < 3 {
+            let mut side = 0u8;
+            while side < 2 {
+                let c = face_corners(axis, side);
+                // Opposite corners agree, adjacent ones differ.
+                let a = corner_inside(case as u8, c[0]);
+                let b = corner_inside(case as u8, c[1]);
+                if a == corner_inside(case as u8, c[2])
+                    && b == corner_inside(case as u8, c[3])
+                    && a != b
+                {
+                    mask |= face_bit(axis, side);
+                }
+                side += 1;
+            }
+            axis += 1;
+        }
+        out[case] = mask;
         case += 1;
     }
     out
@@ -111,8 +180,15 @@ const fn build_cases() -> [McCase; 256] {
 /// Segment links for one configuration: `next[e]` is the cut edge the segment
 /// leaving cut edge `e` arrives at, or [`NO_EDGE`].
 ///
+/// `joined` selects, per face, which of the two pairings an ambiguous face uses:
+/// clear pairs each entry with the exit that closes its own run of inside
+/// corners, **separating** them; set crosses the pairing, **joining** them. Bits
+/// on faces that are not ambiguous are ignored, since such a face has at most one
+/// entry and therefore no pairing to choose. See [`AMBIGUOUS_FACES`] and
+/// [`face_bit`].
+///
 /// Exposed so the validator can rebuild them independently of the triangles.
-pub const fn segment_links(case: u8) -> [u8; EDGE_COUNT] {
+pub const fn segment_links(case: u8, joined: u8) -> [u8; EDGE_COUNT] {
     let mut next = [NO_EDGE; EDGE_COUNT];
 
     let mut axis = 0usize;
@@ -134,7 +210,12 @@ pub const fn segment_links(case: u8) -> [u8; EDGE_COUNT] {
             }
 
             if start < 4 {
-                let mut entry = NO_EDGE;
+                // Starting outside makes the transitions alternate entry, exit,
+                // entry, exit, so entry `n` is always seen before exit `n`. Two
+                // of each is the maximum: a face has 0, 2 or 4 cut edges.
+                let mut entries = [NO_EDGE; 2];
+                let mut exits = [NO_EDGE; 2];
+                let mut pairs = 0usize;
                 let mut j = 0usize;
                 while j < 4 {
                     let p = c[(start + j) % 4];
@@ -142,11 +223,23 @@ pub const fn segment_links(case: u8) -> [u8; EDGE_COUNT] {
                     let p_in = corner_inside(case, p);
                     let q_in = corner_inside(case, q);
                     if !p_in && q_in {
-                        entry = edge_index(p, q);
+                        entries[pairs] = edge_index(p, q);
                     } else if p_in && !q_in {
-                        next[entry as usize] = edge_index(p, q);
+                        exits[pairs] = edge_index(p, q);
+                        pairs += 1;
                     }
                     j += 1;
+                }
+
+                if pairs == 2 && joined & face_bit(axis, side) != 0 {
+                    next[entries[0] as usize] = exits[1];
+                    next[entries[1] as usize] = exits[0];
+                } else {
+                    let mut n = 0usize;
+                    while n < pairs {
+                        next[entries[n] as usize] = exits[n];
+                        n += 1;
+                    }
                 }
             }
 
@@ -158,9 +251,12 @@ pub const fn segment_links(case: u8) -> [u8; EDGE_COUNT] {
     next
 }
 
-const fn build_case(case: u8) -> McCase {
-    let next = segment_links(case);
-
+/// Fan-triangulate the directed cycles the segments form.
+///
+/// Split out of the table construction so the runtime decider path and the
+/// compile-time table share one implementation and cannot drift.
+#[must_use]
+pub const fn triangulate(next: [u8; EDGE_COUNT]) -> McCase {
     let mut triangles = [[0u8; 3]; MAX_TRIANGLES];
     let mut count = 0usize;
     let mut visited = [false; EDGE_COUNT];
@@ -181,7 +277,9 @@ const fn build_case(case: u8) -> McCase {
 
             // Fan from the first vertex. Every cycle has at least three edges:
             // two distinct cube edges share at most one face, so no two-cycle
-            // can form.
+            // can form. That holds under either pairing — crossing an ambiguous
+            // face's pairing permutes which exit each entry reaches, and both
+            // exits are still on that one shared face.
             let mut i = 1usize;
             while i + 1 < len {
                 triangles[count] = [cycle[0], cycle[i], cycle[i + 1]];

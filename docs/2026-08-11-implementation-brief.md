@@ -127,6 +127,31 @@ catalog doc covers which of the 6 ambiguous cases need it.
 under MC33, and the Euler test passes on that field *only* with MC33 enabled. A test that passes both
 ways isn't testing this.
 
+> **CORRECTED at A-001 (✗11) and again at A-002.** Three of the five claims above are wrong for this
+> codebase. The formula survives; the framing, the guard and the exit criterion do not.
+>
+> 1. **"Plain MC has ambiguous faces and produces holes" — false here (✗11).** Holes need two cells
+>    sharing a face to *disagree* about how the surface crosses it. This table is derived at compile
+>    time by walking each face counter-clockwise, so a face's segments are a function of that face's
+>    own four corner signs and nothing else. `validate_table()` checks all 256 cases and
+>    `face_disagreements` is zero. The folklore is right about Lorensen & Cline's transcribed table
+>    and wrong about a derived one.
+> 2. **The exit criterion was therefore unsatisfiable** and was replaced with a χ difference. Measured
+>    at A-002: **88 of the 256 cases change χ** when their ambiguous faces are joined; the smallest is
+>    case 6, where two discs (χ = 2) become one (χ = 1).
+> 3. **"Guard the denominator near zero" — unnecessary, and only on an ambiguous face.** On such a
+>    face one diagonal is strictly negative and the other non-negative (zero counts as outside), so
+>    the denominator is strictly non-zero by the sign rule alone. Only `sign(S)` is wanted and the
+>    denominator's sign is known, so the whole test is `d_in > d_out` on the two diagonal products —
+>    no division, no epsilon. Same argument as `edge_crossing`'s.
+> 4. **The interior test is deliberately not implemented** — see A-002b. `catalog-v2.md` is explicit
+>    that a game wants topological *consistency*, which A-001 already has, over *correctness*; and
+>    Custodio et al. (2013) show Chernyaev's interior test is wrong for case 13.5 and that Lewiner's
+>    implementation omits cases 10 and 12, so there is no correct published table to transcribe.
+> 5. **"It's small" — true, and measurably so.** Measured at A-002: on five of the seven reference
+>    fields an ambiguous face **never occurs at all**, so MC33 and MC are bit-identical there. It
+>    fires on 0.5% of gyroid's surface cells and 1.5% of fbm_terrain's.
+
 ---
 
 ## Stage 3 — Surface Nets

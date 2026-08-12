@@ -279,6 +279,51 @@ an assertion, not an exclusion, so it fails if it spreads *and* if it silently d
 coming back non-manifold under MC.
 **Worth noting for G-001:** a chunk boundary is a place where a surface can be under-resolved relative
 to the chunk it lands in. This is a plausible source of seam defects later.
+**Amended at A-002 (see ✗17):** "MC is manifold when the grid resolves the surface" is still the right
+description of *this* mechanism, but it is not the only one. There is a second, purely combinatorial
+cause with nothing to do with resolution — the fan triangulation — and refinement fixes it only by
+changing which sign patterns occur.
+
+### ✗17 — "Only the interior test can make MC33 non-manifold, so the face decider alone cannot"
+
+**Believed because:** it was written down as a prediction in A-002's plan, and the reasoning looked
+tight. Custodio et al. (2013) §6.2 give exactly one mechanism for MC33's non-manifold edges — *"two
+adjacent voxels that share an ambiguous face have tunnels in the voxel interior"* — and tunnels come
+from the interior test, which A-002 deliberately does not implement. The face decider only re-pairs cut
+edges; it moves no vertex and creates no new one.
+**Falsified by:** `every_closed_reference_field_meshes_cleanly_under_the_decider`, on its first run.
+**Result:** the capped gyroid at 25³ gives **2 non-manifold edges and 3 non-manifold vertices** under
+the decider against plain Marching Cubes' **0**, on a mesh with zero boundary edges and zero
+inconsistently oriented edges. At 17³ and 33³ the two rules agree exactly.
+
+**What's true instead — and it is not the decider's fault.** Both offending mesh edges carry **four**
+faces. Inspected rather than reasoned about: each joins two cut cube edges that lie on a shared cube
+face but are *not* connected by a segment there, and each is emitted **twice by each of the two
+adjacent cells**. They are **fan chords**. `mc/table.rs`'s `triangulate` fans each cycle from its first
+edge, and any triangulation of a `k`-gon that adds no vertices has `k − 3` interior chords; nothing
+local stops two neighbouring cells choosing the same one.
+
+An exhaustive two-cell search settles the attribution. Two cells stacked along z share a face and have
+twelve samples between them, so all 4,096 sign patterns fit in a loop:
+
+| rule | worst faces on one mesh edge | patterns affected |
+|---|---|---|
+| separated (A-001) | **4** | **12 / 4096** |
+| decider (A-002) | **4** | **12 / 4096** |
+
+Identical. **Plain Marching Cubes has this defect at exactly the same rate.** The decider only changes
+*which* sign patterns are reached, and on the gyroid at 25³ it happens to reach one.
+
+**Consequence:** the defect is ticketed against Marching Cubes as **A-015**, not against MC33, and the
+fix is a per-cycle centroid vertex — the only chord-free triangulation of a polygon. That breaks
+✗1/M-2/M-22's `V_mc = C` identity and re-baselines every golden hash, which is why it is its own
+ticket rather than a fix folded into this one. Meanwhile `is_closed()` is deliberately *not* the gate
+in the decider's reference-field sweep, because it folds in manifoldness and manifoldness is owned by
+the fan; the census is pinned exactly instead, following M-4.
+**Would be shown wrong by:** the two-cell search returning a different count for the two rules, or the
+offending mesh edges turning out to be face segments rather than chords.
+**Method note:** the prediction was written into the plan *before* the code ran, which is the only
+reason this reads as a falsification rather than as a bug that was quietly fixed.
 
 ### ✗14 — "Surface Nets is the cheapest thing in the family and the natural default"
 
@@ -367,6 +412,11 @@ search: the suspect is the gather in `emit_quads`, whose `z`-stride is `n²` cel
 | M-28 | **The cell clamp eliminates placement-caused self-intersections entirely, and costs nothing in sharpness.** λ (pairs per 1,000 triangles) at 33³, clamp off → on: `torus` **2.66 → 0**, `gyroid` **71.43 → 3.12**, `fbm_terrain` **189.46 → 13.84**; `sphere`, `box_exact`, `csg_difference` and `thin_plate` were already 0. Corner gap on `box_exact` at 27³: **0.0057 cells either way** — identical, because a convex corner's solution is interior to its own cell, so the constraint never binds where the feature is | A-009, `the_clamp_measured_on_every_reference_field`. Default is now `Clamp::ToCell`, chosen by this measurement rather than by preference |
 | M-29 | **The literature's two branches both fire, on disjoint fields — which is a sharper answer than either alone.** The review states the rule in advance: λ→0 means placement was the cause, λ unchanged means the defect is *connectivity* and needs A-010. Measured: λ → **exactly 0** on five of seven fields, and drops **23×** and **13.7×** on `gyroid` and `fbm_terrain` without reaching it. Those two are precisely the fields with multi-sheet cells (M-4, M-15). So the clamp removes the placement failure completely and the residue is exactly A-010's problem, with nothing left unaccounted for | A-009 |
 | M-30 | **An unclamped solve can fling a vertex 3.18 cells out of its own cell** — measured max displacement on `gyroid` at 33³, with 618 of 5240 vertices outside; `fbm_terrain` 2.17 cells and 1097 of 1958. On the smooth closed fields it never leaves at all: `sphere`, `box_exact` and `thin_plate` have **zero** vertices outside | A-009. This is the failure mode the clamp exists for, quantified rather than asserted |
+| M-40 | **The ambiguous face is rarer than the literature suggests — on five of the seven reference fields it never occurs at all.** At 33³: `sphere` 0 of 1160 surface cells, `torus` 0 of 1128, `box_exact` 0 of 1352, `csg_difference` 0 of 1388, `thin_plate` 0 of 512. Only `gyroid` (**27 of 5240, 0.515%**) and `fbm_terrain` (**30 of 1958, 1.532%**) reach it, and the decider joins roughly half the ambiguous faces it finds — 12 and 18 respectively. **So MC33 and MC are bit-identical on five of seven fields at every resolution tested**, which the 84-row golden fixture now pins | A-002. Verifies Custodio et al. 2013's *"the vast majority of Marching Cubes cases match the non-ambiguous configurations"* (tier R) against this crate's own fields and finds it understated. Consequence for E-102: an MC-vs-MC33 example must use `gyroid` or `fbm_terrain` or it will show two identical meshes |
+| M-41 | **88 of the 256 cases change their Euler characteristic when their ambiguous faces are joined.** The smallest is case 6 — corners 1 and 2 inside, diagonally opposite on the `z = 0` face and on no other face together, so exactly one ambiguous face: separated it is two discs (`χ = 2`), joined it is one (`χ = 1`). 136 of the 256 cases have no ambiguous face at all, so the rule cannot reach them. The decider's worst cell is **10 triangles** against the separated table's 5 — predicted before running, from the longest cycle that can use all twelve cut edges | A-002's acceptance criterion, `the_decider_and_marching_cubes_disagree_about_chi`. Searched over all 256 cases rather than picked, and pinned in both directions |
+| M-42 | **The asymptotic decider is free to within a few percent, which is the first time this repo's "~free" claim has had a benchmark behind it.** Median extraction, f32, Apple M5: `sphere` 33³ **206.25 → 205.65 µs** (−0.3%, i.e. noise), `sphere` 65³ **1.4954 → 1.5189 ms** (+1.6%), `gyroid` 33³ **786.89 → 795.44 µs** (+1.1%), `gyroid` 65³ **5.6378 → 5.8236 ms** (+3.3%). `sphere` has no ambiguous face at all (M-40), so its difference is the price of *asking* — one table lookup and a branch per surface cell; `gyroid`'s extra ~1.7 points is the price of *answering*, building the cell's triangulation at run time instead of reading it | A-002, `cargo bench --bench extract -- decider`. Confirms the v1 catalog's "~free" (tier R) for the decider, against its "730 subcases in the LUT" for the guaranteed version |
+| M-43 | **The decider needs no division and no epsilon, and the brief's "guard the denominator" is unnecessary.** On an ambiguous face one diagonal is strictly negative and the other non-negative — a sample of exactly zero is outside — so `v0 + v2 − v1 − v3` is strictly non-zero *by the sign rule alone*. Only `sign(S)` is wanted and the denominator's sign is already known, so the whole test is **`joined ⟺ d_in > d_out`** on the two diagonal products. Both branches of the derivation reduce to the same comparison, and it is invariant under rotation and reflection of the corner order because IEEE multiplication is commutative and correctly rounded — which is what makes two adjacent cells agree bit for bit | A-002. Structurally the same argument as `edge_crossing`'s missing epsilon: strictness in the sign rule pays for itself twice |
+| M-44 | **The decider does not widen M-32's chunk-seam problem, and there is margin to spare.** Over 217 seam planes where the two chunk expressions differ bit for bit and 499,968 faces lying in them: **0** where the ulp moved a corner across zero (which would be a crack for plain Marching Cubes too, not just for the decider), 205 ambiguous faces, **0** decision flips. The closest any ambiguous seam face came to its own decision boundary was a relative margin of **1.535e-2** — about fourteen orders of magnitude above the `~1e-16` perturbation the seam arithmetic introduces | A-002, `the_decider_at_a_chunk_seam_is_measured`. A count of zero says nothing about how nearly it happened, which is why the margin is recorded alongside it. The first sweep found **0** ambiguous seam faces and the test's own reachability gate caught it — the fixture trap for the third time |
 
 ---
 
@@ -457,6 +507,9 @@ Rules with no incident behind them get ignored. These all have one.
 | **A remedy stated for one operation does not cover the pipeline.** If a property is claimed end-to-end, check every reduction in it | M-24 — the audit's "magnitude-sorted dot products" is real and insufficient; the determinant needed the same treatment, and nothing said so. The equivariance test caught it because it asserted bit-equality rather than a tolerance |
 | **Read a dependency's API before believing what it is for.** Reputation is not a type signature | ✗16 — glam is "the" Rust math library and was written into four documents as A-007's dependency. It has no generic scalar, so it cannot serve a crate generic over `f32` and `f64` |
 | Before believing a performance verdict, ask **how many machines it has run on.** One is a hypothesis | ✗14 — Surface Nets loses to Marching Cubes by 2.76× at 256³ on an Apple M5, and the mechanism is probably cache. That is a strong result and a weak generalisation until it runs somewhere else (O-11) |
+| **When a new feature shows a defect, check whether the old one has it too before attributing it.** The cheapest version of that check is usually an exhaustive small search | ✗17 — the decider produced 2 non-manifold edges where plain MC produced 0, which reads unambiguously as "the decider broke it". An exhaustive sweep over all 4,096 two-cell sign patterns found **12 affected under each rule** — the defect is A-001's fan, and the decider only changes which patterns are reached. Attributing it to A-002 would have put the fix in the wrong ticket and left MC's own version of it undiscovered |
+| **A measurement that comes back zero has to prove it could have come back non-zero.** Put the reachability check in the test | M-44 — the first chunk-seam sweep reported 0 decision flips and 0 ambiguous seam faces, which is a pass that means nothing. The assertion `ambiguous_faces > 100` failed and forced the sweep to be retuned until it actually reached the configuration. **Third occurrence of the fixture trap** (M-32, M-38), and the first where a test caught it rather than a reviewer |
+| **Record the margin, not just the verdict.** "It did not happen" and "it came within an ulp of happening" are the same count | M-44 — zero seam decisions flipped, but the number that makes that trustworthy is the closest observed margin, `1.535e-2`, against a perturbation of `~1e-16`. Without it, the zero could have been luck |
 
 ---
 

@@ -29,8 +29,8 @@ use std::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use isomesh::dc::DualContouring;
-use isomesh::fields::{BoxExact, ReferenceField, Sphere, Torus};
-use isomesh::mc::MarchingCubes;
+use isomesh::fields::{BoxExact, ReferenceField, Sphere, Torus, capped_gyroid};
+use isomesh::mc::{FaceAmbiguity, MarchingCubes};
 use isomesh::sn::SurfaceNets;
 use isomesh::{MeshBuffer, Real, Sdf};
 
@@ -102,6 +102,33 @@ where
     });
 }
 
+/// Marching Cubes with the asymptotic decider.
+///
+/// Identical to [`bench_mc`] but for the one setter, deliberately: the pair is
+/// the measurement, and anything else that differed between them would be in
+/// the difference.
+fn bench_mc33<R, F>(c: &mut Criterion, label: &str, field: F, samples: u32)
+where
+    R: Real,
+    F: ReferenceField + Sdf<Scalar = R>,
+{
+    let (shape, origin, h) = common::grid(&field, samples);
+    let mut mc = MarchingCubes::<R>::new();
+    mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+    let mut out = MeshBuffer::<R>::new();
+    mc.extract(&field, &shape, origin, h, &mut out)
+        .expect("extraction");
+
+    c.bench_function(label, |b| {
+        b.iter(|| {
+            out.reset();
+            mc.extract(&field, &shape, origin, h, &mut out)
+                .expect("extraction");
+            black_box(out.triangle_count())
+        });
+    });
+}
+
 fn algorithms(c: &mut Criterion) {
     for n in COMPARISON_SAMPLES {
         bench_mc(
@@ -161,6 +188,44 @@ fn algorithms(c: &mut Criterion) {
     }
 }
 
+/// What the asymptotic decider costs, against the identical extraction without
+/// it.
+///
+/// Two fields on purpose. On `sphere` the census in `mc/tests.rs` finds **no
+/// ambiguous face at all**, so the difference there is the price of asking —
+/// one table lookup and a branch per surface cell. On `gyroid` the rule fires on
+/// about half a percent of surface cells, so that pair carries the price of
+/// answering as well: building the cell's triangulation at run time instead of
+/// reading it from the compile-time table.
+fn decider(c: &mut Criterion) {
+    for n in COMPARISON_SAMPLES {
+        bench_mc(
+            c,
+            &format!("decider/mc/sphere/f32/{n}"),
+            Sphere::<f32>::canonical(),
+            n,
+        );
+        bench_mc33(
+            c,
+            &format!("decider/mc33/sphere/f32/{n}"),
+            Sphere::<f32>::canonical(),
+            n,
+        );
+        bench_mc(
+            c,
+            &format!("decider/mc/gyroid/f32/{n}"),
+            capped_gyroid::<f32>(),
+            n,
+        );
+        bench_mc33(
+            c,
+            &format!("decider/mc33/gyroid/f32/{n}"),
+            capped_gyroid::<f32>(),
+            n,
+        );
+    }
+}
+
 /// The same field and grid at both widths. Any difference is the cost of `f64`
 /// on a path with no matrix solve in it.
 fn precision(c: &mut Criterion) {
@@ -170,5 +235,5 @@ fn precision(c: &mut Criterion) {
     bench_sn(c, "precision/sn/sphere/f64", Sphere::<f64>::canonical(), 65);
 }
 
-criterion_group!(benches, algorithms, precision);
+criterion_group!(benches, algorithms, decider, precision);
 criterion_main!(benches);

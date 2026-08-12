@@ -36,8 +36,8 @@ use proptest::prelude::*;
 use super::{DOMAIN, SurfaceGate, assert_extracted_mesh_is_valid, convex_body, sphere_union};
 use crate::cube::{corner_offset, edge_crossing};
 use crate::dc::DualContouring;
-use crate::mc::MarchingCubes;
 use crate::mc::table::{CASES, EDGE_AXIS, EDGE_CORNERS, McCase, corner_inside, is_inside};
+use crate::mc::{FaceAmbiguity, MarchingCubes};
 use crate::sn::SurfaceNets;
 use crate::validate::{ValidateConfig, validate_indexed};
 use crate::{MeshBuffer, MeshSink, RuntimeShape3, Sdf, Shape3, vec3};
@@ -85,6 +85,32 @@ fn grid_for(size: [u32; 3]) -> (RuntimeShape3, [f64; 3], f64) {
 fn check_mc<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usize {
     let (shape, origin, cell_size) = grid_for(size);
     let mut mc = MarchingCubes::<f64>::new();
+    let mut out = MeshBuffer::<f64>::new();
+    mc.extract(field, &shape, origin, cell_size, &mut out)
+        .expect("extraction");
+    assert_extracted_mesh_is_valid(
+        label,
+        &out.positions,
+        &out.indices,
+        cell_size,
+        SurfaceGate::ClosedAllowingUnresolvedTopology,
+    );
+    out.triangle_count()
+}
+
+/// Extract with the asymptotic decider and run the bundle over the result.
+///
+/// Same gate as [`check_mc`], and the reason is the same one: the decider does
+/// not change where vertices go or which grid edges carry them, only how an
+/// ambiguous face pairs its four cut edges, so every argument about MC's
+/// manifoldness carries over unchanged. What the generators add over the seven
+/// reference fields is *reach* — `mc/tests.rs`'s census finds an ambiguous face
+/// on only two of them, so without this the rule would be exercised on a
+/// handful of cells in the whole suite.
+fn check_mc33<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usize {
+    let (shape, origin, cell_size) = grid_for(size);
+    let mut mc = MarchingCubes::<f64>::new();
+    mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
     let mut out = MeshBuffer::<f64>::new();
     mc.extract(field, &shape, origin, cell_size, &mut out)
         .expect("extraction");
@@ -181,6 +207,22 @@ proptest! {
     #[test]
     fn marching_cubes_meshes_convex_bodies(field in convex_body(), size in extraction_resolution()) {
         check_mc("mc / convex body", &field, size);
+    }
+
+    #[test]
+    fn the_decider_meshes_sphere_unions(field in sphere_union(), size in extraction_resolution()) {
+        let tris = check_mc33("mc33 / sphere union", &field, size);
+        if largest_radius(&field) >= 2.0 * spacing_for(size) {
+            prop_assert!(tris > 0, "a resolvable sphere was missed entirely");
+        }
+    }
+
+    /// Unions of spheres are where an ambiguous face actually turns up: two
+    /// lobes approaching each other put diagonally opposite corners inside one
+    /// face. The reference fields barely produce the configuration at all.
+    #[test]
+    fn the_decider_meshes_convex_bodies(field in convex_body(), size in extraction_resolution()) {
+        check_mc33("mc33 / convex body", &field, size);
     }
 
     #[test]

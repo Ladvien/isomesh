@@ -59,7 +59,7 @@ use alloc::vec::Vec;
 
 use crate::dc::DualContouring;
 use crate::fields::ReferenceField;
-use crate::mc::MarchingCubes;
+use crate::mc::{FaceAmbiguity, MarchingCubes};
 use crate::sn::SurfaceNets;
 use crate::{MeshBuffer, RuntimeShape3, Sdf};
 
@@ -129,20 +129,33 @@ fn hash_mesh(mesh: &MeshBuffer<f64>) -> u64 {
     h.finish()
 }
 
-/// The three extractors, by name.
+/// The extractors, by name.
+///
+/// `mc33` is `MarchingCubes` with [`FaceAmbiguity::AsymptoticDecider`] rather
+/// than a separate type, so it is a fourth *row* here and not a fourth
+/// algorithm. Its hashes match `mc`'s on every field where no ambiguous face
+/// occurs, which on the reference set is five of the seven — that agreement is
+/// itself pinned by the fixture.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Algorithm {
     MarchingCubes,
+    MarchingCubes33,
     SurfaceNets,
     DualContouring,
 }
 
 impl Algorithm {
-    const ALL: [Self; 3] = [Self::MarchingCubes, Self::SurfaceNets, Self::DualContouring];
+    const ALL: [Self; 4] = [
+        Self::MarchingCubes,
+        Self::MarchingCubes33,
+        Self::SurfaceNets,
+        Self::DualContouring,
+    ];
 
     fn name(self) -> &'static str {
         match self {
             Self::MarchingCubes => "mc",
+            Self::MarchingCubes33 => "mc33",
             Self::SurfaceNets => "sn",
             Self::DualContouring => "dc",
         }
@@ -171,6 +184,12 @@ where
         Algorithm::MarchingCubes => MarchingCubes::<f64>::new()
             .extract(field, &shape, lo, cell_size, &mut out)
             .expect("extraction"),
+        Algorithm::MarchingCubes33 => {
+            let mut mc = MarchingCubes::<f64>::new();
+            mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+            mc.extract(field, &shape, lo, cell_size, &mut out)
+                .expect("extraction");
+        }
         Algorithm::SurfaceNets => SurfaceNets::<f64>::new()
             .extract(field, &shape, lo, cell_size, &mut out)
             .expect("extraction"),
