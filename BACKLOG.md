@@ -64,7 +64,6 @@ Still zero Bevy. This is the machinery a game needs, living in the core crate wh
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **G-003** | **Brush operations.** Add/subtract sphere, box, capsule against the field. `min`/`max` for union/difference, smooth-min variant. Fixed-point (`i32`) storage option for bit-exact determinism. **Acceptance:** a determinism test — 8 brush ops applied in all 40,320 orderings; count distinct results. Expect 1; if it's not 1, you've lost commutativity and the multiplayer story dies here. | M | G-001 |
 | ☐ | **G-004** | **Field-derived LOD.** Mip the field (not the mesh), mesh at level N. **Acceptance:** LOD 0..3 all mesh cleanly; LOD *k* has roughly 1/8^k the cells. Pairs with A-011 for the seams. | M | A-011, G-001 |
 | ☐ | **G-005** | **Collider export.** `MeshBuffer` → `parry3d::TriMesh` (`Vec<[u32;3]>` indices — parry takes plain arrays). Behind an optional `parry` feature. Optional convex decomposition path. **Acceptance:** a carved shape builds a `TriMesh` without error and passes parry's own validity check. | M | A-013 |
 | ☐ | **G-006** | **Frame-budget scheduler.** `mesh_within_budget(ms)` — process the dirty queue until a time budget is exhausted, resume next call. Priority by camera distance. This is the constraint a real game actually operates under and the reason "how fast is the algorithm" is the wrong question. | M | G-002 |
