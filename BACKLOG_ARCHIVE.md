@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-51 tickets. Line numbers are stable until something above them is edited — grep the ID if
+52 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -327,3 +327,7 @@ implementation contradicted the ticket.
 | | | *Nearest-first by **squared** distance* — the ordering is identical and the square root is not free per chunk per frame — with ties broken by `ChunkId`, so the schedule is a pure function of the set's contents and the camera position and never of insertion order. `equidistant_chunks_break_ties_deterministically` inserts six equidistant chunks in six rotations and requires the same schedule from each. |
 | | | *The unprocessed remainder goes back into the set in its own sorted order*, so a partial pass leaves `DirtySet` in exactly the state a fresh one would be. Every chunk is meshed once and only once across passes, asserted by draining a ten-chunk queue three at a time and comparing against `0..10`. |
 | | | *The callback still receives `ChunkLayout::sample_origin`'s answer* rather than one the caller recomputed — the same guarantee `mesh_dirty` gives, for M-32's reason. |
+| ☑ | **E-113** | `normal_estimation` — three panels, lit; differences live in the speculars, not the wireframe | — | A-012 |
+| | | *The ticket's own phrasing turned out to be the design constraint.* The three meshes are **geometrically identical** — same positions, same indices, same 4,484 triangles — because `normals::recompute` overwrites the normal buffer and nothing else. A wireframe view of this comparison is three identical pictures, so the example ships with the wireframe off and a deliberately glossy material; a matte surface integrates away the very variation being compared. |
+| | | ***The first capture was not worth shipping and was redone.*** It used `box_exact` on a cold grey, where **two of the three panels are byte-identical** — a box's analytic gradient is piecewise constant, so differencing a flat face returns it exactly and both read `0.000°`. A three-way comparison showing two identical pictures, with the meshes small in a frame a third empty. Reshot on `csg_difference`, where all three genuinely differ (**0.034 / 17.974 / 46.426** degrees worst), warm and framed to fill. |
+| | | *Archived late — the row was left in `BACKLOG.md` when the work landed at `a0859e8`* and only found when a later survey printed it as open. The example, its screenshot and its README section were all committed at the time; only the checkbox lagged, which is exactly the failure the "check the box in the same commit" rule exists to prevent. |

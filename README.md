@@ -14,7 +14,7 @@
 
 ## Status
 
-Early. Six extraction algorithms, three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, and a Bevy bridge. Fifty-one tickets done, thirty open.
+Early. Six extraction algorithms, three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, and a Bevy bridge. 52 tickets done, 29 open.
 
 | | |
 |---|---|
