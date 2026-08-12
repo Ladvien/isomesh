@@ -100,6 +100,43 @@ pub const fn face_corners(axis: usize, side: u8) -> [u8; 4] {
     }
 }
 
+/// Is this edge one of the four on the face `(axis, side)`?
+///
+/// An edge lies on a face when both its corners do. Its two corners differ only
+/// in its own axis, so it is on the face exactly when the face's axis is not its
+/// own and its lower corner is on the right side.
+#[inline]
+#[must_use]
+pub const fn edge_on_face(edge: u8, axis: usize, side: u8) -> bool {
+    EDGE_AXIS[edge as usize] as usize != axis
+        && (EDGE_CORNERS[edge as usize][0] >> axis) & 1 == side
+}
+
+/// Do these two cube edges both lie on some one face of the cube?
+///
+/// This is the question "can any single *other* cell name both of these edges?"
+/// Two cells share a face and its four edges; two cells that share only an edge
+/// or a corner share no *pair* of edges. So a mesh edge joining two cut cube
+/// edges that share no face can be emitted by exactly one cell — which is what
+/// makes such a chord safe from the collision A-015 is about. See
+/// [`crate::mc::table::CENTROID_BASE`].
+#[inline]
+#[must_use]
+pub const fn edges_share_a_face(a: u8, b: u8) -> bool {
+    let mut axis = 0usize;
+    while axis < 3 {
+        let mut side = 0u8;
+        while side < 2 {
+            if edge_on_face(a, axis, side) && edge_on_face(b, axis, side) {
+                return true;
+            }
+            side += 1;
+        }
+        axis += 1;
+    }
+    false
+}
+
 /// Is this corner inside the solid, for the given case index?
 #[inline]
 pub const fn corner_inside(case: u8, corner: u8) -> bool {

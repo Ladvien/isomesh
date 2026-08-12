@@ -75,13 +75,19 @@ fn grid_for(size: [u32; 3]) -> (RuntimeShape3, [f64; 3], f64) {
 /// Extract with Marching Cubes and run the bundle over the result. Returns the
 /// triangle count, so the caller can also assert the mesh is not empty.
 ///
-/// Not the strict [`SurfaceGate::Closed`] gate, and that is a measured decision
-/// rather than a concession: `an_under_resolved_pinch_makes_marching_cubes_non_manifold`
-/// exhibits a generated union whose surface pinches inside one cell at
-/// `h = 2/3`, giving 2 non-manifold edges on a mesh that is otherwise closed,
-/// oriented and `χ = 2`. The generators reach `h = 2/3`, so the strict gate is
-/// simply false here. It still holds — and is still asserted — on the seven
-/// reference fields at their own resolutions, in `mc/tests.rs`.
+/// **The strict [`SurfaceGate::Closed`] gate, since A-015** — and that is a
+/// measured decision in both directions. It was waived at ✗15, which exhibited a
+/// generated sphere union giving 2 non-manifold edges at `h = 2/3` and
+/// attributed it to the surface pinching inside one cell. A-015 showed the cause
+/// was the fan chord instead, took that fixture to zero, and the gate went back
+/// on: **8,000 generated cases pass it** (`PROPTEST_CASES=4000` on each of the
+/// two properties), where before A-015 it failed on the first fresh seed.
+///
+/// That is evidence, not proof — nothing here shows Marching Cubes is
+/// *unconditionally* manifold, only that the one mechanism ever exhibited is
+/// gone. If this ever fails it is a finding and not a regression: it would mean
+/// a second mechanism exists, and the failing case would be the first example of
+/// it. See O-12.
 fn check_mc<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usize {
     let (shape, origin, cell_size) = grid_for(size);
     let mut mc = MarchingCubes::<f64>::new();
@@ -93,7 +99,7 @@ fn check_mc<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usi
         &out.positions,
         &out.indices,
         cell_size,
-        SurfaceGate::ClosedAllowingUnresolvedTopology,
+        SurfaceGate::Closed,
     );
     out.triangle_count()
 }
@@ -103,7 +109,9 @@ fn check_mc<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usi
 /// Same gate as [`check_mc`], and the reason is the same one: the decider does
 /// not change where vertices go or which grid edges carry them, only how an
 /// ambiguous face pairs its four cut edges, so every argument about MC's
-/// manifoldness carries over unchanged. What the generators add over the seven
+/// manifoldness carries over unchanged — including A-015's, since a cycle with
+/// no chord-safe apex gets a centroid whichever rule produced it. Also measured
+/// at 8,000 generated cases. What the generators add over the seven
 /// reference fields is *reach* — `mc/tests.rs`'s census finds an ambiguous face
 /// on only two of them, so without this the rule would be exercised on a
 /// handful of cells in the whole suite.
@@ -119,7 +127,7 @@ fn check_mc33<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> u
         &out.positions,
         &out.indices,
         cell_size,
-        SurfaceGate::ClosedAllowingUnresolvedTopology,
+        SurfaceGate::Closed,
     );
     out.triangle_count()
 }
@@ -593,7 +601,7 @@ fn the_uncorrupted_table_passes_the_same_bundle() {
 /// exact, and every refinement from 9³ up is exactly zero. So this fails if the
 /// defect ever spreads *and* if it ever silently disappears.
 #[test]
-fn an_under_resolved_pinch_makes_marching_cubes_non_manifold() {
+fn the_fixture_that_falsified_unconditional_manifoldness_is_now_manifold() {
     use crate::fields::Sphere;
 
     let field = super::SphereUnion {
@@ -630,21 +638,28 @@ fn an_under_resolved_pinch_makes_marching_cubes_non_manifold() {
         )
     };
 
+    // Was 2 non-manifold edges and 3 non-manifold vertices at n = 7, which is
+    // what falsified "Marching Cubes is unconditionally manifold" (✗15). A-015
+    // took it to zero, and that is the finding: a **triangulation** change
+    // cannot repair two sheets genuinely meeting inside a cell, so the cause was
+    // never the geometry ✗15 attributed it to. It was the fan chord.
     let coarse = report_at(7);
-    assert_eq!(coarse.non_manifold_edges, 2, "{coarse}");
-    assert_eq!(coarse.non_manifold_vertices, 3, "{coarse}");
-    // Closed and correctly oriented even so — which is exactly why only the link
-    // walk catches it.
+    assert_eq!(coarse.non_manifold_edges, 0, "{coarse}");
+    assert_eq!(coarse.non_manifold_vertices, 0, "{coarse}");
     assert_eq!(coarse.boundary_edges, 0, "{coarse}");
     assert_eq!(coarse.inconsistently_oriented_edges, 0, "{coarse}");
-    assert_eq!(coarse.euler_characteristic, 2, "{coarse}");
+    // And chi moves 2 -> 0, which is the same defect seen from the other side.
+    // A collided mesh edge is counted **once** in E though it carries four
+    // faces, so E was short by exactly the two collisions and chi was long by
+    // two. The old value was not a topology reading at all. At this spacing the
+    // three lobes genuinely meet in a handle: closed, orientable, genus 1.
+    assert_eq!(coarse.euler_characteristic, 0, "{coarse}");
+    assert_eq!(coarse.genus, Some(1), "{coarse}");
+    assert!(coarse.is_closed(), "{coarse}");
 
     for n in [9u32, 13, 17, 25, 33, 49, 65] {
         let r = report_at(n);
-        assert_eq!(
-            r.non_manifold_edges, 0,
-            "n={n} should resolve the pinch\n{r}"
-        );
+        assert_eq!(r.non_manifold_edges, 0, "n={n}\n{r}");
         assert_eq!(r.non_manifold_vertices, 0, "n={n}\n{r}");
         assert!(r.is_closed(), "n={n}\n{r}");
     }

@@ -657,12 +657,15 @@ fn ambiguous_faces_agrees_with_the_face_pattern() {
 }
 
 /// Recorded, not gated, exactly as `no_case_exceeds_the_triangle_bound` records
-/// the separated table's five.
+/// the separated table's five — which A-015 left untouched, because plain
+/// Marching Cubes never produces a cycle long enough to need a centroid.
 ///
-/// **Predicted before running: 10.** Joining faces can merge cycles, and the
-/// longest cycle possible uses all twelve cut edges, which fan-triangulates to
-/// ten. If the measurement disagrees, the prediction was wrong and the number
-/// below is the finding.
+/// **Twelve.** A-002 predicted ten from the longest possible cycle, all twelve
+/// cut edges, fanned from one of its own vertices. A-015 replaced that fan with
+/// a centroid one precisely because such a cycle has no chord-safe apex, and a
+/// centroid fan emits one triangle per cycle edge rather than `k − 2`. So the
+/// bound rose by exactly the two triangles the centroid costs, and it now sits
+/// on `MAX_TRIANGLES` itself.
 #[test]
 fn the_decider_does_not_exceed_the_triangle_bound() {
     let report = validate_decider_table();
@@ -676,7 +679,7 @@ fn the_decider_does_not_exceed_the_triangle_bound() {
         "{} exceeds MAX_TRIANGLES = {MAX_TRIANGLES}",
         report.max_triangles
     );
-    assert_eq!(report.max_triangles, 10);
+    assert_eq!(report.max_triangles, 12);
 }
 
 /// **A-002's acceptance criterion.** A cell configuration with an ambiguous face
@@ -785,13 +788,11 @@ fn every_closed_reference_field_meshes_cleanly_under_the_decider() {
 
 /// The whole non-manifold census, pinned in both directions.
 ///
-/// Six of the seven fields are bit-for-bit identical between the two rules at
-/// all three resolutions — the decider only fires where an ambiguous face
-/// actually occurs, and on these fields that is almost nowhere. The one entry
-/// that is not zero is the fan chord collision of
-/// `the_fan_lets_adjacent_cells_share_an_interior_chord`, reached at one
-/// resolution of one field. It fails if that spreads *and* if it silently
-/// disappears, following M-4.
+/// **Empty, since A-015.** It was `[("gyroid", 25, 2, 0)]` — the fan chord
+/// collision, reached at one resolution of one field — and the chord-safe apex
+/// rule removed it. Kept as an assertion rather than deleted, following M-4: the
+/// interesting failure now is a non-manifold mesh reappearing, and this is what
+/// would see it.
 #[test]
 fn the_decider_non_manifold_census_is_pinned() {
     let mut offenders: Vec<(&str, u32, u64, u64)> = Vec::new();
@@ -811,7 +812,7 @@ fn the_decider_non_manifold_census_is_pinned() {
         }
     });
     std::println!("measured: non-manifold census (field, n, decider, mc) = {offenders:?}");
-    assert_eq!(offenders, vec![("gyroid", 25, 2, 0)]);
+    assert_eq!(offenders, Vec::new());
 }
 
 /// How often the rule even fires. Custodio et al. (2013) report that real-world
@@ -1071,19 +1072,25 @@ fn census<F: Sdf<Scalar = f64>>(field: &F, origin: [f64; 3], h: f64, samples: u3
     out
 }
 
-/// Every undirected mesh edge one cell contributes, in **global** terms — a cut
-/// cube edge identified by its lower sample and its axis, so two cells naming
-/// the same cube edge produce the same key.
+/// Every undirected mesh edge one cell contributes, in **global** terms.
+///
+/// A cut cube edge is identified by its lower sample and its axis, so two cells
+/// naming the same cube edge produce the same key. A **cycle centroid** is keyed
+/// by the cell itself, because that is exactly what it is: cell-local, nameable
+/// by no other cell, which is why it cannot collide (A-015).
 fn global_mesh_edges(base: [i64; 3], case: u8, mask: u8) -> Vec<[(i64, i64, i64, u8); 2]> {
     let entry = triangulate(segment_links(case, mask));
-    let key = |e: u8| -> (i64, i64, i64, u8) {
-        let [c, _] = EDGE_CORNERS[e as usize];
+    let key = |code: u8| -> (i64, i64, i64, u8) {
+        if crate::mc::table::is_centroid(code) {
+            return (base[0], base[1], base[2], code);
+        }
+        let [c, _] = EDGE_CORNERS[code as usize];
         let o = crate::cube::corner_offset(c);
         (
             base[0] + i64::from(o[0]),
             base[1] + i64::from(o[1]),
             base[2] + i64::from(o[2]),
-            super::table::EDGE_AXIS[e as usize],
+            super::table::EDGE_AXIS[code as usize],
         )
     };
     let mut out = Vec::new();
@@ -1097,23 +1104,21 @@ fn global_mesh_edges(base: [i64; 3], case: u8, mask: u8) -> Vec<[(i64, i64, i64,
     out
 }
 
-/// **The fan lets two adjacent cells pick the same interior diagonal**, which
-/// puts four triangles on one mesh edge.
+/// **No two adjacent cells can put more than two triangles on one mesh edge.**
 ///
-/// This is not the decider's doing. Any triangulation of a `k`-gon that adds no
-/// vertices has `k − 3` interior chords, and nothing local stops two neighbours
-/// choosing the same one — so the exhaustive two-cell search below finds it at
-/// **exactly the same rate under Marching Cubes' own separated rule.** It is the
-/// second, purely combinatorial mechanism behind ✗15, which attributed MC's
-/// non-manifoldness entirely to sub-cell pinching.
+/// This is A-015's acceptance criterion, and it is exhaustive rather than
+/// sampled: two cells stacked along z share the face `z = 1` and have twelve
+/// samples between them, so all 4,096 sign patterns fit in a loop, and every
+/// canonical resolution mask is tried on each.
 ///
-/// Two cells stacked along z share the face `z = 1` and have twelve samples
-/// between them, so all 4,096 sign patterns fit in a loop. Recorded in both
-/// directions, following M-4: the defect is an assertion, not an exclusion, so
-/// this fails if it spreads *and* if it silently disappears. A-015 is the ticket
-/// to remove it.
+/// Before A-015 this test recorded the defect instead — **12 of 4,096 patterns
+/// putting four triangles on one mesh edge, identically under Marching Cubes'
+/// separated rule and under the decider**, which is what established that the
+/// fan owned it rather than the ambiguity rule (✗17). It now records its
+/// absence, in both directions: `worst == 2` fails if a collision comes back and
+/// if the search stops reaching two-cell configurations at all.
 #[test]
-fn the_fan_lets_adjacent_cells_share_an_interior_chord() {
+fn adjacent_cells_never_share_a_mesh_edge_beyond_two_faces() {
     for (label, joined) in [("separate (A-001)", false), ("decider (A-002)", true)] {
         let mut worst = 0usize;
         let mut occurrences = 0usize;
@@ -1166,10 +1171,8 @@ fn the_fan_lets_adjacent_cells_share_an_interior_chord() {
             "measured: {label}: worst faces on one mesh edge = {worst}, {occurrences} of 4096 \
              two-cell sign patterns affected, first at {first:?}"
         );
-        // Identical under both rules, which is the whole point: the fan owns
-        // this, not the ambiguity rule.
-        assert_eq!(worst, 4, "{label}");
-        assert_eq!(occurrences, 12, "{label}");
+        assert_eq!(worst, 2, "{label}: {first:?}");
+        assert_eq!(occurrences, 0, "{label}");
     }
 }
 

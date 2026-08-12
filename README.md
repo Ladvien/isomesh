@@ -36,7 +36,7 @@ Nothing on crates.io does all four of: `no_std`, `f32` **and** `f64`, sharp-feat
 | `block-mesh` | Blocky quads only | 2022-04 |
 | `isosurface` | Right architecture, dead crate | 2021-01 |
 | `building-blocks` | Repo archived | 2023-11 |
-| `tessellation` | Healthy Manifold DC — nalgebra-locked | 2026-03 |
+| `tessellation` | Healthy Manifold Dual Contouring — nalgebra-locked | 2026-03 |
 | `fidget-mesh` | Very active — nalgebra-locked, coupled to fidget's evaluator | 2026-08 |
 
 The math-library pin is the load-bearing one. Bevy 0.19 wants glam 0.32, `parry3d` wants 0.33, `fast-surface-nets` wants 0.29 — a consumer using two of those compiles incompatible `Vec3` types and finds out at the type level, much later. So every public signature here is `[f32; 3]` and `[u32; 3]`.
@@ -69,7 +69,7 @@ Anything implementing `Sdf` works as input; anything implementing `MeshSink` wor
 
 Watch the bottom row. **The triangle counts differ by exactly `2χ` — four, on a genus-0 surface — at every resolution.** That is not a coincidence and it contradicts both this project's own brief and the usual folklore that Surface Nets is the cheaper method by output size:
 
-> Marching Cubes places one vertex per crossed grid edge, so `V_mc = C`. Surface Nets emits two triangles per crossed grid edge, so `F_sn = 2C`. Every closed triangulated surface obeys `F = 2V − 2χ`. Therefore `F_sn = F_mc + 2χ`, always.
+> Marching Cubes places one vertex per crossed grid edge, so `V_mc = C`. Surface Nets emits two triangles per crossed grid edge, so `F_sn = 2C`. Every closed triangulated surface obeys `F = 2V − 2χ`. Therefore `F_sn = F_mc + 2χ`, always. (A-015 gave some cells an extra interior vertex to keep the mesh manifold; it is measured never to fire under plain Marching Cubes, so `V_mc = C` still holds exactly.)
 
 Verified across five fields × three resolutions, including a two-component field where `χ = 4` so the difference is **8** and cannot be confused with a constant. What Surface Nets actually buys is quad connectivity and one vertex per *cell* rather than per *edge* — not fewer triangles.
 
@@ -77,8 +77,8 @@ And it is not the cheaper method by time either, which took a benchmark to find 
 
 | samples per axis | 16 | 48 | 64 | 128 | 256 |
 |---|---:|---:|---:|---:|---:|
-| SN / MC — **Apple M5** | 0.34 | 0.74 | 1.06 | 1.94 | **2.65** |
-| SN / MC — **Ryzen 9 5900X** | 2.46 | 3.06 | 3.36 | 4.16 | **3.72** |
+| Surface Nets / Marching Cubes — **Apple M5** | 0.34 | 0.74 | 1.06 | 1.94 | **2.65** |
+| Surface Nets / Marching Cubes — **Ryzen 9 5900X** | 2.46 | 3.06 | 3.36 | 4.16 | **3.72** |
 
 Surface Nets loses, and it loses on both machines — **run on two, not one**. What does *not* transfer is the shape. On the M5 Surface Nets wins below roughly 48³ because Marching Cubes' per-sample cost starts at 25 ns and falls to 4.78 as the `O(n²)` surface term amortises away; on Zen 3 that fall never happens — Marching Cubes is flat at 13–15 ns from 16³ up — so Surface Nets is behind at **every** resolution measured and there is no crossover at all. Surface Nets' per-sample cost climbs on both (8.4 → 12.7 ns on the M5, 37.4 → 49.1 on Zen 3), which is what makes the verdict an algorithm property rather than one cache hierarchy. Sphere, f32, single thread. Raw data in `docs/measurements/resolution_sweep.csv` and `resolution_sweep-ryzen9-5900x.csv`.
 

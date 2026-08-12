@@ -193,20 +193,58 @@ impl<R: Real> MarchingCubes<R> {
                         continue;
                     }
 
+                    // Cycle centroids first, because a triangle that names one
+                    // needs every edge vertex of that cycle averaged before it
+                    // can be emitted. They are cell-local by construction and so
+                    // never cached — that locality is the whole point (A-015).
+                    let mut centroid = [0u32; table::MAX_CENTROIDS];
+                    for (c, slot) in centroid
+                        .iter_mut()
+                        .enumerate()
+                        .take(entry.centroids as usize)
+                    {
+                        let code = table::CENTROID_BASE + c as u8;
+                        let mut sum = [R::ZERO; 3];
+                        let mut n = 0u32;
+                        // A cycle's edges are exactly the non-centroid corners of
+                        // the triangles naming it, each appearing twice.
+                        for tri in &entry.triangles[..entry.count as usize] {
+                            if tri[0] != code {
+                                continue;
+                            }
+                            let position =
+                                edge_position(base, tri[1], &corner_value, origin, cell_size);
+                            sum = [
+                                sum[0] + position[0],
+                                sum[1] + position[1],
+                                sum[2] + position[2],
+                            ];
+                            n += 1;
+                        }
+                        debug_assert!(n >= 4, "a centroid stands for a cycle of four or more");
+                        let scale = R::from_f64(f64::from(n)).recip();
+                        let position = [sum[0] * scale, sum[1] * scale, sum[2] * scale];
+                        *slot = out.vertex(position, unit_gradient(sdf, position));
+                    }
+
                     for tri in &entry.triangles[..entry.count as usize] {
                         let mut idx = [0u32; 3];
-                        for (k, &edge) in tri.iter().enumerate() {
-                            debug_assert!(edge != NO_EDGE);
-                            idx[k] = self.vertex_on_edge(
-                                sdf,
-                                shape,
-                                base,
-                                edge,
-                                &corner_value,
-                                origin,
-                                cell_size,
-                                out,
-                            );
+                        for (k, &code) in tri.iter().enumerate() {
+                            debug_assert!(code != NO_EDGE);
+                            idx[k] = if table::is_centroid(code) {
+                                centroid[(code - table::CENTROID_BASE) as usize]
+                            } else {
+                                self.vertex_on_edge(
+                                    sdf,
+                                    shape,
+                                    base,
+                                    code,
+                                    &corner_value,
+                                    origin,
+                                    cell_size,
+                                    out,
+                                )
+                            };
                         }
                         out.triangle(idx[0], idx[1], idx[2]);
                     }
@@ -217,14 +255,20 @@ impl<R: Real> MarchingCubes<R> {
         Ok(())
     }
 
-    /// The vertex on one cut edge of one cell, creating it if this is the first
-    /// cell to ask.
+    /// The vertex on one cut edge of one cell and where it sits, creating it if
+    /// this is the first cell to ask.
     ///
     /// Cells sharing a grid edge share the vertex on it, which is what makes the
     /// result a connected surface. The cache is keyed on the grid edge — the
     /// lower sample plus the axis — so the key is the same whichever of the four
     /// surrounding cells arrives first, and the result does not depend on
     /// traversal order.
+    ///
+    /// The cache hit returns before any arithmetic, which is the point: a grid
+    /// edge is asked for by up to four cells and only the first does work.
+    /// Cycle centroids need positions rather than indices and take
+    /// [`edge_position`] directly, so the position formula still lives in one
+    /// place without putting it on this path.
     #[allow(clippy::too_many_arguments)]
     fn vertex_on_edge<S, M>(
         &mut self,
@@ -241,9 +285,8 @@ impl<R: Real> MarchingCubes<R> {
         S: Sdf<Scalar = R>,
         M: MeshSink<Scalar = R>,
     {
-        let [lo_corner, hi_corner] = EDGE_CORNERS[edge as usize];
         let axis = EDGE_AXIS[edge as usize] as usize;
-        let lo_sample = corner_sample(shape, base, lo_corner);
+        let lo_sample = corner_sample(shape, base, EDGE_CORNERS[edge as usize][0]);
         let key = lo_sample as usize * 3 + axis;
 
         let cached = self.edge_vertices[key];
@@ -251,33 +294,56 @@ impl<R: Real> MarchingCubes<R> {
             return cached;
         }
 
-        let a = corner_value[lo_corner as usize];
-        let b = corner_value[hi_corner as usize];
-        // On a cut edge exactly one endpoint is strictly negative and the other
-        // is >= 0, so `a - b` is never zero and no epsilon guard is needed. An
-        // epsilon here would snap resolvable crossings to the midpoint.
-        debug_assert!(is_inside(a) != is_inside(b));
-        let t = a / (a - b);
-
-        let lo_pos = corner_position(base, lo_corner, origin, cell_size);
-        let hi_pos = corner_position(base, hi_corner, origin, cell_size);
-        let position = [
-            lo_pos[0] + (hi_pos[0] - lo_pos[0]) * t,
-            lo_pos[1] + (hi_pos[1] - lo_pos[1]) * t,
-            lo_pos[2] + (hi_pos[2] - lo_pos[2]) * t,
-        ];
-
-        let g = sdf.gradient(position);
-        let len = vec3::length(g);
-        // A zero gradient at a surface crossing means the field is degenerate
-        // there; it cannot happen for any exact distance field, where |grad| is 1.
-        debug_assert!(len > R::ZERO, "zero gradient at a surface crossing");
-        let normal = vec3::scale(g, len.recip());
-
-        let index = out.vertex(position, normal);
+        let position = edge_position(base, edge, corner_value, origin, cell_size);
+        let index = out.vertex(position, unit_gradient(sdf, position));
         self.edge_vertices[key] = index;
         index
     }
+}
+
+/// Where the surface crosses one cut edge of one cell.
+///
+/// The single definition of an edge vertex's position: [`MarchingCubes::extract`]
+/// reaches it through the vertex cache, and a cycle centroid averages it over its
+/// own cycle.
+fn edge_position<R: Real>(
+    base: [u32; 3],
+    edge: u8,
+    corner_value: &[R; 8],
+    origin: [R; 3],
+    cell_size: R,
+) -> [R; 3] {
+    let [lo_corner, hi_corner] = EDGE_CORNERS[edge as usize];
+    let a = corner_value[lo_corner as usize];
+    let b = corner_value[hi_corner as usize];
+    // On a cut edge exactly one endpoint is strictly negative and the other is
+    // >= 0, so `a - b` is never zero and no epsilon guard is needed. An epsilon
+    // here would snap resolvable crossings to the midpoint.
+    debug_assert!(is_inside(a) != is_inside(b));
+    let t = a / (a - b);
+
+    let lo_pos = corner_position(base, lo_corner, origin, cell_size);
+    let hi_pos = corner_position(base, hi_corner, origin, cell_size);
+    [
+        lo_pos[0] + (hi_pos[0] - lo_pos[0]) * t,
+        lo_pos[1] + (hi_pos[1] - lo_pos[1]) * t,
+        lo_pos[2] + (hi_pos[2] - lo_pos[2]) * t,
+    ]
+}
+
+/// The field's own gradient at a point, normalised — this crate's normal rule,
+/// stated once so the edge vertices and the cycle centroids cannot use two.
+///
+/// # Panics
+///
+/// In debug builds, if the gradient vanishes. That means the field is degenerate
+/// there; it cannot happen for any exact distance field, where `|grad|` is 1.
+#[inline]
+fn unit_gradient<R: Real, S: Sdf<Scalar = R>>(sdf: &S, position: [R; 3]) -> [R; 3] {
+    let g = sdf.gradient(position);
+    let len = vec3::length(g);
+    debug_assert!(len > R::ZERO, "zero gradient at a surface vertex");
+    vec3::scale(g, len.recip())
 }
 
 impl<R: Real> Default for MarchingCubes<R> {
@@ -313,6 +379,13 @@ pub struct TableReport {
     pub degenerate_triangles: u64,
     /// Cut edges without exactly one incoming and one outgoing segment.
     pub bad_segment_degree: u64,
+    /// Triangles naming a centroid this case does not declare, or a declared
+    /// centroid standing for fewer than four triangles.
+    ///
+    /// A cycle centroid is cell-local, so a stale or spurious reference would
+    /// silently attach geometry to the wrong vertex. See
+    /// [`table::CENTROID_BASE`].
+    pub bad_centroid_reference: u64,
     /// Faces whose segments are not a function of that face's own corner signs.
     ///
     /// Non-zero here means cracks: two cells sharing a face would disagree
@@ -330,6 +403,7 @@ impl TableReport {
             && self.cut_edge_mismatch == 0
             && self.degenerate_triangles == 0
             && self.bad_segment_degree == 0
+            && self.bad_centroid_reference == 0
             && self.face_disagreements == 0
     }
 }
@@ -424,19 +498,37 @@ fn check_case(
     }
 
     let mut used = [false; EDGE_COUNT];
+    let mut centroid_uses = [0u32; table::MAX_CENTROIDS];
     for tri in &entry.triangles[..entry.count as usize] {
         if tri[0] == tri[1] || tri[1] == tri[2] || tri[0] == tri[2] {
             report.degenerate_triangles += 1;
         }
-        for &e in tri {
-            if !cut[e as usize] {
+        for &code in tri {
+            if table::is_centroid(code) {
+                let c = (code - table::CENTROID_BASE) as usize;
+                if c >= entry.centroids as usize {
+                    report.bad_centroid_reference += 1;
+                } else {
+                    centroid_uses[c] += 1;
+                }
+                continue;
+            }
+            if !cut[code as usize] {
                 report.triangles_on_uncut_edges += 1;
             }
-            used[e as usize] = true;
+            used[code as usize] = true;
         }
     }
     if used != cut {
         report.cut_edge_mismatch += 1;
+    }
+    // A centroid stands for a cycle of four or more, and a cycle of `k` gives it
+    // exactly `k` triangles. Fewer than four means it was emitted for a cycle
+    // that did not need one.
+    for &uses in centroid_uses.iter().take(entry.centroids as usize) {
+        if uses < 4 {
+            report.bad_centroid_reference += 1;
+        }
     }
 
     let links = segment_links(case, mask);

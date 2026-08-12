@@ -279,10 +279,27 @@ an assertion, not an exclusion, so it fails if it spreads *and* if it silently d
 coming back non-manifold under MC.
 **Worth noting for G-001:** a chunk boundary is a place where a surface can be under-resolved relative
 to the chunk it lands in. This is a plausible source of seam defects later.
-**Amended at A-002 (see ✗17):** "MC is manifold when the grid resolves the surface" is still the right
-description of *this* mechanism, but it is not the only one. There is a second, purely combinatorial
-cause with nothing to do with resolution — the fan triangulation — and refinement fixes it only by
-changing which sign patterns occur.
+
+**The counterexample stands; the mechanism was wrong, and A-015 proved it.** The falsification
+condition above — "the same field at `h = 2/3` coming back manifold" — **is now met**, by a change that
+touched no geometry at all: the union of three spheres reports **0 non-manifold edges and 0 non-manifold
+vertices** once cycles are fanned from a chord-safe apex.
+
+That settles the attribution, because *a triangulation cannot repair a pinch*. If two sheets genuinely
+met inside a cell they would still meet however each is triangulated. What was actually happening is
+the fan chord of ✗17: two cells choosing the same interior diagonal, four faces on one mesh edge. The
+refinement table above is real but was reading a proxy — refinement changed which sign patterns
+occurred, not whether the grid "resolved" anything.
+
+The reading of χ was wrong too, and in a way worth keeping: a collided mesh edge is counted **once** in
+`E` while carrying four faces, so `E` was short by exactly the two collisions and `χ` was long by two.
+The old `χ = 2` was not a topology measurement. The same fixture now reports `χ = 0`, genus 1 — three
+lobes meeting in a genuine handle at that spacing.
+
+**Consequence:** the property suite's MC gate goes back to the strict `SurfaceGate::Closed` it was
+waived from, and passes 8,000 generated cases where before A-015 it failed on the first fresh seed.
+Whether Marching Cubes is *unconditionally* manifold is now **open, not settled** — see O-12. Nothing
+here proves it; only that the one mechanism ever exhibited is gone.
 
 ### ✗17 — "Only the interior test can make MC33 non-manifold, so the face decider alone cannot"
 
@@ -320,6 +337,18 @@ fix is a per-cycle centroid vertex — the only chord-free triangulation of a po
 ticket rather than a fix folded into this one. Meanwhile `is_closed()` is deliberately *not* the gate
 in the decider's reference-field sweep, because it folds in manifoldness and manifoldness is owned by
 the fan; the census is pinned exactly instead, following M-4.
+**Fixed at A-015, and for far less than it looked like it would cost.** The obvious repair — a centroid
+for every cycle of four or more — works and is ruinous: **+73% vertices and +74% triangles** across the
+seven reference fields, up to +99.7% on `box_exact`, because almost every cycle is long enough to
+qualify. The cheap repair follows from asking *which* chords can collide rather than eliminating all of
+them: only a cell containing **both** of a chord's cut edges can emit it, and two cells share a pair of
+cube edges only when those edges share a cube **face**. So a fan is safe when none of its chords joins
+two edges of one face, and that is a local, `const`-evaluable test. Measured over all 256 cases and
+every canonical mask, **a safe apex exists for every cycle of length 3–7 and for 48 of the 60 length-8
+cycles**; only lengths 9 and 12 have none, and plain Marching Cubes tops out at 7. Final cost across the
+whole golden fixture: **one row's counts changed** — `mc33/gyroid/25`, +6 vertices and +12 triangles.
+`V_mc = C` is intact.
+
 **Would be shown wrong by:** the two-cell search returning a different count for the two rules, or the
 offending mesh edges turning out to be face segments rather than chords.
 **Method note:** the prediction was written into the plan *before* the code ran, which is the only
@@ -428,6 +457,7 @@ search: the suspect is the gather in `emit_quads`, whose `z`-stride is `n²` cel
 | M-43 | **The decider needs no division and no epsilon, and the brief's "guard the denominator" is unnecessary.** On an ambiguous face one diagonal is strictly negative and the other non-negative — a sample of exactly zero is outside — so `v0 + v2 − v1 − v3` is strictly non-zero *by the sign rule alone*. Only `sign(S)` is wanted and the denominator's sign is already known, so the whole test is **`joined ⟺ d_in > d_out`** on the two diagonal products. Both branches of the derivation reduce to the same comparison, and it is invariant under rotation and reflection of the corner order because IEEE multiplication is commutative and correctly rounded — which is what makes two adjacent cells agree bit for bit | A-002. Structurally the same argument as `edge_crossing`'s missing epsilon: strictness in the sign rule pays for itself twice |
 | M-44 | **The decider does not widen M-32's chunk-seam problem, and there is margin to spare.** Over 217 seam planes where the two chunk expressions differ bit for bit and 499,968 faces lying in them: **0** where the ulp moved a corner across zero (which would be a crack for plain Marching Cubes too, not just for the decider), 205 ambiguous faces, **0** decision flips. The closest any ambiguous seam face came to its own decision boundary was a relative margin of **1.535e-2** — about fourteen orders of magnitude above the `~1e-16` perturbation the seam arithmetic introduces | A-002, `the_decider_at_a_chunk_seam_is_measured`. A count of zero says nothing about how nearly it happened, which is why the margin is recorded alongside it. The first sweep found **0** ambiguous seam faces and the test's own reachability gate caught it — the fixture trap for the third time |
 | M-45 | **✗14 reproduces on a second machine and gets worse; its crossover does not reproduce at all.** Same sweep, same field, same commit, AMD Ryzen 9 5900X (Zen 3, x86-64, single thread) against the Apple M5. Per-sample cost, `16³ → 256³`: **MC M5 24.99 → 4.78 ns, MC Zen 3 15.18 → 13.19; SN M5 8.40 → 12.66, SN Zen 3 37.38 → 49.08.** So Surface Nets degrades on both — the effect is the algorithm's memory pattern, not one cache hierarchy — and `SN/MC` at 256³ is **3.72× on Zen 3 against 2.65× on the M5**. But Surface Nets never wins on Zen 3, at any resolution: `2.46×` behind even at 16³. The M5 crossover exists only because MC starts expensive there and converges, which Zen 3's MC does not do because it is flat from the start | O-11, `cargo bench --bench resolution_sweep` on `big` at commit `d2ab82a`. Raw data committed as `docs/measurements/resolution_sweep-ryzen9-5900x.csv` beside the M5's. Also: the M5 is **2.76× faster than the Ryzen on MC at 256³** (80.2 vs 221.4 ms) single-threaded, while the Ryzen is faster below about 32³ |
+| M-46 | **A chord is only collidable when its two cut edges share a cube face, and that makes the manifold fix nearly free.** The naive repair — centroid-fan every cycle of four or more — costs **+73.1% vertices and +73.8% triangles** over the seven reference fields at three resolutions (23,034 → 39,881 and 45,662 → 79,356), worst on `box_exact` at **+99.7%**, because nearly every cycle qualifies. Restricting it to cycles with no chord-safe apex costs **+6 vertices and +12 triangles, on one row of eighty-four**. The enabling fact is local: only a cell containing both of a chord's cut edges can emit that mesh edge, and two cells share a pair of cube edges only if the edges share a face. **A safe apex exists for every cycle of length 3–7 and 48 of the 60 length-8 cycles; plain Marching Cubes never exceeds length 7**, so it never pays anything and `V_mc = C` survives | A-015. The naive version was implemented and measured first, which is the only reason the cheap one was looked for — the ticket had been written expecting to re-baseline ✗1/M-2/M-22 and the whole golden fixture |
 
 ---
 
@@ -475,6 +505,7 @@ Each has the test that would settle it. **An open question with no proposed test
 | O-9 | How much does T-003's gradient-flow chord **over**-estimate distance at a concave seam? | A comparison against nearest-point search over a dense surface point cloud, or E-104 once DC lands | The chord follows `∇f` to the zero set, which near `csg_difference`'s seam can land further away than the true nearest point. The bias direction is known and safe for a "below X" gate; the *magnitude* is not measured, and M-001's shootout column would inherit it. `csg_difference` measured forward `0.0833` at 33³ — how much of that is seam bias is unknown |
 | O-10 | What is Surface Nets' non-manifold **rate** as a function of feature thickness over `h`? | A-010, which must drive it to zero; a sweep over a slab of shrinking thickness would answer it sooner | M-15 established it is a resolution effect rather than a topology one, and M-4 has counts at two resolutions on two fields. Nobody has the curve. It decides whether SN is usable at game resolutions or needs A-010 first |
 | O-11 | **Why does the dual topology go superlinear in `n³` while Marching Cubes does not?** *(Half-answered at M-45: it is not one machine's cache hierarchy. Surface Nets degrades on Zen 3 too — 37.4 → 49.1 ns/sample — and the `SN/MC` ratio is worse there than on the M5. What remains open is the mechanism, not whether the effect is real.)* | A profile or cache-miss counter at 192³ vs 256³. The cross-machine experiment is **done**; a second one would not add anything | The working-set hypothesis survives and is strengthened: SN gathers the four cells around each crossed edge with one stride `n²` cells apart, and that stride is architecture-independent, which is exactly the kind of cost that would reproduce across microarchitectures. Note both machines show a per-sample **spike at 128³** (M5 SN 9.35, Zen 3 SN 53.84 against 45.6 at 96³ and 47.3 at 192³) — a working-set effect at one specific grid size on two unrelated cache hierarchies, which is itself a clue nobody has followed |
+| O-12 | **Is Marching Cubes unconditionally manifold now?** ✗15's only counterexample was the fan chord and A-015 removed it; the strict gate passes 8,000 generated cases where it used to fail on the first seed. But nothing proves a second mechanism does not exist | An exhaustive search over configurations spanning more than two cells — the two-cell sweep is exhaustive and the vertex-link case is not covered by it at all. Or a proof that a cell-local cycle triangulation plus shared face segments cannot produce a non-manifold **vertex** | The strict gate is now asserted, so if a second mechanism exists CI will find it on some future seed. That is the intended outcome: a failure there is a finding, not a regression, and the failing case would be the first example of whatever the mechanism is |
 
 ---
 
@@ -521,6 +552,7 @@ Rules with no incident behind them get ignored. These all have one.
 | **When a new feature shows a defect, check whether the old one has it too before attributing it.** The cheapest version of that check is usually an exhaustive small search | ✗17 — the decider produced 2 non-manifold edges where plain MC produced 0, which reads unambiguously as "the decider broke it". An exhaustive sweep over all 4,096 two-cell sign patterns found **12 affected under each rule** — the defect is A-001's fan, and the decider only changes which patterns are reached. Attributing it to A-002 would have put the fix in the wrong ticket and left MC's own version of it undiscovered |
 | **A measurement that comes back zero has to prove it could have come back non-zero.** Put the reachability check in the test | M-44 — the first chunk-seam sweep reported 0 decision flips and 0 ambiguous seam faces, which is a pass that means nothing. The assertion `ambiguous_faces > 100` failed and forced the sweep to be retuned until it actually reached the configuration. **Third occurrence of the fixture trap** (M-32, M-38), and the first where a test caught it rather than a reviewer |
 | **Run every step of a CI job locally, not the ones you remember it having.** Name them in the definition of done so the list is not held in memory | A-002 — a public doc comment linked to a `pub(crate)` item, which `cargo doc` under `-D warnings` rejects and which clippy and fmt both pass. Two of the lint job's three steps were run locally and the third was not, so a green local run pushed a red CI. Same shape as E-111's missing `fmt` on the excluded workspace: the gap is always the step nobody thinks of as linting |
+| **Implement the expensive fix, measure it, and only then look for the cheap one.** The measurement is what tells you a cheap one is worth hunting | A-015 — the ticket was written expecting to re-baseline ✗1, M-2, M-22 and all 84 golden hashes, and the naive centroid fix duly cost +73% vertices. That number was so much worse than the "a vertex and two triangles per long cycle" estimate that it forced the question "which chords can *actually* collide?", whose answer is local and made the fix free. Estimating the cost instead of measuring it would have shipped the expensive version or abandoned the ticket |
 | **Record the margin, not just the verdict.** "It did not happen" and "it came within an ulp of happening" are the same count | M-44 — zero seam decisions flipped, but the number that makes that trustworthy is the closest observed margin, `1.535e-2`, against a perturbation of `~1e-16`. Without it, the zero could have been luck |
 
 ---

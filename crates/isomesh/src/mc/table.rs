@@ -42,7 +42,8 @@
 //!    normals induce *opposite* directions on their shared edge — so it is an
 //!    entry on one and an exit on the other. The segments therefore link the cut
 //!    edges into directed cycles with no choices left over.
-//! 4. Fan-triangulate each cycle.
+//! 4. Triangulate each cycle — see [`triangulate`] and [`safe_apex`] for which
+//!    fan, and A-015 for why the choice of apex is not free.
 //!
 //! Nothing in that is a lookup, so there is nothing to mistype. Step 3 is also
 //! what makes the result crack-free: a face's segments are a function of that
@@ -85,25 +86,76 @@
 // other extractor. Re-exported here because this module's docs and the table
 // construction below are written in terms of them.
 pub use crate::cube::{
-    CORNER_COUNT, EDGE_AXIS, EDGE_CORNERS, EDGE_COUNT, corner_inside, edge_index, face_corners,
-    is_inside,
+    CORNER_COUNT, EDGE_AXIS, EDGE_CORNERS, EDGE_COUNT, corner_inside, edge_index, edge_on_face,
+    edges_share_a_face, face_corners, is_inside,
 };
 
 /// Upper bound on triangles per cell.
 ///
-/// The construction cannot exceed this; `no_case_exceeds_the_triangle_bound`
-/// records the maximum actually reached, which is five.
+/// A centroid fan emits one triangle per cycle edge rather than `k − 2`, so a
+/// cell with all twelve edges cut in one centroid-fanned cycle reaches twelve.
+/// `no_case_exceeds_the_triangle_bound` and `the_decider_does_not_exceed_the_
+/// triangle_bound` record the maxima actually reached.
 pub const MAX_TRIANGLES: usize = 12;
 
 /// Marker for "no edge".
 pub const NO_EDGE: u8 = u8::MAX;
+
+/// Most cycle centroids one cell can need.
+///
+/// A cell has at most twelve cut edges and a centroid is only ever created for a
+/// cycle with no chord-safe apex, which measurement puts at length eight or more
+/// — so one is the real ceiling. Three is kept as the arithmetic bound: four
+/// edges is the shortest cycle that could in principle need one, and a bound
+/// that does not depend on a measurement cannot go stale. See [`CENTROID_BASE`].
+pub const MAX_CENTROIDS: usize = 3;
+
+/// Triangle corner codes at or above this name a **cycle centroid**, not a cube
+/// edge: `CENTROID_BASE + c` is the centroid of this cell's cycle `c`.
+///
+/// # Why a cell ever needs an interior vertex (A-015)
+///
+/// A polygon triangulated without extra vertices has `k − 3` interior chords,
+/// and nothing *in general* stops two cells that share a face from choosing the
+/// same chord — measured at A-002 as 12 of 4,096 two-cell sign patterns putting
+/// **four** triangles on one mesh edge, identically under both ambiguity rules.
+///
+/// What makes a chord collidable is specific, though, and local: only a cell
+/// containing **both** of its cut edges can emit it, and two cells share a pair
+/// of cube edges only when those edges share a cube *face*. So a fan whose every
+/// chord joins edges sharing no face is safe, and [`safe_apex`] looks for an apex
+/// with that property. Measured over all 256 cases and every canonical mask,
+/// **one exists for every cycle of length 3 to 7 and for 48 of the 60 length-8
+/// cycles.** Plain Marching Cubes tops out at length 7, so it never reaches this
+/// path at all and still places exactly one vertex per crossed grid edge —
+/// ✗1/M-2/M-22's `V_mc = C` is intact.
+///
+/// A cycle with no safe apex fans from a centroid instead, which removes chords
+/// entirely: every mesh edge is then either a cycle edge, lying on a face and so
+/// belonging to exactly the two cells sharing it, or a spoke to a **cell-local**
+/// centroid that no other cell can name. Two faces either way. Only the joined
+/// pairing of A-002's decider produces cycles long enough to need this, and the
+/// measured cost of it across the seven reference fields is **six vertices and
+/// twelve triangles, all on one field at one resolution.**
+pub const CENTROID_BASE: u8 = EDGE_COUNT as u8;
+
+/// Is this triangle corner code a cycle centroid rather than a cube edge?
+#[inline]
+#[must_use]
+pub const fn is_centroid(code: u8) -> bool {
+    code >= CENTROID_BASE && code != NO_EDGE
+}
 
 /// The triangulation for one corner-sign configuration.
 #[derive(Clone, Copy, Debug)]
 pub struct McCase {
     /// Number of triangles.
     pub count: u8,
-    /// Each triangle as three edge indices. Only the first `count` are valid.
+    /// How many cycle centroids the triangles reference.
+    pub centroids: u8,
+    /// Each triangle as three corner codes — a cube edge below
+    /// [`CENTROID_BASE`], a cycle centroid at or above it. Only the first
+    /// `count` are valid.
     pub triangles: [[u8; 3]; MAX_TRIANGLES],
 }
 
@@ -130,6 +182,7 @@ pub static CASES: [McCase; 256] = build_cases();
 const fn build_cases() -> [McCase; 256] {
     let mut out = [McCase {
         count: 0,
+        centroids: 0,
         triangles: [[0u8; 3]; MAX_TRIANGLES],
     }; 256];
     let mut case = 0usize;
@@ -251,14 +304,64 @@ pub const fn segment_links(case: u8, joined: u8) -> [u8; EDGE_COUNT] {
     next
 }
 
-/// Fan-triangulate the directed cycles the segments form.
+/// The first vertex of this cycle that can serve as a fan apex without creating
+/// a chord two cells could both name, or `len` if there is none.
+///
+/// `cycle[..len]` is one directed cycle of cut edges, as [`segment_links`] links
+/// them.
+///
+/// A fan from apex `a` creates the chords `(c[a], c[a+i])` for `2 <= i <= len-2`.
+/// Such a chord is safe when its two cut edges share no cube face, because then
+/// no *other* cell contains both and the mesh edge can only come from this cell's
+/// own fan — which emits it exactly twice. A three-cycle has no chords at all, so
+/// its apex is trivially safe.
+///
+/// **Measured over all 256 cases and every canonical resolution mask:** every
+/// cycle of length 3 to 7 has a safe apex, as do 48 of the 60 length-8 cycles;
+/// the length-9 and length-12 cycles have none. Plain Marching Cubes tops out at
+/// length 7, so it never needs a centroid — the cost of A-015 falls entirely on
+/// the long cycles the asymptotic decider's joined pairing can produce.
+pub const fn safe_apex(cycle: &[u8; EDGE_COUNT], len: usize) -> usize {
+    let mut a = 0usize;
+    while a < len {
+        let mut safe = true;
+        let mut i = 2usize;
+        while i + 2 <= len {
+            if edges_share_a_face(cycle[a], cycle[(a + i) % len]) {
+                safe = false;
+                break;
+            }
+            i += 1;
+        }
+        if safe {
+            return a;
+        }
+        a += 1;
+    }
+    len
+}
+
+/// Triangulate the directed cycles the segments form.
 ///
 /// Split out of the table construction so the runtime decider path and the
 /// compile-time table share one implementation and cannot drift.
+///
+/// A three-cycle becomes its one triangle. **Anything longer fans from a
+/// centroid** rather than from one of its own vertices — see [`CENTROID_BASE`]
+/// for why (A-015): a fan from a vertex leaves `k − 3` interior chords, and two
+/// cells sharing a face can choose the same chord and put four triangles on one
+/// mesh edge. A centroid is cell-local, so its spokes cannot be named by any
+/// other cell, and every remaining mesh edge is a cycle edge lying on a face,
+/// which exactly two cells share.
+///
+/// This costs a vertex and two triangles per long cycle. It does **not** change
+/// the surface, its Euler characteristic or its genus: both triangulations of a
+/// `k`-gon are discs, `χ = 1`.
 #[must_use]
 pub const fn triangulate(next: [u8; EDGE_COUNT]) -> McCase {
     let mut triangles = [[0u8; 3]; MAX_TRIANGLES];
     let mut count = 0usize;
+    let mut centroids = 0usize;
     let mut visited = [false; EDGE_COUNT];
 
     let mut e = 0usize;
@@ -275,16 +378,36 @@ pub const fn triangulate(next: [u8; EDGE_COUNT]) -> McCase {
                 cur = next[cur as usize];
             }
 
-            // Fan from the first vertex. Every cycle has at least three edges:
-            // two distinct cube edges share at most one face, so no two-cycle
-            // can form. That holds under either pairing — crossing an ambiguous
-            // face's pairing permutes which exit each entry reaches, and both
-            // exits are still on that one shared face.
-            let mut i = 1usize;
-            while i + 1 < len {
-                triangles[count] = [cycle[0], cycle[i], cycle[i + 1]];
-                count += 1;
-                i += 1;
+            // Every cycle has at least three edges: two distinct cube edges share
+            // at most one face, so no two-cycle can form. That holds under either
+            // pairing — crossing an ambiguous face's pairing permutes which exit
+            // each entry reaches, and both exits are still on that one shared
+            // face.
+            // Fan from the first chord-safe apex; a cycle with none gets a
+            // centroid. See `safe_apex` and [`CENTROID_BASE`].
+            let apex = safe_apex(&cycle, len);
+            if apex < len {
+                let mut i = 2usize;
+                while i < len {
+                    triangles[count] = [
+                        cycle[apex],
+                        cycle[(apex + i - 1) % len],
+                        cycle[(apex + i) % len],
+                    ];
+                    count += 1;
+                    i += 1;
+                }
+            } else {
+                let centre = CENTROID_BASE + centroids as u8;
+                centroids += 1;
+                let mut i = 0usize;
+                while i < len {
+                    // Winding follows the cycle, so the centroid fan keeps the
+                    // orientation a vertex fan would have had.
+                    triangles[count] = [centre, cycle[i], cycle[(i + 1) % len]];
+                    count += 1;
+                    i += 1;
+                }
             }
         }
         e += 1;
@@ -292,6 +415,7 @@ pub const fn triangulate(next: [u8; EDGE_COUNT]) -> McCase {
 
     McCase {
         count: count as u8,
+        centroids: centroids as u8,
         triangles,
     }
 }
