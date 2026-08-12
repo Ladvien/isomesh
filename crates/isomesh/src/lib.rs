@@ -54,6 +54,7 @@ pub mod hermite;
 pub mod marching_cubes;
 pub mod surface_nets;
 pub mod validate;
+pub mod weld;
 
 #[cfg(test)]
 mod golden;

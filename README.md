@@ -18,8 +18,8 @@ Early. Two extraction algorithms, a validity harness, an accuracy harness, and a
 
 | | |
 |---|---|
-| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Surface Nets · **Dual Contouring** · Hermite data · mesh validity harness · accuracy harness · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property-test scaffolding · Bevy 0.19 bridge |
-| **Not yet** | Marching Cubes 33's interior test · marching tetrahedra · greedy quads · LOD / Transvoxel · vertex welding · colliders · GPU path · benchmarks |
+| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Surface Nets · **Dual Contouring** · Hermite data · mesh validity harness · accuracy harness · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property-test scaffolding · vertex welding · Bevy 0.19 bridge |
+| **Not yet** | Marching Cubes 33's interior test · marching tetrahedra · greedy quads · LOD / Transvoxel · colliders · GPU path · benchmarks |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
 Not published to crates.io. Version `0.0.0`.

@@ -798,55 +798,26 @@ pub fn validate_features<R: Real>(
 
     // ── duplicate vertices ──────────────────────────────────────────────────
     //
-    // Quantise to an integer lattice of side `weld_epsilon`, sort, then probe
-    // the 27 neighbouring cells. Quantising sidesteps `f32: !Ord` entirely: the
-    // key is `[i64; 3]`, which has a genuine total order. `-0.0` and `+0.0` land
-    // in the same bucket. A NaN coordinate saturates to zero and then fails the
-    // distance comparison, so it is never reported as a duplicate.
+    // Bucket onto the same integer lattice `crate::weld` welds on, sort, then
+    // probe the 27 neighbouring cells. Quantising sidesteps `f32: !Ord`
+    // entirely: the key is `[i64; 3]`, which has a genuine total order. `-0.0`
+    // and `+0.0` land in the same bucket. A NaN coordinate saturates to zero and
+    // then fails the distance comparison, so it is never reported as a
+    // duplicate.
+    //
+    // **The lattice is `weld::Lattice`, not a copy of it.** If the two disagreed
+    // about which cells are probed, this count would describe a different
+    // neighbourhood than the weld it is reporting on. What they do differ in is
+    // the question asked: this asks whether *any* earlier vertex is within
+    // epsilon, the welder asks for the lowest-indexed *kept* one, so this is an
+    // upper bound on what a weld removes rather than a prediction of it — see
+    // `weld::tests::the_validator_bounds_the_weld_rather_than_predicting_it`,
+    // which measures both.
     {
         let eps = R::from_f64(cfg.weld_epsilon);
-        let inv_eps = eps.recip();
         let eps_sq = eps * eps;
-
-        // The lattice is anchored to the mesh's own minimum corner, not to the
-        // world origin, and that is load-bearing rather than tidy.
-        //
-        // `quantise` narrows through `as_f32`, which stops distinguishing
-        // consecutive integers above `2²⁴`. The scale here is `1/weld_epsilon`,
-        // which is `1/(h·1e-4)` — a factor of 160,000 at `h = 0.0625` — so an
-        // *absolute* coordinate crosses that ceiling at about **105 world
-        // units** (M-18, measured). Past it neighbouring cells collapse into
-        // one, and the failure is invisible in the answer: coarsening only
-        // merges buckets, the 27-cell probe still covers them and the exact
-        // distance test still runs, so `duplicate_vertices` stays correct while
-        // the scan slides toward quadratic.
-        //
-        // A chunked world reaches 105 units almost immediately, which is why
-        // this is fixed before G-001 rather than after it. Subtracting the
-        // minimum makes the scale depend on the mesh's *extent* instead of its
-        // position, and an extent that large would be a mesh nobody could weld
-        // meaningfully anyway. Same reasoning as `tri_grid`, which is relative
-        // for the same reason.
-        let mut anchor = [R::INFINITY; 3];
-        for p in positions {
-            for (a, slot) in anchor.iter_mut().enumerate() {
-                if p[a].is_finite() && p[a] < *slot {
-                    *slot = p[a];
-                }
-            }
-        }
-        for slot in &mut anchor {
-            if !slot.is_finite() {
-                *slot = R::ZERO;
-            }
-        }
-        let key_of = |p: [R; 3]| {
-            [
-                quantise((p[0] - anchor[0]) * inv_eps),
-                quantise((p[1] - anchor[1]) * inv_eps),
-                quantise((p[2] - anchor[2]) * inv_eps),
-            ]
-        };
+        let lattice = crate::weld::Lattice::new(positions, eps);
+        let key_of = |p: [R; 3]| lattice.key_of(p);
 
         let mut cells: Vec<([i64; 3], u32)> = (0..vertex_count)
             .map(|i| (key_of(positions[i]), i as u32))
@@ -914,17 +885,6 @@ pub fn validate_features<R: Real>(
     }
 
     (report, features)
-}
-
-/// Floor to an `i64` lattice coordinate.
-///
-/// A non-finite input saturates to zero, which is what `as` does in Rust and is
-/// deterministic. Such a vertex is caught by `non_finite_positions` and then
-/// fails the distance comparison, so it is never mistaken for a duplicate.
-#[inline]
-fn quantise<R: Real>(scaled: R) -> i64 {
-    let f = scaled.floor();
-    if f.is_finite() { f.as_f32() as i64 } else { 0 }
 }
 
 /// [`validate_indexed`] for the default sink, plus the one check that needs the

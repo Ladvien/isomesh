@@ -60,6 +60,17 @@ pub enum Error {
         value: f64,
     },
 
+    /// A weld tolerance that is not finite and positive.
+    ///
+    /// Zero is rejected rather than treated as "weld only exact matches",
+    /// because M-32 measured that seam vertices are bit-identical only for
+    /// power-of-two cell sizes — an exact-match weld is precisely the thing that
+    /// works on the fixture and fails in the field.
+    InvalidWeldEpsilon {
+        /// The value given.
+        value: f64,
+    },
+
     /// A spacing that does not describe the mesh it was given.
     ///
     /// Reported rather than absorbed: a broadphase grid finer than the mesh
@@ -94,6 +105,9 @@ impl fmt::Display for Error {
             ),
             Self::InvalidCellSize { value } => {
                 write!(f, "cell size must be finite and positive, got {value}")
+            }
+            Self::InvalidWeldEpsilon { value } => {
+                write!(f, "weld epsilon must be finite and positive, got {value}")
             }
             Self::CellSizeMismatch {
                 triangle,
@@ -138,6 +152,7 @@ mod tests {
                 "5000000000",
             ),
             (Error::InvalidCellSize { value: 0.0 }, "got 0"),
+            (Error::InvalidWeldEpsilon { value: -1.0 }, "got -1"),
             (
                 Error::CellSizeMismatch {
                     triangle: 7,

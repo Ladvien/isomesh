@@ -156,6 +156,19 @@ impl<R: Real> MeshBuffer<R> {
         self.normals.shrink_to_fit();
         self.indices.shrink_to_fit();
     }
+
+    /// Append another mesh, shifting its indices to follow this one's vertices.
+    ///
+    /// The reason this exists is [`crate::weld`]: a chunk seam only becomes
+    /// weldable once both chunks' vertices are in one buffer, and the index
+    /// shift is exactly the step a caller would get wrong. Nothing is welded
+    /// here — the vertices are concatenated as they are, duplicates and all.
+    pub fn append(&mut self, other: &Self) {
+        let base = self.positions.len() as u32;
+        self.positions.extend_from_slice(&other.positions);
+        self.normals.extend_from_slice(&other.normals);
+        self.indices.extend(other.indices.iter().map(|&i| i + base));
+    }
 }
 
 // Hand-written rather than derived: `derive(Default)` would add a spurious
