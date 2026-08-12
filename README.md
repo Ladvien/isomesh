@@ -165,6 +165,16 @@ Differencing at the cell size — the case a game without an analytic field is s
 
 Successive ratios 3.76 and 3.92, so `h²`, asserted as a range rather than admired in a log.
 
+![The same CSG solid shaded three ways: crisp, slightly softened, and smeared](docs/screenshots/e113-normal-estimation-csg.png)
+
+*`normal_estimation` — a sphere bitten out of a box at 41³. **All three panels are the same 2,244 vertices and 4,484 triangles**; only the normal buffer differs. Left, the field's gradient keeps the bite's rim crisp and its staircase legible. Right, area-weighted normals smear that rim and round the steps into blobs — 46.426° off at the worst. The middle is differencing the field at the cell size, which is what a sampled voxel buffer can offer: 17.974° worst, and 0.450° on average.*
+
+```bash
+cd bevy_isomesh && cargo run --example normal_estimation --release
+```
+
+`1`–`5` field · `[` `]` resolution · `W` wireframe.
+
 The third strategy is where it gets interesting. Area-weighted normals track the field closely on smooth geometry and **cannot** on sharp geometry, because a corner vertex gets the average of three face normals where the field's gradient gives one of them. On a sphere the mean disagreement falls 3.25° → 2.16° → 1.08° across those grids and on a torus 11.65° → 6.07° → 2.45°. On `box_exact` the *worst* disagreement is **35.796° at all three resolutions, identical to six figures** — refining a grid does not soften a corner. That invariance is the assertion; the constant is just the box's corner.
 
 ---
@@ -316,6 +326,7 @@ cargo run --example marching_cubes_sphere --release             # the first GIF
 cargo run --example surface_nets_vs_marching_cubes --release    # the second and third
 cargo run --example dual_contouring_cube --release              # the sharp-feature comparison
 cargo run --example manifold_check --release                    # the red marks, and A to make them go
+cargo run --example normal_estimation --release                 # three identical meshes, three shadings
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires

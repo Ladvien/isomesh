@@ -49,8 +49,8 @@ use std::time::Instant;
 use bevy::prelude::*;
 use bevy_isomesh::MeshBuilder;
 use common::{Capture, CommonPlugin, DemoDomain, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
-use isomesh::fields::ReferenceField;
 use isomesh::dual_contouring::DualContouring;
+use isomesh::fields::ReferenceField;
 use isomesh::manifold_dual_contouring::ManifoldDualContouring;
 use isomesh::marching_cubes::MarchingCubes;
 use isomesh::surface_nets::SurfaceNets;
@@ -338,9 +338,13 @@ where
         Algorithm::DualContouring => {
             DualContouring::<f32>::new().extract(field, &shape, min, cell_size, &mut builder)
         }
-        Algorithm::ManifoldDualContouring => {
-            ManifoldDualContouring::<f32>::new().extract(field, &shape, min, cell_size, &mut builder)
-        }
+        Algorithm::ManifoldDualContouring => ManifoldDualContouring::<f32>::new().extract(
+            field,
+            &shape,
+            min,
+            cell_size,
+            &mut builder,
+        ),
     };
     if let Err(error) = extracted {
         error!("extraction failed at {samples}^3: {error}");
