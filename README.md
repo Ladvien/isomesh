@@ -131,6 +131,46 @@ cd bevy_isomesh && cargo run --example manifold_check --release
 
 ---
 
+## A crack between two chunks, and welding it shut
+
+![Two chunks of a torus, meshed independently, with the open seam marked in red](docs/screenshots/e115-chunk-seam-unwelded.png)
+
+*`chunk_seam_weld` — one torus, two chunks, meshed **independently**, exactly as a game does when an edit dirties only the chunks it touches. Every red line is a boundary edge on the shared plane: a triangle with no neighbour. `80` of them, and `40` duplicated vertices. The surface looks continuous and is not.*
+
+![The same two chunks after welding, with no seam](docs/screenshots/e115-chunk-seam-welded.png)
+
+*The same two chunks after `V`. **`1328 → 1288` vertices, 40 merged, 0 triangles collapsed, and the seam carries no boundary at all.** χ stays `0` — it is a torus either way; what changed is that it is now one surface.*
+
+The spacing selector is the part worth pressing. `1` is `h = 0.125` and `2` is `h = 4/35`, and only one of those is arbitrary: two chunks agree on their shared sample plane bit-for-bit **only when the cell size is a power of two**, because one computes `(o + h·cn) + h·n` and the other `o + h·(c+1)n` — equal by algebra, not by IEEE. 22% of random `(origin, h, cells, chunk)` combinations disagree by an ulp, and `4/35` came out of that search. A weld keyed on exact equality closes the seam under `1` and silently leaves it open under `2`; this one is an epsilon weld for exactly that reason.
+
+```bash
+cd bevy_isomesh && cargo run --example chunk_seam_weld --release
+```
+
+`V` weld · `E` explode the chunks apart · `1` `2` spacing · `[` `]` resolution.
+
+---
+
+## An ambiguous face, and how rarely one turns up
+
+![Marching Cubes beside the asymptotic decider on a capped gyroid, ambiguous cells marked](docs/screenshots/e102-ambiguity-gyroid.png)
+
+*`marching_cubes_ambiguity` — plain Marching Cubes on the left, the same extraction with `FaceAmbiguity::AsymptoticDecider` on the right. Every box is a cell with an ambiguous face: **amber where the decider agreed and separated the corners, magenta where it disagreed and joined them.** Magenta is the only place the two meshes can differ, and on the gyroid at 33³ there are nine such cells out of 5,240.*
+
+The catalog originally specified this example as "holes on the left, closed on the right". **That cannot be shown, because it does not happen** — this crate's case table is derived at compile time by walking each face counter-clockwise, so two cells sharing a face cannot disagree about it and neither side ever holes. What the decider changes is *which* surface gets built on an ambiguous face, which the HUD reads off as a difference in Euler characteristic.
+
+![The same comparison on a sphere, where the two meshes are byte-identical](docs/screenshots/e102-ambiguity-sphere-identical.png)
+
+*Press `3`. On a sphere there is **not one ambiguous face in 1,160 surface cells**, and the two meshes are byte-identical — which the committed golden fixture also pins. Five of the seven reference fields behave this way; only the gyroid (0.515% of cells) and `fbm_terrain` (1.532%) reach the configuration at all. An example that only ever showed the interesting case would misrepresent how often the interesting case arrives.*
+
+```bash
+cd bevy_isomesh && cargo run --example marching_cubes_ambiguity --release
+```
+
+`1`–`3` field · `A` cell markers · `[` `]` resolution.
+
+---
+
 ## What gets checked
 
 Every extraction algorithm ships with these before it counts as done. They are ordinary public API, not test-only, because a consumer baking colliders wants them too.
@@ -180,12 +220,14 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 244 tests
+cargo test -p isomesh                    # 283 tests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
-cargo run --example marching_cubes_sphere --release  # the first GIF
-cargo run --example surface_nets_vs_marching_cubes --release   # the second and third
+cargo run --example marching_cubes_sphere --release             # the first GIF
+cargo run --example surface_nets_vs_marching_cubes --release    # the second and third
+cargo run --example chunk_seam_weld --release                   # the seam, and welding it
+cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires
 ```
 
 **Always `--release`.** A debug build meshes 20–50× slower and will convince you something is wrong with the algorithm.
@@ -197,6 +239,14 @@ Any example can be captured without a keyboard, which is how the GIFs above were
 ```bash
 ISOMESH_CAPTURE=/tmp/frames ISOMESH_FIELD=4 ISOMESH_VIEW=wire,nogrid \
   cargo run --example surface_nets_vs_marching_cubes --release
+```
+
+`ISOMESH_SCREENSHOT` takes one shot and exits; `ISOMESH_FIELD`, `ISOMESH_SAMPLES`, `ISOMESH_VIEW`, `ISOMESH_ALGORITHM` and `ISOMESH_WELD` set what it is a shot *of*. Every image in this README was produced that way and can be reproduced from a command line — for instance the non-manifold gyroid above:
+
+```bash
+ISOMESH_ALGORITHM=sn ISOMESH_FIELD=5 ISOMESH_SAMPLES=19 \
+  ISOMESH_SCREENSHOT=../docs/screenshots/e111-manifold-check-gyroid-surface-nets.png \
+  cargo run --example manifold_check --release
 ```
 
 ---

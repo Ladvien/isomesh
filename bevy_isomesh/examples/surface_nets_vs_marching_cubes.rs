@@ -95,7 +95,7 @@ fn main() {
         .add_plugins(CommonPlugin)
         .insert_resource(Demo {
             field: 0,
-            samples: 25,
+            samples: common::samples_override().unwrap_or(25),
             smoothing: 0,
         })
         .add_systems(Startup, setup)

@@ -121,7 +121,18 @@ pub fn face_is_joined<R: Real>(v: [R; 4]) -> bool {
 /// Bit layout is [`face_bit`]'s. Faces outside `ambiguous` are left clear, since
 /// [`super::table::segment_links`] ignores them anyway and leaving them clear
 /// keeps the mask canonical for the validator.
-pub(crate) fn joined_mask<R: Real>(corner_value: &[R; 8], ambiguous: u8) -> u8 {
+///
+/// Public because a cell's decision is not visible in the mesh it produces and
+/// the only way to *show* the rule firing is to ask for it: `E-102` draws a box
+/// round every cell with an ambiguous face and colours it by this answer. Pass
+/// [`super::table::AMBIGUOUS_FACES`]`[case]` as `ambiguous`.
+///
+/// # Panics
+///
+/// In debug builds, if `ambiguous` marks a face that is not ambiguous for these
+/// corner values — see [`face_is_joined`].
+#[must_use]
+pub fn joined_mask<R: Real>(corner_value: &[R; 8], ambiguous: u8) -> u8 {
     let mut mask = 0u8;
     for axis in 0..3usize {
         for side in 0..2u8 {

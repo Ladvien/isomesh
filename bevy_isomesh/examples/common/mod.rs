@@ -113,6 +113,25 @@ impl Default for ViewFlags {
     }
 }
 
+/// Resolution requested through `ISOMESH_SAMPLES`, in samples per axis.
+///
+/// The harness already lets a capture pick its view (`ISOMESH_VIEW`) and its
+/// field (`ISOMESH_FIELD`) without a keyboard, and says that is what makes the
+/// catalog's visual acceptance tests reproducible. **Resolution was the hole in
+/// that claim**: the committed `e111` screenshots are of a 19³ grid and there
+/// was no way to ask for one, so re-taking them meant pressing `[` by hand and
+/// the images could not be regenerated from a command line at all.
+///
+/// Examples with a resolution read this once, at startup, and fall back to their
+/// own default.
+#[allow(dead_code)] // Each example compiles its own copy of this module.
+#[must_use]
+pub fn samples_override() -> Option<u32> {
+    std::env::var("ISOMESH_SAMPLES")
+        .ok()
+        .and_then(|v| v.parse().ok())
+}
+
 /// Numbers the example wants on screen. Filled in by the example, rendered here.
 #[derive(Resource, Default, Debug)]
 pub struct DemoStats {
@@ -227,6 +246,7 @@ impl Default for Capture {
 
 impl Capture {
     /// Whether a sequence is being recorded.
+    #[allow(dead_code)] // Each example compiles its own copy of this module.
     #[must_use]
     pub fn is_active(&self) -> bool {
         self.dir.is_some()

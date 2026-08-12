@@ -90,7 +90,6 @@ the point** — they're how someone decides whether this crate is usable.
 
 | | ID | Example | Blocked by |
 |---|---|---|---|
-| ☐ | **E-102** | `marching_cubes_ambiguity` — **re-scoped, the original framing is falsified by ✗11**: neither rule holes, so "holes vs closed" cannot be shown. Split screen with `FaceAmbiguity::Separate` against `::AsymptoticDecider`, Euler χ in the HUD for both, and the cells with an ambiguous face highlighted — because the measured census says there are almost none. Use `gyroid` or `fbm_terrain`; on the other five reference fields the two rules are **bit-identical** and the example would show nothing. | A-002 |
 | ☐ | **E-105** | `marching_tetrahedra` — same field, much higher triangle count | A-003 |
 | ☐ | **E-106** | `greedy_quads` — the blocky path, quads before/after merge | A-005 |
 | ☐ | **E-107** | `transvoxel_seams` — two LODs adjacent, toggle transition cells. **Commit both screenshots.** | A-011 |

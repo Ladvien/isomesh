@@ -130,7 +130,7 @@ fn main() {
         }))
         .add_plugins(CommonPlugin)
         .init_gizmo_group::<DefectGizmos>()
-        .insert_resource(Resolution(33))
+        .insert_resource(Resolution(common::samples_override().unwrap_or(33)))
         .insert_resource(Algorithm::from_env())
         .insert_resource(ShowBoundary(false))
         .init_resource::<Overlay>()
