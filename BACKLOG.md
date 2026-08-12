@@ -73,13 +73,25 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 |---|---|---|---|---|
 | ☐ | **A-011b** | **Transvoxel extraction and the seam.** Place the transition cell's vertices in world space, emit its triangles, and stitch a full-resolution chunk to a half-resolution neighbour. **Acceptance:** two adjacent chunks at differing LOD produce zero boundary gaps — assert on the geometry, then confirm visually in E-107. A crossing on one of the four half-resolution edges must land where the coarse neighbour's own Marching Cubes pass would put it, or the seam does not close; `transvoxel::table::is_half_resolution` is what marks them. Lengyel's transition width is a free parameter and **zero is legal geometrically and wrong visually** — §4.3 says a zero width "leads to severe shading problems", so pick one and record why. | M | A-011a |
 
-> **IN PROGRESS.** `transvoxel::cell::TransitionCell` places the crossings and the seam identity is
-> asserted: every half-resolution crossing lands **bit-identically** on a vertex the coarse
-> neighbour's Marching Cubes pass produced — 56 of them on a sphere at `h = 1/8`, 24 on a torus at
-> `h = 4/14`. That was not free; see M-73 for the version that put a `1.11e-16` crack in the seam.
+> **IN PROGRESS, and the remaining work is now known to be larger than the ticket implies.**
+> `transvoxel::cell::TransitionCell` samples a face, places its sixteen crossings, and triangulates the
+> cycles `table::transition_links` gives — one centroid fan per cycle, A-015's rule, because a
+> transition cell sits between two differently-resolved blocks where a chord collision is likeliest.
 >
-> What remains: triangulate the cycles `table::transition_links` gives, wind them consistently with
-> the two neighbouring chunks, and assert zero gaps across a real full-resolution/half-resolution pair.
+> Two things are established and two are not.
+>
+> **Established.** The seam identity: every half-resolution crossing lands **bit-identically** on a
+> vertex the coarse neighbour's Marching Cubes pass produced — 56 of them on a sphere at `h = 1/8`, 24
+> on a torus at `h = 4/14`. That was not free; see M-73 for the version that put a `1.11e-16` crack in
+> it. And every crossing reaches a triangle, so no cut edge is dropped.
+>
+> **Not established.** *Winding*, and it cannot be until the width lands: M-74 measured a zero-width
+> patch as **exactly** perpendicular to the surface, so no test against the field gradient can decide
+> its orientation. And the *two-chunk zero-gap assertion*, which needs the width for the same reason.
+>
+> **So the split changed.** Zero width was going to close the gap and defer the shading; M-74 shows the
+> width is what gives the patch a normal at all. A-011c is therefore a dependency of finishing this,
+> not a follow-up to it.
 >
 > Read while scoping, so the next attempt does not have to (Lengyel 2010 §4.3–4.4):
 > - **Transition width** is a free global parameter. His implementation uses `w(k) = 2^(k-2)` for LOD

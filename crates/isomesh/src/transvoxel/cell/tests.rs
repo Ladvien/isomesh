@@ -235,3 +235,143 @@ fn a_cell_the_surface_misses_has_no_centroid() {
         assert!(on_surface.centroid().is_some());
     }
 }
+
+// ─── triangulation ──────────────────────────────────────────────────────────
+
+/// **Why a zero-width transition cell cannot be shaded, and what that costs.**
+///
+/// This test was written to check the patch's winding against the field gradient,
+/// the way `meshed_sphere_has_positive_signed_volume` checks a closed mesh. It
+/// reported **136 of 136 faces inward**, and reversing the fan reported the same
+/// 136 — which is not a winding bug. It is the geometry.
+///
+/// All nine of a transition cell's samples lie in the transition **face**, so at
+/// zero width every crossing does too, and every triangle is coplanar with that
+/// face. Its normal is the face normal — perpendicular to the surface being
+/// stitched. `dot(face_normal, gradient)` is then about `1e-17` and its sign
+/// carries no information, so no winding test on it can mean anything.
+///
+/// That is exactly what Lengyel 2010 §4.3 means by
+///
+/// > It is possible to use a width of zero and still produce results that
+/// > seamlessly stitch multiresolution meshes together, but this width leads to
+/// > **severe shading problems**.
+///
+/// The stitch closes the hole and shades as a hard crease, because it *is* one: a
+/// flat wall standing edge-on to the surface. So the transition width is not a
+/// polish item to defer — **it is what gives the patch a normal at all**, and
+/// A-011c owns it. Recorded as M-74.
+#[test]
+fn a_zero_width_patch_is_edge_on_to_the_surface_and_cannot_be_wound() {
+    // Exact on purpose: the patch is coplanar by construction, not approximately.
+    #![allow(clippy::float_cmp)]
+    let field = Sphere::<f64>::canonical();
+    let (lo, _hi) = field.domain();
+    let fine_h = 0.125;
+
+    let mut worst_alignment = 0.0f64;
+    let mut faces = 0usize;
+    for iv in 0..16i64 {
+        for iu in 0..16i64 {
+            let cell = TransitionCell::sample(&field, lo, fine_h, [16, 2 * iu, 2 * iv], 1, 2);
+            let mut patch = MeshBuffer::<f64>::new();
+            cell.emit(&field, 0, &mut patch);
+            if patch.triangle_count() == 0 {
+                continue;
+            }
+
+            // Every vertex the patch produced sits in the transition face's own
+            // plane -- the crossings by construction, the cycle centroids because
+            // an average of coplanar points is coplanar.
+            for p in &patch.positions {
+                assert_eq!(
+                    p[0], cell.position[0][0],
+                    "a patch vertex left the face plane"
+                );
+            }
+
+            for tri in patch.indices.chunks_exact(3) {
+                let a = patch.positions[tri[0] as usize];
+                let b = patch.positions[tri[1] as usize];
+                let c = patch.positions[tri[2] as usize];
+                let n = crate::vec3::cross(crate::vec3::sub(b, a), crate::vec3::sub(c, a));
+                let len2 = crate::vec3::length_squared(n);
+                if len2 == 0.0 {
+                    continue;
+                }
+                faces += 1;
+                let centre = [
+                    (a[0] + b[0] + c[0]) / 3.0,
+                    (a[1] + b[1] + c[1]) / 3.0,
+                    (a[2] + b[2] + c[2]) / 3.0,
+                ];
+                let g = field.gradient(centre);
+                let alignment =
+                    crate::vec3::dot(n, g).abs() / (len2.sqrt() * crate::vec3::length(g));
+                worst_alignment = worst_alignment.max(alignment);
+            }
+        }
+    }
+
+    std::println!(
+        "{faces} zero-width patch faces; worst |cos| against the surface normal is \
+         {worst_alignment:.3e}"
+    );
+    assert!(faces > 0, "no transition patch was produced");
+    // Edge-on to within a rounding error. If this ever rises, the patch has
+    // acquired a normal and the width work has landed.
+    assert!(
+        worst_alignment < 1e-12,
+        "a zero-width patch should be perpendicular to the surface, got |cos| = {worst_alignment:.3e}"
+    );
+}
+
+/// Every crossing the cell places must be used by the triangulation, and every
+/// triangle must be non-degenerate.
+///
+/// A cut edge whose crossing never reaches a triangle is a hole in the seam by
+/// another name.
+#[test]
+fn every_crossing_reaches_a_triangle() {
+    let field = Sphere::<f64>::canonical();
+    let (lo, _hi) = field.domain();
+
+    let mut cells = 0usize;
+    for iv in 0..16i64 {
+        for iu in 0..16i64 {
+            let cell = TransitionCell::sample(&field, lo, 0.125, [16, 2 * iu, 2 * iv], 1, 2);
+            let crossings: Vec<[f64; 3]> = cell.crossings().map(|(_, p)| p).collect();
+            if crossings.is_empty() {
+                continue;
+            }
+            cells += 1;
+
+            let mut patch = MeshBuffer::<f64>::new();
+            cell.emit(&field, 0, &mut patch);
+            assert!(
+                patch.triangle_count() > 0,
+                "a cell with {} crossings produced no triangles",
+                crossings.len()
+            );
+
+            for crossing in &crossings {
+                assert!(
+                    patch.positions.contains(crossing),
+                    "crossing {crossing:?} never reached a vertex"
+                );
+            }
+            // Every vertex is either a crossing or a cycle centroid.
+            let extra = patch
+                .positions
+                .iter()
+                .filter(|p| !crossings.contains(p))
+                .count();
+            assert!(
+                extra > 0 && extra <= 4,
+                "expected one centroid per cycle, got {extra}"
+            );
+        }
+    }
+    assert!(cells > 0, "no transition cell was cut");
+    std::println!("{cells} transition cells triangulated, every crossing used");
+}

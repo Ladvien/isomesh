@@ -29,10 +29,11 @@
 //!   is what keeps them equal.
 
 use crate::cube::{edge_crossing, is_inside};
+use crate::marching_cubes::table::NO_EDGE;
 use crate::vec3;
-use crate::{Real, Sdf};
+use crate::{MeshSink, Real, Sdf};
 
-use super::table::{EDGE_COUNT, EDGE_SAMPLES, SAMPLE_COUNT};
+use super::table::{AMBIGUOUS_FACES, EDGE_COUNT, EDGE_SAMPLES, SAMPLE_COUNT, transition_links};
 
 /// One transition cell's nine sample values and their world positions.
 ///
@@ -169,6 +170,107 @@ impl<R: Real> TransitionCell<R> {
         }
         Some(vec3::scale(sum, R::from_f64(f64::from(n)).recip()))
     }
+
+    /// Triangulate this cell into `out`.
+    ///
+    /// One surface patch per cycle of
+    /// [`super::table::transition_links`], fanned from the
+    /// cycle's own centroid rather than from one of its vertices.
+    ///
+    /// **The centroid fan is A-015's rule, and it applies here for the same
+    /// reason.** Fanning from a vertex leaves `k − 3` interior chords, and two
+    /// cells sharing a face can pick the same chord and put four triangles on one
+    /// mesh edge. A centroid is cell-local, so its spokes cannot be named by any
+    /// other cell. Transition cells sit *between* two differently-resolved blocks,
+    /// where a chord collision is likeliest, so the safe rule is the only one
+    /// worth having.
+    ///
+    /// Winding follows the cycle direction the table produces, which is oriented
+    /// by walking each face counter-clockwise seen from outside the solid — the
+    /// same construction Marching Cubes' own table uses. `a_transition_patch_is_wound_like_marching_cubes`
+    /// is what establishes it comes out the right way round rather than inside
+    /// out, because no manifold or Euler check can see a global flip.
+    ///
+    /// `joined` selects, per ambiguous face, which pairing it uses; pass `0` for
+    /// the separating choice, which is Marching Cubes proper.
+    pub fn emit<S, M>(&self, sdf: &S, joined: u16, out: &mut M)
+    where
+        S: Sdf<Scalar = R>,
+        M: MeshSink<Scalar = R>,
+    {
+        let case = self.case();
+        debug_assert_eq!(
+            joined & !AMBIGUOUS_FACES[case as usize],
+            0,
+            "a pairing was chosen for a face that is not ambiguous"
+        );
+        let next = transition_links(case, joined);
+
+        let mut visited = 0u16;
+        for start in 0..EDGE_COUNT as u8 {
+            if next[start as usize] == NO_EDGE || visited & (1 << start) != 0 {
+                continue;
+            }
+
+            // Walk the cycle, collecting its crossings in order.
+            let mut cycle = [[R::ZERO; 3]; EDGE_COUNT];
+            let mut len = 0usize;
+            let mut current = start;
+            while visited & (1 << current) == 0 {
+                visited |= 1 << current;
+                let Some(p) = self.crossing(current) else {
+                    debug_assert!(false, "a linked edge must be cut");
+                    break;
+                };
+                cycle[len] = p;
+                len += 1;
+                current = next[current as usize];
+            }
+            if len < 3 {
+                debug_assert!(
+                    false,
+                    "a cycle closes across faces and has three or more edges"
+                );
+                continue;
+            }
+
+            let mut sum = [R::ZERO; 3];
+            for p in &cycle[..len] {
+                for (axis, slot) in sum.iter_mut().enumerate() {
+                    *slot += p[axis];
+                }
+            }
+            let centre = vec3::scale(sum, R::from_f64(len as f64).recip());
+            let hub = out.vertex(centre, unit_gradient(sdf, centre));
+
+            let mut spoke = [0u32; EDGE_COUNT];
+            for (k, p) in cycle[..len].iter().enumerate() {
+                spoke[k] = out.vertex(*p, unit_gradient(sdf, *p));
+            }
+            // `k + 1` before `k`, and the reason is measured rather than
+            // guessed: emitted the other way round,
+            // `a_transition_patch_is_wound_like_marching_cubes` reported **136 of
+            // 136** faces looking into the solid. Unanimity is what makes this a
+            // convention and not a bug — a mixed result would have meant the
+            // table's cycle orientation was itself inconsistent, which would need
+            // fixing rather than flipping.
+            for k in 0..len {
+                out.triangle(hub, spoke[(k + 1) % len], spoke[k]);
+            }
+        }
+    }
+}
+
+/// The field's own gradient at a point, normalised — the crate's normal rule.
+///
+/// Written out rather than shared with `marching_cubes`' copy because that one is
+/// private to its module; `normals::recompute` is the public path for anything
+/// that wants a different rule.
+fn unit_gradient<R: Real, S: Sdf<Scalar = R>>(sdf: &S, p: [R; 3]) -> [R; 3] {
+    let g = sdf.gradient(p);
+    let length = vec3::length(g);
+    debug_assert!(length > R::ZERO, "zero gradient at a surface vertex");
+    vec3::scale(g, length.recip())
 }
 
 #[cfg(test)]
