@@ -55,8 +55,26 @@ let back = read_buffer(gpu.device(), gpu.queue(), field.buffer(), grid.field_buf
   `isomesh::Sdf`.
 - **`read_buffer`** — results back to the CPU, blocking.
 - **`headless::Gpu`** — a device with no window, and an `AdapterReport` of what it turned out to be.
+- **`Composer`** — WGSL `#include` and `#ifdef`, over modules compiled in with `include_str!`. Not
+  `naga_oil`; see the module docs for why.
+- **`FEATURES`** — every compile-time flag any shader here reads. The validation sweep covers the
+  cross product of modules with **every subset** of it, so a flag missing from this list is a branch
+  nothing ever compiles.
 
-Shaders, their composition, and Marching Cubes itself are GPU-002 through GPU-004.
+Marching Cubes itself is GPU-004.
+
+## Validation
+
+Two layers, and they catch different things.
+
+```bash
+cargo test -p isomesh-gpu every_shader_permutation_validates   # naga, no GPU, belongs in CI
+cargo test -p isomesh-gpu is_valid_wgsl_on_a_real_device       # the driver's own opinion
+```
+
+The `naga` sweep needs no adapter and catches "compiles on my Vulkan driver, explodes on DX12". A
+companion test feeds the validator invalid WGSL and asserts it *rejects* it — a gate that has only
+ever passed is indistinguishable from one that cannot fail.
 
 ```bash
 cargo test -p isomesh-gpu -- --nocapture   # prints the adapter it ran on

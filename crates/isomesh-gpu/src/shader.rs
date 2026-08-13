@@ -66,6 +66,19 @@ use crate::{Error, Result};
 /// says so in its own comments.
 pub const GRID_WGSL: &str = include_str!("shaders/grid.wgsl");
 
+/// Every compile-time flag any shader here reads.
+///
+/// GPU-003's sweep validates the cross product of the registered modules with
+/// **every subset** of this list, so a flag that is not here is a branch nothing
+/// ever compiles. Adding an `#ifdef` to a shader and not adding its symbol here
+/// is therefore the one way to hide a shader from validation — which is why the
+/// list is a `const` in the library rather than a literal in a test.
+///
+/// Empty today: `grid.wgsl` has no conditional compilation in it. The sweep is
+/// still non-vacuous — it validates one variant of one module — and its size is
+/// asserted rather than assumed.
+pub const FEATURES: &[&str] = &[];
+
 /// A registry of WGSL modules, and the preprocessor over them.
 ///
 /// Modules are `&'static str` because they come from `include_str!` — compiled
@@ -115,6 +128,40 @@ impl Composer {
     #[must_use]
     pub fn module_names(&self) -> Vec<&str> {
         self.modules.keys().map(String::as_str).collect()
+    }
+
+    /// Every `(module, defines)` pair this registry can produce, given the
+    /// feature flags in play.
+    ///
+    /// The cross product of registered modules with **every subset** of
+    /// `features` — `modules × 2^features` compositions. That is the set
+    /// GPU-003's validation sweep has to cover, because a `#ifdef` branch that
+    /// no permutation selects is a branch nothing ever compiles, and *"works on
+    /// my Vulkan driver, explodes on DX12"* is the cheap half of what that
+    /// hides.
+    ///
+    /// Deterministic: modules in sorted order, subsets in ascending bitmask
+    /// order, so a failing sweep names the same variant every run.
+    ///
+    /// The count is `modules × 2^features` exactly, which is worth asserting
+    /// rather than trusting — M-44 records that a gate which has only ever
+    /// passed is indistinguishable from one that cannot fail, and a sweep over
+    /// an accidentally empty set passes beautifully.
+    #[must_use]
+    pub fn variants<'a>(&'a self, features: &[&'a str]) -> Vec<(&'a str, Vec<&'a str>)> {
+        let mut out = Vec::new();
+        for name in self.module_names() {
+            for mask in 0..(1u32 << features.len()) {
+                let defines = features
+                    .iter()
+                    .enumerate()
+                    .filter(|(bit, _)| mask & (1 << bit) != 0)
+                    .map(|(_, f)| *f)
+                    .collect();
+                out.push((name, defines));
+            }
+        }
+        out
     }
 
     /// Expand `name` with `defines` set.

@@ -505,6 +505,7 @@ name = "isomesh-gpu"
 version = "0.0.2"
 dependencies = [
  "isomesh",
+ "naga",
  "wgpu",
 ]
 

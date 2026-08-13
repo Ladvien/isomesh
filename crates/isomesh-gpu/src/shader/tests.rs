@@ -1,7 +1,7 @@
 //! Most of this needs no GPU. The last test does, because "the WGSL is valid"
 //! is not a claim a string comparison can make.
 
-use super::Composer;
+use super::{Composer, FEATURES};
 use crate::Error;
 
 fn composer(modules: &[(&str, &'static str)]) -> Composer {
@@ -242,4 +242,107 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {{
     let error = crate::block_on::block_on(scope.pop());
     assert!(error.is_none(), "grid.wgsl failed validation: {error:?}");
     drop(module);
+}
+
+// -- GPU-003: the validation sweep -------------------------------------------
+//
+// No GPU, no device, no display. This is the half that belongs in CI, and it
+// catches the entire class of "compiles on my Vulkan driver, explodes on DX12"
+// before an adapter is ever opened.
+
+/// Parse and validate one composed source with the same `naga` `wgpu` carries.
+///
+/// Returns the error as a string rather than propagating it, because the
+/// interesting output of a sweep is *which variant* failed and what it said,
+/// and a `?` would stop at the first one.
+fn validate(source: &str) -> Result<(), String> {
+    let module = naga::front::wgsl::parse_str(source)
+        .map_err(|e| format!("parse: {}", e.emit_to_string(source)))?;
+    naga::valid::Validator::new(
+        naga::valid::ValidationFlags::all(),
+        naga::valid::Capabilities::all(),
+    )
+    .validate(&module)
+    .map(|_| ())
+    .map_err(|e| format!("validate: {e:?}"))
+}
+
+/// The cross product is `modules × 2^features`, in a stable order.
+///
+/// Asserted with synthetic features because the real list is empty today, and a
+/// combinatorial harness that has only ever been run at n = 0 has not been run.
+#[test]
+fn the_variant_sweep_is_the_full_cross_product() {
+    let c = composer(&[("a", "A\n"), ("b", "B\n")]);
+
+    assert_eq!(c.variants(&[]).len(), 2, "two modules, no features");
+
+    let variants = c.variants(&["X", "Y"]);
+    assert_eq!(variants.len(), 2 * 4, "two modules x 2^2 subsets");
+
+    // Stable order, and every subset present exactly once per module.
+    let for_a: Vec<Vec<&str>> = variants
+        .iter()
+        .filter(|(m, _)| *m == "a")
+        .map(|(_, d)| d.clone())
+        .collect();
+    assert_eq!(
+        for_a,
+        vec![vec![], vec!["X"], vec!["Y"], vec!["X", "Y"]],
+        "subsets must be ascending bitmask order"
+    );
+    assert_eq!(c.variants(&["X", "Y"]), c.variants(&["X", "Y"]));
+}
+
+/// The sweep itself, over what this crate actually ships.
+#[test]
+fn every_shader_permutation_validates() {
+    let composer = Composer::with_builtins();
+    let variants = composer.variants(FEATURES);
+
+    // M-44: a gate that has only ever passed is indistinguishable from one that
+    // cannot fail, and a sweep over an empty set passes beautifully. Pin the
+    // size against what it is derived from.
+    assert_eq!(
+        variants.len(),
+        composer.module_names().len() * (1usize << FEATURES.len()),
+        "the sweep is not the full cross product"
+    );
+    assert!(!variants.is_empty(), "the sweep covered nothing");
+
+    let mut failures = Vec::new();
+    for (module, defines) in &variants {
+        match composer.compose(module, defines) {
+            Ok(source) => {
+                if let Err(why) = validate(&source) {
+                    failures.push(format!("{module} {defines:?}: {why}"));
+                }
+            }
+            Err(why) => failures.push(format!("{module} {defines:?}: compose: {why}")),
+        }
+    }
+    assert!(
+        failures.is_empty(),
+        "{} of {} variants failed:\n{}",
+        failures.len(),
+        variants.len(),
+        failures.join("\n")
+    );
+}
+
+/// And the sweep can fail, which is the only way to know it is a gate.
+///
+/// M-44 again, applied to this test rather than to the code it guards: a
+/// validator that accepts everything would make the test above green forever.
+#[test]
+fn the_validator_rejects_invalid_wgsl() {
+    assert!(validate("fn f() -> f32 { return 1.0; }\n").is_ok());
+    assert!(
+        validate("fn f() -> f32 { return no_such_thing(); }\n").is_err(),
+        "the validator accepted a call to an undeclared function"
+    );
+    assert!(
+        validate("this is not wgsl\n").is_err(),
+        "the validator accepted prose"
+    );
 }

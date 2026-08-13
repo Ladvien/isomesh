@@ -28,5 +28,11 @@ wgpu = { version = "29.0.3", default-features = false, features = [
   "vulkan",
 ] }
 
+[dev-dependencies]
+# GPU-003's validation sweep. Same version as the naga wgpu carries, for the
+# same reason wgpu itself is pinned -- validating with a different naga than the
+# one that will compile the shader checks the wrong compiler.
+naga = { version = "29.0.3", features = ["wgsl-in"] }
+
 [lints]
 workspace = true
