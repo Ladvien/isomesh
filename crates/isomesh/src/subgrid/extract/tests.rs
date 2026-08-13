@@ -235,3 +235,77 @@ fn raising_the_sampling_changes_the_topology_it_finds_but_not_by_much_else() {
         "if they agreed exactly this test is asserting nothing"
     );
 }
+
+#[test]
+fn the_thin_plate_census_reproduces_with_the_real_root_finder() {
+    // M-89 was measured with a throwaway probe carrying its own ad-hoc root
+    // finder, deliberately not committed -- a second root finder in the repo is
+    // the two-path failure the crate forbids. This is the same census through
+    // `all_roots`, which is now the only one there is.
+    //
+    // It counts rather than meshes, so it says what the *field* presents to
+    // §3.2 rather than what §3.2 does about it. The 620 multi-root edges are the
+    // subgrid signal itself: every one is an edge a sign test reads as a single
+    // bit.
+    use crate::marching_tetrahedra::table::TETS;
+    use crate::subgrid::curves::CurveKind;
+    use crate::subgrid::surface::cycles;
+
+    let field = ThinPlate::<f64>::canonical();
+    let (shape, origin, cell) = grid(&field, 33);
+    let size = shape.size();
+
+    let mut tets_with_crossings = 0u32;
+    let mut multi_root_edges = 0u32;
+    let mut kinds = [0u32; 3];
+    let mut along: [Vec<f64>; 6] = Default::default();
+
+    for z in 0..size[2] - 1 {
+        for y in 0..size[1] - 1 {
+            for x in 0..size[0] - 1 {
+                for tet in &TETS {
+                    let mut corners = [[0.0f64; 3]; 4];
+                    for (c, slot) in corners.iter_mut().enumerate() {
+                        let offset = crate::cube::corner_offset(tet[c]);
+                        for axis in 0..3 {
+                            let index = f64::from([x, y, z][axis]) + f64::from(offset[axis]);
+                            slot[axis] = origin[axis] + cell * index;
+                        }
+                    }
+
+                    let mut count = [0u32; 6];
+                    for (e, slot) in along.iter_mut().enumerate() {
+                        slot.clear();
+                        let [lo, hi] = crate::marching_tetrahedra::table::TET_EDGES[e];
+                        crate::subgrid::roots::all_roots(
+                            corners[lo as usize],
+                            corners[hi as usize],
+                            &field,
+                            64,
+                            slot,
+                        );
+                        count[e] = slot.len() as u32;
+                        if slot.len() > 1 {
+                            multi_root_edges += 1;
+                        }
+                    }
+                    if count.iter().all(|n| *n == 0) {
+                        continue;
+                    }
+                    tets_with_crossings += 1;
+                    for c in cycles(&crate::subgrid::coordinates::EdgeCoordinates::new(count)) {
+                        match c.kind {
+                            CurveKind::Open => kinds[0] += 1,
+                            CurveKind::Normal => kinds[1] += 1,
+                            CurveKind::NonNormal => kinds[2] += 1,
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    assert_eq!(tets_with_crossings, 3072, "tets carrying crossings");
+    assert_eq!(multi_root_edges, 620, "edges with more than one root");
+    assert_eq!(kinds, [0, 3060, 192], "curves open / normal / non-normal");
+}
