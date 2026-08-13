@@ -129,6 +129,25 @@ impl ExtractTimings {
     }
 }
 
+/// Extraction output left in GPU memory.
+///
+/// What [`MarchingCubesGpu::extract_buffers`] returns and what
+/// [`MeshShaderRenderer`](crate::MeshShaderRenderer) draws. The buffers carry
+/// `STORAGE | COPY_SRC`, so they can be bound to a shader *or* copied home —
+/// the choice is the caller's and is made after extraction rather than during
+/// it.
+#[derive(Debug)]
+pub struct GpuGeometry {
+    /// Three positions per triangle, flat `f32` triples, in cell order.
+    pub positions: wgpu::Buffer,
+    /// Parallel to `positions`.
+    pub normals: wgpu::Buffer,
+    /// Triangles in the soup. Zero means the buffers are placeholders.
+    pub triangles: u32,
+    /// Where the time went. `geometry_readback_ms` is zero here by definition.
+    pub timings: ExtractTimings,
+}
+
 /// A triangle soup read back from the GPU.
 ///
 /// Positions and normals are parallel and three per triangle, in cell order.
@@ -248,11 +267,12 @@ impl MarchingCubesGpu {
         })
     }
 
-    /// Extract `field` and read the triangles back.
+    /// Extract `field` and read the triangles back to the CPU.
     ///
-    /// Blocks twice: once for the counts, once for the geometry. That is what
-    /// the two-pass design costs and it is the price of a deterministic,
-    /// densely packed output.
+    /// Blocks twice: once for the counts, once for the geometry. A caller that
+    /// only wants to *draw* the result should use
+    /// [`extract_buffers`](Self::extract_buffers) instead and skip the second
+    /// wait entirely — M-149 measures that at 6.7% of the path at 129³.
     ///
     /// # Errors
     ///
@@ -264,6 +284,52 @@ impl MarchingCubesGpu {
         queue: &wgpu::Queue,
         field: &FieldBuffer,
     ) -> Result<GpuMesh> {
+        let geometry = self.extract_buffers(device, queue, field)?;
+        if geometry.triangles == 0 {
+            return Ok(GpuMesh {
+                timings: geometry.timings,
+                ..GpuMesh::default()
+            });
+        }
+
+        let mut timings = geometry.timings;
+        let floats = u64::from(geometry.triangles) * 9;
+        let started = std::time::Instant::now();
+        let flat_positions = read_buffer(device, queue, &geometry.positions, floats * 4)?;
+        let flat_normals = read_buffer(device, queue, &geometry.normals, floats * 4)?;
+        timings.geometry_readback_ms = started.elapsed().as_secs_f64() * 1000.0;
+
+        let triple = |flat: &[f32]| -> Vec<[f32; 3]> {
+            flat.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect()
+        };
+        Ok(GpuMesh {
+            positions: triple(&flat_positions),
+            normals: triple(&flat_normals),
+            timings,
+        })
+    }
+
+    /// Extract `field` and leave the geometry **on the GPU**.
+    ///
+    /// The half of [`extract`](Self::extract) a renderer wants: it still waits
+    /// once, for the per-cell counts the prefix sum needs, but the positions
+    /// and normals are never copied home. Hand the buffers to
+    /// [`MeshShaderRenderer`](crate::MeshShaderRenderer) and they are drawn
+    /// where they were written.
+    ///
+    /// The remaining wait is not a detail to gloss: M-149 measures the counts
+    /// read-back at **1.97 ms of 15.03** at 129³, larger than the geometry
+    /// read-back this removes. Losing it needs a GPU scan (GPU-010).
+    ///
+    /// # Errors
+    ///
+    /// As [`extract`](Self::extract).
+    pub fn extract_buffers(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        field: &FieldBuffer,
+    ) -> Result<GpuGeometry> {
         let params = field.params();
         let cells = params.cell_count();
         let groups = cells.div_ceil(u64::from(WORKGROUP));
@@ -343,9 +409,22 @@ impl MarchingCubesGpu {
         let triangles = running;
         if triangles == 0 {
             timings.prefix_ms = started.elapsed().as_secs_f64() * 1000.0;
-            return Ok(GpuMesh {
+            // An empty surface still needs bindable buffers: wgpu rejects a
+            // zero-sized binding, and a caller looping over `triangles` will
+            // never read them.
+            let empty = |label| {
+                device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some(label),
+                    size: 4,
+                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                    mapped_at_creation: false,
+                })
+            };
+            return Ok(GpuGeometry {
+                positions: empty("isomesh positions (empty)"),
+                normals: empty("isomesh normals (empty)"),
+                triangles: 0,
                 timings,
-                ..GpuMesh::default()
             });
         }
 
@@ -374,16 +453,10 @@ impl MarchingCubesGpu {
         );
         timings.emit_ms = started.elapsed().as_secs_f64() * 1000.0;
 
-        let started = std::time::Instant::now();
-        let flat_positions = read_buffer(device, queue, &positions, vertex_floats * 4)?;
-        let flat_normals = read_buffer(device, queue, &normals, vertex_floats * 4)?;
-        timings.geometry_readback_ms = started.elapsed().as_secs_f64() * 1000.0;
-        let triple = |flat: &[f32]| -> Vec<[f32; 3]> {
-            flat.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect()
-        };
-        Ok(GpuMesh {
-            positions: triple(&flat_positions),
-            normals: triple(&flat_normals),
+        Ok(GpuGeometry {
+            positions,
+            normals,
+            triangles,
             timings,
         })
     }

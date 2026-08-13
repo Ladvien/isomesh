@@ -365,3 +365,76 @@ fn the_agreement_is_a_distance_and_holds_at_a_non_power_of_two_spacing() {
         );
     }
 }
+
+/// `extract_buffers` is the same extraction with the last wait removed.
+///
+/// Same triangle count as the read-back path, and `geometry_readback_ms` is
+/// zero by construction rather than by luck — if it were not, the "drawing
+/// needs no read-back" claim in `mesh_render` would be false.
+#[test]
+fn extract_buffers_matches_extract_and_skips_the_geometry_readback() {
+    let gpu = gpu();
+    let mc = MarchingCubesGpu::new(gpu.device(), gpu.queue()).expect("pipeline");
+    let grid = GridParams::new([33; 3], [-2.0; 3], 0.125).expect("valid grid");
+    let field = Sphere::<f32>::canonical();
+    let buffer = FieldBuffer::sampled(gpu.device(), gpu.queue(), grid, &field).expect("upload");
+
+    let read_back = mc
+        .extract(gpu.device(), gpu.queue(), &buffer)
+        .expect("extract");
+    let on_gpu = mc
+        .extract_buffers(gpu.device(), gpu.queue(), &buffer)
+        .expect("extract_buffers");
+
+    assert_eq!(
+        on_gpu.triangles as usize,
+        read_back.triangle_count(),
+        "the two entry points disagree about how many triangles there are"
+    );
+    assert_eq!(
+        on_gpu.timings.geometry_readback_ms, 0.0,
+        "extract_buffers read the geometry back after all"
+    );
+    // And the read-back path really does pay that cost, or the assertion above
+    // is comparing against a stage nobody runs.
+    assert!(
+        read_back.timings.geometry_readback_ms > 0.0,
+        "extract did not time its geometry read-back"
+    );
+
+    // The buffers are bindable as storage, which is what a mesh shader needs.
+    assert!(
+        on_gpu
+            .positions
+            .usage()
+            .contains(wgpu::BufferUsages::STORAGE),
+        "positions cannot be bound to a shader"
+    );
+    assert!(
+        on_gpu.normals.usage().contains(wgpu::BufferUsages::STORAGE),
+        "normals cannot be bound to a shader"
+    );
+}
+
+/// An empty surface still hands back bindable buffers.
+///
+/// wgpu rejects a zero-sized binding, so a caller that always binds -- which a
+/// renderer does -- would fail on an empty chunk if these were zero-length.
+#[test]
+fn empty_extraction_still_yields_bindable_buffers() {
+    let gpu = gpu();
+    let mc = MarchingCubesGpu::new(gpu.device(), gpu.queue()).expect("pipeline");
+    let grid = GridParams::new([9; 3], [10.0; 3], 0.1).expect("valid grid");
+    let buffer = FieldBuffer::sampled(gpu.device(), gpu.queue(), grid, &Sphere::<f32>::canonical())
+        .expect("upload");
+
+    let on_gpu = mc
+        .extract_buffers(gpu.device(), gpu.queue(), &buffer)
+        .expect("extract_buffers");
+    assert_eq!(on_gpu.triangles, 0);
+    assert!(
+        on_gpu.positions.size() > 0,
+        "a zero-sized binding is invalid"
+    );
+    assert!(on_gpu.normals.size() > 0);
+}
