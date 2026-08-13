@@ -666,7 +666,7 @@ fn the_coverage_of_the_implemented_cases_is_pinned() {
     // of the remaining gap here is §3.2.2's corner and contractible types.
     assert_eq!(
         [none, single, subdivision, non_normal, no_pattern],
-        [3808, 0, 0, 288, 0],
+        [4096, 0, 0, 0, 0],
         "coverage moved: [None, SingleLoop, Subdivision, NonNormalLoop, NoPattern]"
     );
     assert_eq!(
@@ -727,19 +727,24 @@ fn non_normal_loops_are_classified_and_all_three_types_are_reachable() {
 }
 
 #[test]
-fn only_corner_type_non_normal_loops_are_still_refused() {
+fn all_three_non_normal_types_now_have_a_spanning_disk() {
     // Diagonal loops fan around a centre of mass in the tet interior;
-    // contractible loops get a disk built in the tet boundary. Corner type is
-    // the one left, because it needs §3.2.2's two extras on top of the disk --
-    // omitting the vertex that coincides with the inside corner, and a triangle
-    // at that corner.
+    // contractible and corner loops get a disk built in the tet boundary, the
+    // corner one with §3.2.2's two extras -- the vertex coinciding with the
+    // inside corner omitted, and a triangle capping that corner.
     //
     // Swept over the whole space rather than the `[a, b, c, 0, 0, 0]` corner of
     // it: that subspace never produces a corner-type loop at all, and the
-    // reachability assertion at the end is what caught the test claiming to
-    // cover a branch it could not reach.
-    let mut filled = 0;
-    let mut refused = 0;
+    // reachability counters below are what caught an earlier version claiming
+    // to cover a branch it could not reach.
+    let mut seen = [0u32; 3];
+    let mut empty_disks = 0u32;
+    let slot = |kind: NonNormalKind| match kind {
+        NonNormalKind::Contractible => 0usize,
+        NonNormalKind::Diagonal => 1,
+        NonNormalKind::Corner => 2,
+    };
+
     for raw in 0..4096u32 {
         {
             {
@@ -755,36 +760,51 @@ fn only_corner_type_non_normal_loops_are_still_refused() {
                 if non_normal.is_empty() {
                     continue;
                 }
+                for x in &non_normal {
+                    if let Some(kind) = x.non_normal_kind() {
+                        seen[slot(kind)] += 1;
+                    }
+                }
+
                 let owned = crossings(coords.count);
                 let mut patch = TetPatch::new();
                 let outcome = fill(&tet(&owned), &mut patch).expect("well-formed");
-                // Diagonal and contractible loops both have spanning disks now;
-                // corner type is the one still refused, and it is the only one.
-                if non_normal
-                    .iter()
-                    .any(|x| x.non_normal_kind() == Some(NonNormalKind::Corner))
-                {
-                    assert_eq!(
-                        outcome,
-                        Unfilled::NonNormalLoop,
-                        "{:?}: a corner-type loop should be refused",
-                        coords.count
-                    );
-                    refused += 1;
-                } else {
-                    assert_ne!(
-                        outcome,
-                        Unfilled::NonNormalLoop,
-                        "{:?}: diagonal and contractible loops should fill",
-                        coords.count
-                    );
-                    filled += 1;
+                assert_eq!(
+                    outcome,
+                    Unfilled::None,
+                    "{:?}: every non-normal type has a disk now",
+                    coords.count
+                );
+                // Not "every non-normal loop produces triangles". The minimal
+                // one -- `e = (2, 0, 0, 0, 0, 0)`, a single scoop pair -- has an
+                // inside region that is a **bigon**: one chord and one edge
+                // piece, two nodes, and a fan over two nodes is empty. That is
+                // V-21's degeneracy at its most extreme, and it is correct here:
+                // the region has zero area until A-014d insets it into the tet
+                // interior. Counted rather than asserted away, so the number
+                // moves if the behaviour does.
+                if patch.triangles.is_empty() {
+                    empty_disks += 1;
                 }
             }
         }
     }
-    assert!(refused > 0, "no corner-type loop was reached");
-    assert!(filled > 0, "no diagonal or contractible loop was reached");
+    for kind in [
+        NonNormalKind::Contractible,
+        NonNormalKind::Diagonal,
+        NonNormalKind::Corner,
+    ] {
+        assert!(
+            seen[slot(kind)] > 0,
+            "{kind:?} was never reached, so its disk is untested"
+        );
+    }
+    // 105 of the configurations carrying a non-normal loop triangulate to
+    // nothing, because their inside regions are bigons -- a chord plus a single
+    // edge piece. V-21: correct at this stage, zero area until A-014d insets
+    // them into the tet interior. Pinned so the number moves if the behaviour
+    // does, rather than hiding inside a green tick.
+    assert_eq!(empty_disks, 105, "degenerate bigon disks");
 }
 
 #[test]

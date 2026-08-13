@@ -473,10 +473,13 @@ pub fn fill<R: Real>(
             Some(NonNormalKind::Contractible) => {
                 unfilled = unfilled.worst(fill_boundary_disk(&coords, cycle, &index_of, out));
             }
-            // Corner type still wants the same disk plus §3.2.2's two extras --
-            // omitting the vertex that coincides with the inside corner, and a
-            // triangle at that corner.
-            _ => unfilled = unfilled.worst(Unfilled::NonNormalLoop),
+            // Corner type: the same disk, plus §3.2.2's two extras -- omitting
+            // the vertex coinciding with the inside corner, and a triangle at
+            // that corner.
+            Some(NonNormalKind::Corner) => {
+                unfilled = unfilled.worst(fill_boundary_disk(&coords, cycle, &index_of, out));
+            }
+            None => unfilled = unfilled.worst(Unfilled::Inconsistent),
         }
     }
 
@@ -562,9 +565,16 @@ fn fill_boundary_disk<R: Real>(
     index_of: &impl Fn(FacePoint) -> u32,
     out: &mut TetPatch<R>,
 ) -> Unfilled {
-    if cycle.non_normal_kind() != Some(NonNormalKind::Contractible) {
-        return Unfilled::NonNormalLoop;
-    }
+    // A contractible loop has no inside corner; a corner-type loop has exactly
+    // one, and it is the only corner a qualifying region may contain.
+    let inside_corner = match cycle.non_normal_kind() {
+        Some(NonNormalKind::Contractible) => None,
+        Some(NonNormalKind::Corner) => match cycle.distinguished_corner() {
+            Some(v) => Some(v),
+            None => return Unfilled::Inconsistent,
+        },
+        _ => return Unfilled::NonNormalLoop,
+    };
 
     for face in 0..TET_FACE_COUNT as u8 {
         let Some(regions) = face_regions(face, coords, cycle) else {
@@ -575,6 +585,11 @@ fn fill_boundary_disk<R: Real>(
             for node in &region.node {
                 match node {
                     Node::Crossing(p) => corner.push(index_of(*p)),
+                    // "If one of P's vertices coincides with the 'inside' vertex
+                    // of a corner loop, we omit this vertex from P."
+                    Node::Corner(c) if Some(*c) == inside_corner => {}
+                    // An outside corner cannot be in a qualifying region: the
+                    // arcs touching it carry its own label, which is outside.
                     Node::Corner(_) => return Unfilled::Inconsistent,
                 }
             }
@@ -586,6 +601,39 @@ fn fill_boundary_disk<R: Real>(
             }
         }
     }
+
+    // "For corner-type loops we also emit a triangle at the corner." It closes
+    // the disk over the vertex the regions just omitted, and its three vertices
+    // are the crossings nearest that corner along its three incident edges --
+    // the innermost ones, which is what makes it a cap rather than an overlap.
+    if let Some(v) = inside_corner {
+        let mut cap = [0u32; 3];
+        for (slot, other) in cap.iter_mut().zip((0..4u8).filter(|c| *c != v)) {
+            let edge = super::coordinates::edge_between(v, other);
+            let [lo, _hi] = TET_EDGES[edge as usize];
+            let mut index: Vec<u32> = cycle
+                .points
+                .iter()
+                .filter(|p| p.edge == edge)
+                .map(|p| p.index)
+                .collect();
+            index.sort_unstable();
+            let nearest = if v == lo {
+                index.first().copied()
+            } else {
+                index.last().copied()
+            };
+            match nearest {
+                // Every edge at the distinguished corner carries an odd -- so
+                // non-zero -- number of this loop's crossings, by the parity
+                // rule that identified the corner in the first place.
+                Some(at) => *slot = index_of(FacePoint { edge, index: at }),
+                None => return Unfilled::Inconsistent,
+            }
+        }
+        out.triangles.push(cap);
+    }
+
     Unfilled::None
 }
 
