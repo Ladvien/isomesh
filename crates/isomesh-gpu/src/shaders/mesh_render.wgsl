@@ -1,12 +1,18 @@
 // Drawing isomesh's compute output with mesh shaders, without ever reading it
 // back.
 //
-// This is the path M-145 measured and did not have: `count + emit` is 0.13 ms
-// at 129^3 while the whole GPU route is 15 ms, and essentially all of the
-// difference is moving data. A mesh shader consumes the very buffers
-// `marching_cubes.wgsl` wrote -- positions and normals, in place, on the GPU --
-// so there is no read-back, no vertex buffer and no index buffer between
-// extraction and the rasteriser.
+// A mesh shader consumes the very buffers `marching_cubes.wgsl` wrote --
+// positions and normals, in place, on the GPU -- so *drawing* needs no
+// read-back, no vertex buffer and no index buffer.
+//
+// Be precise about what that saves, because an earlier version of this comment
+// was not. The extraction still reads the per-cell counts back to prefix-sum
+// them on the CPU, so the pipeline as a whole is not read-back-free. Measured
+// (M-149): the geometry read-back this removes is **6.7% of the GPU path at
+// 129^3** and is the *smallest* of the three data-movement costs -- counts
+// read-back 1.97 ms, CPU prefix sum 3.27 ms, upload 8.63 ms, geometry
+// read-back 1.00 ms. Removing all of it needs a GPU scan and an indirect
+// draw, which is GPU-010.
 //
 // The input is the triangle SOUP those kernels emit: three vertices per
 // triangle, in cell order, `array<f32>` with x fastest. No indices, because

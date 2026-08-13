@@ -3,11 +3,29 @@
 //! # What this is for
 //!
 //! M-145 measured the whole GPU route at 15 ms on a 129³ sphere, of which the
-//! *extraction* was 0.13 ms. Everything else was moving data — upload, two
-//! read-backs, a CPU prefix sum. A mesh shader removes the largest remaining
-//! piece on the output side: it consumes the position and normal buffers
-//! `marching_cubes.wgsl` wrote, in place, so nothing is read back and no vertex
-//! or index buffer is built between extraction and the rasteriser.
+//! *extraction* was 0.13 ms. Everything else was moving data. This pipeline
+//! consumes the position and normal buffers `marching_cubes.wgsl` wrote, in
+//! place, so **drawing** builds no vertex or index buffer and reads nothing
+//! back.
+//!
+//! # How much that is worth, stated rather than implied
+//!
+//! An earlier version of this page said it removed "the largest remaining
+//! piece", and that is wrong. The extraction still reads per-cell counts back
+//! to prefix-sum them on the CPU. Measured (M-149), at 129³:
+//!
+//! | | ms | share of the GPU path |
+//! |---|---:|---:|
+//! | upload | 8.63 | 57% |
+//! | CPU prefix sum | 3.27 | 22% |
+//! | counts read-back | 1.97 | 13% |
+//! | **geometry read-back — what this removes** | **1.00** | **6.7%** |
+//!
+//! So this is worth about 6.7% at 129³, rising to 40% at 17³ where the whole
+//! path is small. It is the *smallest* of the three data-movement costs, not
+//! the largest. Removing the rest needs a GPU prefix scan and
+//! `draw_mesh_tasks_indirect`, which is GPU-010; this pipeline is a
+//! precondition for that rather than the win by itself.
 //!
 //! # It refuses rather than falls back
 //!
