@@ -170,6 +170,50 @@ cd bevy_isomesh && cargo run --example greedy_quads --release
 
 ---
 
+## The sharpness knob, and what it costs at both ends
+
+![Dual Contouring on a capped gyroid with the lambda slider, showing the runaway and rounding measurements in the HUD](../screenshots/e109-sharp-features-gyroid.png)
+
+*`sharp_features` — one model, a live slider on **λ**, the Tikhonov regularizer in the vertex solve. It
+is the whole sharpness/stability trade in one number, and it was a compile-time constant until this
+demo needed to turn it.*
+
+Toward **zero** the solve is the unregularized plane intersection: a corner where three planes meet
+comes out exactly, which is the entire reason to run Dual Contouring rather than Surface Nets. But a
+*flat* cell has a rank-1 system, nothing determines its vertex along two directions, and with no
+regularizer holding it, it leaves. Toward **large**, every vertex is pulled to the centroid of its
+crossings, nothing flies anywhere, and every sharp edge rounds over.
+
+On `gyroid` at 25³ with the clamp off, sweeping λ over six decades:
+
+| λ | worst \|f\| / h | worst clamp move |
+|---|---|---|
+| `1e-6` | 10.54 | **18.03 cells** |
+| `7e-5` | 3.38 | 8.99 |
+| `4e-3` | 2.24 | 3.41 |
+| `5e-1` | 0.60 | 0.78 |
+
+**Two numbers, because the two failures are not the same failure and one metric cannot see both.**
+`|f|/h` is blind to the runaway exactly where it matters: a flat cell's unconstrained directions lie
+*within* the surface, so an unheld vertex slides along the plane and stays on it. On `box_exact` at
+λ = `1e-6` it reads **0.000** — a perfect-looking mesh with a vertex several cells from where it
+belongs.
+
+And the field matters as much as the metric. That same `box_exact` sweep gives **0.000 runaway at every
+λ**, because M-30 measured this failure on `gyroid` and `fbm_terrain` and said plainly that *"sphere,
+box_exact and thin_plate have zero vertices outside"*. Press `3` for the field that shows it (M-107).
+
+The clamp is off by default here and *only* here: A-009's cell clamp confines every vertex to its own
+cell, so with it on none of this is visible. That is why it is the crate's default.
+
+```bash
+cd bevy_isomesh && cargo run --example sharp_features --release
+```
+
+`-` `=` λ · `C` clamp · `1`–`4` field · `[` `]` resolution.
+
+---
+
 ## Where an algorithm breaks, measured rather than described
 
 ![Surface Nets against Marching Cubes on a capped gyroid](../gifs/surface-nets-vs-marching-cubes-gyroid.gif)

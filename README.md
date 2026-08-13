@@ -98,7 +98,7 @@ quoted from a paper.
 | **[Algorithms](docs/demos/algorithms.md)** | Marching Cubes · Surface Nets · Dual Contouring · Manifold Dual Contouring · Marching Tetrahedra · greedy quads · subgrid Marching Tetrahedra, and a six-way shootout in one process |
 | **[Correctness](docs/demos/correctness.md)** | where a mesh stops being a manifold · what splitting the vertex costs · which way the surface faces · ambiguous faces · the crack between two chunks |
 
-Between them they carry 17 demos, 6 GIFs and every measured figure this crate makes a claim about.
+Between them they carry 18 demos, 6 GIFs and every measured figure this crate makes a claim about.
 
 ---
 

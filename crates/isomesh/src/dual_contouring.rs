@@ -199,10 +199,6 @@ impl<R: Real> DualContouring<R> {
         }
     }
 
-    /// Whether solved vertices are confined to their own cells.
-    ///
-    /// Defaults to [`Clamp::ToCell`]. See [`Clamp`] for why, and A-009's archive
-    /// entry for what it measured.
     /// The Tikhonov regularizer, the knob that trades sharpness for stability.
     ///
     /// `None` restores [`solve::LAMBDA`]. Toward zero, a three-plane corner comes
@@ -212,6 +208,10 @@ impl<R: Real> DualContouring<R> {
         self.rule.lambda = lambda;
     }
 
+    /// Whether solved vertices are confined to their own cells.
+    ///
+    /// Defaults to [`Clamp::ToCell`]. See [`Clamp`] for why, and A-009's archive
+    /// entry for what it measured.
     pub fn set_clamp(&mut self, clamp: Clamp) {
         self.rule.clamp = clamp;
     }
