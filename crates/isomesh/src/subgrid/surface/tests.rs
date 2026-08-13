@@ -514,6 +514,69 @@ fn the_shared_face_of_two_tets_carries_no_crack() {
 }
 
 #[test]
+fn the_coverage_of_the_implemented_cases_is_pinned() {
+    // How much of the encoding §3.2 currently serves, over every configuration
+    // with 0..=3 crossings on each of the six edges. Pinned as exact counts
+    // rather than a ratio so a regression moves a number rather than rounding
+    // away, and so the remaining work has a size.
+    let mut none = 0u32;
+    let mut single = 0u32;
+    let mut subdivision = 0u32;
+    let mut non_normal = 0u32;
+    let mut no_pattern = 0u32;
+    let mut inconsistent = 0u32;
+
+    for raw in 0..4096u32 {
+        let mut count = [0u32; TET_EDGE_COUNT];
+        for (e, slot) in count.iter_mut().enumerate() {
+            *slot = (raw >> (2 * e)) & 0b11;
+        }
+        let owned = crossings(count);
+        let outcome = match fill(&tet(&owned), &mut TetPatch::new()) {
+            Ok(o) => o,
+            Err(e) => panic!("{count:?} was rejected as malformed: {e:?}"),
+        };
+        match outcome {
+            Unfilled::None => none += 1,
+            Unfilled::SingleLoop => single += 1,
+            Unfilled::Subdivision => subdivision += 1,
+            Unfilled::NonNormalLoop => non_normal += 1,
+            Unfilled::NoPattern => no_pattern += 1,
+            Unfilled::Inconsistent => inconsistent += 1,
+        }
+    }
+
+    // Nothing may reach Inconsistent: it names a disagreement between the
+    // curves and the crossing lists, which is this crate's own bug and not a
+    // case. A non-zero here is always a defect, never a missing feature.
+    assert_eq!(inconsistent, 0, "Inconsistent is a bug, not a case");
+
+    // Two of these are load-bearing zeros rather than gaps.
+    //
+    // `NoPattern` is zero, which says Property II held on Γ_normal's own
+    // residual in every one of the 4,096 configurations — an empirical check of
+    // Theorem B.3 across the whole sweep, and the thing M-85's restructure was
+    // needed to make true.
+    //
+    // `SingleLoop` and `Subdivision` are zero because neither case is *reachable*
+    // at these counts: both need a residual pattern with ℓ > 8, which wants
+    // larger d₁ and d₂ than three crossings per edge can supply. They are
+    // exercised by `an_unimplemented_case_is_named_rather_than_guessed_at` and
+    // `a_single_long_loop_fans_around_its_centre_of_mass` instead. So the whole
+    // of the remaining gap here is §3.2.2's corner and contractible types.
+    assert_eq!(
+        [none, single, subdivision, non_normal, no_pattern],
+        [3394, 0, 0, 702, 0],
+        "coverage moved: [None, SingleLoop, Subdivision, NonNormalLoop, NoPattern]"
+    );
+    assert_eq!(
+        none + single + subdivision + non_normal + no_pattern,
+        4096,
+        "the outcomes do not partition the sweep"
+    );
+}
+
+#[test]
 fn non_normal_loops_are_classified_and_all_three_types_are_reachable() {
     // §3.2.2's parity rule: b_ij = e_ij^γ mod 2 over the loop's own coordinates,
     // p = b₀₁ + b₀₂ + b₀₃, then 0 → contractible, 2 → diagonal, 1 or 3 →
