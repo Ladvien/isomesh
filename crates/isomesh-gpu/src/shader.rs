@@ -73,6 +73,9 @@ pub const MARCHING_CUBES_WGSL: &str = include_str!("shaders/marching_cubes.wgsl"
 /// output's buffers and needs no grid.
 pub const MESH_RENDER_WGSL: &str = include_str!("shaders/mesh_render.wgsl");
 
+/// The hierarchical exclusive prefix scan over per-cell triangle counts.
+pub const SCAN_WGSL: &str = include_str!("shaders/scan.wgsl");
+
 /// Every compile-time flag any shader here reads.
 ///
 /// GPU-003's sweep validates the cross product of the registered modules with
@@ -121,6 +124,7 @@ impl Composer {
         composer.insert("grid", GRID_WGSL);
         composer.insert("marching_cubes", MARCHING_CUBES_WGSL);
         composer.insert("mesh_render", MESH_RENDER_WGSL);
+        composer.insert("scan", SCAN_WGSL);
         composer
     }
 

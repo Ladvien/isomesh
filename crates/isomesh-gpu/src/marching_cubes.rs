@@ -42,7 +42,7 @@
 
 use isomesh::marching_cubes::table::{self, MAX_TRIANGLES};
 
-use crate::{Composer, Error, FieldBuffer, GridParams, Result, read_buffer, read_buffer_u32};
+use crate::{Composer, Error, FieldBuffer, GridParams, PrefixScan, Result, read_buffer};
 
 /// Words per case in the uploaded table: a header, then one per triangle.
 const CASE_STRIDE: usize = 1 + MAX_TRIANGLES;
@@ -92,10 +92,16 @@ pub fn case_table_bytes() -> Vec<u8> {
 pub struct ExtractTimings {
     /// Classifying every cell and writing per-cell triangle counts.
     pub count_ms: f64,
-    /// Reading those counts back — the barrier the two-pass design costs.
-    pub counts_readback_ms: f64,
-    /// The CPU-side exclusive prefix sum and the offsets upload.
-    pub prefix_ms: f64,
+    /// The GPU prefix scan, including the four-byte total read-back it ends
+    /// with.
+    ///
+    /// One field where there were two. Before GPU-010a this stage was a
+    /// **read-back of every per-cell count** followed by a CPU prefix sum —
+    /// 1.97 ms and 3.28 ms of a 15.03 ms run at 129³, and 8 MB copied home to
+    /// add up (M-149). Both are now one dispatch chain and four bytes, so
+    /// reporting them separately would be reporting a stage that no longer
+    /// exists.
+    pub scan_ms: f64,
     /// Classifying again and writing the triangles.
     pub emit_ms: f64,
     /// Reading positions and normals back.
@@ -106,23 +112,19 @@ impl ExtractTimings {
     /// Everything above, summed.
     #[must_use]
     pub fn total_ms(&self) -> f64 {
-        self.count_ms
-            + self.counts_readback_ms
-            + self.prefix_ms
-            + self.emit_ms
-            + self.geometry_readback_ms
+        self.count_ms + self.scan_ms + self.emit_ms + self.geometry_readback_ms
     }
 
     /// The share spent moving data back to the CPU rather than computing.
     ///
-    /// The number that decides whether a GPU path is worth it at all: a
-    /// consumer rendering straight from GPU memory never pays it, and one that
-    /// needs a collider always does.
+    /// Only the geometry read-back counts. The scan ends with four bytes, which
+    /// is a latency cost rather than a bandwidth one, and folding it in here
+    /// would make a `u32` look like data movement.
     #[must_use]
     pub fn readback_share(&self) -> f64 {
         let total = self.total_ms();
         if total > 0.0 {
-            (self.counts_readback_ms + self.geometry_readback_ms) / total
+            self.geometry_readback_ms / total
         } else {
             0.0
         }
@@ -189,6 +191,7 @@ pub struct MarchingCubesGpu {
     emit: wgpu::ComputePipeline,
     layout: wgpu::BindGroupLayout,
     cases: wgpu::Buffer,
+    scan: PrefixScan,
 }
 
 impl MarchingCubesGpu {
@@ -264,6 +267,7 @@ impl MarchingCubesGpu {
             emit: compile("emit_cells"),
             layout,
             cases,
+            scan: PrefixScan::new(device)?,
         })
     }
 
@@ -390,25 +394,16 @@ impl MarchingCubesGpu {
         );
         timings.count_ms = started.elapsed().as_secs_f64() * 1000.0;
 
+        // Prefix-sum on the GPU. Before GPU-010a this read every per-cell count
+        // home -- 8 MB at 129^3 -- and added them up on the CPU, which M-149
+        // measured at 35% of the whole path. What comes back now is the total,
+        // four bytes, needed to size the geometry buffers.
         let started = std::time::Instant::now();
-        let per_cell = read_buffer_u32(device, queue, &counts, counts_bytes)?;
-        timings.counts_readback_ms = started.elapsed().as_secs_f64() * 1000.0;
-        let started = std::time::Instant::now();
+        let scanned = self.scan.scan(device, queue, &counts, cell_words)?;
+        let triangles = scanned.total;
+        timings.scan_ms = started.elapsed().as_secs_f64() * 1000.0;
 
-        // Exclusive prefix sum on the CPU. A scan kernel is the obvious
-        // optimisation and is not this ticket -- the readback is already the
-        // dominant cost and a wrong scan is a class of bug this does not have.
-        let mut running = 0u32;
-        let mut offsets = Vec::with_capacity(per_cell.len());
-        for n in &per_cell {
-            offsets.push(running);
-            running = running.checked_add(*n).ok_or(Error::GridTooLarge {
-                samples: params.samples(),
-            })?;
-        }
-        let triangles = running;
         if triangles == 0 {
-            timings.prefix_ms = started.elapsed().as_secs_f64() * 1000.0;
             // An empty surface still needs bindable buffers: wgpu rejects a
             // zero-sized binding, and a caller looping over `triangles` will
             // never read them.
@@ -428,14 +423,17 @@ impl MarchingCubesGpu {
             });
         }
 
-        let mut offset_bytes = Vec::with_capacity(offsets.len() * 4);
-        for o in &offsets {
-            offset_bytes.extend_from_slice(&o.to_le_bytes());
-        }
-        queue.write_buffer(&counts, 0, &offset_bytes);
-        timings.prefix_ms = started.elapsed().as_secs_f64() * 1000.0;
-
         let vertex_floats = u64::from(triangles) * 3 * 3;
+        // The CPU's `checked_add` used to catch a count that overflowed a u32;
+        // a GPU scan wraps silently instead, so the guard moves to the thing
+        // that actually breaks -- a binding larger than the device accepts.
+        // Without this the failure is a driver-side validation error rather
+        // than a named one.
+        if vertex_floats * 4 > device.limits().max_storage_buffer_binding_size {
+            return Err(Error::GridTooLarge {
+                samples: params.samples(),
+            });
+        }
         let geometry = |label| {
             device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some(label),
@@ -449,7 +447,17 @@ impl MarchingCubesGpu {
 
         let started = std::time::Instant::now();
         self.dispatch(
-            device, queue, &uniform, field, &counts, &positions, &normals, &self.emit, groups,
+            device,
+            queue,
+            &uniform,
+            field,
+            // The scan's output, not the raw counts: `emit_cells` reads binding
+            // 3 as "where does this cell's first triangle go".
+            &scanned.offsets,
+            &positions,
+            &normals,
+            &self.emit,
+            groups,
         );
         timings.emit_ms = started.elapsed().as_secs_f64() * 1000.0;
 

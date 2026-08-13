@@ -216,8 +216,7 @@ fn measure_median(
         upload_ms: pick(|p| p.upload_ms),
         gpu: ExtractTimings {
             count_ms: pick(|p| p.gpu.count_ms),
-            counts_readback_ms: pick(|p| p.gpu.counts_readback_ms),
-            prefix_ms: pick(|p| p.gpu.prefix_ms),
+            scan_ms: pick(|p| p.gpu.scan_ms),
             emit_ms: pick(|p| p.gpu.emit_ms),
             geometry_readback_ms: pick(|p| p.gpu.geometry_readback_ms),
         },
@@ -274,15 +273,14 @@ fn run(
         for samples in SWEEP {
             if let Some(point) = measure_median(&gpu.0, &device, &queue, field.as_ref(), samples) {
                 info!(
-                    "{name} {:>3}^3: {:>7} tris | cpu {:>8.2} ms | gpu total {:>8.2} = upload {:>7.2} + count {:>6.2} + counts-rb {:>6.2} + prefix {:>5.2} + emit {:>6.2} + geom-rb {:>7.2} | compute-only {:>6.2} | readback {:>4.0}%",
+                    "{name} {:>3}^3: {:>7} tris | cpu {:>8.2} ms | gpu total {:>8.2} = upload {:>7.2} + count {:>6.2} + scan {:>6.2} + emit {:>6.2} + geom-rb {:>7.2} | compute-only {:>6.2} | readback {:>4.0}%",
                     point.samples,
                     point.triangles,
                     point.cpu_ms,
                     point.gpu_total_ms(),
                     point.upload_ms,
                     point.gpu.count_ms,
-                    point.gpu.counts_readback_ms,
-                    point.gpu.prefix_ms,
+                    point.gpu.scan_ms,
                     point.gpu.emit_ms,
                     point.gpu.geometry_readback_ms,
                     point.gpu_compute_ms(),
@@ -373,18 +371,17 @@ fn run(
 /// numbers are already on screen and in the log either way.
 fn write_sweep_csv(field: &str, sweep: &[Point]) {
     let mut out = String::from(
-        "field,samples,triangles,cpu_ms,upload_ms,count_ms,counts_readback_ms,prefix_ms,emit_ms,geometry_readback_ms,gpu_total_ms,gpu_compute_ms\n",
+        "field,samples,triangles,cpu_ms,upload_ms,count_ms,scan_ms,emit_ms,geometry_readback_ms,gpu_total_ms,gpu_compute_ms\n",
     );
     for p in sweep {
         out.push_str(&format!(
-            "{field},{},{},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6}\n",
+            "{field},{},{},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6}\n",
             p.samples,
             p.triangles,
             p.cpu_ms,
             p.upload_ms,
             p.gpu.count_ms,
-            p.gpu.counts_readback_ms,
-            p.gpu.prefix_ms,
+            p.gpu.scan_ms,
             p.gpu.emit_ms,
             p.gpu.geometry_readback_ms,
             p.gpu_total_ms(),
@@ -452,14 +449,9 @@ fn report(state: Res<State>, mut stats: ResMut<DemoStats>) {
             bar(p.gpu.count_ms)
         ),
         format!(
-            "     counts read-back                    {:>8.2} ms  {}",
-            p.gpu.counts_readback_ms,
-            bar(p.gpu.counts_readback_ms)
-        ),
-        format!(
-            "     prefix sum                          {:>8.2} ms  {}",
-            p.gpu.prefix_ms,
-            bar(p.gpu.prefix_ms)
+            "     prefix scan (gpu) + 4-byte total    {:>8.2} ms  {}",
+            p.gpu.scan_ms,
+            bar(p.gpu.scan_ms)
         ),
         format!(
             "     emit pass                           {:>8.2} ms  {}",

@@ -84,7 +84,7 @@ same grid, at any resolution you like.
 
 ## Status
 
-Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 86 tickets done, 5 open.
+Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 87 tickets done, 5 open.
 
 | | |
 |---|---|

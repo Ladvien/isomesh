@@ -6,13 +6,12 @@
 // read-back, no vertex buffer and no index buffer.
 //
 // Be precise about what that saves, because an earlier version of this comment
-// was not. The extraction still reads the per-cell counts back to prefix-sum
-// them on the CPU, so the pipeline as a whole is not read-back-free. Measured
-// (M-149): the geometry read-back this removes is **6.7% of the GPU path at
-// 129^3** and is the *smallest* of the three data-movement costs -- counts
-// read-back 1.97 ms, CPU prefix sum 3.27 ms, upload 8.63 ms, geometry
-// read-back 1.00 ms. Removing all of it needs a GPU scan and an indirect
-// draw, which is GPU-010.
+// was not (M-149). Since GPU-010a moved the prefix sum onto the GPU, the
+// geometry read-back this removes is 0.78 ms of a 9.65 ms path at 129^3 --
+// 8.1% -- and the dominant remaining cost is the upload at 87%, which is field
+// evaluation on the CPU rather than anything a renderer can fix. The last
+// read-back is the four-byte total, and losing that needs an indirect draw
+// (GPU-010b).
 //
 // The input is the triangle SOUP those kernels emit: three vertices per
 // triangle, in cell order, `array<f32>` with x fastest. No indices, because

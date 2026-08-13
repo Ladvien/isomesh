@@ -62,6 +62,7 @@ mod grid;
 mod marching_cubes;
 mod mesh_render;
 mod mesh_shader;
+mod scan;
 mod shader;
 
 pub mod headless;
@@ -74,4 +75,5 @@ pub use marching_cubes::{
 };
 pub use mesh_render::MeshShaderRenderer;
 pub use mesh_shader::{MeshShaderReport, probe_mesh_shaders};
-pub use shader::{Composer, FEATURES, GRID_WGSL, MARCHING_CUBES_WGSL, MESH_RENDER_WGSL};
+pub use scan::{PrefixScan, ScanOutput, cpu_prefix_sum, scan_length};
+pub use shader::{Composer, FEATURES, GRID_WGSL, MARCHING_CUBES_WGSL, MESH_RENDER_WGSL, SCAN_WGSL};

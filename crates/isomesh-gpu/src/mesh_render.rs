@@ -11,21 +11,22 @@
 //! # How much that is worth, stated rather than implied
 //!
 //! An earlier version of this page said it removed "the largest remaining
-//! piece", and that is wrong. The extraction still reads per-cell counts back
-//! to prefix-sum them on the CPU. Measured (M-149), at 129³:
+//! piece", and that was wrong (M-149). GPU-010a has since moved the prefix sum
+//! onto the GPU, so the breakdown at 129³ is now:
 //!
 //! | | ms | share of the GPU path |
 //! |---|---:|---:|
-//! | upload | 8.63 | 57% |
-//! | CPU prefix sum | 3.27 | 22% |
-//! | counts read-back | 1.97 | 13% |
-//! | **geometry read-back — what this removes** | **1.00** | **6.7%** |
+//! | upload | 8.40 | **87%** |
+//! | **geometry read-back — what this removes** | **0.78** | **8.1%** |
+//! | prefix scan + 4-byte total | 0.37 | 3.8% |
+//! | count + emit | 0.11 | 1.1% |
 //!
-//! So this is worth about 6.7% at 129³, rising to 40% at 17³ where the whole
-//! path is small. It is the *smallest* of the three data-movement costs, not
-//! the largest. Removing the rest needs a GPU prefix scan and
-//! `draw_mesh_tasks_indirect`, which is GPU-010; this pipeline is a
-//! precondition for that rather than the win by itself.
+//! So this is worth about **8.1%** at 129³ — a larger share than before only
+//! because the path around it got 1.56× shorter. **The dominant cost is now the
+//! upload, at 87%**, and that is field evaluation on the CPU rather than
+//! anything a renderer can fix: `FieldBuffer::sampled` evaluates the SDF host-
+//! side and copies the samples over. Evaluating the field *in* the shader is
+//! the next real lever, and it is not ticketed yet.
 //!
 //! # It refuses rather than falls back
 //!
