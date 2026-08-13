@@ -33,6 +33,7 @@
 //! `is_manifold`, never `is_closed`.
 
 pub mod dirty;
+pub mod stream;
 
 use crate::{Real, RuntimeShape3};
 

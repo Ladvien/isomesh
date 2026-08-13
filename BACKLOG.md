@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**56 tickets archived, 27 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**57 tickets archived, 26 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -76,13 +76,16 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 
 ---
 
-## Phase 2 — Game-shaped infrastructure
+## Phase 2 — Game-shaped infrastructure ✅ complete
 
-Still zero Bevy. This is the machinery a game needs, living in the core crate where CAD can use it too.
+All seven tickets archived (G-001..G-007): chunk coordinates, dirty-set re-meshing, brush operations,
+field-derived LOD, collider export, the frame budget, and streaming. Still zero Bevy — every one of
+them lives in the core crate, so the CAD side gets them too.
 
-| | ID | Ticket | Size | Blocked by |
-|---|---|---|---|---|
-| ☐ | **G-007** | **Chunk streaming.** Load/unload by camera distance with hysteresis so chunks at the boundary don't thrash. | M | G-004, G-006 |
+The bet that paid here was **G-006's**: the ticket asked for `mesh_within_budget(ms)` and a `no_std`
+crate cannot read a clock, so the budget became a predicate the caller owns. That made streaming a
+composition rather than a rewrite — `ChunkStream` decides residency, `DirtySet` orders the work
+nearest-first, and the caller's own clock decides when to stop.
 
 ---
 
