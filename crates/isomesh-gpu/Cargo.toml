@@ -1,0 +1,32 @@
+[package]
+name = "isomesh-gpu"
+description = "GPU isosurface extraction for isomesh: wgpu buffers and pipelines, no engine types."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+isomesh = { path = "../isomesh" }
+
+# Pinned to Bevy 0.19's exact version, and it must stay exact. Cargo resolves two
+# wgpu majors side by side *without a resolution error* -- verified in
+# `docs/research/2026-08-11-meshing-crate-architecture.md` §6, where `bevy 0.19`
+# plus `wgpu 30` locks 317 packages containing both 29.0.4 and 30.0.0. The failure
+# surfaces much later as `expected TextureFormat, found a different TextureFormat`.
+#
+# Backend features follow `bevy_hanabi`, which solves this same problem the same
+# way. `webgl` is deliberately absent: compute shaders do not exist there.
+wgpu = { version = "29.0.3", default-features = false, features = [
+  "wgsl",
+  "dx12",
+  "metal",
+  "vulkan",
+] }
+
+[lints]
+workspace = true
