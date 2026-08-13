@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-58 tickets. Line numbers are stable until something above them is edited — grep the ID if
+59 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -304,6 +304,9 @@ implementation contradicted the ticket.
 | | | ***`NeedsRemesh` comes off when the task is spawned, not when the mesh lands.*** An edit arriving mid-extraction therefore re-marks the chunk and is re-queued, instead of being cleared by the completion of a task that started before it — a dropped edit that would look like a stale chunk. Tested directly. |
 | | | ***No `bevy_render`, deliberately.*** The plugin produces a `Handle<Mesh>` on `ChunkMesh` and stops; attaching `Mesh3d` is the application's line, which is what keeps a CPU-only consumer — or a headless server meshing for collision — from compiling the renderer. It does pull in `MeshPlugin` when absent, so `Assets<Mesh>` exists in a headless app, which is what its own tests run in. |
 | | | ***M-103, found while linting:*** `rustdoc` had never run on this workspace and two doc links were already broken. Third instance of E-111's rule, which was right and applied too narrowly — `fmt` was added when it bit, the step list was never audited. |
+| ☑ | **E-201** | `game_terrain_stream` — walk a large fBm world, chunks stream by distance | Sustained 60 fps while streaming. HUD: chunks resident, meshing ms/frame, MB. | G-007, B-003 |
+| | | ***Acceptance met and measured: 234 chunks resident, 117,792 triangles, 3.2 MB, 60 fps at 16.65 ms/frame*** while the camera flies and chunks load and unload continuously. The HUD reports resident, in-flight, waiting, applied-this-frame and estimated MB, so the budget and the in-flight cap are both visible rather than inferred. |
+| | | ***The first version was wrong in the way the API invites, and the numbers say how (M-104).*** A radius-based residency rule loads a **ball**, and a heightfield does not need one: 952 chunks resident, 606 permanently waiting, and holes in the terrain that never filled — a working set larger than any budget could serve. Bounding the vertical extent to the two layers that can contain the surface, which is what a real game does, gives 234 and 0. `bevy_render`'s slab allocator also went from 704 use-after-free errors per run to 0, consistent with meshes being freed while queued for upload — noted rather than root-caused, because the churn was removed and the race was not isolated. |
 | ☑ | **E-105** | `marching_tetrahedra` — same field, much higher triangle count | — | A-003 |
 | | | *The only example in the repo that starts with the **wireframe on**.* Shaded, the two panels are two pictures of the same sphere — the entire difference is tessellation density, so a shaded default would have been a demo of nothing. Sphere at 17³: **270 vertices against 830, 536 triangles against 1,656**, ratio 3.074x and 3.090x. |
 | | | *The HUD carries M-52's explanation rather than just the ratio*, because the ratio alone invites the wrong conclusion. It is `4.0` where the normal stays in one octant and `2.0` across a sign change, which is why a grid-aligned box reads ~3.9 and a sphere ~3.0 — and what the extra triangles buy is 4.3% better geometry on a smooth field and **better than Marching Cubes** on a sharp one. |

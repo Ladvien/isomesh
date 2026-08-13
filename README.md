@@ -297,6 +297,26 @@ cd bevy_isomesh && cargo run --example marching_cubes_ambiguity --release
 
 ---
 
+## A world that streams past you
+
+![Unbroken fBm terrain to the horizon, with a HUD reading 234 chunks resident, 0 waiting, 60 fps](docs/screenshots/e201-terrain-stream.png)
+
+*`game_terrain_stream` — 234 chunks resident, 117,792 triangles, 3.2 MB, **60 fps at 16.65 ms/frame** while the camera flies and chunks load and unload continuously.*
+
+This is the first example where none of the pieces are visible on their own. **G-007** decides which chunks exist, with a hysteresis band so a camera drifting across the boundary does not re-mesh the same chunk every frame. **B-003** extracts them on the async task pool — never in a system — and applies finished meshes under a frame budget. **G-001**'s layout is what makes each chunk's world position exact rather than merely close, which is what stops the seams (M-32).
+
+The number to watch is not the triangle count. It is **ms/frame while chunks are landing**, because a streaming world that hitches is one doing its meshing on the main thread.
+
+One correction is worth repeating, because it is the mistake the API invites. A radius-based residency rule loads a **ball** of chunks, and a heightfield does not need one: the first version held 952 chunks with 606 permanently waiting, and rendered as holes that never filled. Bounding the vertical extent to the two layers that can contain the surface — which is what a real game does — takes it to 234 resident and nothing waiting (M-104).
+
+```bash
+cd bevy_isomesh && cargo run --example game_terrain_stream --release
+```
+
+`Space` fly/pause · `[` `]` view distance · `W` wireframe.
+
+---
+
 ## Letters thinner than a voxel
 
 ![The word ISO meshed by subgrid marching tetrahedra on the right, with the marching cubes panel on the left completely empty](docs/screenshots/e108-subgrid-features.png)
@@ -427,6 +447,7 @@ cargo run --example marching_tetrahedra --release               # 3x the triangl
 cargo run --example greedy_quads --release                      # 5014 quads down to 1089
 cargo run --example transvoxel_seams --release                  # the LOD crack, and T to close it
 cargo run --example subgrid_features --release                   # letters thinner than a voxel
+cargo run --example game_terrain_stream --release                # a world streaming past you
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires
