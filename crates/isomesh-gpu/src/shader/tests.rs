@@ -1,0 +1,245 @@
+//! Most of this needs no GPU. The last test does, because "the WGSL is valid"
+//! is not a claim a string comparison can make.
+
+use super::Composer;
+use crate::Error;
+
+fn composer(modules: &[(&str, &'static str)]) -> Composer {
+    let mut composer = Composer::new();
+    for (name, source) in modules {
+        composer.insert(name, source);
+    }
+    composer
+}
+
+#[test]
+fn text_without_directives_passes_through() {
+    let c = composer(&[("a", "fn f() {}\n  indented\n")]);
+    assert_eq!(
+        c.compose("a", &[]).as_deref(),
+        Ok("fn f() {}\n  indented\n")
+    );
+}
+
+#[test]
+fn an_include_pastes_the_module_in_place() {
+    let c = composer(&[
+        ("dep", "DEP\n"),
+        ("root", "before\n#include <dep>\nafter\n"),
+    ]);
+    assert_eq!(
+        c.compose("root", &[]).as_deref(),
+        Ok("before\nDEP\nafter\n")
+    );
+}
+
+/// The semantics WGSL forces: two modules can both depend on a shared header
+/// and the header appears once. A duplicated function is a hard error in WGSL,
+/// so the alternative is not a style preference.
+#[test]
+fn a_module_included_twice_appears_once() {
+    let c = composer(&[
+        ("shared", "SHARED\n"),
+        ("left", "#include <shared>\nLEFT\n"),
+        ("right", "#include <shared>\nRIGHT\n"),
+        ("root", "#include <left>\n#include <right>\n"),
+    ]);
+    let out = c.compose("root", &[]).expect("composes");
+    assert_eq!(out.matches("SHARED").count(), 1, "got:\n{out}");
+    assert!(out.contains("LEFT") && out.contains("RIGHT"));
+}
+
+/// Include-once would quietly terminate a cycle. It is still an error, because
+/// a cycle is a question about which module owns what and absorbing it hides
+/// the question.
+#[test]
+fn a_cycle_is_an_error_rather_than_being_absorbed() {
+    let c = composer(&[("a", "#include <b>\n"), ("b", "#include <a>\n")]);
+    assert_eq!(
+        c.compose("a", &[]).err(),
+        Some(Error::ShaderCircularInclude {
+            name: String::from("a")
+        })
+    );
+}
+
+#[test]
+fn a_missing_module_is_named() {
+    let c = composer(&[("root", "#include <absent>\n")]);
+    assert_eq!(
+        c.compose("root", &[]).err(),
+        Some(Error::ShaderModuleMissing {
+            name: String::from("absent")
+        })
+    );
+    assert_eq!(
+        c.compose("also_absent", &[]).err(),
+        Some(Error::ShaderModuleMissing {
+            name: String::from("also_absent")
+        })
+    );
+}
+
+#[test]
+fn ifdef_and_ifndef_select_opposite_branches() {
+    let c = composer(&[("root", "#ifdef X\nYES\n#else\nNO\n#endif\n")]);
+    assert_eq!(c.compose("root", &["X"]).as_deref(), Ok("YES\n"));
+    assert_eq!(c.compose("root", &[]).as_deref(), Ok("NO\n"));
+
+    let c = composer(&[("root", "#ifndef X\nABSENT\n#else\nPRESENT\n#endif\n")]);
+    assert_eq!(c.compose("root", &["X"]).as_deref(), Ok("PRESENT\n"));
+    assert_eq!(c.compose("root", &[]).as_deref(), Ok("ABSENT\n"));
+}
+
+#[test]
+fn regions_nest() {
+    let source = "#ifdef A\nA1\n#ifdef B\nAB\n#else\nAnotB\n#endif\nA2\n#else\nnotA\n#endif\n";
+    let c = composer(&[("root", source)]);
+    assert_eq!(
+        c.compose("root", &["A", "B"]).as_deref(),
+        Ok("A1\nAB\nA2\n")
+    );
+    assert_eq!(c.compose("root", &["A"]).as_deref(), Ok("A1\nAnotB\nA2\n"));
+    assert_eq!(c.compose("root", &["B"]).as_deref(), Ok("notA\n"));
+    assert_eq!(c.compose("root", &[]).as_deref(), Ok("notA\n"));
+}
+
+/// A directive inside a region that is switched off must still be *parsed* for
+/// nesting, or its `#endif` closes the wrong region. This is the bug a naive
+/// "skip every line while disabled" implementation has.
+#[test]
+fn a_disabled_region_still_tracks_nesting() {
+    let source = "#ifdef ON\nkept\n#ifdef OFF\ndropped\n#endif\nstill kept\n#endif\ntail\n";
+    let c = composer(&[("root", source)]);
+    assert_eq!(
+        c.compose("root", &["ON"]).as_deref(),
+        Ok("kept\nstill kept\ntail\n")
+    );
+    assert_eq!(c.compose("root", &[]).as_deref(), Ok("tail\n"));
+}
+
+/// An include inside a switched-off region must not be pasted — and must not be
+/// marked as included either, or a later live include of the same module
+/// silently produces nothing.
+#[test]
+fn an_include_in_a_dead_branch_is_neither_pasted_nor_consumed() {
+    let c = composer(&[
+        ("dep", "DEP\n"),
+        (
+            "root",
+            "#ifdef NEVER\n#include <dep>\n#endif\n#include <dep>\n",
+        ),
+    ]);
+    assert_eq!(c.compose("root", &[]).as_deref(), Ok("DEP\n"));
+}
+
+#[test]
+fn unbalanced_directives_are_refused_with_a_line_number() {
+    for (source, line) in [
+        ("a\n#endif\n", 2),
+        ("a\n#else\n", 2),
+        ("#ifdef A\nbody\n", 3),
+        ("#ifdef A\n#else\n#else\n#endif\n", 3),
+        ("#ifdef\n#endif\n", 1),
+        ("#ifdef A B\n#endif\n", 1),
+    ] {
+        assert_eq!(
+            composer(&[("root", source)]).compose("root", &[]).err(),
+            Some(Error::ShaderDirective {
+                module: String::from("root"),
+                line
+            }),
+            "accepted {source:?}"
+        );
+    }
+}
+
+#[test]
+fn a_malformed_include_is_refused() {
+    for source in ["#include dep\n", "#include <>\n", "#include <dep\n"] {
+        assert!(
+            matches!(
+                composer(&[("dep", "D\n"), ("root", source)])
+                    .compose("root", &[])
+                    .err(),
+                Some(Error::ShaderDirective { .. })
+            ),
+            "accepted {source:?}"
+        );
+    }
+}
+
+#[test]
+fn composition_is_deterministic() {
+    let c = Composer::with_builtins();
+    assert_eq!(c.compose("grid", &[]), c.compose("grid", &[]));
+    assert_eq!(c.module_names(), ["grid"]);
+}
+
+/// The builtin module carries the layout the CPU side packs, so the names the
+/// rest of this crate will call are pinned here rather than discovered missing
+/// at pipeline-creation time.
+#[test]
+fn the_grid_module_declares_what_the_cpu_side_packs() {
+    let out = Composer::with_builtins()
+        .compose("grid", &[])
+        .expect("composes");
+    for expected in [
+        "struct GridParams",
+        "samples: vec4<u32>",
+        "placement: vec4<f32>",
+        "fn grid_index",
+        "fn grid_position",
+        "fn grid_cells",
+        "fn grid_contains",
+    ] {
+        assert!(out.contains(expected), "grid.wgsl is missing `{expected}`");
+    }
+}
+
+/// "It is valid WGSL" is not a claim `contains` can make, so this one asks a
+/// driver.
+///
+/// A no-GPU `naga` check over every permutation is GPU-003 and is the version
+/// that belongs in CI. This is the version available today, and it is stronger
+/// per-shader: it is the same path a real pipeline takes.
+#[test]
+fn the_grid_module_is_valid_wgsl_on_a_real_device() {
+    let gpu =
+        crate::headless::Gpu::new().expect("a GPU adapter -- no software fallback, by design");
+    let source = Composer::with_builtins()
+        .compose("grid", &[])
+        .expect("composes");
+
+    // A shader module has to be *used* before some backends validate it, and
+    // grid.wgsl declares only functions and a struct. Give it an entry point
+    // that calls every one of them, so nothing is dead-stripped before it is
+    // checked.
+    let probe = format!(
+        "{source}
+@group(0) @binding(0) var<uniform> params: GridParams;
+@group(0) @binding(1) var<storage, read_write> out: array<f32>;
+
+@compute @workgroup_size(1)
+fn main(@builtin(global_invocation_id) id: vec3<u32>) {{
+    if (!grid_contains(params, id)) {{ return; }}
+    let p = grid_position(params, id);
+    let cells = grid_cells(params);
+    out[grid_index(params, id)] = p.x + p.y + p.z + f32(cells.x + grid_sample_count(params));
+}}
+"
+    );
+
+    // wgpu 29 hands back a guard rather than pairing push with a device method,
+    // so the scope cannot be left open by an early return.
+    let scope = gpu.device().push_error_scope(wgpu::ErrorFilter::Validation);
+    let module = gpu
+        .device()
+        .create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("grid.wgsl validation probe"),
+            source: wgpu::ShaderSource::Wgsl(probe.into()),
+        });
+    let error = crate::block_on::block_on(scope.pop());
+    assert!(error.is_none(), "grid.wgsl failed validation: {error:?}");
+    drop(module);
+}

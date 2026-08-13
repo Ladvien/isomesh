@@ -46,6 +46,23 @@ pub enum Error {
     MapFailed,
     /// The device disconnected or a submission never completed.
     DeviceLost,
+    /// A shader module was included, or composed, but never registered.
+    ShaderModuleMissing {
+        /// The name that was asked for.
+        name: String,
+    },
+    /// A shader module includes itself, through some chain.
+    ShaderCircularInclude {
+        /// The module the cycle closes on.
+        name: String,
+    },
+    /// A preprocessor directive was malformed or unbalanced.
+    ShaderDirective {
+        /// Module the directive is in.
+        module: String,
+        /// One-based line number within that module.
+        line: usize,
+    },
     /// A read-back range was not a whole number of elements.
     UnalignedReadback {
         /// Bytes asked for.
@@ -74,6 +91,15 @@ impl fmt::Display for Error {
             Self::DeviceUnavailable => f.write_str("the adapter would not create a device"),
             Self::MapFailed => f.write_str("mapping a buffer for read-back failed"),
             Self::DeviceLost => f.write_str("the device was lost or a submission never completed"),
+            Self::ShaderModuleMissing { name } => {
+                write!(f, "no shader module registered as `{name}`")
+            }
+            Self::ShaderCircularInclude { name } => {
+                write!(f, "shader module `{name}` includes itself")
+            }
+            Self::ShaderDirective { module, line } => {
+                write!(f, "malformed or unbalanced directive at {module}:{line}")
+            }
             Self::UnalignedReadback { bytes, stride } => write!(
                 f,
                 "read-back of {bytes} bytes is not a whole number of {stride}-byte elements"

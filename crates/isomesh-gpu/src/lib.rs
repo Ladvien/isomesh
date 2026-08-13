@@ -55,12 +55,15 @@
 //! # }
 //! ```
 
+mod block_on;
 mod buffers;
 mod error;
 mod grid;
+mod shader;
 
 pub mod headless;
 
 pub use buffers::{FieldBuffer, read_buffer};
 pub use error::{Error, Result};
 pub use grid::GridParams;
+pub use shader::{Composer, GRID_WGSL};

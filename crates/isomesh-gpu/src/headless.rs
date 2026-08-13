@@ -70,7 +70,7 @@ impl Gpu {
         let instance =
             wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
         let adapter =
-            pollster_lite::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+            crate::block_on::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 force_fallback_adapter: false,
                 compatible_surface: None,
@@ -89,7 +89,7 @@ impl Gpu {
         };
 
         let (device, queue) =
-            pollster_lite::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+            crate::block_on::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
                 label: Some("isomesh headless"),
                 required_features: wgpu::Features::empty(),
                 // The adapter's own limits rather than downlevel defaults: this
@@ -129,53 +129,6 @@ impl Gpu {
     #[must_use]
     pub const fn report(&self) -> &AdapterReport {
         &self.report
-    }
-}
-
-/// Blocking on a future, in the twenty lines it actually takes.
-///
-/// `wgpu`'s adapter and device requests are futures and nothing else in this
-/// crate is async. Pulling in an executor to await two calls made once per
-/// session would be a dependency for a thread park, so this is the thread park.
-mod pollster_lite {
-    use core::future::Future;
-    use core::pin::pin;
-    use core::task::{Context, Poll, Waker};
-    use std::sync::Arc;
-    use std::task::Wake;
-
-    /// A waker that unparks the thread doing the blocking.
-    ///
-    /// `park`/`unpark` are permit-based rather than edge-triggered — an unpark
-    /// arriving before the park is remembered — so a wake landing between
-    /// `poll` and `park` cannot be lost, and no mutex is needed to close that
-    /// window.
-    struct ThreadWaker(std::thread::Thread);
-
-    impl Wake for ThreadWaker {
-        fn wake(self: Arc<Self>) {
-            self.0.unpark();
-        }
-
-        fn wake_by_ref(self: &Arc<Self>) {
-            self.0.unpark();
-        }
-    }
-
-    /// Drive `future` on this thread until it completes.
-    ///
-    /// Built on [`Wake`] rather than a raw vtable because the workspace forbids
-    /// `unsafe_code`, and because the safe version is shorter.
-    pub(super) fn block_on<F: Future>(future: F) -> F::Output {
-        let mut future = pin!(future);
-        let waker = Waker::from(Arc::new(ThreadWaker(std::thread::current())));
-        let mut context = Context::from_waker(&waker);
-        loop {
-            match future.as_mut().poll(&mut context) {
-                Poll::Ready(value) => return value,
-                Poll::Pending => std::thread::park(),
-            }
-        }
     }
 }
 
