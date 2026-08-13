@@ -188,7 +188,9 @@ fn extract_one<F: Sdf<Scalar = f32> + ReferenceField>(
     let mut mesher = GreedyQuads::<f32>::new();
     mesher.set_merge(merge);
     let started = Instant::now();
-    mesher.extract(field, shape, origin, cell_size, &mut builder).ok()?;
+    mesher
+        .extract(field, shape, origin, cell_size, &mut builder)
+        .ok()?;
     Some(Extraction {
         builder,
         millis: started.elapsed().as_secs_f64() * 1000.0,

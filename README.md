@@ -19,7 +19,7 @@ Early. Six extraction algorithms, three normal-estimation strategies, a validity
 | | |
 |---|---|
 | **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **six-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · **frame-budget scheduling** · Bevy 0.19 bridge |
-| **Not yet** | Marching Cubes 33's interior test · subgrid Marching Tetrahedra *(encoding and boundary curves done, surface fill not)* · chunk streaming · convex decomposition · GPU path |
+| **Not yet** | Marching Cubes 33's interior test · simplicial embedding for subgrid MT (A-014d) · chunk streaming · convex decomposition · GPU path |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
 Not published to crates.io. Version `0.0.0`.
@@ -297,6 +297,26 @@ cd bevy_isomesh && cargo run --example marching_cubes_ambiguity --release
 
 ---
 
+## Letters thinner than a voxel
+
+![The word ISO meshed by subgrid marching tetrahedra on the right, with the marching cubes panel on the left completely empty](docs/screenshots/e108-subgrid-features.png)
+
+*`subgrid_features` — one field, one grid, two extractors. The letters are **0.35 voxels thick**. Marching Cubes returns **0 triangles**; subgrid marching tetrahedra returns **1,340**.*
+
+Every other method here asks one question per grid edge — *what sign is this endpoint* — and gets one bit back. A feature thinner than a cell fits between the samples and there is no answer that could describe it. **M-67** puts a number on the gap: a sign test cannot distinguish **95.6%** of the configurations a tetrahedron can actually be in.
+
+Subgrid marching asks instead for **every zero along the edge**, and triangulates whatever comes back — however many crossings there are. Push the thickness up and Marching Cubes does not recover cleanly; it passes through a holey remnant first (220 triangles at 0.70 voxels), which is **M-72**'s aliasing and the failure mode a streamed world actually suffers. A feature that vanishes at a known distance can be faded. One that disintegrates into a resolution-dependent scatter pops.
+
+It is not free: **M-98** measured it at **70× classic Marching Tetrahedra**, and the constant is field evaluations rather than anything algorithmic — 576 per cell at 16 samples per edge against Marching Cubes' 8 shared corner samples. But the comparison the HUD invites is the wrong one. The right one is *"against whatever grid resolution would resolve the same feature"*, and below one voxel there is none.
+
+```bash
+cd bevy_isomesh && cargo run --example subgrid_features --release
+```
+
+`-` `=` thickness · `[` `]` resolution · `W` wireframe.
+
+---
+
 ## Two levels of detail, and the crack between them
 
 ![A gyroid meshed at two resolutions with a jagged gap down the seam](docs/screenshots/e107-transvoxel-seam-cracked.png)
@@ -406,6 +426,7 @@ cargo run --example normal_estimation --release                 # three identica
 cargo run --example marching_tetrahedra --release               # 3x the triangles, and what they buy
 cargo run --example greedy_quads --release                      # 5014 quads down to 1089
 cargo run --example transvoxel_seams --release                  # the LOD crack, and T to close it
+cargo run --example subgrid_features --release                   # letters thinner than a voxel
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires

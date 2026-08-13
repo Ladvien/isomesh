@@ -51,7 +51,13 @@ struct Demo {
     samples: u32,
 }
 
-const FIELDS: [&str; 5] = ["sphere", "box_exact", "torus", "csg_difference", "thin_plate"];
+const FIELDS: [&str; 5] = [
+    "sphere",
+    "box_exact",
+    "torus",
+    "csg_difference",
+    "thin_plate",
+];
 const MIN_SAMPLES: u32 = 5;
 const MAX_SAMPLES: u32 = 65;
 
@@ -220,11 +226,7 @@ fn remesh(
     };
 
     let ratio = |a: usize, b: usize| {
-        if a == 0 {
-            0.0
-        } else {
-            b as f64 / a as f64
-        }
+        if a == 0 { 0.0 } else { b as f64 / a as f64 }
     };
     let vertex_ratio = ratio(mc.builder.vertex_count(), mt.builder.vertex_count());
     let triangle_ratio = ratio(mc.builder.triangle_count(), mt.builder.triangle_count());
@@ -239,7 +241,10 @@ fn remesh(
     stats.extra = vec![
         format!("{} samples/axis   [ and ] to change", demo.samples),
         String::new(),
-        format!("{:<12} {:>12} {:>12} {:>9}", "", "cubes", "tetrahedra", "ratio"),
+        format!(
+            "{:<12} {:>12} {:>12} {:>9}",
+            "", "cubes", "tetrahedra", "ratio"
+        ),
         format!(
             "{:<12} {:>12} {:>12} {:>8.3}x",
             "vertices",

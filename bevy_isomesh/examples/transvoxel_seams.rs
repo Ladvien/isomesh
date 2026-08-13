@@ -104,8 +104,7 @@ fn main() {
             // Settable for a capture, the same way ISOMESH_FIELD and
             // ISOMESH_VIEW are -- the two screenshots this example owes are the
             // toggle's two states, and pressing a key is not reproducible.
-            transitions: std::env::var("ISOMESH_TRANSITIONS")
-                .map_or(true, |v| v != "0"),
+            transitions: std::env::var("ISOMESH_TRANSITIONS").map_or(true, |v| v != "0"),
         })
         .add_systems(Startup, setup)
         .add_systems(Update, (controls, remesh))
@@ -207,8 +206,8 @@ fn build<F: Sdf<Scalar = f32> + ReferenceField>(
     let width = if transitions { fine_h } else { 0.0 };
 
     // In-plane extent: the whole domain, at each block's own spacing.
-    let fine_shape = RuntimeShape3::new([fine_cells + 1, 2 * fine_cells + 1, 2 * fine_cells + 1])
-        .ok()?;
+    let fine_shape =
+        RuntimeShape3::new([fine_cells + 1, 2 * fine_cells + 1, 2 * fine_cells + 1]).ok()?;
     let mut fine = MeshBuffer::<f32>::new();
     MarchingCubes::<f32>::new()
         .extract(field, &fine_shape, lo, fine_h, &mut fine)
@@ -261,8 +260,7 @@ fn build<F: Sdf<Scalar = f32> + ReferenceField>(
         .weld(&mut assembled, fine_h * 1e-5)
         .ok()?;
     let cfg = ValidateConfig::from_cell_size(f64::from(fine_h)).ok()?;
-    let (_report, features) =
-        validate_features(&assembled.positions, &assembled.indices, &cfg);
+    let (_report, features) = validate_features(&assembled.positions, &assembled.indices, &cfg);
     let planes = [seam_x, seam_x + width];
     let gaps = features
         .boundary_edges
@@ -272,9 +270,9 @@ fn build<F: Sdf<Scalar = f32> + ReferenceField>(
                 assembled.positions[*a as usize][0],
                 assembled.positions[*b as usize][0],
             );
-            planes
-                .iter()
-                .any(|plane| (pa - plane).abs() < fine_h * 1e-4 && (pb - plane).abs() < fine_h * 1e-4)
+            planes.iter().any(|plane| {
+                (pa - plane).abs() < fine_h * 1e-4 && (pb - plane).abs() < fine_h * 1e-4
+            })
         })
         .count();
 
@@ -309,9 +307,21 @@ fn remesh(
     flags.remesh_requested = false;
 
     let built = match demo.field {
-        0 => build(&Sphere::<f32>::canonical(), demo.coarse_cells, demo.transitions),
-        1 => build(&Torus::<f32>::canonical(), demo.coarse_cells, demo.transitions),
-        2 => build(&csg_difference::<f32>(), demo.coarse_cells, demo.transitions),
+        0 => build(
+            &Sphere::<f32>::canonical(),
+            demo.coarse_cells,
+            demo.transitions,
+        ),
+        1 => build(
+            &Torus::<f32>::canonical(),
+            demo.coarse_cells,
+            demo.transitions,
+        ),
+        2 => build(
+            &csg_difference::<f32>(),
+            demo.coarse_cells,
+            demo.transitions,
+        ),
         _ => build(&capped_gyroid::<f32>(), demo.coarse_cells, demo.transitions),
     };
     let Some(built) = built else {
@@ -328,9 +338,8 @@ fn remesh(
         FIELDS[demo.field],
         if demo.transitions { "ON" } else { "OFF" }
     );
-    stats.vertices = built.fine.vertex_count()
-        + built.coarse.vertex_count()
-        + built.transition.vertex_count();
+    stats.vertices =
+        built.fine.vertex_count() + built.coarse.vertex_count() + built.transition.vertex_count();
     stats.triangles = built.fine.triangle_count()
         + built.coarse.triangle_count()
         + built.transition.triangle_count();
@@ -342,7 +351,10 @@ fn remesh(
             built.width
         ),
         String::new(),
-        format!("{:>6} unmatched boundary edges in the seam plane", built.gaps),
+        format!(
+            "{:>6} unmatched boundary edges in the seam plane",
+            built.gaps
+        ),
         if built.gaps == 0 {
             "       the two resolutions meet".into()
         } else {
