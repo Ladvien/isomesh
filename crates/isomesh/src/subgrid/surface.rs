@@ -416,12 +416,30 @@ pub fn fill<R: Real>(
 ) -> Result<Unfilled, NotFillable> {
     tet.check()?;
     out.reset();
+    // Theorem C.1 bounds the subdivision depth by the sum of the initial edge
+    // coordinates, so that sum is the budget. It is a bound the paper proves,
+    // not a guess at a safe depth — but it is enforced rather than trusted,
+    // because a recursion that fails to terminate is the one bug that takes the
+    // process with it.
+    let budget = tet.coordinates().total();
+    fill_append(tet, out, budget)
+}
 
+/// [`fill`] without the reset, so a subdivided tet can append its children.
+fn fill_append<R: Real>(
+    tet: &TetCrossings<'_, R>,
+    out: &mut TetPatch<R>,
+    budget: u32,
+) -> Result<Unfilled, NotFillable> {
+    tet.check()?;
     let coords = tet.coordinates();
     let cycles = cycles(&coords);
 
     // Every crossing that any cycle uses becomes a vertex, indexed by its
     // FacePoint so the two tets sharing a face agree on which vertex is which.
+    // `base` is where this tet's vertices start: zero for a top-level call, and
+    // wherever the parent left off for a subdivided one.
+    let base = out.positions.len() as u32;
     let mut keys: Vec<FacePoint> = cycles
         .iter()
         .flat_map(|c| c.points.iter().copied())
@@ -439,7 +457,7 @@ pub fn fill<R: Real>(
     }
     let index_of = |p: FacePoint| -> u32 {
         // `keys` is sorted and contains every point any cycle uses.
-        keys.binary_search(&p).map_or(u32::MAX, |i| i as u32)
+        keys.binary_search(&p).map_or(u32::MAX, |i| base + i as u32)
     };
 
     let mut unfilled = Unfilled::None;
@@ -531,8 +549,17 @@ pub fn fill<R: Real>(
         Some(_) if pattern.loop_count() == 1 => {
             unfilled = unfilled.worst(fill_single_loop(&residual_loops, &index_of, out));
         }
-        // Case 5 -- subdivision. Not implemented; named exactly.
-        Some(_) => unfilled = unfilled.worst(Unfilled::Subdivision),
+        // Case 5 -- subdivision.
+        Some(_) => {
+            unfilled = unfilled.worst(fill_subdivision(
+                tet,
+                &residual,
+                pattern,
+                &residual_loops,
+                out,
+                budget,
+            )?);
+        }
         None => {}
     }
 
@@ -1203,6 +1230,165 @@ impl Subdivision {
         }
         Some(EdgeCoordinates { count })
     }
+}
+
+/// §3.2.1 case (3) — subdivide at the centre of mass and recurse.
+///
+/// > … connecting its vertices to the center of mass `a` (Figure 13), and assign
+/// > edge coordinates `e_ai = 2d₂, e_aj = d₁, e_ak = d₂, e_al = d₁ − d₂`. We
+/// > then recursively process each of the four new tets. … We do not maintain an
+/// > explicit tet mesh data structure, but rather just recursively invoke
+/// > reconstruction for each new tet.
+///
+/// [`Subdivision`] supplies the labelling and the four sub-tets' coordinates and
+/// M-84 verifies they are all normal; this is the geometric half — where the new
+/// crossings go, and how a parent edge's crossings are re-expressed in a child's
+/// own orientation.
+///
+/// # The two places an orientation can flip
+///
+/// A **spoke** runs from `a` to a surviving corner, and `a` is always local
+/// corner 0, so a spoke is always measured from `a` and never flips. A parent
+/// **edge** is a different matter: the child's local ordering may disagree with
+/// the parent's canonical one, and then the parameter list must be both reversed
+/// and mapped `t ↦ 1 − t`. Getting that wrong produces a mesh that looks right
+/// and is stitched to the wrong crossings, so the child's derived coordinates
+/// are checked against [`Subdivision::sub_tet`]'s independent prediction rather
+/// than trusted.
+///
+/// # Termination
+///
+/// Theorem C.1 bounds the number of subdivisions by the sum of the initial edge
+/// coordinates. That is the budget, and it is enforced: a recursion that fails
+/// to terminate takes the process with it, which no amount of "the paper proves
+/// it" makes safe to assume.
+fn fill_subdivision<R: Real>(
+    tet: &TetCrossings<'_, R>,
+    residual: &EdgeCoordinates,
+    pattern: Pattern,
+    loops: &[&Cycle],
+    out: &mut TetPatch<R>,
+    budget: u32,
+) -> Result<Unfilled, NotFillable> {
+    if budget == 0 {
+        return Ok(Unfilled::Subdivision);
+    }
+    let Some(stencil) = Subdivision::label(residual, pattern) else {
+        return Ok(Unfilled::NoPattern);
+    };
+
+    // The centre of mass of the parent's four corners.
+    let quarter = R::from_f64(0.25);
+    let mut centre = [R::ZERO; 3];
+    for corner in &tet.corners {
+        for (slot, value) in centre.iter_mut().zip(corner.iter()) {
+            *slot += *value;
+        }
+    }
+    for slot in &mut centre {
+        *slot *= quarter;
+    }
+
+    // The residual crossings on each parent edge, as parameters. Only these
+    // reach the children: the corner cuts and any non-normal loops have already
+    // been emitted by the caller, and their points are not part of the pattern
+    // the stencil was read from.
+    let mut kept: [Vec<R>; TET_EDGE_COUNT] = Default::default();
+    for (e, slot) in kept.iter_mut().enumerate() {
+        let edge = e as u8;
+        let mut index: Vec<u32> = loops
+            .iter()
+            .flat_map(|c| c.points.iter())
+            .filter(|p| p.edge == edge)
+            .map(|p| p.index)
+            .collect();
+        index.sort_unstable();
+        index.dedup();
+        for at in index {
+            match tet.along[e].get(at as usize) {
+                Some(t) => slot.push(*t),
+                None => return Ok(Unfilled::Inconsistent),
+            }
+        }
+    }
+
+    let spoke = stencil.spoke();
+    let mut unfilled = Unfilled::None;
+
+    for which in 0..4usize {
+        // Local corner 0 is `a`; locals 1..3 are the stencil corners that are
+        // not `which`, in stencil order — the same order `sub_tet` uses.
+        let mut surviving = [0u8; 3];
+        let mut at = 0;
+        for (s, corner) in stencil.corner.iter().enumerate() {
+            if s != which {
+                surviving[at] = *corner;
+                at += 1;
+            }
+        }
+
+        let mut corners = [centre; 4];
+        for (slot, corner) in corners.iter_mut().skip(1).zip(surviving.iter()) {
+            *slot = tet.corners[*corner as usize];
+        }
+
+        let mut along: [Vec<R>; TET_EDGE_COUNT] = Default::default();
+        for (e, slot) in along.iter_mut().enumerate() {
+            let [lo, hi] = TET_EDGES[e];
+            if lo == 0 {
+                // A spoke. Its count is the stencil's, and its crossings are
+                // spread evenly from `a` outward — the paper fixes the count and
+                // leaves the placement free, and even spacing keeps them
+                // strictly interior and ordered.
+                let corner = surviving[hi as usize - 1];
+                let Some(position) = stencil.corner.iter().position(|c| *c == corner) else {
+                    return Ok(Unfilled::Inconsistent);
+                };
+                let count = spoke[position];
+                for i in 0..count {
+                    let t = R::from_f64(f64::from(i) + 1.0) / R::from_f64(f64::from(count) + 1.0);
+                    slot.push(t);
+                }
+            } else {
+                // A parent edge, re-expressed in the child's orientation.
+                let (a, b) = (surviving[lo as usize - 1], surviving[hi as usize - 1]);
+                let parent = super::coordinates::edge_between(a, b);
+                let [plo, _phi] = TET_EDGES[parent as usize];
+                let source = &kept[parent as usize];
+                if a == plo {
+                    slot.extend_from_slice(source);
+                } else {
+                    // The child walks this edge the other way, so both the order
+                    // and the parameters invert.
+                    slot.extend(source.iter().rev().map(|t| R::ONE - *t));
+                }
+            }
+        }
+
+        let mut borrowed: [&[R]; TET_EDGE_COUNT] = [&[]; TET_EDGE_COUNT];
+        for (slot, v) in borrowed.iter_mut().zip(along.iter()) {
+            *slot = v.as_slice();
+        }
+        let child = TetCrossings {
+            corners,
+            along: borrowed,
+        };
+
+        // The child's coordinates come from its crossing lists; `sub_tet`
+        // predicts them from the stencil alone. They must agree, and a
+        // disagreement means an orientation flipped or a spoke count went to the
+        // wrong edge.
+        let Some(predicted) = stencil.sub_tet(residual, which) else {
+            return Ok(Unfilled::Inconsistent);
+        };
+        if child.coordinates() != predicted {
+            return Ok(Unfilled::Inconsistent);
+        }
+
+        unfilled = unfilled.worst(fill_append(&child, out, budget - 1)?);
+    }
+
+    Ok(unfilled)
 }
 
 /// §3.2.1 case (2) — one loop, one Steiner point.

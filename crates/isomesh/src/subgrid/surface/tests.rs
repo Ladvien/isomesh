@@ -872,6 +872,15 @@ fn the_stencil_is_asymmetric_and_the_labelling_is_what_decides_it() {
     assert_eq!(seen.len(), 4, "two sub-tets came out identical");
 }
 
+// Exact equality again, and again deliberately: the welding below is only
+// correct if a crossing shared by two sub-tets comes out bit-identical from
+// both, which it does because both compute it from the same corners and the
+// same parameter. A tolerance would paper over a divergence rather than expose
+// it.
+#[expect(
+    clippy::float_cmp,
+    reason = "bit-identity is what makes the weld sound"
+)]
 #[test]
 fn every_implemented_case_emits_an_intersection_free_patch() {
     // The headline claim of §3.2 is that the output is intersection-free, so
@@ -893,8 +902,32 @@ fn every_implemented_case_emits_an_intersection_free_patch() {
                 continue;
             }
 
-            let indices: Vec<u32> = patch.triangles.iter().flatten().copied().collect();
-            let report = crate::validate::self_intersections(&patch.positions, &indices, 1.0)
+            // Weld coincident positions first. Subdivision gives each sub-tet
+            // its own copy of the crossings on a shared internal face, so
+            // triangles that legitimately meet there carry *different* vertex
+            // indices -- and `self_intersections` only skips pairs sharing an
+            // index, so it would count every such meeting as an intersection.
+            // Welding restores the adjacency the counter reasons about. See
+            // M-93.
+            let mut welded_positions: Vec<[f64; 3]> = Vec::new();
+            let mut remap: Vec<u32> = Vec::with_capacity(patch.positions.len());
+            for p in &patch.positions {
+                let at = match welded_positions.iter().position(|q| q == p) {
+                    Some(existing) => existing,
+                    None => {
+                        welded_positions.push(*p);
+                        welded_positions.len() - 1
+                    }
+                };
+                remap.push(at as u32);
+            }
+            let indices: Vec<u32> = patch
+                .triangles
+                .iter()
+                .flatten()
+                .map(|i| remap[*i as usize])
+                .collect();
+            let report = crate::validate::self_intersections(&welded_positions, &indices, 1.0)
                 .expect("a unit tet is a valid spacing");
             assert_eq!(
                 report.count(),
@@ -906,11 +939,11 @@ fn every_implemented_case_emits_an_intersection_free_patch() {
             checked += 1;
         }
     }
-    // 20 patterns have 1 ≤ d₁ ≤ 5, 0 ≤ d₂ ≤ d₁. Exactly one of them — (4, 2),
-    // with gcd 2 and ℓ = 12 — needs subdivision; every other is a quad, an
-    // octagon or a single loop, and fills. A drop below 19 means a case
-    // regressed into being unhandled rather than the assertion getting weaker.
-    assert_eq!(checked, 19, "the sweep did not reach the implemented cases");
+    // All 20 patterns with 1 ≤ d₁ ≤ 5, 0 ≤ d₂ ≤ d₁ now fill — quads, octagons,
+    // single loops, and (4, 2) through subdivision. A drop below 20 means a
+    // case regressed into being unhandled rather than the assertion getting
+    // weaker.
+    assert_eq!(checked, 20, "the sweep did not reach every case");
 }
 
 #[test]
@@ -1007,27 +1040,35 @@ fn a_cycle_visits_every_segment_once_and_returns_to_its_start() {
 }
 
 #[test]
-fn an_unimplemented_case_is_named_rather_than_guessed_at() {
-    // (4, 2): gcd = 2, so two loops of length 4(6)/2 = 12 -- §3.2.1 case (3),
-    // subdivision, not implemented. The contract is that fill names which case
-    // it reached, and emits nothing for it.
-    for (d1, d2, expected) in [
-        (4u32, 2u32, Unfilled::Subdivision),
-        (6, 3, Unfilled::Subdivision),
-        (6, 4, Unfilled::Subdivision),
-    ] {
+fn the_subdivision_case_recurses_and_terminates() {
+    // (4, 2): gcd = 2, so two loops of length 4(6)/2 = 12 -- §3.2.1 case (3).
+    // It is also exactly the paper's threshold, since 4(d₁ + d₂) = 24 and
+    // "such configurations do not occur below 24 total edge intersections".
+    //
+    // Each of these subdivides into four sub-tets and fills every one. The
+    // triangle counts are pinned because they are the only evidence that the
+    // recursion did the work rather than bottoming out early: (4, 2) is
+    // 8 + 8 + 18 + 18.
+    for (d1, d2, triangles) in [(4u32, 2u32, 52usize), (6, 3, 78), (6, 4, 116)] {
         let coords = pattern_coords(d1, d2);
         let owned = crossings(coords.count);
         let mut patch = TetPatch::new();
         assert_eq!(
             fill(&tet(&owned), &mut patch),
-            Ok(expected),
-            "({d1}, {d2}) should report {expected:?}"
+            Ok(Unfilled::None),
+            "({d1}, {d2}) should subdivide and fill"
         );
-        assert!(
-            patch.is_empty(),
-            "({d1}, {d2}): an unhandled case emitted triangles"
+        assert_eq!(
+            patch.triangles.len(),
+            triangles,
+            "({d1}, {d2}) triangle count"
         );
+
+        // Every index is real, across all four children's appended vertices.
+        let n = patch.positions.len() as u32;
+        for t in &patch.triangles {
+            assert!(t.iter().all(|i| *i < n), "({d1}, {d2}): index past {n}");
+        }
     }
 }
 
