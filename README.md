@@ -84,7 +84,7 @@ same grid, at any resolution you like.
 
 ## Status
 
-Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 76 tickets done, 12 open.
+Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 77 tickets done, 11 open.
 
 | | |
 |---|---|
@@ -204,6 +204,7 @@ cargo run --example game_showcase --release                      # caves, arches
 cargo run --example game_budget --release                        # 288 chunks re-meshed without missing a frame
 cargo run --example game_editor --release                        # undo as a re-fold, and the log's order audited
 cargo run --example game_csg_props --release                     # a concave edge, moving, measured every frame
+cargo run --example game_paint --release                         # graffiti, then a hole through it, drift 0.000000
 cargo run --example resolution_plot --release                    # the fit, and where the model stops describing it
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it

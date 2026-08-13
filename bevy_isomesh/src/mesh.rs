@@ -33,6 +33,7 @@ pub struct MeshBuilder {
     positions: Vec<[f32; 3]>,
     normals: Vec<[f32; 3]>,
     uvs: Vec<[f32; 2]>,
+    colors: Vec<[f32; 4]>,
     indices: Vec<u32>,
     uv_scale: f32,
 }
@@ -45,6 +46,7 @@ impl MeshBuilder {
             positions: Vec::new(),
             normals: Vec::new(),
             uvs: Vec::new(),
+            colors: Vec::new(),
             indices: Vec::new(),
             uv_scale: 1.0,
         }
@@ -62,6 +64,7 @@ impl MeshBuilder {
         self.positions.clear();
         self.normals.clear();
         self.uvs.clear();
+        self.colors.clear();
         self.indices.clear();
     }
 
@@ -99,12 +102,53 @@ impl MeshBuilder {
         &self.indices
     }
 
+    /// The per-vertex colour buffer, to be filled or left alone.
+    ///
+    /// Handed out mutably so
+    /// [`isomesh::paint::shade`](isomesh::paint::shade) can write straight into
+    /// the array the [`Mesh`] will own, on the same no-copy reasoning as the
+    /// rest of this type:
+    ///
+    /// ```ignore
+    /// isomesh::paint::shade(builder.positions(), &world, builder.colors_mut());
+    /// ```
+    ///
+    /// (that borrow needs splitting in real code — read the positions into the
+    /// call, or shade into a scratch buffer and swap.)
+    ///
+    /// A mesh either carries colours or does not, exactly as it either carries
+    /// UVs or does not: leave this empty and
+    /// [`into_mesh`](Self::into_mesh) omits the attribute entirely. That is one
+    /// path writing one attribute, not a fallback — there is no second way to
+    /// get a colour onto a vertex here.
+    pub fn colors_mut(&mut self) -> &mut Vec<[f32; 4]> {
+        &mut self.colors
+    }
+
+    /// The per-vertex colours written so far.
+    #[must_use]
+    pub fn colors(&self) -> &[[f32; 4]] {
+        &self.colors
+    }
+
     /// Hand the arrays to a Bevy [`Mesh`], by move.
     ///
     /// Consuming rather than borrowing is deliberate: a `Mesh` owns its vertex
     /// data, so the choice is between transferring ownership and copying, and
     /// this is the transfer. Use [`to_bevy_mesh`] when you would rather keep the
     /// buffer and pay for a copy.
+    ///
+    /// # Colours are present or absent
+    ///
+    /// [`Mesh::ATTRIBUTE_COLOR`] is inserted when
+    /// [`colors_mut`](Self::colors_mut) was filled and omitted when it was not.
+    /// `StandardMaterial` multiplies its `base_color` by the vertex colour, so
+    /// padding every mesh with opaque white would be a no-op that still costs
+    /// 16 bytes a vertex on the twenty-odd examples that do not paint anything.
+    ///
+    /// A mismatched length is a caller error and is **not** silently repaired —
+    /// Bevy rejects an attribute whose length disagrees with the positions, and
+    /// that is the right place for it to fail.
     #[must_use]
     pub fn into_mesh(self) -> Mesh {
         let mut mesh = Mesh::new(
@@ -117,6 +161,9 @@ impl MeshBuilder {
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.positions);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals);
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, self.uvs);
+        if !self.colors.is_empty() {
+            mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, self.colors);
+        }
         mesh.insert_indices(Indices::U32(self.indices));
         mesh
     }
@@ -251,6 +298,52 @@ mod tests {
     fn indices_are_u32() {
         let mesh = sphere_builder().into_mesh();
         assert!(matches!(mesh.indices(), Some(Indices::U32(_))));
+    }
+
+    /// A mesh nobody painted carries no colour attribute — the twenty-odd
+    /// examples that predate E-208 do not pay 16 bytes a vertex for white.
+    #[test]
+    fn an_unpainted_mesh_has_no_color_attribute() {
+        let mesh = sphere_builder().into_mesh();
+        assert!(mesh.attribute(Mesh::ATTRIBUTE_COLOR).is_none());
+    }
+
+    /// E-208's bridge: `paint::shade` writes into the array the `Mesh` ends up
+    /// owning, and the attribute appears because it was filled.
+    #[test]
+    fn shading_the_builder_puts_colors_on_the_mesh() {
+        use isomesh::paint::{Edit, PaintStack, Splat};
+
+        let mut builder = sphere_builder();
+        let vertices = builder.vertex_count();
+
+        let log: [Edit<Sphere<f32>, Sphere<f32>, f32>; 1] = [Edit::Spray(Splat {
+            shape: Sphere {
+                center: [0.0, 1.0, 0.0],
+                radius: 0.6,
+            },
+            color: [1.0, 0.0, 0.0, 1.0],
+            softness: 0.1,
+            depth: 0.1,
+        })];
+        let world = PaintStack {
+            base: Sphere::<f32>::canonical(),
+            edits: &log,
+            background: [0.5, 0.5, 0.5, 1.0],
+        };
+
+        // The borrow has to be split: shade into a scratch buffer, then swap it
+        // into the builder so the Mesh still gets the array by move.
+        let mut colors = Vec::new();
+        isomesh::paint::shade(builder.positions(), &world, &mut colors);
+        core::mem::swap(builder.colors_mut(), &mut colors);
+        assert_eq!(builder.colors().len(), vertices);
+
+        let mesh = builder.into_mesh();
+        let attribute = mesh
+            .attribute(Mesh::ATTRIBUTE_COLOR)
+            .expect("colour attribute");
+        assert_eq!(attribute.len(), vertices);
     }
 
     /// The core crate's own validity harness, run on what Bevy is about to

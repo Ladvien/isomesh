@@ -268,6 +268,62 @@ cd bevy_isomesh && cargo run --example game_editor --release
 
 ---
 
+## Graffiti that survives the wall it was sprayed on
+
+![Coloured paint on a wall with two holes blown through it, the paint intact and the rims bare](../screenshots/e208-game-paint.png)
+
+*Twelve sprays, then two holes blown through patches that were definitely painted. The paint around
+each hole has not moved, and the freshly exposed rim is bare — paint reaches a fixed depth from the
+surface **as it stood when the spray happened**, so a carve exposes material that was never painted.*
+
+The research this demo comes from prices the feature on **L²-nearest attribute transfer over a common
+subdivision** — machinery for carrying per-vertex colour from an old mesh to a new one, on the
+reasoning that the shared tetrahedral grid is the common refinement so the expensive half comes free.
+
+There is none of it here, because there is nothing to transfer. A world in this crate is a base field
+plus an ordered log of edits, so paint goes **in the log**: a splat is an entry alongside the carves,
+and colour is a function of world position. The carve moves the surface. The paint was never on the
+surface.
+
+So the answer is not a small number, it is an equality:
+
+| | |
+|---|---|
+| paint drift across two carves | **0.000000** |
+| probes whose surface those carves destroyed | 20 of 320 |
+| sprays that register drift (the control) | 27 of 40, up to 0.886 |
+
+**That last row is the one that makes the first row mean anything.** The first version of this
+measurement sprayed a single colour, so repainting red over red was numerically identical to paint
+staying put — it printed `0.000000` at every step and would have printed the same on an implementation
+that smeared the paint across the wall. Cycling the palette makes the same instrument sensitive, and
+only then is the zero across the carves evidence of anything.
+
+The cost of exactness is that every sample walks the log, and it grows sub-linearly:
+
+| edits in the log | 1–10 | 11–20 | 21–30 | 31–40 |
+|---|---|---|---|---|
+| ms per re-meshed chunk | 0.1375 | 0.1748 | 0.2450 | 0.3200 |
+
+**2.33× for 40× the log** — the same shape `game_dig` measures for brushes alone. Meshing itself pays
+almost nothing for the paint: the field walk skips sprays without evaluating their shapes, and a log
+with no sprays in it samples bit-identically to the plain `BrushStack`.
+
+One asymmetry worth knowing before you build on this. A carve changes geometry, so the chunks to
+re-mesh come from `mark_edit` comparing the field either side of it. A spray changes **only colour**,
+so the field either side is bit-identical and `mark_edit` correctly answers "nothing moved" — its
+chunks have to be named geometrically instead, from the nozzle's own bounding box.
+
+```bash
+cd bevy_isomesh && cargo run --example game_paint --release
+```
+
+`LMB` spray · `RMB` blow a hole · `1`–`5` colour · `[` `]` nozzle · `X` clear the log.
+
+[← back to the README](../../README.md)
+
+---
+
 ## A concave edge, moving, measured every frame
 
 ![An L-shaped notch cut from a block, with the edge distance for four extractors](../screenshots/e209-csg-props.png)

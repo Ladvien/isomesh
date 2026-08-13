@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**76 tickets archived, 12 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**77 tickets archived, 11 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -117,7 +117,6 @@ These use the algorithms the way a game does: chunked, edited, budgeted, collide
 
 | | ID | Example | What it has to prove | Blocked by |
 |---|---|---|---|---|
-| ☐ | **E-208** | `game_paint` — spray colour on a wall, then blow a hole through it | Paint on the remaining wall is exactly where you sprayed it. Row 4 of the opportunities table. | G-003, B-002 |
 
 ---
 
