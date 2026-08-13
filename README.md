@@ -6,7 +6,7 @@
 
 `isomesh` has to serve both a real-time voxel game and a CAD tool. That single constraint decides almost everything about it: no math library appears in a public signature, output buffers are caller-provided and reusable, the scalar type is generic over `f32` and `f64`, and the core crate has exactly one dependency.
 
-## Walking a world that is being built as you cross it
+## 495 seam crossings, zero holes
 
 ![A ball walking across streamed terrain, chunks loading continuously around it](docs/gifs/walking-the-seams.gif)
 
@@ -151,13 +151,15 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 395 tests, plus 10 doctests
+cargo test -p isomesh                    # 457 tests, plus 11 doctests
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
 cargo run --example marching_cubes_sphere --release             # the first GIF
 cargo run --example surface_nets_vs_marching_cubes --release    # the second and third
 cargo run --example dual_contouring_cube --release              # the sharp-feature comparison
+cargo run --example sharp_features --release                    # lambda, and what it costs at both ends
+cargo run --example qef_clamp --release                         # the clamp, and the red it does not remove
 cargo run --example manifold_check --release                    # the red marks, and A to make them go
 cargo run --example normal_estimation --release                 # three identical meshes, three shadings
 cargo run --example marching_tetrahedra --release               # 3x the triangles, and what they buy
@@ -202,8 +204,8 @@ ISOMESH_ALGORITHM=sn ISOMESH_FIELD=5 ISOMESH_SAMPLES=19 \
 ```
 
 `ISOMESH_SCREENSHOT` takes one shot and exits. `ISOMESH_FIELD`, `ISOMESH_SAMPLES`, `ISOMESH_VIEW`
-(`wire`, `normals`, `nogrid`, `nohud`), `ISOMESH_ALGORITHM` and `ISOMESH_WELD` set what it is a shot
-*of*.
+(`wire`, `normals`, `nogrid`, `nohud`), `ISOMESH_ALGORITHM`, `ISOMESH_CLAMP` and `ISOMESH_WELD` set
+what it is a shot *of*.
 
 ---
 

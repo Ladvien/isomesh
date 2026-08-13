@@ -107,7 +107,7 @@ pub struct Qef {
     /// Whether to confine the result to its cell.
     pub clamp: Clamp,
     /// The Tikhonov regularizer, or [`None`] for
-    /// [`solve::LAMBDA`](crate::dual_contouring::solve::LAMBDA).
+    /// [`solve::LAMBDA`].
     ///
     /// The sharpness knob. Toward zero the solve reproduces a three-plane corner
     /// exactly and lets a flat cell's vertex fly off; large, it pulls every

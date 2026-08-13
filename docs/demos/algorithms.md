@@ -79,7 +79,7 @@ The corners are the real difference, and dual contouring is what closes them. Me
 | Surface Nets | 0.0888 | **0.58** |
 | Dual Contouring | 0.0009 | **0.01** |
 
-Guaranteed intersection-free extraction turns out to be free, which is not what the folklore predicts. Confining each solved vertex to its own cell drives self-intersections to **exactly zero** on five of the seven test fields — `torus` goes 2.66 → 0 pairs per 1,000 triangles — and the corner above measures **identically** clamped or not, because a convex corner's solution is already inside its cell. What survives the clamp is 3.12 on the gyroid and 13.84 on fbm terrain, and those are precisely the two fields where two sheets of surface share a cell: a connectivity defect, not a placement one.
+Guaranteed intersection-free extraction turns out to be free *for placement*, and not sufficient overall — which is not what the folklore predicts in either direction. Confining each solved vertex to its own cell drives self-intersections to **exactly zero** on five of the seven test fields — `torus` goes 2.66 → 0 pairs per 1,000 triangles — and the corner above measures **identically** clamped or not, because a convex corner's solution is already inside its cell. What survives the clamp is 3.12 on the gyroid and 13.84 on fbm terrain, and those are precisely the two fields where two sheets of surface share a cell: a connectivity defect, not a placement one.
 
 It costs about **3%** over Surface Nets to do it, and the two meshes are otherwise the same mesh: identical index buffers, and 864 of 1016 vertices agreeing to within `2e-15` cells. Only the 152 on edges and corners move.
 
@@ -211,6 +211,53 @@ cd bevy_isomesh && cargo run --example sharp_features --release
 ```
 
 `-` `=` λ · `C` clamp · `1`–`4` field · `[` `]` resolution.
+
+---
+
+## What the clamp removes, and the half it cannot reach
+
+![The capped gyroid with the clamp off, offending triangles outlined in red](../screenshots/e110-qef-clamp-gyroid-off.png)
+
+*Every red outline is a triangle the self-intersection counter caught folding through another one. Same
+mesh, same λ; the only thing that changes below is whether each vertex is confined to its own cell.*
+
+The clamp is the cheapest correctness win in the crate and it is **not** a complete one, which is the
+whole content of this demo. On the capped gyroid at 33³:
+
+| | clamp off | clamp on |
+|---|---:|---:|
+| dual contouring | 71.429 | **3.118** |
+| manifold dual contouring | 41.383 | **5.669** |
+
+Pairs per 1,000 triangles. The clamp removes **95.6%** of them and leaves 3.118 — and what it leaves is
+not a smaller version of the same problem. Five of the seven reference fields go to *exactly* zero;
+`torus` reads 2.66 → 0. The two that don't are `gyroid` and `fbm_terrain`, which are precisely the
+fields with cells carrying two sheets of surface. That residue is a **connectivity** defect, and no
+constraint on where a vertex sits can reach it.
+
+Press `A` for the part that is genuinely counter-intuitive. Splitting the shared vertex is the obvious
+fix, and Manifold Dual Contouring makes the count **worse** — 3.118 → 5.669, 1.82×. The clamp's
+guarantee assumes one vertex per cell, and two vertices in one cell is exactly the assumption being
+dropped.
+
+**Two things the picture is not claiming.** The counter never compares triangles that share a vertex
+index, and dual contouring's quads share vertices across every cell face — 71,748 pairs are skipped on
+this mesh, against 756 found, so a fold pinching exactly at a shared vertex draws no red. And the red
+outlines come from the validator's own `pairs`, mapped back through a rebuilt copy of its face filter
+that refuses to draw at all if the two disagree; nothing here forms a second opinion about what counts
+as an intersection.
+
+Sweeping resolution splits the two fields apart, which was not the prediction. On `gyroid` the clamped
+residue falls with finer cells, 7.14 at 17³ to 1.12 at 49³ — multi-sheet cells are a resolution effect,
+so resolving them removes them. On `fbm_terrain` it does not move: 25.40 at 17³, 20.43 at 49³, wandering
+without direction in between. fBm has detail at every scale, so refining the grid uncovers new sub-cell
+features exactly as fast as it resolves the old ones.
+
+```bash
+cd bevy_isomesh && cargo run --example qef_clamp --release
+```
+
+`C` clamp · `A` algorithm · `I` red · `1`–`4` field · `[` `]` resolution.
 
 ---
 
