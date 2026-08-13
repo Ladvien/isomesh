@@ -167,6 +167,52 @@ cd bevy_isomesh && cargo run --example game_lod_flyover --release
 
 `Space` pause · `T` transitions on/off · `[` `]` speed · `R` reset.
 
+---
+
+## 288 chunks re-meshed, without missing a frame
+
+![An overloaded edit queue draining under a 2 ms frame budget](../screenshots/e206-budget.png)
+
+*Every chunk in the world dirty at once, and the queue re-fills the instant it empties. 28.6 chunks a
+frame at a 2 ms budget, 60 fps throughout.*
+
+A meshing paper reports throughput — chunks per second, milliseconds for a grid. A game cannot spend
+that, because it does not get a second. It gets 16.7 milliseconds and then it has to draw something.
+The question is not how fast the queue drains but **what it costs the frame it lands on**.
+
+The flat line is worth nothing without the version that spikes, so `U` drains the identical queue
+through `mesh_dirty`, which does all of it now:
+
+| | |
+|---|---|
+| unbudgeted, one frame | **20.62 ms** — misses a 16.7 ms frame |
+| budgeted, worst frame | **2.10 ms** |
+| lower peak, same total work | **9.8×** |
+
+A budget does not make meshing cheaper. It decides which frame pays, and the total is unchanged.
+
+**The guarantee, priced.** `mesh_within_budget` consults its predicate *after* each chunk, so a budget
+too small for one chunk still meshes one — the doc calls overshooting by at most one chunk "the price".
+Swept from 25 µs to 8 ms, a 320× range:
+
+| budget | chunks/frame | mean ms | overshoot ms |
+|---:|---:|---:|---:|
+| 0.025 | **1.00** | 0.085 | 0.157 |
+| 0.200 | 3.49 | 0.251 | 0.123 |
+| 1.000 | 15.15 | 1.016 | 0.099 |
+| 2.000 | 28.80 | 1.905 | 0.117 |
+| 8.000 | 96.02 | 6.269 | 0.122 |
+
+One chunk here is about 0.072 ms, and the overshoot is bounded by it and flat across the whole range.
+At a 25 µs budget — a third of one chunk — the rate is **exactly 1.00 chunks per frame**: never zero,
+never two. Both halves of the doc's argument are now numbers.
+
+```bash
+cd bevy_isomesh && cargo run --example game_budget --release
+```
+
+`Space` overload · `U` drain it unbudgeted · `[` `]` budget.
+
 [← back to the README](../../README.md)
 
 ---
