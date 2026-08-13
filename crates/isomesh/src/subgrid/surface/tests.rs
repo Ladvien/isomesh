@@ -273,6 +273,45 @@ fn parallel_quads_all_split_the_same_way() {
 }
 
 #[test]
+fn a_single_long_loop_fans_around_its_centre_of_mass() {
+    // (3, 2): gcd = 1, so one loop of length 4(5)/1 = 20. Case (2) -- one
+    // Steiner point at the centre of mass, one triangle per loop edge.
+    for (d1, d2, length) in [(3u32, 2u32, 20usize), (3, 1, 16), (5, 3, 32), (4, 3, 28)] {
+        let coords = pattern_coords(d1, d2);
+        let cycles = cycles(&coords);
+        assert_eq!(cycles.len(), 1, "({d1}, {d2}) should be a single loop");
+        assert_eq!(cycles[0].length(), length, "({d1}, {d2})");
+
+        let owned = crossings(coords.count);
+        let mut patch = TetPatch::new();
+        assert_eq!(
+            fill(&tet(&owned), &mut patch),
+            Ok(Unfilled::None),
+            "({d1}, {d2}) should be the single-loop case"
+        );
+        assert_eq!(patch.triangles.len(), length, "({d1}, {d2})");
+        assert_eq!(patch.positions.len(), length + 1, "({d1}, {d2})");
+
+        // The Steiner point is the centre of mass of the loop's vertices, which
+        // is what puts it inside their convex hull.
+        let steiner = patch.positions[length];
+        let mut sum = [0.0f64; 3];
+        for p in &patch.positions[..length] {
+            for (s, v) in sum.iter_mut().zip(p.iter()) {
+                *s += v;
+            }
+        }
+        for axis in 0..3 {
+            let mean = sum[axis] / length as f64;
+            assert!(
+                (steiner[axis] - mean).abs() < 1e-12,
+                "({d1}, {d2}): Steiner point is not the centre of mass"
+            );
+        }
+    }
+}
+
+#[test]
 fn every_implemented_case_emits_an_intersection_free_patch() {
     // The headline claim of §3.2 is that the output is intersection-free, so
     // this asserts **zero** rather than recording a metric -- the opposite of
@@ -306,8 +345,43 @@ fn every_implemented_case_emits_an_intersection_free_patch() {
             checked += 1;
         }
     }
-    // Quads (d₂ = 0) and octagons (d₁ = d₂) among 1..=5: 5 + 5 = 10.
-    assert_eq!(checked, 10, "the sweep did not reach the implemented cases");
+    // 20 patterns have 1 ≤ d₁ ≤ 5, 0 ≤ d₂ ≤ d₁. Exactly one of them — (4, 2),
+    // with gcd 2 and ℓ = 12 — needs subdivision; every other is a quad, an
+    // octagon or a single loop, and fills. A drop below 19 means a case
+    // regressed into being unhandled rather than the assertion getting weaker.
+    assert_eq!(checked, 19, "the sweep did not reach the implemented cases");
+}
+
+#[test]
+fn the_single_loop_zero_is_vacuous_and_this_is_what_makes_that_visible() {
+    // M-83 taken to its conclusion. A single loop is *one* fan, so every pair
+    // of its triangles shares the apex, and `self_intersections` skips every
+    // pair sharing a vertex. The zero reported for the single-loop case above
+    // is therefore not evidence of anything, and the honest thing is to assert
+    // that rather than let the sweep's green tick imply coverage it does not
+    // have.
+    //
+    // The quad and octagon cases are different: those have loops that share no
+    // vertex with each other, so their zeros are real. This asserts the
+    // difference, so if the counter ever grows the ability to see intra-fan
+    // folds, this test fails and the claim can be upgraded.
+    let coords = pattern_coords(3, 2);
+    let owned = crossings(coords.count);
+    let mut patch = TetPatch::new();
+    assert_eq!(fill(&tet(&owned), &mut patch), Ok(Unfilled::None));
+
+    let indices: Vec<u32> = patch.triangles.iter().flatten().copied().collect();
+    let report = crate::validate::self_intersections(&patch.positions, &indices, 1.0)
+        .expect("a unit tet is a valid spacing");
+
+    let n = patch.triangles.len() as u64;
+    let pairs = n * (n - 1) / 2;
+    assert_eq!(
+        report.adjacent_pairs_skipped, pairs,
+        "not every pair was skipped, so the counter can see *something* inside \
+         a fan and this test's premise needs revisiting"
+    );
+    assert_eq!(report.count(), 0);
 }
 
 #[test]
@@ -373,15 +447,13 @@ fn a_cycle_visits_every_segment_once_and_returns_to_its_start() {
 
 #[test]
 fn an_unimplemented_case_is_named_rather_than_guessed_at() {
-    // (3, 2): gcd = 1, so one loop of length 4(5)/1 = 20 -- §3.2.1 case (2),
-    // the single-loop case, not implemented. (3, 1): gcd = 1 as well, length
-    // 16. (4, 2): gcd = 2, so two loops of length 12 -- case (3), subdivision.
-    // The contract is that fill names which, and emits nothing for it.
+    // (4, 2): gcd = 2, so two loops of length 4(6)/2 = 12 -- §3.2.1 case (3),
+    // subdivision, not implemented. The contract is that fill names which case
+    // it reached, and emits nothing for it.
     for (d1, d2, expected) in [
-        (3u32, 2u32, Unfilled::SingleLoop),
-        (3, 1, Unfilled::SingleLoop),
-        (4, 2, Unfilled::Subdivision),
+        (4u32, 2u32, Unfilled::Subdivision),
         (6, 3, Unfilled::Subdivision),
+        (6, 4, Unfilled::Subdivision),
     ] {
         let coords = pattern_coords(d1, d2);
         let owned = crossings(coords.count);

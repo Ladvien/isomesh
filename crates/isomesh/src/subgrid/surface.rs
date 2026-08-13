@@ -492,11 +492,11 @@ pub fn fill<R: Real>(
                 out,
             ));
         }
-        // Case 4 -- a single loop longer than an octagon, and case 5 --
-        // subdivision. Neither is implemented; both are named exactly.
+        // Case 4 -- a single loop, longer than an octagon.
         Some(_) if pattern.loop_count() == 1 => {
-            unfilled = unfilled.worst(Unfilled::SingleLoop);
+            unfilled = unfilled.worst(fill_single_loop(&residual_loops, &index_of, out));
         }
+        // Case 5 -- subdivision. Not implemented; named exactly.
         Some(_) => unfilled = unfilled.worst(Unfilled::Subdivision),
         None => {}
     }
@@ -506,6 +506,80 @@ pub fn fill<R: Real>(
     }
 
     Ok(unfilled)
+}
+
+/// §3.2.1 case (2) — one loop, one Steiner point.
+///
+/// > If we have just `m = 1` loop, we insert an additional Steiner point `x` at
+/// > any point in the convex hull of the loop vertices, and triangulate the loop
+/// > by connecting each of its edges to `x`. In practice we let `x` be the
+/// > center of mass.
+///
+/// *"Any point in the convex hull"* is a genuine degree of freedom rather than
+/// an under-specification: the loop is a closed curve on the tet boundary, so
+/// every point of its hull sees every edge, and any of them fans without
+/// self-overlap. The centre of mass is in the hull for the same reason a
+/// centroid always is, so following the paper's practice costs nothing and
+/// invents nothing.
+///
+/// Reached only for `ℓ > 8`, since `ℓ = 4` is the quad case and `ℓ = 8` is the
+/// octagon case, which the paper lists first and which therefore takes the
+/// `m = 1, ℓ = 8` overlap.
+fn fill_single_loop<R: Real>(
+    loops: &[&Cycle],
+    index_of: &impl Fn(FacePoint) -> u32,
+    out: &mut TetPatch<R>,
+) -> Unfilled {
+    let [cycle] = loops else {
+        return Unfilled::Inconsistent;
+    };
+    let n = cycle.points.len();
+    if n < 3 {
+        return Unfilled::Inconsistent;
+    }
+
+    // The centre of mass of the loop's own vertices. Summed in the cycle's
+    // order, which `walk` fixed canonically, so the rounding is identical run to
+    // run and T-004 has nothing to catch.
+    let mut sum = [R::ZERO; 3];
+    for point in &cycle.points {
+        let Some(index) = usize::try_from(index_of(*point))
+            .ok()
+            .filter(|i| *i < out.positions.len())
+        else {
+            return Unfilled::Inconsistent;
+        };
+        let p = out.positions[index];
+        for (slot, value) in sum.iter_mut().zip(p.iter()) {
+            *slot += *value;
+        }
+    }
+    let scale = R::ONE / R::from_f64(n as f64);
+    let centre = [sum[0] * scale, sum[1] * scale, sum[2] * scale];
+
+    let steiner = out.positions.len() as u32;
+    out.positions.push(centre);
+    fan(cycle, steiner, index_of, out);
+    Unfilled::None
+}
+
+/// Connect every edge of a loop to one point — §3.2.1's triangulation primitive.
+///
+/// Used by both Steiner cases. Emits one triangle per loop edge, in cycle order,
+/// so the winding is whatever the cycle's own orientation is and is consistent
+/// across every loop in a tet.
+fn fan<R: Real>(
+    cycle: &Cycle,
+    steiner: u32,
+    index_of: &impl Fn(FacePoint) -> u32,
+    out: &mut TetPatch<R>,
+) {
+    let n = cycle.points.len();
+    for k in 0..n {
+        let a = index_of(cycle.points[k]);
+        let b = index_of(cycle.points[(k + 1) % n]);
+        out.triangles.push([a, b, steiner]);
+    }
 }
 
 /// §3.2.1 case (1) — octagons, and their Steiner points.
@@ -636,11 +710,7 @@ fn fill_octagons<R: Real>(
 
     // Fan each octagon around its Steiner point: one triangle per loop edge.
     for (cycle, steiner) in assigned {
-        for k in 0..cycle.points.len() {
-            let a = index_of(cycle.points[k]);
-            let b = index_of(cycle.points[(k + 1) % cycle.points.len()]);
-            out.triangles.push([a, b, steiner]);
-        }
+        fan(cycle, steiner, index_of, out);
     }
 
     Unfilled::None
