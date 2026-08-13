@@ -178,7 +178,7 @@ Recorded so they don't get picked up early, and so it's clear they weren't forgo
   consumer turns up needing something the existing predicate cannot express.
 - Neural / differentiable extraction (FlexiCubes, TetWeave) — different problem, different crate.
 - Publishing real releases to crates.io. **`I-005 — reserve the name` is done: `isomesh 0.0.0` was
-  published on 2026-08-12** and the name is held. `megamesh` was taken 48 hours before we checked it,
+  published on 2026-08-12, and `0.0.1` on 2026-08-13 to carry the crate's README** and the name is held. `megamesh` was taken 48 hours before we checked it,
   which is what made this urgent rather than tidy. The placeholder is 82 files / 329 KiB compressed —
   source, benches, golden hashes and proptest regressions, nothing stray — and `0.0.0` is now burned
   permanently, which is the intent.

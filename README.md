@@ -16,7 +16,7 @@ Early. **Seven** extraction algorithms — including one that resolves features 
 | **Not yet** | Marching Cubes 33's interior test · simplicial embedding for subgrid MT (A-014d) · convex decomposition · GPU path |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
-The name is reserved on crates.io at `0.0.0` — a placeholder, not a release.
+The name is reserved on crates.io at `0.0.1` — a placeholder, not a release.
 
 ---
 
