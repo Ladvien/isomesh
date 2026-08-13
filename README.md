@@ -57,7 +57,7 @@ same grid, at any resolution you like.
 
 ## Status
 
-Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 62 tickets done, 23 open.
+Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 68 tickets done, 18 open.
 
 | | |
 |---|---|
@@ -94,11 +94,11 @@ quoted from a paper.
 
 | | |
 |---|---|
-| **[Gameplay](docs/demos/gameplay.md)** | streaming a world past a camera · walking every chunk seam · digging tunnels · LOD cracks and the transition cells that close them · handing a mesh to a physics engine |
+| **[Gameplay](docs/demos/gameplay.md)** | streaming a world past a camera · walking every chunk seam with a rigid body · digging tunnels · shooting a wall so the debris *is* the boolean · flying an LOD ladder and counting what opens up · handing a mesh to a physics engine |
 | **[Algorithms](docs/demos/algorithms.md)** | Marching Cubes · Surface Nets · Dual Contouring · Manifold Dual Contouring · Marching Tetrahedra · greedy quads · subgrid Marching Tetrahedra, and a six-way shootout in one process |
 | **[Correctness](docs/demos/correctness.md)** | where a mesh stops being a manifold · what splitting the vertex costs · which way the surface faces · ambiguous faces · the crack between two chunks |
 
-Between them they carry 18 demos, 6 GIFs and every measured figure this crate makes a claim about.
+Between them they carry 23 demos, 6 GIFs and every measured figure this crate makes a claim about.
 
 ---
 
@@ -172,6 +172,7 @@ cargo run --example game_terrain_stream --release                # a world strea
 cargo run --example game_walk --release                          # the acid test: walk every seam
 cargo run --example game_capsule_walk --release                  # the same seams, with a body that slides
 cargo run --example game_destruction --release                   # shoot it, and the debris is the boolean
+cargo run --example game_lod_flyover --release                   # LOD ladder, and the crack count as you fly
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires

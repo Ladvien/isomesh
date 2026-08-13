@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**67 tickets archived, 18 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**68 tickets archived, 18 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -114,7 +114,7 @@ These use the algorithms the way a game does: chunked, edited, budgeted, collide
 
 | | ID | Example | What it has to prove | Blocked by |
 |---|---|---|---|---|
-| ☐ | **E-205** | `game_lod_flyover` — fly out and back across LOD transitions | No popping, no cracks, no hitching. Transvoxel doing its job at speed. | G-004, A-011b |
+| ☐ | **E-210** | `game_showcase` — **the demos prove correctness and undersell the crate.** Every gameplay demo runs on the same fBm *heightfield*, so nothing on that page shows a **cave, an overhang or an arch** — which is the entire reason to use an SDF voxel mesher instead of a heightmap. The pieces all exist and each is demonstrated alone; a game is all of them at once. **Wanted:** one hero demo on a field with real 3D topology, streamed, with a character carving through it under a frame budget, art-directed (a material worth looking at, lighting, no HUD) and captured with `ISOMESH_VIEW=nohud` as the README's top GIF, with the HUD stills kept beneath it as the evidence. **Acceptance:** a viewer who does not read the numbers can see something a heightmap cannot do. | M | E-205, E-206, G-003 |
 | ☐ | **E-206** | `game_budget` — a deliberately overloaded edit queue under a frame budget | Frame time stays flat while the backlog drains. **Amortized cost per frame is the number no paper measures and the only one a game cares about.** | G-006 |
 | ☐ | **E-207** | `game_editor` — sculpt with brushes, undo/redo over an op log | The CAD/editor use case. Undo is a re-fold of the log, not a snapshot. | G-003 |
 | ☐ | **E-208** | `game_paint` — spray colour on a wall, then blow a hole through it | Paint on the remaining wall is exactly where you sprayed it. Row 4 of the opportunities table. | G-003, B-002 |

@@ -88,6 +88,49 @@ cd bevy_isomesh && cargo run --example game_destruction --release
 
 `Space` fire · `[` `]` charge radius · `T` target · `X` reset.
 
+---
+
+## Flying an LOD ladder, and counting what opens up
+
+![An LOD ladder with transition cells closing every seam](../screenshots/e205-lod-flyover-stitched.png)
+
+*Twelve blocks stacked along `x`, each meshed at its own spacing — levels 0, 1 and 2, so 0.25, 0.5 and
+1.0 world units — with the camera flying out along the ladder and back. Every 2:1 seam is bridged by
+Transvoxel transition cells, and the count of open edges lying in a seam plane is on the HUD.*
+
+Three claims, three measurements, and only one of them came out the way the ticket phrased it.
+
+**No cracks — confirmed, and on a configuration that had never run.** `transvoxel_seams` meshes exactly
+one pair of blocks with the fine one on the low-`x` side, so `inset_boundary` had only ever been called
+with `face_bit(0, 0)`. Flying out *and back* puts coarse blocks on both sides of the camera, so half the
+seams here are the mirror image — and a mirrored patch is the classic place for an inside-out winding,
+which no manifold or Euler check can see. Across the whole flight: **0 open edges on both sides**.
+
+That zero is only worth something because it can fail. With transitions off, the same worlds report
+**71 open edges on the low side and 102–111 on the high side**:
+
+![The same ladder with transitions off, seams open](../screenshots/e205-lod-flyover-cracked.png)
+
+**"No popping" is the wrong claim.** A coarser mesh genuinely *is* a different surface, so the honest
+deliverable is the size of the jump, not a denial that it happens. Meshing a block at both its old and
+new level at the instant it switches: **worst 3.136 cells**, typically 0.6–1.6. That number decides
+whether a fade can hide it, and there is no figure for it anywhere in the literature review.
+
+**No hitching — but only after the naive version was fixed.** Re-extracting all twelve blocks whenever
+any one changes level costs **12–23 ms** and misses the frame. Caching each block's *un-inset*
+extraction and rebuilding only the one or two that actually changed takes it to **4.6–12.4 ms**. What
+has to be cached is the extraction *before* the taper, because `inset_boundary` mutates positions in
+place and which faces need it depends on the neighbours' levels.
+
+The ladder runs along one axis on purpose: every seam is an `x` seam, so a crack has no second axis to
+hide behind. A production terrain needs four faces, or six with caves, and this does not show that.
+
+```bash
+cd bevy_isomesh && cargo run --example game_lod_flyover --release
+```
+
+`Space` pause · `T` transitions on/off · `[` `]` speed · `R` reset.
+
 [← back to the README](../../README.md)
 
 ---
