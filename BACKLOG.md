@@ -178,6 +178,13 @@ Recorded so they don't get picked up early, and so it's clear they weren't forgo
   whose public API is `[f32; 3]`. Nothing further is owed here; reopen it as a real ticket only if a
   consumer turns up needing something the existing predicate cannot express.
 - Neural / differentiable extraction (FlexiCubes, TetWeave) — different problem, different crate.
-- Publishing to crates.io. **But `I-005 — reserve the name` is now overdue, not deferred.** Publish a
-  `0.0.0` placeholder. `megamesh` was taken 48 hours before we checked it; `isomesh` has been sitting
-  unreserved for a day with a public repo pointing at it. Ten minutes, unbounded downside.
+- Publishing real releases to crates.io. **`I-005 — reserve the name` is done: `isomesh 0.0.0` was
+  published on 2026-08-12** and the name is held. `megamesh` was taken 48 hours before we checked it,
+  which is what made this urgent rather than tidy. The placeholder is 82 files / 329 KiB compressed —
+  source, benches, golden hashes and proptest regressions, nothing stray — and `0.0.0` is now burned
+  permanently, which is the intent.
+
+  What stays out of scope is a **real** release. That wants a `crates/isomesh/README.md` (the root one
+  is outside the package directory and cannot be referenced from it, so the crates.io page currently
+  shows only the one-line description), a version policy, and a decision about whether `isomesh-gpu`
+  and `bevy_isomesh` publish alongside it. None of that is urgent now the name cannot be taken.
