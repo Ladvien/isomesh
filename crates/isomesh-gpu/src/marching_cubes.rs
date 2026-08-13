@@ -75,18 +75,81 @@ pub fn case_table_bytes() -> Vec<u8> {
     out
 }
 
+/// Where the time went inside one [`extract`](MarchingCubesGpu::extract).
+///
+/// Always filled in, rather than sitting behind a flag or a second `_timed`
+/// entry point. Five `Instant::now()` calls against a dispatch is nothing, and
+/// a timing path that has to be opted into is a timing path nobody has run —
+/// which is how "the GPU is slower" gets reported without anyone knowing
+/// *which part* of it is slower.
+///
+/// Wall-clock from the CPU's side. `poll(Wait)` inside the read-backs is what
+/// makes these meaningful at all: without a wait the submit returns
+/// immediately and every millisecond lands on whichever call happens to block
+/// first. Timestamp queries would attribute GPU-side time more precisely and
+/// need a device feature this crate does not request.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct ExtractTimings {
+    /// Classifying every cell and writing per-cell triangle counts.
+    pub count_ms: f64,
+    /// Reading those counts back — the barrier the two-pass design costs.
+    pub counts_readback_ms: f64,
+    /// The CPU-side exclusive prefix sum and the offsets upload.
+    pub prefix_ms: f64,
+    /// Classifying again and writing the triangles.
+    pub emit_ms: f64,
+    /// Reading positions and normals back.
+    pub geometry_readback_ms: f64,
+}
+
+impl ExtractTimings {
+    /// Everything above, summed.
+    #[must_use]
+    pub fn total_ms(&self) -> f64 {
+        self.count_ms
+            + self.counts_readback_ms
+            + self.prefix_ms
+            + self.emit_ms
+            + self.geometry_readback_ms
+    }
+
+    /// The share spent moving data back to the CPU rather than computing.
+    ///
+    /// The number that decides whether a GPU path is worth it at all: a
+    /// consumer rendering straight from GPU memory never pays it, and one that
+    /// needs a collider always does.
+    #[must_use]
+    pub fn readback_share(&self) -> f64 {
+        let total = self.total_ms();
+        if total > 0.0 {
+            (self.counts_readback_ms + self.geometry_readback_ms) / total
+        } else {
+            0.0
+        }
+    }
+}
+
 /// A triangle soup read back from the GPU.
 ///
 /// Positions and normals are parallel and three per triangle, in cell order.
 /// There is no index buffer because there are no shared vertices — see the
 /// module docs.
-#[derive(Clone, Debug, Default, PartialEq)]
+/// # Not `PartialEq`, deliberately
+///
+/// [`timings`](Self::timings) is wall-clock and never repeats, so a derived
+/// equality would make two runs of the same input compare **unequal** — the
+/// exact opposite of what anyone reaching for `==` on a mesh wants. Comparing
+/// geometry means comparing `positions` and `indices`; saying so at the call
+/// site is clearer than a hand-written `PartialEq` that silently drops a field.
+#[derive(Clone, Debug, Default)]
 pub struct GpuMesh {
     /// One per vertex.
     pub positions: Vec<[f32; 3]>,
     /// One per vertex, parallel to `positions`. Unit length, or zero where the
     /// field's gradient vanishes.
     pub normals: Vec<[f32; 3]>,
+    /// Where the time went producing this.
+    pub timings: ExtractTimings,
 }
 
 impl GpuMesh {
@@ -245,6 +308,9 @@ impl MarchingCubesGpu {
             mapped_at_creation: false,
         });
 
+        let mut timings = ExtractTimings::default();
+
+        let started = std::time::Instant::now();
         self.dispatch(
             device,
             queue,
@@ -256,7 +322,12 @@ impl MarchingCubesGpu {
             &self.count,
             groups,
         );
+        timings.count_ms = started.elapsed().as_secs_f64() * 1000.0;
+
+        let started = std::time::Instant::now();
         let per_cell = read_buffer_u32(device, queue, &counts, counts_bytes)?;
+        timings.counts_readback_ms = started.elapsed().as_secs_f64() * 1000.0;
+        let started = std::time::Instant::now();
 
         // Exclusive prefix sum on the CPU. A scan kernel is the obvious
         // optimisation and is not this ticket -- the readback is already the
@@ -271,7 +342,11 @@ impl MarchingCubesGpu {
         }
         let triangles = running;
         if triangles == 0 {
-            return Ok(GpuMesh::default());
+            timings.prefix_ms = started.elapsed().as_secs_f64() * 1000.0;
+            return Ok(GpuMesh {
+                timings,
+                ..GpuMesh::default()
+            });
         }
 
         let mut offset_bytes = Vec::with_capacity(offsets.len() * 4);
@@ -279,6 +354,7 @@ impl MarchingCubesGpu {
             offset_bytes.extend_from_slice(&o.to_le_bytes());
         }
         queue.write_buffer(&counts, 0, &offset_bytes);
+        timings.prefix_ms = started.elapsed().as_secs_f64() * 1000.0;
 
         let vertex_floats = u64::from(triangles) * 3 * 3;
         let geometry = |label| {
@@ -292,18 +368,23 @@ impl MarchingCubesGpu {
         let positions = geometry("isomesh positions");
         let normals = geometry("isomesh normals");
 
+        let started = std::time::Instant::now();
         self.dispatch(
             device, queue, &uniform, field, &counts, &positions, &normals, &self.emit, groups,
         );
+        timings.emit_ms = started.elapsed().as_secs_f64() * 1000.0;
 
+        let started = std::time::Instant::now();
         let flat_positions = read_buffer(device, queue, &positions, vertex_floats * 4)?;
         let flat_normals = read_buffer(device, queue, &normals, vertex_floats * 4)?;
+        timings.geometry_readback_ms = started.elapsed().as_secs_f64() * 1000.0;
         let triple = |flat: &[f32]| -> Vec<[f32; 3]> {
             flat.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect()
         };
         Ok(GpuMesh {
             positions: triple(&flat_positions),
             normals: triple(&flat_normals),
+            timings,
         })
     }
 

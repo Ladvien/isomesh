@@ -224,7 +224,11 @@ fn extraction_is_deterministic() {
     let second = mc
         .extract(gpu.device(), gpu.queue(), &buffer)
         .expect("extract");
-    assert_eq!(first, second, "two runs of the same input disagreed");
+    // Geometry, explicitly. `GpuMesh` is not `PartialEq` precisely because it
+    // carries wall-clock timings, which never repeat and are not part of what
+    // "the same mesh" means.
+    assert_eq!(first.positions, second.positions, "positions differ");
+    assert_eq!(first.normals, second.normals, "normals differ");
 }
 
 /// Normals point away from the solid, which is the convention every consumer
