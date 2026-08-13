@@ -305,6 +305,41 @@ cd bevy_isomesh && cargo run --example precision_f32_vs_f64 --release
 
 ---
 
+## What the vertex solve actually sees
+
+![One cell of box_exact, with its crossings, normals and solved vertex drawn](../screenshots/e114-hermite-debug-box.png)
+
+*One cell at a corner of `box_exact`. Three amber dots are the edge crossings, the amber lines are the
+surface normal at each, the green dot is where the QEF put the vertex — exactly on the box corner — and
+the white box is the cell.*
+
+Dual Contouring's input is not the field. It is **Hermite data**: where the surface crosses each of a
+cell's twelve edges, and the normal at each of those points. Everything the vertex decision knows is in
+that picture, which is why disagreeing normals produce a sharp corner and agreeing ones produce a flat
+patch.
+
+The demo picks the cell for you, and *how* it picks is the interesting part. The obvious score — the
+cell whose unclamped solve sits furthest from its own centre — is M-30's quantity, and M-30 also records
+that `box_exact` has **zero** vertices outside their cells. So on this demo's default field that score
+is about 0.006 everywhere and the winner is chosen by floating-point noise. It landed on a corner
+anyway, which is exactly how a broken heuristic survives review. The score is now normal disagreement,
+`1 − |mean(normals)|`: zero on a flat patch, `0.42` on a box corner.
+
+Two other things this example had to get right rather than assume. `HermiteCell::from_corners` is public
+while the corner order it requires is private, so the example duplicates the layout and then **verifies
+it against the crate at startup** — and that check is mutation-tested, because swapping x and y still
+yields four crossings and would pass a check that only counted them. And the first draft defaulted to
+13³, which is precisely E-104's grid-aligned trap for `box_exact`: the demo opened on the degenerate
+case it exists to explain. The resolution step is now arithmetic that cannot land on one.
+
+```bash
+cd bevy_isomesh && cargo run --example hermite_debug --release
+```
+
+Arrows move the cell in x/y · `,` `.` in z · `-` `=` λ · `[` `]` resolution · `1`–`3` field.
+
+---
+
 ## Where an algorithm breaks, measured rather than described
 
 ![Surface Nets against Marching Cubes on a capped gyroid](../gifs/surface-nets-vs-marching-cubes-gyroid.gif)

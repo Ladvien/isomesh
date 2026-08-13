@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**63 tickets archived, 22 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**64 tickets archived, 21 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -108,7 +108,6 @@ the point** — they're how someone decides whether this crate is usable.
 
 | | ID | Example | Blocked by |
 |---|---|---|---|
-| ☐ | **E-114** | `hermite_debug` — crossings, normals, solved vertex, cell box as gizmos. The view you debug A-007 in. | A-006 |
 
 ### 4b — Game-shaped
 
