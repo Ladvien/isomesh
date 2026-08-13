@@ -114,9 +114,13 @@ cargo run -p isomesh-gpu --example mesh_shader_probe
 ```
 
 Reports every adapter's `EXPERIMENTAL_MESH_SHADER` bits, then the three things the bits do not say.
-Measured here (RTX 3090 / Vulkan): advertised, multiview, points — **and unusable from this
-workspace**, because `ExperimentalFeatures::enabled()` is a `const unsafe fn` and every crate sets
-`unsafe_code = "forbid"`.
+Measured here (RTX 3090 / Vulkan): advertised, multiview, points.
+
+**Reaching them needs no `unsafe` from this repository.** Enabling the feature does require a token
+whose constructor is a `const unsafe fn` — but this crate never opens a device, only borrows one, and
+Bevy writes that `unsafe` itself (`bevy_render` 0.19, `renderer/mod.rs:335`). Bevy's default
+`Functionality` priority requests every advertised feature, so its device already reports
+`mesh_shader=true` here. These crates stay 100% safe Rust.
 
 wgpu's own source settles the Metal question: the feature reaches Vulkan, DX12 and Metal, but *"naga
 is only supported on vulkan; on other platforms you will have to use passthrough shaders."* So mesh

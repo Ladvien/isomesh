@@ -86,11 +86,17 @@ Platform here is **macOS / arm64 → Metal**. Two consequences:
   a caller supplies pre-compiled MSL, which makes mesh shaders a *fork in the shader pipeline* rather
   than a flag on it.
 
-  Two things still stand. **Metal itself is unmeasured** — the probe has only been run on Linux/Vulkan
-  (RTX 3090: advertised, multiview, points). Run `cargo run -p isomesh-gpu --example mesh_shader_probe`
-  on the Mac and record what it says. And **enabling the feature requires `unsafe`**
-  (`ExperimentalFeatures::enabled()` is a `const unsafe fn`) while every crate here sets
-  `unsafe_code = "forbid"`, so GPU-008 is blocked on that policy decision rather than on work.
+  **Reaching it needs no `unsafe` from us, and the crates stay 100% safe Rust** (M-147). Enabling the
+  feature does require a token whose constructor is a `const unsafe fn` — but `isomesh-gpu` never opens
+  a device (its API takes `&wgpu::Device`), and **Bevy writes that `unsafe` itself** at
+  `bevy_render-0.19.0/src/renderer/mod.rs:335`. Bevy's default `Functionality` priority requests every
+  feature the adapter advertises, so its device already reports `mesh_shader=true` here, measured. An
+  earlier note claimed GPU-008 was blocked on a policy decision; that was inferred from this crate's
+  own headless device without checking the path a Bevy example takes, and it was wrong.
+
+  **Metal itself is still unmeasured** — the probe has only run on Linux/Vulkan (RTX 3090: advertised,
+  multiview, points). Run `cargo run -p isomesh-gpu --example mesh_shader_probe` on the Mac and record
+  what it says.
 
 ---
 
