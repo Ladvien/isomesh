@@ -309,3 +309,62 @@ fn the_thin_plate_census_reproduces_with_the_real_root_finder() {
     assert_eq!(multi_root_edges, 620, "edges with more than one root");
     assert_eq!(kinds, [0, 3060, 192], "curves open / normal / non-normal");
 }
+
+#[test]
+fn the_welded_output_is_a_closed_consistently_oriented_manifold() {
+    // A-014e's acceptance. §3.2 fixes each polygon's winding from its own
+    // boundary curve, which knows nothing about which side the field calls
+    // inside, so the extractor imposes it per triangle against the gradient --
+    // per triangle and not per patch, because `thin_plate`'s two faces are 0.4
+    // cells apart and land in the same tetrahedron.
+    //
+    // **The weld is not a convenience here, it is a precondition.** The
+    // extractor emits each tetrahedron's vertices independently, so before
+    // welding the surface is 896 disconnected triangles: 2,240 boundary edges,
+    // and an orientation check that can only see the edges interior to a single
+    // tetrahedron. Welding is what turns it into a surface at all. See M-96.
+    use crate::validate::{ValidateConfig, validate_indexed};
+
+    for (name, n, samples, expected_chi) in
+        [("thin_plate", 17u32, 16u32, 2i64), ("sphere", 17, 16, 2)]
+    {
+        let (mut out, cell) = match name {
+            "thin_plate" => {
+                let field = ThinPlate::<f64>::canonical();
+                let (shape, origin, cell) = grid(&field, n);
+                let mut mt = SubgridMarchingTetrahedra::<f64>::new(samples).expect("valid");
+                let mut out = MeshBuffer::<f64>::default();
+                mt.extract(&field, &shape, origin, cell, &mut out)
+                    .expect("extract");
+                (out, cell)
+            }
+            _ => {
+                let field = crate::fields::Sphere::<f64>::canonical();
+                let (shape, origin, cell) = grid(&field, n);
+                let mut mt = SubgridMarchingTetrahedra::<f64>::new(samples).expect("valid");
+                let mut out = MeshBuffer::<f64>::default();
+                mt.extract(&field, &shape, origin, cell, &mut out)
+                    .expect("extract");
+                (out, cell)
+            }
+        };
+
+        let mut welder = crate::weld::Welder::<f64>::new();
+        welder
+            .weld(&mut out, cell * 1e-6)
+            .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
+
+        let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
+        let report = validate_indexed(&out.positions, &out.indices, &cfg);
+
+        assert_eq!(report.inconsistently_oriented_edges, 0, "{name}: {report}");
+        assert_eq!(report.non_manifold_edges, 0, "{name}: {report}");
+        assert_eq!(report.non_manifold_vertices, 0, "{name}: {report}");
+        assert_eq!(report.boundary_edges, 0, "{name}: {report}");
+        assert!(report.is_closed(), "{name}: {report}");
+        assert_eq!(
+            report.euler_characteristic, expected_chi,
+            "{name}: {report}"
+        );
+    }
+}

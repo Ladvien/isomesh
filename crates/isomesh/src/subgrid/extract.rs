@@ -18,9 +18,10 @@
 //!
 //! Identical to [`marching_cubes`](crate::marching_cubes) and
 //! [`marching_tetrahedra`](crate::marching_tetrahedra), deliberately: sign
-//! negative-inside, zero counts as outside, normals the field's own gradient.
-//! The one convention that is *not* shared is winding, which this extractor does
-//! not yet control — see the caveat on [`SubgridMarchingTetrahedra::extract`].
+//! negative-inside, zero counts as outside, normals the field's own gradient,
+//! winding counter-clockwise seen from outside the solid. The last of those is
+//! imposed here rather than inherited — see
+//! [`extract`](SubgridMarchingTetrahedra::extract).
 //!
 //! # Why every cell recomputes its neighbours' edges
 //!
@@ -101,14 +102,24 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
     /// the field is never sampled at the grid nodes, because node values are
     /// exactly the information this method replaces.
     ///
-    /// # Winding
+    /// # Winding, and why the output must be welded before it is judged
     ///
-    /// **Not yet oriented.** §3.2's reconstruction fixes each polygon's vertex
-    /// order from its own boundary curve, which is consistent within a
-    /// tetrahedron and carries no relationship to the field's inside. Orienting
-    /// the output against the gradient is real work and is not done here, so the
-    /// T-001 orientation check is expected to fail on this extractor's output
-    /// until it is. That is stated rather than quietly tolerated.
+    /// Counter-clockwise seen from outside the solid, matching every other
+    /// extractor here. That is **imposed rather than inherited**: §3.2 fixes
+    /// each polygon's vertex order from its own boundary curve, which is
+    /// consistent within a tetrahedron and carries no relationship to which side
+    /// the field calls inside. Each triangle is therefore flipped, if needed, to
+    /// agree with the gradient at its own centroid — per triangle and not per
+    /// patch, because a sheet thinner than a cell puts two oppositely-facing
+    /// surfaces inside one tetrahedron.
+    ///
+    /// **Vertices are emitted per tetrahedron and are not shared.** Before
+    /// welding, the output is a triangle soup: every edge looks like a boundary
+    /// edge and the mesh has no topology to check. Weld with
+    /// [`Welder`](crate::weld::Welder) before applying
+    /// [`validate_indexed`](crate::validate::validate_indexed) or measuring
+    /// self-intersections — M-93 and M-96 are both consequences of forgetting
+    /// that.
     ///
     /// # Errors
     ///
@@ -250,15 +261,46 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
                 self.index.get(tri[1] as usize),
                 self.index.get(tri[2] as usize),
             );
-            match (a, b, c) {
-                (Some(a), Some(b), Some(c)) => out.triangle(*a, *b, *c),
-                _ => {
-                    return Err(crate::Error::SubgridUnfilled {
-                        cell,
-                        tet: t as u8,
-                        reason: "a triangle indexed a vertex the patch does not have",
-                    });
-                }
+            let (Some(a), Some(b), Some(c)) = (a, b, c) else {
+                return Err(crate::Error::SubgridUnfilled {
+                    cell,
+                    tet: t as u8,
+                    reason: "a triangle indexed a vertex the patch does not have",
+                });
+            };
+
+            // Orientation. §3.2 fixes each polygon's vertex order from its own
+            // boundary curve, which is consistent within a tetrahedron and
+            // carries no relation to which side the field calls inside — so the
+            // winding has to be imposed here, against the only thing that knows:
+            // the gradient, which points away from the solid.
+            //
+            // Per triangle rather than per patch, because one tetrahedron can
+            // carry sheets facing opposite ways — `thin_plate`'s two faces are
+            // 0.4 cells apart and routinely land in the same cell.
+            let (pa, pb, pc) = (
+                self.patch.positions[tri[0] as usize],
+                self.patch.positions[tri[1] as usize],
+                self.patch.positions[tri[2] as usize],
+            );
+            let face = vec3::cross(vec3::sub(pb, pa), vec3::sub(pc, pa));
+            let third = R::ONE / R::from_f64(3.0);
+            let centroid = [
+                (pa[0] + pb[0] + pc[0]) * third,
+                (pa[1] + pb[1] + pc[1]) * third,
+                (pa[2] + pb[2] + pc[2]) * third,
+            ];
+            let outward = vec3::dot(face, sdf.gradient(centroid));
+
+            if outward < R::ZERO {
+                out.triangle(*a, *c, *b);
+            } else {
+                // Includes the exactly-zero case, which is a triangle with no
+                // area — §3.2's boundary disks emit those by construction
+                // (V-21) and there is no orientation to choose for one. Left in
+                // its original order rather than dropped, so the connectivity
+                // §3.2 built stays intact.
+                out.triangle(*a, *b, *c);
             }
         }
         Ok(())
