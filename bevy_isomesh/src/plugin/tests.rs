@@ -341,3 +341,108 @@ fn the_subgrid_extractor_is_reachable_through_the_component() {
     drain_until(&mut app, |app| meshed(app) == 1);
     assert_eq!(meshed(&mut app), 1);
 }
+
+/// Two adjacent chunks, meshed independently, welded, counting boundary edges
+/// that lie in their shared plane.
+///
+/// Excludes the two-chunk block's own six walls, which are the block ending
+/// rather than a seam failing. **The first version of this omitted `y`**, and a
+/// field extending past the chunk's vertical range clipped at the top and put one
+/// of those edges in the seam plane -- reported as a Marching Cubes seam failure
+/// that was nothing of the sort.
+fn seam_open_edges<S: VolumeField>(field: &S, extractor: Extractor) -> usize {
+    let layout = ChunkLayout::new(16, 0.25, [0.0; 3]).expect("a valid layout");
+    let mut all = isomesh::MeshBuffer::<f32>::new();
+    for id in [ChunkId::new([0, 0, 0]), ChunkId::new([1, 0, 0])] {
+        let built = extract_chunk(field, &layout, id, extractor);
+        let mut buf = isomesh::MeshBuffer::<f32>::new();
+        buf.positions.extend_from_slice(built.positions());
+        buf.normals.extend_from_slice(built.normals());
+        buf.indices.extend_from_slice(built.indices());
+        all.append(&buf);
+    }
+    let h = layout.cell_size();
+    isomesh::weld::Welder::<f32>::new()
+        .weld(&mut all, h * 1e-5)
+        .expect("weld");
+    let cfg = isomesh::validate::ValidateConfig::from_cell_size(f64::from(h)).expect("cfg");
+    let (_report, features) =
+        isomesh::validate::validate_features(&all.positions, &all.indices, &cfg);
+
+    let (seam, tol) = (4.0f32, h * 0.25);
+    let outer = |v: [f32; 3]| {
+        v[0] < tol
+            || v[0] > 8.0 - tol
+            || v[1] < tol
+            || v[1] > 4.0 - tol
+            || v[2] < tol
+            || v[2] > 8.0 - tol
+    };
+    features
+        .boundary_edges
+        .iter()
+        .filter(|e| {
+            let (p, q) = (all.positions[e[0] as usize], all.positions[e[1] as usize]);
+            !(outer(p) && outer(q)) && (p[0] - seam).abs() < tol && (q[0] - seam).abs() < tol
+        })
+        .count()
+}
+
+/// A field that crosses the seam plane along its whole length.
+struct Waves;
+impl Sdf for Waves {
+    type Scalar = f32;
+    fn sample(&self, p: [f32; 3]) -> f32 {
+        p[1] - 0.9 * (p[0] * 0.7).sin() * (p[2] * 0.6).cos() - 2.0
+    }
+}
+
+#[test]
+fn the_seam_counts_are_pinned() {
+    // B-006. These are not aspirations: Marching Cubes closes a chunk seam
+    // because its vertices sit on grid *edges*, which both chunks compute from
+    // identical corner values; the dual methods place one vertex per cell
+    // *interior* and a boundary quad needs the neighbour's, so they cannot.
+    //
+    // Pinned as exact non-zero numbers rather than `> 0`, per M-4's rule: a
+    // known defect with a number moves only when someone means it to.
+    assert_eq!(
+        seam_open_edges(&Waves, Extractor::MarchingCubes),
+        0,
+        "marching cubes stopped tiling across a chunk boundary"
+    );
+    assert_eq!(
+        seam_open_edges(&Waves, Extractor::SurfaceNets),
+        5,
+        "surface nets' chunk-seam gap changed"
+    );
+    assert_eq!(
+        seam_open_edges(&Waves, Extractor::DualContouring),
+        4,
+        "dual contouring's chunk-seam gap changed"
+    );
+}
+
+#[test]
+fn chunk_seams_reports_what_was_measured() {
+    // The predicate and the measurement have to agree, or the API is decoration.
+    for (extractor, expected) in [
+        (Extractor::MarchingCubes, ChunkSeams::Closed),
+        (Extractor::SurfaceNets, ChunkSeams::Gapped),
+        (Extractor::DualContouring, ChunkSeams::Gapped),
+    ] {
+        let open = seam_open_edges(&Waves, extractor);
+        let says = extractor.chunk_seams();
+        assert_eq!(says, expected, "{extractor:?} reported {says:?}");
+        match says {
+            ChunkSeams::Closed => assert_eq!(open, 0, "{extractor:?} says Closed with {open} open"),
+            ChunkSeams::Gapped => assert!(open > 0, "{extractor:?} says Gapped with none open"),
+            ChunkSeams::Unverified => {}
+        }
+    }
+    // Unverified is a real state, not a placeholder for "probably fine".
+    assert_eq!(
+        Extractor::Subgrid { samples: 4 }.chunk_seams(),
+        ChunkSeams::Unverified
+    );
+}

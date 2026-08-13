@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**71 tickets archived, 16 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**72 tickets archived, 16 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -100,7 +100,7 @@ nearest-first, and the caller's own clock decides when to stop.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **B-006** | **`Extractor::DualContouring` and `Extractor::SurfaceNets` produce a cracked world on a chunked `VoxelVolume`, and the plugin says nothing (M-128).** Measured on two adjacent chunks: boundary edges in the shared plane are **0 for Marching Cubes, 5 for Surface Nets, 4 for Dual Contouring**. The mechanism is structural rather than a bug — a dual method's boundary quad needs the neighbour cell's vertex and a chunk does not have it — so this is not a fix to the extractors. **What is wrong is that the plugin offers the choice silently.** It shipped a cracked world into the README's lead GIF for one commit because the extractor had been switched during an unrelated investigation and nothing flagged it. **Acceptance:** either the plugin refuses the combination, or `VoxelVolume::with_extractor` documents it at the call site *and* a test pins the three seam counts so the numbers cannot drift. Do **not** "fix" it by welding across chunks — that is G-001's overlap doing a dual method's job and would hide the structural fact. | S | — |
+| ☐ | **B-007** | **Does subgrid Marching Tetrahedra tile across a chunk boundary?** B-006 measured **1 open edge on `waves` and 0 on `blobs`**, which is neither, so `Extractor::Subgrid` reports `ChunkSeams::Unverified` rather than a guess. **M-79 names the mechanism this has to rule out:** subgrid's conformity is locality plus a *global* vertex ordering — two tetrahedra agree on the canonical `i < j` because they share the face's global indices — and M-79 warns in as many words that *"a mesh that renumbered vertices per tet would crack along every shared face"*. Chunks renumber. **The question is whether the ordering is derived from world position or from a chunk-local index**, which is a source question before it is a measurement one. Also rule out the weld: subgrid emits unwelded soup (M-93) and M-96 requires an *exact*-position weld, so a tolerance weld could be leaving the single edge rather than the extractor. **Acceptance:** the answer, the mechanism, and either `Closed` or `Gapped` in `chunk_seams` with the count pinned like the other three. | S | — |
 
 ## Phase 4 — Examples
 

@@ -96,6 +96,65 @@ pub enum Extractor {
     },
 }
 
+/// Whether independently meshed chunks of an [`Extractor`] meet at their shared
+/// face.
+///
+/// This exists because the plugin cannot mesh a volume any way *but* chunked,
+/// and choosing the wrong extractor for that produces a world full of gaps with
+/// nothing said about it. It reports rather than refuses, for the same reason
+/// [`collider::readiness`](isomesh::collider::readiness) and
+/// [`BrushOp::commutes_with`](isomesh::brush::BrushOp::commutes_with) report: a
+/// consumer whose gaps are hidden, or who meshes one chunk, is entitled to make
+/// that call.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ChunkSeams {
+    /// Neighbouring chunks close. Vertices sit on grid **edges**, which two
+    /// chunks compute from identical corner values and therefore agree on.
+    Closed,
+    /// Neighbouring chunks leave gaps. One vertex per cell **interior** means a
+    /// boundary quad needs the neighbour's vertex, which the chunk does not
+    /// have, so it stops short.
+    Gapped,
+    /// Not established. Do not assume either way.
+    Unverified,
+}
+
+impl Extractor {
+    /// What this extractor does at a chunk boundary.
+    ///
+    /// Measured on two adjacent chunks, meshed independently, welded, counting
+    /// boundary edges lying in the shared plane and excluding the two-chunk
+    /// block's own six walls. Two fields, `waves` and `blobs`:
+    ///
+    /// | extractor | waves | blobs | |
+    /// |---|---:|---:|---|
+    /// | [`MarchingCubes`](Extractor::MarchingCubes) | 0 | 0 | [`Closed`](ChunkSeams::Closed) |
+    /// | [`SurfaceNets`](Extractor::SurfaceNets) | 5 | 5 | [`Gapped`](ChunkSeams::Gapped) |
+    /// | [`DualContouring`](Extractor::DualContouring) | 4 | 2 | [`Gapped`](ChunkSeams::Gapped) |
+    /// | [`Subgrid`](Extractor::Subgrid) | 1 | 0 | [`Unverified`](ChunkSeams::Unverified) |
+    ///
+    /// `the_seam_counts_are_pinned` holds the first three, so they cannot drift.
+    ///
+    /// # Why `Subgrid` is unverified rather than closed
+    ///
+    /// It reads 1 and 0, which is neither. **M-79 names a mechanism by which it
+    /// could crack and the measurement cannot rule out:** subgrid's conformity
+    /// is locality plus a *global* vertex ordering — two tetrahedra agree on the
+    /// canonical `i < j` because they share the face's global indices — and it
+    /// warns that *"a mesh that renumbered vertices per tet would crack along
+    /// every shared face"*. Chunks renumber. Whether the ordering here is
+    /// derived from world position or from a chunk-local index decides it, and
+    /// that has not been established. B-007 owns settling it.
+    #[must_use]
+    pub fn chunk_seams(self) -> ChunkSeams {
+        match self {
+            Self::MarchingCubes => ChunkSeams::Closed,
+            Self::SurfaceNets | Self::DualContouring => ChunkSeams::Gapped,
+            Self::Subgrid { .. } => ChunkSeams::Unverified,
+        }
+    }
+}
+
 /// A field, a chunk layout, and how to mesh it.
 #[derive(Component, Clone)]
 pub struct VoxelVolume {
@@ -121,6 +180,20 @@ impl VoxelVolume {
     }
 
     /// The same volume, meshed with `extractor`.
+    ///
+    /// # Check [`Extractor::chunk_seams`] before choosing
+    ///
+    /// A volume is always meshed **chunked**, and the dual methods do not tile:
+    /// [`SurfaceNets`](Extractor::SurfaceNets) and
+    /// [`DualContouring`](Extractor::DualContouring) leave gaps at every chunk
+    /// boundary, measured at 4-5 open edges on a single seam. That is structural
+    /// -- a boundary quad needs the neighbour cell's vertex -- and not something
+    /// a future release fixes.
+    ///
+    /// It is not refused here, because a consumer meshing a single chunk, or one
+    /// whose gaps are never seen, is entitled to the sharper extractor. It is
+    /// said out loud because saying nothing put a cracked world in this
+    /// repository's own README for a commit (M-128).
     #[must_use]
     pub fn with_extractor(mut self, extractor: Extractor) -> Self {
         self.extractor = extractor;
