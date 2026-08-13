@@ -264,6 +264,53 @@ cd bevy_isomesh && cargo run --example game_editor --release
 
 `Z` undo · `Y` redo · `E` edit · `S` swap the last two ops · `X` clear.
 
+---
+
+## A concave edge, moving, measured every frame
+
+![An L-shaped notch cut from a block, with the edge distance for four extractors](../screenshots/e209-csg-props.png)
+
+*`solid(p) = max(box(p), min(p.x − cx, p.y − cy))` — a quarter-space subtracted from a block, leaving a
+reflex dihedral at exactly `(cx, cy)`. The cutter orbits, so the edge sweeps the grid, and all four
+extractions are re-run every frame at 60 fps.*
+
+`dual_contouring_cube` measures a **convex** corner and finds Dual Contouring 101× closer than Surface
+Nets. That is the easy case: a convex corner's solution lies inside its own cell. A **concave** edge is
+what a CAD tool actually cuts — the inside corner of every pocket — and it comes out very differently:
+
+| | mean | worst |
+|---|---:|---:|
+| dual contouring | **0.0798** | 0.3481 |
+| dual contouring, clamp off | 0.0801 | 0.3481 |
+| surface nets | 0.2895 | 0.5426 |
+| marching cubes | 0.3412 | 0.5528 |
+
+Distance from the exact edge to the nearest vertex, in cells. Dual Contouring is **3.6× better in the
+mean and only 1.56× in the worst case** — decisively better typically, converging toward the others at
+the extreme.
+
+**The sweep is what makes that honest.** E-104 measured one static configuration and needed a rule about
+which resolutions to skip to defend it against grid alignment. A moving feature is unaligned almost
+everywhere and aligned occasionally, and reporting the worst over the sweep is the only way the
+occasional case gets counted at all.
+
+**A prediction was registered before the run, and lost.** The guess was that the cell clamp caps Dual
+Contouring here — M-28 found it costs nothing on a convex corner because the solution is interior to its
+cell, so a reflex edge whose solution "wants to sit outside" ought to be capped by it. Clamped and
+unclamped are **identical**, 0.3481 either way. The reasoning was wrong in a simple way: a reflex edge
+passing *through* a cell has its solution inside that cell too, so there is nothing to catch. M-28's
+result extends to concave features rather than being limited by them.
+
+What *does* cap the worst case is left unestablished. It coincides with the edge lying near a sample
+plane, which is E-104's alignment trap arriving continuously, but this demo does not isolate it — and
+saying so is cheaper than guessing.
+
+```bash
+cd bevy_isomesh && cargo run --example game_csg_props --release
+```
+
+`Space` pause · `A` displayed extractor · `[` `]` resolution.
+
 [← back to the README](../../README.md)
 
 ---
