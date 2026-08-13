@@ -56,6 +56,7 @@ reasons certain designs were rejected. Do not re-derive from memory.
 | `2026-08-10-adjacent-math-transfer-audit.md` | writing vertex placement / QEF code |
 | `2026-08-11-meshing-speed-analysis.md` | any performance claim or optimization |
 | `2026-08-11-novel-gameplay-opportunities.md` | deciding what to build next |
+| `2026-08-13-measured-comparison.md` | quoting any comparative figure between the extractors — it is this repo's own numbers, with the sources it falsified |
 
 ---
 

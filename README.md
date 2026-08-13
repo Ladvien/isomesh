@@ -84,7 +84,7 @@ same grid, at any resolution you like.
 
 ## Status
 
-Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 77 tickets done, 11 open.
+Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 78 tickets done, 10 open.
 
 | | |
 |---|---|
@@ -121,11 +121,11 @@ quoted from a paper.
 
 | | |
 |---|---|
-| **[Gameplay](docs/demos/gameplay.md)** | streaming a world past a camera · walking every chunk seam with a rigid body · digging tunnels · shooting a wall so the debris *is* the boolean · flying an LOD ladder and counting what opens up · handing a mesh to a physics engine |
+| **[Gameplay](docs/demos/gameplay.md)** | streaming a world past a camera · walking every chunk seam with a rigid body · digging tunnels · shooting a wall so the debris *is* the boolean · spraying graffiti that survives the wall being blown open · flying an LOD ladder and counting what opens up · handing a mesh to a physics engine |
 | **[Algorithms](docs/demos/algorithms.md)** | Marching Cubes · Surface Nets · Dual Contouring · Manifold Dual Contouring · Marching Tetrahedra · greedy quads · subgrid Marching Tetrahedra, and a six-way shootout in one process |
 | **[Correctness](docs/demos/correctness.md)** | where a mesh stops being a manifold · what splitting the vertex costs · which way the surface faces · ambiguous faces · the crack between two chunks |
 
-Between them they carry 28 demos, 7 GIFs and every measured figure this crate makes a claim about.
+Between them they carry 29 demos, 7 GIFs and every measured figure this crate makes a claim about.
 
 ---
 
