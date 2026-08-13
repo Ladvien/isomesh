@@ -52,5 +52,6 @@
 
 pub mod coordinates;
 pub mod curves;
+pub mod extract;
 pub mod roots;
 pub mod surface;

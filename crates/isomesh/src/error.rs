@@ -99,6 +99,24 @@ pub enum Error {
         /// Index of the offending vertex.
         vertex: u64,
     },
+
+    /// Subgrid Marching Tetrahedra met a tetrahedron it could not triangulate.
+    ///
+    /// Every case §3.2 defines is implemented, so this is not "an unsupported
+    /// configuration" — it is a defect, and it names the cell and tetrahedron so
+    /// the offending edge coordinates can be recovered. Reported rather than
+    /// skipped: a silently dropped tetrahedron is a hole in the mesh, and a hole
+    /// is indistinguishable from the thin feature this extractor exists to
+    /// resolve.
+    SubgridUnfilled {
+        /// The cell whose tetrahedron failed, in grid coordinates.
+        cell: [u32; 3],
+        /// Which of the six tetrahedra of that cell.
+        tet: u8,
+        /// What [`fill`](crate::subgrid::surface::fill) reported, as its
+        /// `Debug` form.
+        reason: &'static str,
+    },
 }
 
 impl fmt::Display for Error {
@@ -136,6 +154,12 @@ impl fmt::Display for Error {
             Self::DegenerateNormal { vertex } => write!(
                 f,
                 "vertex {vertex} has no normal to derive: a zero gradient, or no incident area"
+            ),
+            Self::SubgridUnfilled { cell, tet, reason } => write!(
+                f,
+                "subgrid marching tetrahedra could not fill tetrahedron {tet} of cell \
+                 [{}, {}, {}]: {reason}",
+                cell[0], cell[1], cell[2]
             ),
         }
     }

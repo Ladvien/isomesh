@@ -1,0 +1,237 @@
+//! A-014c's tests.
+//!
+//! The one the ticket exists for is `thin_plate_comes_back_where_greedy_quads_
+//! returns_nothing`: A-005 measured zero triangles on that field, and this is
+//! the same field through this extractor.
+
+use super::*;
+use crate::fields::{ReferenceField, ThinPlate};
+use crate::mesh::MeshBuffer;
+use crate::shape::RuntimeShape3;
+
+/// A grid of `n` samples per axis over a field's own domain.
+fn grid<F: ReferenceField<Scalar = f64>>(field: &F, n: u32) -> (RuntimeShape3, [f64; 3], f64) {
+    let (lo, hi) = field.domain();
+    let shape = RuntimeShape3::new([n; 3]).expect("a cubic grid");
+    let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+    (shape, lo, cell)
+}
+
+#[test]
+fn samples_must_be_positive() {
+    assert!(SubgridMarchingTetrahedra::<f64>::new(0).is_err());
+    assert!(SubgridMarchingTetrahedra::<f64>::new(1).is_ok());
+}
+
+#[test]
+fn a_grid_with_no_cells_is_rejected() {
+    let mut mt = SubgridMarchingTetrahedra::<f64>::new(8).expect("valid");
+    let shape = RuntimeShape3::new([1, 4, 4]).expect("shape");
+    let mut out = MeshBuffer::<f64>::default();
+    assert_eq!(
+        mt.extract(
+            &ThinPlate::<f64>::canonical(),
+            &shape,
+            [0.0; 3],
+            0.1,
+            &mut out
+        ),
+        Err(crate::Error::GridTooSmall { size: [1, 4, 4] })
+    );
+}
+
+#[test]
+fn thin_plate_comes_back_where_greedy_quads_returns_nothing() {
+    // A-014c's acceptance criterion, and the reason the whole subgrid track
+    // exists. A-005 measured `thin_plate` -- 0.4 cells thick -- producing
+    // **zero** triangles under greedy quads, because no cell centre is inside
+    // it. M-72 measured Marching Cubes aliasing it into a resolution-dependent
+    // scatter rather than resolving it.
+    //
+    // The plate is a sheet, so the mesh has to be a sheet: two sides and a rim,
+    // not an empty buffer and not a handful of slivers.
+    let field = ThinPlate::<f64>::canonical();
+    let (shape, origin, cell) = grid(&field, 17);
+    let mut mt = SubgridMarchingTetrahedra::<f64>::new(16).expect("valid");
+    let mut out = MeshBuffer::<f64>::default();
+    mt.extract(&field, &shape, origin, cell, &mut out)
+        .expect("thin_plate should extract");
+
+    // Pinned, not just "more than nothing": 896 triangles at 17³, against
+    // greedy quads' zero on the same field. See M-95.
+    assert_eq!(out.triangle_count(), 896);
+    assert_eq!(out.vertex_count(), 2248);
+
+    // Every vertex is on the surface it came from. This is the check that
+    // separates "produced a lot of triangles" from "produced the *right*
+    // triangles": a wrong root, a mis-mapped edge orientation or a stale buffer
+    // would put a vertex somewhere the field is not zero.
+    for p in &out.positions {
+        let v = field.sample(*p);
+        assert!(
+            v.abs() < 1e-9,
+            "vertex at {p:?} has field value {v}, so it is not on the surface"
+        );
+    }
+}
+
+#[test]
+fn the_extractor_resolves_a_feature_the_grid_cannot() {
+    // The claim in its sharpest form: hold the grid fixed and raise only the 1D
+    // sampling. A slab thinner than a cell appears -- with no more grid
+    // resolution at all -- which is the property M-67 quantified from the other
+    // side and no sign-based method can reproduce.
+    struct Slab {
+        half: f64,
+    }
+    impl crate::Sdf for Slab {
+        type Scalar = f64;
+        fn sample(&self, p: [f64; 3]) -> f64 {
+            // A slab in z, deliberately off the sample lattice so no grid plane
+            // lands on its surface (M-94's fixture trap).
+            (p[2] - 0.0137).abs() - self.half
+        }
+    }
+
+    let shape = RuntimeShape3::new([9; 3]).expect("shape");
+    let origin = [-1.0; 3];
+    let cell = 0.25;
+
+    // A slab 1/20 of a cell thick.
+    let field = Slab { half: cell / 40.0 };
+    let mut coarse = SubgridMarchingTetrahedra::<f64>::new(2).expect("valid");
+    let mut sparse = MeshBuffer::<f64>::default();
+    coarse
+        .extract(&field, &shape, origin, cell, &mut sparse)
+        .expect("extract");
+
+    let mut fine = SubgridMarchingTetrahedra::<f64>::new(256).expect("valid");
+    let mut dense = MeshBuffer::<f64>::default();
+    fine.extract(&field, &shape, origin, cell, &mut dense)
+        .expect("extract");
+
+    assert_eq!(
+        sparse.triangle_count(),
+        0,
+        "2 samples per edge should step over a slab this thin"
+    );
+    assert!(
+        dense.triangle_count() > 0,
+        "256 samples per edge should resolve it on the same grid"
+    );
+}
+
+#[test]
+fn extraction_is_deterministic() {
+    let field = ThinPlate::<f64>::canonical();
+    let (shape, origin, cell) = grid(&field, 9);
+    let mut mt = SubgridMarchingTetrahedra::<f64>::new(8).expect("valid");
+
+    let mut a = MeshBuffer::<f64>::default();
+    let mut b = MeshBuffer::<f64>::default();
+    mt.extract(&field, &shape, origin, cell, &mut a)
+        .expect("extract");
+    mt.extract(&field, &shape, origin, cell, &mut b)
+        .expect("extract");
+
+    assert_eq!(a.positions, b.positions);
+    assert_eq!(a.normals, b.normals);
+    assert_eq!(a.indices, b.indices);
+    assert!(!a.is_empty());
+}
+
+#[test]
+fn reusing_the_extractor_does_not_leak_the_previous_field() {
+    // The buffers are held across calls, so a stale `along` or `patch` would
+    // show up as geometry from the wrong field rather than as a crash.
+    let plate = ThinPlate::<f64>::canonical();
+    let (shape, origin, cell) = grid(&plate, 9);
+    let mut mt = SubgridMarchingTetrahedra::<f64>::new(8).expect("valid");
+
+    let mut first = MeshBuffer::<f64>::default();
+    mt.extract(&plate, &shape, origin, cell, &mut first)
+        .expect("extract");
+    assert!(!first.is_empty());
+
+    // A field with no surface in this domain at all.
+    struct Empty;
+    impl crate::Sdf for Empty {
+        type Scalar = f64;
+        fn sample(&self, _p: [f64; 3]) -> f64 {
+            1.0
+        }
+    }
+    let mut second = MeshBuffer::<f64>::default();
+    mt.extract(&Empty, &shape, origin, cell, &mut second)
+        .expect("extract");
+    assert!(
+        second.is_empty(),
+        "a field with no surface produced {} triangles",
+        second.triangle_count()
+    );
+}
+
+#[test]
+fn every_index_is_in_range_and_no_triangle_is_degenerate_by_index() {
+    let field = ThinPlate::<f64>::canonical();
+    let (shape, origin, cell) = grid(&field, 13);
+    let mut mt = SubgridMarchingTetrahedra::<f64>::new(12).expect("valid");
+    let mut out = MeshBuffer::<f64>::default();
+    mt.extract(&field, &shape, origin, cell, &mut out)
+        .expect("extract");
+
+    let n = out.vertex_count() as u32;
+    for tri in out.indices.chunks_exact(3) {
+        assert!(tri.iter().all(|i| *i < n), "index past {n}: {tri:?}");
+        assert!(
+            tri[0] != tri[1] && tri[1] != tri[2] && tri[0] != tri[2],
+            "degenerate by index: {tri:?}"
+        );
+    }
+}
+
+#[test]
+fn raising_the_sampling_changes_the_topology_it_finds_but_not_by_much_else() {
+    // Once the 1D sampling brackets a feature, refining further does not change
+    // *what* is found -- same vertex count, same triangle count, same indices.
+    //
+    // It does move the vertices, and the first version of this test asserted
+    // bit-equality and failed. Bisection converges to *an* ulp of the root, and
+    // which one depends on the bracket it started from, so a different
+    // `samples` gives a different last bit. Worth knowing precisely: the
+    // determinism guarantee is "same arguments, same output", not "same field,
+    // same output", and golden hashes over this extractor must therefore pin
+    // `samples` alongside the grid. See M-95.
+    let field = ThinPlate::<f64>::canonical();
+    let (shape, origin, cell) = grid(&field, 33);
+
+    let mut coarse = SubgridMarchingTetrahedra::<f64>::new(16).expect("valid");
+    let mut a = MeshBuffer::<f64>::default();
+    coarse
+        .extract(&field, &shape, origin, cell, &mut a)
+        .expect("extract");
+
+    let mut fine = SubgridMarchingTetrahedra::<f64>::new(32).expect("valid");
+    let mut b = MeshBuffer::<f64>::default();
+    fine.extract(&field, &shape, origin, cell, &mut b)
+        .expect("extract");
+
+    assert_eq!(a.triangle_count(), 4328);
+    assert_eq!(a.vertex_count(), b.vertex_count());
+    assert_eq!(a.indices, b.indices, "the topology found should not change");
+
+    let worst = a
+        .positions
+        .iter()
+        .zip(b.positions.iter())
+        .map(|(p, q)| (0..3).map(|k| (p[k] - q[k]).abs()).fold(0.0f64, f64::max))
+        .fold(0.0f64, f64::max);
+    assert!(
+        worst < 1e-12,
+        "16 and 32 samples disagree by {worst}, which is more than a refinement gap"
+    );
+    assert!(
+        worst > 0.0,
+        "if they agreed exactly this test is asserting nothing"
+    );
+}
