@@ -8,6 +8,42 @@ Every figure here came from a command you can run, and the command is under each
 
 ---
 
+## A world with a roof over your head
+
+![Flying through caves and arches](../screenshots/e210-showcase-hero.png)
+
+*Streamed, meshed while the camera moves, and flown **through** rather than over. 440,000 triangles,
+376 chunks, 60 fps.*
+
+Every other demo on this page runs on `fbm_terrain`, which is a **heightfield** — one height per
+column, no overhangs, no caves, nothing above anything else. That is a good test field and a bad
+advertisement, because a heightfield is precisely the case you do *not* need a voxel mesher for.
+
+This one composes a field that has no height at all:
+
+```text
+solid(p) = max( p.y − height(x, z) ,  |gyroid(p)| − thickness )
+```
+
+The gyroid tunnels in all three axes, so intersecting it with the space under a terrain surface leaves
+caves that connect, arches, and rock overhead. Press `1`, `2`, `3` to thin or thicken the shell.
+
+Two things worth knowing about how it got there. The gyroid's period **is** the look — the first
+attempt used `K = 0.19`, a 33 m period, where one tunnel is wider than the view and the world reads as
+a cracked plain rather than as caves. And the staircasing along the rim where the two surfaces meet
+turned out to be the **field's** aliasing, not the extractor's: swapping Surface Nets for Dual
+Contouring changed nothing, and what fixed it was a smooth intersection plus a shell thick enough to
+clear the sampling limit — 2.2 cells to 3.4. That is M-72's failure mode arriving by composition
+instead of by resolution.
+
+```bash
+cd bevy_isomesh && cargo run --example game_showcase --release
+```
+
+`Space` pause · `[` `]` fly speed · `1`–`3` cave density.
+
+---
+
 ## A body that slides, not a ray that hits
 
 ![A capsule walking across streamed terrain under a physics engine](../screenshots/e206b-capsule-walk.png)

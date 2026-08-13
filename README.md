@@ -6,6 +6,33 @@
 
 `isomesh` has to serve both a real-time voxel game and a CAD tool. That single constraint decides almost everything about it: no math library appears in a public signature, output buffers are caller-provided and reusable, the scalar type is generic over `f32` and `f64`, and the core crate has exactly one dependency.
 
+## You cannot store this as a height
+
+![Flying through a landscape riddled with caves, arches and tunnels](docs/gifs/flying-through-the-rock.gif)
+
+*A camera flying **through** the rock — under arches, into tunnels, out the far side. 440,000 triangles
+across 376 streamed chunks at 60 fps, meshed while the camera moved.*
+
+The field is nine lines and nothing in it is authored:
+
+```text
+solid(p) = max( p.y − height(x, z) ,  |gyroid(p)| − thickness )
+```
+
+A `max` is an intersection, so rock exists only where a point is **below the terrain surface** *and*
+**inside a thickened gyroid**. The gyroid is triply periodic — it tunnels in `x`, `y` and `z` by
+construction — so the result has caves that connect, arches carrying rock over open ground, and
+ceilings.
+
+A heightfield stores one number per column. It cannot represent any of those, which is the entire
+reason to reach for a voxel mesher instead of a quadtree of grids.
+
+```bash
+cd bevy_isomesh && cargo run --example game_showcase --release
+```
+
+---
+
 ## 495 seam crossings, zero holes
 
 ![A ball walking across streamed terrain, chunks loading continuously around it](docs/gifs/walking-the-seams.gif)
@@ -57,7 +84,7 @@ same grid, at any resolution you like.
 
 ## Status
 
-Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 68 tickets done, 18 open.
+Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 69 tickets done, 17 open.
 
 | | |
 |---|---|
@@ -98,7 +125,7 @@ quoted from a paper.
 | **[Algorithms](docs/demos/algorithms.md)** | Marching Cubes · Surface Nets · Dual Contouring · Manifold Dual Contouring · Marching Tetrahedra · greedy quads · subgrid Marching Tetrahedra, and a six-way shootout in one process |
 | **[Correctness](docs/demos/correctness.md)** | where a mesh stops being a manifold · what splitting the vertex costs · which way the surface faces · ambiguous faces · the crack between two chunks |
 
-Between them they carry 23 demos, 6 GIFs and every measured figure this crate makes a claim about.
+Between them they carry 24 demos, 7 GIFs and every measured figure this crate makes a claim about.
 
 ---
 
@@ -173,6 +200,7 @@ cargo run --example game_walk --release                          # the acid test
 cargo run --example game_capsule_walk --release                  # the same seams, with a body that slides
 cargo run --example game_destruction --release                   # shoot it, and the debris is the boolean
 cargo run --example game_lod_flyover --release                   # LOD ladder, and the crack count as you fly
+cargo run --example game_showcase --release                      # caves, arches, and a roof over your head
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires
