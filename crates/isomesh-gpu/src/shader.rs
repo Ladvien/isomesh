@@ -66,6 +66,9 @@ use crate::{Error, Result};
 /// says so in its own comments.
 pub const GRID_WGSL: &str = include_str!("shaders/grid.wgsl");
 
+/// The Marching Cubes compute kernel. Includes [`GRID_WGSL`].
+pub const MARCHING_CUBES_WGSL: &str = include_str!("shaders/marching_cubes.wgsl");
+
 /// Every compile-time flag any shader here reads.
 ///
 /// GPU-003's sweep validates the cross product of the registered modules with
@@ -112,6 +115,7 @@ impl Composer {
     pub fn with_builtins() -> Self {
         let mut composer = Self::new();
         composer.insert("grid", GRID_WGSL);
+        composer.insert("marching_cubes", MARCHING_CUBES_WGSL);
         composer
     }
 

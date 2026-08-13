@@ -61,7 +61,34 @@ let back = read_buffer(gpu.device(), gpu.queue(), field.buffer(), grid.field_buf
   cross product of modules with **every subset** of it, so a flag missing from this list is a branch
   nothing ever compiles.
 
-Marching Cubes itself is GPU-004.
+- **`MarchingCubesGpu`** — the compute kernel. Two passes (count, prefix-sum, emit) so the output is
+  dense *and* in cell order, which is what makes it comparable with the CPU and with itself.
+
+## The case table is uploaded, not transcribed
+
+The usual way a GPU port breaks "never guess a case table" is by pasting a second copy into WGSL.
+There isn't one. `case_table_bytes()` packs `isomesh::marching_cubes::table::CASES` — itself derived
+by a `const fn` rather than copied from a paper — and a test unpacks the bytes and compares all 256
+entries.
+
+## Measured against the CPU
+
+Same grid, same samples, same table, 33³ sphere:
+
+| | |
+|---|---|
+| triangle count vs CPU | **equal**, on `sphere`, `torus` and `box_exact` |
+| vertices bit-identical to a CPU vertex | **6,507 of 6,936** |
+| within one ULP per axis | 429 |
+| further than one ULP | **0** |
+
+The 1-ULP miss is float contraction, not the algorithm: WGSL permits a multiply-add to be fused, and
+this driver takes it, rounding once where the CPU rounds twice. The test asserts the bound, so two
+ULPs would fail it.
+
+Normals are the one deliberate divergence — a shader cannot call `Sdf::gradient`, so it central-
+differences the sample grid. `isomesh`'s M-65 measures that at 0.460° worst against the analytic
+gradient at 17³, converging at `h²`.
 
 ## Validation
 

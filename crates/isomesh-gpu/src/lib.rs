@@ -59,11 +59,13 @@ mod block_on;
 mod buffers;
 mod error;
 mod grid;
+mod marching_cubes;
 mod shader;
 
 pub mod headless;
 
-pub use buffers::{FieldBuffer, read_buffer};
+pub use buffers::{FieldBuffer, read_buffer, read_buffer_u32, read_bytes};
 pub use error::{Error, Result};
 pub use grid::GridParams;
-pub use shader::{Composer, FEATURES, GRID_WGSL};
+pub use marching_cubes::{GpuMesh, MarchingCubesGpu, case_table_bytes};
+pub use shader::{Composer, FEATURES, GRID_WGSL, MARCHING_CUBES_WGSL};

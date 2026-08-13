@@ -135,6 +135,49 @@ pub fn read_buffer(
     source: &wgpu::Buffer,
     bytes: u64,
 ) -> Result<Vec<f32>> {
+    let raw = read_bytes(device, queue, source, bytes)?;
+    Ok(raw
+        .chunks_exact(4)
+        .map(|w| f32::from_le_bytes([w[0], w[1], w[2], w[3]]))
+        .collect())
+}
+
+/// The same, as `u32`.
+///
+/// A separate function rather than a generic or a flag: there are exactly two
+/// element types crossing this boundary and naming them is shorter than
+/// abstracting over them.
+///
+/// # Errors
+///
+/// As [`read_buffer`].
+pub fn read_buffer_u32(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    source: &wgpu::Buffer,
+    bytes: u64,
+) -> Result<Vec<u32>> {
+    let raw = read_bytes(device, queue, source, bytes)?;
+    Ok(raw
+        .chunks_exact(4)
+        .map(|w| u32::from_le_bytes([w[0], w[1], w[2], w[3]]))
+        .collect())
+}
+
+/// Copy `bytes` from `source` back to the CPU, untyped.
+///
+/// The one place that touches a staging buffer, so the map/poll/unmap dance
+/// exists once.
+///
+/// # Errors
+///
+/// As [`read_buffer`].
+pub fn read_bytes(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    source: &wgpu::Buffer,
+    bytes: u64,
+) -> Result<Vec<u8>> {
     if bytes % 4 != 0 {
         return Err(Error::UnalignedReadback { bytes, stride: 4 });
     }
@@ -176,12 +219,7 @@ pub fn read_buffer(
         Err(_) => return Err(Error::DeviceLost),
     }
 
-    let out = {
-        let view = staging.slice(..).get_mapped_range();
-        view.chunks_exact(4)
-            .map(|word| f32::from_le_bytes([word[0], word[1], word[2], word[3]]))
-            .collect()
-    };
+    let out = staging.slice(..).get_mapped_range().to_vec();
     staging.unmap();
     Ok(out)
 }

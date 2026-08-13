@@ -173,7 +173,13 @@ fn a_malformed_include_is_refused() {
 fn composition_is_deterministic() {
     let c = Composer::with_builtins();
     assert_eq!(c.compose("grid", &[]), c.compose("grid", &[]));
-    assert_eq!(c.module_names(), ["grid"]);
+    // Sorted, and every builtin present -- the sweep's coverage is exactly this
+    // list, so a module quietly dropped from it is a module nothing validates.
+    assert_eq!(c.module_names(), ["grid", "marching_cubes"]);
+    assert_eq!(
+        c.compose("marching_cubes", &[]),
+        c.compose("marching_cubes", &[])
+    );
 }
 
 /// The builtin module carries the layout the CPU side packs, so the names the
