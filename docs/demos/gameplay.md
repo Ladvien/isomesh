@@ -39,11 +39,6 @@ cd bevy_isomesh && cargo run --example game_terrain_stream --release
 
 ## Walking every seam
 
-![A walker crossing chunk seams on streamed terrain](../gifs/walking-the-seams.gif)
-
-*The orange marker is the walker; every frame casts a dense transect of rays down against the meshed
-triangles and counts holes and lips. It crosses a chunk boundary roughly every second.*
-
 ![Terrain with a walker on it and a HUD reading 495 seam crossings, 0 holes, seam lip 0.412 cells against terrain roughness 0.539](../screenshots/e203-game-walk.png)
 
 *`game_walk` — **495 seam crossings tested, 0 holes.** The worst vertical discontinuity at a seam is **0.412 cells**, against **0.539 cells** within a single chunk: the joins are smoother than the terrain they join.*

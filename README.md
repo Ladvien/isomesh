@@ -37,28 +37,52 @@ The math-library pin is the load-bearing one. Bevy 0.19 wants glam 0.32, `parry3
 
 ---
 
-## The thing nothing else here can do
+## Walking a world that is being built as you cross it
 
-![The word ISO meshed by two extractors as the letters are thinned; the marching cubes panel loses them entirely while the subgrid panel holds](docs/gifs/subgrid-letters-thinner-than-a-voxel.gif)
+![A ball walking across streamed terrain, chunks loading continuously around it](docs/gifs/walking-the-seams.gif)
 
-*One field, one grid, two extractors, and a slider driving the letters from 1.6 voxels thick down to
-0.2. On the left, Marching Cubes: first a holey remnant, then **nothing at all**. On the right, subgrid
-Marching Tetrahedra, unchanged.*
+*Nothing here is pre-baked. Every chunk under that ball was extracted while the camera flew toward it,
+on a background thread, under a frame budget — and the ball is standing on the **triangles**, not on the
+field they came from.*
 
-Every method that asks *"what sign is this grid corner"* gets one bit per edge, and a feature thinner
-than a cell fits between the samples — there is no answer that could describe it. **M-67** puts a number
-on the gap: a sign test cannot distinguish **95.6%** of the configurations a tetrahedron can actually be
-in. Subgrid marching asks instead for *every zero along the edge* and triangulates whatever comes back.
+That last part is the whole test. Chunks are meshed independently, so whether two of them actually
+*meet* is decided by the overlap the chunk layout chose. Get it wrong and a player falls through the
+world at a boundary — a bug that is invisible in every screenshot and fatal in every playthrough.
 
-At 0.35 voxels thick, Marching Cubes returns **0 triangles** and subgrid returns **1,340**.
+So the demo counts rather than asserts. It casts a dense transect of rays straight down against the
+meshed triangles, every frame, through `parry3d`:
 
-It is not free — **70× classic Marching Tetrahedra** (M-98), and the constant is field evaluations. But
-the comparison that matters is not "against Marching Cubes at this resolution". It is "against whatever
-grid resolution would resolve the same feature", and below one voxel there is none.
+| | |
+|---|---|
+| seam crossings tested | **495** |
+| probes that hit nothing | **0** |
+| worst vertical step **across** a seam | **0.412 cells** |
+| worst vertical step **within** one chunk | **0.539 cells** |
+
+The seams are measurably smoother than the terrain they join. That comparison is the point — a fixed
+height threshold would have been measuring the landscape rather than the joins.
+
+Meanwhile the frame time does not move: **60 fps at 16.65 ms/frame** with 234 chunks resident and
+117,792 triangles, while chunks load and unload continuously. Meshing runs on the task pool; what the
+frame budget bounds is turning finished extractions into assets.
 
 ```bash
-cd bevy_isomesh && cargo run --example subgrid_features --release
+cd bevy_isomesh && cargo run --example game_walk --release
 ```
+
+---
+
+## And one thing nothing else here can do
+
+A feature thinner than a voxel does not exist to a method that asks *"what sign is this grid corner"* —
+one bit per edge, and a thin sheet fits between the samples. **M-67** puts a number on the gap: a sign
+test cannot distinguish **95.6%** of the configurations a tetrahedron can actually be in.
+
+`isomesh` ships **subgrid Marching Tetrahedra**, which asks instead for *every zero along the edge*. On
+letters 0.35 voxels thick, Marching Cubes returns **0** triangles and subgrid returns **1,340** — on the
+same grid, at any resolution you like.
+
+[See it lose them, on the algorithms page →](docs/demos/algorithms.md)
 
 ---
 

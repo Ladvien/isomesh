@@ -89,9 +89,15 @@ It costs about **3%** over Surface Nets to do it, and the two meshes are otherwi
 
 ## Letters thinner than a voxel
 
+![The word ISO meshed by two extractors as the letters are thinned; the marching cubes panel loses them entirely while the subgrid panel holds](../gifs/subgrid-letters-thinner-than-a-voxel.gif)
+
+*One field, one grid, two extractors, and a sweep driving the letters from 1.6 voxels thick down to 0.2.
+On the left, Marching Cubes: first a holey remnant, then **nothing at all**. On the right, subgrid
+Marching Tetrahedra, unchanged.*
+
 ![The word ISO meshed by subgrid marching tetrahedra on the right, with the marching cubes panel on the left completely empty](../screenshots/e108-subgrid-features.png)
 
-*`subgrid_features` — one field, one grid, two extractors. The letters are **0.35 voxels thick**. Marching Cubes returns **0 triangles**; subgrid marching tetrahedra returns **1,340**.*
+*The same thing standing still, with the numbers. The letters are **0.35 voxels thick**. Marching Cubes returns **0 triangles**; subgrid marching tetrahedra returns **1,340**.*
 
 Every other method here asks one question per grid edge — *what sign is this endpoint* — and gets one bit back. A feature thinner than a cell fits between the samples and there is no answer that could describe it. **M-67** puts a number on the gap: a sign test cannot distinguish **95.6%** of the configurations a tetrahedron can actually be in.
 
