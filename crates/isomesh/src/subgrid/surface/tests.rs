@@ -241,7 +241,7 @@ fn removing_the_corner_cuts_is_what_makes_property_two_hold() {
     assert_eq!(Pattern::of(&coords), None);
 
     let cycles = cycles(&coords);
-    let residual = residual(&coords, &cycles).expect("cuts came from these coordinates");
+    let residual = residual(&cycles);
     assert_eq!(Pattern::of(&residual), Some(Pattern { d1: 1, d2: 0 }));
 }
 
@@ -309,6 +309,105 @@ fn a_single_long_loop_fans_around_its_centre_of_mass() {
             );
         }
     }
+}
+
+#[test]
+fn non_normal_loops_are_classified_and_all_three_types_are_reachable() {
+    // §3.2.2's parity rule: b_ij = e_ij^γ mod 2 over the loop's own coordinates,
+    // p = b₀₁ + b₀₂ + b₀₃, then 0 → contractible, 2 → diagonal, 1 or 3 →
+    // corner. A sweep that never produced all three would be testing one
+    // branch and reporting three, so the reachability of each is asserted.
+    // Counters rather than a map, so the public enum does not have to derive
+    // Ord for a test's convenience.
+    let mut seen = [0u32; 3];
+    let slot = |kind: NonNormalKind| match kind {
+        NonNormalKind::Contractible => 0usize,
+        NonNormalKind::Diagonal => 1,
+        NonNormalKind::Corner => 2,
+    };
+    for a in 0..4u32 {
+        for b in 0..4u32 {
+            for c in 0..4u32 {
+                for d in 0..4u32 {
+                    for e in 0..4u32 {
+                        for f in 0..4u32 {
+                            let coords = EdgeCoordinates::new([a, b, c, d, e, f]);
+                            for cycle in cycles(&coords) {
+                                if let Some(kind) = cycle.non_normal_kind() {
+                                    seen[slot(kind)] += 1;
+                                }
+                                // A normal loop has no non-normal type.
+                                assert_eq!(
+                                    cycle.non_normal_kind().is_some(),
+                                    cycle.kind == CurveKind::NonNormal
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    for kind in [
+        NonNormalKind::Contractible,
+        NonNormalKind::Diagonal,
+        NonNormalKind::Corner,
+    ] {
+        assert!(
+            seen[slot(kind)] > 0,
+            "{kind:?} was never produced, so its branch is untested"
+        );
+    }
+}
+
+#[test]
+fn a_diagonal_non_normal_loop_fans_around_its_centre_of_mass() {
+    // The one non-normal type whose spanning disk is in the tet interior, and
+    // therefore the one that is a fan like §3.2.1's cases. Corner and
+    // contractible want a disk built in the tet boundary and are still
+    // reported unfilled.
+    let mut filled = 0;
+    let mut refused = 0;
+    for a in 0..4u32 {
+        for b in 0..4u32 {
+            for c in 0..4u32 {
+                let coords = EdgeCoordinates::new([a, b, c, 0, 0, 0]);
+                let non_normal: Vec<_> = cycles(&coords)
+                    .into_iter()
+                    .filter(|x| x.kind == CurveKind::NonNormal)
+                    .collect();
+                if non_normal.is_empty() {
+                    continue;
+                }
+                let owned = crossings(coords.count);
+                let mut patch = TetPatch::new();
+                let outcome = fill(&tet(&owned), &mut patch).expect("well-formed");
+                if non_normal
+                    .iter()
+                    .all(|x| x.non_normal_kind() == Some(NonNormalKind::Diagonal))
+                {
+                    assert_ne!(
+                        outcome,
+                        Unfilled::NonNormalLoop,
+                        "{:?}: diagonal loops should fill",
+                        coords.count
+                    );
+                    filled += 1;
+                } else {
+                    assert_eq!(
+                        outcome,
+                        Unfilled::NonNormalLoop,
+                        "{:?}: a non-diagonal loop should be refused",
+                        coords.count
+                    );
+                    refused += 1;
+                }
+            }
+        }
+    }
+    assert!(refused > 0, "no non-diagonal loop was reached");
+    let _ = filled;
 }
 
 #[test]

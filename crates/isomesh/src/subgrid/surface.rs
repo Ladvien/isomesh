@@ -374,23 +374,30 @@ const fn gcd(a: u32, b: u32) -> u32 {
     a
 }
 
-/// The residual edge coordinates once every corner cut has been removed.
+/// The edge coordinates carried by the **normal** loops that are not corner
+/// cuts — the residual Property II is a statement about.
 ///
-/// A corner cut is a length-3 loop, and its three points lie on the three edges
-/// incident to one tet corner — so removing it subtracts one from each of those
-/// three coordinates. Returns `None` if that would go negative, which cannot
-/// happen for cycles derived from these very coordinates and is therefore this
-/// crate's bug rather than a caller's.
+/// Summed from those loops directly rather than by subtracting corner cuts from
+/// the tet's own coordinates, and the difference is not cosmetic. Property II
+/// (Theorem B.3) is stated over `Γ_normal`, and a tet carrying any *non-normal*
+/// loop has points that belong to neither a corner cut nor a residual normal
+/// loop. Subtracting only the corner cuts leaves those in, and the result then
+/// fails Property II for a reason that has nothing to do with §3.2.1 — which is
+/// exactly what happened on `e = (0, 0, 2, 0, 0, 0)`, where a single non-normal
+/// loop made the whole configuration look patternless and stopped §3.2.2 from
+/// ever running. Summing the residual normal loops cannot make that mistake.
 #[must_use]
-pub fn residual(coords: &EdgeCoordinates, cycles: &[Cycle]) -> Option<EdgeCoordinates> {
-    let mut count = coords.count;
-    for cut in cycles.iter().filter(|c| c.is_corner_cut()) {
-        for point in &cut.points {
-            let slot = &mut count[point.edge as usize];
-            *slot = slot.checked_sub(1)?;
+pub fn residual(cycles: &[Cycle]) -> EdgeCoordinates {
+    let mut count = [0u32; TET_EDGE_COUNT];
+    for cycle in cycles
+        .iter()
+        .filter(|c| c.kind == CurveKind::Normal && !c.is_corner_cut())
+    {
+        for point in &cycle.points {
+            count[point.edge as usize] += 1;
         }
     }
-    Some(EdgeCoordinates { count })
+    EdgeCoordinates { count }
 }
 
 /// Triangulate one tetrahedron's boundary curves.
@@ -447,16 +454,22 @@ pub fn fill<R: Real>(
         ]);
     }
 
-    let Some(residual) = residual(&coords, &cycles) else {
-        return Ok(Unfilled::Inconsistent);
-    };
-    let Some(pattern) = Pattern::of(&residual) else {
-        // Property II did not hold. Either a non-normal configuration reached
-        // here, or Theorem B.3 does not say what this code thinks it says.
-        return Ok(Unfilled::NoPattern);
-    };
-    if pattern.is_empty() {
-        return Ok(unfilled);
+    // §3.2.2 -- non-normal loops. Run before §3.2.1's dispatch and independently
+    // of it: the two sections partition Γ into Γ_nonnormal and Γ_normal, and a
+    // configuration can carry both. Only the diagonal type is implemented -- its
+    // spanning disk is in the tet *interior* and is a fan, the same primitive
+    // the Steiner cases use. Corner and contractible loops want a disk built in
+    // the tet *boundary*, by splitting each face along γ and labelling segments
+    // inside/outside, which is a different construction and is not here.
+    for cycle in cycles.iter().filter(|c| c.kind == CurveKind::NonNormal) {
+        match cycle.non_normal_kind() {
+            // "If γ is of diagonal type, we triangulate it by connecting each
+            // of its segments to its center of mass a."
+            Some(NonNormalKind::Diagonal) => {
+                unfilled = unfilled.worst(fill_centroid_fan(cycle, &index_of, out));
+            }
+            _ => unfilled = unfilled.worst(Unfilled::NonNormalLoop),
+        }
     }
 
     // The dispatch is §3.2.1's own, and it is on the *pattern's* loop length
@@ -466,6 +479,17 @@ pub fn fill<R: Real>(
         .iter()
         .filter(|c| c.kind == CurveKind::Normal && !c.is_corner_cut())
         .collect();
+    let residual = residual(&cycles);
+    let Some(pattern) = Pattern::of(&residual) else {
+        // Property II did not hold over Γ_normal's own residual, which is the
+        // set it is stated for. Either Theorem B.3 does not say what this code
+        // thinks it says, or §3.1 produced loops that are not a (d₁, d₂)
+        // pattern. Neither is a case to paper over.
+        return Ok(unfilled.worst(Unfilled::NoPattern));
+    };
+    if pattern.is_empty() {
+        return Ok(unfilled);
+    }
 
     match pattern.loop_length() {
         // Case 2 -- quads. "If the remaining loops are quads, then we split all
@@ -501,11 +525,103 @@ pub fn fill<R: Real>(
         None => {}
     }
 
-    if cycles.iter().any(|c| c.kind == CurveKind::NonNormal) {
-        unfilled = unfilled.worst(Unfilled::NonNormalLoop);
+    Ok(unfilled)
+}
+
+/// Fan a loop around the centre of mass of its own vertices.
+///
+/// Shared by §3.2.1's single-loop case and §3.2.2's diagonal type, which give
+/// the same instruction for different reasons — the first because any point of
+/// the loop's convex hull works and a centroid is one, the second because the
+/// paper names the centre of mass directly.
+fn fill_centroid_fan<R: Real>(
+    cycle: &Cycle,
+    index_of: &impl Fn(FacePoint) -> u32,
+    out: &mut TetPatch<R>,
+) -> Unfilled {
+    let n = cycle.points.len();
+    if n < 3 {
+        return Unfilled::Inconsistent;
     }
 
-    Ok(unfilled)
+    // Summed in the cycle's canonical order, so the rounding is identical run to
+    // run and T-004 has nothing to catch.
+    let mut sum = [R::ZERO; 3];
+    for point in &cycle.points {
+        let Some(index) = usize::try_from(index_of(*point))
+            .ok()
+            .filter(|i| *i < out.positions.len())
+        else {
+            return Unfilled::Inconsistent;
+        };
+        let p = out.positions[index];
+        for (slot, value) in sum.iter_mut().zip(p.iter()) {
+            *slot += *value;
+        }
+    }
+    let scale = R::ONE / R::from_f64(n as f64);
+    let steiner = out.positions.len() as u32;
+    out.positions
+        .push([sum[0] * scale, sum[1] * scale, sum[2] * scale]);
+    fan(cycle, steiner, index_of, out);
+    Unfilled::None
+}
+
+/// §3.2.2's three kinds of non-normal loop.
+///
+/// > Viewing a tetrahedron as a topological sphere punctured at its four
+/// > vertices, each curve `γ ∈ Γ_nonnormal` has one of three types (no matter
+/// > how much it "spirals" around the tet).
+///
+/// The "no matter how much it spirals" is the useful part: the type is a
+/// homotopy class, so it survives any amount of winding and is decidable from
+/// parities alone.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NonNormalKind {
+    /// *"Does not separate any vertices."*
+    Contractible,
+    /// *"Separates two vertices from the other two."*
+    Diagonal,
+    /// *"Separates one vertex from the other three."*
+    Corner,
+}
+
+impl Cycle {
+    /// Which of §3.2.2's three types a non-normal loop is.
+    ///
+    /// > We evaluate the loop type using a parity bit `b_ij := mod(e_ij^γ, 2)`
+    /// > for each edge `ij`, where `e_ij^γ` are edge coordinates for `γ` alone.
+    /// > This value is odd if `γ` separates vertices `i` and `j`, and even if
+    /// > they belong to the same connected component of the tet boundary.
+    /// > Letting `p := b₀₁ + b₀₂ + b₀₃`, `γ` is then contractible if `p = 0`, is
+    /// > of diagonal type if `p = 2`, and is of corner type if `p = 1` or
+    /// > `p = 3`.
+    ///
+    /// `None` for a normal loop, which has no such type.
+    ///
+    /// Note the asymmetry that makes this well defined: `p` is summed over the
+    /// three edges at **corner 0** only, not over all six. A loop separating
+    /// corner 0 from the rest gives `p = 3`, one separating some *other* single
+    /// corner gives `p = 1`, and both are the corner type — which is why the
+    /// two odd values collapse to one answer rather than naming two types.
+    #[must_use]
+    pub fn non_normal_kind(&self) -> Option<NonNormalKind> {
+        if self.kind != CurveKind::NonNormal {
+            return None;
+        }
+        let mut own = [0u32; TET_EDGE_COUNT];
+        for point in &self.points {
+            own[point.edge as usize] += 1;
+        }
+        // Edges 0, 1, 2 are (0,1), (0,2) and (0,3) in TET_EDGES' lexicographic
+        // order — the three at corner 0.
+        let p: u32 = own[0] % 2 + own[1] % 2 + own[2] % 2;
+        Some(match p {
+            0 => NonNormalKind::Contractible,
+            2 => NonNormalKind::Diagonal,
+            _ => NonNormalKind::Corner,
+        })
+    }
 }
 
 /// §3.2.1 case (3) — the subdivision stencil, as a labelling and four tets.
@@ -655,34 +771,7 @@ fn fill_single_loop<R: Real>(
     let [cycle] = loops else {
         return Unfilled::Inconsistent;
     };
-    let n = cycle.points.len();
-    if n < 3 {
-        return Unfilled::Inconsistent;
-    }
-
-    // The centre of mass of the loop's own vertices. Summed in the cycle's
-    // order, which `walk` fixed canonically, so the rounding is identical run to
-    // run and T-004 has nothing to catch.
-    let mut sum = [R::ZERO; 3];
-    for point in &cycle.points {
-        let Some(index) = usize::try_from(index_of(*point))
-            .ok()
-            .filter(|i| *i < out.positions.len())
-        else {
-            return Unfilled::Inconsistent;
-        };
-        let p = out.positions[index];
-        for (slot, value) in sum.iter_mut().zip(p.iter()) {
-            *slot += *value;
-        }
-    }
-    let scale = R::ONE / R::from_f64(n as f64);
-    let centre = [sum[0] * scale, sum[1] * scale, sum[2] * scale];
-
-    let steiner = out.positions.len() as u32;
-    out.positions.push(centre);
-    fan(cycle, steiner, index_of, out);
-    Unfilled::None
+    fill_centroid_fan(cycle, index_of, out)
 }
 
 /// Connect every edge of a loop to one point — §3.2.1's triangulation primitive.
