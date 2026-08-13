@@ -44,6 +44,20 @@
 //! streaming budget are all on screen, because a showcase that hides its cost is
 //! the thing this repository exists not to be.
 //!
+//! # Why Marching Cubes, and not the sharper extractors
+//!
+//! Because this world is **chunked**, and the dual methods do not tile. Marching
+//! Cubes places vertices on grid *edges*, which two neighbouring chunks compute
+//! from identical corner values and agree on exactly. Surface Nets and Dual
+//! Contouring place one vertex per cell *interior*, and a boundary quad needs the
+//! neighbour's vertex — which the chunk does not have, so it stops short.
+//!
+//! Measured on two adjacent chunks, boundary edges lying in the shared plane:
+//! **Marching Cubes 0, Surface Nets 5, Dual Contouring 4** (M-128). This example
+//! shipped on Dual Contouring for one commit, having been switched during an
+//! unrelated aliasing investigation, and the README's lead image was a cracked
+//! world until someone looked at it.
+//!
 //! # Scope
 //!
 //! Streaming, budgeting and the field. **Carving is deliberately not here** —
@@ -81,8 +95,8 @@ const HYSTERESIS: f32 = 0.25;
 /// leaves caves that connect and rock that hangs over open ground.
 #[derive(Clone, Copy)]
 struct CaveWorld {
-    /// Wall thickness of the gyroid shell, in world units. Larger is more solid
-    /// rock and smaller caves.
+    /// Iso-level on the gyroid: rock is `g < thickness`. Larger is more rock
+    /// and narrower tunnels.
     thickness: f32,
 }
 
@@ -107,10 +121,17 @@ impl Sdf for CaveWorld {
             + (K * p[1]).sin() * (K * p[2]).cos()
             + (K * p[2]).sin() * (K * p[0]).cos();
 
-        // Intersection: below the surface AND within the gyroid's shell. The
-        // shell is `|g| < thickness`, which is the sponge rather than either of
-        // the two labyrinths it separates -- that is the form with rock both
-        // above and below you.
+        // Intersection: below the surface AND inside one of the two labyrinths
+        // the gyroid separates.
+        //
+        // **`g - level`, not `|g| - thickness`.** The absolute value gives the
+        // *shell* around the gyroid surface, and a shell's thickness is
+        // `2t/|grad g|`, which varies: wherever the gradient is steep the sheet
+        // pinches below a cell and the mesher tears it into stair-stepped
+        // slashes. Thickening the shell moves the pinch without removing it,
+        // because the pinch is where the shell's own rim is. One side of the
+        // labyrinth has no rim and no thin sheets -- it is bulk rock with
+        // tunnels through it, which is what a cave is.
         //
         // **Smoothed, and not for looks.** A hard `max` puts a knife edge
         // wherever the two surfaces cross, and that rim is thinner than a cell
@@ -123,7 +144,7 @@ impl Sdf for CaveWorld {
         //
         // `smooth_max(a, b) = -smooth_min(-a, -b)`.
         const BLEND: f32 = 0.7;
-        -smooth_min(-ground, -(g.abs() - self.thickness), BLEND)
+        -smooth_min(-ground, -(g - self.thickness), BLEND)
     }
 }
 
@@ -170,20 +191,15 @@ fn layout() -> ChunkLayout<f32> {
     ChunkLayout::new(CHUNK_CELLS, CELL_SIZE, [0.0; 3]).expect("a valid layout")
 }
 
-/// Shell thickness, in world units.
+/// How much of the labyrinth is rock.
 ///
-/// **The default is not the thinnest option, and that is M-72's rule applied to
-/// a field rather than to an extractor.** A shell of thickness `t` is a sheet
-/// `2t` thick, so `0.55` is 2.2 cells at this spacing — thin enough that its
-/// silhouette staircases, which is the aliasing M-72 documents for features near
-/// the sampling limit. `0.85` is 3.4 cells and holds its edges, with no fewer
-/// holes to look through. `[1]` is still there for anyone who wants to see the
-/// failure.
+/// The gyroid runs about `-1.5..1.5`, and `g < level` selects the solid side, so
+/// `0.0` is an even split and larger is more rock with narrower tunnels.
 fn thickness_for(step: u8) -> f32 {
     match step {
-        0 => 0.55,
-        1 => 0.85,
-        _ => 1.15,
+        0 => -0.35,
+        1 => 0.25,
+        _ => 0.85,
     }
 }
 
@@ -232,7 +248,7 @@ fn setup(
     let volume = commands
         .spawn(
             VoxelVolume::new(layout(), CaveWorld { thickness })
-                .with_extractor(Extractor::DualContouring),
+                .with_extractor(Extractor::MarchingCubes),
         )
         .id();
 
@@ -323,7 +339,7 @@ fn controls(
                         thickness: show.thickness,
                     },
                 )
-                .with_extractor(Extractor::DualContouring),
+                .with_extractor(Extractor::MarchingCubes),
             )
             .id();
     }
@@ -420,7 +436,7 @@ fn hud(
     stats.triangles = triangles;
     stats.extra = vec![
         format!(
-            "{:<24} {:>8.2}   gyroid shell thickness  [1] [2] [3]",
+            "{:<24} {:>8.2}   gyroid iso-level, rock is g < this  [1] [2] [3]",
             "cave density", show.thickness
         ),
         format!(
@@ -428,11 +444,11 @@ fn hud(
             "stream radius", show.view
         ),
         String::new(),
-        "solid(p) = max( p.y - height(x,z) , |gyroid(p)| - thickness )".into(),
+        "solid(p) = max( p.y - height(x,z) , gyroid(p) - level )".into(),
         String::new(),
         "a max is an intersection: rock exists where a point is BELOW the".into(),
-        "surface and INSIDE a thickened gyroid. the gyroid is triply periodic,".into(),
-        "so it tunnels in x, y and z -- which is why there are ceilings.".into(),
+        "surface and INSIDE the gyroid labyrinth. it is triply periodic, so it".into(),
+        "tunnels in x, y and z -- which is why there are ceilings.".into(),
         String::new(),
         "none of this has a height. a heightfield stores one number per column".into(),
         "and cannot represent an arch, a cave, or the rock you are under right".into(),

@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**71 tickets archived, 15 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**71 tickets archived, 16 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -97,6 +97,10 @@ nearest-first, and the caller's own clock decides when to stop.
 |---|---|---|---|---|
 
 ---
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+| ☐ | **B-006** | **`Extractor::DualContouring` and `Extractor::SurfaceNets` produce a cracked world on a chunked `VoxelVolume`, and the plugin says nothing (M-128).** Measured on two adjacent chunks: boundary edges in the shared plane are **0 for Marching Cubes, 5 for Surface Nets, 4 for Dual Contouring**. The mechanism is structural rather than a bug — a dual method's boundary quad needs the neighbour cell's vertex and a chunk does not have it — so this is not a fix to the extractors. **What is wrong is that the plugin offers the choice silently.** It shipped a cracked world into the README's lead GIF for one commit because the extractor had been switched during an unrelated investigation and nothing flagged it. **Acceptance:** either the plugin refuses the combination, or `VoxelVolume::with_extractor` documents it at the call site *and* a test pins the three seam counts so the numbers cannot drift. Do **not** "fix" it by welding across chunks — that is G-001's overlap doing a dual method's job and would hide the structural fact. | S | — |
 
 ## Phase 4 — Examples
 

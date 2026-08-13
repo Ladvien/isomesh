@@ -28,7 +28,15 @@ solid(p) = max( p.y − height(x, z) ,  |gyroid(p)| − thickness )
 The gyroid tunnels in all three axes, so intersecting it with the space under a terrain surface leaves
 caves that connect, arches, and rock overhead. Press `1`, `2`, `3` to thin or thicken the shell.
 
-Two things worth knowing about how it got there. The gyroid's period **is** the look — the first
+**It is meshed with Marching Cubes, and that is not a preference.** The world is chunked, and the dual
+methods do not tile across a chunk boundary: Marching Cubes puts vertices on grid *edges*, which two
+neighbouring chunks compute identically, while Surface Nets and Dual Contouring put one vertex per cell
+*interior* and a boundary quad needs the neighbour's vertex. Measured on two adjacent chunks, boundary
+edges in the shared plane: **Marching Cubes 0, Surface Nets 5, Dual Contouring 4**. This demo shipped on
+Dual Contouring for exactly one commit and the GIF above was a torn, slashed mess until someone looked
+at it (M-128).
+
+Two other things worth knowing about how it got there. The gyroid's period **is** the look — the first
 attempt used `K = 0.19`, a 33 m period, where one tunnel is wider than the view and the world reads as
 a cracked plain rather than as caves. And the staircasing along the rim where the two surfaces meet
 turned out to be the **field's** aliasing, not the extractor's: swapping Surface Nets for Dual
