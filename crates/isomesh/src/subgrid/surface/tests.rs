@@ -312,6 +312,71 @@ fn a_single_long_loop_fans_around_its_centre_of_mass() {
 }
 
 #[test]
+fn the_subdivision_stencil_produces_four_normal_sub_tets() {
+    // The stencil is only usable if every tet it makes is itself a valid input
+    // to the same procedure. That is not obvious from the assignment
+    // e_ai = 2d₂, e_aj = d₁, e_ak = d₂, e_al = d₁ − d₂ -- it is asymmetric in
+    // the four corners, and three of the four faces of each sub-tet satisfy the
+    // triangle inequality with *equality*, which is exactly where an off-by-one
+    // would show up.
+    let mut checked = 0;
+    for d1 in 1..=6u32 {
+        for d2 in 0..=d1 {
+            let coords = pattern_coords(d1, d2);
+            let pattern = Pattern::of(&coords).expect("built as a pattern");
+            let Some(stencil) = Subdivision::label(&coords, pattern) else {
+                panic!("({d1}, {d2}): Property II holds but no labelling was found");
+            };
+
+            // The labelling is what it claims to be.
+            let [i, j, k, l] = stencil.corner;
+            let e = |a: u8, b: u8| coords.edge(crate::subgrid::coordinates::edge_between(a, b));
+            assert_eq!((e(i, j), e(k, l)), (d1, d1), "({d1}, {d2})");
+            assert_eq!((e(i, k), e(j, l)), (d2, d2), "({d1}, {d2})");
+            assert_eq!((e(i, l), e(j, k)), (d1 + d2, d1 + d2), "({d1}, {d2})");
+            assert_eq!(stencil.spoke(), [2 * d2, d1, d2, d1 - d2], "({d1}, {d2})");
+
+            for which in 0..4 {
+                let sub = stencil
+                    .sub_tet(&coords, which)
+                    .expect("four sub-tets exist");
+                assert!(
+                    sub.is_normal(),
+                    "({d1}, {d2}) sub-tet {which} is not a normal configuration: {:?}",
+                    sub.count
+                );
+            }
+            checked += 1;
+        }
+    }
+    assert_eq!(checked, 27, "the sweep did not run");
+}
+
+#[test]
+fn the_stencil_is_asymmetric_and_the_labelling_is_what_decides_it() {
+    // e_ai = 2d₂ against e_aj = d₁: swapping which corner is called `i` gives a
+    // different subdivision, so the labelling is load-bearing rather than
+    // cosmetic. With d₁ ≠ d₂ the spokes are genuinely distinct.
+    let coords = pattern_coords(3, 1);
+    let pattern = Pattern::of(&coords).expect("built as a pattern");
+    let stencil = Subdivision::label(&coords, pattern).expect("a labelling exists");
+    let spoke = stencil.spoke();
+    assert_eq!(spoke, [2, 3, 1, 2]);
+
+    // The four sub-tets are genuinely different from one another, which is what
+    // makes "recursively process each of the four new tets" four calls and not
+    // one repeated.
+    let mut seen: Vec<[u32; TET_EDGE_COUNT]> = (0..4)
+        .filter_map(|w| stencil.sub_tet(&coords, w))
+        .map(|c| c.count)
+        .collect();
+    assert_eq!(seen.len(), 4);
+    seen.sort_unstable();
+    seen.dedup();
+    assert_eq!(seen.len(), 4, "two sub-tets came out identical");
+}
+
+#[test]
 fn every_implemented_case_emits_an_intersection_free_patch() {
     // The headline claim of §3.2 is that the output is intersection-free, so
     // this asserts **zero** rather than recording a metric -- the opposite of

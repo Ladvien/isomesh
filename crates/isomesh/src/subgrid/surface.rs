@@ -508,6 +508,128 @@ pub fn fill<R: Real>(
     Ok(unfilled)
 }
 
+/// §3.2.1 case (3) — the subdivision stencil, as a labelling and four tets.
+///
+/// > Noting Property (II) above, let `i, j, k, l` be vertices of the tetrahedron
+/// > such that `e_ij = e_kl = d₁`, `e_ik = e_jl = d₂`, and
+/// > `e_il = e_jk = d₁ + d₂`. … connecting its vertices to the center of mass
+/// > `a` (Figure 13), and assign edge coordinates
+/// > `e_ai = 2d₂, e_aj = d₁, e_ak = d₂, e_al = d₁ − d₂`.
+/// > We then recursively process each of the four new tets.
+///
+/// The stencil is **not symmetric in the four corners** — `e_ai` is `2d₂` while
+/// `e_aj` is `d₁` — so which corner is called `i` decides the whole
+/// subdivision, and [`label`](Subdivision::label) searches for the labelling
+/// Property II guarantees rather than assuming corner order supplies it.
+///
+/// This type is the combinatorics only: the labelling and the four sub-tets'
+/// edge coordinates. Placing the crossings on the four new edges and recursing
+/// is the geometric half, and is not here yet — see [`Unfilled::Subdivision`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Subdivision {
+    /// The corners in the stencil's own order: `[i, j, k, l]`.
+    pub corner: [u8; 4],
+    /// The pattern the stencil was read from.
+    pub pattern: Pattern,
+}
+
+impl Subdivision {
+    /// Find the `i, j, k, l` labelling Property II promises.
+    ///
+    /// Returns `None` when no labelling of the four corners puts `d₁` on
+    /// `(ij, kl)`, `d₂` on `(ik, jl)` and `d₁ + d₂` on `(il, jk)` — which for a
+    /// residual satisfying Property II cannot happen, so `None` is a signal that
+    /// the residual is not what it was taken to be.
+    ///
+    /// `d₁ = d₂` makes several labellings equivalent; the search returns the
+    /// lexicographically smallest, so the output is deterministic.
+    #[must_use]
+    pub fn label(residual: &EdgeCoordinates, pattern: Pattern) -> Option<Self> {
+        let (d1, d2) = (pattern.d1, pattern.d2);
+        let e = |a: u8, b: u8| residual.edge(super::coordinates::edge_between(a, b));
+        for i in 0..4u8 {
+            for j in 0..4u8 {
+                if j == i {
+                    continue;
+                }
+                for k in 0..4u8 {
+                    if k == i || k == j {
+                        continue;
+                    }
+                    let l = 6 - i - j - k;
+                    if e(i, j) == d1
+                        && e(k, l) == d1
+                        && e(i, k) == d2
+                        && e(j, l) == d2
+                        && e(i, l) == d1 + d2
+                        && e(j, k) == d1 + d2
+                    {
+                        return Some(Self {
+                            corner: [i, j, k, l],
+                            pattern,
+                        });
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    /// The four new edge coordinates, `[e_ai, e_aj, e_ak, e_al]`.
+    ///
+    /// `d₁ − d₂` is non-negative because [`Pattern`] orders them, so the
+    /// subtraction cannot wrap.
+    #[must_use]
+    pub fn spoke(&self) -> [u32; 4] {
+        let (d1, d2) = (self.pattern.d1, self.pattern.d2);
+        [2 * d2, d1, d2, d1 - d2]
+    }
+
+    /// The edge coordinates of the sub-tet opposite corner `which` of `[i,j,k,l]`
+    /// — the one that replaces that corner with the centre of mass `a`.
+    ///
+    /// Corners of the returned tet are in the order `a` first, then the three
+    /// surviving corners in their stencil order, so index 0 is always `a`.
+    #[must_use]
+    pub fn sub_tet(&self, residual: &EdgeCoordinates, which: usize) -> Option<EdgeCoordinates> {
+        if which >= 4 {
+            return None;
+        }
+        let spoke = self.spoke();
+        // Local corner 0 is `a`; locals 1..3 are the stencil corners that are
+        // not `which`, in stencil order.
+        let mut kept = [0u8; 3];
+        let mut slot = 0;
+        for (s, corner) in self.corner.iter().enumerate() {
+            if s != which {
+                kept[slot] = *corner;
+                slot += 1;
+            }
+        }
+        let mut spoke_of = [0u32; 3];
+        for (s, value) in spoke_of.iter_mut().enumerate() {
+            let stencil = self.corner.iter().position(|c| *c == kept[s])?;
+            *value = spoke[stencil];
+        }
+
+        let mut count = [0u32; TET_EDGE_COUNT];
+        for (local_lo, local_hi) in (0..4u8).flat_map(|a| (a + 1..4u8).map(move |b| (a, b))) {
+            let edge = super::coordinates::edge_between(local_lo, local_hi) as usize;
+            count[edge] = if local_lo == 0 {
+                // A spoke, `a` to a surviving corner.
+                spoke_of[local_hi as usize - 1]
+            } else {
+                // An original edge of the parent tet.
+                residual.edge(super::coordinates::edge_between(
+                    kept[local_lo as usize - 1],
+                    kept[local_hi as usize - 1],
+                ))
+            };
+        }
+        Some(EdgeCoordinates { count })
+    }
+}
+
 /// §3.2.1 case (2) — one loop, one Steiner point.
 ///
 /// > If we have just `m = 1` loop, we insert an additional Steiner point `x` at
