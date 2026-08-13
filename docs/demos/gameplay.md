@@ -213,6 +213,49 @@ cd bevy_isomesh && cargo run --example game_budget --release
 
 `Space` overload · `U` drain it unbudgeted · `[` `]` budget.
 
+---
+
+## Undo without a snapshot, and an order that is load-bearing
+
+![A carved block with the edit log and the commutation audit on the HUD](../screenshots/e207-editor.png)
+
+*Eight brushes folded over a block. The field **is** the log — `BrushStack { base, brushes: &log[..cursor] }`
+— and undo moves the cursor back by one.*
+
+Nothing is snapshotted. A snapshot of a voxel world is the whole world; a log entry is a shape and an
+enum. The previous state is *recomputed*, which costs the re-fold — **8.9 ms** here over 8 ops and 32
+chunks, growing with history because every field sample walks the whole log.
+
+Undo then redo returns a **bit-identical** world, checked with an FNV-1a hash over every position and
+index so one vertex moving by one bit anywhere fails it. The check also requires the undone state to
+have *differed*, or an undo that did nothing would pass.
+
+**The interesting part is the order.** `BrushOp::commutes_with` promises *"the honest answer rather than
+an optimistic one: only identical hard operations commute."* This demo audits that against reality —
+swap every adjacent pair, re-fold, compare hashes:
+
+| | |
+|---|---|
+| said commute, mesh bit-identical | **5** |
+| said no, mesh moved | **2** |
+| said commute and the mesh moved (unsound) | **0** |
+| said no, mesh unchanged (conservative) | **0** |
+
+Sound *and* tight. But it answers on operations alone and cannot see shapes, and that is where its
+conservatism lives: two brushes that never touch commute whatever their ops are. Run the same audit on
+a fixture whose brushes are disjoint and those 2 pairs come back conservative instead — which refines
+M-37 rather than contradicting it. Order matters across an add/subtract boundary **when the shapes
+overlap**.
+
+That first fixture was the one this demo shipped with, briefly, and it reported **0 of 7 pairs where
+order mattered** — on a demo whose entire subject is that order matters.
+
+```bash
+cd bevy_isomesh && cargo run --example game_editor --release
+```
+
+`Z` undo · `Y` redo · `E` edit · `S` swap the last two ops · `X` clear.
+
 [← back to the README](../../README.md)
 
 ---
