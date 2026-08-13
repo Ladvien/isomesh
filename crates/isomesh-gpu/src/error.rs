@@ -63,6 +63,12 @@ pub enum Error {
         /// One-based line number within that module.
         line: usize,
     },
+    /// The device cannot run mesh shaders.
+    ///
+    /// Returned rather than substituting a vertex-buffer pipeline: a caller
+    /// told "drawing" while a different pipeline ran has been misinformed
+    /// about the one thing they asked for.
+    MeshShadersUnavailable,
     /// A read-back range was not a whole number of elements.
     UnalignedReadback {
         /// Bytes asked for.
@@ -99,6 +105,9 @@ impl fmt::Display for Error {
             }
             Self::ShaderDirective { module, line } => {
                 write!(f, "malformed or unbalanced directive at {module}:{line}")
+            }
+            Self::MeshShadersUnavailable => {
+                f.write_str("this device was not created with EXPERIMENTAL_MESH_SHADER")
             }
             Self::UnalignedReadback { bytes, stride } => write!(
                 f,

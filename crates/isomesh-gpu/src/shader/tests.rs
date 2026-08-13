@@ -175,7 +175,7 @@ fn composition_is_deterministic() {
     assert_eq!(c.compose("grid", &[]), c.compose("grid", &[]));
     // Sorted, and every builtin present -- the sweep's coverage is exactly this
     // list, so a module quietly dropped from it is a module nothing validates.
-    assert_eq!(c.module_names(), ["grid", "marching_cubes"]);
+    assert_eq!(c.module_names(), ["grid", "marching_cubes", "mesh_render"]);
     assert_eq!(
         c.compose("marching_cubes", &[]),
         c.compose("marching_cubes", &[])

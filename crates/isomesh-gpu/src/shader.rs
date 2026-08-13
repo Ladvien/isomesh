@@ -69,6 +69,10 @@ pub const GRID_WGSL: &str = include_str!("shaders/grid.wgsl");
 /// The Marching Cubes compute kernel. Includes [`GRID_WGSL`].
 pub const MARCHING_CUBES_WGSL: &str = include_str!("shaders/marching_cubes.wgsl");
 
+/// The mesh-shader render pipeline. Standalone: it consumes the compute
+/// output's buffers and needs no grid.
+pub const MESH_RENDER_WGSL: &str = include_str!("shaders/mesh_render.wgsl");
+
 /// Every compile-time flag any shader here reads.
 ///
 /// GPU-003's sweep validates the cross product of the registered modules with
@@ -116,6 +120,7 @@ impl Composer {
         let mut composer = Self::new();
         composer.insert("grid", GRID_WGSL);
         composer.insert("marching_cubes", MARCHING_CUBES_WGSL);
+        composer.insert("mesh_render", MESH_RENDER_WGSL);
         composer
     }
 
