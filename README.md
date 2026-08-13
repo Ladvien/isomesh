@@ -160,6 +160,7 @@ cargo run --example surface_nets_vs_marching_cubes --release    # the second and
 cargo run --example dual_contouring_cube --release              # the sharp-feature comparison
 cargo run --example sharp_features --release                    # lambda, and what it costs at both ends
 cargo run --example qef_clamp --release                         # the clamp, and the red it does not remove
+cargo run --example precision_f32_vs_f64 --release               # why CAD needs f64, in two laws
 cargo run --example manifold_check --release                    # the red marks, and A to make them go
 cargo run --example normal_estimation --release                 # three identical meshes, three shadings
 cargo run --example marching_tetrahedra --release               # 3x the triangles, and what they buy
@@ -204,8 +205,8 @@ ISOMESH_ALGORITHM=sn ISOMESH_FIELD=5 ISOMESH_SAMPLES=19 \
 ```
 
 `ISOMESH_SCREENSHOT` takes one shot and exits. `ISOMESH_FIELD`, `ISOMESH_SAMPLES`, `ISOMESH_VIEW`
-(`wire`, `normals`, `nogrid`, `nohud`), `ISOMESH_ALGORITHM`, `ISOMESH_CLAMP` and `ISOMESH_WELD` set
-what it is a shot *of*.
+(`wire`, `normals`, `nogrid`, `nohud`), `ISOMESH_ALGORITHM`, `ISOMESH_CLAMP`, `ISOMESH_OFFSET` and `ISOMESH_WELD`
+set what it is a shot *of*.
 
 ---
 

@@ -261,6 +261,50 @@ cd bevy_isomesh && cargo run --example qef_clamp --release
 
 ---
 
+## Two failures, two laws, and neither one is where you would guess
+
+![The same sphere at an offset of 2^20, meshed in f32 and f64](../screenshots/e112-precision-sphere-blurred.png)
+
+*The same unit sphere, the same grid, the same code — `f32` on the left, `f64` on the right, both
+translated to `2²⁰ ≈ 1.05e6` and moved back for display. Identical topology: 1,160 vertices, 2,316
+triangles, `χ = 2`, zero holes on both. The lumps are the entire difference.*
+
+This is what "CAD needs `f64`" actually looks like, and it is **two** failures rather than one.
+
+**Accuracy is relative.** The worst distance from a vertex to the true surface is set by
+`ulp(offset)` — the gap between neighbouring `f32` values out there. Expressed in cells it is
+`ulp/h`, so a *finer* grid is hurt more by the same offset. Measured at `2²⁰`: **1.3808 cells for
+`f32` against 0.0362 for `f64`**, a 38× gap with the mesh still topologically perfect. At a fixed
+offset, halving `h` **exactly doubles** the error in cells — 3.1010 → 6.2020, 4.0000 → 8.0000,
+5.8564 → 11.7128 from 33³ to 65³.
+
+**Topology is absolute.** Push out to `2²³ = 8,388,608`, where one representable step reaches a whole
+world unit, and the mesh tears:
+
+![The same sphere at 2^23, where f32 collapses](../screenshots/e112-precision-sphere-cracked.png)
+
+`χ` drops 2 → 1, the vertex count collapses 1,160 → 475, and **42 boundary edges** appear — real
+holes. That threshold **does not move when the cell size does**, which is what makes it a different
+law from the first. The proof is one fixture: at 65³ and `ulp/h = 8` the mesh is clean, while at 33³
+and the *same* `ulp/h = 8` it is torn. Neither number predicts the other.
+
+**The ticket for this demo was wrong, and measuring first is why the demo is not.** It asked for
+`~1e6` offsets where "f32 cracks" — at 1e6 `f32` does not crack, as the first image shows. It also
+asked for the QEF condition number in the HUD, which describes a cell's normals and is very nearly
+unchanged by translating the field; it would have sat there looking relevant and explaining nothing.
+Two other suspects were ruled out before anything was built: re-validating the same `f32` vertices
+after recentring **in `f64`** gives bit-identical reports, so the holes are in the mesh and not in the
+validator's lattice, and an analytic gradient changes nothing, so `Sdf::gradient`'s `|p|`-scaled step
+is not involved (M-112, M-113).
+
+```bash
+cd bevy_isomesh && cargo run --example precision_f32_vs_f64 --release
+```
+
+`-` `=` offset · `[` `]` resolution · `1`–`3` field.
+
+---
+
 ## Where an algorithm breaks, measured rather than described
 
 ![Surface Nets against Marching Cubes on a capped gyroid](../gifs/surface-nets-vs-marching-cubes-gyroid.gif)

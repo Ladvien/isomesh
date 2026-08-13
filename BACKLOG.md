@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**62 tickets archived, 23 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**63 tickets archived, 22 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -108,7 +108,6 @@ the point** — they're how someone decides whether this crate is usable.
 
 | | ID | Example | Blocked by |
 |---|---|---|---|
-| ☐ | **E-112** | `precision_f32_vs_f64` — same field at large offsets; `f32` cracks, `f64` doesn't. **Re-aimed by M-112, which was measured before implementing, and both numbers on the original row are wrong.** ~~`~1e6` offsets~~: at 1e6 `f32` does **not** crack — topology is perfect (`χ = 2`, 0 boundary edges, same 1,160 vertices as `f64`) and only accuracy moves, 0.0362 → 0.6603 cells. The crack is at **`offset ≥ 2²³ ≈ 8.39e6`**, where `ulp(f32) ≥ 1.0`: `χ` 2 → 1, vertices 1,160 → 271, **54 boundary edges** at 33³ and 102 at 65³. ~~condition number in the HUD~~: the QEF condition number is a property of a cell's normals and is essentially **unchanged by translating the field**, so it cannot be the instrument for this failure — the same species of mistake E-109 made with `\|f\|/h`. **What the demo must show instead is that there are two failures with two laws:** accuracy degrades with **`ulp(offset)/h`** (relative — 65³ is hurt at half the offset 33³ is), while topology breaks at an **absolute** offset independent of cell size. The discriminating fixture is on record: 65³ at `ulp/h = 8` is clean, 33³ at `ulp/h = 8` cracks. **Two controls are already done and must not be re-litigated** — the crack survives re-validating in `f64` (so it is the mesh, not `validate.rs`'s lattice) and is bit-identical under an analytic gradient (so it is not `Sdf::gradient`'s `\|p\|`-scaled step). **Acceptance:** offset is a swept knob rather than a constant, the HUD carries `ulp/h` and the boundary-edge count, and the two thresholds are visibly *different* knobs — a demo that shows only one of them has shown half the finding. | S | A-007 |
 | ☐ | **E-114** | `hermite_debug` — crossings, normals, solved vertex, cell box as gizmos. The view you debug A-007 in. | A-006 |
 
 ### 4b — Game-shaped
