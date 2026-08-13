@@ -84,7 +84,7 @@ same grid, at any resolution you like.
 
 ## Status
 
-Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 74 tickets done, 14 open.
+Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 75 tickets done, 13 open.
 
 | | |
 |---|---|
@@ -125,7 +125,7 @@ quoted from a paper.
 | **[Algorithms](docs/demos/algorithms.md)** | Marching Cubes · Surface Nets · Dual Contouring · Manifold Dual Contouring · Marching Tetrahedra · greedy quads · subgrid Marching Tetrahedra, and a six-way shootout in one process |
 | **[Correctness](docs/demos/correctness.md)** | where a mesh stops being a manifold · what splitting the vertex costs · which way the surface faces · ambiguous faces · the crack between two chunks |
 
-Between them they carry 27 demos, 7 GIFs and every measured figure this crate makes a claim about.
+Between them they carry 28 demos, 7 GIFs and every measured figure this crate makes a claim about.
 
 ---
 
@@ -204,6 +204,7 @@ cargo run --example game_showcase --release                      # caves, arches
 cargo run --example game_budget --release                        # 288 chunks re-meshed without missing a frame
 cargo run --example game_editor --release                        # undo as a re-fold, and the log's order audited
 cargo run --example game_csg_props --release                     # a concave edge, moving, measured every frame
+cargo run --example resolution_plot --release                    # the fit, and where the model stops describing it
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires
