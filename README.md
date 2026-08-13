@@ -41,7 +41,7 @@ cd bevy_isomesh && cargo run --example game_walk --release
 
 ---
 
-## And one thing nothing else here can do
+## Marching Cubes returns 0 triangles here. Subgrid returns 1,340.
 
 A feature thinner than a voxel does not exist to a method that asks *"what sign is this grid corner"* —
 one bit per edge, and a thin sheet fits between the samples. **M-67** puts a number on the gap: a sign
@@ -57,7 +57,7 @@ same grid, at any resolution you like.
 
 ## Status
 
-Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 60 tickets done, 24 open.
+Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 62 tickets done, 23 open.
 
 | | |
 |---|---|
