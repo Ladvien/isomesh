@@ -171,6 +171,7 @@ cargo run --example subgrid_features --release                   # letters thinn
 cargo run --example game_terrain_stream --release                # a world streaming past you
 cargo run --example game_walk --release                          # the acid test: walk every seam
 cargo run --example game_capsule_walk --release                  # the same seams, with a body that slides
+cargo run --example game_destruction --release                   # shoot it, and the debris is the boolean
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires

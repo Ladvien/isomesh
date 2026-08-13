@@ -46,6 +46,48 @@ cd bevy_isomesh && cargo run --example game_capsule_walk --release
 
 `Space` pause · `[` `]` view distance · `R` reset.
 
+---
+
+## Shoot it, and the debris is the boolean
+
+![A hollow shell shot open, with the fragment resting on it](../screenshots/e204-destruction-shell.png)
+
+*A hollow shell with a hole blown in it. The orange fragment is not a prop — it is the **intersection**
+of the shell with the charge, meshed. The crater and the fragment are two views of one boolean, and you
+can see straight through to the cavity that a convex hull would have filled in.*
+
+The cheap version of this demo pre-fractures a wall at build time and hides the pieces until you shoot.
+That proves nothing about a meshing crate. Here a shot appends `Brush::subtract(sphere)` to the solid's
+edit log and meshes the intersection of the solid-before-the-shot with that same sphere. Nothing is
+authored.
+
+Fragments get a **convex decomposition**, not a hull, because both shapes this demo targets defeat a
+hull: a hollow shell's hull is a solid ball, and a spiral's is a fat cylinder that swallows every gap.
+The cost of that correctness is the number worth publishing:
+
+| target | fragments | convex parts | parts per fragment | mean | worst |
+|---|---:|---:|---:|---:|---:|
+| wall | 23 | 211 | 9.2 | **240.7 ms** | 323.7 ms |
+| hollow shell | 24 | 305 | **12.7** | **271.8 ms** | 369.0 ms |
+| spiral | 23 | 224 | 9.7 | **249.0 ms** | 362.6 ms |
+
+A 60 fps frame is 16.7 ms. **One fragment's decomposition is fourteen to twenty-two whole frames**, and
+it lands on the frame the shot does. Zero fragments failed to get a collider on any target, and the
+shell — the shape whose hull is a lie — needs the most pieces, exactly as predicted.
+
+So correct destruction colliders are achievable and must never be synchronous. This belongs on a worker
+with the finished collider swapped in later, which is how G-006 already treats meshing.
+
+One honest number: **1 of 23** wall fragments still goes through the floor, and 0 of the shell's and
+spiral's. That is reported rather than tuned away. An earlier version of this demo accused *15 of 23* of
+tunnelling — and the scene simply had no floor for them to land on.
+
+```bash
+cd bevy_isomesh && cargo run --example game_destruction --release
+```
+
+`Space` fire · `[` `]` charge radius · `T` target · `X` reset.
+
 [← back to the README](../../README.md)
 
 ---
