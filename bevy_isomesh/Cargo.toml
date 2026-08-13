@@ -52,6 +52,7 @@ optional = true
 # Note the absence of "x11": that is a Linux windowing backend and this project
 # targets macOS/Metal, where `bevy_winit` needs no extra feature flag.
 [dev-dependencies]
+avian3d = "0.7.0"
 bevy = "0.19"
 
 # E-203 only. The acid test is "walk every chunk seam and never fall through",

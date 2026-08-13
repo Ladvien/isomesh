@@ -6,6 +6,46 @@ produces a beautiful sphere and falls apart at a chunk seam is not one you can s
 
 Every figure here came from a command you can run, and the command is under each demo.
 
+---
+
+## A body that slides, not a ray that hits
+
+![A capsule walking across streamed terrain under a physics engine](../screenshots/e206b-capsule-walk.png)
+
+*The same streamed `fbm_terrain` `game_walk` crosses, with an actual rigid body on it. 154 chunks
+resident, 77,492 triangles, 60 fps, and the collider handed to the physics engine is built from the very
+`Handle<Mesh>` the renderer is drawing.*
+
+`game_walk` casts 400 rays a frame and finds no holes — 495 seam crossings, zero misses. What it cannot
+find is a lip that **stops** something, because a ray is never *caught* on anything. A 0.2-unit step at a
+seam is, to a moving capsule, either nothing at all or a wall, and which one depends on the capsule, its
+speed and the angle it arrives at.
+
+So this drives a dynamic capsule at 7 m/s along the same path and measures what it is prevented from
+doing. Over 66 seconds and 441 metres:
+
+| | |
+|---|---|
+| commanded distance actually covered | **97.0%** |
+| stall frames **at a seam** | **13** |
+| stall frames **inside one chunk** | **70** |
+| worst single-frame shortfall **at a seam** | **0.809** |
+| worst single-frame shortfall **inside one chunk** | **1.000** |
+
+The interior of a chunk stalls a moving body **five times as often** as a join does, and stops it dead at
+least once where no seam ever did. That is the same verdict the ray sweep reached from the other side —
+the joins are smoother than the terrain they join — reached by the one test that could have disagreed.
+
+The body is **dynamic**, not kinematic, and that is the design rather than a detail: a kinematic capsule
+is moved by writing its transform, so it decides where it ends up and the terrain never gets to refuse.
+Only a dynamic body can be stopped by geometry, and being stopped is the measurement.
+
+```bash
+cd bevy_isomesh && cargo run --example game_capsule_walk --release
+```
+
+`Space` pause · `[` `]` view distance · `R` reset.
+
 [← back to the README](../../README.md)
 
 ---
