@@ -273,6 +273,86 @@ fn parallel_quads_all_split_the_same_way() {
 }
 
 #[test]
+fn every_implemented_case_emits_an_intersection_free_patch() {
+    // The headline claim of §3.2 is that the output is intersection-free, so
+    // this asserts **zero** rather than recording a metric -- the opposite of
+    // the dual methods, where a non-zero count is a property of the algorithm.
+    //
+    // It is also the only test that can see a wrong Steiner assignment: a
+    // mis-assigned octagon still fans correctly, still indexes valid vertices
+    // and still has the right triangle count. It just passes through its
+    // neighbours.
+    let mut checked = 0;
+    for d1 in 1..=5u32 {
+        for d2 in 0..=d1 {
+            let coords = pattern_coords(d1, d2);
+            let owned = crossings(coords.count);
+            let mut patch = TetPatch::new();
+            let outcome = fill(&tet(&owned), &mut patch).expect("well-formed crossings");
+            if outcome != Unfilled::None {
+                continue;
+            }
+
+            let indices: Vec<u32> = patch.triangles.iter().flatten().copied().collect();
+            let report = crate::validate::self_intersections(&patch.positions, &indices, 1.0)
+                .expect("a unit tet is a valid spacing");
+            assert_eq!(
+                report.count(),
+                0,
+                "({d1}, {d2}): {} self-intersections in {} triangles",
+                report.count(),
+                patch.triangles.len()
+            );
+            checked += 1;
+        }
+    }
+    // Quads (d₂ = 0) and octagons (d₁ = d₂) among 1..=5: 5 + 5 = 10.
+    assert_eq!(checked, 10, "the sweep did not reach the implemented cases");
+}
+
+#[test]
+fn reversing_the_steiner_assignment_is_visibly_wrong() {
+    // M-44's rule applied to the test above: a zero has to prove it could have
+    // been non-zero. Reversing "innermost to outermost" -- giving loop `i` the
+    // Steiner point meant for loop `m - 1 - i` -- is precisely the mistake that
+    // rule exists to prevent, and the nested fans then cross.
+    //
+    // The mutation has to keep the Steiner points **distinct**. Collapsing them
+    // onto one apex also produces a wrong mesh, but every triangle would then
+    // share that vertex and `self_intersections` skips pairs sharing a vertex
+    // by construction (see its module docs, and M-83) -- so that version of the
+    // mutation reports zero and proves nothing. Distinct-but-permuted keeps the
+    // pairs visible.
+    let m = 3u32;
+    let coords = pattern_coords(m, m);
+    let owned = crossings(coords.count);
+    let mut patch = TetPatch::new();
+    assert_eq!(fill(&tet(&owned), &mut patch), Ok(Unfilled::None));
+
+    let base = 8 * m;
+    let reversed: Vec<u32> = patch
+        .triangles
+        .iter()
+        .flatten()
+        .map(|i| {
+            if *i >= base {
+                base + (m - 1 - (*i - base))
+            } else {
+                *i
+            }
+        })
+        .collect();
+
+    let report = crate::validate::self_intersections(&patch.positions, &reversed, 1.0)
+        .expect("a unit tet is a valid spacing");
+    assert!(
+        report.count() > 0,
+        "reversing the Steiner assignment produced no intersections, so the \
+         intersection-free assertion is not measuring anything"
+    );
+}
+
+#[test]
 fn a_cycle_visits_every_segment_once_and_returns_to_its_start() {
     for d1 in 1..=4u32 {
         for d2 in 0..=d1 {
@@ -292,15 +372,140 @@ fn a_cycle_visits_every_segment_once_and_returns_to_its_start() {
 }
 
 #[test]
-fn a_longer_loop_is_reported_unfilled_rather_than_guessed_at() {
-    // (1, 1) gives a single loop of length 4(1+1)/1 = 8 -- an octagon, which is
-    // §3.2.1 case (1) and not implemented yet. The contract is that fill says
-    // so instead of emitting something plausible.
+fn an_unimplemented_case_is_named_rather_than_guessed_at() {
+    // (3, 2): gcd = 1, so one loop of length 4(5)/1 = 20 -- §3.2.1 case (2),
+    // the single-loop case, not implemented. (3, 1): gcd = 1 as well, length
+    // 16. (4, 2): gcd = 2, so two loops of length 12 -- case (3), subdivision.
+    // The contract is that fill names which, and emits nothing for it.
+    for (d1, d2, expected) in [
+        (3u32, 2u32, Unfilled::SingleLoop),
+        (3, 1, Unfilled::SingleLoop),
+        (4, 2, Unfilled::Subdivision),
+        (6, 3, Unfilled::Subdivision),
+    ] {
+        let coords = pattern_coords(d1, d2);
+        let owned = crossings(coords.count);
+        let mut patch = TetPatch::new();
+        assert_eq!(
+            fill(&tet(&owned), &mut patch),
+            Ok(expected),
+            "({d1}, {d2}) should report {expected:?}"
+        );
+        assert!(
+            patch.is_empty(),
+            "({d1}, {d2}): an unhandled case emitted triangles"
+        );
+    }
+}
+
+#[test]
+fn an_octagon_is_a_fan_around_its_steiner_point() {
+    // (1, 1): gcd = 1, length 4(2)/1 = 8. One octagon, one Steiner point, eight
+    // triangles -- one per loop edge.
     let coords = pattern_coords(1, 1);
+    let cycles = cycles(&coords);
+    assert_eq!(cycles.len(), 1);
+    assert_eq!(cycles[0].length(), 8);
+
     let owned = crossings(coords.count);
     let mut patch = TetPatch::new();
-    assert_eq!(fill(&tet(&owned), &mut patch), Ok(Unfilled::NormalLoop));
-    assert!(patch.is_empty(), "an unhandled case emitted triangles");
+    assert_eq!(fill(&tet(&owned), &mut patch), Ok(Unfilled::None));
+    assert_eq!(patch.triangles.len(), 8);
+    // Eight crossings plus one Steiner point.
+    assert_eq!(patch.positions.len(), 9);
+
+    // Every triangle uses the Steiner point exactly once, and the loop edges it
+    // fans over are all eight of them.
+    let steiner = patch.positions.len() as u32 - 1;
+    for t in &patch.triangles {
+        assert_eq!(
+            t.iter().filter(|i| **i == steiner).count(),
+            1,
+            "triangle {t:?} does not fan around the Steiner point"
+        );
+    }
+}
+
+#[test]
+fn m_octagons_get_m_steiner_points_ordered_along_the_axis() {
+    // (m, m) for m > 1 is the nested-octagon case: m loops, each of length 8,
+    // each fanned around its own Steiner point.
+    for m in 1..=4u32 {
+        let coords = pattern_coords(m, m);
+        let owned = crossings(coords.count);
+        let mut patch = TetPatch::new();
+        assert_eq!(
+            fill(&tet(&owned), &mut patch),
+            Ok(Unfilled::None),
+            "({m}, {m}) should be the octagon case"
+        );
+
+        let loops = m as usize;
+        assert_eq!(patch.triangles.len(), 8 * loops, "m = {m}");
+        // 8 crossings per loop, plus one Steiner point per loop.
+        assert_eq!(patch.positions.len(), 8 * loops + loops, "m = {m}");
+
+        // The Steiner points are the last `m` positions and must be strictly
+        // ordered along the segment they were placed on -- the property the
+        // intersection-free argument rests on, and the one that does not depend
+        // on the particular spacing.
+        let steiner = &patch.positions[8 * loops..];
+        assert_eq!(steiner.len(), loops);
+        let axis = [
+            steiner[loops - 1][0] - steiner[0][0],
+            steiner[loops - 1][1] - steiner[0][1],
+            steiner[loops - 1][2] - steiner[0][2],
+        ];
+        if m > 1 {
+            let mut previous = f64::NEG_INFINITY;
+            for s in steiner {
+                let t = s[0] * axis[0] + s[1] * axis[1] + s[2] * axis[2];
+                assert!(t > previous, "m = {m}: Steiner points are not ordered");
+                previous = t;
+            }
+        }
+    }
+}
+
+#[test]
+fn each_octagon_pairs_nested_crossings_on_the_long_edge() {
+    // The Steiner assignment reads "innermost to outermost pair", which is only
+    // meaningful if each loop's two crossings on the 2m edge are symmetric
+    // about that edge's middle: p_j pairs with p_{2m-1-j}. fill() refuses to
+    // emit when that fails, so checking it here is checking that the refusal
+    // never fires on a well-formed pattern -- and the nesting itself.
+    for m in 2..=4u32 {
+        let coords = pattern_coords(m, m);
+        let cycles = cycles(&coords);
+        assert_eq!(cycles.len(), m as usize);
+
+        // The 2m pair is (2, 3) by pattern_coords' construction: d1 + d2 = 2m.
+        let long = 2u8;
+        assert_eq!(coords.edge(long), 2 * m);
+
+        let mut ranks: Vec<[u32; 2]> = Vec::new();
+        for c in &cycles {
+            let mut on_long: Vec<u32> = c
+                .points
+                .iter()
+                .filter(|q| q.edge == long)
+                .map(|q| q.index)
+                .collect();
+            on_long.sort_unstable();
+            assert_eq!(on_long.len(), 2, "m = {m}: a loop did not cross e twice");
+            assert_eq!(
+                on_long[0] + on_long[1],
+                2 * m - 1,
+                "m = {m}: crossings {on_long:?} are not nested about the middle"
+            );
+            ranks.push([on_long[0], on_long[1]]);
+        }
+        // Every nesting level is used exactly once.
+        ranks.sort_unstable();
+        for (i, r) in ranks.iter().enumerate() {
+            assert_eq!(r[0], i as u32, "m = {m}: nesting levels are not distinct");
+        }
+    }
 }
 
 #[test]

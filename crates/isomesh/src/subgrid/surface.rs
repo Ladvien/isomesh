@@ -395,10 +395,10 @@ pub fn residual(coords: &EdgeCoordinates, cycles: &[Cycle]) -> Option<EdgeCoordi
 
 /// Triangulate one tetrahedron's boundary curves.
 ///
-/// Handles §3.2.1's first two cases — corner cuts (`ℓ = 3`) and quads
-/// (`ℓ = 4`). Octagons, the single-loop case, subdivision and §3.2.2's
-/// non-normal loops are not here yet, and [`Unfilled`] says which was reached
-/// rather than emitting something wrong.
+/// Handles §3.2.1's corner cuts (`ℓ = 3`), quads (`ℓ = 4`) and octagons
+/// (`ℓ = 8`). The single-loop case, subdivision and §3.2.2's non-normal loops
+/// are not here yet, and [`Unfilled`] says which was reached rather than
+/// emitting something wrong.
 ///
 /// # Errors
 ///
@@ -459,28 +459,191 @@ pub fn fill<R: Real>(
         return Ok(unfilled);
     }
 
-    // Case 2 -- quads. "If the remaining loops are quads, then we split all
-    // quads along the same, arbitrary diagonal, producing two triangles per
-    // loop." The diagonal is arbitrary; *the same* is not, and it is what keeps
-    // parallel quads from crossing each other. Splitting every quad from its
-    // own first point -- which `walk` chose canonically -- is what makes it the
-    // same one for every loop in a parallel family.
-    for cycle in cycles.iter().filter(|c| c.kind == CurveKind::Normal) {
-        match cycle.length() {
-            3 => {}
-            4 => {
+    // The dispatch is §3.2.1's own, and it is on the *pattern's* loop length
+    // rather than on each cycle's, because Property I says they are the same
+    // number and the case is a property of the configuration.
+    let residual_loops: Vec<&Cycle> = cycles
+        .iter()
+        .filter(|c| c.kind == CurveKind::Normal && !c.is_corner_cut())
+        .collect();
+
+    match pattern.loop_length() {
+        // Case 2 -- quads. "If the remaining loops are quads, then we split all
+        // quads along the same, arbitrary diagonal, producing two triangles per
+        // loop." The diagonal is arbitrary; *the same* is not, and it is what
+        // keeps parallel quads from crossing each other. Splitting every quad
+        // from its own first point -- which `walk` chose canonically -- is what
+        // makes it the same one for every loop in a parallel family.
+        Some(4) => {
+            for cycle in &residual_loops {
                 let v: Vec<u32> = cycle.points.iter().map(|p| index_of(*p)).collect();
                 out.triangles.push([v[0], v[1], v[2]]);
                 out.triangles.push([v[0], v[2], v[3]]);
             }
-            _ => unfilled = unfilled.worst(Unfilled::NormalLoop),
         }
+        // Case 3 -- octagons.
+        Some(8) => {
+            unfilled = unfilled.worst(fill_octagons(
+                tet,
+                &residual,
+                pattern,
+                &residual_loops,
+                &index_of,
+                out,
+            ));
+        }
+        // Case 4 -- a single loop longer than an octagon, and case 5 --
+        // subdivision. Neither is implemented; both are named exactly.
+        Some(_) if pattern.loop_count() == 1 => {
+            unfilled = unfilled.worst(Unfilled::SingleLoop);
+        }
+        Some(_) => unfilled = unfilled.worst(Unfilled::Subdivision),
+        None => {}
     }
+
     if cycles.iter().any(|c| c.kind == CurveKind::NonNormal) {
         unfilled = unfilled.worst(Unfilled::NonNormalLoop);
     }
 
     Ok(unfilled)
+}
+
+/// §3.2.1 case (1) — octagons, and their Steiner points.
+///
+/// > For `ℓ = 8` (octagons), some pair of opposite edges `e, e'` has `2m`
+/// > intersections, and the remaining edges each have `m` (Equation 4). To
+/// > triangulate the octagons, we place `m` Steiner points `x₀, …, x_{m-1}`
+/// > uniformly along the oriented segment from the midpoint of `e` to the
+/// > midpoint of `e'`. Pairs of intersections on `e` are then connected to
+/// > consecutive Steiner points, from the innermost to outermost pair. I.e., if
+/// > we enumerate intersections along `e` as `p₀, …, p_{2m-1}` (with either
+/// > orientation), then all points on the loop passing through `p_{m+i}` are
+/// > connected to Steiner point `xᵢ`.
+///
+/// # Why `ℓ = 8` *is* `d₁ = d₂`
+///
+/// Corollary B.6 makes the case a statement about the pattern rather than a
+/// separate condition to test. With `g = gcd(d₁, d₂)`, `d₁ = ga` and `d₂ = gb`
+/// where `gcd(a, b) = 1`, the length `4(d₁ + d₂)/g = 8` forces `a + b = 2`, and
+/// coprimality rules out `(2, 0)` — so `a = b = 1` and `d₁ = d₂ = g = m`. The
+/// three complementary pairs then carry `m`, `m` and `2m`, which is exactly the
+/// paper's *"some pair of opposite edges has 2m … and the remaining edges each
+/// have m"*, and the `2m` pair is unique whenever `m > 0`.
+///
+/// # The one place a choice is made
+///
+/// The construction is not symmetric in `e` and `e'` — `x₀` sits nearest the
+/// midpoint of whichever edge is called `e`. That choice is invisible outside
+/// the tet: the octagons' Steiner points are interior, so no neighbouring tet
+/// can see them and conformity cannot depend on them. It is fixed to the
+/// lower-numbered edge of the pair purely so the output is deterministic.
+///
+/// Spacing is `(i + 1)/(m + 1)` along the segment, which is the reading of
+/// *"uniformly"* that keeps every Steiner point strictly interior. The
+/// intersection-free argument depends on the Steiner points being **ordered**
+/// along the segment, not on the particular spacing.
+fn fill_octagons<R: Real>(
+    tet: &TetCrossings<'_, R>,
+    residual: &EdgeCoordinates,
+    pattern: Pattern,
+    loops: &[&Cycle],
+    index_of: &impl Fn(FacePoint) -> u32,
+    out: &mut TetPatch<R>,
+) -> Unfilled {
+    let m = pattern.loop_count();
+    if m == 0 || pattern.d1 != pattern.d2 || loops.len() as u32 != m {
+        return Unfilled::Inconsistent;
+    }
+
+    // The unique complementary pair carrying 2m, lower index first.
+    let Some(e) = (0..TET_EDGE_COUNT as u8).find(|e| {
+        *e < complementary(*e)
+            && residual.edge(*e) == 2 * m
+            && residual.edge(complementary(*e)) == 2 * m
+    }) else {
+        return Unfilled::Inconsistent;
+    };
+    let opposite = complementary(e);
+
+    // p₀ … p_{2m-1}: the residual crossings on `e`, which are the ones these
+    // loops actually use. Deriving the enumeration from the loops rather than
+    // from an index arithmetic on the full crossing list is what keeps this
+    // correct when corner cuts have already claimed points at either end of the
+    // edge -- their points are simply not in this list.
+    let mut p: Vec<u32> = loops
+        .iter()
+        .flat_map(|c| c.points.iter())
+        .filter(|q| q.edge == e)
+        .map(|q| q.index)
+        .collect();
+    p.sort_unstable();
+    p.dedup();
+    if p.len() as u32 != 2 * m {
+        return Unfilled::Inconsistent;
+    }
+
+    let half = R::from_f64(0.5);
+    let midpoint = |edge: u8| -> [R; 3] {
+        let [lo, hi] = TET_EDGES[edge as usize];
+        let (a, b) = (tet.corners[lo as usize], tet.corners[hi as usize]);
+        [
+            (a[0] + b[0]) * half,
+            (a[1] + b[1]) * half,
+            (a[2] + b[2]) * half,
+        ]
+    };
+    let (from, to) = (midpoint(e), midpoint(opposite));
+
+    // The Steiner points, appended after every crossing vertex.
+    let steiner_base = out.positions.len() as u32;
+    let step = R::ONE / R::from_f64(f64::from(m) + 1.0);
+    for i in 0..m {
+        let t = step * R::from_f64(f64::from(i) + 1.0);
+        out.positions.push([
+            from[0] + (to[0] - from[0]) * t,
+            from[1] + (to[1] - from[1]) * t,
+            from[2] + (to[2] - from[2]) * t,
+        ]);
+    }
+
+    // Assign each loop its Steiner point, and check the nesting the assignment
+    // rests on before emitting anything.
+    let mut assigned = Vec::with_capacity(loops.len());
+    for cycle in loops {
+        if cycle.length() != 8 {
+            return Unfilled::Inconsistent;
+        }
+        let mut rank: Vec<u32> = cycle
+            .points
+            .iter()
+            .filter(|q| q.edge == e)
+            .filter_map(|q| p.binary_search(&q.index).ok().map(|r| r as u32))
+            .collect();
+        rank.sort_unstable();
+        // Each loop crosses `e` exactly twice, and the pairs are nested about
+        // the edge's middle: `p_j` pairs with `p_{2m-1-j}`. If that fails, the
+        // "innermost to outermost" assignment has no meaning and guessing one
+        // would be exactly the invented convention rule 5 forbids.
+        let [low, high] = match rank[..] {
+            [low, high] => [low, high],
+            _ => return Unfilled::Inconsistent,
+        };
+        if low + high != 2 * m - 1 || high < m {
+            return Unfilled::Inconsistent;
+        }
+        assigned.push((cycle, steiner_base + (high - m)));
+    }
+
+    // Fan each octagon around its Steiner point: one triangle per loop edge.
+    for (cycle, steiner) in assigned {
+        for k in 0..cycle.points.len() {
+            let a = index_of(cycle.points[k]);
+            let b = index_of(cycle.points[(k + 1) % cycle.points.len()]);
+            out.triangles.push([a, b, steiner]);
+        }
+    }
+
+    Unfilled::None
 }
 
 /// What [`fill`] met and did not yet handle.
@@ -492,9 +655,12 @@ pub fn fill<R: Real>(
 pub enum Unfilled {
     /// Everything the configuration carried was triangulated.
     None,
-    /// A normal loop longer than a quad — §3.2.1's octagon, single-loop and
-    /// subdivision cases.
-    NormalLoop,
+    /// §3.2.1 case (2) — one loop longer than an octagon, wanting a single
+    /// Steiner point in the convex hull of its vertices.
+    SingleLoop,
+    /// §3.2.1 case (3) — several loops longer than octagons, wanting the
+    /// Figure-13 subdivision stencil and a recursive call per new tet.
+    Subdivision,
     /// A non-normal loop — §3.2.2.
     NonNormalLoop,
     /// Property II failed on the residual coordinates.
