@@ -14,12 +14,26 @@ and reusable, the scalar type is generic over `f32` and `f64`, and the crate has
 
 `no_std` + `alloc`, unconditionally.
 
-![The word ISO meshed by two extractors as the letters are thinned; the marching cubes panel loses them entirely while the subgrid panel holds](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/subgrid-letters-thinner-than-a-voxel.gif)
+![A ball walking across streamed terrain, chunks loading continuously around it](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/walking-the-seams.gif)
 
-*One field, one grid, two extractors, and a slider driving the letters from 1.6 voxels thick down to
-0.2. On the left, Marching Cubes: first a holey remnant, then nothing at all. On the right, subgrid
-Marching Tetrahedra, unchanged. At 0.35 voxels thick, Marching Cubes returns **0** triangles and subgrid
-returns **1,340**.*
+*Nothing there is pre-baked. Every chunk under that ball was extracted while the camera flew toward it,
+on a background thread, under a frame budget — and the ball is standing on the **triangles**, not on the
+field they came from.*
+
+That last part is the test that matters. Chunks are meshed independently, so whether two of them
+actually *meet* is decided by the overlap the chunk layout chose; get it wrong and a player falls
+through the world at a boundary. Measured over **495 seam crossings: 0 holes**, worst vertical step
+across a seam **0.412 cells** against **0.539 cells** within a single chunk — the joins are smoother than
+the terrain they join.
+
+## And one thing nothing else here can do
+
+A feature thinner than a voxel does not exist to a method that asks *"what sign is this grid corner"* —
+one bit per edge, and a thin sheet fits between the samples. **Subgrid Marching Tetrahedra** asks
+instead for *every zero along the edge*, and triangulates whatever comes back.
+
+On letters **0.35 voxels thick**, Marching Cubes returns **0** triangles and subgrid returns **1,340** —
+on the same grid, at any resolution you like.
 
 ## Extracting a surface
 
@@ -81,7 +95,7 @@ The demos are worth looking at before the API:
 - **[Gameplay](https://github.com/ladvien/isomesh/blob/main/docs/demos/gameplay.md)** — streaming a
   world past a camera, walking every chunk seam, digging tunnels, LOD cracks and the transition cells
   that close them
-- **[Algorithms](https://github.com/ladvien/isomesh/blob/main/docs/demos/algorithms.md)** — six
+- **[Algorithms](https://github.com/ladvien/isomesh/blob/main/docs/demos/algorithms.md)** — the
   extractors side by side, in one process, on the same grids
 - **[Correctness](https://github.com/ladvien/isomesh/blob/main/docs/demos/correctness.md)** — where a
   mesh stops being a manifold, and what each repair costs
