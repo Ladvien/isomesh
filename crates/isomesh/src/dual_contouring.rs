@@ -106,6 +106,18 @@ pub const CLAMP_EPSILON: f64 = 1e-4;
 pub struct Qef {
     /// Whether to confine the result to its cell.
     pub clamp: Clamp,
+    /// The Tikhonov regularizer, or [`None`] for
+    /// [`solve::LAMBDA`](crate::dual_contouring::solve::LAMBDA).
+    ///
+    /// The sharpness knob. Toward zero the solve reproduces a three-plane corner
+    /// exactly and lets a flat cell's vertex fly off; large, it pulls every
+    /// vertex to the centroid of its crossings and rounds every edge over. See
+    /// [`solve_with`](crate::dual_contouring::solve::solve_with).
+    ///
+    /// `Option` rather than a bare value so that [`Default`] means "the default
+    /// λ" without this type having to restate it — one definition of the
+    /// number, in the module that explains it.
+    pub lambda: Option<f64>,
 }
 
 impl<R: Real> VertexRule<R> for Qef {
@@ -133,7 +145,8 @@ impl<R: Real> VertexRule<R> for Qef {
         // the corner samples the engine already took, so this adds field
         // evaluations only where the surface actually is.
         let cell = HermiteCell::from_corners(sdf, corner, cell_origin, cell_size);
-        let Some(x) = solve::solve(&cell) else {
+        let lambda = R::from_f64(self.lambda.unwrap_or(solve::LAMBDA));
+        let Some(x) = solve::solve_with(&cell, lambda) else {
             return;
         };
         out.push_whole_cell(apply_clamp(self.clamp, x, cell_origin, cell_size));
@@ -181,6 +194,7 @@ impl<R: Real> DualContouring<R> {
             mesher: DualMesher::new(),
             rule: Qef {
                 clamp: Clamp::ToCell,
+                lambda: None,
             },
         }
     }
@@ -189,6 +203,15 @@ impl<R: Real> DualContouring<R> {
     ///
     /// Defaults to [`Clamp::ToCell`]. See [`Clamp`] for why, and A-009's archive
     /// entry for what it measured.
+    /// The Tikhonov regularizer, the knob that trades sharpness for stability.
+    ///
+    /// `None` restores [`solve::LAMBDA`]. Toward zero, a three-plane corner comes
+    /// out exactly and a flat cell's vertex flies off; large, every edge rounds
+    /// over. `sharp_features` is the example that makes that visible.
+    pub fn set_lambda(&mut self, lambda: Option<f64>) {
+        self.rule.lambda = lambda;
+    }
+
     pub fn set_clamp(&mut self, clamp: Clamp) {
         self.rule.clamp = clamp;
     }

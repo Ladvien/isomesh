@@ -6,37 +6,6 @@
 
 `isomesh` has to serve both a real-time voxel game and a CAD tool. That single constraint decides almost everything about it: no math library appears in a public signature, output buffers are caller-provided and reusable, the scalar type is generic over `f32` and `f64`, and the core crate has exactly one dependency.
 
-## Status
-
-Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 60 tickets done, 24 open.
-
-| | |
-|---|---|
-| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **six-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · **frame-budget scheduling** · **subgrid Marching Tetrahedra** · **chunk streaming with hysteresis** · Bevy 0.19 bridge and plugin |
-| **Not yet** | Marching Cubes 33's interior test · simplicial embedding for subgrid MT (A-014d) · convex decomposition · GPU path |
-| **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
-
-The name is reserved on crates.io at `0.0.2` — a placeholder, not a release.
-
----
-
-## Why this exists
-
-Nothing on crates.io does all four of: `no_std`, `f32` **and** `f64`, sharp-feature extraction, and no math library pinned into the public API.
-
-| Crate | Why it doesn't cover this | Last release |
-|---|---|---|
-| `fast-surface-nets` | Surface Nets only; `SignedDistance: Into<f32>` forecloses `f64`; pins glam 0.29 | 2025-01 |
-| `block-mesh` | Blocky quads only | 2022-04 |
-| `isosurface` | Right architecture, dead crate | 2021-01 |
-| `building-blocks` | Repo archived | 2023-11 |
-| `tessellation` | Healthy Manifold Dual Contouring — nalgebra-locked | 2026-03 |
-| `fidget-mesh` | Very active — nalgebra-locked, coupled to fidget's evaluator | 2026-08 |
-
-The math-library pin is the load-bearing one. Bevy 0.19 wants glam 0.32, `parry3d` wants 0.33, `fast-surface-nets` wants 0.29 — a consumer using two of those compiles incompatible `Vec3` types and finds out at the type level, much later. So every public signature here is `[f32; 3]` and `[u32; 3]`.
-
----
-
 ## Walking a world that is being built as you cross it
 
 ![A ball walking across streamed terrain, chunks loading continuously around it](docs/gifs/walking-the-seams.gif)
@@ -83,6 +52,37 @@ letters 0.35 voxels thick, Marching Cubes returns **0** triangles and subgrid re
 same grid, at any resolution you like.
 
 [See it lose them, on the algorithms page →](docs/demos/algorithms.md)
+
+---
+
+## Status
+
+Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 60 tickets done, 24 open.
+
+| | |
+|---|---|
+| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **six-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · **frame-budget scheduling** · **subgrid Marching Tetrahedra** · **chunk streaming with hysteresis** · Bevy 0.19 bridge and plugin |
+| **Not yet** | Marching Cubes 33's interior test · simplicial embedding for subgrid MT (A-014d) · convex decomposition · GPU path |
+| **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
+
+The name is reserved on crates.io at `0.0.2` — a placeholder, not a release.
+
+---
+
+## Why this exists
+
+Nothing on crates.io does all four of: `no_std`, `f32` **and** `f64`, sharp-feature extraction, and no math library pinned into the public API.
+
+| Crate | Why it doesn't cover this | Last release |
+|---|---|---|
+| `fast-surface-nets` | Surface Nets only; `SignedDistance: Into<f32>` forecloses `f64`; pins glam 0.29 | 2025-01 |
+| `block-mesh` | Blocky quads only | 2022-04 |
+| `isosurface` | Right architecture, dead crate | 2021-01 |
+| `building-blocks` | Repo archived | 2023-11 |
+| `tessellation` | Healthy Manifold Dual Contouring — nalgebra-locked | 2026-03 |
+| `fidget-mesh` | Very active — nalgebra-locked, coupled to fidget's evaluator | 2026-08 |
+
+The math-library pin is the load-bearing one. Bevy 0.19 wants glam 0.32, `parry3d` wants 0.33, `fast-surface-nets` wants 0.29 — a consumer using two of those compiles incompatible `Vec3` types and finds out at the type level, much later. So every public signature here is `[f32; 3]` and `[u32; 3]`.
 
 ---
 

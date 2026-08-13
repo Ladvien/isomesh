@@ -70,7 +70,12 @@ use crate::Real;
 use crate::hermite::HermiteCell;
 use crate::vec3;
 
-/// The Tikhonov regularizer. Unitless — see the module docs.
+/// The default Tikhonov regularizer. Unitless — see the module docs.
+///
+/// A default rather than a constant of the algorithm: λ is *the* knob that
+/// trades sharpness against stability, and hard-coding it hid the trade behind a
+/// number nobody could turn. [`solve_with`] takes it, [`solve`] uses this, and
+/// E-109 exists to let you watch what moving it does.
 pub const LAMBDA: f64 = 0.01;
 
 /// A dot product summed smallest-magnitude-first.
@@ -259,6 +264,30 @@ impl<R: Real> Symmetric3<R> {
 /// has an unclamped baseline to measure against.
 #[must_use]
 pub fn solve<R: Real>(cell: &HermiteCell<R>) -> Option<[R; 3]> {
+    solve_with(cell, R::from_f64(LAMBDA))
+}
+
+/// [`solve`] with an explicit Tikhonov regularizer.
+///
+/// # What λ does
+///
+/// It is the whole sharpness/stability trade, in one number.
+///
+/// Toward **zero**, the solve is the unregularized plane intersection: a corner
+/// where three planes meet is reproduced exactly, and a *flat* cell — where `M`
+/// is rank 1 and the constraints do not determine a point — has nothing pulling
+/// its vertex back, so it flies off along the unconstrained directions. That is
+/// the spiking regime.
+///
+/// Toward **large**, the solve is pulled to the centroid of the cell's crossings.
+/// Nothing flies anywhere and every sharp edge rounds over, which is Surface Nets
+/// with extra steps.
+///
+/// [`LAMBDA`] sits near the bottom of the usable range deliberately: the whole
+/// reason to run Dual Contouring is the corner, and the clamp
+/// ([`Clamp`](super::Clamp)) is a better answer to a runaway vertex than
+/// blunting every corner in the mesh to prevent it.
+pub fn solve_with<R: Real>(cell: &HermiteCell<R>, lambda: R) -> Option<[R; 3]> {
     let centroid = cell.centroid()?;
 
     let mut m = Symmetric3::<R>::ZERO;
@@ -271,7 +300,7 @@ pub fn solve<R: Real>(cell: &HermiteCell<R>) -> Option<[R; 3]> {
         g = [g[0] + n[0] * d, g[1] + n[1] * d, g[2] + n[2] * d];
     }
 
-    let a = m.regularized(R::from_f64(LAMBDA));
+    let a = m.regularized(lambda);
     let adj = a.adjugate();
     let det = a.determinant();
 
