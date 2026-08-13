@@ -38,6 +38,10 @@ impl Sdf for SlowSphere {
     }
 }
 
+/// The deliberately slow field's spin count, shared so the reference extraction
+/// in `spawning_the_work_does_not_do_the_work` is timing the same work the app is.
+const SPIN: u32 = 4_000;
+
 fn app(spin: u32, chunks: i32) -> App {
     let mut app = App::new();
     app.add_plugins((TaskPoolPlugin::default(), AssetPlugin::default()))
@@ -74,15 +78,39 @@ fn meshed(app: &mut App) -> usize {
         .count()
 }
 
+/// Run `app` until `done` holds, or give up.
+///
+/// **Spinning `app.update()` in a tight loop is not waiting.** The extractions
+/// run on [`AsyncComputeTaskPool`] threads, and a loop that never yields grants
+/// them almost no wall clock: B-005 measured 500 iterations completing in ~20 ms
+/// against work that needs ~40 ms, draining 2 chunks of 12 and failing 8 runs out
+/// of 8. The same test passed in **39** iterations once each one slept a
+/// millisecond — twelve times fewer iterations and twice the wall time — which is
+/// what identified the loop rather than the plugin as the defect.
+///
+/// So the bound is a deadline, not an iteration count. Returns the frames used,
+/// because two tests assert on that.
+fn drain_until(app: &mut App, mut done: impl FnMut(&mut App) -> bool) -> usize {
+    const DEADLINE: Duration = Duration::from_secs(10);
+    const SLICE: Duration = Duration::from_micros(250);
+
+    let started = Instant::now();
+    let mut frames = 0;
+    while started.elapsed() < DEADLINE {
+        app.update();
+        frames += 1;
+        if done(app) {
+            break;
+        }
+        std::thread::sleep(SLICE);
+    }
+    frames
+}
+
 #[test]
 fn every_chunk_eventually_gets_a_mesh() {
     let mut app = app(0, 12);
-    for _ in 0..200 {
-        app.update();
-        if meshed(&mut app) == 12 {
-            break;
-        }
-    }
+    drain_until(&mut app, |app| meshed(app) == 12);
     assert_eq!(meshed(&mut app), 12, "the queue never drained");
 
     // And nothing is left marked or in flight, so the drain is complete rather
@@ -105,27 +133,51 @@ fn spawning_the_work_does_not_do_the_work() {
     // The acceptance property. One update spawns twelve extractions of a
     // deliberately slow field; if any of that ran on the main thread, the update
     // could not come back in a fraction of the time the extractions take.
-    let mut app = app(4_000, 12);
+    let mut app = app(SPIN, 12);
 
     let spawn_frame = Instant::now();
     app.update();
     let spawn_cost = spawn_frame.elapsed();
 
-    // Drain, and time the whole thing. The total is what the work costs.
-    let drain = Instant::now();
-    for _ in 0..500 {
-        app.update();
-        if meshed(&mut app) == 12 {
-            break;
-        }
-    }
-    let total = drain.elapsed() + spawn_cost;
+    drain_until(&mut app, |app| meshed(app) == 12);
     assert_eq!(meshed(&mut app), 12, "the queue never drained");
 
+    // What one of those extractions actually costs, done here on the main
+    // thread. **This, not the drain loop's wall time, is the denominator.**
+    //
+    // The original compared `spawn_cost` against how long the drain took, which
+    // made the assertion a hostage to scheduling twice over: it flaked on a fast
+    // machine, and any fix that let the loop wait would have padded the total
+    // with sleep and made a main-thread implementation pass. Timing one
+    // extraction directly removes the loop from the question entirely -- the
+    // claim is "queuing twelve of these cost far less than doing one", which is
+    // a statement about *where the work ran*.
+    let layout = ChunkLayout::new(8, 0.25, [0.0; 3]).expect("a valid layout");
+    let field = SlowSphere {
+        inner: Sphere::<f32>::canonical(),
+        spin: SPIN,
+    };
+    let one = Instant::now();
+    let built = extract_chunk(
+        &field,
+        &layout,
+        ChunkId::new([0, 0, 0]),
+        Extractor::default(),
+    );
+    let one_extraction = one.elapsed();
+
+    // The negative control: if the field were free to sample, the comparison
+    // below would pass for any implementation at all.
     assert!(
-        spawn_cost * 4 < total,
-        "the frame that queued the work took {spawn_cost:?} of a total {total:?}, \
-         which is not the profile of work that happened elsewhere"
+        built.triangle_count() > 0,
+        "the reference extraction produced nothing, so it timed no work"
+    );
+
+    assert!(
+        spawn_cost * 4 < one_extraction,
+        "the frame that queued twelve extractions took {spawn_cost:?}, against \
+         {one_extraction:?} to perform ONE of them here -- that is not the profile \
+         of work that happened on another thread"
     );
 }
 
@@ -139,18 +191,14 @@ fn the_budget_bounds_what_lands_per_frame() {
         max_in_flight: 64,
     });
 
-    let mut frames = 0;
     let mut worst = 0usize;
-    for _ in 0..200 {
-        let before = meshed(&mut app);
-        app.update();
-        let after = meshed(&mut app);
+    let mut before = 0usize;
+    let frames = drain_until(&mut app, |app| {
+        let after = meshed(app);
         worst = worst.max(after - before);
-        frames += 1;
-        if after == 12 {
-            break;
-        }
-    }
+        before = after;
+        after == 12
+    });
     assert_eq!(meshed(&mut app), 12);
     assert_eq!(
         worst, 1,
@@ -170,14 +218,13 @@ fn a_generous_budget_is_not_bounded_the_same_way() {
     });
 
     let mut best = 0usize;
-    for _ in 0..200 {
-        let before = meshed(&mut app);
-        app.update();
-        best = best.max(meshed(&mut app) - before);
-        if meshed(&mut app) == 12 {
-            break;
-        }
-    }
+    let mut before = 0usize;
+    drain_until(&mut app, |app| {
+        let after = meshed(app);
+        best = best.max(after - before);
+        before = after;
+        after == 12
+    });
     assert!(
         best > 1,
         "a one-second budget still applied only {best} mesh per frame, so the \
@@ -233,14 +280,10 @@ fn an_edit_during_extraction_is_requeued_rather_than_swallowed() {
 
     // The edit arrives while the first extraction is still running.
     app.world_mut().entity_mut(chunk).insert(NeedsRemesh);
-    for _ in 0..500 {
-        app.update();
-        if !app.world().entity(chunk).contains::<NeedsRemesh>()
+    drain_until(&mut app, |app| {
+        !app.world().entity(chunk).contains::<NeedsRemesh>()
             && !app.world().entity(chunk).contains::<MeshingTask>()
-        {
-            break;
-        }
-    }
+    });
     assert!(
         app.world().entity(chunk).contains::<ChunkMesh>(),
         "the chunk never finished"
@@ -295,11 +338,6 @@ fn the_subgrid_extractor_is_reachable_through_the_component() {
         NeedsRemesh,
     ));
 
-    for _ in 0..500 {
-        app.update();
-        if meshed(&mut app) == 1 {
-            break;
-        }
-    }
+    drain_until(&mut app, |app| meshed(app) == 1);
     assert_eq!(meshed(&mut app), 1);
 }

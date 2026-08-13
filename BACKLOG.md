@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**66 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**67 tickets archived, 18 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -95,7 +95,6 @@ nearest-first, and the caller's own clock decides when to stop.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **B-005** | **B-003's async tests do not drain on Linux, and one of them never passes (M-111).** Measured 2026-08-13 at `4369e3c`, a 12-core Ryzen 5900X on CachyOS, with no local changes to `bevy_isomesh/src`: `plugin::tests::spawning_the_work_does_not_do_the_work` fails **8 of 8** runs in isolation, draining **2 of 12** chunks in 500 `app.update()` calls, and the whole test returns in ~20 ms — so the updates are not blocking on anything, the spawned extractions simply never complete. The other three drain tests (`every_chunk_eventually_gets_a_mesh`, `an_edit_during_extraction_is_requeued_rather_than_swallowed`, `the_budget_bounds_what_lands_per_frame`) fail **intermittently** in the same suite, 1–3 failures per run across three consecutive runs. **This is B-003's acceptance property**, so the failure is either the property or the harness and it matters which. **First question, before any fix:** does the task pool have threads? `TaskPoolPlugin::default()` derives its counts from available parallelism, and `cargo test` runs the suite on N threads each building an `App` with its own pool — oversubscription is the obvious suspect and is *not yet checked*. **Acceptance:** the four tests pass 20 consecutive runs both in isolation and in the full suite, and the diagnosis is recorded — if the pool is the cause, say so; if the plugin only polls one task per frame, that is a plugin defect and not a test one. Do not "fix" it by raising the 500-update bound, which would hide whichever of the two it is. | M | — |
 
 ---
 
