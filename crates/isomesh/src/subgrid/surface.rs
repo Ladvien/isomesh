@@ -51,7 +51,7 @@ use alloc::vec::Vec;
 use crate::marching_tetrahedra::table::{TET_EDGE_COUNT, TET_EDGES};
 use crate::real::Real;
 
-use super::coordinates::{EdgeCoordinates, TET_FACE_COUNT, complementary};
+use super::coordinates::{EdgeCoordinates, TET_FACE_COUNT, TET_FACES, complementary};
 use super::curves::{Curve, CurveKind, FacePoint, Segment, curves};
 
 /// A tetrahedron, and every crossing found along its edges.
@@ -624,6 +624,66 @@ impl Cycle {
     }
 }
 
+/// One step around a face's boundary, between two consecutive nodes.
+///
+/// A face of the tet is a triangle whose boundary carries the loop's crossings.
+/// Walking it gives an alternating sequence of nodes and arcs; the arcs are what
+/// a region is bounded by.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Arc {
+    /// A piece of one of the face's three edges, with the side §3.2.2's
+    /// labelling gives it.
+    Edge {
+        /// Which tet edge it lies on.
+        edge: u8,
+        /// Which piece along that edge, counting from its lower corner.
+        piece: usize,
+        /// Inside or outside the loop.
+        side: Side,
+    },
+    /// A segment of `γ` crossing the face's interior. A **scoop** — both
+    /// endpoints on one edge — is one of these too, and is exactly the case
+    /// V-21 warns realises with zero area until A-014d insets it.
+    Chord,
+}
+
+/// A point on a face's boundary walk.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Node {
+    /// A corner of the tetrahedron.
+    Corner(u8),
+    /// A crossing of the loop with one of the face's edges.
+    Crossing(FacePoint),
+}
+
+/// A region of one face, cut out by the loop's segments.
+///
+/// Its boundary, as arcs in order. Emitted by §3.2.2 only when every [`Arc::Edge`]
+/// in it is [`Side::Inside`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Region {
+    /// The arcs bounding it, in order.
+    pub arc: Vec<Arc>,
+    /// The nodes between them: `node[i]` precedes `arc[i]`.
+    pub node: Vec<Node>,
+}
+
+impl Region {
+    /// Whether §3.2.2 emits this region: *"we emit any polygon `P` bound by
+    /// 'inside' segments and segments of `γ`."*
+    ///
+    /// A region touching a tet corner always fails this, because every corner is
+    /// outside for a contractible loop and all but one for a corner loop — which
+    /// is what stops the disk from swallowing a vertex.
+    #[must_use]
+    pub fn is_inside(&self) -> bool {
+        self.arc.iter().all(|a| match a {
+            Arc::Edge { side, .. } => *side == Side::Inside,
+            Arc::Chord => true,
+        })
+    }
+}
+
 /// Which side of a non-normal loop a piece of the tet boundary is on.
 ///
 /// > Since `γ` is a closed simple curve, it partitions the tet boundary into
@@ -723,6 +783,195 @@ impl Cycle {
         }
         Some(out)
     }
+}
+
+/// Split one face along a loop's segments — §3.2.2's `σ \ γ`.
+///
+/// > We first split each triangle `σ` of the tet boundary along the segments of
+/// > `γ`, yielding a collection of planar polygons `σ \ γ`.
+///
+/// Built **combinatorially**, from the boundary walk and the pairing, never from
+/// straight-line geometry. V-21 is why: a scoop's chord lies *along* its own
+/// edge, so a geometric build collapses it to zero area before A-014d can inset
+/// it, and the region it bounds would disappear rather than be emitted
+/// degenerate as the paper intends.
+///
+/// # The peel
+///
+/// `γ` is simple, so its chords on a face do not cross, and non-crossing chords
+/// on a disk nest. So there is always an **innermost** chord — one whose two
+/// endpoints have no other chord endpoint between them along one side — and the
+/// arcs spanning that gap, plus the chord, bound a region with nothing inside
+/// it. Emit it, replace the whole span by the chord itself, and repeat. What
+/// remains when no chords are left is the last region.
+///
+/// That the peel always finds an innermost chord is not assumed: if it cannot,
+/// the chords were not non-crossing, which would mean §3.1 produced a
+/// self-crossing curve, and this returns `None` rather than inventing a
+/// decomposition.
+///
+/// Returns `None` for a diagonal loop, which has no sides and therefore no
+/// inside/outside decomposition to make.
+#[must_use]
+pub fn face_regions(face: u8, coords: &EdgeCoordinates, cycle: &Cycle) -> Option<Vec<Region>> {
+    let f = TET_FACES[face as usize];
+    let sides: [Vec<Side>; 3] = [
+        cycle.edge_sides(f.edge[0])?,
+        cycle.edge_sides(f.edge[1])?,
+        cycle.edge_sides(f.edge[2])?,
+    ];
+
+    // Walk the face boundary: corner k, then this loop's crossings along
+    // edge k in the direction corner k -> corner k+1, then corner k+1, ...
+    // `piece` indexes the sub-segments of an edge from its *lower* corner,
+    // which is the direction `edge_sides` labels in, so the walk converts once
+    // here and nowhere else.
+    let mut node: Vec<Node> = Vec::new();
+    let mut arc: Vec<Arc> = Vec::new();
+    for (k, side_of) in sides.iter().enumerate() {
+        let edge = f.edge[k];
+        let [lo, _hi] = TET_EDGES[edge as usize];
+        let forward = f.corner[k] == lo;
+        let mut index: Vec<u32> = cycle
+            .points
+            .iter()
+            .filter(|p| p.edge == edge)
+            .map(|p| p.index)
+            .collect();
+        index.sort_unstable();
+        if !forward {
+            index.reverse();
+        }
+
+        node.push(Node::Corner(f.corner[k]));
+        for (step, crossing) in index.iter().enumerate() {
+            // Piece `step` of the walk is piece `step` from the lower corner
+            // when walking forward, and counts back from the far end otherwise.
+            let piece = if forward { step } else { index.len() - step };
+            arc.push(Arc::Edge {
+                edge,
+                piece,
+                side: *side_of.get(piece)?,
+            });
+            node.push(Node::Crossing(FacePoint {
+                edge,
+                index: *crossing,
+            }));
+        }
+        let piece = if forward { index.len() } else { 0 };
+        arc.push(Arc::Edge {
+            edge,
+            piece,
+            side: *side_of.get(piece)?,
+        });
+    }
+
+    // Which walk positions are joined by a chord.
+    //
+    // Face assignment comes from `face_segments`, not from "both endpoints lie
+    // on an edge this face has". Those differ exactly for a **scoop**: its two
+    // endpoints are on one edge, and an edge belongs to *two* faces, so the
+    // weaker test hands the same scoop to both of them and a crossing ends up
+    // bounding three regions instead of two. §3.1 already knows the answer,
+    // because it builds segments per face in the first place.
+    let mut partner: Vec<Option<usize>> = alloc::vec![None; node.len()];
+    let position = |p: FacePoint| node.iter().position(|n| *n == Node::Crossing(p));
+    // This loop's own segments, as endpoint pairs in the same sorted order a
+    // `Segment` stores them, so the two can be compared without reaching for
+    // `Segment`'s private constructor.
+    let mine: Vec<(FacePoint, FacePoint)> = {
+        let mut s: Vec<(FacePoint, FacePoint)> = (0..cycle.points.len())
+            .map(|k| {
+                let (a, b) = (cycle.points[k], cycle.points[(k + 1) % cycle.points.len()]);
+                if a <= b { (a, b) } else { (b, a) }
+            })
+            .collect();
+        s.sort_unstable();
+        s
+    };
+    for segment in super::curves::face_segments(face, coords) {
+        if mine.binary_search(&(segment.a, segment.b)).is_err() {
+            continue;
+        }
+        if let (Some(i), Some(j)) = (position(segment.a), position(segment.b)) {
+            partner[i] = Some(j);
+            partner[j] = Some(i);
+        }
+    }
+
+    Some(peel(node, arc, partner))
+}
+
+/// Repeatedly cut off the innermost chord's region. See [`face_regions`].
+fn peel(mut node: Vec<Node>, mut arc: Vec<Arc>, mut partner: Vec<Option<usize>>) -> Vec<Region> {
+    let mut out = Vec::new();
+
+    loop {
+        let n = node.len();
+        // An innermost chord: `i -> j` forward with no other chord endpoint
+        // strictly between.
+        let innermost = (0..n).find_map(|i| {
+            let j = partner[i]?;
+            let span = (j + n - i) % n;
+            if span == 0 {
+                return None;
+            }
+            let clear = (1..span).all(|s| partner[(i + s) % n].is_none());
+            clear.then_some((i, j, span))
+        });
+
+        let Some((i, j, span)) = innermost else {
+            break;
+        };
+
+        // The region: the arcs from `i` forward to `j`, closed by the chord.
+        let mut region = Region {
+            arc: Vec::with_capacity(span + 1),
+            node: Vec::with_capacity(span + 1),
+        };
+        for s in 0..span {
+            region.node.push(node[(i + s) % n]);
+            region.arc.push(arc[(i + s) % n]);
+        }
+        region.node.push(node[j]);
+        region.arc.push(Arc::Chord);
+        out.push(region);
+
+        // Collapse: the span becomes the chord, and its interior nodes go.
+        let mut kept_node = Vec::with_capacity(n - span + 1);
+        let mut kept_arc = Vec::with_capacity(n - span + 1);
+        let mut kept_partner = Vec::with_capacity(n - span + 1);
+        kept_node.push(node[i]);
+        kept_arc.push(Arc::Chord);
+        kept_partner.push(None);
+        for s in span..n {
+            let at = (i + s) % n;
+            kept_node.push(node[at]);
+            kept_arc.push(arc[at]);
+            kept_partner.push(partner[at]);
+        }
+        // The two chord endpoints have been consumed; nothing else moved
+        // relative to them, so re-derive the pairing by identity.
+        let remap: Vec<Option<usize>> = kept_partner
+            .iter()
+            .map(|p| {
+                p.and_then(|old| {
+                    let original = |at: usize| (i + at) % n;
+                    (0..kept_node.len()).find(|k| *k > 0 && original(span + k - 1) == old)
+                })
+            })
+            .collect();
+        node = kept_node;
+        arc = kept_arc;
+        partner = remap;
+        let _ = j;
+    }
+
+    // Whatever is left, once no chord remains, is the final region.
+    if !arc.is_empty() {
+        out.push(Region { arc, node });
+    }
+    out
 }
 
 /// §3.2.1 case (3) — the subdivision stencil, as a labelling and four tets.

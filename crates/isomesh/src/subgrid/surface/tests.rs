@@ -1138,3 +1138,116 @@ fn no_triangle_indexes_a_vertex_that_does_not_exist_or_repeats_one() {
         }
     }
 }
+
+#[test]
+fn a_face_split_along_a_loop_partitions_into_regions() {
+    // §3.2.2's σ \ γ. The decomposition is checked by conservation rather than
+    // by inspection: every edge arc of the face must appear in exactly one
+    // region, and every chord in exactly two (once from each side) -- which is
+    // what "partition" means for a disk cut by chords, and what a peel that
+    // dropped or duplicated a span would break.
+    let mut faces_with_chords = 0;
+    let mut multi_chord_faces = 0;
+
+    for raw in 0..4096u32 {
+        let mut count = [0u32; TET_EDGE_COUNT];
+        for (e, slot) in count.iter_mut().enumerate() {
+            *slot = (raw >> (2 * e)) & 0b11;
+        }
+        for cycle in cycles(&EdgeCoordinates::new(count)) {
+            if cycle.corner_sides().is_none() {
+                continue;
+            }
+            for face in 0..4u8 {
+                let regions = face_regions(face, &EdgeCoordinates::new(count), &cycle)
+                    .expect("this loop has sides");
+                assert!(!regions.is_empty(), "{count:?} face {face}: no regions");
+
+                let mut edge_arcs = 0usize;
+                let mut chords = 0usize;
+                for r in &regions {
+                    assert_eq!(
+                        r.arc.len(),
+                        r.node.len(),
+                        "{count:?}: arcs and nodes differ"
+                    );
+                    assert!(r.arc.len() >= 2, "{count:?}: a region with under 2 arcs");
+                    for a in &r.arc {
+                        match a {
+                            Arc::Edge { .. } => edge_arcs += 1,
+                            Arc::Chord => chords += 1,
+                        }
+                    }
+                }
+
+                // The face's three edges are each cut into (crossings + 1)
+                // pieces, and every piece belongs to exactly one region.
+                let expected_pieces: usize = (0..3)
+                    .map(|k| {
+                        let e = crate::subgrid::coordinates::TET_FACES[face as usize].edge[k];
+                        cycle.points.iter().filter(|p| p.edge == e).count() + 1
+                    })
+                    .sum();
+                assert_eq!(
+                    edge_arcs, expected_pieces,
+                    "{count:?} face {face}: edge pieces not conserved"
+                );
+
+                // Each chord bounds exactly two regions.
+                let chord_count = chords;
+                assert_eq!(
+                    chord_count % 2,
+                    0,
+                    "{count:?} face {face}: a chord bounds an odd number of regions"
+                );
+                assert_eq!(
+                    regions.len(),
+                    chord_count / 2 + 1,
+                    "{count:?} face {face}: {} regions for {} chord sides",
+                    regions.len(),
+                    chord_count
+                );
+                // Order-sensitive, unlike the counts above: a crossing sits on
+                // the border between exactly two regions and a corner belongs
+                // to exactly one. Peeling a chord that is *not* innermost cuts
+                // off a region still containing unresolved chords, which lands
+                // their endpoints in the wrong number of regions.
+                let mut appearances: Vec<(Node, usize)> = Vec::new();
+                for r in &regions {
+                    for n in &r.node {
+                        match appearances.iter_mut().find(|(m, _)| m == n) {
+                            Some((_, c)) => *c += 1,
+                            None => appearances.push((*n, 1)),
+                        }
+                    }
+                }
+                for (n, c) in &appearances {
+                    let expected = match n {
+                        Node::Corner(_) => 1,
+                        Node::Crossing(_) => 2,
+                    };
+                    assert_eq!(
+                        *c, expected,
+                        "{count:?} face {face}: {n:?} appears in {c} regions, not {expected}"
+                    );
+                }
+
+                if chord_count > 0 {
+                    faces_with_chords += 1;
+                }
+                if chord_count / 2 >= 2 {
+                    multi_chord_faces += 1;
+                }
+            }
+        }
+    }
+    assert!(faces_with_chords > 0, "no face was ever actually cut");
+    // The peel's "innermost" requirement only bites when a face carries two or
+    // more chords -- with one chord, every chord is innermost. If this were
+    // zero, dropping that requirement would pass the test, which is exactly
+    // what a mutation showed before this assertion existed.
+    assert!(
+        multi_chord_faces > 0,
+        "no face carried two chords, so the innermost rule is untested"
+    );
+}
