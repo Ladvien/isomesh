@@ -624,6 +624,107 @@ impl Cycle {
     }
 }
 
+/// Which side of a non-normal loop a piece of the tet boundary is on.
+///
+/// > Since `γ` is a closed simple curve, it partitions the tet boundary into
+/// > two pieces. To define spanning disks, we must classify these pieces as
+/// > "inside" or "outside" `γ`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Side {
+    /// The piece the spanning disk is built over.
+    Inside,
+    /// The other one.
+    Outside,
+}
+
+impl Side {
+    /// The other side. Crossing `γ` once swaps them, which is what makes the
+    /// labels along an edge alternate.
+    #[must_use]
+    pub const fn flipped(self) -> Self {
+        match self {
+            Self::Inside => Self::Outside,
+            Self::Outside => Self::Inside,
+        }
+    }
+}
+
+impl Cycle {
+    /// The corner a corner-type loop separates from the other three.
+    ///
+    /// Read off the parity bits the classification already computes: `b_ij` is
+    /// odd exactly when `γ` separates `i` from `j`, so the distinguished corner
+    /// is the one whose three incident edges are all odd. `None` for any loop
+    /// that is not corner type.
+    #[must_use]
+    pub fn distinguished_corner(&self) -> Option<u8> {
+        if self.non_normal_kind()? != NonNormalKind::Corner {
+            return None;
+        }
+        let mut own = [0u32; TET_EDGE_COUNT];
+        for point in &self.points {
+            own[point.edge as usize] += 1;
+        }
+        (0..4u8).find(|corner| {
+            (0..4u8).filter(|other| other != corner).all(|other| {
+                own[super::coordinates::edge_between(*corner, other) as usize] % 2 == 1
+            })
+        })
+    }
+
+    /// Which side of the loop each of the tet's four corners is on.
+    ///
+    /// > When `γ` is of corner type, we mark the distinguished vertex as inside
+    /// > and all other vertices as outside. When `γ` is contractible, all
+    /// > vertices are "outside," and when `γ` is diagonal we do not require an
+    /// > inside/outside distinction.
+    ///
+    /// `None` for a diagonal loop — which is not a gap but the paper's own
+    /// answer, and the reason the diagonal case can be triangulated without one.
+    #[must_use]
+    pub fn corner_sides(&self) -> Option<[Side; 4]> {
+        match self.non_normal_kind()? {
+            NonNormalKind::Diagonal => None,
+            NonNormalKind::Contractible => Some([Side::Outside; 4]),
+            NonNormalKind::Corner => {
+                let distinguished = self.distinguished_corner()?;
+                let mut side = [Side::Outside; 4];
+                side[distinguished as usize] = Side::Inside;
+                Some(side)
+            }
+        }
+    }
+
+    /// The side of each piece an edge is cut into, from its lower corner.
+    ///
+    /// > Along each edge `ij` of `σ`, the first segment inherits the label of
+    /// > vertex `i`; subsequent segments alternate between "inside" and
+    /// > "outside" labels.
+    ///
+    /// An edge carrying `n` of this loop's crossings is cut into `n + 1` pieces,
+    /// so that is the length of the result. `i` is the edge's **lower-numbered**
+    /// corner, which makes the labelling agree between the two faces sharing the
+    /// edge without either consulting the other — the same mechanism that gives
+    /// §3.1 its conformity (M-79).
+    ///
+    /// `None` for a diagonal loop, which has no sides.
+    #[must_use]
+    pub fn edge_sides(&self, edge: u8) -> Option<Vec<Side>> {
+        let sides = self.corner_sides()?;
+        let [lo, _hi] = TET_EDGES[edge as usize];
+        let crossings = self.points.iter().filter(|p| p.edge == edge).count();
+
+        let mut out = Vec::with_capacity(crossings + 1);
+        let mut side = sides[lo as usize];
+        out.push(side);
+        for _ in 0..crossings {
+            side = side.flipped();
+            out.push(side);
+        }
+        Some(out)
+    }
+}
+
 /// §3.2.1 case (3) — the subdivision stencil, as a labelling and four tets.
 ///
 /// > Noting Property (II) above, let `i, j, k, l` be vertices of the tetrahedron

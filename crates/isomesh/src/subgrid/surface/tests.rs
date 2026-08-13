@@ -514,6 +514,94 @@ fn the_shared_face_of_two_tets_carries_no_crack() {
 }
 
 #[test]
+fn the_edge_labelling_closes_on_the_far_corner_it_was_not_told_about() {
+    // §3.2.2's labelling walks an edge from its lower corner, taking that
+    // corner's side and flipping at every crossing. Nothing in that walk looks
+    // at the *upper* corner -- so the label it arrives at is a prediction, and
+    // it must match the side that corner was independently assigned.
+    //
+    // The two agree only if the parity rule and the vertex rule are consistent
+    // with each other: crossing γ an odd number of times must mean the two
+    // corners are on opposite sides, which is precisely what b_ij is defined to
+    // say. A sign error in either rule breaks this and nothing else would.
+    let mut corner_loops = 0;
+    let mut contractible_loops = 0;
+
+    for raw in 0..4096u32 {
+        let mut count = [0u32; TET_EDGE_COUNT];
+        for (e, slot) in count.iter_mut().enumerate() {
+            *slot = (raw >> (2 * e)) & 0b11;
+        }
+        let coords = EdgeCoordinates::new(count);
+        for cycle in cycles(&coords) {
+            let Some(sides) = cycle.corner_sides() else {
+                continue;
+            };
+            match cycle.non_normal_kind() {
+                Some(NonNormalKind::Corner) => corner_loops += 1,
+                Some(NonNormalKind::Contractible) => contractible_loops += 1,
+                _ => panic!("only corner and contractible loops have sides"),
+            }
+
+            for edge in 0..TET_EDGE_COUNT as u8 {
+                let labels = cycle.edge_sides(edge).expect("this loop has sides");
+                let [lo, hi] = TET_EDGES[edge as usize];
+                let crossings = cycle.points.iter().filter(|p| p.edge == edge).count();
+
+                assert_eq!(labels.len(), crossings + 1, "{count:?} edge {edge}");
+                assert_eq!(labels[0], sides[lo as usize], "{count:?} edge {edge}");
+                assert_eq!(
+                    *labels.last().expect("non-empty"),
+                    sides[hi as usize],
+                    "{count:?} edge {edge}: walking from corner {lo} across {crossings} \
+                     crossings disagrees with corner {hi}'s own side"
+                );
+            }
+
+            // A corner loop's distinguished corner is the inside one, and it is
+            // the only one.
+            if let Some(distinguished) = cycle.distinguished_corner() {
+                assert_eq!(sides[distinguished as usize], Side::Inside);
+                assert_eq!(
+                    sides.iter().filter(|s| **s == Side::Inside).count(),
+                    1,
+                    "{count:?}: a corner loop has exactly one inside vertex"
+                );
+            }
+        }
+    }
+
+    assert!(
+        corner_loops > 0 && contractible_loops > 0,
+        "corner: {corner_loops}, contractible: {contractible_loops} -- both must be \
+         reached or one of the two labelling rules is untested"
+    );
+}
+
+#[test]
+fn a_diagonal_loop_has_no_sides_and_that_is_the_papers_answer() {
+    // "when γ is diagonal we do not require an inside/outside distinction" --
+    // so None here is the specified behaviour, not a missing case, and it is
+    // why the diagonal type could be triangulated before this labelling existed.
+    let mut found = false;
+    for raw in 0..4096u32 {
+        let mut count = [0u32; TET_EDGE_COUNT];
+        for (e, slot) in count.iter_mut().enumerate() {
+            *slot = (raw >> (2 * e)) & 0b11;
+        }
+        for cycle in cycles(&EdgeCoordinates::new(count)) {
+            if cycle.non_normal_kind() == Some(NonNormalKind::Diagonal) {
+                assert_eq!(cycle.corner_sides(), None);
+                assert_eq!(cycle.edge_sides(0), None);
+                assert_eq!(cycle.distinguished_corner(), None);
+                found = true;
+            }
+        }
+    }
+    assert!(found, "no diagonal loop was reached");
+}
+
+#[test]
 fn the_coverage_of_the_implemented_cases_is_pinned() {
     // How much of the encoding §3.2 currently serves, over every configuration
     // with 0..=3 crossings on each of the six edges. Pinned as exact counts
