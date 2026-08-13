@@ -96,16 +96,29 @@ enum Algorithm {
     SurfaceNets,
     DualContouring,
     ManifoldDualContouring,
+    /// Subgrid Marching Tetrahedra, at a fixed 1D sampling resolution.
+    ///
+    /// The only entrant whose cost is not a function of the grid alone — it
+    /// finds every root along every tetrahedron edge, so it also scales with
+    /// [`SUBGRID_SAMPLES`]. Held constant across the sweep so a row comparison
+    /// is about the algorithm rather than about the sampling, and set to the
+    /// same value the golden fixture pins so a timing and a hash describe one
+    /// configuration.
+    SubgridMarchingTetrahedra,
 }
 
+/// The 1D sampling resolution the subgrid rows run at.
+const SUBGRID_SAMPLES: u32 = 16;
+
 impl Algorithm {
-    const ALL: [Self; 6] = [
+    const ALL: [Self; 7] = [
         Self::MarchingCubes,
         Self::MarchingCubesDecider,
         Self::MarchingTetrahedra,
         Self::SurfaceNets,
         Self::DualContouring,
         Self::ManifoldDualContouring,
+        Self::SubgridMarchingTetrahedra,
     ];
 
     fn name(self) -> &'static str {
@@ -116,6 +129,7 @@ impl Algorithm {
             Self::SurfaceNets => "surface_nets",
             Self::DualContouring => "dual_contouring",
             Self::ManifoldDualContouring => "manifold_dual_contouring",
+            Self::SubgridMarchingTetrahedra => "subgrid_marching_tetrahedra",
         }
     }
 
@@ -152,6 +166,14 @@ impl Algorithm {
             Self::ManifoldDualContouring => ManifoldDualContouring::<Scalar>::new()
                 .extract(field, shape, origin, cell_size, out)
                 .expect("extraction"),
+            Self::SubgridMarchingTetrahedra => {
+                isomesh::subgrid::extract::SubgridMarchingTetrahedra::<Scalar>::new(
+                    SUBGRID_SAMPLES,
+                )
+                .expect("a positive sampling resolution")
+                .extract(field, shape, origin, cell_size, out)
+                .expect("extraction");
+            }
         }
     }
 }

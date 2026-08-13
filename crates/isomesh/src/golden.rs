@@ -149,10 +149,25 @@ enum Algorithm {
     SurfaceNets,
     DualContouring,
     ManifoldDualContouring,
+    /// Subgrid Marching Tetrahedra, at a **fixed** 1D sampling resolution.
+    ///
+    /// M-95 is why the resolution is nailed down rather than derived from the
+    /// grid: raising `samples` leaves the topology identical and moves the
+    /// positions by around `1e-12`, because bisection converges to *an* ulp of a
+    /// root and which one depends on the bracket it started from. A hash over
+    /// this extractor is therefore only reproducible if the sampling is part of
+    /// the fixture's definition, and [`SUBGRID_SAMPLES`] is that definition.
+    SubgridMarchingTetrahedra,
 }
 
+/// The 1D sampling resolution the subgrid golden hashes are taken at.
+///
+/// Changing this changes every subgrid row in the fixture, and should be treated
+/// like changing a resolution: deliberate, and re-baselined in the same commit.
+const SUBGRID_SAMPLES: u32 = 16;
+
 impl Algorithm {
-    const ALL: [Self; 7] = [
+    const ALL: [Self; 8] = [
         Self::GreedyQuads,
         Self::MarchingCubes,
         Self::MarchingCubes33,
@@ -160,6 +175,7 @@ impl Algorithm {
         Self::SurfaceNets,
         Self::DualContouring,
         Self::ManifoldDualContouring,
+        Self::SubgridMarchingTetrahedra,
     ];
 
     fn name(self) -> &'static str {
@@ -171,6 +187,7 @@ impl Algorithm {
             Self::SurfaceNets => "surface_nets",
             Self::DualContouring => "dual_contouring",
             Self::ManifoldDualContouring => "manifold_dual_contouring",
+            Self::SubgridMarchingTetrahedra => "subgrid_marching_tetrahedra",
         }
     }
 }
@@ -218,6 +235,12 @@ where
         Algorithm::ManifoldDualContouring => ManifoldDualContouring::<f64>::new()
             .extract(field, &shape, lo, cell_size, &mut out)
             .expect("extraction"),
+        Algorithm::SubgridMarchingTetrahedra => {
+            crate::subgrid::extract::SubgridMarchingTetrahedra::<f64>::new(SUBGRID_SAMPLES)
+                .expect("a positive sampling resolution")
+                .extract(field, &shape, lo, cell_size, &mut out)
+                .expect("extraction");
+        }
     }
     out
 }

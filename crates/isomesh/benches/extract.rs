@@ -33,6 +33,7 @@ use isomesh::fields::{BoxExact, ReferenceField, Sphere, Torus, capped_gyroid};
 use isomesh::manifold_dual_contouring::ManifoldDualContouring;
 use isomesh::marching_cubes::{FaceAmbiguity, MarchingCubes};
 use isomesh::marching_tetrahedra::MarchingTetrahedra;
+use isomesh::subgrid::extract::SubgridMarchingTetrahedra;
 use isomesh::surface_nets::SurfaceNets;
 use isomesh::{MeshBuffer, Real, Sdf};
 
@@ -178,6 +179,43 @@ where
     });
 }
 
+/// Subgrid Marching Tetrahedra.
+///
+/// The one algorithm here whose cost is not a function of the grid alone: it
+/// finds every root along every tetrahedron edge, so its work scales with
+/// `SUBGRID_SAMPLES` as well, and both numbers belong in the label. There is no
+/// published figure to compare against — the paper reports none — so this is the
+/// first measurement of it anywhere, and it exists to be a baseline rather than
+/// a boast.
+fn bench_smt<R, F>(c: &mut Criterion, label: &str, field: F, samples: u32)
+where
+    R: Real,
+    F: ReferenceField + Sdf<Scalar = R>,
+{
+    let (shape, origin, h) = common::grid(&field, samples);
+    let mut smt =
+        SubgridMarchingTetrahedra::<R>::new(SUBGRID_SAMPLES).expect("a positive sampling");
+    let mut out = MeshBuffer::<R>::new();
+    smt.extract(&field, &shape, origin, h, &mut out)
+        .expect("extraction");
+
+    c.bench_function(label, |b| {
+        b.iter(|| {
+            out.reset();
+            smt.extract(&field, &shape, origin, h, &mut out)
+                .expect("extraction");
+            black_box(out.triangle_count())
+        });
+    });
+}
+
+/// The 1D sampling resolution the subgrid benchmarks run at.
+///
+/// Held constant across every subgrid row so the field-to-field comparison is
+/// about the field. It is the same value the golden fixture pins, so a timing
+/// and a hash refer to the same configuration.
+const SUBGRID_SAMPLES: u32 = 16;
+
 fn algorithms(c: &mut Criterion) {
     for n in COMPARISON_SAMPLES {
         bench_mc(
@@ -231,6 +269,24 @@ fn algorithms(c: &mut Criterion) {
         bench_mt(
             c,
             &format!("marching_tetrahedra/box_exact/f32/{n}"),
+            BoxExact::<f32>::canonical(),
+            n,
+        );
+        bench_smt(
+            c,
+            &format!("subgrid_marching_tetrahedra/sphere/f32/{n}"),
+            Sphere::<f32>::canonical(),
+            n,
+        );
+        bench_smt(
+            c,
+            &format!("subgrid_marching_tetrahedra/torus/f32/{n}"),
+            Torus::<f32>::canonical(),
+            n,
+        );
+        bench_smt(
+            c,
+            &format!("subgrid_marching_tetrahedra/box_exact/f32/{n}"),
             BoxExact::<f32>::canonical(),
             n,
         );

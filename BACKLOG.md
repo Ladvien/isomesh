@@ -159,6 +159,7 @@ numbers, or you won't be able to tell what the port bought you.
 
 Recorded so they don't get picked up early, and so it's clear they weren't forgotten.
 
+- **`O-17` — how much does a grid-edge root cache buy?** M-98 measured subgrid Marching Tetrahedra at 70× classic MT, and the constant is field evaluations: 576 per cell at 16 samples per edge, against 8 shared corner samples for Marching Cubes. Every cell currently re-finds the roots on edges its neighbours already found, deliberately — identical endpoints through a deterministic root finder is what makes conformity hold without a cache. A cache keyed on the grid edge is the obvious optimisation and the redundancy is large, but it has a correctness precondition and the saving is **unmeasured**. Settle it by caching and re-running `cargo bench --bench extract`, with the golden hashes as the guard that the mesh did not change.
 - Nanite-style mesh-space cluster simplification — the research concludes it can't be repaired
   edit-proportionally (no local validity certificate). Field-derived LOD is the bet instead.
 - Networked/concurrent editing — **closed out, not deferred. The verdict is in and it is bounded.**

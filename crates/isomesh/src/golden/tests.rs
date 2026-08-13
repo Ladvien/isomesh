@@ -215,14 +215,17 @@ fn the_committed_fixture_is_canonically_formatted() {
     );
 }
 
-/// Guard against the sweep silently shrinking. 7 fields x 7 algorithm rows x 3
+/// Guard against the sweep silently shrinking. 7 fields x 8 algorithm rows x 3
 /// resolutions.
 #[test]
 fn every_combination_is_covered() {
     let entries = compute_all();
-    // 7 fields x 7 algorithm rows x 3 resolutions. `marching_cubes+decider` is a
-    // row rather than an algorithm — Marching Cubes with the decider switched on.
-    assert_eq!(entries.len(), 7 * 7 * 3, "{} combinations", entries.len());
+    // 7 fields x 8 algorithm rows x 3 resolutions. `marching_cubes+decider` is a
+    // row rather than an algorithm — Marching Cubes with the decider switched on
+    // — and `subgrid_marching_tetrahedra` is pinned to one 1D sampling
+    // resolution, because M-95 measured that changing it moves every position by
+    // about 1e-12 while leaving the topology alone.
+    assert_eq!(entries.len(), 7 * 8 * 3, "{} combinations", entries.len());
     let unique: Vec<String> = {
         let mut keys: Vec<String> = as_pairs(&entries).into_iter().map(|(k, _)| k).collect();
         keys.sort();
