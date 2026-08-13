@@ -9,6 +9,12 @@ repository.workspace = true
 authors.workspace = true
 categories.workspace = true
 keywords.workspace = true
+# crates.io renders this as the crate's landing page, and without it the page is
+# blank. It is deliberately *not* a copy of the repository README: relative image
+# paths do not resolve on crates.io, so every link here is absolute, and a reader
+# arriving from a search wants "what is this and how do I call it" rather than
+# seventeen demos. The repository README is the one with the pictures.
+readme = "README.md"
 
 [lints]
 workspace = true

@@ -82,3 +82,14 @@ pub use mesh::{MeshBuffer, MeshSink};
 pub use real::Real;
 pub use sdf::Sdf;
 pub use shape::{ConstShape3, RuntimeShape3, Shape3};
+
+/// Compiles the README's example as a doctest, without putting the README into
+/// these docs.
+///
+/// A code sample on a crate's landing page is the first thing a reader tries and
+/// the first thing to rot, because nothing builds it. `cfg(doctest)` means this
+/// item exists only when rustdoc is collecting doctests, so the example is
+/// checked on every `cargo test` and appears in no rendered documentation.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+pub struct ReadmeExample;

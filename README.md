@@ -6,23 +6,17 @@
 
 `isomesh` has to serve both a real-time voxel game and a CAD tool. That single constraint decides almost everything about it: no math library appears in a public signature, output buffers are caller-provided and reusable, the scalar type is generic over `f32` and `f64`, and the core crate has exactly one dependency.
 
-![Marching Cubes on a sphere, sweeping resolution](docs/gifs/marching-cubes-sphere-resolution-sweep.gif)
-
-*Marching Cubes over a sphere SDF, resolution sweeping from 9³ to 81³. The readout is not decoration — it is the crate's own validity harness, re-run on the mesh being displayed every time it changes. `χ = 2`, zero non-manifold edges, zero boundary edges, every frame.*
-
----
-
 ## Status
 
-Early. Six extraction algorithms, three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, and a Bevy bridge. 52 tickets done, 29 open.
+Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 60 tickets done, 24 open.
 
 | | |
 |---|---|
-| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **six-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · **frame-budget scheduling** · Bevy 0.19 bridge |
-| **Not yet** | Marching Cubes 33's interior test · simplicial embedding for subgrid MT (A-014d) · chunk streaming · convex decomposition · GPU path |
+| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **six-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · **frame-budget scheduling** · **subgrid Marching Tetrahedra** · **chunk streaming with hysteresis** · Bevy 0.19 bridge and plugin |
+| **Not yet** | Marching Cubes 33's interior test · simplicial embedding for subgrid MT (A-014d) · convex decomposition · GPU path |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
-Not published to crates.io. Version `0.0.0`.
+The name is reserved on crates.io at `0.0.0` — a placeholder, not a release.
 
 ---
 
@@ -43,365 +37,44 @@ The math-library pin is the load-bearing one. Bevy 0.19 wants glam 0.32, `parry3
 
 ---
 
-## What it looks like
+## The thing nothing else here can do
 
-```rust
-use isomesh::{MeshBuffer, RuntimeShape3};
-use isomesh::fields::Sphere;
-use isomesh::mc::MarchingCubes;
+![The word ISO meshed by two extractors as the letters are thinned; the marching cubes panel loses them entirely while the subgrid panel holds](docs/gifs/subgrid-letters-thinner-than-a-voxel.gif)
 
-let mut mc = MarchingCubes::<f32>::new();   // owns its scratch; reuse across chunks
-let mut out = MeshBuffer::<f32>::new();     // caller-provided; reset() keeps capacity
+*One field, one grid, two extractors, and a slider driving the letters from 1.6 voxels thick down to
+0.2. On the left, Marching Cubes: first a holey remnant, then **nothing at all**. On the right, subgrid
+Marching Tetrahedra, unchanged.*
 
-let shape = RuntimeShape3::new([33; 3])?;
-mc.extract(&Sphere::canonical(), &shape, [-2.0; 3], 0.125, &mut out)?;
-```
+Every method that asks *"what sign is this grid corner"* gets one bit per edge, and a feature thinner
+than a cell fits between the samples — there is no answer that could describe it. **M-67** puts a number
+on the gap: a sign test cannot distinguish **95.6%** of the configurations a tetrahedron can actually be
+in. Subgrid marching asks instead for *every zero along the edge* and triangulates whatever comes back.
 
-Anything implementing `Sdf` works as input; anything implementing `MeshSink` works as output. `bevy_isomesh::MeshBuilder` is a sink whose buffers *are* a Bevy `Mesh`'s attribute arrays, so extraction writes straight into the asset with no intermediate copy.
+At 0.35 voxels thick, Marching Cubes returns **0 triangles** and subgrid returns **1,340**.
 
----
-
-## Two algorithms, side by side
-
-![Surface Nets against Marching Cubes on a box](docs/gifs/surface-nets-vs-marching-cubes-box.gif)
-
-*Marching Cubes (grey) and Surface Nets (tan) on the same box SDF at the same resolution, sweeping 9³ to 57³.*
-
-Watch the bottom row. **The triangle counts differ by exactly `2χ` — four, on a genus-0 surface — at every resolution.** That is not a coincidence and it contradicts both this project's own brief and the usual folklore that Surface Nets is the cheaper method by output size:
-
-> Marching Cubes places one vertex per crossed grid edge, so `V_mc = C`. Surface Nets emits two triangles per crossed grid edge, so `F_sn = 2C`. Every closed triangulated surface obeys `F = 2V − 2χ`. Therefore `F_sn = F_mc + 2χ`, always. (A-015 gave some cells an extra interior vertex to keep the mesh manifold; it is measured never to fire under plain Marching Cubes, so `V_mc = C` still holds exactly.)
-
-Verified across five fields × three resolutions, including a two-component field where `χ = 4` so the difference is **8** and cannot be confused with a constant. What Surface Nets actually buys is quad connectivity and one vertex per *cell* rather than per *edge* — not fewer triangles.
-
-And it is not the cheaper method by time either, which took a benchmark to find out. The two curves are not parallel — one converges and the other degrades:
-
-| samples per axis | 16 | 48 | 64 | 128 | 256 |
-|---|---:|---:|---:|---:|---:|
-| Surface Nets / Marching Cubes — **Apple M5** | 0.34 | 0.74 | 1.06 | 1.94 | **2.65** |
-| Surface Nets / Marching Cubes — **Ryzen 9 5900X** | 2.46 | 3.06 | 3.36 | 4.16 | **3.72** |
-
-Surface Nets loses, and it loses on both machines — **run on two, not one**. What does *not* transfer is the shape. On the M5 Surface Nets wins below roughly 48³ because Marching Cubes' per-sample cost starts at 25 ns and falls to 4.78 as the `O(n²)` surface term amortises away; on Zen 3 that fall never happens — Marching Cubes is flat at 13–15 ns from 16³ up — so Surface Nets is behind at **every** resolution measured and there is no crossover at all. Surface Nets' per-sample cost climbs on both (8.4 → 12.7 ns on the M5, 37.4 → 49.1 on Zen 3), which is what makes the verdict an algorithm property rather than one cache hierarchy. Sphere, f32, single thread. Raw data in `docs/measurements/resolution_sweep.csv` and `resolution_sweep-ryzen9-5900x.csv`.
-
-So both halves of the usual case for Surface Nets — fewer triangles, lower cost — are falsified by measurement in this repository. What it actually buys is quad connectivity and one vertex per cell.
-
-![Surface Nets against Dual Contouring on a box](docs/screenshots/e104-dual-contouring-box.png)
-
-*`dual_contouring_cube` — the same box, the same 19³ grid, the same edge crossings. Surface Nets on the left, Dual Contouring on the right. The only difference between the two meshes is one function: where a cell's vertex goes. Both emit **972 triangles** with identical connectivity. On [`csg_difference`](docs/screenshots/e104-dual-contouring-csg.png) the concave seam holds too.*
-
-The corners are the real difference, and dual contouring is what closes them. Measured on `box_exact` at 27³ — a resolution deliberately **not** aligned to the box faces, since on an aligned grid this measures the sign-classification rule rather than the algorithm:
-
-| nearest vertex to the corner `(1,1,1)` | world | cells |
-|---|---:|---:|
-| Surface Nets | 0.0888 | **0.58** |
-| Dual Contouring | 0.0009 | **0.01** |
-
-Guaranteed intersection-free extraction turns out to be free, which is not what the folklore predicts. Confining each solved vertex to its own cell drives self-intersections to **exactly zero** on five of the seven test fields — `torus` goes 2.66 → 0 pairs per 1,000 triangles — and the corner above measures **identically** clamped or not, because a convex corner's solution is already inside its cell. What survives the clamp is 3.12 on the gyroid and 13.84 on fbm terrain, and those are precisely the two fields where two sheets of surface share a cell: a connectivity defect, not a placement one.
-
-It costs about **3%** over Surface Nets to do it, and the two meshes are otherwise the same mesh: identical index buffers, and 864 of 1016 vertices agreeing to within `2e-15` cells. Only the 152 on edges and corners move.
-
----
-
-## Where an algorithm breaks, measured rather than described
-
-![Surface Nets against Marching Cubes on a capped gyroid](docs/gifs/surface-nets-vs-marching-cubes-gyroid.gif)
-
-*The capped gyroid — triply periodic, high genus. Marching Cubes stays manifold here; Surface Nets does not.*
-
-Surface Nets places exactly one vertex per cell. Where two sheets of the surface pass through the same cell they are forced to share it, and the result is non-manifold — **42 non-manifold edges at 25³** in the sequence above, against Marching Cubes' zero at every resolution in it. The literature review calls this dual contouring's *"actual structural defect"*. It is fixed below, and the fix has a cost that is also measured.
-
-Notice that the Euler identity now reads **`!! differs`**. That is correct: the identity's precondition is a *closed manifold*, and Surface Nets' output here is not one. The condition under which the assertion should fail is recorded next to the assertion, so when it does fail nobody mistakes it for a regression.
-
-This is the crate's actual pitch. Not "the meshes look right" — a wrong mesh looks right — but that every mesh is measured, the measurements are in the test suite, and the ones that contradict the documentation are written down.
-
----
-
-## Where a mesh stops being a manifold
-
-![Marching Cubes and Surface Nets on the capped gyroid, non-manifold features marked](docs/screenshots/e111-manifold-check-gyroid-surface-nets.png)
-
-*`manifold_check` — the capped gyroid at 19³ under Surface Nets. Every red sphere is a non-manifold vertex and every red line a non-manifold edge, drawn where the validator found them: 39 edges and 61 vertices, clustered around the tunnel mouths where two sheets of surface share a cell. The same field and grid under Marching Cubes reports `0` on every counter and `MANIFOLD, CLOSED` ([screenshot](docs/screenshots/e111-manifold-check-gyroid-marching-cubes.png)).*
-
-A count tells you a mesh is broken without telling you where, and the two most useful findings in this project were both about *where*. The marks come from `validate_features`, which returns the offending edges and vertices from the **same pass** that produced the numbers beside them — so the picture and the caption cannot drift apart.
-
-```bash
-cd bevy_isomesh && cargo run --example manifold_check --release
-```
-
-`1`–`7` field · `A` algorithm · `B` boundary overlay · `[` `]` resolution.
-
----
-
-## Splitting the vertex, and what it costs
-
-![The capped gyroid under Dual Contouring, covered in red non-manifold marks](docs/screenshots/e111-manifold-check-gyroid-dual-contouring.png)
-
-![The same field and grid under Manifold Dual Contouring, with no marks at all](docs/screenshots/e111-manifold-check-gyroid-manifold-dual-contouring.png)
-
-*The same field, the same 19³ grid, one algorithm apart. **Dual Contouring: 39 non-manifold edges, 61 non-manifold vertices, `χ = -10`, one component.** **Manifold Dual Contouring: zero, zero, `χ = -2`, seven components** — and the same 3,276 triangles. Press `A` in `manifold_check` to switch between them.*
-
-One vertex per cell is the defect. The fix is one vertex per **surface component**: the cell's cut edges are partitioned into the cycles the Marching Cubes table already links them into, and each cycle gets its own QEF solve. Ju's own paper describes it and credits it to Nielson — the output is the *dual* of the Marching Cubes surface, so it inherits Marching Cubes' topology.
-
-That inheritance is asserted, not assumed. On every closed field at 17³, 25³ and 33³ the dual reproduces Marching Cubes' Euler characteristic **and its component count** exactly. Look again at the two captions: the pinch was not only breaking the index buffer, it was **fusing seven pieces into one and misreporting `χ` by eight**.
-
-Three things this measured that were not what the tickets predicted:
-
-- **The cost is zero on five of the seven fields**, and about **5%** of the run time on the other two. Only `gyroid` and `fbm_terrain` ever need a second vertex in a cell, and their rate *falls* with resolution — 3.13% → 2.05% → 0.53% at 17³/25³/33³. Nielson's published *"about 1.3%"* counts entries in the case table, not cells in a scene. Triangle counts are unchanged: splitting moves vertices without adding quads.
-- **Self-intersections get worse, not better** — `gyroid` 3.118 → 5.669 per 1,000 triangles, `fbm_terrain` 13.837 → 15.434. The prediction registered before the run said the opposite. Two vertices in one cell is exactly what breaks the within-cell partition the clamp's guarantee rests on, and a 2024 result reporting Manifold Dual Contouring as 100% self-intersecting was on the record the whole time.
-- **A second, unrelated non-manifold mechanism exists.** The dual of a manifold surface is a manifold *complex*, and an index buffer cannot hold two distinct edges between one pair of vertices, so parallel dual edges collapse into one edge with four faces. The property suite found it by shrinking to the exact same three-sphere fixture that falsified unconditional manifoldness for Marching Cubes. It is identified by arithmetic rather than by eye: a collapse costs exactly one edge, so `χ_dual − χ_mc == non_manifold_edges`, measured `1 − 0 == 1` at `h = 2/3` and `0 == 0` at every finer grid.
-
----
-
-## Which way does the surface face
-
-Three answers, and they are not the same answer. Ask the **field** for its gradient; **difference** the field, which is all a sampled voxel buffer can offer; or take the **area-weighted average of the incident triangles**, which is all a mesh can offer. `normals::recompute` re-derives a finished `MeshBuffer` under any of them, so the choice survives welding and merging instead of being baked in by whichever extractor ran.
-
-Differencing at the cell size — the case a game without an analytic field is stuck with — costs under half a degree, and converges the way it must:
-
-| grid | worst | mean |
-|---|---|---|
-| 17³ | 0.460° | 0.299° |
-| 33³ | 0.121° | 0.079° |
-| 65³ | 0.031° | 0.020° |
-
-Successive ratios 3.76 and 3.92, so `h²`, asserted as a range rather than admired in a log.
-
-![The same CSG solid shaded three ways: crisp, slightly softened, and smeared](docs/screenshots/e113-normal-estimation-csg.png)
-
-*`normal_estimation` — a sphere bitten out of a box at 41³. **All three panels are the same 2,244 vertices and 4,484 triangles**; only the normal buffer differs. Left, the field's gradient keeps the bite's rim crisp and its staircase legible. Right, area-weighted normals smear that rim and round the steps into blobs — 46.426° off at the worst. The middle is differencing the field at the cell size, which is what a sampled voxel buffer can offer: 17.974° worst, and 0.450° on average.*
-
-```bash
-cd bevy_isomesh && cargo run --example normal_estimation --release
-```
-
-`1`–`5` field · `[` `]` resolution · `W` wireframe.
-
-The third strategy is where it gets interesting. Area-weighted normals track the field closely on smooth geometry and **cannot** on sharp geometry, because a corner vertex gets the average of three face normals where the field's gradient gives one of them. On a sphere the mean disagreement falls 3.25° → 2.16° → 1.08° across those grids and on a torus 11.65° → 6.07° → 2.45°. On `box_exact` the *worst* disagreement is **35.796° at all three resolutions, identical to six figures** — refining a grid does not soften a corner. That invariance is the assertion; the constant is just the box's corner.
-
----
-
-## Six algorithms, one process, one run
-
-No paper since 2020 benchmarks Marching Cubes against Surface Nets against Dual Contouring, and Surface Nets has no credible published timings at all. So they are measured here — seven fields, two grids, six algorithms, one process — and the headline is not what the folklore says.
-
-| | manifold | intersection-free |
-|---|---|---|
-| Marching Cubes | ✅ | ✅ |
-| Marching Cubes + decider | ✅ | ✅ |
-| Marching Tetrahedra | ✅ | ❌ 3.405 / 1k on `csg_difference` |
-| Surface Nets | ❌ 128 edges | ✅ |
-| Dual Contouring | ❌ 128 edges | ❌ 13.837 / 1k on `fbm_terrain` |
-| **Manifold Dual Contouring** | ✅ | ❌ 15.434 / 1k on `fbm_terrain` |
-
-Three of the four corners of that 2×2 are occupied, and **the crude baseline holds the good one**. What Dual Contouring buys instead is accuracy exactly where the features are sharp — symmetric Hausdorff at 65³ against Marching Cubes: `box_exact` **101×** better, `thin_plate` **77.9×**, against `sphere` **1.2×** and `torus` **1.6×**. Two orders of magnitude on a corner and nothing at all on a sphere.
-
-![The same sphere wireframed under Marching Cubes and Marching Tetrahedra](docs/screenshots/e105-marching-tetrahedra-sphere.png)
-
-*`marching_tetrahedra` — one sphere, one 17³ grid, two algorithms. 270 vertices against 830, 536 triangles against 1,656. The wireframe is on by default because that is the only place the difference lives.*
-
-Marching Tetrahedra costs **2.87–3.91×** the triangles — the published "2–3×" covers only the two roughest fields — for **4.3%** worse geometry, where the source it is usually attributed to reads far stronger than that. And it is *better* than Marching Cubes on sharp fields, because its extra edge families sample a corner from more directions.
-
-```bash
-cargo bench --bench shootout        # writes docs/measurements/shootout.csv
-```
-
----
-
-## The blocky path, and a published number that is one scene's
-
-![Blocky terrain meshed twice: every cell face, then merged into large quads](docs/screenshots/e106-greedy-quads-terrain.png)
-
-*`greedy_quads` — the same fBm terrain and the same occupancy, meshed twice. Left, one quad per visible cell face: **5,014 quads**. Right, coplanar runs merged: **1,089**, and that side wall is two triangles. The wireframe is the demo, because the two surfaces are identical.*
-
-Greedy meshing is quoted everywhere as **2.76× fewer triangles than face culling**, from one UE5 benchmark. Measured across seven fields at one resolution, it is not a constant:
-
-| `gyroid` | `sphere` | `torus` | `fbm_terrain` | `csg_difference` | `box_exact` |
-|---|---|---|---|---|---|
-| 1.70× | 1.94× | 2.69× | 4.60× | 10.64× | **256×** |
-
-Merging pays for **flat runs**. A grid-aligned box collapses to six quads at every resolution — twelve triangles at 17³, 33³ and 65³ alike — while a sphere's staircase is short runs and barely merges. The published figure happens to land beside `torus`. This was predicted before the measurement, for exactly that reason.
-
-Two limitations are on display rather than hidden. `thin_plate` returns **zero triangles**: it is 0.4 cells thick and this algorithm asks one question per cell, so a feature thinner than a cell does not exist to it. And the mesh is deliberately **open** — a cube corner needs three normals, so vertices are split, and welding closes it everywhere except a T-junction, where a long quad butts against several short ones and the vertex they meet at simply is not on the long quad's edge.
-
-```bash
-cd bevy_isomesh && cargo run --example greedy_quads --release
-```
-
-`1`–`6` field · `[` `]` resolution. Press `2` then `]` to watch the right panel stay at twelve triangles while the left one grows.
-
----
-
-## Digging, with the numbers a game actually cares about
-
-![Carving a tunnel into terrain, with the re-meshed chunks outlined](docs/screenshots/e202-game-dig.png)
-
-*`game_dig` — first person, left click to carve. The blue boxes are the chunks the **last edit** re-meshed: 3 of them, in `0.41 ms`. Nine chunks are resident; the other six were not touched and were not looked at.*
-
-This is the first example where the mesh is rebuilt while someone is holding the mouse down, and it exists to put two numbers on screen that no benchmark can produce:
-
-- **E1 — `265 of 1,728 cells in the brush's bounding box actually re-mesh, 15.3%.`** That is the number the entire incremental story rests on. If it were 100%, being clever about which cells changed would buy nothing over re-meshing the whole box.
-- **The trap next to it: `756 cells moved a sample.`** Counting *value* changes rather than *output* changes reads 43% and says incremental meshing is barely worth it; counting output says 15%. The ratio here is `2.85×`, and it was measured offline at 2.8–3.7× before anyone drove it with a mouse.
-
-Edits compose rather than mutate — the field is a stack of brushes over the terrain, which is what makes undo a re-fold of the log rather than a snapshot. So every field sample walks every brush, and the cost grows. Measured over a scripted 60-carve run, median ms per re-meshed chunk:
-
-| edits in the log | 1–15 | 16–30 | 31–45 | 46–60 |
-|---|---|---|---|---|
-| ms per chunk | 0.158 | 0.354 | 0.525 | 0.589 |
-
-**3.7× for 7× the log, and flattening** — real, and not proportional, which is weaker than "every sample walks every brush" makes it sound.
-
-```bash
-cd bevy_isomesh && cargo run --example game_dig --release
-```
-
-`LMB` carve · `RMB` fill · `WASD`/`QE` move · `[` `]` radius · `X` clear the log · `C` chunk outlines.
-
----
-
-## A crack between two chunks, and welding it shut
-
-![Two chunks of a torus, meshed independently, with the open seam marked in red](docs/screenshots/e115-chunk-seam-unwelded.png)
-
-*`chunk_seam_weld` — one torus, two chunks, meshed **independently**, exactly as a game does when an edit dirties only the chunks it touches. Every red line is a boundary edge on the shared plane: a triangle with no neighbour. `80` of them, and `40` duplicated vertices. The surface looks continuous and is not.*
-
-![The same two chunks after welding, with no seam](docs/screenshots/e115-chunk-seam-welded.png)
-
-*The same two chunks after `V`. **`1328 → 1288` vertices, 40 merged, 0 triangles collapsed, and the seam carries no boundary at all.** χ stays `0` — it is a torus either way; what changed is that it is now one surface.*
-
-The spacing selector is the part worth pressing. `1` is `h = 0.125` and `2` is `h = 4/35`, and only one of those is arbitrary: two chunks agree on their shared sample plane bit-for-bit **only when the cell size is a power of two**, because one computes `(o + h·cn) + h·n` and the other `o + h·(c+1)n` — equal by algebra, not by IEEE. 22% of random `(origin, h, cells, chunk)` combinations disagree by an ulp, and `4/35` came out of that search. A weld keyed on exact equality closes the seam under `1` and silently leaves it open under `2`; this one is an epsilon weld for exactly that reason.
-
-```bash
-cd bevy_isomesh && cargo run --example chunk_seam_weld --release
-```
-
-`V` weld · `E` explode the chunks apart · `1` `2` spacing · `[` `]` resolution.
-
----
-
-## An ambiguous face, and how rarely one turns up
-
-![Marching Cubes beside the asymptotic decider on a capped gyroid, ambiguous cells marked](docs/screenshots/e102-ambiguity-gyroid.png)
-
-*`marching_cubes_ambiguity` — plain Marching Cubes on the left, the same extraction with `FaceAmbiguity::AsymptoticDecider` on the right. Every box is a cell with an ambiguous face: **amber where the decider agreed and separated the corners, magenta where it disagreed and joined them.** Magenta is the only place the two meshes can differ, and on the gyroid at 33³ there are nine such cells out of 5,240.*
-
-The catalog originally specified this example as "holes on the left, closed on the right". **That cannot be shown, because it does not happen** — this crate's case table is derived at compile time by walking each face counter-clockwise, so two cells sharing a face cannot disagree about it and neither side ever holes. What the decider changes is *which* surface gets built on an ambiguous face, which the HUD reads off as a difference in Euler characteristic.
-
-![The same comparison on a sphere, where the two meshes are byte-identical](docs/screenshots/e102-ambiguity-sphere-identical.png)
-
-*Press `3`. On a sphere there is **not one ambiguous face in 1,160 surface cells**, and the two meshes are byte-identical — which the committed golden fixture also pins. Five of the seven reference fields behave this way; only the gyroid (0.515% of cells) and `fbm_terrain` (1.532%) reach the configuration at all. An example that only ever showed the interesting case would misrepresent how often the interesting case arrives.*
-
-```bash
-cd bevy_isomesh && cargo run --example marching_cubes_ambiguity --release
-```
-
-`1`–`3` field · `A` cell markers · `[` `]` resolution.
-
----
-
-## Walking every seam
-
-![Terrain with a walker on it and a HUD reading 495 seam crossings, 0 holes, seam lip 0.412 cells against terrain roughness 0.539](docs/screenshots/e203-game-walk.png)
-
-*`game_walk` — **495 seam crossings tested, 0 holes.** The worst vertical discontinuity at a seam is **0.412 cells**, against **0.539 cells** within a single chunk: the joins are smoother than the terrain they join.*
-
-This example is designed to fail. Chunks are meshed independently, and whether two of them actually *meet* is decided by the overlap G-001 chose — get it wrong and you fall through the world at a boundary. So every frame casts a dense transect of rays straight down against the **meshed triangles**, through `parry3d`, and counts holes and lips.
-
-Two details make the answer trustworthy. The ray hits the mesh, not the field — asking the field would test the field, which was never in doubt. And a lip is compared against the terrain's own roughness rather than against zero, because real terrain has real steps and a fixed threshold would be measuring the landscape.
-
-The first version of that test reported **439 holes** and declared the overlap broken. The bug was one operator wide in the test itself: a probe must only count as a hole once *every* chunk layer that could hold the surface has meshed, and the guard said `||` where it needed `&&` (M-105).
-
-```bash
-cd bevy_isomesh && cargo run --example game_walk --release
-```
-
-`Space` walk/pause · `[` `]` view distance · `W` wireframe.
-
----
-
-## A world that streams past you
-
-![Unbroken fBm terrain to the horizon, with a HUD reading 234 chunks resident, 0 waiting, 60 fps](docs/screenshots/e201-terrain-stream.png)
-
-*`game_terrain_stream` — 234 chunks resident, 117,792 triangles, 3.2 MB, **60 fps at 16.65 ms/frame** while the camera flies and chunks load and unload continuously.*
-
-This is the first example where none of the pieces are visible on their own. **G-007** decides which chunks exist, with a hysteresis band so a camera drifting across the boundary does not re-mesh the same chunk every frame. **B-003** extracts them on the async task pool — never in a system — and applies finished meshes under a frame budget. **G-001**'s layout is what makes each chunk's world position exact rather than merely close, which is what stops the seams (M-32).
-
-The number to watch is not the triangle count. It is **ms/frame while chunks are landing**, because a streaming world that hitches is one doing its meshing on the main thread.
-
-One correction is worth repeating, because it is the mistake the API invites. A radius-based residency rule loads a **ball** of chunks, and a heightfield does not need one: the first version held 952 chunks with 606 permanently waiting, and rendered as holes that never filled. Bounding the vertical extent to the two layers that can contain the surface — which is what a real game does — takes it to 234 resident and nothing waiting (M-104).
-
-```bash
-cd bevy_isomesh && cargo run --example game_terrain_stream --release
-```
-
-`Space` fly/pause · `[` `]` view distance · `W` wireframe.
-
----
-
-## Letters thinner than a voxel
-
-![The word ISO meshed by subgrid marching tetrahedra on the right, with the marching cubes panel on the left completely empty](docs/screenshots/e108-subgrid-features.png)
-
-*`subgrid_features` — one field, one grid, two extractors. The letters are **0.35 voxels thick**. Marching Cubes returns **0 triangles**; subgrid marching tetrahedra returns **1,340**.*
-
-Every other method here asks one question per grid edge — *what sign is this endpoint* — and gets one bit back. A feature thinner than a cell fits between the samples and there is no answer that could describe it. **M-67** puts a number on the gap: a sign test cannot distinguish **95.6%** of the configurations a tetrahedron can actually be in.
-
-Subgrid marching asks instead for **every zero along the edge**, and triangulates whatever comes back — however many crossings there are. Push the thickness up and Marching Cubes does not recover cleanly; it passes through a holey remnant first (220 triangles at 0.70 voxels), which is **M-72**'s aliasing and the failure mode a streamed world actually suffers. A feature that vanishes at a known distance can be faded. One that disintegrates into a resolution-dependent scatter pops.
-
-It is not free: **M-98** measured it at **70× classic Marching Tetrahedra**, and the constant is field evaluations rather than anything algorithmic — 576 per cell at 16 samples per edge against Marching Cubes' 8 shared corner samples. But the comparison the HUD invites is the wrong one. The right one is *"against whatever grid resolution would resolve the same feature"*, and below one voxel there is none.
+It is not free — **70× classic Marching Tetrahedra** (M-98), and the constant is field evaluations. But
+the comparison that matters is not "against Marching Cubes at this resolution". It is "against whatever
+grid resolution would resolve the same feature", and below one voxel there is none.
 
 ```bash
 cd bevy_isomesh && cargo run --example subgrid_features --release
 ```
 
-`-` `=` thickness · `[` `]` resolution · `W` wireframe.
-
 ---
 
-## Two levels of detail, and the crack between them
+## Demos
 
-![A gyroid meshed at two resolutions with a jagged gap down the seam](docs/screenshots/e107-transvoxel-seam-cracked.png)
+The rest of the pictures live on three pages, so this one stays short. Every figure on them came from a
+command you can run, and every number is measured on the machine in `FINDINGS.md`'s header rather than
+quoted from a paper.
 
-![The same pair with transition cells bridging the seam in orange](docs/screenshots/e107-transvoxel-seam-stitched.png)
-
-*`transvoxel_seams` — one field, two blocks, the left at full resolution and the right at half. Meshed independently they do not meet: **184 unmatched boundary edges** lie in the seam plane and you can see straight through them. Transition cells take that to **0**, and the orange band is the 310 triangles doing it.*
-
-Both counts are taken **in the seam plane only** — each block is legitimately open at its outer borders, so a global boundary count would drown the signal.
-
-The stitch has a **width**, and that is not cosmetic. A zero-width transition patch also closes the crack — Lengyel says so explicitly — and closing it is *all* it does: every one of its vertices lies in the seam plane, so the patch stands **exactly** perpendicular to the surface it is stitching and shades as a hard crease. Measured: `|cos|` against the surface normal is `0.000` at zero width and `1.000` at `w = 2^(k−2)`. Giving it a width means the coarse block's boundary cells have to be scaled inward by the same amount, which is Lengyel's Equation 4.2 — and written in the block's own cells rather than level-0 cells, the level index cancels out of it entirely.
-
-The property underneath all of it is bit-exactness: a crossing on a half-resolution edge lands on **precisely** the vertex the coarse neighbour's own Marching Cubes pass produced, at every spacing tried including `4/14`. An earlier version of that arithmetic was off by `1.11e-16`, which is a crack no weld can close — a weld merges vertices it can see are the same, and those two are not.
-
-```bash
-cd bevy_isomesh && cargo run --example transvoxel_seams --release
-```
-
-`T` transitions · `1`–`4` field · `[` `]` resolution.
-
----
-
-## Handing a mesh to a physics engine
-
-`parry3d`'s constructor is not a validity check. Its only documented failure is an empty index buffer — measured, it accepts a zero-area triangle and it accepts a two-chunk mesh with an unwelded seam. A renderer draws that seam correctly; a physics engine reads it as a hole and a character walks through the floor.
-
-So `collider::readiness` reads the validator's report through a collider's eyes and says which of three different things you have:
-
-| | means |
+| | |
 |---|---|
-| `is_usable()` | parry will take it and behave — no trailing index, no out-of-range index, no non-finite position |
-| `is_seam_free()` | no duplicate vertices, so nothing was assembled from chunks without welding |
-| `supports_inside_outside()` | closed, manifold and consistently oriented, so parry's `ORIENTED` pseudo-normals mean something |
+| **[Gameplay](docs/demos/gameplay.md)** | streaming a world past a camera · walking every chunk seam · digging tunnels · LOD cracks and the transition cells that close them · handing a mesh to a physics engine |
+| **[Algorithms](docs/demos/algorithms.md)** | Marching Cubes · Surface Nets · Dual Contouring · Manifold Dual Contouring · Marching Tetrahedra · greedy quads · subgrid Marching Tetrahedra, and a six-way shootout in one process |
+| **[Correctness](docs/demos/correctness.md)** | where a mesh stops being a manifold · what splitting the vertex costs · which way the surface faces · ambiguous faces · the crack between two chunks |
 
-They are three predicates rather than one because **a single chunk of a streamed world is open by construction** and is still a perfectly good collider — it just cannot answer "is this point inside". Folding them together would make every chunk in a real world read as broken.
-
-The seam, measured: two adjacent chunks of a torus concatenated give **36 duplicate vertices and 180 boundary edges**. After welding, **0 and 108** — and those 108 are the slab's own outer border, which is genuinely open. The weld closed exactly the 72 that were the seam.
-
-The crate takes no dependency on parry to do this. It emits the `Vec<[u32; 3]>` parry already wants, and the conversion is one line at the call site:
-
-```rust
-let indices = isomesh::collider::triangle_indices(&mesh);
-let vertices = mesh.positions.iter().map(|p| Vector::new(p[0], p[1], p[2])).collect();
-let trimesh = TriMesh::new(vertices, indices)?;
-```
+Between them they carry 17 demos, 6 GIFs and every measured figure this crate makes a claim about.
 
 ---
 
@@ -478,20 +151,35 @@ cargo run --example marching_cubes_ambiguity --release          # the decider, a
 
 Keys: `W` wireframe · `N` normals · `G` grid · `[` `]` resolution · `1`–`5` field · `S` smoothing · `F12` screenshot · `Esc` quit. Drag to orbit, scroll to zoom.
 
-Any example can be captured without a keyboard, which is how the GIFs above were made and how they can be regenerated:
+**Every image in this README and on the demo pages was produced from a command line, and can be
+regenerated from one.** No screenshot here was framed by hand, which is what stops the pictures drifting
+from the code that made them.
+
+A frame sequence, which is where the GIFs come from:
 
 ```bash
-ISOMESH_CAPTURE=/tmp/frames ISOMESH_FIELD=4 ISOMESH_VIEW=wire,nogrid \
-  cargo run --example surface_nets_vs_marching_cubes --release
+ISOMESH_VIEW=nohud ISOMESH_CAPTURE=/tmp/frames ISOMESH_CAPTURE_FRAMES=56 \
+  cargo run --example subgrid_features --release
+ffmpeg -framerate 12 -i /tmp/frames/frame_%04d.png \
+  -vf "scale=780:-1,split[a][b];[a]palettegen=max_colors=128:reserve_transparent=0[p];[b][p]paletteuse" \
+  docs/gifs/subgrid-letters-thinner-than-a-voxel.gif
 ```
 
-`ISOMESH_SCREENSHOT` takes one shot and exits; `ISOMESH_FIELD`, `ISOMESH_SAMPLES`, `ISOMESH_VIEW`, `ISOMESH_ALGORITHM` and `ISOMESH_WELD` set what it is a shot *of*. Every image in this README was produced that way and can be reproduced from a command line — for instance the non-manifold gyroid above:
+An example driving its own parameter sweep reads `Capture::taken` rather than the clock, so a sequence
+is reproducible frame for frame instead of depending on how fast the machine ran.
+
+A single still, which is where the numbers come from — the HUD *is* the evidence, so stills keep it and
+GIFs drop it with `nohud`:
 
 ```bash
 ISOMESH_ALGORITHM=sn ISOMESH_FIELD=5 ISOMESH_SAMPLES=19 \
   ISOMESH_SCREENSHOT=../docs/screenshots/e111-manifold-check-gyroid-surface-nets.png \
   cargo run --example manifold_check --release
 ```
+
+`ISOMESH_SCREENSHOT` takes one shot and exits. `ISOMESH_FIELD`, `ISOMESH_SAMPLES`, `ISOMESH_VIEW`
+(`wire`, `normals`, `nogrid`, `nohud`), `ISOMESH_ALGORITHM` and `ISOMESH_WELD` set what it is a shot
+*of*.
 
 ---
 
@@ -500,6 +188,8 @@ ISOMESH_ALGORITHM=sn ISOMESH_FIELD=5 ISOMESH_SAMPLES=19 \
 Rust **1.85** (edition 2024), checked in CI against the declared MSRV. The Bevy bridge pins **Bevy 0.19**, which pins wgpu 29.0.3, glam 0.32 and encase 0.12 — those move together or not at all, because Cargo will silently resolve two wgpu majors side by side and the failure only surfaces later as `expected TextureFormat, found a different TextureFormat`.
 
 Developed on macOS / arm64 / Metal. CI runs Linux and macOS, which is what makes the bit-reproducibility claim checkable rather than asserted.
+
+---
 
 ## License
 

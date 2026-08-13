@@ -87,11 +87,18 @@ pub struct ViewFlags {
     pub remesh_requested: bool,
     /// Which reference field the example should show, when it offers a choice.
     pub field: usize,
+    /// Hides the HUD entirely.
+    ///
+    /// For media. The HUD is the point of a screenshot -- the numbers are the
+    /// evidence -- but a GIF meant to be looked at rather than read has the text
+    /// sitting on top of the geometry, and a reader who wants the numbers can
+    /// open the still.
+    pub hud: bool,
 }
 
 impl Default for ViewFlags {
     /// Toggles can be preset from `ISOMESH_VIEW`, a comma-separated list of
-    /// `wire`, `normals`, `nogrid`.
+    /// `wire`, `normals`, `nogrid`, `nohud`.
     ///
     /// That exists so a screenshot of a particular view can be captured without
     /// a human pressing a key, which is what makes the visual acceptance tests
@@ -109,6 +116,7 @@ impl Default for ViewFlags {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(0),
+            hud: !has("nohud"),
         }
     }
 }
@@ -470,6 +478,13 @@ fn update_hud(
     times: Res<FrameTimes>,
     mut query: Query<&mut Text, With<HudText>>,
 ) {
+    if !flags.hud {
+        for mut hud in &mut query {
+            hud.0.clear();
+        }
+        return;
+    }
+
     let frame_ms = median(&times.0);
     let fps = if frame_ms > 0.0 {
         1000.0 / frame_ms

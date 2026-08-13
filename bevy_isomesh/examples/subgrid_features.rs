@@ -257,7 +257,21 @@ fn controls(
     capture: Res<Capture>,
     mut flags: ResMut<ViewFlags>,
 ) {
+    // A capture drives the thickness itself, in step with the frames rather
+    // than with wall-clock time, so the sequence is reproducible. A still shows
+    // that one extractor found the letters; only the sweep shows the other one
+    // losing them, which is the whole claim.
     if capture.is_active() {
+        const LOW: f32 = 0.2;
+        const HIGH: f32 = 1.6;
+        const STEPS: u32 = 28;
+        let phase = capture.taken % (STEPS * 2);
+        let step = if phase < STEPS {
+            phase
+        } else {
+            STEPS * 2 - phase - 1
+        };
+        demo.thickness_voxels = HIGH - (HIGH - LOW) * (step as f32 / (STEPS - 1) as f32);
         return;
     }
     if keys.just_pressed(KeyCode::BracketRight) {
