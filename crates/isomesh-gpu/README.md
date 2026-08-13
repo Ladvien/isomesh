@@ -106,3 +106,19 @@ ever passed is indistinguishable from one that cannot fail.
 ```bash
 cargo test -p isomesh-gpu -- --nocapture   # prints the adapter it ran on
 ```
+
+## Mesh shaders
+
+```bash
+cargo run -p isomesh-gpu --example mesh_shader_probe
+```
+
+Reports every adapter's `EXPERIMENTAL_MESH_SHADER` bits, then the three things the bits do not say.
+Measured here (RTX 3090 / Vulkan): advertised, multiview, points — **and unusable from this
+workspace**, because `ExperimentalFeatures::enabled()` is a `const unsafe fn` and every crate sets
+`unsafe_code = "forbid"`.
+
+wgpu's own source settles the Metal question: the feature reaches Vulkan, DX12 and Metal, but *"naga
+is only supported on vulkan; on other platforms you will have to use passthrough shaders."* So mesh
+shaders are a fork in the shader pipeline, not a flag on it. **Metal is still unmeasured** — run the
+probe there.

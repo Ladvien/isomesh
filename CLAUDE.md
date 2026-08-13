@@ -79,9 +79,18 @@ Platform here is **macOS / arm64 → Metal**. Two consequences:
 
 - Do **not** put `"x11"` in Bevy's feature list. That's Linux. macOS needs no windowing feature flag
   beyond `bevy_winit`.
-- **Mesh shaders are unverified on Metal.** wgpu's spec table lists MSL as *planned* while the tracking
-  issue says the Metal HAL backend merged. These disagree. Do not build anything on mesh shaders
-  without first running a capability probe and reporting what it actually says.
+- **Mesh shaders: the probe has been run, and the contradiction is resolved (GPU-007, V-23).** The two
+  sources were right about different layers. `wgpu-types` 29.0.4 lists Vulkan, DX12 **and Metal** as
+  supported, then says *"naga is only supported on vulkan; on other platforms you will have to use
+  passthrough shaders."* So the **feature** reaches Metal and the **WGSL compiler** does not — on Metal
+  a caller supplies pre-compiled MSL, which makes mesh shaders a *fork in the shader pipeline* rather
+  than a flag on it.
+
+  Two things still stand. **Metal itself is unmeasured** — the probe has only been run on Linux/Vulkan
+  (RTX 3090: advertised, multiview, points). Run `cargo run -p isomesh-gpu --example mesh_shader_probe`
+  on the Mac and record what it says. And **enabling the feature requires `unsafe`**
+  (`ExperimentalFeatures::enabled()` is a `const unsafe fn`) while every crate here sets
+  `unsafe_code = "forbid"`, so GPU-008 is blocked on that policy decision rather than on work.
 
 ---
 

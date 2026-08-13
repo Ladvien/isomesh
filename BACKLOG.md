@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**84 tickets archived, 4 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**85 tickets archived, 3 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -135,8 +135,8 @@ numbers, or you won't be able to tell what the port bought you.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **GPU-007** | **Mesh shader capability probe.** Print what this adapter reports for `EXPERIMENTAL_MESH_SHADER` and stop. **macOS/Metal is the unverified case** — wgpu's spec table says MSL is *planned*, the tracking issue says the Metal backend merged. Report the truth before writing a line of shader. | S | GPU-004 |
 | ☐ | **GPU-008** | `E-303 gpu_mesh_shader` — feature-gated, off by default, graceful fallback, never panics on an unsupported adapter. | L | GPU-007 |
+> BLOCKED: **enabling mesh shaders requires `unsafe`, and every crate here sets `unsafe_code = "forbid"`.** GPU-007 measured the adapter and it advertises `EXPERIMENTAL_MESH_SHADER`, `_MULTIVIEW` and `_POINTS` — but requesting any of them at device creation needs an `ExperimentalFeatures` token whose only constructor is a `const unsafe fn` (`wgpu-types` 29.0.4, `src/tokens.rs`), carrying an explicit acknowledgement of possible UB (M-146). So this is a **policy decision, not a task**: either the forbid is relaxed for one crate, deliberately and in writing, or the ticket does not proceed. Two further facts shape it once that is answered (V-23). **WGSL mesh shaders are Vulkan-only** — wgpu's own source says *"naga is only supported on vulkan; on other platforms you will have to use passthrough shaders"* — so on Metal a caller supplies pre-compiled MSL and the composed-WGSL pipeline this crate has does not apply, making mesh shaders a fork in the shader path rather than a flag on it. And the ticket's own wording needs revisiting: *"graceful fallback"* is a second execution path for one feature, which the one-path rule forbids; the shape that survives is a **capability check that refuses loudly**, as GPU-007's probe already does.
 
 ---
 

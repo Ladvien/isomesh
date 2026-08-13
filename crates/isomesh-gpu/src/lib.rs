@@ -60,6 +60,7 @@ mod buffers;
 mod error;
 mod grid;
 mod marching_cubes;
+mod mesh_shader;
 mod shader;
 
 pub mod headless;
@@ -68,4 +69,5 @@ pub use buffers::{FieldBuffer, read_buffer, read_buffer_u32, read_bytes};
 pub use error::{Error, Result};
 pub use grid::GridParams;
 pub use marching_cubes::{ExtractTimings, GpuMesh, MarchingCubesGpu, case_table_bytes};
+pub use mesh_shader::{MeshShaderReport, probe_mesh_shaders};
 pub use shader::{Composer, FEATURES, GRID_WGSL, MARCHING_CUBES_WGSL};
