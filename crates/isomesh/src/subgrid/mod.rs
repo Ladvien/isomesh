@@ -52,4 +52,5 @@
 
 pub mod coordinates;
 pub mod curves;
+pub mod roots;
 pub mod surface;
