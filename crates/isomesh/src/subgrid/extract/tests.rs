@@ -368,3 +368,86 @@ fn the_welded_output_is_a_closed_consistently_oriented_manifold() {
         );
     }
 }
+
+#[test]
+fn the_validity_suite_over_every_reference_field() {
+    // The definition of done's T-001 requirement, with the gate chosen by the
+    // field rather than by the test -- `gyroid` is triply periodic and
+    // `fbm_terrain` is a heightfield, so neither is closed in a finite box and
+    // demanding `is_closed()` of them would be asserting something false.
+    //
+    // Welded first, without exception: M-96 measured that the raw output is a
+    // per-tetrahedron triangle soup, so every one of these counters is
+    // meaningless before the weld.
+    //
+    // Counts are **pinned rather than asserted to zero**, following the Phase 1
+    // amendment: a known defect with a number and a ticket that owns it
+    // satisfies this gate; an unexplained one does not. The non-zero rows here
+    // are §3.2.3's immersion, owned by A-014d and measured in M-97.
+    use crate::fields::ReferenceField;
+    use crate::validate::{ValidateConfig, validate_indexed};
+
+    // name -> (non-manifold edges, non-manifold vertices, inconsistently oriented)
+    let expected: [(&str, u64, u64, u64); 7] = [
+        ("sphere", 0, 0, 0),
+        ("torus", 0, 0, 0),
+        ("box_exact", 0, 0, 0),
+        ("csg_difference", 3, 6, 6),
+        ("thin_plate", 0, 0, 0),
+        ("gyroid", 0, 0, 138),
+        ("fbm_terrain", 4, 6, 19),
+    ];
+
+    let mut checked = 0;
+    crate::for_each_reference_field!(f64, |name, field| {
+        let (lo, hi) = field.domain();
+        let n = 17u32;
+        let shape = RuntimeShape3::new([n; 3]).expect("a cubic grid");
+        let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+
+        let mut mt = SubgridMarchingTetrahedra::<f64>::new(16).expect("valid");
+        let mut out = MeshBuffer::<f64>::default();
+        mt.extract(&field, &shape, lo, cell, &mut out)
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
+
+        let mut welder = crate::weld::Welder::<f64>::new();
+        welder
+            .weld(&mut out, cell * 1e-6)
+            .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
+
+        let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
+        let report = validate_indexed(&out.positions, &out.indices, &cfg);
+
+        let want = expected
+            .iter()
+            .find(|(n, ..)| *n == name)
+            .unwrap_or_else(|| panic!("{name} is not in the pinned table"));
+        assert_eq!(
+            (
+                report.non_manifold_edges,
+                report.non_manifold_vertices,
+                report.inconsistently_oriented_edges
+            ),
+            (want.1, want.2, want.3),
+            "{name}\n{report}"
+        );
+
+        // Every field must at least be a surface with no dangling geometry, and
+        // the clean ones must meet their own gate.
+        assert_eq!(report.out_of_range_indices, 0, "{name}\n{report}");
+        // Only the fields with a clean bill on all three counters are held to
+        // their own gate; the others are pinned above and owned by A-014d.
+        if want.1 == 0 && want.2 == 0 && want.3 == 0 {
+            if field.closed_in_domain() {
+                assert!(report.is_closed(), "{name}\n{report}");
+            } else {
+                assert!(report.is_manifold(), "{name}\n{report}");
+            }
+            if let Some(chi) = field.expected_euler() {
+                assert_eq!(report.euler_characteristic, chi, "{name}\n{report}");
+            }
+        }
+        checked += 1;
+    });
+    assert_eq!(checked, 7, "the sweep did not reach every field");
+}
