@@ -275,3 +275,89 @@ fn a_field_with_no_surface_extracts_nothing() {
     assert_eq!(mesh.triangle_count(), 0);
     assert!(mesh.positions.is_empty());
 }
+
+/// Bit-identity is a property of the **cell size**, not of the port, and the
+/// bound that survives either way is a distance.
+///
+/// At `h = 0.125` almost every vertex is bit-identical; at `h = 0.1` almost
+/// none are. Both are correct — every vertex is still within a rounding
+/// distance of a CPU vertex — but a test written only at a power of two would
+/// report near-perfect agreement and hide a real defect, which is exactly what
+/// happened: `GridParams::sample_position` used `mul_add` where `isomesh` uses
+/// `origin + h * i`, and `h = 0.125` made the two forms bit-identical (M-143).
+///
+/// So the durable assertion is the *offset*, in cells, and it is checked at a
+/// spacing where the two forms can disagree.
+#[test]
+fn the_agreement_is_a_distance_and_holds_at_a_non_power_of_two_spacing() {
+    let gpu = gpu();
+    let mc = MarchingCubesGpu::new(gpu.device(), gpu.queue()).expect("pipeline");
+    let field = Sphere::<f32>::canonical();
+
+    for (samples, cell) in [(33u32, 0.125f32), (41, 0.1)] {
+        let grid = GridParams::new([samples; 3], [-2.0; 3], cell).expect("valid grid");
+        let buffer = FieldBuffer::sampled(gpu.device(), gpu.queue(), grid, &field).expect("upload");
+        let mesh = mc
+            .extract(gpu.device(), gpu.queue(), &buffer)
+            .expect("extract");
+        let cpu = cpu_mesh(&field, grid);
+
+        assert_eq!(
+            mesh.triangle_count(),
+            cpu.indices.len() / 3,
+            "h = {cell}: triangle counts differ"
+        );
+
+        // Nearest CPU vertex through a spatial hash: a ULP probe only answers
+        // "within k" for the k you thought to ask for.
+        let bucket = cell * 0.01;
+        let cell_of = |p: &[f32; 3]| {
+            [
+                (p[0] / bucket).floor() as i64,
+                (p[1] / bucket).floor() as i64,
+                (p[2] / bucket).floor() as i64,
+            ]
+        };
+        let mut index: std::collections::HashMap<[i64; 3], Vec<[f32; 3]>> =
+            std::collections::HashMap::new();
+        for p in &cpu.positions {
+            index.entry(cell_of(p)).or_default().push(*p);
+        }
+
+        let mut exact = 0usize;
+        let mut worst = 0.0f32;
+        for p in &mesh.positions {
+            let mut best = f32::INFINITY;
+            let home = cell_of(p);
+            for dx in -1..=1 {
+                for dy in -1..=1 {
+                    for dz in -1..=1 {
+                        let at = [home[0] + dx, home[1] + dy, home[2] + dz];
+                        for q in index.get(&at).into_iter().flatten() {
+                            let d = ((p[0] - q[0]).powi(2)
+                                + (p[1] - q[1]).powi(2)
+                                + (p[2] - q[2]).powi(2))
+                            .sqrt();
+                            best = best.min(d);
+                        }
+                    }
+                }
+            }
+            if best == 0.0 {
+                exact += 1;
+            }
+            worst = worst.max(best / cell);
+        }
+
+        // Rounding is many orders of magnitude below a cell; a disagreement
+        // about geometry is not.
+        assert!(
+            worst < 1e-4,
+            "h = {cell}: worst offset {worst:e} cells is too large to be rounding"
+        );
+        println!(
+            "h = {cell}: {exact} of {} bit-identical, worst offset {worst:e} cells",
+            mesh.positions.len()
+        );
+    }
+}

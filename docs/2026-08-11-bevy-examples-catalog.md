@@ -112,7 +112,7 @@ The examples that prove the crate is usable for a real game, not just a paper.
 
 | # | Example | Demonstrates | What you see |
 |---|---|---|---|
-| 25 | `gpu_compute_mc` | Compute-shader extraction | Same field, GPU path, readback. HUD asserts **bit-identical to CPU** or reports the exact divergence. Not "looks the same." |
+| 25 | `gpu_compute_mc` | Compute-shader extraction | Same field, GPU path, readback. HUD asserts **bit-identical to CPU** or reports the exact divergence. Not "looks the same." | **Shipped at GPU-005, and it is the second branch:** triangle counts equal at 33³/41³/65³ with zero vertices moved, but bit-identity is a property of the *cell size* — 93.8% at `h = 0.125`, **1.1% at `h = 0.1`**, 98.0% at `h = 0.0625` — because a fused multiply-add is invisible wherever `h·i` is exact. The stable bound is a distance, under `2.1e-6` cells (M-144).
 | 26 | `gpu_vs_cpu` | The real speedup | Both paths live, side by side, timing HUD, resolution slider. Watch the gap open as the grid grows — and watch it *close* at small grids, which is the launch-overhead finding made visible. |
 | 27 | `gpu_mesh_shader` | Feature-gated, exploratory | **First job is the capability probe**: print what the adapter reports for `EXPERIMENTAL_MESH_SHADER` and stop. On macOS/Metal this is unverified upstream. If unsupported, the example must print why and fall back cleanly — never panic. |
 

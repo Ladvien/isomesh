@@ -55,6 +55,17 @@ optional = true
 avian3d = "0.7.0"
 bevy = "0.19"
 
+# GPU-005's example only, and a dev-dependency for the same reason `avian3d` is
+# one: this crate's whole point is that a CPU-only consumer never compiles the
+# renderer, and `isomesh-gpu` carries `wgpu`. Dev-dependencies are not
+# propagated, so nobody depending on `bevy_isomesh` inherits it.
+#
+# The wgpu pin is what makes this safe. `isomesh-gpu` asks for 29.0.3 and Bevy
+# 0.19 asks for 29.0.3, so Cargo unifies them onto one copy -- verified below
+# rather than assumed, because the failure mode is two silently coexisting
+# majors and a type error about `TextureFormat` not matching itself.
+isomesh-gpu = { path = "../crates/isomesh-gpu" }
+
 # E-203 only. The acid test is "walk every chunk seam and never fall through",
 # and answering that needs a ray cast against the meshed triangles -- not a
 # physics engine. parry3d is the same version the core crate's own collider

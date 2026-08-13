@@ -114,12 +114,31 @@ impl GridParams {
     /// The reference implementation of the rule a shader must follow: multiply
     /// the index, never accumulate. A CPU-side caller uses this to check a
     /// shader against it.
+    ///
+    /// # `origin + h * i`, as two operations, and not `mul_add`
+    ///
+    /// This must be the *same expression* `isomesh`'s own extractors evaluate —
+    /// `marching_cubes::corner_position` is `origin + cell_size * index`, a
+    /// multiply and then an add, rounding twice. `mul_add` rounds **once**, and
+    /// the two disagree in the last bit at any spacing where `h * i` is not
+    /// exact.
+    ///
+    /// That is not a stylistic difference. This function decides where the
+    /// field is *sampled* before upload, so using the fused form makes the GPU
+    /// read a field evaluated at slightly different points from the CPU's, and
+    /// every downstream comparison then measures that instead of the algorithm.
+    ///
+    /// **It was written with `mul_add` and the error was invisible at `h =
+    /// 0.125`**, where `h * i` is exact and the two forms agree bit for bit. It
+    /// surfaced the moment E-301 ran at `h = 0.1` (M-143). Fifth instance in
+    /// this repository of an algebraic identity IEEE does not honour, after
+    /// M-32, M-49, M-70 and M-73.
     #[must_use]
     pub fn sample_position(&self, index: [u32; 3]) -> [f32; 3] {
         [
-            self.cell_size.mul_add(index[0] as f32, self.origin[0]),
-            self.cell_size.mul_add(index[1] as f32, self.origin[1]),
-            self.cell_size.mul_add(index[2] as f32, self.origin[2]),
+            self.origin[0] + self.cell_size * index[0] as f32,
+            self.origin[1] + self.cell_size * index[1] as f32,
+            self.origin[2] + self.cell_size * index[2] as f32,
         ]
     }
 
