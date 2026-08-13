@@ -126,6 +126,17 @@ jobs:
       - name: clippy
         working-directory: bevy_isomesh
         run: cargo clippy --all-targets -- -D warnings
+      # The step the root job has and this one did not, so doc links in this
+      # workspace had never been checked -- and two were already broken. Same
+      # shape as E-111: an excluded workspace is excluded from the root's CI
+      # commands too, and the gap is always the step nobody thinks of as
+      # linting.
+      - name: rustdoc
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --no-deps
+        working-directory: bevy_isomesh
+
       - name: test
         working-directory: bevy_isomesh
         run: cargo test

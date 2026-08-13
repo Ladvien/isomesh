@@ -25,6 +25,17 @@ isomesh = { path = "../crates/isomesh" }
 bevy_asset = "0.19"
 bevy_mesh = "0.19"
 
+# B-003's plugin. All four are already in the tree transitively through
+# `bevy_asset`, so naming them directly costs nothing new -- and a Bevy
+# integration crate that cannot be a Bevy plugin would be an odd thing.
+#
+# `bevy_render` is still absent, deliberately. The plugin produces a
+# `Handle<Mesh>` and stops; attaching `Mesh3d` is the application's line to
+# write, which is what keeps a CPU-only consumer from compiling the renderer.
+bevy_app = "0.19"
+bevy_ecs = "0.19"
+bevy_tasks = "0.19"
+
 [features]
 default = []
 # Pulls in the renderer. Nothing needs it yet; the GPU path arrives with

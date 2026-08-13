@@ -1,4 +1,4 @@
-//! Writing an extracted surface into a Bevy [`Mesh`].
+//! Writing an extracted surface into a Bevy [`Mesh`](bevy_mesh::Mesh).
 
 use bevy_asset::RenderAssetUsages;
 use bevy_mesh::{Indices, Mesh, PrimitiveTopology};
@@ -190,7 +190,8 @@ fn triplanar_uv(position: [f32; 3], normal: [f32; 3], scale: f32) -> [f32; 2] {
 /// into a [`MeshBuilder`] instead and let the extractor write straight into the
 /// arrays the asset will take.
 ///
-/// UVs are not emitted here — see [`triplanar_uv`] for why there is no correct
+/// UVs are not emitted here — see this module's `triplanar_uv` note for why
+/// there is no correct
 /// answer, and note that a buffer carries no information this function could
 /// use to invent one.
 #[must_use]

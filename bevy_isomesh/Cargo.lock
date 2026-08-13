@@ -1023,9 +1023,12 @@ name = "bevy_isomesh"
 version = "0.0.0"
 dependencies = [
  "bevy",
+ "bevy_app",
  "bevy_asset",
+ "bevy_ecs",
  "bevy_mesh",
  "bevy_render",
+ "bevy_tasks",
  "isomesh",
 ]
 

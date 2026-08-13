@@ -23,5 +23,11 @@
 
 /// Writing an extracted mesh into a Bevy [`Mesh`](bevy_mesh::Mesh).
 pub mod mesh;
+/// The plugin: chunked, asynchronous meshing under a frame budget.
+pub mod plugin;
 
 pub use mesh::{MeshBuilder, to_bevy_mesh};
+pub use plugin::{
+    ChunkMesh, Extractor, IsomeshPlugin, MeshBudget, MeshStats, NeedsRemesh, VolumeField,
+    VoxelChunk, VoxelVolume,
+};
