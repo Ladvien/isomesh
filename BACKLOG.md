@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**59 tickets archived, 24 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**60 tickets archived, 24 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -116,7 +116,7 @@ These use the algorithms the way a game does: chunked, edited, budgeted, collide
 
 | | ID | Example | What it has to prove | Blocked by |
 |---|---|---|---|---|
-| ☐ | **E-203** | `game_walk` — character controller on meshed terrain, parry3d colliders | **The acid test.** Walk every chunk seam. No falling through, no invisible walls. If this fails, G-001's overlap is wrong. | G-005, E-201 |
+| ☐ | **E-206b** | `game_capsule_walk` — a real character controller on streamed terrain, not a ray sweep | **What E-203 does not test.** Its probe sweep finds holes and lips by casting rays down at 400 points a frame, which answers *"do the chunks meet"* (M-106: 495 crossings, 0 holes, seam lip 0.412 cells against 0.539 of terrain roughness). It does not answer *"can a body move through here"* — nothing in it slides along a surface, so an invisible wall that only a moving capsule reveals would go unseen. Wants an actual controller with a capsule, a step height and contact resolution. **This is where a physics engine earns its place** rather than `parry3d` raycasts; see the note on Avian in `docs/research/`. | M | E-203 |
 | ☐ | **E-204** | `game_destruction` — shoot a wall, it craters, debris becomes rigid bodies | Runtime fragments are correct physics bodies, not pre-fractured props. Carve a spiral and a hollow shell — that's where decomposition fails. | G-005, G-003 |
 | ☐ | **E-205** | `game_lod_flyover` — fly out and back across LOD transitions | No popping, no cracks, no hitching. Transvoxel doing its job at speed. | G-004, A-011b |
 | ☐ | **E-206** | `game_budget` — a deliberately overloaded edit queue under a frame budget | Frame time stays flat while the backlog drains. **Amortized cost per frame is the number no paper measures and the only one a game cares about.** | G-006 |

@@ -297,6 +297,26 @@ cd bevy_isomesh && cargo run --example marching_cubes_ambiguity --release
 
 ---
 
+## Walking every seam
+
+![Terrain with a walker on it and a HUD reading 495 seam crossings, 0 holes, seam lip 0.412 cells against terrain roughness 0.539](docs/screenshots/e203-game-walk.png)
+
+*`game_walk` — **495 seam crossings tested, 0 holes.** The worst vertical discontinuity at a seam is **0.412 cells**, against **0.539 cells** within a single chunk: the joins are smoother than the terrain they join.*
+
+This example is designed to fail. Chunks are meshed independently, and whether two of them actually *meet* is decided by the overlap G-001 chose — get it wrong and you fall through the world at a boundary. So every frame casts a dense transect of rays straight down against the **meshed triangles**, through `parry3d`, and counts holes and lips.
+
+Two details make the answer trustworthy. The ray hits the mesh, not the field — asking the field would test the field, which was never in doubt. And a lip is compared against the terrain's own roughness rather than against zero, because real terrain has real steps and a fixed threshold would be measuring the landscape.
+
+The first version of that test reported **439 holes** and declared the overlap broken. The bug was one operator wide in the test itself: a probe must only count as a hole once *every* chunk layer that could hold the surface has meshed, and the guard said `||` where it needed `&&` (M-105).
+
+```bash
+cd bevy_isomesh && cargo run --example game_walk --release
+```
+
+`Space` walk/pause · `[` `]` view distance · `W` wireframe.
+
+---
+
 ## A world that streams past you
 
 ![Unbroken fBm terrain to the horizon, with a HUD reading 234 chunks resident, 0 waiting, 60 fps](docs/screenshots/e201-terrain-stream.png)
@@ -448,6 +468,7 @@ cargo run --example greedy_quads --release                      # 5014 quads dow
 cargo run --example transvoxel_seams --release                  # the LOD crack, and T to close it
 cargo run --example subgrid_features --release                   # letters thinner than a voxel
 cargo run --example game_terrain_stream --release                # a world streaming past you
+cargo run --example game_walk --release                          # the acid test: walk every seam
 cargo run --example game_dig --release                          # carve, and watch the chunk count
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires
