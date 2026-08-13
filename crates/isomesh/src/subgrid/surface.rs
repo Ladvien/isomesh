@@ -468,6 +468,14 @@ pub fn fill<R: Real>(
             Some(NonNormalKind::Diagonal) => {
                 unfilled = unfilled.worst(fill_centroid_fan(cycle, &index_of, out));
             }
+            // Contractible: the disk is built in the tet boundary, out of
+            // crossings this tet already has.
+            Some(NonNormalKind::Contractible) => {
+                unfilled = unfilled.worst(fill_boundary_disk(&coords, cycle, &index_of, out));
+            }
+            // Corner type still wants the same disk plus §3.2.2's two extras --
+            // omitting the vertex that coincides with the inside corner, and a
+            // triangle at that corner.
             _ => unfilled = unfilled.worst(Unfilled::NonNormalLoop),
         }
     }
@@ -526,6 +534,59 @@ pub fn fill<R: Real>(
     }
 
     Ok(unfilled)
+}
+
+/// §3.2.2's spanning disk for a **contractible** loop, built in the tet
+/// boundary.
+///
+/// > Otherwise, we build a piecewise linear disk contained mostly in the tet
+/// > boundary, rather than its interior. … Finally, we emit any polygon `P`
+/// > bound by "inside" segments and segments of `γ`.
+///
+/// Every vertex of that disk is already a crossing this tet has — the disk lies
+/// *on* the boundary, so it introduces no new points, which is what makes this
+/// case cheaper than any of the Steiner ones despite looking harder.
+///
+/// A contractible loop marks all four corners outside, so an arc touching a
+/// corner is always outside and no qualifying region can contain one. That is
+/// asserted rather than assumed: a `Corner` node reaching the emit is
+/// [`Unfilled::Inconsistent`], because for a *corner-type* loop it would instead
+/// need §3.2.2's omission rule and a corner triangle, and silently fanning over
+/// it would produce a plausible wrong disk.
+///
+/// The triangles are expected to be degenerate wherever a scoop bounds the
+/// region — see V-21. A-014d insets them; this stage is graded on connectivity.
+fn fill_boundary_disk<R: Real>(
+    coords: &EdgeCoordinates,
+    cycle: &Cycle,
+    index_of: &impl Fn(FacePoint) -> u32,
+    out: &mut TetPatch<R>,
+) -> Unfilled {
+    if cycle.non_normal_kind() != Some(NonNormalKind::Contractible) {
+        return Unfilled::NonNormalLoop;
+    }
+
+    for face in 0..TET_FACE_COUNT as u8 {
+        let Some(regions) = face_regions(face, coords, cycle) else {
+            return Unfilled::Inconsistent;
+        };
+        for region in regions.iter().filter(|r| r.is_inside()) {
+            let mut corner = Vec::with_capacity(region.node.len());
+            for node in &region.node {
+                match node {
+                    Node::Crossing(p) => corner.push(index_of(*p)),
+                    Node::Corner(_) => return Unfilled::Inconsistent,
+                }
+            }
+            // A fan from the region's first vertex. The region is a polygon of
+            // one planar face cut by chords, so it is convex and a fan is a
+            // valid triangulation of it.
+            for k in 1..corner.len().saturating_sub(1) {
+                out.triangles.push([corner[0], corner[k], corner[k + 1]]);
+            }
+        }
+    }
+    Unfilled::None
 }
 
 /// Fan a loop around the centre of mass of its own vertices.

@@ -620,10 +620,22 @@ fn the_coverage_of_the_implemented_cases_is_pinned() {
             *slot = (raw >> (2 * e)) & 0b11;
         }
         let owned = crossings(count);
-        let outcome = match fill(&tet(&owned), &mut TetPatch::new()) {
+        let mut patch = TetPatch::new();
+        let outcome = match fill(&tet(&owned), &mut patch) {
             Ok(o) => o,
             Err(e) => panic!("{count:?} was rejected as malformed: {e:?}"),
         };
+
+        // Whatever was emitted has to be indexable, on every path -- including
+        // the boundary disk, which is the one case that builds triangles from
+        // regions rather than from a fan and so has its own way to go wrong.
+        let n = patch.positions.len() as u32;
+        for t in &patch.triangles {
+            assert!(
+                t.iter().all(|i| *i < n),
+                "{count:?}: triangle {t:?} indexes past {n} vertices"
+            );
+        }
         match outcome {
             Unfilled::None => none += 1,
             Unfilled::SingleLoop => single += 1,
@@ -654,7 +666,7 @@ fn the_coverage_of_the_implemented_cases_is_pinned() {
     // of the remaining gap here is §3.2.2's corner and contractible types.
     assert_eq!(
         [none, single, subdivision, non_normal, no_pattern],
-        [3394, 0, 0, 702, 0],
+        [3808, 0, 0, 288, 0],
         "coverage moved: [None, SingleLoop, Subdivision, NonNormalLoop, NoPattern]"
     );
     assert_eq!(
@@ -715,17 +727,27 @@ fn non_normal_loops_are_classified_and_all_three_types_are_reachable() {
 }
 
 #[test]
-fn a_diagonal_non_normal_loop_fans_around_its_centre_of_mass() {
-    // The one non-normal type whose spanning disk is in the tet interior, and
-    // therefore the one that is a fan like §3.2.1's cases. Corner and
-    // contractible want a disk built in the tet boundary and are still
-    // reported unfilled.
+fn only_corner_type_non_normal_loops_are_still_refused() {
+    // Diagonal loops fan around a centre of mass in the tet interior;
+    // contractible loops get a disk built in the tet boundary. Corner type is
+    // the one left, because it needs §3.2.2's two extras on top of the disk --
+    // omitting the vertex that coincides with the inside corner, and a triangle
+    // at that corner.
+    //
+    // Swept over the whole space rather than the `[a, b, c, 0, 0, 0]` corner of
+    // it: that subspace never produces a corner-type loop at all, and the
+    // reachability assertion at the end is what caught the test claiming to
+    // cover a branch it could not reach.
     let mut filled = 0;
     let mut refused = 0;
-    for a in 0..4u32 {
-        for b in 0..4u32 {
-            for c in 0..4u32 {
-                let coords = EdgeCoordinates::new([a, b, c, 0, 0, 0]);
+    for raw in 0..4096u32 {
+        {
+            {
+                let mut count = [0u32; TET_EDGE_COUNT];
+                for (e, slot) in count.iter_mut().enumerate() {
+                    *slot = (raw >> (2 * e)) & 0b11;
+                }
+                let coords = EdgeCoordinates::new(count);
                 let non_normal: Vec<_> = cycles(&coords)
                     .into_iter()
                     .filter(|x| x.kind == CurveKind::NonNormal)
@@ -736,31 +758,33 @@ fn a_diagonal_non_normal_loop_fans_around_its_centre_of_mass() {
                 let owned = crossings(coords.count);
                 let mut patch = TetPatch::new();
                 let outcome = fill(&tet(&owned), &mut patch).expect("well-formed");
+                // Diagonal and contractible loops both have spanning disks now;
+                // corner type is the one still refused, and it is the only one.
                 if non_normal
                     .iter()
-                    .all(|x| x.non_normal_kind() == Some(NonNormalKind::Diagonal))
+                    .any(|x| x.non_normal_kind() == Some(NonNormalKind::Corner))
                 {
-                    assert_ne!(
-                        outcome,
-                        Unfilled::NonNormalLoop,
-                        "{:?}: diagonal loops should fill",
-                        coords.count
-                    );
-                    filled += 1;
-                } else {
                     assert_eq!(
                         outcome,
                         Unfilled::NonNormalLoop,
-                        "{:?}: a non-diagonal loop should be refused",
+                        "{:?}: a corner-type loop should be refused",
                         coords.count
                     );
                     refused += 1;
+                } else {
+                    assert_ne!(
+                        outcome,
+                        Unfilled::NonNormalLoop,
+                        "{:?}: diagonal and contractible loops should fill",
+                        coords.count
+                    );
+                    filled += 1;
                 }
             }
         }
     }
-    assert!(refused > 0, "no non-diagonal loop was reached");
-    let _ = filled;
+    assert!(refused > 0, "no corner-type loop was reached");
+    assert!(filled > 0, "no diagonal or contractible loop was reached");
 }
 
 #[test]
