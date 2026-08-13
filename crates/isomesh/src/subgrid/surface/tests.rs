@@ -311,6 +311,208 @@ fn a_single_long_loop_fans_around_its_centre_of_mass() {
     }
 }
 
+/// Two tets sharing face `(0, 1, 2)`, which lies in the plane `z = 0`. Their
+/// apexes are on opposite sides, so the shared face is the only thing they have
+/// in common — and the only place a crack could open.
+fn two_tets(
+    shared: [Vec<f64>; 3],
+    apex_a: [Vec<f64>; 3],
+    apex_b: [Vec<f64>; 3],
+) -> [Vec<Vec<f64>>; 2] {
+    // TET_EDGES order: 0=(0,1), 1=(0,2), 2=(0,3), 3=(1,2), 4=(1,3), 5=(2,3).
+    // Edges 0, 1 and 3 are the shared face's; 2, 4 and 5 reach the apex.
+    let [s01, s02, s12] = shared;
+    let build = |apex: [Vec<f64>; 3]| {
+        let [a03, a13, a23] = apex;
+        alloc::vec![s01.clone(), s02.clone(), a03, s12.clone(), a13, a23,]
+    };
+    [build(apex_a), build(apex_b)]
+}
+
+// Exact float equality is the point here, not an oversight. The shared face's
+// crossings are computed from the same corners and the same parameters in both
+// tets, so they must come out **bit-identical** -- that is the property the
+// whole conformity argument rests on (M-32 measured what happens when an
+// analogous claim holds only by algebra). Welding with a tolerance would hide
+// exactly the failure this test exists to catch.
+#[expect(clippy::float_cmp, reason = "bit-identity is the property under test")]
+#[test]
+fn the_shared_face_of_two_tets_carries_no_crack() {
+    // A-014b's acceptance criterion. Two tets are filled independently, with no
+    // communication and no second pass, and the question is whether the
+    // triangles meeting at their shared face line up.
+    //
+    // Measured the way E-107 measured the transvoxel seam: merge the two
+    // patches, weld coincident vertices, and count boundary edges -- edges used
+    // by exactly one triangle -- that lie *in the shared face*. Every other
+    // boundary edge is the patch's genuine open border against the rest of the
+    // grid and must survive; a boundary edge inside the shared plane is a hole
+    // you can see through.
+    let corners_a = [
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0],
+    ];
+    let corners_b = [
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, -1.0],
+    ];
+
+    // Counts on the shared face's three edges, then each apex's three. The two
+    // tets differ in their apex edges, which is the whole point: conformity
+    // must not depend on the neighbour's far side.
+    let cases: [([u32; 3], [u32; 3], [u32; 3]); 4] = [
+        ([1, 1, 0], [1, 0, 0], [1, 0, 0]),
+        ([1, 1, 2], [1, 2, 1], [2, 1, 2]),
+        ([2, 2, 2], [2, 2, 2], [1, 1, 1]),
+        ([3, 1, 2], [2, 1, 3], [1, 3, 2]),
+    ];
+
+    let mut examined = 0;
+    let mut excused = 0;
+    for (shared, apex_a, apex_b) in cases {
+        let s = [spaced(shared[0]), spaced(shared[1]), spaced(shared[2])];
+        let a = [spaced(apex_a[0]), spaced(apex_a[1]), spaced(apex_a[2])];
+        let b = [spaced(apex_b[0]), spaced(apex_b[1]), spaced(apex_b[2])];
+        let [owned_a, owned_b] = two_tets(s, a, b);
+
+        let mut merged_positions: Vec<[f64; 3]> = Vec::new();
+        let mut merged_triangles: Vec<[u32; 3]> = Vec::new();
+        let mut any_unfilled = false;
+
+        for (owned, corners) in [(&owned_a, corners_a), (&owned_b, corners_b)] {
+            let mut along: [&[f64]; TET_EDGE_COUNT] = [&[]; TET_EDGE_COUNT];
+            for (slot, v) in along.iter_mut().zip(owned.iter()) {
+                *slot = v.as_slice();
+            }
+            let t = TetCrossings { corners, along };
+            let mut patch = TetPatch::new();
+            let outcome = fill(&t, &mut patch).expect("well-formed crossings");
+            if outcome != Unfilled::None {
+                any_unfilled = true;
+            }
+
+            // Weld on exact position equality. The shared face's crossings are
+            // computed from the same corners and the same parameters in both
+            // tets, so they are bit-identical -- which is itself the thing being
+            // relied on, and would fail loudly here if it were not true.
+            for tri in &patch.triangles {
+                let mut welded = [0u32; 3];
+                for (slot, index) in welded.iter_mut().zip(tri.iter()) {
+                    let p = patch.positions[*index as usize];
+                    *slot = match merged_positions.iter().position(|q| *q == p) {
+                        Some(existing) => existing as u32,
+                        None => {
+                            merged_positions.push(p);
+                            merged_positions.len() as u32 - 1
+                        }
+                    };
+                }
+                merged_triangles.push(welded);
+            }
+        }
+
+        if any_unfilled || merged_triangles.is_empty() {
+            continue;
+        }
+
+        // Count each undirected edge's incident faces.
+        let mut edges: Vec<([u32; 2], u32)> = Vec::new();
+        for tri in &merged_triangles {
+            for k in 0..3 {
+                let (x, y) = (tri[k], tri[(k + 1) % 3]);
+                let key = if x < y { [x, y] } else { [y, x] };
+                match edges.iter_mut().find(|(e, _)| *e == key) {
+                    Some((_, n)) => *n += 1,
+                    None => edges.push((key, 1)),
+                }
+            }
+        }
+
+        let in_shared_face = |e: [u32; 2]| {
+            merged_positions[e[0] as usize][2] == 0.0 && merged_positions[e[1] as usize][2] == 0.0
+        };
+
+        // Every segment either tet discarded as part of an **open** curve, as a
+        // pair of positions. §3.1 is explicit that these legitimately become
+        // mesh boundary: "Such curves are discarded, but their segments may
+        // still appear in neighboring tets as part of the mesh boundary." So a
+        // one-sided edge in the shared face is a crack only if it is *not* one
+        // of these.
+        let mut discarded: Vec<[[f64; 3]; 2]> = Vec::new();
+        for (owned, corners) in [(&owned_a, corners_a), (&owned_b, corners_b)] {
+            let mut along: [&[f64]; TET_EDGE_COUNT] = [&[]; TET_EDGE_COUNT];
+            for (slot, v) in along.iter_mut().zip(owned.iter()) {
+                *slot = v.as_slice();
+            }
+            let t = TetCrossings { corners, along };
+            for curve in crate::subgrid::curves::curves(&t.coordinates()) {
+                if curve.kind != CurveKind::Open {
+                    continue;
+                }
+                for seg in &curve.segments {
+                    if let (Some(p), Some(q)) = (t.position(seg.a), t.position(seg.b)) {
+                        discarded.push([p, q]);
+                    }
+                }
+            }
+        }
+        let was_discarded = |e: [u32; 2]| {
+            let (p, q) = (
+                merged_positions[e[0] as usize],
+                merged_positions[e[1] as usize],
+            );
+            discarded
+                .iter()
+                .any(|[a, b]| (*a == p && *b == q) || (*a == q && *b == p))
+        };
+
+        let cracks: Vec<[u32; 2]> = edges
+            .iter()
+            .filter(|(e, n)| *n == 1 && in_shared_face(*e) && !was_discarded(*e))
+            .map(|(e, _)| *e)
+            .collect();
+        assert!(
+            cracks.is_empty(),
+            "{shared:?}/{apex_a:?}/{apex_b:?}: {} boundary edges inside the shared face \
+             that no open curve accounts for: {cracks:?}",
+            cracks.len()
+        );
+
+        // No shared-face edge may be used by more than two faces either -- that
+        // would be a non-manifold seam rather than a hole.
+        assert!(
+            edges.iter().all(|(e, n)| !in_shared_face(*e) || *n <= 2),
+            "{shared:?}: a shared-face edge is used by more than two triangles"
+        );
+
+        // A zero has to prove it could have been non-zero: the shared face must
+        // actually carry geometry, or this case is asserting nothing.
+        let shared_edges = edges.iter().filter(|(e, _)| in_shared_face(*e)).count();
+        assert!(
+            shared_edges > 0,
+            "{shared:?}: no triangle edge lies in the shared face at all"
+        );
+        excused += edges
+            .iter()
+            .filter(|(e, n)| *n == 1 && in_shared_face(*e) && was_discarded(*e))
+            .count();
+        examined += 1;
+    }
+    assert!(examined > 0, "no case filled completely enough to examine");
+    // The open-curve excuse is the interesting half of the assertion, and an
+    // excuse that never fires would let a real crack through unnoticed. The
+    // fixture is chosen so it fires: `[1, 1, 2]` with those apexes produces one.
+    assert!(
+        excused > 0,
+        "no shared-face boundary edge was excused by a discarded open curve, \
+         so that clause is not being exercised"
+    );
+}
+
 #[test]
 fn non_normal_loops_are_classified_and_all_three_types_are_reachable() {
     // §3.2.2's parity rule: b_ij = e_ij^γ mod 2 over the loop's own coordinates,
