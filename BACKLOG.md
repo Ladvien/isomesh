@@ -72,7 +72,6 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
 | ☐ | **A-014b** | **Subgrid MT — the surface fill.** §3.2's primal reconstruction: triangulate the boundary curves §3.1 produces so the output is intersection-free, via the four cases (corner cuts, parallel quads, octagons, single closed loop) and the Steiner-point rules. **Acceptance:** a configuration that `decompose` rejects still meshes, and the result is conforming across a two-tet fixture. **§3.1 is done** — `subgrid::curves` reconstructs and classifies the boundary curves, and M-79 pins the conformity property it rests on. What remains is §3.2, whose two properties are stated as Theorems B.3 and B.6 and need reading before implementing. | L | A-014a |
-
 | ☐ | **A-014c** | **All-roots edge finding, and the extractor.** §4.3.2 — find *every* zero along a grid edge, exactly for analytic fields or by 1D sampling for black-box ones, then wire A-014b into an extractor. **Acceptance:** `thin_plate` at a resolution where greedy quads returns zero triangles comes back with the sheet. Note §1.3: 1D marching *"can of course miss intersections, [but] we are no worse off than classic marching"* — so the sampled path is a legitimate primary, not a fallback. | L | A-014b |
 | ☐ | **A-002b** | **Marching Cubes 33 interior ambiguity — the trilinear body saddle.** Deliberately deferred at A-002, on evidence, not forgotten. Three reasons. (1) `catalog-v2.md:107` is explicit: *"Skip the interior test; spend the budget on chunk seams"* — a game needs topological *consistency*, which A-001 already has, over *correctness*. (2) **There is no correct published table to transcribe.** Custodio et al. 2013 (`10.1016/j.cag.2013.04.004` §5.1) prove Chernyaev's interior test tracks a quadratic where the true saddle trajectory is hyperbolic with an asymptote, so case 13.5.2 is misread as 13.5.1 — counterexample values in their Appendix A — and Lewiner's reference implementation omits disambiguation for cases 10 and 12 entirely. Rule 5 forbids inventing the missing one. (3) The v1 catalog prices it: the decider is *"~free"*, the guaranteed version is **730 subcases in the LUT**. Also needs cell-interior vertices for tunnels, which the grid-edge-keyed vertex cache has no slot for. **Acceptance:** a cell where the body saddle says "tunnel", meshed as a tunnel, with the sign tracked by Custodio's correction rather than Chernyaev's `F(t)`. | L | A-002 |
 
@@ -163,10 +162,20 @@ Recorded so they don't get picked up early, and so it's clear they weren't forgo
 
 - Nanite-style mesh-space cluster simplification — the research concludes it can't be repaired
   edit-proportionally (no local validity certificate). Field-derived LOD is the bet instead.
-- Networked/concurrent editing — **precondition resolved.** G-003 landed with commutativity measured
-  over all 40,320 orderings; record the verdict here and promote this to a real ticket or close it out
-  explicitly. Leaving it as a pending "depends on" after the dependency has landed is how a decision
-  gets silently dropped.
+- Networked/concurrent editing — **closed out, not deferred. The verdict is in and it is bounded.**
+  O-4 asked whether brush operations commute. They do, conditionally: a run of same-kind *hard* edits
+  reorders bit-for-bit — one result from all 40,320 orderings, all `Add` and again all `Subtract`
+  (M-36) — because `min`/`max` select an argument rather than computing a value. Across an add/subtract
+  boundary they do **not**: 11 distinct results, and the difference is *semantic*, so no storage format
+  or arithmetic repairs it (M-37). Smooth union is worse still — 40,317 distinct results from 40,320,
+  smooth-min being neither associative nor bit-commutative (M-38).
+
+  So the coordination-free story survives inside a run and dies at every boundary, and **that is a
+  protocol's problem, not this crate's.** isomesh's whole obligation was to make the truth available,
+  and `BrushOp::commutes_with` already returns the honest answer rather than the optimistic one. A
+  networking layer needs sockets, clocks and a session model — none of which belong in a `no_std` crate
+  whose public API is `[f32; 3]`. Nothing further is owed here; reopen it as a real ticket only if a
+  consumer turns up needing something the existing predicate cannot express.
 - Neural / differentiable extraction (FlexiCubes, TetWeave) — different problem, different crate.
 - Publishing to crates.io. **But `I-005 — reserve the name` is now overdue, not deferred.** Publish a
   `0.0.0` placeholder. `megamesh` was taken 48 hours before we checked it; `isomesh` has been sitting

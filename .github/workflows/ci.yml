@@ -64,6 +64,12 @@ jobs:
             exit 1
           fi
 
+      # BACKLOG.md is the state, so a row that never moved is a lie about what
+      # shipped. This runs the same script a developer runs -- the logic lives in
+      # one file rather than half here and half in the repo.
+      - name: backlog gate
+        run: ./scripts/backlog_gate.sh
+
   test:
     name: test (${{ matrix.os }})
     # Both platforms, deliberately. The crate routes every transcendental

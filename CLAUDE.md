@@ -232,6 +232,12 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
 
+# the fourth thing CI checks in that job, and the only one that is about the
+# repo rather than the code: a ticket row in both files, a checked row that
+# never moved to the archive, header counts that disagree with the rows, or a
+# "Blocked by" naming a ticket that does not exist. E-113 needed this twice.
+./scripts/backlog_gate.sh
+
 # core — must stay tiny
 cargo test -p isomesh
 cargo tree -p isomesh -e normal      # expect: isomesh + libm. Nothing else.
