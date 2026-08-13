@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**73 tickets archived, 15 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**74 tickets archived, 14 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -100,7 +100,6 @@ nearest-first, and the caller's own clock decides when to stop.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **B-007** | **Does subgrid Marching Tetrahedra tile across a chunk boundary?** B-006 measured **1 open edge on `waves` and 0 on `blobs`**, which is neither, so `Extractor::Subgrid` reports `ChunkSeams::Unverified` rather than a guess. **M-79 names the mechanism this has to rule out:** subgrid's conformity is locality plus a *global* vertex ordering — two tetrahedra agree on the canonical `i < j` because they share the face's global indices — and M-79 warns in as many words that *"a mesh that renumbered vertices per tet would crack along every shared face"*. Chunks renumber. **The question is whether the ordering is derived from world position or from a chunk-local index**, which is a source question before it is a measurement one. Also rule out the weld: subgrid emits unwelded soup (M-93) and M-96 requires an *exact*-position weld, so a tolerance weld could be leaving the single edge rather than the extractor. **Acceptance:** the answer, the mechanism, and either `Closed` or `Gapped` in `chunk_seams` with the count pinned like the other three. | S | — |
 
 ## Phase 4 — Examples
 

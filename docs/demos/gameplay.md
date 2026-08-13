@@ -32,7 +32,9 @@ caves that connect, arches, and rock overhead. Press `1`, `2`, `3` to thin or th
 methods do not tile across a chunk boundary: Marching Cubes puts vertices on grid *edges*, which two
 neighbouring chunks compute identically, while Surface Nets and Dual Contouring put one vertex per cell
 *interior* and a boundary quad needs the neighbour's vertex. Measured on two adjacent chunks, boundary
-edges in the shared plane: **Marching Cubes 0, Surface Nets 5, Dual Contouring 4**. This demo shipped on
+edges in the shared plane: **Marching Cubes 0, Surface Nets 5, Dual Contouring 4** — and 0 for Marching
+Cubes on every field tried, while the dual methods are 0 on some and open on others, so what they lack
+is the guarantee rather than the geometry on any one frame. This demo shipped on
 Dual Contouring for exactly one commit and the GIF above was a torn, slashed mess until someone looked
 at it (M-128).
 

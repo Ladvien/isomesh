@@ -111,9 +111,14 @@ pub enum ChunkSeams {
     /// Neighbouring chunks close. Vertices sit on grid **edges**, which two
     /// chunks compute from identical corner values and therefore agree on.
     Closed,
-    /// Neighbouring chunks leave gaps. One vertex per cell **interior** means a
+    /// Neighbouring chunks are **not guaranteed** to close, and are measured
+    /// open on at least one field. One vertex per cell **interior** means a
     /// boundary quad needs the neighbour's vertex, which the chunk does not
     /// have, so it stops short.
+    ///
+    /// Not *always* open: whether a given surface leaves a gap depends on how it
+    /// meets the seam, and both dual methods measure 0 on some fields. The
+    /// guarantee is what is missing, not the geometry on any one frame.
     Gapped,
     /// Not established. Do not assume either way.
     Unverified,
@@ -129,28 +134,31 @@ impl Extractor {
     /// | extractor | waves | blobs | |
     /// |---|---:|---:|---|
     /// | [`MarchingCubes`](Extractor::MarchingCubes) | 0 | 0 | [`Closed`](ChunkSeams::Closed) |
-    /// | [`SurfaceNets`](Extractor::SurfaceNets) | 5 | 5 | [`Gapped`](ChunkSeams::Gapped) |
-    /// | [`DualContouring`](Extractor::DualContouring) | 4 | 2 | [`Gapped`](ChunkSeams::Gapped) |
-    /// | [`Subgrid`](Extractor::Subgrid) | 1 | 0 | [`Unverified`](ChunkSeams::Unverified) |
+    /// | [`SurfaceNets`](Extractor::SurfaceNets) | 5 | 0 | [`Gapped`](ChunkSeams::Gapped) |
+    /// | [`DualContouring`](Extractor::DualContouring) | 4 | 1 | [`Gapped`](ChunkSeams::Gapped) |
+    /// | [`Subgrid`](Extractor::Subgrid) | 0 | 0 | [`Closed`](ChunkSeams::Closed) |
     ///
-    /// `the_seam_counts_are_pinned` holds the first three, so they cannot drift.
+    /// `the_seam_counts_are_pinned` holds all four, so they cannot drift, and it
+    /// derives the block's bounds from the layout rather than writing them out —
+    /// **both hand-written versions were wrong**, one omitting `y` and one giving
+    /// `z` a bound twice the chunk's depth, and each inflated a count (M-132).
     ///
-    /// # Why `Subgrid` is unverified rather than closed
+    /// # Why `Subgrid` is closed
     ///
-    /// It reads 1 and 0, which is neither. **M-79 names a mechanism by which it
-    /// could crack and the measurement cannot rule out:** subgrid's conformity
-    /// is locality plus a *global* vertex ordering — two tetrahedra agree on the
-    /// canonical `i < j` because they share the face's global indices — and it
-    /// warns that *"a mesh that renumbered vertices per tet would crack along
-    /// every shared face"*. Chunks renumber. Whether the ordering here is
-    /// derived from world position or from a chunk-local index decides it, and
-    /// that has not been established. B-007 owns settling it.
+    /// Measured 0 across 20 configurations — two fields here, plus six field
+    /// phases at three sampling resolutions each — and its edge orientation is a
+    /// property of the grid rather than of a tetrahedron: `TETS[t]` is ordered by
+    /// inclusion, so a tet edge always runs from the lower cube-corner index to
+    /// the higher. **M-79's warning is about a different renumbering** — it says
+    /// a mesh that renumbered vertices *per tet* would crack along every shared
+    /// face, and chunking renumbers per chunk while leaving the within-cell
+    /// corner order untouched.
     #[must_use]
     pub fn chunk_seams(self) -> ChunkSeams {
         match self {
             Self::MarchingCubes => ChunkSeams::Closed,
             Self::SurfaceNets | Self::DualContouring => ChunkSeams::Gapped,
-            Self::Subgrid { .. } => ChunkSeams::Unverified,
+            Self::Subgrid { .. } => ChunkSeams::Closed,
         }
     }
 }
@@ -183,12 +191,13 @@ impl VoxelVolume {
     ///
     /// # Check [`Extractor::chunk_seams`] before choosing
     ///
-    /// A volume is always meshed **chunked**, and the dual methods do not tile:
-    /// [`SurfaceNets`](Extractor::SurfaceNets) and
-    /// [`DualContouring`](Extractor::DualContouring) leave gaps at every chunk
-    /// boundary, measured at 4-5 open edges on a single seam. That is structural
-    /// -- a boundary quad needs the neighbour cell's vertex -- and not something
-    /// a future release fixes.
+    /// A volume is always meshed **chunked**, and the dual methods are not
+    /// guaranteed to tile: [`SurfaceNets`](Extractor::SurfaceNets) and
+    /// [`DualContouring`](Extractor::DualContouring) measure up to 5 open edges
+    /// on a single seam, and 0 on other fields. That is structural -- a boundary
+    /// quad needs the neighbour cell's vertex -- and not something a future
+    /// release fixes. [`MarchingCubes`](Extractor::MarchingCubes) and
+    /// [`Subgrid`](Extractor::Subgrid) measure 0 everywhere tried.
     ///
     /// It is not refused here, because a consumer meshing a single chunk, or one
     /// whose gaps are never seen, is entitled to the sharper extractor. It is

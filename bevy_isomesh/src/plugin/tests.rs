@@ -369,15 +369,15 @@ fn seam_open_edges<S: VolumeField>(field: &S, extractor: Extractor) -> usize {
     let (_report, features) =
         isomesh::validate::validate_features(&all.positions, &all.indices, &cfg);
 
-    let (seam, tol) = (4.0f32, h * 0.25);
-    let outer = |v: [f32; 3]| {
-        v[0] < tol
-            || v[0] > 8.0 - tol
-            || v[1] < tol
-            || v[1] > 4.0 - tol
-            || v[2] < tol
-            || v[2] > 8.0 - tol
-    };
+    // The block's own six walls, derived from the layout rather than written
+    // out. **Both hand-written versions of this were wrong**: the first omitted
+    // `y` entirely, and the second gave `z` an upper bound of 8.0 when a chunk
+    // is only 4.0 deep -- so the `z` wall was never excluded and its edges were
+    // counted as seam failures. Deriving the bounds removes the opportunity.
+    let span = layout.cell_size() * layout.cells() as f32;
+    let hi = [span * 2.0, span, span];
+    let (seam, tol) = (span, h * 0.25);
+    let outer = |v: [f32; 3]| (0..3).any(|a| v[a] < tol || v[a] > hi[a] - tol);
     features
         .boundary_edges
         .iter()
@@ -421,6 +421,13 @@ fn the_seam_counts_are_pinned() {
         4,
         "dual contouring's chunk-seam gap changed"
     );
+    // B-007: subgrid tiles, and its zero is pinned alongside the others so it
+    // cannot quietly stop.
+    assert_eq!(
+        seam_open_edges(&Waves, Extractor::Subgrid { samples: 4 }),
+        0,
+        "subgrid stopped tiling across a chunk boundary"
+    );
 }
 
 #[test]
@@ -430,6 +437,7 @@ fn chunk_seams_reports_what_was_measured() {
         (Extractor::MarchingCubes, ChunkSeams::Closed),
         (Extractor::SurfaceNets, ChunkSeams::Gapped),
         (Extractor::DualContouring, ChunkSeams::Gapped),
+        (Extractor::Subgrid { samples: 4 }, ChunkSeams::Closed),
     ] {
         let open = seam_open_edges(&Waves, extractor);
         let says = extractor.chunk_seams();
@@ -440,9 +448,8 @@ fn chunk_seams_reports_what_was_measured() {
             ChunkSeams::Unverified => {}
         }
     }
-    // Unverified is a real state, not a placeholder for "probably fine".
     assert_eq!(
         Extractor::Subgrid { samples: 4 }.chunk_seams(),
-        ChunkSeams::Unverified
+        ChunkSeams::Closed
     );
 }
