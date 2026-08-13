@@ -16,13 +16,14 @@
 //!
 //! | | ms | share of the GPU path |
 //! |---|---:|---:|
-//! | upload | 8.40 | **87%** |
-//! | **geometry read-back — what this removes** | **0.78** | **8.1%** |
-//! | prefix scan + 4-byte total | 0.37 | 3.8% |
-//! | count + emit | 0.11 | 1.1% |
+//! | upload | 7.04 | **86%** |
+//! | **geometry read-back — what this removes** | **0.63** | **7.7%** |
+//! | prefix scan + 4-byte total | 0.37 | 4.5% |
+//! | count + emit | 0.11 | 1.3% |
 //!
-//! So this is worth about **8.1%** at 129³ — a larger share than before only
-//! because the path around it got 1.56× shorter. **The dominant cost is now the
+//! So this is worth about **7.7%** at 129³ — a larger share than before only
+//! because the path around it got shorter — 1.56× at GPU-010a, another 1.18×
+//! at GPU-012. **The dominant cost is now the
 //! upload, at 87%**, and that is field evaluation on the CPU rather than
 //! anything a renderer can fix: `FieldBuffer::sampled` evaluates the SDF host-
 //! side and copies the samples over. Evaluating the field *in* the shader is

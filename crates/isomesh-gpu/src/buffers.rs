@@ -38,6 +38,23 @@ impl FieldBuffer {
 
     /// Allocate and write `samples`, in `x`-fastest order.
     ///
+    /// # The obvious optimisation here is a pessimisation, measured
+    ///
+    /// This builds a `Vec<u8>` and hands it to `write_buffer`, which looks like
+    /// one copy too many. Three variants were measured at 129³ (M-153) and this
+    /// one wins:
+    ///
+    /// | | upload |
+    /// |---|---:|
+    /// | this: `Vec<u8>` + `write_buffer` | **8.40 ms** |
+    /// | `mapped_at_creation` + `write_iter`, no intermediate | 13.47 ms |
+    /// | `mapped_at_creation` + bulk `copy_from_slice` | 8.62 ms |
+    ///
+    /// Per-element writes into a mapping cost **1.6×**, because mapped memory
+    /// may be write-combining — which is exactly why `BufferViewMut` refuses to
+    /// deref to `[u8]`. A bulk memcpy into a mapping ties, so `write_buffer` was
+    /// already doing the efficient thing and there is nothing to reclaim here.
+    ///
     /// # Errors
     ///
     /// [`Error::SampleCountMismatch`] if the slice is not exactly
@@ -55,13 +72,25 @@ impl FieldBuffer {
         if got != expected {
             return Err(Error::SampleCountMismatch { expected, got });
         }
-        let field = Self::new(device, params);
         let mut bytes = Vec::with_capacity(samples.len() * 4);
-        for s in samples {
-            bytes.extend_from_slice(&s.to_le_bytes());
+        for sample in samples {
+            bytes.extend_from_slice(&sample.to_le_bytes());
         }
-        queue.write_buffer(&field.buffer, 0, &bytes);
-        Ok(field)
+        Ok(Self::from_bytes(device, queue, params, &bytes))
+    }
+
+    /// Allocate and write bytes that are already in the shader's layout.
+    ///
+    /// The one place a `FieldBuffer` is filled, so the descriptor exists once.
+    fn from_bytes(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        params: GridParams,
+        bytes: &[u8],
+    ) -> Self {
+        let field = Self::new(device, params);
+        queue.write_buffer(&field.buffer, 0, bytes);
+        field
     }
 
     /// Sample an `isomesh` field on the CPU and upload the result.
@@ -86,16 +115,21 @@ impl FieldBuffer {
         F: Sdf<Scalar = f32>,
     {
         let [sx, sy, sz] = params.samples();
-        let mut samples = Vec::with_capacity(params.sample_count() as usize);
+        // Bytes directly, rather than a `Vec<f32>` that is converted afterwards.
+        // That conversion was a second full pass over 8.4 MB at 129³, 1.14 ms of
+        // a 4.65 ms upload (M-152). Evaluation already touches every sample, so
+        // writing it in the shader's layout here costs nothing extra.
+        let mut bytes = Vec::with_capacity(params.sample_count() as usize * 4);
         // x fastest, matching GridParams' documented index order.
         for z in 0..sz {
             for y in 0..sy {
                 for x in 0..sx {
-                    samples.push(field.sample(params.sample_position([x, y, z])));
+                    let sample = field.sample(params.sample_position([x, y, z]));
+                    bytes.extend_from_slice(&sample.to_le_bytes());
                 }
             }
         }
-        Self::uploaded(device, queue, params, &samples)
+        Ok(Self::from_bytes(device, queue, params, &bytes))
     }
 
     /// The underlying buffer, for binding into a pipeline.
