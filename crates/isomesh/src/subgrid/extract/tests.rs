@@ -2328,4 +2328,99 @@ fn whether_any_field_reaches_subdivision_on_a_grid() {
         orphaned, 16_296,
         "the grid-level orphan count moved; it is pinned because A-014i owns it"
     );
+
+    // **Determinism, which the ticket asks for and which no fixture could check
+    // before this one.** T-004 covers the reference fields, where subdivision
+    // never runs, so the recursive path has never been held to it.
+    let mut again = MeshBuffer::<f64>::default();
+    SubgridMarchingTetrahedra::<f64>::new(16)
+        .expect("valid")
+        .extract(&Planes(96.0), &shape, lo, cell, &mut again)
+        .expect("the subdividing field extracts");
+    assert_eq!(
+        out.positions, again.positions,
+        "subdivision is not deterministic"
+    );
+    assert_eq!(
+        out.indices, again.indices,
+        "subdivision is not deterministic"
+    );
+
+    // **T-001 on the fixture**, welded first as everywhere else — M-96 measured
+    // the raw output as a per-tetrahedron soup, and subdivision adds a second
+    // layer of that, since children re-derive shared crossings as their own.
+    let mut welded = out.clone();
+    crate::weld::Welder::<f64>::new()
+        .weld(&mut welded, crate::weld::epsilon_for(cell))
+        .expect("weld");
+    let cfg = crate::validate::ValidateConfig::from_cell_size(cell).expect("a valid spacing");
+    let report = crate::validate::validate_indexed(&welded.positions, &welded.indices, &cfg);
+    std::println!(
+        "planes k=96 welded: {} verts, nm-edges {}, nm-verts {}, boundary {}, flipped {}",
+        welded.positions.len(),
+        report.non_manifold_edges,
+        report.non_manifold_vertices,
+        report.boundary_edges,
+        report.inconsistently_oriented_edges,
+    );
+
+    // **The control, before any of that is blamed on subdivision.** X17's rule:
+    // when a new feature shows a defect, check whether the old one has it too.
+    // This field is deliberately, violently under-resolved — `k = 96` over a
+    // cell of 0.25 is about four periods per cell — and X15 established that
+    // "the grid resolves the surface" is the *condition* for manifoldness. So
+    // the same grid and the same field through classic Marching Tetrahedra,
+    // which has no subdivision path at all, says whether these counts are
+    // subdivision's or the resolution's.
+    let mut classic = MeshBuffer::<f64>::default();
+    crate::marching_tetrahedra::MarchingTetrahedra::<f64>::new()
+        .extract(&Planes(96.0), &shape, lo, cell, &mut classic)
+        .expect("classic MT extracts");
+    let mut classic_welded = classic.clone();
+    crate::weld::Welder::<f64>::new()
+        .weld(&mut classic_welded, crate::weld::epsilon_for(cell))
+        .expect("weld");
+    let control =
+        crate::validate::validate_indexed(&classic_welded.positions, &classic_welded.indices, &cfg);
+    std::println!(
+        "planes k=96 classic MT: {} verts, nm-edges {}, nm-verts {}, boundary {}, flipped {}",
+        classic_welded.positions.len(),
+        control.non_manifold_edges,
+        control.non_manifold_vertices,
+        control.boundary_edges,
+        control.inconsistently_oriented_edges,
+    );
+
+    // **That control does not settle it, and saying so is the point.** Classic
+    // Marching Tetrahedra returns **2,113** vertices where subgrid returns
+    // 73,855: it asks one sign question per edge and M-67 measured that as
+    // blind to 95.6% of the configurations a tetrahedron can be in. It is not
+    // reconstructing the same surface and being cleaner about it — it is
+    // reconstructing a far simpler one. X17's control is the right instinct and
+    // the wrong instrument here.
+    //
+    // The comparison that *is* valid holds the algorithm fixed and moves the
+    // resolution: the same plane family at a frequency this grid resolves.
+    let mut resolved = MeshBuffer::<f64>::default();
+    SubgridMarchingTetrahedra::<f64>::new(16)
+        .expect("valid")
+        .extract(&Planes(8.0), &shape, lo, cell, &mut resolved)
+        .expect("the resolved field extracts");
+    let mut resolved_welded = resolved.clone();
+    crate::weld::Welder::<f64>::new()
+        .weld(&mut resolved_welded, crate::weld::epsilon_for(cell))
+        .expect("weld");
+    let fine = crate::validate::validate_indexed(
+        &resolved_welded.positions,
+        &resolved_welded.indices,
+        &cfg,
+    );
+    std::println!(
+        "planes k=8 subgrid: {} verts, nm-edges {}, nm-verts {}, boundary {}, flipped {}",
+        resolved_welded.positions.len(),
+        fine.non_manifold_edges,
+        fine.non_manifold_vertices,
+        fine.boundary_edges,
+        fine.inconsistently_oriented_edges,
+    );
 }
