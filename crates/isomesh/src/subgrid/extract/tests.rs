@@ -451,3 +451,656 @@ fn the_validity_suite_over_every_reference_field() {
     });
     assert_eq!(checked, 7, "the sweep did not reach every field");
 }
+
+// ---------------------------------------------------------------------------
+// A-014d's unblocking measurement.
+//
+// The ticket's `BLOCKED:` line asks for one thing and not another: *"instrument
+// the extractor to report which polygons actually coincide across a shared face
+// on `csg_difference`, and see whether that condition is expressible without
+// neighbour information."* Two implementation attempts of §3.2.3's inset are on
+// record and both made the measured result worse (M-101), so what follows
+// measures the premise instead of trying a third time.
+// ---------------------------------------------------------------------------
+
+/// One tetrahedron's slice of the triangle soup.
+///
+/// The extractor emits vertices per tetrahedron and shares none, so a triangle's
+/// provenance is recoverable from nothing but the order it was written in — as
+/// long as something records the boundaries while the extraction runs.
+struct TetRun {
+    cell: [u32; 3],
+    tet: usize,
+    first: usize,
+    count: usize,
+}
+
+/// The same extraction [`SubgridMarchingTetrahedra::extract`] performs, with the
+/// tetrahedron boundaries recorded.
+///
+/// Driving `cell_tet` directly rather than re-deriving provenance afterwards is
+/// what makes this measure the extractor instead of a lookalike, and the caller
+/// asserts the two agree bit-for-bit.
+fn soup_with_provenance<F: Sdf<Scalar = f64>>(
+    field: &F,
+    origin: [f64; 3],
+    cell_size: f64,
+    n: u32,
+    samples: u32,
+) -> (MeshBuffer<f64>, Vec<TetRun>) {
+    let mut mt = SubgridMarchingTetrahedra::<f64>::new(samples).expect("valid");
+    let mut out = MeshBuffer::<f64>::default();
+    let mut runs = Vec::new();
+    for z in 0..n - 1 {
+        for y in 0..n - 1 {
+            for x in 0..n - 1 {
+                for t in 0..TETS.len() {
+                    let first = out.indices.len() / 3;
+                    mt.cell_tet(field, origin, cell_size, [x, y, z], t, &mut out)
+                        .unwrap_or_else(|e| panic!("cell [{x}, {y}, {z}] tet {t}: {e}"));
+                    let count = out.indices.len() / 3 - first;
+                    if count > 0 {
+                        runs.push(TetRun {
+                            cell: [x, y, z],
+                            tet: t,
+                            first,
+                            count,
+                        });
+                    }
+                }
+            }
+        }
+    }
+    (out, runs)
+}
+
+/// A tetrahedron's four corners, by the expression `cell_tet` itself uses.
+///
+/// Written the same way for the same reason M-32 gives: two tetrahedra sharing a
+/// corner agree bit-for-bit only if the same expression computed it, so this is
+/// a copy of that loop rather than an equivalent one.
+fn tet_corners(origin: [f64; 3], cell_size: f64, cell: [u32; 3], t: usize) -> [[u64; 3]; 4] {
+    let mut corners = [[0u64; 3]; 4];
+    for (c, slot) in corners.iter_mut().enumerate() {
+        let offset = corner_offset(TETS[t][c]);
+        for axis in 0..3 {
+            let index = f64::from(cell[axis]) + f64::from(offset[axis]);
+            slot[axis] = (origin[axis] + cell_size * index).to_bits();
+        }
+    }
+    corners
+}
+
+/// A position as bits, so coincidence is exact rather than within a tolerance.
+///
+/// The extractor's own guarantee is bit-identical positions from the two sides
+/// of a shared face, so an epsilon here would be measuring the epsilon.
+fn point_key(p: [f64; 3]) -> [u64; 3] {
+    [p[0].to_bits(), p[1].to_bits(), p[2].to_bits()]
+}
+
+/// A triangle's three points, sorted — equal for two copies of one polygon
+/// however each was wound.
+fn triangle_key(mesh: &MeshBuffer<f64>, tri: usize) -> [[u64; 3]; 3] {
+    let mut key = triangle_points(mesh, tri);
+    key.sort_unstable();
+    key
+}
+
+/// A triangle's three points, in the order it was wound.
+fn triangle_points(mesh: &MeshBuffer<f64>, tri: usize) -> [[u64; 3]; 3] {
+    let at = |k: usize| point_key(mesh.positions[mesh.indices[tri * 3 + k] as usize]);
+    [at(0), at(1), at(2)]
+}
+
+/// The winding, as the rotation starting at the smallest point.
+///
+/// Two triangles over the same three points wind the same way iff these agree;
+/// §3.2.3's immersed pairs are expected to disagree, which is what makes them
+/// two copies of a surface rather than one surface counted twice.
+fn winding(mesh: &MeshBuffer<f64>, tri: usize) -> [[u64; 3]; 3] {
+    let p = triangle_points(mesh, tri);
+    let start = (0..3).min_by_key(|k| p[*k]).unwrap_or(0);
+    [p[start], p[(start + 1) % 3], p[(start + 2) % 3]]
+}
+
+/// A triangle's three edges, each as its two points sorted.
+fn triangle_edges(mesh: &MeshBuffer<f64>, tri: usize) -> [[[u64; 3]; 2]; 3] {
+    let p = triangle_points(mesh, tri);
+    let mut edges = [[p[0], p[1]], [p[1], p[2]], [p[2], p[0]]];
+    for e in &mut edges {
+        e.sort_unstable();
+    }
+    edges
+}
+
+/// **A-014d's unblocking measurement**, and the answer it produced.
+///
+/// The question is whether a tetrahedron can tell, on its own, that a polygon it
+/// is about to emit will also be emitted by its neighbour — because §3.2.3's
+/// inset has to be applied to *both* copies or neither, and this extractor is
+/// strictly per-tetrahedron.
+///
+/// Three things are counted, and only the third decides the ticket:
+///
+/// 1. **How many polygons coincide, and between how many tetrahedra.** A pair is
+///    the immersion §3.2.3 describes. Anything else is a different defect.
+/// 2. **Whether the emission is symmetric.** If a tetrahedron ever emits a
+///    face polygon its neighbour does not, no per-tetrahedron rule can predict
+///    the duplication, and the inset needs neighbour information for that reason
+///    alone.
+/// 3. **How many *other* tetrahedra use the edges of a coincident polygon.**
+///    This is M-101's failure, stated as a number. §3.2.3 moves the midpoints of
+///    polygon edges lying in an edge of the shared face; every other tetrahedron
+///    meeting at that edge keeps its vertices where they were, so each one is a
+///    seam the inset tears open unless it moves too.
+#[test]
+fn which_polygons_coincide_across_a_shared_face() {
+    use alloc::collections::{BTreeMap, BTreeSet};
+
+    use crate::fields::ReferenceField;
+
+    // field -> (coincident, pairs inside one cell, polygons with foreign edge
+    // users, foreign edge users, of those in another cell)
+    let expected: [(&str, u64, u64, u64, u64, u64); 7] = [
+        ("sphere", 0, 0, 0, 0, 0),
+        ("torus", 0, 0, 0, 0, 0),
+        ("box_exact", 30, 30, 30, 348, 168),
+        ("csg_difference", 33, 33, 27, 312, 150),
+        ("thin_plate", 4, 0, 0, 0, 0),
+        ("gyroid", 1, 1, 1, 18, 18),
+        ("fbm_terrain", 4, 4, 0, 0, 0),
+    ];
+
+    let mut rows = 0;
+    crate::for_each_reference_field!(f64, |name, field| {
+        let (lo, hi) = field.domain();
+        let n = 17u32;
+        let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+        let (mesh, runs) = soup_with_provenance(&field, lo, cell, n, 16);
+
+        // The instrument must be measuring the extractor and not something that
+        // resembles it. Same loop, same order, same output -- asserted, because
+        // a measurement of a lookalike would be worse than no measurement.
+        let shape = RuntimeShape3::new([n; 3]).expect("a cubic grid");
+        let mut reference = MeshBuffer::<f64>::default();
+        SubgridMarchingTetrahedra::<f64>::new(16)
+            .expect("valid")
+            .extract(&field, &shape, lo, cell, &mut reference)
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
+        assert_eq!(
+            mesh.positions, reference.positions,
+            "{name}: instrument drift"
+        );
+        assert_eq!(mesh.indices, reference.indices, "{name}: instrument drift");
+
+        let triangles = mesh.indices.len() / 3;
+        let mut owner = alloc::vec![usize::MAX; triangles];
+        for (r, run) in runs.iter().enumerate() {
+            for slot in owner.iter_mut().skip(run.first).take(run.count) {
+                *slot = r;
+            }
+        }
+
+        // Every triangle occupying a given three points, and every triangle
+        // touching a given two.
+        let mut by_shape: BTreeMap<[[u64; 3]; 3], Vec<usize>> = BTreeMap::new();
+        let mut by_edge: BTreeMap<[[u64; 3]; 2], Vec<usize>> = BTreeMap::new();
+        for tri in 0..triangles {
+            by_shape
+                .entry(triangle_key(&mesh, tri))
+                .or_default()
+                .push(tri);
+            for edge in triangle_edges(&mesh, tri) {
+                by_edge.entry(edge).or_default().push(tri);
+            }
+        }
+
+        let mut coincident = 0u64;
+        let mut over_two_tets = 0u64;
+        let mut not_face_adjacent = 0u64;
+        let mut same_winding = 0u64;
+        let mut with_foreign_edge_users = 0u64;
+        let mut worst_foreign = 0usize;
+        let mut foreign_total = 0u64;
+        // The architectural question, and the only one whose answer changes what
+        // A-014d costs: an inset confined to one cell is a change to `cell_tet`'s
+        // caller, and one that crosses cells is a change to the extractor.
+        let mut pair_in_one_cell = 0u64;
+        let mut foreign_in_one_cell = 0u64;
+        let mut foreign_across_cells = 0u64;
+
+        for group in by_shape.values() {
+            let tets: BTreeSet<usize> = group.iter().map(|tri| owner[*tri]).collect();
+            if tets.len() < 2 {
+                continue;
+            }
+            coincident += 1;
+            if tets.len() > 2 {
+                over_two_tets += 1;
+            }
+
+            // Do the two tetrahedra actually share a face? Three common corners
+            // is a face; anything less means the coincidence is not §3.2.3's.
+            if tets.len() == 2 {
+                let mut it = tets.iter();
+                let (Some(a), Some(b)) = (it.next(), it.next()) else {
+                    continue;
+                };
+                let ca = tet_corners(lo, cell, runs[*a].cell, runs[*a].tet);
+                let cb = tet_corners(lo, cell, runs[*b].cell, runs[*b].tet);
+                let shared = ca.iter().filter(|c| cb.contains(c)).count();
+                if shared != 3 {
+                    not_face_adjacent += 1;
+                }
+            }
+
+            // Two copies of one polygon must be wound oppositely to be two sides
+            // of a sheet rather than the same side twice.
+            let windings: BTreeSet<[[u64; 3]; 3]> =
+                group.iter().map(|tri| winding(&mesh, *tri)).collect();
+            if windings.len() < group.len() {
+                same_winding += 1;
+            }
+
+            // The decider: who else is standing on this polygon's edges.
+            let cells: BTreeSet<[u32; 3]> = tets.iter().map(|t| runs[*t].cell).collect();
+            if cells.len() == 1 {
+                pair_in_one_cell += 1;
+            }
+
+            let mut foreign = 0usize;
+            for edge in triangle_edges(&mesh, group[0]) {
+                if let Some(users) = by_edge.get(&edge) {
+                    for tri in users.iter().filter(|tri| !tets.contains(&owner[**tri])) {
+                        foreign += 1;
+                        if cells.contains(&runs[owner[*tri]].cell) {
+                            foreign_in_one_cell += 1;
+                        } else {
+                            foreign_across_cells += 1;
+                        }
+                    }
+                }
+            }
+            if foreign > 0 {
+                with_foreign_edge_users += 1;
+            }
+            foreign_total += foreign as u64;
+            worst_foreign = worst_foreign.max(foreign);
+        }
+
+        std::println!(
+            "{name:<15} {triangles:>7} tris {:>5} tets | coincident {coincident:>4} \
+             (>2 tets {over_two_tets}, not face-adjacent {not_face_adjacent}, \
+             same winding {same_winding}) | with foreign edge users {with_foreign_edge_users} \
+             (total {foreign_total}, worst {worst_foreign}) | pair in one cell \
+             {pair_in_one_cell} | foreign same-cell {foreign_in_one_cell} \
+             cross-cell {foreign_across_cells}",
+            runs.len(),
+        );
+
+        // Two copies of one polygon must be wound oppositely to be two sides of
+        // a sheet. Every one of them is wound the *same* way, because A-014e
+        // imposes winding from the gradient at the centroid and two coincident
+        // triangles share a centroid -- so the duplication survives the weld as
+        // a doubled face rather than as a two-sided sheet.
+        assert_eq!(same_winding, coincident, "{name}: a pair wound oppositely");
+        let want = expected
+            .iter()
+            .find(|(f, ..)| *f == name)
+            .unwrap_or_else(|| panic!("{name} is not in the pinned table"));
+        assert_eq!(
+            (
+                coincident,
+                pair_in_one_cell,
+                with_foreign_edge_users,
+                foreign_total,
+                foreign_across_cells
+            ),
+            (want.1, want.2, want.3, want.4, want.5),
+            "{name}"
+        );
+        rows += 1;
+    });
+    assert_eq!(rows, 7, "the sweep did not reach every field");
+
+    // **The answer to A-014d's blocking question.** `csg_difference` carries 33
+    // coincident polygons; 27 of them have other tetrahedra standing on their
+    // boundary edges, 312 such triangles in total and up to 12 on one polygon.
+    // §3.2.3 moves the midpoints of those edges, so every one of those
+    // triangles has to move with it or the disk detaches -- which is exactly
+    // what M-101 measured twice. **150 of the 312 belong to a different cell**,
+    // so the information needed is not merely the sibling tetrahedron: it
+    // crosses the cell boundary, and no per-tetrahedron or per-cell rule can
+    // carry it. That makes the inset an architectural change, as the ticket
+    // suspected, and now on a number rather than a suspicion.
+}
+
+/// **Where A-014d's three defects actually come from**, traced to the
+/// tetrahedra that emitted them.
+///
+/// The first measurement above answered the ticket's question and raised a
+/// louder one: `box_exact` carries 30 coincident polygons and validates
+/// **clean**, while `csg_difference` carries 33 and reports only 3 non-manifold
+/// edges. If duplication were the defect those two numbers would track each
+/// other, and they do not — so this asks which edges are actually bad and what
+/// is standing on them.
+///
+/// The census is taken on the soup by **position**, because that is what welding
+/// merges by, and it is checked against the welded mesh's own report rather than
+/// trusted: a provenance census that disagreed with `validate_indexed` would be
+/// describing a different mesh.
+#[test]
+fn the_defects_traced_back_to_the_tetrahedra_that_made_them() {
+    use alloc::collections::{BTreeMap, BTreeSet};
+
+    use crate::fields::ReferenceField;
+    use crate::validate::{ValidateConfig, validate_indexed};
+
+    // field -> (bad edges, of those duplication-only, three distinct polygons,
+    // collapsed triangles)
+    let expected: [(&str, u64, u64, u64, u64); 7] = [
+        ("sphere", 0, 0, 0, 0),
+        ("torus", 0, 0, 0, 0),
+        ("box_exact", 0, 0, 0, 468),
+        ("csg_difference", 6, 3, 3, 372),
+        ("thin_plate", 2, 0, 2, 12),
+        ("gyroid", 0, 0, 0, 12),
+        ("fbm_terrain", 4, 2, 2, 0),
+    ];
+
+    let mut rows = 0;
+    crate::for_each_reference_field!(f64, |name, field| {
+        let (lo, hi) = field.domain();
+        let n = 17u32;
+        let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+        let (mesh, runs) = soup_with_provenance(&field, lo, cell, n, 16);
+        let triangles = mesh.indices.len() / 3;
+        let mut owner = alloc::vec![usize::MAX; triangles];
+        for (r, run) in runs.iter().enumerate() {
+            for slot in owner.iter_mut().skip(run.first).take(run.count) {
+                *slot = r;
+            }
+        }
+
+        // Triangles with a repeated point collapse to nothing under the weld, so
+        // they are counted and set aside rather than allowed to invent edges.
+        let mut collapsed = 0u64;
+        let mut by_edge: BTreeMap<[[u64; 3]; 2], Vec<usize>> = BTreeMap::new();
+        for tri in 0..triangles {
+            let p = triangle_points(&mesh, tri);
+            if p[0] == p[1] || p[1] == p[2] || p[2] == p[0] {
+                collapsed += 1;
+                continue;
+            }
+            for edge in triangle_edges(&mesh, tri) {
+                by_edge.entry(edge).or_default().push(tri);
+            }
+        }
+
+        // The same mesh through the real gate, so the census can be checked
+        // rather than believed.
+        let shape = RuntimeShape3::new([n; 3]).expect("a cubic grid");
+        let mut welded = MeshBuffer::<f64>::default();
+        SubgridMarchingTetrahedra::<f64>::new(16)
+            .expect("valid")
+            .extract(&field, &shape, lo, cell, &mut welded)
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
+        crate::weld::Welder::<f64>::new()
+            .weld(&mut welded, cell * 1e-6)
+            .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
+        let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
+        let report = validate_indexed(&welded.positions, &welded.indices, &cfg);
+
+        // Of the bad edges, how many are bad *only* because one polygon was
+        // emitted twice? Collapse each edge's faces to distinct shapes: if
+        // fewer than three remain, duplication is the whole story and §3.2.3's
+        // inset is the fix. If three or more distinct polygons genuinely meet,
+        // it is not.
+        let mut bad = 0u64;
+        let mut duplication_only = 0u64;
+        let mut genuinely_three = 0u64;
+        let mut tets_on_worst = 0usize;
+        for tris in by_edge.values().filter(|t| t.len() >= 3) {
+            bad += 1;
+            let distinct: BTreeSet<[[u64; 3]; 3]> =
+                tris.iter().map(|t| triangle_key(&mesh, *t)).collect();
+            if distinct.len() < 3 {
+                duplication_only += 1;
+            } else {
+                genuinely_three += 1;
+            }
+            let tets: BTreeSet<usize> = tris.iter().map(|t| owner[*t]).collect();
+            tets_on_worst = tets_on_worst.max(tets.len());
+        }
+        let soup_boundary = by_edge.values().filter(|t| t.len() == 1).count();
+
+        std::println!(
+            "{name:<15} welded nm-edges {:>3} nm-verts {:>3} flipped {:>3} boundary {:>4} \
+             | soup: bad edges {bad:>3} (duplication-only {duplication_only}, \
+             three-distinct {genuinely_three}, worst tets {tets_on_worst}) \
+             collapsed tris {collapsed:>3} soup-boundary {soup_boundary}",
+            report.non_manifold_edges,
+            report.non_manifold_vertices,
+            report.inconsistently_oriented_edges,
+            report.boundary_edges,
+        );
+        let want = expected
+            .iter()
+            .find(|(f, ..)| *f == name)
+            .unwrap_or_else(|| panic!("{name} is not in the pinned table"));
+        assert_eq!(
+            (bad, duplication_only, genuinely_three, collapsed),
+            (want.1, want.2, want.3, want.4),
+            "{name}"
+        );
+        rows += 1;
+    });
+    assert_eq!(rows, 7, "the sweep did not reach every field");
+
+    // **`box_exact` is the result that re-aims the ticket.** It carries the most
+    // coincident polygons of any field -- 30, with 348 triangles standing on
+    // their edges -- and validates completely clean. Coincidence is therefore
+    // not the defect, and 468 of its triangles are zero-area, which §3.2's
+    // boundary disks emit by construction (V-21) and the weld removes.
+}
+
+/// The three surviving non-manifold edges on `csg_difference`, named.
+///
+/// The census above found six bad edges in the soup where the welded mesh
+/// reports three, so which three survive is a matter of record rather than
+/// inference. This matches them by position — the welder merges by position, so
+/// a welded vertex carries a soup vertex's exact bits — and prints what is
+/// standing on each one.
+#[test]
+fn the_surviving_non_manifold_edges_are_not_duplicated_polygons() {
+    use alloc::collections::{BTreeMap, BTreeSet};
+
+    use crate::fields::{ReferenceField, csg_difference};
+    use crate::validate::{ValidateConfig, validate_features};
+
+    let field = csg_difference::<f64>();
+    let (lo, hi) = field.domain();
+    let n = 17u32;
+    let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+    let (mesh, runs) = soup_with_provenance(&field, lo, cell, n, 16);
+    let triangles = mesh.indices.len() / 3;
+    let mut owner = alloc::vec![usize::MAX; triangles];
+    for (r, run) in runs.iter().enumerate() {
+        for slot in owner.iter_mut().skip(run.first).take(run.count) {
+            *slot = r;
+        }
+    }
+    let mut by_edge: BTreeMap<[[u64; 3]; 2], Vec<usize>> = BTreeMap::new();
+    for tri in 0..triangles {
+        let p = triangle_points(&mesh, tri);
+        if p[0] == p[1] || p[1] == p[2] || p[2] == p[0] {
+            continue;
+        }
+        for edge in triangle_edges(&mesh, tri) {
+            by_edge.entry(edge).or_default().push(tri);
+        }
+    }
+
+    let shape = RuntimeShape3::new([n; 3]).expect("a cubic grid");
+    let mut welded = MeshBuffer::<f64>::default();
+    SubgridMarchingTetrahedra::<f64>::new(16)
+        .expect("valid")
+        .extract(&field, &shape, lo, cell, &mut welded)
+        .expect("extraction");
+    crate::weld::Welder::<f64>::new()
+        .weld(&mut welded, cell * 1e-6)
+        .expect("weld");
+    let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
+    let (report, features) = validate_features(&welded.positions, &welded.indices, &cfg);
+    assert_eq!(report.non_manifold_edges, 3, "the pinned count moved");
+
+    let mut duplication_only = 0;
+    let mut three_distinct = 0;
+    for edge in &features.edges {
+        let mut key = [
+            point_key(welded.positions[edge[0] as usize]),
+            point_key(welded.positions[edge[1] as usize]),
+        ];
+        key.sort_unstable();
+        let Some(tris) = by_edge.get(&key) else {
+            panic!("a welded non-manifold edge has no soup edge with the same bits");
+        };
+        let distinct: BTreeSet<[[u64; 3]; 3]> =
+            tris.iter().map(|t| triangle_key(&mesh, *t)).collect();
+        let tets: BTreeSet<usize> = tris.iter().map(|t| owner[*t]).collect();
+        if distinct.len() < 3 {
+            duplication_only += 1;
+        } else {
+            three_distinct += 1;
+        }
+        std::println!(
+            "  edge: {} soup faces, {} distinct polygons, {} tetrahedra {:?}",
+            tris.len(),
+            distinct.len(),
+            tets.len(),
+            tets.iter()
+                .map(|t| (runs[*t].cell, runs[*t].tet))
+                .collect::<Vec<_>>(),
+        );
+    }
+
+    // The result A-014d turns on. §3.2.3's inset separates two *coincident
+    // copies of one polygon*; not one of the surviving defects is that.
+    assert_eq!(
+        (duplication_only, three_distinct),
+        (0, 3),
+        "every surviving non-manifold edge should be three distinct polygons meeting"
+    );
+}
+
+/// Whether `gyroid`'s 138 inconsistently-oriented edges are A-014d's to fix.
+///
+/// The ticket says they are — *"the same cause wearing a different face"* — on
+/// the grounds that 12 triangles have zero area and 24 have the gradient lying
+/// in the triangle's plane, so §3.2.3's inset would give them area and a normal
+/// transverse to the gradient. The first measurement above found **no
+/// §3.2.3 pair on `gyroid` at all**, which makes "the same cause" checkable
+/// rather than assumed: this asks what the flipped edges are actually touching.
+///
+/// A-014e decides winding by `dot(face_normal, gradient(centroid))`, so a
+/// triangle whose normal is perpendicular to the gradient has no answer, and a
+/// zero-area triangle has no normal. Both would show up here as a `|cos|` at or
+/// near zero.
+#[test]
+fn what_gyroids_flipped_edges_are_standing_on() {
+    use alloc::collections::BTreeSet;
+
+    use crate::fields::{ReferenceField, capped_gyroid};
+    use crate::validate::{ValidateConfig, validate_features};
+
+    let field = capped_gyroid::<f64>();
+    let (lo, hi) = field.domain();
+    let n = 17u32;
+    let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+    let shape = RuntimeShape3::new([n; 3]).expect("a cubic grid");
+    let mut mesh = MeshBuffer::<f64>::default();
+    SubgridMarchingTetrahedra::<f64>::new(16)
+        .expect("valid")
+        .extract(&field, &shape, lo, cell, &mut mesh)
+        .expect("extraction");
+    crate::weld::Welder::<f64>::new()
+        .weld(&mut mesh, cell * 1e-6)
+        .expect("weld");
+    let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
+    let (report, features) = validate_features(&mesh.positions, &mesh.indices, &cfg);
+    assert_eq!(
+        report.inconsistently_oriented_edges, 138,
+        "the pinned count moved"
+    );
+
+    // Every triangle on a flipped edge, once.
+    let mut on_flipped = BTreeSet::new();
+    for tri in 0..mesh.indices.len() / 3 {
+        let v = [
+            mesh.indices[tri * 3],
+            mesh.indices[tri * 3 + 1],
+            mesh.indices[tri * 3 + 2],
+        ];
+        for k in 0..3 {
+            let mut edge = [v[k], v[(k + 1) % 3]];
+            edge.sort_unstable();
+            if features.inconsistently_oriented_edges.contains(&edge) {
+                on_flipped.insert(tri);
+            }
+        }
+    }
+
+    // The two quantities A-014e's vote depends on. A triangle it cannot decide
+    // is one with no area or with its normal perpendicular to the gradient.
+    let mut undecidable = 0u64;
+    let mut zero_area = 0u64;
+    let mut decisive = 0u64;
+    for tri in &on_flipped {
+        let p = [
+            mesh.positions[mesh.indices[tri * 3] as usize],
+            mesh.positions[mesh.indices[tri * 3 + 1] as usize],
+            mesh.positions[mesh.indices[tri * 3 + 2] as usize],
+        ];
+        let face = crate::vec3::cross(crate::vec3::sub(p[1], p[0]), crate::vec3::sub(p[2], p[0]));
+        let area = crate::vec3::length(face) * 0.5;
+        let third = 1.0 / 3.0;
+        let centroid = [
+            (p[0][0] + p[1][0] + p[2][0]) * third,
+            (p[0][1] + p[1][1] + p[2][1]) * third,
+            (p[0][2] + p[1][2] + p[2][2]) * third,
+        ];
+        let g = field.gradient(centroid);
+        let scale = crate::vec3::length(face) * crate::vec3::length(g);
+        if area <= f64::EPSILON * cell * cell {
+            zero_area += 1;
+        } else if scale > 0.0 && (crate::vec3::dot(face, g) / scale).abs() < 1e-6 {
+            undecidable += 1;
+        } else {
+            decisive += 1;
+        }
+    }
+
+    std::println!(
+        "gyroid: {} triangles on the 138 flipped edges -- zero-area {zero_area}, \
+         gradient-in-plane {undecidable}, decisive {decisive}",
+        on_flipped.len(),
+    );
+
+    // **The ticket's mechanism is real and accounts for 8% of the defect.** 15
+    // of the 186 triangles have the gradient in their own plane, so A-014e's
+    // vote genuinely had no answer for them and giving them a transverse normal
+    // would settle it. The other **171 have a decisive vote and disagree with
+    // their neighbour anyway** -- two triangles of one sheet, each correctly
+    // oriented against the gradient at its own centroid, wound opposite ways.
+    // That is the per-triangle vote of A-014e, not §3.2.3's immersion, and no
+    // amount of insetting reaches it.
+    //
+    // Zero-area is 0 rather than the soup's 12 because the weld removes a
+    // triangle with a repeated vertex before this ever sees it.
+    assert_eq!(
+        (zero_area, undecidable, decisive),
+        (0, 15, 171),
+        "gyroid's flipped edges moved"
+    );
+}
