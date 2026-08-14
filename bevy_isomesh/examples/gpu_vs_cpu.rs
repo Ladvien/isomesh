@@ -49,7 +49,9 @@ use common::{CommonPlugin, DemoStats, ViewFlags};
 use isomesh::fields::{BoxExact, Sphere, ThinPlate, Torus, csg_difference};
 use isomesh::marching_cubes::MarchingCubes;
 use isomesh::{MeshBuffer, RuntimeShape3, Sdf};
-use isomesh_gpu::{ExtractTimings, FieldBuffer, GridParams, MarchingCubesGpu};
+use isomesh_gpu::{
+    ExtractTimings, FieldBuffer, FieldSampler, GpuField, GridParams, MarchingCubesGpu,
+};
 
 /// Samples per axis, unless `ISOMESH_SAMPLES` says otherwise.
 const DEFAULT_SAMPLES: u32 = 65;
@@ -57,6 +59,17 @@ const DEFAULT_SAMPLES: u32 = 65;
 /// Resolutions the sweep visits. Powers-of-two spacing where possible, so the
 /// comparison is not also measuring M-143's rounding difference.
 const SWEEP: [u32; 6] = [17, 33, 49, 65, 97, 129];
+
+/// The GPU-side equivalent of the example's field index, where one exists.
+fn gpu_field_at(index: usize) -> Option<GpuField> {
+    match index % 5 {
+        0 => Some(GpuField::Sphere),
+        1 => Some(GpuField::Torus),
+        2 => Some(GpuField::BoxExact),
+        // csg_difference and thin_plate have no GPU implementation yet.
+        _ => None,
+    }
+}
 
 /// The fields `1`-`5` select.
 fn field_at(index: usize) -> (&'static str, Box<dyn Sdf<Scalar = f32> + Send + Sync>) {
@@ -76,6 +89,16 @@ struct Point {
     triangles: usize,
     cpu_ms: f64,
     upload_ms: f64,
+    /// The whole path with the field **produced on the GPU** instead of
+    /// uploaded: the sampling pass plus the extraction, end to end.
+    ///
+    /// One number rather than a breakdown, because the sampling pass cannot be
+    /// timed on its own from the CPU — `sample()` submits and returns, so a
+    /// clock around it reads zero regardless of what the GPU does. What can be
+    /// timed is a span that ends in a wait, and `extract_buffers` supplies one.
+    /// `None` when the field has no GPU implementation — GPU-011a covers four
+    /// of the seven.
+    gpu_field_ms: Option<f64>,
     gpu: ExtractTimings,
 }
 
@@ -88,6 +111,11 @@ impl Point {
     /// What a caller pays if the mesh stays on the GPU.
     fn gpu_compute_ms(&self) -> f64 {
         self.gpu.count_ms + self.gpu.emit_ms
+    }
+
+    /// The same, with the field produced on the GPU instead of uploaded.
+    fn gpu_field_total_ms(&self) -> Option<f64> {
+        self.gpu_field_ms
     }
 }
 
@@ -109,7 +137,7 @@ struct State {
 }
 
 #[derive(Resource)]
-struct Gpu(MarchingCubesGpu);
+struct Gpu(MarchingCubesGpu, FieldSampler);
 
 #[derive(Component)]
 struct Surface;
@@ -139,8 +167,10 @@ fn setup(
     queue: Res<RenderQueue>,
     mut state: ResMut<State>,
 ) {
+    let sampler = FieldSampler::new(device.wgpu_device())
+        .expect("the field sampler is this crate's own shader");
     match MarchingCubesGpu::new(device.wgpu_device(), &queue) {
-        Ok(pipeline) => commands.insert_resource(Gpu(pipeline)),
+        Ok(pipeline) => commands.insert_resource(Gpu(pipeline, sampler)),
         // No CPU fallback: a comparison demo that silently ran one side twice
         // would report a ratio of 1.0 and look like a result.
         Err(why) => panic!("could not build the GPU pipeline on Bevy's device: {why}"),
@@ -149,8 +179,11 @@ fn setup(
 }
 
 /// Run both extractors once at `samples`, timing each part.
+#[allow(clippy::too_many_arguments)]
 fn measure(
     gpu: &MarchingCubesGpu,
+    sampler: &FieldSampler,
+    gpu_field: Option<GpuField>,
     device: &RenderDevice,
     queue: &RenderQueue,
     field: &dyn Sdf<Scalar = f32>,
@@ -164,6 +197,16 @@ fn measure(
     let started = Instant::now();
     let buffer = FieldBuffer::sampled(device.wgpu_device(), queue, grid, &field).ok()?;
     let upload_ms = started.elapsed().as_secs_f64() * 1000.0;
+
+    // The same extraction with the field produced by a compute pass rather than
+    // uploaded. Timed as one span ending in `extract_buffers`, which waits.
+    let gpu_field_ms = gpu_field.map(|which| {
+        let started = Instant::now();
+        if let Ok(produced) = sampler.sample(device.wgpu_device(), queue, grid, which) {
+            let _ = gpu.extract_buffers(device.wgpu_device(), queue, &produced);
+        }
+        started.elapsed().as_secs_f64() * 1000.0
+    });
 
     let mesh = gpu.extract(device.wgpu_device(), queue, &buffer).ok()?;
 
@@ -180,6 +223,7 @@ fn measure(
         triangles: mesh.triangle_count(),
         cpu_ms,
         upload_ms,
+        gpu_field_ms,
         gpu: mesh.timings,
     })
 }
@@ -191,15 +235,18 @@ fn measure(
 /// reason. Component-wise rather than picking the run with the median total:
 /// the breakdown is the product here, and a total can be median while every
 /// part of it is an outlier.
+#[allow(clippy::too_many_arguments)]
 fn measure_median(
     gpu: &MarchingCubesGpu,
+    sampler: &FieldSampler,
+    gpu_field: Option<GpuField>,
     device: &RenderDevice,
     queue: &RenderQueue,
     field: &dyn Sdf<Scalar = f32>,
     samples: u32,
 ) -> Option<Point> {
     let runs: Vec<Point> = (0..3)
-        .filter_map(|_| measure(gpu, device, queue, field, samples))
+        .filter_map(|_| measure(gpu, sampler, gpu_field, device, queue, field, samples))
         .collect();
     if runs.len() < 3 {
         return None;
@@ -214,6 +261,9 @@ fn measure_median(
         triangles: runs[0].triangles,
         cpu_ms: pick(|p| p.cpu_ms),
         upload_ms: pick(|p| p.upload_ms),
+        gpu_field_ms: runs[0]
+            .gpu_field_ms
+            .map(|_| median([0, 1, 2].map(|i| runs[i].gpu_field_ms.unwrap_or(0.0)))),
         gpu: ExtractTimings {
             count_ms: pick(|p| p.gpu.count_ms),
             scan_ms: pick(|p| p.gpu.scan_ms),
@@ -257,6 +307,7 @@ fn run(
         return;
     };
     let (name, field) = field_at(flags.field);
+    let gpu_field = gpu_field_at(flags.field);
 
     if keyboard.just_pressed(KeyCode::KeyS) || auto.0 {
         auto.0 = false;
@@ -268,12 +319,28 @@ fn run(
         // call. A sweep that starts cold reports that as the smallest grid
         // being the slowest, which is exactly backwards (M-145).
         for _ in 0..2 {
-            measure(&gpu.0, &device, &queue, field.as_ref(), SWEEP[0]);
+            measure(
+                &gpu.0,
+                &gpu.1,
+                gpu_field,
+                &device,
+                &queue,
+                field.as_ref(),
+                SWEEP[0],
+            );
         }
         for samples in SWEEP {
-            if let Some(point) = measure_median(&gpu.0, &device, &queue, field.as_ref(), samples) {
+            if let Some(point) = measure_median(
+                &gpu.0,
+                &gpu.1,
+                gpu_field,
+                &device,
+                &queue,
+                field.as_ref(),
+                samples,
+            ) {
                 info!(
-                    "{name} {:>3}^3: {:>7} tris | cpu {:>8.2} ms | gpu total {:>8.2} = upload {:>7.2} + count {:>6.2} + scan {:>6.2} + emit {:>6.2} + geom-rb {:>7.2} | compute-only {:>6.2} | readback {:>4.0}%",
+                    "{name} {:>3}^3: {:>7} tris | cpu {:>8.2} ms | gpu total {:>8.2} = upload {:>7.2} + count {:>6.2} + scan {:>6.2} + emit {:>6.2} + geom-rb {:>7.2} | compute-only {:>6.2} | readback {:>4.0}% | field-on-gpu {:>7.2} ms",
                     point.samples,
                     point.triangles,
                     point.cpu_ms,
@@ -285,6 +352,7 @@ fn run(
                     point.gpu.geometry_readback_ms,
                     point.gpu_compute_ms(),
                     100.0 * point.gpu.readback_share(),
+                    point.gpu_field_total_ms().unwrap_or(f64::NAN),
                 );
                 state.sweep.push(point);
             }
@@ -301,7 +369,15 @@ fn run(
     }
     *last = Some(want);
 
-    let Some(point) = measure(&gpu.0, &device, &queue, field.as_ref(), state.samples) else {
+    let Some(point) = measure(
+        &gpu.0,
+        &gpu.1,
+        gpu_field,
+        &device,
+        &queue,
+        field.as_ref(),
+        state.samples,
+    ) else {
         return;
     };
     state.field = name;
@@ -371,11 +447,11 @@ fn run(
 /// numbers are already on screen and in the log either way.
 fn write_sweep_csv(field: &str, sweep: &[Point]) {
     let mut out = String::from(
-        "field,samples,triangles,cpu_ms,upload_ms,count_ms,scan_ms,emit_ms,geometry_readback_ms,gpu_total_ms,gpu_compute_ms\n",
+        "field,samples,triangles,cpu_ms,upload_ms,count_ms,scan_ms,emit_ms,geometry_readback_ms,gpu_total_ms,gpu_compute_ms,gpu_field_total_ms\n",
     );
     for p in sweep {
         out.push_str(&format!(
-            "{field},{},{},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6}\n",
+            "{field},{},{},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6}\n",
             p.samples,
             p.triangles,
             p.cpu_ms,
@@ -386,6 +462,7 @@ fn write_sweep_csv(field: &str, sweep: &[Point]) {
             p.gpu.geometry_readback_ms,
             p.gpu_total_ms(),
             p.gpu_compute_ms(),
+            p.gpu_field_total_ms().unwrap_or(f64::NAN),
         ));
     }
     let path = "../docs/measurements/gpu_vs_cpu.csv";
@@ -472,6 +549,14 @@ fn report(state: Res<State>, mut stats: ResMut<DemoStats>) {
             "compute only (mesh stays on the gpu)     {:>8.2} ms   {compute_ratio:>5.2}x cpu",
             p.gpu_compute_ms()
         ),
+        match p.gpu_field_total_ms() {
+            Some(ms) => format!(
+                "field evaluated on the gpu, end to end   {:>8.2} ms   {:>5.2}x cpu   (no upload at all)",
+                ms,
+                if p.cpu_ms > 0.0 { ms / p.cpu_ms } else { 0.0 }
+            ),
+            None => "field evaluated on the gpu: not implemented for this field".to_string(),
+        },
     ];
 
     if !state.sweep.is_empty() {

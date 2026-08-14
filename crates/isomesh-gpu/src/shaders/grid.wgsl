@@ -46,6 +46,19 @@ fn grid_position(g: GridParams, at: vec3<u32>) -> vec3<f32> {
     return g.placement.xyz + g.placement.w * vec3<f32>(at);
 }
 
+// The 3-D index of a flat sample index -- the inverse of grid_index.
+//
+// Shared here rather than rewritten per kernel: a transposition between the
+// forward and inverse mapping produces a field that is sampled correctly and
+// stored rotated, which looks like a meshing bug.
+fn grid_sample_at(g: GridParams, flat: u32) -> vec3<u32> {
+    return vec3<u32>(
+        flat % g.samples.x,
+        (flat / g.samples.x) % g.samples.y,
+        flat / (g.samples.x * g.samples.y),
+    );
+}
+
 // Whether a sample index is inside the grid.
 fn grid_contains(g: GridParams, at: vec3<u32>) -> bool {
     return all(at < g.samples.xyz);
