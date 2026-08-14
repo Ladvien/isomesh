@@ -1357,3 +1357,120 @@ fn the_peel_refuses_crossing_chords_rather_than_dropping_them() {
     let partner = alloc::vec![Some(2), Some(3), Some(0), Some(1)];
     assert_eq!(peel(node, arc, partner), None);
 }
+
+/// **A-014i's fixture, and the three defects it was told to reproduce.**
+///
+/// The 2026-08-14 review recorded three faults in §3.2.1 case (5)'s subdivision
+/// path — orphaned vertices, a child re-lerp that should use `1 − t`, and
+/// orphaned bigons — and fixed none, because the path is unreachable on all
+/// seven reference fields (`subdivision == 0` is pinned). The ticket's own
+/// instruction is that those names are **one-line summaries, not verified
+/// re-derivations**, so rule 5 applies and each has to be reproduced before
+/// anything is fixed.
+///
+/// # Which pattern reaches case (5), derived rather than searched for
+///
+/// The dispatch takes case (5) only when `ℓ ∉ {4, 8}` **and** `loop_count > 1`.
+/// With `ℓ = 4(d₁+d₂)/g` and `loop_count = g = gcd(d₁, d₂)`, that needs
+/// `g > 1` and `d₁ + d₂ > 2g`. The smallest such pattern is **(4, 2)**:
+/// `g = 2`, `ℓ = 12`, two loops — and its total edge coordinate is
+/// `4(d₁+d₂) = 24`, which is exactly the *"subdivision … requires ≥24 edge
+/// intersections"* the ticket quotes. `(4, 2)` is also the **only** pattern in
+/// `every_implemented_case_emits_an_intersection_free_patch`'s `1 ≤ d₁ ≤ 5`
+/// sweep that reaches case (5), so that sweep has been covering this path all
+/// along — one case out of twenty, and nothing said so.
+#[test]
+fn the_subdivision_path_is_reached_and_its_orphaned_vertices_counted() {
+    // Case (5), from the derivation above rather than by trial.
+    let coords = pattern_coords(4, 2);
+    assert_eq!(coords.total(), 24, "the ticket's ≥24 intersections");
+    let pattern = Pattern::of(&coords).expect("Property II holds by construction");
+    assert_eq!(
+        pattern.loop_count(),
+        2,
+        "more than one loop, or it is case (4)"
+    );
+    assert_eq!(
+        pattern.loop_length(),
+        Some(12),
+        "loop length is not 4 or 8, or it is case (2)/(3)"
+    );
+
+    let owned = crossings(coords.count);
+    let mut patch = TetPatch::new();
+    let outcome = fill(&tet(&owned), &mut patch).expect("well-formed crossings");
+    assert_eq!(outcome, Unfilled::None, "case (5) did not fill");
+
+    // **Defect 1 and 3, as one measurable quantity.** An orphaned vertex is a
+    // position the fill pushed that no triangle references; an orphaned bigon is
+    // one way to produce them, since a region of fewer than three nodes emits no
+    // triangle and leaves its crossings behind. Counting unreferenced positions
+    // sees both without having to tell them apart first.
+    let mut used = alloc::vec![false; patch.positions.len()];
+    for tri in &patch.triangles {
+        for i in tri {
+            let at = *i as usize;
+            assert!(at < used.len(), "an index past the end of the positions");
+            used[at] = true;
+        }
+    }
+    let orphaned = used.iter().filter(|u| !**u).count();
+
+    std::println!(
+        "(4, 2): {} positions, {} triangles, {orphaned} unreferenced",
+        patch.positions.len(),
+        patch.triangles.len(),
+    );
+
+    // **Pinned, not asserted to zero — A-014i owns it.** This is the review's
+    // "orphaned vertices", reproduced as a number: the parent records a position
+    // for every crossing its cycles name, because every case *except* this one
+    // triangulates over exactly those, and subdivision instead hands the work to
+    // four children that re-derive their own copies. 24 is exactly the parent's
+    // own crossing count.
+    //
+    // **The obvious fix is measurably the wrong one, and that is the finding.**
+    // Dropping unreferenced positions at the end of `fill` and remapping was
+    // built and run: it takes this fixture to 88 positions and 0 orphans, and it
+    // drifts six golden rows — `gyroid` and `fbm_terrain` at all three
+    // resolutions — with **identical vertex and triangle counts** and a
+    // different hash. So on the reference fields it removes nothing and only
+    // reorders: an unreferenced position there still carries a global crossing
+    // identity and seeds the map a neighbouring tetrahedron reuses, so dropping
+    // it merely moves which tetrahedron emits that vertex first. A-014i's own
+    // guard is that reference-field output must not change, and that is the
+    // guard which caught it (M-200).
+    assert_eq!(
+        orphaned, 24,
+        "the orphaned-vertex count moved; it is pinned because A-014i owns it"
+    );
+
+    // **Defect 2, and it is a hole in this suite rather than a fault in the
+    // code.** The review recorded "a child re-lerp that should use `1 − t`".
+    // `fill_subdivision` already does — a child walking a parent edge the other
+    // way both reverses the list and maps `t ↦ 1 − t` — but **inverting that
+    // branch passes all 32 tests in this module**, including the
+    // intersection-free sweep, because `child.coordinates()` counts crossings
+    // per edge and a mirror leaves every count identical (M-200).
+    //
+    // This is the assertion with power over it. A parent crossing is a real
+    // point on a real edge, and whichever child re-expresses it must land on the
+    // same point — bit-identically, since that is what the weld above relies on.
+    // Mirror the parameter and the child lands somewhere else, and the parent's
+    // copy is then matched by nothing.
+    let named = patch.crossings.len();
+    let mut rediscovered = 0;
+    for at in 0..named {
+        let parent = patch.positions[at];
+        if patch.positions[named..].contains(&parent) {
+            rediscovered += 1;
+        }
+    }
+    std::println!("(4, 2): {rediscovered} of {named} parent crossings re-derived by a child");
+    assert_eq!(
+        rediscovered, named,
+        "a child placed a parent crossing somewhere the parent did not: the \
+         edge re-expression mirrored a parameter it should have preserved, or \
+         preserved one it should have mirrored"
+    );
+}
