@@ -161,3 +161,56 @@ jobs:
         run: rustup toolchain install ${{ steps.msrv.outputs.version }} --profile minimal
       - name: check
         run: cargo +${{ steps.msrv.outputs.version }} check --workspace --all-targets
+
+  # A pull request cannot publish, but it can find out whether it *could*.
+  # `cargo publish --dry-run` packages and verification-builds, which is the
+  # only thing that sees the errors invisible to every test: a `path` dependency
+  # with no `version` (which would have rejected isomesh-gpu's first release),
+  # a `license` field with no license file beside it (true of isomesh 0.0.0
+  # through 0.0.2, unnoticed for three releases), or a README that lives outside
+  # the package directory and is therefore never shipped.
+  package:
+    name: package (dry run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: dry run
+        run: ./scripts/publish.sh --dry-run
+
+  # Releasing is a version bump, not a push.
+  #
+  # `publish.sh` uploads a crate only when its manifest version is absent from
+  # crates.io, so pushing a bump releases and pushing anything else exits 0
+  # having done nothing. The alternative -- publish on every push -- fails with
+  # "crate version already exists" on all but one push in fifty, which leaves
+  # main red by default and teaches everyone to stop reading it.
+  #
+  # `needs` is the load-bearing part. Publishing cannot be undone: a version can
+  # be yanked but never deleted, so this must not start until the entire gate
+  # has passed *on this commit*. A separate workflow triggered by push could
+  # upload while the test job was still red.
+  publish:
+    name: publish to crates.io
+    needs: [lint, test, bevy, msrv, package]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Serialised against itself, and never cancelled. The default
+    # `cancel-in-progress` above would be free to kill this between the two
+    # crates, leaving isomesh published and isomesh-gpu not -- which is
+    # recoverable but only by hand.
+    concurrency:
+      group: publish-crates-io
+      cancel-in-progress: false
+    environment: crates-io
+    steps:
+      - uses: actions/checkout@v4
+      - name: publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          if [ -z "${CARGO_REGISTRY_TOKEN:-}" ]; then
+            echo "::error::CARGO_REGISTRY_TOKEN is not set."
+            echo "Add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          ./scripts/publish.sh

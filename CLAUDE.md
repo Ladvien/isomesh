@@ -274,6 +274,13 @@ cargo bench --bench resolution_sweep     # 16^3..256^3, fits t = a + b*n^3, writ
 # gpu
 cargo test -p isomesh-gpu
 
+# release. Publishing is irreversible -- a version can be yanked, never deleted
+# -- so this uploads a crate only when its manifest version is ABSENT from
+# crates.io. A push that bumps the version releases; any other push exits 0
+# having done nothing. CI runs the same script, gated on the whole suite.
+./scripts/publish.sh --dry-run   # packages and verification-builds, uploads nothing
+./scripts/publish.sh             # uploads what is missing, in dependency order
+
 # bevy side — separate workspace, run from its directory
 cd bevy_isomesh && cargo run --example marching_cubes_sphere --release
 cd bevy_isomesh && cargo build --examples
