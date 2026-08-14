@@ -256,3 +256,133 @@ fn the_high_plane_vertex_moves_by_exactly_minus_w() {
          back face misses it by a last bit and the crack cannot be welded"
     );
 }
+
+/// **E-211's gate: the mirrored seam, and the wrong sign that has to open it.**
+///
+/// `the_seam_stays_closed_at_a_real_width` runs one configuration — coarse block
+/// above the seam — and E-107 never ran the other. The mirror was genuinely open
+/// (44 boundary edges per two-block seam, M-195) and nothing caught it, because
+/// the only instrument watching was `game_lod_flyover`'s HUD counter, which scans
+/// the seam plane while Eq-4.2's taper puts the geometry at `seam ± w`.
+///
+/// So this asserts closure at all three planes — `seam`, `seam − w` and
+/// `seam + w` — and, **because a zero that cannot go non-zero is not a
+/// measurement (M-44, and E-208's rule)**, it runs the same construction with the
+/// unsigned width and requires that one to fail. That second half is the whole
+/// point: it is the positive control the missing bug needed.
+///
+/// The width is **signed**, and this is the configuration that says so: with the
+/// coarse block below the seam its wall tapers to `seam − w`, so the patch's back
+/// face must go to `seam − w` too. Passing `+w` sends it to `seam + w` and leaves
+/// the moat between `seam − w` and `seam` with nothing in it.
+#[test]
+fn the_mirrored_seam_closes_only_with_the_signed_width() {
+    // Exact: a vertex is in a plane or it is not.
+    #![allow(clippy::float_cmp)]
+    let field = Sphere::<f64>::canonical();
+    let fine_h = 0.125;
+    let coarse_h = fine_h + fine_h;
+    let width = fine_h;
+    let seam_x = 0.0;
+
+    // Open boundary edges at (seam, seam − w, seam + w).
+    let run = |sample_width: f64| -> (usize, usize, usize) {
+        // The coarse block sits **below** the seam — the mirror of every
+        // configuration this crate had ever built.
+        let coarse_origin = [-2.0, -2.0, -2.0];
+        let coarse_shape = RuntimeShape3::new([9, 17, 17]).expect("valid shape");
+        let mut coarse = MeshBuffer::<f64>::new();
+        MarchingCubes::<f64>::new()
+            .extract(&field, &coarse_shape, coarse_origin, coarse_h, &mut coarse)
+            .expect("extraction");
+        // Its **high** face is the one facing the seam, so it tapers to seam − w.
+        inset_boundary(
+            &mut coarse,
+            coarse_origin,
+            8,
+            coarse_h,
+            width,
+            face_bit(0, 1),
+        )
+        .expect("valid taper");
+
+        let fine_origin = [seam_x, -2.0, -2.0];
+        let fine_shape = RuntimeShape3::new([17, 33, 33]).expect("valid shape");
+        let mut fine = MeshBuffer::<f64>::new();
+        MarchingCubes::<f64>::new()
+            .extract(&field, &fine_shape, fine_origin, fine_h, &mut fine)
+            .expect("extraction");
+
+        let mut stitched = MeshBuffer::<f64>::new();
+        stitched
+            .append(&fine)
+            .expect("the meshes fit the u32 index space");
+        stitched
+            .append(&coarse)
+            .expect("the meshes fit the u32 index space");
+        for jz in 0..16i64 {
+            for jy in 0..16i64 {
+                let cell = TransitionCell::sample(
+                    &field,
+                    fine_origin,
+                    fine_h,
+                    [0, 2 * jy, 2 * jz],
+                    1,
+                    2,
+                    sample_width,
+                );
+                let mut patch = MeshBuffer::<f64>::new();
+                cell.emit(&field, 0, &mut patch);
+                if patch.triangle_count() == 0 {
+                    continue;
+                }
+                stitched
+                    .append(&patch)
+                    .expect("the meshes fit the u32 index space");
+            }
+        }
+
+        crate::weld::Welder::<f64>::new()
+            .weld(&mut stitched, crate::weld::epsilon_for(fine_h))
+            .expect("weld");
+
+        let cfg = crate::validate::ValidateConfig::from_cell_size(fine_h).expect("valid cell size");
+        let (_report, features) =
+            crate::validate::validate_features(&stitched.positions, &stitched.indices, &cfg);
+
+        let in_plane = |plane: f64| {
+            features
+                .boundary_edges
+                .iter()
+                .filter(|[a, b]| {
+                    stitched.positions[*a as usize][0] == plane
+                        && stitched.positions[*b as usize][0] == plane
+                })
+                .count()
+        };
+        (
+            in_plane(seam_x),
+            in_plane(seam_x - width),
+            in_plane(seam_x + width),
+        )
+    };
+
+    let signed = run(-width);
+    let unsigned = run(width);
+    std::println!(
+        "mirrored seam at (seam, seam−w, seam+w): signed {signed:?}, unsigned {unsigned:?}"
+    );
+
+    assert_eq!(
+        signed,
+        (0, 0, 0),
+        "the mirrored seam is open somewhere in the inset band"
+    );
+    // The control. Without it the zero above would be worth nothing.
+    assert!(
+        unsigned.0 + unsigned.1 + unsigned.2 > 0,
+        "the unsigned width left the seam closed, so this test cannot see the \
+         defect it exists for -- E-211's whole premise is that scanning the \
+         wrong planes hides it"
+    );
+}

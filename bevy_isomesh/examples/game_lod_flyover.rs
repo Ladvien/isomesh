@@ -309,7 +309,13 @@ fn assemble<F: Sdf<Scalar = f32>>(
         blocks.push(buffer.clone());
     }
 
-    let mut seam_planes: Vec<(f32, bool)> = Vec::new();
+    // Plane, which side of the camera it is on, and **the seam's own transition
+    // width**. The width is what E-211 added: Eq-4.2's taper puts the geometry at
+    // `seam ± w`, so a counter that only knows the plane is looking where the
+    // crack is not. It is carried per seam rather than derived from `BASE_H`
+    // because `w` is that seam's fine spacing, and hand-written bounds in this
+    // exact kind of counter have been wrong twice before (`plugin/tests.rs`).
+    let mut seam_planes: Vec<(f32, bool, f32)> = Vec::new();
     let mut transition_mesh = MeshBuffer::<f32>::new();
     let mut seams = 0;
 
@@ -322,9 +328,12 @@ fn assemble<F: Sdf<Scalar = f32>>(
         if levels[i] != levels[i + 1] {
             seams += 1;
             let seam_x = (i + 1) as f32 * BLOCK_W;
+            // The band's half-width is the *fine* side's spacing, the same
+            // quantity the transition pass below uses for `width`.
+            let fine = levels[i].min(levels[i + 1]);
             // The seam is "low" when it sits on the camera's low-x side, which
             // is the mirror of the only configuration E-107 ever ran.
-            seam_planes.push((seam_x, seam_x < at));
+            seam_planes.push((seam_x, seam_x < at, spacing(fine)));
         }
     }
 
@@ -429,6 +438,7 @@ fn assemble<F: Sdf<Scalar = f32>>(
         );
         let tol = BASE_H * 0.25;
         // An edge on the world's outer wall is the world ending, not a crack --
+        // and this bound really is about the world, so it keeps the global `tol`.
         // and the wall passes *through* every seam plane, so without this the
         // four edges where they meet are counted as failures. The first run
         // reported exactly that: 1 crack that was the y/z boundary crossing the
@@ -442,10 +452,26 @@ fn assemble<F: Sdf<Scalar = f32>>(
         if on_outer(p) && on_outer(q) {
             continue;
         }
-        for &(plane, is_low) in &seam_planes {
-            // Both endpoints within a hair of the plane, so an edge that merely
+        for &(plane, is_low, w) in &seam_planes {
+            // **All three planes of the inset band, not just the seam.** The
+            // coarse block's facing wall tapers to `seam ± w` and the transition
+            // patch's back face meets it there, so that is where a sign error
+            // leaves the mesh open -- measured at 0 edges on the seam plane and
+            // 28 on each of `seam ± w` (M-195). Scanning the seam alone is why
+            // the mirrored-seam bug survived its own instrument.
+            //
+            // The tolerance comes from this seam's own spacing rather than from
+            // the global `BASE_H`, because `w >= BASE_H` and a fixed quarter of
+            // `BASE_H` is narrower than the thing it has to resolve.
+            let near = w * 0.25;
+            let in_band = |v: f32| {
+                (v - plane).abs() < near
+                    || (v - (plane - w)).abs() < near
+                    || (v - (plane + w)).abs() < near
+            };
+            // Both endpoints within a hair of one plane, so an edge that merely
             // crosses the region is not counted as lying in it.
-            if (p[0] - plane).abs() < tol && (q[0] - plane).abs() < tol {
+            if in_band(p[0]) && in_band(q[0]) {
                 if is_low {
                     open_low += 1;
                 } else {
@@ -457,7 +483,7 @@ fn assemble<F: Sdf<Scalar = f32>>(
     }
 
     let validate_ms = validate.elapsed().as_secs_f64() * 1000.0;
-    let seams_low = seam_planes.iter().filter(|(_, low)| *low).count() as u32;
+    let seams_low = seam_planes.iter().filter(|(_, low, _)| *low).count() as u32;
     Some(Assembled {
         mesh,
         build_ms,
