@@ -15,6 +15,31 @@ use crate::{Error, Result};
 /// Owns them, so a caller can keep one alive for the length of a session.
 /// Everything else in this crate borrows a `&Device` and does not care where it
 /// came from.
+///
+/// # What this device cannot do, stated so the harness is not over-trusted
+///
+/// It is created with `Features::empty()`, and **that is a decision rather than
+/// an oversight** (GPU-009, M-156). Asking for `EXPERIMENTAL_MESH_SHADER`
+/// requires an `ExperimentalFeatures` token whose only constructor is a
+/// `const unsafe fn`, and every crate here sets `unsafe_code = "forbid"` so that
+/// `isomesh-gpu` can be described, accurately, as safe Rust.
+///
+/// The consequence is precise and worth knowing before relying on this for
+/// coverage:
+///
+/// | | |
+/// |---|---|
+/// | mesh shaders **validate** headlessly | yes — GPU-003's `naga` sweep needs no device |
+/// | a mesh pipeline is **refused** headlessly | yes — `MeshShaderRenderer::new` returns an error, and there is a test |
+/// | a mesh shader **runs** headlessly | **no**, and nothing here can make it |
+///
+/// So shader *validity* is covered in CI and mesh-shader *behaviour* is not: a
+/// kernel can only be executed inside an application whose device asked for the
+/// feature — Bevy's does, by default (M-147). Anything asserting what a mesh
+/// shader computes has to live there.
+///
+/// Compute kernels are unaffected. Marching Cubes, the prefix scan and the field
+/// sampler all run here and are tested here.
 #[derive(Debug)]
 pub struct Gpu {
     device: wgpu::Device,

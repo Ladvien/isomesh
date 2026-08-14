@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-89 tickets. Line numbers are stable until something above them is edited — grep the ID if
+90 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -311,6 +311,10 @@ implementation contradicted the ticket.
 | | | ***The acid test passes, with a margin worth reading: 495 seam crossings, 0 holes, worst discontinuity at a seam 0.412 cells against 0.539 cells within a single chunk*** (M-106). The seams are smoother than the terrain they join. Rays are cast against the meshed triangles through `parry3d` rather than against the field, because whether two independently meshed chunks *meet* is decided by G-001's overlap and only the triangles know it. |
 | | | ***The first run reported 439 holes and blamed G-001 (M-105), and the bug was one operator wide in the test.*** A probe misses only counts as a hole once *every* layer that could hold the surface has meshed; the guard said `||` where it needed `&&`. Diagnosed by printing the field at the offending points, not by reasoning about them. The prior matters: G-001 has M-32, M-46 and M-69 behind it and the probe sweep was two hours old. |
 | | | ***Deviation from the ticket, promoted rather than hidden.*** It asks for a "character controller"; what shipped is a probe sweep plus a visible walker. The sweep tests far more seams per second — waiting for one walker to reach a boundary tests one seam every few seconds — but it does not test locomotion, and an invisible wall that only a moving capsule reveals would go unseen. Split out as **E-206b**. |
+| ☑ | **GPU-009** | **Mesh-shader kernels cannot be executed under test, and that is a coverage hole rather than a missing convenience.** | S | GPU-008a |
+| | | ***Resolved by accepting the hole and documenting it, not by relaxing `unsafe_code` (M-156).*** The alternative would work and its entire `unsafe` body is `Self { enabled: true }` — but the stated goal is a crate that can be described, accurately, as safe Rust, and one `#[allow(unsafe_code)]` costs exactly that description for a test-only convenience. The decision is the user's, recorded rather than assumed. |
+| | | ***`headless::Gpu` now says precisely what it does and does not cover***, as a table: mesh shaders **validate** headlessly (GPU-003's `naga` sweep needs no device), a mesh pipeline is **refused** headlessly (`MeshShaderRenderer::new` errors, asserted), and a mesh shader **never runs** here. Compute kernels are unaffected — Marching Cubes, the scan and the field sampler all run and are tested headlessly. |
+| | | ***The claim is pinned by a test rather than left as prose.*** If wgpu stops gating experimental features behind an `unsafe` token, or the lint policy changes, the assertion fails and the table gets re-read instead of quietly becoming false. That is the same guard M-44 asks for, applied to a documentation claim. |
 | ☑ | **GPU-011a** | **Evaluate the field on the GPU — prove the win before designing the general mechanism.** | M | GPU-010a |
 | | | ***Predicted "under 2 ms and ≥4×" before writing it; measured 0.54 ms and 15.5× (M-155).*** The 129³ path goes from **8.37 ms to 0.54**, and from 2.4× to **37× ahead** of a single-threaded CPU. What was 86% of the run became nothing: the samples are produced where they are read and the bus is never touched. |
 | | | ***The shape matters as much as the number: it is nearly flat.*** 0.22 ms at 17³ and 0.54 at 129³ — a **420×** increase in cells for 2.5× the time, the same not-remotely-saturated signature M-145 found in `count + emit`. The crossover moves to ~25³, on about 0.22 ms of fixed overhead. |
