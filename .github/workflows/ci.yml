@@ -197,6 +197,15 @@ jobs:
       #
       # Every check that reads the root workspace needs a deliberate answer for
       # this directory, and "it is excluded" is not one.
+      # Bevy 0.19 enables Wayland by default on Linux, so `wayland-sys`'s build
+      # script needs the dev packages even to *type-check*. The `bevy` job has
+      # carried this step for the same reason; needing it a second time here is
+      # I-007's own finding happening to I-007 (M-192).
+      - name: system deps for bevy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
       - name: read bevy_isomesh's declared MSRV
         id: bevy_msrv
         working-directory: bevy_isomesh
