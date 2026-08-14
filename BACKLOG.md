@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**103 tickets archived, 7 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**104 tickets archived, 6 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -97,7 +97,6 @@ nearest-first, and the caller's own clock decides when to stop.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **B-008** | **Pool the plugin's per-chunk scratch allocations.** Recorded (and deliberately not applied) by the 2026-08-14 review: `bevy_isomesh/src/mesh.rs`'s shading path allocates a scratch buffer per call to split the borrow ("shade into a scratch buffer, then swap"), which at re-meshing scale is an allocation per chunk per edit — the pattern core rule 6 exists to prevent, one workspace over. Keep the scratch in a plugin-owned resource and reuse it across chunks. Any perf claim needs a committed measurement; without one this is an allocation-count cleanup and the commit should say so. | S | — |
 
 ---
 

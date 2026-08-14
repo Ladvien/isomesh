@@ -113,8 +113,12 @@ impl MeshBuilder {
     /// isomesh::paint::shade(builder.positions(), &world, builder.colors_mut());
     /// ```
     ///
-    /// (that borrow needs splitting in real code — read the positions into the
-    /// call, or shade into a scratch buffer and swap.)
+    /// The two borrows in that line are one shared and one mutable, so the
+    /// compiler will not take it as written. Use
+    /// [`positions_and_colors_mut`](Self::positions_and_colors_mut), which hands
+    /// out both at once from disjoint fields — **not** a scratch buffer and a
+    /// swap, which is an allocation per call and, at re-meshing scale, an
+    /// allocation per chunk per edit (B-008).
     ///
     /// A mesh either carries colours or does not, exactly as it either carries
     /// UVs or does not: leave this empty and
@@ -123,6 +127,31 @@ impl MeshBuilder {
     /// get a colour onto a vertex here.
     pub fn colors_mut(&mut self) -> &mut Vec<[f32; 4]> {
         &mut self.colors
+    }
+
+    /// The positions to read and the colours to write, borrowed together.
+    ///
+    /// `shade(builder.positions(), world, builder.colors_mut())` is the natural
+    /// way to write a shading pass and the compiler rejects it: one shared and
+    /// one mutable borrow of the same value. The two obvious workarounds both
+    /// cost something — cloning the positions, or shading into a scratch `Vec`
+    /// and swapping it in — and at re-meshing scale that is **an allocation per
+    /// chunk per edit**, which is the pattern the core crate's rule 6 exists to
+    /// prevent, one workspace over (B-008).
+    ///
+    /// The fields are disjoint, so there is nothing to work around: this hands
+    /// out both borrows at once and the pass writes straight into the array the
+    /// [`Mesh`] will own.
+    ///
+    /// ```
+    /// # use bevy_isomesh::MeshBuilder;
+    /// # let mut builder = MeshBuilder::new();
+    /// let (positions, colors) = builder.positions_and_colors_mut();
+    /// colors.clear();
+    /// colors.extend(positions.iter().map(|p| [p[0], p[1], p[2], 1.0]));
+    /// ```
+    pub fn positions_and_colors_mut(&mut self) -> (&[[f32; 3]], &mut Vec<[f32; 4]>) {
+        (&self.positions, &mut self.colors)
     }
 
     /// The per-vertex colours written so far.
@@ -349,11 +378,10 @@ mod tests {
             background: [0.5, 0.5, 0.5, 1.0],
         };
 
-        // The borrow has to be split: shade into a scratch buffer, then swap it
-        // into the builder so the Mesh still gets the array by move.
-        let mut colors = Vec::new();
-        isomesh::paint::shade(builder.positions(), &world, &mut colors);
-        core::mem::swap(builder.colors_mut(), &mut colors);
+        // Straight into the array the Mesh will own, with no scratch buffer and
+        // no swap: the two borrows come from disjoint fields (B-008).
+        let (positions, colors) = builder.positions_and_colors_mut();
+        isomesh::paint::shade(positions, &world, colors);
         assert_eq!(builder.colors().len(), vertices);
 
         let mesh = builder.into_mesh();
