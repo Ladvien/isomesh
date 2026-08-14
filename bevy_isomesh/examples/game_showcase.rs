@@ -383,7 +383,17 @@ fn attach(
     fresh: Query<(Entity, &ChunkMesh), Without<Mesh3d>>,
 ) {
     for (entity, chunk) in &fresh {
-        commands.entity(entity).insert((
+        // `try_insert`, not `insert`, and this is not a swallowed error. The
+        // streamer despawns a chunk the moment it leaves residency, and that
+        // can happen in the same frame this system queues the attach -- both
+        // are commands, and whichever order the queue flushes, the insert may
+        // land on an entity that is already gone. Attaching a mesh to a chunk
+        // that no longer exists is *vacuous*, not degraded: there is nothing
+        // else this could correctly do, and `insert` panics instead.
+        // `game_terrain_stream` is where it actually fired -- "Entity
+        // despawned: the entity with ID 404v0 is invalid" -- and the other
+        // three carried the same race latently.
+        commands.entity(entity).try_insert((
             Mesh3d(chunk.0.clone()),
             MeshMaterial3d(look.0.clone()),
             Transform::default(),

@@ -57,7 +57,10 @@ impl Plugin for CommonPlugin {
             // and silently lose its settings. Spawning a schedule earlier makes
             // "the camera exists by the time your Startup runs" a guarantee
             // rather than a coin flip.
-            .add_systems(PreStartup, (spawn_camera, spawn_light, spawn_hud))
+            .add_systems(
+                PreStartup,
+                (spawn_camera, spawn_light, spawn_hud, size_window),
+            )
             .add_systems(Update, (auto_screenshot, capture_sequence))
             .add_systems(
                 Update,
@@ -269,6 +272,17 @@ fn capture_sequence(
     let Some(dir) = capture.dir.clone() else {
         return;
     };
+    // Created here rather than assumed. A missing directory used to produce one
+    // "Cannot save screenshot, IO error" per frame and no files, which reads as
+    // a broken capture rather than a missing `mkdir` -- and the errors come from
+    // deep inside Bevy's screenshot observer, nowhere near the cause.
+    if capture.elapsed == 0 {
+        if let Err(e) = std::fs::create_dir_all(&dir) {
+            error!("ISOMESH_CAPTURE={dir} cannot be created: {e}");
+            capture.dir = None;
+            return;
+        }
+    }
     capture.elapsed += 1;
     if capture.elapsed <= capture.settle {
         return;
@@ -285,6 +299,32 @@ fn capture_sequence(
         .spawn(Screenshot::primary_window())
         .observe(save_to_disk(path));
     capture.taken += 1;
+}
+
+/// Force the window to a given size, for reproducible captures.
+///
+/// `ISOMESH_WINDOW=1280x720`. Without it the window takes whatever the window
+/// manager hands out — on a tiling compositor that is whatever slot happens to
+/// be free, so two captures of the same example come back different shapes and
+/// cannot be composited side by side.
+///
+/// Applied in `PreStartup` and to the *primary* window, so it overrides whatever
+/// an example's own `WindowPlugin` asked for rather than fighting it.
+fn size_window(mut windows: Query<&mut Window, With<bevy::window::PrimaryWindow>>) {
+    let Ok(spec) = std::env::var("ISOMESH_WINDOW") else {
+        return;
+    };
+    let Some((w, h)) = spec.split_once(['x', 'X']) else {
+        error!("ISOMESH_WINDOW={spec} is not WIDTHxHEIGHT");
+        return;
+    };
+    let (Ok(w), Ok(h)) = (w.trim().parse::<f32>(), h.trim().parse::<f32>()) else {
+        error!("ISOMESH_WINDOW={spec} is not WIDTHxHEIGHT");
+        return;
+    };
+    for mut window in &mut windows {
+        window.resolution.set(w, h);
+    }
 }
 
 /// Marks the mesh an example wants wireframed and normal-drawn.

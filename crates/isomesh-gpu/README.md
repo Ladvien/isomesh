@@ -90,6 +90,37 @@ Normals are the one deliberate divergence — a shader cannot call `Sdf::gradien
 differences the sample grid. `isomesh`'s M-65 measures that at 0.460° worst against the analytic
 gradient at 17³, converging at `h²`.
 
+## Run it
+
+Three examples, none of which needs a window — this crate's whole API takes `&wgpu::Device`, so a
+demo that required an engine would be demonstrating the engine.
+
+```bash
+cargo run -p isomesh-gpu --example extract_a_sphere --release   # the whole loop, checked against the CPU
+cargo run -p isomesh-gpu --example gpu_vs_cpu --release         # where the GPU starts winning, and by how much
+cargo run -p isomesh-gpu --example mesh_shader_probe            # what this adapter says about mesh shaders
+```
+
+**`--release` matters for the second one.** A debug-build CPU extraction is 20–50× slower, which
+would flatter the GPU by roughly the factor the example exists to measure.
+
+`gpu_vs_cpu` on an RTX 3090 / Vulkan, sphere, field evaluation included on both sides:
+
+| n | triangles | cpu ms | gpu+read ms | gpu ms | vs cpu | no-read |
+|---|---|---|---|---|---|---|
+| 17 | 1,064 | 0.056 | 0.290 | 0.172 | **5.2× slower** | 3.1× slower |
+| 33 | 4,280 | 0.342 | 0.326 | 0.174 | 1.1× | 2.0× |
+| 49 | 9,512 | 1.011 | 0.410 | 0.223 | 2.5× | 4.5× |
+| 65 | 17,192 | 2.269 | 0.516 | 0.274 | 4.4× | 8.3× |
+| 97 | 38,456 | 6.954 | 0.831 | 0.361 | 8.4× | 19.3× |
+| 129 | 68,648 | 16.471 | 1.315 | **0.547** | 12.5× | **30.1×** |
+
+Two things there matter more than the ratio. **The GPU loses below about 25³** — the top row is real
+and the example prints it rather than starting the table where the story improves. And the last
+column is **nearly flat**: 0.172 → 0.547 ms across a **420× increase in cells**, because the samples
+are produced where they are read and the bus is never touched. The extractor is not remotely
+saturated at 129³.
+
 ## Validation
 
 Two layers, and they catch different things.

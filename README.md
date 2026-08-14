@@ -6,6 +6,15 @@
 
 `isomesh` has to serve both a real-time voxel game and a CAD tool. That single constraint decides almost everything about it: no math library appears in a public signature, output buffers are caller-provided and reusable, the scalar type is generic over `f32` and `f64`, and the core crate has exactly one dependency.
 
+![Six of the examples running: caves and arches, a carved block, a ball crossing streamed chunk seams, a slab blown apart into debris, letters thinner than a single voxel, and Surface Nets against Marching Cubes](docs/gifs/kitchen-sink.gif)
+
+*Six examples, all running. **Top:** caves and arches from a nine-line field; eight edits replayed as a
+re-fold of the log; a ball walking 1,348 chunk-seam crossings with zero holes. **Bottom:** a slab
+blown apart, where the debris is the boolean; letters 1.00 voxels thick resolved by subgrid marching
+tetrahedra; the same sphere under Surface Nets and Marching Cubes.*
+
+Every one of those is `cargo run --example` in `bevy_isomesh/`, and each has its own section below.
+
 ## You cannot store this as a height
 
 ![Flying through a landscape riddled with caves, arches and tunnels](docs/gifs/flying-through-the-rock.gif)
