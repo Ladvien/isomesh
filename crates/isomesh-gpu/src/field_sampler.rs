@@ -19,12 +19,40 @@
 //! (M-31). **The GPU path acquires no such guarantee**, and that is a property
 //! of the approach rather than of this implementation.
 //!
-//! # This is the cheapest version on purpose
+//! # The general mechanism is an interpreted edit log, and here is the argument
 //!
-//! Four reference fields selected by a uniform, enough to answer whether the
-//! 86% is recoverable and to measure the drift. Interpreting an edit log, or
-//! composing a consumer's own WGSL, is GPU-011b — and the deviation numbers
-//! here are what that design has to be built around.
+//! GPU-011a proved the win with four fields hard-coded in WGSL, which is not
+//! shippable — a consumer's own field cannot be one of four. GPU-011b had two
+//! candidates and chose **interpreting an edit log**
+//! ([`sample_stack`](FieldSampler::sample_stack)) over **composing the
+//! consumer's WGSL** through [`Composer`](crate::Composer). Four reasons, in
+//! the order they mattered:
+//!
+//! 1. **It is what this crate's world already is.** A scene here is a base
+//!    field plus an ordered op list — `BrushStack`, and `paint::Edit` after
+//!    E-208. E-207's undo is a re-fold of that log. Consuming the same log puts
+//!    the GPU path on the architecture that exists rather than beside it.
+//! 2. **It survives editing, and the alternative does not.** A carve pushes an
+//!    op and the GPU re-reads a buffer. Composing WGSL would **recompile a
+//!    shader per edit**, which is tolerable for a static CAD model and fatal
+//!    for `game_dig` or `game_editor` — the demos where a GPU path would
+//!    actually be used.
+//! 3. **It is exactly testable.** `brush::apply` and `brush::smooth_min` define
+//!    the fold, so the interpreter is asserted against them sample-for-sample.
+//!    Composed WGSL can only be checked against a *second* statement of the
+//!    field, which is the drift rule 5 exists to prevent — testable, but only
+//!    after the duplication is already there.
+//! 4. **M-154 says the drift is in the expression, not the GPU.** A field of
+//!    `abs`/`max`/`min` crosses within 1 ULP; one of sums-of-products does not.
+//!    An interpreter evaluating the same primitives has the same drift as
+//!    compiled WGSL doing the same maths, so option (b) buys no accuracy.
+//!
+//! **What it costs, stated plainly:** the log is bounded by the primitives the
+//! shader knows — sphere, box, capsule, and the three brush ops. A consumer
+//! with an arbitrary analytic SDF is **not** served, and that is the CAD half
+//! of this crate's audience. Composing consumer WGSL remains the right answer
+//! for them and is additive rather than contradictory: a second *feature*, not
+//! a second path to this one.
 
 use crate::{Composer, FieldBuffer, GridParams, Result};
 
@@ -113,6 +141,149 @@ impl GpuField {
     }
 }
 
+/// One brush shape, matching `isomesh`'s three.
+///
+/// Implements [`Sdf`](isomesh::Sdf) by delegating to `isomesh`'s own types, so
+/// the CPU side of every comparison is the real definition rather than a second
+/// copy of it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum GpuShape {
+    /// A sphere.
+    Sphere {
+        /// Centre.
+        center: [f32; 3],
+        /// Radius.
+        radius: f32,
+    },
+    /// An axis-aligned box, exact distance.
+    BoxExact {
+        /// Centre.
+        center: [f32; 3],
+        /// Half-extents.
+        half_extents: [f32; 3],
+    },
+    /// The set of points within `radius` of a segment.
+    Capsule {
+        /// One end.
+        a: [f32; 3],
+        /// The other.
+        b: [f32; 3],
+        /// Distance from the segment that counts as inside.
+        radius: f32,
+    },
+}
+
+impl isomesh::Sdf for GpuShape {
+    type Scalar = f32;
+
+    fn sample(&self, p: [f32; 3]) -> f32 {
+        use isomesh::brush::Capsule;
+        use isomesh::fields::{BoxExact, Sphere};
+        match *self {
+            Self::Sphere { center, radius } => Sphere { center, radius }.sample(p),
+            Self::BoxExact {
+                center,
+                half_extents,
+            } => BoxExact {
+                center,
+                half_extents,
+            }
+            .sample(p),
+            Self::Capsule { a, b, radius } => Capsule { a, b, radius }.sample(p),
+        }
+    }
+}
+
+/// What a brush does to the field it is applied to, matching `isomesh`'s
+/// [`BrushOp`](isomesh::brush::BrushOp).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum GpuOp {
+    /// Union: `min(field, shape)`.
+    Add,
+    /// Difference: `max(field, -shape)`.
+    Subtract,
+    /// Union with a rounded join of width `k`.
+    SmoothAdd {
+        /// Join width, in world units.
+        k: f32,
+    },
+}
+
+/// One entry in the edit log.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct GpuBrush {
+    /// The shape being applied.
+    pub shape: GpuShape,
+    /// What to do with it.
+    pub op: GpuOp,
+}
+
+impl GpuBrush {
+    /// Bytes this occupies in the shader's brush array.
+    pub const STRIDE: u64 = 64;
+
+    /// The same brush as `isomesh` sees it.
+    #[must_use]
+    pub fn to_cpu(self) -> isomesh::brush::Brush<GpuShape> {
+        use isomesh::brush::{Brush, BrushOp};
+        Brush {
+            shape: self.shape,
+            op: match self.op {
+                GpuOp::Add => BrushOp::Add,
+                GpuOp::Subtract => BrushOp::Subtract,
+                GpuOp::SmoothAdd { k } => BrushOp::SmoothAdd { k: f64::from(k) },
+            },
+        }
+    }
+
+    /// The 64 bytes the shader reads.
+    ///
+    /// Four `vec4`s, so std140 and std430 agree. The slot meanings are written
+    /// out in `field.wgsl` next to the matching struct — a disagreement between
+    /// the two produces a brush of the right kind in the wrong place, which
+    /// looks like a meshing bug.
+    #[must_use]
+    pub fn to_std140(self) -> [u8; Self::STRIDE as usize] {
+        let (kind, a, a_w, b, b_w) = match self.shape {
+            GpuShape::Sphere { center, radius } => (0u32, center, radius, [0.0f32; 3], 0.0f32),
+            GpuShape::BoxExact {
+                center,
+                half_extents,
+            } => (1, center, 0.0, half_extents, 0.0),
+            GpuShape::Capsule { a, b, radius } => (2, a, radius, b, 0.0),
+        };
+        let (op, k) = match self.op {
+            GpuOp::Add => (0u32, 0.0f32),
+            GpuOp::Subtract => (1, 0.0),
+            GpuOp::SmoothAdd { k } => (2, k),
+        };
+
+        let mut out = [0u8; Self::STRIDE as usize];
+        let words: [[u8; 4]; 16] = [
+            kind.to_le_bytes(),
+            op.to_le_bytes(),
+            0u32.to_le_bytes(),
+            0u32.to_le_bytes(),
+            a[0].to_le_bytes(),
+            a[1].to_le_bytes(),
+            a[2].to_le_bytes(),
+            a_w.to_le_bytes(),
+            b[0].to_le_bytes(),
+            b[1].to_le_bytes(),
+            b[2].to_le_bytes(),
+            b_w.to_le_bytes(),
+            k.to_le_bytes(),
+            0f32.to_le_bytes(),
+            0f32.to_le_bytes(),
+            0f32.to_le_bytes(),
+        ];
+        for (slot, word) in out.chunks_exact_mut(4).zip(words) {
+            slot.copy_from_slice(&word);
+        }
+        out
+    }
+}
+
 /// A compiled pipeline that fills a [`FieldBuffer`] on the GPU.
 #[derive(Debug)]
 pub struct FieldSampler {
@@ -150,6 +321,7 @@ impl FieldSampler {
                 entry(0, wgpu::BufferBindingType::Uniform),
                 entry(1, wgpu::BufferBindingType::Uniform),
                 entry(2, wgpu::BufferBindingType::Storage { read_only: false }),
+                entry(3, wgpu::BufferBindingType::Storage { read_only: true }),
             ],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -189,6 +361,33 @@ impl FieldSampler {
         params: GridParams,
         field: GpuField,
     ) -> Result<FieldBuffer> {
+        self.sample_stack(device, queue, params, field, &[])
+    }
+
+    /// Allocate a [`FieldBuffer`] and fill it from a base field **and an edit
+    /// log**, on the GPU.
+    ///
+    /// The general mechanism GPU-011b chose, and the argument for choosing it
+    /// over composing a consumer's WGSL is on [`FieldSampler`].
+    ///
+    /// `brushes` is folded first to last over the base, exactly as
+    /// [`BrushStack`](isomesh::brush::BrushStack) does. **That order is part of
+    /// the value**: a log mixing adds and subtracts does not commute, and one
+    /// containing a smooth add is not even associative (M-36..M-38), so a
+    /// shader that reordered for parallelism would compute a different solid.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::GridTooLarge`](crate::Error::GridTooLarge) if the sample count
+    /// needs more workgroups than the adapter will dispatch.
+    pub fn sample_stack(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        params: GridParams,
+        field: GpuField,
+        brushes: &[GpuBrush],
+    ) -> Result<FieldBuffer> {
         let samples = params.sample_count();
         let groups = samples.div_ceil(u64::from(WORKGROUP));
         if groups > u64::from(device.limits().max_compute_workgroups_per_dimension) {
@@ -213,7 +412,27 @@ impl FieldSampler {
         });
         let mut bytes = [0u8; 16];
         bytes[..4].copy_from_slice(&field.id().to_le_bytes());
+        let count = u32::try_from(brushes.len()).map_err(|_| crate::Error::GridTooLarge {
+            samples: params.samples(),
+        })?;
+        bytes[4..8].copy_from_slice(&count.to_le_bytes());
         queue.write_buffer(&select, 0, &bytes);
+
+        // At least one element: wgpu rejects a zero-sized binding, and an empty
+        // log is the ordinary case rather than an error.
+        let log = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("isomesh brush log"),
+            size: GpuBrush::STRIDE * brushes.len().max(1) as u64,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        if !brushes.is_empty() {
+            let mut packed = Vec::with_capacity(brushes.len() * GpuBrush::STRIDE as usize);
+            for brush in brushes {
+                packed.extend_from_slice(&brush.to_std140());
+            }
+            queue.write_buffer(&log, 0, &packed);
+        }
 
         let out = FieldBuffer::new(device, params);
 
@@ -226,7 +445,12 @@ impl FieldSampler {
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("isomesh field sampler"),
             layout: &self.layout,
-            entries: &[entry(0, &grid), entry(1, &select), entry(2, out.buffer())],
+            entries: &[
+                entry(0, &grid),
+                entry(1, &select),
+                entry(2, out.buffer()),
+                entry(3, &log),
+            ],
         });
 
         let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {

@@ -29,13 +29,43 @@ const FIELD_BOX_EXACT: u32 = 2u;
 const FIELD_GYROID: u32 = 3u;
 
 struct FieldSelect {
-    // Which reference field to evaluate.
+    // Which reference field is the base.
     id: u32,
+    // Brushes in the log. Zero means the base field alone.
+    brush_count: u32,
 }
+
+// One brush in the edit log, 64 bytes.
+//
+// Four vec4s rather than a packed struct, for the same reason GridParams is two:
+// std140 and std430 then agree and there is no padding rule to get wrong. The
+// slots mean different things per shape and the mapping is written out once,
+// here and in `GpuBrush::to_std140`, because a disagreement between them
+// produces a brush of the right kind in the wrong place.
+//
+//   header : [kind, op, _, _]
+//   a      : sphere/box/torus centre, or capsule endpoint A .xyz ; .w = radius or major
+//   b      : box half-extents, or capsule endpoint B .xyz ; .w = minor
+//   join   : .x = smooth-add width k
+struct Brush {
+    header: vec4<u32>,
+    a: vec4<f32>,
+    b: vec4<f32>,
+    join: vec4<f32>,
+}
+
+const SHAPE_SPHERE: u32 = 0u;
+const SHAPE_BOX: u32 = 1u;
+const SHAPE_CAPSULE: u32 = 2u;
+
+const OP_ADD: u32 = 0u;
+const OP_SUBTRACT: u32 = 1u;
+const OP_SMOOTH_ADD: u32 = 2u;
 
 @group(0) @binding(0) var<uniform> params: GridParams;
 @group(0) @binding(1) var<uniform> select: FieldSelect;
 @group(0) @binding(2) var<storage, read_write> samples: array<f32>;
+@group(0) @binding(3) var<storage, read> brushes: array<Brush>;
 
 // isomesh's `vec3::length`: `dot` then `sqrt`, in that order.
 fn iso_length(v: vec3<f32>) -> f32 {
@@ -81,11 +111,80 @@ fn evaluate(id: u32, p: vec3<f32>) -> f32 {
     }
 }
 
+// The three brush shapes, transcribed from `fields/mod.rs` and `brush.rs`.
+
+fn shape_sphere(p: vec3<f32>, centre: vec3<f32>, radius: f32) -> f32 {
+    return iso_length(p - centre) - radius;
+}
+
+fn shape_box(p: vec3<f32>, centre: vec3<f32>, half: vec3<f32>) -> f32 {
+    let q = abs(p - centre) - half;
+    let outside = vec3<f32>(max(q.x, 0.0), max(q.y, 0.0), max(q.z, 0.0));
+    return iso_length(outside) + min(max(max(q.x, q.y), q.z), 0.0);
+}
+
+// Point-to-segment distance. A zero-length capsule is a sphere, which is the
+// right answer rather than a degenerate case to reject -- `brush.rs` says so
+// and the `denom > 0` guard is what implements it.
+fn shape_capsule(p: vec3<f32>, a: vec3<f32>, b: vec3<f32>, radius: f32) -> f32 {
+    let ab = b - a;
+    let ap = p - a;
+    let denom = ab.x * ab.x + ab.y * ab.y + ab.z * ab.z;
+    var t = 0.0;
+    if (denom > 0.0) {
+        t = clamp((ap.x * ab.x + ap.y * ab.y + ap.z * ab.z) / denom, 0.0, 1.0);
+    }
+    return iso_length(ap - ab * t) - radius;
+}
+
+// isomesh's `brush::smooth_min`, expression for expression.
+//
+// A `k` of zero degenerates to an ordinary `min` rather than dividing by zero,
+// and the parenthesisation is the CPU's: `(b + (a - b) * h) - k * h * (1 - h)`.
+// Smooth-min is not associative and not even bit-commutative (M-38), so the
+// order the CPU folds in is part of the answer and this walks the log the same
+// way.
+fn smooth_min(a: f32, b: f32, k: f32) -> f32 {
+    if (k <= 0.0) {
+        return min(a, b);
+    }
+    let h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+    return (b + (a - b) * h) - k * h * (1.0 - h);
+}
+
+// isomesh's `brush::apply`.
+fn apply_op(op: u32, field: f32, shape: f32, k: f32) -> f32 {
+    switch op {
+        case 1u: { return max(field, -shape); }
+        case 2u: { return smooth_min(field, shape, k); }
+        default: { return min(field, shape); }
+    }
+}
+
+fn brush_shape(brush: Brush, p: vec3<f32>) -> f32 {
+    switch brush.header.x {
+        case 1u: { return shape_box(p, brush.a.xyz, brush.b.xyz); }
+        case 2u: { return shape_capsule(p, brush.a.xyz, brush.b.xyz, brush.a.w); }
+        default: { return shape_sphere(p, brush.a.xyz, brush.a.w); }
+    }
+}
+
 @compute @workgroup_size(64)
 fn sample_field(@builtin(global_invocation_id) gid: vec3<u32>) {
     let flat = gid.x;
     if (flat >= grid_sample_count(params)) {
         return;
     }
-    samples[flat] = evaluate(select.id, grid_position(params, grid_sample_at(params, flat)));
+    let p = grid_position(params, grid_sample_at(params, flat));
+
+    // Base field, then the log folded over it first to last -- the same order
+    // `BrushStack::sample` walks, which is load-bearing because a mixed
+    // add/subtract log does not commute and a smooth one is not even
+    // associative (M-36..M-38).
+    var value = evaluate(select.id, p);
+    for (var i = 0u; i < select.brush_count; i = i + 1u) {
+        let brush = brushes[i];
+        value = apply_op(brush.header.y, value, brush_shape(brush, p), brush.join.x);
+    }
+    samples[flat] = value;
 }

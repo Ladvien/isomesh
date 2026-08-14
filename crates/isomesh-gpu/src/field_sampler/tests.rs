@@ -283,3 +283,298 @@ impl isomesh::Sdf for FieldOf {
         self.0.sample_on_cpu(p)
     }
 }
+
+// -- GPU-011b: the edit log --------------------------------------------------
+
+use super::{GpuBrush, GpuOp, GpuShape};
+
+/// A base field plus an edit log, as `isomesh` folds it.
+fn cpu_stack(base: GpuField, brushes: &[GpuBrush], p: [f32; 3]) -> f32 {
+    use isomesh::Sdf;
+    use isomesh::brush::{Brush, BrushStack};
+
+    struct Base(GpuField);
+    impl Sdf for Base {
+        type Scalar = f32;
+        fn sample(&self, p: [f32; 3]) -> f32 {
+            self.0.sample_on_cpu(p)
+        }
+    }
+
+    let ops: Vec<Brush<GpuShape>> = brushes.iter().map(|b| b.to_cpu()).collect();
+    BrushStack {
+        base: Base(base),
+        brushes: &ops,
+    }
+    .sample(p)
+}
+
+/// Compare a GPU-folded log against `BrushStack`, sample for sample.
+fn check_stack(
+    gpu: &Gpu,
+    sampler: &FieldSampler,
+    base: GpuField,
+    brushes: &[GpuBrush],
+    what: &str,
+) {
+    let grid = GridParams::new([25; 3], [-2.0; 3], 0.125).expect("grid");
+    let buffer = sampler
+        .sample_stack(gpu.device(), gpu.queue(), grid, base, brushes)
+        .expect("gpu stack");
+    let got = read_buffer(
+        gpu.device(),
+        gpu.queue(),
+        buffer.buffer(),
+        grid.field_buffer_size(),
+    )
+    .expect("read back");
+
+    let [sx, sy, sz] = grid.samples();
+    let mut worst = 0.0f32;
+    let mut i = 0usize;
+    for z in 0..sz {
+        for y in 0..sy {
+            for x in 0..sx {
+                let p = grid.sample_position([x, y, z]);
+                worst = worst.max((got[i] - cpu_stack(base, brushes, p)).abs());
+                i += 1;
+            }
+        }
+    }
+    assert!(
+        worst < 1e-5,
+        "{what}: worst deviation {worst:e} from BrushStack -- too large to be rounding"
+    );
+    println!("{what:<44} worst {worst:e}");
+}
+
+/// Each op, alone, against `brush::apply`.
+#[test]
+fn every_brush_op_matches_the_cpu_fold() {
+    let gpu = gpu();
+    let sampler = FieldSampler::new(gpu.device()).expect("pipeline");
+    let shape = GpuShape::Sphere {
+        center: [0.4, 0.1, -0.2],
+        radius: 0.7,
+    };
+
+    for (op, name) in [
+        (GpuOp::Add, "add"),
+        (GpuOp::Subtract, "subtract"),
+        (GpuOp::SmoothAdd { k: 0.25 }, "smooth_add k=0.25"),
+        // k <= 0 degenerates to a plain min on both sides rather than dividing
+        // by zero -- the degenerate case has a right answer and gets it.
+        (GpuOp::SmoothAdd { k: 0.0 }, "smooth_add k=0"),
+    ] {
+        check_stack(
+            &gpu,
+            &sampler,
+            GpuField::BoxExact,
+            &[GpuBrush { shape, op }],
+            name,
+        );
+    }
+}
+
+/// Each shape, against its `isomesh` definition.
+#[test]
+fn every_brush_shape_matches_the_cpu() {
+    let gpu = gpu();
+    let sampler = FieldSampler::new(gpu.device()).expect("pipeline");
+
+    for (shape, name) in [
+        (
+            GpuShape::Sphere {
+                center: [0.3, -0.2, 0.1],
+                radius: 0.6,
+            },
+            "sphere brush",
+        ),
+        (
+            GpuShape::BoxExact {
+                center: [-0.2, 0.3, 0.0],
+                half_extents: [0.5, 0.3, 0.7],
+            },
+            "box brush",
+        ),
+        (
+            GpuShape::Capsule {
+                a: [-0.6, 0.0, 0.0],
+                b: [0.6, 0.4, -0.3],
+                radius: 0.35,
+            },
+            "capsule brush",
+        ),
+        // A zero-length capsule is a sphere, which `brush.rs` calls the right
+        // answer rather than a case to reject. Both sides must agree on that.
+        (
+            GpuShape::Capsule {
+                a: [0.1, 0.1, 0.1],
+                b: [0.1, 0.1, 0.1],
+                radius: 0.4,
+            },
+            "degenerate capsule",
+        ),
+    ] {
+        check_stack(
+            &gpu,
+            &sampler,
+            GpuField::Sphere,
+            &[GpuBrush {
+                shape,
+                op: GpuOp::Subtract,
+            }],
+            name,
+        );
+    }
+}
+
+/// A long mixed log, which is where an interpreter that reorders would show.
+///
+/// Mixed adds and subtracts do not commute and a smooth add is not associative
+/// (M-36..M-38), so folding first-to-last is part of the answer rather than an
+/// implementation detail. A shader that batched or reordered for parallelism
+/// would pass every single-op test above and fail this one.
+#[test]
+fn a_mixed_log_matches_the_cpu_in_order() {
+    let gpu = gpu();
+    let sampler = FieldSampler::new(gpu.device()).expect("pipeline");
+
+    let mut log = Vec::new();
+    for i in 0..12u32 {
+        let t = i as f32;
+        let shape = match i % 3 {
+            0 => GpuShape::Sphere {
+                center: [0.9 * (t * 0.7).sin(), 0.6 * (t * 1.1).cos(), 0.4 * t.sin()],
+                radius: 0.3 + 0.05 * (t % 3.0),
+            },
+            1 => GpuShape::BoxExact {
+                center: [0.5 * (t * 0.9).cos(), 0.2 * t.sin(), 0.7 * (t * 0.3).sin()],
+                half_extents: [0.25, 0.35, 0.2],
+            },
+            _ => GpuShape::Capsule {
+                a: [-0.5, 0.2 * t.sin(), 0.0],
+                b: [0.5, 0.1 * t.cos(), 0.2],
+                radius: 0.2,
+            },
+        };
+        let op = match i % 4 {
+            0 => GpuOp::Add,
+            1 => GpuOp::Subtract,
+            2 => GpuOp::SmoothAdd { k: 0.2 },
+            _ => GpuOp::Subtract,
+        };
+        log.push(GpuBrush { shape, op });
+    }
+
+    check_stack(&gpu, &sampler, GpuField::Gyroid, &log, "12-brush mixed log");
+}
+
+/// An empty log is the base field, unchanged.
+#[test]
+fn an_empty_log_is_the_base_field() {
+    let gpu = gpu();
+    let sampler = FieldSampler::new(gpu.device()).expect("pipeline");
+    let grid = GridParams::new([17; 3], [-2.0; 3], 0.25).expect("grid");
+
+    for field in GpuField::ALL {
+        let plain = sampler
+            .sample(gpu.device(), gpu.queue(), grid, field)
+            .expect("sample");
+        let empty = sampler
+            .sample_stack(gpu.device(), gpu.queue(), grid, field, &[])
+            .expect("sample_stack");
+
+        let a = read_buffer(
+            gpu.device(),
+            gpu.queue(),
+            plain.buffer(),
+            grid.field_buffer_size(),
+        )
+        .expect("read");
+        let b = read_buffer(
+            gpu.device(),
+            gpu.queue(),
+            empty.buffer(),
+            grid.field_buffer_size(),
+        )
+        .expect("read");
+        assert_eq!(
+            a.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            b.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            "{}: an empty log changed the field",
+            field.name()
+        );
+    }
+}
+
+/// And the mesh is unchanged, which is the acceptance rather than the deviation.
+#[test]
+fn a_gpu_folded_log_extracts_the_same_mesh() {
+    use crate::{FieldBuffer, MarchingCubesGpu};
+    use isomesh::Sdf;
+    use isomesh::brush::{Brush, BrushStack};
+
+    let gpu = gpu();
+    let sampler = FieldSampler::new(gpu.device()).expect("pipeline");
+    let mc = MarchingCubesGpu::new(gpu.device(), gpu.queue()).expect("pipeline");
+    let grid = GridParams::new([49; 3], [-2.0; 3], 4.0 / 48.0).expect("grid");
+
+    let log = [
+        GpuBrush {
+            shape: GpuShape::Sphere {
+                center: [0.6, 0.2, 0.0],
+                radius: 0.55,
+            },
+            op: GpuOp::Subtract,
+        },
+        GpuBrush {
+            shape: GpuShape::Capsule {
+                a: [-0.8, -0.3, 0.0],
+                b: [0.4, 0.5, 0.2],
+                radius: 0.22,
+            },
+            op: GpuOp::Add,
+        },
+        GpuBrush {
+            shape: GpuShape::BoxExact {
+                center: [-0.3, 0.4, 0.1],
+                half_extents: [0.3, 0.2, 0.4],
+            },
+            op: GpuOp::SmoothAdd { k: 0.15 },
+        },
+    ];
+
+    struct Base;
+    impl Sdf for Base {
+        type Scalar = f32;
+        fn sample(&self, p: [f32; 3]) -> f32 {
+            GpuField::Sphere.sample_on_cpu(p)
+        }
+    }
+    let ops: Vec<Brush<GpuShape>> = log.iter().map(|b| b.to_cpu()).collect();
+    let stack = BrushStack {
+        base: Base,
+        brushes: &ops,
+    };
+
+    let uploaded =
+        FieldBuffer::sampled(gpu.device(), gpu.queue(), grid, &stack).expect("cpu sample");
+    let folded = sampler
+        .sample_stack(gpu.device(), gpu.queue(), grid, GpuField::Sphere, &log)
+        .expect("gpu fold");
+
+    let from_cpu = mc
+        .extract_buffers(gpu.device(), gpu.queue(), &uploaded)
+        .expect("extract");
+    let from_gpu = mc
+        .extract_buffers(gpu.device(), gpu.queue(), &folded)
+        .expect("extract");
+
+    assert!(from_cpu.triangles > 0, "the fixture extracted nothing");
+    assert_eq!(
+        from_cpu.triangles, from_gpu.triangles,
+        "a GPU-folded edit log changed the triangle count: {} against {}",
+        from_gpu.triangles, from_cpu.triangles
+    );
+}
