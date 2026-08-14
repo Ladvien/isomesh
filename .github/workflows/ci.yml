@@ -266,10 +266,8 @@ jobs:
       - name: publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        run: |
-          if [ -z "${CARGO_REGISTRY_TOKEN:-}" ]; then
-            echo "::error::CARGO_REGISTRY_TOKEN is not set."
-            echo "Add it under Settings -> Secrets and variables -> Actions."
-            exit 1
-          fi
-          ./scripts/publish.sh
+        # The token check lives in the script, next to the upload it guards, so
+        # a push that publishes nothing does not need a secret to stay green.
+        # Checking it here made every push to a green main red -- see M-198 and
+        # publish.sh's own header.
+        run: ./scripts/publish.sh

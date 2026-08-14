@@ -116,6 +116,24 @@ for crate in "${ORDER[@]}"; do
     continue
   fi
 
+  # **The token is required here, and deliberately not a line earlier.** An
+  # upload is now imminent -- this crate's version is absent from the registry
+  # and this is not a dry run -- so a missing token means a release that will
+  # silently not happen, and it must fail loudly.
+  #
+  # It used to be checked at the top of the workflow job instead, which made
+  # *every* push to a green main red, including the ones that upload nothing.
+  # That is precisely the outcome this script's own header exists to prevent:
+  # "would leave main permanently red and train everyone to ignore it". Nobody
+  # had seen it because the job had been `skipped` on every run since it was
+  # written -- the suite was red -- so GPU-013's push was the first time it ran
+  # at all, and the first time the missing secret was visible (M-198).
+  if [ -z "${CARGO_REGISTRY_TOKEN:-}" ]; then
+    echo "::error::CARGO_REGISTRY_TOKEN is not set, and $crate $version needs uploading."
+    echo "Add it under Settings -> Environments -> crates-io -> Environment secrets."
+    exit 1
+  fi
+
   echo "-- cargo publish -p $crate"
   # `--locked` so CI publishes exactly the dependency graph the committed
   # lockfile describes, rather than whatever resolved that morning.
