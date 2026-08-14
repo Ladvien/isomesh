@@ -223,6 +223,24 @@ impl MeshShaderRenderer {
         })
     }
 
+    /// Record a draw whose workgroup count the **GPU** supplies.
+    ///
+    /// The count and the triangle total were written by
+    /// [`MarchingCubesGpu::extract_indirect`](crate::MarchingCubesGpu::extract_indirect)
+    /// and never came home, so nothing on this path waits for the extraction to
+    /// finish. Bind `draw_params` as binding 1 rather than a CPU-written
+    /// uniform — the two are the same 16 bytes, one filled by a kernel.
+    pub fn draw_indirect(
+        &self,
+        pass: &mut wgpu::RenderPass<'_>,
+        bind_group: &wgpu::BindGroup,
+        indirect: &wgpu::Buffer,
+    ) {
+        pass.set_pipeline(&self.pipeline);
+        pass.set_bind_group(0, bind_group, &[]);
+        pass.draw_mesh_tasks_indirect(indirect, 0);
+    }
+
     /// Record the draw. `triangles` is the soup's triangle count.
     pub fn draw(
         &self,

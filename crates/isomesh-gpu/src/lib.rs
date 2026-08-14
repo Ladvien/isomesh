@@ -73,11 +73,11 @@ pub use error::{Error, Result};
 pub use field_sampler::{FieldSampler, GpuBrush, GpuField, GpuOp, GpuShape};
 pub use grid::GridParams;
 pub use marching_cubes::{
-    ExtractTimings, GpuGeometry, GpuMesh, MarchingCubesGpu, case_table_bytes,
+    ExtractTimings, GpuGeometry, GpuMesh, IndirectGeometry, MarchingCubesGpu, case_table_bytes,
 };
 pub use mesh_render::MeshShaderRenderer;
 pub use mesh_shader::{MeshShaderReport, probe_mesh_shaders};
-pub use scan::{PrefixScan, ScanOutput, cpu_prefix_sum, scan_length};
+pub use scan::{DeferredScan, PrefixScan, ScanOutput, cpu_prefix_sum, scan_length};
 pub use shader::{
     Composer, FEATURES, FIELD_WGSL, GRID_WGSL, MARCHING_CUBES_WGSL, MESH_RENDER_WGSL, SCAN_WGSL,
 };

@@ -222,11 +222,23 @@ fn emit_cells(@builtin(global_invocation_id) id: vec3<u32>) {
 
     // `counts` holds exclusive prefix sums by now, so this cell's triangles go
     // at a slot nothing else writes and the output is dense with no atomics.
+    //
+    // The bound comes from `arrayLength` rather than a uniform: when the caller
+    // sized the buffers from the scanned total there is nothing to clamp, and
+    // when they sized them from a budget (the zero-read-back path) this is what
+    // stops a write running off the end. A surface that exceeds the budget is
+    // truncated, and the caller detects that by comparing the total against
+    // their capacity -- explicitly, when they choose, rather than by this
+    // shader deciding for them.
+    let capacity = arrayLength(&positions) / 3u;
     var slot = counts[flat] * 3u;
     for (var t = 0u; t < count; t = t + 1u) {
         let tri = case_triangle(cell.case_index, t);
         let code = array<u32, 3>(tri.x, tri.y, tri.z);
         for (var k = 0u; k < 3u; k = k + 1u) {
+            if (slot >= capacity) {
+                return;
+            }
             var p: vec3<f32>;
             if (code[k] >= CENTROID_BASE) {
                 p = centroid[code[k] - CENTROID_BASE];

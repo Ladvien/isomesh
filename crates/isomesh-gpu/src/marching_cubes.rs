@@ -50,6 +50,10 @@ const CASE_STRIDE: usize = 1 + MAX_TRIANGLES;
 /// Threads per workgroup, matching `@workgroup_size(64)` in the shader.
 const WORKGROUP: u32 = 64;
 
+/// Triangles a mesh-shader workgroup emits. Must match `BATCH` in
+/// `mesh_render.wgsl` and `MeshShaderRenderer`'s own constant.
+const MESH_BATCH: u32 = 32;
+
 /// The 256-case table, packed for the shader.
 ///
 /// 13 words per case, little-endian:
@@ -147,6 +151,35 @@ pub struct GpuGeometry {
     /// Triangles in the soup. Zero means the buffers are placeholders.
     pub triangles: u32,
     /// Where the time went. `geometry_readback_ms` is zero here by definition.
+    pub timings: ExtractTimings,
+}
+
+/// An extraction that never synchronised: the triangle count is still on the
+/// GPU, and the draw reads it from there.
+///
+/// The zero-read-back form. Its cost is that the geometry buffers were sized
+/// from a **budget** rather than from the answer, so a surface with more
+/// triangles than the budget is truncated — see
+/// [`MarchingCubesGpu::extract_indirect`] for why that is a contract rather
+/// than a silent failure.
+#[derive(Debug)]
+pub struct IndirectGeometry {
+    /// Three positions per triangle, sized to the budget.
+    pub positions: wgpu::Buffer,
+    /// Parallel to `positions`.
+    pub normals: wgpu::Buffer,
+    /// `[group_count_x, y, z]` for `draw_mesh_tasks_indirect`.
+    pub indirect: wgpu::Buffer,
+    /// The mesh shader's own uniform: the triangle count.
+    pub draw_params: wgpu::Buffer,
+    /// A one-element buffer holding the triangle count.
+    ///
+    /// Reading it is the only way to learn whether the budget was exceeded, and
+    /// it is the caller's choice when — or whether — to pay for that.
+    pub total: wgpu::Buffer,
+    /// Triangles the buffers were sized for.
+    pub budget: u32,
+    /// Where the time went. Every read-back field is zero here by definition.
     pub timings: ExtractTimings,
 }
 
@@ -309,6 +342,165 @@ impl MarchingCubesGpu {
         Ok(GpuMesh {
             positions: triple(&flat_positions),
             normals: triple(&flat_normals),
+            timings,
+        })
+    }
+
+    /// Extract `field` with **no read-back at all**, sizing the output from a
+    /// budget.
+    ///
+    /// [`extract_buffers`](Self::extract_buffers) still waits once, for the four
+    /// bytes of the triangle count, and that wait also drains every dispatch
+    /// queued before it — measured at **0.375 ms of a 0.454 ms extraction** at
+    /// 129³ (M-159). This form removes the synchronisation entirely: the total
+    /// stays in GPU memory, a kernel turns it into
+    /// `draw_mesh_tasks_indirect` arguments, and the CPU carries on recording.
+    ///
+    /// # The budget is a contract, and here is its cost
+    ///
+    /// Without the total, the geometry buffers cannot be sized from the answer.
+    /// Three strategies were considered and the budget is the one that ships:
+    ///
+    /// - **Worst case.** `MAX_TRIANGLES` is 12 per cell, so 129³ would need
+    ///   **906 MB per buffer**, 1.8 GB for both, against a measured 38,456
+    ///   triangles — a factor of **190×** wasted. Viable only on a large card and
+    ///   never a good idea.
+    /// - **Grow and retry.** Needs to know it overflowed, which needs the total,
+    ///   which is the wait this exists to remove.
+    /// - **A budget the caller sets.** What this does.
+    ///
+    /// A surface exceeding `budget` is **truncated**, and the shader stops at
+    /// the buffer's own `arrayLength` rather than running off the end. That is
+    /// not a silent fallback: [`total`](IndirectGeometry::total) holds the real
+    /// count, and a caller who wants certainty reads it — explicitly, when they
+    /// choose, exactly as `collider::readiness` is a check the caller runs
+    /// rather than a guarantee the extractor pretends to.
+    ///
+    /// # Errors
+    ///
+    /// As [`extract_buffers`](Self::extract_buffers).
+    pub fn extract_indirect(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        field: &FieldBuffer,
+        budget: u32,
+    ) -> Result<IndirectGeometry> {
+        let params = field.params();
+        let cells = params.cell_count();
+        let groups = cells.div_ceil(u64::from(WORKGROUP));
+        if groups > u64::from(device.limits().max_compute_workgroups_per_dimension) {
+            return Err(Error::GridTooLarge {
+                samples: params.samples(),
+            });
+        }
+        let cell_words = u32::try_from(cells).map_err(|_| Error::GridTooLarge {
+            samples: params.samples(),
+        })?;
+
+        let uniform = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("isomesh grid params"),
+            size: GridParams::UNIFORM_SIZE,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        queue.write_buffer(&uniform, 0, &params.to_std140());
+
+        let counts = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("isomesh cell triangle counts"),
+            size: u64::from(cell_words) * 4,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+        let placeholder = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("isomesh unused output"),
+            size: 4,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+
+        let mut timings = ExtractTimings::default();
+        let started = std::time::Instant::now();
+        self.dispatch(
+            device,
+            queue,
+            &uniform,
+            field,
+            &counts,
+            &placeholder,
+            &placeholder,
+            &self.count,
+            groups,
+        );
+        timings.count_ms = started.elapsed().as_secs_f64() * 1000.0;
+
+        let started = std::time::Instant::now();
+        let scanned = self.scan.scan_deferred(device, queue, &counts, cell_words);
+        timings.scan_ms = started.elapsed().as_secs_f64() * 1000.0;
+
+        let floats = u64::from(budget) * 9;
+        if floats * 4 > device.limits().max_storage_buffer_binding_size {
+            return Err(Error::GridTooLarge {
+                samples: params.samples(),
+            });
+        }
+        let geometry = |label| {
+            device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some(label),
+                size: (floats * 4).max(4),
+                usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+                mapped_at_creation: false,
+            })
+        };
+        let positions = geometry("isomesh positions (budgeted)");
+        let normals = geometry("isomesh normals (budgeted)");
+
+        let started = std::time::Instant::now();
+        self.dispatch(
+            device,
+            queue,
+            &uniform,
+            field,
+            &scanned.offsets,
+            &positions,
+            &normals,
+            &self.emit,
+            groups,
+        );
+        timings.emit_ms = started.elapsed().as_secs_f64() * 1000.0;
+
+        let indirect = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("isomesh mesh draw args"),
+            size: 12,
+            usage: wgpu::BufferUsages::INDIRECT
+                | wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+        let draw_params = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("isomesh draw params"),
+            size: 16,
+            usage: wgpu::BufferUsages::UNIFORM
+                | wgpu::BufferUsages::STORAGE
+                | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+        self.scan.write_draw_args(
+            device,
+            queue,
+            &scanned.total,
+            &indirect,
+            &draw_params,
+            MESH_BATCH,
+        );
+
+        Ok(IndirectGeometry {
+            positions,
+            normals,
+            indirect,
+            draw_params,
+            total: scanned.total,
+            budget,
             timings,
         })
     }

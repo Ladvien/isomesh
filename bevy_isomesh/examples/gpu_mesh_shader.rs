@@ -70,6 +70,9 @@ struct Scene {
     samples: u32,
     /// Drives the moving brushes. Frozen by `Space`.
     time: f32,
+    /// Read the triangle count back this frame. Off by default, because not
+    /// reading it is the property this demo exists to show.
+    probe: bool,
 }
 
 impl ExtractResource for Scene {
@@ -97,9 +100,12 @@ impl ExtractResource for Readout {
 #[derive(Default, Clone, Copy)]
 struct Stats {
     triangles: u32,
+    budget: u32,
     extract_ms: f64,
     mesh_shaders: bool,
     ran: bool,
+    /// Whether `triangles` came from an actual read-back this frame.
+    probed: bool,
 }
 
 /// Pipelines, built once the render device exists.
@@ -129,6 +135,7 @@ fn main() {
         .insert_resource(Scene {
             samples: common::samples_override().unwrap_or(DEFAULT_SAMPLES),
             time: 0.0,
+            probe: false,
         })
         .init_resource::<Readout>()
         .add_systems(Startup, setup)
@@ -161,6 +168,8 @@ fn drive(
     if keys.just_pressed(KeyCode::BracketRight) {
         scene.samples = (scene.samples + 16).min(129);
     }
+    // Held, not toggled: the cost is per frame it is on.
+    scene.probe = keys.pressed(KeyCode::KeyT);
 }
 
 fn report(scene: Res<Scene>, readout: Res<Readout>, mut stats: ResMut<DemoStats>) {
@@ -182,8 +191,24 @@ fn report(scene: Res<Scene>, readout: Res<Readout>, mut stats: ResMut<DemoStats>
         "prefix sum scanned on the gpu (GPU-010a)".to_string(),
         "geometry never read back      (GPU-008b)".to_string(),
         String::new(),
-        "per frame the cpu sends a camera matrix and three brushes".to_string(),
-        "[ ] resolution   [Space] pause the brushes".to_string(),
+        format!(
+            "triangle budget {:>9}   {}",
+            snapshot.budget,
+            if snapshot.probed {
+                format!(
+                    "actual {} -- read back because you held T",
+                    snapshot.triangles
+                )
+            } else {
+                "actual: NOT READ BACK. hold [T] to pay for it".to_string()
+            }
+        ),
+        String::new(),
+        "per frame the cpu sends a camera matrix and three brushes, and waits".to_string(),
+        "for nothing. the triangle count goes straight into the draw's own".to_string(),
+        "arguments (GPU-010b) -- so the cpu cannot know it without asking.".to_string(),
+        String::new(),
+        "[ ] resolution   [Space] pause the brushes   [T] read the count".to_string(),
     ];
 }
 
@@ -329,17 +354,30 @@ fn draw_isosurface(
     else {
         return;
     };
-    let Ok(geometry) = kit.marching_cubes.extract_buffers(device, queue, &field) else {
+    // Zero read-backs: the triangle count is written into the draw's own
+    // arguments and never comes home. The budget is the price -- see
+    // `extract_indirect` -- and a quarter of the cell count is generous against
+    // the ~2% of cells a surface actually crosses.
+    let budget = (grid.cell_count() / 4).clamp(4096, 4_000_000) as u32;
+    let Ok(geometry) = kit
+        .marching_cubes
+        .extract_indirect(device, queue, &field, budget)
+    else {
         return;
     };
     stats.extract_ms = started.elapsed().as_secs_f64() * 1000.0;
-    stats.triangles = geometry.triangles;
+    stats.budget = budget;
     stats.ran = true;
-    publish(stats);
 
-    if geometry.triangles == 0 {
-        return;
+    // The count is only knowable by reading it, which is the whole point -- so
+    // it is read on request rather than every frame.
+    if scene.probe {
+        if let Ok(total) = isomesh_gpu::read_buffer_u32(device, queue, &geometry.total, 4) {
+            stats.triangles = total.first().copied().unwrap_or(0);
+            stats.probed = true;
+        }
     }
+    publish(stats);
 
     // The one thing the CPU still sends: where the camera is.
     let clip_from_world = extracted.clip_from_world.unwrap_or_else(|| {
@@ -359,15 +397,13 @@ fn draw_isosurface(
         "isomesh camera",
         &MeshShaderRenderer::camera_bytes(clip_from_world.to_cols_array_2d()),
     );
-    let draw = uniform(
-        "isomesh draw",
-        &MeshShaderRenderer::draw_bytes(geometry.triangles),
-    );
 
     let bind_group = renderer.bind_group(
         device,
         &camera,
-        &draw,
+        // The draw's uniform, written by a kernel from the scanned total rather
+        // than uploaded. Same sixteen bytes, filled on the other side.
+        &geometry.draw_params,
         &geometry.positions,
         &geometry.normals,
     );
@@ -385,5 +421,5 @@ fn draw_isosurface(
         occlusion_query_set: None,
         multiview_mask: None,
     });
-    renderer.draw(&mut pass, &bind_group, geometry.triangles);
+    renderer.draw_indirect(&mut pass, &bind_group, &geometry.indirect);
 }

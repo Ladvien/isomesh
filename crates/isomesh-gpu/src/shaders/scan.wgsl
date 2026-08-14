@@ -101,3 +101,21 @@ fn add_block_offsets(
     }
     output[i] = output[i] + block_sums[wg.x];
 }
+
+// Write a mesh-shader draw's arguments from the scanned total, so the CPU never
+// has to learn it.
+//
+// `input[0]` is the grand total the deepest level published; `params.n` carries
+// the mesh shader's triangles-per-workgroup. One invocation, because there are
+// four numbers to write.
+@compute @workgroup_size(1)
+fn write_draw_args() {
+    let total = input[0];
+    // [group_count_x, y, z] for `draw_mesh_tasks_indirect`.
+    output[0] = (total + params.n - 1u) / params.n;
+    output[1] = 1u;
+    output[2] = 1u;
+    // The draw's own uniform: how many triangles the last workgroup should stop
+    // at. Written here rather than uploaded, which is the whole point.
+    block_sums[0] = total;
+}

@@ -57,6 +57,23 @@ struct Level {
     params: wgpu::Buffer,
 }
 
+/// A scan whose total is still on the GPU.
+///
+/// The zero-synchronisation form: nothing is read back, so the CPU never waits
+/// for the dispatches to finish and the caller can keep recording. The price is
+/// that the caller does not know how many triangles there will be, which is what
+/// [`MarchingCubesGpu::extract_indirect`](crate::MarchingCubesGpu::extract_indirect)
+/// solves with a budget.
+#[derive(Debug)]
+pub struct DeferredScan {
+    /// The exclusive prefix sum, one `u32` per input element.
+    pub offsets: wgpu::Buffer,
+    /// A one-element buffer holding the sum of every input element.
+    pub total: wgpu::Buffer,
+    /// Levels the hierarchy needed.
+    pub levels: usize,
+}
+
 /// What a scan produced.
 #[derive(Debug)]
 pub struct ScanOutput {
@@ -78,6 +95,7 @@ pub struct ScanOutput {
 pub struct PrefixScan {
     scan: wgpu::ComputePipeline,
     add: wgpu::ComputePipeline,
+    draw_args: wgpu::ComputePipeline,
     layout: wgpu::BindGroupLayout,
 }
 
@@ -138,6 +156,7 @@ impl PrefixScan {
         Ok(Self {
             scan: compile("scan_blocks"),
             add: compile("add_block_offsets"),
+            draw_args: compile("write_draw_args"),
             layout,
         })
     }
@@ -161,6 +180,35 @@ impl PrefixScan {
         counts: &wgpu::Buffer,
         n: u32,
     ) -> Result<ScanOutput> {
+        let deferred = self.scan_deferred(device, queue, counts, n);
+        // The four bytes. Measured at 0.033 ms on their own, and the `poll(Wait)`
+        // around them also waits for every dispatch queued before -- 0.375 ms at
+        // 129³ (M-159). `scan_deferred` is the form that skips both.
+        let total = read_buffer_u32(device, queue, &deferred.total, 4)?
+            .first()
+            .copied()
+            .unwrap_or(0);
+        Ok(ScanOutput {
+            offsets: deferred.offsets,
+            total,
+            levels: deferred.levels,
+        })
+    }
+
+    /// The same scan, leaving the total in GPU memory.
+    ///
+    /// Nothing is read back and nothing is waited on, so the caller can carry on
+    /// recording work. Pair it with
+    /// [`write_draw_args`](Self::write_draw_args) to turn the total into a draw
+    /// the GPU issues to itself.
+    #[must_use]
+    pub fn scan_deferred(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        counts: &wgpu::Buffer,
+        n: u32,
+    ) -> DeferredScan {
         // Sizes first, buffers second, dispatches third. Working out the whole
         // hierarchy before allocating any of it keeps the borrow of the level
         // below out of the loop that builds the level above.
@@ -242,24 +290,68 @@ impl PrefixScan {
         }
 
         // The deepest level has exactly one block, so the single total it
-        // published is the sum of everything. Four bytes, against 4 bytes per
-        // cell before.
-        let deepest = levels.last().expect("the loop pushes at least one level");
-        let total = read_buffer_u32(device, queue, &deepest.sums, 4)?
-            .first()
-            .copied()
-            .unwrap_or(0);
-
-        let offsets = levels
-            .into_iter()
-            .next()
-            .expect("the loop pushes at least one level")
-            .out;
-        Ok(ScanOutput {
+        // published is the sum of everything.
+        let mut levels = levels;
+        let deepest = levels.pop().expect("the loop pushes at least one level");
+        let total = deepest.sums;
+        // With one level the buffer just popped is also the first, so its own
+        // `out` is the answer. `Level` implements no `Drop`, so taking two
+        // fields out of it separately is a partial move rather than a clone.
+        let offsets = match levels.into_iter().next() {
+            Some(first) => first.out,
+            None => deepest.out,
+        };
+        DeferredScan {
             offsets,
             total,
             levels: sizes.len(),
-        })
+        }
+    }
+
+    /// Turn a scanned total into a mesh-shader draw the GPU issues to itself.
+    ///
+    /// Writes `[ceil(total / batch), 1, 1]` into `indirect` for
+    /// `draw_mesh_tasks_indirect`, and the total into `draw_params` for the
+    /// shader's own bound. Neither number is ever known to the CPU.
+    ///
+    /// `indirect` needs `INDIRECT | STORAGE`; `draw_params` needs
+    /// `UNIFORM | STORAGE`.
+    pub fn write_draw_args(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        total: &wgpu::Buffer,
+        indirect: &wgpu::Buffer,
+        draw_params: &wgpu::Buffer,
+        batch: u32,
+    ) {
+        // `params.n` carries the batch size for this entry point rather than an
+        // element count -- one uniform, two meanings, documented at both ends.
+        let params = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("isomesh draw args params"),
+            size: 16,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        let mut bytes = [0u8; 16];
+        bytes[..4].copy_from_slice(&batch.to_le_bytes());
+        queue.write_buffer(&params, 0, &bytes);
+
+        let level = Level {
+            blocks: 1,
+            out: indirect.clone(),
+            sums: draw_params.clone(),
+            params,
+        };
+        self.dispatch(
+            device,
+            queue,
+            &self.draw_args,
+            &level,
+            total,
+            indirect,
+            draw_params,
+        );
     }
 
     #[allow(clippy::too_many_arguments)]

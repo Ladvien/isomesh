@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**92 tickets archived, 3 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**93 tickets archived, 2 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -135,7 +135,6 @@ numbers, or you won't be able to tell what the port bought you.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **GPU-010b** | **An indirect mesh draw, so the last four bytes stop coming home.** GPU-010a moved the scan onto the GPU; what remains is that the CPU still reads the grand total to size the geometry buffer. Write the total and the mesh-workgroup count into an indirect buffer and draw with `draw_mesh_tasks_indirect` (`wgpu-29.0.4`, `api/render_pass.rs:303`), and the extraction reads back **nothing**. **The sizing question is the real content of this ticket, not the draw call:** without the total on the CPU the geometry buffer has to be allocated worst-case, or grown and the emit pass re-dispatched, and that is a decision with a memory bill attached — at 129³ the worst case is 12 triangles per cell against a measured 38,456 total, which is four orders of magnitude of slack. **Acceptance:** a 129³ extraction with zero read-backs, measured against `gpu_vs_cpu.csv`, and the allocation strategy written down with its cost. | L | GPU-010a |
 > NOT BLOCKED, and an earlier note here said it was — see M-147. **The route needs no `unsafe` in this repository at all.** `isomesh-gpu` never opens a device (its API takes `&wgpu::Device`, GPU-001's rule), and **Bevy writes the experimental token itself**: `experimental_features: unsafe { wgpu::ExperimentalFeatures::enabled() }` at `bevy_render-0.19.0/src/renderer/mod.rs:335`. `WgpuSettings`' default priority is `Functionality`, which requests every feature the adapter advertises, so **Bevy's device already reports `mesh_shader=true multiview=true points=true`** on this machine, measured. E-303 is a Bevy example and gets a mesh-shader-capable device for free; `WgpuSettings.features` is there to force it explicitly if the default ever changes.
 >
 > **The probe is load-bearing, not belt-and-braces** — an earlier version of this note implied otherwise and was wrong in the opposite direction from the blocked claim it replaced. The free device is *one of three branches*: `WgpuSettings::default()` consults `settings_priority_from_env()` first, so **`WGPU_SETTINGS_PRIO` overrides it**; under any priority other than `Functionality`, `features` starts at `wgpu::Features::empty()`; and `adapter.features()` is machine-dependent. It is also **contingent upstream**: Bevy's line carries `// SAFETY: TODO, see bevyengine/bevy#22082`, an admission that a justification is owed, so if that issue lands as opt-in the default path loses mesh shaders. Track it.

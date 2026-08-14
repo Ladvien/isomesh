@@ -14,7 +14,7 @@ use isomesh::{MeshBuffer, RuntimeShape3, Sdf};
 
 use super::{MarchingCubesGpu, case_table_bytes};
 use crate::headless::Gpu;
-use crate::{FieldBuffer, GridParams};
+use crate::{FieldBuffer, GridParams, read_buffer, read_buffer_u32};
 
 fn gpu() -> Gpu {
     Gpu::new().expect("a GPU adapter -- no software fallback, by design")
@@ -437,4 +437,89 @@ fn empty_extraction_still_yields_bindable_buffers() {
         "a zero-sized binding is invalid"
     );
     assert!(on_gpu.normals.size() > 0);
+}
+
+/// The zero-read-back path agrees with the synchronising one, triangle for
+/// triangle and byte for byte.
+///
+/// `extract_indirect` never learns the total, so the only way to check it is to
+/// read what it produced afterwards — which is exactly the explicit,
+/// caller-chosen check its contract describes.
+#[test]
+fn the_indirect_path_produces_the_same_geometry() {
+    let gpu = gpu();
+    let mc = MarchingCubesGpu::new(gpu.device(), gpu.queue()).expect("pipeline");
+    let grid = GridParams::new([33; 3], [-2.0; 3], 0.125).expect("grid");
+    let field = Sphere::<f32>::canonical();
+    let buffer = FieldBuffer::sampled(gpu.device(), gpu.queue(), grid, &field).expect("upload");
+
+    let sync = mc
+        .extract_buffers(gpu.device(), gpu.queue(), &buffer)
+        .expect("extract_buffers");
+    // Generous budget: this test is about agreement, not truncation.
+    let indirect = mc
+        .extract_indirect(gpu.device(), gpu.queue(), &buffer, sync.triangles * 2)
+        .expect("extract_indirect");
+
+    // The total the GPU wrote, read back only because a test has to look.
+    let total = read_buffer_u32(gpu.device(), gpu.queue(), &indirect.total, 4).expect("total")[0];
+    assert_eq!(
+        total, sync.triangles,
+        "the indirect path counted differently"
+    );
+
+    // And the draw arguments it derived from it.
+    let args = read_buffer_u32(gpu.device(), gpu.queue(), &indirect.indirect, 12).expect("args");
+    assert_eq!(args[0], total.div_ceil(32), "workgroup count");
+    assert_eq!([args[1], args[2]], [1, 1], "y and z must be 1");
+
+    let params =
+        read_buffer_u32(gpu.device(), gpu.queue(), &indirect.draw_params, 4).expect("params");
+    assert_eq!(params[0], total, "the draw uniform must carry the total");
+
+    // The geometry itself, bit for bit over the triangles that exist.
+    let floats = u64::from(total) * 9 * 4;
+    let a = read_buffer(gpu.device(), gpu.queue(), &sync.positions, floats).expect("sync");
+    let b = read_buffer(gpu.device(), gpu.queue(), &indirect.positions, floats).expect("indirect");
+    assert_eq!(
+        a.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+        b.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+        "the two paths wrote different positions"
+    );
+}
+
+/// A budget smaller than the surface truncates, and says so where the caller
+/// can find it.
+///
+/// The important half is the second: truncation is not silent, because
+/// `total` holds the real count and comparing it against the budget is the
+/// documented check. The first half is that the shader stops at the buffer's
+/// own length rather than writing past it — which without the `arrayLength`
+/// bound would be memory corruption rather than a short mesh.
+#[test]
+fn a_budget_smaller_than_the_surface_truncates_detectably() {
+    let gpu = gpu();
+    let mc = MarchingCubesGpu::new(gpu.device(), gpu.queue()).expect("pipeline");
+    let grid = GridParams::new([33; 3], [-2.0; 3], 0.125).expect("grid");
+    let field = Sphere::<f32>::canonical();
+    let buffer = FieldBuffer::sampled(gpu.device(), gpu.queue(), grid, &field).expect("upload");
+
+    let full = mc
+        .extract_buffers(gpu.device(), gpu.queue(), &buffer)
+        .expect("extract");
+    let budget = full.triangles / 4;
+    let tight = mc
+        .extract_indirect(gpu.device(), gpu.queue(), &buffer, budget)
+        .expect("extract_indirect");
+
+    let total = read_buffer_u32(gpu.device(), gpu.queue(), &tight.total, 4).expect("total")[0];
+    assert_eq!(
+        total, full.triangles,
+        "the total must report the real surface, not the budget"
+    );
+    assert!(
+        total > tight.budget,
+        "the fixture did not actually overflow: {total} against a budget of {}",
+        tight.budget
+    );
 }
