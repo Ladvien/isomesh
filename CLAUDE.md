@@ -68,7 +68,7 @@ compiles two copies and you get `expected TextureFormat, found a different Textu
 | Crate | Version | Why |
 |---|---|---|
 | `bevy` | **0.19** | target |
-| `wgpu` / `wgpu-types` / `naga` | **29.0.3** | exactly what `bevy_render` 0.19 pins |
+| `wgpu` / `wgpu-types` / `naga` | **29.x — whatever Bevy 0.19's requirement resolves to** (both lockfiles are at 29.0.4) | patch releases float by design; the major/minor is what `bevy_render` 0.19 pins |
 | `glam` | **0.32** | exactly what Bevy 0.19 pins |
 | `encase` | **0.12** | same |
 | edition | **2024** | |
@@ -112,7 +112,7 @@ isomesh/
                         lives in bevy_isomesh/, so CI compiles it.
                         Deps: libm. Only libm — see ✗16; glam cannot serve a crate
                         generic over f32 and f64.
-    isomesh-gpu/        + wgpu 29.0.3. API takes &wgpu::Device / &Queue / &mut CommandEncoder.
+    isomesh-gpu/        + wgpu 29.x. API takes &wgpu::Device / &Queue / &mut CommandEncoder.
   bevy_isomesh/         EXCLUDED from the root workspace. Own Cargo.lock. ALL Bevy examples here.
   docs/research/        the papers-derived research. Read-only unless asked.
 ```
@@ -130,8 +130,12 @@ pristine. The cost is no `cargo test --workspace` across the boundary — run bo
    implementation detail. Reason: Bevy 0.19 wants glam 0.32, `parry3d` wants 0.33, `fast-surface-nets`
    wants 0.29 — a consumer using two of those compiles incompatible `Vec3` types. Arrays are the only
    thing that survives. Offer `From`/`Into` behind optional features, never in the core API.
-2. **`grep -r "bevy" crates/` must return nothing.** Not in `src`, not in `Cargo.toml`, not in
-   `dev-dependencies`. Bevy exists only inside `bevy_isomesh/`.
+2. **No Bevy dependency and no Bevy in code under `crates/`.** Not in `[dependencies]`, not in
+   `[dev-dependencies]`, not in a `use`. Bevy exists only inside `bevy_isomesh/`. Prose *may* name
+   Bevy where it explains why wgpu is pinned to Bevy's version — that is the rule's reason, not a
+   breach of it. CI enforces the two checkable forms: comment-stripped manifests must not name bevy,
+   and non-comment `.rs` lines must not either. The strong form is unchanged:
+   `cargo metadata --format-version 1 | grep -c '"name":"bevy'` → 0.
 3. **Nothing goes in `crates/isomesh/Cargo.toml` `[dependencies]` except `glam`** without a written
    justification added to this file in the same commit. The pitch is "as light as possible"; every dep
    is a decision, not a convenience. Justifications live in the section below.
