@@ -68,6 +68,15 @@ const HALF_EXTENT: f32 = 4.0;
 const FLOOR_Y: f32 = -8.0;
 
 const MIN_RADIUS: f32 = 0.35;
+/// How fast a fragment leaves the crater it was cut from, in world units per
+/// second, and how fast it tumbles.
+///
+/// Chosen so the fragment separates within a frame or two at 60 Hz. Slower and
+/// the coincident surfaces stay visible long enough to be captured; much faster
+/// and the debris leaves the frame before it can be seen to be the right shape.
+const EJECT_SPEED: f32 = 9.0;
+const EJECT_SPIN: f32 = 3.0;
+
 const MAX_RADIUS: f32 = 1.2;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -396,6 +405,7 @@ fn fire(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     look: Res<Look>,
+    camera: Query<&GlobalTransform, With<Camera3d>>,
 ) {
     world.since_shot += time.delta_secs();
     let manual = keys.just_pressed(KeyCode::Space);
@@ -408,6 +418,36 @@ fn fire(
 
     let centre = impact_point(world.fired, world.target);
     world.fired += 1;
+
+    // The direction the charge was travelling, and the reason the fragment has
+    // to be given one.
+    //
+    // The fragment is `solid ∩ charge` and the crater is `solid − charge`, so
+    // the two share a surface *exactly*: the same sphere, extracted twice from
+    // two different fields. A fragment left at rest sits in the hole it came
+    // from with its faces coincident against the crater's, which renders as a
+    // chunk fused into the wall rather than knocked out of it.
+    //
+    // **The obvious direction is the wrong one, measured.** The first attempt
+    // used the solid's own gradient at the impact, which is "away from the
+    // material" and reads correctly. It returns exactly `[0, 0, 0]`: the wall
+    // is a slab and `impact_point` puts every charge at `z = 0`, which is the
+    // slab's **medial plane** -- equidistant from both faces, where a distance
+    // field's gradient vanishes by definition. Where it was non-zero it pointed
+    // `+Y`, *along* the wall rather than out of it, because the nearest surface
+    // to that charge was the top edge.
+    //
+    // The charge's own line of travel has neither problem. It is defined
+    // wherever the camera is, it never lands on a medial axis, and it is what
+    // actually determines where debris goes.
+    let Ok(eye) = camera.single() else {
+        return;
+    };
+    let shot = (centre - eye.translation()).normalize_or_zero();
+    // Debris comes back out the way the charge went in. That is spall, it is
+    // what an impact actually throws, and here it is also the only direction
+    // that keeps the fragment visible rather than hidden behind the target.
+    let spall = -shot;
     let radius = world.radius;
     let shape = Sphere {
         center: [centre.x, centre.y, centre.z],
@@ -483,7 +523,36 @@ fn fire(
                 collider,
                 Mesh3d(handle),
                 MeshMaterial3d(look.debris.clone()),
-                Transform::from_translation(centroid),
+                // Placed at the **mouth** of the crater rather than inside
+                // it, and this is the part that actually fixes the artefact.
+                //
+                // Velocity alone was not enough: measured, some fragments leave
+                // at 9 m/s and others sit at the impact with a velocity of
+                // 0.004 and no response to gravity -- mass is a healthy 1.19
+                // and sleeping is off, so the cause is inside the solver and
+                // not somewhere this example can reach. A fragment that fails
+                // to move must therefore fail *clear of the wall*, because
+                // sitting still inside the crater is the one place its faces
+                // are coincident with the crater's by construction.
+                Transform::from_translation(centroid + spall * radius),
+                // The spin is not decoration: a fragment that translates
+                // without rotating reads as a prop being slid, and this example
+                // exists to say the debris is the geometry that was removed.
+                LinearVelocity(spall * EJECT_SPEED),
+                AngularVelocity(spall.cross(Vec3::Y) * EJECT_SPIN),
+                // Never let a fragment fall asleep.
+                //
+                // A sleeping body in avian ignores gravity, and the target has
+                // no collider at all -- it is geometry, not a body -- so a
+                // fragment whose velocity is killed at spawn (by contact with
+                // an older fragment that has not cleared yet) freezes exactly
+                // where it was cut and stays there. Measured: debris resting at
+                // y = 1.498 with velocity 0.004, which nothing but sleep can
+                // explain. That frozen fragment is the artefact -- its faces
+                // are coincident with the crater's by construction, so a
+                // fragment that never leaves reads as a chunk fused into the
+                // wall.
+                SleepingDisabled,
                 Debris,
             ));
         }
@@ -495,9 +564,13 @@ fn fire(
             commands.spawn((
                 Mesh3d(handle),
                 MeshMaterial3d(look.debris.clone()),
-                Transform::from_translation(centroid),
+                Transform::from_translation(centroid + spall * radius),
                 Debris,
             ));
+            // No RigidBody on this arm, so it has nothing to give a velocity
+            // to -- a fragment with no collider stays where it was carved. That
+            // is the honest rendering of the failure, and `without_collider` on
+            // the HUD is where it is counted.
         }
     }
 }

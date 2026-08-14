@@ -3393,14 +3393,14 @@ dependencies = [
 
 [[package]]
 name = "isomesh"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "libm",
 ]
 
 [[package]]
 name = "isomesh-gpu"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "isomesh",
  "wgpu",
