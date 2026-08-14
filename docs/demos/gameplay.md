@@ -268,6 +268,42 @@ cd bevy_isomesh && cargo run --example game_editor --release
 
 ---
 
+## The whole pipeline on the GPU, and the bus is never touched
+
+![A carved sphere resting on a slab, drawn entirely by a mesh shader](../screenshots/e303-gpu-mesh-shader.png)
+
+*16,436 triangles at 65³, extracted and drawn in **0.41 ms**, 60 fps. Per frame the CPU sends a camera
+matrix and three brushes. Nothing else crosses the bus in either direction.*
+
+Four things happen per frame and none of them involve the CPU touching geometry:
+
+| | |
+|---|---|
+| the **field** is evaluated by a compute pass | no samples are uploaded |
+| three moving **brushes** are folded over it | the edit log is a few hundred bytes |
+| Marching Cubes runs, prefix-summed **on the GPU** | four bytes come home: the triangle count |
+| a **mesh shader** draws it | straight from the position and normal buffers, no vertex or index buffer |
+
+The extraction alone went **15.01 ms → 0.54 ms** at 129³ across three tickets, and *none* of that came
+from making the extractor faster. `count + emit` never moved — 0.11 ms then, 0.04 now. Every gain was
+data movement removed: the per-cell counts that used to be copied home to be added up (8.4 MB at 129³),
+the samples that used to be uploaded, and finally the geometry that used to be read back.
+
+**It refuses rather than falling back.** On an adapter without `EXPERIMENTAL_MESH_SHADER` the pipeline
+is not built, the HUD says so, and nothing is drawn — no vertex-buffer pipeline is quietly substituted
+in its place. That branch is forced with `ISOMESH_NO_MESH_SHADER=1` and screenshotted, because a branch
+nothing can execute is not a tested branch.
+
+```bash
+cd bevy_isomesh && cargo run --example gpu_mesh_shader --release
+```
+
+`[` `]` resolution · `Space` freeze the brushes.
+
+[← back to the README](../../README.md)
+
+---
+
 ## Graffiti that survives the wall it was sprayed on
 
 ![Coloured paint on a wall with two holes blown through it, the paint intact and the rims bare](../screenshots/e208-game-paint.png)

@@ -24,7 +24,7 @@ fn an_unsupported_device_is_refused_rather_than_crashed() {
          wgpu changed or this test is no longer measuring the unsupported case"
     );
 
-    let built = MeshShaderRenderer::new(gpu.device(), wgpu::TextureFormat::Rgba8UnormSrgb, None);
+    let built = MeshShaderRenderer::new(gpu.device(), wgpu::TextureFormat::Rgba8UnormSrgb, None, 1);
     assert_eq!(
         built.err(),
         Some(Error::MeshShadersUnavailable),

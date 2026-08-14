@@ -66,6 +66,11 @@ bevy = "0.19"
 # majors and a type error about `TextureFormat` not matching itself.
 isomesh-gpu = { path = "../crates/isomesh-gpu" }
 
+# E-303's example talks to wgpu directly -- a render pass, buffer descriptors --
+# because that is what `isomesh-gpu`'s API takes. Same pin as everywhere, and
+# dev-only, so no consumer inherits it. The lockfile still resolves one wgpu.
+wgpu = { version = "29.0.3", default-features = false }
+
 # E-203 only. The acid test is "walk every chunk seam and never fall through",
 # and answering that needs a ray cast against the meshed triangles -- not a
 # physics engine. parry3d is the same version the core crate's own collider

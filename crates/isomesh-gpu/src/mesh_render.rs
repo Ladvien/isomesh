@@ -90,10 +90,17 @@ impl MeshShaderRenderer {
     /// is the whole "never panics on an unsupported adapter" requirement: the
     /// answer is an error value, checked at the call site, not an abort inside
     /// a driver.
+    /// `samples` is the view's MSAA sample count and **must** match the pass
+    /// this pipeline is used in. It is a parameter rather than a default
+    /// because getting it wrong is not a quality difference — wgpu refuses the
+    /// draw outright with *"the RenderPass uses textures with sample count 4 but
+    /// the RenderPipeline uses attachments with format 1"*, which is how this
+    /// signature came to have it. Bevy defaults to 4.
     pub fn new(
         device: &wgpu::Device,
         format: wgpu::TextureFormat,
         depth: Option<wgpu::DepthStencilState>,
+        samples: u32,
     ) -> Result<Self> {
         if !Self::is_supported(device) {
             return Err(Error::MeshShadersUnavailable);
@@ -156,7 +163,10 @@ impl MeshShaderRenderer {
                 ..wgpu::PrimitiveState::default()
             },
             depth_stencil: depth,
-            multisample: wgpu::MultisampleState::default(),
+            multisample: wgpu::MultisampleState {
+                count: samples,
+                ..wgpu::MultisampleState::default()
+            },
             fragment: Some(wgpu::FragmentState {
                 module: &module,
                 entry_point: Some("shade"),
