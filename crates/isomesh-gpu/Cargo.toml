@@ -11,7 +11,7 @@ categories.workspace = true
 keywords.workspace = true
 
 [dependencies]
-isomesh = { path = "../isomesh", version = "0.0.3" }
+isomesh = { path = "../isomesh", version = "0.0.4" }
 
 # Pinned to Bevy 0.19's exact version, and it must stay exact. Cargo resolves two
 # wgpu majors side by side *without a resolution error* -- verified in
