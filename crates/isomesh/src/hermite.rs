@@ -30,6 +30,7 @@
 //! every extractor at once or to none.
 
 use crate::cube::{EDGE_CORNERS, EDGE_COUNT, corner_offset, edge_crossing, is_inside};
+use crate::equivariant::sum_equivariant;
 use crate::vec3;
 use crate::{Real, Sdf};
 
@@ -206,18 +207,32 @@ impl<R: Real> HermiteCell<R> {
     /// contouring's starting point: the QEF is minimised subject to staying near
     /// it, and it is the answer when the normals carry no directional
     /// information at all. Returns `None` for an empty cell.
+    ///
+    /// # Why the sum is not taken in edge order
+    ///
+    /// A lattice rotation permutes the edge labels, and IEEE addition is not
+    /// associative, so a running sum over [`iter`](Self::iter) would make this
+    /// point — and every vertex the QEF places relative to it — a function of
+    /// how the cell happens to sit on the grid rather than of the cell. Each
+    /// component is reduced over a slot per edge instead, smallest magnitude
+    /// first (A-016; the mechanism and the measurement are in
+    /// the crate-internal `equivariant` module).
     #[must_use]
     pub fn centroid(&self) -> Option<[R; 3]> {
         if self.is_empty() {
             return None;
         }
-        let mut sum = [R::ZERO; 3];
-        for crossing in self.iter() {
-            for (axis, slot) in sum.iter_mut().enumerate() {
-                *slot += crossing.position[axis];
+        let mut axes = [[R::ZERO; EDGE_COUNT]; 3];
+        for edge in 0..EDGE_COUNT {
+            let Some(crossing) = self.get(edge as u8) else {
+                continue;
+            };
+            for (slot, value) in axes.iter_mut().zip(crossing.position) {
+                slot[edge] = value;
             }
         }
         let inverse = R::from_f64(self.len() as f64).recip();
+        let sum = axes.map(sum_equivariant);
         Some([sum[0] * inverse, sum[1] * inverse, sum[2] * inverse])
     }
 }

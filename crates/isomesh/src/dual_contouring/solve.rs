@@ -34,7 +34,11 @@
 //!   orders of magnitude, and the tail is what a user sees.
 //!
 //! So: no eigendecomposition, no SVD, no iteration, and no data-dependent
-//! branch. Around 90 flops.
+//! branch. Around 90 flops of arithmetic, plus the sorting the accumulation
+//! needs to be a function of the cell rather than of its orientation on the grid
+//! — twelve slots per accumulator, nine of them, insertion-sorted (A-016, and
+//! the crate-internal `equivariant` module for why that is the price of the
+//! property).
 //!
 //! # Why `λ = 0.01`, and why it is unitless
 //!
@@ -67,6 +71,8 @@
 //! where `f32` gives out.
 
 use crate::Real;
+use crate::cube::EDGE_COUNT;
+use crate::equivariant::{sort_by_magnitude, sum_equivariant};
 use crate::hermite::HermiteCell;
 use crate::vec3;
 
@@ -96,43 +102,6 @@ pub const LAMBDA: f64 = 0.01;
 #[inline]
 pub fn dot_equivariant<R: Real>(a: [R; 3], b: [R; 3]) -> R {
     sum_equivariant([a[0] * b[0], a[1] * b[1], a[2] * b[2]])
-}
-
-/// Sort ascending by magnitude, in place.
-///
-/// `total_cmp` on the absolute values is a total order even across NaN and
-/// signed zero, so the network cannot produce an order that depends on which
-/// comparison ran first. Ties need no tie-break: IEEE addition and
-/// multiplication are both *commutative* — only associativity fails — so two
-/// terms of equal magnitude give the same answer either way round.
-#[inline]
-fn sort_by_magnitude<R: Real, const N: usize>(t: &mut [R; N]) {
-    // Insertion sort: N is 3 or 5 here, and it is branch-predictable and
-    // allocation-free, which a comparison sort over a slice would not be in
-    // `no_std`.
-    let mut i = 1;
-    while i < N {
-        let mut j = i;
-        while j > 0 && t[j - 1].abs().total_cmp(&t[j].abs()) == core::cmp::Ordering::Greater {
-            t.swap(j - 1, j);
-            j -= 1;
-        }
-        i += 1;
-    }
-}
-
-/// Sum smallest-magnitude-first, so the result is a function of the *set* of
-/// terms rather than of the order they were written in.
-#[inline]
-fn sum_equivariant<R: Real, const N: usize>(mut t: [R; N]) -> R {
-    sort_by_magnitude(&mut t);
-    let mut acc = R::ZERO;
-    let mut i = 0;
-    while i < N {
-        acc += t[i];
-        i += 1;
-    }
-    acc
 }
 
 /// Multiply smallest-magnitude-first, for the same reason.
@@ -165,24 +134,36 @@ struct Symmetric3<R: Real> {
 }
 
 impl<R: Real> Symmetric3<R> {
-    const ZERO: Self = Self {
-        xx: R::ZERO,
-        xy: R::ZERO,
-        xz: R::ZERO,
-        yy: R::ZERO,
-        yz: R::ZERO,
-        zz: R::ZERO,
-    };
-
-    /// Accumulate the outer product `n nᵀ`.
+    /// The six distinct entries of the outer product `n nᵀ`, in this struct's
+    /// own storage order.
+    ///
+    /// Returned rather than accumulated, because the caller has to reduce each
+    /// entry over the *set* of crossings and cannot do that with a running sum —
+    /// see [`solve_with`].
     #[inline]
-    fn add_outer(&mut self, n: [R; 3]) {
-        self.xx += n[0] * n[0];
-        self.xy += n[0] * n[1];
-        self.xz += n[0] * n[2];
-        self.yy += n[1] * n[1];
-        self.yz += n[1] * n[2];
-        self.zz += n[2] * n[2];
+    fn outer(n: [R; 3]) -> [R; 6] {
+        [
+            n[0] * n[0],
+            n[0] * n[1],
+            n[0] * n[2],
+            n[1] * n[1],
+            n[1] * n[2],
+            n[2] * n[2],
+        ]
+    }
+
+    /// Rebuild from the six entries [`outer`](Self::outer) produces, once each
+    /// has been reduced across the cell.
+    #[inline]
+    fn from_entries(e: [R; 6]) -> Self {
+        Self {
+            xx: e[0],
+            xy: e[1],
+            xz: e[2],
+            yy: e[3],
+            yz: e[4],
+            zz: e[5],
+        }
     }
 
     /// Add `λ` to the diagonal.
@@ -291,15 +272,30 @@ pub fn solve<R: Real>(cell: &HermiteCell<R>) -> Option<[R; 3]> {
 pub fn solve_with<R: Real>(cell: &HermiteCell<R>, lambda: R) -> Option<[R; 3]> {
     let centroid = cell.centroid()?;
 
-    let mut m = Symmetric3::<R>::ZERO;
-    let mut g = [R::ZERO; 3];
-    for crossing in cell.iter() {
+    // One slot per *edge label*, reduced once at the end, rather than nine
+    // running sums taken in visit order. A lattice rotation permutes the edge
+    // labels, and float addition is not associative, so a running sum makes the
+    // vertex a function of how the cell sits on the grid — the same defect
+    // `determinant` already carries the fix for, one level down (A-016). Absent
+    // edges stay at `R::ZERO`; see `crate::equivariant` for why that is exact.
+    let mut m_terms = [[R::ZERO; EDGE_COUNT]; 6];
+    let mut g_terms = [[R::ZERO; EDGE_COUNT]; 3];
+    for edge in 0..EDGE_COUNT {
+        let Some(crossing) = cell.get(edge as u8) else {
+            continue;
+        };
         let n = crossing.normal;
         // Plane distance from the centroid, along this crossing's own normal.
         let d = dot_equivariant(n, vec3::sub(crossing.position, centroid));
-        m.add_outer(n);
-        g = [g[0] + n[0] * d, g[1] + n[1] * d, g[2] + n[2] * d];
+        for (slot, value) in m_terms.iter_mut().zip(Symmetric3::outer(n)) {
+            slot[edge] = value;
+        }
+        for (slot, value) in g_terms.iter_mut().zip([n[0] * d, n[1] * d, n[2] * d]) {
+            slot[edge] = value;
+        }
     }
+    let m = Symmetric3::from_entries(m_terms.map(sum_equivariant));
+    let g = g_terms.map(sum_equivariant);
 
     let a = m.regularized(lambda);
     let adj = a.adjugate();

@@ -236,7 +236,90 @@ fn the_vertex_is_bit_exactly_equivariant_under_lattice_rotations() {
     assert_eq!(checked, 24 * 3);
 }
 
-/// The negative control for the test above.
+/// **A-016's property, and the half the test above structurally cannot see.**
+///
+/// The vertex must be a function of the *set* of crossings, never of the edge
+/// labels they arrived under. A lattice rotation permutes those labels — and
+/// `the_vertex_is_bit_exactly_equivariant_under_lattice_rotations` carries `e`
+/// through unchanged at its own line 216, so both sides of its comparison visit
+/// the crossings in the same order and any accumulation-order defect cancels out
+/// of the difference it measures.
+///
+/// Relabelling is the isolated form of the same permutation: nothing geometric
+/// changes, because `solve_with` reads only `position` and `normal`. Anything
+/// but bit-identity means the vertex is a function of the labelling.
+#[test]
+fn the_vertex_does_not_depend_on_which_edges_the_crossings_arrived_on() {
+    let mut checked = 0u32;
+    for fixture in fixtures() {
+        let base = solve(&cell(&fixture)).expect("solvable");
+
+        // Every relabelling keeps the crossings and moves only their names,
+        // including ones that reverse the visit order outright.
+        let labellings: [&[u8]; 4] = [
+            &[11, 10, 9, 8],
+            &[0, 5, 7, 11],
+            &[9, 2, 6, 1],
+            &[4, 3, 1, 0],
+        ];
+        for labels in labellings {
+            let relabelled: Vec<(u8, HermiteCrossing<f64>)> = fixture
+                .iter()
+                .zip(labels)
+                .map(|(&(_, c), &e)| (e, c))
+                .collect();
+            assert_eq!(relabelled.len(), fixture.len());
+
+            let got = solve(&cell(&relabelled)).expect("solvable");
+            for axis in 0..3 {
+                assert_eq!(
+                    got[axis].to_bits(),
+                    base[axis].to_bits(),
+                    "labels {labels:?} axis {axis}: got {got:?}, want {base:?}"
+                );
+            }
+            checked += 1;
+        }
+    }
+    assert_eq!(checked, 4 * 3);
+}
+
+/// The negative control for the test above, and the reason it is not decoration.
+///
+/// The accumulation this replaced summed in visit order. Reproduced here on one
+/// fixture: the same crossings under two labellings give two different centroids
+/// once the sum is taken in label order, and the QEF is solved *relative to that
+/// centroid*, so the vertex moves with it.
+///
+/// If this ever stops finding a disagreement, the fixture has gone too tame to
+/// detect the defect and the test above is proving nothing.
+#[test]
+fn an_in_visit_order_sum_really_does_depend_on_the_labelling() {
+    let fixture = &fixtures()[1];
+    let in_visit_order = |labels: &[u8]| {
+        let mut pairs: Vec<(u8, [f64; 3])> = fixture
+            .iter()
+            .zip(labels)
+            .map(|(&(_, c), &e)| (e, c.position))
+            .collect();
+        pairs.sort_by_key(|&(e, _)| e);
+        let mut sum = [0.0f64; 3];
+        for (_, p) in &pairs {
+            for axis in 0..3 {
+                sum[axis] += p[axis];
+            }
+        }
+        sum
+    };
+    let a = in_visit_order(&[0, 1, 2, 3]);
+    let b = in_visit_order(&[11, 10, 9, 8]);
+    assert!(
+        (0..3).any(|axis| a[axis].to_bits() != b[axis].to_bits()),
+        "fixture cannot detect an accumulation-order defect: {a:?} vs {b:?}"
+    );
+}
+
+/// The negative control for the rotation test.
 ///
 /// A dot product summed in index order is not permutation invariant, so under a
 /// rotation that relabels the axes the three products are added in a different

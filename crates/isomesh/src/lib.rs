@@ -71,6 +71,7 @@ mod property;
 
 mod cube;
 mod dual;
+mod equivariant;
 mod error;
 mod mesh;
 mod real;
