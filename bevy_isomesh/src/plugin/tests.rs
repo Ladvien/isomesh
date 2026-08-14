@@ -366,7 +366,7 @@ fn seam_open_edges<S: VolumeField>(field: &S, extractor: Extractor) -> usize {
     }
     let h = layout.cell_size();
     isomesh::weld::Welder::<f32>::new()
-        .weld(&mut all, h * 1e-5)
+        .weld(&mut all, isomesh::weld::epsilon_for(h))
         .expect("weld");
     let cfg = isomesh::validate::ValidateConfig::from_cell_size(f64::from(h)).expect("cfg");
     let (_report, features) =

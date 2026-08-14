@@ -172,15 +172,28 @@ impl WeldReport {
     }
 }
 
-/// Welds coincident vertices in place, reusing its scratch across calls.
+/// **The** weld tolerance, derived from the grid spacing it is relative to.
 ///
-/// Owns its buffers for the same reason the extractors do: a chunked world welds
-/// thousands of meshes and should not allocate thousands of times.
+/// [`Welder::weld`] takes a bare scalar because welding is a geometric primitive
+/// that knows nothing about grids. This is where the *policy* lives, and every
+/// weld in this crate goes through it (T-009). It is
+/// [`ValidateConfig::weld_epsilon`](crate::validate::ValidateConfig::weld_epsilon)
+/// in the form a generic caller can use — the validator and the welder must
+/// agree on what "coincident" means, or the validator's duplicate count is
+/// measuring a different mesh than the one the welder produced.
 ///
-/// # Example
+/// # Why relative to `h`, never absolute
+///
+/// The broadphase lattice quantises through `as_f32`, which stops distinguishing
+/// consecutive integers above `2²⁴`, so the usable extent is `2²⁴ · epsilon`. At
+/// this policy with `h = 0.0625` that is about **105 world units**; at an
+/// absolute `1e-6` it collapses to about **16.8**, whatever `h` is, and at
+/// `h · 1e-6` with a small `h` it collapses further. An absolute tolerance is
+/// therefore a trap that gets worse exactly as the grid gets finer, which is the
+/// direction a user turns the dial.
 ///
 /// ```
-/// use isomesh::weld::Welder;
+/// use isomesh::weld::{Welder, epsilon_for};
 /// use isomesh::MeshBuffer;
 ///
 /// // Two triangles that share an edge, written as two separate triangles.
@@ -192,14 +205,27 @@ impl WeldReport {
 /// mesh.normals = vec![[0.0, 0.0, 1.0]; 6];
 /// mesh.indices = vec![0, 1, 2, 3, 4, 5];
 ///
+/// // The grid this mesh came off, not a number chosen for the mesh.
 /// let mut welder = Welder::<f64>::new();
-/// let report = welder.weld(&mut mesh, 1e-6)?;
+/// let report = welder.weld(&mut mesh, epsilon_for(1.0))?;
 ///
 /// assert_eq!(report.vertices_removed(), 2);
 /// assert_eq!(mesh.vertex_count(), 4);
 /// assert_eq!(mesh.triangle_count(), 2);
 /// # Ok::<(), isomesh::Error>(())
 /// ```
+#[must_use]
+pub fn epsilon_for<R: Real>(cell_size: R) -> R {
+    cell_size * R::from_f64(crate::validate::ValidateConfig::WELD_EPSILON_REL)
+}
+
+/// Welds coincident vertices in place, reusing its scratch across calls.
+///
+/// Owns its buffers for the same reason the extractors do: a chunked world welds
+/// thousands of meshes and should not allocate thousands of times.
+///
+/// Pass [`epsilon_for`]`(cell_size)` unless you have a specific reason not to —
+/// see that function for why the tolerance is relative to the grid.
 #[derive(Debug)]
 pub struct Welder<R: Real> {
     /// `(lattice cell, vertex index)`, sorted. The broadphase.

@@ -59,7 +59,7 @@ fn welding_closes_a_greedy_mesh_only_where_the_merge_left_no_t_junctions() {
     );
     assert_eq!(before.boundary_edges as usize, quads * 4);
     Welder::<f64>::new()
-        .weld(&mut boxed, h * ValidateConfig::WELD_EPSILON_REL)
+        .weld(&mut boxed, crate::weld::epsilon_for(h))
         .expect("valid epsilon");
     let after = validate_indexed(&boxed.positions, &boxed.indices, &cfg_for(h));
     std::println!(
@@ -80,7 +80,7 @@ fn welding_closes_a_greedy_mesh_only_where_the_merge_left_no_t_junctions() {
     let (mut sphere, h) = mesh(&Sphere::<f64>::canonical(), 33);
     let before = validate_indexed(&sphere.positions, &sphere.indices, &cfg_for(h));
     let report = Welder::<f64>::new()
-        .weld(&mut sphere, h * ValidateConfig::WELD_EPSILON_REL)
+        .weld(&mut sphere, crate::weld::epsilon_for(h))
         .expect("valid epsilon");
     let after = validate_indexed(&sphere.positions, &sphere.indices, &cfg_for(h));
     std::println!(

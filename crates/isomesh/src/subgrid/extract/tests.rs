@@ -343,7 +343,7 @@ fn the_welded_output_is_a_closed_consistently_oriented_manifold() {
 
         let mut welder = crate::weld::Welder::<f64>::new();
         welder
-            .weld(&mut out, cell * 1e-6)
+            .weld(&mut out, crate::weld::epsilon_for(cell))
             .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
 
         let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
@@ -407,7 +407,7 @@ fn the_validity_suite_over_every_reference_field() {
 
         let mut welder = crate::weld::Welder::<f64>::new();
         welder
-            .weld(&mut out, cell * 1e-6)
+            .weld(&mut out, crate::weld::epsilon_for(cell))
             .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
 
         let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
@@ -851,7 +851,7 @@ fn the_defects_traced_back_to_the_tetrahedra_that_made_them() {
             .extract(&field, &shape, lo, cell, &mut welded)
             .unwrap_or_else(|e| panic!("{name}: {e}"));
         crate::weld::Welder::<f64>::new()
-            .weld(&mut welded, cell * 1e-6)
+            .weld(&mut welded, crate::weld::epsilon_for(cell))
             .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
         let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
         let report = validate_indexed(&welded.positions, &welded.indices, &cfg);
@@ -953,7 +953,7 @@ fn the_surviving_non_manifold_edges_are_not_duplicated_polygons() {
         .extract(&field, &shape, lo, cell, &mut welded)
         .expect("extraction");
     crate::weld::Welder::<f64>::new()
-        .weld(&mut welded, cell * 1e-6)
+        .weld(&mut welded, crate::weld::epsilon_for(cell))
         .expect("weld");
     let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
     let (report, features) = validate_features(&welded.positions, &welded.indices, &cfg);
@@ -1029,7 +1029,7 @@ fn what_gyroids_flipped_edges_are_standing_on() {
         .extract(&field, &shape, lo, cell, &mut mesh)
         .expect("extraction");
     crate::weld::Welder::<f64>::new()
-        .weld(&mut mesh, cell * 1e-6)
+        .weld(&mut mesh, crate::weld::epsilon_for(cell))
         .expect("weld");
     let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
     let (report, features) = validate_features(&mesh.positions, &mesh.indices, &cfg);
@@ -1278,7 +1278,7 @@ fn how_complete_the_shared_table_is_against_a_positional_weld() {
 
         let mut welded = raw.clone();
         crate::weld::Welder::<f64>::new()
-            .weld(&mut welded, cell * 1e-6)
+            .weld(&mut welded, crate::weld::epsilon_for(cell))
             .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
         let after = validate_indexed(&welded.positions, &welded.indices, &cfg);
 
@@ -1378,7 +1378,7 @@ fn how_complete_the_shared_table_is_against_a_positional_weld() {
 fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
     use std::collections::HashSet;
 
-    // field -> (raw, distinct by bit pattern, welded at cell * 1e-6)
+    // field -> (raw, distinct by bit pattern, welded at crate::weld::epsilon_for(cell))
     let expected: [(&str, usize, usize, usize); 7] = [
         ("sphere", 830, 830, 812),
         ("torus", 912, 912, 912),
@@ -1406,7 +1406,7 @@ fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
 
         let mut welded = raw.clone();
         crate::weld::Welder::<f64>::new()
-            .weld(&mut welded, cell * 1e-6)
+            .weld(&mut welded, crate::weld::epsilon_for(cell))
             .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
 
         let got = (raw.positions.len(), distinct.len(), welded.positions.len());
@@ -1572,4 +1572,83 @@ fn no_root_reports_parameter_zero_and_almost_none_reports_one() {
         "a root reported parameter 0, or landed on the lower corner -- \
          M-179's mechanism has changed and A-014h can be re-scoped"
     );
+}
+
+/// **How wide the weld tolerance's plateau is (T-009, M-181).**
+///
+/// T-009 routed four scattered epsilons — `h·1e-4` via the constant, `h·1e-4` as
+/// a literal, `h·1e-6` and `h·1e-5` — onto one policy, and expected to re-pin the
+/// censuses that moved. **Nothing moved.** This measures why rather than leaving
+/// that as luck: the weld's answer is *flat* across the whole range the four
+/// policies spanned, because the duplicate clusters sit orders of magnitude
+/// closer together than any genuine pair of neighbours.
+///
+/// That is the fact that made the scatter survivable, and it is also the fact
+/// that made it dangerous: four different numbers that happen to agree today
+/// disagree the moment a field puts two real vertices `1e-5·h` apart.
+///
+/// It doubles as **P-7 limb (a)**, whose falsifier is *"a component count that
+/// changes with the epsilon"*.
+#[test]
+fn the_weld_answer_is_flat_across_the_range_the_four_policies_spanned() {
+    // The four policies T-009 replaced were 1e-4, 1e-5 and 1e-6; the ends here
+    // are a decade beyond each, so the plateau's edges are visible if it has any.
+    let factors: [f64; 10] = [1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 0.5];
+    let spanned = 3..=5; // the indices covering 1e-6 ..= 1e-4
+
+    let mut rows = 0;
+    crate::for_each_reference_field!(f64, |name, field| {
+        let (shape, lo, cell) = grid(&field, 17);
+        let mut raw = MeshBuffer::<f64>::default();
+        SubgridMarchingTetrahedra::<f64>::new(16)
+            .expect("valid")
+            .extract(&field, &shape, lo, cell, &mut raw)
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
+
+        let counts: Vec<usize> = factors
+            .iter()
+            .map(|f| {
+                let mut m = raw.clone();
+                crate::weld::Welder::<f64>::new()
+                    .weld(&mut m, cell * f)
+                    .unwrap_or_else(|e| panic!("{name} at {f:e}: {e}"));
+                m.positions.len()
+            })
+            .collect();
+
+        std::println!("{name:<15} raw {:>5} | {counts:?}", raw.positions.len());
+
+        let over_the_span = &counts[spanned.clone()];
+        assert!(
+            over_the_span.iter().all(|c| *c == over_the_span[0]),
+            "{name}: the weld is NOT flat across the policies T-009 merged \
+             ({over_the_span:?}) -- every census that used one of them has to be \
+             re-read, and P-7 limb (a) is falsified"
+        );
+
+        // The margin, not just the outcome: the first factor whose answer
+        // differs from the policy's. P-7 asks for this explicitly, because it is
+        // the quantity that would decide a coarser weld.
+        let policy = counts[5]; // 1e-4, the one policy
+        let first_change = factors
+            .iter()
+            .zip(&counts)
+            .find(|(_, c)| **c != policy)
+            .map(|(f, _)| *f);
+        match first_change {
+            Some(f) => {
+                let margin = f / crate::validate::ValidateConfig::WELD_EPSILON_REL;
+                std::println!("{name:<15}   first change at {f:e}  ({margin:.0}x the policy)");
+                assert!(
+                    margin >= 100.0,
+                    "{name}: the policy sits within {margin}x of a tolerance that \
+                     changes the answer -- too close to be a plateau"
+                );
+            }
+            None => std::println!("{name:<15}   no change anywhere up to 0.5h"),
+        }
+
+        rows += 1;
+    });
+    assert_eq!(rows, 7);
 }

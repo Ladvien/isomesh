@@ -263,7 +263,7 @@ fn build<F: Sdf<Scalar = f32> + ReferenceField>(
         .append(&transition)
         .expect("the meshes fit the u32 index space");
     isomesh::weld::Welder::<f32>::new()
-        .weld(&mut assembled, fine_h * 1e-5)
+        .weld(&mut assembled, isomesh::weld::epsilon_for(fine_h))
         .ok()?;
     let cfg = ValidateConfig::from_cell_size(f64::from(fine_h)).ok()?;
     let (_report, features) = validate_features(&assembled.positions, &assembled.indices, &cfg);

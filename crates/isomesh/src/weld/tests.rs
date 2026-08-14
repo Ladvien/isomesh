@@ -9,7 +9,7 @@
 use alloc::vec;
 use alloc::vec::Vec;
 
-use super::{WeldReport, Welder};
+use super::{WeldReport, Welder, epsilon_for};
 use crate::chunk::{ChunkId, ChunkLayout};
 use crate::fields::{ReferenceField, Sphere};
 use crate::marching_cubes::MarchingCubes;
@@ -221,7 +221,7 @@ fn a_chunk_seam_welds_at_a_non_power_of_two_spacing() {
 
     let mut welder = Welder::<f64>::new();
     let report = welder
-        .weld(&mut joined, h * ValidateConfig::WELD_EPSILON_REL)
+        .weld(&mut joined, epsilon_for(h))
         .expect("valid epsilon");
     let after = validate_indexed(&joined.positions, &joined.indices, &cfg);
 
@@ -274,7 +274,7 @@ fn a_chunk_seam_welds_at_a_power_of_two_spacing_too() {
     let cfg = ValidateConfig::from_cell_size(h).expect("valid cell size");
     let mut welder = Welder::<f64>::new();
     let report = welder
-        .weld(&mut joined, h * ValidateConfig::WELD_EPSILON_REL)
+        .weld(&mut joined, epsilon_for(h))
         .expect("valid epsilon");
     let after = validate_indexed(&joined.positions, &joined.indices, &cfg);
 
@@ -305,7 +305,7 @@ fn welding_is_deterministic() {
         out.append(&second)
             .expect("the meshes fit the u32 index space");
         Welder::<f64>::new()
-            .weld(out, h * ValidateConfig::WELD_EPSILON_REL)
+            .weld(out, epsilon_for(h))
             .expect("valid epsilon");
     });
     assert!(report.is_deterministic(), "{report}");
@@ -318,7 +318,7 @@ fn a_reused_welder_gives_the_same_answer_as_a_fresh_one() {
     let h = 4.0 / 35.0;
     let layout = ChunkLayout::<f64>::new(8, h, [-2.0; 3]).expect("valid layout");
     let field = Sphere::<f64>::canonical();
-    let eps = h * ValidateConfig::WELD_EPSILON_REL;
+    let eps = epsilon_for(h);
 
     let build = || {
         let a = ChunkId::new([1, 1, 1]);
@@ -376,7 +376,7 @@ fn the_validator_bounds_the_weld_rather_than_predicting_it() {
     let cfg = ValidateConfig::from_cell_size(h).expect("valid cell size");
     let counted = validate_indexed(&joined.positions, &joined.indices, &cfg).duplicate_vertices;
     let removed = Welder::<f64>::new()
-        .weld(&mut joined, h * ValidateConfig::WELD_EPSILON_REL)
+        .weld(&mut joined, epsilon_for(h))
         .expect("valid epsilon")
         .vertices_removed();
     std::println!("measured: seam -- validator counted {counted}, weld removed {removed}");
@@ -430,7 +430,7 @@ fn a_whole_volume_mesh_welds_only_where_a_sample_sits_on_the_surface() {
                 continue;
             }
             let report = Welder::<f64>::new()
-                .weld(&mut mesh, h * ValidateConfig::WELD_EPSILON_REL)
+                .weld(&mut mesh, epsilon_for(h))
                 .expect("valid epsilon");
             if !report.is_noop() {
                 found.push((
@@ -453,5 +453,43 @@ fn a_whole_volume_mesh_welds_only_where_a_sample_sits_on_the_surface() {
             ("gyroid", 33, 2, 4),
             ("fbm_terrain", 33, 1, 2),
         ]
+    );
+}
+
+/// **T-009's invariant: the welder and the validator mean the same thing by
+/// "coincident".**
+///
+/// [`epsilon_for`] and
+/// [`ValidateConfig::weld_epsilon`](crate::validate::ValidateConfig::weld_epsilon)
+/// are two expressions of one policy, and if they ever drift the validator's
+/// duplicate count is describing a different mesh than the welder produced —
+/// which is precisely what `the_validator_bounds_the_weld_rather_than_predicting_it`
+/// assumes and cannot check.
+#[test]
+fn the_one_policy_is_one_number_however_it_is_reached() {
+    use crate::validate::ValidateConfig;
+
+    // Spacings including M-32's non-power-of-two case, where bit-exactness fails
+    // and the tolerance is actually doing work.
+    for h in [1.0, 0.5, 0.125, 0.1, 1.0 / 3.0, 0.0625, 7.5] {
+        let cfg = ValidateConfig::from_cell_size(h).expect("a valid spacing");
+        assert_eq!(
+            epsilon_for(h).to_bits(),
+            cfg.weld_epsilon().to_bits(),
+            "h = {h}: the welder and the validator disagree about coincidence"
+        );
+    }
+
+    // And it is genuinely relative -- doubling the grid doubles the tolerance,
+    // which is the property an absolute epsilon does not have.
+    assert_eq!(
+        epsilon_for(2.0f64).to_bits(),
+        (2.0 * epsilon_for(1.0f64)).to_bits()
+    );
+
+    // f32 reaches the same policy through the same constant.
+    assert_eq!(
+        epsilon_for(1.0f32).to_bits(),
+        (ValidateConfig::WELD_EPSILON_REL as f32).to_bits()
     );
 }

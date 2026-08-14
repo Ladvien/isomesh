@@ -411,7 +411,7 @@ fn assemble<F: Sdf<Scalar = f32>>(
 
     let finest = spacing(*levels.iter().min().unwrap_or(&0));
     isomesh::weld::Welder::<f32>::new()
-        .weld(&mut mesh, finest * 1e-5)
+        .weld(&mut mesh, isomesh::weld::epsilon_for(finest))
         .ok()?;
 
     let build_ms = build.elapsed().as_secs_f64() * 1000.0;

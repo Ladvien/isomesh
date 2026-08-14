@@ -168,7 +168,7 @@ fn the_seam_stays_closed_at_a_real_width() {
     }
 
     crate::weld::Welder::<f64>::new()
-        .weld(&mut stitched, fine_h * 1e-6)
+        .weld(&mut stitched, crate::weld::epsilon_for(fine_h))
         .expect("weld");
 
     let cfg = crate::validate::ValidateConfig::from_cell_size(fine_h).expect("valid cell size");

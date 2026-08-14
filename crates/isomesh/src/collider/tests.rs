@@ -190,7 +190,7 @@ fn an_unwelded_seam_is_reported_and_welding_fixes_it() {
 
     let mut welder = Welder::<f32>::new();
     welder
-        .weld(&mut joined, layout.cell_size() * 1e-4)
+        .weld(&mut joined, crate::weld::epsilon_for(layout.cell_size()))
         .expect("weld");
     let after = readiness(&joined, &cfg);
     std::println!(

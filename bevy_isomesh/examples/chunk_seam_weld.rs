@@ -247,7 +247,7 @@ fn remesh(
 
     let welded = if demo.welded {
         Welder::<f32>::new()
-            .weld(&mut joined, h * ValidateConfig::WELD_EPSILON_REL as f32)
+            .weld(&mut joined, isomesh::weld::epsilon_for(h))
             .ok()
     } else {
         None

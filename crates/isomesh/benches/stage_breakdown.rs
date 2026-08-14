@@ -201,7 +201,7 @@ fn measure<F: Sdf<Scalar = Scalar> + ReferenceField>(
         let mut work = pristine.clone();
         let start = Instant::now();
         Welder::<Scalar>::new()
-            .weld(&mut work, h * Scalar::from_f64(1e-5))
+            .weld(&mut work, isomesh::weld::epsilon_for(h))
             .ok();
         times.push(start.elapsed());
         black_box(work.positions.len());
@@ -215,7 +215,7 @@ fn measure<F: Sdf<Scalar = Scalar> + ReferenceField>(
     // welded, manifold, correctly wound.
     let mut welded = pristine.clone();
     Welder::<Scalar>::new()
-        .weld(&mut welded, h * Scalar::from_f64(1e-5))
+        .weld(&mut welded, isomesh::weld::epsilon_for(h))
         .ok();
     let mut times = Vec::with_capacity((WARMUP_RUNS + TIMED_RUNS) as usize);
     for _ in 0..(WARMUP_RUNS + TIMED_RUNS) {

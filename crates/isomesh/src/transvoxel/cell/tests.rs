@@ -591,7 +591,7 @@ fn transition_cells_close_the_gap_between_two_resolutions() {
         .append(&coarse)
         .expect("the meshes fit the u32 index space");
     crate::weld::Welder::<f64>::new()
-        .weld(&mut plain, fine_h * 1e-6)
+        .weld(&mut plain, crate::weld::epsilon_for(fine_h))
         .expect("weld");
     let before = gaps_in_the_seam_plane(&plain, seam_x, fine_h);
 
@@ -627,7 +627,7 @@ fn transition_cells_close_the_gap_between_two_resolutions() {
         }
     }
     crate::weld::Welder::<f64>::new()
-        .weld(&mut stitched, fine_h * 1e-6)
+        .weld(&mut stitched, crate::weld::epsilon_for(fine_h))
         .expect("weld");
     let after = gaps_in_the_seam_plane(&stitched, seam_x, fine_h);
 
