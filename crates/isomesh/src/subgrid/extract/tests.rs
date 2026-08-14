@@ -812,16 +812,173 @@ fn which_polygons_coincide_across_a_shared_face() {
     });
     assert_eq!(rows, 7, "the sweep did not reach every field");
 
-    // **The answer to A-014d's blocking question.** `csg_difference` carries 33
-    // coincident polygons; 27 of them have other tetrahedra standing on their
-    // boundary edges, 312 such triangles in total and up to 12 on one polygon.
-    // §3.2.3 moves the midpoints of those edges, so every one of those
-    // triangles has to move with it or the disk detaches -- which is exactly
-    // what M-101 measured twice. **150 of the 312 belong to a different cell**,
-    // so the information needed is not merely the sibling tetrahedron: it
-    // crosses the cell boundary, and no per-tetrahedron or per-cell rule can
-    // carry it. That makes the inset an architectural change, as the ticket
-    // suspected, and now on a number rather than a suspicion.
+    // **The answer to A-014d's blocking question, as the table above now records
+    // it.** An earlier version of this comment described 33 coincident polygons
+    // on `csg_difference`, 27 with foreign edge users, 312 such triangles and
+    // 150 of them in another cell -- and concluded the inset was an
+    // architectural change no per-cell rule could carry. A-014h falsified every
+    // one of those numbers (M-186) by giving each crossing a complete identity:
+    // the row is `(3, 3, 0, 0, 0)`, which the assertion above enforces. Most of
+    // what M-162 measured was one grid point wearing many names, not §3.2.3's
+    // immersion. The stale prose outlived the numbers it described by one
+    // ticket, which is exactly the failure X3 names.
+}
+
+/// **Which of Figure 15's three polygon types A-014d actually has to inset.**
+///
+/// §3.2.3 names three — *"There are three polygon types: a quad, a hexagon, and
+/// a pentagon made at a corner"* — and gives their triangulation patterns only
+/// as a picture, *"Figure 15, right"*. That figure has now been read at
+/// 1200–2400 DPI: the quad's and the hexagon's patterns transcribe
+/// unambiguously, and the pentagon's second inserted point **cannot** be told
+/// apart from the drawing, so rule 5 still binds on that one case.
+///
+/// It only blocks the ticket if a pentagon is reachable, and this is the
+/// measurement that says. It also says which patterns need writing at all —
+/// implementing a type no field produces would be unverifiable code.
+///
+/// The polygon is a [`Region`](crate::subgrid::surface::Region) of one face, and
+/// its boundary already carries the distinction Figure 15 draws in colour:
+/// [`Arc::Chord`] is a segment of `γ` — the thick blue edges, along which the
+/// two copies stay glued, which is why the pair is a *tube* rather than a sphere
+/// — and [`Arc::Edge`] is a piece of an edge of the face, which is exactly what
+/// §3.2.3 inserts a midpoint into and pushes inward.
+#[test]
+fn which_polygon_types_coincide_across_a_shared_face() {
+    use alloc::collections::BTreeMap;
+
+    use crate::fields::ReferenceField;
+    use crate::subgrid::coordinates::TET_FACE_COUNT;
+    use crate::subgrid::curves::CurveKind;
+    use crate::subgrid::surface::{Arc, Node, NonNormalKind, cycles, face_regions};
+
+    /// A polygon's `(loop kind, chords, edges)` — the figure's own vocabulary.
+    type Shape = (&'static str, usize, usize);
+
+    let mut rows = 0;
+    let mut totals: BTreeMap<Shape, u64> = BTreeMap::new();
+    crate::for_each_reference_field!(f64, |name, field| {
+        let (lo, hi) = field.domain();
+        let n = 17u32;
+        let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+        let samples = 16u32;
+
+        let mut along: [Vec<f64>; TET_EDGE_COUNT] = core::array::from_fn(|_| Vec::new());
+        // The polygon's node ring, sorted, against every (loop kind, chords,
+        // edges) seen on it. Two tetrahedra sharing a face build the same ring
+        // from the same crossings, so a key with two entries *is* a coincident
+        // pair. The loop kind rides along because Figure 15's third type is a
+        // pentagon **made at a corner** — a 5-arc region from a contractible
+        // loop would not be that polygon, and its pattern would not apply.
+        let mut by_ring: BTreeMap<Vec<[u64; 3]>, Vec<Shape>> = BTreeMap::new();
+
+        for z in 0..n - 1 {
+            for y in 0..n - 1 {
+                for x in 0..n - 1 {
+                    for tet in &TETS {
+                        let mut corners = [[0.0f64; 3]; 4];
+                        for (c, slot) in corners.iter_mut().enumerate() {
+                            let offset = corner_offset(tet[c]);
+                            for axis in 0..3 {
+                                let index = f64::from([x, y, z][axis]) + f64::from(offset[axis]);
+                                slot[axis] = lo[axis] + cell * index;
+                            }
+                        }
+
+                        let mut total = 0usize;
+                        for (e, slot) in along.iter_mut().enumerate() {
+                            slot.clear();
+                            let [a, b] = TET_EDGES[e];
+                            all_roots(
+                                corners[a as usize],
+                                corners[b as usize],
+                                &field,
+                                samples,
+                                slot,
+                            );
+                            total += slot.len();
+                        }
+                        if total == 0 {
+                            continue;
+                        }
+
+                        let mut borrowed: [&[f64]; TET_EDGE_COUNT] = [&[]; TET_EDGE_COUNT];
+                        for (slot, v) in borrowed.iter_mut().zip(along.iter()) {
+                            *slot = v.as_slice();
+                        }
+                        let crossings = TetCrossings {
+                            corners,
+                            along: borrowed,
+                        };
+                        if crossings.check().is_err() {
+                            continue;
+                        }
+                        let coords = crossings.coordinates();
+
+                        for cycle in cycles(&coords)
+                            .iter()
+                            .filter(|c| c.kind == CurveKind::NonNormal)
+                        {
+                            // Only the two kinds whose disk is built in the tet
+                            // boundary can coincide with the neighbour's copy;
+                            // a diagonal loop fans over an interior centroid.
+                            let (kind, inside_corner) = match cycle.non_normal_kind() {
+                                Some(NonNormalKind::Contractible) => ("contractible", None),
+                                Some(NonNormalKind::Corner) => {
+                                    ("corner", cycle.distinguished_corner())
+                                }
+                                _ => continue,
+                            };
+                            for face in 0..TET_FACE_COUNT as u8 {
+                                let Some(regions) = face_regions(face, &coords, cycle) else {
+                                    continue;
+                                };
+                                for region in regions.iter().filter(|r| r.is_inside()) {
+                                    let mut ring = Vec::new();
+                                    let mut whole = true;
+                                    for node in &region.node {
+                                        match node {
+                                            Node::Crossing(p) => match crossings.position(*p) {
+                                                Some(q) => ring.push(point_key(q)),
+                                                None => whole = false,
+                                            },
+                                            Node::Corner(c) if Some(*c) == inside_corner => {}
+                                            Node::Corner(c) => {
+                                                ring.push(point_key(corners[*c as usize]));
+                                            }
+                                        }
+                                    }
+                                    if !whole {
+                                        continue;
+                                    }
+                                    let chords = region
+                                        .arc
+                                        .iter()
+                                        .filter(|a| matches!(a, Arc::Chord))
+                                        .count();
+                                    let edges = region.arc.len() - chords;
+                                    ring.sort_unstable();
+                                    ring.dedup();
+                                    by_ring.entry(ring).or_default().push((kind, chords, edges));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut shape: BTreeMap<(&'static str, usize, usize), u64> = BTreeMap::new();
+        for seen in by_ring.values().filter(|v| v.len() >= 2) {
+            let entry = shape.entry(seen[0]).or_default();
+            *entry += 1;
+            *totals.entry(seen[0]).or_default() += 1;
+        }
+        std::println!("{name:<15} coincident by (kind, chords, edges): {shape:?}");
+        rows += 1;
+    });
+    assert_eq!(rows, 7, "the sweep did not reach every field");
+    std::println!("all fields: {totals:?}");
 }
 
 /// **Where A-014d's three defects actually come from**, traced to the
