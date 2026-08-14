@@ -92,6 +92,20 @@ pub trait ReferenceField: Sdf {
 /// });
 /// assert_eq!(n, 7);
 /// ```
+///
+/// # It looks like a closure and it is not
+///
+/// The `|name, field|` is syntax, not a closure: the body is **inlined once per
+/// field**, because the seven fields are seven different types and no single
+/// closure can take all of them. So a `return` in the body returns from the
+/// **enclosing function**, not from one iteration — a test that skips fields
+/// with `if name != "…" { return; }` exits on `sphere` and silently stops,
+/// passing while asserting nothing (M-199). Select with `if name == "…" { … }`
+/// instead.
+///
+/// `continue` and `break` are safe only inside a loop the body itself opens; a
+/// bare one does not compile, which is why `return` is the only shape of this
+/// mistake that survives to run.
 #[macro_export]
 macro_rules! for_each_reference_field {
     ($scalar:ty, |$name:ident, $field:ident| $body:block) => {{

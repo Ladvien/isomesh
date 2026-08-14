@@ -1976,3 +1976,145 @@ fn the_plate_is_one_closed_orientable_component_at_every_tolerance() {
         );
     }
 }
+
+/// **What §3.2.3 is actually graded on, measured before it is attempted again.**
+///
+/// A-014d spent two tickets aimed at `csg_difference`'s non-manifold edges and
+/// M-194 falsified that target: all three are genuine three-sheet junctions, and
+/// separating the coincident copies leaves the count at exactly 3. The paper says
+/// so in advance — *"Pairs of identical polygons … **define manifold
+/// connectivity**, but degenerate geometry"* — so §3.2.3 buys
+/// **intersection-freedom**, and T-002's counter is the one that can see it.
+///
+/// That counter had never been run over this extractor's reference-field output.
+/// `subgrid/surface/tests.rs` runs it per tetrahedron on synthetic patterns,
+/// which is a different question: it asks whether one tet's patch folds, not
+/// whether the assembled surface passes through itself.
+///
+/// Welded first, without exception — M-96 measured the raw output as a
+/// per-tetrahedron soup, and `self_intersections` only skips pairs sharing a
+/// vertex index, so unwelded neighbours are counted as intersecting (M-93).
+///
+/// Recorded per 1,000 triangles as `CLAUDE.md` requires, and **pinned rather
+/// than asserted to zero**: dual methods are expected to be non-zero and the
+/// measured question is how much a remedy moves them.
+#[test]
+fn the_self_intersection_census_over_every_reference_field() {
+    use crate::fields::ReferenceField;
+
+    // **Three resolutions, because Phase 1's gate says three.** T-010 is on
+    // record that running this family at 17³ alone is what let this project
+    // believe a defect list it did not have, and M-182 made it a rule: a suite
+    // that samples one point of a stated range is reporting on that point.
+    const RESOLUTIONS: [u32; 3] = [17, 25, 33];
+
+    // (field, samples) -> self-intersecting pairs.
+    #[rustfmt::skip]
+    let expected: [(&str, u32, u64); 21] = [
+        ("sphere", 17, 0), ("torus", 17, 0), ("box_exact", 17, 0),
+        ("csg_difference", 17, 0), ("thin_plate", 17, 0), ("gyroid", 17, 0),
+        ("fbm_terrain", 17, 0),
+
+        ("sphere", 25, 0), ("torus", 25, 0), ("box_exact", 25, 0),
+        ("csg_difference", 25, 0), ("thin_plate", 25, 0), ("gyroid", 25, 0),
+        ("fbm_terrain", 25, 0),
+
+        ("sphere", 33, 0), ("torus", 33, 0), ("box_exact", 33, 0),
+        ("csg_difference", 33, 0), ("thin_plate", 33, 0), ("gyroid", 33, 0),
+        ("fbm_terrain", 33, 0),
+    ];
+
+    let mut checked = 0;
+    for n in RESOLUTIONS {
+        crate::for_each_reference_field!(f64, |name, field| {
+            let (lo, hi) = field.domain();
+            let shape = RuntimeShape3::new([n; 3]).expect("a cubic grid");
+            let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+
+            let mut mt = SubgridMarchingTetrahedra::<f64>::new(16).expect("valid");
+            let mut out = MeshBuffer::<f64>::default();
+            mt.extract(&field, &shape, lo, cell, &mut out)
+                .unwrap_or_else(|e| panic!("{name}: {e}"));
+
+            let mut welder = crate::weld::Welder::<f64>::new();
+            welder
+                .weld(&mut out, crate::weld::epsilon_for(cell))
+                .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
+
+            let report = crate::validate::self_intersections(&out.positions, &out.indices, cell)
+                .unwrap_or_else(|e| panic!("{name}: {e}"));
+
+            std::println!(
+                "{name:<15} {n}³  {:>5} triangles  {:>4} intersecting pairs  \
+             {:>7.3} per 1k  ({} adjacent skipped, {} degenerate)",
+                report.triangles,
+                report.count(),
+                report.per_thousand_triangles(),
+                report.adjacent_pairs_skipped,
+                report.degenerate_triangles,
+            );
+
+            let want = expected
+                .iter()
+                .find(|(f, s, _)| *f == name && *s == n)
+                .unwrap_or_else(|| panic!("{name} {n} is not in the pinned table"));
+            assert_eq!(report.count(), want.2, "{name} {n}³");
+            checked += 1;
+        });
+    }
+    assert_eq!(
+        checked, 21,
+        "the sweep did not reach every field at every size"
+    );
+
+    // **The control.** Seven zeroes are worth nothing unless this pipeline —
+    // extract, weld at `epsilon_for(cell)`, count — can report something else at
+    // the same fields and the same resolution. Dual contouring is the extractor
+    // this project has already measured as non-zero here: A-009 drove `gyroid`
+    // and `fbm_terrain` down 23× and 13.7× with the cell clamp **without
+    // reaching zero** (M-28, M-29), because what remains is two sheets sharing a
+    // cell, which is placement's problem to state and not placement's to fix.
+    //
+    // The first control tried was the *unwelded* subgrid soup, on M-93's note
+    // that neighbours sharing a position but not an index are counted. It reads
+    // zero too — face-touching is not crossing — so it proved nothing, and the
+    // assertion said so before this one replaced it.
+    let mut controls = 0;
+    crate::for_each_reference_field!(f64, |name, field| {
+        // `if`, **not** an early `return`: `for_each_reference_field!` inlines
+        // this body once per field as a plain block rather than calling it as a
+        // closure, so a `return` here exits the whole test. The first version of
+        // this control did exactly that and **passed while running nothing** --
+        // it returned on `sphere` and never reached either control or the
+        // `controls == 2` assertion (M-199).
+        if name == "gyroid" || name == "fbm_terrain" {
+            let (lo, hi) = field.domain();
+            let n = 17u32;
+            let shape = RuntimeShape3::new([n; 3]).expect("a cubic grid");
+            let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+
+            let mut dc = crate::dual_contouring::DualContouring::<f64>::new();
+            let mut out = MeshBuffer::<f64>::default();
+            dc.extract(&field, &shape, lo, cell, &mut out)
+                .unwrap_or_else(|e| panic!("{name}: {e}"));
+            crate::weld::Welder::<f64>::new()
+                .weld(&mut out, crate::weld::epsilon_for(cell))
+                .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
+            let report = crate::validate::self_intersections(&out.positions, &out.indices, cell)
+                .unwrap_or_else(|e| panic!("{name}: {e}"));
+
+            std::println!(
+                "{name:<15} 17³  dual contouring control: {:>4} pairs, {:.3} per 1k",
+                report.count(),
+                report.per_thousand_triangles(),
+            );
+            assert!(
+                report.count() > 0,
+                "{name}: the control is clean too, so this counter cannot see \
+             anything on this pipeline and the seven zeroes above mean nothing"
+            );
+            controls += 1;
+        }
+    });
+    assert_eq!(controls, 2, "both controls must run");
+}
