@@ -101,8 +101,9 @@ cargo run -p isomesh-gpu --example gpu_vs_cpu --release         # where the GPU 
 cargo run -p isomesh-gpu --example mesh_shader_probe            # what this adapter says about mesh shaders
 ```
 
-**`--release` matters for the second one.** A debug-build CPU extraction is 20–50× slower, which
-would flatter the GPU by roughly the factor the example exists to measure.
+**`--release` matters for the second one.** A debug-build CPU extraction is 37–62× slower — measured
+in this repo (FINDINGS M-152), not folklore — which would flatter the GPU by roughly the factor the
+example exists to measure.
 
 `gpu_vs_cpu` on an RTX 3090 / Vulkan, sphere, field evaluation included on both sides:
 

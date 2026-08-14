@@ -221,7 +221,7 @@ cargo run --example marching_cubes_ambiguity --release          # the decider, a
 cargo run --example marching_cubes_interior --release            # the saddle's hyperbola, and the 12.6% MC33 gets wrong
 ```
 
-**Always `--release`.** A debug build meshes 20–50× slower and will convince you something is wrong with the algorithm.
+**Always `--release`.** A debug build meshes 37–62× slower — both ends measured here, not folklore (FINDINGS M-152; the resolution-sweep incident in `crates/isomesh/Cargo.toml`) — and will convince you something is wrong with the algorithm.
 
 Keys: `W` wireframe · `N` normals · `G` grid · `[` `]` resolution · `1`–`5` field · `S` smoothing · `F12` screenshot · `Esc` quit. Drag to orbit, scroll to zoom.
 
