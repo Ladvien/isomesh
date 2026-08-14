@@ -190,6 +190,28 @@ jobs:
       - name: check
         run: cargo +${{ steps.msrv.outputs.version }} check --workspace --all-targets
 
+      # `bevy_isomesh` is excluded from the root workspace, so `cargo metadata`
+      # above cannot see it and its own `rust-version` was asserted rather than
+      # checked -- the same shape of hole M-174 had just closed for the root, and
+      # the third the exclusion has produced after rustfmt and rustdoc (I-007).
+      #
+      # Every check that reads the root workspace needs a deliberate answer for
+      # this directory, and "it is excluded" is not one.
+      - name: read bevy_isomesh's declared MSRV
+        id: bevy_msrv
+        working-directory: bevy_isomesh
+        run: |
+          set -euo pipefail
+          version=$(cargo metadata --format-version 1 --no-deps \
+            | tr ',' '\n' | grep '"rust_version"' | head -1 | cut -d'"' -f4)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "declared MSRV: $version"
+      - name: install it
+        run: rustup toolchain install ${{ steps.bevy_msrv.outputs.version }} --profile minimal
+      - name: check bevy_isomesh
+        working-directory: bevy_isomesh
+        run: cargo +${{ steps.bevy_msrv.outputs.version }} check --all-targets
+
   # A pull request cannot publish, but it can find out whether it *could*.
   # `cargo publish --dry-run` packages and verification-builds, which is the
   # only thing that sees the errors invisible to every test: a `path` dependency
