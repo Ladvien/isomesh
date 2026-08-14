@@ -1355,3 +1355,221 @@ fn how_complete_the_shared_table_is_against_a_positional_weld() {
     });
     assert_eq!(rows, 7, "the sweep did not reach every field");
 }
+
+/// **What A-014h can actually reach, measured before designing it (M-180).**
+///
+/// M-169 established that identity-based sharing is incomplete exactly where a
+/// root lands on a grid sample point, and named the remedy: name such a crossing
+/// by the point rather than by the edge. That remedy assumes the copies *are the
+/// same point*, and this measures whether they are.
+///
+/// They are mostly not. Three counts per field: raw vertices, distinct raw
+/// vertices **by bit pattern**, and vertices after a positional weld. The middle
+/// column is the ceiling on any rule that keeps positions where the extractor put
+/// them — and on `box_exact` it is 1028 against the weld's 338.
+///
+/// So the gap M-169 measured is not one population but two, and only the smaller
+/// one is an identity problem. The rest are positions that a human would call the
+/// same grid point and IEEE calls different numbers, because two tetrahedra reach
+/// it along different edges and `a + (b − a)·t` rounds differently on each.
+/// Merging those is not naming, it is *moving* — which is a decision about
+/// geometry and belongs to the ticket, not to a test.
+#[test]
+fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
+    use std::collections::HashSet;
+
+    // field -> (raw, distinct by bit pattern, welded at cell * 1e-6)
+    let expected: [(&str, usize, usize, usize); 7] = [
+        ("sphere", 830, 830, 812),
+        ("torus", 912, 912, 912),
+        ("box_exact", 1262, 1028, 338),
+        ("csg_difference", 1280, 1094, 482),
+        ("thin_plate", 450, 444, 422),
+        ("gyroid", 4020, 4014, 4014),
+        ("fbm_terrain", 1758, 1758, 1758),
+    ];
+
+    let mut rows = 0;
+    crate::for_each_reference_field!(f64, |name, field| {
+        let (shape, lo, cell) = grid(&field, 17);
+        let mut raw = MeshBuffer::<f64>::default();
+        SubgridMarchingTetrahedra::<f64>::new(16)
+            .expect("valid")
+            .extract(&field, &shape, lo, cell, &mut raw)
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
+
+        let distinct: HashSet<[u64; 3]> = raw
+            .positions
+            .iter()
+            .map(|p| [p[0].to_bits(), p[1].to_bits(), p[2].to_bits()])
+            .collect();
+
+        let mut welded = raw.clone();
+        crate::weld::Welder::<f64>::new()
+            .weld(&mut welded, cell * 1e-6)
+            .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
+
+        let got = (raw.positions.len(), distinct.len(), welded.positions.len());
+        let want = expected
+            .iter()
+            .find(|(f, ..)| *f == name)
+            .map(|&(_, a, b, c)| (a, b, c))
+            .unwrap_or_else(|| panic!("{name} is not in the table"));
+
+        std::println!(
+            "{name:<15} raw {:>5}  exact-distinct {:>5}  welded {:>5}  \
+             | an exact rule could remove {:>4} of the weld's {:>4}",
+            got.0,
+            got.1,
+            got.2,
+            got.0 - got.1,
+            got.0 - got.2,
+        );
+        assert_eq!(got, want, "{name}");
+
+        // An exact rule can never merge more than a tolerance rule, on any
+        // field. This is the direction that must hold everywhere.
+        assert!(
+            got.1 >= got.2,
+            "{name}: exact identity out-merged a positional weld, which is \
+             impossible -- one of the two is not doing what it says"
+        );
+        rows += 1;
+    });
+    assert_eq!(rows, 7);
+
+    // The split, stated as an assertion rather than left in the table. On
+    // `gyroid` every merge the weld makes is exact, so an identity rule would
+    // close it completely; on the two CSG-shaped fields it would close a quarter
+    // at most. Same defect name, two different problems underneath.
+    let gap = |f: &str| {
+        let &(_, raw, exact, welded) = expected.iter().find(|(n, ..)| *n == f).expect("in table");
+        (raw - exact, raw - welded)
+    };
+    assert_eq!(gap("gyroid"), (6, 6), "gyroid's merges are entirely exact");
+    assert_eq!(gap("box_exact"), (234, 924), "box_exact's are mostly not");
+    assert_eq!(gap("csg_difference"), (186, 798));
+    assert_eq!(
+        gap("sphere"),
+        (0, 18),
+        "sphere has no exact duplicate at all"
+    );
+}
+
+/// **Where an endpoint root actually lands, and why `t == 0` is the wrong test
+/// (M-179).**
+///
+/// A-014h's stated mechanism is that *"a crossing at parameter 0 or 1 should be
+/// named by the grid point it lies on"*. Measured over every tetrahedron edge of
+/// every cell at 17³, **no root anywhere reports `t == 0`**, and only 36 report
+/// `t == 1` — all of them on `gyroid`. The rule as written would find almost
+/// nothing.
+///
+/// The cause is [`refine`](crate::subgrid::roots)'s deliberate choice to return
+/// the **upper** end of its final bracket, so it can keep the ascending-and-
+/// distinct contract when a root sits on a sample. A root at an edge's lower
+/// endpoint therefore comes back as a tiny positive parameter, never `0`.
+///
+/// What that tiny parameter does to the *position* is the other half, and it is
+/// also not what the ticket assumed: `a + (b − a)·t` never rounds back onto
+/// `corners[a]` on any field, while it does land exactly on `corners[b]` for a
+/// root at the far end. Both directions were expected to behave alike; only one
+/// does.
+#[test]
+fn no_root_reports_parameter_zero_and_almost_none_reports_one() {
+    use crate::subgrid::roots::all_roots;
+
+    // field -> (roots, t == 0, t == 1, position == corners[a], == corners[b])
+    let expected: [(&str, usize, usize, usize, usize, usize); 7] = [
+        ("sphere", 4200, 0, 0, 0, 18),
+        ("torus", 4632, 0, 0, 0, 0),
+        ("box_exact", 6312, 0, 0, 0, 1692),
+        ("csg_difference", 6408, 0, 0, 0, 1284),
+        ("thin_plate", 2248, 0, 0, 0, 112),
+        ("gyroid", 20352, 0, 36, 0, 36),
+        ("fbm_terrain", 8336, 0, 0, 0, 0),
+    ];
+
+    let mut rows = 0;
+    crate::for_each_reference_field!(f64, |name, field| {
+        let (shape, lo, cell) = grid(&field, 17);
+        let dims = shape.size();
+        let (mut total, mut t0, mut t1, mut at_a, mut at_b) = (0, 0, 0, 0, 0);
+
+        for z in 0..dims[2] - 1 {
+            for y in 0..dims[1] - 1 {
+                for x in 0..dims[0] - 1 {
+                    for tet in &TETS {
+                        // The same corner expression `cell_tet` uses -- M-32's
+                        // caveat is that equal by algebra is not equal by IEEE.
+                        let mut corners = [[0.0f64; 3]; 4];
+                        for (c, slot) in corners.iter_mut().enumerate() {
+                            let off = corner_offset(tet[c]);
+                            for axis in 0..3 {
+                                let index = f64::from([x, y, z][axis]) + f64::from(off[axis]);
+                                slot[axis] = lo[axis] + cell * index;
+                            }
+                        }
+                        for &[ia, ib] in &TET_EDGES {
+                            let (a, b) = (corners[ia as usize], corners[ib as usize]);
+                            let mut ts = Vec::new();
+                            all_roots(a, b, &field, 16, &mut ts);
+                            for &tt in &ts {
+                                total += 1;
+                                // Bit comparison, not `==`: "exactly the
+                                // endpoint parameter" is the whole question, so
+                                // a tolerance would answer a different one.
+                                if tt.to_bits() == 0.0f64.to_bits() {
+                                    t0 += 1;
+                                }
+                                if tt.to_bits() == 1.0f64.to_bits() {
+                                    t1 += 1;
+                                }
+                                let p = [0, 1, 2].map(|k| a[k] + (b[k] - a[k]) * tt);
+                                let same = |u: [f64; 3], v: [f64; 3]| {
+                                    (0..3).all(|k| u[k].to_bits() == v[k].to_bits())
+                                };
+                                if same(p, a) {
+                                    at_a += 1;
+                                }
+                                if same(p, b) {
+                                    at_b += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let got = (total, t0, t1, at_a, at_b);
+        let want = expected
+            .iter()
+            .find(|(f, ..)| *f == name)
+            .map(|&(_, a, b, c, d, e)| (a, b, c, d, e))
+            .unwrap_or_else(|| panic!("{name} is not in the table"));
+        std::println!(
+            "{name:<15} roots {:>6}  t==0 {:>3}  t==1 {:>3}  \
+             at corner a {:>3}  at corner b {:>5}",
+            got.0,
+            got.1,
+            got.2,
+            got.3,
+            got.4
+        );
+        assert_eq!(got, want, "{name}");
+        rows += 1;
+    });
+    assert_eq!(rows, 7);
+
+    // The headline, asserted rather than left to the table: the ticket's stated
+    // test finds nothing on six of seven fields, and nothing at all at the lower
+    // endpoint.
+    assert!(
+        expected
+            .iter()
+            .all(|&(_, _, t0, _, at_a, _)| t0 == 0 && at_a == 0),
+        "a root reported parameter 0, or landed on the lower corner -- \
+         M-179's mechanism has changed and A-014h can be re-scoped"
+    );
+}
