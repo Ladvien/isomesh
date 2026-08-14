@@ -392,74 +392,103 @@ fn the_validity_suite_over_every_reference_field() {
     //
     // Counts are **pinned rather than asserted to zero**, following the Phase 1
     // amendment: a known defect with a number and a ticket that owns it
-    // satisfies this gate; an unexplained one does not. The non-zero rows here
-    // are §3.2.3's immersion, owned by A-014d and measured in M-97.
+    // satisfies this gate; an unexplained one does not.
+    //
+    // **The `inconsistently_oriented` column is the extractor's output, before
+    // A-014f's pass.** That pass drives every one of these to zero on any row
+    // whose edges are all manifold (M-187), so this column measures what §3.2's
+    // winding plus A-014e's per-triangle vote produce on their own -- which is
+    // the thing this suite is for -- and `orient`'s own test measures the
+    // pipeline. Keeping them apart is what makes it visible when one of them
+    // regresses.
     use crate::fields::ReferenceField;
     use crate::validate::{ValidateConfig, validate_indexed};
 
-    // name -> (non-manifold edges, non-manifold vertices, inconsistently oriented)
-    let expected: [(&str, u64, u64, u64); 7] = [
-        ("sphere", 0, 0, 0),
-        ("torus", 0, 0, 0),
-        ("box_exact", 0, 0, 0),
-        ("csg_difference", 3, 6, 6),
-        ("thin_plate", 0, 0, 0),
-        ("gyroid", 0, 0, 138),
-        ("fbm_terrain", 4, 6, 19),
+    // (field, samples) -> (non-manifold edges, non-manifold vertices,
+    // inconsistently oriented). **Three resolutions, because Phase 1's gate says
+    // three and this ran at 17 alone until T-010** -- and 17³ turned out to be
+    // the resolution that decided which defects this project believed it had.
+    const RESOLUTIONS: [u32; 3] = [17, 25, 33];
+    #[rustfmt::skip]
+    let expected: [(&str, u32, u64, u64, u64); 21] = [
+        ("sphere",         17, 0, 0,   0), ("torus",       17, 0, 0,   0),
+        ("box_exact",      17, 0, 0,   0), ("csg_difference", 17, 3, 6, 6),
+        ("thin_plate",     17, 0, 0,   0), ("gyroid",      17, 0, 0, 138),
+        ("fbm_terrain",    17, 4, 6,  19),
+
+        ("sphere",         25, 0, 0,   0), ("torus",       25, 4, 6,   6),
+        ("box_exact",      25, 0, 0,   0), ("csg_difference", 25, 0, 0, 0),
+        ("thin_plate",     25, 0, 0,   8), ("gyroid",      25, 0, 0, 150),
+        ("fbm_terrain",    25, 2, 3,  29),
+
+        ("sphere",         33, 0, 0,   0), ("torus",       33, 0, 0,   0),
+        ("box_exact",      33, 0, 0,   0), ("csg_difference", 33, 0, 0, 36),
+        ("thin_plate",     33, 0, 0,   6), ("gyroid",      33, 0, 0, 330),
+        ("fbm_terrain",    33, 8, 12, 53),
     ];
 
     let mut checked = 0;
-    crate::for_each_reference_field!(f64, |name, field| {
-        let (lo, hi) = field.domain();
-        let n = 17u32;
-        let shape = RuntimeShape3::new([n; 3]).expect("a cubic grid");
-        let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+    for n in RESOLUTIONS {
+        crate::for_each_reference_field!(f64, |name, field| {
+            let (lo, hi) = field.domain();
+            let shape = RuntimeShape3::new([n; 3]).expect("a cubic grid");
+            let cell = (hi[0] - lo[0]) / f64::from(n - 1);
 
-        let mut mt = SubgridMarchingTetrahedra::<f64>::new(16).expect("valid");
-        let mut out = MeshBuffer::<f64>::default();
-        mt.extract(&field, &shape, lo, cell, &mut out)
-            .unwrap_or_else(|e| panic!("{name}: {e}"));
+            let mut mt = SubgridMarchingTetrahedra::<f64>::new(16).expect("valid");
+            let mut out = MeshBuffer::<f64>::default();
+            mt.extract(&field, &shape, lo, cell, &mut out)
+                .unwrap_or_else(|e| panic!("{name}: {e}"));
 
-        let mut welder = crate::weld::Welder::<f64>::new();
-        welder
-            .weld(&mut out, crate::weld::epsilon_for(cell))
-            .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
+            let mut welder = crate::weld::Welder::<f64>::new();
+            welder
+                .weld(&mut out, crate::weld::epsilon_for(cell))
+                .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
 
-        let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
-        let report = validate_indexed(&out.positions, &out.indices, &cfg);
+            let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
+            let report = validate_indexed(&out.positions, &out.indices, &cfg);
 
-        let want = expected
-            .iter()
-            .find(|(n, ..)| *n == name)
-            .unwrap_or_else(|| panic!("{name} is not in the pinned table"));
-        assert_eq!(
-            (
+            let want = expected
+                .iter()
+                .find(|(f, s, ..)| *f == name && *s == n)
+                .unwrap_or_else(|| panic!("{name} {n} is not in the pinned table"));
+            std::println!(
+                "{name:<15} {n}³  nm-edges {:>2}  nm-verts {:>2}  flipped {:>3}",
                 report.non_manifold_edges,
                 report.non_manifold_vertices,
                 report.inconsistently_oriented_edges
-            ),
-            (want.1, want.2, want.3),
-            "{name}\n{report}"
-        );
+            );
+            assert_eq!(
+                (
+                    report.non_manifold_edges,
+                    report.non_manifold_vertices,
+                    report.inconsistently_oriented_edges
+                ),
+                (want.2, want.3, want.4),
+                "{name} {n}³\n{report}"
+            );
 
-        // Every field must at least be a surface with no dangling geometry, and
-        // the clean ones must meet their own gate.
-        assert_eq!(report.out_of_range_indices, 0, "{name}\n{report}");
-        // Only the fields with a clean bill on all three counters are held to
-        // their own gate; the others are pinned above and owned by A-014d.
-        if want.1 == 0 && want.2 == 0 && want.3 == 0 {
-            if field.closed_in_domain() {
-                assert!(report.is_closed(), "{name}\n{report}");
-            } else {
-                assert!(report.is_manifold(), "{name}\n{report}");
+            // Every field must at least be a surface with no dangling geometry, and
+            // the clean ones must meet their own gate.
+            assert_eq!(report.out_of_range_indices, 0, "{name}\n{report}");
+            // Only the fields with a clean bill on all three counters are held to
+            // their own gate; the others are pinned above and owned by A-014d.
+            if want.2 == 0 && want.3 == 0 && want.4 == 0 {
+                if field.closed_in_domain() {
+                    assert!(report.is_closed(), "{name}\n{report}");
+                } else {
+                    assert!(report.is_manifold(), "{name}\n{report}");
+                }
+                if let Some(chi) = field.expected_euler() {
+                    assert_eq!(report.euler_characteristic, chi, "{name}\n{report}");
+                }
             }
-            if let Some(chi) = field.expected_euler() {
-                assert_eq!(report.euler_characteristic, chi, "{name}\n{report}");
-            }
-        }
-        checked += 1;
-    });
-    assert_eq!(checked, 7, "the sweep did not reach every field");
+            checked += 1;
+        });
+    }
+    assert_eq!(
+        checked, 21,
+        "the sweep did not reach every field at every size"
+    );
 }
 
 // ---------------------------------------------------------------------------
