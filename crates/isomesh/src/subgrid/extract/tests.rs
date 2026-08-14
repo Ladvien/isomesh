@@ -1652,3 +1652,122 @@ fn the_weld_answer_is_flat_across_the_range_the_four_policies_spanned() {
     });
     assert_eq!(rows, 7);
 }
+
+/// **P-7's remaining limbs, measured (M-182).**
+///
+/// P-7 was registered before A-014f was attempted, because A-014f's proposed
+/// remedy — orient each connected component from its most confident triangle and
+/// propagate — is a *per-patch* decision, and M-96 is on record that
+/// `thin_plate`'s two faces sit 0.4 cells apart and land in one tetrahedron
+/// facing opposite ways. The worry was that a weld merges the two sheets through
+/// their thickness and propagation then silently inverts one of them, on the one
+/// field that justifies the whole subgrid track (M-95).
+///
+/// Limb (a) — the margin — was closed at T-009: the plate's welded vertex count
+/// is flat from `h·10⁻⁹` to `h·10⁻³` and first moves at `h·10⁻¹`, 1000× the
+/// policy. This is limb (b) and both remaining falsifiers.
+///
+/// **Limb (b)** is the stronger claim and the one that actually decides A-014f:
+/// `thin_plate` is *closed in its domain*, so its top and bottom are joined at a
+/// rim and are one component **by topology rather than by tolerance**. A closed
+/// orientable surface carries a coherent orientation across that rim, which makes
+/// component-wise propagation the right answer there rather than a risk to it.
+///
+/// Note what this does **not** say. It says propagation is safe on the field the
+/// concern was raised about. Whether propagation is the right remedy for
+/// `gyroid`'s 138 flipped edges is A-014f's question, and this does not answer it.
+#[test]
+fn the_plate_is_one_closed_orientable_component_at_every_tolerance() {
+    use crate::fields::ThinPlate;
+    use crate::validate::{ValidateConfig, validate_indexed};
+
+    let mut flipped = Vec::new();
+    for n in [17u32, 25, 33] {
+        let field = ThinPlate::<f64>::canonical();
+        let (shape, lo, cell) = grid(&field, n);
+        let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
+
+        let mut raw = MeshBuffer::<f64>::default();
+        SubgridMarchingTetrahedra::<f64>::new(16)
+            .expect("valid")
+            .extract(&field, &shape, lo, cell, &mut raw)
+            .unwrap_or_else(|e| panic!("{n}: {e}"));
+
+        let mut welded = raw.clone();
+        crate::weld::Welder::<f64>::new()
+            .weld(&mut welded, crate::weld::epsilon_for(cell))
+            .expect("weld");
+        let r = validate_indexed(&welded.positions, &welded.indices, &cfg);
+
+        std::println!(
+            "thin_plate {n}³  components {}  boundary {}  flipped {}  \
+             nm-edges {}  nm-verts {}  chi {}  genus {:?}",
+            r.components,
+            r.boundary_edges,
+            r.inconsistently_oriented_edges,
+            r.non_manifold_edges,
+            r.non_manifold_vertices,
+            r.euler_characteristic,
+            r.genus,
+        );
+
+        // Falsifier 1: more than one component after the weld.
+        assert_eq!(
+            r.components, 1,
+            "thin_plate {n}³ welds into {} components -- P-7 falsified, and \
+             component-wise propagation is unsafe on the field it most needs to \
+             be safe on",
+            r.components
+        );
+        // Limb (b): joined at a rim, so one component by topology and not by
+        // tolerance. This is the part that makes the margin measured at T-009
+        // beside the point rather than merely comfortable.
+        assert_eq!(
+            r.boundary_edges, 0,
+            "thin_plate {n}³ is not closed in its domain -- limb (b)'s premise \
+             is wrong and the two sheets are one component only by tolerance"
+        );
+        assert_eq!(r.non_manifold_edges, 0);
+        assert_eq!(r.non_manifold_vertices, 0);
+        assert_eq!(r.euler_characteristic, 2, "a closed genus-0 plate");
+
+        // **Recorded, not gated (M-182).** The surface is orientable -- one
+        // closed component of genus 0 -- but §3.2's winding, flipped per triangle
+        // by A-014e's gradient vote, is not *coherent* on it at every resolution.
+        // That is A-014f's defect appearing on the field A-014e's per-triangle
+        // rule was written to protect, and it is an argument *for* propagation
+        // rather than against it: there is a coherent orientation to propagate to,
+        // and the local vote is not finding it.
+        flipped.push((n, r.inconsistently_oriented_edges));
+    }
+    assert_eq!(
+        flipped,
+        alloc::vec![(17, 0), (25, 8), (33, 6)],
+        "thin_plate's flipped-edge census moved"
+    );
+
+    // Falsifier 2: a component count that changes with the epsilon. T-009
+    // measured the vertex count across the plateau; this is the count P-7 names.
+    let field = ThinPlate::<f64>::canonical();
+    let (shape, lo, cell) = grid(&field, 17);
+    let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
+    let mut raw = MeshBuffer::<f64>::default();
+    SubgridMarchingTetrahedra::<f64>::new(16)
+        .expect("valid")
+        .extract(&field, &shape, lo, cell, &mut raw)
+        .expect("extract");
+
+    for factor in [1e-9f64, 1e-7, 1e-5, 1e-4, 1e-3, 1e-2] {
+        let mut m = raw.clone();
+        crate::weld::Welder::<f64>::new()
+            .weld(&mut m, cell * factor)
+            .expect("weld");
+        let r = validate_indexed(&m.positions, &m.indices, &cfg);
+        assert_eq!(
+            r.components, 1,
+            "thin_plate at {factor:e}·h welds into {} components -- P-7's second \
+             falsifier fires and the remedy is epsilon-dependent",
+            r.components
+        );
+    }
+}
