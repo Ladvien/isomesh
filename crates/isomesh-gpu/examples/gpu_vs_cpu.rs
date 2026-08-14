@@ -104,8 +104,8 @@ fn main() {
     };
 
     println!(
-        "{:>6}  {:>10}  {:>12}  {:>12}  {:>12}  {:>9}  {:>9}",
-        "n", "triangles", "cpu ms", "gpu+read ms", "gpu ms", "vs cpu", "no-read"
+        "{:>6}  {:>10}  {:>12}  {:>12}  {:>12}  {:>12}  {:>9}  {:>9}",
+        "n", "triangles", "cpu ms", "gpu+read ms", "gpu ms", "indirect ms", "vs cpu", "no-read"
     );
 
     for n in [17u32, 33, 49, 65, 97, 129] {
@@ -134,6 +134,23 @@ fn main() {
                 return;
             };
             let _ = mc.extract_buffers(gpu.device(), gpu.queue(), &buffer);
+        });
+
+        // **The zero-read-back path, which had no harness at all until GPU-013.**
+        // The ticket asked whether batching its eight submissions into one is
+        // worth doing, and that question cannot be answered against a path
+        // nothing times. Nothing here waits: no map, no poll, no CPU-visible
+        // value, so whatever this column costs is pure CPU recording.
+        //
+        // The budget is the triangle count the read-back path just measured, so
+        // the buffers are sized exactly as the surface needs and no truncation
+        // is being timed.
+        let budget = u32::try_from(triangles).unwrap_or(u32::MAX);
+        let indirect = median_ms(|| {
+            let Ok(buffer) = sampler.sample(gpu.device(), gpu.queue(), grid, field) else {
+                return;
+            };
+            let _ = mc.extract_indirect(gpu.device(), gpu.queue(), &buffer, budget);
         });
 
         let Ok(shape) = RuntimeShape3::new(grid.samples()) else {
@@ -172,7 +189,8 @@ fn main() {
         };
 
         println!(
-            "{n:>6}  {triangles:>10}  {cpu:>12.3}  {gpu_read:>12.3}  {gpu_only:>12.3}  {:>9}  {:>9}",
+            "{n:>6}  {triangles:>10}  {cpu:>12.3}  {gpu_read:>12.3}  {gpu_only:>12.3}  \
+             {indirect:>12.3}  {:>9}  {:>9}",
             ratio(cpu, gpu_read),
             ratio(cpu, gpu_only),
         );

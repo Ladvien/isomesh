@@ -42,7 +42,7 @@
 
 use isomesh::marching_cubes::table::{self, MAX_TRIANGLES};
 
-use crate::{Composer, Error, FieldBuffer, GridParams, PrefixScan, Result, read_buffer};
+use crate::{Composer, Error, FieldBuffer, GridParams, PrefixScan, Result, read_bytes_many};
 
 /// Words per case in the uploaded table: a header, then one per triangle.
 const CASE_STRIDE: usize = 1 + MAX_TRIANGLES;
@@ -133,6 +133,39 @@ impl ExtractTimings {
             0.0
         }
     }
+}
+
+/// What both extraction entry points build before their first dispatch.
+///
+/// Extracted at GPU-013 because the two copies had **already drifted**: `counts`
+/// carried `STORAGE | COPY_SRC` in one and `STORAGE | COPY_DST | COPY_SRC` in
+/// the other, `counts_bytes` was a named local in one and an inline expression
+/// in the other, and both explanatory comments existed in only one — so a reader
+/// of `extract_indirect` could not see why either buffer was shaped that way.
+///
+/// The unified `counts` drops `COPY_DST`. Nothing copies or writes into that
+/// buffer anywhere in the crate — the shader is its only author — so the flag
+/// was dead in the copy that had it rather than missing from the one that did
+/// not.
+///
+/// The ticket named the wrong pair. `extract` has no prologue at all: it
+/// delegates to `extract_buffers` and reads two buffers home. The duplication
+/// was between `extract_indirect` and `extract_buffers`, and the ticket's stated
+/// justification — that the indirect-draw budget-clamp fix touched this region —
+/// is also wrong: those hunks land 15 and 74 lines past its end (M-197).
+struct Prologue {
+    /// The grid, as both entry points go on to report it.
+    params: GridParams,
+    /// Workgroups the per-cell passes dispatch.
+    groups: u64,
+    /// Cells, as the `u32` the shader indexes with.
+    cell_words: u32,
+    /// Grid parameters, already written.
+    uniform: wgpu::Buffer,
+    /// Per-cell triangle counts, written by pass one.
+    counts: wgpu::Buffer,
+    /// A minimal output binding for the pass that writes no geometry.
+    placeholder: wgpu::Buffer,
 }
 
 /// Extraction output left in GPU memory.
@@ -307,12 +340,81 @@ impl MarchingCubesGpu {
         })
     }
 
+    /// Build [`Prologue`] — the buffers both entry points need before their
+    /// first dispatch.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::GridTooLarge`] if the dispatch would exceed the device's
+    /// workgroup limit, or if the cell count does not fit a `u32`.
+    fn prologue(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        field: &FieldBuffer,
+    ) -> Result<Prologue> {
+        let params = field.params();
+        let cells = params.cell_count();
+        let groups = cells.div_ceil(u64::from(WORKGROUP));
+        if groups > u64::from(device.limits().max_compute_workgroups_per_dimension) {
+            return Err(Error::GridTooLarge {
+                samples: params.samples(),
+            });
+        }
+        // Every buffer below is indexed by a u32 in the shader, so the cell
+        // count has to fit one. Checked here rather than trusted, because the
+        // symptom of not checking is a silently wrapped index writing over
+        // another cell's triangles.
+        let cell_words = u32::try_from(cells).map_err(|_| Error::GridTooLarge {
+            samples: params.samples(),
+        })?;
+
+        let uniform = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("isomesh grid params"),
+            size: GridParams::UNIFORM_SIZE,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        queue.write_buffer(&uniform, 0, &params.to_std140());
+
+        let counts = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("isomesh cell triangle counts"),
+            size: u64::from(cell_words) * 4,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+
+        // Pass one needs the output bindings to exist but writes nothing to
+        // them, so they start at the minimum wgpu will bind rather than at the
+        // size the mesh will need -- which is not known yet.
+        let placeholder = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("isomesh unused output"),
+            size: 4,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
+            mapped_at_creation: false,
+        });
+
+        Ok(Prologue {
+            params,
+            groups,
+            cell_words,
+            uniform,
+            counts,
+            placeholder,
+        })
+    }
+
     /// Extract `field` and read the triangles back to the CPU.
     ///
     /// Blocks twice: once for the counts, once for the geometry. A caller that
     /// only wants to *draw* the result should use
     /// [`extract_buffers`](Self::extract_buffers) instead and skip the second
     /// wait entirely — M-149 measures that at 6.7% of the path at 129³.
+    ///
+    /// **"Twice" became true at GPU-013.** It said so while the geometry
+    /// read-back was two separate calls, one for positions and one for normals,
+    /// each with its own `poll(Wait)` — so the count was three, and the doc had
+    /// been describing the intent rather than the code. Positions and normals
+    /// now travel in one submission and one wait (M-197).
     ///
     /// # Errors
     ///
@@ -333,18 +435,35 @@ impl MarchingCubesGpu {
         }
 
         let mut timings = geometry.timings;
-        let floats = u64::from(geometry.triangles) * 9;
+        let bytes = u64::from(geometry.triangles) * 9 * 4;
         let started = std::time::Instant::now();
-        let flat_positions = read_buffer(device, queue, &geometry.positions, floats * 4)?;
-        let flat_normals = read_buffer(device, queue, &geometry.normals, floats * 4)?;
+        // **One submission, one device wait, for both.** Positions and normals
+        // are independent and nothing between them consumes a result, so reading
+        // them separately bought two full `poll(Wait)` queue drains where one
+        // does -- and M-167 puts synchronisation at 82.6% of this path's time,
+        // so the second drain was the expensive half of the operation.
+        let flat = read_bytes_many(
+            device,
+            queue,
+            &[(&geometry.positions, bytes), (&geometry.normals, bytes)],
+        )?;
         timings.geometry_readback_ms = started.elapsed().as_secs_f64() * 1000.0;
 
-        let triple = |flat: &[f32]| -> Vec<[f32; 3]> {
-            flat.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect()
+        let triple = |raw: &[u8]| -> Vec<[f32; 3]> {
+            raw.chunks_exact(12)
+                .map(|c| {
+                    let at = |k: usize| f32::from_le_bytes([c[k], c[k + 1], c[k + 2], c[k + 3]]);
+                    [at(0), at(4), at(8)]
+                })
+                .collect()
+        };
+        let (Some(positions), Some(normals)) = (flat.first(), flat.get(1)) else {
+            // `read_bytes_many` returns one result per request and it was given two.
+            return Err(Error::DeviceLost);
         };
         Ok(GpuMesh {
-            positions: triple(&flat_positions),
-            normals: triple(&flat_normals),
+            positions: triple(positions),
+            normals: triple(normals),
             timings,
         })
     }
@@ -389,38 +508,14 @@ impl MarchingCubesGpu {
         field: &FieldBuffer,
         budget: u32,
     ) -> Result<IndirectGeometry> {
-        let params = field.params();
-        let cells = params.cell_count();
-        let groups = cells.div_ceil(u64::from(WORKGROUP));
-        if groups > u64::from(device.limits().max_compute_workgroups_per_dimension) {
-            return Err(Error::GridTooLarge {
-                samples: params.samples(),
-            });
-        }
-        let cell_words = u32::try_from(cells).map_err(|_| Error::GridTooLarge {
-            samples: params.samples(),
-        })?;
-
-        let uniform = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("isomesh grid params"),
-            size: GridParams::UNIFORM_SIZE,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        queue.write_buffer(&uniform, 0, &params.to_std140());
-
-        let counts = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("isomesh cell triangle counts"),
-            size: u64::from(cell_words) * 4,
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-            mapped_at_creation: false,
-        });
-        let placeholder = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("isomesh unused output"),
-            size: 4,
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-            mapped_at_creation: false,
-        });
+        let Prologue {
+            params,
+            groups,
+            cell_words,
+            uniform,
+            counts,
+            placeholder,
+        } = Self::prologue(device, queue, field)?;
 
         let mut timings = ExtractTimings::default();
         let started = std::time::Instant::now();
@@ -532,49 +627,14 @@ impl MarchingCubesGpu {
         queue: &wgpu::Queue,
         field: &FieldBuffer,
     ) -> Result<GpuGeometry> {
-        let params = field.params();
-        let cells = params.cell_count();
-        let groups = cells.div_ceil(u64::from(WORKGROUP));
-        if groups > u64::from(device.limits().max_compute_workgroups_per_dimension) {
-            return Err(Error::GridTooLarge {
-                samples: params.samples(),
-            });
-        }
-        // Every buffer below is indexed by a u32 in the shader, so the cell
-        // count has to fit one. Checked here rather than trusted, because the
-        // symptom of not checking is a silently wrapped index writing over
-        // another cell's triangles.
-        let cell_words = u32::try_from(cells).map_err(|_| Error::GridTooLarge {
-            samples: params.samples(),
-        })?;
-
-        let uniform = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("isomesh grid params"),
-            size: GridParams::UNIFORM_SIZE,
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        queue.write_buffer(&uniform, 0, &params.to_std140());
-
-        let counts_bytes = u64::from(cell_words) * 4;
-        let counts = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("isomesh cell triangle counts"),
-            size: counts_bytes,
-            usage: wgpu::BufferUsages::STORAGE
-                | wgpu::BufferUsages::COPY_DST
-                | wgpu::BufferUsages::COPY_SRC,
-            mapped_at_creation: false,
-        });
-
-        // Pass one needs the output bindings to exist but writes nothing to
-        // them, so they start at the minimum wgpu will bind rather than at the
-        // size the mesh will need -- which is not known yet.
-        let placeholder = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("isomesh unused output"),
-            size: 4,
-            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-            mapped_at_creation: false,
-        });
+        let Prologue {
+            params,
+            groups,
+            cell_words,
+            uniform,
+            counts,
+            placeholder,
+        } = Self::prologue(device, queue, field)?;
 
         let mut timings = ExtractTimings::default();
 

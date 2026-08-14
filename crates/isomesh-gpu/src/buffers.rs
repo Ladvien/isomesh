@@ -200,8 +200,8 @@ pub fn read_buffer_u32(
 
 /// Copy `bytes` from `source` back to the CPU, untyped.
 ///
-/// The one place that touches a staging buffer, so the map/poll/unmap dance
-/// exists once.
+/// One request through [`read_bytes_many`], which is where the staging/map/poll
+/// dance actually lives.
 ///
 /// # Errors
 ///
@@ -212,12 +212,64 @@ pub fn read_bytes(
     source: &wgpu::Buffer,
     bytes: u64,
 ) -> Result<Vec<u8>> {
-    if !bytes.is_multiple_of(4) {
-        return Err(Error::UnalignedReadback { bytes, stride: 4 });
+    let mut out = read_bytes_many(device, queue, &[(source, bytes)])?;
+    match out.pop() {
+        Some(only) => Ok(only),
+        // `read_bytes_many` returns one result per request and it was given one.
+        None => Err(Error::DeviceLost),
     }
+}
+
+/// Copy several buffers back to the CPU in **one submission and one device
+/// wait**.
+///
+/// The one place that touches a staging buffer, so the map/poll/unmap dance
+/// exists once.
+///
+/// # Why the plural version is the primitive
+///
+/// `device.poll(Wait { submission_index: None })` **drains the entire queue**,
+/// not just the copy that preceded it — so the cost of a read-back is a full
+/// device synchronisation whether it moves four bytes or forty megabytes, and
+/// two read-backs in a row cost two of them for no reason. M-167 measured
+/// synchronisation at 82.6% of this crate's GPU time, which makes the second
+/// drain the expensive part of the operation rather than an detail of it.
+///
+/// Batching is only legal when nothing between the reads consumes a result. A
+/// read-back whose value sizes the next dispatch **cannot** join the batch, and
+/// `extract_buffers` has exactly one of those — the triangle total that sizes
+/// the geometry buffers.
+///
+/// # Errors
+///
+/// [`Error::UnalignedReadback`] if any `bytes` is not a multiple of 4,
+/// [`Error::MapFailed`] if a map is refused, [`Error::DeviceLost`] if the
+/// submission never completes.
+pub fn read_bytes_many(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    requests: &[(&wgpu::Buffer, u64)],
+) -> Result<Vec<Vec<u8>>> {
+    for (_, bytes) in requests {
+        if !bytes.is_multiple_of(4) {
+            return Err(Error::UnalignedReadback {
+                bytes: *bytes,
+                stride: 4,
+            });
+        }
+    }
+    if requests.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // **One staging buffer, not one per request.** Peak staging memory is the
+    // same either way -- every copy in a batch has to be resident until the
+    // single wait completes -- but this is one allocation and one map instead of
+    // `n` of each, and the device allocator is the thing being avoided.
+    let total: u64 = requests.iter().map(|(_, bytes)| *bytes).sum();
     let staging = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("isomesh readback"),
-        size: bytes,
+        size: total,
         usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
@@ -225,7 +277,13 @@ pub fn read_bytes(
     let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
         label: Some("isomesh readback copy"),
     });
-    encoder.copy_buffer_to_buffer(source, 0, &staging, 0, bytes);
+    let mut at = 0u64;
+    for (source, bytes) in requests {
+        // Every size is a multiple of 4, checked above, so each offset satisfies
+        // `COPY_BUFFER_ALIGNMENT` by construction rather than by rounding.
+        encoder.copy_buffer_to_buffer(source, 0, &staging, at, *bytes);
+        at += *bytes;
+    }
     queue.submit(Some(encoder.finish()));
 
     let (sender, receiver) = std::sync::mpsc::channel();
@@ -253,7 +311,17 @@ pub fn read_bytes(
         Err(_) => return Err(Error::DeviceLost),
     }
 
-    let out = staging.slice(..).get_mapped_range().to_vec();
+    let view = staging.slice(..).get_mapped_range();
+    let mut out = Vec::with_capacity(requests.len());
+    let mut at = 0usize;
+    for (_, bytes) in requests {
+        let len = usize::try_from(*bytes).map_err(|_| Error::DeviceLost)?;
+        let end = at.checked_add(len).ok_or(Error::DeviceLost)?;
+        let slice = view.get(at..end).ok_or(Error::DeviceLost)?;
+        out.push(slice.to_vec());
+        at = end;
+    }
+    drop(view);
     staging.unmap();
     Ok(out)
 }
