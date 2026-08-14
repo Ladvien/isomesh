@@ -440,7 +440,8 @@ fn dig(
         brushes: &world.brushes,
     };
     let mut dirty = DirtySet::new();
-    let report = mark_edit(&layout, &before, &after, min_cell, max_cell, &mut dirty);
+    let report = mark_edit(&layout, &before, &after, min_cell, max_cell, &mut dirty)
+        .expect("a dig brush spans a few cells, far inside the u32 sample space");
 
     let touched: Vec<ChunkId> = dirty.iter().collect();
     let field = BrushStack {

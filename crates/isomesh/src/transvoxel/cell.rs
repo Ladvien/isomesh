@@ -257,11 +257,16 @@ impl<R: Real> TransitionCell<R> {
     /// where a chord collision is likeliest, so the safe rule is the only one
     /// worth having.
     ///
-    /// Winding follows the cycle direction the table produces, which is oriented
-    /// by walking each face counter-clockwise seen from outside the solid — the
-    /// same construction Marching Cubes' own table uses. `a_transition_patch_is_wound_like_marching_cubes`
-    /// is what establishes it comes out the right way round rather than inside
-    /// out, because no manifold or Euler check can see a global flip.
+    /// Winding follows the cycle direction the table produces, which is
+    /// counter-clockwise seen from outside **in `(u, v, w)` parameter space**.
+    /// The map to world space preserves that orientation only when
+    /// `sign(width)` times the handedness of `(u, v, normal)` is positive, so
+    /// the emitted order is swapped for the reflected parameterisations —
+    /// Lengyel's tables store reversed windings for reflected transition cells
+    /// for exactly this reason. `a_patch_with_width_is_wound_away_from_the_solid`
+    /// and `a_mirrored_patch_is_wound_away_from_the_solid` establish both ways
+    /// round come out facing outward, because no manifold or Euler check can
+    /// see a global flip.
     ///
     /// `joined` selects, per ambiguous face, which pairing it uses; pass `0` for
     /// the separating choice, which is Marching Cubes proper.
@@ -277,6 +282,21 @@ impl<R: Real> TransitionCell<R> {
             "a pairing was chosen for a face that is not ambiguous"
         );
         let next = transition_links(case, joined);
+
+        // The FACES cycles are counter-clockwise seen from outside in
+        // (u, v, w) *parameter* space. The map to world space preserves that
+        // orientation only when sign(width) times the parity of
+        // (u, v, normal) is positive -- Lengyel's tables store reversed
+        // windings for the reflected transition cells for exactly this
+        // reason. e_u, e_v and the back displacement each have exactly one
+        // nonzero component, so this triple product is +-step^2*width with no
+        // cancellation and its sign is exact. Zero width leaves it exactly
+        // zero: no winding is decidable there (M-74), and the shipped order
+        // is kept.
+        let e_u = vec3::sub(self.position[1], self.position[0]);
+        let e_v = vec3::sub(self.position[3], self.position[0]);
+        let towards_back = vec3::sub(self.back[0], self.position[0]);
+        let reversed = vec3::dot(vec3::cross(e_u, e_v), towards_back) < R::ZERO;
 
         let mut visited = 0u16;
         for start in 0..EDGE_COUNT as u8 {
@@ -330,7 +350,12 @@ impl<R: Real> TransitionCell<R> {
             // faces away from the solid on all 144 faces, the other order on
             // none.
             for k in 0..len {
-                out.triangle(hub, spoke[k], spoke[(k + 1) % len]);
+                let (b, c) = (spoke[k], spoke[(k + 1) % len]);
+                if reversed {
+                    out.triangle(hub, c, b);
+                } else {
+                    out.triangle(hub, b, c);
+                }
             }
         }
     }

@@ -195,6 +195,12 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
     /// than two samples. [`Error::SubgridUnfilled`](crate::Error::SubgridUnfilled)
     /// if a tetrahedron could not be triangulated — a defect rather than an
     /// unsupported input, since every case §3.2 defines is implemented.
+    /// [`Error::DegenerateNormal`](crate::Error::DegenerateNormal) if the field's
+    /// gradient at a crossing is zero or non-finite.
+    /// [`Error::IndexSpaceExhausted`](crate::Error::IndexSpaceExhausted) if the
+    /// extraction reaches `u32::MAX` emitted vertices — checked as it emits
+    /// rather than up front, because an edge can carry any number of roots, so
+    /// no a-priori bound exists.
     pub fn extract<S, M>(
         &mut self,
         sdf: &S,
@@ -215,12 +221,17 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
         // extractions would hand the second one the first's numbering.
         self.shared.clear();
 
+        // Unlike every other extractor, the vertex count here has no a-priori
+        // bound -- an edge can carry any number of roots -- so the u32 index
+        // space is guarded at emission rather than up front.
+        let mut vertices: u64 = 0;
+
         for z in 0..size[2] - 1 {
             for y in 0..size[1] - 1 {
                 for x in 0..size[0] - 1 {
                     let cell = [x, y, z];
                     for t in 0..TETS.len() {
-                        self.cell_tet(sdf, origin, cell_size, cell, t, out)?;
+                        self.cell_tet(sdf, origin, cell_size, cell, t, &mut vertices, out)?;
                     }
                 }
             }
@@ -229,6 +240,7 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
     }
 
     /// One tetrahedron of one cell.
+    #[allow(clippy::too_many_arguments)]
     fn cell_tet<S, M>(
         &mut self,
         sdf: &S,
@@ -236,6 +248,7 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
         cell_size: R,
         cell: [u32; 3],
         t: usize,
+        vertices: &mut u64,
         out: &mut M,
     ) -> crate::Result<()>
     where
@@ -336,7 +349,17 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
                 return Err(crate::Error::DegenerateNormal { vertex: at as u64 });
             }
             let normal = vec3::scale(g, length.recip());
+            // The sink's index space is u32 and `vertex` has no way to report
+            // exhaustion, so the count is enforced here: after `u32::MAX`
+            // emissions the next index a non-welding sink hands back would be
+            // `u32::MAX` itself, one past the last addressable vertex.
+            if *vertices >= u64::from(u32::MAX) {
+                return Err(crate::Error::IndexSpaceExhausted {
+                    needed: *vertices + 1,
+                });
+            }
             let emitted = out.vertex(*position, normal);
+            *vertices += 1;
             if let Some(key) = key {
                 self.shared.insert(key, emitted);
             }

@@ -53,6 +53,7 @@ use bevy_asset::{Assets, Handle};
 use bevy_ecs::prelude::*;
 use bevy_mesh::Mesh;
 use bevy_tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future};
+use tracing::error;
 
 use isomesh::chunk::{ChunkId, ChunkLayout};
 use isomesh::{RuntimeShape3, Sdf};
@@ -235,8 +236,12 @@ pub struct NeedsRemesh;
 pub struct ChunkMesh(pub Handle<Mesh>);
 
 /// An extraction in flight on the task pool.
+///
+/// Carries a `Result` rather than a bare builder: a failed extraction crosses
+/// back to the main thread as a value, where it can be reported against the
+/// chunk that produced it, instead of being absorbed on the worker.
 #[derive(Component)]
-struct MeshingTask(Task<MeshBuilder>);
+struct MeshingTask(Task<isomesh::Result<MeshBuilder>>);
 
 /// How much main-thread time per frame the plugin may spend turning finished
 /// extractions into assets.
@@ -294,8 +299,22 @@ impl Plugin for IsomeshPlugin {
         // exist. `MeshPlugin` is where that normally comes from, and adding it
         // here rather than requiring it means the plugin works in a headless
         // app with no renderer -- which is what its own tests run in, and what
-        // a server meshing for collision would want.
+        // a server meshing for collision would want. Headless is not
+        // plugin-free, though: `MeshPlugin` registers `Assets<Mesh>` through
+        // the `AssetServer`, so `AssetPlugin` must already be in the app.
         if !app.is_plugin_added::<bevy_mesh::MeshPlugin>() {
+            // Checked by name before it fails by side effect. Without this,
+            // the same configuration panics inside `bevy_asset` about a
+            // missing `AssetServer` resource -- nowhere near the omission. A
+            // config error at the door, naming the fix, is the loud path;
+            // `Plugin::build` returns `()`, so there is no Result to return,
+            // and every configuration this rejects already panicked before.
+            assert!(
+                app.is_plugin_added::<bevy_asset::AssetPlugin>(),
+                "IsomeshPlugin stores meshes in `Assets<Mesh>`, which needs \
+                 `AssetPlugin`: add `AssetPlugin` (or `DefaultPlugins`) before \
+                 `IsomeshPlugin`"
+            );
             app.add_plugins(bevy_mesh::MeshPlugin);
         }
         app.init_resource::<MeshBudget>()
@@ -341,10 +360,20 @@ fn spawn_meshing_tasks(
         // `NeedsRemesh` comes off now rather than when the mesh lands, so an
         // edit arriving mid-extraction re-marks the chunk and is re-queued
         // instead of being swallowed by a task that started before it.
+        //
+        // `try_insert`, not `insert`, and this is not a swallowed error. A
+        // consumer despawns a chunk the moment it leaves residency, and that
+        // can happen in the same frame this system queues the task -- both are
+        // commands, and whichever order the queue flushes, the insert may land
+        // on an entity that is already gone. Queueing a task for a chunk that
+        // no longer exists is *vacuous*, not degraded: there is nothing else
+        // this could correctly do, and `insert` panics instead. M-171 is this
+        // exact race in the examples' attach systems; these two plugin sites
+        // carried it latently.
         commands
             .entity(entity)
             .remove::<NeedsRemesh>()
-            .insert(MeshingTask(task));
+            .try_insert(MeshingTask(task));
         running += 1;
         stats.spawned += 1;
     }
@@ -365,14 +394,31 @@ fn apply_finished_meshes(
     stats.applied = 0;
 
     for (entity, mut task) in &mut tasks {
-        let Some(builder) = block_on(future::poll_once(&mut task.0)) else {
+        let Some(result) = block_on(future::poll_once(&mut task.0)) else {
             continue;
         };
-        commands
-            .entity(entity)
-            .remove::<MeshingTask>()
-            .insert(ChunkMesh(meshes.add(builder.into_mesh())));
-        stats.applied += 1;
+        match result {
+            Ok(builder) => {
+                // `try_insert`, not `insert`: the consumer may have queued
+                // this chunk's despawn in the same frame -- see the comment at
+                // the MeshingTask insert. The dropped Handle frees the asset.
+                commands
+                    .entity(entity)
+                    .remove::<MeshingTask>()
+                    .try_insert(ChunkMesh(meshes.add(builder.into_mesh())));
+                stats.applied += 1;
+            }
+            Err(e) => {
+                // Fail loudly, publish nothing. A `ChunkMesh` in place of a
+                // failed extraction is the silent default the one-path rule
+                // forbids -- worse than absent, because a partial buffer
+                // renders and looks plausible. `NeedsRemesh` is deliberately
+                // not re-inserted: the same input fails the same way, and a
+                // retry loop is a stall that only logs once.
+                error!("meshing chunk {entity} failed: {e}");
+                commands.entity(entity).remove::<MeshingTask>();
+            }
+        }
 
         // Checked *after* the work, so a budget too small for one mesh still
         // makes progress. See the module docs.
@@ -385,23 +431,24 @@ fn apply_finished_meshes(
 }
 
 /// Extract one chunk. Runs on the task pool, so it touches no ECS state.
+///
+/// A failure crosses back to the main thread as a value rather than being
+/// absorbed here: this runs on a worker thread, where a panic is a silent lost
+/// task -- and publishing the buffer of a failed extraction would stamp a
+/// partial or empty mesh as the chunk's real one, which is the degraded
+/// substitute nothing downstream can attribute.
 fn extract_chunk(
     field: &dyn VolumeField,
     layout: &ChunkLayout<f32>,
     id: ChunkId,
     extractor: Extractor,
-) -> MeshBuilder {
+) -> isomesh::Result<MeshBuilder> {
     let mut out = MeshBuilder::new();
-    let Ok(shape) = layout.sample_shape() else {
-        return out;
-    };
+    let shape = layout.sample_shape()?;
     let origin = layout.sample_origin(id);
     let cell = layout.cell_size();
-    // A failed extraction yields an empty chunk rather than a panic: this runs
-    // on a worker thread, where a panic is a silent lost task rather than a
-    // crash, which is the worst of both.
-    let _ = extract_with(extractor, field, &shape, origin, cell, &mut out);
-    out
+    extract_with(extractor, field, &shape, origin, cell, &mut out)?;
+    Ok(out)
 }
 
 fn extract_with(

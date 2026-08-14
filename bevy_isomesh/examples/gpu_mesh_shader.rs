@@ -371,11 +371,11 @@ fn draw_isosurface(
 
     // The count is only knowable by reading it, which is the whole point -- so
     // it is read on request rather than every frame.
-    if scene.probe {
-        if let Ok(total) = isomesh_gpu::read_buffer_u32(device, queue, &geometry.total, 4) {
-            stats.triangles = total.first().copied().unwrap_or(0);
-            stats.probed = true;
-        }
+    if scene.probe
+        && let Ok(total) = isomesh_gpu::read_buffer_u32(device, queue, &geometry.total, 4)
+    {
+        stats.triangles = total.first().copied().unwrap_or(0);
+        stats.probed = true;
     }
     publish(stats);
 

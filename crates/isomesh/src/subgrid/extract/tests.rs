@@ -327,31 +327,19 @@ fn the_welded_output_is_a_closed_consistently_oriented_manifold() {
     // welding the surface is 896 disconnected triangles: 2,240 boundary edges,
     // and an orientation check that can only see the edges interior to a single
     // tetrahedron. Welding is what turns it into a surface at all. See M-96.
-    use crate::validate::{ValidateConfig, validate_indexed};
+    // One generic body, dispatched by type rather than by a `match` on the
+    // field's name -- the ladder this replaces is exactly the shape the
+    // testing law forbids ("no `if field == gyroid` anywhere in test code"),
+    // and its two arms had already been copied identically once.
+    fn check<F: ReferenceField<Scalar = f64>>(field: &F, n: u32, samples: u32, expected_chi: i64) {
+        use crate::validate::{ValidateConfig, validate_indexed};
+        let name = F::NAME;
 
-    for (name, n, samples, expected_chi) in
-        [("thin_plate", 17u32, 16u32, 2i64), ("sphere", 17, 16, 2)]
-    {
-        let (mut out, cell) = match name {
-            "thin_plate" => {
-                let field = ThinPlate::<f64>::canonical();
-                let (shape, origin, cell) = grid(&field, n);
-                let mut mt = SubgridMarchingTetrahedra::<f64>::new(samples).expect("valid");
-                let mut out = MeshBuffer::<f64>::default();
-                mt.extract(&field, &shape, origin, cell, &mut out)
-                    .expect("extract");
-                (out, cell)
-            }
-            _ => {
-                let field = crate::fields::Sphere::<f64>::canonical();
-                let (shape, origin, cell) = grid(&field, n);
-                let mut mt = SubgridMarchingTetrahedra::<f64>::new(samples).expect("valid");
-                let mut out = MeshBuffer::<f64>::default();
-                mt.extract(&field, &shape, origin, cell, &mut out)
-                    .expect("extract");
-                (out, cell)
-            }
-        };
+        let (shape, origin, cell) = grid(field, n);
+        let mut mt = SubgridMarchingTetrahedra::<f64>::new(samples).expect("valid");
+        let mut out = MeshBuffer::<f64>::default();
+        mt.extract(field, &shape, origin, cell, &mut out)
+            .expect("extract");
 
         let mut welder = crate::weld::Welder::<f64>::new();
         welder
@@ -371,6 +359,9 @@ fn the_welded_output_is_a_closed_consistently_oriented_manifold() {
             "{name}: {report}"
         );
     }
+
+    check(&ThinPlate::<f64>::canonical(), 17, 16, 2);
+    check(&crate::fields::Sphere::<f64>::canonical(), 17, 16, 2);
 }
 
 #[test]
@@ -495,13 +486,22 @@ fn soup_with_provenance<F: Sdf<Scalar = f64>>(
     let mut mt = SubgridMarchingTetrahedra::<f64>::new(samples).expect("valid");
     let mut out = MeshBuffer::<f64>::default();
     let mut runs = Vec::new();
+    let mut vertices: u64 = 0;
     for z in 0..n - 1 {
         for y in 0..n - 1 {
             for x in 0..n - 1 {
                 for t in 0..TETS.len() {
                     let first = out.indices.len() / 3;
-                    mt.cell_tet(field, origin, cell_size, [x, y, z], t, &mut out)
-                        .unwrap_or_else(|e| panic!("cell [{x}, {y}, {z}] tet {t}: {e}"));
+                    mt.cell_tet(
+                        field,
+                        origin,
+                        cell_size,
+                        [x, y, z],
+                        t,
+                        &mut vertices,
+                        &mut out,
+                    )
+                    .unwrap_or_else(|e| panic!("cell [{x}, {y}, {z}] tet {t}: {e}"));
                     let count = out.indices.len() / 3 - first;
                     if count > 0 {
                         runs.push(TetRun {

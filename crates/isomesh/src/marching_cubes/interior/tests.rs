@@ -6,6 +6,7 @@
 
 use super::{Interior, SweptFaces, chernyaev_numerator_test};
 use crate::Error;
+use crate::marching_cubes::ambiguity::face_is_joined;
 
 /// The sign structure that admits a pole, and the one Appendix A's counterexample
 /// has: the `A`/`C` diagonal positive on the low face and negative on the high
@@ -278,4 +279,74 @@ fn the_test_is_deterministic_and_independent_of_diagonal_order() {
     }
     // Twice, identical: nothing here reads a hash map or an address.
     assert_eq!(faces.test(), faces.test());
+}
+
+#[test]
+fn catastrophic_cancellation_does_not_hide_a_positive_saddle() {
+    // **The stable quadratic, witnessed.** `a = αγ − βδ` is a difference of
+    // near-equal products and nothing keeps it away from zero: this fixture
+    // has `a ≈ 1e-11` against `b ≈ 2.79`, and its only positive-saddle
+    // interval is the 4.8e-6-wide gap between `F`'s small root (0.3240821…)
+    // and the pole (0.3240869…). The textbook `(−b + √disc)/2a` computes
+    // `√disc − b` — two O(1) values agreeing to eleven digits — and lands the
+    // root 8.0e-6 low; the walk then brackets an interval whose midpoint sits
+    // below the true root, where the saddle is still negative, and answers
+    // Separated. Kahan's `q = −(b + signum(b)·√disc)/2`, roots `q/a` and
+    // `c/q`, places the small root to full precision (|F| there: 1e-17
+    // against the textbook root's 2e-5) and the walk finds the interval.
+    //
+    // Both faces are ambiguous — one diagonal strictly negative, the other
+    // strictly positive — so this is a configuration MC33 can actually ask
+    // about, not a synthetic corner.
+    let faces = SweptFaces::new(
+        [0.3, -1.0, 0.3, -0.9926951163344483],
+        [-1.7, 1.0, -1.7, 1.0073048836605518],
+    )
+    .expect("ambiguous faces");
+
+    // The positive interval is real whatever the root solver does: just below
+    // the pole the saddle is far above zero, while both endpoints read
+    // negative — so only the interval walk can find it, and it must.
+    let pole = faces.pole().expect("Δ changes sign inside this sweep");
+    assert!(
+        faces.saddle(pole - 1e-7) > 0.0,
+        "saddle(pole − 1e-7) = {}",
+        faces.saddle(pole - 1e-7)
+    );
+    assert!(faces.saddle(0.0) < 0.0 && faces.saddle(1.0) < 0.0);
+
+    assert_eq!(faces.test(), Interior::Joined);
+}
+
+#[test]
+#[allow(clippy::float_cmp)] // The exact-zero comparison is the guard's point.
+fn joined_names_the_positive_regions_and_the_face_rule_names_the_negative() {
+    // **The polarity relation between the two deciders, pinned.** Custodio
+    // states the interior criterion for the *positive* vertices and this
+    // module keeps that sign: positive saddle → `Interior::Joined`, and in
+    // this crate positive is *outside*. `ambiguity::face_is_joined` speaks the
+    // other way round — its `true` joins the *inside* (negative) corners, and
+    // its `d_in > d_out` comparison is algebraically `S < 0`. So on a shared
+    // face the two agree about the geometry and use "joined" for opposite
+    // sign classes: `face_is_joined(face)` must equal `saddle < 0` there,
+    // never `saddle > 0`. A-002b has to translate between them, not equate
+    // them; this is the translation, as an assertion.
+    let faces = opposed();
+    for (v, t) in [(faces.lo, 0.0), (faces.hi, 1.0)] {
+        let s = faces.saddle(t);
+        assert_ne!(s, 0.0, "a tied saddle at {v:?} would pin nothing");
+        assert_eq!(
+            face_is_joined(v),
+            s < 0.0,
+            "face {v:?}: saddle {s} disagrees with the face rule's polarity"
+        );
+    }
+
+    // The endpoint shortcut in `test` fires on this very fixture: the high
+    // face's saddle is positive, so the sweep answers Joined — while the face
+    // rule reads the same four values as *not* joining its inside corners.
+    // Same numbers, opposite words; that is the trap this test exists for.
+    assert!(faces.saddle(1.0) > 0.0);
+    assert!(!face_is_joined(faces.hi));
+    assert_eq!(faces.test(), Interior::Joined);
 }

@@ -372,6 +372,18 @@ fn assemble<F: Sdf<Scalar = f32>>(
             } else {
                 0
             };
+            // The patch's width is **signed**: positive runs toward increasing
+            // x, so it states which side the coarse block is on. A mirrored
+            // seam (coarse block below) needs the negative sign, or the patch
+            // grows into the fine block and leaves the inset moat open --
+            // measured at 44 boundary edges per mirrored two-block seam, at
+            // seam±w where the HUD's seam-plane counter cannot see them, and
+            // zero with the sign stated.
+            let sample_width = if coarse_index > fine_index {
+                width
+            } else {
+                -width
+            };
             for jz in 0..fine_across / 2 {
                 for jy in 0..fine_across / 2 {
                     let cell = TransitionCell::sample(
@@ -381,7 +393,7 @@ fn assemble<F: Sdf<Scalar = f32>>(
                         [base_x, 2 * jy, 2 * jz],
                         1,
                         2,
-                        width,
+                        sample_width,
                     );
                     cell.emit(field, 0, &mut transition_mesh);
                 }
@@ -391,9 +403,11 @@ fn assemble<F: Sdf<Scalar = f32>>(
 
     let mut mesh = MeshBuffer::<f32>::new();
     for block in &blocks {
-        mesh.append(block);
+        mesh.append(block)
+            .expect("the assembled world fits the u32 index space");
     }
-    mesh.append(&transition_mesh);
+    mesh.append(&transition_mesh)
+        .expect("the meshes fit the u32 index space");
 
     let finest = spacing(*levels.iter().min().unwrap_or(&0));
     isomesh::weld::Welder::<f32>::new()

@@ -141,9 +141,16 @@ fn main() {
             continue;
         };
         let mut out = MeshBuffer::<f32>::new();
+        // Constructed once, outside the timed closure: the extractor owns its
+        // scratch precisely so re-meshing does not re-allocate ("Construct
+        // once, call extract as often as you like" -- its own docs). A fresh
+        // extractor per timed run would charge ~34 MB of cold allocation to
+        // the CPU column and flatter the ratios this example exists to
+        // measure. The warmup runs grow the scratch; the timed runs reuse it.
+        let mut cpu_mc = isomesh::marching_cubes::MarchingCubes::<f32>::new();
         let cpu = median_ms(|| {
             out.reset();
-            let _ = isomesh::marching_cubes::MarchingCubes::<f32>::new().extract(
+            let _ = cpu_mc.extract(
                 &FieldOf(field),
                 &shape,
                 grid.origin(),

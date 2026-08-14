@@ -163,7 +163,8 @@ fn spawning_the_work_does_not_do_the_work() {
         &layout,
         ChunkId::new([0, 0, 0]),
         Extractor::default(),
-    );
+    )
+    .expect("the reference extraction failed");
     let one_extraction = one.elapsed();
 
     // The negative control: if the field were free to sample, the comparison
@@ -354,12 +355,14 @@ fn seam_open_edges<S: VolumeField>(field: &S, extractor: Extractor) -> usize {
     let layout = ChunkLayout::new(16, 0.25, [0.0; 3]).expect("a valid layout");
     let mut all = isomesh::MeshBuffer::<f32>::new();
     for id in [ChunkId::new([0, 0, 0]), ChunkId::new([1, 0, 0])] {
-        let built = extract_chunk(field, &layout, id, extractor);
+        let built =
+            extract_chunk(field, &layout, id, extractor).expect("a chunk extraction failed");
         let mut buf = isomesh::MeshBuffer::<f32>::new();
         buf.positions.extend_from_slice(built.positions());
         buf.normals.extend_from_slice(built.normals());
         buf.indices.extend_from_slice(built.indices());
-        all.append(&buf);
+        all.append(&buf)
+            .expect("two chunks fit the u32 index space");
     }
     let h = layout.cell_size();
     isomesh::weld::Welder::<f32>::new()

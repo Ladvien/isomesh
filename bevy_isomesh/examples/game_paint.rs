@@ -529,7 +529,8 @@ fn edit(
             let reach = radius + layout.cell_size();
             let min_cell = layout.cell_of([hit.x - reach, hit.y - reach, hit.z - reach]);
             let max_cell = layout.cell_of([hit.x + reach, hit.y + reach, hit.z + reach]);
-            mark_edit(&layout, &before, &after, min_cell, max_cell, &mut dirty);
+            mark_edit(&layout, &before, &after, min_cell, max_cell, &mut dirty)
+                .expect("a paint brush spans a few cells, far inside the u32 sample space");
         }
     }
 

@@ -47,8 +47,23 @@ pub enum Error {
 
     /// The output would need more vertices than a `u32` index can address.
     IndexSpaceExhausted {
-        /// An upper bound on the vertices the extraction could produce.
+        /// The vertex demand that failed to fit: an a-priori upper bound where
+        /// one exists, or the count at which subgrid's running guard tripped.
         needed: u64,
+    },
+
+    /// A triangle index referring to a vertex the buffer does not have.
+    ///
+    /// [`MeshBuffer`](crate::MeshBuffer)'s fields are public, so a caller can
+    /// construct this. It is rejected at the door rather than part-way through
+    /// an operation, which would leave the buffer half-rewritten.
+    IndexOutOfRange {
+        /// Offset into `indices` of the offending entry.
+        at: u64,
+        /// The index found there.
+        index: u32,
+        /// How many vertices the buffer has.
+        vertices: u64,
     },
 
     /// A cell size that is not finite and positive.
@@ -150,6 +165,14 @@ impl fmt::Display for Error {
             Self::IndexSpaceExhausted { needed } => write!(
                 f,
                 "extraction could need {needed} vertices, beyond the u32 index space"
+            ),
+            Self::IndexOutOfRange {
+                at,
+                index,
+                vertices,
+            } => write!(
+                f,
+                "indices[{at}] is {index}, but the buffer has {vertices} vertices"
             ),
             Self::InvalidCellSize { value } => {
                 write!(f, "cell size must be finite and positive, got {value}")

@@ -38,6 +38,11 @@ bevy_app = "0.19"
 bevy_ecs = "0.19"
 bevy_tasks = "0.19"
 
+# The one loud channel for a failed extraction. Already in the tree
+# transitively -- `bevy_asset` logs through it -- and Bevy's `LogPlugin` is
+# the subscriber that surfaces it.
+tracing = { version = "0.1", default-features = false }
+
 [features]
 default = []
 # Pulls in the renderer. Nothing needs it yet; the GPU path arrives with

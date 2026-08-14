@@ -610,14 +610,13 @@ where
     if let (Some(dc), Some(mdc)) = (
         rate(Algorithm::DualContouring, true),
         rate(Algorithm::ManifoldDualContouring, true),
-    ) {
-        if dc > 0.0 {
-            lines.push(format!(
-                "  splitting the vertex instead: {:.2}x {} than dual contouring (M-61)",
-                mdc / dc,
-                if mdc > dc { "WORSE" } else { "better" },
-            ));
-        }
+    ) && dc > 0.0
+    {
+        lines.push(format!(
+            "  splitting the vertex instead: {:.2}x {} than dual contouring (M-61)",
+            mdc / dc,
+            if mdc > dc { "WORSE" } else { "better" },
+        ));
     }
 
     let m = at(demo.algorithm, demo.clamp)?;

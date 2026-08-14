@@ -199,6 +199,17 @@ pub trait Real:
     /// internal callers since I-002.)
     #[must_use]
     fn as_f32(self) -> f32;
+
+    /// Widen to `f64`.
+    ///
+    /// Exact for both implementations: every `f32` is representable in `f64`,
+    /// and for `f64` it is the identity — nothing is narrowed, so the
+    /// precision policy is untouched. It exists for the integer-narrowing
+    /// idiom `f.as_f64() as i64`, which stays exact to `2⁵³` where
+    /// `f.as_f32() as i64` stops distinguishing consecutive integers at `2²⁴`
+    /// (✗13, M-18).
+    #[must_use]
+    fn as_f64(self) -> f64;
 }
 
 macro_rules! impl_real {
@@ -279,6 +290,12 @@ macro_rules! impl_real {
             #[allow(clippy::unnecessary_cast)] // A no-op for f32; the narrowing point for f64.
             fn as_f32(self) -> f32 {
                 self as f32
+            }
+
+            #[inline]
+            #[allow(clippy::unnecessary_cast)] // Identity for f64; exact widening for f32.
+            fn as_f64(self) -> f64 {
+                self as f64
             }
         }
     };

@@ -102,7 +102,7 @@ fn measured_corner(field: usize) -> [f32; 3] {
 /// the ±2 domain, which makes the comparison measure the sign convention instead
 /// of the algorithm.
 fn is_grid_aligned(samples: u32) -> bool {
-    (samples - 1) % 4 == 0
+    (samples - 1).is_multiple_of(4)
 }
 
 fn main() {

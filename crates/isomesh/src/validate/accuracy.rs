@@ -395,7 +395,7 @@ where
 
     let whole = indices.len() - indices.len() % 3;
     // A trailing partial group is one face that cannot be read.
-    report.faces_skipped = u64::from(indices.len() % 3 != 0);
+    report.faces_skipped = u64::from(!indices.len().is_multiple_of(3));
     let mut tris: Vec<[u32; 3]> = Vec::with_capacity(whole / 3);
     let mut referenced = alloc::vec![false; positions.len()];
     for face in indices[..whole].chunks_exact(3) {

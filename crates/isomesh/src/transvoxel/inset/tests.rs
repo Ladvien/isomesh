@@ -120,8 +120,12 @@ fn the_seam_stays_closed_at_a_real_width() {
     .expect("valid taper");
 
     let mut stitched = MeshBuffer::<f64>::new();
-    stitched.append(&fine);
-    stitched.append(&coarse);
+    stitched
+        .append(&fine)
+        .expect("the meshes fit the u32 index space");
+    stitched
+        .append(&coarse)
+        .expect("the meshes fit the u32 index space");
     let mut alignment = 0.0f64;
     for jz in 0..16i64 {
         for jy in 0..16i64 {
@@ -157,7 +161,9 @@ fn the_seam_stays_closed_at_a_real_width() {
                 let cos = crate::vec3::dot(n, g) / (len2.sqrt() * crate::vec3::length(g));
                 alignment = alignment.max(cos.abs());
             }
-            stitched.append(&patch);
+            stitched
+                .append(&patch)
+                .expect("the meshes fit the u32 index space");
         }
     }
 
@@ -192,5 +198,61 @@ fn the_seam_stays_closed_at_a_real_width() {
     assert!(
         alignment > 0.1,
         "the patch is still perpendicular to the surface: {alignment:.3e}"
+    );
+}
+
+/// **The high plane must be exact the way the low plane already is.** A vertex
+/// on the high boundary plane moves by exactly `−w`, because the transition
+/// cell's back face is one `p + width` add away from the same coordinate and a
+/// last-bit disagreement is an M-69 crack no weld can close.
+///
+/// The fixture is searched rather than picked (M-32's rule): at a power-of-two
+/// spacing every intermediate rounds exactly and a low-anchored
+/// `(s − 1 − c)·w` agrees bit for bit, so such a fixture cannot fail. The
+/// search finds an `(origin, h)` where the two anchorings actually disagree,
+/// and asserts they do before asserting the exact one wins.
+#[test]
+#[allow(clippy::float_cmp)]
+fn the_high_plane_vertex_moves_by_exactly_minus_w() {
+    let cells = 8u32;
+    let span = f64::from(cells);
+
+    let mut fixture = None;
+    'search: for i in 1..100u32 {
+        let origin = 1.0 + 0.0173 * f64::from(i);
+        for j in 1..100u32 {
+            let h = 0.05 + 0.000437 * f64::from(j);
+            let width = 0.125 * h;
+            // The boundary corner as the extractors compute it: origin + h·i.
+            let plane = origin + h * span;
+            // The low-anchored taper, exactly as first shipped.
+            let c = (plane - origin) * h.recip();
+            let naive = plane + (span - 1.0 - c) * width;
+            if naive != plane - width {
+                fixture = Some((origin, h, width, plane));
+                break 'search;
+            }
+        }
+    }
+    let (origin, h, width, plane) =
+        fixture.expect("no fixture distinguishes the two anchorings — widen the search");
+
+    let mut mesh = MeshBuffer::<f64>::new();
+    mesh.positions.push([plane, 0.5, 0.5]);
+    mesh.normals.push([1.0, 0.0, 0.0]);
+    inset_boundary(
+        &mut mesh,
+        [origin, 0.0, 0.0],
+        cells,
+        h,
+        width,
+        face_bit(0, 1),
+    )
+    .expect("valid taper");
+    assert_eq!(
+        mesh.positions[0][0],
+        plane - width,
+        "a vertex on the high plane must move by exactly -w, or the patch's \
+         back face misses it by a last bit and the crack cannot be welded"
     );
 }

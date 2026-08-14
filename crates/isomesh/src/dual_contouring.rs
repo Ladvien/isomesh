@@ -32,9 +32,10 @@
 //!
 //! - **The vertex can leave its cell.** Surface Nets' centroid is inside by
 //!   construction; a solved vertex is not, and a vertex outside its own cell is
-//!   how a dual method self-intersects. A-009 adds the `(1−ε)` clamp and measures
-//!   what it costs in sharpness against what it buys in self-intersections.
-//!   Until then this is the unclamped solve, so that A-009 has a baseline.
+//!   how a dual method self-intersects. A-009 added the `(1−ε)` clamp and
+//!   measured what it costs in sharpness against what it buys in
+//!   self-intersections — [`Clamp::ToCell`] is the default (M-28, M-29), and
+//!   [`Clamp::None`] remains only as the measured baseline configuration.
 //! - **One vertex per cell.** Where two sheets of surface share a cell they share
 //!   its vertex, and the mesh is non-manifold there. Inherited from the shared
 //!   topology, measured on Surface Nets as M-4 and M-15, and fixed

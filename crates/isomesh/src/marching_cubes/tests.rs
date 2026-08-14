@@ -455,46 +455,51 @@ fn samples_exactly_on_the_surface_produce_slivers_but_not_holes() {
 
 /// Every reference field, through the gate its own metadata selects. This is the
 /// composition the whole of Phase 0 was building toward.
+///
+/// The sweep is the macro, not a hand-kept list — a hand enumeration silently
+/// omitted `thin_plate`, the one closed field this extractor was suspected of
+/// failing, and it passes. The resolutions are the decider twin's, and all odd,
+/// which is load-bearing for `thin_plate`: its only inside samples lie on the
+/// y = 0 midplane, which is a sample plane exactly when `n` is odd. At even `n`
+/// plain MC correctly produces an empty mesh (the field's own resolution
+/// caveat), so an even resolution here would trip the produced-nothing assert
+/// rather than silently passing. Higher-resolution coverage the hand list
+/// carried lives on in the per-field tests (`a_meshed_torus_has_genus_one`,
+/// `sharp_and_concave_fields_stay_manifold`,
+/// `the_capped_gyroid_is_closed_and_its_genus_is_recorded`).
 #[test]
 fn every_closed_reference_field_meshes_cleanly() {
-    fn check<F: Sdf<Scalar = f64> + ReferenceField>(name: &str, field: &F, samples: u32) {
-        let (out, h) = mesh(field, samples);
-        let report = validate_indexed(
-            &out.positions,
-            &out.indices,
-            &ValidateConfig::from_cell_size(h).expect("valid cell size"),
-        );
-        assert!(out.triangle_count() > 0, "{name} produced nothing");
-        if field.closed_in_domain() {
-            assert!(report.is_closed(), "{name}:\n{report}");
-        } else {
-            assert!(report.is_manifold(), "{name}:\n{report}");
+    crate::for_each_reference_field!(f64, |name, field| {
+        for samples in [17u32, 25, 33] {
+            let (out, h) = mesh(&field, samples);
+            let report = validate_indexed(
+                &out.positions,
+                &out.indices,
+                &ValidateConfig::from_cell_size(h).expect("valid cell size"),
+            );
+            assert!(
+                out.triangle_count() > 0,
+                "{name} at {samples}^3 produced nothing"
+            );
+            if field.closed_in_domain() {
+                assert!(report.is_closed(), "{name} at {samples}^3:\n{report}");
+            } else {
+                assert!(report.is_manifold(), "{name} at {samples}^3:\n{report}");
+            }
+            if let Some(chi) = field.expected_euler() {
+                assert_eq!(
+                    report.euler_characteristic, chi,
+                    "{name} at {samples}^3:\n{report}"
+                );
+            }
+            std::println!(
+                "measured: {name} at {samples}^3 -> {} tris, chi {}, {} degenerate",
+                out.triangle_count(),
+                report.euler_characteristic,
+                report.degenerate_triangles
+            );
         }
-        if let Some(chi) = field.expected_euler() {
-            assert_eq!(report.euler_characteristic, chi, "{name}:\n{report}");
-        }
-        std::println!(
-            "measured: {name} at {samples}^3 -> {} tris, chi {}, {} degenerate",
-            out.triangle_count(),
-            report.euler_characteristic,
-            report.degenerate_triangles
-        );
-    }
-
-    check("sphere", &Sphere::<f64>::canonical(), 33);
-    check("torus", &Torus::<f64>::canonical(), 49);
-    check("box_exact", &BoxExact::<f64>::canonical(), 33);
-    check(
-        "csg_difference",
-        &crate::fields::csg_difference::<f64>(),
-        41,
-    );
-    check("gyroid", &crate::fields::capped_gyroid::<f64>(), 49);
-    check(
-        "fbm_terrain",
-        &crate::fields::FbmTerrain::<f64>::canonical(),
-        33,
-    );
+    });
 }
 
 #[test]

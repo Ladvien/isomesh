@@ -157,7 +157,9 @@ fn an_unwelded_seam_is_reported_and_welding_fixes_it() {
                 &mut chunk,
             )
             .expect("extraction");
-        joined.append(&chunk);
+        joined
+            .append(&chunk)
+            .expect("the meshes fit the u32 index space");
     }
 
     let cfg = config(layout.cell_size());

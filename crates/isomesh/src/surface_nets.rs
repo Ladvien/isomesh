@@ -154,13 +154,17 @@ impl<R: Real> SurfaceNets<R> {
     /// How many Laplacian smoothing passes to run. Default zero.
     ///
     /// Each pass replaces every vertex with the average of itself and the
-    /// vertices of the face-adjacent active cells. It visibly relaxes the
-    /// staircase that a coarse grid produces.
+    /// vertices of the face-adjacent active cells, then clamps the result back
+    /// into the vertex's own cell. It visibly relaxes the staircase that a
+    /// coarse grid produces.
     ///
-    /// **It can move a vertex outside its own cell**, and vertices that leave
-    /// their cells are how a dual method starts self-intersecting. The
-    /// self-intersection counter is the way to see that happening; A-009 is the
-    /// ticket that measures the clamp which prevents it.
+    /// The clamp is Gibson's own constraint, not an option: vertices that
+    /// leave their cells are how a dual method starts self-intersecting, and
+    /// the catalog's headline correction of the algorithm is that the box
+    /// constraint — not gradients — is the mechanism. The clamp policy is the
+    /// QEF path's (A-009), so the two cannot disagree about what "inside the
+    /// cell" means. The self-intersection counter is the way to watch what
+    /// smoothing does regardless.
     pub fn set_smoothing_passes(&mut self, passes: u32) {
         self.mesher.smoothing_passes = passes;
     }

@@ -584,8 +584,12 @@ fn transition_cells_close_the_gap_between_two_resolutions() {
 
     // Without transition cells.
     let mut plain = MeshBuffer::<f64>::new();
-    plain.append(&fine);
-    plain.append(&coarse);
+    plain
+        .append(&fine)
+        .expect("the meshes fit the u32 index space");
+    plain
+        .append(&coarse)
+        .expect("the meshes fit the u32 index space");
     crate::weld::Welder::<f64>::new()
         .weld(&mut plain, fine_h * 1e-6)
         .expect("weld");
@@ -594,8 +598,12 @@ fn transition_cells_close_the_gap_between_two_resolutions() {
     // With them: one transition cell per coarse cell face on the seam, spanning
     // two fine cells on each in-plane axis.
     let mut stitched = MeshBuffer::<f64>::new();
-    stitched.append(&fine);
-    stitched.append(&coarse);
+    stitched
+        .append(&fine)
+        .expect("the meshes fit the u32 index space");
+    stitched
+        .append(&coarse)
+        .expect("the meshes fit the u32 index space");
     let mut patches = 0usize;
     for jz in 0..16i64 {
         for jy in 0..16i64 {
@@ -612,7 +620,9 @@ fn transition_cells_close_the_gap_between_two_resolutions() {
             cell.emit(&field, 0, &mut patch);
             if patch.triangle_count() > 0 {
                 patches += 1;
-                stitched.append(&patch);
+                stitched
+                    .append(&patch)
+                    .expect("the meshes fit the u32 index space");
             }
         }
     }
@@ -638,4 +648,60 @@ fn transition_cells_close_the_gap_between_two_resolutions() {
         after, 0,
         "the seam still has {after} unmatched boundary edges"
     );
+}
+
+/// **The mirrored patch faces away from the solid too.** `sample`'s width is
+/// signed — the caller states which side the coarse block is on — and with the
+/// coarse side toward −x the map from `(u, v, w)` parameter space to world
+/// space is a reflection. Left uncorrected, every triangle of every mirrored
+/// patch is wound into the solid — 144 of 144 measured, the exact complement
+/// of `a_patch_with_width_is_wound_away_from_the_solid` — and no manifold or
+/// Euler check can see it. Both reflected parameterisations are checked: a
+/// negative width, and swapped in-plane axes.
+#[test]
+fn a_mirrored_patch_is_wound_away_from_the_solid() {
+    let field = Sphere::<f64>::canonical();
+    let (lo, _hi) = field.domain();
+    let fine_h = 0.125;
+
+    // Each has sign(width) × parity(u, v, normal) negative.
+    for (u, v, width) in [(1usize, 2usize, -fine_h), (2, 1, fine_h)] {
+        let mut agree = 0usize;
+        let mut disagree = 0usize;
+        for ib in 0..16i64 {
+            for ia in 0..16i64 {
+                let cell =
+                    TransitionCell::sample(&field, lo, fine_h, [16, 2 * ia, 2 * ib], u, v, width);
+                let mut patch = MeshBuffer::<f64>::new();
+                cell.emit(&field, 0, &mut patch);
+                for tri in patch.indices.chunks_exact(3) {
+                    let a = patch.positions[tri[0] as usize];
+                    let b = patch.positions[tri[1] as usize];
+                    let c = patch.positions[tri[2] as usize];
+                    let n = crate::vec3::cross(crate::vec3::sub(b, a), crate::vec3::sub(c, a));
+                    if crate::vec3::length_squared(n) == 0.0 {
+                        continue;
+                    }
+                    let centre = [
+                        (a[0] + b[0] + c[0]) / 3.0,
+                        (a[1] + b[1] + c[1]) / 3.0,
+                        (a[2] + b[2] + c[2]) / 3.0,
+                    ];
+                    if crate::vec3::dot(n, field.gradient(centre)) > 0.0 {
+                        agree += 1;
+                    } else {
+                        disagree += 1;
+                    }
+                }
+            }
+        }
+        std::println!("u={u} v={v} width={width}: {agree} faces outward, {disagree} inward");
+        assert!(agree + disagree > 0, "no patch was produced");
+        assert_eq!(
+            disagree,
+            0,
+            "u={u} v={v} width={width}: {disagree} of {} faces point into the solid",
+            agree + disagree
+        );
+    }
 }

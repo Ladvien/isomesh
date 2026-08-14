@@ -95,7 +95,7 @@ fn a_normal_face_pairs_every_crossing_across_two_edges() {
             coords.edge(f.edge[1]),
             coords.edge(f.edge[2]),
         ];
-        let even = (e[0] + e[1] + e[2]) % 2 == 0;
+        let even = (e[0] + e[1] + e[2]).is_multiple_of(2);
         let triangle = (0..3).all(|k| e[k] + e[(k + 2) % 3] >= e[(k + 1) % 3]);
         if !(even && triangle) {
             continue;
@@ -145,7 +145,7 @@ fn the_reduced_pass_leaves_exactly_one_point_per_edge() {
             coords.edge(f.edge[1]),
             coords.edge(f.edge[2]),
         ];
-        let odd = (e[0] + e[1] + e[2]) % 2 != 0;
+        let odd = !(e[0] + e[1] + e[2]).is_multiple_of(2);
         let triangle = (0..3).all(|k| e[k] + e[(k + 2) % 3] >= e[(k + 1) % 3]);
         if !(odd && triangle) {
             continue;
@@ -211,7 +211,7 @@ fn a_violated_inequality_produces_scoops_on_the_long_edge() {
             coords.count
         );
 
-        if r % 2 == 0 {
+        if r.is_multiple_of(2) {
             even_case += 1;
         } else {
             odd_case += 1;

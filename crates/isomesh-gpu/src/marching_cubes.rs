@@ -168,9 +168,12 @@ pub struct IndirectGeometry {
     pub positions: wgpu::Buffer,
     /// Parallel to `positions`.
     pub normals: wgpu::Buffer,
-    /// `[group_count_x, y, z]` for `draw_mesh_tasks_indirect`.
+    /// `[group_count_x, y, z]` for `draw_mesh_tasks_indirect`, clamped to the
+    /// budget — the draw covers what the emit pass actually wrote.
     pub indirect: wgpu::Buffer,
-    /// The mesh shader's own uniform: the triangle count.
+    /// The mesh shader's own uniform: the triangle count, clamped to the
+    /// budget for the same reason. The un-clamped total stays in the scan's
+    /// own buffer for the caller who asks whether truncation happened.
     pub draw_params: wgpu::Buffer,
     /// A one-element buffer holding the triangle count.
     ///
@@ -435,7 +438,9 @@ impl MarchingCubesGpu {
         timings.count_ms = started.elapsed().as_secs_f64() * 1000.0;
 
         let started = std::time::Instant::now();
-        let scanned = self.scan.scan_deferred(device, queue, &counts, cell_words);
+        let scanned = self
+            .scan
+            .scan_deferred(device, queue, &counts, cell_words)?;
         timings.scan_ms = started.elapsed().as_secs_f64() * 1000.0;
 
         let floats = u64::from(budget) * 9;
@@ -492,6 +497,7 @@ impl MarchingCubesGpu {
             &indirect,
             &draw_params,
             MESH_BATCH,
+            budget,
         );
 
         Ok(IndirectGeometry {

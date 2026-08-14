@@ -247,7 +247,7 @@ impl EdgeCoordinates {
                 self.count[f.edge[2] as usize],
             ];
             let sum = e[0] + e[1] + e[2];
-            if sum % 2 != 0 {
+            if !sum.is_multiple_of(2) {
                 return Err(NotNormal::OddSum { face, sum });
             }
             for k in 0..3 {

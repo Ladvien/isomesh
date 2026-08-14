@@ -312,3 +312,60 @@ fn a_cell_size_that_does_not_describe_the_mesh_is_rejected() {
         "{error}"
     );
 }
+
+/// A vertex resting exactly on another triangle's face is tangential, not an
+/// intersection.
+///
+/// The contract at the top of the module: contact along a line or at a point is
+/// measure zero and does not count — it is what correctly-stitched neighbours
+/// do. This pair shares no vertex *indices*, so the adjacency exclusion cannot
+/// save it: the peak triangle touches the floor triangle at the single point
+/// `(0, 0, 0)` and climbs strictly upward from it. Before the straddle guard,
+/// its degenerate one-point interval sat strictly inside the floor's interval
+/// and the pair was counted — a T-junction at an unstitched LOD seam, or an MC
+/// vertex emitted exactly at a zero-valued grid corner, would inflate the rate
+/// the same way.
+#[test]
+fn a_point_contact_is_not_an_intersection() {
+    let p = vec![
+        // The floor, in z = 0.
+        [-2.0, -1.0, 0.0],
+        [2.0, -1.0, 0.0],
+        [0.0, 2.0, 0.0],
+        // The peak: one vertex on the floor's interior, the rest strictly above.
+        [0.0, 0.0, 0.0],
+        [1.0, 1.0, 1.0],
+        [-1.0, 1.0, 1.0],
+    ];
+    let idx = vec![0, 1, 2, 3, 4, 5];
+    let r = self_intersections(&p, &idx, H).expect("self intersections");
+    assert_eq!(r.count(), 0, "a point contact was counted as a crossing");
+}
+
+/// An edge resting in another triangle's plane is tangential too.
+///
+/// Two vertices in the plane and one strictly above: the contact is a line
+/// segment, which the contract excludes just as it excludes the point. Only a
+/// strict straddle — vertices on both sides — can carry a positive-measure
+/// crossing.
+#[test]
+fn an_edge_in_the_plane_is_not_an_intersection() {
+    let p = vec![
+        // The floor, in z = 0.
+        [-2.0, -1.0, 0.0],
+        [2.0, -1.0, 0.0],
+        [0.0, 2.0, 0.0],
+        // A tent wall standing on the floor's interior: its base edge lies in
+        // z = 0, its apex is strictly above.
+        [-0.5, 0.0, 0.0],
+        [0.5, 0.0, 0.0],
+        [0.0, 0.0, 1.0],
+    ];
+    let idx = vec![0, 1, 2, 3, 4, 5];
+    let r = self_intersections(&p, &idx, H).expect("self intersections");
+    assert_eq!(
+        r.count(),
+        0,
+        "an edge-in-plane contact was counted as a crossing"
+    );
+}

@@ -76,6 +76,16 @@ pub enum Error {
         /// Bytes per element.
         stride: u64,
     },
+    /// A scan was asked for more elements than one dispatch can cover.
+    ///
+    /// Level 0 dispatches one workgroup per `PrefixScan::BLOCK` elements, and
+    /// `max_compute_workgroups_per_dimension` caps how many that can be.
+    ScanTooLong {
+        /// Elements the caller asked to scan.
+        elements: u32,
+        /// The most this device will scan in one call.
+        max: u32,
+    },
 }
 
 impl fmt::Display for Error {
@@ -106,12 +116,17 @@ impl fmt::Display for Error {
             Self::ShaderDirective { module, line } => {
                 write!(f, "malformed or unbalanced directive at {module}:{line}")
             }
-            Self::MeshShadersUnavailable => {
-                f.write_str("this device was not created with EXPERIMENTAL_MESH_SHADER")
-            }
+            Self::MeshShadersUnavailable => f.write_str(
+                "mesh shaders need EXPERIMENTAL_MESH_SHADER on a Vulkan device; \
+                 naga compiles WGSL mesh stages for SPIR-V only",
+            ),
             Self::UnalignedReadback { bytes, stride } => write!(
                 f,
                 "read-back of {bytes} bytes is not a whole number of {stride}-byte elements"
+            ),
+            Self::ScanTooLong { elements, max } => write!(
+                f,
+                "cannot scan {elements} elements; this device dispatches at most {max}"
             ),
         }
     }

@@ -1074,11 +1074,20 @@ pub fn face_regions(face: u8, coords: &EdgeCoordinates, cycle: &Cycle) -> Option
         }
     }
 
-    Some(peel(node, arc, partner))
+    peel(node, arc, partner)
 }
 
 /// Repeatedly cut off the innermost chord's region. See [`face_regions`].
-fn peel(mut node: Vec<Node>, mut arc: Vec<Arc>, mut partner: Vec<Option<usize>>) -> Vec<Region> {
+///
+/// `None` if the peel ever stalls with chords still unresolved: non-crossing
+/// chords always admit an innermost one, so a stall means §3.1 produced a
+/// self-crossing curve, and the answer is refusal rather than a region with
+/// the leftover chords silently dropped.
+fn peel(
+    mut node: Vec<Node>,
+    mut arc: Vec<Arc>,
+    mut partner: Vec<Option<usize>>,
+) -> Option<Vec<Region>> {
     let mut out = Vec::new();
 
     loop {
@@ -1096,6 +1105,12 @@ fn peel(mut node: Vec<Node>, mut arc: Vec<Arc>, mut partner: Vec<Option<usize>>)
         });
 
         let Some((i, j, span)) = innermost else {
+            // Two ways to get here: every chord peeled (the normal exit), or a
+            // stall with chords remaining -- which only crossing or self-paired
+            // chords can produce, and which the doc above promises to refuse.
+            if partner.iter().any(Option::is_some) {
+                return None;
+            }
             break;
         };
 
@@ -1139,14 +1154,13 @@ fn peel(mut node: Vec<Node>, mut arc: Vec<Arc>, mut partner: Vec<Option<usize>>)
         node = kept_node;
         arc = kept_arc;
         partner = remap;
-        let _ = j;
     }
 
     // Whatever is left, once no chord remains, is the final region.
     if !arc.is_empty() {
         out.push(Region { arc, node });
     }
-    out
+    Some(out)
 }
 
 /// §3.2.1 case (3) — the subdivision stencil, as a labelling and four tets.

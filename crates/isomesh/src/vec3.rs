@@ -4,9 +4,12 @@
 //! nothing more. It exists so that the two modules needing a cross product do
 //! not each carry their own copy of one.
 //!
-//! `glam` is the crate's sanctioned internal math library and will land with the
-//! dual-contouring solve, which is the first code with enough vector work to
-//! justify it. Until then these seven functions are the whole requirement.
+//! `glam` was once expected to land with the dual-contouring solve; ✗16
+//! falsified that. glam has no scalar abstraction — `Mat3` is `f32`, `DMat3` is
+//! `f64`, no generic `Mat3<T>` spans them — so it cannot serve a crate generic
+//! over [`Real`], and the solve shipped as a six-entry symmetric matrix in
+//! `dual_contouring/solve.rs` instead. These helpers *are* the crate's math
+//! library. Do not add glam here without reopening ✗16 and CLAUDE.md rule 3.
 
 use crate::Real;
 

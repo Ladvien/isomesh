@@ -253,9 +253,15 @@ fn build<F: Sdf<Scalar = f32> + ReferenceField>(
 
     // What is still open in the seam plane, counted on the assembled mesh.
     let mut assembled = MeshBuffer::<f32>::new();
-    assembled.append(&fine);
-    assembled.append(&coarse);
-    assembled.append(&transition);
+    assembled
+        .append(&fine)
+        .expect("the meshes fit the u32 index space");
+    assembled
+        .append(&coarse)
+        .expect("the meshes fit the u32 index space");
+    assembled
+        .append(&transition)
+        .expect("the meshes fit the u32 index space");
     isomesh::weld::Welder::<f32>::new()
         .weld(&mut assembled, fine_h * 1e-5)
         .ok()?;

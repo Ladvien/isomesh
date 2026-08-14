@@ -29,8 +29,12 @@ const BLOCK: u32 = 256u;
 
 struct ScanParams {
     // Elements at this level. The last block is partial whenever this is not a
-    // multiple of BLOCK, which is the usual case.
+    // multiple of BLOCK, which is the usual case. `write_draw_args` reads it as
+    // the draw's triangles-per-workgroup instead.
     n: u32,
+    // `write_draw_args` only: triangles the geometry buffers were sized for.
+    // The scan levels write zero here and never read it.
+    budget: u32,
 }
 
 @group(0) @binding(0) var<uniform> params: ScanParams;
@@ -110,12 +114,17 @@ fn add_block_offsets(
 // four numbers to write.
 @compute @workgroup_size(1)
 fn write_draw_args() {
-    let total = input[0];
+    // The emit pass stopped writing at the buffers' capacity, so the draw must
+    // stop there too: walking the full total over budget-sized buffers would
+    // read past everything that was written. The un-clamped total stays where
+    // it always was -- the scan's own buffer -- for the caller who asks
+    // whether truncation happened.
+    let drawn = min(input[0], params.budget);
     // [group_count_x, y, z] for `draw_mesh_tasks_indirect`.
-    output[0] = (total + params.n - 1u) / params.n;
+    output[0] = (drawn + params.n - 1u) / params.n;
     output[1] = 1u;
     output[2] = 1u;
     // The draw's own uniform: how many triangles the last workgroup should stop
     // at. Written here rather than uploaded, which is the whole point.
-    block_sums[0] = total;
+    block_sums[0] = drawn;
 }

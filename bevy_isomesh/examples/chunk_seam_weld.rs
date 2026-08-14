@@ -240,7 +240,9 @@ fn remesh(
     let seam_x = layout.sample_origin(right_id)[0];
 
     let mut joined = left.clone();
-    joined.append(&right);
+    joined
+        .append(&right)
+        .expect("the meshes fit the u32 index space");
     let before = joined.vertex_count();
 
     let welded = if demo.welded {

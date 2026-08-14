@@ -38,7 +38,11 @@
 //! [`TransitionCell`](super::cell::TransitionCell) gives its half-resolution
 //! face — and that coincidence is what keeps the seam closed at a non-zero width.
 //! `the_seam_stays_closed_at_a_real_width` is what checks it rather than trusting
-//! the algebra.
+//! the algebra. The high face gets the same exactness by being anchored on its
+//! *own* plane — computed as `origin + h·s`, the extractors' corner expression —
+//! rather than measured from the low one, whose recomputed `c` lands a last bit
+//! off `s` at generic origins; `the_high_plane_vertex_moves_by_exactly_minus_w`
+//! holds the searched fixture that distinguishes the two anchorings.
 //!
 //! # This is a post-pass, deliberately
 //!
@@ -121,16 +125,32 @@ pub fn inset_boundary<R: Real>(
     let span = R::from_f64(f64::from(cells));
     let one = R::ONE;
     let inv = cell_size.recip();
+    // Each face's taper is anchored on that face's *own* plane, so a vertex
+    // exactly on the plane moves by exactly its width. The low plane is
+    // `origin` itself; the high plane is written with the same expression the
+    // extractors use for a corner -- `origin + h*i` -- so a boundary vertex's
+    // coordinate equals it bit for bit, the subtraction is exactly zero, and
+    // the displacement is exactly `-width`, matching the transition cell's
+    // own `p + width` add. Measuring the high face from the low plane instead
+    // leaves `span - one - c` a last bit off `-1` at generic origins, which
+    // is an M-69 crack no weld can close.
+    let high = [
+        origin[0] + cell_size * span,
+        origin[1] + cell_size * span,
+        origin[2] + cell_size * span,
+    ];
 
     for position in &mut mesh.positions {
         for axis in 0..3usize {
-            // The coordinate in this block's own cells.
+            // The coordinate in this block's own cells, from the low plane...
             let c = (position[axis] - origin[axis]) * inv;
+            // ...and from the high plane, exactly zero on that plane.
+            let d = (position[axis] - high[axis]) * inv;
 
             if c < one && faces & face_bit(axis, 0) != 0 {
                 position[axis] += (one - c) * width;
-            } else if c > span - one && faces & face_bit(axis, 1) != 0 {
-                position[axis] += (span - one - c) * width;
+            } else if d > -one && faces & face_bit(axis, 1) != 0 {
+                position[axis] -= (one + d) * width;
             }
         }
     }

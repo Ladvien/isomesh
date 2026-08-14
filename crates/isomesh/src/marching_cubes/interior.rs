@@ -97,12 +97,24 @@ pub struct SweptFaces<R> {
 }
 
 /// What the sweep found.
+///
+/// **The sign is part of the contract, and it is the opposite of the face
+/// rule's word.** Both variants speak of the **positive — outside —** regions,
+/// because that is the polarity Custodio's criterion is stated in (*"the
+/// positive vertices are connected inside the cube"*) and this crate's inside
+/// is negative (`crate::cube::is_inside`). [`super::ambiguity::face_is_joined`]
+/// runs the other way: its `true` joins the *inside* corners, which on a face
+/// is exactly the **negative**-saddle case. The two rules agree about the
+/// geometry and attach "joined" to opposite sign classes —
+/// `joined_names_the_positive_regions_and_the_face_rule_names_the_negative`
+/// pins the relation, and A-002b must translate between them, not equate them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Interior {
-    /// Some cutting plane has a positive saddle: the same-signed regions the two
-    /// faces carry are connected through the cell's interior.
+    /// Some cutting plane has a positive saddle: the positive (outside)
+    /// regions the two faces carry are connected through the cell's interior.
     Joined,
-    /// No cutting plane has a positive saddle: they are separated.
+    /// No cutting plane has a positive saddle: the positive regions are
+    /// separated.
     Separated,
 }
 
@@ -212,8 +224,11 @@ impl<R: Real> SweptFaces<R> {
     /// testing one midpoint per subinterval decides the whole sweep.
     ///
     /// The endpoints `0` and `1` are included as candidates: the faces
-    /// themselves are cutting planes, and a positive saddle on one of them is
-    /// the face rule's own answer.
+    /// themselves are cutting planes, and their saddles are the very values
+    /// the face rule reads — **with the opposite word attached**. A positive
+    /// face saddle here means [`Interior::Joined`], and it is exactly the case
+    /// [`super::ambiguity::face_is_joined`] answers `false` to, because
+    /// "joined" there names the inside (negative) corners — see [`Interior`].
     #[must_use]
     pub fn test(&self) -> Interior {
         let mut breaks = [R::ZERO; 3];
@@ -278,10 +293,27 @@ impl<R: Real> SweptFaces<R> {
             let two = R::ONE + R::ONE;
             let disc = b * b - two * two * a * c;
             if disc >= R::ZERO {
-                let root = disc.sqrt();
-                roots[0] = (-b - root) / (two * a);
-                roots[1] = (-b + root) / (two * a);
-                count = 2;
+                // Kahan's stable form. The textbook `(−b ± √disc) / 2a` cancels
+                // catastrophically in whichever branch subtracts `√disc` from a
+                // near-equal `|b|`, and `a = αγ − βδ` is a difference of
+                // near-equal products with nothing keeping it away from zero:
+                // at `a ≈ 1e-11` the cancellation misplaces the small root by
+                // ~8e-6, which is wider than the sign interval it bounds, and
+                // the walk above then tests no point inside the real one — see
+                // `catastrophic_cancellation_does_not_hide_a_positive_saddle`.
+                // `b + signum(b)·√disc` adds magnitudes instead, so `q` is
+                // accurate to rounding; `q/a` is the large root and, by Vieta
+                // (product `c/a`), `c/q` the small one.
+                let q = -(b + b.signum() * disc.sqrt()) / two;
+                roots[0] = q / a;
+                count = 1;
+                // `q == 0` forces `b == 0` and `disc == 0`, hence `c == 0`:
+                // `F = a·t²`, whose double root `t = 0` is already delivered by
+                // `q / a`, and `c / q` would be `0/0`.
+                if q != R::ZERO {
+                    roots[1] = c / q;
+                    count = 2;
+                }
             }
         }
         roots.into_iter().take(count)

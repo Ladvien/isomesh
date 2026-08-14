@@ -522,4 +522,75 @@ fn a_budget_smaller_than_the_surface_truncates_detectably() {
         "the fixture did not actually overflow: {total} against a budget of {}",
         tight.budget
     );
+
+    // The draw the GPU wrote for itself must stop where the emit pass stopped
+    // writing: at the budget, not at the total. Before this clamp the indirect
+    // args dispatched ceil(total/32) workgroups over budget-sized buffers --
+    // 4x past the end of everything the emit pass wrote.
+    let args = read_buffer_u32(gpu.device(), gpu.queue(), &tight.indirect, 12).expect("args");
+    assert_eq!(
+        args[0],
+        tight.budget.div_ceil(32),
+        "workgroups must cover the budget only"
+    );
+    let dp = read_buffer_u32(gpu.device(), gpu.queue(), &tight.draw_params, 4).expect("params");
+    assert_eq!(
+        dp[0], tight.budget,
+        "the draw uniform must stop at the budget"
+    );
+}
+
+/// The two WGSL constants that ARE hand-transcribed -- `EDGE_CORNERS` and the
+/// `corner_offset` bit rule -- pinned to the same source of truth as the
+/// uploaded table. The 12 pairs are parsed back out of the shader text and
+/// compared to `cube::EDGE_CORNERS` (public through `marching_cubes::table`),
+/// in order, because the position is the edge index.
+///
+/// Device-free on purpose, like `the_uploaded_table_is_isomeshs_own`: CI has
+/// no GPU, and a drifted transcription would otherwise ship invisibly.
+#[test]
+fn the_wgsl_edge_corners_are_isomeshs_own() {
+    let src = crate::MARCHING_CUBES_WGSL;
+    let start = src
+        .find("const EDGE_CORNERS")
+        .expect("marching_cubes.wgsl lost `const EDGE_CORNERS`");
+    let body = &src[start..];
+    let end = body.find(");").expect("`const EDGE_CORNERS` never closes");
+    let mut rest = &body[..end];
+
+    let mut pairs: Vec<[u8; 2]> = Vec::new();
+    while let Some(open) = rest.find("vec2<u32>(") {
+        let args = &rest[open + "vec2<u32>(".len()..];
+        let close = args.find(')').expect("unclosed vec2 in EDGE_CORNERS");
+        let mut nums = args[..close].split(',').map(|n| {
+            n.trim()
+                .strip_suffix('u')
+                .and_then(|digits| digits.parse::<u8>().ok())
+                .expect("EDGE_CORNERS entries are `<digits>u`")
+        });
+        pairs.push([
+            nums.next().expect("vec2 lost its low corner"),
+            nums.next().expect("vec2 lost its high corner"),
+        ]);
+        rest = &args[close..];
+    }
+
+    assert_eq!(
+        pairs,
+        table::EDGE_CORNERS,
+        "the WGSL EDGE_CORNERS transcription drifted from cube::EDGE_CORNERS"
+    );
+}
+
+/// The corner bit layout, pinned as text: corner `c` at
+/// `(c & 1, (c >> 1) & 1, (c >> 2) & 1)` is the crate's public corner
+/// numbering contract (documented on `cube::CORNER_COUNT`), and this is the
+/// exact expression the shader's `corner_offset` must compute. Text rather
+/// than values because `cube::corner_offset` itself is `pub(crate)`.
+#[test]
+fn the_wgsl_corner_offset_is_the_documented_bit_layout() {
+    assert!(
+        crate::MARCHING_CUBES_WGSL.contains("vec3<u32>(c & 1u, (c >> 1u) & 1u, (c >> 2u) & 1u)"),
+        "marching_cubes.wgsl's corner_offset no longer matches the corner bit layout"
+    );
 }

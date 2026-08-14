@@ -258,10 +258,11 @@ impl<R: Real> Symmetric3<R> {
 /// one crossing, twelve, all coplanar, all parallel — is handled by the same
 /// arithmetic, which is the property the whole module is built around.
 ///
-/// The result is **not** clamped to the cell. A-009 is the ticket that adds the
-/// clamp and measures what it costs in sharpness and buys in
-/// self-intersections; until then this is the unmodified solve, so that A-009
-/// has an unclamped baseline to measure against.
+/// The result is **not** clamped to the cell — clamping is the *rule's* job,
+/// applied by [`Qef::place`](crate::dual_contouring::Qef) after this returns
+/// (A-009, default [`Clamp::ToCell`](crate::dual_contouring::Clamp)). Keeping
+/// the raw solve separate is what lets `Clamp::None` remain measurable as the
+/// baseline configuration A-009 compared against.
 #[must_use]
 pub fn solve<R: Real>(cell: &HermiteCell<R>) -> Option<[R; 3]> {
     solve_with(cell, R::from_f64(LAMBDA))

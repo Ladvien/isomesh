@@ -21,9 +21,12 @@
 //! rests on: a half-resolution crossing lands **bit-identically** on a vertex the
 //! coarse neighbour's Marching Cubes pass produced.
 //!
-//! What A-011b still needs is the triangulation — winding the cycles
-//! [`table::transition_links`] gives into triangles, and asserting zero gaps
-//! across a real full-resolution/half-resolution chunk pair.
+//! A-011b's triangulation is here too — [`cell::TransitionCell::emit`] winds
+//! the cycles [`table::transition_links`] gives into a centroid fan, and
+//! `transition_cells_close_the_gap_between_two_resolutions` asserts zero
+//! seam-plane boundary edges across a real full-resolution/half-resolution
+//! chunk pair. A-011c's inset taper lives in [`inset`], with its own
+//! real-width acceptance test.
 
 pub mod cell;
 pub mod inset;

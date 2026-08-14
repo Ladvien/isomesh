@@ -153,3 +153,44 @@ fn the_cpu_reference_is_an_exclusive_scan() {
     assert!(empty.is_empty());
     assert_eq!(zero, 0);
 }
+
+/// A scan of zero elements is the empty scan, not a scan of one stale word.
+///
+/// The nonzero word is planted deliberately: scanned with `n = 0`, it must not
+/// come back as the total the way `n.max(1)` once made it.
+#[test]
+fn scanning_zero_elements_matches_the_cpu_and_reads_nothing() {
+    let gpu = gpu();
+    let scan = PrefixScan::new(gpu.device()).expect("pipelines");
+    let input = upload(gpu.device(), gpu.queue(), &[0xdead_beef]);
+    let out = scan
+        .scan(gpu.device(), gpu.queue(), &input, 0)
+        .expect("scan");
+    let (expected, total) = cpu_prefix_sum(&[]);
+    assert!(expected.is_empty());
+    assert_eq!(out.total, total, "empty scan: grand total differs");
+    assert_eq!(out.levels, 0, "no elements need no hierarchy");
+}
+
+/// More elements than one dispatch covers is a named error, not a wgpu panic.
+#[test]
+fn a_scan_wider_than_the_dispatch_limit_is_refused() {
+    let gpu = gpu();
+    let scan = PrefixScan::new(gpu.device()).expect("pipelines");
+    let limit = gpu.device().limits().max_compute_workgroups_per_dimension;
+    let Some(n) = limit
+        .checked_mul(PrefixScan::BLOCK)
+        .and_then(|x| x.checked_add(1))
+    else {
+        return; // a device this wide cannot express the failing input in u32
+    };
+    // The guard fires before `counts` is ever bound, so a one-word buffer with
+    // a lying `n` is the honest probe -- without the guard this exact call is
+    // a wgpu validation panic, not an error value.
+    let input = upload(gpu.device(), gpu.queue(), &[0]);
+    let err = scan.scan(gpu.device(), gpu.queue(), &input, n);
+    assert!(
+        matches!(err, Err(crate::Error::ScanTooLong { .. })),
+        "expected ScanTooLong, got {err:?}"
+    );
+}

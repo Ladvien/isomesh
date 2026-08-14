@@ -1336,3 +1336,24 @@ fn a_face_split_along_a_loop_partitions_into_regions() {
         "no face carried two chords, so the innermost rule is untested"
     );
 }
+
+#[test]
+fn the_peel_refuses_crossing_chords_rather_than_dropping_them() {
+    // Chords 0<->2 and 1<->3 interleave, so neither is ever innermost. §3.1
+    // cannot produce this -- a simple curve's chords nest -- so reaching it
+    // means an upstream invariant broke, and the documented answer is None,
+    // not a final region with both chords silently ignored.
+    let p = |index| Node::Crossing(FacePoint { edge: 0, index });
+    let node = alloc::vec![p(0), p(1), p(2), p(3)];
+    let side = Side::Inside;
+    let arc = alloc::vec![
+        Arc::Edge {
+            edge: 0,
+            piece: 0,
+            side
+        };
+        4
+    ];
+    let partner = alloc::vec![Some(2), Some(3), Some(0), Some(1)];
+    assert_eq!(peel(node, arc, partner), None);
+}

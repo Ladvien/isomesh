@@ -152,7 +152,7 @@ pub fn face_segments(face: u8, coords: &EdgeCoordinates) -> Vec<Segment> {
             (r, Some(k))
         }
         // Step 2: an odd sum with the inequality intact -- drop one from each.
-        None if total % 2 != 0 => ([count[0] - 1, count[1] - 1, count[2] - 1], None),
+        None if !total.is_multiple_of(2) => ([count[0] - 1, count[1] - 1, count[2] - 1], None),
         // Step 1 applies as written.
         None => (count, None),
     };

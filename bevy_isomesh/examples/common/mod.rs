@@ -34,7 +34,6 @@
 
 use std::collections::VecDeque;
 
-use bevy::asset::RenderAssetUsages;
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll};
 use bevy::mesh::{Indices, VertexAttributeValues};
 use bevy::prelude::*;
@@ -276,18 +275,18 @@ fn capture_sequence(
     // "Cannot save screenshot, IO error" per frame and no files, which reads as
     // a broken capture rather than a missing `mkdir` -- and the errors come from
     // deep inside Bevy's screenshot observer, nowhere near the cause.
-    if capture.elapsed == 0 {
-        if let Err(e) = std::fs::create_dir_all(&dir) {
-            error!("ISOMESH_CAPTURE={dir} cannot be created: {e}");
-            capture.dir = None;
-            return;
-        }
+    if capture.elapsed == 0
+        && let Err(e) = std::fs::create_dir_all(&dir)
+    {
+        error!("ISOMESH_CAPTURE={dir} cannot be created: {e}");
+        capture.dir = None;
+        return;
     }
     capture.elapsed += 1;
     if capture.elapsed <= capture.settle {
         return;
     }
-    if (capture.elapsed - capture.settle) % capture.every != 0 {
+    if !(capture.elapsed - capture.settle).is_multiple_of(capture.every) {
         return;
     }
     if capture.taken >= capture.total {
@@ -680,8 +679,3 @@ pub fn surface_material(materials: &mut Assets<StandardMaterial>) -> Handle<Stan
         ..default()
     })
 }
-
-/// Marker so `cargo check --all-targets` compiles this module even though it is
-/// only ever reached through `mod common;` in an example.
-#[allow(dead_code)]
-pub const RENDER_ASSET_USAGES_NOTE: RenderAssetUsages = RenderAssetUsages::MAIN_WORLD;

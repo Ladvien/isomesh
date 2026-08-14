@@ -315,6 +315,17 @@ impl EditReport {
 /// Costs `(region + 1)³` field evaluations of each field: it samples the corner
 /// grid once and reuses each sample across the eight cells that share it, rather
 /// than evaluating eight times per cell.
+///
+/// # Errors
+///
+/// [`Error::IndexSpaceExhausted`](crate::Error::IndexSpaceExhausted) if the
+/// region's corner grid exceeds the `u32` sample space — the same bound the
+/// extractors enforce, and the same rule `ChunkStream` applies to its candidate
+/// box: reported rather than attempted, because the alternative is an
+/// allocation that takes the process down. A brush covering `i64`-extreme
+/// cells — which is what `cell_of`'s saturation hands this for an enormous
+/// radius — used to overflow the extent arithmetic here and produce a wrong or
+/// empty dirty set in release, silently.
 pub fn mark_edit<R, A, B>(
     layout: &ChunkLayout<R>,
     before: &A,
@@ -322,7 +333,7 @@ pub fn mark_edit<R, A, B>(
     min_cell: [i64; 3],
     max_cell: [i64; 3],
     dirty: &mut DirtySet,
-) -> EditReport
+) -> crate::Result<EditReport>
 where
     R: Real,
     A: Sdf<Scalar = R>,
@@ -331,17 +342,27 @@ where
     let mut report = EditReport::default();
     for axis in 0..3 {
         if max_cell[axis] < min_cell[axis] {
-            return report;
+            return Ok(report);
         }
     }
 
     // Sample the corner grid spanning the region: one plane wider than the cells
     // on each axis, since a cell's corners are its own index and the next.
-    let extent = [
-        (max_cell[0] - min_cell[0] + 2) as usize,
-        (max_cell[1] - min_cell[1] + 2) as usize,
-        (max_cell[2] - min_cell[2] + 2) as usize,
-    ];
+    //
+    // Extents in u64, where even `i64::MAX - i64::MIN` fits: `max >= min` held
+    // above, so the wrapping difference is the true difference.
+    let mut samples = 1u64;
+    let mut extent = [0usize; 3];
+    for axis in 0..3 {
+        let planes = (max_cell[axis].wrapping_sub(min_cell[axis]) as u64).saturating_add(2);
+        samples = samples.saturating_mul(planes);
+        // Sound to narrow only because the gate below refuses anything past
+        // the u32 sample space before `extent` is ever read.
+        extent[axis] = planes as usize;
+    }
+    if samples > u64::from(u32::MAX) {
+        return Err(crate::Error::IndexSpaceExhausted { needed: samples });
+    }
     let count = extent[0] * extent[1] * extent[2];
     let mut changed = alloc::vec![false; count];
     let mut inside_before = alloc::vec![false; count];
@@ -427,7 +448,7 @@ where
         .iter()
         .filter(|id| dirty.iter().any(|d| d == *id))
         .count() as u64;
-    report
+    Ok(report)
 }
 
 #[cfg(test)]

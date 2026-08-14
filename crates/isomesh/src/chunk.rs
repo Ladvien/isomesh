@@ -55,11 +55,26 @@ impl ChunkId {
         Self { coords }
     }
 
-    /// The neighbour one step along `axis`.
+    /// The neighbour one step along `axis` (`0 = x`, `1 = y`, `2 = z`).
+    ///
+    /// # Panics
+    ///
+    /// If `axis >= 3`, or if the step leaves the `i32` chunk lattice — the
+    /// same kind of contract as [`Real::clamp`]'s bounds:
+    /// there is no meaningful chunk to return, and wrapping would silently
+    /// name one on the far side of the world. Identical in debug and release,
+    /// where the unchecked `+` used to wrap.
     #[must_use]
     pub fn neighbour(self, axis: usize, step: i32) -> Self {
+        assert!(axis < 3, "axis is 0, 1 or 2; got {axis}");
         let mut coords = self.coords;
-        coords[axis] += step;
+        coords[axis] = match coords[axis].checked_add(step) {
+            Some(c) => c,
+            None => panic!(
+                "chunk coordinate {} + {step} leaves the i32 lattice",
+                coords[axis]
+            ),
+        };
         Self { coords }
     }
 }
@@ -236,8 +251,12 @@ impl<R: Real> ChunkLayout<R> {
         let mut coords = [0i32; 3];
         for (axis, slot) in coords.iter_mut().enumerate() {
             let cell = ((point[axis] - self.origin[axis]) * inv / n).floor();
+            // `as_f64`, not `as_f32`: the narrowing hop stops distinguishing
+            // consecutive integers at 2²⁴, and an f64 layout's whole point is
+            // coordinates past that (✗13, M-18). The widening is exact for
+            // both scalar types; f64→i32 saturates identically.
             *slot = if cell.is_finite() {
-                cell.as_f32() as i32
+                cell.as_f64() as i32
             } else {
                 0
             };
@@ -264,8 +283,10 @@ impl<R: Real> ChunkLayout<R> {
         let mut cells = [0i64; 3];
         for (axis, slot) in cells.iter_mut().enumerate() {
             let cell = ((point[axis] - self.origin[axis]) * inv).floor();
+            // `as_f64`, not `as_f32`: exact to 2⁵³ where the f32 hop turns
+            // wrong at 2²⁴ — inside the f64 regime M-112 measured (✗13, M-18).
             *slot = if cell.is_finite() {
-                cell.as_f32() as i64
+                cell.as_f64() as i64
             } else {
                 0
             };

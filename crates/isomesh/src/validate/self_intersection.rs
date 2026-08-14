@@ -328,12 +328,17 @@ fn triangles_overlap<R: Real>(
         vec3::dot(nb, vec3::sub(a[1], b[0])),
         vec3::dot(nb, vec3::sub(a[2], b[0])),
     ];
-    if all_above(da, eps) || all_below(da, eps) {
-        return false;
-    }
-
     if da[0].abs() <= eps && da[1].abs() <= eps && da[2].abs() <= eps {
         return coplanar_overlap(a, b, na);
+    }
+    // A positive-measure transverse crossing needs each triangle strictly on
+    // *both* sides of the other's plane. "Not entirely on one side" is weaker:
+    // a triangle with a vertex or an edge in the plane and the rest on one
+    // side merely *touches* it, its interval on the crossing line degenerates
+    // to that contact, and counting it would report exactly the tangential
+    // point/line contact the module contract excludes.
+    if !straddles(da, eps) {
+        return false;
     }
 
     let db = [
@@ -341,7 +346,7 @@ fn triangles_overlap<R: Real>(
         vec3::dot(na, vec3::sub(b[1], a[0])),
         vec3::dot(na, vec3::sub(b[2], a[0])),
     ];
-    if all_above(db, eps) || all_below(db, eps) {
+    if !straddles(db, eps) {
         return false;
     }
 
@@ -357,14 +362,12 @@ fn triangles_overlap<R: Real>(
     hi_a > lo_b && hi_b > lo_a
 }
 
+/// Whether the triangle has vertices strictly on both sides of the plane.
 #[inline]
-fn all_above<R: Real>(d: [R; 3], eps: R) -> bool {
-    d[0] > eps && d[1] > eps && d[2] > eps
-}
-
-#[inline]
-fn all_below<R: Real>(d: [R; 3], eps: R) -> bool {
-    d[0] < -eps && d[1] < -eps && d[2] < -eps
+fn straddles<R: Real>(d: [R; 3], eps: R) -> bool {
+    let above = d[0] > eps || d[1] > eps || d[2] > eps;
+    let below = d[0] < -eps || d[1] < -eps || d[2] < -eps;
+    above && below
 }
 
 /// Where a triangle meets the other plane, projected onto `axis`.

@@ -75,21 +75,35 @@ impl MeshShaderRenderer {
     /// device only has what was requested at creation — an adapter that
     /// advertises mesh shaders says nothing about a device that did not ask
     /// for them.
+    ///
+    /// Also checks the **backend** (V-23): this pipeline's shader is WGSL,
+    /// naga translates the mesh and task stages to SPIR-V only, and its MSL
+    /// writer hits `unimplemented!()` on them (naga 29.0.4,
+    /// `back/msl/writer.rs:6937`). Metal genuinely *advertises*
+    /// `EXPERIMENTAL_MESH_SHADER` — the feature is real for callers shipping
+    /// pre-compiled passthrough MSL, which this crate does not — so the
+    /// feature bit alone would send [`new`](Self::new) into an abort inside
+    /// pipeline creation instead of an error value. The positive gate
+    /// (`== Vulkan` rather than `!= Metal`) is deliberate: naga's HLSL
+    /// backend lacks the stages too, so allow-listing the one backend that
+    /// compiles them is the single path.
     #[must_use]
     pub fn is_supported(device: &wgpu::Device) -> bool {
         device
             .features()
             .contains(wgpu::Features::EXPERIMENTAL_MESH_SHADER)
+            && device.adapter_info().backend == wgpu::Backend::Vulkan
     }
 
     /// Compile the pipeline for a colour target of `format`.
     ///
     /// # Errors
     ///
-    /// [`Error::MeshShadersUnavailable`] if the device lacks the feature. This
-    /// is the whole "never panics on an unsupported adapter" requirement: the
-    /// answer is an error value, checked at the call site, not an abort inside
-    /// a driver.
+    /// [`Error::MeshShadersUnavailable`] if the device lacks the feature or
+    /// the backend cannot compile WGSL mesh stages (only Vulkan can — V-23).
+    /// This is the whole "never panics on an unsupported adapter" requirement:
+    /// the answer is an error value, checked at the call site, not an abort
+    /// inside a driver.
     /// `samples` is the view's MSAA sample count and **must** match the pass
     /// this pipeline is used in. It is a parameter rather than a default
     /// because getting it wrong is not a quality difference — wgpu refuses the

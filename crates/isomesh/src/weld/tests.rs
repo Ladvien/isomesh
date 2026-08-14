@@ -212,7 +212,9 @@ fn a_chunk_seam_welds_at_a_non_power_of_two_spacing() {
         !joined.is_empty() && !second.is_empty(),
         "both chunks must carry surface or this measures nothing"
     );
-    joined.append(&second);
+    joined
+        .append(&second)
+        .expect("the meshes fit the u32 index space");
 
     let cfg = ValidateConfig::from_cell_size(h).expect("valid cell size");
     let before = validate_indexed(&joined.positions, &joined.indices, &cfg);
@@ -265,7 +267,9 @@ fn a_chunk_seam_welds_at_a_power_of_two_spacing_too() {
     let mut joined = mesh_chunk(&layout, &field, a);
     let second = mesh_chunk(&layout, &field, a.neighbour(0, 1));
     assert!(!joined.is_empty() && !second.is_empty());
-    joined.append(&second);
+    joined
+        .append(&second)
+        .expect("the meshes fit the u32 index space");
 
     let cfg = ValidateConfig::from_cell_size(h).expect("valid cell size");
     let mut welder = Welder::<f64>::new();
@@ -296,8 +300,10 @@ fn welding_is_deterministic() {
     let report = check_determinism(|out: &mut MeshBuffer<f64>| {
         let first = mesh_chunk(&layout, &field, a);
         let second = mesh_chunk(&layout, &field, b);
-        out.append(&first);
-        out.append(&second);
+        out.append(&first)
+            .expect("the meshes fit the u32 index space");
+        out.append(&second)
+            .expect("the meshes fit the u32 index space");
         Welder::<f64>::new()
             .weld(out, h * ValidateConfig::WELD_EPSILON_REL)
             .expect("valid epsilon");
@@ -317,14 +323,17 @@ fn a_reused_welder_gives_the_same_answer_as_a_fresh_one() {
     let build = || {
         let a = ChunkId::new([1, 1, 1]);
         let mut m = mesh_chunk(&layout, &field, a);
-        m.append(&mesh_chunk(&layout, &field, a.neighbour(0, 1)));
+        m.append(&mesh_chunk(&layout, &field, a.neighbour(0, 1)))
+            .expect("the meshes fit the u32 index space");
         m
     };
 
     let mut reused = Welder::<f64>::new();
     // Warm the scratch on a different, larger mesh first.
     let mut other = build();
-    other.append(&build());
+    other
+        .append(&build())
+        .expect("the meshes fit the u32 index space");
     reused.weld(&mut other, eps).expect("valid epsilon");
 
     let mut from_reused = build();
@@ -360,7 +369,9 @@ fn the_validator_bounds_the_weld_rather_than_predicting_it() {
     let field = Sphere::<f64>::canonical();
     let a = ChunkId::new([1, 1, 1]);
     let mut joined = mesh_chunk(&layout, &field, a);
-    joined.append(&mesh_chunk(&layout, &field, a.neighbour(0, 1)));
+    joined
+        .append(&mesh_chunk(&layout, &field, a.neighbour(0, 1)))
+        .expect("the meshes fit the u32 index space");
 
     let cfg = ValidateConfig::from_cell_size(h).expect("valid cell size");
     let counted = validate_indexed(&joined.positions, &joined.indices, &cfg).duplicate_vertices;

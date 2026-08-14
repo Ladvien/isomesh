@@ -572,7 +572,7 @@ fn inspect<F: Sdf<Scalar = f32> + ReferenceField>(field: &F, demo: &Demo) -> Opt
         String::new(),
         format!(
             "grid alignment           {:>8}   (n-1) mod 4 = {}; on box_exact a grid",
-            if (demo.samples - 1) % 4 == 0 {
+            if (demo.samples - 1).is_multiple_of(4) {
                 "ALIGNED"
             } else {
                 "safe"

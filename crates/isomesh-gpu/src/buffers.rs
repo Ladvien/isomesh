@@ -212,7 +212,7 @@ pub fn read_bytes(
     source: &wgpu::Buffer,
     bytes: u64,
 ) -> Result<Vec<u8>> {
-    if bytes % 4 != 0 {
+    if !bytes.is_multiple_of(4) {
         return Err(Error::UnalignedReadback { bytes, stride: 4 });
     }
     let staging = device.create_buffer(&wgpu::BufferDescriptor {

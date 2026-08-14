@@ -253,6 +253,12 @@ impl<R: Real> Welder<R> {
     /// exactly the case that fails at a seam, so it is rejected rather than
     /// quietly accepted.
     ///
+    /// [`Error::IndexOutOfRange`] if any triangle index names a vertex the
+    /// buffer does not have. Checked at the door, before any state is touched:
+    /// the remap runs after positions and normals are already compacted, so an
+    /// unvalidated bad index would panic mid-mutation and leave the caller's
+    /// buffer torn.
+    ///
     /// # Panics
     ///
     /// In debug builds, if `mesh.normals` is not the same length as
@@ -274,6 +280,18 @@ impl<R: Real> Welder<R> {
         );
 
         let n = mesh.positions.len();
+        // Rejected before any mutation: by the time the remap loop reads an
+        // index, positions and normals are already compacted, so a bad index
+        // discovered there would abort mid-rewrite with the buffer torn.
+        for (at, &i) in mesh.indices.iter().enumerate() {
+            if i as usize >= n {
+                return Err(Error::IndexOutOfRange {
+                    at: at as u64,
+                    index: i,
+                    vertices: n as u64,
+                });
+            }
+        }
         let mut report = WeldReport {
             vertices_before: n,
             vertices_after: n,

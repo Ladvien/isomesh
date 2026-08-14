@@ -163,11 +163,26 @@ impl<R: Real> MeshBuffer<R> {
     /// weldable once both chunks' vertices are in one buffer, and the index
     /// shift is exactly the step a caller would get wrong. Nothing is welded
     /// here — the vertices are concatenated as they are, duplicates and all.
-    pub fn append(&mut self, other: &Self) {
+    ///
+    /// # Errors
+    ///
+    /// [`Error::IndexSpaceExhausted`](crate::Error::IndexSpaceExhausted) if
+    /// the combined vertex count would leave `other`'s indices unaddressable
+    /// in the `u32` index space. Checked here rather than debug-asserted as
+    /// [`MeshSink::vertex`] does, because `append` sits outside the
+    /// extractors' up-front bound: it is the caller's own assembly step,
+    /// repeatable without limit, and the failure it prevents is a silent
+    /// index wrap that aliases early vertices.
+    pub fn append(&mut self, other: &Self) -> crate::Result<()> {
+        let total = self.positions.len() as u64 + other.positions.len() as u64;
+        if total > u64::from(u32::MAX) {
+            return Err(crate::Error::IndexSpaceExhausted { needed: total });
+        }
         let base = self.positions.len() as u32;
         self.positions.extend_from_slice(&other.positions);
         self.normals.extend_from_slice(&other.normals);
         self.indices.extend(other.indices.iter().map(|&i| i + base));
+        Ok(())
     }
 }
 
@@ -187,8 +202,9 @@ impl<R: Real> MeshSink for MeshBuffer<R> {
     fn vertex(&mut self, position: [R; 3], normal: [R; 3]) -> u32 {
         let index = self.positions.len();
         // A `debug_assert!` rather than a check on the hot path: the extractors
-        // bound their vertex count against `u32` before they start, and return
-        // `Error::IndexSpaceExhausted` if it could not fit. This catches a sink
+        // bound their vertex count against `u32` — up front where an a-priori
+        // bound exists, per emission in subgrid, where none does — and return
+        // `Error::IndexSpaceExhausted` if it cannot fit. This catches a sink
         // driven directly past the limit, in the builds where that is worth
         // paying for.
         debug_assert!(

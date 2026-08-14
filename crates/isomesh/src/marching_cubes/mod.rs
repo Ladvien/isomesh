@@ -110,10 +110,11 @@ impl<R: Real> MarchingCubes<R> {
     /// [`Error::GridTooSmall`](crate::Error::GridTooSmall) if any axis has fewer
     /// than two samples, since then there is no cell to march.
     /// [`Error::IndexSpaceExhausted`](crate::Error::IndexSpaceExhausted) if the
-    /// grid could produce more vertices than a `u32` can address — Marching
-    /// Cubes places one per crossed grid edge, so the bound is three per sample.
-    /// Checked up front, which is what lets the per-vertex path stay a
-    /// `debug_assert!`.
+    /// grid could produce more vertices than a `u32` can address — one per
+    /// crossed grid edge, so three per sample, plus up to
+    /// [`table::MAX_CENTROIDS`] cell-local cycle-centroid vertices per cell,
+    /// which only the decider's joined cycles can add (A-015). Checked up
+    /// front, which is what lets the per-vertex path stay a `debug_assert!`.
     pub fn extract<S, M>(
         &mut self,
         sdf: &S,
@@ -131,7 +132,13 @@ impl<R: Real> MarchingCubes<R> {
             return Err(crate::Error::GridTooSmall { size });
         }
         let sample_count = shape.element_count();
-        let bound = 3u64 * sample_count as u64;
+        // Three edge vertices per sample, plus up to `MAX_CENTROIDS` cell-local
+        // cycle-centroid vertices per cell — A-015's fan centroids are created
+        // per cell and never cached, so the edge count does not cover them.
+        // Both shape types guarantee the sample product fits in `u32` and cells
+        // are fewer than samples, so this sum stays far below `u64::MAX`.
+        let cells = u64::from(size[0] - 1) * u64::from(size[1] - 1) * u64::from(size[2] - 1);
+        let bound = 3u64 * sample_count as u64 + table::MAX_CENTROIDS as u64 * cells;
         if bound > u64::from(u32::MAX) {
             return Err(crate::Error::IndexSpaceExhausted { needed: bound });
         }

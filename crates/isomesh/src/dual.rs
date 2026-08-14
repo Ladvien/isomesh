@@ -262,7 +262,7 @@ impl<R: Real> DualMesher<R> {
         self.slot_vertex.clear();
 
         self.place_vertices(rule, sdf, shape, cells, origin, cell_size);
-        self.smooth(cells);
+        self.smooth(cells, origin, cell_size);
         self.emit_vertices(sdf, out);
         self.emit_quads(shape, cells, out);
 
@@ -361,7 +361,7 @@ impl<R: Real> DualMesher<R> {
     /// the only kind that exposes it: with two sheets in a cell there is no
     /// single answer to "the neighbour's vertex", and averaging across sheets
     /// would drag one into the other. Asserted rather than branched on.
-    fn smooth(&mut self, cells: [u32; 3]) {
+    fn smooth(&mut self, cells: [u32; 3], origin: [R; 3], cell_size: R) {
         if self.smoothing_passes == 0 {
             return;
         }
@@ -411,7 +411,26 @@ impl<R: Real> DualMesher<R> {
                             }
                         }
                         let inv = R::from_f64(f64::from(count)).recip();
-                        self.smoothed[first as usize] = [sum[0] * inv, sum[1] * inv, sum[2] * inv];
+                        // Gibson's box constraint, the load-bearing half of the
+                        // relaxation: "each node clamped inside its original
+                        // cube" (10.1007/bfb0056277). Without it the averaged
+                        // vertex leaves its cell, the cells stop partitioning
+                        // space, and the mesh self-intersects — the catalog's
+                        // headline correction is that the mechanism is this box,
+                        // not gradients. Same clamp policy as the QEF path, so
+                        // the two cannot disagree about what "inside the cell"
+                        // means.
+                        let cell_origin = [
+                            origin[0] + cell_size * R::from_f64(f64::from(x)),
+                            origin[1] + cell_size * R::from_f64(f64::from(y)),
+                            origin[2] + cell_size * R::from_f64(f64::from(z)),
+                        ];
+                        self.smoothed[first as usize] = crate::dual_contouring::apply_clamp(
+                            crate::dual_contouring::Clamp::ToCell,
+                            [sum[0] * inv, sum[1] * inv, sum[2] * inv],
+                            cell_origin,
+                            cell_size,
+                        );
                     }
                 }
             }
@@ -493,14 +512,22 @@ impl<R: Real> DualMesher<R> {
                             // vertex leaves [`u32::MAX`] here — an index no sink
                             // ever returned, which the validator reports as an
                             // out-of-range index rather than reading past the
-                            // end of the vertex list.
+                            // end of the vertex list. Branching on the sentinel
+                            // rather than letting the sum run past the list is
+                            // what keeps that true on 32-bit targets, where
+                            // `u32::MAX as usize` wraps back into range and
+                            // would silently stitch the quad to an unrelated
+                            // vertex.
                             debug_assert!(first != u32::MAX);
                             debug_assert!(owner != NO_SLOT);
-                            *slot = self
-                                .slot_vertex
-                                .get((first as usize).wrapping_add(owner as usize))
-                                .copied()
-                                .unwrap_or(u32::MAX);
+                            *slot = if first == u32::MAX || owner == NO_SLOT {
+                                u32::MAX
+                            } else {
+                                self.slot_vertex
+                                    .get(first as usize + owner as usize)
+                                    .copied()
+                                    .unwrap_or(u32::MAX)
+                            };
                         }
 
                         if inside0 {

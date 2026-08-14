@@ -361,7 +361,7 @@ fn drain(
 
 /// One CSV row per drained pass, so the budget can be swept from a shell.
 fn report(bench: Res<Bench>, mut last: Local<u32>) {
-    if bench.frames == *last || bench.frames % 40 != 0 || bench.frames == 0 {
+    if bench.frames == *last || !bench.frames.is_multiple_of(40) || bench.frames == 0 {
         return;
     }
     *last = bench.frames;

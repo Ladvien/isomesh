@@ -94,7 +94,8 @@ fn an_inverted_region_changes_nothing() {
     let l = layout();
     let mut dirty = DirtySet::new();
     let field = BoxExact::<f64>::canonical();
-    let report = mark_edit(&l, &field, &field, [5, 5, 5], [4, 5, 5], &mut dirty);
+    let report = mark_edit(&l, &field, &field, [5, 5, 5], [4, 5, 5], &mut dirty)
+        .expect("an empty region is in bounds");
     assert_eq!(report, EditReport::default());
     assert!(dirty.is_empty());
 }
@@ -107,7 +108,7 @@ fn an_identical_field_dirties_no_chunks() {
     let mut dirty = DirtySet::new();
     let field = carved(0.5, [0.0, 0.0, 0.0]);
     let (min, max) = brush_region(&l, [0.0, 0.0, 0.0], 0.6);
-    let report = mark_edit(&l, &field, &field, min, max, &mut dirty);
+    let report = mark_edit(&l, &field, &field, min, max, &mut dirty).expect("a region in bounds");
 
     assert!(report.region_cells > 0, "the region must be non-trivial");
     assert_eq!(report.value_changed_cells, 0);
@@ -156,7 +157,7 @@ fn e1_the_fraction_of_a_brush_that_actually_changes() {
         let (min, max) = brush_region(&l, centre, grown);
 
         let mut dirty = DirtySet::new();
-        let r = mark_edit(&l, &before, &after, min, max, &mut dirty);
+        let r = mark_edit(&l, &before, &after, min, max, &mut dirty).expect("a region in bounds");
 
         std::println!(
             "  {radius:>7.2} {:>9} {:>11} {:>10} {:>9} {:>7} {:>7.1}% {:>5}/{:<7}",
@@ -210,7 +211,7 @@ fn chunk_size_decides_how_much_the_dirty_set_over_marks() {
         let (min, max) = brush_region(&l, centre, 0.63);
 
         let mut dirty = DirtySet::new();
-        let r = mark_edit(&l, &before, &after, min, max, &mut dirty);
+        let r = mark_edit(&l, &before, &after, min, max, &mut dirty).expect("a region in bounds");
         std::println!(
             "  {cells:>3} cells/chunk -> E1 {:>5.1}% of cells, {:>5.1}% of chunks ({}/{})",
             r.changed_fraction() * 100.0,
@@ -236,7 +237,7 @@ fn dirtied_chunks_overlap_the_region() {
     let (min, max) = brush_region(&l, centre, 0.63);
 
     let mut dirty = DirtySet::new();
-    let report = mark_edit(&l, &before, &after, min, max, &mut dirty);
+    let report = mark_edit(&l, &before, &after, min, max, &mut dirty).expect("a region in bounds");
     assert!(!dirty.is_empty());
 
     for id in dirty.iter() {

@@ -105,7 +105,7 @@ impl MeshBuilder {
     /// The per-vertex colour buffer, to be filled or left alone.
     ///
     /// Handed out mutably so
-    /// [`isomesh::paint::shade`](isomesh::paint::shade) can write straight into
+    /// [`isomesh::paint::shade`] can write straight into
     /// the array the [`Mesh`] will own, on the same no-copy reasoning as the
     /// rest of this type:
     ///
@@ -146,11 +146,28 @@ impl MeshBuilder {
     /// padding every mesh with opaque white would be a no-op that still costs
     /// 16 bytes a vertex on the twenty-odd examples that do not paint anything.
     ///
-    /// A mismatched length is a caller error and is **not** silently repaired —
-    /// Bevy rejects an attribute whose length disagrees with the positions, and
-    /// that is the right place for it to fail.
+    /// A mismatched length is a caller error and is **not** silently repaired.
+    /// Bevy would not catch it either: `bevy_mesh` 0.19 only *warns* on a
+    /// short attribute and then truncates **every** attribute to the shortest
+    /// (`count_vertices`, "all attributes will be truncated to match the
+    /// smallest") — while the inserted indices keep referencing the full
+    /// vertex range. That is silently corrupted rendering far from the cause,
+    /// so the mismatch is refused here, at the door.
+    ///
+    /// # Panics
+    ///
+    /// If colours were written but not one per vertex — shade after the last
+    /// extraction into this builder, not before the next one.
     #[must_use]
     pub fn into_mesh(self) -> Mesh {
+        assert!(
+            self.colors.is_empty() || self.colors.len() == self.positions.len(),
+            "colours must be one per vertex: {} colours against {} vertices -- \
+             bevy_mesh would warn and truncate every attribute to the shorter \
+             length while the indices keep addressing the longer one",
+            self.colors.len(),
+            self.positions.len(),
+        );
         let mut mesh = Mesh::new(
             PrimitiveTopology::TriangleList,
             // The default: the asset stays in main memory as well as being
