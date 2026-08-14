@@ -10,6 +10,7 @@
 //! that against an independently parsed copy.
 
 pub mod ambiguity;
+pub mod interior;
 pub mod table;
 
 #[cfg(test)]

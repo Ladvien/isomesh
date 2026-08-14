@@ -85,6 +85,21 @@ pub enum Error {
         cell_size: f64,
     },
 
+    /// A sweep whose bilinear denominator vanishes on one of its two faces.
+    ///
+    /// `A + C - B - D` being zero means that face's bilinear function has no
+    /// saddle point, so
+    /// [`SweptFaces::test`](crate::marching_cubes::interior::SweptFaces::test)'s
+    /// criterion -- *is there a cutting plane whose saddle is positive* -- has
+    /// no answer there rather than a hard one.
+    ///
+    /// It cannot happen on an ambiguous face, where one diagonal is strictly
+    /// negative and the other non-negative. Reported rather than defaulted for
+    /// that reason: reaching it means the interior test was applied to a face
+    /// that is not ambiguous, and a default would hide the caller's mistake
+    /// behind a plausible topology.
+    DegenerateSweep,
+
     /// A vertex whose normal cannot be derived, so there is nothing to normalise.
     ///
     /// A zero or non-finite field gradient, or — under
@@ -150,6 +165,11 @@ impl fmt::Display for Error {
                 f,
                 "triangle {triangle} spans {cells} grid cells at cell size {cell_size}; \
                  that spacing does not describe this mesh"
+            ),
+            Self::DegenerateSweep => write!(
+                f,
+                "a swept face has a zero bilinear denominator, so it has no saddle point \
+                 and the interior test has nothing to evaluate"
             ),
             Self::DegenerateNormal { vertex } => write!(
                 f,
