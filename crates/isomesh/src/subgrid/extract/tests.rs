@@ -2118,3 +2118,214 @@ fn the_self_intersection_census_over_every_reference_field() {
     });
     assert_eq!(controls, 2, "both controls must run");
 }
+
+/// **Can subdivision be reached on a grid at all?** A-014i's exploratory probe.
+///
+/// Every measurement of case (5) so far is on a bare tetrahedron built from
+/// hand-chosen edge coordinates, which is the one configuration where a
+/// crossing has no neighbour to be shared with. That matters: dropping the
+/// "orphaned" positions on the reference fields changes vertex **order** and not
+/// **count** (M-200), which proves those positions are consumed by adjacent
+/// tetrahedra rather than wasted — and nothing can say whether subdivision's
+/// orphans behave the same way without a field that actually subdivides.
+///
+/// So this asks whether one exists. High-frequency fields put many roots on each
+/// edge; case (5) additionally needs the *residual* to satisfy `g > 1` and
+/// `ℓ > 8`, which is a much narrower target than "many crossings".
+#[test]
+fn whether_any_field_reaches_subdivision_on_a_grid() {
+    use crate::sdf::Sdf;
+
+    /// Parallel planes normal to `(1,1,1)` — the tetrahedra's main diagonal.
+    #[derive(Clone, Copy)]
+    struct Planes(f64);
+    impl Sdf for Planes {
+        type Scalar = f64;
+        fn sample(&self, p: [f64; 3]) -> f64 {
+            libm::sin(self.0 * (p[0] + p[1] + p[2]))
+        }
+    }
+
+    /// A gyroid at a frequency far above the grid.
+    #[derive(Clone, Copy)]
+    struct FastGyroid(f64);
+    impl Sdf for FastGyroid {
+        type Scalar = f64;
+        fn sample(&self, p: [f64; 3]) -> f64 {
+            let k = self.0;
+            libm::sin(k * p[0]) * libm::cos(k * p[1])
+                + libm::sin(k * p[1]) * libm::cos(k * p[2])
+                + libm::sin(k * p[2]) * libm::cos(k * p[0])
+        }
+    }
+
+    /// A product of sines — zero sets on three orthogonal plane families.
+    ///
+    /// **Its gradient vanishes where two families meet**, so the extractor
+    /// refuses it with `DegenerateNormal` and it cannot be a grid fixture. Kept
+    /// in the probe because it is the one that most readily *reaches* case (5),
+    /// which is itself the clue: subdivision wants two transverse families of
+    /// cuts, and the obvious way to write that is also the degenerate way.
+    #[derive(Clone, Copy)]
+    struct Lattice(f64);
+    impl Sdf for Lattice {
+        type Scalar = f64;
+        fn sample(&self, p: [f64; 3]) -> f64 {
+            libm::sin(self.0 * p[0]) * libm::sin(self.0 * p[1]) * libm::sin(self.0 * p[2])
+        }
+    }
+
+    /// A **sum** of sines with coefficients summing below one.
+    ///
+    /// Chosen so the gradient cannot vanish on the zero set: it would need every
+    /// cosine to be zero at once, which forces every sine to `±1`, and then
+    /// `|f| ≥ 1 − 0.6 − 0.3 > 0`. So the surface is everywhere well-oriented and
+    /// the extractor will accept it — the property `Lattice` lacks.
+    #[derive(Clone, Copy)]
+    struct Waves(f64);
+    impl Sdf for Waves {
+        type Scalar = f64;
+        fn sample(&self, p: [f64; 3]) -> f64 {
+            libm::sin(self.0 * p[0])
+                + 0.6 * libm::sin(self.0 * p[1] + 1.3)
+                + 0.3 * libm::sin(self.0 * p[2] + 2.7)
+        }
+    }
+
+    let mut best = 0u64;
+    for k in [4.0f64, 8.0, 16.0, 24.0, 32.0, 48.0, 64.0, 96.0] {
+        for (label, sampled) in [("planes", 0usize), ("gyroid", 1), ("lattice", 2)] {
+            let n = 9u32;
+            let cell = 2.0 / f64::from(n - 1);
+            let lo = [-1.0f64; 3];
+            let mut cases = [0u64; 6];
+            for z in 0..n - 1 {
+                for y in 0..n - 1 {
+                    for x in 0..n - 1 {
+                        for tet in TETS {
+                            let mut corners = [[0.0f64; 3]; 4];
+                            for (c, slot) in corners.iter_mut().enumerate() {
+                                let offset = corner_offset(tet[c]);
+                                for axis in 0..3 {
+                                    let index =
+                                        f64::from([x, y, z][axis]) + f64::from(offset[axis]);
+                                    slot[axis] = lo[axis] + cell * index;
+                                }
+                            }
+                            let mut along: [Vec<f64>; TET_EDGE_COUNT] =
+                                core::array::from_fn(|_| Vec::new());
+                            for (e, slot) in along.iter_mut().enumerate() {
+                                let [a, b] = TET_EDGES[e];
+                                let (p, q) = (corners[a as usize], corners[b as usize]);
+                                match sampled {
+                                    0 => all_roots(p, q, &Planes(k), 16, slot),
+                                    1 => all_roots(p, q, &FastGyroid(k), 16, slot),
+                                    2 => all_roots(p, q, &Lattice(k), 16, slot),
+                                    _ => all_roots(p, q, &Waves(k), 16, slot),
+                                }
+                            }
+                            let mut borrowed: [&[f64]; TET_EDGE_COUNT] = [&[]; TET_EDGE_COUNT];
+                            for (slot, v) in borrowed.iter_mut().zip(along.iter()) {
+                                *slot = v.as_slice();
+                            }
+                            let crossings = TetCrossings {
+                                corners,
+                                along: borrowed,
+                            };
+                            if crossings.check().is_err() {
+                                continue;
+                            }
+                            let coords = crossings.coordinates();
+                            let cycles = crate::subgrid::surface::cycles(&coords);
+                            let residual = crate::subgrid::surface::residual(&cycles);
+                            let Some(pattern) = crate::subgrid::surface::Pattern::of(&residual)
+                            else {
+                                continue;
+                            };
+                            if pattern.is_empty() {
+                                continue;
+                            }
+                            match pattern.loop_length() {
+                                Some(4) => cases[2] += 1,
+                                Some(8) => cases[3] += 1,
+                                Some(_) if pattern.loop_count() == 1 => cases[4] += 1,
+                                Some(_) => cases[5] += 1,
+                                None => {}
+                            }
+                        }
+                    }
+                }
+            }
+            if cases[5] > 0 {
+                std::println!(
+                    "{label} k={k}: quads {} octagons {} single {} SUBDIVISION {}",
+                    cases[2],
+                    cases[3],
+                    cases[4],
+                    cases[5]
+                );
+            }
+            best = best.max(cases[5]);
+        }
+    }
+    std::println!("best subdivision count over the sweep: {best}");
+    assert!(
+        best > 0,
+        "no field in the sweep reaches case (5), so the subdivision path still \
+         has no grid-level fixture and A-014i's orphan question stays unanswerable"
+    );
+
+    // **The fixture, and what it is for.** `planes` at `k = 96` fires case (5)
+    // **276 times** on a 9³ grid, and unlike `lattice` its gradient cannot
+    // vanish on the zero set: `∇f = k·cos(k(x+y+z))·(1,1,1)`, and where `sin` is
+    // zero `cos` is `±1`, so the magnitude is `k√3`. Run the whole extractor over
+    // it and the orphan question becomes answerable, because on a grid a
+    // crossing has neighbours — exactly what the bare-tet fixture lacks.
+    let n = 9u32;
+    let cell = 2.0 / f64::from(n - 1);
+    let lo = [-1.0f64; 3];
+    let shape = RuntimeShape3::new([n; 3]).expect("a cubic grid");
+    let mut mt = SubgridMarchingTetrahedra::<f64>::new(16).expect("valid");
+    let mut out = MeshBuffer::<f64>::default();
+    mt.extract(&Planes(96.0), &shape, lo, cell, &mut out)
+        .expect("the subdividing field extracts");
+
+    let mut used = alloc::vec![false; out.positions.len()];
+    for i in &out.indices {
+        if let Some(slot) = used.get_mut(*i as usize) {
+            *slot = true;
+        }
+    }
+    let orphaned = used.iter().filter(|u| !**u).count();
+    std::println!(
+        "planes k=96 on {n}³: {} vertices, {} triangles, {orphaned} unreferenced",
+        out.positions.len(),
+        out.indices.len() / 3,
+    );
+
+    // **The answer, and it is the opposite of the guess this fixture was built
+    // to check.** 16,296 of 166,591 vertices — **9.8%** — are referenced by no
+    // triangle. So A-014i's orphaned-vertex defect is real on a grid, and the
+    // reference fields could not have shown it because subdivision never fires
+    // there.
+    //
+    // The mechanism is now clear, and it is why the neighbour argument fails
+    // here but holds elsewhere. A parent's crossings are real grid crossings
+    // with global identities, so an adjacent tetrahedron that *does not*
+    // subdivide reuses them — which is what makes them merely reordered on the
+    // reference fields. A subdividing parent's children instead re-derive those
+    // same points as **child-local** positions beyond `crossings.len()`, with no
+    // identity at all. Where both sides of a face subdivide, nobody consumes the
+    // parent's registration and it becomes an orphan.
+    //
+    // That also names the fix, which is architectural rather than a tidy-up: the
+    // children should inherit the parent's crossing identities on parent edges
+    // instead of re-deriving anonymous copies. Dropping the orphans afterwards
+    // is the shape that does **not** work — it removes positions the reference
+    // fields legitimately share, changing vertex order there for no gain
+    // (M-201). Pinned, not fixed; A-014i owns it.
+    assert_eq!(
+        orphaned, 16_296,
+        "the grid-level orphan count moved; it is pinned because A-014i owns it"
+    );
+}
