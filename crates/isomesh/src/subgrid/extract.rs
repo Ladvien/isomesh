@@ -23,6 +23,35 @@
 //! imposed here rather than inherited — see
 //! [`extract`](SubgridMarchingTetrahedra::extract).
 //!
+//! # Vertices are shared, and the key is a property of the grid
+//!
+//! A crossing is the `index`-th root along a tetrahedron edge, and
+//! [`FacePoint`] already counts `index` from that
+//! edge's lower-numbered corner for exactly this reason. Lift it out of the
+//! tetrahedron and it becomes a **global** name: the edge's two grid points and
+//! the root's ordinal.
+//!
+//! The direction is the part that has to hold, and it does, for a reason that
+//! does not depend on the cell. `TETS[t]` orders its corners by *inclusion*, so
+//! a tet edge runs from the corner whose offset bits are a subset to the one
+//! whose bits are a superset. Offsets are the grid point minus the cell origin,
+//! and subtracting the same origin from both preserves the componentwise
+//! comparison — so inclusion is equivalent to `P ≤ Q` componentwise, which names
+//! the same direction from whichever cell the edge is viewed. Two tetrahedra in
+//! two cells therefore derive the same key, and — since their corner positions
+//! are bit-identical and [`all_roots`] is deterministic — the same position for
+//! it.
+//!
+//! **What this buys is not speed.** It is that a vertex has an *identity* rather
+//! than merely a location, so a later stage can move one and have every triangle
+//! standing on it move too. Welding by position cannot do that: after the move
+//! the copies no longer coincide, which is precisely the tearing M-101 measured
+//! twice and M-162 traced to 150 triangles in neighbouring cells.
+//!
+//! Steiner points are deliberately **not** shared. A centroid is a property of
+//! one tetrahedron, and giving it a key would assert an identity it does not
+//! have.
+//!
 //! # Why every cell recomputes its neighbours' edges
 //!
 //! A grid edge shared by two cells has its roots found twice, and a tetrahedron
@@ -35,6 +64,7 @@
 //! correctness precondition, and this ticket owes a working extractor before a
 //! fast one.
 
+use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 
 use crate::cube::corner_offset;
@@ -45,8 +75,41 @@ use crate::sdf::Sdf;
 use crate::shape::Shape3;
 use crate::vec3;
 
+use super::curves::FacePoint;
 use super::roots::all_roots;
 use super::surface::{TetCrossings, TetPatch, Unfilled, fill};
+
+/// A crossing's identity, independent of which tetrahedron found it.
+///
+/// The two grid points of the tetrahedron edge it lies on, componentwise
+/// smaller first, and which root along that edge it is. See this module's docs
+/// for why the ordering is the same from either cell.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct CrossingKey {
+    lo: [u32; 3],
+    hi: [u32; 3],
+    index: u32,
+}
+
+impl CrossingKey {
+    /// Lift a tetrahedron-local crossing to its global name.
+    fn of(cell: [u32; 3], tet: usize, point: FacePoint) -> Self {
+        let [a, b] = TET_EDGES[point.edge as usize];
+        let grid = |corner: u8| {
+            let offset = corner_offset(TETS[tet][corner as usize]);
+            [
+                cell[0] + offset[0],
+                cell[1] + offset[1],
+                cell[2] + offset[2],
+            ]
+        };
+        Self {
+            lo: grid(a),
+            hi: grid(b),
+            index: point.index,
+        }
+    }
+}
 
 /// Subgrid Marching Tetrahedra — Baktash, Gillespie & Crane,
 /// `10.48550/arXiv.2606.00454`.
@@ -59,6 +122,10 @@ pub struct SubgridMarchingTetrahedra<R: Real> {
     along: [Vec<R>; TET_EDGE_COUNT],
     patch: TetPatch<R>,
     index: Vec<u32>,
+    /// Which sink vertex each crossing was emitted as, for the extraction in
+    /// progress. Cleared per [`extract`](Self::extract), so it never carries a
+    /// stale index from a previous grid.
+    shared: BTreeMap<CrossingKey, u32>,
 }
 
 impl<R: Real> SubgridMarchingTetrahedra<R> {
@@ -85,6 +152,7 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
             along: Default::default(),
             patch: TetPatch::new(),
             index: Vec::new(),
+            shared: BTreeMap::new(),
         })
     }
 
@@ -143,6 +211,9 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
         if size[0] < 2 || size[1] < 2 || size[2] < 2 {
             return Err(crate::Error::GridTooSmall { size });
         }
+        // Indices in here name vertices of `out`, so a table held across two
+        // extractions would hand the second one the first's numbering.
+        self.shared.clear();
 
         for z in 0..size[2] - 1 {
             for y in 0..size[1] - 1 {
@@ -244,6 +315,18 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
         self.index.clear();
         self.index.reserve(self.patch.positions.len());
         for (at, position) in self.patch.positions.iter().enumerate() {
+            // A crossing carries a global name; a Steiner point does not, and
+            // gets a fresh vertex because it is shared with nothing.
+            let key = self
+                .patch
+                .crossings
+                .get(at)
+                .map(|point| CrossingKey::of(cell, t, *point));
+            if let Some(existing) = key.and_then(|k| self.shared.get(&k)) {
+                self.index.push(*existing);
+                continue;
+            }
+
             let g = sdf.gradient(*position);
             let length = vec3::length(g);
             // `!is_finite() || <= 0` rather than a negated `>`: NaN is excluded by
@@ -253,7 +336,11 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
                 return Err(crate::Error::DegenerateNormal { vertex: at as u64 });
             }
             let normal = vec3::scale(g, length.recip());
-            self.index.push(out.vertex(*position, normal));
+            let emitted = out.vertex(*position, normal);
+            if let Some(key) = key {
+                self.shared.insert(key, emitted);
+            }
+            self.index.push(emitted);
         }
         for tri in &self.patch.triangles {
             let (a, b, c) = (

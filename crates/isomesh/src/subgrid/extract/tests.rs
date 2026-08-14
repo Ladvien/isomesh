@@ -60,7 +60,11 @@ fn thin_plate_comes_back_where_greedy_quads_returns_nothing() {
     // Pinned, not just "more than nothing": 896 triangles at 17³, against
     // greedy quads' zero on the same field. See M-95.
     assert_eq!(out.triangle_count(), 896);
-    assert_eq!(out.vertex_count(), 2248);
+    // **2248 before A-014g's shared vertex table, 450 after** — the triangle
+    // count is unchanged and only the duplication is gone, which is what
+    // sharing crossings is supposed to do and the strongest single check that
+    // it did not also change the geometry.
+    assert_eq!(out.vertex_count(), 450);
 
     // Every vertex is on the surface it came from. This is the check that
     // separates "produced a lot of triangles" from "produced the *right*
@@ -1103,4 +1107,251 @@ fn what_gyroids_flipped_edges_are_standing_on() {
         (0, 15, 171),
         "gyroid's flipped edges moved"
     );
+}
+
+/// Which of §3.2's five cases the reference fields actually reach.
+///
+/// A-014d's shared vertex table has to give every vertex a key two tetrahedra
+/// can compute independently, and the only vertices that admits are **top-level
+/// edge crossings**: a crossing is the `index`-th root along a tetrahedron edge,
+/// the edge runs low-corner to high-corner so its direction is a property of the
+/// grid, and `all_roots` is deterministic on bit-identical endpoints. Steiner
+/// points have no such key — a centroid is a property of one tetrahedron.
+///
+/// Subdivision is the case that decides how much of the patch is keyable, since
+/// it re-emits the parent's face crossings as *child* crossings with child-local
+/// labels. So this counts which cases fire before any of that is designed.
+#[test]
+fn which_fill_cases_the_reference_fields_reach() {
+    use crate::fields::ReferenceField;
+    use crate::subgrid::curves::CurveKind;
+    use crate::subgrid::surface::{Pattern, cycles, residual};
+
+    let mut rows = 0;
+    crate::for_each_reference_field!(f64, |name, field| {
+        let (lo, hi) = field.domain();
+        let n = 17u32;
+        let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+        let mt = SubgridMarchingTetrahedra::<f64>::new(16).expect("valid");
+
+        // [corner cuts, non-normal, quads, octagons, single loop, subdivision]
+        let mut cases = [0u64; 6];
+        let mut tets = 0u64;
+        for z in 0..n - 1 {
+            for y in 0..n - 1 {
+                for x in 0..n - 1 {
+                    for tet in TETS {
+                        // The same crossings `cell_tet` computes, by the same
+                        // expression -- see `tet_corners` for why that matters.
+                        let mut corners = [[0.0f64; 3]; 4];
+                        for (c, slot) in corners.iter_mut().enumerate() {
+                            let offset = corner_offset(tet[c]);
+                            for axis in 0..3 {
+                                let index = f64::from([x, y, z][axis]) + f64::from(offset[axis]);
+                                slot[axis] = lo[axis] + cell * index;
+                            }
+                        }
+                        let mut along: [Vec<f64>; TET_EDGE_COUNT] = Default::default();
+                        let mut total = 0usize;
+                        for (e, slot) in along.iter_mut().enumerate() {
+                            let [a, b] = TET_EDGES[e];
+                            super::super::roots::all_roots(
+                                corners[a as usize],
+                                corners[b as usize],
+                                &field,
+                                mt.samples(),
+                                slot,
+                            );
+                            total += slot.len();
+                        }
+                        if total == 0 {
+                            continue;
+                        }
+                        tets += 1;
+
+                        let mut borrowed: [&[f64]; TET_EDGE_COUNT] = [&[]; TET_EDGE_COUNT];
+                        for (slot, v) in borrowed.iter_mut().zip(along.iter()) {
+                            *slot = v.as_slice();
+                        }
+                        let crossings = TetCrossings {
+                            corners,
+                            along: borrowed,
+                        };
+                        let coords = crossings.coordinates();
+                        let all = cycles(&coords);
+                        if all.iter().any(super::super::surface::Cycle::is_corner_cut) {
+                            cases[0] += 1;
+                        }
+                        if all.iter().any(|c| c.kind == CurveKind::NonNormal) {
+                            cases[1] += 1;
+                        }
+                        let Some(pattern) = Pattern::of(&residual(&all)) else {
+                            continue;
+                        };
+                        match pattern.loop_length() {
+                            Some(4) => cases[2] += 1,
+                            Some(8) => cases[3] += 1,
+                            Some(_) if pattern.loop_count() == 1 => cases[4] += 1,
+                            Some(_) => cases[5] += 1,
+                            None => {}
+                        }
+                    }
+                }
+            }
+        }
+
+        std::println!(
+            "{name:<15} {tets:>5} tets | corner cuts {:>5} non-normal {:>4} quads {:>5} \
+             octagons {:>4} single loop {:>4} SUBDIVISION {:>4}",
+            cases[0],
+            cases[1],
+            cases[2],
+            cases[3],
+            cases[4],
+            cases[5],
+        );
+        // **Subdivision never fires on any reference field.** That is what makes
+        // a shared vertex table tractable: every vertex on a tetrahedron's
+        // boundary is a top-level crossing with a globally computable key, and
+        // the only unkeyable positions are Steiner points, which are interior to
+        // one tetrahedron and are not shared with anything.
+        assert_eq!(cases[5], 0, "{name}: subdivision fired");
+        rows += 1;
+    });
+    assert_eq!(rows, 7, "the sweep did not reach every field");
+}
+
+/// **How complete the shared vertex table is, against a positional weld — and
+/// the one thing that stops it being complete.**
+///
+/// M-96 measured that the raw output used to be a per-tetrahedron triangle soup:
+/// every edge a boundary edge, no topology to check until a weld by position had
+/// run. A-014g gives each crossing a global identity so that stops being true,
+/// and this measures how far it got by validating the raw output **directly**
+/// and against the same output welded.
+///
+/// The answer is that identity-based sharing is complete **exactly when no root
+/// lands on a grid sample point**, and the correlation is not approximate:
+/// `torus` and `fbm_terrain` have zero vertices on a grid point and the weld
+/// removes zero, while `box_exact` has *every* vertex on one and the weld removes
+/// 924 of 1262. A root at a tetrahedron edge's endpoint has one position and a
+/// different `(edge, index)` on each of the up-to-24 tet edges meeting there, so
+/// it is one point wearing many names — which no amount of correct sharing under
+/// this key can merge.
+///
+/// That is a property of how the field sits on the grid rather than of the
+/// algorithm: `box_exact`'s faces are axis-aligned and land on sample planes,
+/// which is M-94's fixture trap showing up structurally rather than by accident.
+/// **The fix is still an identity and not a weld** — a crossing at parameter 0
+/// or 1 should be named by the grid point it sits on rather than by the edge it
+/// was found along — and it is named as the next step rather than done here.
+#[test]
+fn how_complete_the_shared_table_is_against_a_positional_weld() {
+    use crate::fields::ReferenceField;
+    use crate::validate::{ValidateConfig, validate_indexed};
+
+    // field -> (raw vertices, welded vertices, vertices on a grid sample point)
+    let expected: [(&str, usize, usize, usize); 7] = [
+        ("sphere", 830, 812, 24),
+        ("torus", 912, 912, 0),
+        ("box_exact", 1262, 338, 1262),
+        ("csg_difference", 1280, 482, 1087),
+        ("thin_plate", 450, 422, 58),
+        ("gyroid", 4020, 4014, 7),
+        ("fbm_terrain", 1758, 1758, 0),
+    ];
+
+    let mut rows = 0;
+    crate::for_each_reference_field!(f64, |name, field| {
+        let (lo, hi) = field.domain();
+        let n = 17u32;
+        let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+        let shape = RuntimeShape3::new([n; 3]).expect("a cubic grid");
+        let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
+
+        let mut raw = MeshBuffer::<f64>::default();
+        SubgridMarchingTetrahedra::<f64>::new(16)
+            .expect("valid")
+            .extract(&field, &shape, lo, cell, &mut raw)
+            .unwrap_or_else(|e| panic!("{name}: {e}"));
+        let direct = validate_indexed(&raw.positions, &raw.indices, &cfg);
+
+        let mut welded = raw.clone();
+        crate::weld::Welder::<f64>::new()
+            .weld(&mut welded, cell * 1e-6)
+            .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
+        let after = validate_indexed(&welded.positions, &welded.indices, &cfg);
+
+        // A root at a tetrahedron edge's *endpoint* sits on a grid sample point,
+        // which up to 24 tet edges meet at -- so it has one position and a
+        // different key on each of them. Identity-based sharing cannot merge
+        // those; a positional weld can. This counts them, to test that
+        // mechanism rather than assume it.
+        let on_lattice = raw
+            .positions
+            .iter()
+            .filter(|p| {
+                (0..3).all(|k| {
+                    let g = (p[k] - lo[k]) / cell;
+                    (g - g.round()).abs() < 1e-9
+                })
+            })
+            .count();
+
+        std::println!(
+            "{name:<15} {:>6} verts -> {:>6} welded ({} removed, {on_lattice} on a grid point) \
+             | nm-edges {} vs {} \
+             nm-verts {} vs {} flipped {} vs {} boundary {} vs {}",
+            raw.positions.len(),
+            welded.positions.len(),
+            raw.positions.len() - welded.positions.len(),
+            direct.non_manifold_edges,
+            after.non_manifold_edges,
+            direct.non_manifold_vertices,
+            after.non_manifold_vertices,
+            direct.inconsistently_oriented_edges,
+            after.inconsistently_oriented_edges,
+            direct.boundary_edges,
+            after.boundary_edges,
+        );
+
+        let want = expected
+            .iter()
+            .find(|(f, ..)| *f == name)
+            .unwrap_or_else(|| panic!("{name} is not in the pinned table"));
+        assert_eq!(
+            (raw.positions.len(), welded.positions.len(), on_lattice),
+            (want.1, want.2, want.3),
+            "{name}"
+        );
+
+        // The weld never *adds* a defect: sharing by identity is a subset of
+        // sharing by position, so every counter must be at least as good after
+        // welding as before. A table that merged two vertices that are not the
+        // same point would break this rather than merely under-merge.
+        assert!(
+            direct.non_manifold_edges >= after.non_manifold_edges,
+            "{name}"
+        );
+        assert!(
+            direct.non_manifold_vertices >= after.non_manifold_vertices,
+            "{name}"
+        );
+        assert!(
+            direct.inconsistently_oriented_edges >= after.inconsistently_oriented_edges,
+            "{name}"
+        );
+        assert_eq!(direct.boundary_edges, after.boundary_edges, "{name}");
+
+        // **Complete exactly where nothing lands on a grid point.**
+        if on_lattice == 0 {
+            assert_eq!(
+                raw.positions.len(),
+                welded.positions.len(),
+                "{name}: no vertex is on a grid point, so the weld should find nothing to do"
+            );
+        }
+        rows += 1;
+    });
+    assert_eq!(rows, 7, "the sweep did not reach every field");
 }

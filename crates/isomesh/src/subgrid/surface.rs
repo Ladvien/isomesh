@@ -160,6 +160,26 @@ pub struct TetPatch<R: Real> {
     pub positions: Vec<[R; 3]>,
     /// Triangles, indexing [`positions`](Self::positions).
     pub triangles: Vec<[u32; 3]>,
+    /// Which crossing each of the leading positions is:
+    /// `positions[i]` is the crossing `crossings[i]` for `i < crossings.len()`,
+    /// and a Steiner point at or beyond it.
+    ///
+    /// This makes the "crossings first" ordering above **machine-readable**
+    /// rather than only documented, which is what lets a caller give a crossing
+    /// an identity two tetrahedra can agree on. A crossing is the `index`-th
+    /// root along a named tetrahedron edge, and that edge runs from the
+    /// componentwise-smaller grid point to the larger whichever cell it is
+    /// viewed from, so its label is a property of the grid — see
+    /// [`SubgridMarchingTetrahedra`](crate::subgrid::extract::SubgridMarchingTetrahedra).
+    ///
+    /// A Steiner point has no such identity: a centroid is a property of one
+    /// tetrahedron and is shared with nothing, which is why it is left out
+    /// rather than given a key that would be wrong.
+    ///
+    /// **Only the top-level tetrahedron's crossings appear here.** A subdivided
+    /// tetrahedron's children carry child-local labels, so their positions land
+    /// beyond `crossings.len()` and are treated as unshared.
+    pub crossings: Vec<FacePoint>,
 }
 
 impl<R: Real> TetPatch<R> {
@@ -169,6 +189,7 @@ impl<R: Real> TetPatch<R> {
         Self {
             positions: Vec::new(),
             triangles: Vec::new(),
+            crossings: Vec::new(),
         }
     }
 
@@ -176,6 +197,7 @@ impl<R: Real> TetPatch<R> {
     pub fn reset(&mut self) {
         self.positions.clear();
         self.triangles.clear();
+        self.crossings.clear();
     }
 
     /// Whether anything was emitted.
@@ -422,7 +444,29 @@ pub fn fill<R: Real>(
     // because a recursion that fails to terminate is the one bug that takes the
     // process with it.
     let budget = tet.coordinates().total();
+    // The top-level crossings, recorded before the fill so that a caller can
+    // give them an identity. `fill_append` derives the same list from the same
+    // function, so position `i` is crossing `i` by construction rather than by
+    // coincidence -- and a subdivided child appends beyond this length, which is
+    // exactly the boundary between shared and unshared.
+    out.crossings = crossing_order(&cycles(&tet.coordinates()));
     fill_append(tet, out, budget)
+}
+
+/// The crossings a tetrahedron's cycles use, deduplicated, in the order the fill
+/// pushes their positions.
+///
+/// One definition rather than two: [`fill`] records this on the patch and
+/// [`fill_append`] indexes by it, and if they disagreed the recorded identities
+/// would name the wrong vertices.
+fn crossing_order(cycles: &[Cycle]) -> Vec<FacePoint> {
+    let mut keys: Vec<FacePoint> = cycles
+        .iter()
+        .flat_map(|c| c.points.iter().copied())
+        .collect();
+    keys.sort_unstable();
+    keys.dedup();
+    keys
 }
 
 /// [`fill`] without the reset, so a subdivided tet can append its children.
@@ -440,12 +484,7 @@ fn fill_append<R: Real>(
     // `base` is where this tet's vertices start: zero for a top-level call, and
     // wherever the parent left off for a subdivided one.
     let base = out.positions.len() as u32;
-    let mut keys: Vec<FacePoint> = cycles
-        .iter()
-        .flat_map(|c| c.points.iter().copied())
-        .collect();
-    keys.sort_unstable();
-    keys.dedup();
+    let keys = crossing_order(&cycles);
     for key in &keys {
         match tet.position(*key) {
             Some(p) => out.positions.push(p),
