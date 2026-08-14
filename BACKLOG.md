@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**105 tickets archived, 5 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**106 tickets archived, 4 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -120,7 +120,6 @@ These use the algorithms the way a game does: chunked, edited, budgeted, collide
 
 | | ID | Example | What it has to prove | Blocked by |
 |---|---|---|---|---|
-| ☐ | **E-212** | **The game examples consume `fields::`, not hand-rolled SDF copies.** `game_destruction`, `game_csg_props` and `game_showcase` each re-implement field combinators the crate already ships, without the analytic gradients the real ones carry. The 2026-08-14 review skipped this as a behavior-changing demo refactor, correctly. Note `game_destruction` had concurrent active work land mid-review (E-204) — rebase on it, don't fight it. | The demos read as consumers of the crate's field API rather than private forks of it, meshes still look right by eye, and recorded framerates hold. | — |
 
 ---
 

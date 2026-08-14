@@ -53,6 +53,7 @@ use bevy::prelude::*;
 use bevy_isomesh::to_bevy_mesh;
 use common::{Capture, CommonPlugin, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
 use isomesh::dual_contouring::DualContouring;
+use isomesh::fields::{BoxExact, Intersection};
 use isomesh::marching_cubes::MarchingCubes;
 use isomesh::surface_nets::SurfaceNets;
 use isomesh::{MeshBuffer, RuntimeShape3, Sdf};
@@ -129,15 +130,76 @@ struct Notched {
     cy: f32,
 }
 
+impl Notched {
+    /// The block, as the crate's own [`BoxExact`] rather than as a second copy
+    /// of its distance function — and with the analytic gradient that copy did
+    /// not carry.
+    fn block() -> BoxExact<f32> {
+        BoxExact {
+            center: [0.0; 3],
+            half_extents: [HALF; 3],
+        }
+    }
+
+    /// The quarter-space `min(x − cx, y − cy)`.
+    ///
+    /// **This part stays local, deliberately.** It is a union of two half-spaces,
+    /// and `fields::` ships `Difference` and `Intersection` but **no `Union`** —
+    /// union exists only as `BrushOp::Add`, which is an edit operation rather
+    /// than a field combinator. Writing one would be new public core API, which
+    /// E-212 is not.
+    fn cut(&self) -> Quarter {
+        Quarter {
+            cx: self.cx,
+            cy: self.cy,
+        }
+    }
+}
+
 impl Sdf for Notched {
     type Scalar = f32;
+
     fn sample(&self, p: [f32; 3]) -> f32 {
-        let q = [p[0].abs() - HALF, p[1].abs() - HALF, p[2].abs() - HALF];
-        let outside = [q[0].max(0.0), q[1].max(0.0), q[2].max(0.0)];
-        let block = (outside[0] * outside[0] + outside[1] * outside[1] + outside[2] * outside[2])
-            .sqrt()
-            + q[0].max(q[1]).max(q[2]).min(0.0);
-        block.max((p[0] - self.cx).min(p[1] - self.cy))
+        Intersection {
+            a: Self::block(),
+            b: self.cut(),
+        }
+        .sample(p)
+    }
+
+    fn gradient(&self, p: [f32; 3]) -> [f32; 3] {
+        Intersection {
+            a: Self::block(),
+            b: self.cut(),
+        }
+        .gradient(p)
+    }
+}
+
+/// The quarter-space removed from the block: `min(x − cx, y − cy)`.
+///
+/// Its gradient is the active half-space's normal, which is exact everywhere
+/// except on the reflex edge itself — and the reflex edge is precisely what this
+/// demo measures, so it is worth having exactly rather than by six samples.
+#[derive(Clone, Copy)]
+struct Quarter {
+    cx: f32,
+    cy: f32,
+}
+
+impl Sdf for Quarter {
+    type Scalar = f32;
+
+    fn sample(&self, p: [f32; 3]) -> f32 {
+        (p[0] - self.cx).min(p[1] - self.cy)
+    }
+
+    fn gradient(&self, p: [f32; 3]) -> [f32; 3] {
+        if p[0] - self.cx <= p[1] - self.cy {
+            [1.0, 0.0, 0.0]
+        } else {
+            [0.0, 1.0, 0.0]
+        }
     }
 }
 

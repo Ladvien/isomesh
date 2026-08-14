@@ -55,7 +55,7 @@ use bevy::prelude::*;
 use bevy_isomesh::MeshBuilder;
 use common::{Capture, CommonPlugin, DemoStats, OrbitCamera};
 use isomesh::brush::{Brush, BrushStack};
-use isomesh::fields::Sphere;
+use isomesh::fields::{BoxExact, Difference, Intersection, Sphere};
 use isomesh::{RuntimeShape3, Sdf};
 
 /// Grid the *targets* are meshed on.
@@ -124,18 +124,12 @@ impl Target {
     }
 }
 
-/// A vertical slab.
-#[derive(Clone, Copy)]
-struct Wall;
-
-impl Sdf for Wall {
-    type Scalar = f32;
-    fn sample(&self, p: [f32; 3]) -> f32 {
-        let d = [p[0].abs() - 2.6, p[1].abs() - 2.2, p[2].abs() - 0.45];
-        let outside = [d[0].max(0.0), d[1].max(0.0), d[2].max(0.0)];
-        let len =
-            (outside[0] * outside[0] + outside[1] * outside[1] + outside[2] * outside[2]).sqrt();
-        len + d[0].max(d[1]).max(d[2]).min(0.0)
+/// A vertical slab — [`BoxExact`], which is the same distance function this
+/// example used to spell out, plus the analytic gradient it did not have.
+fn wall() -> BoxExact<f32> {
+    BoxExact {
+        center: [0.0; 3],
+        half_extents: [2.6, 2.2, 0.45],
     }
 }
 
@@ -143,14 +137,21 @@ impl Sdf for Wall {
 ///
 /// Its convex hull is the outer ball, so a hull collider fills the cavity that
 /// makes it a shell. This is the shape the ticket names first.
-#[derive(Clone, Copy)]
-struct HollowShell;
-
-impl Sdf for HollowShell {
-    type Scalar = f32;
-    fn sample(&self, p: [f32; 3]) -> f32 {
-        let r = (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]).sqrt();
-        (r - 2.3).max(1.7 - r)
+///
+/// `Difference` is `max(fa, −fb)`, and `−(r − 1.7)` is `1.7 − r`, so this is
+/// exactly the `(r - 2.3).max(1.7 - r)` it replaces — evaluated by the crate,
+/// with the gradient of whichever operand is active rather than six extra
+/// samples.
+fn hollow_shell() -> Difference<Sphere<f32>, Sphere<f32>> {
+    Difference {
+        a: Sphere {
+            center: [0.0; 3],
+            radius: 2.3,
+        },
+        b: Sphere {
+            center: [0.0; 3],
+            radius: 1.7,
+        },
     }
 }
 
@@ -186,26 +187,11 @@ impl Sdf for Spiral {
     }
 }
 
-/// The intersection of two fields: `max`, which is the volume in both.
-#[derive(Clone, Copy)]
-struct Intersect<A, B>(A, B);
-
-impl<A, B> Sdf for Intersect<A, B>
-where
-    A: Sdf<Scalar = f32>,
-    B: Sdf<Scalar = f32>,
-{
-    type Scalar = f32;
-    fn sample(&self, p: [f32; 3]) -> f32 {
-        self.0.sample(p).max(self.1.sample(p))
-    }
-}
-
 /// One target, as a field, so the three share one code path.
 #[derive(Clone, Copy)]
 enum Solid {
-    Wall(Wall),
-    Shell(HollowShell),
+    Wall(BoxExact<f32>),
+    Shell(Difference<Sphere<f32>, Sphere<f32>>),
     Spiral(Spiral),
 }
 
@@ -218,13 +204,27 @@ impl Sdf for Solid {
             Self::Spiral(f) => f.sample(p),
         }
     }
+
+    /// **Forwarded, and that is the point of consuming `fields::` at all.**
+    /// [`Sdf::gradient`]'s default is central differences — six extra `sample`
+    /// calls per normal — so a dispatch layer that implements only `sample`
+    /// throws away the analytic gradients the crate's fields carry. `Spiral` has
+    /// no analytic gradient to forward and falls back to the same default it
+    /// always used.
+    fn gradient(&self, p: [f32; 3]) -> [f32; 3] {
+        match self {
+            Self::Wall(f) => f.gradient(p),
+            Self::Shell(f) => f.gradient(p),
+            Self::Spiral(f) => f.gradient(p),
+        }
+    }
 }
 
 impl From<Target> for Solid {
     fn from(t: Target) -> Self {
         match t {
-            Target::Wall => Self::Wall(Wall),
-            Target::HollowShell => Self::Shell(HollowShell),
+            Target::Wall => Self::Wall(wall()),
+            Target::HollowShell => Self::Shell(hollow_shell()),
             Target::Spiral => Self::Spiral(Spiral),
         }
     }
@@ -468,7 +468,10 @@ fn fire(
     let min = [centre.x - pad, centre.y - pad, centre.z - pad];
     let cell = (pad * 2.0) / (FRAGMENT_SAMPLES - 1) as f32;
     let mut fragment = MeshBuilder::new();
-    let carved = Intersect(before, shape);
+    let carved = Intersection {
+        a: before,
+        b: shape,
+    };
     let Ok(shape3) = RuntimeShape3::new([FRAGMENT_SAMPLES; 3]) else {
         return;
     };
