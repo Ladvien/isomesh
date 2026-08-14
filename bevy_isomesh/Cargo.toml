@@ -3,7 +3,9 @@ name = "bevy_isomesh"
 description = "Bevy integration for isomesh: signed distance field in, Bevy Mesh out."
 version = "0.0.0"
 edition = "2024"
-rust-version = "1.85"
+# Bevy 0.19's own crates declare 1.95.0, and this crate cannot compile without
+# them, so claiming less would be a floor nothing can stand on.
+rust-version = "1.95"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/ladvien/isomesh"
 authors = ["C. Thomas Brittain <cthomasbrittain@yahoo.com>"]

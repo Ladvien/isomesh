@@ -11,7 +11,13 @@ exclude = ["bevy_isomesh"]
 [workspace.package]
 version = "0.0.4"
 edition = "2024"
-rust-version = "1.85"
+# The floor is set by the dependency graph the msrv CI job actually checks
+# (`--workspace --all-targets`, so dev-dependencies count): wgpu/naga 29.x
+# declare 1.87, and `wide`/`safe_arch` (via parry3d, dev-only) declare 1.89.
+# The old claim of 1.85 was never true once isomesh-gpu existed -- cargo
+# itself rejected it on every CI run. Verified: `cargo +1.89 check
+# --workspace --all-targets` is clean.
+rust-version = "1.89"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/ladvien/isomesh"
 authors = ["C. Thomas Brittain <cthomasbrittain@yahoo.com>"]
