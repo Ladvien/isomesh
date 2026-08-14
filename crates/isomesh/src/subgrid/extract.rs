@@ -81,32 +81,82 @@ use super::surface::{TetCrossings, TetPatch, Unfilled, fill};
 
 /// A crossing's identity, independent of which tetrahedron found it.
 ///
-/// The two grid points of the tetrahedron edge it lies on, componentwise
-/// smaller first, and which root along that edge it is. See this module's docs
-/// for why the ordering is the same from either cell.
+/// Two rules, because a crossing sits in one of two structurally different
+/// places and only one of them is named by an edge. See this module's docs for
+/// why the edge's direction is the same from either cell.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-struct CrossingKey {
-    lo: [u32; 3],
-    hi: [u32; 3],
-    index: u32,
+enum CrossingKey {
+    /// A root in the interior of a tetrahedron edge: the edge's two grid points,
+    /// componentwise smaller first, and which root along it this is.
+    OnEdge {
+        lo: [u32; 3],
+        hi: [u32; 3],
+        index: u32,
+    },
+    /// A root that lies **on** a grid sample point, named by that point.
+    ///
+    /// Up to 24 tetrahedron edges meet at a grid point, so such a root has a
+    /// different `(edge, index)` on every one of them — one point wearing many
+    /// names, which no correct sharing under [`OnEdge`] can merge (M-169). A grid
+    /// point has a single coordinate triple and needs no ordinal, which makes
+    /// this rule *simpler* than the edge one rather than a special case bolted
+    /// onto it: it needs no inclusion argument at all, because an absolute grid
+    /// coordinate is cell-independent outright.
+    ///
+    /// [`OnEdge`]: CrossingKey::OnEdge
+    OnGridPoint { at: [u32; 3] },
+}
+
+/// Which of a tetrahedron's four corners the field is exactly zero at.
+///
+/// The **exact** test — no tolerance — because it is the definition of the
+/// surface passing through a grid point, and because it must give the same
+/// answer in every cell that shares that point. `f(G)` depends on `G` alone,
+/// where anything derived from an edge does not.
+///
+/// Note this samples the corner directly rather than reusing
+/// [`all_roots`]'s own endpoint evaluations: that function evaluates `t = 1` as
+/// `a + (b − a)·1`, which is *not* bit-identical to `b`, so its answer there is a
+/// property of the edge and not of the grid point (M-183).
+fn corners_on_surface<R: Real, S: Sdf<Scalar = R>>(sdf: &S, corners: &[[R; 3]; 4]) -> [bool; 4] {
+    // `partial_cmp` rather than `== 0`: `Some(Equal)` accepts both zeros, which
+    // the sign convention already treats alike, and `None` rejects NaN, which a
+    // bare equality would silently answer `false` to without saying why.
+    corners.map(|c| {
+        matches!(
+            sdf.sample(c).partial_cmp(&R::ZERO),
+            Some(core::cmp::Ordering::Equal)
+        )
+    })
 }
 
 impl CrossingKey {
-    /// Lift a tetrahedron-local crossing to its global name.
-    fn of(cell: [u32; 3], tet: usize, point: FacePoint) -> Self {
-        let [a, b] = TET_EDGES[point.edge as usize];
-        let grid = |corner: u8| {
+    /// The two grid points of a tetrahedron edge, in the order `TETS` gives.
+    fn edge_grid_points(cell: [u32; 3], tet: usize, edge: u8) -> [[u32; 3]; 2] {
+        let [a, b] = TET_EDGES[edge as usize];
+        [a, b].map(|corner| {
             let offset = corner_offset(TETS[tet][corner as usize]);
             [
                 cell[0] + offset[0],
                 cell[1] + offset[1],
                 cell[2] + offset[2],
             ]
-        };
-        Self {
-            lo: grid(a),
-            hi: grid(b),
-            index: point.index,
+        })
+    }
+
+    /// Lift a tetrahedron-local crossing to its global name.
+    ///
+    /// `endpoint` names the edge corner this root sits *on*, when it sits on one.
+    fn of(cell: [u32; 3], tet: usize, point: FacePoint, endpoint: Option<u8>) -> Self {
+        let [lo, hi] = Self::edge_grid_points(cell, tet, point.edge);
+        match endpoint {
+            Some(0) => Self::OnGridPoint { at: lo },
+            Some(_) => Self::OnGridPoint { at: hi },
+            None => Self::OnEdge {
+                lo,
+                hi,
+                index: point.index,
+            },
         }
     }
 }
@@ -239,6 +289,47 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
         Ok(())
     }
 
+    /// Which tetrahedron-edge corner this crossing sits on, if it sits on one.
+    ///
+    /// `0` for the edge's lower corner, `1` for its upper, in `TET_EDGES` order.
+    ///
+    /// # Why the ordinal decides it rather than the parameter
+    ///
+    /// The obvious test — is the root's parameter 0 or 1 — describes nothing:
+    /// **no root anywhere reports `t == 0`** and almost none reports `t == 1`
+    /// (M-179), because [`refine`](super::roots) returns the *upper* end of its
+    /// final bracket so it can keep the ascending-and-distinct contract when a
+    /// root sits on a sample.
+    ///
+    /// What is exact is `f(G) == 0`, and `all_roots` reports at most one root per
+    /// bracketing interval in ascending order. So if the surface passes through
+    /// the lower corner and a root exists in the *first* interval, that root is
+    /// the one at the corner, and it is `index == 0`. Symmetrically at the top.
+    /// Both facts are properties of the grid point and the edge's own sampling,
+    /// so every tetrahedron meeting there reaches the same answer.
+    fn endpoint_of(&self, point: FacePoint, on_surface: &[bool; 4]) -> Option<u8> {
+        let [a, b] = TET_EDGES[point.edge as usize];
+        let roots = &self.along[point.edge as usize];
+        let count = roots.len() as u32;
+        if count == 0 {
+            return None;
+        }
+        let step = R::ONE / R::from_f64(f64::from(self.samples));
+        let last_interval_start = R::from_f64(f64::from(self.samples - 1)) * step;
+        let t = *roots.get(point.index as usize)?;
+
+        let at_lo = on_surface[a as usize] && point.index == 0 && t <= step;
+        let at_hi = on_surface[b as usize] && point.index == count - 1 && t >= last_interval_start;
+        match (at_lo, at_hi) {
+            // Both ends on the surface with a single root between them: the
+            // parameter is the only thing left that can say which one it is.
+            (true, true) => Some(u8::from(t + t >= R::ONE)),
+            (true, false) => Some(0),
+            (false, true) => Some(1),
+            (false, false) => None,
+        }
+    }
+
     /// One tetrahedron of one cell.
     #[allow(clippy::too_many_arguments)]
     fn cell_tet<S, M>(
@@ -324,21 +415,37 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
             });
         }
 
+        // Which corners the surface passes exactly through. A root adjacent to
+        // one of those is *at* it, and is named and placed by the grid point
+        // rather than by the edge it was found along (A-014h).
+        let on_surface = corners_on_surface(sdf, &corners);
+
         // Into the sink, with the field's own gradient as each normal.
         self.index.clear();
         self.index.reserve(self.patch.positions.len());
         for (at, position) in self.patch.positions.iter().enumerate() {
             // A crossing carries a global name; a Steiner point does not, and
             // gets a fresh vertex because it is shared with nothing.
-            let key = self
-                .patch
-                .crossings
-                .get(at)
-                .map(|point| CrossingKey::of(cell, t, *point));
+            let crossing = self.patch.crossings.get(at).copied();
+            let endpoint = crossing.and_then(|point| self.endpoint_of(point, &on_surface));
+            let key = crossing.map(|point| CrossingKey::of(cell, t, point, endpoint));
             if let Some(existing) = key.and_then(|k| self.shared.get(&k)) {
                 self.index.push(*existing);
                 continue;
             }
+
+            // A root on a grid point is emitted **at** that point, by the same
+            // `origin + cell_size · index` expression every cell computes
+            // identically (M-32) -- not at the lerp's answer, which differs in
+            // the last bits between the edges that meet there and is what left
+            // 690 of `box_exact`'s duplicates unmergeable (M-180).
+            let position = &match (crossing, endpoint) {
+                (Some(point), Some(end)) => {
+                    let [a, b] = TET_EDGES[point.edge as usize];
+                    corners[if end == 0 { a } else { b } as usize]
+                }
+                _ => *position,
+            };
 
             let g = sdf.gradient(*position);
             let length = vec3::length(g);
@@ -378,6 +485,20 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
                     reason: "a triangle indexed a vertex the patch does not have",
                 });
             };
+
+            // Two of this triangle's corners are the same vertex, so it has no
+            // area and is not a triangle. It arises only from A-014h: when the
+            // surface passes exactly through a grid point, the two tetrahedron
+            // edges meeting there each carry a root *at* it, and naming both by
+            // the point makes them one vertex. The sliver between them was always
+            // zero-area; it is now zero-area and says so in its indices, which
+            // `validate_indexed` counts as a structural error rather than as a
+            // recorded metric. Declining to emit it is not dropping geometry —
+            // there is no geometry to drop — and the alternative is shipping an
+            // index buffer this crate's own validator calls invalid (M-185).
+            if a == b || b == c || a == c {
+                continue;
+            }
 
             // Orientation. §3.2 fixes each polygon's vertex order from its own
             // boundary curve, which is consistent within a tetrahedron and

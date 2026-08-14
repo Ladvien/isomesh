@@ -57,14 +57,19 @@ fn thin_plate_comes_back_where_greedy_quads_returns_nothing() {
     mt.extract(&field, &shape, origin, cell, &mut out)
         .expect("thin_plate should extract");
 
-    // Pinned, not just "more than nothing": 896 triangles at 17³, against
+    // Pinned, not just "more than nothing": 840 triangles at 17³, against
     // greedy quads' zero on the same field. See M-95.
-    assert_eq!(out.triangle_count(), 896);
-    // **2248 before A-014g's shared vertex table, 450 after** — the triangle
-    // count is unchanged and only the duplication is gone, which is what
-    // sharing crossings is supposed to do and the strongest single check that
-    // it did not also change the geometry.
-    assert_eq!(out.vertex_count(), 450);
+    //
+    // **896 before A-014h, 840 after.** The 56 that went are the zero-area
+    // slivers between two roots that both sit on one grid point: naming them by
+    // the point makes them one vertex, which makes the triangle between them a
+    // repeated-index degenerate, and the extractor declines to emit those
+    // (M-185). None of them carried area at any point in this crate's history.
+    assert_eq!(out.triangle_count(), 840);
+    // **2248 before A-014g's shared vertex table, 450 after it, 422 after
+    // A-014h** — and 422 is exactly what a positional weld reaches, so the
+    // extractor now emits each vertex once and there is nothing left to merge.
+    assert_eq!(out.vertex_count(), 422);
 
     // Every vertex is on the surface it came from. This is the check that
     // separates "produced a lot of triangles" from "produced the *right*
@@ -220,23 +225,33 @@ fn raising_the_sampling_changes_the_topology_it_finds_but_not_by_much_else() {
     fine.extract(&field, &shape, origin, cell, &mut b)
         .expect("extract");
 
-    assert_eq!(a.triangle_count(), 4328);
+    assert_eq!(a.triangle_count(), 3964);
     assert_eq!(a.vertex_count(), b.vertex_count());
     assert_eq!(a.indices, b.indices, "the topology found should not change");
 
-    let worst = a
+    // **A-014h turned this from "close" into "identical" (M-186).** The
+    // paragraph above records that the first version of this test asserted
+    // bit-equality and failed, because bisection converges to *an* ulp of the
+    // root and which one depended on the bracket it started from. That is no
+    // longer true here: every vertex whose last bit moved with `samples` was a
+    // root sitting on a grid point, and those are now emitted at the grid
+    // point's own canonical position, which no amount of refinement can move.
+    //
+    // Asserted at the bit rather than by a tolerance, because a tolerance would
+    // no longer be measuring anything.
+    let differing = a
         .positions
         .iter()
         .zip(b.positions.iter())
-        .map(|(p, q)| (0..3).map(|k| (p[k] - q[k]).abs()).fold(0.0f64, f64::max))
-        .fold(0.0f64, f64::max);
-    assert!(
-        worst < 1e-12,
-        "16 and 32 samples disagree by {worst}, which is more than a refinement gap"
-    );
-    assert!(
-        worst > 0.0,
-        "if they agreed exactly this test is asserting nothing"
+        .filter(|(p, q)| (0..3).any(|k| p[k].to_bits() != q[k].to_bits()))
+        .count();
+    assert_eq!(
+        differing,
+        0,
+        "{differing} of {} vertices moved when the 1D sampling doubled -- \
+         A-014h's canonical placement has stopped covering them, and the \
+         determinism guarantee this test pins is weaker again",
+        a.vertex_count()
     );
 }
 
@@ -609,10 +624,10 @@ fn which_polygons_coincide_across_a_shared_face() {
     let expected: [(&str, u64, u64, u64, u64, u64); 7] = [
         ("sphere", 0, 0, 0, 0, 0),
         ("torus", 0, 0, 0, 0, 0),
-        ("box_exact", 30, 30, 30, 348, 168),
-        ("csg_difference", 33, 33, 27, 312, 150),
-        ("thin_plate", 4, 0, 0, 0, 0),
-        ("gyroid", 1, 1, 1, 18, 18),
+        ("box_exact", 0, 0, 0, 0, 0),
+        ("csg_difference", 3, 3, 0, 0, 0),
+        ("thin_plate", 0, 0, 0, 0, 0),
+        ("gyroid", 0, 0, 0, 0, 0),
         ("fbm_terrain", 4, 4, 0, 0, 0),
     ];
 
@@ -806,10 +821,10 @@ fn the_defects_traced_back_to_the_tetrahedra_that_made_them() {
     let expected: [(&str, u64, u64, u64, u64); 7] = [
         ("sphere", 0, 0, 0, 0),
         ("torus", 0, 0, 0, 0),
-        ("box_exact", 0, 0, 0, 468),
-        ("csg_difference", 6, 3, 3, 372),
-        ("thin_plate", 2, 0, 2, 12),
-        ("gyroid", 0, 0, 0, 12),
+        ("box_exact", 0, 0, 0, 0),
+        ("csg_difference", 3, 0, 3, 0),
+        ("thin_plate", 0, 0, 0, 0),
+        ("gyroid", 0, 0, 0, 0),
         ("fbm_terrain", 4, 2, 2, 0),
     ];
 
@@ -1252,12 +1267,12 @@ fn how_complete_the_shared_table_is_against_a_positional_weld() {
 
     // field -> (raw vertices, welded vertices, vertices on a grid sample point)
     let expected: [(&str, usize, usize, usize); 7] = [
-        ("sphere", 830, 812, 24),
+        ("sphere", 812, 812, 6),
         ("torus", 912, 912, 0),
-        ("box_exact", 1262, 338, 1262),
-        ("csg_difference", 1280, 482, 1087),
-        ("thin_plate", 450, 422, 58),
-        ("gyroid", 4020, 4014, 7),
+        ("box_exact", 338, 338, 338),
+        ("csg_difference", 482, 482, 289),
+        ("thin_plate", 422, 422, 30),
+        ("gyroid", 4014, 4014, 1),
         ("fbm_terrain", 1758, 1758, 0),
     ];
 
@@ -1380,16 +1395,17 @@ fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
 
     // field -> (raw, distinct by bit pattern, welded at crate::weld::epsilon_for(cell))
     let expected: [(&str, usize, usize, usize); 7] = [
-        ("sphere", 830, 830, 812),
+        ("sphere", 812, 812, 812),
         ("torus", 912, 912, 912),
-        ("box_exact", 1262, 1028, 338),
-        ("csg_difference", 1280, 1094, 482),
-        ("thin_plate", 450, 444, 422),
-        ("gyroid", 4020, 4014, 4014),
+        ("box_exact", 338, 338, 338),
+        ("csg_difference", 482, 482, 482),
+        ("thin_plate", 422, 422, 422),
+        ("gyroid", 4014, 4014, 4014),
         ("fbm_terrain", 1758, 1758, 1758),
     ];
 
     let mut rows = 0;
+    let mut got_rows: Vec<(&str, (usize, usize, usize))> = Vec::new();
     crate::for_each_reference_field!(f64, |name, field| {
         let (shape, lo, cell) = grid(&field, 17);
         let mut raw = MeshBuffer::<f64>::default();
@@ -1426,6 +1442,7 @@ fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
             got.0 - got.2,
         );
         assert_eq!(got, want, "{name}");
+        got_rows.push((name, got));
 
         // An exact rule can never merge more than a tolerance rule, on any
         // field. This is the direction that must hold everywhere.
@@ -1442,18 +1459,20 @@ fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
     // `gyroid` every merge the weld makes is exact, so an identity rule would
     // close it completely; on the two CSG-shaped fields it would close a quarter
     // at most. Same defect name, two different problems underneath.
-    let gap = |f: &str| {
-        let &(_, raw, exact, welded) = expected.iter().find(|(n, ..)| *n == f).expect("in table");
-        (raw - exact, raw - welded)
-    };
-    assert_eq!(gap("gyroid"), (6, 6), "gyroid's merges are entirely exact");
-    assert_eq!(gap("box_exact"), (234, 924), "box_exact's are mostly not");
-    assert_eq!(gap("csg_difference"), (186, 798));
-    assert_eq!(
-        gap("sphere"),
-        (0, 18),
-        "sphere has no exact duplicate at all"
-    );
+    // **A-014h's acceptance, in the strongest form available**: on every field
+    // the three columns agree, so the extractor emits each vertex exactly once
+    // and a positional weld has nothing left to do. The gap M-180 measured --
+    // 690 of `box_exact`'s duplicates unreachable by any keying rule -- closed
+    // by canonicalising an endpoint root onto its grid point rather than by
+    // finding a cleverer key (M-184).
+    for &(name, (raw, exact, welded)) in &got_rows {
+        assert_eq!(
+            (raw, raw),
+            (exact, welded),
+            "{name}: identity-based sharing is no longer complete -- \
+             raw {raw}, distinct {exact}, welded {welded}"
+        );
+    }
 }
 
 /// **Where an endpoint root actually lands, and why `t == 0` is the wrong test
