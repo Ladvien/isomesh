@@ -16,8 +16,8 @@ use super::{MarchingCubesGpu, case_table_bytes};
 use crate::headless::Gpu;
 use crate::{FieldBuffer, GridParams, read_buffer, read_buffer_u32};
 
-fn gpu() -> Gpu {
-    Gpu::new().expect("a GPU adapter -- no software fallback, by design")
+fn gpu() -> &'static Gpu {
+    crate::headless::shared()
 }
 
 /// The CPU's answer on the same grid, for comparison.

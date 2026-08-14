@@ -157,5 +157,25 @@ impl Gpu {
     }
 }
 
+/// One device for the whole test binary.
+///
+/// Every test module used to open its own, and at 67 tests that exhausts the
+/// driver's adapters as soon as anything else on the machine is holding VRAM —
+/// **`request_adapter` starts returning nothing partway through the run and the
+/// remaining device tests fail with [`Error::NoAdapter`], while every one of
+/// them passes in isolation** (M-170).
+///
+/// Sharing is not a workaround, it is the more accurate harness: this crate's
+/// API takes `&wgpu::Device` and never opens one, so nothing under test wants a
+/// *fresh* device — only [`Gpu::new`] itself does, and `headless::tests` still
+/// calls it directly because testing device creation is its whole job.
+#[cfg(test)]
+pub(crate) fn shared() -> &'static Gpu {
+    static SHARED: std::sync::OnceLock<Gpu> = std::sync::OnceLock::new();
+    SHARED.get_or_init(|| {
+        Gpu::new().expect("a GPU adapter -- there is no software fallback, by design")
+    })
+}
+
 #[cfg(test)]
 mod tests;

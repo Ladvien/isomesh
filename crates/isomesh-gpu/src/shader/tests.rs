@@ -214,8 +214,7 @@ fn the_grid_module_declares_what_the_cpu_side_packs() {
 /// per-shader: it is the same path a real pipeline takes.
 #[test]
 fn the_grid_module_is_valid_wgsl_on_a_real_device() {
-    let gpu =
-        crate::headless::Gpu::new().expect("a GPU adapter -- no software fallback, by design");
+    let gpu = crate::headless::shared();
     let source = Composer::with_builtins()
         .compose("grid", &[])
         .expect("composes");

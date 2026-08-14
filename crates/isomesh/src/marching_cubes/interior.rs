@@ -162,6 +162,27 @@ impl<R: Real> SweptFaces<R> {
         self.numerator(t) / self.denominator(t)
     }
 
+    /// Where the cutting plane's saddle *sits*, in the plane's own `[0, 1]²`
+    /// coordinates.
+    ///
+    /// Custodio's Equation (1), with `A` at `(0, 0)`, `B` at `(1, 0)`, `C` at
+    /// `(1, 1)` and `D` at `(0, 1)` — so `A`/`C` are one diagonal and `B`/`D`
+    /// the other.
+    ///
+    /// **This is what makes the correction visible rather than merely provable.**
+    /// Their Figure 4 plots this path and calls it hyperbolic: it is a linear
+    /// function over `Δ(t)`, so as the sweep approaches [`pole`](Self::pole) the
+    /// saddle runs off to infinity and returns from the other side. A point that
+    /// leaves `[0, 1]²` has left the face, which is why the value there can
+    /// change sign without the numerator doing anything.
+    #[must_use]
+    pub fn saddle_position(&self, t: R) -> [R; 2] {
+        let s = R::ONE - t;
+        let v = |k: usize| self.lo[k] * s + self.hi[k] * t;
+        let d = self.denominator(t);
+        [(v(0) - v(3)) / d, (v(0) - v(1)) / d]
+    }
+
     /// Where the saddle value has its pole, if that is inside the sweep.
     ///
     /// `Δ` is linear and non-zero at both ends, so it has a root in `(0, 1)`

@@ -91,6 +91,44 @@ fn the_numerator_alone_reads_a_joined_cell_as_separated() {
 }
 
 #[test]
+fn the_saddle_position_is_where_the_bilinear_gradient_vanishes() {
+    // A saddle is a critical point, so the bilinear function's two partial
+    // derivatives must both be zero there -- checked rather than trusted,
+    // because Equation (1) is transcribed geometry and a swapped coordinate
+    // would still look plausible.
+    //
+    // On the unit square with A at (0,0), B at (1,0), C at (1,1), D at (0,1):
+    //   f(u,v) = A(1-u)(1-v) + Bu(1-v) + Cuv + D(1-u)v
+    let faces = opposed();
+    for step in 0..=20 {
+        let t = f64::from(step) / 20.0;
+        if faces.pole() == Some(t) {
+            continue;
+        }
+        let s = 1.0 - t;
+        let c = |k: usize| faces.lo[k] * s + faces.hi[k] * t;
+        let (a, b, cc, d) = (c(0), c(1), c(2), c(3));
+        let [u, v] = faces.saddle_position(t);
+
+        let df_du = -a * (1.0 - v) + b * (1.0 - v) + cc * v - d * v;
+        let df_dv = -a * (1.0 - u) - b * u + cc * u + d * (1.0 - u);
+        let scale = (a.abs() + b.abs() + cc.abs() + d.abs()).max(1.0);
+        assert!(
+            df_du.abs() <= 1e-9 * scale && df_dv.abs() <= 1e-9 * scale,
+            "t = {t}: gradient at the saddle is ({df_du}, {df_dv}), not zero"
+        );
+
+        // And the value there is the one `saddle` reports.
+        let f = a * (1.0 - u) * (1.0 - v) + b * u * (1.0 - v) + cc * u * v + d * (1.0 - u) * v;
+        assert!(
+            (f - faces.saddle(t)).abs() <= 1e-9 * scale,
+            "t = {t}: bilinear at the saddle is {f}, saddle() says {}",
+            faces.saddle(t)
+        );
+    }
+}
+
+#[test]
 fn without_a_pole_the_correction_changes_nothing() {
     // Where the denominator keeps one sign the quotient's sign is the
     // numerator's, up to that constant sign -- so the correction can only

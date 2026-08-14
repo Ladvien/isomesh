@@ -8,7 +8,6 @@
 #![allow(clippy::float_cmp)]
 
 use super::MeshShaderRenderer;
-use crate::headless::Gpu;
 use crate::{Composer, Error};
 
 /// The acceptance criterion, on the device this crate can build.
@@ -16,7 +15,7 @@ use crate::{Composer, Error};
 /// An error value, not an abort, and not a silently different pipeline.
 #[test]
 fn an_unsupported_device_is_refused_rather_than_crashed() {
-    let gpu = Gpu::new().expect("a GPU adapter -- no software fallback, by design");
+    let gpu = crate::headless::shared();
 
     assert!(
         !MeshShaderRenderer::is_supported(gpu.device()),

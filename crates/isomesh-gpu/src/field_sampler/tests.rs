@@ -11,8 +11,8 @@ use super::{FieldSampler, GpuField};
 use crate::headless::Gpu;
 use crate::{GridParams, read_buffer};
 
-fn gpu() -> Gpu {
-    Gpu::new().expect("a GPU adapter -- no software fallback, by design")
+fn gpu() -> &'static Gpu {
+    crate::headless::shared()
 }
 
 /// How one field's GPU evaluation compares with `isomesh`'s.
@@ -98,7 +98,7 @@ fn the_gpu_field_matches_the_cpu_within_a_measured_bound() {
         "field", "bit-exact", "of", "worst abs", "ulps"
     );
     for field in GpuField::ALL {
-        let d = measure(&gpu, &sampler, field, grid);
+        let d = measure(gpu, &sampler, field, grid);
         println!(
             "{:<12} {:>10} {:>8} {:>12.3e} {:>8}   worst at {:?}",
             field.name(),
@@ -138,7 +138,7 @@ fn no_field_agrees_with_libm_bit_for_bit() {
     let grid = GridParams::new([33; 3], [-2.0; 3], 0.125).expect("grid");
 
     for field in GpuField::ALL {
-        let d = measure(&gpu, &sampler, field, grid);
+        let d = measure(gpu, &sampler, field, grid);
         assert!(
             d.exact < d.total,
             "{} now agrees with libm on all {} samples -- the GPU/CPU divergence \
@@ -167,7 +167,7 @@ fn the_field_of_exact_operations_is_the_closest() {
     let sampler = FieldSampler::new(gpu.device()).expect("pipeline");
     let grid = GridParams::new([33; 3], [-2.0; 3], 0.125).expect("grid");
 
-    let boxed = measure(&gpu, &sampler, GpuField::BoxExact, grid);
+    let boxed = measure(gpu, &sampler, GpuField::BoxExact, grid);
     assert_eq!(
         boxed.worst_ulps, 1,
         "box_exact's worst deviation is {} ULPs, not 1 -- its arithmetic is \
@@ -176,7 +176,7 @@ fn the_field_of_exact_operations_is_the_closest() {
     );
 
     for other in [GpuField::Sphere, GpuField::Torus, GpuField::Gyroid] {
-        let d = measure(&gpu, &sampler, other, grid);
+        let d = measure(gpu, &sampler, other, grid);
         assert!(
             d.exact < boxed.exact,
             "{} matches on {} samples, box_exact on {} -- box_exact should be \
@@ -367,7 +367,7 @@ fn every_brush_op_matches_the_cpu_fold() {
         (GpuOp::SmoothAdd { k: 0.0 }, "smooth_add k=0"),
     ] {
         check_stack(
-            &gpu,
+            gpu,
             &sampler,
             GpuField::BoxExact,
             &[GpuBrush { shape, op }],
@@ -417,7 +417,7 @@ fn every_brush_shape_matches_the_cpu() {
         ),
     ] {
         check_stack(
-            &gpu,
+            gpu,
             &sampler,
             GpuField::Sphere,
             &[GpuBrush {
@@ -467,7 +467,7 @@ fn a_mixed_log_matches_the_cpu_in_order() {
         log.push(GpuBrush { shape, op });
     }
 
-    check_stack(&gpu, &sampler, GpuField::Gyroid, &log, "12-brush mixed log");
+    check_stack(gpu, &sampler, GpuField::Gyroid, &log, "12-brush mixed log");
 }
 
 /// An empty log is the base field, unchanged.

@@ -10,8 +10,8 @@ use super::{PrefixScan, cpu_prefix_sum};
 use crate::headless::Gpu;
 use crate::read_buffer_u32;
 
-fn gpu() -> Gpu {
-    Gpu::new().expect("a GPU adapter -- no software fallback, by design")
+fn gpu() -> &'static Gpu {
+    crate::headless::shared()
 }
 
 /// Upload `counts` as a storage buffer.
@@ -65,7 +65,7 @@ fn a_single_block_matches_the_cpu() {
     let gpu = gpu();
     let scan = PrefixScan::new(gpu.device()).expect("pipelines");
     let counts: Vec<u32> = (0..200).map(|i| (i % 7) as u32).collect();
-    assert_eq!(check(&gpu, &scan, &counts, "200 elements"), 1);
+    assert_eq!(check(gpu, &scan, &counts, "200 elements"), 1);
 }
 
 /// Exactly one full block, where the partial-tail handling is not exercised and
@@ -75,7 +75,7 @@ fn exactly_one_full_block_matches_the_cpu() {
     let gpu = gpu();
     let scan = PrefixScan::new(gpu.device()).expect("pipelines");
     let counts: Vec<u32> = (0..PrefixScan::BLOCK).map(|i| i % 5).collect();
-    assert_eq!(check(&gpu, &scan, &counts, "256 elements"), 1);
+    assert_eq!(check(gpu, &scan, &counts, "256 elements"), 1);
 }
 
 /// Two levels, with a partial tail block — the ordinary case.
@@ -84,7 +84,7 @@ fn two_levels_with_a_partial_tail_match_the_cpu() {
     let gpu = gpu();
     let scan = PrefixScan::new(gpu.device()).expect("pipelines");
     let counts: Vec<u32> = (0..1000).map(|i| (i % 11) as u32).collect();
-    assert_eq!(check(&gpu, &scan, &counts, "1000 elements"), 2);
+    assert_eq!(check(gpu, &scan, &counts, "1000 elements"), 2);
 }
 
 /// Three levels, which is what a 129³ extraction actually uses.
@@ -98,7 +98,7 @@ fn three_levels_match_the_cpu() {
     let scan = PrefixScan::new(gpu.device()).expect("pipelines");
     // 300_000 -> 1172 blocks -> 5 blocks -> 1.
     let counts: Vec<u32> = (0..300_000).map(|i| (i % 13) as u32).collect();
-    assert_eq!(check(&gpu, &scan, &counts, "300k elements"), 3);
+    assert_eq!(check(gpu, &scan, &counts, "300k elements"), 3);
 }
 
 /// The degenerate inputs, which is where a scan usually breaks.
@@ -107,10 +107,10 @@ fn degenerate_inputs_match_the_cpu() {
     let gpu = gpu();
     let scan = PrefixScan::new(gpu.device()).expect("pipelines");
 
-    check(&gpu, &scan, &[0], "one zero");
-    check(&gpu, &scan, &[7], "one element");
-    check(&gpu, &scan, &vec![0u32; 1000], "all zeros");
-    check(&gpu, &scan, &vec![1u32; 1000], "all ones");
+    check(gpu, &scan, &[0], "one zero");
+    check(gpu, &scan, &[7], "one element");
+    check(gpu, &scan, &vec![0u32; 1000], "all zeros");
+    check(gpu, &scan, &vec![1u32; 1000], "all ones");
     // A block boundary landing exactly on the end, one past, and one short.
     for n in [
         PrefixScan::BLOCK - 1,
@@ -119,7 +119,7 @@ fn degenerate_inputs_match_the_cpu() {
         PrefixScan::BLOCK * PrefixScan::BLOCK,
     ] {
         let counts: Vec<u32> = (0..n).map(|i| i % 3).collect();
-        check(&gpu, &scan, &counts, &format!("{n} elements"));
+        check(gpu, &scan, &counts, &format!("{n} elements"));
     }
 }
 
@@ -139,7 +139,7 @@ fn a_realistic_sparse_distribution_matches_the_cpu() {
             if on_surface { (i % 5) + 1 } else { 0 }
         })
         .collect();
-    check(&gpu, &scan, &counts, "sparse shell");
+    check(gpu, &scan, &counts, "sparse shell");
 }
 
 /// The CPU reference is only worth comparing against if it is obviously right.

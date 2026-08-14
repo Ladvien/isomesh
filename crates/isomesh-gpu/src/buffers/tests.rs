@@ -16,8 +16,8 @@ use super::{FieldBuffer, read_buffer};
 use crate::headless::Gpu;
 use crate::{Error, GridParams};
 
-fn gpu() -> Gpu {
-    Gpu::new().expect("a GPU adapter -- this crate has no software fallback, by design")
+fn gpu() -> &'static Gpu {
+    crate::headless::shared()
 }
 
 /// The round trip that everything above this depends on: CPU field in, GPU
