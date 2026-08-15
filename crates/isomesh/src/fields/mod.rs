@@ -746,6 +746,58 @@ impl<A: Sdf, B: Sdf<Scalar = A::Scalar>> Sdf for Intersection<A, B> {
     }
 }
 
+/// A field that knows what its own values are worth.
+///
+/// Ticket: F-003. Separate from [`ReferenceField`] because that trait is about
+/// *test fixtures* — it also demands a domain, a closedness flag and an expected
+/// Euler characteristic, none of which a composed field has any business
+/// answering. This asks one question, so a CSG node can answer it from its
+/// operands.
+///
+/// # What composes and what does not
+///
+/// **The Lipschitz constant composes, exactly.** `min` and `max` of an
+/// `l₁`-Lipschitz and an `l₂`-Lipschitz function is `max(l₁, l₂)`-Lipschitz:
+/// each is selected pointwise, so the result's rate of change is never more than
+/// the faster operand's. That is what makes a sphere tracer's step size survive
+/// an arbitrary CSG tree, and it is the half Phase 12 needs.
+///
+/// **Exactness does not compose, and no `q` is invented here.** Bálint, Valasek
+/// & Gergó's 2023 follow-up is explicit that the minimum of two exact SDFs *"is
+/// not an exact SDF, and the error can be arbitrarily large under certain
+/// conditions"*, and their Theorem 6 quantifies the survivor as
+/// `¼ · σ(δ)/diam · min(q_f, q_g)` — where `σ` is a **set-contact smoothness**
+/// depending on how the two solids meet. This crate does not compute `σ`, so it
+/// does not report a `q` for a composed field: a number derived from a factor
+/// nobody evaluated is a guess with a citation attached, which is what rule 5
+/// forbids. A composed field reports the Lipschitz constant it can prove and
+/// stops there.
+pub trait BoundedSdf: Sdf {
+    /// What this field's values are worth. See [`FieldBound`].
+    fn value_bound(&self) -> FieldBound;
+}
+
+/// The bound of a `min`/`max` composition of two fields.
+///
+/// One definition, shared by all four combinators, because the rule is the same
+/// for every one of them and four copies would drift.
+///
+/// - Any operand [`Unbounded`](FieldBound::Unbounded) makes the result so:
+///   nothing can be claimed about a value composed from a value nothing is
+///   claimed about.
+/// - Otherwise the result is [`Lipschitz`](FieldBound::Lipschitz) at
+///   `max(l_a, l_b)`, **including when both operands are exact** — that
+///   downgrade is the point, not an oversight.
+#[must_use]
+pub fn composed_bound(a: FieldBound, b: FieldBound) -> FieldBound {
+    match (a.lipschitz(), b.lipschitz()) {
+        (Some(la), Some(lb)) => FieldBound::Lipschitz {
+            l: if la > lb { la } else { lb },
+        },
+        _ => FieldBound::Unbounded,
+    }
+}
+
 /// Set union `a ∪ b`, as `min(f_a, f_b)`.
 ///
 /// The combinator the crate went without until E-216 needed it, and the absence
@@ -1334,3 +1386,90 @@ impl<R: Real> ReferenceField for FbmTerrain<R> {
 
 #[cfg(test)]
 mod tests;
+
+impl<R: Real> BoundedSdf for Sphere<R> {
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Exact
+    }
+}
+
+impl<R: Real> BoundedSdf for Torus<R> {
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Exact
+    }
+}
+
+impl<R: Real> BoundedSdf for BoxExact<R> {
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Exact
+    }
+}
+
+impl<R: Real> BoundedSdf for ThinPlate<R> {
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Exact
+    }
+}
+
+impl<R: Real> BoundedSdf for Gyroid<R> {
+    /// `2√3` per axis-scale — derived on [`CappedGyroid`]'s
+    /// [`bound`](ReferenceField::bound).
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Lipschitz {
+            l: 3.464_101_615_137_754_6 * self.scale.as_f64().abs(),
+        }
+    }
+}
+
+impl<A: BoundedSdf, B: BoundedSdf<Scalar = A::Scalar>> BoundedSdf for Union<A, B> {
+    fn value_bound(&self) -> FieldBound {
+        composed_bound(self.a.value_bound(), self.b.value_bound())
+    }
+}
+
+impl<A: BoundedSdf, B: BoundedSdf<Scalar = A::Scalar>> BoundedSdf for Intersection<A, B> {
+    fn value_bound(&self) -> FieldBound {
+        composed_bound(self.a.value_bound(), self.b.value_bound())
+    }
+}
+
+impl<A: BoundedSdf, B: BoundedSdf<Scalar = A::Scalar>> BoundedSdf for Difference<A, B> {
+    /// Negating an operand cannot change how fast it moves, so subtraction
+    /// composes exactly as intersection does.
+    fn value_bound(&self) -> FieldBound {
+        composed_bound(self.a.value_bound(), self.b.value_bound())
+    }
+}
+
+impl<A: BoundedSdf, B: BoundedSdf<Scalar = A::Scalar>> BoundedSdf for SmoothUnion<A, B, A::Scalar> {
+    /// The blend never moves faster than the operands it interpolates between:
+    /// `smooth_min` is a convex combination of `a` and `b` less a non-negative
+    /// term, so its gradient is bounded by the larger operand's.
+    fn value_bound(&self) -> FieldBound {
+        composed_bound(self.a.value_bound(), self.b.value_bound())
+    }
+}
+
+impl<R: Real> BoundedSdf for NoiseVolume<R> {
+    /// Unbounded: the constant is derivable from the noise's amplitude and
+    /// octaves and has not been derived, and a sampled maximum would be unsound
+    /// in the dangerous direction (M-244).
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Unbounded
+    }
+}
+
+impl<R: Real> BoundedSdf for FbmTerrain<R> {
+    /// Unbounded. A heightfield's value is a vertical distance, and fbm has no
+    /// slope bound worth asserting.
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Unbounded
+    }
+}
+
+impl<R: Real> BoundedSdf for crate::brush::Capsule<R> {
+    /// Exact. Distance to a segment, which is a true distance in both regions.
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Exact
+    }
+}

@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**146 tickets archived, 25 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**147 tickets archived, 24 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -221,7 +221,6 @@ provably correct under unlimited player editing.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **F-003** | **CSG combinators that propagate the bound.** `Union`, `Intersection`, `Difference`, `SmoothUnion` each computing their result's `FieldBound` from their operands' — the algebra from F-001's source. Ricci 1973 (`10.1093/comjnl/16.2.157`) is the origin of min/max CSG and is on the hand-acquisition list. **Acceptance:** composing two `Exact` fields with `min` yields a declared bound that F-002 confirms; the same with `max` yields a strictly weaker one, and the test asserts the asymmetry rather than treating the two as equivalent. | M | F-002 |
 | ☐ | **F-004** | **Measure how fast the distance property degrades under repeated CSG. Original contribution — no paper measures this.** Apply *N* random sphere subtractions to an analytic box; sample `‖∇f‖` over a grid; plot the distribution against *N*. Sits alongside the manifold and self-intersection metrics as a recorded field-quality number. **Acceptance:** a curve, in `docs/measurements/`, and a plain answer to *"after how many brush strokes is the field no longer usable as a distance?"* — which is the question a destructible game actually needs answered and nobody has. | M | F-003 |
 
 ---

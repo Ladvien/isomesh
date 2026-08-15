@@ -557,3 +557,164 @@ fn the_csg_field_does_not_claim_to_be_a_distance() {
     // Phase 12's empty-cell rejection needs.
     assert_eq!(f.bound().lipschitz(), Some(1.0));
 }
+
+/// **How far `min` and `max` are from the true distance, measured against
+/// analytic ground truth (F-003).**
+///
+/// The ticket predicted an asymmetry — that `min` of two exact fields yields a
+/// bound F-002 confirms and `max` yields *"a strictly weaker one"* — and asked
+/// for the test to assert it rather than treat the two as equivalent. So this
+/// measures both against a distance computed in closed form, rather than
+/// assuming which direction the asymmetry runs.
+///
+/// Ground truth for two spheres is exact and cheap: the distance to the union of
+/// two balls, and to their intersection, both have closed forms for the
+/// configuration used here — a point's distance to a ball is `|p − c| − r`, and
+/// for two overlapping balls the union's boundary is the near part of each
+/// sphere while the intersection's is the far part.
+#[test]
+fn min_and_max_are_both_inexact_and_the_asymmetry_is_by_region() {
+    use super::{Intersection, Sphere, Union};
+
+    let a = Sphere {
+        center: [-0.35, 0.0, 0.0],
+        radius: 0.8_f64,
+    };
+    let b = Sphere {
+        center: [0.35, 0.0, 0.0],
+        radius: 0.8_f64,
+    };
+    let union = Union { a, b };
+    let inter = Intersection { a, b };
+
+    // Worst relative shortfall of the composed value against the true distance,
+    // split by region. `min`/`max` never overestimate here, so the interesting
+    // number is how far they fall short.
+    let mut union_outside = 0.0f64;
+    let mut union_inside = 0.0f64;
+    let mut inter_outside = 0.0f64;
+    let mut inter_inside = 0.0f64;
+
+    let n = 40;
+    for i in 0..n {
+        for j in 0..n {
+            for k in 0..n {
+                let t = |v: i32| -1.6 + 3.2 * (f64::from(v) + 0.5) / f64::from(n);
+                let p = [t(i), t(j), t(k)];
+                let (fa, fb) = (a.sample(p), b.sample(p));
+
+                // Union: outside both, the true distance to A ∪ B is exactly
+                // min(d_a, d_b) -- the nearest surface is the nearest surface.
+                // Inside, the value is the distance to the *nearer* boundary,
+                // which may be an interior surface that the union removed.
+                let u = union.sample(p);
+                if fa > 0.0 && fb > 0.0 {
+                    union_outside = union_outside.max((u - fa.min(fb)).abs());
+                } else {
+                    // True distance to the union's boundary from inside: the
+                    // point is inside at least one ball, and the boundary of the
+                    // union is whichever sphere it is nearer to *from within the
+                    // union*, which is the larger of the two signed values.
+                    let truth = fa.max(fb);
+                    union_inside = union_inside.max((truth - u).abs());
+                }
+
+                // Intersection is the mirror image: exact inside, degraded
+                // outside.
+                let x = inter.sample(p);
+                if fa < 0.0 && fb < 0.0 {
+                    inter_inside = inter_inside.max((x - fa.max(fb)).abs());
+                } else {
+                    let truth = fa.min(fb);
+                    inter_outside = inter_outside.max((truth - x).abs());
+                }
+            }
+        }
+    }
+
+    std::println!(
+        "measured: union  outside {union_outside:.3e}  inside {union_inside:.3e}\n\
+         measured: inter  inside  {inter_inside:.3e}  outside {inter_outside:.3e}"
+    );
+
+    // **Union is exact outside and intersection is exact inside**, to rounding.
+    // That is the region each operator gets right.
+    assert!(
+        union_outside < 1e-12,
+        "min is not exact outside the union: {union_outside:e}"
+    );
+    assert!(
+        inter_inside < 1e-12,
+        "max is not exact inside the intersection: {inter_inside:e}"
+    );
+
+    // **And each is wrong in the other region, by a comparable amount.** The
+    // ticket expected `min` to be strictly better than `max`; it is not. They
+    // are mirror images, and the asymmetry is by *region* rather than by
+    // operator (M-246).
+    assert!(
+        union_inside > 1e-3,
+        "min was expected to lose accuracy inside the union"
+    );
+    assert!(
+        inter_outside > 1e-3,
+        "max was expected to lose accuracy outside the intersection"
+    );
+    let ratio = union_inside / inter_outside;
+    assert!(
+        (0.5..2.0).contains(&ratio),
+        "one operator is much worse than the other ({ratio:.3}), which would make \
+         the ticket's 'strictly weaker' prediction right after all"
+    );
+}
+
+/// **A composed bound is what the combinator can prove, not what its operands
+/// were (F-003).**
+///
+/// Composing two `Exact` fields yields `Lipschitz { l: 1 }` — not `Exact`, and
+/// not an `Underestimate` with an invented `q`. That downgrade is the ticket's
+/// substance: exactness does not survive `min`/`max`, the Lipschitz constant
+/// does, and the precision `q` needs a set-contact factor this crate does not
+/// compute.
+#[test]
+fn composing_exact_fields_keeps_the_constant_and_loses_exactness() {
+    use super::{BoundedSdf, Difference, FieldBound, Intersection, SmoothUnion, Sphere, Union};
+
+    let a = Sphere::<f64>::canonical();
+    let b = Sphere {
+        center: [0.5; 3],
+        radius: 0.6_f64,
+    };
+    assert_eq!(a.value_bound(), FieldBound::Exact);
+
+    for (name, bound) in [
+        ("union", Union { a, b }.value_bound()),
+        ("intersection", Intersection { a, b }.value_bound()),
+        ("difference", Difference { a, b }.value_bound()),
+        ("smooth_union", SmoothUnion { a, b, k: 0.2 }.value_bound()),
+    ] {
+        assert_eq!(
+            bound,
+            FieldBound::Lipschitz { l: 1.0 },
+            "{name} should keep the constant and lose exactness"
+        );
+        assert!(!bound.is_exact(), "{name} must not claim to be a distance");
+        assert_eq!(bound.lipschitz(), Some(1.0), "{name} lost its step size");
+    }
+
+    // An unbounded operand poisons the composition, because nothing can be
+    // claimed about a value composed from one nothing is claimed about.
+    let noisy = super::Gyroid::<f64>::canonical();
+    assert!(matches!(
+        Union { a, b: noisy }.value_bound(),
+        FieldBound::Lipschitz { .. }
+    ));
+    assert_eq!(
+        Union {
+            a,
+            b: super::FbmTerrain::<f64>::canonical()
+        }
+        .value_bound(),
+        FieldBound::Unbounded
+    );
+}

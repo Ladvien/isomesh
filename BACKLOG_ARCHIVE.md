@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-146 tickets. Line numbers are stable until something above them is edited — grep the ID if
+147 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -70,6 +70,7 @@ implementation contradicted the ticket.
 | [`T-014`](#L862) | Cross-machine protocol, and provenance inside the file |
 | [`F-001`](#L870) | FieldBound — the declaration a bool could not hold |
 | [`F-002`](#L878) | The bound validator, and what eikonal cannot see |
+| [`F-003`](#L886) | Composed bounds, and the asymmetry that is by region |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -854,3 +855,8 @@ implementation contradicted the ticket.
 | | | ***It found something that justifies F-001's shape (M-245).*** `csg_difference` measures **100% eikonal** while not being a distance: away from the seam the active operand *is* an exact distance, and the seam is measure-zero. **So `|∇f| ≈ 1` is necessary and not sufficient**, and the obvious single-number validator — check the field is eikonal — would have passed the exact field this phase exists because of. That is why `FieldBound` carries `l` and `q` separately, and it is now asserted rather than argued. |
 | | | ***The acceptance is that a tightened declaration fails.*** `tightening_a_declaration_by_one_step_is_caught` replaces each field's real bound with the next tighter one and requires the report to catch it — three fields tightened and caught, five already at their tightest, both counts asserted so the test cannot quietly stop testing anything. |
 | | | *The census is recorded because it is interesting in its own right: sup `‖∇f‖` and eikonal fraction are 1.000/100% for the four exact fields and for `csg_difference`, 1.727/67.0% for gyroid, 2.850/11.7% for fbm_terrain, and 7.748/85.6% for noise_cavity — whose pairing of a high eikonal fraction with a gradient reaching 7.7 is a second way the fraction alone misleads.* |
+| ☑ | **F-003** | **CSG combinators that propagate the bound.** | M | F-002 |
+| | | ***The ticket's prediction is refuted, with numbers (M-246).*** It expected `min` of two exact fields to yield a bound F-002 confirms and `max` to yield *"a strictly weaker one"*. Measured against closed-form ground truth over 64,000 points: **union is exact outside (0.000e0) and wrong inside by 6.989e-1; intersection is exact inside (0.000e0) and wrong outside by 6.995e-1** — a ratio of 0.999. They are mirror images. There *is* an asymmetry and it is by **region**, not by operator. |
+| | | ***What composes is the Lipschitz constant; what does not is exactness, and no `q` is invented.*** `min`/`max` of an `l₁`- and an `l₂`-Lipschitz function is `max(l₁,l₂)`-Lipschitz, exactly, which is what keeps a sphere tracer's step size valid through an arbitrary CSG tree. Precision does not: Bálint, Valasek & Gergó's Theorem 6 gives the survivor as `¼·σ(δ)/diam·min(q_f,q_g)`, where `σ` is a **set-contact smoothness** depending on how the solids meet. This crate does not compute `σ`, so a composed field reports `Lipschitz` and stops — a number derived from a factor nobody evaluated is a guess with a citation attached. |
+| | | ***`BoundedSdf` is separate from `ReferenceField` on purpose.*** That trait is about test fixtures and also demands a domain, a closedness flag and an expected Euler characteristic, none of which a CSG node has any business answering. The new trait asks one question, so a combinator can answer it from its operands — and `composed_bound` is one definition shared by all four, because the rule is identical and four copies would drift. |
+| | | *An `Unbounded` operand poisons the composition, asserted: nothing can be claimed about a value composed from a value nothing is claimed about.* |
