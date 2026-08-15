@@ -78,11 +78,13 @@ mod scan;
 mod shader;
 
 pub mod headless;
+pub mod jump_flood;
 
 pub use buffers::{FieldBuffer, read_buffer, read_buffer_u32, read_bytes, read_bytes_many};
 pub use error::{Error, Result};
 pub use field_sampler::{FieldSampler, GpuBrush, GpuField, GpuOp, GpuShape};
 pub use grid::GridParams;
+pub use jump_flood::JumpFlood;
 pub use marching_cubes::{
     ExtractTimings, GpuGeometry, GpuMesh, IndirectGeometry, MarchingCubesGpu, case_table_bytes,
 };
@@ -90,7 +92,8 @@ pub use mesh_render::MeshShaderRenderer;
 pub use mesh_shader::{MeshShaderReport, probe_mesh_shaders};
 pub use scan::{DeferredScan, PrefixScan, ScanOutput, cpu_prefix_sum};
 pub use shader::{
-    Composer, FEATURES, FIELD_WGSL, GRID_WGSL, MARCHING_CUBES_WGSL, MESH_RENDER_WGSL, SCAN_WGSL,
+    Composer, FEATURES, FIELD_WGSL, GRID_WGSL, JUMP_FLOOD_WGSL, MARCHING_CUBES_WGSL,
+    MESH_RENDER_WGSL, SCAN_WGSL,
 };
 
 /// Compiles the README's example as a doctest, without putting the README into

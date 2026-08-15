@@ -1381,3 +1381,56 @@ one path; the bound is a parameter, not a second algorithm.
 
 The test asserts the share stays below 25% for the same reason M-255's assertion is on the total: a
 solve that quietly touched the whole grid would pass the drift check and defeat the ticket.
+
+### M-257 — the approximate GPU method beats both exact CPU ones (S-005)
+
+**M.** Jump flooding (Rong & Tan 2006, `10.1145/1111411.1111431`) against `construct::
+signed_distance_field` (S-001, "exact") and `construct::signed_distance_field_swept` (S-002), on the
+four reference fields whose analytic value is a distance, at 17³/33³/65³. Worst error against the
+**analytic** field, at 65³:
+
+| field | jump flood | swept | exact transform |
+|---|---|---|---|
+| `sphere` | **0.02048** | 0.09271 | 0.06250 |
+| `torus` | **0.02370** | 0.10527 | 0.06233 |
+| `box_exact` | **0.08839** | 0.15861 | 0.10825 |
+| `thin_plate` | **0.06250** | 0.19221 | 0.08927 |
+
+The flood wins all twelve rows. `docs/measurements/jump_flood.csv`.
+
+**Why, and why it is not a paradox.** "Exact" in S-001 means exact to the nearest *sample*, so it
+quantises every distance to the grid — its error is pinned at exactly `h/4` on `sphere` and
+`box_exact` at every resolution, which is the signature of quantisation rather than of algorithm.
+The sweep is exact in the limit but its Godunov update is first-order. The flood is seeded from the
+same sub-cell crossings the sweep uses and then measures a **true Euclidean distance** to that seed,
+so on these fields the sub-cell seeding buys more than the 27-offset lattice restriction costs.
+
+**So the ticket's stated acceptance was the wrong assertion, and it took two failures to see it.**
+S-005 asks for "error against S-001". Written literally, the gate asserts the flood *agree* with a
+CPU constructor — which asserts it reproduce that constructor's error. Both attempts failed on that
+basis while the flood was the most accurate of the three:
+
+- against S-001: `sphere` at 17³ disagreed by a full cell (0.250) while sitting 0.082 from truth
+  against the transform's 0.250.
+- against S-002: `thin_plate` at 17³ disagreed by 0.523 cells while sitting 0.250 from truth against
+  the sweep's 0.407.
+
+The gate is `flood_err <= xform_err && flood_err <= swept_err`, against the analytic field. The
+agreement figures stay recorded, because *how far the GPU and CPU paths drift apart* is a real
+question for a consumer meshing on one and colliding on the other — it is just not a correctness
+bound.
+
+**Rule 5 note.** The seeding is a deliberate departure from the paper, stated rather than slipped in:
+Rong & Tan seed each boundary *sample* with its own position. Seeding the interpolated crossing is
+what makes the comparison measure the flood rather than the seeding, and it is why these numbers do
+not transfer to a textbook JFA implementation.
+
+### M-258 — a `u32` followed by `vec3<u32>` is 32 bytes, not 16 (S-005)
+
+**V + M.** std140 aligns `vec3<u32>` to 16, so `struct { stride: u32, pad: vec3<u32> }` puts the pad
+at offset 16 and the struct is **32 bytes**. Sizing the uniform buffer at 16 produced
+*"the buffer bound at binding index 1 is bound with size 16 where the shader expects 32"* — caught by
+wgpu, but only at dispatch, not at pipeline creation. `struct { stride: vec4<u32> }` with `.x` used
+is 16 and says the same thing. The existing `GridParams` shader header already carried this rule in
+prose ("two vec4s rather than a struct of scalars so std140 and std430 agree"); it was not followed
+in the new file.

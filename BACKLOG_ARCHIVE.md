@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-155 tickets. Line numbers are stable until something above them is edited — grep the ID if
+156 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -915,3 +915,17 @@ the whole volume — fast sweeping visits every sample on every pass whatever it
 because the first dequeued value past the limit proves every remaining one is too. **4,802 of 35,937 samples finalised
 — 13.4%**, and the test asserts that share stays under 25%. `march()` gained a `limit`; the unbounded constructor
 passes `far()`, so there is one implementation. |
+| ☑ | **S-005** | **Jump flooding**, GPU. Approximate, `O(log n)` passes, the standard GPU answer. Lives in `isomesh-gpu`. **Acceptance:** error against S-001 quantified rather than assumed; "approximate" is a measurement, not an adjective. | M | S-001, GPU-001 |
+| | | ***The acceptance as written was the wrong assertion, and it failed twice before that was clear (M-257).*** "Error
+against S-001" taken literally asserts the flood *agree* with a CPU constructor, which asserts it reproduce that
+constructor's error — S-001's quantisation to the nearest sample, or S-002's first-order Godunov truncation. Both gates
+failed while the flood was **the most accurate of the three against the analytic field, on all twelve rows**. The gate
+is `flood_err <= xform_err && flood_err <= swept_err` against ground truth; the agreement figures stay recorded,
+because GPU-versus-CPU drift is a real question for a consumer meshing on one and colliding on the other. |
+| | | ***Seeded from the crossing, not the sample, and said so.*** Rong & Tan seed each boundary sample with its own
+position. That floors the error at half a cell and would have made the comparison a comparison of seedings. Seeding the
+interpolated crossing is why these numbers do not transfer to a textbook JFA — noted under rule 5 rather than left for
+someone to rediscover. |
+| | | ***M-258:*** `struct { stride: u32, pad: vec3<u32> }` is **32** bytes under std140, not 16, and wgpu reports it at
+dispatch rather than at pipeline creation. `grid.wgsl` already carried the rule in prose and the new file did not
+follow it. |
