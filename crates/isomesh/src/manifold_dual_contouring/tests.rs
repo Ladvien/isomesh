@@ -622,3 +622,77 @@ fn the_self_intersection_count_is_recorded() {
         }
     });
 }
+
+/// **A-017's characterisation, and it rules out the two explanations the ticket
+/// offered.**
+///
+/// Manifold Dual Contouring is not manifold on `noise_cavity`. The ticket asked
+/// whether that is a defect in this crate's construction or the published
+/// guarantee not covering a cell whose interior the trilinear interpolant joins.
+/// Measured, it is **neither, because it is not about tunnels at all** (M-224):
+///
+/// - **Only one** offending edge in each of 30 and 64 lies within `1.5h` of a
+///   tunnel cell, while **all** of them lie within `1.5h` of an *ambiguous* cell.
+///   The field has 193 and 502 ambiguous cells against 3 and 2 tunnels.
+/// - **Every** offending edge carries exactly **four faces, all four distinct** —
+///   no threes, no fives, and no duplication. Four distinct triangles on one edge
+///   is two sheets meeting along it, which is a genuine junction rather than the
+///   double-emission ✗17 found behind Marching Cubes' fan chords.
+/// - It survives the **correct** face rule. Under `AsymptoticDecider` the count
+///   falls from 30 to 8 at 17³ but does not reach zero — and the same setting
+///   *introduces* 3 offending edges on `gyroid` at 25³, where `Separate` gives
+///   none.
+///
+/// So the remaining hypothesis is about the quad walk around a crossed grid edge,
+/// not about interior topology and not about face pairing. Pinned here in both
+/// directions so that whatever A-017 eventually does has to move these numbers.
+#[test]
+fn the_manifold_dual_contouring_defect_is_four_distinct_faces_on_one_edge() {
+    use crate::validate::validate_features;
+    use alloc::collections::{BTreeMap, BTreeSet};
+
+    let field = crate::fields::noise_cavity::<f64>();
+    let mut rows = Vec::new();
+    for samples in [17u32, 33] {
+        let (mesh, h) = mesh_mdc(&field, samples);
+        let (_report, features) = validate_features(
+            &mesh.positions,
+            &mesh.indices,
+            &ValidateConfig::from_cell_size(h).expect("valid cell size"),
+        );
+        let offending: BTreeSet<(u32, u32)> = features.edges.iter().map(|e| (e[0], e[1])).collect();
+
+        let mut faces: BTreeMap<(u32, u32), usize> = BTreeMap::new();
+        let mut distinct: BTreeMap<(u32, u32), BTreeSet<[u32; 3]>> = BTreeMap::new();
+        for t in mesh.indices.chunks_exact(3) {
+            let mut key = [t[0], t[1], t[2]];
+            key.sort_unstable();
+            for k in 0..3 {
+                let (a, b) = (t[k], t[(k + 1) % 3]);
+                let e = (a.min(b), a.max(b));
+                if offending.contains(&e) {
+                    *faces.entry(e).or_insert(0) += 1;
+                    distinct.entry(e).or_default().insert(key);
+                }
+            }
+        }
+
+        for (e, n) in &faces {
+            assert_eq!(*n, 4, "edge {e:?} carries {n} faces, not four");
+            assert_eq!(
+                distinct[e].len(),
+                4,
+                "edge {e:?} carries {n} faces but only {} distinct triangles — \
+                 that would be duplication, which is a different defect",
+                distinct[e].len()
+            );
+        }
+        rows.push((samples, offending.len()));
+    }
+    assert_eq!(
+        rows,
+        alloc::vec![(17, 30), (33, 64)],
+        "the A-017 census moved"
+    );
+    std::println!("measured: A-017 offending edges {rows:?}, all four distinct faces");
+}
