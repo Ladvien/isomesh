@@ -186,3 +186,94 @@ fn the_eikonal_tolerance_is_loose_enough_to_survive_a_crease() {
         report.eikonal_fraction
     );
 }
+
+/// **A directional Lipschitz bound is tighter than the global one only where the
+/// global one is loose — which is nowhere, for four of the eight fields
+/// (F-006).**
+///
+/// Galin, Guérin, Paris & Peytavie, *Segment Tracing Using Local Lipschitz
+/// Bounds*, CGF 39(2) (`10.1111/cgf.13951`). Their method marches by a bound
+/// computed **along the ray** rather than over all directions, which admits
+/// larger safe steps.
+///
+/// # The prediction, written before the measurement
+///
+/// The paper states the condition for its own failure plainly: *"when the
+/// implicit objects have an almost uniform distribution of primitives and a
+/// uniform Lipschitz bound over their support Ω, the benefit is limited or
+/// negative in terms of speed."* **Four of this crate's eight fields are exactly
+/// that** — `sphere`, `torus`, `box_exact` and `thin_plate` are 1-Lipschitz
+/// everywhere, so a directional bound cannot be smaller than 1 either and there
+/// is nothing to win. F-006 says a null result is a finding; this is where it is
+/// recorded.
+///
+/// The gyroid is the case that can gain, and its directional bound is
+/// **derivable rather than sampled**: along a coordinate axis the directional
+/// derivative is a single partial, `|∂g/∂x| = |cos a cos b − sin c sin a| ≤ 2`,
+/// against the global `|∇g| ≤ 2√3`. A factor of `√3` tighter, exactly, with no
+/// estimation involved.
+#[test]
+fn a_directional_bound_helps_only_where_the_global_one_is_loose() {
+    use crate::Sdf;
+    use crate::fields::ReferenceField;
+
+    /// Steps a sphere tracer takes from `origin` along `+x`, marching by
+    /// `|f| / lambda`.
+    fn steps<F: Sdf<Scalar = f64>>(field: &F, origin: [f64; 3], lambda: f64, far: f64) -> u32 {
+        let mut t = 0.0;
+        for step in 0..4096u32 {
+            let p = [origin[0] + t, origin[1], origin[2]];
+            let d = field.sample(p).abs();
+            if d < 1e-4 {
+                return step;
+            }
+            t += (d / lambda).max(1e-6);
+            if t > far {
+                return step;
+            }
+        }
+        4096
+    }
+
+    crate::for_each_reference_field!(f64, |name, field| {
+        let Some(global) = field.bound().lipschitz() else {
+            return;
+        };
+        // Along a coordinate axis, only one partial contributes. For every field
+        // here except the gyroid the global bound is already 1 and cannot be
+        // beaten; for the gyroid the axis-aligned bound is 2 against 2√3.
+        let directional = if name == "gyroid" { 2.0 } else { global };
+
+        let (lo, hi) = field.domain();
+        let far = hi[0] - lo[0];
+        let mut total_global = 0u64;
+        let mut total_directional = 0u64;
+        for a in 0..6 {
+            for b in 0..6 {
+                let at = |v: i32, l: f64, h: f64| l + (h - l) * (f64::from(v) + 0.5) / 6.0;
+                let origin = [lo[0], at(a, lo[1], hi[1]), at(b, lo[2], hi[2])];
+                total_global += u64::from(steps(&field, origin, global, far));
+                total_directional += u64::from(steps(&field, origin, directional, far));
+            }
+        }
+        let gain = total_global as f64 / total_directional as f64;
+        std::println!(
+            "measured: {name:<16} global λ {global:>6.3}  directional {directional:>6.3}  \
+             steps {total_global:>6} → {total_directional:>6}  ({gain:.2}×)"
+        );
+
+        if (directional - global).abs() < 1e-12 {
+            // Nothing to win, and nothing lost: the two are the same march.
+            assert_eq!(
+                total_global, total_directional,
+                "{name}: identical bounds must produce identical marches"
+            );
+        } else {
+            assert!(
+                gain > 1.2,
+                "{name}: a √3-tighter bound bought only {gain:.2}×, so the tightness \
+                 is not where the cost is"
+            );
+        }
+    });
+}

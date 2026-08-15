@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-149 tickets. Line numbers are stable until something above them is edited — grep the ID if
+150 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -73,6 +73,7 @@ implementation contradicted the ticket.
 | [`F-003`](#L886) | Composed bounds, and the asymmetry that is by region |
 | [`F-004`](#L894) | CSG degradation — the tail collapses, the median does not |
 | [`F-005`](#L902) | Empty-cell rejection — one evaluation replaces 576 |
+| [`F-006`](#L910) | Segment tracing — the null result, and where it is not null |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -872,3 +873,7 @@ implementation contradicted the ticket.
 | | | ***A loose constant is taxed twice, which is a second reason F-001's had to be derived.*** The rejection radius is `l·(√3/2)·h`, so gyroid's `l = 3.46` inflates it by that factor and disqualifies cells a distance field would have rejected — the optimisation pays in proportion to emptiness and is charged for imprecision. |
 | | | ***Bit-identical output is the safety property, and it is checked rather than argued.*** A rejection test that is ever wrong produces a **hole**, and a hole is invisible to every validity gate in this repository: the mesh is simply missing a piece and stays perfectly manifold, closed and correctly oriented. `rejection_does_not_change_the_mesh` compares both paths byte for byte on every field with a constant. |
 | | | *`None` is the default and the only safe answer when the constant is unknown, which is why `without_a_constant_no_cell_is_rejected` pins that too. A constant smaller than the field's true one rejects cells containing surface — and M-244 is the incident where a hand-reasoned constant was wrong by 3× on the first attempt.* |
+| ☑ | **F-006** | **Segment tracing / enhanced sphere tracing.** | M | F-005 |
+| | | ***A null result on five fields of six, which is what the ticket asked to be told (M-249).*** Galin et al. state the condition for their own method's failure: *"when the implicit objects have an almost uniform distribution of primitives and a uniform Lipschitz bound over their support Ω, the benefit is limited or negative."* `sphere`, `torus`, `box_exact`, `csg_difference` and `thin_plate` are 1-Lipschitz **everywhere**, so no directional bound can be smaller than 1. Steps global → directional: 228 → 228, 360 → 360, 108 → 108, 108 → 108, 148 → 148 — **asserted as equality**, not as a small difference. |
+| | | ***The one field that can gain, gains 1.80×, and its bound is derived rather than sampled.*** Along a coordinate axis the gyroid's directional derivative is a single partial, `|∂g/∂x| = |cos a cos b − sin c sin a| ≤ 2`, against the global `|∇g| ≤ 2√3`. Steps **2184 → 1213** — slightly better than the 1.73× the bound ratio predicts, because fewer steps also accumulate less conservatism. |
+| | | *So the technique is worth exactly what a field's global bound is loose by. That is the sentence to carry forward: it is not a general acceleration, it is a correction for imprecise bounds, and an analytic distance primitive has none to correct.* |
