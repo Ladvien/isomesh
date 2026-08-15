@@ -50,6 +50,12 @@ pub mod brush;
 pub mod chunk;
 pub mod collider;
 pub mod dual_contouring;
+/// Speculative algorithms, behind the `experimental` feature.
+///
+/// Off by default, exempt from semver, and exempt from nothing else — see the
+/// module's own docs.
+#[cfg(feature = "experimental")]
+pub mod experimental;
 pub mod extractor;
 pub mod fields;
 pub mod greedy_quads;

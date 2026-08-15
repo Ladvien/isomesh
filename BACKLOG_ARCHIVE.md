@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-134 tickets. Line numbers are stable until something above them is edited — grep the ID if
+136 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -58,6 +58,8 @@ implementation contradicted the ticket.
 | [`T-012`](#L770) | FINDINGS.md's index, generated and gated |
 | [`X-001`](#L776) | One Extractor trait, one registry, and the gate on it |
 | [`X-002`](#L788) | The ablation seam — a type parameter, not a branch |
+| [`X-003`](#L796) | The experimental feature, with a real inhabitant |
+| [`X-004`](#L802) | Probabilistic quadrics reduce to our own solve |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -781,3 +783,13 @@ implementation contradicted the ticket.
 | | | ***The measurement is the acceptance, and both halves were pre-registered before the run (M-237).*** Symmetric Hausdorff at 65³ as a ratio of QEF to centroid: **sphere 0.486, torus 0.457, csg_difference 0.255, box_exact 0.010, thin_plate 0.010** — two-fold where the surface is smooth, hundred-fold where it has a feature. Self-intersections per 1,000 triangles at 33³: QEF **3.118 / 13.837 / 29.745** on gyroid, fbm_terrain and noise_cavity against centroid's **0.000** on all three. The QEF buys accuracy and pays for it entirely in self-intersection. |
 | | | ***What makes it a measurement of the rule rather than of two programs.*** Vertex, triangle and non-manifold-edge counts are **identical** between arms on every field at every resolution, so the rule provably does not reach the topology. `the_ablation_arms_differ_only_in_position` pins it behaviourally — 680 vertices, byte-identical index buffers, **all 680 positions different**. A `SurfaceNets`-versus-`DualContouring` comparison cannot say this: those are two structs with two `extract` methods, so any difference between them is a difference between two implementations. |
 | | | *"No `if` in the hot loop" is a type-system property rather than a measurement — a bound generic parameter is statically dispatched, so there is no value for the placement to test. The only way to lose it is `dyn`, so `the_ablation_arms_are_not_branches` asserts the dual path names no trait object.* |
+| ☑ | **X-003** | **An `experimental` feature and module.** | S | X-001 |
+| | | ***Landed with X-004 rather than alone, because an empty module is a stub and the rules forbid one.*** The feature exists because there is something to gate; `ProbabilisticQuadric` is its first and only inhabitant. |
+| | | ***The dependency acceptance is checked exactly rather than sampled.*** Instead of shelling out to `cargo tree`, `the_experimental_feature_adds_no_dependencies` asserts the `[features]` section is exactly `experimental = []` — a feature with an empty list *cannot* enable an optional dependency, since that is the only mechanism by which a feature adds one. `cargo tree -p isomesh -e normal` remains `isomesh + libm`. |
+| | | *"Exempt from semver and from nothing else" needed one CI change to be true: the module's tests only compile with the feature on, so without a `cargo test --features experimental` step they would have sat there looking like coverage and never run.* |
+| ☑ | **X-004** | **First ablation: Probabilistic Quadrics — which turn out to be the solve this crate already had.** | M | X-002 |
+| | | ***The ticket's premise is falsified, and the derivation is the result (M-238).*** X-004 said Trettner & Kobbelt *"supersedes the λ ≈ 0.01 regularizer"*. It does not — it **is** that regularizer. The paper's `A = Σnnᵀ + N·Σₙ`, `b = Σnnᵀq + Σₙ·Σq` rewritten in the centroid-relative coordinates this crate already solves in gives `(M + Nσ²I)Δ = Σnᵢdᵢ + σ²Σrᵢ`, and **`Σrᵢ ≡ 0` because the centroid is the mean of the crossings** — so the paper's extra term vanishes and what is left is `solve_with` at `λ = Nσ²`. |
+| | | ***Verified numerically before anything was built.*** A direct assembly of the paper's equations in world coordinates, sharing no line with the crate's solve, agrees to **1.110e-16 across 296 cells**. Measuring first is what turned an `M` implementation ticket into a one-line rule plus a proof. |
+| | | ***So no solver was written, on purpose.*** A `ProbabilisticQuadric` solver would be a second execution path computing numbers the existing path already computes — precisely what the one-path rule forbids. What shipped is the part that differs: the regularizer scales with the **crossing count**, where `Qef` applies one fixed λ to every cell. |
+| | | ***Measured on all eight fields at 65³.*** Hausdorff as a ratio of scaled to fixed: **1.0000 sphere, 0.9957 torus, 0.9992 csg_difference, 0.7519 box_exact, 0.7519 thin_plate** — never worse, **25% better on both sharp-feature fields**. Self-intersections per 1k at 33³ also fall: gyroid **3.118 → 2.551**, fbm_terrain **13.837 → 13.571**, noise_cavity **29.745 → 28.749**. *The two sharp fields improving by the identical 0.7519 is unexplained and is left recorded rather than rationalised.* |
+| | | *Two things about the paper that do not transfer, stated so nobody re-reads it hoping: its headline is robustness **without an SVD**, and this crate's solve never used one — it is a 3×3 adjugate (✗16). And its real novelty is **anisotropic** `Σₙ`, which needs a per-plane noise model that analytic fields with exact gradients do not have; inventing one so the formula had somewhere to put it would be fitting the data to the method.* |

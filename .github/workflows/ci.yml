@@ -124,6 +124,11 @@ jobs:
           fi
       - name: doc tests
         run: cargo test --workspace --doc
+      # X-003: the experimental module is exempt from semver and from nothing
+      # else. Its tests only compile with the feature on, so without this step
+      # they would sit there looking like coverage and never run.
+      - name: experimental feature
+        run: cargo test -p isomesh --features experimental --all-targets
 
   bevy:
     name: bevy_isomesh (separate workspace)

@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**134 tickets archived, 36 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**136 tickets archived, 34 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -168,8 +168,6 @@ O(N) edit across benches, property tests and examples instead of O(1).**
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **X-003** | **An `experimental` feature and module.** Speculative algorithms currently have nowhere to live but the stable public API. Gate them: `#[cfg(feature = "experimental")] pub mod experimental`, off by default, exempt from semver, and **exempt from nothing else** — T-001 validity, T-004 determinism and the property suite still apply. **Acceptance:** `cargo tree -p isomesh -e normal` is unchanged with the feature off — still `isomesh + libm` and nothing else; an experimental algorithm passes the full validity suite. | S | X-001 |
-| ☐ | **X-004** | **First ablation: Probabilistic Quadrics.** Trettner & Kobbelt `10.1111/cgf.13933` — **already in the corpus and invisible to `distill_search`**, found via `catalog_read`. It states outright that quadric minimisation *"is in many cases not robust and requires an SVD or some ad-hoc regularization"*, then derives a closed form solvable by a plain linear system, **50× faster than SVD**, demonstrated on isosurface extraction. **This supersedes the `λ ≈ 0.01` regularizer** taken from the adjacent-math audit. Measure against the current solve on all eight fields: Hausdorff, self-intersections per 1k, non-manifold edges, condition number, ms. **This is X-002's proof that the seam works, and a real improvement either way — a null result is also a finding.** | M | X-002 |
 
 ---
 

@@ -45,6 +45,8 @@ mod common;
 
 use isomesh::dual::VertexRule;
 use isomesh::dual_contouring::DualContouring;
+#[cfg(feature = "experimental")]
+use isomesh::experimental::ProbabilisticQuadric;
 use isomesh::fields::ReferenceField;
 use isomesh::surface_nets::Centroid;
 use isomesh::validate::{
@@ -120,6 +122,22 @@ fn main() {
                 &field,
                 "centroid",
                 &mut DualContouring::<Scalar, Centroid>::with_rule(Centroid),
+                samples,
+            ) {
+                print_row(&row);
+                rows.push(row);
+            }
+            // X-004's arm. Behind the feature because the rule is, and absent
+            // rather than stubbed when it is off — a row of zeros would be worse
+            // than a missing row, because it would average into the summary.
+            #[cfg(feature = "experimental")]
+            if let Some(row) = measure(
+                name,
+                &field,
+                "pq_scaled",
+                &mut DualContouring::<Scalar, ProbabilisticQuadric>::with_rule(
+                    ProbabilisticQuadric::default(),
+                ),
                 samples,
             ) {
                 print_row(&row);

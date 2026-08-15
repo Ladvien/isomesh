@@ -20,6 +20,16 @@ readme = "README.md"
 [lints]
 workspace = true
 
+[features]
+# Speculative algorithms, off by default and exempt from semver -- X-003.
+#
+# It adds no dependencies and is not meant to: `cargo tree -p isomesh -e normal`
+# is `isomesh + libm` with it on or off, which
+# `the_experimental_feature_adds_no_dependencies` checks. A feature that quietly
+# pulled in a dependency would break the crate's whole pitch for the consumers
+# who never enable it.
+experimental = []
+
 [dependencies]
 # The crate's only dependency. `core` has no sqrt/floor/sin/cos on stable, and
 # `libm` is used unconditionally rather than behind a `std` switch so there is
