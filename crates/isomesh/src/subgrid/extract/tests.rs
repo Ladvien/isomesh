@@ -2324,9 +2324,25 @@ fn whether_any_field_reaches_subdivision_on_a_grid() {
     // is the shape that does **not** work — it removes positions the reference
     // fields legitimately share, changing vertex order there for no gain
     // (M-201). Pinned, not fixed; A-014i owns it.
+    // **A-014i's orphaned vertices, fixed.** Children now inherit the parent's
+    // crossing identities on parent edges instead of re-deriving anonymous
+    // copies, which takes this from **16,296 unreferenced of 166,591 vertices**
+    // to 46 of 104,767 — 37% fewer vertices for **exactly the same 219,084
+    // triangles**, which is what says the topology did not move (M-203).
+    //
+    // The residue is pinned rather than chased. 46 is 0.04%, and they are
+    // crossings the parent named that no child's cycle reaches at all — a
+    // different thing from the systematic duplication this fixture was built to
+    // measure.
+    //
+    // **This test is also where the `1 − t` re-lerp is now caught.** Inverting
+    // that branch used to be invisible to all 32 tests in `surface::tests`; the
+    // bare-tetrahedron detector that first exposed it no longer applies, because
+    // inherited crossings take their positions from the parent rather than from
+    // the child's parameters. This fixture fails on the mutation, verified.
     assert_eq!(
-        orphaned, 16_296,
-        "the grid-level orphan count moved; it is pinned because A-014i owns it"
+        orphaned, 46,
+        "the grid-level orphan count moved; A-014i owns the 46 that remain"
     );
 
     // **Determinism, which the ticket asks for and which no fixture could check

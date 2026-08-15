@@ -1422,42 +1422,25 @@ fn the_subdivision_path_is_reached_and_its_orphaned_vertices_counted() {
         patch.triangles.len(),
     );
 
-    // **Pinned, not asserted to zero — A-014i owns it.** This is the review's
-    // "orphaned vertices", reproduced as a number: the parent records a position
-    // for every crossing its cycles name, because every case *except* this one
-    // triangulates over exactly those, and subdivision instead hands the work to
-    // four children that re-derive their own copies. 24 is exactly the parent's
-    // own crossing count.
-    //
-    // **The obvious fix is measurably the wrong one, and that is the finding.**
-    // Dropping unreferenced positions at the end of `fill` and remapping was
-    // built and run: it takes this fixture to 88 positions and 0 orphans, and it
-    // drifts six golden rows — `gyroid` and `fbm_terrain` at all three
-    // resolutions — with **identical vertex and triangle counts** and a
-    // different hash. So on the reference fields it removes nothing and only
-    // reorders: an unreferenced position there still carries a global crossing
-    // identity and seeds the map a neighbouring tetrahedron reuses, so dropping
-    // it merely moves which tetrahedron emits that vertex first. A-014i's own
-    // guard is that reference-field output must not change, and that is the
-    // guard which caught it (M-200).
+    // **Fixed, not pinned.** This was 24 of 112 positions: the parent recorded a
+    // position for every crossing its cycles named, and its four children then
+    // re-derived those same points as anonymous child-local copies, so nothing
+    // referenced the parent's block. Children now **inherit** the parent's
+    // crossing identities on parent edges, and the bare tetrahedron drops from
+    // 112 positions to 64 with none unreferenced — the same 52 triangles
+    // throughout, which is what says the topology did not move (M-203).
     assert_eq!(
-        orphaned, 24,
-        "the orphaned-vertex count moved; it is pinned because A-014i owns it"
+        orphaned,
+        0,
+        "{orphaned} of {} positions are unreferenced",
+        patch.positions.len()
     );
 
-    // **Defect 2, and it is a hole in this suite rather than a fault in the
-    // code.** The review recorded "a child re-lerp that should use `1 − t`".
-    // `fill_subdivision` already does — a child walking a parent edge the other
-    // way both reverses the list and maps `t ↦ 1 − t` — but **inverting that
-    // branch passes all 32 tests in this module**, including the
-    // intersection-free sweep, because `child.coordinates()` counts crossings
-    // per edge and a mirror leaves every count identical (M-200).
-    //
-    // This is the assertion with power over it. A parent crossing is a real
-    // point on a real edge, and whichever child re-expresses it must land on the
-    // same point — bit-identically, since that is what the weld above relies on.
-    // Mirror the parameter and the child lands somewhere else, and the parent's
-    // copy is then matched by nothing.
+    // **Children inherit their parent's crossings; they no longer re-derive
+    // them.** Before A-014i's fix each child pushed its own anonymous copy of
+    // every parent-edge crossing, so all 24 of the parent's names reappeared
+    // later in the buffer. Now none do, and that is the invariant: a parent
+    // crossing is one vertex, named once.
     let named = patch.crossings.len();
     let mut rediscovered = 0;
     for at in 0..named {
@@ -1466,11 +1449,10 @@ fn the_subdivision_path_is_reached_and_its_orphaned_vertices_counted() {
             rediscovered += 1;
         }
     }
-    std::println!("(4, 2): {rediscovered} of {named} parent crossings re-derived by a child");
+    std::println!("(4, 2): {rediscovered} of {named} parent crossings duplicated by a child");
     assert_eq!(
-        rediscovered, named,
-        "a child placed a parent crossing somewhere the parent did not: the \
-         edge re-expression mirrored a parameter it should have preserved, or \
-         preserved one it should have mirrored"
+        rediscovered, 0,
+        "a child pushed its own copy of a parent crossing instead of inheriting \
+         the parent's index, which is what left the parent's block orphaned"
     );
 }

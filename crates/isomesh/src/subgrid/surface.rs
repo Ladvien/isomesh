@@ -450,7 +450,8 @@ pub fn fill<R: Real>(
     // coincidence -- and a subdivided child appends beyond this length, which is
     // exactly the boundary between shared and unshared.
     out.crossings = crossing_order(&cycles(&tet.coordinates()));
-    fill_append(tet, out, budget)
+    // The top-level tetrahedron inherits nothing: it *is* the parent.
+    fill_append(tet, out, budget, &|_| None)
 }
 
 /// The crossings a tetrahedron's cycles use, deduplicated, in the order the fill
@@ -474,6 +475,7 @@ fn fill_append<R: Real>(
     tet: &TetCrossings<'_, R>,
     out: &mut TetPatch<R>,
     budget: u32,
+    inherited: &dyn Fn(FacePoint) -> Option<u32>,
 ) -> Result<Unfilled, NotFillable> {
     tet.check()?;
     let coords = tet.coordinates();
@@ -481,13 +483,29 @@ fn fill_append<R: Real>(
 
     // Every crossing that any cycle uses becomes a vertex, indexed by its
     // FacePoint so the two tets sharing a face agree on which vertex is which.
-    // `base` is where this tet's vertices start: zero for a top-level call, and
-    // wherever the parent left off for a subdivided one.
-    let base = out.positions.len() as u32;
+    //
+    // **A subdivided child does not record its own copy of a crossing it shares
+    // with its parent.** `inherited` answers "which vertex is this already?" for
+    // the points that lie on a parent edge, and the child reuses that index
+    // rather than pushing a position at the same place under a new name. Before
+    // A-014i it always pushed, which left the parent's whole block referenced by
+    // nothing wherever both sides of a face subdivided — 16,296 of 166,591
+    // vertices on the plane fixture (M-201).
     let keys = crossing_order(&cycles);
+    let mut index: Vec<u32> = Vec::with_capacity(keys.len());
     for key in &keys {
+        if let Some(existing) = inherited(*key) {
+            index.push(existing);
+            continue;
+        }
         match tet.position(*key) {
-            Some(p) => out.positions.push(p),
+            Some(p) => {
+                let Ok(at) = u32::try_from(out.positions.len()) else {
+                    return Ok(Unfilled::Inconsistent);
+                };
+                index.push(at);
+                out.positions.push(p);
+            }
             // A cycle named a crossing the crossing list does not have, which
             // means `coordinates()` and `along` disagree — impossible, since the
             // first is derived from the second.
@@ -496,7 +514,7 @@ fn fill_append<R: Real>(
     }
     let index_of = |p: FacePoint| -> u32 {
         // `keys` is sorted and contains every point any cycle uses.
-        keys.binary_search(&p).map_or(u32::MAX, |i| base + i as u32)
+        keys.binary_search(&p).map_or(u32::MAX, |i| index[i])
     };
 
     let mut unfilled = Unfilled::None;
@@ -595,6 +613,7 @@ fn fill_append<R: Real>(
                 &residual,
                 pattern,
                 &residual_loops,
+                &index_of,
                 out,
                 budget,
             )?);
@@ -1320,6 +1339,7 @@ fn fill_subdivision<R: Real>(
     residual: &EdgeCoordinates,
     pattern: Pattern,
     loops: &[&Cycle],
+    index_of: &dyn Fn(FacePoint) -> u32,
     out: &mut TetPatch<R>,
     budget: u32,
 ) -> Result<Unfilled, NotFillable> {
@@ -1347,6 +1367,10 @@ fn fill_subdivision<R: Real>(
     // been emitted by the caller, and their points are not part of the pattern
     // the stencil was read from.
     let mut kept: [Vec<R>; TET_EDGE_COUNT] = Default::default();
+    // The same crossings as `kept`, as the parent's own indices along that edge.
+    // A child re-expresses these points in its local orientation; this is what
+    // lets it name them as the parent already did instead of minting new ones.
+    let mut kept_index: [Vec<u32>; TET_EDGE_COUNT] = Default::default();
     for (e, slot) in kept.iter_mut().enumerate() {
         let edge = e as u8;
         let mut index: Vec<u32> = loops
@@ -1357,12 +1381,13 @@ fn fill_subdivision<R: Real>(
             .collect();
         index.sort_unstable();
         index.dedup();
-        for at in index {
-            match tet.along[e].get(at as usize) {
+        for at in &index {
+            match tet.along[e].get(*at as usize) {
                 Some(t) => slot.push(*t),
                 None => return Ok(Unfilled::Inconsistent),
             }
         }
+        kept_index[e] = index;
     }
 
     let spoke = stencil.spoke();
@@ -1438,7 +1463,34 @@ fn fill_subdivision<R: Real>(
             return Ok(Unfilled::Inconsistent);
         }
 
-        unfilled = unfilled.worst(fill_append(&child, out, budget - 1)?);
+        // Which of this child's crossings the parent has already named. A spoke
+        // (local corner 0) is new geometry the parent never had, so it inherits
+        // nothing; a parent edge carries the parent's own crossings, forward or
+        // reversed exactly as the parameters above were.
+        let inherited = |p: FacePoint| -> Option<u32> {
+            let [lo, hi] = TET_EDGES[p.edge as usize];
+            if lo == 0 {
+                return None;
+            }
+            let (a, b) = (surviving[lo as usize - 1], surviving[hi as usize - 1]);
+            let parent = super::coordinates::edge_between(a, b);
+            let [plo, _phi] = TET_EDGES[parent as usize];
+            let names = &kept_index[parent as usize];
+            let j = p.index as usize;
+            let at = if a == plo {
+                names.get(j)
+            } else {
+                names.len().checked_sub(1 + j).and_then(|k| names.get(k))
+            };
+            at.map(|index| {
+                index_of(FacePoint {
+                    edge: parent,
+                    index: *index,
+                })
+            })
+        };
+
+        unfilled = unfilled.worst(fill_append(&child, out, budget - 1, &inherited)?);
     }
 
     Ok(unfilled)
