@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**116 tickets archived, 4 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**117 tickets archived, 3 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -157,7 +157,6 @@ and every README code fence must be compiled by something.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **D-008** | **Root README — the on-ramp above the essay.** Badge row. "In 60 seconds": `cargo add isomesh`, the canonical snippet copied verbatim from `crates/isomesh/README.md`, three next-step links. An honest fit table with a when-not-to-use list: dual methods don't tile chunks, GPU readback is not a speedup, MC33 tunnels unmeshed. The claim-headline essays follow in their current order, tightened where D-003 touched them — the voice is the differentiation and it stays. The snippet copy is gated: new `scripts/readme_sync.sh` diffs the `rust` fences of the two files, and CI's lint job runs it beside the backlog gate. Chosen over a second `include_str!` because the root README is outside the package directory, and a published crate must never reference a file it does not ship. | M | D-003, D-005 |
 | ☐ | **D-009** | **CHANGELOG and templates.** `CHANGELOG.md` in Keep a Changelog form, backfilled from the five version-bump commits (0.0.0 reserved the name on 2026-08-12; 0.0.3 shipped the license files three releases forgot; 0.0.4 shipped isomesh-gpu's demos). Issue templates — the bug form asks for the exact command, whether `--release`, and the machine, because machine-naming is a house value — and a PR template that asks whether the gates ran, whether any perf claim has its committed benchmark, and whether FINDINGS changed. Plain markdown, no YAML forms. CONTRIBUTING and a code of conduct were considered and declined on 2026-08-14 — recorded here so it isn't re-litigated. | S | — |
 | ☐ | **D-010** | **`bevy_isomesh` 0.0.4 — the release wiring. Merging this publishes.** Version to 0.0.4, matching the workspace train. `isomesh = { path = "../crates/isomesh", version = "0.0.4" }`, because a path-only dependency cannot publish. `scripts/publish.sh` gains an explicit bevy_isomesh stanza — the script's member discovery runs `cargo metadata` from the root workspace, which excludes this crate, so the stanza is spelled out the way `ORDER` is, same 200/404 logic, after isomesh-gpu. The CI package job dry-runs it. CHANGELOG entry. `bevy_isomesh 0.0.4` burns permanently on the next push to main; that is the intent, decided 2026-08-14. | S | D-007 |
 

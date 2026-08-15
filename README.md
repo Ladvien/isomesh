@@ -2,6 +2,8 @@
 
 > ⚠️ **Vibe Coded.** This crate was written by an AI agent working from a research corpus and a ticket queue. Every number below is produced by a test in this repository and every algorithm cites its source, but it has not been through human code review. Read the tests before trusting it with anything that matters.
 
+[![crates.io](https://img.shields.io/crates/v/isomesh.svg)](https://crates.io/crates/isomesh) [![docs.rs](https://img.shields.io/docsrs/isomesh)](https://docs.rs/isomesh) [![CI](https://github.com/ladvien/isomesh/actions/workflows/ci.yml/badge.svg)](https://github.com/ladvien/isomesh/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE-MIT)
+
 **Engine-agnostic isosurface extraction in Rust. Signed distance field in, triangles out.**
 
 `isomesh` has to serve both a real-time voxel game and a CAD tool. That single constraint decides almost everything about it: no math library appears in a public signature, output buffers are caller-provided and reusable, the scalar type is generic over `f32` and `f64`, and the core crate has exactly one dependency.
@@ -14,6 +16,56 @@ blown apart, where the debris is the boolean; letters 1.00 voxels thick resolved
 tetrahedra; the same sphere under Surface Nets and Marching Cubes.*
 
 Every one of those is `cargo run --example` in `bevy_isomesh/`, and each has its own section below.
+
+## In 60 seconds
+
+```bash
+cargo add isomesh
+```
+
+Implement `Sdf` for your field — or use one of the seven shipped reference fields — and extract:
+
+```rust
+use isomesh::marching_cubes::MarchingCubes;
+use isomesh::{MeshBuffer, RuntimeShape3, Sdf};
+
+struct Sphere;
+impl Sdf for Sphere {
+    type Scalar = f32;
+    fn sample(&self, p: [f32; 3]) -> f32 {
+        (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]).sqrt() - 1.0
+    }
+}
+
+let shape = RuntimeShape3::new([33; 3])?;
+let mut mesh = MeshBuffer::<f32>::new();
+
+// The buffer is caller-provided and reusable: `reset()` clears it without
+// releasing capacity, because a real workload re-meshes thousands of chunks
+// per edit and an allocation per chunk is the whole budget.
+MarchingCubes::<f32>::new().extract(&Sphere, &shape, [-2.0; 3], 0.125, &mut mesh)?;
+
+assert!(mesh.triangle_count() > 0);
+# Ok::<(), isomesh::Error>(())
+```
+
+The lines starting with `#` are doctest plumbing: this exact block is the crate README's example,
+compiled on every `cargo test`, and `scripts/readme_sync.sh` holds this copy identical to it in CI —
+so the first code you read here cannot rot.
+
+Where next: **[the API docs](https://docs.rs/isomesh)** to use it, **[the demo pages](docs/demos/gameplay.md)** to see it moving, **[`bevy_isomesh`](bevy_isomesh/)** if you are arriving from Bevy.
+
+## Is this for you?
+
+| You want | Honest answer |
+|---|---|
+| a chunked voxel world — dig, build, stream | **yes**, the primary target; use `MarchingCubes` or `SubgridMarchingTetrahedra`, the two extractors measured to tile across chunk seams with zero open edges |
+| CAD-grade `f64` end to end | **yes**, the second target; every algorithm is generic over the scalar, and `precision_f32_vs_f64` shows exactly where `f32` tears |
+| `no_std` | **yes** — the core is `no_std + alloc` unconditionally, with one dependency |
+| sharp corners *and* chunk streaming together | **not yet** — `DualContouring` holds corners but does not tile across seams (measured, structural); pick one per volume |
+| GPU extraction to make CPU meshing faster | **no** — with readback the GPU path measures slower than the CPU at every resolution tried; it pays off only when you render from GPU memory and never read back |
+| MC33 tunnels through a single cell | **not yet** — the interior decider ships, the tunnel meshing does not (A-002b) |
+| convex decomposition for physics | **not here** — export the mesh and decompose downstream; `game_destruction` shows the handoff |
 
 ## You cannot store this as a height
 

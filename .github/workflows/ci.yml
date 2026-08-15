@@ -81,6 +81,11 @@ jobs:
       - name: backlog gate
         run: ./scripts/backlog_gate.sh
 
+      # The root README's quickstart is a copy of the crate README's doctested
+      # one; the doctest compiles the original and this diff pins the copy.
+      - name: readme sync
+        run: ./scripts/readme_sync.sh
+
   test:
     name: test (${{ matrix.os }})
     # Both platforms, deliberately. The crate routes every transcendental
