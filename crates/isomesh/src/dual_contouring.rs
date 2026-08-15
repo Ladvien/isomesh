@@ -57,10 +57,25 @@ use crate::{MeshSink, Real, Sdf, Shape3};
 /// [`SurfaceNets`](crate::surface_nets::SurfaceNets): a Laplacian pass averages each vertex
 /// with its neighbours, which is exactly the operation that destroys the sharp
 /// feature the solve just recovered.
+/// # The rule is a type parameter, and that is X-002's whole point
+///
+/// `V` defaults to [`Qef`], so `DualContouring::<f32>::new()` means exactly what
+/// it always meant and production monomorphises to one path with no runtime
+/// branch anywhere. An *experiment* names a different rule —
+/// `DualContouring::<f32, Centroid>::with_rule(Centroid)` — and gets a second,
+/// separately compiled path that shares every other line of the algorithm.
+///
+/// This resolves a tension the crate had recorded and left alone.
+/// `property/extraction.rs` argues, correctly, that adding a swappable table
+/// *parameter* to the public API *"would be a second execution path in
+/// production code, and the crate's rule is one"*. A type parameter is not that:
+/// there is no value to branch on, so the compiler emits one rule per
+/// instantiation and the binary a consumer ships contains only the rule they
+/// named.
 #[derive(Debug)]
-pub struct DualContouring<R: Real> {
+pub struct DualContouring<R: Real, V: VertexRule<R> = Qef> {
     mesher: DualMesher<R>,
-    rule: Qef,
+    rule: V,
 }
 
 /// Whether a solved vertex is confined to the cell that produced it.
@@ -215,6 +230,32 @@ impl<R: Real> DualContouring<R> {
     /// entry for what it measured.
     pub fn set_clamp(&mut self, clamp: Clamp) {
         self.rule.clamp = clamp;
+    }
+}
+
+impl<R: Real, V: VertexRule<R>> DualContouring<R, V> {
+    /// A mesher that places its vertices with `rule`.
+    ///
+    /// The experiment's entry point, and the reason the rule is a type
+    /// parameter. [`new`](DualContouring::new) is this with [`Qef`], and the two
+    /// share every line of the algorithm below the placement — which is what
+    /// makes a comparison between two rules a measurement of the *rule* rather
+    /// than of two implementations that happen to differ.
+    ///
+    /// ```
+    /// use isomesh::dual_contouring::DualContouring;
+    /// use isomesh::surface_nets::Centroid;
+    ///
+    /// // Dual Contouring's topology with Surface Nets' placement.
+    /// let mesher = DualContouring::<f32, _>::with_rule(Centroid);
+    /// # let _ = mesher;
+    /// ```
+    #[must_use]
+    pub const fn with_rule(rule: V) -> Self {
+        Self {
+            mesher: DualMesher::new(),
+            rule,
+        }
     }
 
     /// Extract the zero level set into `out`.

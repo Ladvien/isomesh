@@ -51,7 +51,7 @@ use crate::{MeshSink, Real, Sdf, Shape3};
 /// tetrahedron inside, each isolated from the others, each contributing its own
 /// triangle. `every_case_fits_the_slot_budget` proves it over all 256 cases and
 /// all 64 face-resolution masks rather than trusting the argument.
-pub(crate) const MAX_CELL_VERTICES: usize = 4;
+pub const MAX_CELL_VERTICES: usize = 4;
 
 /// No vertex owns this edge, because the surface does not cross it.
 pub(crate) const NO_SLOT: u8 = u8::MAX;
@@ -63,7 +63,7 @@ pub(crate) const NO_SLOT: u8 = u8::MAX;
 /// that lies on the same sheet of surface, and the cell alone does not identify
 /// it.
 #[derive(Debug)]
-pub(crate) struct CellVertices<R: Real> {
+pub struct CellVertices<R: Real> {
     position: [[R; 3]; MAX_CELL_VERTICES],
     /// Which vertex owns each of the twelve edges, or [`NO_SLOT`].
     slot_of_edge: [u8; EDGE_COUNT],
@@ -91,7 +91,7 @@ impl<R: Real> CellVertices<R> {
     /// edge maps to it, including edges the surface does not cross — harmless,
     /// because the quad walk only ever asks about edges it has just found a sign
     /// change on.
-    pub(crate) fn push_whole_cell(&mut self, position: [R; 3]) {
+    pub fn push_whole_cell(&mut self, position: [R; 3]) {
         debug_assert_eq!(self.count, 0, "a whole-cell vertex must be the only one");
         self.position[0] = position;
         self.slot_of_edge = [0; EDGE_COUNT];
@@ -104,7 +104,7 @@ impl<R: Real> CellVertices<R> {
     ///
     /// In debug builds, if more than [`MAX_CELL_VERTICES`] components are pushed
     /// or two components claim the same edge.
-    pub(crate) fn push_component(&mut self, position: [R; 3], edges: u16) {
+    pub fn push_component(&mut self, position: [R; 3], edges: u16) {
         debug_assert!((self.count as usize) < MAX_CELL_VERTICES, "slot budget");
         let slot = self.count;
         self.position[slot as usize] = position;
@@ -132,7 +132,7 @@ impl<R: Real> CellVertices<R> {
 /// The rule receives `base`, `origin` and `cell_size` separately rather than a
 /// pre-computed cell origin so that an implementation can do its arithmetic in
 /// whichever space keeps it exact.
-pub(crate) trait VertexRule<R: Real> {
+pub trait VertexRule<R: Real> {
     /// Place this cell's vertices, given its corner samples in the crate's
     /// corner order.
     fn place<S: Sdf<Scalar = R>>(

@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**133 tickets archived, 37 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**134 tickets archived, 36 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -168,7 +168,6 @@ O(N) edit across benches, property tests and examples instead of O(1).**
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **X-002** | **An ablation seam that does not create a second execution path.** The next experiments are *not* new algorithms; they are the same algorithm with one rule swapped — Probabilistic Quadrics against Tikhonov `λ`, persistence-thresholded ambiguity against the asymptotic decider, curvature-aware placement against planar. `property/extraction.rs` currently argues, correctly, that a swappable table parameter *"would be a second execution path in production code, and the crate's rule is one."* **That rule protects production and blocks experimentation, and the tension must be resolved deliberately rather than by accident.** Proposed resolution: the variant is a *type* parameter with a default, so production monomorphises to exactly one path and the experiment instantiates another. Zero runtime branches, one source of truth. **Acceptance:** two vertex rules measured against each other on all eight fields, in one bench run, with no `if` in the hot loop — verified by reading the generated assembly or by a codegen test. | L | X-001 |
 | ☐ | **X-003** | **An `experimental` feature and module.** Speculative algorithms currently have nowhere to live but the stable public API. Gate them: `#[cfg(feature = "experimental")] pub mod experimental`, off by default, exempt from semver, and **exempt from nothing else** — T-001 validity, T-004 determinism and the property suite still apply. **Acceptance:** `cargo tree -p isomesh -e normal` is unchanged with the feature off — still `isomesh + libm` and nothing else; an experimental algorithm passes the full validity suite. | S | X-001 |
 | ☐ | **X-004** | **First ablation: Probabilistic Quadrics.** Trettner & Kobbelt `10.1111/cgf.13933` — **already in the corpus and invisible to `distill_search`**, found via `catalog_read`. It states outright that quadric minimisation *"is in many cases not robust and requires an SVD or some ad-hoc regularization"*, then derives a closed form solvable by a plain linear system, **50× faster than SVD**, demonstrated on isosurface extraction. **This supersedes the `λ ≈ 0.01` regularizer** taken from the adjacent-math audit. Measure against the current solve on all eight fields: Hausdorff, self-intersections per 1k, non-manifold edges, condition number, ms. **This is X-002's proof that the seam works, and a real improvement either way — a null result is also a finding.** | M | X-002 |
 

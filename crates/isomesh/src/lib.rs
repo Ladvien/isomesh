@@ -72,7 +72,7 @@ mod golden;
 mod property;
 
 mod cube;
-mod dual;
+pub mod dual;
 mod equivariant;
 mod error;
 mod mesh;

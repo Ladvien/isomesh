@@ -435,3 +435,95 @@ fn the_clamp_cost_in_sharpness_is_measured() {
         "the clamp must not surrender the corner: {on:.4} cells"
     );
 }
+
+/// **The two ablation arms differ in vertex positions and in nothing else
+/// (X-002).**
+///
+/// The seam's correctness property, and a stronger statement than "it compiles".
+/// `DualContouring<Qef>` and `DualContouring<Centroid>` must produce:
+///
+/// - **the same index buffer**, because the cell classification and the quad
+///   walk are the same lines of code and the rule cannot reach them; and
+/// - **different positions**, because otherwise the type parameter is not
+///   swapping what it claims to and every ablation measured through it is
+///   measuring nothing.
+///
+/// Both halves matter. Identical indices with identical positions is a seam that
+/// does not work; differing indices is a seam that changes more than the rule,
+/// which would make X-004's comparison of two vertex rules a comparison of two
+/// algorithms.
+#[test]
+fn the_ablation_arms_differ_only_in_position() {
+    use crate::surface_nets::Centroid;
+
+    let field = crate::fields::Torus::<f64>::canonical();
+    let shape = crate::RuntimeShape3::new([25; 3]).expect("valid shape");
+
+    let mut qef_mesh = crate::MeshBuffer::<f64>::new();
+    DualContouring::<f64>::new()
+        .extract(&field, &shape, [-2.0; 3], 0.16, &mut qef_mesh)
+        .expect("extraction");
+
+    let mut centroid_mesh = crate::MeshBuffer::<f64>::new();
+    DualContouring::<f64, Centroid>::with_rule(Centroid)
+        .extract(&field, &shape, [-2.0; 3], 0.16, &mut centroid_mesh)
+        .expect("extraction");
+
+    assert_eq!(
+        qef_mesh.indices, centroid_mesh.indices,
+        "the vertex rule changed the topology, so it is not only the rule that swapped"
+    );
+    assert_eq!(qef_mesh.positions.len(), centroid_mesh.positions.len());
+    assert!(
+        qef_mesh.positions.len() > 100,
+        "too small a mesh for this to mean anything"
+    );
+
+    // Exact comparison on purpose: the question is whether the rule moved the
+    // vertex at all, and a tolerance would answer a different one. Two rules that
+    // agreed to within an epsilon would still be two rules.
+    #[allow(clippy::float_cmp)]
+    let moved = qef_mesh
+        .positions
+        .iter()
+        .zip(&centroid_mesh.positions)
+        .filter(|(a, b)| a != b)
+        .count();
+    assert!(
+        moved > qef_mesh.positions.len() / 2,
+        "only {moved} of {} vertices moved — the rule is not being applied",
+        qef_mesh.positions.len()
+    );
+    std::println!(
+        "measured: {} vertices, identical indices, {moved} positions differ",
+        qef_mesh.positions.len()
+    );
+}
+
+/// **The seam is static dispatch, so there is no branch to emit (X-002).**
+///
+/// The acceptance asks for "no `if` in the hot loop". That is a type-system
+/// property rather than a measurement: a generic parameter bound by a trait is
+/// monomorphised, so each arm is compiled separately and there is no value for
+/// the placement to test. The only way to lose it is to reach for `dyn`, which
+/// would put a vtable call in exactly the loop this exists to keep clean.
+///
+/// So what is checkable is that nobody has: the dual path names no trait object.
+#[test]
+fn the_ablation_arms_are_not_branches() {
+    for (name, source) in [
+        ("dual.rs", include_str!("../dual.rs")),
+        ("dual_contouring.rs", include_str!("../dual_contouring.rs")),
+        ("surface_nets.rs", include_str!("../surface_nets.rs")),
+        (
+            "manifold_dual_contouring.rs",
+            include_str!("../manifold_dual_contouring.rs"),
+        ),
+    ] {
+        assert!(
+            !source.contains("dyn VertexRule"),
+            "{name} dispatches the vertex rule dynamically, which puts a vtable call \
+             in the per-cell loop and gives up what the type parameter buys"
+        );
+    }
+}

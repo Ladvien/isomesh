@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-133 tickets. Line numbers are stable until something above them is edited — grep the ID if
+134 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -57,6 +57,7 @@ implementation contradicted the ticket.
 | [`B-009`](#L764) | The quickstart — the one example that teaches nothing |
 | [`T-012`](#L770) | FINDINGS.md's index, generated and gated |
 | [`X-001`](#L776) | One Extractor trait, one registry, and the gate on it |
+| [`X-002`](#L788) | The ablation seam — a type parameter, not a branch |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -774,3 +775,9 @@ implementation contradicted the ticket.
 | | | ***`benches/shootout.rs` went from 26 hand references to zero***, and the registry's order matches the committed `docs/measurements/shootout.csv` exactly, so the evidence in that file stays valid. `benches/resolution_sweep.rs`'s duplicate local `Extractor` trait and its four impls are deleted — about a hundred lines — while its deliberate three-algorithm selection is preserved along with the reason, which is that a fourth row would rewrite committed evidence quoted by ✗14, M-19, M-20, M-21, M-22 and O-11. |
 | | | ***The bench header was counting wrong, which is the exact drift this ticket exists to remove.*** `shootout` printed *"seven reference fields, five algorithms"* while running **eight and seven** — `noise_cavity` landed at A-002e and the decider row was added later, and neither edit reached the header. Both counts now come from the lists themselves. |
 | | | *Not converted, and why: `benches/extract.rs` (15 references) and `benches/stage_breakdown.rs` (2). `extract.rs` is a criterion regression suite whose `bench_function` labels are historical, and collapsing its six near-identical helpers is mechanical but risks those labels; it is worth doing and was kept out of this commit rather than bundled with a trait introduction. `src/property/extraction.rs` names algorithms in per-algorithm property tests that each assert something different, so it does not enumerate uniformly and a registry does not fit it.* |
+| ☑ | **X-002** | **An ablation seam that does not create a second execution path.** | L | X-001 |
+| | | ***The tension the ticket named was real and the resolution is the one it proposed.*** `property/extraction.rs` argues that a swappable *parameter* in the public API *"would be a second execution path in production code, and the crate's rule is one"* — correct, and it blocked every experiment in Phases 11–15. A **type** parameter is not that: there is no value to branch on, so each arm is monomorphised and the binary a consumer ships contains only the rule they named. `DualContouring<R, V: VertexRule<R> = Qef>` — the default means `DualContouring::<f32>::new()` is unchanged, and `with_rule` is the experiment's door. |
+| | | ***Half the seam already existed and nobody had noticed.*** `VertexRule` was a `pub(crate)` trait with three impls — `Qef`, `Centroid`, `CycleQef` — so the abstraction was built and then hardcoded at the point of use. This ticket promoted it, `CellVertices` and `MAX_CELL_VERTICES` to public and added the type parameter; it wrote no new abstraction. |
+| | | ***The measurement is the acceptance, and both halves were pre-registered before the run (M-237).*** Symmetric Hausdorff at 65³ as a ratio of QEF to centroid: **sphere 0.486, torus 0.457, csg_difference 0.255, box_exact 0.010, thin_plate 0.010** — two-fold where the surface is smooth, hundred-fold where it has a feature. Self-intersections per 1,000 triangles at 33³: QEF **3.118 / 13.837 / 29.745** on gyroid, fbm_terrain and noise_cavity against centroid's **0.000** on all three. The QEF buys accuracy and pays for it entirely in self-intersection. |
+| | | ***What makes it a measurement of the rule rather than of two programs.*** Vertex, triangle and non-manifold-edge counts are **identical** between arms on every field at every resolution, so the rule provably does not reach the topology. `the_ablation_arms_differ_only_in_position` pins it behaviourally — 680 vertices, byte-identical index buffers, **all 680 positions different**. A `SurfaceNets`-versus-`DualContouring` comparison cannot say this: those are two structs with two `extract` methods, so any difference between them is a difference between two implementations. |
+| | | *"No `if` in the hot loop" is a type-system property rather than a measurement — a bound generic parameter is statically dispatched, so there is no value for the placement to test. The only way to lose it is `dyn`, so `the_ablation_arms_are_not_branches` asserts the dual path names no trait object.* |
