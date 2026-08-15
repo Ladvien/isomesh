@@ -1491,3 +1491,55 @@ an arc cosine `Real` did not have. Added as `libm::acosf` / `libm::acos`, uncond
 reason in CLAUDE.md's `libm` justification: `std`'s `acos` is the platform's and differs between
 macOS and Linux, and T-007's 63 golden hashes are committed. A platform-dependent angle would make
 this crate's mesh-to-field path produce different geometry on the dev machine and in CI.
+
+### M-262 — the winding number beats the pseudonormal on holed meshes, by a widening margin (S-007)
+
+**M.** A meshed sphere at 17³ with a cap removed, scored against the analytic sphere on the 4,491
+samples more than one cell from the surface. Four hole sizes:
+
+| cut | triangles removed | boundary edges | pseudonormal wrong | winding wrong | mean `\|w−½\|` |
+|---|---|---|---|---|---|
+| 0.6 | 104 | 24 | 5 | **0** | 0.0000 |
+| 0.3 | 212 | 28 | 131 | **27** | 0.0674 |
+| 0.0 | 268 | 28 | 327 | **50** | 0.1225 |
+| −0.5 | 396 | 28 | 1,435 | **88** | 0.2650 |
+
+The margin widens from 5-versus-0 to **16×**. On the closed mesh the winding number is exactly
+`1.000000000` inside and `0.000000000` outside — the correction term is identically zero when there
+are no boundary edges, so that case reduces to plain ray parity and calibrates the intersection code
+separately from the construction.
+
+**The one-hole version of this test was not evidence.** At `cut = 0.6` the two methods differ by five
+samples out of 4,491, which is indistinguishable from noise in a discretisation. The sweep is what
+makes it a finding rather than an anecdote.
+
+**Why the winding number is not perfect either, and why that is correct.** The `mean |w−½|` column
+grows with the hole. That is not the measure becoming confidently wrong — it is the *question*
+becoming wrong. Once half the sphere is deleted the mesh no longer encloses the points under the
+hole, so calling them outside is the right answer for the surface that actually exists, and scoring
+against the analytic sphere is scoring against geometry that was removed. Jacobson et al.'s framing
+is that a GWN measures *"how confident we can be that a point is inside"*; the column is that
+confidence at exactly the samples this counts as wrong. So the assertion is a **3× margin over the
+pseudonormal at every hole size**, plus exactness on the smallest hole, not zero errors everywhere.
+
+**Sources checked rather than assumed.** Xie, Hafner & Wojtan (`10.1145/3811339`) give the
+construction verbatim: `w_M(q) = Σᵢ sgn(r·nᵢ) − (1/4π) Σⱼ Ωⱼ`, with the cone apex *"directly behind
+the ray"* so the cone contributes no forward intersections. They are also the source for **not**
+citing Barill et al. 2018 as state of the art: Barnes–Hut summation *"trades off accuracy for
+computational speed… the resulting values are merely approximations."* Martens & Bessmeltsev supply
+the grid optimisation used here — *"to compute voxelizations of resolution N³, we only need to shoot
+N² rays"* — which is why this casts one ray per row and sums the intersections beyond each sample.
+
+### M-263 — the boundary must be counted with multiplicity, not as a boolean (S-007)
+
+**V.** The closing cone needs one triangle per *net* directed boundary edge. Treating "is this a
+boundary edge" as a boolean is correct on a manifold mesh with boundary and wrong on the triangle
+soup this exists to handle: an edge with three incident faces has a net of one and needs one closing
+triangle, while a boolean either drops it (if any partner exists) or double-counts it. The net is
+also what makes the sign right without a separate orientation pass — a net of `+n` for `u → v` means
+`n` copies of the triangle `(v, u, apex)`, the reverse edge, which is what makes `M + C` consistently
+oriented.
+
+`Real` gained `atan2` for van Oosterom & Strackee's solid angle. The four-quadrant form is
+load-bearing: the denominator goes negative for a triangle subtending more than a hemisphere, and a
+plain `atan` of the quotient loses the half-turn.

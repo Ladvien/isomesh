@@ -36,6 +36,7 @@
 //! only has that form because the terms are squares.
 
 pub mod from_mesh;
+pub mod winding;
 
 #[cfg(test)]
 mod tests;

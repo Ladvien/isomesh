@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-157 tickets. Line numbers are stable until something above them is edited — grep the ID if
+158 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -945,3 +945,22 @@ is **2.3× faster** and asserted bit-identical, and dropped the module's test ti
 BVH, and the doc says so. |
 | | | ***`Real` gained `acos`*** (M-261), `libm`'s and not `std`'s, for the reason the `libm` justification already
 gives: T-007's golden hashes are committed and the platform's `acos` differs between macOS and Linux. |
+| ☑ | **S-007** | **Mesh → SDF by generalized winding number**, for imported or damaged input. **Do not cite Barill 2018 as state of the art** — the 2026 Antipodal paper (`10.1145/3811323`) states its order-0/order-1 expansions are *"very imprecise… not useful for applications."* Use Antipodal or Xie, Hafner & Wojtan (`10.1145/3811339`), both in corpus, both exact and faster: the winding number reduces to one ray-surface intersection plus a sum over **boundary** edges, so **cost scales with holes, not triangles** — a nearly-closed mesh is nearly free. **Use GWN to classify points, never to repair meshes**: Takayama et al. 2014 (in corpus) is the GWN authors' own paper explaining that the orientation-repair application is *"fundamentally flawed."* **Acceptance:** classifies correctly on a deliberately hole-punched mesh where S-006 fails. | L | S-006 |
+| | | ***The acceptance needed a sweep, not a hole (M-262).*** One hole separated the two methods by five samples out
+of 4,491, which is indistinguishable from discretisation noise. Four hole sizes make it a trend: pseudonormal 5 / 131 /
+327 / 1,435 wrong against the winding number's 0 / 27 / 50 / 88 — a margin widening to **16×**. On the closed mesh the
+winding number is exactly 1.000000000 inside and 0.000000000 outside, which calibrates the ray code separately from
+the construction, because with no boundary edges the correction term is identically zero. |
+| | | ***And the winding number is not perfect either, which is the correct behaviour.*** `mean \|w−½\|` over its own
+misclassified samples grows from 0.00 to 0.27 with the hole. That is the question going wrong, not the measure: once
+half the sphere is deleted the mesh does not enclose the points under the hole, so calling them outside is right for
+the surface that exists. The assertion is a 3× margin at every hole size plus exactness on the smallest, not zero
+everywhere. |
+| | | ***Every source checked in the corpus.*** Xie/Hafner/Wojtan give `w_M(q) = Σ sgn(r·nᵢ) − (1/4π) Σ Ωⱼ` with the
+apex *"directly behind the ray"*, and are themselves the reason not to cite Barill 2018 — Barnes–Hut *"values are
+merely approximations."* Martens & Bessmeltsev supply the one-ray-per-row reduction that makes an `n³` grid cost `n²`
+casts. Nothing here writes to a mesh, per Takayama et al. |
+| | | ***M-263: the boundary is counted with multiplicity.*** A boolean "is this a boundary edge" is right on a
+manifold-with-boundary and wrong on the soup this exists for; the net directed count also fixes the closing triangles'
+orientation without a separate pass. `Real` gained `atan2`, four-quadrant because the solid-angle denominator goes
+negative past a hemisphere. |

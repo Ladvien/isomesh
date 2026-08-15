@@ -81,7 +81,7 @@ use crate::shape::Shape3;
 /// differs per feature, and picking the face normal for a point closest to a
 /// vertex is precisely the error the paper exists to correct.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Feature {
+pub(super) enum Feature {
     /// Interior of the face.
     Face,
     /// Edge between local vertices `i` and `(i + 1) % 3`.
@@ -91,27 +91,27 @@ enum Feature {
 }
 
 /// `a − b`.
-fn sub<R: Real>(a: [R; 3], b: [R; 3]) -> [R; 3] {
+pub(super) fn sub<R: Real>(a: [R; 3], b: [R; 3]) -> [R; 3] {
     [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
 
 /// `a + b`.
-fn add<R: Real>(a: [R; 3], b: [R; 3]) -> [R; 3] {
+pub(super) fn add<R: Real>(a: [R; 3], b: [R; 3]) -> [R; 3] {
     [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
 }
 
 /// `a · s`.
-fn scale<R: Real>(a: [R; 3], s: R) -> [R; 3] {
+pub(super) fn scale<R: Real>(a: [R; 3], s: R) -> [R; 3] {
     [a[0] * s, a[1] * s, a[2] * s]
 }
 
 /// `a · b`.
-fn dot<R: Real>(a: [R; 3], b: [R; 3]) -> R {
+pub(super) fn dot<R: Real>(a: [R; 3], b: [R; 3]) -> R {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 
 /// `a × b`.
-fn cross<R: Real>(a: [R; 3], b: [R; 3]) -> [R; 3] {
+pub(super) fn cross<R: Real>(a: [R; 3], b: [R; 3]) -> [R; 3] {
     [
         a[1] * b[2] - a[2] * b[1],
         a[2] * b[0] - a[0] * b[2],
@@ -120,7 +120,7 @@ fn cross<R: Real>(a: [R; 3], b: [R; 3]) -> [R; 3] {
 }
 
 /// `‖a‖`.
-fn norm<R: Real>(a: [R; 3]) -> R {
+pub(super) fn norm<R: Real>(a: [R; 3]) -> R {
     dot(a, a).sqrt()
 }
 
@@ -129,7 +129,12 @@ fn norm<R: Real>(a: [R; 3]) -> R {
 /// Ericson, *Real-Time Collision Detection*, §5.1.5 — the barycentric region
 /// test, which decides the feature as a by-product of finding the point instead
 /// of needing a second classification pass that could disagree with the first.
-fn closest_on_triangle<R: Real>(p: [R; 3], a: [R; 3], b: [R; 3], c: [R; 3]) -> ([R; 3], Feature) {
+pub(super) fn closest_on_triangle<R: Real>(
+    p: [R; 3],
+    a: [R; 3],
+    b: [R; 3],
+    c: [R; 3],
+) -> ([R; 3], Feature) {
     let ab = sub(b, a);
     let ac = sub(c, a);
     let ap = sub(p, a);
