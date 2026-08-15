@@ -9,6 +9,12 @@ rust-version = "1.95"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/ladvien/isomesh"
 authors = ["C. Thomas Brittain <cthomasbrittain@yahoo.com>"]
+documentation = "https://docs.rs/bevy_isomesh"
+readme = "README.md"
+# `bevy` first: it is the term a Bevy user searches, and crates.io weights
+# keyword position. Both lists at or under the 5-item cap.
+keywords = ["bevy", "voxel", "isosurface", "marching-cubes", "sdf"]
+categories = ["game-development", "graphics", "rendering"]
 
 # Deliberately its own workspace, not a member of the root one. In a shared
 # workspace Cargo's feature unification hands `glam` the `std`, `serde`,

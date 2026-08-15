@@ -1,25 +1,9 @@
-//! Bevy integration for [`isomesh`].
-//!
-//! `isomesh` itself knows nothing about Bevy — its public API is `[f32; 3]` and
-//! `[u32; 3]` and it has one dependency. This crate is the whole of the Bevy
-//! knowledge, and it lives in its own workspace so that Cargo's feature
-//! unification cannot leak Bevy's feature choices into the core crate's
-//! lockfile.
-//!
-//! # Why the examples live here
-//!
-//! Every Bevy example in this project is under `bevy_isomesh/examples/`, and CI
-//! builds them on every commit. That is not organisational tidiness — it is the
-//! one thing that stops them rotting. `block-mesh`'s examples are pinned to
-//! Bevy 0.13 and `fast-surface-nets`' to Bevy 0.7, both because they lived in a
-//! separate crate that nothing ever compiled.
-//!
-//! # Versions
-//!
-//! Bevy 0.19, which pins `wgpu` 29.0.3 and `glam` 0.32. Those move together or
-//! not at all: Cargo will happily resolve two majors of `wgpu` side by side with
-//! no error, and the failure surfaces much later as
-//! `expected TextureFormat, found a different TextureFormat`.
+// The README is this crate's front page — `docs/bevy_plugins.md` rule 1, the
+// header Bevy's own crates use. Its fences compile as doctests on every
+// `cargo test`, which is why the quickstart cannot rot; everything the old
+// crate-level docs said (the separate-workspace rationale, the version pins,
+// why every example lives here) moved into it.
+#![doc = include_str!("../README.md")]
 
 /// Writing an extracted mesh into a Bevy [`Mesh`](bevy_mesh::Mesh).
 pub mod mesh;
