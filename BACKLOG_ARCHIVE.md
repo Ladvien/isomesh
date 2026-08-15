@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-127 tickets. Line numbers are stable until something above them is edited — grep the ID if
+128 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -51,6 +51,7 @@ implementation contradicted the ticket.
 | [`A-002b`](#L714) | MC33's interior ambiguity, wired up and graded |
 | [`A-018`](#L722) | The positional weld that was unnecessary and harmful |
 | [`A-019`](#L730) | Orientation stops at non-manifold edges, and the residue vanishes |
+| [`E-213`](#L738) | `marching_cubes_tunnel` — the tunnel made visible |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -729,3 +730,8 @@ implementation contradicted the ticket.
 | | | ***The fix is `if neighbours.len() > 2 { continue; }`.*** With three or more faces on an edge there is no "the neighbour" to agree with, so the walk was taking all of them, committing to whichever it reached first, and carrying a *consistent* winding across a patch that was consistent with the wrong side. Stopping leaves each sheet to be seeded and oriented on its own evidence, which is the only evidence there is. |
 | | | ***M-187's caveat turns out to have been about the walk, not the mesh.*** It said orientation reaches zero only where every edge is manifold, because *"no assignment of windings can make four faces pairwise oppose across one edge"* — true, and it does not imply a residue. That edge contributes one only if the walk **visits** it, and `inconsistently_oriented_edges` counts runs of exactly two faces, which a four-face edge is not. The non-manifold edges are still there and still counted; what has gone is the orientation damage they were doing elsewhere. |
 | | | *Two assertions in the census test were mine from A-002e and both were wrong in the same direction: `after > 0` on a non-manifold mesh, and a per-field exemption letting `noise_cavity` grow. Both are gone, and `after <= before` is a law again.* |
+| ☑ | **E-213** | `marching_cubes_tunnel` — **the interior ambiguity made visible, and the tunnel meshed as a tunnel.** | S | A-002b |
+| | | ***Two discs become one cylinder, and the numbers say so.*** Measured on both shipped configurations: components **2 → 1**, χ **2 → 0**, triangles 5 → 21 and 3 → 19, and **boundary edges unchanged** at 9 and 7 — which is crack-freeness visible as a number, since the contours are what the neighbouring cell shares and the interior rule never touches them. |
+| | | ***The HUD's headline is the χ difference***, because that is the claim rather than the picture: a tunnel is a handle and a handle costs a closed surface exactly two (M-222). On a single open cell χ is not `2 − 2g`, so the difference is what to read, and the HUD says so. |
+| | | ***The configurations are searched, not invented, and the ticket's own reason is why.*** Interior ambiguity occurs in 0 of 68,385 surface cells across the seven original reference fields (M-208), so a demo that sampled a field would show an empty cell almost every time. Swept for a cell with six body saddles whose contours form a tunnel, then rounded to one decimal so the constant is readable in the source. |
+| | | *Finding the demo configuration is what found **A-020**: the same sweep turned up a case-13 tunnel whose contours are nine and three, outside Corollary 6, with two contour edges the construction has no rule for. The demo ships the two Corollary-6-compliant ones; the other is now a fixture and a ticket.* |
