@@ -126,9 +126,21 @@ pub struct CycleQef {
     /// How an ambiguous face is resolved.
     ///
     /// This must be read as choosing *which* Marching Cubes surface to take the
-    /// dual of. Both settings are manifold; they disagree about the topology
-    /// being dualised, exactly as they do in
-    /// [`MarchingCubes`](crate::marching_cubes::MarchingCubes).
+    /// dual of. They disagree about the topology being dualised, exactly as they
+    /// do in [`MarchingCubes`](crate::marching_cubes::MarchingCubes).
+    ///
+    /// # "Both settings are manifold" was false, and neither is uniformly better
+    ///
+    /// This said so until A-002e produced a field that could test it (M-224).
+    /// Measured on `noise_cavity`: `Separate` leaves **30** non-manifold edges at
+    /// 17³ where `AsymptoticDecider` leaves **8** — and on `gyroid` at 25³ the
+    /// decider **introduces 3** where `Separate` leaves none. So this setting
+    /// cannot be chosen to make the output manifold, in either direction.
+    ///
+    /// The count either way is exactly the number of shared ambiguous faces whose
+    /// four cut edges lie in one cycle on *both* sides — see
+    /// `the_defect_count_is_predicted_from_the_grid_alone`, and **A-017**, which
+    /// owns it.
     pub face_ambiguity: FaceAmbiguity,
 }
 

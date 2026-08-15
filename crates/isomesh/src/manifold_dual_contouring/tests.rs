@@ -696,3 +696,138 @@ fn the_manifold_dual_contouring_defect_is_four_distinct_faces_on_one_edge() {
     );
     std::println!("measured: A-017 offending edges {rows:?}, all four distinct faces");
 }
+
+/// **A-017's mechanism, and it predicts the count exactly under both face rules.**
+///
+/// An ambiguous face has **all four** of its edges cut. Manifold Dual Contouring
+/// puts one vertex per cycle per cell, so if all four of those edges belong to
+/// *one* cycle in each of the two cells sharing the face, then all four dual
+/// quads — one per crossed grid edge — connect the **same pair** of cell
+/// vertices. Four quads on one dual edge, and a quad contributes exactly one of
+/// its two triangles to each of its sides, which is precisely the *four distinct
+/// faces* measured above.
+///
+/// So the count is not an estimate. It is
+///
+/// ```text
+/// non_manifold_edges  ==  shared ambiguous faces whose four cut edges
+///                         lie in one cycle on both sides
+/// ```
+///
+/// and it holds for `Separate` (30 and 64) and for `AsymptoticDecider` (8 and 40)
+/// alike — computed here from the *grid*, with no mesh involved, against a count
+/// the validator takes from the *mesh*, with no grid involved (M-225).
+///
+/// **This is a limit of one-vertex-per-cycle, not a bug in this transcription.**
+/// Schaefer, Ju & Warren's argument separates sheets *within* a cell, and nothing
+/// in it stops two different crossed edges of one shared face resolving to the
+/// same pair of cycles. A-017 owns what to do about it; this test owns knowing
+/// exactly what it is.
+#[test]
+fn the_defect_count_is_predicted_from_the_grid_alone() {
+    use crate::cube::{corner_offset, edge_on_face, is_inside};
+    use crate::marching_cubes::FaceAmbiguity;
+    use crate::marching_cubes::ambiguity::joined_mask;
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+    use crate::marching_cubes::trilinear::Contours;
+
+    let field = crate::fields::noise_cavity::<f64>();
+    let (lo, _hi) = field.domain();
+    let mut rows = Vec::new();
+
+    for rule in [FaceAmbiguity::Separate, FaceAmbiguity::AsymptoticDecider] {
+        for samples in [17u32, 33] {
+            let h = 4.0 / f64::from(samples - 1);
+            let cell_of = |x: u32, y: u32, z: u32| {
+                let mut corner = [0.0f64; 8];
+                let mut case = 0u8;
+                for (c, slot) in corner.iter_mut().enumerate() {
+                    let o = corner_offset(c as u8);
+                    *slot = field.sample([
+                        lo[0] + h * f64::from(x + o[0]),
+                        lo[1] + h * f64::from(y + o[1]),
+                        lo[2] + h * f64::from(z + o[2]),
+                    ]);
+                    if is_inside(*slot) {
+                        case |= 1 << c;
+                    }
+                }
+                (case, corner)
+            };
+            let rings_of = |case: u8, corner: &[f64; 8]| {
+                let mask = match rule {
+                    FaceAmbiguity::Separate => 0,
+                    FaceAmbiguity::AsymptoticDecider => {
+                        joined_mask(corner, AMBIGUOUS_FACES[case as usize])
+                    }
+                };
+                let contours = Contours::of(case, mask);
+                let mut owner = [255u8; 12];
+                for r in 0..contours.count() {
+                    for &e in contours.ring(r) {
+                        owner[e as usize] = r as u8;
+                    }
+                }
+                owner
+            };
+
+            let mut predicted = 0usize;
+            for axis in 0..3usize {
+                for z in 0..samples - 1 {
+                    for y in 0..samples - 1 {
+                        for x in 0..samples - 1 {
+                            let mut n = [x, y, z];
+                            n[axis] += 1;
+                            if n[axis] >= samples - 1 {
+                                continue;
+                            }
+                            let (ca, va) = cell_of(x, y, z);
+                            if AMBIGUOUS_FACES[ca as usize] & (1u8 << (axis * 2 + 1)) == 0 {
+                                continue;
+                            }
+                            let (cb, vb) = cell_of(n[0], n[1], n[2]);
+                            let oa = rings_of(ca, &va);
+                            let ob = rings_of(cb, &vb);
+                            let cut = |owner: &[u8; 12], side: u8| -> Vec<u8> {
+                                (0..12u8)
+                                    .filter(|&e| {
+                                        edge_on_face(e, axis, side) && owner[e as usize] != 255
+                                    })
+                                    .collect()
+                            };
+                            let (cut_a, cut_b) = (cut(&oa, 1), cut(&ob, 0));
+                            if cut_a.len() != 4 || cut_b.len() != 4 {
+                                continue;
+                            }
+                            let one = |owner: &[u8; 12], edges: &[u8]| {
+                                edges
+                                    .iter()
+                                    .all(|&e| owner[e as usize] == owner[edges[0] as usize])
+                            };
+                            if one(&oa, &cut_a) && one(&ob, &cut_b) {
+                                predicted += 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            let (lo_d, hi_d) = field.domain();
+            let cell = (hi_d[0] - lo_d[0]) / f64::from(samples - 1);
+            let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
+            let mut mdc = ManifoldDualContouring::<f64>::new();
+            mdc.set_face_ambiguity(rule);
+            let mut out = MeshBuffer::<f64>::new();
+            mdc.extract(&field, &shape, lo_d, cell, &mut out)
+                .expect("extraction");
+            let observed = report_of(&out, cell).non_manifold_edges as usize;
+
+            assert_eq!(
+                predicted, observed,
+                "{rule:?} at {samples}^3: the grid predicts {predicted} and the mesh has {observed}"
+            );
+            rows.push((rule, samples, predicted));
+        }
+    }
+    std::println!("measured: A-017 predicted == observed for {rows:?}");
+}
