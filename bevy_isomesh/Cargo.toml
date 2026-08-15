@@ -43,16 +43,6 @@ bevy_tasks = "0.19"
 # the subscriber that surfaces it.
 tracing = { version = "0.1", default-features = false }
 
-[features]
-default = []
-# Pulls in the renderer. Nothing needs it yet; the GPU path arrives with
-# GPU-001 and the plugin with B-003.
-gpu = ["dep:bevy_render"]
-
-[dependencies.bevy_render]
-version = "0.19"
-optional = true
-
 # Examples only. Dev-dependencies are not propagated to consumers, so nothing
 # here reaches anyone depending on this crate.
 #

@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-110 tickets. Line numbers are stable until something above them is edited — grep the ID if
+111 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -647,3 +647,5 @@ implementation contradicted the ticket.
 | ☑ | **D-001** | **`docs/bevy_plugins.md` exists only in another repo.** `CLAUDE.md` links `docs/bevy_plugins.md` — the only broken link in the repository — and the file it means lives in `/home/ladvien/foundation_vs_slop/docs/bevy_plugins.md`. Copy it in verbatim under a short provenance preamble (source path, date), so the rule CLAUDE.md leans on is readable from this clone. | S | — |
 | | | ***The file is a transcript, and half of it is addressed to someone else — copied verbatim anyway.*** It is a research note written for the `foundation_vs_slop` workspace: the top half is Bevy 0.19 plugin-pattern findings aimed at that repo's CLAUDE.md and crates, and only the bottom half — the three crate-convention rules and the `*Systems`/`*Plugin` naming lint — is what this repo's CLAUDE.md leans on. The provenance preamble says exactly that and points readers at the right half, rather than editing someone else's words to fit. |
 | | | *CLAUDE.md itself needed no edit.* The link was broken because its target did not exist; creating the target is the whole fix. |
+| ☑ | **D-002** | **Remove the `gpu` feature that gates nothing.** `bevy_isomesh` declares `gpu = ["dep:bevy_render"]` and no `cfg(feature = "gpu")` exists in src or examples — the three GPU examples reach render types through the `bevy` umbrella dev-dependency, verified by grep. A feature that changes nothing is a second path that lies about the first. Delete the feature, the optional `bevy_render` dependency, and the stale comment claiming the plugin hasn't landed yet. | S | — |
+| | | ***The whole `[features]` table went, not just the row.*** With `gpu` gone the table held only `default = []`, which declares nothing — deleted rather than left as furniture. The lockfile diff is one line: `bevy_render` leaves `bevy_isomesh`'s dependency list and stays in the tree, because the `bevy` umbrella dev-dependency was where the examples were getting it all along. `cargo check` clean on the first try, which is the measure of how load-bearing the feature was. |
