@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-156 tickets. Line numbers are stable until something above them is edited — grep the ID if
+157 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -929,3 +929,19 @@ someone to rediscover. |
 | | | ***M-258:*** `struct { stride: u32, pad: vec3<u32> }` is **32** bytes under std140, not 16, and wgpu reports it at
 dispatch rather than at pipeline creation. `grid.wgsl` already carried the rule in prose and the new file did not
 follow it. |
+| ☑ | **S-006** | **Mesh → SDF by angle-weighted pseudonormal** — Bærentzen & Aanæs (in corpus). **This is a proof, not a heuristic**, and it is the right tool for geometry isomesh produced itself, which already carries a `V−E+F == 2` guard. **Acceptance:** round-trip — mesh a sphere, convert back to a field, re-mesh, and compare against the original. That round-trip is a strong end-to-end test the crate does not currently have. | M | S-001 |
+| | | ***The round trip passed on the first run and is the crate's first end-to-end test (M-259).*** 1,158 vertices and
+2,312 triangles in, the same counts out; χ 2 → 2; worst `|analytic|` on the output vertices 0.0017 → 0.0038 against a
+half-cell bound of 0.0625. **Zero sign disagreements** with the analytic field over 35,937 samples, which is Theorem 1
+tested rather than trusted. |
+| | | ***It needed an adapter that did not exist.*** Every constructor in `construct` returns a `Vec<R>` and every
+extractor consumes an `Sdf`, so nothing in the crate could mesh what had just been built — the acceptance was not
+merely unimplemented, it was unstateable. `construct::SampledField` closes it, interpolating **trilinearly** because
+that is the interpolant Marching Cubes' case table is derived from. |
+| | | ***The acceleration was wrong first, and the benchmark said so (M-260).*** A uniform grid over the sample cells
+with expanding-shell search measured **3.9× slower than brute force**: reaching radius `k` costs `O(k³)` bins, and most
+samples in any grid are far ones. A two-level box reject — per triangle, and per block of 64 consecutive triangles —
+is **2.3× faster** and asserted bit-identical, and dropped the module's test time from 31.6 s to 3.0 s. It is not a
+BVH, and the doc says so. |
+| | | ***`Real` gained `acos`*** (M-261), `libm`'s and not `std`'s, for the reason the `libm` justification already
+gives: T-007's golden hashes are committed and the platform's `acos` differs between macOS and Linux. |

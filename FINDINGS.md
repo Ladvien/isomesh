@@ -1434,3 +1434,60 @@ wgpu, but only at dispatch, not at pipeline creation. `struct { stride: vec4<u32
 is 16 and says the same thing. The existing `GridParams` shader header already carried this rule in
 prose ("two vec4s rather than a struct of scalars so std140 and std430 agree"); it was not followed
 in the new file.
+
+### M-259 — the round trip the crate did not have (S-006)
+
+**M.** Sphere → Marching Cubes → `signed_distance_from_mesh` → Marching Cubes, on a 33³ grid at
+`h = 0.125`. Vertex and triangle counts are **identical** across the trip (1,158 vertices, 2,312
+triangles), χ is 2 both times, boundary and non-manifold edges zero both times, and the worst
+`|analytic field|` over the output vertices goes from `0.001701` to `0.003803` — 2.2× degradation,
+against a bound of half a cell (`0.0625`).
+
+The **sign** agrees with the analytic field at every sample more than half a cell from the surface —
+zero disagreements out of 35,937. That is Bærentzen & Aanæs Theorem 1's whole claim, tested rather
+than trusted, and it is the assertion that catches a pseudonormal read from the wrong feature: a face
+normal where a vertex one was needed is correct for most samples and wrong near a crease.
+
+This is the first end-to-end test in the crate. It exercises the extractor, the pseudonormal sign,
+the closest-point classification and the acceleration structure *against each other* — a fault in any
+one shows up as geometry that moved.
+
+**It needed a piece that did not exist.** Every constructor in `construct` returns a `Vec<R>` and
+every extractor consumes an `Sdf`, so there was no way to mesh what had just been built.
+`construct::SampledField` is that adapter, and it interpolates **trilinearly** rather than by nearest
+sample because Marching Cubes' case table is derived from the trilinear interpolant — a field
+wrapping the same samples any other way disagrees with the mesher about where the surface is.
+
+### M-260 — a uniform grid over the sample cells lost to a flat box reject, 3.9× (S-006)
+
+**M.** Mesh-to-SDF needs a closest-triangle query per sample. The first implementation binned
+triangles into the sample grid's own cells and searched expanding shells, stopping when the shell's
+own lower bound exceeded the best distance found. It measured **3,457 ms** against an unaccelerated
+scan's **892 ms** on 9,261 samples × 872 triangles — 3.9× *slower* than the thing it was accelerating.
+
+**Why, and it is not an implementation detail.** Reaching radius `k` costs `O(k³)` bins. A sample at
+the corner of a 21³ grid around a unit sphere is twelve cells from the surface, so it walks
+essentially the whole grid before it finds anything — and most samples in any grid are far ones.
+Fixing the shell iteration from `O(k³)` to `O(k²)` per shell does not change the conclusion, because
+the *total* over all shells is `O(k³)` either way.
+
+Replaced with a two-level axis-aligned box reject: a box per triangle, and a box per block of 64
+consecutive triangles. **394 ms — 2.3× faster than brute force**, and the whole `from_mesh` test
+module dropped from 31.6 s to 3.0 s.
+
+The reject is exact — a box whose nearest corner is beyond the current best cannot contain a closer
+point — so the accelerated and unaccelerated paths are asserted **bit-identical**, not merely close.
+
+**What makes the blocks work is a property of the input, stated rather than assumed:** Marching Cubes
+emits triangles in grid order, so 64 consecutive ones are spatially close and their block box is
+tight. A mesh whose triangles arrive in arbitrary order degrades to the unaccelerated scan and stays
+correct. This is **not** a BVH, which is what the paper uses and what would make the query `O(log m)`
+rather than `O(m)`.
+
+### M-261 — `Real` gained `acos`, and `libm` is why (S-006)
+
+**V.** The angle-weighted pseudonormal weights each face normal by the incident angle, which needs
+an arc cosine `Real` did not have. Added as `libm::acosf` / `libm::acos`, unconditionally, for the
+reason in CLAUDE.md's `libm` justification: `std`'s `acos` is the platform's and differs between
+macOS and Linux, and T-007's 63 golden hashes are committed. A platform-dependent angle would make
+this crate's mesh-to-field path produce different geometry on the dev machine and in CI.

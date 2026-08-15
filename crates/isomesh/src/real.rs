@@ -119,6 +119,15 @@ pub trait Real:
     #[must_use]
     fn cos(self) -> Self;
 
+    /// Arc cosine, in radians, on `[-1, 1]`. Same caveat as [`Real::sin`].
+    ///
+    /// Added at S-006: the angle-weighted pseudonormal weights each face normal
+    /// by the incident angle, and `libm` is the only source of that angle that
+    /// stays bit-identical across platforms — which is what T-007's golden
+    /// hashes depend on.
+    #[must_use]
+    fn acos(self) -> Self;
+
     // ── from core ───────────────────────────────────────────────────────────
 
     /// Absolute value.
@@ -216,7 +225,8 @@ macro_rules! impl_real {
     (
         $ty:ty,
         diff_step = $diff_step:expr,
-        sqrt = $sqrt:path, floor = $floor:path, sin = $sin:path, cos = $cos:path $(,)?
+        sqrt = $sqrt:path, floor = $floor:path, sin = $sin:path, cos = $cos:path,
+        acos = $acos:path $(,)?
     ) => {
         impl sealed::Sealed for $ty {}
 
@@ -245,6 +255,10 @@ macro_rules! impl_real {
             #[inline]
             fn cos(self) -> Self {
                 $cos(self)
+            }
+            #[inline]
+            fn acos(self) -> Self {
+                $acos(self)
             }
 
             #[inline]
@@ -308,6 +322,7 @@ impl_real!(
     floor = libm::floorf,
     sin = libm::sinf,
     cos = libm::cosf,
+    acos = libm::acosf,
 );
 
 impl_real!(
@@ -317,6 +332,7 @@ impl_real!(
     floor = libm::floor,
     sin = libm::sin,
     cos = libm::cos,
+    acos = libm::acos,
 );
 
 #[cfg(test)]

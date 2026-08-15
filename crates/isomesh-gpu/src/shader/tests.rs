@@ -177,7 +177,14 @@ fn composition_is_deterministic() {
     // list, so a module quietly dropped from it is a module nothing validates.
     assert_eq!(
         c.module_names(),
-        ["field", "grid", "jump_flood", "marching_cubes", "mesh_render", "scan"]
+        [
+            "field",
+            "grid",
+            "jump_flood",
+            "marching_cubes",
+            "mesh_render",
+            "scan"
+        ]
     );
     assert_eq!(
         c.compose("marching_cubes", &[]),

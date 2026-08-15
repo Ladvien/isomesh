@@ -35,6 +35,8 @@
 //! rooted space, and the intersection formula below divides by `2(q − p)`, which
 //! only has that form because the terms are squares.
 
+pub mod from_mesh;
+
 #[cfg(test)]
 mod tests;
 
@@ -863,4 +865,109 @@ pub fn reinitialise_narrow_band<R: Real>(
         }
     }
     Ok((out, solved.visited))
+}
+
+/// A sampled grid, read as a field.
+///
+/// Ticket: S-006, and the piece that closes the loop. Every constructor in this
+/// module produces a `Vec<R>`; every extractor in this crate consumes an
+/// [`Sdf`](crate::Sdf). Without this there is no way to mesh what was just
+/// built, which makes S-006's round-trip acceptance impossible to even state.
+///
+/// # Trilinear, matching the extractors' own model
+///
+/// Marching Cubes' case table is derived from the **trilinear** interpolant of
+/// the eight corner values — that is the whole subject of A-002 and Grosso's
+/// papers. So a field wrapping those same samples must interpolate the same way
+/// or the mesher and the field disagree about where the surface is, and every
+/// vertex lands slightly off its own isosurface.
+///
+/// # Outside the grid, the value is clamped, and that is a real limitation
+///
+/// Sampling beyond the grid returns the nearest in-grid interpolation, which is
+/// **not** a distance — it is constant along any ray leaving the box. Nothing in
+/// this crate samples outside the grid it was given, so this is a documented
+/// edge rather than a hazard; a caller doing sphere tracing through one of these
+/// should know that the field stops carrying information at the boundary.
+#[derive(Clone, Copy, Debug)]
+pub struct SampledField<'a, R: Real, S: Shape3> {
+    values: &'a [R],
+    shape: &'a S,
+    origin: [R; 3],
+    cell_size: R,
+}
+
+impl<'a, R: Real, S: Shape3> SampledField<'a, R, S> {
+    /// Wrap `values`, laid out x-fastest over `shape`.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::GridTooSmall`](crate::Error::GridTooSmall) for a grid under
+    /// 2×2×2 — trilinear interpolation needs a cell — and
+    /// [`Error::ShapeOverflow`](crate::Error::ShapeOverflow) if `values` is not
+    /// exactly one entry per sample.
+    pub fn new(values: &'a [R], shape: &'a S, origin: [R; 3], cell_size: R) -> crate::Result<Self> {
+        let size = shape.size();
+        if size[0] < 2 || size[1] < 2 || size[2] < 2 {
+            return Err(crate::Error::GridTooSmall { size });
+        }
+        if values.len() != shape.element_count() {
+            return Err(crate::Error::ShapeOverflow {
+                size,
+                product: values.len() as u64,
+            });
+        }
+        Ok(Self {
+            values,
+            shape,
+            origin,
+            cell_size,
+        })
+    }
+}
+
+impl<R: Real, S: Shape3> crate::Sdf for SampledField<'_, R, S> {
+    type Scalar = R;
+
+    fn sample(&self, p: [R; 3]) -> R {
+        let size = self.shape.size();
+        let (nx, ny, nz) = (size[0] as usize, size[1] as usize, size[2] as usize);
+
+        // Cell index and the fraction within it, per axis, clamped so a query
+        // outside the grid reads the nearest cell rather than an out-of-bounds
+        // index.
+        let mut base = [0usize; 3];
+        let mut frac = [R::ZERO; 3];
+        let limit = [nx - 2, ny - 2, nz - 2];
+        for axis in 0..3 {
+            let t = (p[axis] - self.origin[axis]) / self.cell_size;
+            let floor = t.floor();
+            let i = floor.as_f64();
+            let clamped = if i < 0.0 {
+                0
+            } else if i > limit[axis] as f64 {
+                limit[axis]
+            } else {
+                i as usize
+            };
+            base[axis] = clamped;
+            frac[axis] = t - R::from_f64(clamped as f64);
+        }
+
+        let at = |dx: usize, dy: usize, dz: usize| {
+            let x = base[0] + dx;
+            let y = base[1] + dy;
+            let z = base[2] + dz;
+            self.values[(z * ny + y) * nx + x]
+        };
+
+        let lerp = |a: R, b: R, t: R| a + (b - a) * t;
+        let x0 = lerp(at(0, 0, 0), at(1, 0, 0), frac[0]);
+        let x1 = lerp(at(0, 1, 0), at(1, 1, 0), frac[0]);
+        let x2 = lerp(at(0, 0, 1), at(1, 0, 1), frac[0]);
+        let x3 = lerp(at(0, 1, 1), at(1, 1, 1), frac[0]);
+        let y0 = lerp(x0, x1, frac[1]);
+        let y1 = lerp(x2, x3, frac[1]);
+        lerp(y0, y1, frac[2])
+    }
 }
