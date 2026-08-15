@@ -425,7 +425,7 @@ fn the_validity_suite_over_every_reference_field() {
         ("box_exact",      33, 0, 0,   0), ("csg_difference", 33, 0, 0, 36),
         ("thin_plate",     33, 0, 0,   6), ("gyroid",      33, 0, 0, 330),
         ("fbm_terrain",    33, 8, 12, 53),
-        ("noise_cavity", 17, 290, 395, 1629), ("noise_cavity", 25, 318, 439, 1580),
+        ("noise_cavity", 17, 288, 392, 1630), ("noise_cavity", 25, 314, 435, 1595),
         ("noise_cavity", 33, 258, 355, 1477),
     ];
 
@@ -441,11 +441,15 @@ fn the_validity_suite_over_every_reference_field() {
             mt.extract(&field, &shape, lo, cell, &mut out)
                 .unwrap_or_else(|e| panic!("{name}: {e}"));
 
-            let mut welder = crate::weld::Welder::<f64>::new();
-            welder
-                .weld(&mut out, crate::weld::epsilon_for(cell))
-                .unwrap_or_else(|e| panic!("{name}: weld failed: {e}"));
-
+            // **No weld, since A-018.** This used to weld before validating,
+            // from the days when the extractor emitted a triangle soup. A-014h
+            // ended that — every crossing has a global identity and is emitted
+            // once — and A-018 measured what the leftover weld was still doing:
+            // nothing on seven fields, and on `noise_cavity` merging one pair of
+            // vertices that are coincident by position and distinct by identity,
+            // which fuses two sheets and *adds* two non-manifold edges (M-226).
+            // Judging the extractor's own output is both more honest and two
+            // edges kinder.
             let cfg = ValidateConfig::from_cell_size(cell).expect("a valid spacing");
             let report = validate_indexed(&out.positions, &out.indices, &cfg);
 

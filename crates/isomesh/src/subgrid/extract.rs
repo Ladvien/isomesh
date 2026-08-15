@@ -231,13 +231,28 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
     /// patch, because a sheet thinner than a cell puts two oppositely-facing
     /// surfaces inside one tetrahedron.
     ///
-    /// **Vertices are emitted per tetrahedron and are not shared.** Before
-    /// welding, the output is a triangle soup: every edge looks like a boundary
-    /// edge and the mesh has no topology to check. Weld with
-    /// [`Welder`](crate::weld::Welder) before applying
-    /// [`validate_indexed`](crate::validate::validate_indexed) or measuring
-    /// self-intersections — M-93 and M-96 are both consequences of forgetting
-    /// that.
+    /// # Vertices *are* shared, and welding this output is unnecessary and can
+    /// damage it
+    ///
+    /// This said the opposite until A-018 measured it: *"vertices are emitted per
+    /// tetrahedron and are not shared … before welding, the output is a triangle
+    /// soup"*. That was true when M-93 and M-96 were written and **A-014h ended
+    /// it** — the extractor gives every crossing a global identity and emits it
+    /// once, so the raw output already has `boundary_edges == 0` on every closed
+    /// reference field, with no weld at all.
+    ///
+    /// A positional weld afterwards is therefore a no-op at best. On seven of the
+    /// eight reference fields it is exactly that — same vertex count, same
+    /// topology. On `noise_cavity` it merges **one** pair of vertices that are
+    /// coincident *by position* and distinct *by identity*, fusing two sheets and
+    /// **adding two non-manifold edges and three non-manifold vertices**
+    /// (M-226). Sharing by identity is strictly finer than sharing by position,
+    /// and once it is complete the coarser rule has nothing left to contribute
+    /// except mistakes.
+    ///
+    /// So do not weld this output to make it a surface; it already is one. Weld
+    /// only to *join it to other geometry*, and expect that to cost the pair above
+    /// wherever two sheets pass within the tolerance of each other.
     ///
     /// # Errors
     ///

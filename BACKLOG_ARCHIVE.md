@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-125 tickets. Line numbers are stable until something above them is edited — grep the ID if
+126 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -49,6 +49,7 @@ implementation contradicted the ticket.
 | [`A-002g`](#L698) | Disk triangulation and the one interior vertex |
 | [`A-002h`](#L706) | Tunnel and twelve-vertex contour, against the inner hexagon |
 | [`A-002b`](#L714) | MC33's interior ambiguity, wired up and graded |
+| [`A-018`](#L722) | The positional weld that was unnecessary and harmful |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -717,3 +718,8 @@ implementation contradicted the ticket.
 | | | ***Measured, not asserted (M-223): 1.95% at 33³ and 0.14% at 65³*** on `noise_cavity`, the only reference field the rule can do anything in. The cost falls as the grid refines because tunnels do — the same undersampling relationship M-209 records from the other end. On the five fields with no ambiguous face the rule is free, because it never runs. |
 | | | ***One correction inherited and paid: A-002g's "no budget moves" was wrong for the tunnel.*** M-217 said three interior vertices and no change; A-002h measured six and 22 triangles. The `u32` index-space bound now budgets the larger of `MAX_CENTROIDS` and `MAX_INTERIOR_VERTICES` per cell. `MAX_TRIANGLES` did **not** have to move — it sizes the 256-case table's own array, which this path does not use. |
 | | | *The `bevy_isomesh` example is split out as **E-213**. It is a demo rather than a correctness obligation, and what grades the rule is the χ identity above.* |
+| ☑ | **A-018** | **The positional weld can create a non-manifold edge, and one vertex pair proves it.** | M | A-002e |
+| | | ***The answer is not a guard, it is a deletion (M-226).*** The ticket offered an identity-aware weld or a rewritten claim. Neither was needed: **A-014h had already made the weld unnecessary and nobody removed it.** Measured across all eight fields at 17³, the *raw* output has `boundary_edges == 0` on every closed field — it is a surface, not the triangle soup the module doc still described — and the weld is a no-op on seven of them, same vertex count and same topology. |
+| | | ***On the eighth it is worse than a no-op.*** `noise_cavity` has exactly one pair of vertices coincident by position and distinct by identity; the weld merges them, fuses two sheets, and takes non-manifold edges from **288 to 290**. Sharing by identity is strictly finer than sharing by position, so once identity sharing is complete the coarser rule can only contribute mistakes. |
+| | | ***The doc was actively telling consumers to do the harmful thing***, which is the part that mattered most: *"weld with `Welder` before applying `validate_indexed`"*. Corrected to say the output is already shared, that welding it to make it a surface is unnecessary, and that welding to *join* it to other geometry costs the pair above wherever two sheets pass within tolerance. |
+| | | *The subgrid validity suite no longer welds before judging — two rows moved, `noise_cavity` at 17³ and 25³, and nothing else on any field. The weld-specific tests keep welding, because measuring the weld is what they are for, and P-7's plateau and A-014h's completeness census stay exactly as A-002e pinned them.* |
