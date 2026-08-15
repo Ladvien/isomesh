@@ -1856,3 +1856,124 @@ fn the_tunnel_contour_shapes_are_pinned() {
          of Corollary 6's second half is untested"
     );
 }
+
+/// **Every separate-disks cell has a body saddle sitting on a cell face, and
+/// continuous corner values produce none at all (M-231).**
+///
+/// This is A-020b's premise falling over, and it is the reason that ticket asks
+/// for no new triangulation. [`Topology::SeparateDisks`] looked like a topological
+/// subcase of case 13 that Grosso's construction forgot. It is not. It is the
+/// numerical signature of a **singular face** — a saddle of the trilinear
+/// interpolant lying *on* a face of the cell, which is Grosso 2017 §4.2's case and
+/// this repository's A-002i — surviving [`BodySaddles::has_inner_hexagon`]'s
+/// strict `0 < x < 1` test because floating point puts the root a few ulps inside.
+///
+/// Two measurements say so, and the second is what makes the first mean something:
+///
+/// - **Continuous corner values produce zero** separate-disks cells. The shipped
+///   fixtures were found by a search over *rounded* values, and rounding is
+///   precisely what makes a root land on a face.
+/// - **Every one that quantisation does produce has a root within `1e-12` of a
+///   face** — with no exceptions across every quantum tried — while the same
+///   degeneracy among other six-saddle cells runs at a rate that swings with the
+///   quantum. The invariant is not "rounding makes cells degenerate"; it is this
+///   configuration specifically.
+///
+/// **Not proof, and the test is written to say so.** Zero over a sample is a
+/// sample, so the continuous arm asserts zero and would fail loudly if a
+/// non-degenerate one ever appeared — which is exactly the event that would put
+/// A-020b back in scope.
+#[test]
+fn every_separate_disks_cell_has_a_saddle_on_a_face() {
+    use crate::cube::is_inside as inside;
+    use crate::marching_cubes::ambiguity::joined_mask;
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+
+    // A root this close to 0 or 1 is a saddle on the face; the strict interior
+    // test admits it because the arithmetic misses the face by a few ulps.
+    const ON_FACE: f64 = 1e-12;
+    const CELLS: usize = 500_000;
+
+    let classify = |f: &[f64; 8]| {
+        let mut case = 0u8;
+        for (c, &val) in f.iter().enumerate() {
+            if inside(val) {
+                case |= 1 << c;
+            }
+        }
+        if case == 0 || case == 255 {
+            return None;
+        }
+        let saddles = BodySaddles::of(f);
+        if !saddles.has_inner_hexagon() {
+            return None;
+        }
+        let contours = Contours::of(case, joined_mask(f, AMBIGUOUS_FACES[case as usize]));
+        Some((saddles, contours.topology(&saddles)))
+    };
+    let on_face = |saddles: &BodySaddles<f64>| {
+        (0..3).any(|axis| saddles.axis(axis).iter().any(|&x| x.min(1.0 - x) < ON_FACE))
+    };
+
+    // Continuous: none exist.
+    let mut rng = Lcg::new(0x0000_A020_B000_0003);
+    let mut six = 0usize;
+    let mut separate = 0usize;
+    for _ in 0..CELLS {
+        let f = rng.corners();
+        if let Some((_, topology)) = classify(&f) {
+            six += 1;
+            if topology == Topology::SeparateDisks {
+                separate += 1;
+            }
+        }
+    }
+    assert!(
+        six > 1000,
+        "only {six} six-saddle cells, too few to mean anything"
+    );
+    assert_eq!(
+        separate, 0,
+        "a separate-disks cell appeared without quantisation — A-020b's premise is \
+         back in scope and the singular-face explanation is not the whole story"
+    );
+    std::println!(
+        "measured: {six} six-saddle cells from continuous values, {separate} separate-disks"
+    );
+
+    // Quantised: they exist, and every one has a saddle on a face.
+    for (label, quantum) in [("0.1", 0.1f64), ("1/3", 1.0 / 3.0)] {
+        let mut rng = Lcg::new(0x0000_A020_B000_0003);
+        let mut found = 0usize;
+        let mut degenerate = 0usize;
+        for _ in 0..CELLS {
+            let mut f = rng.corners();
+            for x in &mut f {
+                *x = (*x / quantum).round() * quantum;
+            }
+            if let Some((saddles, topology)) = classify(&f)
+                && topology == Topology::SeparateDisks
+            {
+                found += 1;
+                if on_face(&saddles) {
+                    degenerate += 1;
+                }
+            }
+        }
+        assert!(
+            found > 0,
+            "quantum {label} produced no separate-disks cell, so this asserted nothing"
+        );
+        assert_eq!(
+            found,
+            degenerate,
+            "quantum {label}: {} of {found} separate-disks cells have no saddle on a face, \
+             so the singular-face explanation does not cover them",
+            found - degenerate
+        );
+        std::println!(
+            "measured: quantum {label} gives {found} separate-disks cells, all {degenerate} \
+             with a saddle on a cell face"
+        );
+    }
+}

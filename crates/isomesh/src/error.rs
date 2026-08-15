@@ -166,7 +166,12 @@ pub enum Error {
     /// selects its interior vertex from face pairs whose quadratic has a **single**
     /// solution, of which a six-saddle cell has none. **The construction therefore
     /// stops here**, and so does this crate rather than guessing past it.
-    /// **A-020b** owns deriving it.
+    ///
+    /// **What is owed is not a new triangulation but the singular-face case
+    /// (M-231).** Continuous corner values produce no such cell at all; every one
+    /// that quantised values produce has a body saddle within `1e-12` of a cell
+    /// **face**, which is Grosso 2017 §4.2's singular configuration slipping past
+    /// the strict interior test by a few ulps. **A-002i** owns it.
     UnresolvedSixSaddle {
         /// The cell's corner-sign index.
         case: u8,
@@ -266,7 +271,7 @@ impl fmt::Display for Error {
                 "case {case:#010b} mask {mask:#08b} has six body saddles and a contour of \
                  {longest} vertices, past Corollary 6's bound of six, so its contours bound \
                  separate disks rather than a tunnel and Grosso's construction gives no rule \
-                 for it (A-020b)"
+                 for it (A-002i)"
             ),
             Self::DegenerateSweep => write!(
                 f,
