@@ -84,6 +84,11 @@ jobs:
       # index answers confidently and wrongly, which is worse than no index.
       - name: findings index is current
         run: ./scripts/findings_index.sh --check
+      # The regression checker itself, not the benches -- those take minutes and
+      # their timings are meaningless on a shared runner. This proves the gate
+      # still detects a regression, which is the half that can rot silently.
+      - name: regression checker detects a regression
+        run: ./scripts/regress.sh --self-test
 
       # The root README's quickstart is a copy of the crate README's doctested
       # one; the doctest compiles the original and this diff pins the copy.

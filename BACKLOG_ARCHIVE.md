@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-141 tickets. Line numbers are stable until something above them is edited — grep the ID if
+142 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -65,6 +65,7 @@ implementation contradicted the ticket.
 | [`E-214`](#L822) | The tunnel on screen, and the blocker that was a hypothesis |
 | [`E-215`](#L830) | record_gif.sh — the tenth GIF is a command |
 | [`E-216`](#L838) | Building a field, and the union nobody had noticed was missing |
+| [`T-011`](#L846) | Metric baselines, and a gate that has been seen to fail |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -822,3 +823,9 @@ implementation contradicted the ticket.
 | | | ***Two layout mistakes caught by looking at the recording rather than at the code.*** The gallery ran straight through the HUD, and the 'box' primitive was the *cutter* — a half-space slab far wider than the domain, which is what flattens the cap and which shows a wall rather than a box on a shelf of primitives. Both are fixed and the second is commented, because the next person will reach for the same function. |
 | | | ***Re-recorded after review, and the first pair did not show their claims (M-241).*** The user asked what the GIFs were meant to show, which was the right question: `marching_cubes_tunnel` had **no `Mesh3d` at all** and drew every triangle as three gizmo lines, so "two discs against one cylinder" was a cage of outlines; and `building-a-field` held `k` fixed for all 79 frames, advertising a sweep it never performed. Both fixed — the patches are filled and the sweep is driven by `Capture::taken`, which exists for exactly that — and `kitchen-sink.gif` rebuilt so its panels carry the improved versions. **A single frame is not an inspection of a GIF**, and checking one is how both shipped. |
 | | | *Both halves of the ticket shipped. The visibility half: `docs/gifs/building-a-field.gif`, a screenshot, rows in both READMEs, and **`kitchen-sink.gif` rebuilt from six panels to eight** with the authoring demo leading — plus `scripts/record_kitchen_sink.sh`, since that montage's recipe was as unwritten as the individual GIFs' was before E-215.* |
+| ☑ | **T-011** | **Committed metric baselines and a regression diff.** | M | — |
+| | | ***It earned its keep on the first run (M-242).*** X-001 had just rewritten how `benches/shootout.rs` enumerates its algorithms, which touches every measurement the file produces. Re-run and compared row for row: **112 rows, zero differences** in vertices, triangles or non-manifold edges. That is precisely the change golden hashes cannot see — T-007 pins meshes from the extractors, not from the bench — and *"the diff looked mechanical"* is not evidence. |
+| | | ***Two classes of metric, and only one is noisy.*** Vertices, triangles and non-manifold edges are compared **exactly**: they are deterministic by T-004 and a tolerance there could only hide a real change. `hausdorff` gets 2% and `self_intersections_per_1k` 5%, for float accumulation across architectures. `median_ms` gets **60%** — a tripwire for a doubling, not a benchmark, because wall clock moves with the governor and whatever else is running. |
+| | | ***Baselines are per machine and the machine is in the filename***, matching the `resolution_sweep-ryzen9-5900x.csv` convention already used by hand. A run on another host finds no baseline and says so, rather than comparing against numbers that never applied to it. A timing baseline from another box is worse than none. |
+| | | ***The acceptance is that the gate has been seen to fail, three ways.*** `--self-test` doubles one row's `median_ms` in a copy and requires the failure to **name the row** — it reports *"sphere qef 17: median_ms 0.396 → 0.793 (+100.0%, tolerance 60%)"*. Two real perturbations were also run and caught: a Hausdorff worsened 50% against its 2% band, and a triangle count moved by **two**, which the exact comparison catches where any tolerance would not. It runs in CI, because the half that rots silently is the checker rather than the numbers. |
+| | | *Deviation from the ticket, with the reason: it is `scripts/regress.sh` rather than `cargo run --bin regress`. A `[[bin]]` in `crates/isomesh` would ship an executable to every consumer of a `no_std` library and appear in `cargo install`, and the repo already has four gates as scripts — `backlog_gate.sh`, `readme_sync.sh`, `findings_index.sh`, `record_gif.sh` — so this is the existing idiom rather than a new one.* |
