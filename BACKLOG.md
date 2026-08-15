@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**151 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**152 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -241,7 +241,6 @@ source of truth* to check the first against.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **S-001** | **Exact Euclidean distance transform** — Felzenszwalb & Huttenlocher, separable, `O(n)` per dimension. The **ground truth** every other constructor is measured against, and the cheapest to get exactly right. **Acceptance:** on a sampled sphere, agrees with the analytic distance to within one sample spacing everywhere; a brute-force `O(n²)` reference agrees exactly on a small grid. | M | — |
 | ☐ | **S-002** | **Fast sweeping** — Zhao. `O(N)`, a few Gauss–Seidel passes, no heap, trivially parallel. The pragmatic default. **Acceptance:** converges to S-001's answer within a stated tolerance; sweep count to convergence recorded per field. | M | S-001 |
 | ☐ | **S-003** | **Fast marching** — Sethian (`10.1073/pnas.93.4.1591`, free on pnas.org, hand-acquisition). Heap-based, `O(N log N)`, single pass. Worth having because it is the citation everyone knows and because its error characteristics differ from sweeping. **Acceptance:** measured against S-001 and S-002 — accuracy *and* wall clock, in `docs/measurements/`. | M | S-002 |
 | ☐ | **S-004** | **Narrow-band reinitialization** — Peng et al. (in corpus). **The best structural match to a brush stroke**, because cost scales with edited *surface area* rather than chunk volume. Carry Sussman & Fatemi's warning explicitly: naive reinitialisation **moves the zero set**, which in a destructible game means geometry creeping after every edit. **Acceptance:** measure the zero-set drift per reinitialisation and assert it below a stated bound — that assertion is the ticket. | L | S-002, F-004 |

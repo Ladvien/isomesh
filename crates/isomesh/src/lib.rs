@@ -71,6 +71,7 @@ extern crate std;
 pub mod brush;
 pub mod chunk;
 pub mod collider;
+pub mod construct;
 pub mod dual_contouring;
 /// Speculative algorithms, behind the `experimental` feature.
 ///

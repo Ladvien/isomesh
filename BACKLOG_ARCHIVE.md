@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-151 tickets. Line numbers are stable until something above them is edited — grep the ID if
+152 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -75,6 +75,7 @@ implementation contradicted the ticket.
 | [`F-005`](#L902) | Empty-cell rejection — one evaluation replaces 576 |
 | [`F-006`](#L910) | Segment tracing — the null result, and where it is not null |
 | [`F-007`](#L918) | Crossing refinement — right mechanism, wrong metric |
+| [`S-001`](#L926) | The exact distance transform, checked two ways |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -884,3 +885,8 @@ implementation contradicted the ticket.
 | | | ***What does improve is the curved fields, by 13–15%***: sphere **5.361e-3 → 4.561e-3 (0.851×)**, torus **1.379e-2 → 1.201e-2 (0.871×)**. Those are the fields whose error genuinely *is* interpolation error, because `f` along an edge is a curve and a straight line through its endpoints misses it. So the feature is worth having; it is aimed at a different target than the ticket believed. |
 | | | ***Shipped as `set_crossing_refinement(steps)`, defaulting to 0.*** Zero is plain linear interpolation, which is what every committed golden hash pins, so the default changes nothing. Refinement moves vertices and **never** triangles — the sign is untouched by it, so the case classification and the topology are already right — and the test asserts the triangle count is identical rather than trusting that. |
 | | | *The method note: "where the field is kinked" and "where the error is" were assumed to be the same place and are not. The ticket reasoned from the defect's mechanism to the metric without checking what the metric was measuring.* |
+| ☑ | **S-001** | **Exact Euclidean distance transform.** | M | — |
+| | | ***Checked two independent ways, because they answer different questions.*** Against an `O(n²)` brute-force search sharing no line of code with it — **1,287 samples, exact equality, not a tolerance** — which proves the lower-envelope pass computes what it intends, its failure mode being plausible numbers. And against the closed-form sphere, which proves the intent is a distance field at all. |
+| | | ***The one-cell gap is structural and is stated as such (M-251).*** Worst disagreement **0.10000 against a spacing of 0.1 — exactly 1.0000 cells**. The transform answers with the distance to the nearest opposite-signed *sample*, and the surface lies between samples, so a point whose nearest crossing falls mid-cell is off by a full spacing. Landing on the bound rather than inside it is the expected result; the test compares against `1 + ε` for that reason and says so, rather than quietly widening the tolerance. |
+| | | ***The test grid is 11×9×13, deliberately not a cube.*** An axis transposition in a separable three-pass transform survives a cube perfectly and dies immediately on unequal extents. |
+| | | *Squared distances throughout with one square root at the end: the recurrence is exact in squared space, and the parabola-intersection formula's `2(q − p)` denominator only has that form because the terms are squares. `far()` is a large finite number rather than infinity, because `∞ − ∞` in that formula is a NaN that propagates silently through the envelope.* |
