@@ -2440,3 +2440,167 @@ fn whether_any_field_reaches_subdivision_on_a_grid() {
         fine.inconsistently_oriented_edges,
     );
 }
+
+/// **A-014i's third recorded defect: are bigons what leaves vertices behind?**
+///
+/// M-193 counted **510** two-arc regions across the seven fields — one chord and
+/// one edge piece, the zero-area scoop V-21 predicted. A region of fewer than
+/// three nodes emits no triangle, so any crossing reached only by bigons is a
+/// position the fill records and nothing references. That is the shape the
+/// review's "orphaned bigons" describes, and this asks whether the two counts
+/// are actually the same thing.
+///
+/// Measured at the **patch** level rather than on the assembled mesh, because
+/// `cell_tet` hands every patch position to the sink and a neighbouring
+/// tetrahedron may then reference the vertex — which is exactly how M-201's
+/// reference-field orphans turned out to be consumed rather than wasted.
+#[test]
+fn whether_bigons_are_what_leaves_positions_unreferenced() {
+    use crate::fields::ReferenceField;
+    use crate::subgrid::coordinates::TET_FACE_COUNT;
+    use crate::subgrid::curves::CurveKind;
+    use crate::subgrid::surface::{NonNormalKind, TetPatch, cycles, face_regions, fill};
+
+    let mut rows = 0;
+    crate::for_each_reference_field!(f64, |name, field| {
+        let (lo, hi) = field.domain();
+        let n = 17u32;
+        let cell = (hi[0] - lo[0]) / f64::from(n - 1);
+        let mut along: [Vec<f64>; TET_EDGE_COUNT] = core::array::from_fn(|_| Vec::new());
+        let mut patch = TetPatch::<f64>::new();
+        let (mut orphans, mut bigons, mut tets_with_orphans) = (0u64, 0u64, 0u64);
+        // How many unreferenced positions a single tetrahedron leaves, so an
+        // exception to "always two" is visible as a shape rather than a residue.
+        let mut per_tet: alloc::collections::BTreeMap<usize, u64> =
+            alloc::collections::BTreeMap::new();
+
+        for z in 0..n - 1 {
+            for y in 0..n - 1 {
+                for x in 0..n - 1 {
+                    for tet in &TETS {
+                        let mut corners = [[0.0f64; 3]; 4];
+                        for (c, slot) in corners.iter_mut().enumerate() {
+                            let offset = corner_offset(tet[c]);
+                            for axis in 0..3 {
+                                let index = f64::from([x, y, z][axis]) + f64::from(offset[axis]);
+                                slot[axis] = lo[axis] + cell * index;
+                            }
+                        }
+                        let mut total = 0usize;
+                        for (e, slot) in along.iter_mut().enumerate() {
+                            slot.clear();
+                            let [a, b] = TET_EDGES[e];
+                            all_roots(corners[a as usize], corners[b as usize], &field, 16, slot);
+                            total += slot.len();
+                        }
+                        if total == 0 {
+                            continue;
+                        }
+                        let mut borrowed: [&[f64]; TET_EDGE_COUNT] = [&[]; TET_EDGE_COUNT];
+                        for (slot, v) in borrowed.iter_mut().zip(along.iter()) {
+                            *slot = v.as_slice();
+                        }
+                        let crossings = TetCrossings {
+                            corners,
+                            along: borrowed,
+                        };
+                        if crossings.check().is_err() {
+                            continue;
+                        }
+                        if fill(&crossings, &mut patch).is_err() {
+                            continue;
+                        }
+
+                        let mut used = alloc::vec![false; patch.positions.len()];
+                        for tri in &patch.triangles {
+                            for i in tri {
+                                if let Some(slot) = used.get_mut(*i as usize) {
+                                    *slot = true;
+                                }
+                            }
+                        }
+                        let here = used.iter().filter(|u| !**u).count() as u64;
+                        orphans += here;
+                        if here > 0 {
+                            tets_with_orphans += 1;
+                            *per_tet.entry(here as usize).or_default() += 1;
+                        }
+
+                        // Two-arc inside regions, counted the same way M-193 does.
+                        let coords = crossings.coordinates();
+                        for cycle in cycles(&coords)
+                            .iter()
+                            .filter(|c| c.kind == CurveKind::NonNormal)
+                        {
+                            let inside = match cycle.non_normal_kind() {
+                                Some(NonNormalKind::Contractible) => None,
+                                Some(NonNormalKind::Corner) => cycle.distinguished_corner(),
+                                _ => continue,
+                            };
+                            let _ = inside;
+                            for face in 0..TET_FACE_COUNT as u8 {
+                                let Some(regions) = face_regions(face, &coords, cycle) else {
+                                    continue;
+                                };
+                                bigons += regions
+                                    .iter()
+                                    .filter(|r| r.is_inside() && r.arc.len() < 3)
+                                    .count() as u64;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        std::println!(
+            "{name:<15} patch orphans {orphans:>5} across {tets_with_orphans:>4} tets | \
+             bigon regions {bigons:>4}"
+        );
+
+        std::println!("{name:<15} orphans per affected tetrahedron: {per_tet:?}");
+
+        // **A bigon is a two-node region, and almost every affected tetrahedron
+        // leaves exactly two positions behind** — which is the review's
+        // "orphaned bigons", measured: a bigon emits no triangle, so where its
+        // two crossings are reached by nothing else they are recorded and never
+        // used. The law is exact on six of the seven fields.
+        //
+        // **`fbm_terrain` looked like an exception and is not.** It leaves 302
+        // across 148 tetrahedra where twice-per-tetrahedron gives 296 — and the
+        // histogram says why: **145 tetrahedra with 2 and three with 4**, which
+        // is two bigons in one tetrahedron rather than a second mechanism.
+        // `145·2 + 3·4 = 302`. The law is therefore that orphans arrive in
+        // **pairs**, one pair per bigon nothing else reaches, and it is exact on
+        // all seven fields once stated that way — which is why the assertion
+        // below is evenness rather than a fixed multiple.
+        //
+        // A field with no bigons has no orphans, which is the other half and is
+        // exact everywhere.
+        assert_eq!(
+            bigons == 0,
+            orphans == 0,
+            "{name}: bigons and orphans disagree about whether there are any"
+        );
+        assert!(
+            per_tet.keys().all(|k| k % 2 == 0),
+            "{name}: a tetrahedron left an odd number of positions unreferenced, \
+             so something other than a bigon is orphaning them: {per_tet:?}"
+        );
+        let want = match name {
+            "sphere" | "torus" => (0, 0, 0),
+            "box_exact" => (96, 48, 264),
+            "csg_difference" => (132, 66, 318),
+            "thin_plate" => (8, 4, 12),
+            "gyroid" => (282, 141, 696),
+            _ => (302, 148, 510),
+        };
+        assert_eq!(
+            (orphans, tets_with_orphans, bigons),
+            want,
+            "{name}: the bigon/orphan census moved"
+        );
+        rows += 1;
+    });
+    assert_eq!(rows, 7, "the sweep did not reach every field");
+}
