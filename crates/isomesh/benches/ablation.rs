@@ -197,7 +197,7 @@ where
     };
 
     // Only where the field's own metadata says the quantity is a distance.
-    let hausdorff = if field.is_exact_distance() {
+    let hausdorff = if field.bound().is_exact() {
         AccuracyConfig::from_cell_size(h)
             .ok()
             .and_then(|acfg| {

@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-144 tickets. Line numbers are stable until something above them is edited — grep the ID if
+145 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -68,6 +68,7 @@ implementation contradicted the ticket.
 | [`T-011`](#L846) | Metric baselines, and a gate that has been seen to fail |
 | [`T-013`](#L854) | Part 4b — experiments run, and what happened to them |
 | [`T-014`](#L862) | Cross-machine protocol, and provenance inside the file |
+| [`F-001`](#L870) | FieldBound — the declaration a bool could not hold |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -841,3 +842,9 @@ implementation contradicted the ticket.
 | | | ***The commit line is the field that matters and the one most easily lost.*** Two runs a week apart on the same box are not comparable if the extractor changed between them, and nothing else in a CSV records that it did. The header marks a run **not attributable** when code has moved since the commit — scoped to `crates/`, `bevy_isomesh/` and the manifests, because a dirty README cannot change a triangle count and flagging it would train everyone to ignore the warning that matters. |
 | | | ***The hand-named file is left alone, deliberately.*** `resolution_sweep-ryzen9-5900x.csv` predates the convention and **M-45, ✗14 and O-11 quote figures from it by name**; renaming it to match would silently break five references to buy tidiness. `docs/measurements/README.md` records that it is the exception and why. |
 | | | ***One real bug found in the process, and it exited zero (M-243).*** The script embeds Python in an **unquoted** heredoc, so bash expanded the body — a backtick in a docstring became command substitution, and a comment mentioning `median_ms` made bash run it and print `command not found` on every invocation. The gate still passed: command substitution failing does not fail the script. Fixed structurally by quoting the heredoc and passing values through the environment, which removes the class rather than the instance. **This repository writes unusually long comments and is therefore unusually exposed to prose-inside-a-heredoc being code.** |
+| ☑ | **F-001** | **Replace `is_exact_distance() -> bool` with a declared bound.** | M | — |
+| | | ***Both sources verified in the corpus rather than cited from the ticket.*** Bálint, Valasek & Gergó 2019 (`10.14232/actacyb.24.1.2019.3`) Corollary 1, verbatim: *"Every signed distance function is Lipschitz continuous and their smallest Lipschitz constant is 1."* Their 2023 follow-up (`10.14733/cadaps.2023.1154-1174`) supplies `q` and is blunt about why exactness cannot survive CSG: *"the minimum of two exact signed distance functions… is not an exact SDF, and the error can be arbitrarily large under certain conditions."* |
+| | | ***`FieldBound` has four cases because a `bool` could hold neither half of `true // away from the seam`.*** `Exact`, `Lipschitz { l }`, `Underestimate { q }`, `Unbounded`. The split that matters: `l` bounds how fast the field *changes* and survives arbitrary CSG, which is what Phase 12 needs; `q` bounds how far the *value* is from the distance and does not. |
+| | | ***The test caught its own author, immediately (M-244).*** The first draft declared `noise_cavity` as `Lipschitz { l: 2.598 }`; `every_field_meets_the_bound_it_declares` measured `|∇f|` reaching **7.734** and failed. That is the same defect the ticket existed to remove, reproduced one screen away by the person removing it. **The gyroid's constant was guessed too and survived only by luck** — `√3` declared against a sampled maximum of 1.695. Derived properly: `|∂g/∂x| ≤ 2`, so `|∇g| ≤ 2√3 ≈ 3.464`, twice the guess and in the direction where being wrong lets a tracer step through the surface. |
+| | | ***`noise_cavity` is `Unbounded`, not measured.*** A sampled maximum is a lower bound on a supremum, so declaring one as a Lipschitz constant would be unsound in the dangerous direction. F-002 is where a real constant gets established from the noise's amplitude and octaves. |
+| | | *Acceptance met: every field declares, `csg_difference` is no longer `Exact` and has its own pinned test, and `accuracy.rs`, `shootout` and `ablation` all gate on `bound().is_exact()`. One rotting claim fell out — `accuracy.rs` said Hausdorff is unavailable for "two of the seven" fields; it is **four of the eight**, and nothing could check that until each field declared.* |

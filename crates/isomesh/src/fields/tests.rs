@@ -86,11 +86,11 @@ fn analytic_gradients_match_central_differences() {
 /// Where a field claims to be a signed distance, `|∇f|` must actually be one.
 ///
 /// This is the test that catches a missing normalisation, and it is why
-/// `is_exact_distance` lives on the trait instead of in a comment.
+/// The bound lives on the trait instead of in a comment.
 #[test]
 fn exact_distance_fields_have_unit_gradients() {
     fn check<S: ReferenceField<Scalar = f64>>(name: &str, field: &S) {
-        if !field.is_exact_distance() {
+        if !field.bound().is_exact() {
             return;
         }
         for p in scaled_samples(field) {
@@ -248,8 +248,8 @@ fn gyroid_signs() {
     assert!(f.sample([6.5, 0.0, 0.0]) > 0.0);
 
     // The uncapped surface really is not a distance field -- this is the reason
-    // `is_exact_distance` exists.
-    assert!(!f.is_exact_distance());
+    // The declared bound says so, rather than a comment.
+    assert!(!f.bound().is_exact());
 }
 
 #[test]
@@ -443,4 +443,117 @@ fn the_blend_radius_adds_material_monotonically() {
             );
         }
     }
+}
+
+/// **Every reference field declares a bound, and the declaration is checked
+/// against the field rather than trusted (F-001).**
+///
+/// A declaration nobody verifies is the defect this ticket existed to remove —
+/// `csg_difference` declared `true` with `// away from the seam` beside it for
+/// months. So each field's claim is measured:
+///
+/// - **`Exact`** must satisfy `|∇f| ≈ 1`, since that is what "the value is the
+///   distance" means differentially. Corollary 1 of Bálint, Valasek & Gergó 2019
+///   is the authority: every true SDF is 1-Lipschitz and 1 is the *smallest*
+///   such constant, so an exact field cannot have a gradient shorter than one
+///   either.
+/// - **`Lipschitz { l }`** must satisfy `|∇f| ≤ l`. Declaring a constant smaller
+///   than the field's own gradient is the failure worth catching, because a
+///   sphere tracer dividing by it would step through the surface.
+/// - **`Underestimate { q }`** must not *overstate* distance along the gradient,
+///   which is the property that makes it the safe direction.
+#[test]
+fn every_field_meets_the_bound_it_declares() {
+    use super::FieldBound;
+
+    // Sampled off-lattice on purpose: a grid aligned to the noise lattice or to
+    // a box face lands on exactly the creases where a gradient is undefined, and
+    // would measure the discontinuity instead of the field.
+    const N: u32 = 12;
+    let offset = 0.031_7_f64;
+
+    crate::for_each_reference_field!(f64, |name, field| {
+        let (lo, hi) = field.domain();
+        let bound = field.bound();
+        let mut worst_low = f64::INFINITY;
+        let mut worst_high: f64 = 0.0;
+        let mut samples = 0usize;
+
+        for i in 0..N {
+            for j in 0..N {
+                for k in 0..N {
+                    let t = |v: u32, a: f64, b: f64| {
+                        a + (b - a) * (f64::from(v) + 0.5 + offset) / f64::from(N)
+                    };
+                    let p = [t(i, lo[0], hi[0]), t(j, lo[1], hi[1]), t(k, lo[2], hi[2])];
+                    let g = field.gradient(p);
+                    let len = (g[0] * g[0] + g[1] * g[1] + g[2] * g[2]).sqrt();
+                    if !len.is_finite() {
+                        continue;
+                    }
+                    worst_low = worst_low.min(len);
+                    worst_high = worst_high.max(len);
+                    samples += 1;
+                }
+            }
+        }
+        assert!(samples > 100, "{name}: only {samples} usable samples");
+
+        match bound {
+            FieldBound::Exact => {
+                // Generous both ways: a crease has no gradient and a finite
+                // sample near one reads short. The claim being tested is that
+                // the field is a distance, not that every sample is clean.
+                assert!(
+                    worst_high < 1.20,
+                    "{name} declares Exact but |∇f| reaches {worst_high:.4}"
+                );
+                assert!(
+                    worst_low > 0.30,
+                    "{name} declares Exact but |∇f| falls to {worst_low:.4}"
+                );
+            }
+            FieldBound::Lipschitz { l } => {
+                assert!(
+                    worst_high <= l * 1.05,
+                    "{name} declares Lipschitz l = {l} but |∇f| reaches {worst_high:.4}"
+                );
+            }
+            FieldBound::Underestimate { q } => {
+                assert!((0.0..=1.0).contains(&q), "{name}: q = {q} is not in (0, 1]");
+                // An underestimate is still 1-Lipschitz in this crate's fields:
+                // it is built from exact operands by min/max, and those preserve
+                // the constant even where they destroy exactness.
+                assert!(
+                    worst_high < 1.20,
+                    "{name} declares Underestimate but |∇f| reaches {worst_high:.4}"
+                );
+            }
+            FieldBound::Unbounded => {}
+        }
+        std::println!("measured: {name:<16} {bound:?} |∇f| in [{worst_low:.3}, {worst_high:.3}]");
+    });
+}
+
+/// **`csg_difference` is no longer `Exact`, which is F-001's acceptance stated
+/// as a test.**
+///
+/// Pinned separately from the sweep above because it is the specific claim the
+/// ticket was written about, and because a future edit that "tidies" the
+/// declaration back to `Exact` would pass every other test in this file.
+#[test]
+fn the_csg_field_does_not_claim_to_be_a_distance() {
+    use super::FieldBound;
+
+    let f = super::csg_difference::<f64>();
+    assert_ne!(
+        f.bound(),
+        FieldBound::Exact,
+        "csg_difference is max(box, -sphere); max of two exact distances is not \
+         an exact distance, and near a concave seam it overestimates"
+    );
+    assert!(!f.bound().is_exact());
+    // It is still 1-Lipschitz, which is the half that survives CSG and the half
+    // Phase 12's empty-cell rejection needs.
+    assert_eq!(f.bound().lipschitz(), Some(1.0));
 }

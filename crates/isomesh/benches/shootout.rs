@@ -24,7 +24,7 @@
 //! Two columns are conditional, and the conditions are the fields' own metadata
 //! rather than this file's opinion:
 //!
-//! - **Hausdorff is only reported where `is_exact_distance()`.** `gyroid` and
+//! - **Hausdorff is only reported where the field declares `FieldBound::Exact`.** `gyroid` and
 //!   `fbm_terrain` are not distance fields, so the quantity T-003 computes
 //!   against them is not a distance and printing it would invent a number.
 //! - **Self-intersection is only run at the smaller grid.** It is a
@@ -180,7 +180,7 @@ where
     };
 
     // Only where the field's own metadata says the quantity is a distance.
-    let hausdorff = if field.is_exact_distance() {
+    let hausdorff = if field.bound().is_exact() {
         AccuracyConfig::from_cell_size(h)
             .ok()
             .and_then(|acfg| {

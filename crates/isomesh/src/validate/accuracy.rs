@@ -27,9 +27,13 @@
 //!
 //! One unconditional path, for all seven reference fields and any other `Sdf`.
 //!
-//! `|f(p)|` is a distance only when `|∇f| == 1`, which is false for two of the
-//! seven reference fields. Branching on
-//! [`is_exact_distance`](crate::fields::ReferenceField::is_exact_distance) would
+//! `|f(p)|` is a distance only when `|∇f| == 1`, which is false for **four of the
+//! eight** reference fields — a count that read "two of the seven" until F-001
+//! made every field declare its own bound and the arithmetic became checkable.
+//! Exact: `sphere`, `torus`, `box_exact`, `thin_plate`. Not: `csg_difference`
+//! (an underestimate, because `max` of two distances is not one), `gyroid`
+//! (Lipschitz), `noise_cavity` and `fbm_terrain` (unbounded). Branching on
+//! [`bound`](crate::fields::ReferenceField::bound) would
 //! put two execution paths in the harness, and the crate's rule is one.
 //!
 //! The obvious branch-free repair, `|f(p)|/|∇f(p)|`, is rejected for a reason
