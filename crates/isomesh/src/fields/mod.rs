@@ -638,6 +638,108 @@ impl<A: Sdf, B: Sdf<Scalar = A::Scalar>> Sdf for Intersection<A, B> {
     }
 }
 
+/// Set union `a ∪ b`, as `min(f_a, f_b)`.
+///
+/// The combinator the crate went without until E-216 needed it, and the absence
+/// is worth a sentence: `Difference` caps `csg_difference` and `Intersection`
+/// caps `Gyroid`, so both had a reference field asking for them. **Nothing in
+/// the suite unions anything**, so the most basic CSG operation was the one
+/// missing — a property of the fixtures rather than of the design (M-240).
+///
+/// # Distance, and why this one is the safe direction
+///
+/// `min` of two 1-Lipschitz functions is 1-Lipschitz, and it **never
+/// overestimates** the true distance: away from the seam it is exact, and near
+/// one it is a conservative lower bound. That is the direction a sphere tracer
+/// can survive — a step that is too short only costs iterations. `max`, which
+/// [`Intersection`] and [`Difference`] use, overestimates near concave seams and
+/// is the direction that lets a tracer step *through* a surface. Phase 11's
+/// `F-001` is where that distinction gets a type.
+///
+/// Gradient is that of the active operand; the first wins on the seam, which is
+/// the same deterministic selection from the subdifferential the other two make.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Union<A, B> {
+    /// First operand.
+    pub a: A,
+    /// Second operand.
+    pub b: B,
+}
+
+impl<A: Sdf, B: Sdf<Scalar = A::Scalar>> Sdf for Union<A, B> {
+    type Scalar = A::Scalar;
+
+    #[inline]
+    fn sample(&self, p: [Self::Scalar; 3]) -> Self::Scalar {
+        let (fa, fb) = (self.a.sample(p), self.b.sample(p));
+        if fa <= fb { fa } else { fb }
+    }
+
+    #[inline]
+    fn gradient(&self, p: [Self::Scalar; 3]) -> [Self::Scalar; 3] {
+        let (fa, fb) = (self.a.sample(p), self.b.sample(p));
+        if fa <= fb {
+            self.a.gradient(p)
+        } else {
+            self.b.gradient(p)
+        }
+    }
+}
+
+/// Union with a rounded seam of radius `k`, as
+/// [`smooth_min`](crate::brush::smooth_min).
+///
+/// **The parameter a level designer actually reaches for.** A hard [`Union`]
+/// leaves a crease where two primitives meet; `k` is how wide the fillet is, in
+/// world units, and sweeping it from zero is the difference between two spheres
+/// touching and one blob.
+///
+/// # It is not a distance field, and the blend is where it stops being one
+///
+/// `smooth_min` is smaller than `min` by up to `k/4`, so the value understates
+/// distance inside the blend region. It stays a conservative *lower* bound —
+/// the safe direction, as for [`Union`] — but an accuracy harness must measure
+/// against geometry rather than against `|sample|`. The gradient is the exact
+/// derivative of the blend rather than either operand's, because on this seam
+/// there is no active operand to pick: that is what "smooth" means.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SmoothUnion<A, B, R> {
+    /// First operand.
+    pub a: A,
+    /// Second operand.
+    pub b: B,
+    /// Blend radius, in world units. Zero degenerates to a hard [`Union`].
+    pub k: R,
+}
+
+impl<A: Sdf, B: Sdf<Scalar = A::Scalar>> Sdf for SmoothUnion<A, B, A::Scalar> {
+    type Scalar = A::Scalar;
+
+    #[inline]
+    fn sample(&self, p: [Self::Scalar; 3]) -> Self::Scalar {
+        crate::brush::smooth_min(self.a.sample(p), self.b.sample(p), self.k)
+    }
+
+    /// Central differences, because the blend has no active operand.
+    ///
+    /// [`Union`] can hand back whichever operand is active; here both contribute
+    /// everywhere inside the blend, so the analytic gradient would be a chain
+    /// rule through `smooth_min`'s own `h`. Differencing the composed field is
+    /// shorter, is exact to `O(h²)`, and cannot disagree with `sample` — which
+    /// an independently written analytic form could.
+    #[inline]
+    fn gradient(&self, p: [Self::Scalar; 3]) -> [Self::Scalar; 3] {
+        let e = Self::Scalar::from_f64(1e-4);
+        let at = |q: [Self::Scalar; 3]| self.sample(q);
+        let two = Self::Scalar::ONE + Self::Scalar::ONE;
+        [
+            (at([p[0] + e, p[1], p[2]]) - at([p[0] - e, p[1], p[2]])) / (two * e),
+            (at([p[0], p[1] + e, p[2]]) - at([p[0], p[1] - e, p[2]])) / (two * e),
+            (at([p[0], p[1], p[2] + e]) - at([p[0], p[1], p[2] - e])) / (two * e),
+        ]
+    }
+}
+
 /// A box with a sphere subtracted from one corner.
 pub type CsgDifference<R> = Difference<BoxExact<R>, Sphere<R>>;
 

@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**140 tickets archived, 31 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**141 tickets archived, 30 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -145,7 +145,6 @@ and every README code fence must be compiled by something.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **E-216** | **An SDF *authoring* demo — the gap the eleven game examples do not cover.** Raised 2026-08-15 on the observation that the repo has no SDF demos for games. **Half of that is a visibility problem and half is a real gap, and they need separating.** What exists: eleven `game_*` examples, of which `game_showcase`, `game_csg_props` and `game_destruction` compose fields by CSG at runtime, plus four committed GIFs of game scenes. What does **not** exist is a demo of the SDF as a *content medium* — every example either meshes a reference field or applies brush edits to one, so a reader learns that isomesh meshes fields and never learns **how to build the field a game would ship**. Concretely: a gallery of the primitives and operators with each one's shape on screen and its cost measured, and one worked asset — a prop or a level piece — assembled from primitives, smooth-unioned, and meshed, with the field expression shown beside the result. **The measured hook already exists and is not being used**: `smooth_union`'s blend radius is exactly the parameter a level designer would reach for, and nothing shows it. **Check the visibility half first, because it may be most of the complaint** — the `bevy_isomesh` README's table lists 8 of 33 examples and E-214 is blocked on a capture environment, so the demos that *do* exist are largely invisible from the front page. If that is the whole of it, this ticket shrinks to a README change. | M | E-214 |
 
 ---
 

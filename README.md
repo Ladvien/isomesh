@@ -8,7 +8,7 @@
 
 `isomesh` has to serve both a real-time voxel game and a CAD tool. That single constraint decides almost everything about it: no math library appears in a public signature, output buffers are caller-provided and reusable, the scalar type is generic over `f32` and `f64`, and the core crate has exactly one dependency.
 
-![Six of the examples running: caves and arches, a carved block, a ball crossing streamed chunk seams, a slab blown apart into debris, letters thinner than a single voxel, and Surface Nets against Marching Cubes](docs/gifs/kitchen-sink.gif)
+![Eight of the examples running at once: a field built from primitives and smooth-unioned into a mushroom, caves and arches, letters thinner than a single voxel, one cell meshed as two discs and as a tunnel, Surface Nets against Marching Cubes, terrain being carved, a ball crossing streamed chunk seams, and a slab blown apart into debris](docs/gifs/kitchen-sink.gif)
 
 *Six examples, all running. **Top:** caves and arches from a nine-line field; eight edits replayed as a
 re-fold of the log; a ball walking 1,348 chunk-seam crossings with zero holes. **Bottom:** a slab
@@ -97,6 +97,16 @@ cd bevy_isomesh && cargo run --example game_showcase --release
 ## 495 seam crossings, zero holes
 
 ![A ball walking across streamed terrain, chunks loading continuously around it](docs/gifs/walking-the-seams.gif)
+
+## Building the field, not meshing it
+
+![Four SDF primitives on a shelf — capsule, sphere, box, torus — and one mushroom assembled from them by smooth union and difference](docs/gifs/building-a-field.gif)
+
+*Every other example here starts from a field that already exists. This one has no meshing content at
+all: the extractor is the default and the only thing that changes is the expression. Left, the four
+primitives. Right, `Union { SmoothUnion { stem, Difference { cap, flat }, k }, gills }`. **`k` is the
+knob a level designer reaches for** — at zero the stem meets the cap in a crease, and by 0.25 it is a
+fillet — and `[` and `]` sweep it and re-mesh while the triangle count and extraction time update.*
 
 ## One cell, meshed twice
 
@@ -256,6 +266,7 @@ cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
 cargo run --example quickstart --release                        # start here: an SDF on screen, nothing else
+cargo run --example sdf_authoring --release                     # building a field: primitives, operators, one asset
 cargo run --example marching_cubes_sphere --release             # the first GIF
 cargo run --example surface_nets_vs_marching_cubes --release    # the second and third
 cargo run --example dual_contouring_cube --release              # the sharp-feature comparison

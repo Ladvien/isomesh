@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-140 tickets. Line numbers are stable until something above them is edited — grep the ID if
+141 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -64,6 +64,7 @@ implementation contradicted the ticket.
 | [`B-011`](#L816) | The Bevy Assets entry, staged rather than submitted |
 | [`E-214`](#L822) | The tunnel on screen, and the blocker that was a hypothesis |
 | [`E-215`](#L830) | record_gif.sh — the tenth GIF is a command |
+| [`E-216`](#L838) | Building a field, and the union nobody had noticed was missing |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -815,3 +816,8 @@ implementation contradicted the ticket.
 | | | ***The ticket's premise was half wrong and was corrected before starting rather than after.*** `examples/common/mod.rs` already carried the whole capture rig — `ISOMESH_CAPTURE` writing a numbered frame per N ticks, plus `_FRAMES`, `_EVERY`, `_SETTLE`, `ISOMESH_SCREENSHOT` and `ISOMESH_SPIN`. What was undocumented was the **assembly**: nothing said how a frame directory becomes a GIF. |
 | | | ***`scripts/record_gif.sh` drives the rig rather than scraping the screen.*** The obvious `ffmpeg -f x11grab` is the wrong tool — the rig's frames come through Bevy's screenshot path, so they need no window manager and cannot catch another window passing over the top. Two-pass `palettegen`/`paletteuse`, because a single pass bands badly on shaded 3D, and a warning outside the 0.7–4.8 MB the committed GIFs sit within. |
 | | | *Acceptance met by re-recording: the script reproduces the committed GIF at **79 frames and 2.34 MB** against the hand-made 2.32 MB. That comparison is what proves the recipe is the recipe rather than a plausible script nobody ran.* |
+| ☑ | **E-216** | **An SDF *authoring* demo — the gap the eleven game examples did not cover.** | M | — |
+| | | ***It could not be written, because the crate had no `Union` (M-240).*** `Difference` existed because `csg_difference` needs it and `Intersection` because `Gyroid` needs capping — every combinator was there because a *fixture* asked for it, so the most basic CSG operation was the one missing. **The fixture trap in its ninth appearance and from a new direction**: not a wrong belief this time but an absent capability, invisible for exactly as long as nothing exercised it. `Union` and `SmoothUnion` are added, with the set property and the never-overestimates property asserted over 13,824 sample points, and the blend radius asserted **monotone** — more `k`, more material at the seam, never less anywhere. |
+| | | ***`examples/sdf_authoring.rs` has no meshing content on purpose.*** The extractor is the default and the resolution is fixed; the only thing that changes is the expression. Four primitives on a shelf, then `Union { SmoothUnion { stem, Difference { cap, flat }, k }, gills }` — three of the four operators doing visible work. **`[` and `]` sweep `k` and re-mesh**, which is the designer-facing parameter nothing in the repository had ever put on screen. |
+| | | ***Two layout mistakes caught by looking at the recording rather than at the code.*** The gallery ran straight through the HUD, and the 'box' primitive was the *cutter* — a half-space slab far wider than the domain, which is what flattens the cap and which shows a wall rather than a box on a shelf of primitives. Both are fixed and the second is commented, because the next person will reach for the same function. |
+| | | *Both halves of the ticket shipped. The visibility half: `docs/gifs/building-a-field.gif`, a screenshot, rows in both READMEs, and **`kitchen-sink.gif` rebuilt from six panels to eight** with the authoring demo leading — plus `scripts/record_kitchen_sink.sh`, since that montage's recipe was as unwritten as the individual GIFs' was before E-215.* |

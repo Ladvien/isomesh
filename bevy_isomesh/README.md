@@ -112,12 +112,13 @@ Every Bevy example in the project also lives here, and CI builds them all on eve
 
 ## Examples
 
-33 of them. **Start with `quickstart`** — it is the only one that is not a measured experiment, and the only one whose
+34 of them. **Start with `quickstart`** — it is the only one that is not a measured experiment, and the only one whose
 job is to show you the shape of a working app rather than to prove something about the library. The rest each carry a
 claim in the header; a taste, with what each one proves:
 
 | Example | The claim it makes | Evidence |
 |---|---|---|
+| `sdf_authoring` | **building** a field rather than meshing one — four primitives, three operators, one asset, and the blend radius on a key | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e216-sdf-authoring.png) |
 | `quickstart` | **the shortest path from an SDF to a mesh on screen** — under 60 lines including the prose, and its exact chunk layout is asserted to mesh all eight chunks | [`examples/quickstart.rs`](https://github.com/ladvien/isomesh/blob/main/bevy_isomesh/examples/quickstart.rs) |
 | `game_showcase` | caves and arches a heightfield cannot represent, flown through at 60 fps | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e210-showcase-hero.png) |
 | `game_walk` | 495 chunk-seam crossings walked, 0 holes — the ball stands on the triangles, not the field | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e203-game-walk.png) |

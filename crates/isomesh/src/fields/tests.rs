@@ -333,3 +333,114 @@ fn difference_gradient_follows_the_active_operand() {
     .gradient(p);
     assert_eq!(g, [-sphere_grad[0], -sphere_grad[1], -sphere_grad[2]]);
 }
+
+/// **Union is the set union, and its value never overestimates distance
+/// (E-216).**
+///
+/// Two properties, because `min` is easy to write and easy to write backwards.
+/// The **set** property is what makes it a union: a point is inside `a ∪ b`
+/// exactly when it is inside either. The **bound** property is what makes it
+/// safe: `min` of two exact distances is never larger than the true distance to
+/// the union, so a sphere tracer stepping by it can only under-step.
+#[test]
+fn union_is_the_set_union_and_never_overestimates() {
+    use super::{Sphere, Union};
+
+    let a = Sphere {
+        center: [-0.4, 0.0, 0.0],
+        radius: 0.7_f64,
+    };
+    let b = Sphere {
+        center: [0.4, 0.0, 0.0],
+        radius: 0.7_f64,
+    };
+    let u = Union { a, b };
+
+    let mut checked = 0usize;
+    let n = 24;
+    for i in 0..n {
+        for j in 0..n {
+            for k in 0..n {
+                let p = [
+                    -1.5 + 3.0 * f64::from(i) / f64::from(n - 1),
+                    -1.5 + 3.0 * f64::from(j) / f64::from(n - 1),
+                    -1.5 + 3.0 * f64::from(k) / f64::from(n - 1),
+                ];
+                let (fa, fb, fu) = (a.sample(p), b.sample(p), u.sample(p));
+
+                // Set property, stated on the signs rather than the values.
+                assert_eq!(
+                    fu <= 0.0,
+                    fa <= 0.0 || fb <= 0.0,
+                    "union disagrees with `inside a or inside b` at {p:?}"
+                );
+                // Bound property: never larger than either operand's distance.
+                assert!(
+                    fu <= fa + 1e-12 && fu <= fb + 1e-12,
+                    "union overestimates distance at {p:?}: {fu} > min({fa}, {fb})"
+                );
+                checked += 1;
+            }
+        }
+    }
+    assert_eq!(checked, 24 * 24 * 24);
+}
+
+/// **The blend radius does what a level designer expects, and `k = 0` is a hard
+/// union (E-216).**
+///
+/// `SmoothUnion` exists so the seam between two primitives can be filleted, so
+/// the property worth pinning is monotone: **more `k`, more material** in the
+/// crease between two nearly touching spheres, and never less anywhere. Plus the
+/// degenerate case, because a blend radius of zero reaching `smooth_min`'s
+/// divide-by-`k` would be the obvious way for this to be wrong.
+#[test]
+fn the_blend_radius_adds_material_monotonically() {
+    use super::{SmoothUnion, Sphere, Union};
+
+    let (a, b) = (
+        Sphere {
+            center: [-0.55, 0.0, 0.0],
+            radius: 0.5_f64,
+        },
+        Sphere {
+            center: [0.55, 0.0, 0.0],
+            radius: 0.5_f64,
+        },
+    );
+    // The midpoint of the crease: outside both spheres, and the first place a
+    // fillet puts material.
+    let seam = [0.0, 0.0, 0.0];
+
+    let hard = Union { a, b }.sample(seam);
+    let zero = SmoothUnion { a, b, k: 0.0 }.sample(seam);
+    assert_eq!(zero, hard, "k = 0 must degenerate to a hard union");
+
+    let mut previous = hard;
+    for step in 1..=6 {
+        let k = 0.1 * f64::from(step);
+        let value = SmoothUnion { a, b, k }.sample(seam);
+        assert!(
+            value < previous,
+            "k = {k} did not add material at the seam: {value} >= {previous}"
+        );
+        previous = value;
+    }
+    std::println!("measured: seam value {hard:.4} (hard) -> {previous:.4} at k = 0.6");
+
+    // And it never removes material anywhere, which is what "union" still means.
+    let blended = SmoothUnion { a, b, k: 0.3 };
+    for i in 0..20 {
+        for j in 0..20 {
+            let p = [
+                -1.5 + 3.0 * f64::from(i) / 19.0,
+                -1.5 + 3.0 * f64::from(j) / 19.0,
+                0.0,
+            ];
+            assert!(
+                blended.sample(p) <= Union { a, b }.sample(p) + 1e-12,
+                "the blend removed material at {p:?}"
+            );
+        }
+    }
+}
