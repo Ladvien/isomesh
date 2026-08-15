@@ -115,6 +115,34 @@ pub enum Error {
     /// behind a plausible topology.
     DegenerateSweep,
 
+    /// A tunnel whose triangulation the published construction does not define.
+    ///
+    /// Grosso's tunnel rule assigns each contour vertex to its nearest inner
+    /// hexagon vertex, then closes each contour edge according to how many steps
+    /// its two endpoints are apart around that six-ring: one triangle for zero
+    /// steps, two for one, three for two. **Three steps has no rule** — the paper
+    /// does not give one and the authors' own implementation has no branch for
+    /// it, so it silently emits nothing and leaves a hole.
+    ///
+    /// It is reachable. Not by uniformly random corner values — 400,000 of those
+    /// produced 2,297 tunnels and never a three-step edge — but by Marching
+    /// Cubes' **case 13** with particular face resolutions, where a tunnel's two
+    /// contours can be nine and three vertices rather than the at-most-six and
+    /// three Grosso's Corollary 6 predicts (M-228).
+    ///
+    /// Reported rather than patched, because inventing the missing triangulation
+    /// is precisely what `CLAUDE.md`'s rule 5 forbids: a wrong case table
+    /// produces meshes that look fine and are subtly non-manifold. **A-020** owns
+    /// deriving it.
+    UnresolvedTunnel {
+        /// The cell's corner-sign index.
+        case: u8,
+        /// The face-resolution mask in force for that cell.
+        mask: u8,
+        /// How many of the contour's edges had no rule.
+        edges: usize,
+    },
+
     /// A vertex whose normal cannot be derived, so there is nothing to normalise.
     ///
     /// A zero or non-finite field gradient, or — under
@@ -188,6 +216,12 @@ impl fmt::Display for Error {
                 f,
                 "triangle {triangle} spans {cells} grid cells at cell size {cell_size}; \
                  that spacing does not describe this mesh"
+            ),
+            Self::UnresolvedTunnel { case, mask, edges } => write!(
+                f,
+                "tunnel triangulation undefined for case {case:#010b} mask {mask:#08b}: \
+                 {edges} contour edge(s) span three inner-hexagon steps, which \
+                 Grosso's construction gives no rule for (A-020)"
             ),
             Self::DegenerateSweep => write!(
                 f,

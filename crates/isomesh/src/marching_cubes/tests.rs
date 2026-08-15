@@ -1539,3 +1539,54 @@ fn chi_falls_by_two_for_every_tunnel_and_by_nothing_else() {
     );
     std::println!("measured: chi shift by tunnel count {rows:?}");
 }
+
+/// **The extractor refuses a tunnel it cannot triangulate, rather than emitting a
+/// hole (M-228).**
+///
+/// Grosso's tunnel rule has no branch for a contour edge whose endpoints land
+/// three steps apart on the inner hexagon, and neither does the authors'
+/// implementation — it emits nothing there. Emitting nothing is a hole in the
+/// surface, and one that only appears on Marching Cubes' case 13 at particular
+/// face resolutions is exactly the kind of defect that reaches a consumer's
+/// collider before anyone notices.
+///
+/// So `extract` returns [`Error::UnresolvedTunnel`] instead. Inventing the
+/// missing triangulation is what rule 5 forbids; **A-020** owns deriving it.
+#[test]
+fn a_tunnel_with_no_rule_is_refused_rather_than_holed() {
+    // The single cell from `a_tunnel_can_span_three_hexagon_steps_and_is_refused`,
+    // laid out as a 2×2×2 grid so the interpolant reproduces it exactly.
+    let field = Trilinear {
+        size: [2, 2, 2],
+        values: alloc::vec![-0.8, 0.8, 0.6, -0.8, 0.8, -0.8, -0.2, 0.7],
+    };
+    let shape = RuntimeShape3::new([2; 3]).expect("valid shape");
+
+    let mut mc = MarchingCubes::<f64>::new();
+    mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+    mc.set_interior_ambiguity(crate::marching_cubes::InteriorAmbiguity::Trilinear);
+    let mut out = MeshBuffer::<f64>::new();
+    let result = mc.extract(&field, &shape, [0.0; 3], 1.0, &mut out);
+
+    match result {
+        Err(crate::Error::UnresolvedTunnel { case, mask, edges }) => {
+            assert_eq!(case, 0b0110_1001);
+            assert_eq!(edges, 2);
+            std::println!(
+                "measured: refused case {case:#010b} mask {mask:#08b}, {edges} edges with no rule"
+            );
+        }
+        other => panic!("expected UnresolvedTunnel, got {other:?}"),
+    }
+
+    // And the same cell is meshed without complaint by the rules that do not
+    // claim to resolve the interior — the refusal is confined to the one path
+    // that would otherwise be silently wrong.
+    let mut mc = MarchingCubes::<f64>::new();
+    mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+    mc.set_interior_ambiguity(crate::marching_cubes::InteriorAmbiguity::Ignore);
+    let mut out = MeshBuffer::<f64>::new();
+    mc.extract(&field, &shape, [0.0; 3], 1.0, &mut out)
+        .expect("the face rule alone has no such gap");
+    assert!(out.triangle_count() > 0);
+}

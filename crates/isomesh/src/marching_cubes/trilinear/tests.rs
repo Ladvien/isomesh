@@ -1167,10 +1167,17 @@ fn the_tunnel_patch_is_manifold_inside_the_cell() {
     }
 
     assert!(cells > 500, "only {cells} tunnel cells were built");
+    // **Zero here is a property of this sweep, not a law (M-228).** A contour
+    // edge spanning three hexagon steps has no rule and emits nothing, and
+    // uniform random corner values never produce one — but Marching Cubes' case
+    // 13 at particular face resolutions does, which
+    // `a_tunnel_can_span_three_hexagon_steps_and_is_refused` pins. So the
+    // manifoldness checked above holds *given* that the sweep stays inside the
+    // construction's defined domain, and this assertion is what says it did.
     assert_eq!(
         unresolved_total, 0,
-        "{unresolved_total} ring edges spanned three hexagon steps, which the \
-         construction has no rule for and emits nothing at"
+        "{unresolved_total} ring edges spanned three hexagon steps, so the patches \
+         above were judged outside the construction's defined domain"
     );
     std::println!(
         "measured: {cells} tunnel patches, all manifold inside the cell; \
@@ -1383,5 +1390,70 @@ fn how_often_a_face_is_singular() {
         (singular_count, rsing),
         (0, 0),
         "a singular face appeared — A-002i's premise has changed and it is now reachable"
+    );
+}
+
+/// **The three-step contour edge is reachable, and 400,000 random cells could
+/// not reach it (M-228).**
+///
+/// `fan_tunnel` closes each contour edge by how many steps its two endpoints are
+/// apart around the inner hexagon: one triangle for zero, two for one, three for
+/// two. **Three has no rule** — Grosso does not give one and the authors'
+/// implementation has no branch for it, so it emits nothing and leaves a hole.
+/// `the_tunnel_patch_is_manifold_inside_the_cell` asserted that count was zero
+/// and passed, because uniform random corner values produce 2,297 tunnels and
+/// never this shape.
+///
+/// It is reachable on Marching Cubes' **case 13** — the four alternating corners,
+/// the only case with all six faces ambiguous — at particular face resolutions,
+/// where a tunnel's two contours come out **nine and three** vertices. That also
+/// puts it outside Grosso's Corollary 6, which says a tunnel's contours are at
+/// most six and three.
+///
+/// Both halves are pinned: the configuration still produces the shape, and the
+/// extractor still **refuses** rather than emitting the hole.
+#[test]
+fn a_tunnel_can_span_three_hexagon_steps_and_is_refused() {
+    use crate::cube::is_inside as inside;
+    use crate::marching_cubes::ambiguity::joined_mask;
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+
+    // Searched, not invented: a sweep over rounded corner values looking for a
+    // tunnel whose contours are not Corollary 6's shape.
+    let f = [-0.8f64, 0.8, 0.6, -0.8, 0.8, -0.8, -0.2, 0.7];
+
+    let mut case = 0u8;
+    for (c, &v) in f.iter().enumerate() {
+        if inside(v) {
+            case |= 1 << c;
+        }
+    }
+    assert_eq!(case, 0b0110_1001, "the fixture is no longer case 13");
+
+    let saddles = BodySaddles::of(&f);
+    assert!(saddles.has_inner_hexagon());
+    let mask = joined_mask(&f, AMBIGUOUS_FACES[case as usize]);
+    let contours = Contours::of(case, mask);
+    assert_eq!(contours.topology(&saddles), Topology::Tunnel);
+
+    let mut sizes: alloc::vec::Vec<usize> = (0..contours.count())
+        .map(|r| contours.ring(r).len())
+        .collect();
+    sizes.sort_unstable();
+    assert_eq!(
+        sizes,
+        alloc::vec![3, 9],
+        "the fixture no longer produces the nine-and-three shape Corollary 6 excludes"
+    );
+
+    let mut tris = 0usize;
+    let unresolved = contours.fan_tunnel(&saddles, &f, |_| tris += 1);
+    assert_eq!(
+        unresolved, 2,
+        "the three-step count moved — the construction's gap has changed shape"
+    );
+    std::println!(
+        "measured: case 13 mask {mask:#08b} gives rings {sizes:?}, {tris} triangles, \
+         {unresolved} contour edges with no rule"
     );
 }

@@ -260,7 +260,7 @@ impl<R: Real> MarchingCubes<R> {
                             origin,
                             cell_size,
                             out,
-                        );
+                        )?;
                         continue;
                     }
 
@@ -358,7 +358,8 @@ impl<R: Real> MarchingCubes<R> {
         origin: [R; 3],
         cell_size: R,
         out: &mut M,
-    ) where
+    ) -> crate::Result<()>
+    where
         S: Sdf<Scalar = R>,
         M: MeshSink<Scalar = R>,
     {
@@ -366,7 +367,7 @@ impl<R: Real> MarchingCubes<R> {
 
         let contours = Contours::of(case, mask);
         if contours.count() == 0 {
-            return;
+            return Ok(());
         }
         let saddles = BodySaddles::of(corner_value);
 
@@ -403,10 +404,25 @@ impl<R: Real> MarchingCubes<R> {
         let mut triangles = [[0u8; 3]; trilinear::MAX_PATCH_TRIANGLES];
         let mut count = 0usize;
         if hexagon.is_some() {
-            contours.fan_tunnel(&saddles, corner_value, |t| {
+            let unresolved = contours.fan_tunnel(&saddles, corner_value, |t| {
                 triangles[count] = t;
                 count += 1;
             });
+            // **Loud rather than holed.** A contour edge whose endpoints land
+            // three steps apart on the inner hexagon has no rule in Grosso's
+            // construction and none in the authors' implementation, which simply
+            // emits nothing there. Emitting nothing is a hole in the surface, and
+            // a hole that only appears on Marching Cubes' case 13 with particular
+            // face resolutions is exactly the kind of defect that reaches a
+            // consumer's collider before anyone notices (M-228). A-020 owns
+            // deriving the missing triangulation; until then this refuses.
+            if unresolved != 0 {
+                return Err(crate::Error::UnresolvedTunnel {
+                    case,
+                    mask,
+                    edges: unresolved,
+                });
+            }
         } else {
             let fanned = saddles.interior_vertex().is_some();
             contours.fan(fanned, |t| {
@@ -440,6 +456,7 @@ impl<R: Real> MarchingCubes<R> {
             }
             out.triangle(idx[0], idx[1], idx[2]);
         }
+        Ok(())
     }
 
     /// The vertex on one cut edge of one cell and where it sits, creating it if
