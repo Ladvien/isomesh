@@ -1457,3 +1457,152 @@ fn a_tunnel_can_span_three_hexagon_steps_and_is_refused() {
          {unresolved} contour edges with no rule"
     );
 }
+
+/// **The ring-count discriminator misclassifies case 13, and that is exactly
+/// where the missing triangulation bites (M-229).**
+///
+/// `Contours::topology` calls a six-saddle cell a tunnel when it has two or more
+/// contours and a twelve-vertex disk when it has one — which is what the authors'
+/// implementation branches on, and what V-31 recorded as making Proposition 1's
+/// asymptote-side predicate unnecessary. **It is not unnecessary.**
+///
+/// Measured by flood-filling the cell's inside region on a 96³ grid and counting
+/// how many components its inside *corners* fall into — a computation that shares
+/// nothing with the classifier:
+///
+/// - a genuine tunnel joins its same-signed corners through the interior, so they
+///   land in **one** component. Both shipped tunnel fixtures do.
+/// - the `[9,3]` case-13 cells land in **two**. Their inside region is two
+///   separate blobs, which is not one cylinder — a different case-13 subcase, and
+///   Grosso's Corollary 6 excludes them from the tunnel case for that reason.
+///
+/// And those are precisely the cells whose contour edges span three hexagon steps
+/// and hit the rule the construction does not define (A-020). So the gap is a
+/// **classification** failure first and a triangulation gap second, which is what
+/// A-020 has to settle before it derives anything.
+#[test]
+fn a_nine_and_three_cell_is_not_one_connected_tunnel() {
+    use crate::cube::is_inside as inside;
+    use crate::marching_cubes::ambiguity::joined_mask;
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+
+    // Connected components of the inside (negative) region within the cell,
+    // sampled on an n^3 grid with 6-connectivity. A tunnel joins two same-signed
+    // corner groups through the interior, so the component count over the corners
+    // is what says whether one exists.
+    fn corner_groups(f: &[f64; 8], n: usize) -> usize {
+        let at = |i: usize, j: usize, k: usize| {
+            let p = [
+                i as f64 / (n - 1) as f64,
+                j as f64 / (n - 1) as f64,
+                k as f64 / (n - 1) as f64,
+            ];
+            trilinear(f, p) < 0.0
+        };
+        let idx = |i: usize, j: usize, k: usize| (k * n + j) * n + i;
+        let mut label = alloc::vec![usize::MAX; n * n * n];
+        let mut next = 0usize;
+        let mut stack = alloc::vec::Vec::new();
+        for k in 0..n {
+            for j in 0..n {
+                for i in 0..n {
+                    if !at(i, j, k) || label[idx(i, j, k)] != usize::MAX {
+                        continue;
+                    }
+                    let id = next;
+                    next += 1;
+                    stack.push((i, j, k));
+                    label[idx(i, j, k)] = id;
+                    while let Some((x, y, z)) = stack.pop() {
+                        let push =
+                            |a: usize,
+                             b: usize,
+                             c: usize,
+                             st: &mut alloc::vec::Vec<_>,
+                             lb: &mut alloc::vec::Vec<usize>| {
+                                if at(a, b, c) && lb[idx(a, b, c)] == usize::MAX {
+                                    lb[idx(a, b, c)] = id;
+                                    st.push((a, b, c));
+                                }
+                            };
+                        if x > 0 {
+                            push(x - 1, y, z, &mut stack, &mut label);
+                        }
+                        if x + 1 < n {
+                            push(x + 1, y, z, &mut stack, &mut label);
+                        }
+                        if y > 0 {
+                            push(x, y - 1, z, &mut stack, &mut label);
+                        }
+                        if y + 1 < n {
+                            push(x, y + 1, z, &mut stack, &mut label);
+                        }
+                        if z > 0 {
+                            push(x, y, z - 1, &mut stack, &mut label);
+                        }
+                        if z + 1 < n {
+                            push(x, y, z + 1, &mut stack, &mut label);
+                        }
+                    }
+                }
+            }
+        }
+        // How many distinct components do the *inside corners* fall into?
+        let mut seen = alloc::collections::BTreeSet::new();
+        for (c, &value) in f.iter().enumerate() {
+            if !inside(value) {
+                continue;
+            }
+            let g = |bit: usize| if (c >> bit) & 1 == 1 { n - 1 } else { 0 };
+            let l = label[idx(g(0), g(1), g(2))];
+            if l != usize::MAX {
+                seen.insert(l);
+            }
+        }
+        seen.len()
+    }
+
+    for (label, f) in [
+        (
+            "[9,3] case 13",
+            [-0.8f64, 0.8, 0.6, -0.8, 0.8, -0.8, -0.2, 0.7],
+        ),
+        (
+            "[9,3] case 13 b",
+            [-0.3, 0.2, 0.3, -0.4, 0.6, -0.5, -0.4, 1.0],
+        ),
+        (
+            "[6,3] tunnel",
+            [-0.2, -0.9, 0.7, -0.3, 0.8, -0.4, -0.9, 0.6],
+        ),
+        ("[4,3] tunnel", [0.2, -0.6, 0.2, -0.2, 0.4, 0.1, -0.9, 1.0]),
+    ] {
+        let mut case = 0u8;
+        for (c, &v) in f.iter().enumerate() {
+            if inside(v) {
+                case |= 1 << c;
+            }
+        }
+        let saddles = BodySaddles::of(&f);
+        let contours = Contours::of(case, joined_mask(&f, AMBIGUOUS_FACES[case as usize]));
+        let sizes: alloc::vec::Vec<usize> = (0..contours.count())
+            .map(|r| contours.ring(r).len())
+            .collect();
+        let inside_count = f.iter().filter(|v| inside(**v)).count();
+        let parts = corner_groups(&f, 96);
+        let is_nine_and_three = sizes.contains(&9);
+        assert_eq!(
+            parts,
+            if is_nine_and_three { 2 } else { 1 },
+            "{label}: inside corners fall into {parts} components, which contradicts \
+             the classification this test exists to check"
+        );
+        // Every one of these is called a tunnel by the ring count, and two of
+        // them are not one. That is the finding.
+        assert_eq!(contours.topology(&saddles), Topology::Tunnel, "{label}");
+        std::println!(
+            "measured: {label:<16} case {case:#010b} rings {sizes:?} | inside corners \
+             {inside_count} in {parts} component(s)"
+        );
+    }
+}
