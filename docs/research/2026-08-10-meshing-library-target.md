@@ -73,8 +73,8 @@ delete it · `PAYWALL` = no OA route · `NO DOI` = book/notes/thesis/blog, see �
 | Extended LUT / SnapMC | Raman & Wenger 2008 | `10.1111/j.1467-8659.2008.01209.x` | HAVE |
 | Edge transformations (MACET) | Dietrich et al. 2008 | `10.1109/tvcg.2008.60` | HAVE (abstract only) |
 | **MC33 practical correctness** | Custodio et al. 2013 | `10.1016/j.cag.2013.04.004` | **NEW** |
-| Manifold isosurfaces | Grosso 2016 | `10.1111/cgf.12975` | PAYWALL |
-| Robust asymptotic decider | Grosso 2017 | `10.1145/3095140.3095179` | PAYWALL |
+| **Manifold isosurfaces** | Grosso 2016 | `10.1111/cgf.12975` | **HAVE** (corrected 2026-08-14, V-29) |
+| **Robust asymptotic decider** | Grosso 2017 | `10.1145/3095140.3095179` | **HAVE** (corrected 2026-08-14, V-29) |
 | Extended MC33 triangulation | Custodio, Pesco, Silva 2019 | `10.1186/s13173-019-0086-6` | HAVE |
 | **Neural Marching Cubes** | Chen & Zhang 2021 | `10.1145/3478513.3480518` | **NEW** |
 | **Subgrid Marching Tetrahedra** | Baktash, Gillespie, Crane 2026 | `10.48550/arXiv.2606.00454` | **NEW** |

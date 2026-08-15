@@ -101,6 +101,8 @@ The best-covered family in the corpus by a wide margin.
 | Edge transformations (2008) | `10.1109_tvcg.2008.60` | no | zero degenerate tris | ≤2× MC time |
 | GPU MC + accel structures (2012) | `10.1007_s13173-012-0097-z` | no | = MC | **~18× vs CPU** |
 | Extended MC33 triangulation (2019) | `10.1186_s13173-019-0086-6` | no | fixes MC33's non-manifold edges | grid preprocessing pass |
+| Manifold isosurfaces (2016) | `10.1111_cgf.12975` | no | fixes the same edges, **no grid pass** | ambiguous cells only; ≤3 interior verts |
+| Robust asymptotic decider (2017) | `10.1145_3095140.3095179` | no | + the singular face the decider misses | 8–58 singular faces per 512²×~700 CT |
 | Subgrid Marching Tetrahedra (2026) | `sig2026_Subgrid_Marching_Tetrahedra` | no | **manifold + intersection-free, proved** | ~7× *fewer* tris at equal error |
 
 ### The ones that matter for you

@@ -296,7 +296,12 @@ impl<R: Real> SweptFaces<R> {
     /// Returns at most two. The quadratic is solved from the derived
     /// coefficients; when `a` is zero it is linear, which is not a special case
     /// so much as a smaller polynomial, and is solved as one.
-    fn numerator_roots(&self) -> impl Iterator<Item = R> {
+    ///
+    /// Visible to the rest of [`super`] rather than private, because
+    /// [`super::trilinear`] locates the same body saddles by an unrelated
+    /// construction and checks itself against these roots (M-206). It is still
+    /// not public API: `pub(super)` here stops at `marching_cubes`.
+    pub(super) fn numerator_roots(&self) -> impl Iterator<Item = R> {
         let d = |k: usize| self.hi[k] - self.lo[k];
         let a = d(0) * d(2) - d(1) * d(3);
         let b = self.lo[2] * d(0) + self.lo[0] * d(2) - self.lo[3] * d(1) - self.lo[1] * d(3);

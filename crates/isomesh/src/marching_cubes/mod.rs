@@ -12,6 +12,7 @@
 pub mod ambiguity;
 pub mod interior;
 pub mod table;
+pub mod trilinear;
 
 #[cfg(test)]
 mod reference;
