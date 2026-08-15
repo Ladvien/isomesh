@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**148 tickets archived, 23 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**149 tickets archived, 22 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -231,7 +231,6 @@ correct under unlimited player carving; nothing here assumes exactness.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **F-005** | **Empty-cell rejection by sphere tracing — the attack on M-98's 70×.** Hart (`10.1007/s003710050084`, in corpus): with `L = 1`, a **single** evaluation at a cell centre with `\|f\| >` half the cell diagonal proves the entire cell empty. M-98 measured subgrid at `6 tets × 6 edges × 16 samples = 576` field evaluations per cell against Marching Cubes' 8, and predicted ~72× against a measured 70× — **the constant is the whole story, and this deletes it for every empty cell.** Kalra & Barr (`10.1145/74334.74364`, hand-acquisition) give the `q`-bounded version when the field is not 1-Lipschitz. **Acceptance:** identical output to the unrejected path, bit-for-bit, on all eight fields; re-measure M-98's ratio and record both numbers. | M | F-001 |
 | ☐ | **F-006** | **Segment tracing / enhanced sphere tracing.** `10.1111/cgf.13951` (HAL PDF already in the catalog entry). Uses a *directional* Lipschitz bound along a ray rather than the global one, which is strictly tighter. Relevant to F-005's cell test and to any future ray-vs-field query for physics. **Acceptance:** measured step-count reduction against plain sphere tracing on the reference fields; a null result is a finding. | M | F-005 |
 | ☐ | **F-007** | **Kink-aware edge interpolation — possibly the whole fix, and much narrower than redistancing.** `min`/`max` preserve the **sign** exactly: `{min(f,g) ≤ 0}` *is* the union. What they break is (a) the interpolated crossing position, because the field is kinked and linear interpolation across a kink is wrong, and (b) gradient-based normals. **You know where the kinks are — you built the CSG tree.** So: detect the kink on an edge (a gradient discontinuity between endpoints), and solve for the crossing piecewise instead of linearly. Pujol & Chica (`10.1016/j.cag.2023.06.020`, in corpus) treat exactly this problem. **Acceptance:** `csg_difference`'s Hausdorff improves, and O-9's `0.0833` forward error is decomposed into seam-bias and harness-bias with a number on each. | L | F-003 |
 

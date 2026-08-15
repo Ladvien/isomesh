@@ -169,6 +169,12 @@ impl CrossingKey {
 #[derive(Clone, Debug)]
 pub struct SubgridMarchingTetrahedra<R: Real> {
     samples: u32,
+    /// The field's Lipschitz constant, when the caller knows one.
+    ///
+    /// Enables the empty-cell rejection described on
+    /// [`set_lipschitz`](Self::set_lipschitz). `None` means unknown, and every
+    /// cell is subdivided.
+    lipschitz: Option<R>,
     along: [Vec<R>; TET_EDGE_COUNT],
     patch: TetPatch<R>,
     index: Vec<u32>,
@@ -199,6 +205,7 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
         }
         Ok(Self {
             samples,
+            lipschitz: None,
             along: Default::default(),
             patch: TetPatch::new(),
             index: Vec::new(),
@@ -210,6 +217,73 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
     #[must_use]
     pub const fn samples(&self) -> u32 {
         self.samples
+    }
+    /// Tell the extractor the field's Lipschitz constant, enabling empty-cell
+    /// rejection.
+    ///
+    /// Ticket: F-005. Source: Hart, *Sphere tracing* (`10.1007/s003710050084`).
+    ///
+    /// # What it buys, and why this extractor in particular
+    ///
+    /// M-98 measured this extractor at **70× the cost of Marching Cubes**, and
+    /// found the constant is the whole story: `6 tets × 6 edges × 16 samples =
+    /// 576` field evaluations per cell against Marching Cubes' 8. The prediction
+    /// was ~72× and the measurement was 70×, so there is nothing else to blame.
+    ///
+    /// A field with Lipschitz constant `l` cannot change by more than `l · d`
+    /// over a distance `d`. So if `|f(centre)| > l · r`, where `r` is the
+    /// circumradius of the cell — half its diagonal, `(√3/2)·h` — then `f` cannot
+    /// reach zero anywhere inside it, and **one evaluation replaces 576**.
+    ///
+    /// # It cannot change the output, and that is asserted rather than argued
+    ///
+    /// This is a short-circuit, not an alternative algorithm: a rejected cell is
+    /// one the full path would have found empty. `rejection_does_not_change_the_mesh`
+    /// runs both ways on all eight reference fields and compares **bit for bit**,
+    /// so the claim is checked rather than reasoned about. That is also why this
+    /// does not violate the one-path rule — there is one path, and a proof that
+    /// part of it need not be walked.
+    ///
+    /// # Pass the constant, not a guess
+    ///
+    /// [`FieldBound::lipschitz`](crate::fields::FieldBound::lipschitz) is where
+    /// a reference field's constant comes from. **A value smaller than the
+    /// field's true constant will reject cells that contain surface**, which is
+    /// a hole in the mesh rather than a slow path — so `None`, the default, is
+    /// the only safe answer when it is not known. M-244 is the incident: a
+    /// hand-reasoned constant was wrong by 3× on the first try.
+    pub fn set_lipschitz(&mut self, l: Option<R>) {
+        self.lipschitz = l;
+    }
+
+    /// Can one evaluation prove this cell contains no surface?
+    ///
+    /// `false` whenever no constant is known, which is the default — see
+    /// [`set_lipschitz`](Self::set_lipschitz).
+    fn cell_is_provably_empty<S>(
+        &self,
+        sdf: &S,
+        origin: [R; 3],
+        cell_size: R,
+        cell: [u32; 3],
+    ) -> bool
+    where
+        S: Sdf<Scalar = R>,
+    {
+        let Some(l) = self.lipschitz else {
+            return false;
+        };
+        let half = cell_size * R::HALF;
+        let centre = [
+            origin[0] + cell_size * R::from_f64(f64::from(cell[0])) + half,
+            origin[1] + cell_size * R::from_f64(f64::from(cell[1])) + half,
+            origin[2] + cell_size * R::from_f64(f64::from(cell[2])) + half,
+        ];
+        // Circumradius of the cell: half the space diagonal.
+        let radius = half * R::from_f64(1.732_050_807_568_877_2);
+        // Strict, so a value exactly on the bound subdivides. The surface can
+        // touch a corner at equality, and a hole is worse than a wasted cell.
+        sdf.sample(centre).abs() > l * radius
     }
 
     /// Extract the zero level set into `out`.
@@ -295,6 +369,9 @@ impl<R: Real> SubgridMarchingTetrahedra<R> {
             for y in 0..size[1] - 1 {
                 for x in 0..size[0] - 1 {
                     let cell = [x, y, z];
+                    if self.cell_is_provably_empty(sdf, origin, cell_size, cell) {
+                        continue;
+                    }
                     for t in 0..TETS.len() {
                         self.cell_tet(sdf, origin, cell_size, cell, t, &mut vertices, out)?;
                     }

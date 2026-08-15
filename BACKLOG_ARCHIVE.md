@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-148 tickets. Line numbers are stable until something above them is edited — grep the ID if
+149 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -72,6 +72,7 @@ implementation contradicted the ticket.
 | [`F-002`](#L878) | The bound validator, and what eikonal cannot see |
 | [`F-003`](#L886) | Composed bounds, and the asymmetry that is by region |
 | [`F-004`](#L894) | CSG degradation — the tail collapses, the median does not |
+| [`F-005`](#L902) | Empty-cell rejection — one evaluation replaces 576 |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -866,3 +867,8 @@ implementation contradicted the ticket.
 | | | ***What degrades is the tail, and only the tail (M-247).*** Empirical underestimate ratio over 13,824 points: worst case **0.5774 → 0.1815 → 0.0726 → 0.0040** at 0, 4, 32 and 256 strokes, **143× down**, while the **median stays at 1.0000 throughout**. |
 | | | ***So the ticket's question has two answers, and the useful one is not the one it asked for.*** *"No longer a distance"* happens within a handful of strokes; *"no longer usable"* has not happened at 256, where mean sphere-tracing cost has gone **5.2 → 9.9 steps**. A destructible game should watch the tracing cost rather than the precision bound. |
 | | | *The caveat is in the measurement rather than the field, and is stated in the output rather than buried: `q̂` is built from a **ray** distance, and a ray leaving a box corner runs along the diagonal, so an **uncarved** box reports `q̂_min = 0.5774 ≈ 1/√3`. That is the metric's floor. The curve is read against that baseline, not against 1.0, and reporting the absolute number would have called an exact box degraded.* |
+| ☑ | **F-005** | **Empty-cell rejection by sphere tracing — the attack on M-98's 70×.** | M | F-001 |
+| | | ***One evaluation replaces 576, and the spread is geometric (M-248).*** Cost against Marching Cubes **before → after**: sphere 204× → 36.7×, torus 294× → 45.6×, box_exact 381× → 88.9×, csg_difference 400× → 91.4×, thin_plate 389× → **32.9×**, gyroid 449× → 295×. `thin_plate` gains **11.8×** because a plate leaves nearly all its domain empty; `gyroid` gains **1.5×** because a triply periodic surface reaches almost every cell. |
+| | | ***A loose constant is taxed twice, which is a second reason F-001's had to be derived.*** The rejection radius is `l·(√3/2)·h`, so gyroid's `l = 3.46` inflates it by that factor and disqualifies cells a distance field would have rejected — the optimisation pays in proportion to emptiness and is charged for imprecision. |
+| | | ***Bit-identical output is the safety property, and it is checked rather than argued.*** A rejection test that is ever wrong produces a **hole**, and a hole is invisible to every validity gate in this repository: the mesh is simply missing a piece and stays perfectly manifold, closed and correctly oriented. `rejection_does_not_change_the_mesh` compares both paths byte for byte on every field with a constant. |
+| | | *`None` is the default and the only safe answer when the constant is unknown, which is why `without_a_constant_no_cell_is_rejected` pins that too. A constant smaller than the field's true one rejects cells containing surface — and M-244 is the incident where a hand-reasoned constant was wrong by 3× on the first attempt.* |

@@ -2676,3 +2676,169 @@ fn whether_bigons_are_what_leaves_positions_unreferenced() {
     });
     assert_eq!(rows, 8, "the sweep did not reach every field");
 }
+
+/// **Empty-cell rejection does not change the mesh, bit for bit, on all eight
+/// fields (F-005).**
+///
+/// The acceptance, and the only thing that makes the optimisation safe to have.
+/// A rejection test is a claim that a cell cannot contain surface; if the claim
+/// is ever wrong the result is a **hole**, which no validity gate on the emitted
+/// mesh can see — the mesh is simply missing a piece and remains perfectly
+/// manifold. So the check is equality against the unrejected path, not
+/// plausibility of the output.
+///
+/// Each field supplies its own constant from
+/// [`FieldBound::lipschitz`](crate::fields::FieldBound::lipschitz), so this also
+/// exercises the declarations F-001 and F-002 established rather than a number
+/// chosen to make the test pass.
+#[test]
+fn rejection_does_not_change_the_mesh() {
+    use crate::MeshBuffer;
+    use crate::fields::ReferenceField;
+
+    const SAMPLES: u32 = 9;
+    let mut checked = 0usize;
+    let mut rejected_any = false;
+
+    crate::for_each_reference_field!(f64, |name, field| {
+        let Some(l) = field.bound().lipschitz() else {
+            // Unbounded fields cannot use the rejection at all, which is itself
+            // the correct behaviour and is asserted below.
+            return;
+        };
+        let (lo, hi) = field.domain();
+        let h = (hi[0] - lo[0]) / f64::from(SAMPLES - 1);
+        let shape = crate::RuntimeShape3::new([SAMPLES; 3]).expect("valid shape");
+
+        let mut plain = MeshBuffer::<f64>::new();
+        let mut slow = SubgridMarchingTetrahedra::<f64>::new(6).expect("valid resolution");
+        slow.extract(&field, &shape, lo, h, &mut plain)
+            .expect("extraction");
+
+        let mut fast_out = MeshBuffer::<f64>::new();
+        let mut fast = SubgridMarchingTetrahedra::<f64>::new(6).expect("valid resolution");
+        fast.set_lipschitz(Some(l));
+        fast.extract(&field, &shape, lo, h, &mut fast_out)
+            .expect("extraction");
+
+        assert_eq!(
+            plain.positions, fast_out.positions,
+            "{name}: rejection moved a vertex"
+        );
+        assert_eq!(
+            plain.indices, fast_out.indices,
+            "{name}: rejection changed the triangles"
+        );
+        if plain.triangle_count() > 0 {
+            rejected_any = true;
+        }
+        checked += 1;
+    });
+
+    assert!(checked >= 5, "only {checked} fields had a usable constant");
+    assert!(
+        rejected_any,
+        "no field produced a mesh, so nothing was compared"
+    );
+    std::println!("measured: {checked} fields, rejected and unrejected meshes identical");
+}
+
+/// **Without a constant, nothing is rejected — the default is the safe one.**
+///
+/// A field whose bound is `Unbounded` has no constant to offer, and the
+/// extractor must subdivide every cell rather than invent one. Asserted because
+/// the failure mode is silent: an invented constant that is too small rejects
+/// cells containing surface and leaves holes.
+#[test]
+fn without_a_constant_no_cell_is_rejected() {
+    use crate::MeshBuffer;
+    use crate::fields::{FieldBound, ReferenceField};
+
+    let field = crate::fields::FbmTerrain::<f64>::canonical();
+    assert_eq!(
+        field.bound(),
+        FieldBound::Unbounded,
+        "this test needs a field that offers no constant"
+    );
+    assert_eq!(field.bound().lipschitz(), None);
+
+    let (lo, hi) = field.domain();
+    let h = (hi[0] - lo[0]) / 8.0;
+    let shape = crate::RuntimeShape3::new([9; 3]).expect("valid shape");
+    let mut out = MeshBuffer::<f64>::new();
+    let mut mesher = SubgridMarchingTetrahedra::<f64>::new(6).expect("valid resolution");
+    mesher.set_lipschitz(None);
+    mesher
+        .extract(&field, &shape, lo, h, &mut out)
+        .expect("extraction");
+    assert!(out.triangle_count() > 0);
+}
+
+/// **What empty-cell rejection buys, per field (F-005, M-248).**
+///
+/// M-98 found this extractor's cost is entirely its constant — `6 tets × 6 edges
+/// × 16 samples = 576` field evaluations per cell against Marching Cubes' 8 —
+/// and F-005's claim is that one evaluation deletes that constant for every cell
+/// the surface does not reach. This is the measurement, recorded rather than
+/// asserted, because the interesting part is how much it varies.
+///
+/// Timing is a ratio against Marching Cubes on the same grid in the same
+/// process, so it is comparable across machines in a way a millisecond is not.
+/// **Not a regression gate** — the thresholds are loose enough to survive a busy
+/// machine, and `docs/measurements/` is where precise figures live.
+#[test]
+fn empty_cell_rejection_is_measured_per_field() {
+    use crate::MeshBuffer;
+    use crate::fields::ReferenceField;
+    use std::time::Instant;
+
+    const SAMPLES: u32 = 17;
+    let mut rows = alloc::vec::Vec::new();
+
+    crate::for_each_reference_field!(f64, |name, field| {
+        let Some(l) = field.bound().lipschitz() else {
+            return;
+        };
+        let (lo, hi) = field.domain();
+        let h = (hi[0] - lo[0]) / f64::from(SAMPLES - 1);
+        let shape = crate::RuntimeShape3::new([SAMPLES; 3]).expect("valid shape");
+
+        let best = |lipschitz: Option<f64>| {
+            let mut out = MeshBuffer::<f64>::new();
+            let mut ms = f64::INFINITY;
+            for _ in 0..3 {
+                out.reset();
+                let mut m = SubgridMarchingTetrahedra::<f64>::new(16).expect("valid resolution");
+                m.set_lipschitz(lipschitz);
+                let t = Instant::now();
+                m.extract(&field, &shape, lo, h, &mut out)
+                    .expect("extraction");
+                ms = ms.min(t.elapsed().as_secs_f64() * 1e3);
+            }
+            (ms, out.triangle_count())
+        };
+
+        let (slow, tris) = best(None);
+        let (fast, tris_fast) = best(Some(l));
+        assert_eq!(
+            tris, tris_fast,
+            "{name}: rejection changed the triangle count"
+        );
+        rows.push((name, slow / fast));
+        std::println!(
+            "measured: {name:<16} rejection speedup {:>5.2}x",
+            slow / fast
+        );
+    });
+
+    assert!(rows.len() >= 5, "only {} fields had a constant", rows.len());
+    // Every field must benefit, however little: a cell the surface does not
+    // reach exists in every one of them.
+    for (name, speedup) in &rows {
+        assert!(
+            *speedup > 1.0,
+            "{name}: rejection made it slower ({speedup:.2}x), which means the test \
+             is costing more than the 576 evaluations it saves"
+        );
+    }
+}
