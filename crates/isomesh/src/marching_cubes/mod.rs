@@ -363,13 +363,29 @@ impl<R: Real> MarchingCubes<R> {
         S: Sdf<Scalar = R>,
         M: MeshSink<Scalar = R>,
     {
-        use trilinear::{BodySaddles, Contours, INTERIOR, MAX_INTERIOR_VERTICES};
+        use trilinear::{BodySaddles, Contours, INTERIOR, MAX_INTERIOR_VERTICES, Topology};
 
         let contours = Contours::of(case, mask);
         if contours.count() == 0 {
             return Ok(());
         }
         let saddles = BodySaddles::of(corner_value);
+
+        // **Refused before a single vertex is emitted.** Six body saddles with a
+        // contour past Corollary 6's bound is not a tunnel — its inside region is
+        // two blobs rather than one cylinder (M-229) — and neither §5.1's tunnel
+        // rule nor §5.2's twelve-vertex rule applies to it. Sending it to
+        // `fan_tunnel` anyway is what produced the hole M-228 found; the ring
+        // count admitted a cell the corollary excludes, and the missing three-step
+        // rule was the symptom rather than the defect. A-020b owns the
+        // triangulation this needs.
+        if contours.topology(&saddles) == Topology::SeparateDisks {
+            return Err(crate::Error::UnresolvedSixSaddle {
+                case,
+                mask,
+                longest: contours.longest(),
+            });
+        }
 
         // Cell-local coordinates to world. The cell is a unit cube in `(u,v,w)`.
         let to_world = |p: [R; 3]| {

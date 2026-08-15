@@ -65,6 +65,89 @@ fn trilinear(f: &[f64; 8], p: [f64; 3]) -> f64 {
     sum
 }
 
+/// How many connected components the cell's **inside corners** fall into.
+///
+/// The inside (negative) region within the cell is sampled on an `n³` grid and
+/// flood-filled with 6-connectivity; the answer is how many distinct components
+/// the cell's own inside corners land in. This is the independent oracle for
+/// "is there a tunnel": a tunnel joins two same-signed corner groups *through*
+/// the interior, so its corners land in **one** component, and two separate
+/// blobs land in two.
+///
+/// It shares no arithmetic with [`super::Contours::topology`] or with
+/// [`super::BodySaddles`] — it evaluates the interpolant and nothing else, which
+/// is the only reason its agreement with either is evidence (M-229).
+fn corner_groups(f: &[f64; 8], n: usize) -> usize {
+    let at = |i: usize, j: usize, k: usize| {
+        let p = [
+            i as f64 / (n - 1) as f64,
+            j as f64 / (n - 1) as f64,
+            k as f64 / (n - 1) as f64,
+        ];
+        trilinear(f, p) < 0.0
+    };
+    let idx = |i: usize, j: usize, k: usize| (k * n + j) * n + i;
+    let mut label = alloc::vec![usize::MAX; n * n * n];
+    let mut next = 0usize;
+    let mut stack = alloc::vec::Vec::new();
+    for k in 0..n {
+        for j in 0..n {
+            for i in 0..n {
+                if !at(i, j, k) || label[idx(i, j, k)] != usize::MAX {
+                    continue;
+                }
+                let id = next;
+                next += 1;
+                stack.push((i, j, k));
+                label[idx(i, j, k)] = id;
+                while let Some((x, y, z)) = stack.pop() {
+                    let push = |a: usize,
+                                b: usize,
+                                c: usize,
+                                st: &mut alloc::vec::Vec<_>,
+                                lb: &mut alloc::vec::Vec<usize>| {
+                        if at(a, b, c) && lb[idx(a, b, c)] == usize::MAX {
+                            lb[idx(a, b, c)] = id;
+                            st.push((a, b, c));
+                        }
+                    };
+                    if x > 0 {
+                        push(x - 1, y, z, &mut stack, &mut label);
+                    }
+                    if x + 1 < n {
+                        push(x + 1, y, z, &mut stack, &mut label);
+                    }
+                    if y > 0 {
+                        push(x, y - 1, z, &mut stack, &mut label);
+                    }
+                    if y + 1 < n {
+                        push(x, y + 1, z, &mut stack, &mut label);
+                    }
+                    if z > 0 {
+                        push(x, y, z - 1, &mut stack, &mut label);
+                    }
+                    if z + 1 < n {
+                        push(x, y, z + 1, &mut stack, &mut label);
+                    }
+                }
+            }
+        }
+    }
+    // How many distinct components do the *inside corners* fall into?
+    let mut seen = alloc::collections::BTreeSet::new();
+    for (c, &value) in f.iter().enumerate() {
+        if !is_inside(value) {
+            continue;
+        }
+        let g = |bit: usize| if (c >> bit) & 1 == 1 { n - 1 } else { 0 };
+        let l = label[idx(g(0), g(1), g(2))];
+        if l != usize::MAX {
+            seen.insert(l);
+        }
+    }
+    seen.len()
+}
+
 /// Grosso's `v0 = (0,0,0)`, `v1 = (1,0,0)`, `v2 = (0,1,0)`, `v3 = (1,1,0)`,
 /// `v4 = (0,0,1)`, `v5 = (1,0,1)`, `v6 = (0,1,1)`, `v7 = (1,1,1)`.
 ///
@@ -733,6 +816,7 @@ fn six_saddles_split_into_tunnels_and_twelve_vertex_contours() {
     let mut tunnels = 0usize;
     let mut twelves = 0usize;
     let mut disks = 0usize;
+    let mut separate = 0usize;
 
     for _ in 0..400_000 {
         let f = rng.corners();
@@ -751,6 +835,7 @@ fn six_saddles_split_into_tunnels_and_twelve_vertex_contours() {
             Topology::Disks => disks += 1,
             Topology::Tunnel => tunnels += 1,
             Topology::TwelveVertexContour => twelves += 1,
+            Topology::SeparateDisks => separate += 1,
         }
     }
 
@@ -762,7 +847,17 @@ fn six_saddles_split_into_tunnels_and_twelve_vertex_contours() {
         twelves > 0,
         "no twelve-vertex contour was reached, so that branch is untested"
     );
-    std::println!("measured: {disks} disks, {tunnels} tunnels, {twelves} twelve-vertex contours");
+    // Recorded as zero rather than asserted absent: `[9,3]` is reachable but not
+    // by uniform sampling, which is exactly the fixture trap M-228 fell into.
+    // `a_nine_and_three_cell_is_refused` carries the searched configuration.
+    assert_eq!(
+        separate, 0,
+        "uniform sampling reached a separate-disks cell, which no sweep has before"
+    );
+    std::println!(
+        "measured: {disks} disks, {tunnels} tunnels, {twelves} twelve-vertex contours, \
+         {separate} separate-disk cells"
+    );
 }
 
 /// Grosso's Corollary 4, checked against the rings rather than assumed.
@@ -1167,13 +1262,13 @@ fn the_tunnel_patch_is_manifold_inside_the_cell() {
     }
 
     assert!(cells > 500, "only {cells} tunnel cells were built");
-    // **Zero here is a property of this sweep, not a law (M-228).** A contour
-    // edge spanning three hexagon steps has no rule and emits nothing, and
-    // uniform random corner values never produce one — but Marching Cubes' case
-    // 13 at particular face resolutions does, which
-    // `a_tunnel_can_span_three_hexagon_steps_and_is_refused` pins. So the
-    // manifoldness checked above holds *given* that the sweep stays inside the
-    // construction's defined domain, and this assertion is what says it did.
+    // **Zero here, and A-020 explained why (M-230).** A contour edge spanning
+    // three hexagon steps has no rule and emits nothing. Every configuration ever
+    // found to produce one was a nine-and-three case-13 cell, which Corollary 6's
+    // bound now classifies as `SeparateDisks` and keeps out of this sweep
+    // entirely — see `a_nine_and_three_cell_is_refused_before_triangulation`. So
+    // this is a live guard on a case nothing classified as a tunnel has reached,
+    // kept because that is a measurement over a sample rather than a proof.
     assert_eq!(
         unresolved_total, 0,
         "{unresolved_total} ring edges spanned three hexagon steps, so the patches \
@@ -1393,27 +1488,28 @@ fn how_often_a_face_is_singular() {
     );
 }
 
-/// **The three-step contour edge is reachable, and 400,000 random cells could
-/// not reach it (M-228).**
+/// **The nine-and-three cell, and the classification that now stops it before any
+/// triangulation runs (M-230).**
 ///
-/// `fan_tunnel` closes each contour edge by how many steps its two endpoints are
-/// apart around the inner hexagon: one triangle for zero, two for one, three for
-/// two. **Three has no rule** — Grosso does not give one and the authors'
-/// implementation has no branch for it, so it emits nothing and leaves a hole.
-/// `the_tunnel_patch_is_manifold_inside_the_cell` asserted that count was zero
-/// and passed, because uniform random corner values produce 2,297 tunnels and
-/// never this shape.
+/// Marching Cubes' **case 13** — the four alternating corners, the only case with
+/// all six faces ambiguous — at particular face resolutions gives a cell with an
+/// inner hexagon and contours of **nine and three** vertices. The ring count
+/// called it a tunnel, `fan_tunnel` then met a contour edge whose endpoints land
+/// three steps apart on the hexagon, and Grosso's construction has no rule for
+/// that: it emits nothing and leaves a hole (M-228).
 ///
-/// It is reachable on Marching Cubes' **case 13** — the four alternating corners,
-/// the only case with all six faces ambiguous — at particular face resolutions,
-/// where a tunnel's two contours come out **nine and three** vertices. That also
-/// puts it outside Grosso's Corollary 6, which says a tunnel's contours are at
-/// most six and three.
+/// **The hole was a symptom.** Corollary 6 bounds a tunnel's contours at six, so
+/// this cell was never a tunnel, and
+/// [`a_nine_and_three_cell_is_not_one_connected_tunnel`] shows independently that
+/// its inside region is two blobs. [`Contours::topology`] now says
+/// [`Topology::SeparateDisks`] and `extract` refuses there, before a vertex is
+/// emitted.
 ///
-/// Both halves are pinned: the configuration still produces the shape, and the
-/// extractor still **refuses** rather than emitting the hole.
+/// Three things are pinned: the configuration still produces the shape, the
+/// classifier still excludes it, and **the three-step rule is no longer reached**
+/// — `fan_tunnel` is not called for such a cell at all.
 #[test]
-fn a_tunnel_can_span_three_hexagon_steps_and_is_refused() {
+fn a_nine_and_three_cell_is_refused_before_triangulation() {
     use crate::cube::is_inside as inside;
     use crate::marching_cubes::ambiguity::joined_mask;
     use crate::marching_cubes::table::AMBIGUOUS_FACES;
@@ -1434,7 +1530,6 @@ fn a_tunnel_can_span_three_hexagon_steps_and_is_refused() {
     assert!(saddles.has_inner_hexagon());
     let mask = joined_mask(&f, AMBIGUOUS_FACES[case as usize]);
     let contours = Contours::of(case, mask);
-    assert_eq!(contours.topology(&saddles), Topology::Tunnel);
 
     let mut sizes: alloc::vec::Vec<usize> = (0..contours.count())
         .map(|r| contours.ring(r).len())
@@ -1445,7 +1540,15 @@ fn a_tunnel_can_span_three_hexagon_steps_and_is_refused() {
         alloc::vec![3, 9],
         "the fixture no longer produces the nine-and-three shape Corollary 6 excludes"
     );
+    assert_eq!(
+        contours.topology(&saddles),
+        Topology::SeparateDisks,
+        "the length bound no longer excludes the nine-and-three cell"
+    );
 
+    // What the old classification led to, kept as the record of why the bound
+    // exists: sent to the tunnel rule, this cell leaves two contour edges with no
+    // triangulation and therefore a hole.
     let mut tris = 0usize;
     let unresolved = contours.fan_tunnel(&saddles, &f, |_| tris += 1);
     assert_eq!(
@@ -1453,8 +1556,9 @@ fn a_tunnel_can_span_three_hexagon_steps_and_is_refused() {
         "the three-step count moved — the construction's gap has changed shape"
     );
     std::println!(
-        "measured: case 13 mask {mask:#08b} gives rings {sizes:?}, {tris} triangles, \
-         {unresolved} contour edges with no rule"
+        "measured: case 13 mask {mask:#08b} gives rings {sizes:?}; classified \
+         SeparateDisks. Under the old tunnel rule it would emit {tris} triangles and \
+         leave {unresolved} contour edges with no rule"
     );
 }
 
@@ -1485,82 +1589,6 @@ fn a_nine_and_three_cell_is_not_one_connected_tunnel() {
     use crate::cube::is_inside as inside;
     use crate::marching_cubes::ambiguity::joined_mask;
     use crate::marching_cubes::table::AMBIGUOUS_FACES;
-
-    // Connected components of the inside (negative) region within the cell,
-    // sampled on an n^3 grid with 6-connectivity. A tunnel joins two same-signed
-    // corner groups through the interior, so the component count over the corners
-    // is what says whether one exists.
-    fn corner_groups(f: &[f64; 8], n: usize) -> usize {
-        let at = |i: usize, j: usize, k: usize| {
-            let p = [
-                i as f64 / (n - 1) as f64,
-                j as f64 / (n - 1) as f64,
-                k as f64 / (n - 1) as f64,
-            ];
-            trilinear(f, p) < 0.0
-        };
-        let idx = |i: usize, j: usize, k: usize| (k * n + j) * n + i;
-        let mut label = alloc::vec![usize::MAX; n * n * n];
-        let mut next = 0usize;
-        let mut stack = alloc::vec::Vec::new();
-        for k in 0..n {
-            for j in 0..n {
-                for i in 0..n {
-                    if !at(i, j, k) || label[idx(i, j, k)] != usize::MAX {
-                        continue;
-                    }
-                    let id = next;
-                    next += 1;
-                    stack.push((i, j, k));
-                    label[idx(i, j, k)] = id;
-                    while let Some((x, y, z)) = stack.pop() {
-                        let push =
-                            |a: usize,
-                             b: usize,
-                             c: usize,
-                             st: &mut alloc::vec::Vec<_>,
-                             lb: &mut alloc::vec::Vec<usize>| {
-                                if at(a, b, c) && lb[idx(a, b, c)] == usize::MAX {
-                                    lb[idx(a, b, c)] = id;
-                                    st.push((a, b, c));
-                                }
-                            };
-                        if x > 0 {
-                            push(x - 1, y, z, &mut stack, &mut label);
-                        }
-                        if x + 1 < n {
-                            push(x + 1, y, z, &mut stack, &mut label);
-                        }
-                        if y > 0 {
-                            push(x, y - 1, z, &mut stack, &mut label);
-                        }
-                        if y + 1 < n {
-                            push(x, y + 1, z, &mut stack, &mut label);
-                        }
-                        if z > 0 {
-                            push(x, y, z - 1, &mut stack, &mut label);
-                        }
-                        if z + 1 < n {
-                            push(x, y, z + 1, &mut stack, &mut label);
-                        }
-                    }
-                }
-            }
-        }
-        // How many distinct components do the *inside corners* fall into?
-        let mut seen = alloc::collections::BTreeSet::new();
-        for (c, &value) in f.iter().enumerate() {
-            if !inside(value) {
-                continue;
-            }
-            let g = |bit: usize| if (c >> bit) & 1 == 1 { n - 1 } else { 0 };
-            let l = label[idx(g(0), g(1), g(2))];
-            if l != usize::MAX {
-                seen.insert(l);
-            }
-        }
-        seen.len()
-    }
 
     for (label, f) in [
         (
@@ -1597,12 +1625,234 @@ fn a_nine_and_three_cell_is_not_one_connected_tunnel() {
             "{label}: inside corners fall into {parts} components, which contradicts \
              the classification this test exists to check"
         );
-        // Every one of these is called a tunnel by the ring count, and two of
-        // them are not one. That is the finding.
-        assert_eq!(contours.topology(&saddles), Topology::Tunnel, "{label}");
+        // The ring count called every one of these a tunnel; Corollary 6's bound
+        // splits them, and it splits them the way the flood fill does.
+        assert_eq!(
+            contours.topology(&saddles),
+            if is_nine_and_three {
+                Topology::SeparateDisks
+            } else {
+                Topology::Tunnel
+            },
+            "{label}"
+        );
         std::println!(
             "measured: {label:<16} case {case:#010b} rings {sizes:?} | inside corners \
              {inside_count} in {parts} component(s)"
         );
     }
+}
+
+/// **Proposition 1's asymptote-side predicate is Corollary 1, and it is not the
+/// tunnel test (M-230).**
+///
+/// [`super::BodySaddles::same_asymptote_side`] is *derived* from the paper's
+/// normal form rather than transcribed, which by rule 5 makes it a claim until
+/// something independent grades it. The grader here is the contour count, which
+/// shares no arithmetic with it at all: the predicate is trigonometry on the
+/// quadratic's roots, the count is a walk over the face segment links.
+///
+/// Corollary 1 says a six-solution cell that is **not** a tunnel has a contour of
+/// twelve vertices, and that its solutions are then *not* all on the same side of
+/// the asymptotes. So the two must agree exactly — and they do, on every cell
+/// measured, which is what makes the derivation trustworthy.
+///
+/// **It also shows what the predicate does not decide.** Every multi-contour
+/// shape passes it, the `[9,3]` cells included, so Proposition 1 is not what
+/// separates them. Corollary 6's length bound is.
+#[test]
+fn the_asymptote_side_predicate_is_corollary_1() {
+    use crate::cube::is_inside as inside;
+    use crate::marching_cubes::ambiguity::joined_mask;
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+
+    let mut rng = Lcg::new(0x0000_A020_F000_0001);
+    let mut same = 0usize;
+    let mut opposite = 0usize;
+    let mut disagreements = 0usize;
+
+    for _ in 0..400_000 {
+        let f = rng.corners();
+        let mut case = 0u8;
+        for (c, &v) in f.iter().enumerate() {
+            if inside(v) {
+                case |= 1 << c;
+            }
+        }
+        if case == 0 || case == 255 {
+            continue;
+        }
+        let saddles = BodySaddles::of(&f);
+        if !saddles.has_inner_hexagon() {
+            continue;
+        }
+
+        let predicate = saddles.same_asymptote_side(&f);
+        let contours = Contours::of(case, joined_mask(&f, AMBIGUOUS_FACES[case as usize]));
+        // Corollary 1: not all on the same side <=> the single twelve-vertex contour.
+        if predicate == (contours.count() == 1) {
+            disagreements += 1;
+        }
+        if predicate {
+            same += 1;
+        } else {
+            opposite += 1;
+        }
+    }
+
+    assert_eq!(
+        disagreements, 0,
+        "the derived predicate and the contour count disagree, so one of them is wrong"
+    );
+    assert!(same > 0, "no same-side cell was reached");
+    assert!(opposite > 0, "no opposite-side cell was reached");
+    std::println!(
+        "measured: {same} same-side and {opposite} opposite-side six-saddle cells, \
+         0 disagreements with Corollary 1"
+    );
+}
+
+/// **Corollary 6's length bound is the tunnel test, and the flood fill grades it
+/// (M-230).**
+///
+/// For a cell with exactly **two** contours the question "is this one cylinder or
+/// two disks" has an unambiguous independent answer: [`corner_groups`] flood-fills
+/// the inside region and counts the components its inside corners land in. A
+/// cylinder joins them, so one component; two disks cap two blobs, so two.
+///
+/// The restriction to two contours is load-bearing and is why M-229's oracle
+/// could not simply be applied everywhere. A **three**-contour tunnel has a
+/// detached ring capping its own corner group, so two components there is the
+/// correct answer *for a tunnel* — the census below records 14 such cells. And a
+/// twelve-vertex contour has one component while being a disk, so the flood fill
+/// says nothing about that split either. It is decisive only here.
+#[test]
+fn corollary_6s_length_bound_agrees_with_the_flood_fill() {
+    use crate::cube::is_inside as inside;
+    use crate::marching_cubes::ambiguity::joined_mask;
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+
+    // **Both constants are measured, not guessed.** The oracle's resolution has a
+    // floor: a narrow tunnel closes up on a coarse grid and reads as two
+    // components, which would fail this test for a reason that has nothing to do
+    // with the classifier. Swept against a 96³ reference over the same 400 cells,
+    // 24³ and 32³ each miss one; **48³ and 64³ miss none**, as do all four on the
+    // decisive fixtures. 48 is therefore the floor plus nothing, and the cell
+    // count is what keeps a debug run in seconds rather than minutes — 96³ over
+    // 400 cells took 415 s.
+    const GRID: usize = 48;
+    const CELLS: usize = 150;
+
+    let mut rng = Lcg::new(0x0000_A020_F000_0002);
+    let mut tunnels = 0usize;
+    let mut seen = 0usize;
+    let mut disagreements = alloc::vec::Vec::new();
+
+    while seen < CELLS {
+        let f = rng.corners();
+        let mut case = 0u8;
+        for (c, &v) in f.iter().enumerate() {
+            if inside(v) {
+                case |= 1 << c;
+            }
+        }
+        if case == 0 || case == 255 {
+            continue;
+        }
+        let saddles = BodySaddles::of(&f);
+        if !saddles.has_inner_hexagon() {
+            continue;
+        }
+        let contours = Contours::of(case, joined_mask(&f, AMBIGUOUS_FACES[case as usize]));
+        if contours.count() != 2 {
+            continue;
+        }
+        seen += 1;
+
+        let is_tunnel = contours.topology(&saddles) == Topology::Tunnel;
+        if is_tunnel {
+            tunnels += 1;
+        }
+        if is_tunnel != (corner_groups(&f, GRID) == 1) {
+            disagreements.push(f);
+        }
+    }
+
+    assert!(
+        disagreements.is_empty(),
+        "the classifier and the {GRID}^3 flood fill disagree on {} of {seen} two-contour \
+         six-saddle cells; first is {:?}",
+        disagreements.len(),
+        disagreements.first()
+    );
+    assert_eq!(
+        tunnels, seen,
+        "the random sweep is expected to reach only genuine tunnels here; the \
+         nine-and-three shape is found by search, not by sampling"
+    );
+    std::println!(
+        "measured: {seen} two-contour six-saddle cells, all classified tunnels, \
+         0 disagreements with the {GRID}^3 flood fill"
+    );
+}
+
+/// **What a tunnel's contours actually look like, and which half of Corollary 6
+/// survives measurement (M-230).**
+///
+/// Corollary 6 reads *"one of the contours can have at most 6 vertices and the
+/// other 3 vertices."* Only the **bound** is used by
+/// [`Contours::topology`], and this is why: `[4,4]` and `[3,3,6]` tunnels are
+/// common, and neither has a second contour of three vertices. The corollary's
+/// second half is a description of the typical case, not a property.
+///
+/// The census is pinned as a whole so a new shape is as visible as a vanished
+/// one, and so that [`super::MAX_TUNNEL_CONTOUR`] is a measured bound rather than
+/// a transcribed one.
+#[test]
+fn the_tunnel_contour_shapes_are_pinned() {
+    use crate::cube::is_inside as inside;
+    use crate::marching_cubes::ambiguity::joined_mask;
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+
+    let mut rng = Lcg::new(0x0000_A002_F000_0001);
+    let mut shapes: alloc::collections::BTreeMap<alloc::vec::Vec<usize>, usize> =
+        alloc::collections::BTreeMap::new();
+
+    for _ in 0..400_000 {
+        let f = rng.corners();
+        let mut case = 0u8;
+        for (c, &v) in f.iter().enumerate() {
+            if inside(v) {
+                case |= 1 << c;
+            }
+        }
+        if case == 0 || case == 255 {
+            continue;
+        }
+        let saddles = BodySaddles::of(&f);
+        let contours = Contours::of(case, joined_mask(&f, AMBIGUOUS_FACES[case as usize]));
+        if contours.topology(&saddles) != Topology::Tunnel {
+            continue;
+        }
+        let mut sizes: alloc::vec::Vec<usize> = (0..contours.count())
+            .map(|r| contours.ring(r).len())
+            .collect();
+        sizes.sort_unstable();
+        *shapes.entry(sizes).or_insert(0) += 1;
+    }
+
+    for (sizes, n) in &shapes {
+        std::println!("measured: tunnel contours {sizes:?} x{n}");
+        assert!(
+            sizes.iter().all(|&s| s <= super::MAX_TUNNEL_CONTOUR),
+            "a tunnel with a contour past Corollary 6's bound reached the census"
+        );
+    }
+    // The half of Corollary 6 that measurement falsifies: a second contour of
+    // three vertices is not a property of tunnels.
+    assert!(
+        shapes.keys().any(|s| !s.contains(&3)),
+        "no tunnel without a three-vertex contour was reached, so the falsification \
+         of Corollary 6's second half is untested"
+    );
 }

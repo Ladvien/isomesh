@@ -1540,21 +1540,24 @@ fn chi_falls_by_two_for_every_tunnel_and_by_nothing_else() {
     std::println!("measured: chi shift by tunnel count {rows:?}");
 }
 
-/// **The extractor refuses a tunnel it cannot triangulate, rather than emitting a
-/// hole (M-228).**
+/// **The extractor refuses a cell it cannot triangulate, rather than emitting a
+/// hole (M-228, M-230).**
 ///
-/// Grosso's tunnel rule has no branch for a contour edge whose endpoints land
-/// three steps apart on the inner hexagon, and neither does the authors'
-/// implementation — it emits nothing there. Emitting nothing is a hole in the
-/// surface, and one that only appears on Marching Cubes' case 13 at particular
-/// face resolutions is exactly the kind of defect that reaches a consumer's
-/// collider before anyone notices.
+/// The cell reached is Marching Cubes' case 13 with contours of nine and three,
+/// which the ring count called a tunnel and Grosso's Corollary 6 excludes.
+/// Triangulated as a tunnel it left two contour edges with no rule, and therefore
+/// a hole — a defect that only appears at particular face resolutions and is
+/// exactly the kind that reaches a consumer's collider before anyone notices.
 ///
-/// So `extract` returns [`Error::UnresolvedTunnel`] instead. Inventing the
-/// missing triangulation is what rule 5 forbids; **A-020** owns deriving it.
+/// A-020 moved the refusal **earlier and onto the real cause**: the cell is
+/// classified [`Topology::SeparateDisks`] and `extract` returns
+/// [`Error::UnresolvedSixSaddle`] before any vertex is emitted, rather than
+/// discovering the gap partway through the tunnel rule. Deriving the
+/// triangulation such a cell needs is A-020b's; inventing one is what rule 5
+/// forbids.
 #[test]
-fn a_tunnel_with_no_rule_is_refused_rather_than_holed() {
-    // The single cell from `a_tunnel_can_span_three_hexagon_steps_and_is_refused`,
+fn a_cell_with_no_rule_is_refused_rather_than_holed() {
+    // The single cell from `a_nine_and_three_cell_is_refused_before_triangulation`,
     // laid out as a 2×2×2 grid so the interpolant reproduces it exactly.
     let field = Trilinear {
         size: [2, 2, 2],
@@ -1569,15 +1572,31 @@ fn a_tunnel_with_no_rule_is_refused_rather_than_holed() {
     let result = mc.extract(&field, &shape, [0.0; 3], 1.0, &mut out);
 
     match result {
-        Err(crate::Error::UnresolvedTunnel { case, mask, edges }) => {
+        Err(crate::Error::UnresolvedSixSaddle {
+            case,
+            mask,
+            longest,
+        }) => {
             assert_eq!(case, 0b0110_1001);
-            assert_eq!(edges, 2);
+            assert_eq!(
+                longest, 9,
+                "the fixture no longer has a nine-vertex contour"
+            );
             std::println!(
-                "measured: refused case {case:#010b} mask {mask:#08b}, {edges} edges with no rule"
+                "measured: refused case {case:#010b} mask {mask:#08b}, longest contour {longest}"
             );
         }
-        other => panic!("expected UnresolvedTunnel, got {other:?}"),
+        other => panic!("expected UnresolvedSixSaddle, got {other:?}"),
     }
+
+    // And nothing was written before the refusal. A partially meshed cell in the
+    // caller's buffer is the failure mode a late refusal has and an early one
+    // does not.
+    assert_eq!(
+        out.triangle_count(),
+        0,
+        "the refusal left triangles in the caller's buffer"
+    );
 
     // And the same cell is meshed without complaint by the rules that do not
     // claim to resolve the interior — the refusal is confined to the one path

@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-128 tickets. Line numbers are stable until something above them is edited — grep the ID if
+129 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -52,6 +52,7 @@ implementation contradicted the ticket.
 | [`A-018`](#L722) | The positional weld that was unnecessary and harmful |
 | [`A-019`](#L730) | Orientation stops at non-manifold edges, and the residue vanishes |
 | [`E-213`](#L738) | `marching_cubes_tunnel` — the tunnel made visible |
+| [`A-020`](#L746) | Corollary 6 was the test, and the hole was a misclassification |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -735,3 +736,11 @@ implementation contradicted the ticket.
 | | | ***The HUD's headline is the χ difference***, because that is the claim rather than the picture: a tunnel is a handle and a handle costs a closed surface exactly two (M-222). On a single open cell χ is not `2 − 2g`, so the difference is what to read, and the HUD says so. |
 | | | ***The configurations are searched, not invented, and the ticket's own reason is why.*** Interior ambiguity occurs in 0 of 68,385 surface cells across the seven original reference fields (M-208), so a demo that sampled a field would show an empty cell almost every time. Swept for a cell with six body saddles whose contours form a tunnel, then rounded to one decimal so the constant is readable in the source. |
 | | | *Finding the demo configuration is what found **A-020**: the same sweep turned up a case-13 tunnel whose contours are nine and three, outside Corollary 6, with two contour edges the construction has no rule for. The demo ships the two Corollary-6-compliant ones; the other is now a fixture and a ticket.* |
+| ☑ | **A-020** | **The tunnel triangulation Grosso does not define was a misclassification, and Corollary 6 was the test.** | M | A-002b |
+| | | ***The plan was wrong about which theorem does the work, and the wrong theorem is what proved the right one (M-230).*** The ticket said to derive Proposition 1's asymptote-side predicate, which V-31 had twice recorded as unpinnable prose. It is pinnable: §3 gives the face bilinear the normal form `G = α + η(s−s_c)(t−t_c)` and names the asymptotes, so `η·s_c = a − c` falls straight out of matching coefficients, and one comparison per face decides it. **The predicate then turned out not to separate the `[9,3]` cells at all** — it is false *exactly* when the cell has one contour, over 400,000 random cells with zero disagreements, which is Corollary 1 and nothing more. So it is equivalent to the reference implementation's contour-count shortcut, which means V-31's original claim (c) was right and both later amendments overshot. |
+| | | ***It was still worth deriving, and it is shipped.*** `BodySaddles::same_asymptote_side` is not on `extract`'s path; it exists because a derivation and a face-segment walk agreeing cell-for-cell is independent evidence for both, in the shape V-30 established. Without it the contour-count shortcut was a transcription nobody had graded. |
+| | | ***The fix is Corollary 6's bound, read contrapositively, and it is one comparison.*** A contour longer than six cannot belong to a tunnel, so `Contours::topology` gains `_ if self.longest() <= MAX_TUNNEL_CONTOUR`. `longest()` already existed from A-002f. The new `Topology::SeparateDisks` names what such a cell is. |
+| | | ***Half of Corollary 6 is false and is not used.*** It reads *"one of the contours can have at most 6 vertices and the other 3 vertices"*. The measured tunnel shapes are `[3,3] [3,4] [3,5] [3,6] [4,4]` and `[3,3,6]`; `[4,4]` has no three-vertex contour. Only the bound is taken, and only as a necessary condition — `the_tunnel_contour_shapes_are_pinned` records the census so a new shape is as visible as a vanished one. |
+| | | ***M-229's flood fill is a narrower oracle than it looked, and the test says where it is decisive.*** It is sound only on **two**-contour cells: a three-contour tunnel's detached ring caps its own corner group and correctly gives two components, and a twelve-vertex contour gives one while being a disk. `corollary_6s_length_bound_agrees_with_the_flood_fill` restricts to two-contour cells for that reason and states it. |
+| | | ***The refusal moved earlier and onto the real cause.*** `extract` returns the new `Error::UnresolvedSixSaddle` before emitting a single vertex, rather than discovering the gap partway through the tunnel rule and leaving the caller's buffer half-filled — asserted. `Error::UnresolvedTunnel` is kept as a live guard on the three-step edge, which nothing classified as a tunnel has ever reached; that is a sample, not a proof. |
+| | | *Deriving what such a cell should mesh as is **A-020b**, and it is a genuine rule-5 stop rather than remaining effort: none of §5.1, §5.2 or §5.3 applies to it.* |

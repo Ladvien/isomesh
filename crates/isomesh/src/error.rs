@@ -124,16 +124,24 @@ pub enum Error {
     /// does not give one and the authors' own implementation has no branch for
     /// it, so it silently emits nothing and leaves a hole.
     ///
-    /// It is reachable. Not by uniformly random corner values — 400,000 of those
-    /// produced 2,297 tunnels and never a three-step edge — but by Marching
-    /// Cubes' **case 13** with particular face resolutions, where a tunnel's two
-    /// contours can be nine and three vertices rather than the at-most-six and
-    /// three Grosso's Corollary 6 predicts (M-228).
+    /// It was reachable, and **A-020 established that reaching it was a
+    /// misclassification rather than a gap in the rule** (M-229, M-230). Every
+    /// configuration that produced a three-step edge was a case-13 cell with
+    /// contours of nine and three, which Corollary 6 excludes from the tunnel case
+    /// and [`Contours::topology`](crate::marching_cubes::trilinear::Contours::topology)
+    /// now excludes too — such a cell is reported as
+    /// [`UnresolvedSixSaddle`](Self::UnresolvedSixSaddle) before any triangulation
+    /// is attempted.
+    ///
+    /// So this is now a **live guard on a case nothing has reached**: no cell
+    /// classified as a tunnel has ever produced a three-step edge. It is kept
+    /// rather than deleted because "nothing has reached it" is a measurement over
+    /// a sample, not a proof, and the alternative to reporting it is emitting the
+    /// hole.
     ///
     /// Reported rather than patched, because inventing the missing triangulation
     /// is precisely what `CLAUDE.md`'s rule 5 forbids: a wrong case table
-    /// produces meshes that look fine and are subtly non-manifold. **A-020** owns
-    /// deriving it.
+    /// produces meshes that look fine and are subtly non-manifold.
     UnresolvedTunnel {
         /// The cell's corner-sign index.
         case: u8,
@@ -141,6 +149,32 @@ pub enum Error {
         mask: u8,
         /// How many of the contour's edges had no rule.
         edges: usize,
+    },
+
+    /// A cell with six body saddles whose contours bound separate disks rather
+    /// than the ends of a tunnel, for which the published construction has no
+    /// triangulation.
+    ///
+    /// Marching Cubes' **case 13** at particular face resolutions gives a cell
+    /// with an inner hexagon and two contours of **nine and three** vertices.
+    /// Grosso's Corollary 6 bounds a tunnel's contours at six and three, so this
+    /// is not a tunnel, and flood-filling the cell's inside region agrees: its
+    /// inside corners fall into **two** components rather than one (M-229).
+    ///
+    /// It is not a twelve-vertex contour either, so neither of §5.1's and §5.2's
+    /// hexagon rules applies. What it needs is §5.3's disk fan — and that rule
+    /// selects its interior vertex from face pairs whose quadratic has a **single**
+    /// solution, of which a six-saddle cell has none. **The construction therefore
+    /// stops here**, and so does this crate rather than guessing past it.
+    /// **A-020b** owns deriving it.
+    UnresolvedSixSaddle {
+        /// The cell's corner-sign index.
+        case: u8,
+        /// The face-resolution mask in force for that cell.
+        mask: u8,
+        /// Vertices in the cell's longest contour — what exceeds Corollary 6's
+        /// bound of six.
+        longest: usize,
     },
 
     /// A vertex whose normal cannot be derived, so there is nothing to normalise.
@@ -221,7 +255,18 @@ impl fmt::Display for Error {
                 f,
                 "tunnel triangulation undefined for case {case:#010b} mask {mask:#08b}: \
                  {edges} contour edge(s) span three inner-hexagon steps, which \
-                 Grosso's construction gives no rule for (A-020)"
+                 Grosso's construction gives no rule for"
+            ),
+            Self::UnresolvedSixSaddle {
+                case,
+                mask,
+                longest,
+            } => write!(
+                f,
+                "case {case:#010b} mask {mask:#08b} has six body saddles and a contour of \
+                 {longest} vertices, past Corollary 6's bound of six, so its contours bound \
+                 separate disks rather than a tunnel and Grosso's construction gives no rule \
+                 for it (A-020b)"
             ),
             Self::DegenerateSweep => write!(
                 f,

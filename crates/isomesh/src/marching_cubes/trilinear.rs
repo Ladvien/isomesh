@@ -95,16 +95,26 @@
 //! written out above because it is what the derivation produces; the specialised
 //! form is what runs.
 //!
-//! # What is *not* here
+//! # What the saddles alone cannot say
 //!
 //! Whether six saddles mean a tunnel or a single twelve-vertex contour. That
-//! distinction **cannot be made from the saddles alone** and does not need to be:
-//! it follows from how many closed contours the cell's cut edges form, which is
-//! A-002f's. The paper states an asymptote-side criterion for it (Proposition 1,
-//! Corollary 1) whose precise predicate its prose does not pin down; the authors'
-//! implementation does not evaluate one, branching on the contour count instead.
-//! Following the program rather than inventing a predicate is rule 5 working as
-//! intended — see V-31.
+//! distinction **cannot be made from the saddles' positions alone**, and the paper
+//! states an asymptote-side criterion for it — Proposition 1 and Corollary 1.
+//!
+//! V-31 recorded that criterion as one the prose never pins down, and following
+//! the authors' contour-count shortcut instead as rule 5 working as intended.
+//! **Half of that was wrong, and A-020 corrected it (M-230).** The criterion *is*
+//! derivable from the paper's own normal form for the face bilinear, it is
+//! implemented here as [`BodySaddles::same_asymptote_side`], and it agrees with
+//! the contour count on every cell measured — false exactly when there is one
+//! contour. So the shortcut was sound for what it decides, and the reason to have
+//! the predicate is that a derivation checked against a program is worth more than
+//! either alone (V-30's shape).
+//!
+//! It does **not** settle everything the contour count was being asked to settle.
+//! A case-13 cell with contours of nine and three passes the criterion and is not
+//! a tunnel; Corollary 6's length bound is what excludes it. See
+//! [`Contours::topology`].
 
 #[cfg(test)]
 mod tests;
@@ -341,6 +351,18 @@ impl<R: Real> BodySaddles<R> {
     }
 }
 
+/// The longest contour a **tunnel** can have, from Grosso's Corollary 6.
+///
+/// > If two contours build a tunnel, one of the contours can have at most 6
+/// > vertices and the other 3 vertices.
+///
+/// Only the bound is used, as a *necessary* condition read contrapositively: a
+/// contour longer than this cannot belong to a tunnel. The corollary's other half
+/// — that the second contour has exactly three vertices — **is falsified by
+/// measurement** and is not used: `[4,4]` and `[3,3,6]` tunnels are common
+/// (M-230), and both have a second contour that is not a triangle.
+pub const MAX_TUNNEL_CONTOUR: usize = 6;
+
 /// Most closed contours one cell's cut edges can form.
 ///
 /// Twelve cut edges and three to a ring is four, and four is reached — by the
@@ -451,17 +473,36 @@ impl Contours {
 
     /// What the cell's surface is, once the saddles and the rings are both known.
     ///
-    /// **This is the decision six body saddles cannot make alone**, and the one
-    /// the paper states through an asymptote-side criterion (Proposition 1,
-    /// Corollary 1) whose precise predicate its prose never pins down. The
-    /// authors' implementation does not evaluate one — it branches on how many
-    /// rings the cell has, and so does this (V-31):
+    /// **This is the decision six body saddles cannot make alone.**
     ///
     /// - fewer than six saddles → every ring is a disk;
     /// - six saddles and **one** ring → that ring has twelve vertices and is
     ///   still a disk, just a long one;
-    /// - six saddles and **two or three** rings → two of them are the two ends of
-    ///   a tunnel, and a third, if present, is a separate three-vertex disk.
+    /// - six saddles, **two or more** rings, none longer than
+    ///   [`MAX_TUNNEL_CONTOUR`] → two of them are the two ends of a tunnel, and a
+    ///   third, if present, is a separate disk;
+    /// - six saddles, two or more rings, and one of them **longer** than that →
+    ///   [`Topology::SeparateDisks`], which is not a tunnel and has no
+    ///   triangulation rule. See that variant.
+    ///
+    /// # The ring count alone is not the answer, and the length bound is the fix
+    ///
+    /// The authors' implementation branches on the ring count and nothing else,
+    /// and V-31 recorded that as making Grosso's asymptote-side criterion
+    /// (Proposition 1, Corollary 1) unnecessary. **The first half of that is
+    /// right and the second is not** (M-230). The criterion is derivable — see
+    /// [`BodySaddles::same_asymptote_side`] — and it agrees with the ring count
+    /// exactly, on every cell measured: it is false precisely when there is one
+    /// ring. So it settles the twelve-vertex split and says nothing about this
+    /// one.
+    ///
+    /// What the ring count misses is a case-13 cell whose rings come out **nine
+    /// and three**. It has two rings, so the count calls it a tunnel; its inside
+    /// region is two separate blobs rather than one cylinder (M-229); and it is
+    /// the only shape that then reaches the contour edge Grosso's tunnel
+    /// triangulation has no rule for (M-228). **Corollary 6 excludes it and was
+    /// being read as a description rather than a test** — hence the length bound
+    /// here, which is that corollary used contrapositively.
     #[must_use]
     pub fn topology<R: Real>(&self, saddles: &BodySaddles<R>) -> Topology {
         if !saddles.has_inner_hexagon() {
@@ -469,7 +510,8 @@ impl Contours {
         }
         match self.count() {
             0 | 1 => Topology::TwelveVertexContour,
-            _ => Topology::Tunnel,
+            _ if self.longest() <= MAX_TUNNEL_CONTOUR => Topology::Tunnel,
+            _ => Topology::SeparateDisks,
         }
     }
 }
@@ -485,6 +527,24 @@ pub enum Topology {
     /// reachable from Marching Cubes' case 13, and rare even there — Grosso
     /// counts **7** in a 512²×641 CT skull, against 2,057 tunnels.
     TwelveVertexContour,
+    /// Six body saddles, two or more contours, and one of them longer than
+    /// [`MAX_TUNNEL_CONTOUR`]. **Not a tunnel, and Grosso gives no rule for it.**
+    ///
+    /// Reachable on Marching Cubes' case 13 at particular face resolutions, where
+    /// the contours come out **nine and three**. The ring count calls such a cell
+    /// a tunnel; Corollary 6 excludes it; and flood-filling its inside region puts
+    /// its inside corners in **two** components rather than one, so the two
+    /// contours bound two separate disks rather than the ends of one cylinder
+    /// (M-229).
+    ///
+    /// The cell therefore needs the *disk* triangulation — but §5.3 selects that
+    /// path's interior vertex from face pairs whose quadratic has a **single**
+    /// solution, and a six-saddle cell has none. So there is no rule to apply and
+    /// none to derive without guessing, which rule 5 forbids;
+    /// [`MarchingCubes::extract`](super::MarchingCubes::extract) returns
+    /// [`Error::UnresolvedSixSaddle`](crate::Error::UnresolvedSixSaddle) rather
+    /// than emitting a hole. A-020b owns deriving it.
+    SeparateDisks,
 }
 
 /// One of the three pairs of opposite faces, named by the axis its lines run
@@ -561,6 +621,87 @@ impl<R: Real> BodySaddles<R> {
     #[must_use]
     pub fn line_count(&self, pair: Pair) -> u32 {
         self.lines(pair).count_ones()
+    }
+
+    /// Do both solutions lie on the same side of every face's asymptotes?
+    ///
+    /// **This is Grosso's Proposition 1, and it is the half of it that
+    /// [`has_inner_hexagon`](Self::has_inner_hexagon) does not cover.** The
+    /// proposition is an *if and only if* with two clauses:
+    ///
+    /// > ...is homeomorphic to a cylinder, i.e. it is a tunnel, if and only if for
+    /// > all three pairs of opposite faces the corresponding hyperbolas have two
+    /// > intersection points within the range `[0,1]²` **and the intersection
+    /// > points are always at the same side of the corresponding asymptotes**.
+    ///
+    /// `has_inner_hexagon` is the first clause. This is the second, and Corollary 1
+    /// states its contrapositive: six solutions that are *not* all on the same side
+    /// give a twelve-vertex contour rather than a tunnel.
+    ///
+    /// # Derived from the paper's own normal form, not guessed
+    ///
+    /// Rule 5 forbids inventing a predicate the prose leaves vague, and V-31
+    /// recorded this one as vague. It is not: §3 gives the face bilinear its normal
+    /// form `G(s,t) = α + η(s − s_c)(t − t_c)` and says *"the lines `s = s_c` and
+    /// `t = t_c` are the asymptotes"*, which names them exactly. Matching
+    /// coefficients against `G = a + (b−a)s + (c−a)t + (a+d−b−c)st` for a face whose
+    /// corners are `a, b, c, d` at `(0,0), (1,0), (0,1), (1,1)` gives
+    ///
+    /// ```text
+    /// η = a + d − b − c        η·s_c = a − c        η·t_c = a − b
+    /// ```
+    ///
+    /// A point on the hyperbola has `η(s − s_c)(t − t_c)` equal to a fixed non-zero
+    /// constant, so `sign(s − s_c)` and `sign(t − t_c)` determine each other and
+    /// **one coordinate per face decides it** — "same side of the asymptotes" is
+    /// "same branch of the hyperbola", which is what the proposition's proof argues
+    /// geometrically: *"otherwise it is not possible to move from one intersection
+    /// point to the other within the empty region corresponding to the tunnel."*
+    ///
+    /// The comparison is written as `η·s − (a − c)` rather than `s − s_c` so that
+    /// no division happens. The common factor `η` cancels between the two solutions,
+    /// and a face with `η == 0` — a bilinear with no twist, whose level set is a
+    /// straight line with no asymptotes — yields the same constant for both and is
+    /// reported as same-side, which is the only answer a line admits.
+    ///
+    /// # The crossing in [`lines`](Self::lines) does not reach here
+    ///
+    /// Pair `U`'s two solutions are crossed, `(v₁,w₀)` and `(v₀,w₁)`. This is a
+    /// predicate over the *set* of two points, so which pairing they take is
+    /// immaterial: `{v[0], v[1]}` is the same set either way.
+    ///
+    /// Returns `false` when the cell has no inner hexagon, since Proposition 1's
+    /// first clause has already failed and there is no second question to ask.
+    #[must_use]
+    pub fn same_asymptote_side(&self, corner: &[R; 8]) -> bool {
+        if !self.has_inner_hexagon() {
+            return false;
+        }
+        let [u, v, _] = self.coordinate;
+        // Per face: its four corner indices as `a, b, c, d` at `(0,0), (1,0),
+        // (0,1), (1,1)` in that face's own `(s, t)`, and which saddle coordinate
+        // plays `s`. Faces `w = *` use `(u, v)` and faces `v = *` use `(u, w)`, so
+        // `s` is `u` for four of the six; faces `u = *` use `(v, w)`.
+        const FACE: [([usize; 4], usize); 6] = [
+            ([0, 1, 2, 3], 0), // w = 0, (s, t) = (u, v)
+            ([4, 5, 6, 7], 0), // w = 1
+            ([0, 1, 4, 5], 0), // v = 0, (s, t) = (u, w)
+            ([2, 3, 6, 7], 0), // v = 1
+            ([0, 2, 4, 6], 1), // u = 0, (s, t) = (v, w)
+            ([1, 3, 5, 7], 1), // u = 1
+        ];
+
+        for ([a, b, c, d], axis) in FACE {
+            let twist = (corner[a] + corner[d]) - (corner[b] + corner[c]);
+            let offset = corner[a] - corner[c];
+            let s = if axis == 0 { u } else { v };
+            let lo = twist * s[0] - offset;
+            let hi = twist * s[1] - offset;
+            if lo * hi < R::ZERO {
+                return false;
+            }
+        }
+        true
     }
 
     /// The point where a pair's line `line` crosses the cell, given the value of
