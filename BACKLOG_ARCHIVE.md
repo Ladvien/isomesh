@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-131 tickets. Line numbers are stable until something above them is edited — grep the ID if
+132 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -55,6 +55,7 @@ implementation contradicted the ticket.
 | [`A-020`](#L746) | Corollary 6 was the test, and the hole was a misclassification |
 | [`A-017`](#L755) | MDC's non-manifoldness is a limit of the algorithm, documented |
 | [`B-009`](#L764) | The quickstart — the one example that teaches nothing |
+| [`T-012`](#L770) | FINDINGS.md's index, generated and gated |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -757,3 +758,8 @@ implementation contradicted the ticket.
 | | | ***A layout that compiles and shows an empty window is the failure mode, and it happened while writing this.*** `ChunkLayout::new`'s first argument is **cells**, not samples. The first draft passed `new(16, 0.25, …)`, giving each chunk a 4.0-unit span for a radius-1 sphere and leaving seven of the eight chunks empty. It compiled, ran, and would have shipped a quickstart that displays almost nothing. |
 | | | ***So the configuration is asserted rather than assumed.*** `the_quickstart_layout_meshes_every_chunk` runs the example's exact numbers — 16 cells at 1/16 of a unit, eight chunks tiling `[-1,1]³` — through the plugin headlessly and checks **triangle counts per chunk**, not merely that a `ChunkMesh` handle exists: an empty handle satisfies a count and shows nothing. Measured **1,189 triangles in every one of the eight**, identical across all of them, which is the symmetry a sphere at their shared corner must have. |
 | | | *The same cells-versus-samples error was in the README's doctest comment (`// 8 samples per chunk axis`) and is fixed there too. Example count 32 → 33, and both READMEs now point at `quickstart` first.* |
+| ☑ | **T-012** | **`FINDINGS.md` index and split policy.** | S | — |
+| | | ***Generated, not written, because a hand-maintained index of 298 rows is a rotting artefact with extra steps.*** `scripts/findings_index.sh` rewrites a marked block in place; `--check` exits non-zero if it is stale and runs in CI beside `backlog_gate.sh`. The precedent is in this repository: `BACKLOG_ARCHIVE.md`'s index was built by hand and carries rows reading *"(title not auto-extracted — grep the ID)"*, which is what a manual index costs after a few hundred entries. |
+| | | ***The file was worse than the ticket said, which is why it earned an index.*** The ticket cited 166 KB / 730 lines / 107 measurements. Measured on the day: **387 KB / 945 lines / 298 entries** — 17 falsified, 232 measured, 33 verified, 16 open. **And the cost was already being paid**: V-29 and V-32 are the same correction made twice, three days apart, two rows apart in the same table, because nobody could find the first one. |
+| | | ***One extraction bug, found by reading the output rather than trusting it.*** A bare first-bold-run rule returns the *label* on rows that open with one — `O-13` and `O-14` both begin `**Pre-registered:**` — and indexed two distinct predictions as the same string. Anything under 30 characters is now treated as a label and the whole cell is used instead. |
+| | | *The split policy is stated in advance rather than left to whoever is holding the file when it becomes unbearable: at **500 entries or 600 KB**, Parts 1–4 move to `findings/` split by **axis** rather than by date, the index stays generated across all files, and **entry numbering stays global** — `M-231` keeps its identifier wherever it lives, because a year of commit messages and both backlog files name it by number.* |

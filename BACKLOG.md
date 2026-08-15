@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**131 tickets archived, 39 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**132 tickets archived, 38 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -205,7 +205,6 @@ measurement count.** It is past the size at which anyone reads it end to end.
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
 | ☐ | **T-011** | **Committed metric baselines and a regression diff.** `docs/measurements/*.csv` is rewritten fresh each run, so nothing answers *"did this change make anything worse?"*. T-007's golden hashes catch a changed **mesh**; they are blind to a change that keeps the mesh bit-identical and doubles the runtime, or that worsens Hausdorff on one field. Commit a baseline CSV per machine; add `cargo run --bin regress` that diffs the current run against it and **fails on a regression beyond a stated tolerance**, printing the row. **Acceptance:** a deliberately slowed extractor fails the check and names the field and the metric. | M | — |
-| ☐ | **T-012** | **`FINDINGS.md` index and split policy.** Add the same index treatment `BACKLOG_ARCHIVE.md` got — a table of every `M-`, `✗`, `O-` and `P-` entry with its one-line claim — and a stated split rule for when it exceeds a size (`FINDINGS.md` as index + `findings/` by axis). **The index is what keeps it a lookup table rather than a diary**, and at 231 measurements the lookup is the only way it gets used. | S | — |
 | ☐ | **T-013** | **An experiment record format.** `FINDINGS.md` has slots for measurements (`M-`), falsified beliefs (`✗`), open questions (`O-`) and pre-registered predictions (`P-`). It has **no slot for an experiment that was run and reverted** — and with Phase 8, most experiments will be. Add an `E×-` section: hypothesis, the ablation, the numbers both ways, verdict, **kept or reverted and why**. A reverted experiment with recorded numbers is what stops it being re-run in six weeks. | S | T-012 |
 | ☐ | **T-014** | **Cross-machine measurement protocol.** `resolution_sweep-ryzen9-5900x.csv` exists beside `resolution_sweep.csv` and that second machine already produced a finding (M-45: Surface Nets' superlinearity is the algorithm, not one cache hierarchy). Make it systematic — a documented procedure, consistent filenames, and the machine's specs recorded in the CSV header rather than the filename. | S | T-011 |
 

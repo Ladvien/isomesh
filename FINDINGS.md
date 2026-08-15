@@ -28,6 +28,332 @@ which (the README and demo pages lean on this block by reference; added at D-003
   distrust, not just which facts.
 - Every entry names how it could be shown wrong. If you can't write that line, you have an opinion.
 
+## Index
+
+<!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
+
+**298 entries** — 17 falsified, 232 measured, 33 verified, 16 open. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+
+| # | Claim |
+|---|---|
+| `✗1` | "Surface Nets produces substantially fewer triangles than Marching Cubes" |
+| `✗2` | "You can have a manifold mesh or an intersection-free one, not both" |
+| `✗3` | "Every interior Surface Nets vertex has four neighbours" |
+| `✗4` | "Dual Contouring is absent from the home-still corpus" |
+| `✗5` | "naga_oil is the shader composition path for Bevy" |
+| `✗6` | "Mesh shaders aren't reachable from inside Bevy" |
+| `✗7` | "CBT 5.78 → 0.40 ms is from Dupuy 2020" |
+| `✗8` | Velo3D "93M vertices / 31M faces" |
+| `✗9` | "Marching Cubes' cost inside the volumetric loop was never measured" / "navmesh rebuild cost was never measured" |
+| `✗10` | "glam should be the internal math library from day one" |
+| `✗11` | "Plain Marching Cubes has ambiguous faces and produces holes" |
+| `✗12` | "The equivariant vertex rule needs a fast three-plane path with a fallback" |
+| `✗13` | "Real::as_f32 is the only narrowing operation in the crate, and the crate itself never calls it" |
+| `✗14` | "Surface Nets is the cheapest thing in the family and the natural default" |
+| `✗15` | "Marching Cubes is unconditionally manifold" |
+| `✗16` | "glam 0.32 lands with A-007's vertex solve" |
+| `✗17` | "Only the interior test can make Marching Cubes 33 non-manifold, so the face decider alone cannot" |
+| `M-1` | surface cells = crossed edges + χ |
+| `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
+| `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
+| `M-4` | Surface Nets is non-manifold where one cell carries two sheets: 48 non-manifold edges on capped gyroid, 15 on fbm_terrai… |
+| `M-5` | On box_exact, Surface Nets' nearest vertex to the corner (1,1,1) is 1.15 cells away |
+| `M-6` | libm::sqrtf lowers to hardware fsqrt (aarch64+neon) / sqrtss (x86-64+sse2) |
+| `M-7` | dev-dependencies do not propagate: consumer resolves 3 packages, the crate's own lockfile has 137 |
+| `M-8` | 317 packages, both 29.0.4 and 30.0.0 |
+| `M-9` | Workspace feature unification leaks: -p isomesh alone gives glam libm; whole-workspace gives it std, serde, bytemuck, en… |
+| `M-10` | Unit sphere at 64³ (h = 4/63), symmetric Hausdorff: Marching Cubes 1.380e-3, Surface Nets 2.288e-3. |
+| `M-11` | T-003's own acceptance criterion is loose by ~80×. |
+| `M-12` | Marching Cubes' error falls like h², measured. |
+| `M-13` | Surface cells ≈ 1.5·A/h², not A/h². |
+| `M-14` | The reverse direction finds defects the forward direction structurally cannot. |
+| `M-15` | Surface Nets' non-manifoldness is a resolution effect, not a topology effect. |
+| `M-16` | The even-χ parity check is not independent of manifoldness — it is a corollary of it. |
+| `M-17` | A case-table entry naming an uncut edge is caught inside the crate, before any mesh exists |
+| `M-18` | (refined by T-008 — the arithmetic below is about adjacent cells; the effect on a real mesh is gradual, because a mesh w… |
+| `M-19` | There is no meaningful fixed cost on the CPU extraction path, and the prediction saying so was written down before the r… |
+| `M-20` | Marching Cubes' marginal cost is 4.75 ns/sample — 211 M samples/s, single-threaded, f32, Apple M5. |
+| `M-21` | Surface Nets is not O(n³) over this range; Marching Cubes is. |
+| `M-22` | ✗1's identity holds at every resolution to 256³ |
+| `M-23` | f64 costs 8–10% on extraction paths with no matrix solve in them. |
+| `M-24` | Bit-exact lattice equivariance needs magnitude-ordered products, not just sums. |
+| `M-25` | The sharp-feature solve is nearly free: Dual Contouring costs 3% more than Surface Nets. |
+| `M-26` | Dual Contouring reaches a box corner to 0.01 cells where Surface Nets stops at 0.58 |
+| `M-27` | The two dual methods differ only at features, with a 14-order-of-magnitude gap and nothing in between. |
+| `M-28` | The cell clamp eliminates placement-caused self-intersections entirely, and costs nothing in sharpness. |
+| `M-29` | The literature's two branches both fire, on disjoint fields — which is a sharper answer than either alone. |
+| `M-30` | An unclamped solve can fling a vertex 3.18 cells out of its own cell |
+| `M-31` | libm delivers the bit-identical cross-platform meshes it was chosen for — verified, not reasoned. |
+| `M-32` | Chunk seams are bit-exact only when the cell size is a power of two. |
+| `M-33` | E1, the unpublished number: a brush changes 15–36% of the cells in its own bounding box. |
+| `M-34` | Counting value changes overstates the re-mesh set by 2.8–3.7×. |
+| `M-35` | A brush stepping two cells sweeps 6–14% of its sign-changed cells entirely through. |
+| `M-36` | The multiplayer story survives, with a boundary. Eight brushes in all 8! = 40,320 orderings give exactly one result — bi… |
+| `M-37` | Mixed add and subtract do not commute: 11 distinct results from the same 40,320 orderings. |
+| `M-38` | Smooth union destroys reordering almost completely: 40,317 distinct results from 40,320 orderings. |
+| `M-39` | Fixed-point storage is unnecessary for the guarantee it was proposed for. |
+| `M-40` | The ambiguous face is rarer than the literature suggests — on five of the seven reference fields it never occurs at all. |
+| `M-41` | 88 of the 256 cases change their Euler characteristic when their ambiguous faces are joined. |
+| `M-42` | The asymptotic decider is free to within a few percent, which is the first time this repo's "~free" claim has had a benc… |
+| `M-43` | The decider needs no division and no epsilon, and the brief's "guard the denominator" is unnecessary. |
+| `M-44` | The decider does not widen M-32's chunk-seam problem, and there is margin to spare. |
+| `M-45` | ✗14 reproduces on a second machine and gets worse; its crossover does not reproduce at all. |
+| `M-46` | A chord is only collidable when its two cut edges share a cube face, and that makes the manifold fix nearly free. |
+| `M-47` | The validator's duplicate_vertices is an upper bound on what a weld removes, not the count. |
+| `M-48` | The edge-vertex cache does not share everything, and welding removes a class of sliver nobody expected it to. |
+| `M-49` | ChunkLayout::cell_of inverts world_of_sample inside a cell and not reliably on its corner — M-32 in a second place. |
+| `M-50` | E1 and M-34's ratio both reproduce live, under a mouse. |
+| `M-51` | Marching Tetrahedra costs ~3× the triangles for ~4% worse geometry — and the literature's 2–3× is too low. |
+| `M-52` | The Marching Tetrahedra ratio is 4.0 when the surface normal lies in one octant and 2.0 when it changes sign, and P-1's… |
+| `M-53` | The five algorithms fill three of the four corners of manifold × intersection-free, and Marching Cubes is the only one i… |
+| `M-54` | Dual Contouring is 101× more accurate than Marching Cubes on a sharp field, and indistinguishable on a smooth one. |
+| `M-55` | O-14 falsified: Marching Tetrahedra's accuracy penalty is 4.3%, not 86%, and it beats Surface Nets rather than losing to… |
+| `M-56` | Greedy meshing's 2.76× saving over face culling is a property of one scene, not of the algorithm: measured 1.70× to 256×… |
+| `M-57` | Greedy merging manufactures T-junctions, and no weld can remove them. |
+| `M-58` | A-010's vertex splitting removes the one-vertex-per-cell pinch completely, and the ticket named a field that was never a… |
+| `M-59` | The dual of a manifold surface is a manifold complex, and an indexed triangle mesh cannot always represent it. This is a… |
+| `M-60` | Only two of seven fields ever need a second vertex in a cell, and the rate falls with resolution — so Nielson's "about 1… |
+| `M-61` | Splitting the vertex makes self-intersection worse, not better — ✗2's report is confirmed and the natural reading of M-2… |
+| `M-62` | The t = a + b·n³ fit had been printing NaN since the day the algorithm names were spelled out, and once it prints number… |
+| `M-63` | Both papers docs/research/ lists as "genuinely absent, blocking" are in the home-still corpus, so the acquisition lists… |
+| `M-64` | A Transvoxel lateral face does not always cross the resolution boundary, and the exception is what transition cells are… |
+| `M-65` | Central differences at the cell size cost under half a degree of normal direction, and converge at h². |
+| `M-66` | On a sharp field the geometry and the field disagree by an angle that does not fall with resolution. |
+| `M-67` | A sign test cannot distinguish 95.6% of the configurations a tetrahedron can actually be in. |
+| `M-68` | parry3d's constructor is not a validity check: the only mesh it refuses is one with no triangles. |
+| `M-69` | A chunk seam costs 72 boundary edges, and welding removes exactly those and nothing else. |
+| `M-70` | Field-derived LOD is exact, not approximate: a coarse sample position is bit-identical to the fine one it sits on. |
+| `M-71` | Cells fall by 8 per LOD level and triangles by 4 — and the 4 degrades exactly where the grid stops resolving the surface… |
+| `M-72` | A sub-cell feature does not vanish under coarsening — it aliases, which is worse. |
+| `M-73` | A transition cell that computes its sample positions by offsetting from a face origin puts a hairline crack in the seam,… |
+| `M-74` | A zero-width transition cell stitches the hole and has no normal at all — which is what "severe shading problems" means,… |
+| `M-75` | The transition width is what makes the patch's winding a measurable question at all, and the answer is unanimous. |
+| `M-76` | Two blocks at differing resolution leave 88 unmatched boundary edges in the seam plane, and transition cells take it to… |
+| `M-77` | Lengyel's Equation 4.2 loses its level index entirely when written in the block's own cells, and the seam holds at a rea… |
+| `M-78` | A no_std crate cannot take a millisecond budget, and the honest API is a predicate the caller owns. |
+| `M-79` | Subgrid MT's conformity is locality plus a shared vertex ordering — it is emphatically not invariance under relabelling,… |
+| `M-80` | Every point §3.1 leaves unpaired is forced by arithmetic, not chosen — which is what makes the procedure implementable w… |
+| `M-81` | §3.2.1's first two cases cover the whole of classic Marching Tetrahedra, and the rest of the machinery exists entirely f… |
+| `M-82` | Theorems B.4 and B.6 hold against a reconstruction that does not use them — 27 of 27 (d₁, d₂) patterns, exactly. |
+| `M-83` | T-002 is structurally blind to a fold inside a Steiner fan, and §3.2 is built entirely from Steiner fans — so "zero self… |
+| `M-84` | The Figure-13 subdivision stencil closes: all four sub-tets it produces are themselves normal configurations, on all 27… |
+| `M-85` | Property II is a statement about Γ_normal's residual, not about the tetrahedron's — and taking it for the tet's silently… |
+| `M-86` | Conforming does not mean "no boundary at a shared face" — it means "boundary exactly where an open curve was discarded",… |
+| `M-87` | §3.2 as implemented meshes 3,394 of 4,096 configurations, the entire remaining gap is one construction, and Property II… |
+| `M-88` | §3.2.2's two labelling rules are stated separately and are checkable against each other, which turns a transcription int… |
+| `M-89` | On thin_plate — the field this whole track exists for — 93.75% of tets already mesh, and every one of the remaining 6.25… |
+| `M-90` | A scoop belongs to one face, but its two endpoints lie on an edge that belongs to two — so "both endpoints are on this f… |
+| `M-91` | The contractible spanning disk introduces no vertices at all, and coverage moves 3,394 → 3,808 of 4,096. |
+| `M-92` | §3.2 is complete over the tested space: 4,096 of 4,096 configurations mesh, with NoPattern and Inconsistent both zero —… |
+| `M-93` | Subdivision's output reported 30 self-intersections in 52 triangles, and every one was an artefact of vertex duplication… |
+| `M-94` | 1D root finding resolves a slab at 1/1000 of the edge length — and the fixture that appears to demonstrate its limit pas… |
+| `M-95` | A-014c's acceptance is met with a number rather than a hedge: thin_plate returns 4,328 triangles at 33³ where greedy qua… |
+| `M-96` | Orienting each triangle against the gradient at its own centroid is sufficient — the welded output is closed, manifold a… |
+| `M-97` | §3.2.3's immersion is not hypothetical, and it is the single cause of every violation the subgrid extractor produces: 4… |
+| `M-98` | Subgrid Marching Tetrahedra costs 70× classic Marching Tetrahedra and 196× Marching Cubes, and the ratio is field evalua… |
+| `M-99` | The subgrid mesh's connectivity is provably manifold and my weld is what breaks it — the same mechanism as M-59, in a se… |
+| `M-100` | A demo can be broken in a way that looks entirely correct: E-108's letters, centred on z = 0, are never lost by Marching… |
+| `M-101` | §3.2.3's inset cannot be reconstructed from its prose, and two attempts made the measured result worse rather than bette… |
+| `M-102` | ChunkId orders lexicographically on [x, y, z], so a residency sweep must iterate x slowest — and the natural z-outer loo… |
+| `M-103` | rustdoc had never run on bevy_isomesh, and two doc links were already broken — the third time an excluded workspace turn… |
+| `M-104` | A radius-based residency rule loads a ball of chunks, and for a heightfield that is 4x too many with most of them meshin… |
+| `M-105` | E-203's first run reported 439 holes and a verdict of "G-001's overlap is wrong" — and the bug was in the test, one oper… |
+| `M-106` | The acid test passes with a margin, and the margin is the interesting part: across 495 seam crossings the worst vertical… |
+| `M-107` | λ is the sharpness/stability trade in one number, and swept over six decades it moves the runaway by a factor of 23 — bu… |
+| `M-108` | The prediction was registered before the sweep and came out half right, and the half that failed is the more interesting… |
+| `M-109` | M-61's "splitting the vertex makes self-intersection worse" is a 33³ fact, not a property — across nine resolutions it r… |
+| `M-110` | The self-intersection counter never tests 99% of the pairs on a dual contouring mesh, and the skipped count is identical… |
+| `M-111` | bevy_isomesh's four async drain tests do not pass on Linux, and one of them never passes — B-003's acceptance property i… |
+| `M-112` | E-112's premise is wrong by an order of magnitude, and the failure it names is really two failures with two different la… |
+| `M-113` | M-112's two laws reproduce in the committed example, and its fitted constant does not survive — the accuracy figure depe… |
+| `M-114` | HermiteCell::from_corners is public and its contract is not: the corner order it requires lives in a private module, so… |
+| `M-115` | A moving body is stopped harder and more often by ordinary terrain than by a chunk join — the same shape as M-106's answ… |
+| `M-116` | Runtime convex decomposition costs 241–272 ms per fragment, which is 14–22 whole frames — so correct destruction collide… |
+| `M-117` | A metric that reports a defect can be measuring the absence of a floor. E-204's first run accused 15 of 23 working colli… |
+| `M-118` | B-003's async tests were a wall-clock race, not a plugin defect — and the number of iterations they ran was irrelevant t… |
+| `M-119` | The obvious repair would have gutted the assertion it was repairing, and the mutation test is what proves the replacemen… |
+| `M-120` | Transvoxel's mirrored seam works, and it had never been run — E-107 only ever meshed the fine block on the low-x side. |
+| `M-121` | A level change moves the surface by up to 3.14 cells, which is the pop nobody measures. |
+| `M-122` | Re-extracting a whole LOD ladder on every level change costs 12–23 ms and hitches; re-extracting only the blocks that ch… |
+| `M-123` | Aliasing on a composed field came from the field, not the extractor — and swapping Surface Nets for Dual Contouring is w… |
+| `M-124` | The amortized cost per frame is the number a game spends, and it tracks the budget to within one chunk across a 320x ran… |
+| `M-125` | The never-livelock guarantee costs one chunk, exactly, and below one chunk's cost it degrades to precisely 1.00 chunks p… |
+| `M-126` | BrushOp::commutes_with is sound and tight — on eight overlapping brushes it called all seven adjacent pairs correctly, w… |
+| `M-127` | A fixture built to demonstrate that order matters reported 0 of 7 pairs where order mattered. |
+| `M-128` | The dual methods do not tile across chunk boundaries and Marching Cubes does — measured on two fields, after the defect… |
+| `M-129` | The seam counter's own exclusion list was missing an axis, and it accused Marching Cubes of a defect it does not have. |
+| `M-130` | On a concave edge Dual Contouring's advantage is 3.6x in the mean and only 1.56x in the worst case — nothing like the 10… |
+| `M-131` | The cell clamp does not bind on a concave edge either, which extends M-28 rather than limiting it — and the prediction t… |
+| `M-132` | Subgrid Marching Tetrahedra does tile across a chunk boundary — 0 open edges in 20 configurations — and the 1 that said… |
+| `M-133` | The dual methods are not reliably seam-closing rather than reliably open, which is a weaker and more useful claim than t… |
+| `M-134` | M-21's negative intercept reproduces in direction on a second machine and a third of the range, and its magnitude is 40x… |
+| `M-135` | The contour is 29% of a usable mesh, not 54% — and the largest stage is the collider check at 45%. |
+| `M-136` | "What fraction is the contour" has no single answer — it is 13.1% to 74.3% across seven fields, and the variable is how… |
+| `M-137` | Paint that lives in the field does not move when the geometry under it is destroyed — drift is exactly 0.000000, not sma… |
+| `M-138` | The price of exact paint is that every sample walks the edit log, and it is sub-linear in practice: 2.33x the cost per c… |
+| `M-139` | The wgpu pin holds, and the number it holds at is 29.0.4 rather than the 29.0.3 written down. |
+| `M-140` | The GPU this repository's numbers will be measured on, and the two limits that bound a dispatch. |
+| `M-141` | Include-once and cycle detection interact, and the obvious ordering silently accepts a circular graph. |
+| `M-142` | GPU and CPU Marching Cubes agree on every triangle and disagree on 6% of vertices by exactly one ULP — and the cause is… |
+| `M-143` | GridParams::sample_position was a mul_add where isomesh is origin + h·i, and a power-of-two cell size hid it through an… |
+| `M-144` | GPU/CPU bit-identity is a property of the cell size, not of the port — 93.8% at h = 0.125, 1.1% at h = 0.1, 98.0% at h =… |
+| `M-145` | The GPU extraction itself is essentially free and almost flat — 0.05 ms at 17³ and 0.13 ms at 129³, over 420× the cells… |
+| `M-146` | Mesh shaders are advertised by this adapter and cannot be enabled from this workspace, because ExperimentalFeatures::ena… |
+| `M-147` | Bevy's device already has mesh shaders enabled, with no configuration and no unsafe anywhere in this repository — so GPU… |
+| `M-148` | A WGSL mesh shader's output block is a fixed contract that naga defines and no document states — and it is derivable fro… |
+| `M-149` | A mesh-shader draw removes the smallest of the GPU path's three data-movement costs — 6.7% at 129³ — and the doc comment… |
+| `M-150` | Moving the prefix sum onto the GPU took the extraction path from 15.01 ms to 9.65 ms at 129³ — 1.56× — and the stage it… |
+| `M-151` | A hierarchical GPU scan is exactly the kind of code that is wrong invisibly, so it is asserted element-for-element again… |
+| `M-152` | "The upload is field evaluation" is 57% true: of the 8.40 ms upload at 129³, evaluation is 2.65 ms, converting Vec<f32>… |
+| `M-153` | Eliminating the "redundant" copy into GPU memory costs 1.6×, and the copy that was redundant was a different one. |
+| `M-154` | GPU field evaluation does not match libm bit-for-bit on any field, including the ones with no transcendentals — and it d… |
+| `M-155` | Evaluating the field on the GPU takes the 129³ path from 8.37 ms to 0.54 ms — 15.5× — and 37× ahead of a single-threaded… |
+| `M-156` | The mesh-shader coverage hole is accepted rather than closed, and the deciding constraint is a stated goal rather than a… |
+| `M-157` | A GPU-interpreted edit log reproduces BrushStack to under 8.4e-7 across every shape, every op and a twelve-brush mixed s… |
+| `M-158` | The whole pipeline runs on the GPU and never touches the bus: field, edit log, extraction and draw, at 0.41 ms for 16,43… |
+| `M-159` | The last four bytes cost 0.033 ms to move and 0.375 ms to wait for — because poll(Wait) drains every dispatch queued bef… |
+| `M-160` | A zero-synchronisation extraction makes CPU time independent of grid size: flat at ~0.17 ms from 33³ to 129³, where the… |
+| `M-161` | §3.2.3's immersion is real, measured on five of seven fields — and it is not the defect. |
+| `M-162` | A-014d's blocking question is answered, and the answer is no: the inset needs neighbour information, and the neighbours… |
+| `M-163` | csg_difference's three surviving non-manifold edges are each 4 faces but only 3 distinct polygons, from exactly 2 tetrah… |
+| `M-164` | gyroid's 138 inconsistently-oriented edges are not A-014d's, and the ticket's stated mechanism reaches 8% of them. |
+| `M-165` | Among the configurations that can exhibit it, Chernyaev's numerator-only test is wrong 12.6% of the time — 1,966 of 15,6… |
+| `M-166` | The interior test does not inherit ambiguity's crack-freeness argument, and the reason is one operator. |
+| `M-167` | Across the whole GPU series the arithmetic never moved and was never the point: synchronisation was 83% of an extraction… |
+| `M-168` | Giving a crossing an identity instead of a position removes 5.01× of the subgrid extractor's vertices and changes no tri… |
+| `M-169` | Identity-based sharing is complete exactly when no root lands on a grid sample point, and the correlation is not approxi… |
+| `M-170` | A GPU adapter is a finite resource and the test harness was treating it as free: 67 tests opened 67 devices, and once an… |
+| `M-171` | A shipped example panicked on every run, and three siblings carried the same race unfired. |
+| `M-172` | A signed distance field's gradient is exactly zero on its medial axis, and for a slab the medial plane is precisely wher… |
+| `M-173` | Two coincident surfaces are not a rendering bug to be biased away, they are a modelling statement — and the fix is to st… |
+| `M-174` | CI has been red on every push of the GPU series, and behind the one accepted failure three unrelated ones accumulated un… |
+| `M-175` | Sorting by magnitude is not enough to make a sum permutation-invariant, and the comment that said it was had been wrong… |
+| `M-176` | Zero-padding a reduction is transparent, negative zero included — and the reason is the accumulator's seed, not the sort… |
+| `M-177` | Reordering cannot buy negation equivariance, and the obstruction is structural rather than a missing tie-break. |
+| `M-178` | A-016 moved 34 of 168 golden rows, not the 42 predicted, and the 8 that held identify their own mechanism. |
+| `M-179` | A-014h's stated mechanism finds almost nothing, and the reason is a deliberate choice in the root finder. |
+| `M-180` | The population M-169 named as one defect is two, and only the smaller one is an identity problem — so A-014h cannot reac… |
+| `M-181` | T-009's own premise was wrong: normalising four scattered weld epsilons onto one moved nothing, because the weld's answe… |
+| `M-182` | P-7 confirmed, and the check that confirmed it found thin_plate failing at two of the three resolutions nobody was testi… |
+| `M-184` | Naming a root by the grid point it lies on completes the identity outright: on every field the extractor now emits each… |
+| `M-185` | Completing the identity turns a sliver into a repeated-index triangle, and the extractor now declines to emit those. |
+| `M-186` | M-162 is falsified, and A-014d's blocker with it: after A-014h no coincident polygon has a foreign tetrahedron on its bo… |
+| `M-187` | Orienting each connected component from its most confident triangle drives the inconsistently-oriented-edge count to exa… |
+| `M-188` | Two of the seven reference fields are non-manifold at a resolution the suite never tested, and one of them is torus. |
+| `M-189` | Running the subgrid validity census at the three resolutions its own gate names doubles the number of known defects, and… |
+| `M-192` | I-007's own finding happened to I-007, in the commit that filed it. |
+| `M-193` | The polygon type A-014d has to inset is the one type its figure could not be read for — measured, not assumed. |
+| `M-194` | A-014d's acceptance criterion asks §3.2.3 to fix a defect §3.2.3 does not cause, and this repository's own instrument ha… |
+| `M-195` | The mirrored seam's crack is exactly invisible to a seam-plane counter — 0 edges on the plane, 28 on each side of it. |
+| `M-196` | Consuming fields:: instead of a hand-rolled copy is a speed-up, not a tidy-up — and a dispatch layer can throw the whole… |
+| `M-197` | GPU-013's two halves both misnamed their target, and the measurement says the prize is waits rather than submissions. |
+| `M-198` | The publish job ran for the first time in its life, and failed on a secret that was never set — so the release pipeline… |
+| `M-199` | Subgrid Marching Tetrahedra is already intersection-free on every reference field at every resolution — so §3.2.3, whose… |
+| `M-200` | Two of A-014i's three recorded defects are not what the review called them: one is real and its obvious fix is measurabl… |
+| `M-201` | The subdivision path has a grid-level fixture at last, and it says the orphaned vertices are real — 9.8% of them — which… |
+| `M-202` | Subdivision only fires where the grid badly under-resolves the field, so "T-001 validity on the subdivision fixture" can… |
+| `M-203` | A-014i's orphaned vertices are fixed by giving children their parent's names instead of new ones, and the mesh is bit-fo… |
+| `M-204` | M-166 is closed by two parentheses, and the test that was already asserting the property could not have caught it. |
+| `M-205` | A-014i's "orphaned bigons" is real, and it is a law rather than a defect: unreferenced positions arrive in pairs, one pa… |
+| `M-206` | Two independently derived constructions locate the same body saddles, to 1.1e-12. |
+| `M-207` | The reference implementation loses a root this one keeps, in two places, and both are the textbook quadratic formula. |
+| `M-208` | Interior ambiguity was unreachable by this crate's entire test suite: 0 of 68,385 reference-field surface cells have six… |
+| `M-209` | The eighth reference field is searched, not designed — 97 of 610 candidates qualify, and the one taken is the gentlest r… |
+| `M-210` | The natural level set of gradient noise is its own lattice, which is degenerate — so a noise reference field may not use… |
+| `M-211` | A-010's zero was conditional, and nobody knew on what: Manifold Dual Contouring is not manifold on a field with interior… |
+| `M-212` | Welding two coincident vertices can create a non-manifold edge, which a test comment had asserted was impossible. |
+| `M-213` | Orientation can raise the flipped-edge count, and after <= before was not a law. |
+| `M-214` | The tunnel and the twelve-vertex contour are told apart by counting rings, and both are reachable: 2,053 and 173 in 396,… |
+| `M-215` | The u pair's two lines are crossed relative to the other two, and the inner hexagon is what proves it. |
+| `M-216` | The interior vertex is a transcription, and the check on it is geometric: 149,803 of them, every one on the level set to… |
+| `M-217` | The disk path costs no new budget: worst case 12 triangles and 1 interior vertex per cell, against MAX_TRIANGLES = 12 an… |
+| `M-218` | The twelve-vertex contour needs a closing step the tunnel does not, and a manifoldness test found it rather than a readi… |
+| `M-219` | The reference implementation has a transcription-grade typo in the detached-ring test, and it is one line from six. |
+| `M-220` | The singular face is an artifact of quantised data, and this crate cannot reach it: 0 of 1,838 on eight reference fields… |
+| `M-221` | 0 × NaN is NaN, and it took the extractor to find that — not 400,000 random cells. |
+| `M-222` | χ falls by exactly two per tunnel and by nothing else — the interior rule's topology change is arithmetic, not approxima… |
+| `M-223` | The interior rule costs 1.95% at 33³ and 0.14% at 65³, on the only field that exercises it. |
+| `M-224` | Manifold Dual Contouring's non-manifoldness has nothing to do with tunnels, which is what A-017 assumed, and it survives… |
+| `M-225` | A-017's mechanism, and the grid predicts the mesh defect exactly — 30, 64, 8 and 40, with zero error. |
+| `M-226` | Subgrid Marching Tetrahedra's output does not need welding and is damaged by it — the doc had been telling consumers to… |
+| `M-227` | Orientation now reaches zero on every reference field at every resolution, and M-187's caveat was about the walk rather… |
+| `M-228` | Grosso's tunnel triangulation has an undefined case, it is reachable, and 400,000 random cells could not reach it. |
+| `M-229` | The contour-count discriminator misclassifies case 13, and the misclassified cells are exactly the ones with no triangul… |
+| `M-230` | Corollary 6 is the tunnel test; Proposition 1 is not, and the derivation that shows it also validates itself. |
+| `M-231` | The [9,3] cell is not a topological subcase; it is a singular face that the strict interior test lets through. |
+| `M-232` | A singular face is unreachable from continuous data and routine from quantised data — and the rate at u8 density matches… |
+| `M-233` | A-002i's blocker is not the vertex cache, it is that a singular face needs a third routing and the resolution mask has t… |
+| `M-234` | A-017 closed by decision rather than by code, and the limit is stated as an identity so it cannot rot. |
+| `M-235` | The example capture rig renders headlessly but cannot control its own window size, and it fails silently — which is the… |
+| `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
+| `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
+| `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
+| `V-4` | Contouring 68 ms vs halfedge construction 58 ms |
+| `V-5` | On unstructured grids, Delaunay/MT ratio 15.3×–81.5× — contouring is 1–2% of the pipeline |
+| `V-6` | 73% of FlexiCubes' 64³ Marching Cubes timing is fixed launch overhead |
+| `V-7` | Cross-paper reproducibility floor is ~1.5× in opposite directions: TetWeave re-measured FlexiCubes at 128³ as 9.63/15.25… |
+| `V-8` | 10.7× more bandwidth bought ~1.7× more throughput |
+| `V-9` | Same Marching Cubes, compute shader → mesh shader: 114.2 → 2679.4 fps (23.4×) |
+| `V-10` | CBT sum-reduction, atomics → LDS staging: 5.78 → 0.40 ms |
+| `V-11` | Meshlet compression: 15.5 M tri in 0.59 ms (RX 7900 XTX) |
+| `V-12` | Work graphs: 79,710 instances in 3.74 ms — but 2.8–3.4× slower on classification workloads |
+| `V-13` | nvblox: meshing is the least GPU-accelerable stage, ×3–13 vs fusion's ×174–177 |
+| `V-14` | Aokana renders 10¹⁰ voxels at 6 ms, 5% resident, RTX 3060 Ti — explicitly not editable |
+| `V-15` | CoACD vs V-HACD: 49% → 80% downstream manipulation success |
+| `V-16` | Dimforge migrated parry (0.26.0) and rapier (0.32) off nalgebra onto glam, citing rust-gpu support; performance "nothing… |
+| `V-17` | No paper since 2020 benchmarks Marching Cubes vs Surface Nets vs Dual Contouring against each other. |
+| `V-18` | Dual Contouring's own paper quantifies the f32 QEF failure. |
+| `V-19` | Dual Contouring's topology is Surface Nets' topology. |
+| `V-20` | A QEF is stored as AᵀA (symmetric 3×3), Aᵀb (3-vector) and bᵀb (scalar) — 10 floats — rather than as A and b |
+| `V-21` | The corner/contractible spanning disk is supposed to come out degenerate, and mistaking that for a bug would send A-014b… |
+| `V-22` | (settled at E-206b: adopted as a bevy_isomesh dev-dependency only, avian3d 0.7.0, which compiles clean against Bevy 0.19… |
+| `V-23` | CLAUDE.md's Metal contradiction is resolved, and both sources were right about different layers. |
+| `V-24` | Custodio §5.1's correction, verified from the paper and re-derived rather than transcribed. |
+| `V-25` | "Lewiner's reference implementation omits disambiguation for cases 10 and 12 entirely" is true of the code and false of… |
+| `V-26` | A follow-up exists that builds MC33's triangulation with no lookup table at all, and A-002b's blocker did not know about… |
+| `V-27` | §3.2.3's prose is fully retrievable and its triangulation patterns are still only a picture — and the paper offers a sec… |
+| `V-28` | A-014d's rule-5 stop is lifted, and not by the figure — by the authors' own reference implementation, shipped as arXiv a… |
+| `V-29` | Two sources this repo recorded as unobtainable were obtainable, and one of them removes the largest single piece of A-00… |
+| `V-30` | Grosso's quadratic re-derived, and now agreeing three ways rather than two. |
+| `V-31` | The reference implementation both Grosso papers cite has been deleted from GitHub, and it survives — the paper's own lis… |
+| `V-32` | Two more rows of meshing-library-target.md marked PAYWALL are in the corpus, and the table's status code has now been wr… |
+| `V-33` | A paper_download that reports success can return a landing page, and this is the third producer of that signature. |
+| `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
+| `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
+| `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
+| `O-4` | Settled at G-003 (M-36, M-37, M-38): conditionally, and the condition is narrow. |
+| `O-5` | Do mesh shaders work on macOS/Metal? |
+| `O-6` | What is amortized meshing cost per frame under continuous editing? |
+| `O-7` | What fraction of our pipeline is contouring vs everything else? |
+| `O-8` | Does Dual Contouring's vertex placement need f64 in practice, or is f32 enough? |
+| `O-9` | How much does T-003's gradient-flow chord over-estimate distance at a concave seam? |
+| `O-10` | What is Surface Nets' non-manifold rate as a function of feature thickness over h? First curve measured at A-010 (M-60),… |
+| `O-11` | Why does the dual topology go superlinear in n³ while Marching Cubes does not? |
+| `O-12` | Is Marching Cubes unconditionally manifold now? |
+| `O-13` | Pre-registered: Marching Tetrahedra vertex count = 3.0× Marching Cubes, converging from above Confirmed at A-003/M-001,… |
+| `O-14` | Pre-registered: Marching Tetrahedra symmetric Hausdorff at 64³ ≈ 2.6e-3, about 1.86× Marching Cubes, i.e. slightly worse… |
+| `O-15` | Answered at A-003 (M-52): the normal's sign pattern, not its direction. |
+| `O-16` | Can the parallel dual-edge collapse (M-59) be removed without giving up the cycle partition? |
+
+<!-- END GENERATED INDEX -->
+
+## When this file splits
+
+**Stated in advance, so the decision is not made under pressure by whoever is holding it when it
+becomes unbearable.** At **500 entries or 600 KB**, whichever comes first, `FINDINGS.md` becomes the
+index plus Parts 5 and 6 — the method rules and the how-to — and Parts 1 through 4 move to
+`findings/` split by *axis*, not by date: `findings/correctness.md`, `findings/performance.md`,
+`findings/sources.md`, `findings/method.md`. Date order is how the file grew and is useless for
+lookup; nobody has ever wanted "everything we learned in August".
+
+Two things do not change at the split. **The index stays generated** — `scripts/findings_index.sh`
+gains the directory and keeps one table across all files, because an index per file is four places
+to look and therefore none. And **entry numbering stays global**: `M-231` keeps its identifier
+wherever it lives, since every cross-reference in the backlog, the archive and a year of commit
+messages names it by number and a renumber would silently break all of them.
+
+Current: **298 entries, 387 KB** — see the index above.
+
 ## Confidence tiers
 
 | Tier | Meaning | Bar |
