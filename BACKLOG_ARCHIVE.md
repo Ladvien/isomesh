@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-143 tickets. Line numbers are stable until something above them is edited — grep the ID if
+144 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -67,6 +67,7 @@ implementation contradicted the ticket.
 | [`E-216`](#L838) | Building a field, and the union nobody had noticed was missing |
 | [`T-011`](#L846) | Metric baselines, and a gate that has been seen to fail |
 | [`T-013`](#L854) | Part 4b — experiments run, and what happened to them |
+| [`T-014`](#L862) | Cross-machine protocol, and provenance inside the file |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -835,3 +836,8 @@ implementation contradicted the ticket.
 | | | ***`E×2` is the entry that proves the section was needed.*** It records a variant **reverted before it was written**: the paper's solver is identical to `solve_with` at `λ = Nσ²` to 1.110e-16, so building it would have been a second execution path computing the same numbers. Nothing left in the tree says that was tried, which is exactly the six-week re-run this section exists to stop — and the entry names the door that *is* open (anisotropic `Σₙ`) so the next attempt starts there rather than repeating this one. |
 | | | ***The verdict line carries the reasoning, not just the outcome.*** `E×1` is *kept as an ablation, not as a default* because neither arm dominates — 100× accuracy on sharp features against zero self-intersections. `E×3` is *kept behind `experimental`, not made default* because promoting it moves T-007's committed golden hashes and 112 baseline rows for a 25% gain on two of eight fields, which is a decision with evidence attached rather than a tidy-up. |
 | | | *Three supporting edits so the slot is real rather than announced: `scripts/findings_index.sh` learned the `E×` kind and now reports experiments in its header line, the how-to-use section states the obligation, and two hardcoded entry counts were removed from the script's own header and the split policy — a generated index that quotes a stale number in its prose is the same defect one level up.* |
+| ☑ | **T-014** | **Cross-machine measurement protocol.** | S | T-011 |
+| | | ***The specs go inside the file because a filename cannot hold them.*** `resolution_sweep-ryzen9-5900x.csv` shows the problem it was solving: a filename has to stay short enough to type, so it carries a nickname and loses core count, memory, kernel and — above all — **which commit produced the numbers**. `scripts/machine.sh --spec` emits `#` lines that every reader here skips, and `--slug` gives the one token a filename can carry. One definition of "which machine is this", shared, so two baselines cannot disagree about their own names. |
+| | | ***The commit line is the field that matters and the one most easily lost.*** Two runs a week apart on the same box are not comparable if the extractor changed between them, and nothing else in a CSV records that it did. The header marks a run **not attributable** when code has moved since the commit — scoped to `crates/`, `bevy_isomesh/` and the manifests, because a dirty README cannot change a triangle count and flagging it would train everyone to ignore the warning that matters. |
+| | | ***The hand-named file is left alone, deliberately.*** `resolution_sweep-ryzen9-5900x.csv` predates the convention and **M-45, ✗14 and O-11 quote figures from it by name**; renaming it to match would silently break five references to buy tidiness. `docs/measurements/README.md` records that it is the exception and why. |
+| | | ***One real bug found in the process, and it exited zero (M-243).*** The script embeds Python in an **unquoted** heredoc, so bash expanded the body — a backtick in a docstring became command substitution, and a comment mentioning `median_ms` made bash run it and print `command not found` on every invocation. The gate still passed: command substitution failing does not fail the script. Fixed structurally by quoting the heredoc and passing values through the environment, which removes the class rather than the instance. **This repository writes unusually long comments and is therefore unusually exposed to prose-inside-a-heredoc being code.** |

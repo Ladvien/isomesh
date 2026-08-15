@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**143 tickets archived, 28 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**144 tickets archived, 27 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -195,7 +195,6 @@ measurement count.** It is past the size at which anyone reads it end to end.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **T-014** | **Cross-machine measurement protocol.** `resolution_sweep-ryzen9-5900x.csv` exists beside `resolution_sweep.csv` and that second machine already produced a finding (M-45: Surface Nets' superlinearity is the algorithm, not one cache hierarchy). Make it systematic — a documented procedure, consistent filenames, and the machine's specs recorded in the CSV header rather than the filename. | S | T-011 |
 
 ---
 

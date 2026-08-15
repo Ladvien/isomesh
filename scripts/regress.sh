@@ -41,32 +41,30 @@ cd "$(dirname "$0")/.."
 MEASUREMENTS="docs/measurements"
 BASELINES="$MEASUREMENTS/baseline"
 
-# Slug for this machine, matching the convention `resolution_sweep-ryzen9-5900x.csv`
-# already used by hand.
-machine_slug() {
-    local raw
-    raw="$(uname -s)-$(uname -m)"
-    if [ -r /proc/cpuinfo ]; then
-        local model
-        model="$(grep -m1 '^model name' /proc/cpuinfo | cut -d: -f2- || true)"
-        [ -n "$model" ] && raw="$model"
-    fi
-    echo "$raw" | tr '[:upper:]' '[:lower:]' | sed -E 's/\(r\)|\(tm\)|cpu|processor|@.*//g; s/[^a-z0-9]+/-/g; s/^-+|-+$//g'
-}
+# One definition of "which machine is this", shared with anything else that needs
+# it -- a second copy would drift and two baselines would disagree about their own
+# names (T-014).
+MACHINE="${REGRESS_MACHINE:-$(./scripts/machine.sh --slug)}"
+SPEC="$(./scripts/machine.sh --spec)"
 
-MACHINE="${REGRESS_MACHINE:-$(machine_slug)}"
+# **Quoted heredoc, and the values come through the environment.** Unquoted, bash
+# expands the Python body -- and a backtick in a docstring becomes a command
+# substitution, so `median_ms` in a comment was executed and reported as
+# "command not found" on every run. Nothing failed; it just printed noise, which
+# is the kind of bug that survives for months.
+export MEASUREMENTS BASELINES MACHINE SPEC
+python3 - "$@" <<'PYEOF'
+import csv, os, sys
 
-python3 - "$@" <<PYEOF
-import csv, os, sys, shutil
-
-MEASUREMENTS = "$MEASUREMENTS"
-BASELINES = "$BASELINES"
-MACHINE = "$MACHINE"
+MEASUREMENTS = os.environ["MEASUREMENTS"]
+BASELINES = os.environ["BASELINES"]
+MACHINE = os.environ["MACHINE"]
+SPEC = os.environ["SPEC"]
 
 # Columns that identify a row. Everything else is a metric.
 KEYS = ("field", "algorithm", "rule", "samples")
 
-# Per-metric tolerance as a relative fraction. \`None\` means exact.
+# Per-metric tolerance as a relative fraction. `None` means exact.
 #
 # The structural three are exact because they are deterministic and a tolerance
 # would only hide a change. The rest are stated with the reason they are not.
@@ -94,9 +92,20 @@ LOWER_IS_BETTER = {
 }
 
 
-def read(path):
+def rows_of(path):
+    """Rows, ignoring the `#` provenance header a baseline carries (T-014).
+
+    Every reader goes through here. The self-test did not, at first, and read the
+    header as data -- so it found no row with a `median_ms` and died on a bare
+    StopIteration rather than saying so.
+    """
     with open(path, newline="") as handle:
-        rows = list(csv.DictReader(handle))
+        body = [line for line in handle if not line.startswith("#")]
+    return list(csv.DictReader(body))
+
+
+def read(path):
+    rows = rows_of(path)
     keyed = {}
     for row in rows:
         key = tuple(row.get(k, "") for k in KEYS)
@@ -171,7 +180,7 @@ if self_test:
         sys.exit("regress --self-test: no baseline committed yet")
 
     with tempfile.TemporaryDirectory() as tmp:
-        rows = list(csv.DictReader(open(source, newline="")))
+        rows = rows_of(source)
         fields = rows[0].keys()
         # A "deliberately slowed extractor": one row, doubled.
         target = next(r for r in rows if r.get("median_ms"))
@@ -213,7 +222,13 @@ for name in names:
         continue
     if accept:
         os.makedirs(BASELINES, exist_ok=True)
-        shutil.copyfile(current, base)
+        # The provenance goes *in* the file. A filename can hold a nickname and
+        # not a compiler version, and a timing figure whose commit is unknown is
+        # a rumour -- two runs a week apart on one box are not comparable if the
+        # extractor changed between them (T-014).
+        with open(base, "w", newline="") as out:
+            out.write(SPEC.rstrip("\n") + "\n")
+            out.write(open(current).read())
         print(f"regress: accepted {current} as {base}")
         continue
     if not os.path.exists(base):
