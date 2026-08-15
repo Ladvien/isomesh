@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-136 tickets. Line numbers are stable until something above them is edited — grep the ID if
+137 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -60,6 +60,7 @@ implementation contradicted the ticket.
 | [`X-002`](#L788) | The ablation seam — a type parameter, not a branch |
 | [`X-003`](#L796) | The experimental feature, with a real inhabitant |
 | [`X-004`](#L802) | Probabilistic quadrics reduce to our own solve |
+| [`B-010`](#L810) | docs.rs metadata, and docs that open with the code |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -793,3 +794,7 @@ implementation contradicted the ticket.
 | | | ***So no solver was written, on purpose.*** A `ProbabilisticQuadric` solver would be a second execution path computing numbers the existing path already computes — precisely what the one-path rule forbids. What shipped is the part that differs: the regularizer scales with the **crossing count**, where `Qef` applies one fixed λ to every cell. |
 | | | ***Measured on all eight fields at 65³.*** Hausdorff as a ratio of scaled to fixed: **1.0000 sphere, 0.9957 torus, 0.9992 csg_difference, 0.7519 box_exact, 0.7519 thin_plate** — never worse, **25% better on both sharp-feature fields**. Self-intersections per 1k at 33³ also fall: gyroid **3.118 → 2.551**, fbm_terrain **13.837 → 13.571**, noise_cavity **29.745 → 28.749**. *The two sharp fields improving by the identical 0.7519 is unexplained and is left recorded rather than rationalised.* |
 | | | *Two things about the paper that do not transfer, stated so nobody re-reads it hoping: its headline is robustness **without an SVD**, and this crate's solve never used one — it is a 3×3 adjugate (✗16). And its real novelty is **anisotropic** `Σₙ`, which needs a per-plane noise model that analytic fields with exact gradients do not have; inventing one so the formula had somewhere to put it would be fitting the data to the method.* |
+| ☑ | **B-010** | **The publishing-metadata residue.** | S | B-009 |
+| | | ***`[package.metadata.docs.rs] all-features = true` on all three manifests.*** It matters more than it did when the ticket was written: X-003 landed a feature-gated `experimental` module, and without this docs.rs would render the crate as though it did not exist — a reader would have to check out the source to learn there was something to enable. |
+| | | ***Both crate headers now open with code rather than with rationale.*** `isomesh`'s opened *"has to serve both a real-time voxel game and a CAD tool"* and `isomesh-gpu`'s with its one architectural rule. Both are the best prose in the crate and both are the wrong first screen — Effective Rust Item 27 splits the jobs (crates.io for **choosing**, docs.rs for **using**), and Carroll's minimalist-instruction finding is that users act rather than read. The rationale is not deleted; it moved under a heading and now follows a working example. |
+| | | *Written as doctests, so the front page cannot rot: `isomesh`'s eleven-line extraction and `isomesh-gpu`'s device-and-mesher snippet both compile on every `cargo test`. The gpu one caught its own error immediately — the first draft invented `headless::device()` and `gpu.device` when the API is `headless::Gpu::new()` and `gpu.device()`, which is exactly the class of mistake an uncompiled example ships with.* |

@@ -1,5 +1,27 @@
 //! Engine-agnostic isosurface extraction. Field in, triangles out.
 //!
+//! ```
+//! use isomesh::marching_cubes::MarchingCubes;
+//! use isomesh::fields::Sphere;
+//! use isomesh::{MeshBuffer, RuntimeShape3};
+//!
+//! let field = Sphere::<f32>::canonical();          // any `Sdf` -- yours, or one of eight here
+//! let shape = RuntimeShape3::new([33; 3])?;        // 33 samples per axis, so 32 cells
+//! let mut mesh = MeshBuffer::<f32>::new();         // reused across calls; never reallocated
+//!
+//! MarchingCubes::<f32>::new()
+//!     .extract(&field, &shape, [-2.0; 3], 0.125, &mut mesh)?;
+//!
+//! assert!(mesh.triangle_count() > 0);
+//! # Ok::<(), isomesh::Error>(())
+//! ```
+//!
+//! `mesh.positions` is `Vec<[f32; 3]>` and `mesh.indices` is `Vec<u32>` — hand
+//! them to a renderer, a physics engine, or an exporter. There is no mesh type to
+//! learn and no math library in the way.
+//!
+//! # Why it looks like this
+//!
 //! `isomesh` has to serve both a real-time voxel game and a CAD tool, and that
 //! single constraint decides most of its design: no math library appears in a
 //! public signature, output buffers are caller-provided and reusable, and the

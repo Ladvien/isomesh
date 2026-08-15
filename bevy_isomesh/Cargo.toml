@@ -22,6 +22,14 @@ categories = ["game-development", "graphics", "rendering"]
 # root would stop testing what a consumer of `isomesh` actually gets.
 [workspace]
 
+# docs.rs builds with every feature, so the `experimental` module appears there
+# even though it is off by default. A reader evaluating the crate should be able
+# to see what is behind a feature without checking out the source to find out it
+# exists -- D-0/B-010, per Effective Rust Item 27: crates.io is for people
+# CHOOSING a crate, docs.rs for people USING one.
+[package.metadata.docs.rs]
+all-features = true
+
 [dependencies]
 # Path *and* version: a path-only dependency cannot publish, and the version is
 # what a crates.io consumer resolves.

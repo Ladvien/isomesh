@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**136 tickets archived, 35 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**137 tickets archived, 34 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -187,7 +187,6 @@ for, and it does not exist.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **B-010** | **The publishing-metadata residue.** Verified present already: `documentation` keys on both manifests, and the `isomesh ↔ isomesh-gpu ↔ wgpu ↔ bevy` compatibility matrix, which is `## Compatibility` in `bevy_isomesh/README.md`. **What is missing:** `[package.metadata.docs.rs] all-features = true` on all three manifests, and crate-level `//!` docs that open with a usage example rather than a design rationale — docs.rs renders the latter first, and a reader deciding whether to use the crate meets the rationale before the code. | S | B-009 |
 | ☐ | **B-011** | **Bevy-ecosystem conventions — the listing, not the changelog.** `CHANGELOG.md` exists and is maintained per release, so that half is done. **What is missing:** a Bevy Assets listing entry and a version-support table (`bevy 0.19 → bevy_isomesh 0.0.x`). Cheap, and their absence is what makes an ecosystem crate look abandoned regardless of commit rate. | S | B-010 |
 
 ---

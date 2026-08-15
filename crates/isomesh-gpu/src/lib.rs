@@ -1,5 +1,16 @@
 //! GPU isosurface extraction for [`isomesh`], on raw `wgpu`.
 //!
+//! ```no_run
+//! use isomesh_gpu::{MarchingCubesGpu, headless};
+//!
+//! // Any wgpu device will do -- Bevy's via `RenderDevice::wgpu_device()`, a CAD
+//! // tool's own, or this one. The API never names an engine type.
+//! let gpu = headless::Gpu::new()?;
+//! let mut mc = MarchingCubesGpu::new(gpu.device(), gpu.queue())?;
+//! # let _ = &mut mc;
+//! # Ok::<(), isomesh_gpu::Error>(())
+//! ```
+//!
 //! # The one rule this crate exists to keep
 //!
 //! **Every public entry point takes `&wgpu::Device`, `&wgpu::Queue` or
