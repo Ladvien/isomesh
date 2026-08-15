@@ -89,6 +89,7 @@ pub struct MarchingCubes<R: Real> {
     edge_vertices: Vec<u32>,
     face_ambiguity: FaceAmbiguity,
     interior_ambiguity: InteriorAmbiguity,
+    crossing_refinement: u32,
 }
 
 impl<R: Real> MarchingCubes<R> {
@@ -100,6 +101,7 @@ impl<R: Real> MarchingCubes<R> {
             edge_vertices: Vec::new(),
             face_ambiguity: FaceAmbiguity::Separate,
             interior_ambiguity: InteriorAmbiguity::Ignore,
+            crossing_refinement: 0,
         }
     }
 
@@ -121,6 +123,33 @@ impl<R: Real> MarchingCubes<R> {
     /// [`FaceAmbiguity::AsymptoticDecider`], whose answer it builds on.
     pub fn set_interior_ambiguity(&mut self, interior_ambiguity: InteriorAmbiguity) {
         self.interior_ambiguity = interior_ambiguity;
+    }
+
+    /// Bisection steps spent locating each edge crossing on the real field.
+    ///
+    /// Ticket: F-007. Defaults to **0** — plain linear interpolation, which is
+    /// what every committed golden hash pins.
+    ///
+    /// # When it changes anything
+    ///
+    /// `t = a / (a − b)` is exact for a field that is linear along the edge, and
+    /// an analytic primitive is close enough over one cell that refinement moves
+    /// the vertex by rounding. **A CSG field is not linear along an edge that
+    /// crosses a seam**: `min`/`max` select an operand pointwise, so the field is
+    /// two straight pieces meeting at an angle and a line through the endpoints
+    /// misses the root.
+    ///
+    /// The sign is untouched — `{min(f,g) ≤ 0}` *is* the union — so the case
+    /// classification and the topology are already correct, and this moves
+    /// vertices without moving triangles. That is why it is a much narrower
+    /// repair than redistancing the field.
+    ///
+    /// # Cost
+    ///
+    /// One field evaluation per step per **cut** edge, and only cut edges, so it
+    /// scales with surface area rather than volume.
+    pub fn set_crossing_refinement(&mut self, steps: u32) {
+        self.crossing_refinement = steps;
     }
 
     /// Extract the zero level set into `out`.
@@ -292,8 +321,15 @@ impl<R: Real> MarchingCubes<R> {
                             if tri[0] != code {
                                 continue;
                             }
-                            let position =
-                                edge_position(base, tri[1], &corner_value, origin, cell_size);
+                            let position = edge_position(
+                                sdf,
+                                base,
+                                tri[1],
+                                &corner_value,
+                                origin,
+                                cell_size,
+                                self.crossing_refinement,
+                            );
                             sum = [
                                 sum[0] + position[0],
                                 sum[1] + position[1],
@@ -514,7 +550,15 @@ impl<R: Real> MarchingCubes<R> {
             return cached;
         }
 
-        let position = edge_position(base, edge, corner_value, origin, cell_size);
+        let position = edge_position(
+            sdf,
+            base,
+            edge,
+            corner_value,
+            origin,
+            cell_size,
+            self.crossing_refinement,
+        );
         let index = out.vertex(position, unit_gradient(sdf, position));
         self.edge_vertices[key] = index;
         index
@@ -526,13 +570,18 @@ impl<R: Real> MarchingCubes<R> {
 /// The single definition of an edge vertex's position: [`MarchingCubes::extract`]
 /// reaches it through the vertex cache, and a cycle centroid averages it over its
 /// own cycle.
-fn edge_position<R: Real>(
+fn edge_position<S, R: Real>(
+    sdf: &S,
     base: [u32; 3],
     edge: u8,
     corner_value: &[R; 8],
     origin: [R; 3],
     cell_size: R,
-) -> [R; 3] {
+    refinement: u32,
+) -> [R; 3]
+where
+    S: Sdf<Scalar = R>,
+{
     let [lo_corner, hi_corner] = EDGE_CORNERS[edge as usize];
     let a = corner_value[lo_corner as usize];
     let b = corner_value[hi_corner as usize];
@@ -544,11 +593,71 @@ fn edge_position<R: Real>(
 
     let lo_pos = corner_position(base, lo_corner, origin, cell_size);
     let hi_pos = corner_position(base, hi_corner, origin, cell_size);
+    let t = refine_crossing(sdf, lo_pos, hi_pos, a, t, refinement);
     [
         lo_pos[0] + (hi_pos[0] - lo_pos[0]) * t,
         lo_pos[1] + (hi_pos[1] - lo_pos[1]) * t,
         lo_pos[2] + (hi_pos[2] - lo_pos[2]) * t,
     ]
+}
+
+/// Refine a linearly interpolated crossing by bisecting the *actual* field.
+///
+/// Ticket: F-007. Source: Pujol & Chica, *Adaptive approximation of signed
+/// distance fields* (`10.1016/j.cag.2023.06.020`).
+///
+/// # What linear interpolation assumes, and where CSG breaks it
+///
+/// `t = a / (a − b)` is exact when `f` is linear along the edge, and every
+/// analytic primitive here is close enough to linear over one cell that it does
+/// not matter. **A CSG field is not.** `min`/`max` select an operand pointwise,
+/// so along an edge that crosses a seam the field is a *kinked* piecewise
+/// function: two straight pieces meeting at an angle. A line through its
+/// endpoints misses the root by an amount that does not shrink with the cell
+/// size the way a smooth field's error does — it shrinks only as the seam
+/// occupies less of the edge.
+///
+/// **The sign is untouched by this.** `{min(f,g) ≤ 0}` *is* the union, exactly,
+/// so the case classification and therefore the topology are already right.
+/// Only the crossing's *position* is wrong, which is why this is a much narrower
+/// repair than redistancing the field.
+///
+/// # Bisection rather than the CSG tree
+///
+/// The tree would say exactly where the kink is, and this crate's `Sdf` does not
+/// expose one — a field is a closure as far as the extractor is concerned. So
+/// the kink is found rather than known: bisect on the sign of the real field,
+/// which converges on the true root whatever shape the field has between the
+/// endpoints, at the cost of `steps` extra evaluations per cut edge.
+///
+/// Returns the parameter in `[0, 1]` along the edge.
+fn refine_crossing<S, R>(sdf: &S, lo: [R; 3], hi: [R; 3], a: R, t0: R, steps: u32) -> R
+where
+    S: Sdf<Scalar = R>,
+    R: Real,
+{
+    if steps == 0 {
+        return t0;
+    }
+    // The bracket is the whole edge: the endpoints differ in sign by
+    // construction, which is what makes bisection safe here without a guard.
+    let (mut low, mut high) = (R::ZERO, R::ONE);
+    let a_inside = is_inside(a);
+    let mut t = t0;
+    for _ in 0..steps {
+        let p = [
+            lo[0] + (hi[0] - lo[0]) * t,
+            lo[1] + (hi[1] - lo[1]) * t,
+            lo[2] + (hi[2] - lo[2]) * t,
+        ];
+        if is_inside(sdf.sample(p)) == a_inside {
+            low = t;
+        } else {
+            high = t;
+        }
+        t = (low + high) * R::HALF;
+    }
+    t
 }
 
 /// The field's own gradient at a point, normalised — this crate's normal rule,

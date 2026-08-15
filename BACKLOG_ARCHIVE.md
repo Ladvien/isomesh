@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-150 tickets. Line numbers are stable until something above them is edited — grep the ID if
+151 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -74,6 +74,7 @@ implementation contradicted the ticket.
 | [`F-004`](#L894) | CSG degradation — the tail collapses, the median does not |
 | [`F-005`](#L902) | Empty-cell rejection — one evaluation replaces 576 |
 | [`F-006`](#L910) | Segment tracing — the null result, and where it is not null |
+| [`F-007`](#L918) | Crossing refinement — right mechanism, wrong metric |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -877,3 +878,9 @@ implementation contradicted the ticket.
 | | | ***A null result on five fields of six, which is what the ticket asked to be told (M-249).*** Galin et al. state the condition for their own method's failure: *"when the implicit objects have an almost uniform distribution of primitives and a uniform Lipschitz bound over their support Ω, the benefit is limited or negative."* `sphere`, `torus`, `box_exact`, `csg_difference` and `thin_plate` are 1-Lipschitz **everywhere**, so no directional bound can be smaller than 1. Steps global → directional: 228 → 228, 360 → 360, 108 → 108, 108 → 108, 148 → 148 — **asserted as equality**, not as a small difference. |
 | | | ***The one field that can gain, gains 1.80×, and its bound is derived rather than sampled.*** Along a coordinate axis the gyroid's directional derivative is a single partial, `|∂g/∂x| = |cos a cos b − sin c sin a| ≤ 2`, against the global `|∇g| ≤ 2√3`. Steps **2184 → 1213** — slightly better than the 1.73× the bound ratio predicts, because fewer steps also accumulate less conservatism. |
 | | | *So the technique is worth exactly what a field's global bound is loose by. That is the sentence to carry forward: it is not a general acceleration, it is a correction for imprecise bounds, and an analytic distance primitive has none to correct.* |
+| ☑ | **F-007** | **Kink-aware edge interpolation — the mechanism was right and the acceptance was not.** | L | F-003 |
+| | | ***The acceptance is falsified, and the reasoning behind it is not (M-250).*** The ticket argued that `min`/`max` kink the field along an edge crossing a seam so linear interpolation misses the root — correct — and set its acceptance as *"`csg_difference`'s Hausdorff improves"*. Measured at 33³ with 24 bisection steps: **csg_difference 1.515e-1 → 1.515e-1 (1.001×)**. No improvement. |
+| | | ***The mechanism nobody checked: `csg_difference` is `max(box, −sphere)` and a box is planar.*** Its field is *exactly* linear along an axis-aligned edge, so there is nothing for a root-finder to find, and its Hausdorff is dominated by the box's own edges and corners — which Marching Cubes cannot represent at any resolution. That is A-007's problem and refinement does not touch it. |
+| | | ***What does improve is the curved fields, by 13–15%***: sphere **5.361e-3 → 4.561e-3 (0.851×)**, torus **1.379e-2 → 1.201e-2 (0.871×)**. Those are the fields whose error genuinely *is* interpolation error, because `f` along an edge is a curve and a straight line through its endpoints misses it. So the feature is worth having; it is aimed at a different target than the ticket believed. |
+| | | ***Shipped as `set_crossing_refinement(steps)`, defaulting to 0.*** Zero is plain linear interpolation, which is what every committed golden hash pins, so the default changes nothing. Refinement moves vertices and **never** triangles — the sign is untouched by it, so the case classification and the topology are already right — and the test asserts the triangle count is identical rather than trusting that. |
+| | | *The method note: "where the field is kinked" and "where the error is" were assumed to be the same place and are not. The ticket reasoned from the defect's mechanism to the metric without checking what the metric was measuring.* |

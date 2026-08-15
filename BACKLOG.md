@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**150 tickets archived, 21 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**151 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -231,7 +231,6 @@ correct under unlimited player carving; nothing here assumes exactness.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **F-007** | **Kink-aware edge interpolation — possibly the whole fix, and much narrower than redistancing.** `min`/`max` preserve the **sign** exactly: `{min(f,g) ≤ 0}` *is* the union. What they break is (a) the interpolated crossing position, because the field is kinked and linear interpolation across a kink is wrong, and (b) gradient-based normals. **You know where the kinks are — you built the CSG tree.** So: detect the kink on an edge (a gradient discontinuity between endpoints), and solve for the crossing piecewise instead of linearly. Pujol & Chica (`10.1016/j.cag.2023.06.020`, in corpus) treat exactly this problem. **Acceptance:** `csg_difference`'s Hausdorff improves, and O-9's `0.0833` forward error is decomposed into seam-bias and harness-bias with a number on each. | L | F-003 |
 
 ---
 
