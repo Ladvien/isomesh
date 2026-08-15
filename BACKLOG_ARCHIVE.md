@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-126 tickets. Line numbers are stable until something above them is edited — grep the ID if
+127 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -50,6 +50,7 @@ implementation contradicted the ticket.
 | [`A-002h`](#L706) | Tunnel and twelve-vertex contour, against the inner hexagon |
 | [`A-002b`](#L714) | MC33's interior ambiguity, wired up and graded |
 | [`A-018`](#L722) | The positional weld that was unnecessary and harmful |
+| [`A-019`](#L730) | Orientation stops at non-manifold edges, and the residue vanishes |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -723,3 +724,8 @@ implementation contradicted the ticket.
 | | | ***On the eighth it is worse than a no-op.*** `noise_cavity` has exactly one pair of vertices coincident by position and distinct by identity; the weld merges them, fuses two sheets, and takes non-manifold edges from **288 to 290**. Sharing by identity is strictly finer than sharing by position, so once identity sharing is complete the coarser rule can only contribute mistakes. |
 | | | ***The doc was actively telling consumers to do the harmful thing***, which is the part that mattered most: *"weld with `Welder` before applying `validate_indexed`"*. Corrected to say the output is already shared, that welding it to make it a surface is unnecessary, and that welding to *join* it to other geometry costs the pair above wherever two sheets pass within tolerance. |
 | | | *The subgrid validity suite no longer welds before judging — two rows moved, `noise_cavity` at 17³ and 25³, and nothing else on any field. The weld-specific tests keep welding, because measuring the weld is what they are for, and P-7's plateau and A-014h's completeness census stay exactly as A-002e pinned them.* |
+| ☑ | **A-019** | **Orientation can raise the flipped-edge count; `after <= before` was assumed and never tested.** | M | A-002e |
+| | | ***One line, and the result is larger than the ticket asked for (M-227).*** It wanted the growth removed. What it got is the residue **eliminated on every field at every resolution**: `csg_difference` 6 → 0, `torus` 6 → 0, `thin_plate` 8 → 0, `gyroid` 138 → 0, `fbm_terrain` 19 → 0, and `noise_cavity` 1,629 → 0 and 1,580 → 0 where it used to *grow* to 2,422. The whole census is now zeros. |
+| | | ***The fix is `if neighbours.len() > 2 { continue; }`.*** With three or more faces on an edge there is no "the neighbour" to agree with, so the walk was taking all of them, committing to whichever it reached first, and carrying a *consistent* winding across a patch that was consistent with the wrong side. Stopping leaves each sheet to be seeded and oriented on its own evidence, which is the only evidence there is. |
+| | | ***M-187's caveat turns out to have been about the walk, not the mesh.*** It said orientation reaches zero only where every edge is manifold, because *"no assignment of windings can make four faces pairwise oppose across one edge"* — true, and it does not imply a residue. That edge contributes one only if the walk **visits** it, and `inconsistently_oriented_edges` counts runs of exactly two faces, which a four-face edge is not. The non-manifold edges are still there and still counted; what has gone is the orientation damage they were doing elsewhere. |
+| | | *Two assertions in the census test were mine from A-002e and both were wrong in the same direction: `after > 0` on a non-manifold mesh, and a per-field exemption letting `noise_cavity` grow. Both are gone, and `after <= before` is a law again.* |

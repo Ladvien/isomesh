@@ -290,12 +290,16 @@ fn every_reference_field_comes_out_coherently_oriented() {
     }
     assert_eq!(rows, 24);
 
-    // **The law, and it is exact (M-187).** Orientation drives the count to
-    // *zero* on every row whose edges are all manifold. Where it does not, the
-    // mesh has edges carrying more than two faces, and no assignment of windings
-    // can make four faces pairwise oppose across one edge — that residue is
-    // A-014d's non-manifoldness wearing an orientation costume, not a limit of
-    // propagation.
+    // **The law is now unconditional, and A-019 is what made it so (M-227).**
+    // M-187 stated it with a caveat: orientation drives the count to zero on
+    // every row whose edges are all manifold, and *"where it does not, the mesh
+    // has edges carrying more than two faces, and no assignment of windings can
+    // make four faces pairwise oppose across one edge"*. The second half was a
+    // property of the **walk**, not of the mesh. A walk that crosses a four-face
+    // edge must indeed leave a residue there — but it need not cross it, and once
+    // propagation stops instead, every row reaches **zero**: `csg_difference`
+    // 6 → 0, `fbm_terrain` 19 → 0, `noise_cavity` 1,629 → 0 and 1,580 → 0 where
+    // it used to *grow* to 2,422.
     for &(name, n, before, after, non_manifold) in &got {
         if non_manifold == 0 {
             assert_eq!(
@@ -304,27 +308,24 @@ fn every_reference_field_comes_out_coherently_oriented() {
                  non-manifold edge, from {before}"
             );
         } else {
-            // **`after <= before` is not a law, and `noise_cavity` is what shows
-            // it (M-213).** The reasoning was that propagation can only ever
-            // agree edges it reaches, so the residue can shrink but not grow.
-            // That holds while the non-manifold edges are sparse enough to stay
-            // out of propagation's way. They are not here: with 318 of them the
-            // flood fill crosses a four-face edge, commits to one side's winding,
-            // and carries a consistent-but-wrong orientation across a whole
-            // patch — so the count rises, 1580 → 2422. Nothing is *more* wrong
-            // afterwards; a different, larger set of edges is now the one that
-            // disagrees. Pinned per field so a second field growing still fails.
-            // A-019.
+            // **`after <= before` is a law again, and A-019 is what restored
+            // it (M-227).** It was falsified at A-002e — `noise_cavity` went
+            // 1,580 → 2,422 at 25³ — and the cause was propagation *crossing* a
+            // four-face edge: with no well-defined neighbour there, the walk took
+            // whichever it reached first and carried a consistent winding across
+            // a patch that was consistent with the wrong side. Propagation now
+            // stops at such an edge, so each sheet is seeded and oriented on its
+            // own evidence.
+            //
+            // **The residue may now reach zero on a non-manifold mesh**, which
+            // M-187's law said it could not: that law was about a walk that
+            // crossed the edge, where four faces cannot pairwise oppose. A walk
+            // that does not cross it has no such obligation, and
+            // `csg_difference` at 17³ goes 6 → 0.
             assert!(
-                after > 0,
-                "{name} {n}³: residue vanished on a non-manifold mesh"
-            );
-            let may_grow = name == "noise_cavity";
-            assert!(
-                after <= before || may_grow,
+                after <= before,
                 "{name} {n}³: {before} -> {after} with {non_manifold} \
-                 non-manifold edges -- orientation made it worse, or removed a \
-                 residue it should not be able to"
+                 non-manifold edges -- orientation made it worse"
             );
         }
     }
@@ -339,31 +340,27 @@ fn every_reference_field_comes_out_coherently_oriented() {
             ("sphere", 17, 0, 0),
             ("torus", 17, 0, 0),
             ("box_exact", 17, 0, 0),
-            ("csg_difference", 17, 6, 6),
+            ("csg_difference", 17, 6, 0),
             ("thin_plate", 17, 0, 0),
             ("gyroid", 17, 138, 0),
-            ("fbm_terrain", 17, 19, 6),
-            ("noise_cavity", 17, 1629, 1015),
+            ("fbm_terrain", 17, 19, 0),
+            ("noise_cavity", 17, 1629, 0),
             ("sphere", 25, 0, 0),
-            ("torus", 25, 6, 6),
+            ("torus", 25, 6, 0),
             ("box_exact", 25, 0, 0),
             ("csg_difference", 25, 0, 0),
             ("thin_plate", 25, 8, 0),
             ("gyroid", 25, 150, 0),
-            ("fbm_terrain", 25, 29, 3),
-            ("noise_cavity", 25, 1580, 2422),
+            ("fbm_terrain", 25, 29, 0),
+            ("noise_cavity", 25, 1580, 0),
             ("sphere", 33, 0, 0),
             ("torus", 33, 0, 0),
             ("box_exact", 33, 0, 0),
             ("csg_difference", 33, 36, 0),
             ("thin_plate", 33, 6, 0),
             ("gyroid", 33, 330, 0),
-            ("fbm_terrain", 33, 53, 12),
-            // The only rows where orientation *raises* the count -- M-213, A-019.
-            // It lowers it at 17³ and raises it at 25³ and 33³, which is the
-            // shape of a flood fill meeting enough four-face edges to commit to
-            // the wrong side of one.
-            ("noise_cavity", 33, 1477, 3341),
+            ("fbm_terrain", 33, 53, 0),
+            ("noise_cavity", 33, 1477, 0),
         ],
         "the flipped-edge census moved"
     );

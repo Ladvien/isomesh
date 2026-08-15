@@ -223,6 +223,18 @@ pub fn orient<R: Real>(mesh: &mut MeshBuffer<R>) -> crate::Result<OrientReport> 
                 let Some(neighbours) = incident.get(&undirected(from, to)) else {
                     continue;
                 };
+                // **Propagation stops at a non-manifold edge (A-019).** With
+                // three or more faces on one edge there is no "the neighbour" to
+                // agree with: the walk would take all of them, commit to
+                // whichever it reached first, and carry a *consistent* winding
+                // across a whole patch that is consistent with the wrong side.
+                // That is how orientation used to make the count **worse** —
+                // 1,580 → 2,422 on `noise_cavity` at 25³ (M-213). Stopping
+                // instead leaves each sheet to be seeded and oriented on its own
+                // evidence, which is the only evidence there is.
+                if neighbours.len() > 2 {
+                    continue;
+                }
                 for &other in neighbours {
                     if other == face {
                         continue;
