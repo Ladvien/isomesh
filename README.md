@@ -243,6 +243,7 @@ cargo test -p isomesh                    # the suite prints its own count; docte
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
+cargo run --example quickstart --release                        # start here: an SDF on screen, nothing else
 cargo run --example marching_cubes_sphere --release             # the first GIF
 cargo run --example surface_nets_vs_marching_cubes --release    # the second and third
 cargo run --example dual_contouring_cube --release              # the sharp-feature comparison

@@ -33,7 +33,8 @@ fn main() -> Result<(), isomesh::Error> {
     // AssetPlugin must come first -- IsomeshPlugin asserts it and names the fix.
     app.add_plugins(DefaultPlugins).add_plugins(IsomeshPlugin);
 
-    // 8 samples per chunk axis, 0.25 world units per cell, origin at zero.
+    // 8 *cells* per chunk axis, 0.25 world units each, origin at zero -- so one
+    // chunk spans 2.0. `ChunkLayout::new` takes cells, not samples.
     let layout = ChunkLayout::new(8, 0.25, [0.0; 3])?;
     let volume = app
         .world_mut()
@@ -111,10 +112,13 @@ Every Bevy example in the project also lives here, and CI builds them all on eve
 
 ## Examples
 
-32 of them, each a measured experiment with its claim in the header. A taste, with what each one proves:
+33 of them. **Start with `quickstart`** — it is the only one that is not a measured experiment, and the only one whose
+job is to show you the shape of a working app rather than to prove something about the library. The rest each carry a
+claim in the header; a taste, with what each one proves:
 
 | Example | The claim it makes | Evidence |
 |---|---|---|
+| `quickstart` | **the shortest path from an SDF to a mesh on screen** — under 60 lines including the prose, and its exact chunk layout is asserted to mesh all eight chunks | [`examples/quickstart.rs`](https://github.com/ladvien/isomesh/blob/main/bevy_isomesh/examples/quickstart.rs) |
 | `game_showcase` | caves and arches a heightfield cannot represent, flown through at 60 fps | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e210-showcase-hero.png) |
 | `game_walk` | 495 chunk-seam crossings walked, 0 holes — the ball stands on the triangles, not the field | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e203-game-walk.png) |
 | `game_dig` | carving tunnels re-meshes only the chunks the brush touched | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e202-game-dig.png) |

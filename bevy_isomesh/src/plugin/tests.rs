@@ -456,3 +456,72 @@ fn chunk_seams_reports_what_was_measured() {
         ChunkSeams::Closed
     );
 }
+
+/// **The quickstart's own configuration meshes, and every one of its eight chunks
+/// carries triangles (B-009).**
+///
+/// `examples/quickstart.rs` is the file a new user copies, so "it compiles" is
+/// the wrong bar — a layout that puts the sphere outside the chunks it spawns
+/// compiles perfectly and shows an empty window. That mistake was made and caught
+/// while writing it: `ChunkLayout::new`'s first argument is **cells**, not
+/// samples, so the original `new(16, 0.25, …)` gave each chunk a 4.0-unit span
+/// for a radius-1 sphere and left seven of the eight empty.
+///
+/// This asserts the numbers the example actually ships: 16 cells at `1/16` of a
+/// unit, so one chunk spans exactly 1.0 and the eight tile `[-1, 1]³` — the cube
+/// `Sphere::canonical()` fills. **Every chunk must carry triangles**, which is
+/// what says the sphere's surface crosses all eight rather than sitting in one.
+#[test]
+fn the_quickstart_layout_meshes_every_chunk() {
+    let mut app = App::new();
+    app.add_plugins((TaskPoolPlugin::default(), AssetPlugin::default()))
+        .add_plugins(IsomeshPlugin);
+
+    // Exactly what examples/quickstart.rs passes.
+    let layout = ChunkLayout::new(16, 1.0 / 16.0, [0.0; 3]).expect("a valid layout");
+    let volume = app
+        .world_mut()
+        .spawn(VoxelVolume::new(layout, Sphere::<f32>::canonical()))
+        .id();
+    for z in -1..1 {
+        for y in -1..1 {
+            for x in -1..1 {
+                app.world_mut().spawn((
+                    VoxelChunk {
+                        id: ChunkId::new([x, y, z]),
+                        volume,
+                    },
+                    NeedsRemesh,
+                ));
+            }
+        }
+    }
+
+    drain_until(&mut app, |app| meshed(app) == 8);
+    assert_eq!(meshed(&mut app), 8, "the quickstart's queue never drained");
+
+    // Not just "a mesh exists" -- a mesh with geometry in it, per chunk. An empty
+    // handle would satisfy the count above and show nothing on screen.
+    let handles: Vec<_> = app
+        .world_mut()
+        .query::<&ChunkMesh>()
+        .iter(app.world())
+        .map(|m| m.0.clone())
+        .collect();
+    let meshes = app.world().resource::<Assets<Mesh>>();
+    let counts: Vec<usize> = handles
+        .iter()
+        .map(|h| {
+            meshes
+                .get(h)
+                .and_then(|m| m.indices().map(|i| i.len() / 3))
+                .unwrap_or(0)
+        })
+        .collect();
+    assert!(
+        counts.iter().all(|&n| n > 0),
+        "a quickstart chunk meshed to nothing, so the sphere does not cross all \
+         eight: {counts:?}"
+    );
+    std::println!("measured: quickstart chunks meshed to {counts:?} triangles");
+}

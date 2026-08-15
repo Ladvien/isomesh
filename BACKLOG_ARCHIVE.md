@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-130 tickets. Line numbers are stable until something above them is edited — grep the ID if
+131 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -54,6 +54,7 @@ implementation contradicted the ticket.
 | [`E-213`](#L738) | `marching_cubes_tunnel` — the tunnel made visible |
 | [`A-020`](#L746) | Corollary 6 was the test, and the hole was a misclassification |
 | [`A-017`](#L755) | MDC's non-manifoldness is a limit of the algorithm, documented |
+| [`B-009`](#L764) | The quickstart — the one example that teaches nothing |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -751,3 +752,8 @@ implementation contradicted the ticket.
 | | | ***The diagnosis was already complete, which is why this was a decision and not an investigation.*** Three measurements each killed an explanation (M-224): not tunnels (all 30 offending edges lie within 1.5h of an *ambiguous* cell, only one near a tunnel), not duplication (every offending edge carries four **distinct** triangles, the opposite of ✗17), not the face pairing (`AsymptoticDecider` drops 30 → 8 on `noise_cavity` and *introduces* 3 on `gyroid` at 25³, so no rule is uniformly better). |
 | | | ***The mechanism is predicted from the grid with zero error (M-225).*** `non_manifold_edges == shared ambiguous faces whose four cut edges lie in one cycle on both sides`, asserted grid-against-mesh and exact under both face rules: `Separate` 30 and 64, `AsymptoticDecider` 8 and 40. A limit stated as an identity is worth more than a limit stated as prose, because it fails loudly if it is ever wrong. |
 | | | *What shipped is documentation and nothing else, in three places that each made the claim: the module header now states the precondition where the guarantee is stated, the crate README's tradeoff row carries the exception, and A-010's archive row is amended. `MDC_NON_MANIFOLD_CENSUS` and `MDC_CHI_CENSUS` stay pinned as whole censuses — they fail if the counts spread **and** if they vanish, so a silent fix is as visible as a silent regression.* |
+| ☑ | **B-009** | **A quickstart example — the one thing all 32 examples failed to be.** | M | — |
+| | | ***The README half was already done and the runnable half was the gap.*** `bevy_isomesh/README.md` carries the same call sequence as a `no_run` doctest, so the API is compile-checked on every `cargo test` and cannot rot. What a doctest cannot have is a camera, a light and a window — without those the snippet is correct and shows you nothing. `examples/quickstart.rs` is that snippet made runnable, and the difference between them is exactly the three lines Bevy needs and `bevy_isomesh` does not provide. |
+| | | ***A layout that compiles and shows an empty window is the failure mode, and it happened while writing this.*** `ChunkLayout::new`'s first argument is **cells**, not samples. The first draft passed `new(16, 0.25, …)`, giving each chunk a 4.0-unit span for a radius-1 sphere and leaving seven of the eight chunks empty. It compiled, ran, and would have shipped a quickstart that displays almost nothing. |
+| | | ***So the configuration is asserted rather than assumed.*** `the_quickstart_layout_meshes_every_chunk` runs the example's exact numbers — 16 cells at 1/16 of a unit, eight chunks tiling `[-1,1]³` — through the plugin headlessly and checks **triangle counts per chunk**, not merely that a `ChunkMesh` handle exists: an empty handle satisfies a count and shows nothing. Measured **1,189 triangles in every one of the eight**, identical across all of them, which is the symmetry a sphere at their shared corner must have. |
+| | | *The same cells-versus-samples error was in the README's doctest comment (`// 8 samples per chunk axis`) and is fixed there too. Example count 32 → 33, and both READMEs now point at `quickstart` first.* |
