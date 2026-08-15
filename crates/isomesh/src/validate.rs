@@ -37,11 +37,13 @@ use crate::{MeshBuffer, Real};
 
 mod accuracy;
 mod determinism;
+mod field_bound;
 mod self_intersection;
 mod tri_grid;
 
 pub use accuracy::{AccuracyConfig, AccuracyReport, DistanceStats, accuracy};
 pub use determinism::{DeterminismReport, Divergence, RunPair, check_determinism};
+pub use field_bound::{EIKONAL_TOLERANCE, FieldBoundReport, field_bound_report};
 pub use self_intersection::{SelfIntersectionReport, self_intersections};
 
 /// Thresholds for the two metrics that have units.

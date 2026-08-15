@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-145 tickets. Line numbers are stable until something above them is edited — grep the ID if
+146 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -69,6 +69,7 @@ implementation contradicted the ticket.
 | [`T-013`](#L854) | Part 4b — experiments run, and what happened to them |
 | [`T-014`](#L862) | Cross-machine protocol, and provenance inside the file |
 | [`F-001`](#L870) | FieldBound — the declaration a bool could not hold |
+| [`F-002`](#L878) | The bound validator, and what eikonal cannot see |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -848,3 +849,8 @@ implementation contradicted the ticket.
 | | | ***The test caught its own author, immediately (M-244).*** The first draft declared `noise_cavity` as `Lipschitz { l: 2.598 }`; `every_field_meets_the_bound_it_declares` measured `|∇f|` reaching **7.734** and failed. That is the same defect the ticket existed to remove, reproduced one screen away by the person removing it. **The gyroid's constant was guessed too and survived only by luck** — `√3` declared against a sampled maximum of 1.695. Derived properly: `|∂g/∂x| ≤ 2`, so `|∇g| ≤ 2√3 ≈ 3.464`, twice the guess and in the direction where being wrong lets a tracer step through the surface. |
 | | | ***`noise_cavity` is `Unbounded`, not measured.*** A sampled maximum is a lower bound on a supremum, so declaring one as a Lipschitz constant would be unsound in the dangerous direction. F-002 is where a real constant gets established from the noise's amplitude and octaves. |
 | | | *Acceptance met: every field declares, `csg_difference` is no longer `Exact` and has its own pinned test, and `accuracy.rs`, `shootout` and `ablation` all gate on `bound().is_exact()`. One rotting claim fell out — `accuracy.rs` said Hausdorff is unavailable for "two of the seven" fields; it is **four of the eight**, and nothing could check that until each field declared.* |
+| ☑ | **F-002** | **A Lipschitz-bound validator, in the harness.** | M | F-001 |
+| | | ***The validator is one-sided, and the asymmetry is the design.*** A sampled maximum is a **lower** bound on a supremum, so this can prove a declaration wrong and can never prove one right. Finding `‖∇f‖ = 7.73` against a declared 2.598 settles it; finding nothing above 1.7 against a declared 3.46 says only that the sampling missed. `violates()` therefore asks a one-sided question, and `a_loosened_declaration_is_never_a_violation` pins that as a property rather than leaving it to be read off the code. |
+| | | ***It found something that justifies F-001's shape (M-245).*** `csg_difference` measures **100% eikonal** while not being a distance: away from the seam the active operand *is* an exact distance, and the seam is measure-zero. **So `|∇f| ≈ 1` is necessary and not sufficient**, and the obvious single-number validator — check the field is eikonal — would have passed the exact field this phase exists because of. That is why `FieldBound` carries `l` and `q` separately, and it is now asserted rather than argued. |
+| | | ***The acceptance is that a tightened declaration fails.*** `tightening_a_declaration_by_one_step_is_caught` replaces each field's real bound with the next tighter one and requires the report to catch it — three fields tightened and caught, five already at their tightest, both counts asserted so the test cannot quietly stop testing anything. |
+| | | *The census is recorded because it is interesting in its own right: sup `‖∇f‖` and eikonal fraction are 1.000/100% for the four exact fields and for `csg_difference`, 1.727/67.0% for gyroid, 2.850/11.7% for fbm_terrain, and 7.748/85.6% for noise_cavity — whose pairing of a high eikonal fraction with a gradient reaching 7.7 is a second way the fraction alone misleads.* |
