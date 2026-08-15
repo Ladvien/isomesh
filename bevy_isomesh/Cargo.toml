@@ -1,7 +1,7 @@
 [package]
 name = "bevy_isomesh"
 description = "Bevy integration for isomesh: signed distance field in, Bevy Mesh out."
-version = "0.0.4"
+version = "0.0.5"
 edition = "2024"
 # Bevy 0.19's own crates declare 1.95.0, and this crate cannot compile without
 # them, so claiming less would be a floor nothing can stand on.
@@ -25,7 +25,7 @@ categories = ["game-development", "graphics", "rendering"]
 [dependencies]
 # Path *and* version: a path-only dependency cannot publish, and the version is
 # what a crates.io consumer resolves.
-isomesh = { path = "../crates/isomesh", version = "0.0.4" }
+isomesh = { path = "../crates/isomesh", version = "0.0.5" }
 
 # Leaf crates, never the `bevy` umbrella. Bevy 0.17-0.19 carved `bevy_camera`,
 # `bevy_light`, `bevy_shader`, `bevy_mesh` and `bevy_material` out of
@@ -72,7 +72,7 @@ bevy = "0.19"
 # Version alongside the path: cargo strips path-only dev-dependencies from the
 # published manifest, which would leave the packaged GPU examples uncompilable
 # from the tarball. With the version they resolve against crates.io.
-isomesh-gpu = { path = "../crates/isomesh-gpu", version = "0.0.4" }
+isomesh-gpu = { path = "../crates/isomesh-gpu", version = "0.0.5" }
 
 # E-303's example talks to wgpu directly -- a render pass, buffer descriptors --
 # because that is what `isomesh-gpu`'s API takes. Same pin as everywhere, and

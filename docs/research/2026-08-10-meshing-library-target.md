@@ -41,6 +41,13 @@ unreachable through the tool. That is a tooling gap, not an access problem.
 **Status codes:** `HAVE` = already owned · `NEW` = downloaded today · `STUB` = HTML landing page saved,
 delete it · `PAYWALL` = no OA route · `NO DOI` = book/notes/thesis/blog, see §11.
 
+> **`PAYWALL` in this table means "the resolver could not reach it", not "we do not have it" — and it
+> has now been wrong four times.** V-29 corrected both Grosso rows on 2026-08-14 after they had been
+> indexed in home-still since 2026-08-10, and A-020 corrected Nielson 2003 and Lopes & Brodlie 2003
+> the same way on 2026-08-15 (V-32) — both were in the corpus and searchable the whole time.
+> **Before treating a row here as a missing source, query the corpus for its DOI.** Two of this
+> project's tickets took a longer route than they needed to because nobody did.
+
 ---
 
 ## 1. Isosurface extraction on regular grids
@@ -66,8 +73,8 @@ delete it · `PAYWALL` = no OA route · `NO DOI` = book/notes/thesis/blog, see �
 | Adaptive trilinear isosurfaces | Cignoni et al. 2000 | `10.1016/s0097-8493(00)00036-4` | PAYWALL |
 | Exact isosurfaces for MC | Theisel 2002 | `10.1111/1467-8659.00563` | PAYWALL |
 | **MC33 w/ topological guarantees** | Lewiner et al. 2003 | `10.1080/10867651.2003.10487582` | HAVE |
-| On Marching Cubes | Nielson 2003 | `10.1109/tvcg.2003.1207437` | PAYWALL |
-| Robust & accurate MC | Lopes & Brodlie 2003 | `10.1109/tvcg.2003.1175094` | PAYWALL |
+| **On Marching Cubes** | Nielson 2003 | `10.1109/tvcg.2003.1207437` | **HAVE** (corrected 2026-08-15, V-32) |
+| **Robust & accurate MC** | Lopes & Brodlie 2003 | `10.1109/tvcg.2003.1175094` | **HAVE** (corrected 2026-08-15, V-32) |
 | MC survey | Newman & Yi 2006 | `10.1016/j.cag.2006.07.021` | HAVE |
 | HistoPyramid MC | Dyken et al. 2008 | `10.1111/j.1467-8659.2008.01182.x` | PAYWALL |
 | Extended LUT / SnapMC | Raman & Wenger 2008 | `10.1111/j.1467-8659.2008.01209.x` | HAVE |

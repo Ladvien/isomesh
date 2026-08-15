@@ -64,7 +64,7 @@ Where next: **[the API docs](https://docs.rs/isomesh)** to use it, **[the demo p
 | `no_std` | **yes** — the core is `no_std + alloc` unconditionally, with one dependency |
 | sharp corners *and* chunk streaming together | **not yet** — `DualContouring` holds corners but does not tile across seams (measured, structural); pick one per volume |
 | GPU extraction to make CPU meshing faster | **no** — with readback the GPU path measures slower than the CPU at every resolution tried; it pays off only when you render from GPU memory and never read back |
-| MC33 tunnels through a single cell | **not yet** — the interior decider ships, the tunnel meshing does not (A-002b) |
+| MC33 tunnels through a single cell | **yes** — opt in with `set_interior_ambiguity(InteriorAmbiguity::Trilinear)`; a tunnel is meshed against the inner hexagon and χ falls by exactly two per tunnel, checked against a tunnel count taken from the classifier rather than the mesh. **One configuration is refused rather than meshed**: a cell whose contours run past Grosso's Corollary 6 bound has no published triangulation, so `extract` returns `Error::UnresolvedSixSaddle` instead of emitting a hole (A-002b, A-020) |
 | convex decomposition for physics | **not here** — export the mesh and decompose downstream; `game_destruction` shows the handoff |
 
 ## You cannot store this as a height
@@ -149,8 +149,8 @@ Early. **Seven** extraction algorithms — including one that resolves features 
 
 | | |
 |---|---|
-| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **six-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · **frame-budget scheduling** · **subgrid Marching Tetrahedra** · **chunk streaming with hysteresis** · Bevy 0.19 bridge and plugin · **GPU compute Marching Cubes** · **GPU prefix scan** · **GPU field evaluation** · **mesh-shader rendering** |
-| **Not yet** | Marching Cubes 33's interior test — the decider ships, tunnels are not meshed (A-002b) · convex decomposition |
+| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · **MC33's interior ambiguity (tunnels and the twelve-vertex contour)** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **six-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · **frame-budget scheduling** · **subgrid Marching Tetrahedra** · **chunk streaming with hysteresis** · Bevy 0.19 bridge and plugin · **GPU compute Marching Cubes** · **GPU prefix scan** · **GPU field evaluation** · **mesh-shader rendering** |
+| **Not yet** | the singular face — a saddle lying *on* a cell face, which quantised input reaches and continuous `f64` does not (A-002i) · convex decomposition |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
 Published on crates.io: [`isomesh`](https://crates.io/crates/isomesh) and [`isomesh-gpu`](https://crates.io/crates/isomesh-gpu). Releases are CI-driven: `scripts/publish.sh` is version-driven and uploads only what crates.io does not already have, so a version bump landing on `main` is the release.
@@ -271,6 +271,7 @@ cargo run --example game_dig --release                          # carve, and wat
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires
 cargo run --example marching_cubes_interior --release            # the saddle's hyperbola, and the 12.6% MC33 gets wrong
+cargo run --example marching_cubes_tunnel --release              # two discs become one cylinder; components 2->1, chi 2->0
 cargo run --example gpu_compute_mc --release                     # GPU and CPU Marching Cubes, vertex for vertex
 cargo run --example gpu_vs_cpu --release                         # one GPU extraction, five timed parts
 cargo run --example gpu_mesh_shader --release                    # field to pixels; four bytes come home
