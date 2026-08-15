@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-123 tickets. Line numbers are stable until something above them is edited — grep the ID if
+124 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -47,6 +47,7 @@ implementation contradicted the ticket.
 | [`A-002e`](#L683) | The eighth reference field, with tunnels in it |
 | [`A-002f`](#L691) | Contours — the cell's cut edges as closed rings |
 | [`A-002g`](#L698) | Disk triangulation and the one interior vertex |
+| [`A-002h`](#L706) | Tunnel and twelve-vertex contour, against the inner hexagon |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -702,3 +703,9 @@ implementation contradicted the ticket.
 | | | ***The branch selection is transcribed and the verification is geometric (M-216).*** §5.3 determines neither the four-line case nor which of three lines' three pairwise intersections its "two saddle points" are, so the index selection comes from the authors' program. A transcription cannot be checked by re-reading it — it can be checked by the property it must have. **149,803 interior vertices, every one on the level set to 6.7e-12**, with all three reachable branches fired (99,777 / 32,916 / 17,110) and the five-and-six-line arm separately asserted unreachable so its `None` is not a silent wrong answer. |
 | | | ***No budget moves, and the re-derivation is the point rather than the reuse (M-217).*** The ticket asked for the per-cell bound at `mod.rs:140-141` to be re-derived. It is: §5.3 adds at most **one** cell-local vertex where A-015 budgeted three, and the fan's worst case is **12** triangles against `MAX_TRIANGLES = 12` — the same number A-015 already raised it to, for the same reason. A-002h's tunnel needs exactly three, which is the bound again. |
 | | | *The fan is emitted as codes rather than positions — cut edges by index, the interior vertex as `INTERIOR`, deliberately the same value as `table::CENTROID_BASE` because both name a cell-local vertex no other cell can reach. Wiring it into `extract` is A-002b's, so this ticket ends at a construction that is exhaustively checkable without a grid.* |
+| ☑ | **A-002h** | **Tunnel and twelve-vertex contour — Grosso §5.1 and §5.2.** Where the interior ambiguity is finally meshed and where manifoldness is bought. | M | A-002g |
+| | | ***Six hexagon vertices, not three, on the authors' own later advice.*** 2016 §5.1 collapses the hexagon to three inner vertices (its equation 7); **2017 §4.1 does not** — *"instead of three we use all six vertices of the inner hexagon"* — and the reference implements 2017. That corrects A-002g's M-217, which had said the tunnel needs three and no budget moves: it needs **six** interior vertices and **22** triangles, so A-002b must raise both bounds. The claim was made from the earlier paper without checking which one the construction came from. |
+| | | ***A missing closing step, found by a manifoldness test rather than by reading §5.2 (M-218).*** A tunnel is an annulus — its two contours pass the hexagon from opposite sides, so every hexagon edge is traversed twice and the patch closes itself. A twelve-vertex contour is a **disk**: one ring, circling the hexagon once, leaving a six-edge hole. Without a closure the cell emits a patch with a boundary no neighbour shares. `the_tunnel_patch_is_manifold_inside_the_cell` caught it on its first run. |
+| | | ***And the closure's winding cannot be fixed, which took two wrong attempts to establish.*** A twelve-vertex ring circles the hexagon in either direction depending on the configuration, so the fan's orientation is derived from the hexagon edges the ring walk actually laid. Both fixed windings were rejected by the directed-edge check — which is why that check is directed and not merely a count. |
+| | | ***The acceptance: 2,297 patches, every one manifold and consistently wound inside the cell.*** Each non-contour edge traversed exactly once in each direction, each contour edge exactly once because its second face belongs to the neighbouring cell. **That is the property Chernyaev's tunnel triangulation fails** — his lays part of the tunnel *on* the ambiguous face, so two neighbours both claim it — and it is the entire reason this route needs no grid-subdivision pass. Also measured: the three-hexagon-step case, which the construction has no rule for, fires **zero** times, and is returned as a count rather than asserted so a caller cannot mistake a hole for a closed patch. |
+| | | ***One line of the reference is a typo and is fixed here (M-219).*** The detached-ring test computes a ring's `u` span with `umax = (u_e2 > umax) ? u_e1 : umax` — comparing the third vertex and storing the second — where the other five lines of the same block are correct. **The point is not the typo but the method**: this file settled three questions the papers left open (V-31) *and* has a bug in it, so transcribing from it and verifying by a geometric or topological property is the only combination that survives either source being wrong. |

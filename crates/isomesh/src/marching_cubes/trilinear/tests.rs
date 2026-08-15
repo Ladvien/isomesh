@@ -11,7 +11,10 @@
 // An approximate comparison would be a different test, not a weaker one.
 #![allow(clippy::float_cmp)]
 
-use super::{ALL_INSIDE, BodySaddles, Contours, INTERIOR, MAX_CONTOURS, Pair, Topology};
+use super::{
+    ALL_INSIDE, BodySaddles, Contours, INTERIOR, MAX_CONTOURS, MAX_INTERIOR_VERTICES, Pair,
+    Topology,
+};
 use crate::Sdf;
 use crate::cube::{corner_offset, is_inside};
 use crate::fields::ReferenceField;
@@ -1035,5 +1038,218 @@ fn the_worst_case_triangle_count_is_pinned() {
         "measured: worst triangle count {worst_plain} without an interior vertex, \
          {worst_interior} with one (MAX_TRIANGLES is {})",
         crate::marching_cubes::table::MAX_TRIANGLES
+    );
+}
+
+// ─── A-002h: tunnels ────────────────────────────────────────────────────────
+
+/// Build one cell's tunnel patch and return its triangles.
+fn tunnel_patch(f: &[f64; 8]) -> Option<(alloc::vec::Vec<[u8; 3]>, usize)> {
+    use crate::cube::is_inside as inside;
+    use crate::marching_cubes::ambiguity::joined_mask;
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+
+    let mut case = 0u8;
+    for (c, &v) in f.iter().enumerate() {
+        if inside(v) {
+            case |= 1 << c;
+        }
+    }
+    if case == 0 || case == 255 {
+        return None;
+    }
+    let saddles = BodySaddles::of(f);
+    if !saddles.has_inner_hexagon() {
+        return None;
+    }
+    let contours = Contours::of(case, joined_mask(f, AMBIGUOUS_FACES[case as usize]));
+    let mut tris = alloc::vec::Vec::new();
+    let unresolved = contours.fan_tunnel(&saddles, f, |t| tris.push(t));
+    Some((tris, unresolved))
+}
+
+/// **The tunnel patch is manifold inside the cell.** This is what §5.1 is for.
+///
+/// Every edge of the emitted patch that is *not* a contour edge must be shared by
+/// exactly two triangles, and every contour edge by exactly one — because a
+/// contour edge lies on a cell face and its second triangle belongs to the
+/// neighbouring cell. That is the whole manifoldness argument, and it is the
+/// property Chernyaev's tunnel triangulation fails: his lays part of the tunnel
+/// *on* the ambiguous face, so two neighbours both claim it and the shared edge
+/// ends up with four faces.
+#[test]
+fn the_tunnel_patch_is_manifold_inside_the_cell() {
+    let mut rng = Lcg::new(0x0000_A002_8000_0001);
+    let mut cells = 0usize;
+    let mut unresolved_total = 0usize;
+    let mut worst_tris = 0usize;
+    let mut worst_interior = 0usize;
+
+    for _ in 0..400_000 {
+        let f = rng.corners();
+        let Some((tris, unresolved)) = tunnel_patch(&f) else {
+            continue;
+        };
+        unresolved_total += unresolved;
+        worst_tris = worst_tris.max(tris.len());
+
+        // Which codes are contour vertices, and which consecutive pairs are
+        // contour edges.
+        let mut ring_edge = [[false; 20]; 20];
+        {
+            use crate::cube::is_inside as inside;
+            use crate::marching_cubes::ambiguity::joined_mask;
+            use crate::marching_cubes::table::AMBIGUOUS_FACES;
+            let mut case = 0u8;
+            for (c, &v) in f.iter().enumerate() {
+                if inside(v) {
+                    case |= 1 << c;
+                }
+            }
+            let contours = Contours::of(case, joined_mask(&f, AMBIGUOUS_FACES[case as usize]));
+            for r in 0..contours.count() {
+                let ring = contours.ring(r);
+                for k in 0..ring.len() {
+                    let (a, b) = (ring[k] as usize, ring[(k + 1) % ring.len()] as usize);
+                    ring_edge[a.min(b)][a.max(b)] = true;
+                }
+            }
+        }
+
+        // Directed, so this pins the winding as well as the count: a
+        // consistently oriented patch traverses every interior edge once in each
+        // direction, and every boundary edge once.
+        let mut directed = [[0u32; 20]; 20];
+        let mut used = [[0u32; 20]; 20];
+        let mut interior_seen = [false; 20];
+        for t in &tris {
+            assert!(
+                t[0] != t[1] && t[1] != t[2] && t[0] != t[2],
+                "degenerate tunnel triangle {t:?}"
+            );
+            for &c in t {
+                if c >= INTERIOR {
+                    interior_seen[c as usize] = true;
+                }
+            }
+            for k in 0..3 {
+                let (a, b) = (t[k] as usize, t[(k + 1) % 3] as usize);
+                directed[a][b] += 1;
+                used[a.min(b)][a.max(b)] += 1;
+            }
+        }
+        for (a, row) in directed.iter().enumerate() {
+            for (b, &count) in row.iter().enumerate() {
+                assert!(
+                    count <= 1,
+                    "directed edge ({a},{b}) traversed {count} times — the patch \
+                     is not consistently wound"
+                );
+            }
+        }
+        worst_interior = worst_interior.max(interior_seen.iter().filter(|&&s| s).count());
+
+        for a in 0..20 {
+            for b in a..20 {
+                let n = used[a][b];
+                if n == 0 {
+                    continue;
+                }
+                let want = if ring_edge[a][b] { 1 } else { 2 };
+                assert_eq!(
+                    n, want,
+                    "edge ({a},{b}) carries {n} faces, wanted {want} — the tunnel \
+                     patch is not manifold inside the cell. corners {f:?}"
+                );
+            }
+        }
+        cells += 1;
+    }
+
+    assert!(cells > 500, "only {cells} tunnel cells were built");
+    assert_eq!(
+        unresolved_total, 0,
+        "{unresolved_total} ring edges spanned three hexagon steps, which the \
+         construction has no rule for and emits nothing at"
+    );
+    std::println!(
+        "measured: {cells} tunnel patches, all manifold inside the cell; \
+         worst {worst_tris} triangles and {worst_interior} interior vertices"
+    );
+}
+
+/// Every hexagon vertex the tunnel names is on the surface, and the codes stay in
+/// range.
+#[test]
+fn tunnel_interior_vertices_are_hexagon_saddles() {
+    let mut rng = Lcg::new(0x0000_A002_8000_0002);
+    let mut checked = 0usize;
+    let mut worst: f64 = 0.0;
+    for _ in 0..200_000 {
+        let f = rng.corners();
+        let Some((tris, _)) = tunnel_patch(&f) else {
+            continue;
+        };
+        let hexagon = BodySaddles::of(&f)
+            .inner_hexagon()
+            .expect("a tunnel patch has a hexagon");
+        for t in &tris {
+            for &c in t {
+                if c >= INTERIOR {
+                    let k = (c - INTERIOR) as usize;
+                    assert!(k < MAX_INTERIOR_VERTICES, "interior code {c} out of range");
+                    worst = worst.max(trilinear(&f, hexagon[k]).abs());
+                    checked += 1;
+                }
+            }
+        }
+    }
+    assert!(checked > 1000);
+    assert!(
+        worst < 1e-9,
+        "a tunnel interior vertex is {worst:e} off the surface"
+    );
+    std::println!("measured: {checked} tunnel interior-vertex references, worst {worst:e} off");
+}
+
+/// What a tunnel costs, measured, because it is more than the disk path and the
+/// per-cell budgets have to cover it.
+///
+/// **This is where A-002g's "no budget moves" stops being true (M-217 amended).**
+/// A fanned disk adds one cell-local vertex and at most 12 triangles, both
+/// already covered by `MAX_CENTROIDS` and `MAX_TRIANGLES`. A tunnel names all six
+/// hexagon vertices and can reach 22 triangles, so A-002b has to raise both.
+#[test]
+fn the_worst_case_tunnel_triangle_count_is_pinned() {
+    let mut rng = Lcg::new(0x0000_A002_8000_0003);
+    let mut worst_tris = 0usize;
+    let mut worst_interior = 0usize;
+    let mut cells = 0usize;
+    for _ in 0..400_000 {
+        let f = rng.corners();
+        let Some((tris, _)) = tunnel_patch(&f) else {
+            continue;
+        };
+        worst_tris = worst_tris.max(tris.len());
+        let mut seen = [false; 20];
+        for t in &tris {
+            for &c in t {
+                if c >= INTERIOR {
+                    seen[c as usize] = true;
+                }
+            }
+        }
+        worst_interior = worst_interior.max(seen.iter().filter(|&&s| s).count());
+        cells += 1;
+    }
+    assert!(cells > 500);
+    assert_eq!(
+        (worst_tris, worst_interior),
+        (22, MAX_INTERIOR_VERTICES),
+        "the tunnel's worst case moved"
+    );
+    std::println!(
+        "measured: {cells} tunnels, worst {worst_tris} triangles and \
+         {worst_interior} interior vertices"
     );
 }

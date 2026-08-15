@@ -109,7 +109,7 @@
 #[cfg(test)]
 mod tests;
 
-use crate::cube::EDGE_COUNT;
+use crate::cube::{EDGE_AXIS, EDGE_CORNERS, EDGE_COUNT, corner_offset, edge_crossing};
 use crate::real::Real;
 
 use super::table::{NO_EDGE, segment_links};
@@ -755,5 +755,268 @@ impl Contours {
                 }
             })
             .sum()
+    }
+}
+
+/// Most cell-local interior vertices any one cell can need.
+///
+/// Six, and only a tunnel or a twelve-vertex contour reaches it: those name every
+/// vertex of the inner hexagon. A fanned disk uses one, [`INTERIOR`] itself.
+///
+/// # Six rather than three, on the authors' own later advice
+///
+/// Grosso 2016 §5.1 collapses the hexagon to **three** inner vertices by taking
+/// the midpoint of each consecutive pair (its equation 7). Grosso 2017 §4.1 does
+/// not: *"We triangulate the contours with the method proposed in \[6\], but
+/// **instead of three we use all six vertices of the inner hexagon**."* The
+/// reference implementation is the 2017 one, and six is what this follows — the
+/// collapse loses the geometry of a saddle to save two vertices in a case that
+/// occurs in roughly one cell in two hundred.
+pub const MAX_INTERIOR_VERTICES: usize = 6;
+
+/// Where the surface crosses one cut edge, in the cell's own `[0,1]³`
+/// coordinates.
+///
+/// The edge runs along one axis, so two of the three coordinates are the corner's
+/// own `0` or `1` and the third is the crossing parameter.
+#[must_use]
+pub fn local_crossing<R: Real>(edge: u8, corner: &[R; 8]) -> [R; 3] {
+    let [lo, hi] = EDGE_CORNERS[edge as usize];
+    let axis = EDGE_AXIS[edge as usize] as usize;
+    let o = corner_offset(lo);
+    let mut p = [
+        R::from_f64(f64::from(o[0])),
+        R::from_f64(f64::from(o[1])),
+        R::from_f64(f64::from(o[2])),
+    ];
+    p[axis] = edge_crossing(corner[lo as usize], corner[hi as usize]);
+    p
+}
+
+/// Squared distance in the cell's local coordinates.
+fn distance_squared<R: Real>(a: [R; 3], b: [R; 3]) -> R {
+    let d = [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+    d[0] * d[0] + d[1] * d[1] + d[2] * d[2]
+}
+
+/// Steps between two hexagon indices around the six-ring, never more than three.
+const fn ring_distance(a: usize, b: usize) -> usize {
+    let r = a.abs_diff(b);
+    if r > 2 { 6 - r } else { r }
+}
+
+/// The hexagon index halfway between two that are two steps apart.
+const fn ring_midpoint(a: usize, b: usize) -> usize {
+    let (lo, hi) = if a < b { (a, b) } else { (b, a) };
+    if (hi + 2) % 6 == lo {
+        (hi + 1) % 6
+    } else {
+        (hi + lo) / 2
+    }
+}
+
+impl Contours {
+    /// Which ring, if any, is *not* part of the tunnel.
+    ///
+    /// Corollary 5: with a tunnel and three contours, the one that does not belong
+    /// to it has three vertices. Corollary 7 says how to tell which — its vertices
+    /// lie to one side of the quadratic's solutions — and the test is whether the
+    /// ring's span in `u` misses the interval between the two `u` roots entirely.
+    ///
+    /// # One transcribed line is a typo and is fixed here
+    ///
+    /// The reference computes the ring's `u` span with
+    /// `umax = (u_e2 > umax) ? u_e1 : umax` — comparing the third vertex and then
+    /// storing the **second**. It is plainly meant to be `u_e2`, it is the only
+    /// one of six such lines written that way, and a max that can return a value
+    /// smaller than the one it just compared is not a max. Written correctly here,
+    /// and `the_detached_ring_is_the_one_outside_the_u_span` measures how often
+    /// the two disagree (M-219).
+    #[must_use]
+    pub fn detached_ring<R: Real>(
+        &self,
+        saddles: &BodySaddles<R>,
+        corner: &[R; 8],
+    ) -> Option<usize> {
+        if self.count() != 3 {
+            return None;
+        }
+        let u = saddles.axis(0);
+        let (u_lo, u_hi) = if u[0] < u[1] {
+            (u[0], u[1])
+        } else {
+            (u[1], u[0])
+        };
+
+        for r in 0..self.count() {
+            let ring = self.ring(r);
+            if ring.len() != 3 {
+                continue;
+            }
+            let mut lo = R::INFINITY;
+            let mut hi = R::NEG_INFINITY;
+            for &e in ring {
+                let x = local_crossing(e, corner)[0];
+                lo = lo.min(x);
+                hi = hi.max(x);
+            }
+            if u_lo > hi || u_hi < lo {
+                return Some(r);
+            }
+        }
+        None
+    }
+
+    /// Triangulate a tunnel or a twelve-vertex contour against the inner hexagon.
+    ///
+    /// Grosso 2016 §5.1 and §5.2 with 2017 §4.1's six-vertex refinement. Each ring
+    /// vertex is assigned to its nearest hexagon vertex; each ring edge then spans
+    /// zero, one or two steps around the hexagon and closes with one, two or three
+    /// triangles accordingly. A detached three-vertex ring is emitted directly.
+    ///
+    /// Hexagon vertex `k` is named by the code `INTERIOR + k`.
+    ///
+    /// Returns the number of ring edges whose endpoints landed **three** steps
+    /// apart on the hexagon — a case the construction has no rule for and emits
+    /// nothing at. Zero on every configuration measured; returned rather than
+    /// asserted so a caller cannot mistake a hole for a closed patch.
+    pub fn fan_tunnel<R: Real>(
+        &self,
+        saddles: &BodySaddles<R>,
+        corner: &[R; 8],
+        mut emit: impl FnMut([u8; 3]),
+    ) -> usize {
+        let Some(hexagon) = saddles.inner_hexagon() else {
+            return 0;
+        };
+        // Buffered rather than streamed, because the closing fan's winding is not
+        // known until the ring walk has been done: a twelve-vertex contour can
+        // circle the hexagon either way, and the closure has to go the other way.
+        // Twelve ring edges at three triangles each plus a four-triangle closure
+        // is the bound, and `the_worst_case_tunnel_triangle_count_is_pinned`
+        // measures what is actually reached.
+        let mut buffer = [[0u8; 3]; 40];
+        let mut n = 0usize;
+        let detached = self.detached_ring(saddles, corner);
+        let mut unresolved = 0usize;
+
+        for r in 0..self.count() {
+            let ring = self.ring(r);
+            if Some(r) == detached {
+                buffer[n] = [ring[0], ring[1], ring[2]];
+                n += 1;
+                continue;
+            }
+
+            // Nearest hexagon vertex for each ring vertex.
+            let nearest = |edge: u8| -> usize {
+                let p = local_crossing(edge, corner);
+                let mut best = 0usize;
+                let mut best_d = R::INFINITY;
+                for (k, &h) in hexagon.iter().enumerate() {
+                    let d = distance_squared(p, h);
+                    if d < best_d {
+                        best_d = d;
+                        best = k;
+                    }
+                }
+                best
+            };
+
+            for k in 0..ring.len() {
+                let (a, b) = (ring[k], ring[(k + 1) % ring.len()]);
+                let (ha, hb) = (nearest(a), nearest(b));
+                match ring_distance(ha, hb) {
+                    0 => {
+                        buffer[n] = [a, b, INTERIOR + ha as u8];
+                        n += 1;
+                    }
+                    1 => {
+                        // Split the quad along its shorter diagonal.
+                        let pa = local_crossing(a, corner);
+                        let pb = local_crossing(b, corner);
+                        if distance_squared(pa, hexagon[hb]) < distance_squared(pb, hexagon[ha]) {
+                            {
+                                buffer[n] = [a, b, INTERIOR + hb as u8];
+                                n += 1;
+                            }
+                            {
+                                buffer[n] = [a, INTERIOR + hb as u8, INTERIOR + ha as u8];
+                                n += 1;
+                            }
+                        } else {
+                            {
+                                buffer[n] = [a, b, INTERIOR + ha as u8];
+                                n += 1;
+                            }
+                            {
+                                buffer[n] = [b, INTERIOR + hb as u8, INTERIOR + ha as u8];
+                                n += 1;
+                            }
+                        }
+                    }
+                    2 => {
+                        let hm = ring_midpoint(ha, hb);
+                        {
+                            buffer[n] = [a, b, INTERIOR + hm as u8];
+                            n += 1;
+                        }
+                        {
+                            buffer[n] = [a, INTERIOR + hm as u8, INTERIOR + ha as u8];
+                            n += 1;
+                        }
+                        {
+                            buffer[n] = [b, INTERIOR + hb as u8, INTERIOR + hm as u8];
+                            n += 1;
+                        }
+                    }
+                    _ => unresolved += 1,
+                }
+            }
+        }
+
+        // **§5.2's closing step, and the reason it exists.** A tunnel is an
+        // annulus: its two contours pass the inner hexagon from opposite sides,
+        // so every hexagon edge is covered twice and the patch closes itself. A
+        // twelve-vertex contour is a *disk* — one ring, walking the hexagon once
+        // — so it leaves the hexagon as a hexagonal hole, and every hexagon edge
+        // is covered once. Grosso closes it by merging the six into three and
+        // emitting one last triangle; keeping all six (2017 §4.1) the same hole
+        // takes a four-triangle fan. Without this the patch has a six-edge
+        // boundary that no neighbouring cell shares, which is a hole in the mesh
+        // — and `the_tunnel_patch_is_manifold_inside_the_cell` is what found it
+        // (M-218).
+        if self.count() == 1 {
+            // Which way round the hexagon did the ring walk go? Every hexagon-to-
+            // hexagon edge it laid answers it, and they all agree; `+1` means it
+            // ran `k → k+1`.
+            let mut spin = 0i32;
+            for t in &buffer[..n] {
+                for k in 0..3 {
+                    let (a, b) = (t[k], t[(k + 1) % 3]);
+                    if a >= INTERIOR && b >= INTERIOR {
+                        let (x, y) = ((a - INTERIOR) as usize, (b - INTERIOR) as usize);
+                        spin += if y == (x + 1) % 6 { 1 } else { -1 };
+                    }
+                }
+            }
+            for k in 1..5u8 {
+                if spin > 0 {
+                    {
+                        buffer[n] = [INTERIOR, INTERIOR + k + 1, INTERIOR + k];
+                        n += 1;
+                    }
+                } else {
+                    {
+                        buffer[n] = [INTERIOR, INTERIOR + k, INTERIOR + k + 1];
+                        n += 1;
+                    }
+                }
+            }
+        }
+        for t in &buffer[..n] {
+            emit(*t);
+        }
+        unresolved
     }
 }
