@@ -38,6 +38,7 @@
 #[cfg(test)]
 mod tests;
 
+use alloc::collections::BTreeSet;
 use alloc::vec;
 use alloc::vec::Vec;
 
@@ -235,6 +236,44 @@ pub fn signed_distance_field<R: Real>(
     Ok(out)
 }
 
+/// The Godunov upwind solution of `|∇d| = 1` at one sample.
+///
+/// Shared by [`sweep`] and the marching front, because they differ in the
+/// *order* they visit samples and not in the arithmetic they do when they get
+/// there. Two copies would drift, and a drift between them would be invisible:
+/// both would still produce plausible distance fields.
+fn godunov<R: Real>(neighbours: [Option<R>; 3], h: R) -> Option<R> {
+    let mut a: [R; 3] = [far(), far(), far()];
+    let mut n = 0usize;
+    for v in neighbours.into_iter().flatten() {
+        a[n] = v;
+        n += 1;
+    }
+    if n == 0 {
+        return None;
+    }
+    a[..n].sort_by(|p, q| p.partial_cmp(q).unwrap_or(core::cmp::Ordering::Equal));
+
+    let mut candidate = a[0] + h;
+    if n > 1 && candidate > a[1] {
+        let (s, q) = (a[0] + a[1], a[0] * a[1]);
+        let disc = s * s - (R::ONE + R::ONE) * (q + q - h * h);
+        if disc >= R::ZERO {
+            candidate = (s + disc.sqrt()) * R::HALF;
+        }
+        if n > 2 && candidate > a[2] {
+            let s3 = a[0] + a[1] + a[2];
+            let q3 = a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
+            let three = R::from_f64(3.0);
+            let disc3 = s3 * s3 - three * (q3 - h * h);
+            if disc3 >= R::ZERO {
+                candidate = (s3 + disc3.sqrt()) / three;
+            }
+        }
+    }
+    Some(candidate)
+}
+
 /// Fast sweeping: Gauss–Seidel passes over the eikonal equation, in place.
 ///
 /// Ticket: S-002. Zhao, *A fast sweeping method for eikonal equations*,
@@ -302,39 +341,15 @@ fn sweep<R: Real>(d: &mut [R], frozen: &[bool], size: [u32; 3], h: R) {
                         (z + 1 < nz).then(|| d[at(x, y, z + 1)]),
                     );
 
-                    // Godunov update: solve for the largest root using only the
-                    // neighbours smaller than it, adding them in increasing
-                    // order until the candidate stops exceeding the next one.
-                    let mut a: [R; 3] = [far(), far(), far()];
-                    let mut n = 0usize;
-                    for v in [ax, ay, az].into_iter().flatten() {
-                        a[n] = v;
-                        n += 1;
-                    }
-                    if n == 0 {
+                    // The same Godunov update the marching front uses. Shared,
+                    // because the two algorithms differ in the *order* they
+                    // visit samples and not in the arithmetic they do on
+                    // arrival — and a drift between two copies would be
+                    // invisible, since both would still produce plausible
+                    // distance fields.
+                    let Some(candidate) = godunov([ax, ay, az], h) else {
                         continue;
-                    }
-                    a[..n].sort_by(|p, q| p.partial_cmp(q).unwrap_or(core::cmp::Ordering::Equal));
-
-                    let mut candidate = a[0] + h;
-                    if n > 1 && candidate > a[1] {
-                        // Two-axis root of (d−a0)² + (d−a1)² = h².
-                        let (s, q) = (a[0] + a[1], a[0] * a[1]);
-                        let disc = s * s - (R::ONE + R::ONE) * (q + q - h * h);
-                        if disc >= R::ZERO {
-                            candidate = (s + disc.sqrt()) * R::HALF;
-                        }
-                        if n > 2 && candidate > a[2] {
-                            // Three-axis root; the same algebra one dimension up.
-                            let s3 = a[0] + a[1] + a[2];
-                            let q3 = a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
-                            let three = R::from_f64(3.0);
-                            let disc3 = s3 * s3 - three * (q3 - h * h);
-                            if disc3 >= R::ZERO {
-                                candidate = (s3 + disc3.sqrt()) / three;
-                            }
-                        }
-                    }
+                    };
                     if candidate < d[i] {
                         d[i] = candidate;
                     }
@@ -443,6 +458,232 @@ pub fn signed_distance_field_swept<R: Real>(
     }
 
     sweep(&mut d, &frozen, size, cell_size);
+
+    let mut out = vec![R::ZERO; count];
+    for (i, slot) in out.iter_mut().enumerate() {
+        *slot = if samples[i] < R::ZERO { -d[i] } else { d[i] };
+    }
+    Ok(out)
+}
+
+/// Build a signed distance field by fast marching.
+///
+/// Ticket: S-003. Sethian, *A fast marching level set method for monotonically
+/// advancing fronts*, PNAS 93(4), pp. 1591–1595 (1996).
+///
+/// # What it is, against the two already here
+///
+/// The same Godunov update as [`signed_distance_field_swept`] — literally the
+/// same function — visited in a different order. Sweeping does eight fixed
+/// passes and lets the answer settle; marching keeps a priority queue and
+/// **finalises the smallest unfinalised value at each step**, so every sample is
+/// updated from values that are already final and none is ever revisited.
+///
+/// That makes it a single pass at `O(N log N)`, against sweeping's `O(N)` with a
+/// constant of eight. Which of those is faster is a question about `log N`
+/// versus 8 and about heap traffic versus linear scans, and it is measured
+/// rather than argued: `benches/distance_construct.rs`.
+///
+/// # Why have it when sweeping already wins on accuracy
+///
+/// Because its error is structured differently. Sweeping's answer at a sample
+/// depends on the eight orderings reaching it; marching's depends only on the
+/// front, so it is order-independent by construction. On a field whose
+/// characteristics are not straight — which a sphere's are — that difference is
+/// the whole point, and S-002's clean win may not survive it.
+///
+/// # Errors
+///
+/// As [`signed_distance_field`].
+pub fn signed_distance_field_marched<R: Real>(
+    samples: &[R],
+    shape: &impl Shape3,
+    cell_size: R,
+) -> crate::Result<Vec<R>> {
+    let size = shape.size();
+    if size[0] < 2 || size[1] < 2 || size[2] < 2 {
+        return Err(crate::Error::GridTooSmall { size });
+    }
+    let count = shape.element_count();
+    if samples.len() != count {
+        return Err(crate::Error::ShapeOverflow {
+            size,
+            product: samples.len() as u64,
+        });
+    }
+    let (nx, ny, nz) = (size[0] as usize, size[1] as usize, size[2] as usize);
+    let at = |x: usize, y: usize, z: usize| (z * ny + y) * nx + x;
+
+    let mut d = vec![far::<R>(); count];
+    let mut done = vec![false; count];
+
+    // The same sub-cell seeding sweeping uses, so the comparison between them is
+    // a comparison of *orderings* and not of seeds.
+    for z in 0..nz {
+        for y in 0..ny {
+            for x in 0..nx {
+                let i = at(x, y, z);
+                let here = samples[i];
+                let inside = here < R::ZERO;
+                let mut best = far::<R>();
+                let mut neighbour = |j: usize| {
+                    let there = samples[j];
+                    if (there < R::ZERO) == inside {
+                        return;
+                    }
+                    let denom = here - there;
+                    if denom != R::ZERO {
+                        let t = (here / denom).abs();
+                        if t < best {
+                            best = t;
+                        }
+                    }
+                };
+                if x > 0 {
+                    neighbour(at(x - 1, y, z));
+                }
+                if x + 1 < nx {
+                    neighbour(at(x + 1, y, z));
+                }
+                if y > 0 {
+                    neighbour(at(x, y - 1, z));
+                }
+                if y + 1 < ny {
+                    neighbour(at(x, y + 1, z));
+                }
+                if z > 0 {
+                    neighbour(at(x, y, z - 1));
+                }
+                if z + 1 < nz {
+                    neighbour(at(x, y, z + 1));
+                }
+                if best < far::<R>() {
+                    d[i] = best * cell_size;
+                    done[i] = true;
+                }
+            }
+        }
+    }
+
+    // **A sorted set rather than a binary heap**, because the classic algorithm
+    // needs decrease-key: a sample's tentative value falls as its neighbours
+    // finalise, and a heap without decrease-key either grows stale entries or
+    // needs an index map. `BTreeSet` keyed on `(value, index)` gives both the
+    // minimum and the removal, and `no_std + alloc` has it.
+    //
+    /// Ordered by the bit pattern of the value, which for non-negative finite
+    /// floats is order-isomorphic to the value itself — the standard trick, used
+    /// here because `R` is not `Ord`.
+    fn key<R: Real>(v: R) -> u64 {
+        v.as_f64().to_bits()
+    }
+
+    let mut queue: BTreeSet<(u64, usize)> = BTreeSet::new();
+    let mut tentative = vec![far::<R>(); count];
+
+    let neighbours_of = |i: usize| {
+        let x = i % nx;
+        let y = (i / nx) % ny;
+        let z = i / (nx * ny);
+        let mut out = [usize::MAX; 6];
+        let mut n = 0;
+        let push = |j: usize, out: &mut [usize; 6], n: &mut usize| {
+            out[*n] = j;
+            *n += 1;
+        };
+        if x > 0 {
+            push(at(x - 1, y, z), &mut out, &mut n);
+        }
+        if x + 1 < nx {
+            push(at(x + 1, y, z), &mut out, &mut n);
+        }
+        if y > 0 {
+            push(at(x, y - 1, z), &mut out, &mut n);
+        }
+        if y + 1 < ny {
+            push(at(x, y + 1, z), &mut out, &mut n);
+        }
+        if z > 0 {
+            push(at(x, y, z - 1), &mut out, &mut n);
+        }
+        if z + 1 < nz {
+            push(at(x, y, z + 1), &mut out, &mut n);
+        }
+        (out, n)
+    };
+
+    let update = |d: &[R], i: usize| -> Option<R> {
+        let x = i % nx;
+        let y = (i / nx) % ny;
+        let z = i / (nx * ny);
+        let axis = |lo: Option<usize>, hi: Option<usize>| -> Option<R> {
+            let pick = |j: Option<usize>| j.map(|j| d[j]).filter(|v| *v < far::<R>());
+            match (pick(lo), pick(hi)) {
+                (Some(p), Some(q)) => Some(if p < q { p } else { q }),
+                (Some(p), None) | (None, Some(p)) => Some(p),
+                (None, None) => None,
+            }
+        };
+        godunov(
+            [
+                axis(
+                    (x > 0).then(|| at(x - 1, y, z)),
+                    (x + 1 < nx).then(|| at(x + 1, y, z)),
+                ),
+                axis(
+                    (y > 0).then(|| at(x, y - 1, z)),
+                    (y + 1 < ny).then(|| at(x, y + 1, z)),
+                ),
+                axis(
+                    (z > 0).then(|| at(x, y, z - 1)),
+                    (z + 1 < nz).then(|| at(x, y, z + 1)),
+                ),
+            ],
+            cell_size,
+        )
+    };
+
+    // Seed the band: every unfinalised neighbour of a frozen sample.
+    for i in 0..count {
+        if !done[i] {
+            continue;
+        }
+        let (ns, n) = neighbours_of(i);
+        for &j in &ns[..n] {
+            if done[j] {
+                continue;
+            }
+            if let Some(v) = update(&d, j)
+                && v < tentative[j]
+            {
+                queue.remove(&(key(tentative[j]), j));
+                tentative[j] = v;
+                queue.insert((key(v), j));
+            }
+        }
+    }
+
+    while let Some(&(k, i)) = queue.iter().next() {
+        queue.remove(&(k, i));
+        if done[i] {
+            continue;
+        }
+        d[i] = tentative[i];
+        done[i] = true;
+        let (ns, n) = neighbours_of(i);
+        for &j in &ns[..n] {
+            if done[j] {
+                continue;
+            }
+            if let Some(v) = update(&d, j)
+                && v < tentative[j]
+            {
+                queue.remove(&(key(tentative[j]), j));
+                tentative[j] = v;
+                queue.insert((key(v), j));
+            }
+        }
+    }
 
     let mut out = vec![R::ZERO; count];
     for (i, slot) in out.iter_mut().enumerate() {

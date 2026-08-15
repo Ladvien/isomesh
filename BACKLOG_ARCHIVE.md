@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-153 tickets. Line numbers are stable until something above them is edited — grep the ID if
+154 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -77,6 +77,7 @@ implementation contradicted the ticket.
 | [`F-007`](#L918) | Crossing refinement — right mechanism, wrong metric |
 | [`S-001`](#L926) | The exact distance transform, checked two ways |
 | [`S-002`](#L934) | Fast sweeping — the seeding is where the accuracy is |
+| [`S-003`](#L942) | Fast marching, and the macro that swallowed three tests |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -896,3 +897,8 @@ implementation contradicted the ticket.
 | | | ***The mechanism is the seed rather than the sweep.*** The exact transform answers with the distance to the nearest opposite-signed **sample**, so it is quantised to the grid with a floor of one full spacing (M-251). Sweeping seeds from the *interpolated* crossing and starts sub-cell; a sphere's characteristics are radial straight lines, the eight-orthant sweep follows them, and that head start survives to the edge of the domain. |
 | | | ***The losing-at-distance prediction was mine and went into a doc comment as though established.*** That is the third time in one day — M-244 and M-250 are the others — that a stated expectation reached prose before a measurement reached a test. The doc is corrected and the assertion is now "does not lose", so a field that flips the ordering fails loudly rather than quietly vindicating the original claim. |
 | | | *Eight sweeps because there are eight orthants, not because eight converged: a characteristic of the eikonal equation is a straight line and every straight line in 3D is monotone in each axis, so some diagonal ordering follows it. The count is a property of the geometry rather than a tuning knob, and the docs say so.* |
+| ☑ | **S-003** | **Fast marching.** | M | S-002 |
+| | | ***It shares `godunov` with sweeping, literally — one function, called from both.*** The two algorithms differ in the *order* they visit samples and not in the arithmetic they do on arrival, and two copies of that arithmetic would drift invisibly, since both would still produce plausible distance fields. A `BTreeSet` keyed on the value's bit pattern rather than a binary heap, because the algorithm needs decrease-key and a heap without it either grows stale entries or needs an index map. |
+| | | ***The comparison S-003 asked for (M-254).*** Means over four exact fields at three resolutions — ms, worst error, worst within two cells: exact **3.430 / 0.18701 / 0.18690**, swept **10.124 / 0.21820 / 0.12560**, marched **39.863 / 0.20591 / 0.12560**. **Sweeping and marching produce identical near-surface error to five figures**, because they share the seed and the update: the near band is decided entirely by the seed. All three scale linearly in practice — 59.7×, 57.9×, 64.6× for 56× the samples — so marching's `O(N log N)` is not what makes it slow; the set traffic is. |
+| | | ***And it refines M-252 rather than contradicting it.*** Sweeping beat the exact transform *at 41³ on a sphere*; at 65³ the exact transform's error has halved with `h` while sweeping's has not, so the ordering flips with resolution. A finding measured at one resolution was a finding about that resolution. |
+| | | ***One real bug, found because the bench exited 0 and wrote nothing (M-253).*** `for_each_reference_field!` expands **inline blocks**, not a closure, so a `return` used to skip a field abandons the enclosing function. Three tests written earlier today carried the same bug and **all three still passed** — the first field each skipped was late enough in the order that its count assertion was already satisfied. Rerun with `if let`, every number is unchanged, because the skipped fields were the unbounded ones with nothing to contribute. The guard and the loop's skip look like the same statement and are not. |

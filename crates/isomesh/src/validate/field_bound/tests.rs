@@ -236,44 +236,45 @@ fn a_directional_bound_helps_only_where_the_global_one_is_loose() {
     }
 
     crate::for_each_reference_field!(f64, |name, field| {
-        let Some(global) = field.bound().lipschitz() else {
-            return;
-        };
-        // Along a coordinate axis, only one partial contributes. For every field
-        // here except the gyroid the global bound is already 1 and cannot be
-        // beaten; for the gyroid the axis-aligned bound is 2 against 2√3.
-        let directional = if name == "gyroid" { 2.0 } else { global };
+        // `if let` rather than `let … else { return }`: the macro expands
+        // inline blocks, so a `return` leaves the test (M-253).
+        if let Some(global) = field.bound().lipschitz() {
+            // Along a coordinate axis, only one partial contributes. For every field
+            // here except the gyroid the global bound is already 1 and cannot be
+            // beaten; for the gyroid the axis-aligned bound is 2 against 2√3.
+            let directional = if name == "gyroid" { 2.0 } else { global };
 
-        let (lo, hi) = field.domain();
-        let far = hi[0] - lo[0];
-        let mut total_global = 0u64;
-        let mut total_directional = 0u64;
-        for a in 0..6 {
-            for b in 0..6 {
-                let at = |v: i32, l: f64, h: f64| l + (h - l) * (f64::from(v) + 0.5) / 6.0;
-                let origin = [lo[0], at(a, lo[1], hi[1]), at(b, lo[2], hi[2])];
-                total_global += u64::from(steps(&field, origin, global, far));
-                total_directional += u64::from(steps(&field, origin, directional, far));
+            let (lo, hi) = field.domain();
+            let far = hi[0] - lo[0];
+            let mut total_global = 0u64;
+            let mut total_directional = 0u64;
+            for a in 0..6 {
+                for b in 0..6 {
+                    let at = |v: i32, l: f64, h: f64| l + (h - l) * (f64::from(v) + 0.5) / 6.0;
+                    let origin = [lo[0], at(a, lo[1], hi[1]), at(b, lo[2], hi[2])];
+                    total_global += u64::from(steps(&field, origin, global, far));
+                    total_directional += u64::from(steps(&field, origin, directional, far));
+                }
             }
-        }
-        let gain = total_global as f64 / total_directional as f64;
-        std::println!(
-            "measured: {name:<16} global λ {global:>6.3}  directional {directional:>6.3}  \
+            let gain = total_global as f64 / total_directional as f64;
+            std::println!(
+                "measured: {name:<16} global λ {global:>6.3}  directional {directional:>6.3}  \
              steps {total_global:>6} → {total_directional:>6}  ({gain:.2}×)"
-        );
+            );
 
-        if (directional - global).abs() < 1e-12 {
-            // Nothing to win, and nothing lost: the two are the same march.
-            assert_eq!(
-                total_global, total_directional,
-                "{name}: identical bounds must produce identical marches"
-            );
-        } else {
-            assert!(
-                gain > 1.2,
-                "{name}: a √3-tighter bound bought only {gain:.2}×, so the tightness \
+            if (directional - global).abs() < 1e-12 {
+                // Nothing to win, and nothing lost: the two are the same march.
+                assert_eq!(
+                    total_global, total_directional,
+                    "{name}: identical bounds must produce identical marches"
+                );
+            } else {
+                assert!(
+                    gain > 1.2,
+                    "{name}: a √3-tighter bound bought only {gain:.2}×, so the tightness \
                  is not where the cost is"
-            );
+                );
+            }
         }
     });
 }

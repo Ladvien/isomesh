@@ -1638,38 +1638,39 @@ fn refinement_helps_curved_fields_and_not_the_kinked_one() {
     let mut rows = alloc::vec::Vec::new();
 
     crate::for_each_reference_field!(f64, |name, field| {
-        if !field.bound().is_exact() && name != "csg_difference" {
-            return;
+        // `if` rather than `return`: the macro expands inline blocks, so a
+        // `return` would leave the test function (M-253).
+        if field.bound().is_exact() || name == "csg_difference" {
+            let (lo, hi) = field.domain();
+            let h = (hi[0] - lo[0]) / f64::from(SAMPLES - 1);
+            let shape = crate::RuntimeShape3::new([SAMPLES; 3]).expect("valid shape");
+
+            let measure = |steps: u32| {
+                let mut out = crate::MeshBuffer::<f64>::new();
+                let mut mc = MarchingCubes::<f64>::new();
+                mc.set_crossing_refinement(steps);
+                mc.extract(&field, &shape, lo, h, &mut out)
+                    .expect("extraction");
+                let cfg = AccuracyConfig::from_cell_size(h).expect("valid config");
+                let report = accuracy(&out.positions, &out.indices, &field, &shape, lo, &cfg)
+                    .expect("accuracy");
+                (report.symmetric_hausdorff(), out.triangle_count())
+            };
+
+            let (plain, tris_plain) = measure(0);
+            let (refined, tris_refined) = measure(24);
+            // Refinement moves vertices, never triangles: the sign, and therefore the
+            // case classification, is untouched by it.
+            assert_eq!(
+                tris_plain, tris_refined,
+                "{name}: refinement changed the topology, which it cannot do"
+            );
+            rows.push((name, plain, refined));
+            std::println!(
+                "measured: {name:<16} hausdorff {plain:>10.4e} → {refined:>10.4e}  ({:.3}×)",
+                refined / plain
+            );
         }
-        let (lo, hi) = field.domain();
-        let h = (hi[0] - lo[0]) / f64::from(SAMPLES - 1);
-        let shape = crate::RuntimeShape3::new([SAMPLES; 3]).expect("valid shape");
-
-        let measure = |steps: u32| {
-            let mut out = crate::MeshBuffer::<f64>::new();
-            let mut mc = MarchingCubes::<f64>::new();
-            mc.set_crossing_refinement(steps);
-            mc.extract(&field, &shape, lo, h, &mut out)
-                .expect("extraction");
-            let cfg = AccuracyConfig::from_cell_size(h).expect("valid config");
-            let report =
-                accuracy(&out.positions, &out.indices, &field, &shape, lo, &cfg).expect("accuracy");
-            (report.symmetric_hausdorff(), out.triangle_count())
-        };
-
-        let (plain, tris_plain) = measure(0);
-        let (refined, tris_refined) = measure(24);
-        // Refinement moves vertices, never triangles: the sign, and therefore the
-        // case classification, is untouched by it.
-        assert_eq!(
-            tris_plain, tris_refined,
-            "{name}: refinement changed the topology, which it cannot do"
-        );
-        rows.push((name, plain, refined));
-        std::println!(
-            "measured: {name:<16} hausdorff {plain:>10.4e} → {refined:>10.4e}  ({:.3}×)",
-            refined / plain
-        );
     });
 
     let get = |want: &str| {

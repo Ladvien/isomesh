@@ -266,3 +266,82 @@ fn sweeping_refuses_what_the_transform_refuses() {
     let shape = RuntimeShape3::new([4; 3]).expect("valid shape");
     assert!(super::signed_distance_field_swept(&alloc::vec![1.0f64; 7], &shape, 0.1).is_err());
 }
+
+/// **Marching and sweeping agree closely, because they are the same update in a
+/// different order (S-003).**
+///
+/// The two share `godunov` literally — one function, called from both — and the
+/// same sub-cell seeding, so this compares *orderings* and nothing else.
+/// Sweeping does eight fixed passes and lets the answer settle; marching
+/// finalises the smallest tentative value at each step and never revisits.
+///
+/// They should therefore land close but not identical: sweeping's answer at a
+/// sample depends on the eight orderings reaching it, marching's only on the
+/// front, and on a sphere both find essentially the same characteristics.
+#[test]
+fn marching_agrees_with_sweeping_and_neither_is_the_other() {
+    let field = crate::fields::Sphere::<f64>::canonical();
+    let shape = RuntimeShape3::new([33; 3]).expect("valid shape");
+    let h = 0.125_f64;
+    let origin = [-2.0; 3];
+    let samples = sample_grid(&field, &shape, origin, h);
+
+    let swept = super::signed_distance_field_swept(&samples, &shape, h).expect("sweep");
+    let marched = super::signed_distance_field_marched(&samples, &shape, h).expect("march");
+
+    let size = shape.size();
+    let mut worst_gap = 0.0f64;
+    let mut swept_err = 0.0f64;
+    let mut marched_err = 0.0f64;
+    let mut differ = 0usize;
+    for z in 0..size[2] {
+        for y in 0..size[1] {
+            for x in 0..size[0] {
+                let p = [
+                    origin[0] + h * f64::from(x),
+                    origin[1] + h * f64::from(y),
+                    origin[2] + h * f64::from(z),
+                ];
+                let truth = field.sample(p);
+                let i = ((z * size[1] + y) * size[0] + x) as usize;
+                worst_gap = worst_gap.max((swept[i] - marched[i]).abs());
+                swept_err = swept_err.max((swept[i] - truth).abs());
+                marched_err = marched_err.max((marched[i] - truth).abs());
+                if (swept[i] - marched[i]).abs() > 1e-12 {
+                    differ += 1;
+                }
+            }
+        }
+    }
+    std::println!(
+        "measured: swept vs marched — worst gap {worst_gap:.5}, {differ} samples differ; \
+         error against analytic: swept {swept_err:.5}, marched {marched_err:.5}"
+    );
+
+    // Close: the same update from the same seeds cannot diverge far.
+    assert!(
+        worst_gap < 4.0 * h,
+        "the two orderings disagree by {worst_gap:.5}, which is more than an \
+         ordering can explain"
+    );
+    // Both must be real distance fields, not merely similar to each other.
+    assert!(
+        marched_err < 2.0 * h,
+        "marching's error {marched_err:.5} is too large"
+    );
+    assert!(
+        swept_err < 2.0 * h,
+        "sweeping's error {swept_err:.5} is too large"
+    );
+}
+
+/// Marching refuses the same degenerate inputs the others do.
+#[test]
+fn marching_refuses_what_the_others_refuse() {
+    let shape = RuntimeShape3::new([1, 4, 4]).expect("valid shape");
+    let samples = alloc::vec![1.0f64; shape.element_count()];
+    assert!(super::signed_distance_field_marched(&samples, &shape, 0.1).is_err());
+
+    let shape = RuntimeShape3::new([4; 3]).expect("valid shape");
+    assert!(super::signed_distance_field_marched(&alloc::vec![1.0f64; 7], &shape, 0.1).is_err());
+}

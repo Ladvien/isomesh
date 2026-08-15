@@ -2701,38 +2701,38 @@ fn rejection_does_not_change_the_mesh() {
     let mut rejected_any = false;
 
     crate::for_each_reference_field!(f64, |name, field| {
-        let Some(l) = field.bound().lipschitz() else {
-            // Unbounded fields cannot use the rejection at all, which is itself
-            // the correct behaviour and is asserted below.
-            return;
-        };
-        let (lo, hi) = field.domain();
-        let h = (hi[0] - lo[0]) / f64::from(SAMPLES - 1);
-        let shape = crate::RuntimeShape3::new([SAMPLES; 3]).expect("valid shape");
+        // Unbounded fields cannot use the rejection at all, which is itself
+        // correct and is asserted separately. `if let` rather than a `return`,
+        // because the macro expands inline blocks (M-253).
+        if let Some(l) = field.bound().lipschitz() {
+            let (lo, hi) = field.domain();
+            let h = (hi[0] - lo[0]) / f64::from(SAMPLES - 1);
+            let shape = crate::RuntimeShape3::new([SAMPLES; 3]).expect("valid shape");
 
-        let mut plain = MeshBuffer::<f64>::new();
-        let mut slow = SubgridMarchingTetrahedra::<f64>::new(6).expect("valid resolution");
-        slow.extract(&field, &shape, lo, h, &mut plain)
-            .expect("extraction");
+            let mut plain = MeshBuffer::<f64>::new();
+            let mut slow = SubgridMarchingTetrahedra::<f64>::new(6).expect("valid resolution");
+            slow.extract(&field, &shape, lo, h, &mut plain)
+                .expect("extraction");
 
-        let mut fast_out = MeshBuffer::<f64>::new();
-        let mut fast = SubgridMarchingTetrahedra::<f64>::new(6).expect("valid resolution");
-        fast.set_lipschitz(Some(l));
-        fast.extract(&field, &shape, lo, h, &mut fast_out)
-            .expect("extraction");
+            let mut fast_out = MeshBuffer::<f64>::new();
+            let mut fast = SubgridMarchingTetrahedra::<f64>::new(6).expect("valid resolution");
+            fast.set_lipschitz(Some(l));
+            fast.extract(&field, &shape, lo, h, &mut fast_out)
+                .expect("extraction");
 
-        assert_eq!(
-            plain.positions, fast_out.positions,
-            "{name}: rejection moved a vertex"
-        );
-        assert_eq!(
-            plain.indices, fast_out.indices,
-            "{name}: rejection changed the triangles"
-        );
-        if plain.triangle_count() > 0 {
-            rejected_any = true;
+            assert_eq!(
+                plain.positions, fast_out.positions,
+                "{name}: rejection moved a vertex"
+            );
+            assert_eq!(
+                plain.indices, fast_out.indices,
+                "{name}: rejection changed the triangles"
+            );
+            if plain.triangle_count() > 0 {
+                rejected_any = true;
+            }
+            checked += 1;
         }
-        checked += 1;
     });
 
     assert!(checked >= 5, "only {checked} fields had a usable constant");
@@ -2796,39 +2796,39 @@ fn empty_cell_rejection_is_measured_per_field() {
     let mut rows = alloc::vec::Vec::new();
 
     crate::for_each_reference_field!(f64, |name, field| {
-        let Some(l) = field.bound().lipschitz() else {
-            return;
-        };
-        let (lo, hi) = field.domain();
-        let h = (hi[0] - lo[0]) / f64::from(SAMPLES - 1);
-        let shape = crate::RuntimeShape3::new([SAMPLES; 3]).expect("valid shape");
+        if let Some(l) = field.bound().lipschitz() {
+            let (lo, hi) = field.domain();
+            let h = (hi[0] - lo[0]) / f64::from(SAMPLES - 1);
+            let shape = crate::RuntimeShape3::new([SAMPLES; 3]).expect("valid shape");
 
-        let best = |lipschitz: Option<f64>| {
-            let mut out = MeshBuffer::<f64>::new();
-            let mut ms = f64::INFINITY;
-            for _ in 0..3 {
-                out.reset();
-                let mut m = SubgridMarchingTetrahedra::<f64>::new(16).expect("valid resolution");
-                m.set_lipschitz(lipschitz);
-                let t = Instant::now();
-                m.extract(&field, &shape, lo, h, &mut out)
-                    .expect("extraction");
-                ms = ms.min(t.elapsed().as_secs_f64() * 1e3);
-            }
-            (ms, out.triangle_count())
-        };
+            let best = |lipschitz: Option<f64>| {
+                let mut out = MeshBuffer::<f64>::new();
+                let mut ms = f64::INFINITY;
+                for _ in 0..3 {
+                    out.reset();
+                    let mut m =
+                        SubgridMarchingTetrahedra::<f64>::new(16).expect("valid resolution");
+                    m.set_lipschitz(lipschitz);
+                    let t = Instant::now();
+                    m.extract(&field, &shape, lo, h, &mut out)
+                        .expect("extraction");
+                    ms = ms.min(t.elapsed().as_secs_f64() * 1e3);
+                }
+                (ms, out.triangle_count())
+            };
 
-        let (slow, tris) = best(None);
-        let (fast, tris_fast) = best(Some(l));
-        assert_eq!(
-            tris, tris_fast,
-            "{name}: rejection changed the triangle count"
-        );
-        rows.push((name, slow / fast));
-        std::println!(
-            "measured: {name:<16} rejection speedup {:>5.2}x",
-            slow / fast
-        );
+            let (slow, tris) = best(None);
+            let (fast, tris_fast) = best(Some(l));
+            assert_eq!(
+                tris, tris_fast,
+                "{name}: rejection changed the triangle count"
+            );
+            rows.push((name, slow / fast));
+            std::println!(
+                "measured: {name:<16} rejection speedup {:>5.2}x",
+                slow / fast
+            );
+        }
     });
 
     assert!(rows.len() >= 5, "only {} fields had a constant", rows.len());

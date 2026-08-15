@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**153 tickets archived, 18 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**154 tickets archived, 17 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -241,7 +241,6 @@ source of truth* to check the first against.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **S-003** | **Fast marching** — Sethian (`10.1073/pnas.93.4.1591`, free on pnas.org, hand-acquisition). Heap-based, `O(N log N)`, single pass. Worth having because it is the citation everyone knows and because its error characteristics differ from sweeping. **Acceptance:** measured against S-001 and S-002 — accuracy *and* wall clock, in `docs/measurements/`. | M | S-002 |
 | ☐ | **S-004** | **Narrow-band reinitialization** — Peng et al. (in corpus). **The best structural match to a brush stroke**, because cost scales with edited *surface area* rather than chunk volume. Carry Sussman & Fatemi's warning explicitly: naive reinitialisation **moves the zero set**, which in a destructible game means geometry creeping after every edit. **Acceptance:** measure the zero-set drift per reinitialisation and assert it below a stated bound — that assertion is the ticket. | L | S-002, F-004 |
 | ☐ | **S-005** | **Jump flooding**, GPU. Approximate, `O(log n)` passes, the standard GPU answer. Lives in `isomesh-gpu`. **Acceptance:** error against S-001 quantified rather than assumed; "approximate" is a measurement, not an adjective. | M | S-001, GPU-001 |
 | ☐ | **S-006** | **Mesh → SDF by angle-weighted pseudonormal** — Bærentzen & Aanæs (in corpus). **This is a proof, not a heuristic**, and it is the right tool for geometry isomesh produced itself, which already carries a `V−E+F == 2` guard. **Acceptance:** round-trip — mesh a sphere, convert back to a field, re-mesh, and compare against the original. That round-trip is a strong end-to-end test the crate does not currently have. | M | S-001 |
