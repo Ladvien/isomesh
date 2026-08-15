@@ -51,7 +51,7 @@ use isomesh::marching_cubes::MarchingCubes;
 use isomesh::{RuntimeShape3, Sdf};
 
 mod common;
-use common::{CommonPlugin, DemoStats};
+use common::{Capture, CommonPlugin, DemoStats};
 
 /// Samples per axis for every field on screen. Fixed, because this example is
 /// about the expression and not about resolution.
@@ -207,7 +207,35 @@ fn aim_camera(mut cameras: Query<&mut Transform, With<Camera3d>>) {
     }
 }
 
-fn controls(keys: Res<ButtonInput<KeyCode>>, mut state: ResMut<Authoring>) {
+/// Blend radii the recorded sweep visits, low to high and back.
+///
+/// **A recording that never turns the knob is a recording of nothing**, which is
+/// what the first `building-a-field.gif` was: 79 frames of a fixed `k = 0.12`,
+/// advertising a sweep it never performed. `Capture::taken` exists precisely so
+/// a sweep runs *in step with the capture* rather than with wall-clock time, so
+/// the GIF is reproducible and every frame lands on a value someone chose.
+///
+/// It returns to the start so the loop closes without a jump.
+const SWEEP: [f32; 12] = [
+    0.0, 0.04, 0.08, 0.13, 0.19, 0.26, 0.34, 0.26, 0.19, 0.13, 0.08, 0.04,
+];
+
+/// Capture frames spent on each step of [`SWEEP`].
+const FRAMES_PER_STEP: u32 = 6;
+
+fn controls(keys: Res<ButtonInput<KeyCode>>, capture: Res<Capture>, mut state: ResMut<Authoring>) {
+    // While recording, the sweep drives itself. A human pressing `[` and `]` gets
+    // the same values; this only removes the human.
+    if capture.is_active() {
+        let step = (capture.taken / FRAMES_PER_STEP) as usize % SWEEP.len();
+        let wanted = SWEEP[step];
+        if (state.blend - wanted).abs() > f32::EPSILON {
+            state.blend = wanted;
+            state.dirty = true;
+        }
+        return;
+    }
+
     let mut changed = false;
     if keys.just_pressed(KeyCode::BracketRight) {
         state.blend = (state.blend + 0.02).min(0.45);

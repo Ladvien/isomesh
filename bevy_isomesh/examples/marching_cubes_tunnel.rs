@@ -145,7 +145,7 @@ fn main() {
             wireframe: false,
         })
         .add_systems(Startup, aim_camera)
-        .add_systems(Update, (controls, draw, report).chain())
+        .add_systems(Update, (controls, fill_patches, draw, report).chain())
         .run();
 }
 
@@ -188,6 +188,92 @@ fn mesh_with(values: [f64; 8], interior: InteriorAmbiguity) -> MeshBuffer<f64> {
     mc.extract(&field, &shape, [0.0; 3], 1.0, &mut out)
         .expect("neither configuration is A-020's undefined case");
     out
+}
+
+/// Marks the two filled patches, so they can be replaced when the configuration
+/// changes.
+#[derive(Component)]
+struct Patch;
+
+/// Spawn the two surfaces as **solid** meshes, not only as gizmo outlines.
+///
+/// # Why this exists
+///
+/// The example drew every triangle as three lines and nothing else, with a
+/// per-triangle normal tick added *"so the two sides read as surfaces rather
+/// than as a cage of lines"* — which concedes the problem. Interactively it is a
+/// good diagram: you can see through it to the hexagon and the contours. As a
+/// picture it fails, because the claim being made is about **surfaces** — two
+/// discs against one cylinder — and a cage of lines does not show a surface at
+/// all. Recorded to a GIF it read as scaffolding.
+///
+/// So the patches are filled, and the gizmo overlay stays on top of them. The
+/// mesh comes from the same `mesh_with` call the gizmos use, so the outline and
+/// the fill cannot disagree about what was extracted.
+fn fill_patches(
+    mut commands: Commands,
+    show: Res<Show>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    existing: Query<Entity, With<Patch>>,
+    mut last: Local<Option<usize>>,
+) {
+    if *last == Some(show.which) {
+        return;
+    }
+    *last = Some(show.which);
+    for entity in &existing {
+        commands.entity(entity).despawn();
+    }
+    let Some(config) = CONFIGURATIONS.get(show.which) else {
+        return;
+    };
+
+    for (shift, interior, colour) in [
+        (
+            -1.3f32,
+            InteriorAmbiguity::Ignore,
+            Color::srgb(0.62, 0.66, 0.70),
+        ),
+        (
+            0.9,
+            InteriorAmbiguity::Trilinear,
+            Color::srgb(0.20, 0.68, 0.92),
+        ),
+    ] {
+        let buffer = mesh_with(config.corners, interior);
+        if buffer.triangle_count() == 0 {
+            continue;
+        }
+        let positions: Vec<[f32; 3]> = buffer
+            .positions
+            .iter()
+            .map(|p| [p[0] as f32 + shift, p[1] as f32, p[2] as f32])
+            .collect();
+        let normals: Vec<[f32; 3]> = buffer
+            .normals
+            .iter()
+            .map(|n| [n[0] as f32, n[1] as f32, n[2] as f32])
+            .collect();
+        let mut mesh = Mesh::new(
+            bevy::render::mesh::PrimitiveTopology::TriangleList,
+            bevy::asset::RenderAssetUsages::default(),
+        );
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+        mesh.insert_indices(bevy::render::mesh::Indices::U32(buffer.indices.clone()));
+        commands.spawn((
+            Mesh3d(meshes.add(mesh)),
+            MeshMaterial3d(materials.add(StandardMaterial {
+                base_color: colour,
+                // Both sides matter: a disc seen from behind is still the claim.
+                cull_mode: None,
+                perceptual_roughness: 0.75,
+                ..default()
+            })),
+            Patch,
+        ));
+    }
 }
 
 fn to_vec3(p: [f64; 3], shift: f32) -> Vec3 {

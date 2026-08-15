@@ -113,7 +113,7 @@ fillet — and `[` and `]` sweep it and re-mesh while the triangle count and ext
 ![The same cell meshed twice: two separate discs under the face rule, one cylinder under the interior rule, with the inner hexagon drawn](docs/gifs/the-tunnel-meshed-as-a-tunnel.gif)
 
 *Marching Cubes 33's interior ambiguity, which is the hardest thing in this repository and the easiest
-to show. **Left** the face rule alone: two separate discs, two components, χ = 2. **Right** the same
+to show once the surfaces are filled rather than drawn as outlines. **Left** the face rule alone: two separate discs, two components, χ = 2. **Right** the same
 cell with the interior rule: one cylinder through it, one component, χ = 0. A tunnel is a handle and a
 handle costs exactly two — the difference is arithmetic, not a matter of opinion, and the HUD reports
 it every frame. The gold ring is the inner hexagon: six body saddles of the trilinear interpolant,
