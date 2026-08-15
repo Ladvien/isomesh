@@ -1339,3 +1339,45 @@ below it. The gap between what was reported and what was measured is itself data
 
 **Record the ones we got right for the wrong reason.** ✗10 is in the falsified section even though
 the outcome was fine, because the reasoning was wrong and the reasoning is what generalizes.
+
+### M-255 — naive reinitialisation moves the zero set, measured before it was fixed (S-004)
+
+**M.** Sussman & Fatemi's warning is not folklore and not small. A narrow-band reinitialiser that
+seeds from the interpolated crossing, solves, and keeps the solved value everywhere drifts the
+surface **0.152 of a cell over twenty applications** on `Sphere` at 33³, `h = 0.125`, `band = 3` —
+tracked as the crossing fraction along all 386 cut x-edges, none of which appeared or vanished.
+
+At roughly 0.0076 cells per application that is invisible per edit and visible after a hundred. In a
+destructible game it is a wall changing shape while nobody edits it.
+
+**Freezing the seeds inside one call does not fix it**, which was the first thing tried and the
+reason this entry exists: the *next* call recomputes the seeds from the previous call's output, so
+the freeze holds for one round and the drift resumes. The fix is to restore the **input** values at
+every sample adjacent to a sign change, which makes the crossing fraction bit-identical rather than
+close — measured drift is then exactly `0.0`, and the assertion is `assert_eq!(worst, 0.0)` rather
+than a tolerance.
+
+**Why a tolerance would have been the wrong assertion.** A per-application bound of 0.01 cells is
+satisfied by a steady creep of 0.0076. The bound has to be on the *total after many applications*,
+which is why the test runs twenty and not one.
+
+`construct::tests::reinitialisation_does_not_move_the_zero_set`.
+
+### M-256 — the narrow band's cost claim needs the march, not the sweep (S-004)
+
+**M.** The ticket's premise is that reinitialisation should cost **edited surface area** rather than
+chunk volume. Delegating to `signed_distance_field_swept` and discarding what falls outside the band
+satisfies every accuracy assertion and none of that premise: fast sweeping visits every sample on
+every one of its eight passes regardless of value, so bounding it saves the *update* and not the
+*visit*.
+
+Fast marching bounds exactly. It finalises in increasing order of distance, so the first dequeued
+value above the limit proves every remaining one is too, and `break` there is exact rather than a
+heuristic cutoff. Measured on `Sphere` at 33³, `band = 3`: **4,802 of 35,937 samples finalised —
+13.4%**, against 100% for both unbounded constructors.
+
+So `march()` takes a `limit` and `signed_distance_field_marched` passes `far()`. One implementation,
+one path; the bound is a parameter, not a second algorithm.
+
+The test asserts the share stays below 25% for the same reason M-255's assertion is on the total: a
+solve that quietly touched the whole grid would pass the drift check and defeat the ticket.

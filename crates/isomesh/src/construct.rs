@@ -500,6 +500,47 @@ pub fn signed_distance_field_marched<R: Real>(
     shape: &impl Shape3,
     cell_size: R,
 ) -> crate::Result<Vec<R>> {
+    let march = march(samples, shape, cell_size, far::<R>())?;
+    let mut out = vec![R::ZERO; march.distance.len()];
+    for (i, slot) in out.iter_mut().enumerate() {
+        *slot = if samples[i] < R::ZERO {
+            -march.distance[i]
+        } else {
+            march.distance[i]
+        };
+    }
+    Ok(out)
+}
+
+/// What a bounded march finalised, and how much of the grid it had to touch.
+struct March<R> {
+    /// Unsigned distance. [`far`] wherever the march stopped short.
+    distance: Vec<R>,
+    /// Whether each sample was finalised. False outside the limit.
+    finalised: Vec<bool>,
+    /// Samples finalised. **The cost**, and the number that makes a narrow band
+    /// worth having: it tracks surface area, while `distance.len()` tracks volume.
+    visited: usize,
+}
+
+/// Sethian's front, stopped once it passes `limit`.
+///
+/// `limit` of [`far`] is the unbounded march — [`signed_distance_field_marched`]
+/// passes exactly that, so there is one implementation and not two.
+///
+/// # Why the march and not the sweep, for a bounded solve
+///
+/// Fast sweeping visits every sample on every pass whatever its value, so
+/// bounding it saves the *update* and not the *visit* — the cost still scales
+/// with volume. The march finalises in increasing order of distance, so stopping
+/// at the first value above the limit leaves everything beyond it untouched, and
+/// the cost scales with the band.
+fn march<R: Real>(
+    samples: &[R],
+    shape: &impl Shape3,
+    cell_size: R,
+    limit: R,
+) -> crate::Result<March<R>> {
     let size = shape.size();
     if size[0] < 2 || size[1] < 2 || size[2] < 2 {
         return Err(crate::Error::GridTooSmall { size });
@@ -516,6 +557,7 @@ pub fn signed_distance_field_marched<R: Real>(
 
     let mut d = vec![far::<R>(); count];
     let mut done = vec![false; count];
+    let mut visited = 0usize;
 
     // The same sub-cell seeding sweeping uses, so the comparison between them is
     // a comparison of *orderings* and not of seeds.
@@ -560,6 +602,7 @@ pub fn signed_distance_field_marched<R: Real>(
                 if best < far::<R>() {
                     d[i] = best * cell_size;
                     done[i] = true;
+                    visited += 1;
                 }
             }
         }
@@ -668,8 +711,15 @@ pub fn signed_distance_field_marched<R: Real>(
         if done[i] {
             continue;
         }
+        // **The bound, and the only place it is applied.** The queue is ordered by
+        // value, so the first sample past the limit means every remaining one is
+        // too — stopping here is exact, not a heuristic cutoff.
+        if tentative[i] > limit {
+            break;
+        }
         d[i] = tentative[i];
         done[i] = true;
+        visited += 1;
         let (ns, n) = neighbours_of(i);
         for &j in &ns[..n] {
             if done[j] {
@@ -685,9 +735,132 @@ pub fn signed_distance_field_marched<R: Real>(
         }
     }
 
-    let mut out = vec![R::ZERO; count];
-    for (i, slot) in out.iter_mut().enumerate() {
-        *slot = if samples[i] < R::ZERO { -d[i] } else { d[i] };
+    Ok(March {
+        distance: d,
+        finalised: done,
+        visited,
+    })
+}
+
+/// Rebuild the distance property in a band around the surface, leaving the rest
+/// alone.
+///
+/// Ticket: S-004. Peng, Merriman, Osher, Zhao & Kang, *A PDE-based fast local
+/// level set method*, Journal of Computational Physics 155(2) (1999).
+///
+/// `band` is the half-width, in **cells**. Samples further than that from a sign
+/// change keep whatever value they had, clamped in magnitude to the band so the
+/// field stays monotone across the boundary rather than stepping.
+///
+/// Returns the rebuilt grid and **how many samples the solve touched** — the
+/// number the cost argument below rests on, reported rather than asserted.
+///
+/// # Why a band, and why this is the shape a brush wants
+///
+/// A full reinitialisation costs the whole volume. An edit costs the surface it
+/// touched. So the cost of keeping a field usable under editing should scale
+/// with **edited surface area**, not with chunk volume — which is what
+/// restricting the solve to a band does, and why this is the constructor a
+/// destructible game reaches for rather than [`signed_distance_field`].
+///
+/// The bound is real and not decorative: this runs the *march*, stopped at the
+/// band's edge, precisely because a bounded sweep would still visit every sample
+/// on every pass. Measured on a sphere in a 33³ grid at `band = 3`, the solve
+/// finalises 4,802 of 35,937 samples — **13.4%**, against 100% for the
+/// unbounded constructors (M-256).
+///
+/// # The warning that comes with it, from Sussman & Fatemi
+///
+/// **Naive reinitialisation moves the zero set.** The solve is seeded from the
+/// interpolated crossing and then propagated, and each pass can shift where the
+/// field changes sign — so a field reinitialised after every brush stroke has
+/// geometry that creeps. In a destructible game that is a wall slowly changing
+/// shape while nobody edits it, which is worse than a field that is merely not
+/// a distance.
+///
+/// The creep is real and was measured here before it was fixed: seeding the
+/// solve from the interpolated crossing and keeping the solved value everywhere
+/// drifts the zero set by **0.152 of a cell over twenty reinitialisations**
+/// (M-255). Freezing the seeds *within one call* does not help, because the next
+/// call recomputes them from the previous call's output.
+///
+/// So this **restores the input values at every sample adjacent to a sign
+/// change**. The solve still runs — the band becomes a distance — but the
+/// samples that encode where the surface is are handed back unchanged, so the
+/// crossing fraction a mesher reads is bit-identical to the one it read before.
+/// Drift is then zero by construction rather than small by luck, and
+/// `reinitialisation_does_not_move_the_zero_set` asserts exactly that.
+///
+/// # Errors
+///
+/// As [`signed_distance_field`].
+pub fn reinitialise_narrow_band<R: Real>(
+    values: &[R],
+    shape: &impl Shape3,
+    cell_size: R,
+    band: u32,
+) -> crate::Result<(Vec<R>, usize)> {
+    // The band's reach in world units. Beyond it, a value is clamped rather than
+    // solved: clamping keeps the sign and the monotonicity, which is all
+    // anything outside the band uses.
+    let reach = cell_size * R::from_f64(f64::from(band));
+    let solved = march(values, shape, cell_size, reach)?;
+
+    let size = shape.size();
+    let (nx, ny, nz) = (size[0] as usize, size[1] as usize, size[2] as usize);
+    let at = |x: usize, y: usize, z: usize| (z * ny + y) * nx + x;
+
+    // Which samples sit next to a sign change. These carry the surface's
+    // position, and handing them back untouched is what makes the zero set
+    // immovable under repeated application.
+    let mut on_surface = alloc::vec![false; values.len()];
+    for z in 0..nz {
+        for y in 0..ny {
+            for x in 0..nx {
+                let i = at(x, y, z);
+                let inside = values[i] < R::ZERO;
+                let mut touching = |j: usize| {
+                    if (values[j] < R::ZERO) != inside {
+                        on_surface[i] = true;
+                    }
+                };
+                if x > 0 {
+                    touching(at(x - 1, y, z));
+                }
+                if x + 1 < nx {
+                    touching(at(x + 1, y, z));
+                }
+                if y > 0 {
+                    touching(at(x, y - 1, z));
+                }
+                if y + 1 < ny {
+                    touching(at(x, y + 1, z));
+                }
+                if z > 0 {
+                    touching(at(x, y, z - 1));
+                }
+                if z + 1 < nz {
+                    touching(at(x, y, z + 1));
+                }
+            }
+        }
     }
-    Ok(out)
+
+    let mut out = alloc::vec::Vec::with_capacity(values.len());
+    for (i, &v) in values.iter().enumerate() {
+        if on_surface[i] {
+            out.push(v);
+        } else if solved.finalised[i] {
+            let d = solved.distance[i];
+            out.push(if v < R::ZERO { -d } else { d });
+        } else if v < R::ZERO {
+            // Outside the band the old value survives, clamped so it cannot be
+            // nearer the surface than the band's edge -- which would put a
+            // crossing outside the region that was solved.
+            out.push(if v > -reach { -reach } else { v });
+        } else {
+            out.push(if v < reach { reach } else { v });
+        }
+    }
+    Ok((out, solved.visited))
 }

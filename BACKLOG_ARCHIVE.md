@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-154 tickets. Line numbers are stable until something above them is edited — grep the ID if
+155 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -902,3 +902,16 @@ implementation contradicted the ticket.
 | | | ***The comparison S-003 asked for (M-254).*** Means over four exact fields at three resolutions — ms, worst error, worst within two cells: exact **3.430 / 0.18701 / 0.18690**, swept **10.124 / 0.21820 / 0.12560**, marched **39.863 / 0.20591 / 0.12560**. **Sweeping and marching produce identical near-surface error to five figures**, because they share the seed and the update: the near band is decided entirely by the seed. All three scale linearly in practice — 59.7×, 57.9×, 64.6× for 56× the samples — so marching's `O(N log N)` is not what makes it slow; the set traffic is. |
 | | | ***And it refines M-252 rather than contradicting it.*** Sweeping beat the exact transform *at 41³ on a sphere*; at 65³ the exact transform's error has halved with `h` while sweeping's has not, so the ordering flips with resolution. A finding measured at one resolution was a finding about that resolution. |
 | | | ***One real bug, found because the bench exited 0 and wrote nothing (M-253).*** `for_each_reference_field!` expands **inline blocks**, not a closure, so a `return` used to skip a field abandons the enclosing function. Three tests written earlier today carried the same bug and **all three still passed** — the first field each skipped was late enough in the order that its count assertion was already satisfied. Rerun with `if let`, every number is unchanged, because the skipped fields were the unbounded ones with nothing to contribute. The guard and the loop's skip look like the same statement and are not. |
+| ☑ | **S-004** | **Narrow-band reinitialization** — Peng et al. (in corpus). **The best structural match to a brush stroke**, because cost scales with edited *surface area* rather than chunk volume. Carry Sussman & Fatemi's warning explicitly: naive reinitialisation **moves the zero set**, which in a destructible game means geometry creeping after every edit. **Acceptance:** measure the zero-set drift per reinitialisation and assert it below a stated bound — that assertion is the ticket. | L | S-002, F-004 |
+| | | ***The warning was the ticket, and it fired.*** Sussman & Fatemi's creep is not folklore here: the first
+implementation drifted the zero set **0.152 of a cell over twenty reinitialisations** (M-255), and freezing the seeds
+*within* a call did not help because the next call recomputes them from the previous call's output. Restoring the
+**input** values at every sample adjacent to a sign change makes the crossing fraction bit-identical, so the assertion
+is `assert_eq!(worst, 0.0)` — and it is on the total after twenty applications, because a per-application tolerance is
+satisfied by exactly the steady creep it is meant to catch. |
+| | | ***The cost claim needed a second fix nothing else would have caught (M-256).*** Delegating to
+`signed_distance_field_swept` and discarding what fell outside the band passed every accuracy assertion while costing
+the whole volume — fast sweeping visits every sample on every pass whatever its value. Fast marching bounds exactly,
+because the first dequeued value past the limit proves every remaining one is too. **4,802 of 35,937 samples finalised
+— 13.4%**, and the test asserts that share stays under 25%. `march()` gained a `limit`; the unbounded constructor
+passes `far()`, so there is one implementation. |

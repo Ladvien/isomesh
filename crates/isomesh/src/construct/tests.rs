@@ -345,3 +345,107 @@ fn marching_refuses_what_the_others_refuse() {
     let shape = RuntimeShape3::new([4; 3]).expect("valid shape");
     assert!(super::signed_distance_field_marched(&alloc::vec![1.0f64; 7], &shape, 0.1).is_err());
 }
+
+/// **Repeated reinitialisation does not move the zero set (S-004).**
+///
+/// The acceptance, and the warning the ticket exists to carry. Sussman & Fatemi:
+/// naive reinitialisation *moves the surface*, so a field rebuilt after every
+/// brush stroke has geometry that creeps — a wall slowly changing shape while
+/// nobody edits it, which is worse than a field that is merely not a distance.
+///
+/// Measured rather than argued: reinitialise twenty times over and track where
+/// the field crosses zero along a dense set of grid edges. The drift must stay
+/// below a stated fraction of a cell, and **the bound is on the total after
+/// twenty applications**, not per application — a per-step bound is satisfied by
+/// a steady creep, which is the failure mode.
+#[test]
+fn reinitialisation_does_not_move_the_zero_set() {
+    let field = crate::fields::Sphere::<f64>::canonical();
+    let shape = RuntimeShape3::new([33; 3]).expect("valid shape");
+    let h = 0.125_f64;
+    let origin = [-2.0; 3];
+    let size = shape.size();
+
+    let mut values = sample_grid(&field, &shape, origin, h);
+
+    // Where the field crosses zero along every cut x-edge, as a fraction of a
+    // cell. That is what a mesher reads, so it is what must not move.
+    let crossings = |v: &[f64]| {
+        let mut out = alloc::vec::Vec::new();
+        for z in 0..size[2] {
+            for y in 0..size[1] {
+                for x in 0..size[0] - 1 {
+                    let i = ((z * size[1] + y) * size[0] + x) as usize;
+                    let j = i + 1;
+                    if (v[i] < 0.0) != (v[j] < 0.0) {
+                        out.push((i, v[i] / (v[i] - v[j])));
+                    }
+                }
+            }
+        }
+        out
+    };
+
+    let first = crossings(&values);
+    assert!(first.len() > 300, "only {} crossings to track", first.len());
+
+    let mut touched = 0usize;
+    for _ in 0..20 {
+        let (next, visited) =
+            super::reinitialise_narrow_band(&values, &shape, h, 3).expect("reinit");
+        values = next;
+        touched = visited;
+    }
+
+    let last = crossings(&values);
+    assert_eq!(
+        first.len(),
+        last.len(),
+        "reinitialisation created or destroyed a crossing, which is worse than \
+         moving one"
+    );
+
+    let mut worst = 0.0f64;
+    for ((ia, ta), (ib, tb)) in first.iter().zip(&last) {
+        assert_eq!(ia, ib, "a crossing moved to a different edge");
+        worst = worst.max((ta - tb).abs());
+    }
+    // **The cost claim, measured.** The ticket's premise is that a band costs
+    // edited surface area rather than chunk volume; a solve that quietly touched
+    // every sample would satisfy the drift assertion and none of the reason the
+    // ticket exists.
+    let total = shape.element_count();
+    let share = 100.0 * touched as f64 / total as f64;
+    std::println!(
+        "measured: 20 reinitialisations moved the zero set by at most {worst:.6} of a cell; \
+         the band solve finalised {touched} of {total} samples ({share:.1}%)"
+    );
+    assert!(
+        share < 25.0,
+        "the band solve touched {share:.1}% of the grid — that is a volume cost, \
+         not a surface-area one"
+    );
+    // **Zero, not small.** The samples adjacent to a sign change are handed back
+    // unchanged, so the crossing fraction is bit-identical rather than close.
+    // Anything above zero here means a seed was overwritten and Sussman &
+    // Fatemi's creep is back — measured at 0.152 of a cell before the fix.
+    // `assert!(worst == 0.0)` rather than `assert_eq!`: clippy rejects strict
+    // float comparison, and rightly in general — here the equality is the point,
+    // since the seed values are handed back untouched and so must compare bitwise
+    // identical, not merely close.
+    #[allow(clippy::float_cmp)]
+    {
+        assert!(
+            worst == 0.0,
+            "the zero set moved by {worst:e} of a cell over 20 reinitialisations"
+        );
+    }
+}
+
+/// Reinitialisation refuses what the constructors refuse.
+#[test]
+fn reinitialisation_refuses_what_the_others_refuse() {
+    let shape = RuntimeShape3::new([1, 4, 4]).expect("valid shape");
+    let v = alloc::vec![1.0f64; shape.element_count()];
+    assert!(super::reinitialise_narrow_band(&v, &shape, 0.1, 3).is_err());
+}
