@@ -27,12 +27,15 @@ which (the README and demo pages lean on this block by reference; added at D-003
 - **Falsified entries stay.** They're the most valuable rows, because they tell you which *sources* to
   distrust, not just which facts.
 - Every entry names how it could be shown wrong. If you can't write that line, you have an opinion.
+- **An experiment that was run and reverted is an entry too** — Part 4b. The verdict line is the
+  point: a variant that was built, measured and put back is the most expensive thing to rediscover,
+  because nothing left in the tree records that it was ever tried.
 
 ## Index
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**305 entries** — 17 falsified, 239 measured, 33 verified, 16 open. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**308 entries** — 17 falsified, 239 measured, 33 verified, 16 open, 3 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -341,6 +344,9 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `O-14` | Pre-registered: Marching Tetrahedra symmetric Hausdorff at 64³ ≈ 2.6e-3, about 1.86× Marching Cubes, i.e. slightly worse… |
 | `O-15` | Answered at A-003 (M-52): the normal's sign pattern, not its direction. |
 | `O-16` | Can the parallel dual-edge collapse (M-59) be removed without giving up the cycle partition? |
+| `E×1` | Surface Nets' centroid as Dual Contouring's vertex rule |
+| `E×2` | A separate probabilistic-quadric solver |
+| `E×3` | Crossing-count-scaled regularizer |
 
 <!-- END GENERATED INDEX -->
 
@@ -359,7 +365,7 @@ to look and therefore none. And **entry numbering stays global**: `M-231` keeps 
 wherever it lives, since every cross-reference in the backlog, the archive and a year of commit
 messages names it by number and a renumber would silently break all of them.
 
-Current: **298 entries, 387 KB** — see the index above.
+The index above carries the current count; it is generated, so it cannot drift from the file.
 
 ## Confidence tiers
 
@@ -1194,6 +1200,30 @@ the record the whole time and should have been weighted against M-29 before regi
 
 ---
 
+## Part 4b — Experiments run, and what happened to them
+
+**The slot this file did not have (T-013).** `M-` records a measurement, `✗` a belief that died, `O-`
+an open question and a `P-` prediction rides inside the `O-` row it settles. None of those is the
+right home for *"we built the variant, measured it, and put it back"* — and with Phase 8's ablation
+seam, most experiments will end that way. A reverted experiment whose numbers were never written
+down gets re-run in six weeks by someone who has forgotten, which is the specific waste this section
+exists to prevent.
+
+**An entry is owed whenever an ablation runs**, whether it was kept or not. The verdict line is the
+point; the numbers are what make it re-checkable.
+
+```markdown
+| E×n | **<the variant, in one line>** | H: <the hypothesis, as pre-registered> | <numbers, both arms> | **KEPT** / **REVERTED** — <why> | <ticket, harness> |
+```
+
+| # | Variant | Hypothesis | Both arms | Verdict | Where |
+|---|---|---|---|---|---|
+| E×1 | **Surface Nets' centroid as Dual Contouring's vertex rule** | The QEF is worth its cost on sharp fields and not on smooth ones, and pays for it in self-intersection | Hausdorff at 65³, QEF ÷ centroid: sphere **0.486**, torus **0.457**, csg_difference **0.255**, box_exact **0.010**, thin_plate **0.010**. Self-intersections per 1k at 33³: QEF **3.118 / 13.837 / 29.745** on gyroid, fbm_terrain, noise_cavity against centroid's **0.000** | **KEPT as an ablation, not as a default.** Both arms are real answers to different questions and neither dominates — 100× accuracy on sharp features against zero self-intersections. The seam stays so the comparison can be re-run; `Qef` stays the default because sharp-feature recovery is what A-007 exists for | X-002, `benches/ablation.rs`, M-237 |
+| E×2 | **A separate probabilistic-quadric solver** (Trettner & Kobbelt, `10.1111/cgf.13933`) | It supersedes the Tikhonov regularizer and is more robust on near-singular cells | Never measured as a separate solver, because it was shown identical first: a direct assembly of the paper's equations agrees with `solve_with` at `λ = Nσ²` to **1.110e-16 over 296 cells** | **REVERTED before it was written.** In this crate's centroid-relative coordinates the paper's extra term is `σ²Σrᵢ`, and `Σrᵢ ≡ 0` because the centroid *is* the mean of the crossings. A second solver would have been a second execution path computing identical numbers. **Do not re-attempt for isotropic noise**; the open door is anisotropic `Σₙ`, which needs a noise model analytic fields do not have | X-004, `the_probabilistic_quadric_is_the_existing_solve`, M-238 |
+| E×3 | **Crossing-count-scaled regularizer** (`λ = Nσ²`, the part of E×2 that *is* different) | Scaling λ with the number of planes beats one fixed λ per cell | Hausdorff at 65³, scaled ÷ fixed: sphere **1.0000**, torus **0.9957**, csg_difference **0.9992**, box_exact **0.7519**, thin_plate **0.7519**. Self-intersections at 33³ fall on all three noisy fields: **3.118→2.551, 13.837→13.571, 29.745→28.749** | **KEPT behind `experimental`, not made default.** Never worse and 25% better on both sharp fields, which is a real improvement — but the default carries T-007's committed golden hashes and 112 baseline rows, and moving those for a 25% gain on two of eight fields is a decision with evidence attached, not a tidy-up. Promoting it is its own ticket | X-004, `crates/isomesh/src/experimental.rs`, M-238 |
+
+---
+
 ## Part 5 — Method rules, and the failure that earned each
 
 Rules with no incident behind them get ignored. These all have one.
@@ -1277,6 +1307,10 @@ Rules with no incident behind them get ignored. These all have one.
 **Consequence:** <what changed as a result — a decision, a ticket, an assertion>
 **Would be shown wrong by:** <the observation that would falsify this>
 ```
+
+**An experiment that was reverted still gets an entry.** Part 4b is the slot, and the verdict line is
+the load-bearing part — a variant that was built, measured and put back is the single most expensive
+thing to rediscover, because nothing in the tree records that it was ever tried.
 
 Two things that make this file worth keeping rather than a chore:
 

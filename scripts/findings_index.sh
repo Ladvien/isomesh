@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 #
-# FINDINGS.md is the epistemic state and it is 387 KB, 945 lines and 298 entries.
-# Past a certain size a ledger stops being a lookup table and becomes a diary --
+# FINDINGS.md is the epistemic state, and it is past the size at which a ledger
+# stops being a lookup table and becomes a diary --
 # nobody reads it end to end, so a fact that is in there gets re-derived anyway,
 # which is the exact failure the file exists to prevent. It has already happened:
 # V-29 and V-32 are the same correction made twice, three days apart, two rows
 # apart in the same table.
 #
 # So the file gets an index, and the index gets a generator, because a
-# hand-maintained index of 298 rows is a rotting artefact with extra steps.
+# hand-maintained index of several hundred rows is a rotting artefact with extra
+# steps -- and a count written into this comment would rot the same way, which is
+# why the current one is printed rather than stated.
 # `BACKLOG_ARCHIVE.md`'s index was built by hand and carries rows reading
 # "(title not auto-extracted -- grep the ID)", which is what that costs.
 #
@@ -63,7 +65,7 @@ def claim(cell):
 rows = []
 for number, line in enumerate(lines, 1):
     # Table entries: M-, V- and O- all lead their row with the id.
-    entry = re.match(r"^\| (M-\d+|V-\d+|O-\d+) \| (.*)$", line)
+    entry = re.match(r"^\| (M-\d+|V-\d+|O-\d+|E×\d+) \| (.*)$", line)
     if entry:
         body = entry.group(2).split(" | ")[0]
         rows.append((entry.group(1), number, claim(body)))
@@ -79,7 +81,7 @@ if not rows:
 
 def sort_key(row):
     kind = row[0][0]
-    order = {"✗": 0, "M": 1, "V": 2, "O": 3}.get(kind, 9)
+    order = {"✗": 0, "M": 1, "V": 2, "O": 3, "E": 4}.get(kind, 9)
     return (order, int(re.sub(r"\D", "", row[0])))
 
 
@@ -93,7 +95,8 @@ block = [
     "",
     f"**{len(rows)} entries** — "
     f"{counts.get('✗', 0)} falsified, {counts.get('M', 0)} measured, "
-    f"{counts.get('V', 0)} verified, {counts.get('O', 0)} open. "
+    f"{counts.get('V', 0)} verified, {counts.get('O', 0)} open, "
+    f"{counts.get('E', 0)} experiments. "
     "Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.",
     "",
     "| # | Claim |",

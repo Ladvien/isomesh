@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-142 tickets. Line numbers are stable until something above them is edited — grep the ID if
+143 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -66,6 +66,7 @@ implementation contradicted the ticket.
 | [`E-215`](#L830) | record_gif.sh — the tenth GIF is a command |
 | [`E-216`](#L838) | Building a field, and the union nobody had noticed was missing |
 | [`T-011`](#L846) | Metric baselines, and a gate that has been seen to fail |
+| [`T-013`](#L854) | Part 4b — experiments run, and what happened to them |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -829,3 +830,8 @@ implementation contradicted the ticket.
 | | | ***Baselines are per machine and the machine is in the filename***, matching the `resolution_sweep-ryzen9-5900x.csv` convention already used by hand. A run on another host finds no baseline and says so, rather than comparing against numbers that never applied to it. A timing baseline from another box is worse than none. |
 | | | ***The acceptance is that the gate has been seen to fail, three ways.*** `--self-test` doubles one row's `median_ms` in a copy and requires the failure to **name the row** — it reports *"sphere qef 17: median_ms 0.396 → 0.793 (+100.0%, tolerance 60%)"*. Two real perturbations were also run and caught: a Hausdorff worsened 50% against its 2% band, and a triangle count moved by **two**, which the exact comparison catches where any tolerance would not. It runs in CI, because the half that rots silently is the checker rather than the numbers. |
 | | | *Deviation from the ticket, with the reason: it is `scripts/regress.sh` rather than `cargo run --bin regress`. A `[[bin]]` in `crates/isomesh` would ship an executable to every consumer of a `no_std` library and appear in `cargo install`, and the repo already has four gates as scripts — `backlog_gate.sh`, `readme_sync.sh`, `findings_index.sh`, `record_gif.sh` — so this is the existing idiom rather than a new one.* |
+| ☑ | **T-013** | **An experiment record format.** | S | T-012 |
+| | | ***Populated on arrival, because three experiments had already run without a home.*** A format with no entries is a template; this shipped with `E×1` (Surface Nets' centroid as Dual Contouring's rule), `E×2` (a separate probabilistic-quadric solver) and `E×3` (the crossing-count-scaled regularizer), all from today's X-002 and X-004. |
+| | | ***`E×2` is the entry that proves the section was needed.*** It records a variant **reverted before it was written**: the paper's solver is identical to `solve_with` at `λ = Nσ²` to 1.110e-16, so building it would have been a second execution path computing the same numbers. Nothing left in the tree says that was tried, which is exactly the six-week re-run this section exists to stop — and the entry names the door that *is* open (anisotropic `Σₙ`) so the next attempt starts there rather than repeating this one. |
+| | | ***The verdict line carries the reasoning, not just the outcome.*** `E×1` is *kept as an ablation, not as a default* because neither arm dominates — 100× accuracy on sharp features against zero self-intersections. `E×3` is *kept behind `experimental`, not made default* because promoting it moves T-007's committed golden hashes and 112 baseline rows for a 25% gain on two of eight fields, which is a decision with evidence attached rather than a tidy-up. |
+| | | *Three supporting edits so the slot is real rather than announced: `scripts/findings_index.sh` learned the `E×` kind and now reports experiments in its header line, the how-to-use section states the obligation, and two hardcoded entry counts were removed from the script's own header and the split policy — a generated index that quotes a stale number in its prose is the same defect one level up.* |

@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**142 tickets archived, 29 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**143 tickets archived, 28 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -195,7 +195,6 @@ measurement count.** It is past the size at which anyone reads it end to end.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **T-013** | **An experiment record format.** `FINDINGS.md` has slots for measurements (`M-`), falsified beliefs (`✗`), open questions (`O-`) and pre-registered predictions (`P-`). It has **no slot for an experiment that was run and reverted** — and with Phase 8, most experiments will be. Add an `E×-` section: hypothesis, the ablation, the numbers both ways, verdict, **kept or reverted and why**. A reverted experiment with recorded numbers is what stops it being re-run in six weeks. | S | T-012 |
 | ☐ | **T-014** | **Cross-machine measurement protocol.** `resolution_sweep-ryzen9-5900x.csv` exists beside `resolution_sweep.csv` and that second machine already produced a finding (M-45: Surface Nets' superlinearity is the algorithm, not one cache hierarchy). Make it systematic — a documented procedure, consistent filenames, and the machine's specs recorded in the CSV header rather than the filename. | S | T-011 |
 
 ---
