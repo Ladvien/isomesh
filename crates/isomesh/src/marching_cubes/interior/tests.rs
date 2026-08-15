@@ -272,9 +272,11 @@ fn the_test_is_deterministic_and_independent_of_diagonal_order() {
             continue;
         }
         let (a, b) = (faces.saddle(t), rotated.saddle(t));
-        assert!(
-            (a - b).abs() <= 1e-12 * a.abs().max(1.0),
-            "t = {t}: {a} vs {b}"
+        assert_eq!(
+            a.to_bits(),
+            b.to_bits(),
+            "t = {t}: {a} vs {b} -- two cells reading one face must agree \
+             bit-for-bit, or they can disagree about a tunnel"
         );
     }
     // Twice, identical: nothing here reads a hash map or an address.
@@ -349,4 +351,66 @@ fn joined_names_the_positive_regions_and_the_face_rule_names_the_negative() {
     assert!(faces.saddle(1.0) > 0.0);
     assert!(!face_is_joined(faces.hi));
     assert_eq!(faces.test(), Interior::Joined);
+}
+
+/// **M-166, closed.** Two cells reading one shared face agree bit-for-bit.
+///
+/// The face decider can promise this for free because it compares two
+/// *products* and IEEE multiplication is commutative. This module's denominator
+/// could not: `((A + C) − B) − D` is a fixed subtraction order that a rotation
+/// permutes, and floating-point addition is not associative, so two cells
+/// meeting on a face could disagree about a tunnel.
+///
+/// # The fixture is searched for, not chosen
+///
+/// `the_test_is_deterministic_and_independent_of_diagonal_order` asserts the
+/// same property and **passes on its own fixture even with the defect present**,
+/// because `opposed()`'s corners are all of similar magnitude and the two
+/// orders round identically. That is the fixture trap this project has now hit
+/// five times (M-32, M-38, M-44, G-003, and here), so the fixture below comes
+/// from a search over corner magnitudes: `(1, 1, 1, 10⁻⁸)` is the first
+/// quadruple where the orders disagree, `0.99999999` against
+/// `0.9999999900000001`. Over 20,166 quadruples the old order disagrees on
+/// **2,764** and the grouped one on **none**.
+///
+/// The first assertion is that the fixture still distinguishes the two
+/// anchorings — without it this could pass by having stopped exercising the
+/// case, which is exactly how the older test passes.
+#[test]
+fn two_cells_reading_one_face_agree_bit_for_bit() {
+    // The two orders, spelled out, so the fixture can be shown to separate them.
+    let old = |v: [f64; 4]| ((v[0] + v[2]) - v[1]) - v[3];
+    let rotate2 = |v: [f64; 4]| [v[2], v[3], v[0], v[1]];
+    let corners = [1.0, 1.0, 1.0, 1e-8];
+    assert_ne!(
+        old(corners).to_bits(),
+        old(rotate2(corners)).to_bits(),
+        "the fixture no longer distinguishes the two subtraction orders, so it \
+         cannot show that grouping the diagonals is what fixes them"
+    );
+
+    let faces = SweptFaces::new(corners, corners).expect("a non-degenerate sweep");
+    let rotated =
+        SweptFaces::new(rotate2(corners), rotate2(corners)).expect("a non-degenerate sweep");
+
+    // A two-corner rotation preserves both diagonals, so nothing may move.
+    for step in 0..=20 {
+        let t = f64::from(step) / 20.0;
+        assert_eq!(
+            faces.denominator(t).to_bits(),
+            rotated.denominator(t).to_bits(),
+            "t = {t}: the denominator moved under a rotation that preserves \
+             both diagonals"
+        );
+        if faces.pole() == Some(t) {
+            continue;
+        }
+        assert_eq!(
+            faces.saddle(t).to_bits(),
+            rotated.saddle(t).to_bits(),
+            "t = {t}: the saddle moved, so two cells could disagree about a tunnel"
+        );
+    }
+    assert_eq!(faces.test(), rotated.test());
+    assert_eq!(faces.pole(), rotated.pole());
 }

@@ -142,12 +142,32 @@ impl<R: Real> SweptFaces<R> {
         Ok(faces)
     }
 
-    /// `Δ(t) = A_t + C_t − B_t − D_t`, the bilinear denominator at height `t`.
+    /// `Δ(t) = (A_t + C_t) − (B_t + D_t)`, the bilinear denominator at height `t`.
     ///
     /// Linear in `t`, and its root is the pole Chernyaev's quadratic cannot see.
+    ///
+    /// # The parentheses are load-bearing, and M-166 is what they close
+    ///
+    /// This was `v[0] + v[2] - v[1] - v[3]`, which evaluates as
+    /// `((A + C) − B) − D` — a **fixed subtraction order that a rotation
+    /// permutes**, and floating-point addition is not associative. Two cells
+    /// meeting on a shared face read its corners in rotated order, so they could
+    /// evaluate the same sweep to different bits and disagree about a tunnel.
+    /// Searched rather than argued (M-32's rule, and the fourth time this
+    /// project has needed it): `(1, 1, 1, 10⁻⁸)` gives `0.99999999` one way and
+    /// `0.9999999900000001` the other.
+    ///
+    /// Grouping each diagonal makes every symmetry of the face exact. A
+    /// two-corner rotation swaps the operands *within* each parenthesis, and
+    /// IEEE addition is commutative, so the result is bit-identical; a
+    /// one-corner rotation or a reflection exchanges the two parentheses, and
+    /// IEEE subtraction is exactly antisymmetric, so the result is the exact
+    /// negation — which cancels against the numerator's own exact negation in
+    /// [`saddle`](Self::saddle). Checked over 20,166 corner quadruples: **zero
+    /// disagreements**, against **2,764** for the old order (M-204).
     #[must_use]
     pub fn denominator(&self, t: R) -> R {
-        let at = |v: &[R; 4]| v[0] + v[2] - v[1] - v[3];
+        let at = |v: &[R; 4]| (v[0] + v[2]) - (v[1] + v[3]);
         at(&self.lo) + (at(&self.hi) - at(&self.lo)) * t
     }
 
