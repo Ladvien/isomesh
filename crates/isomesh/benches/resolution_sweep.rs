@@ -41,12 +41,12 @@ use std::hint::black_box;
 use std::path::PathBuf;
 use std::time::Instant;
 
+use isomesh::MeshBuffer;
 use isomesh::dual_contouring::DualContouring;
+use isomesh::extractor::Extractor;
 use isomesh::fields::Sphere;
 use isomesh::marching_cubes::MarchingCubes;
-use isomesh::marching_tetrahedra::MarchingTetrahedra;
 use isomesh::surface_nets::SurfaceNets;
-use isomesh::{MeshBuffer, RuntimeShape3};
 
 /// Samples per axis. Spans the 16³→256³ range the ticket asks for, with enough
 /// points either side of the tail cut for both fits to be meaningful.
@@ -78,112 +78,19 @@ struct Row {
     triangles: usize,
 }
 
-/// One extractor, so the sweep can drive both without threading a six-argument
-/// closure through two layers of indirection.
-trait Extractor {
-    /// Column label in the printed table and the CSV.
-    const NAME: &'static str;
-
-    fn new() -> Self;
-
-    /// Extract into `out`, panicking on an error the sweep cannot act on.
-    fn extract_into(
-        &mut self,
-        field: &Sphere<Scalar>,
-        shape: &RuntimeShape3,
-        origin: [Scalar; 3],
-        cell_size: Scalar,
-        out: &mut MeshBuffer<Scalar>,
-    );
-}
-
-impl Extractor for MarchingCubes<Scalar> {
-    const NAME: &'static str = "marching_cubes";
-
-    fn new() -> Self {
-        Self::new()
-    }
-
-    fn extract_into(
-        &mut self,
-        field: &Sphere<Scalar>,
-        shape: &RuntimeShape3,
-        origin: [Scalar; 3],
-        cell_size: Scalar,
-        out: &mut MeshBuffer<Scalar>,
-    ) {
-        self.extract(field, shape, origin, cell_size, out)
-            .expect("extraction");
-    }
-}
-
-/// Present, and deliberately **not** swept by `main`.
-///
-/// Adding a fourth row would rewrite `docs/measurements/resolution_sweep.csv`,
-/// and that file is committed evidence: ✗14, M-19, M-20, M-21, M-22 and O-11's
-/// cross-machine comparison all quote exact figures from it. Re-running the
-/// sweep to add Marching Tetrahedra would move every one of those by measurement
-/// noise, so the row waits for M-001, which is the ticket that re-measures the
-/// whole family in one process and one run on purpose.
-impl Extractor for MarchingTetrahedra<Scalar> {
-    const NAME: &'static str = "marching_tetrahedra";
-
-    fn new() -> Self {
-        Self::new()
-    }
-
-    fn extract_into(
-        &mut self,
-        field: &Sphere<Scalar>,
-        shape: &RuntimeShape3,
-        origin: [Scalar; 3],
-        cell_size: Scalar,
-        out: &mut MeshBuffer<Scalar>,
-    ) {
-        self.extract(field, shape, origin, cell_size, out)
-            .expect("extraction");
-    }
-}
-
-impl Extractor for SurfaceNets<Scalar> {
-    const NAME: &'static str = "surface_nets";
-
-    fn new() -> Self {
-        Self::new()
-    }
-
-    fn extract_into(
-        &mut self,
-        field: &Sphere<Scalar>,
-        shape: &RuntimeShape3,
-        origin: [Scalar; 3],
-        cell_size: Scalar,
-        out: &mut MeshBuffer<Scalar>,
-    ) {
-        self.extract(field, shape, origin, cell_size, out)
-            .expect("extraction");
-    }
-}
-
-impl Extractor for DualContouring<Scalar> {
-    const NAME: &'static str = "dual_contouring";
-
-    fn new() -> Self {
-        Self::new()
-    }
-
-    fn extract_into(
-        &mut self,
-        field: &Sphere<Scalar>,
-        shape: &RuntimeShape3,
-        origin: [Scalar; 3],
-        cell_size: Scalar,
-        out: &mut MeshBuffer<Scalar>,
-    ) {
-        self.extract(field, shape, origin, cell_size, out)
-            .expect("extraction");
-    }
-}
+// **Marching Tetrahedra is deliberately not swept**, and the reason outlived
+// this file's own `Extractor` trait, deleted at X-001 in favour of the crate's.
+//
+// Adding a fourth row would rewrite `docs/measurements/resolution_sweep.csv`,
+// and that file is committed evidence: ✗14, M-19, M-20, M-21, M-22 and O-11's
+// cross-machine comparison all quote exact figures from it. Re-running the
+// sweep to add Marching Tetrahedra would move every one of those by measurement
+// noise, so the row waits for M-001, which is the ticket that re-measures the
+// whole family in one process and one run on purpose.
+//
+// A registry to enumerate from now exists — `isomesh::for_each_extractor!` —
+// which makes the three swept here a **choice** rather than an omission. It is
+// still a choice.
 
 fn main() {
     // Cargo passes `--bench` under `cargo bench` and passes no arguments at all
@@ -203,9 +110,9 @@ fn main() {
         "alg", "samples", "n^3", "median ms", "verts", "tris"
     );
 
-    let mut rows = sweep::<MarchingCubes<Scalar>>();
-    rows.extend(sweep::<SurfaceNets<Scalar>>());
-    rows.extend(sweep::<DualContouring<Scalar>>());
+    let mut rows = sweep("marching_cubes", MarchingCubes::<Scalar>::new);
+    rows.extend(sweep("surface_nets", SurfaceNets::<Scalar>::new));
+    rows.extend(sweep("dual_contouring", DualContouring::<Scalar>::new));
 
     let path = write_csv(&rows);
     println!("\nwrote {}", path.display());
@@ -217,12 +124,12 @@ fn main() {
 /// The extractor and its scratch live inside the per-resolution loop, so 256³'s
 /// several hundred megabytes are released before the next resolution rather than
 /// held for the whole sweep.
-fn sweep<E: Extractor>() -> Vec<Row> {
+fn sweep<E: Extractor<Scalar>>(name: &'static str, make: impl Fn() -> E) -> Vec<Row> {
     let field = Sphere::<Scalar>::canonical();
     let mut rows = Vec::with_capacity(RESOLUTIONS.len());
     for n in RESOLUTIONS {
         let (shape, origin, h) = common::grid(&field, n);
-        let mut extractor = E::new();
+        let mut extractor = make();
         let mut mesh = MeshBuffer::<Scalar>::new();
         let mut times = Vec::with_capacity((WARMUP_RUNS + TIMED_RUNS) as usize);
 
@@ -231,7 +138,9 @@ fn sweep<E: Extractor>() -> Vec<Row> {
             // workload runs, not a cold first call.
             mesh.reset();
             let start = Instant::now();
-            extractor.extract_into(&field, &shape, origin, h, &mut mesh);
+            extractor
+                .extract_into(&field, &shape, origin, h, &mut mesh)
+                .expect("extraction");
             times.push(start.elapsed());
             black_box(mesh.triangle_count());
         }
@@ -245,12 +154,12 @@ fn sweep<E: Extractor>() -> Vec<Row> {
         let n_cubed = f64::from(n).powi(3);
         println!(
             "{:<20} {n:>8} {n_cubed:>12.0} {median_ms:>12.3} {:>10} {:>10}",
-            E::NAME,
+            name,
             mesh.vertex_count(),
             mesh.triangle_count()
         );
         rows.push(Row {
-            algorithm: E::NAME,
+            algorithm: name,
             samples: n,
             n_cubed,
             median_ms,

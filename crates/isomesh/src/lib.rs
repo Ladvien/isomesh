@@ -50,6 +50,7 @@ pub mod brush;
 pub mod chunk;
 pub mod collider;
 pub mod dual_contouring;
+pub mod extractor;
 pub mod fields;
 pub mod greedy_quads;
 pub mod hermite;
