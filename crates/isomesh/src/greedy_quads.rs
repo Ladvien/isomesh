@@ -1,4 +1,6 @@
-//! A-005 — blocky meshing with greedy quad merging.
+//! Blocky meshing with greedy quad merging.
+//!
+//! Ticket: A-005.
 //!
 //! The budget end of the tradeoff table, and the comparison baseline for
 //! triangle counts. Every other extractor here places vertices *on* the surface;

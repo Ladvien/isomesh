@@ -8,6 +8,12 @@ touches the core crate's dependency graph.
 26 examples in five tiers. Build them alongside the stage that enables them, not in a batch at the
 end — an algorithm without its example is not done.
 
+> **Amended 2026-08-14 (D-004).** The plan above worked: the built set has since grown past it, to
+> **31 examples in `bevy_isomesh/examples/`** plus **3 headless ones in `crates/isomesh-gpu/examples/`**
+> (`extract_a_sphere`, `gpu_vs_cpu`, `mesh_shader_probe`). This catalog keeps its 2026-08-11 count as
+> planning history; the inventory of record is `ls bevy_isomesh/examples/*.rs`, and the three
+> [demo pages](demos/gameplay.md) carry every example's measured figures.
+
 ---
 
 ## Shared conventions — build this first

@@ -6,6 +6,8 @@ produces a beautiful sphere and falls apart at a chunk seam is not one you can s
 
 Every figure here came from a command you can run, and the command is under each demo.
 
+[← back to the README](../../README.md)
+
 ---
 
 ## A world with a roof over your head
@@ -152,8 +154,15 @@ with `face_bit(0, 0)`. Flying out *and back* puts coarse blocks on both sides of
 seams here are the mirror image — and a mirrored patch is the classic place for an inside-out winding,
 which no manifold or Euler check can see. Across the whole flight: **0 open edges on both sides**.
 
-That zero is only worth something because it can fail. With transitions off, the same worlds report
-**71 open edges on the low side and 102–111 on the high side**:
+That zero comes from an instrument that has itself been through falsification (E-211, M-195). The
+counter originally accepted an edge only within a quarter-cell of the seam plane, and that window was
+structurally blind: Eq-4.2's taper places transition geometry at seam ± w, at least four tolerances
+outside it, so a mirrored-seam winding bug once left 44 edges open while this HUD read zero. The
+counter now scans each seam's own ± w band, and the flight's zero above is the fixed counter's zero.
+
+The zero is also only worth something because it can fail. With transitions off there is no taper —
+the cracks sit exactly on the seam plane, where the old and new counters agree — and the same worlds
+report **71 open edges on the low side and 102–111 on the high side**:
 
 ![The same ladder with transitions off, seams open](../screenshots/e205-lod-flyover-cracked.png)
 

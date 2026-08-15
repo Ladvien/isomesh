@@ -1,4 +1,6 @@
-//! B-003 — the plugin, and meshing that does not run on the main thread.
+//! The plugin, and meshing that does not run on the main thread.
+//!
+//! Ticket: B-003.
 //!
 //! [`mesh`](crate::mesh) turns one extraction into one [`Mesh`](bevy_mesh::Mesh).
 //! This turns a

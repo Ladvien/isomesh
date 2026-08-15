@@ -1,4 +1,6 @@
-//! A-003 — Marching Tetrahedra.
+//! Marching Tetrahedra.
+//!
+//! Ticket: A-003.
 //!
 //! Splits each cell into six tetrahedra and contours each one independently.
 //! Both the decomposition and the case table are **derived at compile time** —

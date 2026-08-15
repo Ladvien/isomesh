@@ -1,4 +1,6 @@
-//! A-013 — welding coincident vertices, and the lattice that finds them.
+//! Welding coincident vertices, and the lattice that finds them.
+//!
+//! Ticket: A-013.
 //!
 //! # What this is for, and what it is not for
 //!
