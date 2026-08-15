@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-122 tickets. Line numbers are stable until something above them is edited — grep the ID if
+123 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -46,6 +46,7 @@ implementation contradicted the ticket.
 | [`A-002d`](#L676) | Trilinear body saddles, from one quadratic |
 | [`A-002e`](#L683) | The eighth reference field, with tunnels in it |
 | [`A-002f`](#L691) | Contours — the cell's cut edges as closed rings |
+| [`A-002g`](#L698) | Disk triangulation and the one interior vertex |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -696,3 +697,8 @@ implementation contradicted the ticket.
 | | | ***Crack-freeness is inherited rather than re-argued.*** Face connectivity is untouched by anything in this module, so ✗11's face-locality property and A-002's `validate_decider_table` over all 16,384 `(case, mask)` pairs keep covering it. That is the structural reason this construction needs no grid-subdivision pass where Custodio's does. |
 | | | ***The split A-002d could not make, made here, and both branches proved reachable (M-214).*** Six body saddles mean tunnel *or* twelve-vertex contour; the saddles cannot say which and the paper's asymptote-side criterion is not pinned down in prose. The ring count says it, which is what the authors' implementation branches on. Measured over 396,877 random surface cells: **394,651 disks, 2,053 tunnels, 173 twelve-vertex contours**, with both rare branches asserted non-zero so neither is dead code. |
 | | | ***Ring lengths come out as exactly `{3, 4, 5, 6, 7, 8, 9, 12}`*** — the set the paper lists — over all 16,384 combinations, with **ten and eleven absent**. That absence is the interesting half: an eleven-ring would leave one cut edge of a twelve-edge cell over, and the parity of the face walk forbids it. At most 4 rings, longest 12, both pinned in both directions. |
+| ☑ | **A-002g** | **Disk triangulation — Grosso §5.3.** The one interior vertex an ambiguous contour is fanned from, and the fan. | M | A-002f |
+| | | ***The `u` pair's lines are crossed and the hexagon is what proves it (M-215).*** A line joining a pair of opposite faces is fixed by the other two coordinates, and the obvious reading — solution `k` gives the line at `(v[k], w[k])` — is right for `v` and `w` and **wrong for `u`**, which pairs `(v₀,w₁)` and `(v₁,w₀)`. Read off the hexagon's ring, where a pair of vertices differing in exactly one coordinate *is* a line, and checked over 1,083 hexagons against the ring rather than against the transcription it agrees with. **The disagreement with the obvious reading is why it was worth deriving**: a copied crossed index looks like a typo to fix, and fixing it would have put the interior vertex off the surface in a third of cells. |
+| | | ***The branch selection is transcribed and the verification is geometric (M-216).*** §5.3 determines neither the four-line case nor which of three lines' three pairwise intersections its "two saddle points" are, so the index selection comes from the authors' program. A transcription cannot be checked by re-reading it — it can be checked by the property it must have. **149,803 interior vertices, every one on the level set to 6.7e-12**, with all three reachable branches fired (99,777 / 32,916 / 17,110) and the five-and-six-line arm separately asserted unreachable so its `None` is not a silent wrong answer. |
+| | | ***No budget moves, and the re-derivation is the point rather than the reuse (M-217).*** The ticket asked for the per-cell bound at `mod.rs:140-141` to be re-derived. It is: §5.3 adds at most **one** cell-local vertex where A-015 budgeted three, and the fan's worst case is **12** triangles against `MAX_TRIANGLES = 12` — the same number A-015 already raised it to, for the same reason. A-002h's tunnel needs exactly three, which is the bound again. |
+| | | *The fan is emitted as codes rather than positions — cut edges by index, the interior vertex as `INTERIOR`, deliberately the same value as `table::CENTROID_BASE` because both name a cell-local vertex no other cell can reach. Wiring it into `extract` is A-002b's, so this ticket ends at a construction that is exhaustively checkable without a grid.* |

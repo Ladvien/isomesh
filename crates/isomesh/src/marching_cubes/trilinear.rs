@@ -486,3 +486,274 @@ pub enum Topology {
     /// counts **7** in a 512²×641 CT skull, against 2,057 tunnels.
     TwelveVertexContour,
 }
+
+/// One of the three pairs of opposite faces, named by the axis its lines run
+/// along.
+///
+/// Pair `U` is the faces `u = 0` and `u = 1`, joined by lines parallel to `u`,
+/// and so on.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Pair {
+    /// Faces `u = 0` and `u = 1`.
+    U = 0,
+    /// Faces `v = 0` and `v = 1`.
+    V = 1,
+    /// Faces `w = 0` and `w = 1`.
+    W = 2,
+}
+
+impl Pair {
+    /// All three, in `u, v, w` order.
+    pub const ALL: [Pair; 3] = [Pair::U, Pair::V, Pair::W];
+}
+
+impl<R: Real> BodySaddles<R> {
+    /// Which of a pair's two lines lie inside the cell, as a two-bit mask.
+    ///
+    /// A line joining one pair of opposite faces is fixed by the *other two*
+    /// coordinates, and it lies inside the cell exactly when both of them do.
+    ///
+    /// # The `u` pair's two solutions are crossed, and this is derived not copied
+    ///
+    /// The obvious reading is that solution `k` contributes the line at
+    /// `(v[k], w[k])`, and for the `v` and `w` pairs that is right. **For the `u`
+    /// pair it is wrong**, and the inner hexagon is what shows it. Consecutive
+    /// hexagon vertices differ in exactly one coordinate, so a pair of vertices
+    /// differing *only* in `u` is a `u`-parallel line; reading them off
+    /// [`inner_hexagon`](Self::inner_hexagon)'s ring gives
+    ///
+    /// ```text
+    /// (u₀,v₀,w₁) ↔ (u₁,v₀,w₁)   →   the u-line at (v₀, w₁)
+    /// (u₀,v₁,w₀) ↔ (u₁,v₁,w₀)   →   the u-line at (v₁, w₀)
+    /// ```
+    ///
+    /// — indices `0,1` and `1,0`, **crossed**. The same reading gives `(u₀,v₀)`
+    /// and `(u₁,v₁)` for the `w` pair and `(u₀,w₀)` and `(u₁,w₁)` for the `v`
+    /// pair, both uncrossed. The authors' implementation agrees, and it was the
+    /// disagreement with the obvious reading that made this worth deriving:
+    /// `the_line_inventory_agrees_with_the_inner_hexagon` checks all three pairs
+    /// against the ring rather than against the transcription (M-215).
+    #[must_use]
+    pub fn lines(&self, pair: Pair) -> u8 {
+        let inside = self.inside;
+        // `(axis, solution)` index pairs, per line, per pair of opposite faces.
+        let needed: [[(usize, usize); 2]; 2] = match pair {
+            // A u-line is fixed by (v, w) — crossed.
+            Pair::U => [[(1, 1), (2, 0)], [(1, 0), (2, 1)]],
+            // A v-line is fixed by (u, w).
+            Pair::V => [[(0, 0), (2, 0)], [(0, 1), (2, 1)]],
+            // A w-line is fixed by (u, v).
+            Pair::W => [[(0, 0), (1, 0)], [(0, 1), (1, 1)]],
+        };
+        let mut mask = 0u8;
+        for (line, coordinates) in needed.iter().enumerate() {
+            if coordinates
+                .iter()
+                .all(|&(axis, k)| inside & coordinate_bit(axis, k) != 0)
+            {
+                mask |= 1 << line;
+            }
+        }
+        mask
+    }
+
+    /// How many of a pair's two lines lie inside the cell.
+    #[must_use]
+    pub fn line_count(&self, pair: Pair) -> u32 {
+        self.lines(pair).count_ones()
+    }
+
+    /// The point where a pair's line `line` crosses the cell, given the value of
+    /// the coordinate it runs along.
+    ///
+    /// The line is fixed in the other two coordinates; `along` supplies the third.
+    ///
+    /// Test-only: nothing in the extractor needs a point *on* a line, only the
+    /// saddles the lines cross at. It exists so
+    /// `the_line_inventory_agrees_with_the_inner_hexagon` can check the pairing
+    /// against the hexagon's ring rather than against the transcription it agrees
+    /// with. A-002h may promote it when the hexagon is meshed.
+    #[cfg(test)]
+    pub(super) fn point_on_line_for_test(&self, pair: Pair, line: usize, along: R) -> [R; 3] {
+        let [u, v, w] = self.coordinate;
+        match pair {
+            Pair::U if line == 0 => [along, v[1], w[0]],
+            Pair::U => [along, v[0], w[1]],
+            Pair::V if line == 0 => [u[0], along, w[0]],
+            Pair::V => [u[1], along, w[1]],
+            Pair::W if line == 0 => [u[0], v[0], along],
+            Pair::W => [u[1], v[1], along],
+        }
+    }
+}
+
+impl<R: Real> BodySaddles<R> {
+    /// The one interior vertex an ambiguous disk contour is fanned from, in the
+    /// cell's own `[0,1]³` coordinates.
+    ///
+    /// Grosso §5.3. A contour of six or fewer vertices that touches no ambiguous
+    /// face is a flat polygon and needs nothing; a contour of six to nine that
+    /// crosses an ambiguous face **twice** cannot be triangulated manifoldly
+    /// without one, *"otherwise a third edge in one of the ambiguous faces has to
+    /// be introduced, violating manifoldness across cells borders."*
+    ///
+    /// `None` when every in-range line belongs to a single pair of opposite faces,
+    /// because then no two lines cross and there is no interior saddle to use —
+    /// and none is needed, since such a contour does not double back.
+    ///
+    /// # This branch structure is the reference implementation's, and the check
+    /// on it is geometric rather than textual
+    ///
+    /// The paper says only *"if there are only two such lines, the additional
+    /// vertex is the intersection point. If there are three such lines, the
+    /// additional inner vertex is the midpoint between the two saddle points"* —
+    /// which does not determine the four-line case, and does not say which of
+    /// three lines' three pairwise intersections the "two saddle points" are. The
+    /// index selection below is therefore transcribed from the authors' program
+    /// (V-31), and **verified by the one property that a transcription error
+    /// cannot survive**: the point it returns must lie *on* the level set.
+    /// `the_interior_vertex_lies_on_the_level_set` checks exactly that against an
+    /// independent evaluation of the interpolant, which is the same instrument
+    /// that validated the inner hexagon.
+    #[must_use]
+    pub fn interior_vertex(&self) -> Option<[R; 3]> {
+        let set = |axis: usize, k: usize| self.inside & coordinate_bit(axis, k) != 0;
+        // A 0/1 weight, so every "select the in-range one" below is an exact
+        // multiply-and-add rather than a branch.
+        let f = |axis: usize, k: usize| {
+            if set(axis, k) { R::ONE } else { R::ZERO }
+        };
+        let count = |a: (usize, usize), b: (usize, usize)| u8::from(set(a.0, a.1) && set(b.0, b.1));
+
+        // Lines per pair of opposite faces. The `u` pair is crossed; see
+        // [`lines`](Self::lines) for why that is derived and not copied.
+        let fc_w = count((0, 0), (1, 0)) + count((0, 1), (1, 1));
+        let fc_v = count((0, 0), (2, 0)) + count((0, 1), (2, 1));
+        let fc_u = count((1, 0), (2, 1)) + count((1, 1), (2, 0));
+        let total = fc_w + fc_v + fc_u;
+
+        // Every line in one pair — parallel lines never cross, so there is no
+        // saddle. Also covers `total == 0`.
+        if total == fc_w || total == fc_v || total == fc_u {
+            return None;
+        }
+
+        let [u, v, w] = self.coordinate;
+        let (uc, vc, wc) = match total {
+            2 if fc_w == 0 => (
+                f(0, 0) * u[0] + f(0, 1) * u[1],
+                f(1, 0) * v[0] + f(1, 1) * v[1],
+                f(1, 0) * w[1] + f(1, 1) * w[0],
+            ),
+            2 if fc_v == 0 => (
+                f(0, 0) * u[0] + f(0, 1) * u[1],
+                f(0, 0) * v[0] + f(0, 1) * v[1],
+                f(0, 0) * w[1] + f(0, 1) * w[0],
+            ),
+            2 => (
+                f(1, 0) * u[0] + f(1, 1) * u[1],
+                f(1, 0) * v[0] + f(1, 1) * v[1],
+                f(1, 0) * w[0] + f(1, 1) * w[1],
+            ),
+            // Three lines: the mean of the two solutions on each axis, which is
+            // the paper's "midpoint between the two saddle points" written so that
+            // an axis with only one solution contributes that one unchanged.
+            3 => (
+                (f(0, 0) * u[0] + f(0, 1) * u[1]) / (f(0, 0) + f(0, 1)),
+                (f(1, 0) * v[0] + f(1, 1) * v[1]) / (f(1, 0) + f(1, 1)),
+                (f(2, 0) * w[0] + f(2, 1) * w[1]) / (f(2, 0) + f(2, 1)),
+            ),
+            4 => {
+                let on = |axis: usize| f(axis, 0) + f(axis, 1);
+                if on(2) == R::ONE {
+                    (
+                        f(2, 0) * u[0] + f(2, 1) * u[1],
+                        f(2, 1) * v[0] + f(2, 0) * v[1],
+                        f(2, 0) * w[0] + f(2, 1) * w[1],
+                    )
+                } else if on(1) == R::ONE {
+                    (
+                        f(1, 0) * u[0] + f(1, 1) * u[1],
+                        f(1, 0) * v[0] + f(1, 1) * v[1],
+                        f(1, 1) * w[0] + f(1, 0) * w[1],
+                    )
+                } else {
+                    (
+                        f(0, 0) * u[0] + f(0, 1) * u[1],
+                        f(0, 0) * v[0] + f(0, 1) * v[1],
+                        f(0, 0) * w[0] + f(0, 1) * w[1],
+                    )
+                }
+            }
+            // Five or six lines is the hexagon's territory, and a cell there is a
+            // tunnel or a twelve-vertex contour rather than a fanned disk. A-002h
+            // owns it; `the_disk_path_never_sees_five_or_six_lines` asserts this
+            // arm is unreachable from the disk path rather than assuming it.
+            _ => return None,
+        };
+        Some([uc, vc, wc])
+    }
+}
+
+/// The code a triangle uses to name the cell's one interior vertex, as opposed
+/// to one of the twelve cut edges.
+///
+/// Deliberately the same value as [`super::table::CENTROID_BASE`]: both name a
+/// **cell-local** vertex that no other cell can reach, which is exactly why
+/// neither is cached and why A-015's index-space budget already accounts for the
+/// slot. What differs is where the position comes from — a centroid averages its
+/// cycle's edge vertices, this one is a saddle of the interpolant
+/// ([`BodySaddles::interior_vertex`]).
+pub const INTERIOR: u8 = EDGE_COUNT as u8;
+
+impl Contours {
+    /// Fan every ring into triangles, naming cut edges by index and the cell's
+    /// interior vertex by [`INTERIOR`].
+    ///
+    /// `interior` says whether [`BodySaddles::interior_vertex`] produced one. When
+    /// it did, rings of more than three vertices fan from it — `k` triangles for a
+    /// ring of `k` — because a ring that crosses an ambiguous face twice cannot be
+    /// closed manifoldly from one of its own vertices without laying a third edge
+    /// in that face. A ring of exactly three is a triangle either way and takes
+    /// the direct emission, as the reference implementation does.
+    ///
+    /// When there is none, every ring fans from its own first vertex: `k − 2`
+    /// triangles, and no interior vertex is created at all.
+    ///
+    /// Winding follows the ring order, which [`super::table::segment_links`]
+    /// already orients — so this inherits A-001's counter-clockwise-from-outside
+    /// convention rather than choosing one.
+    pub fn fan(&self, interior: bool, mut emit: impl FnMut([u8; 3])) {
+        for r in 0..self.count() {
+            let ring = self.ring(r);
+            if ring.len() == 3 {
+                emit([ring[0], ring[1], ring[2]]);
+            } else if interior {
+                for k in 0..ring.len() {
+                    emit([ring[k], ring[(k + 1) % ring.len()], INTERIOR]);
+                }
+            } else {
+                for k in 1..ring.len() - 1 {
+                    emit([ring[0], ring[k], ring[k + 1]]);
+                }
+            }
+        }
+    }
+
+    /// How many triangles [`fan`](Self::fan) will emit.
+    #[must_use]
+    pub fn triangle_count(&self, interior: bool) -> usize {
+        (0..self.count())
+            .map(|r| {
+                let k = self.ring(r).len();
+                if k == 3 {
+                    1
+                } else if interior {
+                    k
+                } else {
+                    k - 2
+                }
+            })
+            .sum()
+    }
+}

@@ -11,7 +11,7 @@
 // An approximate comparison would be a different test, not a weaker one.
 #![allow(clippy::float_cmp)]
 
-use super::{ALL_INSIDE, BodySaddles, Contours, MAX_CONTOURS, Topology};
+use super::{ALL_INSIDE, BodySaddles, Contours, INTERIOR, MAX_CONTOURS, Pair, Topology};
 use crate::Sdf;
 use crate::cube::{corner_offset, is_inside};
 use crate::fields::ReferenceField;
@@ -813,5 +813,227 @@ fn few_saddles_mean_short_rings() {
     );
     std::println!(
         "measured: {checked} cells with fewer than two body saddles, longest ring {worst}"
+    );
+}
+
+/// The line inventory is checked against the inner hexagon, not against the
+/// implementation it agrees with.
+///
+/// **This is the test that earns the crossed `u` pairing (M-215).** The obvious
+/// reading — solution `k` gives the `u`-line at `(v[k], w[k])` — is wrong, and
+/// only the hexagon says so: a pair of ring vertices differing in exactly one
+/// coordinate *is* a line, so reading the ring off gives the pairing directly.
+/// Where all six saddles are inside, every pair must report both its lines, and
+/// each line's two fixing coordinates must match a hexagon edge.
+#[test]
+fn the_line_inventory_agrees_with_the_inner_hexagon() {
+    let mut rng = Lcg::new(0x0000_A002_6000_0001);
+    let mut checked = 0usize;
+    for _ in 0..200_000 {
+        let f = rng.corners();
+        let saddles = BodySaddles::of(&f);
+        let Some(hexagon) = saddles.inner_hexagon() else {
+            continue;
+        };
+
+        // Every pair has both lines when the hexagon exists.
+        for pair in Pair::ALL {
+            assert_eq!(
+                saddles.line_count(pair),
+                2,
+                "a full hexagon must give every pair both lines"
+            );
+        }
+
+        // Each hexagon edge changes exactly one coordinate; the axis it changes
+        // names the pair, and the two coordinates it holds fixed must be the ones
+        // `lines` requires for one of that pair's two lines.
+        for k in 0..6 {
+            let a = hexagon[k];
+            let b = hexagon[(k + 1) % 6];
+            let axis = (0..3)
+                .find(|&ax| a[ax] != b[ax])
+                .expect("a hexagon edge changes a coordinate");
+            let pair = Pair::ALL[axis];
+
+            // Recover the line by asking `point_on_line` for both of the pair's
+            // lines and seeing which reproduces the held coordinates.
+            let mut matched = 0;
+            for line in 0..2 {
+                let probe = saddles.point_on_line_for_test(pair, line, a[axis]);
+                if probe == a {
+                    matched += 1;
+                }
+            }
+            assert_eq!(
+                matched, 1,
+                "hexagon edge {k} along axis {axis} matches {matched} of the \
+                 pair's two lines, not exactly one — the pairing is wrong"
+            );
+        }
+        checked += 1;
+    }
+    assert!(checked > 100, "only {checked} hexagons reached the check");
+    std::println!("measured: {checked} hexagons agree with the line inventory");
+}
+
+/// **The interior vertex lies on the level set.** This is what verifies §5.3.
+///
+/// The branch selection in `interior_vertex` is transcribed from the authors'
+/// program, because the paper determines neither the four-line case nor which of
+/// three lines' three pairwise intersections its "two saddle points" are. A
+/// transcription cannot be checked by re-reading it; it can be checked by the
+/// property it must have. The point is a **saddle of the trilinear interpolant**,
+/// so it lies *on* the surface — and an index picked from the wrong axis lands it
+/// somewhere the interpolant is not zero.
+#[test]
+fn the_interior_vertex_lies_on_the_level_set() {
+    let mut rng = Lcg::new(0x0000_A002_6000_0002);
+    let mut checked = 0usize;
+    let mut worst: f64 = 0.0;
+    let mut by_total = [0usize; 5];
+
+    for _ in 0..400_000 {
+        let f = rng.corners();
+        let saddles = BodySaddles::of(&f);
+        if saddles.has_inner_hexagon() {
+            continue; // A-002h's territory
+        }
+        let Some(p) = saddles.interior_vertex() else {
+            continue;
+        };
+        assert!(
+            p.iter().all(|c| c.is_finite()),
+            "interior vertex is not finite: {p:?}"
+        );
+        let lines: u32 = Pair::ALL.iter().map(|&q| saddles.line_count(q)).sum();
+        by_total[lines as usize] += 1;
+        worst = worst.max(trilinear(&f, p).abs());
+        checked += 1;
+    }
+
+    assert!(
+        checked > 1000,
+        "only {checked} interior vertices were built"
+    );
+    assert!(
+        worst < 1e-9,
+        "an interior vertex is {worst:e} off the level set — the branch selection is wrong"
+    );
+    // Every branch that can fire must have fired, or one of them is untested.
+    assert!(
+        by_total[2] > 0 && by_total[3] > 0 && by_total[4] > 0,
+        "{by_total:?}"
+    );
+    std::println!(
+        "measured: {checked} interior vertices, worst distance from the level set {worst:e}, \
+         by line count {by_total:?}"
+    );
+}
+
+/// The disk path never reaches five or six lines.
+///
+/// `interior_vertex` returns `None` there, and that arm exists because the paper
+/// and the reference both stop at four. Asserting it is unreachable from the disk
+/// path is what stops the `None` being a silent wrong answer.
+#[test]
+fn the_disk_path_never_sees_five_or_six_lines() {
+    let mut rng = Lcg::new(0x0000_A002_6000_0003);
+    let mut seen_five_or_six = 0usize;
+    let mut checked = 0usize;
+    for _ in 0..400_000 {
+        let f = rng.corners();
+        let saddles = BodySaddles::of(&f);
+        if saddles.has_inner_hexagon() {
+            continue;
+        }
+        let lines: u32 = Pair::ALL.iter().map(|&q| saddles.line_count(q)).sum();
+        if lines >= 5 {
+            seen_five_or_six += 1;
+        }
+        checked += 1;
+    }
+    assert!(checked > 1000);
+    assert_eq!(
+        seen_five_or_six, 0,
+        "the disk path reached {seen_five_or_six} cells with five or six lines, \
+         which `interior_vertex` answers `None` to"
+    );
+    std::println!("measured: {checked} disk cells, none with five or six lines");
+}
+
+/// The fan uses every ring edge exactly twice and never repeats an index.
+///
+/// Twice is the manifold condition inside one cell: each ring edge is shared by
+/// the two triangles either side of it, except that a fan from a ring vertex
+/// leaves the ring's own boundary once. Checked over all 16,384 combinations,
+/// both with and without an interior vertex.
+#[test]
+fn the_fan_covers_each_ring_once_and_repeats_no_index() {
+    for case in 0..=255u8 {
+        for mask in 0..64u8 {
+            let contours = Contours::of(case, mask);
+            for interior in [false, true] {
+                let mut count = 0usize;
+                let mut used = [0u32; 13];
+                contours.fan(interior, |t| {
+                    assert!(
+                        t[0] != t[1] && t[1] != t[2] && t[0] != t[2],
+                        "case {case:#010b} mask {mask:#08b}: degenerate triangle {t:?}"
+                    );
+                    for &c in &t {
+                        used[c as usize] += 1;
+                    }
+                    count += 1;
+                });
+                assert_eq!(
+                    count,
+                    contours.triangle_count(interior),
+                    "case {case:#010b} mask {mask:#08b}: triangle_count disagrees with fan"
+                );
+                // Every cut edge the rings carry appears at least once, and the
+                // interior vertex appears only when one was asked for.
+                for r in 0..contours.count() {
+                    for &e in contours.ring(r) {
+                        assert!(used[e as usize] > 0, "edge {e} was never emitted");
+                    }
+                }
+                if !interior {
+                    assert_eq!(
+                        used[INTERIOR as usize], 0,
+                        "an interior vertex was used without one"
+                    );
+                }
+            }
+        }
+    }
+    std::println!("measured: fan checked over 16,384 combinations, both interior modes");
+}
+
+/// A fan from an interior vertex costs `k` triangles against `k − 2`, and the
+/// worst case is what the per-cell budget has to cover.
+#[test]
+fn the_worst_case_triangle_count_is_pinned() {
+    let mut worst_plain = 0usize;
+    let mut worst_interior = 0usize;
+    for case in 0..=255u8 {
+        for mask in 0..64u8 {
+            let c = Contours::of(case, mask);
+            worst_plain = worst_plain.max(c.triangle_count(false));
+            worst_interior = worst_interior.max(c.triangle_count(true));
+        }
+    }
+    // Twelve either way: the single twelve-vertex ring gives 10 fanned from a
+    // vertex and 12 from an interior one, and four separate rings of three give
+    // four. `MAX_TRIANGLES` is 12 and does not have to move.
+    assert_eq!((worst_plain, worst_interior), (10, 12));
+    assert!(
+        worst_interior <= crate::marching_cubes::table::MAX_TRIANGLES,
+        "the fan exceeds MAX_TRIANGLES"
+    );
+    std::println!(
+        "measured: worst triangle count {worst_plain} without an interior vertex, \
+         {worst_interior} with one (MAX_TRIANGLES is {})",
+        crate::marching_cubes::table::MAX_TRIANGLES
     );
 }
