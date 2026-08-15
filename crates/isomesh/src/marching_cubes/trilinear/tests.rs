@@ -2052,3 +2052,75 @@ fn a_singular_face_needs_quantised_data() {
     }
     std::println!("measured: continuous f64 gives {continuous} in {CELLS} cells");
 }
+
+/// **A singular face needs a third routing, and the resolution mask has only two
+/// bits of room (A-002i, M-233).**
+///
+/// This is the blocker, stated as a check rather than as prose. Grosso 2017's
+/// Definition 3.2:
+///
+/// > A topologically correct triangulation across singular cell faces will not
+/// > divide the surface into two branches. The asymptotes of the hyperbolas at the
+/// > singular face including the hyperbola center are part of the isosurface.
+///
+/// On a singular *ambiguous* face all four edges are cut and the level set is the
+/// two crossing asymptotes — so the four cut edges must all meet at the hyperbola
+/// **centre**, a four-valent junction on the face. Both neighbouring cells do the
+/// same and their patches join through that shared point.
+///
+/// [`super::super::table::segment_links`] cannot express it. Its `joined` argument
+/// is **one bit per face**, so a face has exactly two available routings, and this
+/// test asserts what both of them are: two disjoint segments, every cut edge with
+/// exactly one successor, under *either* bit. Neither is a junction, and there is
+/// no third value to ask for.
+///
+/// So the work A-002i owes is not only the face-keyed vertex cache — that part is
+/// determined — but a third face state carried through `Contours`, which is the
+/// representation the whole trilinear path and the 16,384-pair decider validation
+/// rest on. **This test is what will fail** if a third state is ever added, which
+/// is the point: it should have to be deleted deliberately.
+#[test]
+fn a_face_has_only_two_routings_so_a_singular_face_has_nowhere_to_go() {
+    use crate::marching_cubes::table::{AMBIGUOUS_FACES, NO_EDGE, face_bit, segment_links};
+
+    let mut checked = 0usize;
+    for case in 0..=255u8 {
+        let ambiguous = AMBIGUOUS_FACES[case as usize];
+        if ambiguous == 0 {
+            continue;
+        }
+        for axis in 0..3usize {
+            for side in 0..2u8 {
+                let bit = face_bit(axis, side);
+                if ambiguous & bit == 0 {
+                    continue;
+                }
+                // The two routings this face can be given, all else held equal.
+                for joined in [0u8, bit] {
+                    let next = segment_links(case, joined);
+                    // Every cut edge has exactly one successor and one
+                    // predecessor: a permutation, never a junction. A four-valent
+                    // meeting point would need one edge to have three.
+                    let mut seen = [0u8; 12];
+                    for &to in next.iter() {
+                        if to != NO_EDGE {
+                            seen[to as usize] += 1;
+                        }
+                    }
+                    assert!(
+                        seen.iter().all(|&n| n <= 1),
+                        "case {case:#010b} face ({axis},{side}) joined {joined:#08b}: an edge \
+                         has more than one predecessor, so a junction is representable after all"
+                    );
+                    checked += 1;
+                }
+            }
+        }
+    }
+    // Pinned exactly: 192 (case, ambiguous face) pairs, two routings each.
+    assert_eq!(checked, 384, "the ambiguous-face inventory moved");
+    std::println!(
+        "measured: {checked} (case, ambiguous face, bit) routings, every one a permutation \
+         of cut edges — no face junction is representable"
+    );
+}
