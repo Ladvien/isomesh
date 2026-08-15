@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-137 tickets. Line numbers are stable until something above them is edited — grep the ID if
+138 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -61,6 +61,7 @@ implementation contradicted the ticket.
 | [`X-003`](#L796) | The experimental feature, with a real inhabitant |
 | [`X-004`](#L802) | Probabilistic quadrics reduce to our own solve |
 | [`B-010`](#L810) | docs.rs metadata, and docs that open with the code |
+| [`B-011`](#L816) | The Bevy Assets entry, staged rather than submitted |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -798,3 +799,8 @@ implementation contradicted the ticket.
 | | | ***`[package.metadata.docs.rs] all-features = true` on all three manifests.*** It matters more than it did when the ticket was written: X-003 landed a feature-gated `experimental` module, and without this docs.rs would render the crate as though it did not exist — a reader would have to check out the source to learn there was something to enable. |
 | | | ***Both crate headers now open with code rather than with rationale.*** `isomesh`'s opened *"has to serve both a real-time voxel game and a CAD tool"* and `isomesh-gpu`'s with its one architectural rule. Both are the best prose in the crate and both are the wrong first screen — Effective Rust Item 27 splits the jobs (crates.io for **choosing**, docs.rs for **using**), and Carroll's minimalist-instruction finding is that users act rather than read. The rationale is not deleted; it moved under a heading and now follows a working example. |
 | | | *Written as doctests, so the front page cannot rot: `isomesh`'s eleven-line extraction and `isomesh-gpu`'s device-and-mesher snippet both compile on every `cargo test`. The gpu one caught its own error immediately — the first draft invented `headless::device()` and `gpu.device` when the API is `headless::Gpu::new()` and `gpu.device()`, which is exactly the class of mistake an uncompiled example ships with.* |
+| ☑ | **B-011** | **Bevy-ecosystem conventions — the listing, not the changelog.** | S | B-010 |
+| | | ***Two of the three halves were already done, and checking beat assuming.*** `CHANGELOG.md` exists and is maintained per release. The **version-support table also already existed** — `bevy_isomesh 0.0.x | bevy 0.19 | wgpu 29.x` under `## Compatibility` in the crate README — so the ticket's residue was one item, not two. |
+| | | ***The schema is verified against the live repository, not written from memory.*** `Assets/<Category>/` with one `.toml` per entry; `name`, `description` (under 100 characters, no formatting) and `link` required, `image` and `crate` optional — read off `bevyengine/bevy-assets`'s own README and confirmed against two real entries, `bevy_mod_outline.toml` and `bevy_atmosphere.toml`. A submission in the wrong shape is a rejected PR and a wasted round trip, which is the entire risk this ticket carries. |
+| | | ***Staged, not submitted, and that is the ticket's boundary.*** `docs/bevy-assets-submission/` holds the entry and the recipe. **Opening the PR is the maintainer's**: it is outward-facing, it happens under a personal GitHub account, and listing a crate publicly is a claim that it is ready for other people to use. Nothing automated should make that claim. |
+| | | *`Assets/3D` is a judgement call and is recorded as one — the crate meshes 3D volumes, `Shapes` is closer to primitive-geometry helpers, and `bevy_hanabi`, `bevy_mod_outline` and `bevy-hikari` all sit in `3D`. No image ships with it: E-214 is blocked on a capture environment, and the entry is valid without one.* |
