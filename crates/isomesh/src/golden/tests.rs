@@ -225,7 +225,7 @@ fn every_combination_is_covered() {
     // — and `subgrid_marching_tetrahedra` is pinned to one 1D sampling
     // resolution, because M-95 measured that changing it moves every position by
     // about 1e-12 while leaving the topology alone.
-    assert_eq!(entries.len(), 7 * 8 * 3, "{} combinations", entries.len());
+    assert_eq!(entries.len(), 8 * 8 * 3, "{} combinations", entries.len());
     let unique: Vec<String> = {
         let mut keys: Vec<String> = as_pairs(&entries).into_iter().map(|(k, _)| k).collect();
         keys.sort();

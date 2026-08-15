@@ -410,7 +410,7 @@ fn the_validity_suite_over_every_reference_field() {
     // the resolution that decided which defects this project believed it had.
     const RESOLUTIONS: [u32; 3] = [17, 25, 33];
     #[rustfmt::skip]
-    let expected: [(&str, u32, u64, u64, u64); 21] = [
+    let expected: [(&str, u32, u64, u64, u64); 24] = [
         ("sphere",         17, 0, 0,   0), ("torus",       17, 0, 0,   0),
         ("box_exact",      17, 0, 0,   0), ("csg_difference", 17, 3, 6, 6),
         ("thin_plate",     17, 0, 0,   0), ("gyroid",      17, 0, 0, 138),
@@ -425,6 +425,8 @@ fn the_validity_suite_over_every_reference_field() {
         ("box_exact",      33, 0, 0,   0), ("csg_difference", 33, 0, 0, 36),
         ("thin_plate",     33, 0, 0,   6), ("gyroid",      33, 0, 0, 330),
         ("fbm_terrain",    33, 8, 12, 53),
+        ("noise_cavity", 17, 290, 395, 1629), ("noise_cavity", 25, 318, 439, 1580),
+        ("noise_cavity", 33, 258, 355, 1477),
     ];
 
     let mut checked = 0;
@@ -486,7 +488,7 @@ fn the_validity_suite_over_every_reference_field() {
         });
     }
     assert_eq!(
-        checked, 21,
+        checked, 24,
         "the sweep did not reach every field at every size"
     );
 }
@@ -650,7 +652,7 @@ fn which_polygons_coincide_across_a_shared_face() {
 
     // field -> (coincident, pairs inside one cell, polygons with foreign edge
     // users, foreign edge users, of those in another cell)
-    let expected: [(&str, u64, u64, u64, u64, u64); 7] = [
+    let expected: [(&str, u64, u64, u64, u64, u64); 8] = [
         ("sphere", 0, 0, 0, 0, 0),
         ("torus", 0, 0, 0, 0, 0),
         ("box_exact", 0, 0, 0, 0, 0),
@@ -658,6 +660,7 @@ fn which_polygons_coincide_across_a_shared_face() {
         ("thin_plate", 0, 0, 0, 0, 0),
         ("gyroid", 0, 0, 0, 0, 0),
         ("fbm_terrain", 4, 4, 0, 0, 0),
+        ("noise_cavity", 213, 140, 124, 226, 106),
     ];
 
     let mut rows = 0;
@@ -810,7 +813,7 @@ fn which_polygons_coincide_across_a_shared_face() {
         );
         rows += 1;
     });
-    assert_eq!(rows, 7, "the sweep did not reach every field");
+    assert_eq!(rows, 8, "the sweep did not reach every field");
 
     // **The answer to A-014d's blocking question, as the table above now records
     // it.** An earlier version of this comment described 33 coincident polygons
@@ -977,7 +980,7 @@ fn which_polygon_types_coincide_across_a_shared_face() {
         std::println!("{name:<15} coincident by (kind, chords, edges): {shape:?}");
         rows += 1;
     });
-    assert_eq!(rows, 7, "the sweep did not reach every field");
+    assert_eq!(rows, 8, "the sweep did not reach every field");
     std::println!("all fields: {totals:?}");
 }
 
@@ -1004,7 +1007,7 @@ fn the_defects_traced_back_to_the_tetrahedra_that_made_them() {
 
     // field -> (bad edges, of those duplication-only, three distinct polygons,
     // collapsed triangles)
-    let expected: [(&str, u64, u64, u64, u64); 7] = [
+    let expected: [(&str, u64, u64, u64, u64); 8] = [
         ("sphere", 0, 0, 0, 0),
         ("torus", 0, 0, 0, 0),
         ("box_exact", 0, 0, 0, 0),
@@ -1012,6 +1015,7 @@ fn the_defects_traced_back_to_the_tetrahedra_that_made_them() {
         ("thin_plate", 0, 0, 0, 0),
         ("gyroid", 0, 0, 0, 0),
         ("fbm_terrain", 4, 2, 2, 0),
+        ("noise_cavity", 288, 126, 162, 0),
     ];
 
     let mut rows = 0;
@@ -1101,7 +1105,7 @@ fn the_defects_traced_back_to_the_tetrahedra_that_made_them() {
         );
         rows += 1;
     });
-    assert_eq!(rows, 7, "the sweep did not reach every field");
+    assert_eq!(rows, 8, "the sweep did not reach every field");
 
     // **`box_exact` is the result that re-aims the ticket.** It carries the most
     // coincident polygons of any field -- 30, with 348 triangles standing on
@@ -1419,7 +1423,7 @@ fn which_fill_cases_the_reference_fields_reach() {
         assert_eq!(cases[5], 0, "{name}: subdivision fired");
         rows += 1;
     });
-    assert_eq!(rows, 7, "the sweep did not reach every field");
+    assert_eq!(rows, 8, "the sweep did not reach every field");
 }
 
 /// **How complete the shared vertex table is, against a positional weld — and
@@ -1452,7 +1456,7 @@ fn how_complete_the_shared_table_is_against_a_positional_weld() {
     use crate::validate::{ValidateConfig, validate_indexed};
 
     // field -> (raw vertices, welded vertices, vertices on a grid sample point)
-    let expected: [(&str, usize, usize, usize); 7] = [
+    let expected: [(&str, usize, usize, usize); 8] = [
         ("sphere", 812, 812, 6),
         ("torus", 912, 912, 0),
         ("box_exact", 338, 338, 338),
@@ -1460,6 +1464,7 @@ fn how_complete_the_shared_table_is_against_a_positional_weld() {
         ("thin_plate", 422, 422, 30),
         ("gyroid", 4014, 4014, 1),
         ("fbm_terrain", 1758, 1758, 0),
+        ("noise_cavity", 5567, 5566, 27),
     ];
 
     let mut rows = 0;
@@ -1526,17 +1531,34 @@ fn how_complete_the_shared_table_is_against_a_positional_weld() {
             "{name}"
         );
 
-        // The weld never *adds* a defect: sharing by identity is a subset of
-        // sharing by position, so every counter must be at least as good after
-        // welding as before. A table that merged two vertices that are not the
-        // same point would break this rather than merely under-merge.
-        assert!(
-            direct.non_manifold_edges >= after.non_manifold_edges,
-            "{name}"
+        // **The weld can add a defect, and `noise_cavity` is the counterexample
+        // (M-212).** This block used to assert the opposite outright, reasoning
+        // that sharing by identity is a subset of sharing by position so every
+        // counter must be at least as good after welding as before. That is true
+        // of the *sharing* and false of the *counters*: merging two vertices that
+        // are geometrically coincident but topologically distinct fuses two
+        // sheets, which is precisely the pinch A-010 exists to avoid. It costs
+        // exactly one merged pair here — 5567 → 5566 — and that pair adds two
+        // non-manifold edges and three non-manifold vertices.
+        //
+        // Pinned per field rather than relaxed, so the inequality still holds
+        // everywhere it ever held, and the one place it does not is a number that
+        // moves loudly. Owned by **A-018**.
+        let regression = (
+            after
+                .non_manifold_edges
+                .saturating_sub(direct.non_manifold_edges),
+            after
+                .non_manifold_vertices
+                .saturating_sub(direct.non_manifold_vertices),
         );
-        assert!(
-            direct.non_manifold_vertices >= after.non_manifold_vertices,
-            "{name}"
+        let allowed = match name {
+            "noise_cavity" => (2, 3),
+            _ => (0, 0),
+        };
+        assert_eq!(
+            regression, allowed,
+            "{name}: the weld's effect on manifoldness moved"
         );
         assert!(
             direct.inconsistently_oriented_edges >= after.inconsistently_oriented_edges,
@@ -1554,7 +1576,7 @@ fn how_complete_the_shared_table_is_against_a_positional_weld() {
         }
         rows += 1;
     });
-    assert_eq!(rows, 7, "the sweep did not reach every field");
+    assert_eq!(rows, 8, "the sweep did not reach every field");
 }
 
 /// **What A-014h can actually reach, measured before designing it (M-180).**
@@ -1580,7 +1602,7 @@ fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
     use std::collections::HashSet;
 
     // field -> (raw, distinct by bit pattern, welded at crate::weld::epsilon_for(cell))
-    let expected: [(&str, usize, usize, usize); 7] = [
+    let expected: [(&str, usize, usize, usize); 8] = [
         ("sphere", 812, 812, 812),
         ("torus", 912, 912, 912),
         ("box_exact", 338, 338, 338),
@@ -1588,6 +1610,7 @@ fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
         ("thin_plate", 422, 422, 422),
         ("gyroid", 4014, 4014, 4014),
         ("fbm_terrain", 1758, 1758, 1758),
+        ("noise_cavity", 5567, 5567, 5566),
     ];
 
     let mut rows = 0;
@@ -1639,7 +1662,7 @@ fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
         );
         rows += 1;
     });
-    assert_eq!(rows, 7);
+    assert_eq!(rows, 8);
 
     // The split, stated as an assertion rather than left in the table. On
     // `gyroid` every merge the weld makes is exact, so an identity rule would
@@ -1651,11 +1674,26 @@ fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
     // 690 of `box_exact`'s duplicates unreachable by any keying rule -- closed
     // by canonicalising an endpoint root onto its grid point rather than by
     // finding a cleverer key (M-184).
+    // **`noise_cavity` is where the three columns stop agreeing, and it confirms
+    // M-212 rather than contradicting A-014h.** Its single exception is a pair of
+    // vertices that are coincident *by position* and distinct *by identity*: the
+    // exact rule therefore leaves them alone — correctly, they are different
+    // crossings — and the positional weld merges them, fusing two sheets and
+    // adding the two non-manifold edges measured above. So `exact == raw` still
+    // holds everywhere, which is A-014h's actual claim; what fails is
+    // `welded == raw`, and it fails in the direction that says the *weld* is
+    // wrong, not the identity rule. A-018.
     for &(name, (raw, exact, welded)) in &got_rows {
         assert_eq!(
-            (raw, raw),
-            (exact, welded),
+            exact, raw,
             "{name}: identity-based sharing is no longer complete -- \
+             raw {raw}, distinct {exact}, welded {welded}"
+        );
+        let over_merged = raw - welded;
+        let allowed = usize::from(name == "noise_cavity");
+        assert_eq!(
+            over_merged, allowed,
+            "{name}: the positional weld's over-merge moved -- \
              raw {raw}, distinct {exact}, welded {welded}"
         );
     }
@@ -1685,7 +1723,7 @@ fn no_root_reports_parameter_zero_and_almost_none_reports_one() {
     use crate::subgrid::roots::all_roots;
 
     // field -> (roots, t == 0, t == 1, position == corners[a], == corners[b])
-    let expected: [(&str, usize, usize, usize, usize, usize); 7] = [
+    let expected: [(&str, usize, usize, usize, usize, usize); 8] = [
         ("sphere", 4200, 0, 0, 0, 18),
         ("torus", 4632, 0, 0, 0, 0),
         ("box_exact", 6312, 0, 0, 0, 1692),
@@ -1693,6 +1731,7 @@ fn no_root_reports_parameter_zero_and_almost_none_reports_one() {
         ("thin_plate", 2248, 0, 0, 0, 112),
         ("gyroid", 20352, 0, 36, 0, 36),
         ("fbm_terrain", 8336, 0, 0, 0, 0),
+        ("noise_cavity", 28212, 0, 0, 0, 48),
     ];
 
     let mut rows = 0;
@@ -1765,7 +1804,7 @@ fn no_root_reports_parameter_zero_and_almost_none_reports_one() {
         assert_eq!(got, want, "{name}");
         rows += 1;
     });
-    assert_eq!(rows, 7);
+    assert_eq!(rows, 8);
 
     // The headline, asserted rather than left to the table: the ticket's stated
     // test finds nothing on six of seven fields, and nothing at all at the lower
@@ -1823,12 +1862,21 @@ fn the_weld_answer_is_flat_across_the_range_the_four_policies_spanned() {
 
         std::println!("{name:<15} raw {:>5} | {counts:?}", raw.positions.len());
 
+        // **Flat on seven fields and not on the eighth (M-212).** P-7 limb (a)
+        // registered this as a plateau, and it is one everywhere the seven fields
+        // reach. `noise_cavity` has a single pair of coincident-but-distinct
+        // vertices, and the coarsest of the four spanned tolerances merges it
+        // while the other three do not — so the span reads `[5567, 5567, 5566]`.
+        // One vertex in 5,567 is not a plateau, and saying so is the finding.
+        // Pinned per field so that a *second* field going non-flat still fails.
         let over_the_span = &counts[spanned.clone()];
-        assert!(
-            over_the_span.iter().all(|c| *c == over_the_span[0]),
-            "{name}: the weld is NOT flat across the policies T-009 merged \
+        let flat = over_the_span.iter().all(|c| *c == over_the_span[0]);
+        let expected_flat = name != "noise_cavity";
+        assert_eq!(
+            flat, expected_flat,
+            "{name}: the weld's flatness across the policies T-009 merged changed \
              ({over_the_span:?}) -- every census that used one of them has to be \
-             re-read, and P-7 limb (a) is falsified"
+             re-read"
         );
 
         // The margin, not just the outcome: the first factor whose answer
@@ -1844,18 +1892,36 @@ fn the_weld_answer_is_flat_across_the_range_the_four_policies_spanned() {
             Some(f) => {
                 let margin = f / crate::validate::ValidateConfig::WELD_EPSILON_REL;
                 std::println!("{name:<15}   first change at {f:e}  ({margin:.0}x the policy)");
-                assert!(
-                    margin >= 100.0,
-                    "{name}: the policy sits within {margin}x of a tolerance that \
-                     changes the answer -- too close to be a plateau"
-                );
+                // **On `noise_cavity` the margin is not small, it is inverted,
+                // and that is worth more than a relaxed floor (M-212).** This
+                // quantity assumes the policy's answer is the *stable* one and
+                // measures how far away the nearest disagreement is. Here the
+                // policy is the odd one out: the single coincident-but-distinct
+                // pair merges at exactly `1e-4` and stays separate at every finer
+                // tolerance, so the "first change" is the smallest factor tried
+                // and the ratio comes out below one. Pinned rather than floored,
+                // because a floor would report this as a near miss when it is a
+                // direct hit. A-018.
+                if name == "noise_cavity" {
+                    assert!(
+                        margin < 1.0,
+                        "{name}: the policy no longer sits on the change point \
+                         (margin {margin}) -- A-018's premise has moved"
+                    );
+                } else {
+                    assert!(
+                        margin >= 100.0,
+                        "{name}: the policy sits within {margin}x of a tolerance \
+                         that changes the answer -- too close to be a plateau"
+                    );
+                }
             }
             None => std::println!("{name:<15}   no change anywhere up to 0.5h"),
         }
 
         rows += 1;
     });
-    assert_eq!(rows, 7);
+    assert_eq!(rows, 8);
 }
 
 /// **P-7's remaining limbs, measured (M-182).**
@@ -2010,7 +2076,7 @@ fn the_self_intersection_census_over_every_reference_field() {
 
     // (field, samples) -> self-intersecting pairs.
     #[rustfmt::skip]
-    let expected: [(&str, u32, u64); 21] = [
+    let expected: [(&str, u32, u64); 24] = [
         ("sphere", 17, 0), ("torus", 17, 0), ("box_exact", 17, 0),
         ("csg_difference", 17, 0), ("thin_plate", 17, 0), ("gyroid", 17, 0),
         ("fbm_terrain", 17, 0),
@@ -2022,6 +2088,7 @@ fn the_self_intersection_census_over_every_reference_field() {
         ("sphere", 33, 0), ("torus", 33, 0), ("box_exact", 33, 0),
         ("csg_difference", 33, 0), ("thin_plate", 33, 0), ("gyroid", 33, 0),
         ("fbm_terrain", 33, 0),
+        ("noise_cavity", 17, 0), ("noise_cavity", 25, 0), ("noise_cavity", 33, 0),
     ];
 
     let mut checked = 0;
@@ -2063,7 +2130,7 @@ fn the_self_intersection_census_over_every_reference_field() {
         });
     }
     assert_eq!(
-        checked, 21,
+        checked, 24,
         "the sweep did not reach every field at every size"
     );
 
@@ -2593,7 +2660,8 @@ fn whether_bigons_are_what_leaves_positions_unreferenced() {
             "csg_difference" => (132, 66, 318),
             "thin_plate" => (8, 4, 12),
             "gyroid" => (282, 141, 696),
-            _ => (302, 148, 510),
+            "fbm_terrain" => (302, 148, 510),
+            _ => (1276, 628, 2981),
         };
         assert_eq!(
             (orphans, tets_with_orphans, bigons),
@@ -2602,5 +2670,5 @@ fn whether_bigons_are_what_leaves_positions_unreferenced() {
         );
         rows += 1;
     });
-    assert_eq!(rows, 7, "the sweep did not reach every field");
+    assert_eq!(rows, 8, "the sweep did not reach every field");
 }

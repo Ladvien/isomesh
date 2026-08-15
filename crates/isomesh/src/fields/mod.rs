@@ -1,4 +1,4 @@
-//! The seven reference fields.
+//! The eight reference fields.
 //!
 //! One definition, shared by tests, benchmarks and every example, so that
 //! comparisons between algorithms are actually comparisons between algorithms.
@@ -16,7 +16,7 @@
 //! anti-drift mechanism**: nothing anywhere hard-codes a radius or a half-extent,
 //! so changing a parameter changes it everywhere at once. Use
 //! [`for_each_reference_field!`](crate::for_each_reference_field) to sweep all
-//! seven without dynamic dispatch.
+//! eight without dynamic dispatch.
 //!
 //! # Not all of them are closed, and not all of them are distances
 //!
@@ -27,7 +27,7 @@
 //! asks the field what to expect rather than hard-coding `χ == 2` and
 //! discovering the problem later.
 
-mod noise;
+pub(crate) mod noise;
 
 use crate::vec3::{length, scale, sub};
 use crate::{Real, Sdf};
@@ -90,13 +90,13 @@ pub trait ReferenceField: Sdf {
 ///     let _ = field.sample(lo);
 ///     n += 1;
 /// });
-/// assert_eq!(n, 7);
+/// assert_eq!(n, 8);
 /// ```
 ///
 /// # It looks like a closure and it is not
 ///
 /// The `|name, field|` is syntax, not a closure: the body is **inlined once per
-/// field**, because the seven fields are seven different types and no single
+/// field**, because the eight fields are eight different types and no single
 /// closure can take all of them. So a `return` in the body returns from the
 /// **enclosing function**, not from one iteration — a test that skips fields
 /// with `if name != "…" { return; }` exits on `sphere` and silently stops,
@@ -142,6 +142,11 @@ macro_rules! for_each_reference_field {
         {
             let $name = "fbm_terrain";
             let $field = $crate::fields::FbmTerrain::<$scalar>::canonical();
+            $body
+        }
+        {
+            let $name = "noise_cavity";
+            let $field = $crate::fields::noise_cavity::<$scalar>();
             $body
         }
     }};
@@ -783,6 +788,162 @@ impl<R: Real> ReferenceField for CappedGyroid<R> {
     }
     fn expected_euler(&self) -> Option<i64> {
         None // genus depends on how many tunnels the cap encloses
+    }
+    fn is_exact_distance(&self) -> bool {
+        false
+    }
+}
+
+// ─── volumetric noise ───────────────────────────────────────────────────────
+
+/// A single octave of 3D gradient noise, as a volume rather than a heightfield.
+///
+/// `f(p) = perlin(frequency · p) − iso`, so the surface is the boundary between
+/// the regions where the noise is below and above `iso` — the blobby, branching
+/// shape a voxel game gets from carving caves out of solid rock, and the shape
+/// [`FbmTerrain`] cannot produce because it only ever samples a horizontal plane.
+///
+/// # Why this field exists, and why noise rather than another analytic solid
+///
+/// Every other field here has an *interior ambiguity* rate of exactly zero.
+/// Measured over all seven at 17³, 33³ and 65³: **not one of 68,385 surface cells
+/// has six body saddles**, and only five cells in the whole sweep reach even five
+/// (M-208). So the trilinear interpolant's tunnel case — the thing MC33's interior
+/// rule exists for — was unreachable by this crate's own test suite, and a
+/// per-cell proof was all A-002's series could ever have got.
+///
+/// Smooth analytic solids do not produce tunnels because they are too smooth: a
+/// tunnel needs the field to reverse twice across one cell, and a sphere or a box
+/// never does. Both papers behind MC33's corrections used **randomly generated
+/// scalar fields** for exactly this reason — Custodio et al. count their
+/// non-manifold case *"once in 10000"* random 5×5×5 grids, and Grosso's own tunnel
+/// statistics come from CT data and random volumes. Gradient noise is the smooth,
+/// deterministic, analytically differentiable version of the same thing.
+///
+/// # The parameters are searched, and `iso` may not be zero
+///
+/// `frequency` and `iso` were **searched** rather than chosen — over 610
+/// combinations, keeping only those whose mesh is *closed* at 17³, 25³ and 33³
+/// **and** which reach six body saddles at all three rather than at a lucky one.
+/// 97 combinations qualify, so this is a plateau rather than a knife edge; these
+/// are the best of them (M-209).
+///
+/// **`iso` is deliberately not zero, and that is not a tuning choice.** Perlin
+/// noise is *exactly* zero at every point of its own integer lattice — measured,
+/// `0.000e0` at all six lattice points probed, against `1.5e-1`-ish just off it.
+/// So the zero level set of gradient noise **contains the whole lattice**, which
+/// makes the surface pass through a regular array of its own critical points; the
+/// first version of this field used `iso = 0` and tripped
+/// [`Sdf::gradient`](crate::Sdf)'s zero-gradient assertion during extraction
+/// (M-210). Any non-zero level avoids the lattice entirely.
+///
+/// # Undersampling is the point, not a defect
+///
+/// The features here are about `1 / frequency ≈ 0.29` across while the coarsest
+/// golden grid has cells `0.25` across, so this field is **deliberately sampled
+/// near its own feature size**. That is not sloppiness: a tunnel requires the
+/// field to reverse twice across a single cell, which cannot happen when the cell
+/// is small relative to the features. Grosso reports the same relationship from
+/// the other end — refining a volume with 16 tunnels twice leaves **one** — and
+/// it reproduces here, six-saddle cells thinning to **zero** by 65³.
+///
+/// The frequency is also the **gentlest** that still reaches the configuration at
+/// all three golden resolutions, and that is deliberate too. Volumetric noise
+/// sampled near its feature size is hard on every extractor, not just on the
+/// interior rule: at frequency `4.9` this field reaches four times as many
+/// six-saddle cells and roughly **quadruples** Subgrid Marching Tetrahedra's
+/// non-manifold and flipped-edge counts, which is collateral rather than coverage
+/// (M-209). The ticket asked for a field that reaches the configuration, not one
+/// that maximises it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct NoiseVolume<R: Real> {
+    /// Which noise field. Any `u32` gives a different but equally valid one.
+    pub seed: u32,
+    /// Spatial frequency. The features are about `1 / frequency` across.
+    pub frequency: R,
+    /// Level set to extract. Zero gives the noise's own balanced surface.
+    pub iso: R,
+}
+
+impl<R: Real> NoiseVolume<R> {
+    /// The searched parameters: frequency `3.45`, iso `0.25`.
+    ///
+    /// The seed is [`FbmTerrain`]'s, deliberately — the two fields drive the same
+    /// generator through different domains (a horizontal plane against the whole
+    /// volume) and sharing it means one fewer arbitrary constant, not one more
+    /// coincidence.
+    #[must_use]
+    pub fn canonical() -> Self {
+        Self {
+            seed: 0x5EED_1234,
+            frequency: R::from_f64(3.45),
+            iso: R::from_f64(0.25),
+        }
+    }
+}
+
+impl<R: Real> Default for NoiseVolume<R> {
+    fn default() -> Self {
+        Self::canonical()
+    }
+}
+
+impl<R: Real> Sdf for NoiseVolume<R> {
+    type Scalar = R;
+
+    #[inline]
+    fn sample(&self, p: [R; 3]) -> R {
+        let (n, _) = noise::perlin(scale(p, self.frequency), self.seed);
+        n - self.iso
+    }
+
+    #[inline]
+    fn gradient(&self, p: [R; 3]) -> [R; 3] {
+        // Chain rule: the noise is evaluated at `frequency · p`, so its gradient
+        // scales by `frequency`. Analytic, from the same evaluation as the value —
+        // `perlin` returns both, which is why this field can be `ReferenceField`
+        // at all (`fields/tests.rs` checks the analytic gradient against a central
+        // difference, and a finite-difference stand-in would be comparing a
+        // difference with itself).
+        let (_, g) = noise::perlin(scale(p, self.frequency), self.seed);
+        scale(g, self.frequency)
+    }
+}
+
+/// [`NoiseVolume`] capped to a sphere, so that it is a closed surface.
+pub type NoiseCavity<R> = Intersection<NoiseVolume<R>, Sphere<R>>;
+
+/// The canonical volumetric-noise entry: [`NoiseVolume::canonical`] intersected
+/// with a sphere of radius `1.5`, over the `[-2, 2]³` domain.
+///
+/// Capped for [`CappedGyroid`]'s reason: an uncapped noise level set has
+/// **boundary** wherever the sampling box cuts it, so its Euler characteristic is
+/// neither `2` nor predictable. The cap sits half a unit inside the domain wall.
+/// Its genus is not known in closed form — it depends on how many noise blobs the
+/// sphere happens to enclose — so
+/// [`expected_euler`](ReferenceField::expected_euler) is `None` and the observed
+/// value belongs in a golden fixture, exactly as for the gyroid.
+#[must_use]
+pub fn noise_cavity<R: Real>() -> NoiseCavity<R> {
+    Intersection {
+        a: NoiseVolume::canonical(),
+        b: Sphere {
+            center: [R::ZERO; 3],
+            radius: R::from_f64(1.5),
+        },
+    }
+}
+
+impl<R: Real> ReferenceField for NoiseCavity<R> {
+    const NAME: &'static str = "noise_cavity";
+    fn domain(&self) -> ([R; 3], [R; 3]) {
+        cube_domain(2.0)
+    }
+    fn closed_in_domain(&self) -> bool {
+        true
+    }
+    fn expected_euler(&self) -> Option<i64> {
+        None // genus depends on how many noise blobs the cap encloses
     }
     fn is_exact_distance(&self) -> bool {
         false

@@ -514,7 +514,7 @@ fn the_gate_is_chosen_by_the_field_not_by_the_test() {
         }
         checked += 1;
     });
-    assert_eq!(checked, 7);
+    assert_eq!(checked, 8);
 }
 
 /// Freezes the rendered block. It is the thing a golden-hash regression will

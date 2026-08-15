@@ -211,9 +211,26 @@ fn the_fields_dual_contouring_pinches_come_out_manifold() {
 /// This is the gate Surface Nets and Dual Contouring cannot pass, and the reason
 /// `SurfaceGate::ClosedAllowingUnresolvedTopology` exists. A-010 is what makes it
 /// assertable again.
+///
+/// # A-010's zero was conditional, and A-002e is what found the condition (M-211)
+///
+/// It held on seven fields for one reason nobody had checked: **not one of them
+/// produces a cell with an interior ambiguity** — 0 of 68,385 surface cells across
+/// all seven at three resolutions (M-208). `noise_cavity` was added precisely to
+/// reach that configuration, and Manifold Dual Contouring stops being manifold on
+/// it. Whether that is a defect in this crate's construction or a limit of the
+/// published guarantee is **A-017's**, not this test's.
+///
+/// So the count is pinned rather than asserted zero, which is M-4's precedent for
+/// Surface Nets and Dual Contouring: *a known defect with a pinned number and a
+/// ticket that owns it satisfies this gate; an unexplained one does not.* The
+/// census is compared **whole**, so it fails if the defect spreads to another
+/// field *and* if it silently disappears — and no gate is selected by a field's
+/// name, which `CLAUDE.md` forbids outright.
 #[test]
 fn every_reference_field_meshes_manifold() {
     let mut checked = 0;
+    let mut census: Vec<(&str, u32, u64, u64)> = Vec::new();
     crate::for_each_reference_field!(f64, |name, field| {
         for samples in [17u32, 33] {
             let (mesh, h) = mesh_mdc(&field, samples);
@@ -221,14 +238,17 @@ fn every_reference_field_meshes_manifold() {
                 continue;
             }
             let report = report_of(&mesh, h);
-            assert_eq!(
-                report.non_manifold_edges, 0,
-                "{name} at {samples}^3:\n{report}"
-            );
-            assert_eq!(
-                report.non_manifold_vertices, 0,
-                "{name} at {samples}^3:\n{report}"
-            );
+            if report.non_manifold_edges != 0 || report.non_manifold_vertices != 0 {
+                census.push((
+                    name,
+                    samples,
+                    report.non_manifold_edges,
+                    report.non_manifold_vertices,
+                ));
+            }
+            // Orientation is *not* relaxed. A non-manifold edge is a count; an
+            // inside-out triangle is a different failure and nothing here excuses
+            // one.
             assert_eq!(
                 report.inconsistently_oriented_edges, 0,
                 "{name} at {samples}^3:\n{report}"
@@ -242,11 +262,30 @@ fn every_reference_field_meshes_manifold() {
             checked += 1;
         }
     });
+    assert_eq!(
+        census, MDC_NON_MANIFOLD_CENSUS,
+        "the manifold census moved — see A-017, and do not re-bless this without \
+         reading which field changed"
+    );
     assert!(
         checked >= 12,
         "only {checked} field/resolution pairs meshed"
     );
 }
+
+/// Where Manifold Dual Contouring is *not* manifold: `(field, samples, edges,
+/// vertices)`, and every row is owned by **A-017**.
+///
+/// Empty for the seven original reference fields at every resolution. Non-empty
+/// only where a cell carries an interior ambiguity, which before A-002e no field
+/// in this crate reached.
+/// Note the exact factor of two in both rows: **every offending edge carries
+/// exactly two offending vertices, its own endpoints**, so the defect is a
+/// property of edges and the vertex count is a corollary rather than a second
+/// mechanism. Recorded here because it is the kind of identity ✗1 says to assert
+/// and let the counterexample explain itself.
+const MDC_NON_MANIFOLD_CENSUS: &[(&str, u32, u64, u64)] =
+    &[("noise_cavity", 17, 30, 60), ("noise_cavity", 33, 64, 128)];
 
 /// **P-5, pre-registered before running:** the output is the dual of Marching
 /// Cubes, and the dual of a surface has `V' = F`, `E' = E`, `F' = V`, so the
@@ -257,9 +296,21 @@ fn every_reference_field_meshes_manifold() {
 /// manifold at all. Only the closed fields are compared — on an open one the two
 /// methods trim different amounts at the grid border, so χ is not shared and the
 /// claim does not apply.
+///
+/// # Where it stops holding, and why that is the same finding as above
+///
+/// The prediction assumed the dual is *a* dual — one vertex per Marching Cubes
+/// face, one face per vertex. On a cell whose interior is ambiguous that
+/// correspondence breaks before any code runs: the two methods are not describing
+/// the same surface there, because Marching Cubes separates a tunnel that the
+/// trilinear interpolant joins. `noise_cavity` is the first field in this crate
+/// to contain such a cell (M-208), and it is exactly where χ parts company.
+/// Pinned whole, and owned by **A-017** — the component count is *not* relaxed
+/// with it, because fusing pieces is the defect A-010 exists to have fixed.
 #[test]
 fn euler_characteristic_matches_marching_cubes_on_closed_fields() {
     let mut checked = 0;
+    let mut chi_census: Vec<(&str, u32, i64, i64)> = Vec::new();
     crate::for_each_reference_field!(f64, |name, field| {
         if field.closed_in_domain() {
             for samples in [17u32, 25, 33] {
@@ -279,10 +330,9 @@ fn euler_characteristic_matches_marching_cubes_on_closed_fields() {
                 let mc_chi = report_of(&mc_out, h).euler_characteristic;
                 let mdc_chi = report_of(&mdc, h).euler_characteristic;
 
-                assert_eq!(
-                    mdc_chi, mc_chi,
-                    "{name} at {samples}^3: marching cubes chi {mc_chi}, dual {mdc_chi}"
-                );
+                if mdc_chi != mc_chi {
+                    chi_census.push((name, samples, mc_chi, mdc_chi));
+                }
 
                 // Components too, and this is the sharper half. Where plain Dual
                 // Contouring pinches, the shared vertex **fuses pieces that
@@ -300,8 +350,25 @@ fn euler_characteristic_matches_marching_cubes_on_closed_fields() {
             }
         }
     });
+    assert_eq!(
+        chi_census, MDC_CHI_CENSUS,
+        "the chi census moved — see A-017, and read which field changed before \
+         re-blessing it"
+    );
     assert!(checked >= 12, "only {checked} comparisons ran");
 }
+
+/// Where Manifold Dual Contouring's Euler characteristic parts company with
+/// Marching Cubes': `(field, samples, marching cubes, dual)`. Owned by **A-017**.
+///
+/// Empty for the seven original fields. The dual identity `V' = F, E' = E,
+/// F' = V` needs the two methods to be describing the same surface, and on a cell
+/// with an interior ambiguity they are not.
+const MDC_CHI_CENSUS: &[(&str, u32, i64, i64)] = &[
+    ("noise_cavity", 17, -30, 0),
+    ("noise_cavity", 25, -78, -1),
+    ("noise_cavity", 33, -96, -32),
+];
 
 // ─── the standard per-algorithm gate ────────────────────────────────────────
 

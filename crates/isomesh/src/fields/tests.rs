@@ -276,7 +276,7 @@ fn reference_field_names_match_the_sweep() {
         count += 1;
         assert!(!name.is_empty());
     });
-    assert_eq!(count, 7);
+    assert_eq!(count, 8);
 
     assert_eq!(Sphere::<f64>::NAME, "sphere");
     assert_eq!(Torus::<f64>::NAME, "torus");
@@ -285,6 +285,7 @@ fn reference_field_names_match_the_sweep() {
     assert_eq!(ThinPlate::<f64>::NAME, "thin_plate");
     assert_eq!(CappedGyroid::<f64>::NAME, "gyroid");
     assert_eq!(FbmTerrain::<f64>::NAME, "fbm_terrain");
+    assert_eq!(<NoiseCavity<f64> as ReferenceField>::NAME, "noise_cavity");
 }
 
 /// Two fields have no analytically known Euler characteristic, and saying so is

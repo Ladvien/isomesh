@@ -14,13 +14,27 @@ Every number below has a committed benchmark that produced it and a `FINDINGS.md
 Where a figure is machine-specific, it says so, because three of the most interesting results here are
 about exactly that.
 
+> **Amended 2026-08-15 (A-002e). An eighth field exists now, and every figure below is still a
+> seven-field figure.** `noise_cavity` was added because none of the seven produces a cell with an
+> interior ambiguity — 0 of 68,385 surface cells (M-208) — which made the trilinear tunnel case
+> unreachable by this crate's own suite. `docs/measurements/shootout.csv` and `stage_breakdown.csv`
+> now carry its rows; **the percentages in this document have not been re-derived over eight fields
+> and must not be read as if they had.** They are what they were on 2026-08-13, over the seven.
+>
+> Folding the eighth into them would move them a long way and would misrepresent what it is.
+> `noise_cavity` is volumetric noise sampled near its own feature size — deliberately, because that
+> is the only regime where a tunnel exists at all — so it is far harsher than any of the seven on
+> every extractor, and it falsified five separately pre-registered claims on arrival (A-017, A-018,
+> A-019). It belongs in a *topology* comparison, not averaged into a speed or accuracy headline. Any
+> re-derivation should report the seven and the eighth separately and say which is which.
+
 ---
 
 ## Method
 
 | | |
 |---|---|
-| **Fields** | seven reference fields — `sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate`, `gyroid`, `fbm_terrain` |
+| **Fields** | the **seven** reference fields as of 2026-08-13 — `sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate`, `gyroid`, `fbm_terrain`. An eighth, `noise_cavity`, was added at A-002e on 2026-08-15 and is in the CSVs but **not** in this document's figures — see the amendment above |
 | **Grids** | 33³ and 65³ for topology and accuracy; 16³–256³ for the speed sweep |
 | **Timing** | median of repeated runs in one process, single-threaded, after warmup |
 | **Machines** | Apple M5 (macOS, arm64) and AMD Ryzen 9 5900X (Zen 3, Linux, x86-64) |

@@ -12,7 +12,9 @@
 #![allow(clippy::float_cmp)]
 
 use super::{ALL_INSIDE, BodySaddles};
-use crate::cube::corner_offset;
+use crate::Sdf;
+use crate::cube::{corner_offset, is_inside};
+use crate::fields::ReferenceField;
 use crate::marching_cubes::interior::SweptFaces;
 
 /// A deterministic generator, so a census is reproducible and a failure is a
@@ -489,4 +491,135 @@ fn the_classification_is_deterministic_in_both_widths() {
         let n = BodySaddles::of(&narrow);
         assert_eq!(n.inside_mask(), BodySaddles::of(&narrow).inside_mask());
     }
+}
+
+/// How often the seven reference fields reach six body saddles.
+///
+/// **This is the measurement A-002e turns on.** M-40 established that five of the
+/// seven never produce an ambiguous *face* at all. Interior ambiguity is rarer
+/// still — 0.57% of uniformly random cells, and a signed-distance field is very
+/// far from uniformly random — so if no reference field reaches six saddles then
+/// the T-001 field gates and the golden fixture cannot exercise a tunnel, and an
+/// eighth field has to be built for them to.
+///
+/// Recorded rather than gated: a zero here is a fact about the fields, not a
+/// failure. What *is* asserted is that the sweep visited surface cells at all, so
+/// a zero cannot be an empty loop reported as a result.
+#[test]
+fn how_often_the_reference_fields_reach_six_body_saddles() {
+    let mut reached = 0u64;
+    let mut surface_total = 0u64;
+
+    crate::for_each_reference_field!(f64, |name, field| {
+        // No `return` in this body: `for_each_reference_field!` is a macro, not a
+        // closure, and one would exit the whole test at `sphere` (M-199).
+        for samples in [17u32, 33, 65] {
+            let (lo, hi) = field.domain();
+            let h = (hi[0] - lo[0]) / f64::from(samples - 1);
+            let mut surface = 0u64;
+            let mut histogram = [0u64; 7];
+
+            for z in 0..samples - 1 {
+                for y in 0..samples - 1 {
+                    for x in 0..samples - 1 {
+                        let mut corner = [0.0f64; 8];
+                        let mut case = 0u8;
+                        for (c, slot) in corner.iter_mut().enumerate() {
+                            let o = corner_offset(c as u8);
+                            *slot = field.sample([
+                                lo[0] + h * f64::from(x + o[0]),
+                                lo[1] + h * f64::from(y + o[1]),
+                                lo[2] + h * f64::from(z + o[2]),
+                            ]);
+                            if is_inside(*slot) {
+                                case |= 1 << c;
+                            }
+                        }
+                        if case == 0 || case == 255 {
+                            continue;
+                        }
+                        surface += 1;
+                        histogram[BodySaddles::of(&corner).inside_count() as usize] += 1;
+                    }
+                }
+            }
+
+            surface_total += surface;
+            reached += histogram[6];
+            std::println!(
+                "measured: {name} at {samples}^3 -> {surface} surface cells, \
+                 saddle histogram {histogram:?}"
+            );
+        }
+    });
+
+    assert!(
+        surface_total > 0,
+        "the sweep visited no surface cell, so it measured nothing"
+    );
+    std::println!(
+        "measured: {reached} of {surface_total} reference-field surface cells have six body saddles"
+    );
+}
+
+/// The eighth reference field really does contain the configuration it exists for.
+///
+/// **A-002e's acceptance, and M-44's rule as a test.** `noise_cavity` was added for
+/// one reason: every other reference field has an interior-ambiguity rate of
+/// exactly zero (M-208), so without it the tunnel case — the thing MC33's interior
+/// rule exists for — is unreachable by this crate's own suite and the T-001 gates
+/// and golden fixture can never exercise it.
+///
+/// A field that reached no six-saddle cell would be a gate that measures nothing,
+/// so the count is asserted **non-zero at every golden resolution** rather than
+/// merely recorded. Pinned in both directions: an increase is as much a change to
+/// the field as a decrease.
+#[test]
+fn the_tunnel_field_actually_contains_tunnels() {
+    let field = crate::fields::noise_cavity::<f64>();
+    let (lo, hi) = field.domain();
+
+    let mut counts = alloc::vec::Vec::new();
+    for samples in [17u32, 25, 33] {
+        let h = (hi[0] - lo[0]) / f64::from(samples - 1);
+        let mut six = 0u64;
+        for z in 0..samples - 1 {
+            for y in 0..samples - 1 {
+                for x in 0..samples - 1 {
+                    let mut corner = [0.0f64; 8];
+                    let mut case = 0u8;
+                    for (c, slot) in corner.iter_mut().enumerate() {
+                        let o = corner_offset(c as u8);
+                        *slot = field.sample([
+                            lo[0] + h * f64::from(x + o[0]),
+                            lo[1] + h * f64::from(y + o[1]),
+                            lo[2] + h * f64::from(z + o[2]),
+                        ]);
+                        if is_inside(*slot) {
+                            case |= 1 << c;
+                        }
+                    }
+                    if case == 0 || case == 255 {
+                        continue;
+                    }
+                    if BodySaddles::of(&corner).inside_count() == 6 {
+                        six += 1;
+                    }
+                }
+            }
+        }
+        assert!(
+            six > 0,
+            "noise_cavity at {samples}^3 has no six-saddle cell, so every gate \
+             that rests on it measures nothing"
+        );
+        counts.push(six);
+    }
+
+    assert_eq!(
+        counts,
+        alloc::vec![3, 4, 4],
+        "the tunnel population moved; the field or the classifier changed"
+    );
+    std::println!("measured: noise_cavity six-saddle cells at 17/25/33 -> {counts:?}");
 }

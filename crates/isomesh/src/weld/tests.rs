@@ -452,6 +452,13 @@ fn a_whole_volume_mesh_welds_only_where_a_sample_sits_on_the_surface() {
             ("gyroid", 25, 2, 4),
             ("gyroid", 33, 2, 4),
             ("fbm_terrain", 33, 1, 2),
+            // The eighth field welds far more than the others, and for the reason
+            // M-212 records: volumetric noise sampled near its feature size puts many
+            // crossings on or beside a grid point. One of these merges is the pair
+            // that fuses two sheets (A-018); the rest are ordinary.
+            ("noise_cavity", 17, 30, 54),
+            ("noise_cavity", 25, 136, 266),
+            ("noise_cavity", 33, 35, 68),
         ]
     );
 }

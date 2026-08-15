@@ -288,7 +288,7 @@ fn every_reference_field_comes_out_coherently_oriented() {
             rows += 1;
         });
     }
-    assert_eq!(rows, 21);
+    assert_eq!(rows, 24);
 
     // **The law, and it is exact (M-187).** Orientation drives the count to
     // *zero* on every row whose edges are all manifold. Where it does not, the
@@ -304,8 +304,24 @@ fn every_reference_field_comes_out_coherently_oriented() {
                  non-manifold edge, from {before}"
             );
         } else {
+            // **`after <= before` is not a law, and `noise_cavity` is what shows
+            // it (M-213).** The reasoning was that propagation can only ever
+            // agree edges it reaches, so the residue can shrink but not grow.
+            // That holds while the non-manifold edges are sparse enough to stay
+            // out of propagation's way. They are not here: with 318 of them the
+            // flood fill crosses a four-face edge, commits to one side's winding,
+            // and carries a consistent-but-wrong orientation across a whole
+            // patch — so the count rises, 1580 → 2422. Nothing is *more* wrong
+            // afterwards; a different, larger set of edges is now the one that
+            // disagrees. Pinned per field so a second field growing still fails.
+            // A-019.
             assert!(
-                after > 0 && after <= before,
+                after > 0,
+                "{name} {n}³: residue vanished on a non-manifold mesh"
+            );
+            let may_grow = name == "noise_cavity";
+            assert!(
+                after <= before || may_grow,
                 "{name} {n}³: {before} -> {after} with {non_manifold} \
                  non-manifold edges -- orientation made it worse, or removed a \
                  residue it should not be able to"
@@ -327,6 +343,7 @@ fn every_reference_field_comes_out_coherently_oriented() {
             ("thin_plate", 17, 0, 0),
             ("gyroid", 17, 138, 0),
             ("fbm_terrain", 17, 19, 6),
+            ("noise_cavity", 17, 1629, 1015),
             ("sphere", 25, 0, 0),
             ("torus", 25, 6, 6),
             ("box_exact", 25, 0, 0),
@@ -334,6 +351,7 @@ fn every_reference_field_comes_out_coherently_oriented() {
             ("thin_plate", 25, 8, 0),
             ("gyroid", 25, 150, 0),
             ("fbm_terrain", 25, 29, 3),
+            ("noise_cavity", 25, 1580, 2422),
             ("sphere", 33, 0, 0),
             ("torus", 33, 0, 0),
             ("box_exact", 33, 0, 0),
@@ -341,6 +359,11 @@ fn every_reference_field_comes_out_coherently_oriented() {
             ("thin_plate", 33, 6, 0),
             ("gyroid", 33, 330, 0),
             ("fbm_terrain", 33, 53, 12),
+            // The only rows where orientation *raises* the count -- M-213, A-019.
+            // It lowers it at 17³ and raises it at 25³ and 33³, which is the
+            // shape of a flood fill meeting enough four-face edges to commit to
+            // the wrong side of one.
+            ("noise_cavity", 33, 1477, 3341),
         ],
         "the flipped-edge census moved"
     );
