@@ -98,6 +98,18 @@ cd bevy_isomesh && cargo run --example game_showcase --release
 
 ![A ball walking across streamed terrain, chunks loading continuously around it](docs/gifs/walking-the-seams.gif)
 
+## One cell, meshed twice
+
+![The same cell meshed twice: two separate discs under the face rule, one cylinder under the interior rule, with the inner hexagon drawn](docs/gifs/the-tunnel-meshed-as-a-tunnel.gif)
+
+*Marching Cubes 33's interior ambiguity, which is the hardest thing in this repository and the easiest
+to show. **Left** the face rule alone: two separate discs, two components, χ = 2. **Right** the same
+cell with the interior rule: one cylinder through it, one component, χ = 0. A tunnel is a handle and a
+handle costs exactly two — the difference is arithmetic, not a matter of opinion, and the HUD reports
+it every frame. The gold ring is the inner hexagon: six body saddles of the trilinear interpolant,
+the points Grosso's whole construction is built from.*
+
+
 *Nothing here is pre-baked. Every chunk under that ball was extracted while the camera flew toward it,
 on a background thread, under a frame budget — and the ball is standing on the **triangles**, not on the
 field they came from.*

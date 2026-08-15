@@ -127,7 +127,7 @@ claim in the header; a taste, with what each one proves:
 | `game_paint` | graffiti survives the wall being blown open, drift exactly zero | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e208-game-paint.png) |
 | `game_budget` | every chunk dirtied at once, drained under a frame budget that holds | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e206-budget.png) |
 | `gpu_compute_mc` | GPU Marching Cubes agrees with the CPU vertex-for-vertex, worst case one ULP | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e301-gpu-compute-mc.png) |
-| `marching_cubes_tunnel` | the same cell meshed twice — two discs under the face rule, one cylinder under the interior rule; components 2 → 1, χ 2 → 0, boundary edges unchanged | [catalog](https://github.com/ladvien/isomesh/blob/main/docs/2026-08-11-bevy-examples-catalog.md) |
+| `marching_cubes_tunnel` | the same cell meshed twice — two discs under the face rule, one cylinder under the interior rule; components 2 → 1, χ 2 → 0, boundary edges unchanged | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e213-tunnel.png) |
 
 ```bash
 cd bevy_isomesh

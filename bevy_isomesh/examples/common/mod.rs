@@ -56,10 +56,8 @@ impl Plugin for CommonPlugin {
             // and silently lose its settings. Spawning a schedule earlier makes
             // "the camera exists by the time your Startup runs" a guarantee
             // rather than a coin flip.
-            .add_systems(
-                PreStartup,
-                (spawn_camera, spawn_light, spawn_hud, size_window),
-            )
+            .add_systems(PreStartup, (spawn_camera, spawn_light, spawn_hud))
+            .add_systems(Update, size_window)
             .add_systems(Update, (auto_screenshot, capture_sequence))
             .add_systems(
                 Update,
@@ -300,17 +298,53 @@ fn capture_sequence(
     capture.taken += 1;
 }
 
+/// How many frames [`size_window`] keeps re-applying the requested size.
+///
+/// **Re-applied rather than set once, because neither "set it early" nor "set it
+/// and check" works.** At `PreStartup` the OS window does not exist yet, so the
+/// write lands on an entity and is then overwritten by whatever the window comes
+/// back as. And `Window::resolution` reads back the value *this* system wrote
+/// rather than what the platform granted, so a system that stops when the two
+/// agree stops on its own echo — measured, and it reproduced the same wrong size
+/// as the `PreStartup` version.
+///
+/// So it re-applies across the frames in which the window is created and
+/// configured, then stops. This must stay comfortably below
+/// `ISOMESH_CAPTURE_SETTLE` (45 by default) so a sequence's first frame is taken
+/// after the size has stopped moving.
+const SIZE_WINDOW_FRAMES: u32 = 30;
+
 /// Force the window to a given size, for reproducible captures.
 ///
-/// `ISOMESH_WINDOW=1280x720`. Without it the window takes whatever the window
-/// manager hands out — on a tiling compositor that is whatever slot happens to
-/// be free, so two captures of the same example come back different shapes and
-/// cannot be composited side by side.
+/// `ISOMESH_WINDOW=1280x720`. Without it the window takes whatever it is given —
+/// on a tiling compositor that is whatever slot happens to be free, and with no
+/// window manager at all it is whatever the X server picks, so two captures of
+/// the same example come back different shapes and cannot be composited side by
+/// side.
 ///
-/// Applied in `PreStartup` and to the *primary* window, so it overrides whatever
-/// an example's own `WindowPlugin` asked for rather than fighting it.
-fn size_window(mut windows: Query<&mut Window, With<bevy::window::PrimaryWindow>>) {
+/// # It ran in `PreStartup` and silently did nothing (E-214, M-235 amended)
+///
+/// The OS window does not exist yet at `PreStartup` — `bevy_winit` creates it
+/// later — so writing `Window::resolution` there set a field on an entity and
+/// then had it overwritten by whatever the window came back as. Measured: with
+/// no window manager, `1280x720` and `1600x900` **both** produced 836×1356, with
+/// no error, which is precisely the guarantee this function claims to provide.
+///
+/// It runs in `Update` instead, once, after the window exists. A window can
+/// always resize itself; that never needed a compositor, which is what the first
+/// diagnosis got wrong. `Local<bool>` rather than a resource because the state is
+/// this system's alone, and re-applying every frame would fight a human dragging
+/// the window edge.
+fn size_window(
+    mut frames: Local<u32>,
+    mut windows: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
+) {
+    if *frames > SIZE_WINDOW_FRAMES {
+        return;
+    }
+    *frames += 1;
     let Ok(spec) = std::env::var("ISOMESH_WINDOW") else {
+        *frames = SIZE_WINDOW_FRAMES + 1;
         return;
     };
     let Some((w, h)) = spec.split_once(['x', 'X']) else {

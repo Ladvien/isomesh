@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-138 tickets. Line numbers are stable until something above them is edited — grep the ID if
+140 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -62,6 +62,8 @@ implementation contradicted the ticket.
 | [`X-004`](#L802) | Probabilistic quadrics reduce to our own solve |
 | [`B-010`](#L810) | docs.rs metadata, and docs that open with the code |
 | [`B-011`](#L816) | The Bevy Assets entry, staged rather than submitted |
+| [`E-214`](#L822) | The tunnel on screen, and the blocker that was a hypothesis |
+| [`E-215`](#L830) | record_gif.sh — the tenth GIF is a command |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -804,3 +806,12 @@ implementation contradicted the ticket.
 | | | ***The schema is verified against the live repository, not written from memory.*** `Assets/<Category>/` with one `.toml` per entry; `name`, `description` (under 100 characters, no formatting) and `link` required, `image` and `crate` optional — read off `bevyengine/bevy-assets`'s own README and confirmed against two real entries, `bevy_mod_outline.toml` and `bevy_atmosphere.toml`. A submission in the wrong shape is a rejected PR and a wasted round trip, which is the entire risk this ticket carries. |
 | | | ***Staged, not submitted, and that is the ticket's boundary.*** `docs/bevy-assets-submission/` holds the entry and the recipe. **Opening the PR is the maintainer's**: it is outward-facing, it happens under a personal GitHub account, and listing a crate publicly is a claim that it is ready for other people to use. Nothing automated should make that claim. |
 | | | *`Assets/3D` is a judgement call and is recorded as one — the crate meshes 3D volumes, `Shapes` is closer to primitive-geometry helpers, and `bevy_hanabi`, `bevy_mod_outline` and `bevy-hikari` all sit in `3D`. No image ships with it: E-214 is blocked on a capture environment, and the entry is valid without one.* |
+| ☑ | **E-214** | **The tunnel, on screen — the A-002 series had no visual at all.** | S | — |
+| | | ***It was blocked on a wrong diagnosis, and the disproof took one attempt (M-239).*** This ticket sat blocked on installing `xorg-server-xvfb`, because M-235 concluded the capture rig "needs a compositor for geometry". It does not. A window can always resize itself; `size_window` merely ran in `PreStartup`, **before `bevy_winit` creates the OS window**, so the request landed on an entity and was overwritten. Moving the system and re-running settled it. |
+| | | ***Two obvious fixes fail silently before the third works, which is why this is worth reading.*** `PreStartup`: `1280x720` and `1600x900` both give **836×1356**. `Update`, latching when the window reports the size back: **also 836×1356**, because `Window::resolution` reads back the value *this system wrote* rather than what the platform granted — it latches on its own echo. `Update`, re-applying across the first 30 frames: **1493×840 and 1866×1050**, exactly the requests at the display's 1.1666 scale, and 16:9 to four figures. |
+| | | ***What shipped.*** `docs/gifs/the-tunnel-meshed-as-a-tunnel.gif` (900 px, 2.32 MB, 79 frames) and `docs/screenshots/e213-tunnel.png`, wired into the root README with the claim as its caption, the crate README's example row — replacing the catalog link that stood in for a missing image — and the catalog's own E-213 row. The HUD in frame carries the measurement rather than the caption asserting it: components **2 → 1**, χ **2 → 0**, *"a tunnel is a handle, and a handle costs exactly two"*. |
+| | | *The capture goes through Bevy's own screenshot path, so it reads back from the GPU and works over a window the compositor never mapped — no `x11grab`, and no window passing over the top can corrupt a frame.* |
+| ☑ | **E-215** | **Write the GIF recipe down — the mechanism existed in code and the method did not.** | S | E-214 |
+| | | ***The ticket's premise was half wrong and was corrected before starting rather than after.*** `examples/common/mod.rs` already carried the whole capture rig — `ISOMESH_CAPTURE` writing a numbered frame per N ticks, plus `_FRAMES`, `_EVERY`, `_SETTLE`, `ISOMESH_SCREENSHOT` and `ISOMESH_SPIN`. What was undocumented was the **assembly**: nothing said how a frame directory becomes a GIF. |
+| | | ***`scripts/record_gif.sh` drives the rig rather than scraping the screen.*** The obvious `ffmpeg -f x11grab` is the wrong tool — the rig's frames come through Bevy's screenshot path, so they need no window manager and cannot catch another window passing over the top. Two-pass `palettegen`/`paletteuse`, because a single pass bands badly on shaded 3D, and a warning outside the 0.7–4.8 MB the committed GIFs sit within. |
+| | | *Acceptance met by re-recording: the script reproduces the committed GIF at **79 frames and 2.34 MB** against the hand-made 2.32 MB. That comparison is what proves the recipe is the recipe rather than a plausible script nobody ran.* |
