@@ -98,6 +98,11 @@ parry3d = "0.30"
 # Benches are still compiled by the `check`/`clippy --all-targets` jobs, so they
 # cannot rot.
 [[bench]]
+name = "csg_degradation"
+harness = false
+test = false
+
+[[bench]]
 name = "ablation"
 harness = false
 test = false

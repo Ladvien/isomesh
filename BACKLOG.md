@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**147 tickets archived, 24 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**148 tickets archived, 23 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -221,7 +221,6 @@ provably correct under unlimited player editing.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **F-004** | **Measure how fast the distance property degrades under repeated CSG. Original contribution — no paper measures this.** Apply *N* random sphere subtractions to an analytic box; sample `‖∇f‖` over a grid; plot the distribution against *N*. Sits alongside the manifold and self-intersection metrics as a recorded field-quality number. **Acceptance:** a curve, in `docs/measurements/`, and a plain answer to *"after how many brush strokes is the field no longer usable as a distance?"* — which is the question a destructible game actually needs answered and nobody has. | M | F-003 |
 
 ---
 

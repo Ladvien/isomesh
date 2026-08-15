@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-147 tickets. Line numbers are stable until something above them is edited — grep the ID if
+148 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -71,6 +71,7 @@ implementation contradicted the ticket.
 | [`F-001`](#L870) | FieldBound — the declaration a bool could not hold |
 | [`F-002`](#L878) | The bound validator, and what eikonal cannot see |
 | [`F-003`](#L886) | Composed bounds, and the asymmetry that is by region |
+| [`F-004`](#L894) | CSG degradation — the tail collapses, the median does not |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -860,3 +861,8 @@ implementation contradicted the ticket.
 | | | ***What composes is the Lipschitz constant; what does not is exactness, and no `q` is invented.*** `min`/`max` of an `l₁`- and an `l₂`-Lipschitz function is `max(l₁,l₂)`-Lipschitz, exactly, which is what keeps a sphere tracer's step size valid through an arbitrary CSG tree. Precision does not: Bálint, Valasek & Gergó's Theorem 6 gives the survivor as `¼·σ(δ)/diam·min(q_f,q_g)`, where `σ` is a **set-contact smoothness** depending on how the solids meet. This crate does not compute `σ`, so a composed field reports `Lipschitz` and stops — a number derived from a factor nobody evaluated is a guess with a citation attached. |
 | | | ***`BoundedSdf` is separate from `ReferenceField` on purpose.*** That trait is about test fixtures and also demands a domain, a closedness flag and an expected Euler characteristic, none of which a CSG node has any business answering. The new trait asks one question, so a combinator can answer it from its operands — and `composed_bound` is one definition shared by all four, because the rule is identical and four copies would drift. |
 | | | *An `Unbounded` operand poisons the composition, asserted: nothing can be claimed about a value composed from a value nothing is claimed about.* |
+| ☑ | **F-004** | **Measure how fast the distance property degrades under repeated CSG.** | M | F-003 |
+| | | ***The ticket's proposed metric could not have seen the thing it was measuring.*** F-004 said to sample `‖∇f‖`. F-002 had since measured `csg_difference` at **100% eikonal** while its values are not distances (M-245), because `max` selects an exact operand pointwise and the seam is measure-zero. The bench keeps `‖∇f‖` as a **control column**, and it reads 100.0% at every stroke count from 0 to 256 — a flat line, exactly as predicted. |
+| | | ***What degrades is the tail, and only the tail (M-247).*** Empirical underestimate ratio over 13,824 points: worst case **0.5774 → 0.1815 → 0.0726 → 0.0040** at 0, 4, 32 and 256 strokes, **143× down**, while the **median stays at 1.0000 throughout**. |
+| | | ***So the ticket's question has two answers, and the useful one is not the one it asked for.*** *"No longer a distance"* happens within a handful of strokes; *"no longer usable"* has not happened at 256, where mean sphere-tracing cost has gone **5.2 → 9.9 steps**. A destructible game should watch the tracing cost rather than the precision bound. |
+| | | *The caveat is in the measurement rather than the field, and is stated in the output rather than buried: `q̂` is built from a **ray** distance, and a ray leaving a box corner runs along the diagonal, so an **uncarved** box reports `q̂_min = 0.5774 ≈ 1/√3`. That is the metric's floor. The curve is read against that baseline, not against 1.0, and reporting the absolute number would have called an exact box degraded.* |
