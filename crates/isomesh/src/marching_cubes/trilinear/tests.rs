@@ -1378,9 +1378,12 @@ fn how_often_a_face_is_singular() {
     use crate::cube::{face_corners, is_inside as inside};
     use crate::marching_cubes::table::AMBIGUOUS_FACES;
 
-    // A face is singular when the bilinear saddle sits exactly on the level set,
-    // i.e. the two diagonal products are bit-identical.
-    let singular = |v: [f64; 4]| v[0] * v[2] == v[1] * v[3];
+    // The predicate under test is the crate's own, so this census cannot drift
+    // from what the extractor would see (A-002i).
+    let singular = |v: [f64; 4]| {
+        let corner = [v[0], v[1], v[2], v[3], v[0], v[1], v[2], v[3]];
+        super::singular_face_mask(&corner) & super::super::table::face_bit(2, 0) != 0
+    };
 
     let mut ambiguous = 0u64;
     let mut singular_count = 0u64;
@@ -1976,4 +1979,76 @@ fn every_separate_disks_cell_has_a_saddle_on_a_face() {
              with a saddle on a cell face"
         );
     }
+}
+
+/// **A singular face is unreachable from continuous data and routine from
+/// quantised data, which is the audience this crate has (A-002i, M-232).**
+///
+/// [`super::singular_face_mask`] detects Grosso 2017 §3's singular configuration:
+/// a face whose bilinear saddle sits exactly *on* the level set, so the asymptotic
+/// decider's `α` equals the isovalue and the decider has no answer to give. A-002i
+/// recorded it as **0 of 1,838** ambiguous faces on the eight reference fields and
+/// **0 of 299,215** over 400,000 random cells, and concluded — correctly — that a
+/// continuous `f64` field essentially never produces one.
+///
+/// **That number is about the fields, not about the case**, and this is the test
+/// that says so. Quantise the same corner values, as any consumer feeding `u8`
+/// density does, and singular faces arrive immediately. Grosso's own counts come
+/// from CT volumes for exactly this reason: 8, 58 and 20 per 512²×~700 volume.
+///
+/// The census is pinned at both ends, because both ends are claims: zero from
+/// continuous values, and non-zero from quantised ones. A change in either is a
+/// change in what A-002i is for.
+#[test]
+fn a_singular_face_needs_quantised_data() {
+    use crate::cube::is_inside as inside;
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+
+    const CELLS: usize = 400_000;
+
+    // Only faces the cell's signs make *ambiguous* count: a singular face that is
+    // not ambiguous has nothing to decide and so nothing to get wrong.
+    let ambiguous_singular = |f: &[f64; 8]| -> u32 {
+        let mut case = 0u8;
+        for (c, &v) in f.iter().enumerate() {
+            if inside(v) {
+                case |= 1 << c;
+            }
+        }
+        if case == 0 || case == 255 {
+            return 0;
+        }
+        (super::singular_face_mask(f) & AMBIGUOUS_FACES[case as usize]).count_ones()
+    };
+
+    let mut rng = Lcg::new(0x0000_A002_1000_0001);
+    let mut continuous = 0u32;
+    for _ in 0..CELLS {
+        continuous += ambiguous_singular(&rng.corners());
+    }
+    assert_eq!(
+        continuous, 0,
+        "a continuous f64 sweep produced {continuous} singular ambiguous faces — \
+         A-002i's premise that this needs quantisation has changed"
+    );
+
+    for (label, quantum) in [("0.1", 0.1f64), ("1/255 (u8 density)", 1.0 / 255.0)] {
+        let mut rng = Lcg::new(0x0000_A002_1000_0001);
+        let mut found = 0u32;
+        for _ in 0..CELLS {
+            let mut f = rng.corners();
+            for x in &mut f {
+                *x = (*x / quantum).round() * quantum;
+            }
+            found += ambiguous_singular(&f);
+        }
+        assert!(
+            found > 0,
+            "quantum {label} produced no singular ambiguous face, so this asserted nothing"
+        );
+        std::println!(
+            "measured: quantum {label} gives {found} singular ambiguous faces in {CELLS} cells"
+        );
+    }
+    std::println!("measured: continuous f64 gives {continuous} in {CELLS} cells");
 }

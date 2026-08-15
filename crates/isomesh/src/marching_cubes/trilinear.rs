@@ -119,10 +119,12 @@
 #[cfg(test)]
 mod tests;
 
-use crate::cube::{EDGE_AXIS, EDGE_CORNERS, EDGE_COUNT, corner_offset, edge_crossing};
+use crate::cube::{
+    EDGE_AXIS, EDGE_CORNERS, EDGE_COUNT, corner_offset, edge_crossing, face_corners,
+};
 use crate::real::Real;
 
-use super::table::{NO_EDGE, segment_links};
+use super::table::{NO_EDGE, face_bit, segment_links};
 
 /// The number of candidate body saddles a cell can have. Two, from one quadratic.
 pub const SADDLE_COUNT: usize = 2;
@@ -349,6 +351,61 @@ impl<R: Real> BodySaddles<R> {
             [u[0], v[1], w[0]],
         ])
     }
+}
+
+/// Which of a cell's six faces are **singular**, as a [`face_bit`] mask.
+///
+/// A face is singular when the bilinear interpolant's saddle sits exactly *on*
+/// the level set — Grosso 2017 §3, where the asymptotic decider's coefficient `α`
+/// equals the isovalue and *"there are no asymptotes"*. This crate extracts the
+/// zero level set, so in the face's normal form `G = α + η(u−u₀)(v−v₀)` the
+/// condition `α = 0` becomes the two diagonal products being equal:
+///
+/// ```text
+/// v₀·v₂ == v₁·v₃
+/// ```
+///
+/// # Why this is detection and not resolution, and why it is here
+///
+/// [`super::ambiguity::face_is_joined`] already gives a tie a *defined* answer —
+/// it resolves to **separated** — so nothing is undefined today and no mesh has a
+/// hole because of this. What is missing is topological correctness: Grosso 2017's
+/// Definition 3.2 says *"a topologically correct triangulation across singular cell
+/// faces will not divide the surface into two branches"*, and resolving to
+/// separated is exactly dividing it into two.
+///
+/// So `ambiguity` is deliberately untouched — changing it would move every mesh
+/// this crate has ever produced, including the committed golden hashes — and the
+/// singular case belongs to the opt-in `trilinear` path instead. This function is
+/// the first half of it: **say where the configuration is**, which is what makes
+/// the second half measurable rather than asserted (A-002i).
+///
+/// # It reads a face's own four values and nothing else
+///
+/// The same locality [`super::ambiguity`] relies on: two cells sharing a face
+/// compute this from the same four numbers in a possibly different order, and the
+/// predicate is invariant under the rotations and reflections that relabelling can
+/// produce, because it compares the two *diagonal* products and a face's diagonals
+/// are the same two pairs whichever corner is called first. That is what lets
+/// neighbours agree without communicating.
+#[must_use]
+pub fn singular_face_mask<R: Real>(corner_value: &[R; 8]) -> u8 {
+    let mut mask = 0u8;
+    for axis in 0..3usize {
+        for side in 0..2u8 {
+            let c = face_corners(axis, side);
+            let v = [
+                corner_value[c[0] as usize],
+                corner_value[c[1] as usize],
+                corner_value[c[2] as usize],
+                corner_value[c[3] as usize],
+            ];
+            if v[0] * v[2] == v[1] * v[3] {
+                mask |= face_bit(axis, side);
+            }
+        }
+    }
+    mask
 }
 
 /// The longest contour a **tunnel** can have, from Grosso's Corollary 6.
