@@ -5,6 +5,8 @@
 > source, but it has not been through human code review. Read the tests before trusting it with anything
 > that matters.
 
+[![crates.io](https://img.shields.io/crates/v/isomesh.svg)](https://crates.io/crates/isomesh) [![docs.rs](https://img.shields.io/docsrs/isomesh)](https://docs.rs/isomesh) [![CI](https://github.com/ladvien/isomesh/actions/workflows/ci.yml/badge.svg)](https://github.com/ladvien/isomesh/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/ladvien/isomesh/blob/main/LICENSE-MIT)
+
 **Engine-agnostic isosurface extraction in Rust. Signed distance field in, triangles out.**
 
 `isomesh` has to serve both a real-time voxel game and a CAD tool. That single constraint decides almost
@@ -77,6 +79,24 @@ counts), an accuracy harness, Hermite data and QEF vertex placement, vertex weld
 with dirty-set re-meshing, brush operations, field-derived LOD, Transvoxel transition cells, collider
 readiness checks, frame-budget scheduling, and chunk streaming with hysteresis.
 
+## Choosing an extractor
+
+The honest tradeoff table, from this repo's own measurements (`docs/measurements/shootout.csv` and the
+demo pages). "Tiles" means two independently meshed chunks meet with zero boundary edges on the seam —
+a structural property of where each method places vertices, not something a future release fixes.
+
+| Extractor | Sharp corners | Tiles across chunks | The tradeoff |
+|---|---|---|---|
+| `MarchingCubes` | rounded | **yes** (measured 0 seam edges) | the baseline; MC33's asymptotic decider available; emits slivers near zero-valued corners |
+| `MarchingTetrahedra` | rounded | unmeasured here | 2.87–3.91× the triangles, measured — not the folklore constant — and more accurate on sharp fields |
+| `SurfaceNets` | rounded (0.58 cells off a true corner at 27³) | **no** — gapped, structurally | smoother output, optional smoothing passes |
+| `DualContouring` | **held** (0.01 cells at 27³) | **no** — gapped, structurally | QEF with Tikhonov λ and a cell clamp; self-intersections are a measured, non-zero rate |
+| `ManifoldDualContouring` | **held** | unmeasured here | one vertex per surface component: takes the non-manifold counts to zero where `DualContouring` cannot |
+| `GreedyQuads` | n/a — blocky | open at boundaries by design | Minecraft surface; quad merge measured 1.70×–256× savings depending on the field |
+| `SubgridMarchingTetrahedra` | rounded | **yes** (measured 0 seam edges) | resolves features thinner than a voxel, which no sign-based method can; ~70× classic MT (M-98) |
+
+For a chunked world the seam column decides: use `MarchingCubes` or `SubgridMarchingTetrahedra`.
+
 ## Verification
 
 Every algorithm ships with a validity gate chosen by the field rather than a blanket rule, a determinism
@@ -87,6 +107,16 @@ The repository keeps a [`FINDINGS.md`](https://github.com/ladvien/isomesh/blob/m
 a primary source, reported, or folklore — including the published figures that failed verification.
 Falsified entries are never deleted, because which *sources* to distrust is worth more than the
 individual fact.
+
+## Troubleshooting
+
+- **It is slow.** You are in a debug build. A debug build meshes **37–62× slower** — both ends measured
+  here, not folklore (FINDINGS M-152) — and will convince you something is wrong with the algorithm
+  rather than with the profile. `--release`, always.
+- **Zero triangles.** Negative is inside, and a sample of exactly zero counts as outside. If your field
+  returns plain distance instead of *signed* distance, or the sampled box never crosses the surface,
+  every cell classifies the same way and the extractor correctly emits nothing. Check the sign at a
+  point you know is inside, and that `origin` and `cell_size` actually span the surface.
 
 ## More
 
