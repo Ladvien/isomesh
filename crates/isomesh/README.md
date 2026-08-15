@@ -91,7 +91,7 @@ a structural property of where each method places vertices, not something a futu
 | `MarchingTetrahedra` | rounded | unmeasured here | 2.87–3.91× the triangles, measured — not the folklore constant — and more accurate on sharp fields |
 | `SurfaceNets` | rounded (0.58 cells off a true corner at 27³) | **no** — gapped, structurally | smoother output, optional smoothing passes |
 | `DualContouring` | **held** (0.01 cells at 27³) | **no** — gapped, structurally | QEF with Tikhonov λ and a cell clamp; self-intersections are a measured, non-zero rate |
-| `ManifoldDualContouring` | **held** | unmeasured here | one vertex per surface component: takes the non-manifold counts to zero where `DualContouring` cannot |
+| `ManifoldDualContouring` | **held** | unmeasured here | one vertex per surface *component*: takes the non-manifold counts to zero where `DualContouring` cannot — **except on a shared ambiguous face whose four cut edges land in one cycle on both sides**, which is outside Schaefer/Ju/Warren's guarantee and is a pinned census rather than a bug (A-017) |
 | `GreedyQuads` | n/a — blocky | open at boundaries by design | Minecraft surface; quad merge measured 1.70×–256× savings depending on the field |
 | `SubgridMarchingTetrahedra` | rounded | **yes** (measured 0 seam edges) | resolves features thinner than a voxel, which no sign-based method can; ~70× classic MT (M-98) |
 

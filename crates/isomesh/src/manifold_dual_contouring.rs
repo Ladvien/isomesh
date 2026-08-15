@@ -59,6 +59,40 @@
 //! characteristic is carried across unchanged, which
 //! `euler_characteristic_matches_marching_cubes` asserts on all seven fields.
 //!
+//! # The guarantee has a precondition, and it is not the one the paper states
+//!
+//! **This entry was described as "the one that takes the non-manifold count to
+//! zero". That held on seven reference fields because not one of them can produce
+//! the configuration that breaks it** (M-208, A-017). On a field that can —
+//! A-002e's `noise_cavity` — it returns **30 non-manifold edges at 17³ and 64 at
+//! 33³**, pinned as whole censuses so they fail if they spread *and* if they
+//! vanish.
+//!
+//! The mechanism is exact and is a limit of the published algorithm rather than of
+//! this transcription (M-225). An **ambiguous face has all four of its edges cut**.
+//! One vertex per cycle per cell means that when all four land in a *single* cycle
+//! on each side, all four dual quads connect the **same pair** of cell vertices —
+//! four quads on one dual edge, one triangle each. The identity
+//!
+//! ```text
+//! non_manifold_edges == shared ambiguous faces whose four cut edges
+//!                       lie in one cycle on both sides
+//! ```
+//!
+//! is asserted from the grid against the mesh and holds with **zero error** under
+//! both face rules: `Separate` 30 and 64, `AsymptoticDecider` 8 and 40.
+//!
+//! Schaefer, Ju and Warren separate sheets *within* a cell and never claimed to
+//! handle two crossed edges of one **shared** face resolving to the same cycle
+//! pair, so this is outside what they guarantee rather than a defect against it.
+//! **It is documented rather than fixed**, deliberately: splitting the cycle needs
+//! a second vertex where the paper gives one, which would no longer be their
+//! algorithm. A-017 recorded the decision and the two alternatives it rejected.
+//!
+//! Note also that no face rule escapes it —
+//! [`FaceAmbiguity::AsymptoticDecider`](crate::marching_cubes::FaceAmbiguity)
+//! lowers the count on `noise_cavity` and *raises* it on `gyroid`.
+//!
 //! # What it does not fix
 //!
 //! Self-intersection. ✗2 records ODC (2024) measuring Manifold Dual Contouring at

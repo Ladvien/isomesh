@@ -47,6 +47,13 @@ construction stops. Everything here is measured; see `FINDINGS.md` M-229…M-233
 
 ### Documentation
 
+- **`ManifoldDualContouring`'s manifoldness guarantee now states its precondition** (A-017). It was
+  described as the entry that takes the non-manifold count to zero; that held because none of the
+  seven original reference fields can produce a cell with an interior ambiguity. On one that can it
+  returns 30 non-manifold edges at 17³ and 64 at 33³. This is outside Schaefer, Ju and Warren's
+  guarantee rather than a defect against it — they separate sheets *within* a cell and never claimed
+  two crossed edges of one **shared** face resolving to the same cycle pair — so it is documented,
+  not chased, and the counts stay pinned as whole censuses. No code change.
 - `docs/research/2026-08-10-meshing-library-target.md`: Nielson 2003 and Lopes & Brodlie 2003
   corrected from `PAYWALL` to `HAVE` (V-32), and a callout added above the status legend — that code
   records what the resolver could not reach, has now been wrong four times, and correcting
