@@ -1253,3 +1253,135 @@ fn the_worst_case_tunnel_triangle_count_is_pinned() {
          {worst_interior} interior vertices"
     );
 }
+
+/// How often the asymptotic decider has no answer: never, on continuous data.
+///
+/// **A-002i's reachability, measured before it was implemented (M-220).** A face
+/// is *singular* when its bilinear saddle sits exactly on the level set — the two
+/// hyperbola branches degenerate into crossing straight lines and the decider's
+/// binary choice is between two answers that are both wrong, because the surface
+/// passes through the saddle. Grosso 2017 exists for this case and counts **8, 58
+/// and 20** of them per 512²×~700 CT volume.
+///
+/// Here it is **zero**, on every reference field and on 400,000 random cells. The
+/// reason is the data, not the code: a singular face needs `v₀·v₂` and `v₁·v₃` to
+/// be *bit-identical* `f64`s, which quantised CT voxels collide into readily and
+/// a continuous field essentially never does.
+///
+/// Recorded rather than gated — a zero here is a fact about the fields. What is
+/// asserted is that ambiguous faces were reached at all, so the zero cannot be an
+/// empty loop reported as a result.
+#[test]
+fn how_often_a_face_is_singular() {
+    use crate::cube::{face_corners, is_inside as inside};
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+
+    // A face is singular when the bilinear saddle sits exactly on the level set,
+    // i.e. the two diagonal products are bit-identical.
+    let singular = |v: [f64; 4]| v[0] * v[2] == v[1] * v[3];
+
+    let mut ambiguous = 0u64;
+    let mut singular_count = 0u64;
+    crate::for_each_reference_field!(f64, |name, field| {
+        for samples in [17u32, 33, 65] {
+            let (lo, hi) = field.domain();
+            let h = (hi[0] - lo[0]) / f64::from(samples - 1);
+            let mut amb = 0u64;
+            let mut sing = 0u64;
+            for z in 0..samples - 1 {
+                for y in 0..samples - 1 {
+                    for x in 0..samples - 1 {
+                        let mut corner = [0.0f64; 8];
+                        let mut case = 0u8;
+                        for (c, slot) in corner.iter_mut().enumerate() {
+                            let o = corner_offset(c as u8);
+                            *slot = field.sample([
+                                lo[0] + h * f64::from(x + o[0]),
+                                lo[1] + h * f64::from(y + o[1]),
+                                lo[2] + h * f64::from(z + o[2]),
+                            ]);
+                            if inside(*slot) {
+                                case |= 1 << c;
+                            }
+                        }
+                        let mask = AMBIGUOUS_FACES[case as usize];
+                        if mask == 0 {
+                            continue;
+                        }
+                        for axis in 0..3usize {
+                            for side in 0..2u8 {
+                                let bit = 1u8 << (axis * 2 + side as usize);
+                                if mask & bit == 0 {
+                                    continue;
+                                }
+                                let c = face_corners(axis, side);
+                                let v = [
+                                    corner[c[0] as usize],
+                                    corner[c[1] as usize],
+                                    corner[c[2] as usize],
+                                    corner[c[3] as usize],
+                                ];
+                                amb += 1;
+                                if singular(v) {
+                                    sing += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            ambiguous += amb;
+            singular_count += sing;
+            if sing > 0 {
+                std::println!("  {name} at {samples}^3: {sing} singular of {amb} ambiguous faces");
+            }
+        }
+    });
+    std::println!(
+        "measured: {singular_count} singular of {ambiguous} ambiguous faces, eight fields"
+    );
+
+    // And over random cells, where a tie is far likelier than on a smooth field.
+    let mut rng = Lcg::new(0x0000_A002_9000_0001);
+    let mut ramb = 0u64;
+    let mut rsing = 0u64;
+    for _ in 0..400_000 {
+        let f = rng.corners();
+        let mut case = 0u8;
+        for (c, &v) in f.iter().enumerate() {
+            if inside(v) {
+                case |= 1 << c;
+            }
+        }
+        let mask = AMBIGUOUS_FACES[case as usize];
+        for axis in 0..3usize {
+            for side in 0..2u8 {
+                if mask & (1u8 << (axis * 2 + side as usize)) == 0 {
+                    continue;
+                }
+                let c = face_corners(axis, side);
+                let v = [
+                    f[c[0] as usize],
+                    f[c[1] as usize],
+                    f[c[2] as usize],
+                    f[c[3] as usize],
+                ];
+                ramb += 1;
+                if singular(v) {
+                    rsing += 1;
+                }
+            }
+        }
+    }
+    std::println!("measured: {rsing} singular of {ramb} ambiguous faces, 400,000 random cells");
+
+    assert!(
+        ambiguous > 1000 && ramb > 100_000,
+        "the sweep reached {ambiguous} and {ramb} ambiguous faces, too few to mean anything"
+    );
+    assert_eq!(
+        (singular_count, rsing),
+        (0, 0),
+        "a singular face appeared — A-002i's premise has changed and it is now reachable"
+    );
+}
