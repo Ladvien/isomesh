@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**111 tickets archived, 9 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**112 tickets archived, 8 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -157,7 +157,6 @@ and every README code fence must be compiled by something.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **D-003** | **Truth pass, claims.** The root README says the crates.io name is a 0.0.2 placeholder; crates.io serves five isomesh releases and two isomesh-gpu releases, CI-published. It says Rust 1.85 twice across the READMEs; the workspace pins 1.89 and `bevy_isomesh` 1.95. It says 147 golden combinations; the fixture holds 168. Running totals that nothing gates (ticket counts, test counts, demo counts) become pointers at their gated sources or the commands that print them; measured-once figures keep their numbers. Add the three GPU examples to the run list. Add a **Machines** block to `FINDINGS.md`'s header naming both benchmark machines and which CSV each produced — the root README already claims that block exists, which today it does not. Refresh this file's stale deferred-publishing paragraph (the crate README it says is missing has existed since `d9b8836`). Make every FINDINGS.md name-check an actual link, absolute in the crate READMEs. | M | — |
 | ☐ | **D-004** | **Truth pass, demo surfaces.** The examples catalog says "26 examples"; 31 live in `bevy_isomesh/examples/` plus 3 headless in `crates/isomesh-gpu/examples/` — correct it with a dated addendum rather than rewriting a 2026-08-11 planning document. `docs/demos/gameplay.md` gets the top back-link the other two demo pages have, and its LOD open-edge figures predate the E-211/M-195 counter fix (the taper moves cracks off the seam plane; the old counter read 0 there) — reconcile the section with the corrected instrument's numbers. Normalize the four module headers that lead with a ticket ID (`greedy_quads`, `marching_tetrahedra`, `weld`, `bevy_isomesh::plugin`) to reader-facing first lines; the ID moves to a "Ticket:" line below, because the first line is the docs.rs module summary. | M | — |
 | ☐ | **D-005** | **`crates/isomesh/README.md` — the chooser's page gets a chooser's tools.** Add the minimal badge row (crates.io, docs.rs, CI, license). Add a "Choosing an extractor" table: seven rows, sharp features / chunk tiling / cost, sourced from `Extractor::chunk_seams` and `docs/measurements/shootout.csv`. Add two troubleshooting entries — the debug build (M-152's 37–62×) and zero triangles (negative-is-inside, or the domain misses the surface) — because error recovery is content, not a warning. The `cfg(doctest)` README wiring stays exactly as it is; its quickstart remains the canonical snippet other pages copy. | S | D-003 |
 | ☐ | **D-006** | **`crates/isomesh-gpu/README.md` — the snippet nothing compiles.** Wire the README into doctests with the same `cfg(doctest)` `include_str!` block core uses; the snippet's fence becomes `rust,no_run` with a hidden `Ok` tail, so a GPU-less CI runner compiles it and never runs it. Add the badge row, one screenshot by absolute URL, the License section this README never had, and fix the `(../isomesh)` link that 404s on crates.io. Explicit `readme` and `documentation` manifest keys here, plus `documentation` for core in the same commit. `[package.metadata.docs.rs]` is deliberately not added anywhere: zero cargo features means there is nothing true to configure, and an empty stanza is a claim-shaped nothing. | M | D-003 |
@@ -201,3 +200,8 @@ Recorded so they don't get picked up early, and so it's clear they weren't forgo
   is outside the package directory and cannot be referenced from it, so the crates.io page currently
   shows only the one-line description), a version policy, and a decision about whether `isomesh-gpu`
   and `bevy_isomesh` publish alongside it. None of that is urgent now the name cannot be taken.
+
+  **Amended 2026-08-14 (D-003): most of that has since happened.** `crates/isomesh/README.md` exists
+  (`d9b8836`) and is the crates.io page; releases are CI-driven on version bumps; `isomesh` and
+  `isomesh-gpu` are live at 0.0.4. What remains of this item is a version policy. The `bevy_isomesh`
+  decision is made and ticketed: D-007 dresses it, D-010 publishes it at 0.0.4.

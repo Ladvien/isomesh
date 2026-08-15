@@ -93,15 +93,15 @@ same grid, at any resolution you like.
 
 ## Status
 
-Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. 96 tickets done, 3 open.
+Early. **Seven** extraction algorithms — including one that resolves features thinner than a voxel, which nothing else here can do — three normal-estimation strategies, a validity harness, an accuracy harness, a measured shootout between them, collider readiness, field-derived LOD, Transvoxel seams, chunk streaming, and a Bevy plugin that meshes off the main thread. [`BACKLOG.md`](BACKLOG.md) is the queue and the state; its archive carries every completed ticket with what implementation changed about it.
 
 | | |
 |---|---|
 | **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **six-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · seven reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · **frame-budget scheduling** · **subgrid Marching Tetrahedra** · **chunk streaming with hysteresis** · Bevy 0.19 bridge and plugin · **GPU compute Marching Cubes** · **GPU prefix scan** · **GPU field evaluation** · **mesh-shader rendering** |
-| **Not yet** | Marching Cubes 33's interior test · simplicial embedding for subgrid MT (A-014d) · convex decomposition |
+| **Not yet** | Marching Cubes 33's interior test — the decider ships, tunnels are not meshed (A-002b) · convex decomposition |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
-The name is reserved on crates.io at `0.0.2` — a placeholder, not a release.
+Published on crates.io: [`isomesh`](https://crates.io/crates/isomesh) and [`isomesh-gpu`](https://crates.io/crates/isomesh-gpu). Releases are CI-driven: `scripts/publish.sh` is version-driven and uploads only what crates.io does not already have, so a version bump landing on `main` is the release.
 
 ---
 
@@ -125,8 +125,8 @@ The math-library pin is the load-bearing one. Bevy 0.19 wants glam 0.32, `parry3
 ## Demos
 
 The rest of the pictures live on three pages, so this one stays short. Every figure on them came from a
-command you can run, and every number is measured on the machine in `FINDINGS.md`'s header rather than
-quoted from a paper.
+command you can run, and every number is measured on one of the two machines in
+[`FINDINGS.md`](FINDINGS.md)'s header rather than quoted from a paper.
 
 | | |
 |---|---|
@@ -134,7 +134,7 @@ quoted from a paper.
 | **[Algorithms](docs/demos/algorithms.md)** | Marching Cubes · Surface Nets · Dual Contouring · Manifold Dual Contouring · Marching Tetrahedra · greedy quads · subgrid Marching Tetrahedra, and a six-way shootout in one process |
 | **[Correctness](docs/demos/correctness.md)** | where a mesh stops being a manifold · what splitting the vertex costs · which way the surface faces · ambiguous faces · the crack between two chunks |
 
-Between them they carry 30 demos, 7 GIFs and every measured figure this crate makes a claim about.
+Between them they carry every measured figure this crate makes a claim about, and each one names the command that regenerates it.
 
 ---
 
@@ -149,11 +149,11 @@ Every extraction algorithm ships with these before it counts as done. They are o
 | Edge orientation consistency | a single flipped triangle, which passes χ *and* both manifold checks while being inside out |
 | Self-intersections per 1,000 triangles | reported as a rate, never as a fraction-of-meshes, which saturates with chunk size |
 | Determinism | compared bit-wise via `total_cmp`, because `==` is wrong in both directions on floats |
-| Golden hashes over 147 (algorithm, field, resolution) combinations | a change that is topologically identical, geometrically indistinguishable and statistically invisible — the silent diff every other check shrugs at |
+| Golden hashes over every (algorithm, field, resolution) combination — 168 at last count, with `every_combination_is_covered` failing the suite if one goes missing | a change that is topologically identical, geometrically indistinguishable and statistically invisible — the silent diff every other check shrugs at |
 | Signed volume | global inversion, which nothing else here can see |
 | Hausdorff distance, both directions, and mean absolute error | a mesh that is perfectly valid and in the wrong place. Only the reverse direction sees *missing* geometry — deleting one face of a test octahedron leaves the forward number bit-identical |
 
-`FINDINGS.md` is the epistemic state: what is believed, how strongly, and on what evidence, with tiers for measured-here, verified-from-primary-source, reported, and folklore. Seventeen entries are in the falsified section, several of them corrections to this project's own documents, and the predictions are registered *before* the measurement so a wrong one stays on the record.
+[`FINDINGS.md`](FINDINGS.md) is the epistemic state: what is believed, how strongly, and on what evidence, with tiers for measured-here, verified-from-primary-source, reported, and folklore. The falsified section is the longest-lived one — several of its entries are corrections to this project's own documents — and predictions are registered *before* the measurement so a wrong one stays on the record.
 
 ---
 
@@ -187,7 +187,7 @@ The examples live in `bevy_isomesh` and CI compiles them on every push. That is 
 ## Running it
 
 ```bash
-cargo test -p isomesh                    # 457 tests, plus 11 doctests
+cargo test -p isomesh                    # the suite prints its own count; doctests included
 cargo tree -p isomesh -e normal          # exactly two packages: isomesh, libm
 
 cd bevy_isomesh
@@ -219,6 +219,9 @@ cargo run --example game_dig --release                          # carve, and wat
 cargo run --example chunk_seam_weld --release                   # the seam, and welding it
 cargo run --example marching_cubes_ambiguity --release          # the decider, and how rarely it fires
 cargo run --example marching_cubes_interior --release            # the saddle's hyperbola, and the 12.6% MC33 gets wrong
+cargo run --example gpu_compute_mc --release                     # GPU and CPU Marching Cubes, vertex for vertex
+cargo run --example gpu_vs_cpu --release                         # one GPU extraction, five timed parts
+cargo run --example gpu_mesh_shader --release                    # field to pixels; four bytes come home
 ```
 
 **Always `--release`.** A debug build meshes 37–62× slower — both ends measured here, not folklore (FINDINGS M-152; the resolution-sweep incident in `crates/isomesh/Cargo.toml`) — and will convince you something is wrong with the algorithm.
@@ -259,9 +262,9 @@ set what it is a shot *of*.
 
 ## Requirements
 
-Rust **1.85** (edition 2024), checked in CI against the declared MSRV. The Bevy bridge pins **Bevy 0.19**, which pins wgpu 29.0.3, glam 0.32 and encase 0.12 — those move together or not at all, because Cargo will silently resolve two wgpu majors side by side and the failure only surfaces later as `expected TextureFormat, found a different TextureFormat`.
+Rust **1.89** (edition 2024) for the root workspace, checked in CI against the declared MSRV. The Bevy bridge declares **1.95** — Bevy 0.19's own floor — and pins **Bevy 0.19**, which pins wgpu 29.0.3, glam 0.32 and encase 0.12; those move together or not at all, because Cargo will silently resolve two wgpu majors side by side and the failure only surfaces later as `expected TextureFormat, found a different TextureFormat`.
 
-Developed on macOS / arm64 / Metal. CI runs Linux and macOS, which is what makes the bit-reproducibility claim checkable rather than asserted.
+Developed and measured on the two machines in [`FINDINGS.md`](FINDINGS.md)'s header — an Apple M5 (macOS/arm64/Metal) and a Ryzen 9 5900X with an RTX 3090 (Linux/x86-64/Vulkan) — with one resolution-sweep CSV per machine in `docs/measurements/`. CI runs Linux and macOS, which is what makes the bit-reproducibility claim checkable rather than asserted.
 
 ---
 

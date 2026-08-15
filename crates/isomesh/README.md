@@ -83,7 +83,7 @@ Every algorithm ships with a validity gate chosen by the field rather than a bla
 check, golden hashes that are bit-identical across macOS and Linux, and property tests. Nothing claims a
 performance number without a committed benchmark that produced it.
 
-The repository keeps a `FINDINGS.md` recording what is known and how well — measured here, verified from
+The repository keeps a [`FINDINGS.md`](https://github.com/ladvien/isomesh/blob/main/FINDINGS.md) recording what is known and how well — measured here, verified from
 a primary source, reported, or folklore — including the published figures that failed verification.
 Falsified entries are never deleted, because which *sources* to distrust is worth more than the
 individual fact.
@@ -108,7 +108,7 @@ Full README: <https://github.com/ladvien/isomesh>
 
 ## Requirements
 
-Rust 1.85, edition 2024.
+Rust 1.89, edition 2024.
 
 ## License
 

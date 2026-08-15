@@ -8,6 +8,17 @@ exists because this project has already been wrong six times in ways that would 
 propagated into code, and because the research corpus contains several published figures that failed
 verification. A belief with no recorded falsification method is not a finding, it's a preference.
 
+## Machines
+
+Every measured figure in this repo comes from one of these two, and machine-specific figures say
+which (the README and demo pages lean on this block by reference; added at D-003, sourced from
+`docs/research/2026-08-13-measured-comparison.md`).
+
+| | |
+|---|---|
+| **M5** | Apple M5 · macOS · arm64 · Metal — `docs/measurements/resolution_sweep.csv` |
+| **Zen 3** | AMD Ryzen 9 5900X · Linux · x86-64 · NVIDIA RTX 3090 (Vulkan) — `docs/measurements/resolution_sweep-ryzen9-5900x.csv`, and every GPU figure |
+
 ## How to use this file
 
 - **Before acting on a "known" fact, look for it here.** If it's not here, it hasn't been checked.

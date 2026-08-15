@@ -31,11 +31,11 @@ libm = { workspace = true }
 # Pinned at the version whose MSRV matches ours exactly.
 proptest = "1.11"
 
-# T-006. Held at 0.7 deliberately: criterion 0.8 declares `rust-version = 1.86`
-# and this workspace promises 1.85. The `msrv` CI job runs
-# `cargo check --workspace --all-targets`, which includes benches, so a newer
-# criterion would break the promise rather than merely inconvenience a bench.
-# 0.7 declares 1.80.
+# T-006. Held at 0.7 when this workspace promised 1.85 and criterion 0.8's
+# floor was 1.86; the workspace now promises 1.89, so that reason has expired
+# and the hold stands only until someone bumps it deliberately. The `msrv` CI
+# job runs `cargo check --workspace --all-targets`, which includes benches, so
+# any bump is checked rather than trusted. 0.7 declares 1.80.
 #
 # `default-features = false` drops `rayon` and `plotters`. Neither earns its
 # tree here: the benchmarks are single-threaded by construction because that is
