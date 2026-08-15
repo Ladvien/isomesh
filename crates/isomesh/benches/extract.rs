@@ -29,7 +29,7 @@ use std::hint::black_box;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use isomesh::dual_contouring::DualContouring;
-use isomesh::fields::{BoxExact, ReferenceField, Sphere, Torus, capped_gyroid};
+use isomesh::fields::{BoxExact, ReferenceField, Sphere, Torus, capped_gyroid, noise_cavity};
 use isomesh::manifold_dual_contouring::ManifoldDualContouring;
 use isomesh::marching_cubes::{FaceAmbiguity, MarchingCubes};
 use isomesh::marching_tetrahedra::MarchingTetrahedra;
@@ -143,6 +143,33 @@ where
     let (shape, origin, h) = common::grid(&field, samples);
     let mut mc = MarchingCubes::<R>::new();
     mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+    let mut out = MeshBuffer::<R>::new();
+    mc.extract(&field, &shape, origin, h, &mut out)
+        .expect("extraction");
+
+    c.bench_function(label, |b| {
+        b.iter(|| {
+            out.reset();
+            mc.extract(&field, &shape, origin, h, &mut out)
+                .expect("extraction");
+            black_box(out.triangle_count())
+        });
+    });
+}
+
+/// Marching Cubes 33 with the interior rule as well as the face one.
+///
+/// Identical to [`bench_mc33`] but for the second setter, for the same reason:
+/// the pair is the measurement.
+fn bench_trilinear<R, F>(c: &mut Criterion, label: &str, field: F, samples: u32)
+where
+    R: Real,
+    F: ReferenceField + Sdf<Scalar = R>,
+{
+    let (shape, origin, h) = common::grid(&field, samples);
+    let mut mc = MarchingCubes::<R>::new();
+    mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+    mc.set_interior_ambiguity(isomesh::marching_cubes::InteriorAmbiguity::Trilinear);
     let mut out = MeshBuffer::<R>::new();
     mc.extract(&field, &shape, origin, h, &mut out)
         .expect("extraction");
@@ -362,6 +389,22 @@ fn decider(c: &mut Criterion) {
             c,
             &format!("decider/marching_cubes+decider/gyroid/f32/{n}"),
             capped_gyroid::<f32>(),
+            n,
+        );
+        // The third rung, and the one that carries the interior rule's own cost:
+        // `noise_cavity` is the only reference field with a cell the rule can
+        // actually do something in (M-208), so this pair is the price of meshing
+        // a tunnel against the price of ignoring one.
+        bench_mc33(
+            c,
+            &format!("decider/marching_cubes+decider/noise_cavity/f32/{n}"),
+            noise_cavity::<f32>(),
+            n,
+        );
+        bench_trilinear(
+            c,
+            &format!("decider/marching_cubes+trilinear/noise_cavity/f32/{n}"),
+            noise_cavity::<f32>(),
             n,
         );
     }

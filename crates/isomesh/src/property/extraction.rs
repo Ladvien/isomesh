@@ -136,6 +136,32 @@ fn check_mc33<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> u
     out.triangle_count()
 }
 
+/// Extract with the interior rule as well as the face one, and run the bundle.
+///
+/// **The strict gate, and it is the interesting one.** The interior rule adds
+/// cell-local vertices and, on a tunnel, replaces two disks with a cylinder — the
+/// most invasive thing any setting in this crate does to a cell's topology. If it
+/// can produce a non-closed or non-manifold mesh, generated fields are where it
+/// will show, because `mc/tests.rs`'s census finds interior ambiguity on exactly
+/// one of the eight reference fields (M-208) while sphere unions reach it freely.
+fn check_trilinear<S: Sdf<Scalar = f64>>(label: &str, field: &S, size: [u32; 3]) -> usize {
+    let (shape, origin, cell_size) = grid_for(size);
+    let mut mc = MarchingCubes::<f64>::new();
+    mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+    mc.set_interior_ambiguity(crate::marching_cubes::InteriorAmbiguity::Trilinear);
+    let mut out = MeshBuffer::<f64>::new();
+    mc.extract(field, &shape, origin, cell_size, &mut out)
+        .expect("extraction");
+    assert_extracted_mesh_is_valid(
+        label,
+        &out.positions,
+        &out.indices,
+        cell_size,
+        SurfaceGate::Closed,
+    );
+    out.triangle_count()
+}
+
 /// Extract with Marching Tetrahedra and run the bundle over the result.
 ///
 /// **The strict gate**, like Marching Cubes' — and here it is not merely
@@ -292,6 +318,22 @@ proptest! {
     #[test]
     fn the_decider_meshes_convex_bodies(field in convex_body(), size in extraction_resolution()) {
         check_mc33("mc33 / convex body", &field, size);
+    }
+
+    #[test]
+    fn the_interior_rule_meshes_sphere_unions(field in sphere_union(), size in extraction_resolution()) {
+        let tris = check_trilinear("trilinear / sphere union", &field, size);
+        if largest_radius(&field) >= 2.0 * spacing_for(size) {
+            prop_assert!(tris > 0, "a resolvable sphere was missed entirely");
+        }
+    }
+
+    /// Two lobes approaching each other is also how an *interior* ambiguity
+    /// arises: the same configuration that puts diagonally opposite corners
+    /// inside one face can join them through the cell.
+    #[test]
+    fn the_interior_rule_meshes_convex_bodies(field in convex_body(), size in extraction_resolution()) {
+        check_trilinear("trilinear / convex body", &field, size);
     }
 
     #[test]

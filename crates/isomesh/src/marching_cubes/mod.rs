@@ -27,6 +27,31 @@ use crate::{MeshSink, Real, Sdf, Shape3};
 
 pub use ambiguity::FaceAmbiguity;
 
+/// How a cell resolves an ambiguous **interior** — the trilinear body saddle.
+///
+/// [`FaceAmbiguity`] decides what happens on a *face*. This decides what happens
+/// inside the cell, which is a different and larger question: two faces can each
+/// be resolved and the cell's topology still be undetermined, because the regions
+/// they carry may or may not be joined through the interior.
+///
+/// Both settings are crack-free, for the same structural reason: neither touches
+/// face connectivity. See [`trilinear::Contours`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum InteriorAmbiguity {
+    /// Mesh each cell from its face connectivity alone. Marching Cubes and MC33's
+    /// face half both do this, and it is the default because it is what every
+    /// committed golden hash pins.
+    #[default]
+    Ignore,
+    /// Ask the trilinear interpolant, via Grosso's construction: contours from the
+    /// cut edges, topology from one quadratic, and a tunnel meshed **as** a tunnel.
+    ///
+    /// Only cells with an ambiguous face take this path; every other cell reads
+    /// the same table it always did, so the cost is confined to the roughly one
+    /// cell in two hundred that can differ.
+    Trilinear,
+}
+
 use ambiguity::joined_mask;
 use table::{
     AMBIGUOUS_FACES, CASES, EDGE_AXIS, EDGE_CORNERS, NO_EDGE, is_inside, segment_links, triangulate,
@@ -63,6 +88,7 @@ pub struct MarchingCubes<R: Real> {
     /// [`u32::MAX`].
     edge_vertices: Vec<u32>,
     face_ambiguity: FaceAmbiguity,
+    interior_ambiguity: InteriorAmbiguity,
 }
 
 impl<R: Real> MarchingCubes<R> {
@@ -73,6 +99,7 @@ impl<R: Real> MarchingCubes<R> {
             values: Vec::new(),
             edge_vertices: Vec::new(),
             face_ambiguity: FaceAmbiguity::Separate,
+            interior_ambiguity: InteriorAmbiguity::Ignore,
         }
     }
 
@@ -84,6 +111,16 @@ impl<R: Real> MarchingCubes<R> {
     /// difference measures.
     pub fn set_face_ambiguity(&mut self, face_ambiguity: FaceAmbiguity) {
         self.face_ambiguity = face_ambiguity;
+    }
+
+    /// How the cell's **interior** ambiguity is resolved.
+    ///
+    /// Defaults to [`InteriorAmbiguity::Ignore`]. [`InteriorAmbiguity::Trilinear`]
+    /// is A-002b's, and it only does anything on a cell that also has an ambiguous
+    /// face — so it is normally set together with
+    /// [`FaceAmbiguity::AsymptoticDecider`], whose answer it builds on.
+    pub fn set_interior_ambiguity(&mut self, interior_ambiguity: InteriorAmbiguity) {
+        self.interior_ambiguity = interior_ambiguity;
     }
 
     /// Extract the zero level set into `out`.
@@ -139,7 +176,16 @@ impl<R: Real> MarchingCubes<R> {
         // Both shape types guarantee the sample product fits in `u32` and cells
         // are fewer than samples, so this sum stays far below `u64::MAX`.
         let cells = u64::from(size[0] - 1) * u64::from(size[1] - 1) * u64::from(size[2] - 1);
-        let bound = 3u64 * sample_count as u64 + table::MAX_CENTROIDS as u64 * cells;
+        // A cell's interior vertices are cell-local and uncached, so they are
+        // budgeted per cell rather than per edge. A-015's cycle centroids need
+        // three; A-002h's tunnel names all six vertices of the inner hexagon, so
+        // the larger of the two is what has to be covered (M-218).
+        let per_cell = if table::MAX_CENTROIDS > trilinear::MAX_INTERIOR_VERTICES {
+            table::MAX_CENTROIDS
+        } else {
+            trilinear::MAX_INTERIOR_VERTICES
+        };
+        let bound = 3u64 * sample_count as u64 + per_cell as u64 * cells;
         if bound > u64::from(u32::MAX) {
             return Err(crate::Error::IndexSpaceExhausted { needed: bound });
         }
@@ -193,10 +239,35 @@ impl<R: Real> MarchingCubes<R> {
                         FaceAmbiguity::Separate => 0,
                         FaceAmbiguity::AsymptoticDecider => AMBIGUOUS_FACES[case as usize],
                     };
+                    let mask = if ambiguous == 0 {
+                        0
+                    } else {
+                        joined_mask(&corner_value, ambiguous)
+                    };
+
+                    // The trilinear path, and it is deliberately *only* reachable
+                    // on a cell that already has an ambiguous face: everything
+                    // else reads the same table it always did, byte for byte,
+                    // which is what keeps every existing golden hash intact.
+                    if ambiguous != 0 && self.interior_ambiguity == InteriorAmbiguity::Trilinear {
+                        self.emit_trilinear(
+                            sdf,
+                            shape,
+                            base,
+                            case,
+                            mask,
+                            &corner_value,
+                            origin,
+                            cell_size,
+                            out,
+                        );
+                        continue;
+                    }
+
                     let entry = if ambiguous == 0 {
                         CASES[case as usize]
                     } else {
-                        triangulate(segment_links(case, joined_mask(&corner_value, ambiguous)))
+                        triangulate(segment_links(case, mask))
                     };
                     if entry.count == 0 {
                         continue;
@@ -262,6 +333,113 @@ impl<R: Real> MarchingCubes<R> {
         }
 
         Ok(())
+    }
+
+    /// Mesh one ambiguous cell by Grosso's construction.
+    ///
+    /// Contours from the cut edges, topology from the body saddles, and a tunnel
+    /// meshed **as** a tunnel. Interior vertices are cell-local and never cached —
+    /// the same rule A-015's cycle centroids follow, and for the same reason: no
+    /// other cell can name them.
+    ///
+    /// Normals come from the field's own gradient at the vertex, as everywhere
+    /// else here. The reference implementation interpolates the eight corner
+    /// normals instead; this crate has the field on hand and `unit_gradient` is
+    /// its one rule for what a normal is.
+    #[allow(clippy::too_many_arguments)]
+    fn emit_trilinear<S, M>(
+        &mut self,
+        sdf: &S,
+        shape: &impl Shape3,
+        base: [u32; 3],
+        case: u8,
+        mask: u8,
+        corner_value: &[R; 8],
+        origin: [R; 3],
+        cell_size: R,
+        out: &mut M,
+    ) where
+        S: Sdf<Scalar = R>,
+        M: MeshSink<Scalar = R>,
+    {
+        use trilinear::{BodySaddles, Contours, INTERIOR, MAX_INTERIOR_VERTICES};
+
+        let contours = Contours::of(case, mask);
+        if contours.count() == 0 {
+            return;
+        }
+        let saddles = BodySaddles::of(corner_value);
+
+        // Cell-local coordinates to world. The cell is a unit cube in `(u,v,w)`.
+        let to_world = |p: [R; 3]| {
+            [
+                origin[0] + cell_size * (R::from_f64(f64::from(base[0])) + p[0]),
+                origin[1] + cell_size * (R::from_f64(f64::from(base[1])) + p[1]),
+                origin[2] + cell_size * (R::from_f64(f64::from(base[2])) + p[2]),
+            ]
+        };
+
+        // Interior vertices first, for the reason the centroids go first: a
+        // triangle that names one cannot be emitted until it exists.
+        let mut interior = [u32::MAX; MAX_INTERIOR_VERTICES];
+        let hexagon = saddles.inner_hexagon();
+        if let Some(ring) = hexagon {
+            for (slot, local) in interior.iter_mut().zip(ring) {
+                let position = to_world(local);
+                *slot = out.vertex(position, unit_gradient(sdf, position));
+            }
+        } else if let Some(local) = saddles.interior_vertex() {
+            debug_assert!(
+                local.iter().all(|&c| c >= R::ZERO && c <= R::ONE),
+                "interior vertex outside the cell: {local:?} mask {:#08b}",
+                saddles.inside_mask()
+            );
+            let position = to_world(local);
+            interior[0] = out.vertex(position, unit_gradient(sdf, position));
+        }
+
+        // `fan`/`fan_tunnel` hand back codes; resolve them here so the two paths
+        // share one resolver and cannot disagree about what a code means.
+        let mut triangles = [[0u8; 3]; trilinear::MAX_PATCH_TRIANGLES];
+        let mut count = 0usize;
+        if hexagon.is_some() {
+            contours.fan_tunnel(&saddles, corner_value, |t| {
+                triangles[count] = t;
+                count += 1;
+            });
+        } else {
+            let fanned = saddles.interior_vertex().is_some();
+            contours.fan(fanned, |t| {
+                triangles[count] = t;
+                count += 1;
+            });
+        }
+
+        for tri in &triangles[..count] {
+            let mut idx = [0u32; 3];
+            for (k, &code) in tri.iter().enumerate() {
+                idx[k] = if code >= INTERIOR {
+                    let slot = interior[(code - INTERIOR) as usize];
+                    debug_assert!(
+                        slot != u32::MAX,
+                        "a triangle named an interior vertex that was never created"
+                    );
+                    slot
+                } else {
+                    self.vertex_on_edge(
+                        sdf,
+                        shape,
+                        base,
+                        code,
+                        corner_value,
+                        origin,
+                        cell_size,
+                        out,
+                    )
+                };
+            }
+            out.triangle(idx[0], idx[1], idx[2]);
+        }
     }
 
     /// The vertex on one cut edge of one cell and where it sits, creating it if

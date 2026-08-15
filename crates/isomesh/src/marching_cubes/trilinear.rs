@@ -618,11 +618,17 @@ impl<R: Real> BodySaddles<R> {
     #[must_use]
     pub fn interior_vertex(&self) -> Option<[R; 3]> {
         let set = |axis: usize, k: usize| self.inside & coordinate_bit(axis, k) != 0;
-        // A 0/1 weight, so every "select the in-range one" below is an exact
-        // multiply-and-add rather than a branch.
-        let f = |axis: usize, k: usize| {
-            if set(axis, k) { R::ONE } else { R::ZERO }
-        };
+        // **Selection, not a 0/1 weight, and the difference is a real defect
+        // (M-221).** The reference multiplies each candidate by a 0/1 flag and
+        // sums, which is a selection *for finite values only*: an out-of-range
+        // coordinate can be `NaN` — the linear solve for `v` or `w` divides by a
+        // difference that vanishes where the interpolant does not vary along that
+        // axis — and `0 × NaN` is `NaN`, not zero. The reference dodges it by
+        // substituting `-1` for every non-finite coordinate; this crate keeps the
+        // mask as the single authority on which numbers mean anything, so the
+        // selection has to be a branch.
+        let f = |axis: usize, k: usize, x: R| if set(axis, k) { x } else { R::ZERO };
+        let one = |axis: usize, k: usize| if set(axis, k) { R::ONE } else { R::ZERO };
         let count = |a: (usize, usize), b: (usize, usize)| u8::from(set(a.0, a.1) && set(b.0, b.1));
 
         // Lines per pair of opposite faces. The `u` pair is crossed; see
@@ -641,47 +647,47 @@ impl<R: Real> BodySaddles<R> {
         let [u, v, w] = self.coordinate;
         let (uc, vc, wc) = match total {
             2 if fc_w == 0 => (
-                f(0, 0) * u[0] + f(0, 1) * u[1],
-                f(1, 0) * v[0] + f(1, 1) * v[1],
-                f(1, 0) * w[1] + f(1, 1) * w[0],
+                f(0, 0, u[0]) + f(0, 1, u[1]),
+                f(1, 0, v[0]) + f(1, 1, v[1]),
+                f(1, 0, w[1]) + f(1, 1, w[0]),
             ),
             2 if fc_v == 0 => (
-                f(0, 0) * u[0] + f(0, 1) * u[1],
-                f(0, 0) * v[0] + f(0, 1) * v[1],
-                f(0, 0) * w[1] + f(0, 1) * w[0],
+                f(0, 0, u[0]) + f(0, 1, u[1]),
+                f(0, 0, v[0]) + f(0, 1, v[1]),
+                f(0, 0, w[1]) + f(0, 1, w[0]),
             ),
             2 => (
-                f(1, 0) * u[0] + f(1, 1) * u[1],
-                f(1, 0) * v[0] + f(1, 1) * v[1],
-                f(1, 0) * w[0] + f(1, 1) * w[1],
+                f(1, 0, u[0]) + f(1, 1, u[1]),
+                f(1, 0, v[0]) + f(1, 1, v[1]),
+                f(1, 0, w[0]) + f(1, 1, w[1]),
             ),
             // Three lines: the mean of the two solutions on each axis, which is
             // the paper's "midpoint between the two saddle points" written so that
             // an axis with only one solution contributes that one unchanged.
             3 => (
-                (f(0, 0) * u[0] + f(0, 1) * u[1]) / (f(0, 0) + f(0, 1)),
-                (f(1, 0) * v[0] + f(1, 1) * v[1]) / (f(1, 0) + f(1, 1)),
-                (f(2, 0) * w[0] + f(2, 1) * w[1]) / (f(2, 0) + f(2, 1)),
+                (f(0, 0, u[0]) + f(0, 1, u[1])) / (one(0, 0) + one(0, 1)),
+                (f(1, 0, v[0]) + f(1, 1, v[1])) / (one(1, 0) + one(1, 1)),
+                (f(2, 0, w[0]) + f(2, 1, w[1])) / (one(2, 0) + one(2, 1)),
             ),
             4 => {
-                let on = |axis: usize| f(axis, 0) + f(axis, 1);
+                let on = |axis: usize| one(axis, 0) + one(axis, 1);
                 if on(2) == R::ONE {
                     (
-                        f(2, 0) * u[0] + f(2, 1) * u[1],
-                        f(2, 1) * v[0] + f(2, 0) * v[1],
-                        f(2, 0) * w[0] + f(2, 1) * w[1],
+                        f(2, 0, u[0]) + f(2, 1, u[1]),
+                        f(2, 1, v[0]) + f(2, 0, v[1]),
+                        f(2, 0, w[0]) + f(2, 1, w[1]),
                     )
                 } else if on(1) == R::ONE {
                     (
-                        f(1, 0) * u[0] + f(1, 1) * u[1],
-                        f(1, 0) * v[0] + f(1, 1) * v[1],
-                        f(1, 1) * w[0] + f(1, 0) * w[1],
+                        f(1, 0, u[0]) + f(1, 1, u[1]),
+                        f(1, 0, v[0]) + f(1, 1, v[1]),
+                        f(1, 1, w[0]) + f(1, 0, w[1]),
                     )
                 } else {
                     (
-                        f(0, 0) * u[0] + f(0, 1) * u[1],
-                        f(0, 0) * v[0] + f(0, 1) * v[1],
-                        f(0, 0) * w[0] + f(0, 1) * w[1],
+                        f(0, 0, u[0]) + f(0, 1, u[1]),
+                        f(0, 0, v[0]) + f(0, 1, v[1]),
+                        f(0, 0, w[0]) + f(0, 1, w[1]),
                     )
                 }
             }
@@ -1020,3 +1026,13 @@ impl Contours {
         unresolved
     }
 }
+
+/// Most triangles one cell's patch can carry on the trilinear path.
+///
+/// Twenty-two, reached by a tunnel; a fanned disk tops out at twelve. Measured
+/// exhaustively for the disk path and over 400,000 random cells for the tunnel —
+/// `the_worst_case_triangle_count_is_pinned` and
+/// `the_worst_case_tunnel_triangle_count_is_pinned` both pin it in both
+/// directions. Larger than [`super::table::MAX_TRIANGLES`], which sizes the
+/// 256-case table's own array and is untouched by this path.
+pub const MAX_PATCH_TRIANGLES: usize = 24;

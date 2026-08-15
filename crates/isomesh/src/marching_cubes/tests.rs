@@ -1308,3 +1308,234 @@ fn the_decider_at_a_chunk_seam_is_measured() {
     assert_eq!(sign_disagreements, 0);
     assert_eq!(decision_flips, 0);
 }
+
+// ─── A-002b: the interior rule, end to end ──────────────────────────────────
+
+/// Mesh a reference field with the trilinear interior rule switched on.
+fn mesh_trilinear<F: Sdf<Scalar = f64> + ReferenceField>(
+    field: &F,
+    samples: u32,
+) -> (MeshBuffer<f64>, f64) {
+    let (lo, hi) = field.domain();
+    let cell_size = (hi[0] - lo[0]) / f64::from(samples - 1);
+    let mut mc = MarchingCubes::<f64>::new();
+    mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+    mc.set_interior_ambiguity(crate::marching_cubes::InteriorAmbiguity::Trilinear);
+    let mut out = MeshBuffer::<f64>::new();
+    let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
+    mc.extract(field, &shape, lo, cell_size, &mut out)
+        .expect("extraction");
+    (out, cell_size)
+}
+
+/// **A-002b's acceptance, first part: the rule changes the mesh, and only where
+/// it should.**
+///
+/// On the five fields with no ambiguous face at all (M-40) the interior rule
+/// cannot fire, so the output must be **byte-identical** to the decider's. On
+/// `noise_cavity` it must differ, because that field was added precisely to
+/// contain the configuration (M-208). A rule that changed nothing anywhere, or
+/// changed something everywhere, would be wrong in opposite directions.
+#[test]
+fn the_interior_rule_fires_only_where_a_cell_is_ambiguous() {
+    let mut identical = alloc::vec::Vec::new();
+    let mut differing = alloc::vec::Vec::new();
+
+    crate::for_each_reference_field!(f64, |name, field| {
+        for samples in [17u32, 33] {
+            let (lo, hi) = field.domain();
+            let h = (hi[0] - lo[0]) / f64::from(samples - 1);
+            let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
+
+            let mut decider = MarchingCubes::<f64>::new();
+            decider.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+            let mut a = MeshBuffer::<f64>::new();
+            decider
+                .extract(&field, &shape, lo, h, &mut a)
+                .expect("extract");
+
+            let (b, _) = mesh_trilinear(&field, samples);
+
+            if a.positions == b.positions && a.indices == b.indices {
+                identical.push((name, samples));
+            } else {
+                differing.push((name, samples, a.triangle_count(), b.triangle_count()));
+            }
+        }
+    });
+
+    assert!(
+        !differing.is_empty(),
+        "the interior rule changed nothing on any field, so it is untested"
+    );
+    assert!(
+        !identical.is_empty(),
+        "the interior rule changed every field, which means it is firing on cells \
+         that have no ambiguity"
+    );
+    std::println!("measured: unchanged on {identical:?}");
+    std::println!("measured: changed on {differing:?}");
+}
+
+/// **A-002b's acceptance, second part: the meshes are still valid.**
+///
+/// Same gate the rest of the suite uses, chosen by the field rather than by the
+/// test: closed fields must come out closed, open ones manifold, and χ is
+/// asserted only where the field publishes one.
+#[test]
+fn every_reference_field_meshes_cleanly_under_the_interior_rule() {
+    crate::for_each_reference_field!(f64, |name, field| {
+        for samples in [17u32, 25, 33] {
+            let (out, h) = mesh_trilinear(&field, samples);
+            assert!(
+                out.triangle_count() > 0,
+                "{name} at {samples}^3 produced nothing"
+            );
+            let report = validate_indexed(
+                &out.positions,
+                &out.indices,
+                &ValidateConfig::from_cell_size(h).expect("valid cell size"),
+            );
+            // The gate is the field's, not the test's: `fbm_terrain` leaves
+            // through the sides of its domain by construction, so boundary edges
+            // are correct there and a blanket zero would assert the field is
+            // something it says it is not.
+            if field.closed_in_domain() {
+                assert_eq!(
+                    report.boundary_edges, 0,
+                    "{name} at {samples}^3 is not crack-free:\n{report}"
+                );
+            }
+            assert_eq!(
+                report.inconsistently_oriented_edges, 0,
+                "{name} at {samples}^3:\n{report}"
+            );
+            if let Some(chi) = field.expected_euler() {
+                assert_eq!(
+                    report.euler_characteristic, chi,
+                    "{name} at {samples}^3:\n{report}"
+                );
+            }
+            std::println!(
+                "measured: {name} {samples}^3 -> {} tris, chi {}, nm-edges {}",
+                out.triangle_count(),
+                report.euler_characteristic,
+                report.non_manifold_edges
+            );
+        }
+    });
+}
+
+/// Same input twice, byte for byte, including through a reused buffer.
+#[test]
+fn the_interior_rule_is_deterministic() {
+    let field = crate::fields::noise_cavity::<f64>();
+    let (lo, hi) = field.domain();
+    let h = (hi[0] - lo[0]) / 32.0;
+    let shape = RuntimeShape3::new([33; 3]).expect("valid shape");
+    let report = check_determinism(|out: &mut MeshBuffer<f64>| {
+        let mut mc = MarchingCubes::<f64>::new();
+        mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+        mc.set_interior_ambiguity(crate::marching_cubes::InteriorAmbiguity::Trilinear);
+        mc.extract(&field, &shape, lo, h, out).expect("extraction");
+    });
+    report.panic_if_divergent();
+    std::println!("measured: {} vertices, deterministic", report.vertices);
+}
+
+/// **A-002b's acceptance, and the sharpest form it has: χ falls by exactly two
+/// per tunnel, and by nothing at all otherwise.**
+///
+/// A tunnel is a handle, and a handle costs a closed surface `χ = 2 − 2g` exactly
+/// **two**. Everything else the interior rule does — giving an ambiguous contour
+/// an interior vertex and fanning from it instead of from one of its own
+/// vertices — is topology-neutral by construction: it adds one vertex, three
+/// edges and two faces, and `1 − 3 + 2 = 0`.
+///
+/// So the prediction is arithmetic rather than approximate, and it is checked
+/// against a count taken from a completely different instrument: the number of
+/// cells whose [`Contours::topology`] says `Tunnel`. Nothing in the extractor
+/// tells the validator what to expect.
+///
+/// The twelve-vertex contour is the half that makes this a real test. It also has
+/// six body saddles, and it is **not** a handle — it is a disk with a long
+/// boundary — so it must contribute nothing. At 33³ `noise_cavity` has four
+/// six-saddle cells and χ moves by four rather than eight, which is two tunnels
+/// and two twelve-vertex contours; a rule that treated all six-saddle cells alike
+/// would miss by exactly that.
+#[test]
+fn chi_falls_by_two_for_every_tunnel_and_by_nothing_else() {
+    use crate::cube::is_inside as inside;
+    use crate::marching_cubes::ambiguity::joined_mask;
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+    use crate::marching_cubes::trilinear::{BodySaddles, Contours, Topology};
+
+    let mut rows = alloc::vec::Vec::new();
+    let mut tunnels_seen = 0usize;
+
+    crate::for_each_reference_field!(f64, |name, field| {
+        for samples in [17u32, 25, 33] {
+            let (lo, hi) = field.domain();
+            let h = (hi[0] - lo[0]) / f64::from(samples - 1);
+            let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
+
+            // Count tunnels by walking the grid with the classifier alone.
+            let mut tunnels = 0usize;
+            for z in 0..samples - 1 {
+                for y in 0..samples - 1 {
+                    for x in 0..samples - 1 {
+                        let mut corner = [0.0f64; 8];
+                        let mut case = 0u8;
+                        for (c, slot) in corner.iter_mut().enumerate() {
+                            let o = crate::cube::corner_offset(c as u8);
+                            *slot = field.sample([
+                                lo[0] + h * f64::from(x + o[0]),
+                                lo[1] + h * f64::from(y + o[1]),
+                                lo[2] + h * f64::from(z + o[2]),
+                            ]);
+                            if inside(*slot) {
+                                case |= 1 << c;
+                            }
+                        }
+                        let ambiguous = AMBIGUOUS_FACES[case as usize];
+                        if ambiguous == 0 {
+                            continue;
+                        }
+                        let contours = Contours::of(case, joined_mask(&corner, ambiguous));
+                        if contours.topology(&BodySaddles::of(&corner)) == Topology::Tunnel {
+                            tunnels += 1;
+                        }
+                    }
+                }
+            }
+
+            let mut decider = MarchingCubes::<f64>::new();
+            decider.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+            let mut a = MeshBuffer::<f64>::new();
+            decider
+                .extract(&field, &shape, lo, h, &mut a)
+                .expect("extraction");
+            let (b, _) = mesh_trilinear(&field, samples);
+
+            let cfg = ValidateConfig::from_cell_size(h).expect("valid cell size");
+            let before = validate_indexed(&a.positions, &a.indices, &cfg).euler_characteristic;
+            let after = validate_indexed(&b.positions, &b.indices, &cfg).euler_characteristic;
+
+            assert_eq!(
+                after,
+                before - 2 * tunnels as i64,
+                "{name} at {samples}^3: chi went {before} -> {after} with {tunnels} tunnels"
+            );
+            tunnels_seen += tunnels;
+            if tunnels > 0 {
+                rows.push((name, samples, tunnels, before, after));
+            }
+        }
+    });
+
+    assert!(
+        tunnels_seen > 0,
+        "no field produced a tunnel, so this asserted nothing"
+    );
+    std::println!("measured: chi shift by tunnel count {rows:?}");
+}

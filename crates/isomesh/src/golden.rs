@@ -145,6 +145,9 @@ enum Algorithm {
     GreedyQuads,
     MarchingCubes,
     MarchingCubes33,
+    /// Marching Cubes 33 with the **interior** rule as well as the face one —
+    /// A-002b's, and the only row that meshes a tunnel as a tunnel.
+    MarchingCubes33Trilinear,
     MarchingTetrahedra,
     SurfaceNets,
     DualContouring,
@@ -167,10 +170,11 @@ enum Algorithm {
 const SUBGRID_SAMPLES: u32 = 16;
 
 impl Algorithm {
-    const ALL: [Self; 8] = [
+    const ALL: [Self; 9] = [
         Self::GreedyQuads,
         Self::MarchingCubes,
         Self::MarchingCubes33,
+        Self::MarchingCubes33Trilinear,
         Self::MarchingTetrahedra,
         Self::SurfaceNets,
         Self::DualContouring,
@@ -183,6 +187,7 @@ impl Algorithm {
             Self::GreedyQuads => "greedy_quads",
             Self::MarchingCubes => "marching_cubes",
             Self::MarchingCubes33 => "marching_cubes+decider",
+            Self::MarchingCubes33Trilinear => "marching_cubes+trilinear",
             Self::MarchingTetrahedra => "marching_tetrahedra",
             Self::SurfaceNets => "surface_nets",
             Self::DualContouring => "dual_contouring",
@@ -220,6 +225,13 @@ where
         Algorithm::MarchingCubes33 => {
             let mut mc = MarchingCubes::<f64>::new();
             mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+            mc.extract(field, &shape, lo, cell_size, &mut out)
+                .expect("extraction");
+        }
+        Algorithm::MarchingCubes33Trilinear => {
+            let mut mc = MarchingCubes::<f64>::new();
+            mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+            mc.set_interior_ambiguity(crate::marching_cubes::InteriorAmbiguity::Trilinear);
             mc.extract(field, &shape, lo, cell_size, &mut out)
                 .expect("extraction");
         }
