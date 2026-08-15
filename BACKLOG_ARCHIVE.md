@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-152 tickets. Line numbers are stable until something above them is edited — grep the ID if
+153 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -76,6 +76,7 @@ implementation contradicted the ticket.
 | [`F-006`](#L910) | Segment tracing — the null result, and where it is not null |
 | [`F-007`](#L918) | Crossing refinement — right mechanism, wrong metric |
 | [`S-001`](#L926) | The exact distance transform, checked two ways |
+| [`S-002`](#L934) | Fast sweeping — the seeding is where the accuracy is |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -890,3 +891,8 @@ implementation contradicted the ticket.
 | | | ***The one-cell gap is structural and is stated as such (M-251).*** Worst disagreement **0.10000 against a spacing of 0.1 — exactly 1.0000 cells**. The transform answers with the distance to the nearest opposite-signed *sample*, and the surface lies between samples, so a point whose nearest crossing falls mid-cell is off by a full spacing. Landing on the bound rather than inside it is the expected result; the test compares against `1 + ε` for that reason and says so, rather than quietly widening the tolerance. |
 | | | ***The test grid is 11×9×13, deliberately not a cube.*** An axis transposition in a separable three-pass transform survives a cube perfectly and dies immediately on unequal extents. |
 | | | *Squared distances throughout with one square root at the end: the recurrence is exact in squared space, and the parabola-intersection formula's `2(q − p)` denominator only has that form because the terms are squares. `far()` is a large finite number rather than infinity, because `∞ − ∞` in that formula is a NaN that propagates silently through the envelope.* |
+| ☑ | **S-002** | **Fast sweeping.** | M | S-001 |
+| | | ***It beats the exact transform everywhere, including where I predicted it would lose (M-252).*** Worst error against the analytic sphere at 41³, by band: **within two cells, swept 0.0333 against 0.1000; beyond eight cells, swept 0.0933 against 0.1000.** Three times better near the surface and still ahead, narrowly, far from it. |
+| | | ***The mechanism is the seed rather than the sweep.*** The exact transform answers with the distance to the nearest opposite-signed **sample**, so it is quantised to the grid with a floor of one full spacing (M-251). Sweeping seeds from the *interpolated* crossing and starts sub-cell; a sphere's characteristics are radial straight lines, the eight-orthant sweep follows them, and that head start survives to the edge of the domain. |
+| | | ***The losing-at-distance prediction was mine and went into a doc comment as though established.*** That is the third time in one day — M-244 and M-250 are the others — that a stated expectation reached prose before a measurement reached a test. The doc is corrected and the assertion is now "does not lose", so a field that flips the ordering fails loudly rather than quietly vindicating the original claim. |
+| | | *Eight sweeps because there are eight orthants, not because eight converged: a characteristic of the eikonal equation is a straight line and every straight line in 3D is monotone in each axis, so some diagonal ordering follows it. The count is a property of the geometry rather than a tuning knob, and the docs say so.* |

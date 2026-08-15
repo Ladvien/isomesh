@@ -234,3 +234,219 @@ pub fn signed_distance_field<R: Real>(
     }
     Ok(out)
 }
+
+/// Fast sweeping: Gauss–Seidel passes over the eikonal equation, in place.
+///
+/// Ticket: S-002. Zhao, *A fast sweeping method for eikonal equations*,
+/// Mathematics of Computation 74(250), pp. 603–627 (2005).
+///
+/// # Why this exists when [`signed_distance_field`] is already exact
+///
+/// The exact transform answers with the distance to the nearest opposite-signed
+/// **sample**, which quantises the answer to the grid — M-251 measured that at a
+/// full spacing on a sphere. Sweeping solves `|∇d| = 1` instead, so it can place
+/// the surface *between* samples and does not inherit that floor. It is also
+/// `O(N)` with no heap and a handful of passes, which is why it is the
+/// pragmatic default rather than the exact one.
+///
+/// # Eight sweeps, and why the count is not a tuning knob
+///
+/// Each pass visits the grid in one of the `2³` diagonal orderings. Zhao's
+/// argument is that a characteristic of the eikonal equation is a straight line,
+/// and every straight line in 3D is monotone in each axis, so **some** ordering
+/// follows it — after all eight, every characteristic has been swept along.
+/// That is why the count is eight rather than "enough": it is the number of
+/// orthants, not a convergence parameter.
+///
+/// # The seed values are the whole accuracy story
+///
+/// Sweeping propagates whatever it is given. Seeded with zeros on the inside
+/// samples it reproduces the exact transform's quantisation exactly; seeded with
+/// the **sub-cell** crossing position — where the sign change actually falls
+/// between two samples — it does better, and that is what
+/// `beats_the_exact_transform_near_the_surface` measures.
+fn sweep<R: Real>(d: &mut [R], frozen: &[bool], size: [u32; 3], h: R) {
+    let (nx, ny, nz) = (size[0] as usize, size[1] as usize, size[2] as usize);
+    let at = |x: usize, y: usize, z: usize| (z * ny + y) * nx + x;
+
+    // The eight diagonal orderings, as (reverse_x, reverse_y, reverse_z).
+    for pass in 0..8u8 {
+        let (rx, ry, rz) = (pass & 1 != 0, pass & 2 != 0, pass & 4 != 0);
+        for zi in 0..nz {
+            let z = if rz { nz - 1 - zi } else { zi };
+            for yi in 0..ny {
+                let y = if ry { ny - 1 - yi } else { yi };
+                for xi in 0..nx {
+                    let x = if rx { nx - 1 - xi } else { xi };
+                    let i = at(x, y, z);
+                    if frozen[i] {
+                        continue;
+                    }
+                    // Smaller neighbour along each axis; a boundary axis
+                    // contributes nothing rather than a sentinel.
+                    let pick = |a: Option<R>, b: Option<R>| match (a, b) {
+                        (Some(p), Some(q)) => Some(if p < q { p } else { q }),
+                        (Some(p), None) | (None, Some(p)) => Some(p),
+                        (None, None) => None,
+                    };
+                    let ax = pick(
+                        (x > 0).then(|| d[at(x - 1, y, z)]),
+                        (x + 1 < nx).then(|| d[at(x + 1, y, z)]),
+                    );
+                    let ay = pick(
+                        (y > 0).then(|| d[at(x, y - 1, z)]),
+                        (y + 1 < ny).then(|| d[at(x, y + 1, z)]),
+                    );
+                    let az = pick(
+                        (z > 0).then(|| d[at(x, y, z - 1)]),
+                        (z + 1 < nz).then(|| d[at(x, y, z + 1)]),
+                    );
+
+                    // Godunov update: solve for the largest root using only the
+                    // neighbours smaller than it, adding them in increasing
+                    // order until the candidate stops exceeding the next one.
+                    let mut a: [R; 3] = [far(), far(), far()];
+                    let mut n = 0usize;
+                    for v in [ax, ay, az].into_iter().flatten() {
+                        a[n] = v;
+                        n += 1;
+                    }
+                    if n == 0 {
+                        continue;
+                    }
+                    a[..n].sort_by(|p, q| p.partial_cmp(q).unwrap_or(core::cmp::Ordering::Equal));
+
+                    let mut candidate = a[0] + h;
+                    if n > 1 && candidate > a[1] {
+                        // Two-axis root of (d−a0)² + (d−a1)² = h².
+                        let (s, q) = (a[0] + a[1], a[0] * a[1]);
+                        let disc = s * s - (R::ONE + R::ONE) * (q + q - h * h);
+                        if disc >= R::ZERO {
+                            candidate = (s + disc.sqrt()) * R::HALF;
+                        }
+                        if n > 2 && candidate > a[2] {
+                            // Three-axis root; the same algebra one dimension up.
+                            let s3 = a[0] + a[1] + a[2];
+                            let q3 = a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
+                            let three = R::from_f64(3.0);
+                            let disc3 = s3 * s3 - three * (q3 - h * h);
+                            if disc3 >= R::ZERO {
+                                candidate = (s3 + disc3.sqrt()) / three;
+                            }
+                        }
+                    }
+                    if candidate < d[i] {
+                        d[i] = candidate;
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Build a signed distance field by fast sweeping.
+///
+/// Ticket: S-002. Same contract as [`signed_distance_field`] — sign convention,
+/// world units, error cases — and a different algorithm behind it.
+///
+/// # What it does better, and what it does worse
+///
+/// **Better near the surface, by 3×.** Cells adjacent to a sign change are seeded
+/// with the *interpolated* crossing distance rather than zero, so the answer is
+/// not quantised to the grid the way the exact transform's is.
+///
+/// **Not worse far from it, which was predicted and is false.** The concern was
+/// that a value ten cells out is ten first-order Godunov updates and accumulates
+/// error the exact transform does not. Measured on a sphere at 41³: within two
+/// cells of the surface, worst error **0.0333 against the transform's 0.1000**;
+/// beyond eight cells, **0.0933 against 0.1000**. It wins everywhere, narrowly
+/// at distance — the characteristics of a sphere are radial straight lines, the
+/// eight-orthant sweep follows them, and the seeding advantage survives (M-252).
+///
+/// `sweeping_and_the_exact_transform_trade_places_with_distance` keeps the name
+/// it was written under and now asserts "does not lose" at distance rather than
+/// "loses", so a field that does flip the ordering fails it loudly.
+///
+/// # Errors
+///
+/// As [`signed_distance_field`].
+pub fn signed_distance_field_swept<R: Real>(
+    samples: &[R],
+    shape: &impl Shape3,
+    cell_size: R,
+) -> crate::Result<Vec<R>> {
+    let size = shape.size();
+    if size[0] < 2 || size[1] < 2 || size[2] < 2 {
+        return Err(crate::Error::GridTooSmall { size });
+    }
+    let count = shape.element_count();
+    if samples.len() != count {
+        return Err(crate::Error::ShapeOverflow {
+            size,
+            product: samples.len() as u64,
+        });
+    }
+    let (nx, ny, nz) = (size[0] as usize, size[1] as usize, size[2] as usize);
+    let at = |x: usize, y: usize, z: usize| (z * ny + y) * nx + x;
+
+    // Seed: every sample adjacent to a sign change gets the *interpolated*
+    // distance to that crossing, which is the sub-cell information the exact
+    // transform throws away.
+    let mut d = vec![far::<R>(); count];
+    let mut frozen = vec![false; count];
+    for z in 0..nz {
+        for y in 0..ny {
+            for x in 0..nx {
+                let i = at(x, y, z);
+                let here = samples[i];
+                let inside = here < R::ZERO;
+                let mut best = far::<R>();
+                let mut neighbour = |j: usize| {
+                    let there = samples[j];
+                    if (there < R::ZERO) == inside {
+                        return;
+                    }
+                    // Linear crossing along this edge, as a fraction of a cell.
+                    let denom = here - there;
+                    if denom == R::ZERO {
+                        return;
+                    }
+                    let t = (here / denom).abs();
+                    if t < best {
+                        best = t;
+                    }
+                };
+                if x > 0 {
+                    neighbour(at(x - 1, y, z));
+                }
+                if x + 1 < nx {
+                    neighbour(at(x + 1, y, z));
+                }
+                if y > 0 {
+                    neighbour(at(x, y - 1, z));
+                }
+                if y + 1 < ny {
+                    neighbour(at(x, y + 1, z));
+                }
+                if z > 0 {
+                    neighbour(at(x, y, z - 1));
+                }
+                if z + 1 < nz {
+                    neighbour(at(x, y, z + 1));
+                }
+                if best < far::<R>() {
+                    d[i] = best * cell_size;
+                    frozen[i] = true;
+                }
+            }
+        }
+    }
+
+    sweep(&mut d, &frozen, size, cell_size);
+
+    let mut out = vec![R::ZERO; count];
+    for (i, slot) in out.iter_mut().enumerate() {
+        *slot = if samples[i] < R::ZERO { -d[i] } else { d[i] };
+    }
+    Ok(out)
+}
