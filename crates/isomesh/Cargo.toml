@@ -9,6 +9,7 @@ repository.workspace = true
 authors.workspace = true
 categories.workspace = true
 keywords.workspace = true
+documentation = "https://docs.rs/isomesh"
 # crates.io renders this as the crate's landing page, and without it the page is
 # blank. It is deliberately *not* a copy of the repository README: relative image
 # paths do not resolve on crates.io, so every link here is absolute, and a reader

@@ -9,6 +9,10 @@ repository.workspace = true
 authors.workspace = true
 categories.workspace = true
 keywords.workspace = true
+documentation = "https://docs.rs/isomesh-gpu"
+# cargo auto-detects README.md at the package root; named explicitly so the
+# intent survives a rename.
+readme = "README.md"
 
 [dependencies]
 isomesh = { path = "../isomesh", version = "0.0.4" }

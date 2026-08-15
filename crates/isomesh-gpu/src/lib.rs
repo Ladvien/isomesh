@@ -81,3 +81,12 @@ pub use scan::{DeferredScan, PrefixScan, ScanOutput, cpu_prefix_sum};
 pub use shader::{
     Composer, FEATURES, FIELD_WGSL, GRID_WGSL, MARCHING_CUBES_WGSL, MESH_RENDER_WGSL, SCAN_WGSL,
 };
+
+/// Compiles the README's example as a doctest, without putting the README into
+/// these docs — the same pattern `isomesh` uses. The README's fence is
+/// `rust,no_run`: it must compile everywhere, including a CI runner with no
+/// adapter, and execute nowhere, because [`headless::Gpu::new`] refuses to fall
+/// back to a software device.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+pub struct ReadmeExample;

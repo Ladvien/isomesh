@@ -1,10 +1,16 @@
 # isomesh-gpu
 
-> ⚠️ **Vibe Coded.** Written by an AI agent from a research corpus and a ticket queue. Every number
-> here is produced by a test in this repository, but it has not been through human code review.
+> ⚠️ **Vibe Coded.** This crate was written by an AI agent working from a research corpus and a ticket queue. Every number below is produced by a test in this repository and every algorithm cites its source, but it has not been through human code review. Read the tests before trusting it with anything that matters.
 
-GPU isosurface extraction for [`isomesh`](../isomesh), on raw `wgpu`. No engine types anywhere in the
-public API.
+[![crates.io](https://img.shields.io/crates/v/isomesh-gpu.svg)](https://crates.io/crates/isomesh-gpu) [![docs.rs](https://img.shields.io/docsrs/isomesh-gpu)](https://docs.rs/isomesh-gpu) [![CI](https://github.com/ladvien/isomesh/actions/workflows/ci.yml/badge.svg)](https://github.com/ladvien/isomesh/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/ladvien/isomesh/blob/main/LICENSE-MIT)
+
+GPU isosurface extraction for [`isomesh`](https://crates.io/crates/isomesh), on raw `wgpu`. No engine
+types anywhere in the public API.
+
+![The whole pipeline on the GPU: field evaluation, Marching Cubes, prefix scan and the draw](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e303-gpu-mesh-shader.png)
+
+*E-303: field to pixels without the geometry ever crossing the bus — four bytes come home per frame.
+The timings table below is the compute half of the same story.*
 
 ## The rule
 
@@ -37,7 +43,7 @@ So a machine with no GPU **fails** these tests. That is the intended behaviour.
 
 ## What is here
 
-```rust
+```rust,no_run
 use isomesh::fields::Sphere;
 use isomesh_gpu::{FieldBuffer, GridParams, headless, read_buffer};
 
@@ -46,7 +52,12 @@ let grid = GridParams::new([33; 3], [-2.0; 3], 0.125)?;
 
 let field = FieldBuffer::sampled(gpu.device(), gpu.queue(), grid, &Sphere::<f32>::canonical())?;
 let back = read_buffer(gpu.device(), gpu.queue(), field.buffer(), grid.field_buffer_size())?;
+# drop(back);
+# Ok::<(), isomesh_gpu::Error>(())
 ```
+
+That block is compiled — never run — by every `cargo test`: the fence is `rust,no_run`, because a CI
+runner has no adapter and `headless::Gpu::new` refuses to pretend otherwise.
 
 - **`GridParams`** — a validated sampling grid, with the 32-byte two-`vec4` layout a shader reads it
   as. Positions are the index *multiplied*, never accumulated; `isomesh`'s M-70 and M-73 both record
@@ -158,3 +169,7 @@ wgpu's own source settles the Metal question: the feature reaches Vulkan, DX12 a
 is only supported on vulkan; on other platforms you will have to use passthrough shaders."* So mesh
 shaders are a fork in the shader pipeline, not a flag on it. **Metal is still unmeasured** — run the
 probe there.
+
+## License
+
+MIT OR Apache-2.0, at your option.
