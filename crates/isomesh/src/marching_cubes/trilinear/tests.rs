@@ -11,7 +11,7 @@
 // An approximate comparison would be a different test, not a weaker one.
 #![allow(clippy::float_cmp)]
 
-use super::{ALL_INSIDE, BodySaddles};
+use super::{ALL_INSIDE, BodySaddles, Contours, MAX_CONTOURS, Topology};
 use crate::Sdf;
 use crate::cube::{corner_offset, is_inside};
 use crate::fields::ReferenceField;
@@ -622,4 +622,196 @@ fn the_tunnel_field_actually_contains_tunnels() {
         "the tunnel population moved; the field or the classifier changed"
     );
     std::println!("measured: noise_cavity six-saddle cells at 17/25/33 -> {counts:?}");
+}
+
+// ─── A-002f: contours ───────────────────────────────────────────────────────
+
+/// Every cut edge lies on exactly one ring, and the rings close.
+///
+/// Exhaustive over all 256 cases × all 64 face-resolution masks, in the shape
+/// `validate_decider_table` uses — 16,384 combinations, not the handful some
+/// field happens to produce.
+#[test]
+fn every_cut_edge_lies_on_exactly_one_closed_ring() {
+    use crate::cube::{EDGE_CORNERS, corner_inside};
+    use crate::marching_cubes::table::segment_links;
+
+    let mut worst_rings = 0usize;
+    let mut worst_len = 0usize;
+    for case in 0..=255u8 {
+        for mask in 0..64u8 {
+            let contours = Contours::of(case, mask);
+
+            let mut cut = 0u16;
+            for (edge, [lo, hi]) in EDGE_CORNERS.into_iter().enumerate() {
+                if corner_inside(case, lo) != corner_inside(case, hi) {
+                    cut |= 1 << edge;
+                }
+            }
+
+            let mut seen = 0u16;
+            let next = segment_links(case, mask);
+            for r in 0..contours.count() {
+                let ring = contours.ring(r);
+                assert!(
+                    ring.len() >= 3,
+                    "case {case:#010b} mask {mask:#08b}: ring of {}",
+                    ring.len()
+                );
+                for (k, &e) in ring.iter().enumerate() {
+                    assert_eq!(seen & (1 << e), 0, "edge {e} is on two rings");
+                    seen |= 1 << e;
+                    // The ring really is the link walk, closed at the wrap.
+                    let follows = ring[(k + 1) % ring.len()];
+                    assert_eq!(
+                        next[e as usize], follows,
+                        "case {case:#010b} mask {mask:#08b}: ring does not follow the links"
+                    );
+                }
+                worst_len = worst_len.max(ring.len());
+            }
+            assert_eq!(
+                seen, cut,
+                "case {case:#010b} mask {mask:#08b}: rings do not cover the cut edges"
+            );
+            worst_rings = worst_rings.max(contours.count());
+        }
+    }
+    // Four rings is the tetrahedral case; twelve is the single contour through
+    // every cut edge. Pinned so an over-sized buffer is as visible as an
+    // under-sized one.
+    assert_eq!(worst_rings, MAX_CONTOURS);
+    assert_eq!(worst_len, 12);
+    std::println!(
+        "measured: 16,384 combinations, at most {worst_rings} rings, longest {worst_len}"
+    );
+}
+
+/// Grosso lists the ring lengths his construction can produce; ours produces
+/// exactly that set.
+///
+/// *"Contours can have 3, 4, 5, 6, 7, 8, 9 or 12 vertices."* Ten and eleven are
+/// **absent**, which is the interesting half — a ring of eleven would mean one
+/// cut edge left over from a twelve-edge cell, and the parity of the face walk
+/// forbids it.
+#[test]
+fn ring_lengths_are_the_set_the_paper_lists() {
+    let mut seen = [false; 13];
+    for case in 0..=255u8 {
+        for mask in 0..64u8 {
+            let contours = Contours::of(case, mask);
+            for r in 0..contours.count() {
+                seen[contours.ring(r).len()] = true;
+            }
+        }
+    }
+    let produced: alloc::vec::Vec<usize> = (0..13).filter(|&k| seen[k]).collect();
+    assert_eq!(
+        produced,
+        alloc::vec![3, 4, 5, 6, 7, 8, 9, 12],
+        "the ring-length set moved"
+    );
+    std::println!("measured: ring lengths produced = {produced:?}");
+}
+
+/// The tunnel and the twelve-vertex contour are told apart by the ring count,
+/// and both are reachable.
+///
+/// **A-002d deliberately could not make this call** — six body saddles mean one
+/// or the other and the saddles do not say which. This is the test that the ring
+/// count does say, and that neither answer is dead code.
+#[test]
+fn six_saddles_split_into_tunnels_and_twelve_vertex_contours() {
+    use crate::cube::is_inside as inside;
+    use crate::marching_cubes::ambiguity::joined_mask;
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+
+    let mut rng = Lcg::new(0x0000_A002_F000_0001);
+    let mut tunnels = 0usize;
+    let mut twelves = 0usize;
+    let mut disks = 0usize;
+
+    for _ in 0..400_000 {
+        let f = rng.corners();
+        let mut case = 0u8;
+        for (c, &v) in f.iter().enumerate() {
+            if inside(v) {
+                case |= 1 << c;
+            }
+        }
+        if case == 0 || case == 255 {
+            continue;
+        }
+        let mask = joined_mask(&f, AMBIGUOUS_FACES[case as usize]);
+        let contours = Contours::of(case, mask);
+        match contours.topology(&BodySaddles::of(&f)) {
+            Topology::Disks => disks += 1,
+            Topology::Tunnel => tunnels += 1,
+            Topology::TwelveVertexContour => twelves += 1,
+        }
+    }
+
+    assert!(
+        tunnels > 0,
+        "no tunnel was reached, so the branch is untested"
+    );
+    assert!(
+        twelves > 0,
+        "no twelve-vertex contour was reached, so that branch is untested"
+    );
+    std::println!("measured: {disks} disks, {tunnels} tunnels, {twelves} twelve-vertex contours");
+}
+
+/// Grosso's Corollary 4, checked against the rings rather than assumed.
+///
+/// *"If the three quadratic equations have less than two solutions within the
+/// range, or if only one of the equations has two solutions, then the contour has
+/// 3, 4, 5 or 6 vertices and does not intersect an ambiguous face."*
+///
+/// Recorded as a census rather than asserted as a bare implication, because the
+/// interesting part is the shape of the exceptions if there are any.
+#[test]
+fn few_saddles_mean_short_rings() {
+    use crate::cube::is_inside as inside;
+    use crate::marching_cubes::ambiguity::joined_mask;
+    use crate::marching_cubes::table::AMBIGUOUS_FACES;
+
+    let mut rng = Lcg::new(0x0000_A002_F000_0002);
+    let mut checked = 0usize;
+    let mut violations = 0usize;
+    let mut worst = 0usize;
+
+    for _ in 0..400_000 {
+        let f = rng.corners();
+        let mut case = 0u8;
+        for (c, &v) in f.iter().enumerate() {
+            if inside(v) {
+                case |= 1 << c;
+            }
+        }
+        if case == 0 || case == 255 {
+            continue;
+        }
+        let saddles = BodySaddles::of(&f);
+        if saddles.inside_count() >= 2 {
+            continue;
+        }
+        let mask = joined_mask(&f, AMBIGUOUS_FACES[case as usize]);
+        let contours = Contours::of(case, mask);
+        let longest = contours.longest();
+        worst = worst.max(longest);
+        if longest > 6 {
+            violations += 1;
+        }
+        checked += 1;
+    }
+
+    assert!(checked > 1000, "only {checked} cells reached the corollary");
+    assert_eq!(
+        violations, 0,
+        "{violations} of {checked} cells with fewer than two saddles had a ring longer than six"
+    );
+    std::println!(
+        "measured: {checked} cells with fewer than two body saddles, longest ring {worst}"
+    );
 }

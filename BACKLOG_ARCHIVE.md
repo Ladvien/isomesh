@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-121 tickets. Line numbers are stable until something above them is edited — grep the ID if
+122 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -45,6 +45,7 @@ implementation contradicted the ticket.
 | [`A-015`](#L147) | Chord-free cycle triangulation |
 | [`A-002d`](#L676) | Trilinear body saddles, from one quadratic |
 | [`A-002e`](#L683) | The eighth reference field, with tunnels in it |
+| [`A-002f`](#L691) | Contours — the cell's cut edges as closed rings |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -690,3 +691,8 @@ implementation contradicted the ticket.
 | | | ***Five pre-registered claims were true of the fixtures rather than of the code, and all five broke at once.*** Manifold Dual Contouring's zero (**A-017**), P-5's dual-χ identity (**A-017**), the weld's never-adds-a-defect (**A-018**), P-7 limb (a)'s weld plateau (**A-018**), and orientation's monotonicity (**A-019**). None was wrong about the seven fields; each was **narrower than stated**, with the same missing precondition every time. Every one is now a pinned census that fails in both directions rather than a relaxed assertion, following M-4's rule — and the shared method note is Part 5's new row: *a property that holds on every fixture you have is a property of the fixtures until one of them can fail it.* |
 | | | ***The golden diff is the clean kind: 168 → 192 rows, 24 added, 0 changed, 0 removed.*** Splitting the field into its own commit is what bought that; folded into the algorithm it would have been unreadable. `shootout.csv` and `stage_breakdown.csv` gain their `noise_cavity` rows in the same commit. |
 | | | *One visibility change: `fields::noise` from private to `pub(crate)`, so the new field can use the same Perlin the terrain does rather than carrying a second copy.* |
+| ☑ | **A-002f** | **Contours — the cell's cut edges as closed rings.** Grosso's Algorithm 1 step 2. No triangles. | M | A-002d |
+| | | ***Almost nothing had to be built, which is the finding.*** The rings are `table::segment_links(case, joined)` walked — the **same** function the 256-case table and the face decider already use, driven by the **same** mask `ambiguity::joined_mask` computes. So `Contours::of` is a walk over existing link structure, and `every_cut_edge_lies_on_exactly_one_closed_ring` asserts exactly that by checking the ring follows `next` at the wrap as well as inside. |
+| | | ***Crack-freeness is inherited rather than re-argued.*** Face connectivity is untouched by anything in this module, so ✗11's face-locality property and A-002's `validate_decider_table` over all 16,384 `(case, mask)` pairs keep covering it. That is the structural reason this construction needs no grid-subdivision pass where Custodio's does. |
+| | | ***The split A-002d could not make, made here, and both branches proved reachable (M-214).*** Six body saddles mean tunnel *or* twelve-vertex contour; the saddles cannot say which and the paper's asymptote-side criterion is not pinned down in prose. The ring count says it, which is what the authors' implementation branches on. Measured over 396,877 random surface cells: **394,651 disks, 2,053 tunnels, 173 twelve-vertex contours**, with both rare branches asserted non-zero so neither is dead code. |
+| | | ***Ring lengths come out as exactly `{3, 4, 5, 6, 7, 8, 9, 12}`*** — the set the paper lists — over all 16,384 combinations, with **ten and eleven absent**. That absence is the interesting half: an eleven-ring would leave one cut edge of a twelve-edge cell over, and the parity of the face walk forbids it. At most 4 rings, longest 12, both pinned in both directions. |

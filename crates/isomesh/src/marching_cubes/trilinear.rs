@@ -109,7 +109,10 @@
 #[cfg(test)]
 mod tests;
 
+use crate::cube::EDGE_COUNT;
 use crate::real::Real;
+
+use super::table::{NO_EDGE, segment_links};
 
 /// The number of candidate body saddles a cell can have. Two, from one quadratic.
 pub const SADDLE_COUNT: usize = 2;
@@ -336,4 +339,150 @@ impl<R: Real> BodySaddles<R> {
             [u[0], v[1], w[0]],
         ])
     }
+}
+
+/// Most closed contours one cell's cut edges can form.
+///
+/// Twelve cut edges and three to a ring is four, and four is reached — by the
+/// configuration whose four inside corners are the corners of one tetrahedron,
+/// each isolated from the others.
+pub const MAX_CONTOURS: usize = 4;
+
+/// The closed rings a cell's cut edges form, in order around each ring.
+///
+/// Grosso's Algorithm 1 step 2: *"the intersection of the isosurface with the
+/// cell is computed at the cell edges. From these intersection points a set of up
+/// to four contours is generated **using the asymptotic decider to preserve
+/// consistency across cells borders**."*
+///
+/// # Crack-freeness is inherited here rather than argued
+///
+/// The rings come from [`super::table::segment_links`], which is the *same*
+/// function the table and the face decider already use, driven by the *same*
+/// `joined` mask [`super::ambiguity::joined_mask`] computes. So a cell's face
+/// connectivity is untouched by anything in this module, and ✗11's face-locality
+/// property — a face's segments are a function of that face's own four corner
+/// signs and nothing else — keeps covering it, as does A-002's
+/// [`validate_decider_table`](super::validate_decider_table) over all 16,384
+/// `(case, mask)` pairs. **The interior classification cannot move a face
+/// segment**, which is the whole reason this construction needs no grid
+/// subdivision pass where Custodio's does (V-29).
+///
+/// # Why the tunnel test lives here and not in [`BodySaddles`]
+///
+/// Six body saddles mean the cell is *either* a tunnel *or* one twelve-vertex
+/// contour, and the saddles cannot tell you which. The number of contours can,
+/// and that is what the authors' own implementation branches on. See
+/// [`Contours::topology`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Contours {
+    /// Every ring's edges, laid end to end.
+    edges: [u8; EDGE_COUNT],
+    /// Where each ring starts in `edges`, plus a final sentinel at the end.
+    start: [u8; MAX_CONTOURS + 1],
+    count: u8,
+}
+
+impl Contours {
+    /// Walk a cell's cut edges into closed rings.
+    ///
+    /// `case` is the corner-sign index and `joined` the per-face resolution mask,
+    /// exactly as [`super::table::segment_links`] takes them.
+    #[must_use]
+    pub fn of(case: u8, joined: u8) -> Self {
+        let next = segment_links(case, joined);
+        let mut edges = [NO_EDGE; EDGE_COUNT];
+        let mut start = [0u8; MAX_CONTOURS + 1];
+        let mut count = 0usize;
+        let mut filled = 0usize;
+        let mut visited = 0u16;
+
+        for first in 0..EDGE_COUNT as u8 {
+            if next[first as usize] == NO_EDGE || visited & (1 << first) != 0 {
+                continue;
+            }
+            debug_assert!(count < MAX_CONTOURS, "more rings than a cell can hold");
+            start[count] = filled as u8;
+            count += 1;
+
+            let mut current = first;
+            while visited & (1 << current) == 0 {
+                visited |= 1 << current;
+                edges[filled] = current;
+                filled += 1;
+                current = next[current as usize];
+            }
+        }
+        start[count] = filled as u8;
+
+        Self {
+            edges,
+            start,
+            count: count as u8,
+        }
+    }
+
+    /// How many closed rings this cell has. Zero for an empty or full cell.
+    #[must_use]
+    pub const fn count(&self) -> usize {
+        self.count as usize
+    }
+
+    /// One ring's cut edges, in order around it.
+    ///
+    /// # Panics
+    ///
+    /// If `index` is not less than [`count`](Self::count).
+    #[must_use]
+    pub fn ring(&self, index: usize) -> &[u8] {
+        assert!(index < self.count(), "contour {index} does not exist");
+        let (lo, hi) = (self.start[index] as usize, self.start[index + 1] as usize);
+        &self.edges[lo..hi]
+    }
+
+    /// The length of the longest ring, or zero if there are none.
+    #[must_use]
+    pub fn longest(&self) -> usize {
+        (0..self.count())
+            .map(|i| self.ring(i).len())
+            .max()
+            .unwrap_or(0)
+    }
+
+    /// What the cell's surface is, once the saddles and the rings are both known.
+    ///
+    /// **This is the decision six body saddles cannot make alone**, and the one
+    /// the paper states through an asymptote-side criterion (Proposition 1,
+    /// Corollary 1) whose precise predicate its prose never pins down. The
+    /// authors' implementation does not evaluate one — it branches on how many
+    /// rings the cell has, and so does this (V-31):
+    ///
+    /// - fewer than six saddles → every ring is a disk;
+    /// - six saddles and **one** ring → that ring has twelve vertices and is
+    ///   still a disk, just a long one;
+    /// - six saddles and **two or three** rings → two of them are the two ends of
+    ///   a tunnel, and a third, if present, is a separate three-vertex disk.
+    #[must_use]
+    pub fn topology<R: Real>(&self, saddles: &BodySaddles<R>) -> Topology {
+        if !saddles.has_inner_hexagon() {
+            return Topology::Disks;
+        }
+        match self.count() {
+            0 | 1 => Topology::TwelveVertexContour,
+            _ => Topology::Tunnel,
+        }
+    }
+}
+
+/// What the trilinear interpolant does inside one cell.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Topology {
+    /// Every contour bounds a disk. The overwhelming majority of cells.
+    Disks,
+    /// Two contours are the ends of a cylinder through the cell.
+    Tunnel,
+    /// A single contour through all twelve cut edges, still a disk. Only
+    /// reachable from Marching Cubes' case 13, and rare even there — Grosso
+    /// counts **7** in a 512²×641 CT skull, against 2,057 tunnels.
+    TwelveVertexContour,
 }
