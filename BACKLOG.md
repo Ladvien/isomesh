@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**118 tickets archived, 2 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**119 tickets archived, 1 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -157,7 +157,6 @@ and every README code fence must be compiled by something.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **D-010** | **`bevy_isomesh` 0.0.4 — the release wiring. Merging this publishes.** Version to 0.0.4, matching the workspace train. `isomesh = { path = "../crates/isomesh", version = "0.0.4" }`, because a path-only dependency cannot publish. `scripts/publish.sh` gains an explicit bevy_isomesh stanza — the script's member discovery runs `cargo metadata` from the root workspace, which excludes this crate, so the stanza is spelled out the way `ORDER` is, same 200/404 logic, after isomesh-gpu. The CI package job dry-runs it. CHANGELOG entry. `bevy_isomesh 0.0.4` burns permanently on the next push to main; that is the intent, decided 2026-08-14. | S | D-007 |
 
 ---
 

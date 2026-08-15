@@ -10,6 +10,11 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ### Added
 
+- **`bevy_isomesh` prepared for its first crates.io release**, at 0.0.4 in lockstep with the
+  workspace: crates.io metadata and LICENSE files (D-007), version-carrying dependencies, and the
+  release wiring — `scripts/publish.sh` now carries it as the third, last leg (D-010). The upload
+  executes on the next push to `main` where the version is absent from crates.io, and fails loudly
+  until `CARGO_REGISTRY_TOKEN` exists in the `crates-io` environment (FINDINGS M-198).
 - The documentation overhaul (Phase 7, D-001…D-009): a doctested 60-second quickstart on the root
   README with a CI gate holding it identical to the crate README's compiled example
   (`scripts/readme_sync.sh`); an "Is this for you?" fit table where the refusals are stated as

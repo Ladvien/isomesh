@@ -27,8 +27,31 @@
 # that nobody placed in this list is an error, not a silent omission.
 set -euo pipefail
 
-# Dependency order. Every workspace member must appear.
-ORDER=(isomesh isomesh-gpu)
+# Dependency order. Every root-workspace member must appear, and `bevy_isomesh`
+# rides at the end: it lives in its own workspace (excluded from the root, see
+# its manifest for why), so the root `cargo metadata` can neither discover it
+# for the guard below nor address it with `-p`. It goes last because it depends
+# on both of the others by version.
+ORDER=(isomesh isomesh-gpu bevy_isomesh)
+
+# The two places a crate's location matters: reading its version, and handing
+# it to `cargo publish`. Everything else in the loop is location-blind, which
+# is the point — one path, parameterised, rather than a second copy that
+# drifts (GPU-013's duplicated prologue is the local precedent).
+metadata_for() {
+  if [ "$1" = "bevy_isomesh" ]; then
+    cargo metadata --format-version 1 --no-deps --manifest-path bevy_isomesh/Cargo.toml
+  else
+    cargo metadata --format-version 1 --no-deps
+  fi
+}
+publish_args() {
+  if [ "$1" = "bevy_isomesh" ]; then
+    printf -- '--manifest-path bevy_isomesh/Cargo.toml'
+  else
+    printf -- '-p %s' "$1"
+  fi
+}
 
 DRY_RUN=0
 if [ "${1:-}" = "--dry-run" ]; then
@@ -67,7 +90,7 @@ skipped=0
 
 for crate in "${ORDER[@]}"; do
   version=$(
-    cargo metadata --format-version 1 --no-deps \
+    metadata_for "$crate" \
       | jq -r --arg c "$crate" '.packages[] | select(.name == $c) | .version'
   )
   if [ -z "$version" ]; then
@@ -107,8 +130,9 @@ for crate in "${ORDER[@]}"; do
     # It cannot verify `isomesh-gpu` before `isomesh` is on the registry, so on
     # a first release of a dependent crate this reports that and moves on
     # rather than failing the run.
-    echo "-- dry run: cargo publish -p $crate --dry-run"
-    if ! cargo publish -p "$crate" --dry-run --locked; then
+    echo "-- dry run: cargo publish $(publish_args "$crate") --dry-run"
+    # shellcheck disable=SC2046 -- publish_args emits flag words with no spaces
+    if ! cargo publish $(publish_args "$crate") --dry-run --locked; then
       echo "::warning::$crate could not be verified. If it depends on another"
       echo "crate in this workspace whose version is not yet on crates.io, that"
       echo "is expected and resolves once the dependency is published."
@@ -134,10 +158,11 @@ for crate in "${ORDER[@]}"; do
     exit 1
   fi
 
-  echo "-- cargo publish -p $crate"
+  echo "-- cargo publish $(publish_args "$crate")"
   # `--locked` so CI publishes exactly the dependency graph the committed
   # lockfile describes, rather than whatever resolved that morning.
-  cargo publish -p "$crate" --locked
+  # shellcheck disable=SC2046 -- publish_args emits flag words with no spaces
+  cargo publish $(publish_args "$crate") --locked
   published=$((published + 1))
 done
 
