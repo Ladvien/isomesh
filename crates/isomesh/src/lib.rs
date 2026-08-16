@@ -83,6 +83,7 @@ pub mod extractor;
 pub mod fields;
 pub mod greedy_quads;
 pub mod hermite;
+pub mod lod;
 pub mod manifold_dual_contouring;
 pub mod marching_cubes;
 pub mod marching_tetrahedra;

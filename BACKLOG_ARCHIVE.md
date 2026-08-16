@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-159 tickets. Line numbers are stable until something above them is edited — grep the ID if
+160 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -980,3 +980,19 @@ area. `noise_cavity` at 1.49 is honestly between the two, consistent with M-244'
 (alternating corner signs) is the ticket's engineered violator, and a **face-ambiguous cell** is refused too — a
 topology that depends on a tie-break is by definition not determined by the corners, which is what the whole A-002
 series is about. |
+| ☑ | **T-016** | **Downsampling operator comparison. Original — the comparison does not exist.** Mean vs min vs re-evaluate vs wavelet, measured on all eight fields across LOD 0–3. **The literature predicts your answer:** you do not downsample, you *re-sample* — every level built by evaluating the field at that spacing (Frisken's ADF, Koschier's hp-adaptive). Under re-sampling, a plate thinner than a coarse cell gives all-positive corners and correctly disappears; under box-filter averaging the straddling ± set survives and Marching Cubes keeps emitting triangles — **which is exactly M-72's measured 4,088 → 1,016 → 248 → 56.** So this ticket's first job is to confirm that M-72's aliasing is the predicted failure of an operator the literature already rejects, and its second is to publish the head-to-head nobody has. | M | F-001 |
+| | | ***Both of the ticket's predictions were falsified by the measurement it asked for.*** It said M-72's
+4,088 → 1,016 → 248 → 56 is what box-filter averaging produces and that re-sampling would make the plate "correctly
+disappear". Measured: **that sequence is re-sampling's**, and the box filter is what deletes the plate — completely,
+from level 1 (M-266). And it said "you do not downsample, you re-sample"; **decimation matches re-sampling
+bit-for-bit** on every field at every level, because decimating a field-sampled grid keeps a subset of the same points
+and decimation composes (M-265). The rule is sound about *filtering* operators and has no bite for decimation on a
+nested grid — until a level is edited rather than sampled, which is where it earns its keep. |
+| | | ***M-72's aliasing is alignment, and half a cell removes it.*** The plate is `0.4 × h` thick and centred at
+`y = 0`; every level has an odd sample count, so `y = 0` is a sample plane at all of them. Shifting the plate half a
+cell gives **zero triangles at every level, including the finest**. `ThinPlate::THICKNESS_IN_CELLS`'s doc claims "no
+grid phase can ever put a corner inside the plate" — the canonical grid puts a whole *plane* of corners inside it. |
+| | | ***The head-to-head, which is the deliverable.*** `Mean` and `Tent` give **fewer triangles and larger error at
+every level** — 5× the geometric error on `sphere` at level 3, and the mean **deletes the entire torus** one level
+before the grid stops resolving it. `Min` never loses anything, by construction, and pays a systematic dilation of
+about one fine cell per level: 4.02 error on `fbm_terrain` against re-sampling's 0.93. **Recommendation: decimate.** |

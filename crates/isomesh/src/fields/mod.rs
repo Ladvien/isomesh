@@ -600,9 +600,20 @@ pub struct ThinPlate<R: Real> {
 impl<R: Real> ThinPlate<R> {
     /// Plate thickness as a fraction of the cell size it is built for.
     ///
-    /// Below `1.0` so that no grid phase can ever put a corner inside the plate,
-    /// with margin; far enough above zero that a four-fold refinement resolves
-    /// it comfortably.
+    /// Below `1.0`, and far enough above zero that a four-fold refinement
+    /// resolves it comfortably.
+    ///
+    /// **This used to claim that "no grid phase can ever put a corner inside the
+    /// plate". That is false and the canonical grid is the counterexample**
+    /// (M-266): the plate is centred at `y = 0` and every grid this crate
+    /// measures on has an *odd* sample count, so `y = 0` is a sample plane and a
+    /// whole plane of corners sits inside the plate at every level. Being
+    /// thinner than a cell is not the same as being off-lattice, and the
+    /// difference is what M-72 measured without naming.
+    ///
+    /// Shifting the plate half a cell removes the surface entirely, at every
+    /// level including the finest — `lod::tests::
+    /// the_aliasing_is_alignment_and_a_half_cell_shift_removes_it`.
     pub const THICKNESS_IN_CELLS: f64 = 0.4;
 
     /// A plate `THICKNESS_IN_CELLS × h` thick, spanning `[-1, 1]` in x and z.

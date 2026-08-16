@@ -1599,3 +1599,66 @@ sign test on isotropic cells.
 Figure 1 — alternating corner signs — is refused, which is the ticket's "engineered violator". So is
 a face-ambiguous cell: a configuration whose topology depends on a tie-break is by definition not
 determined by the corners, and A-002's entire series exists because of it.
+
+### M-265 — decimation *is* re-sampling on a nested grid, so the literature's rule has no bite here (T-016)
+
+**M.** Four downsampling operators against re-sampling, on all eight reference fields, 65³ → 9³ in
+four levels. `docs/measurements/downsample.csv`.
+
+**Decimation matches re-sampling bit-for-bit** — every triangle count, every vertex position, every
+error figure, on every field at every level. Asserted as an equality, not a tolerance. The reason is
+elementary once stated: a grid that was sampled from the field, decimated, keeps a *subset* of those
+same points, and decimation composes, so level 3 is still a subset of the field's own samples.
+
+That falsifies the framing this ticket inherited. *"You do not downsample, you re-sample"* (Frisken,
+Koschier) is sound advice about **filtering** operators; for decimation on a `2ᵏ + 1` nested grid it
+is a distinction with no difference, and the free operator is already the recommended one. It stops
+being free the moment a level is *edited* rather than sampled — which is the case a destructible
+game is in, and is where the rule earns its keep.
+
+**The filters are strictly worse, both ways at once.** `Mean` (box, `[1,1,1]/3`) and `Tent`
+(`[1,2,1]/4`) produce **fewer** triangles *and* **larger** geometric error at every level — worst
+`|analytic|` on `sphere` at level 3 is `0.07196` for the mean against re-sampling's `0.01430`, 5×.
+And at level 3 the mean **deletes the entire torus**: 0 triangles against 128. A filter that removes
+a whole object one level before the grid stops resolving it is not "correctly discarding a sub-cell
+feature".
+
+**`Min` behaves exactly as designed and the price is now known.** It never loses anything — more
+triangles at every level on every field — because taking a minimum can only pull values negative, so
+solid grows and never shrinks. The cost is a systematic dilation of about one fine cell per level:
+worst error reaches `4.02` on `fbm_terrain` at level 3 against re-sampling's `0.93`, and `0.75` on
+`sphere` against `0.014`.
+
+**Recommendation, with the number behind it:** decimate. It is free, it is identical to re-sampling
+while the fine level is field-derived, and both alternatives trade accuracy for something that is not
+worth it — the filters for smoothing that deletes objects, `min` for a conservatism that costs
+several cells of dilation.
+
+### M-266 — M-72's aliasing is *alignment*, not chance (T-016)
+
+**M, and it refines M-72 rather than contradicting it.** M-72 recorded `thin_plate` at
+**4,088 → 1,016 → 248 → 56** triangles across LOD 0–3 and explained the survival as *"whichever edges
+happen to straddle a thin slab still register a sign change"* — which reads as chance.
+
+It is not chance. The plate is `0.4 × h` thick and centred at `y = 0`; every level here has an **odd**
+sample count (65, 33, 17, 9), so `y = 0` is a sample plane at every level and the feature is exactly
+aligned with the sampling. Shifting the plate by **half a cell** produces **zero triangles at every
+level, including the finest**, where it is still only 0.4 cells thick.
+
+So the sequence is not a sub-cell feature disintegrating; it is a perfectly aligned one being found
+every time, and the falling counts are just its `x`/`z` extent being sampled more coarsely.
+
+**And the ticket's attribution was backwards.** It predicted that 4,088 → 1,016 → 248 → 56 is what
+*box-filter averaging* produces, and that re-sampling would make the plate *"correctly disappear"*.
+Measured: that sequence is **re-sampling's**, and the box filter is what makes the plate vanish —
+completely, from level 1. Both halves inverted.
+
+The mechanism is clear once separated: re-sampling asks a **point** question, so a corner inside the
+plate registers a sign change however thin it is; a filter asks a **neighbourhood** question, so a
+thin negative sliver averaged against a large positive surround comes out positive. Neither is
+"correct" — they answer different questions, and which one a consumer wants depends on whether a
+feature that vanishes at a known distance is better than one that survives by luck of alignment.
+
+**This also makes `ThinPlate::THICKNESS_IN_CELLS`'s doc comment wrong.** It reads *"Below `1.0` so
+that no grid phase can ever put a corner inside the plate, with margin"*, and the canonical grid puts
+a whole **plane** of corners inside it. Thin enough is not the same as off-lattice.
