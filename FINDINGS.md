@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**365 entries** — 19 falsified, 291 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**367 entries** — 19 falsified, 293 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -349,6 +349,8 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-294` | the defect in 48 samples, and the same signs give the decider two answers (A-025) |
 | `M-295` | the documentation drifted in thirteen places, and one number rotted twice (docs) |
 | `M-296` | the README answered "is the GPU faster" with no, and its own CSV said 37× (docs) |
+| `M-297` | no published convex decomposition runs at interactive rates, so this crate's own 241 ms was not an outlier (O-2) |
+| `M-298` | orientation catches a fan that reverses, not a fan that folds, and a star polygon is invisible to both counters (T-020) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -3615,3 +3617,102 @@ apply twice.
 
 **Would be shown wrong by:** a re-run of `gpu_vs_cpu` on this hardware showing the crossover somewhere
 other than ~33³, or `gpu_field_total_ms` losing its flatness with resolution.
+
+
+### M-297 — no published convex decomposition runs at interactive rates, so this crate's own 241 ms was not an outlier (O-2)
+
+**V.** M-116 measured runtime convex decomposition at **241–272 ms per fragment** on `avian3d` 0.7 —
+*"14–22 whole frames"* — and left open whether that was the implementation or the problem. A sweep of
+the decomposition literature says it is the problem, and by a wide margin.
+
+| method | per PartNet-Mobility model | hardware | source |
+|---|---|---|---|
+| VisACD | **16.97 s** | OptiX + CUDA | its own Discussion, `10.48550/arXiv.2604.04244` |
+| CoACD, as VisACD measured it | **36.31 s** | — | the same sentence |
+| CoACD, as CoACD measured itself | **194.4–253.4 s** | one CPU thread | Table 1, `10.48550/arXiv.2205.02961` |
+
+Against a 16.67 ms frame that is **1,000× at the very best and 15,000× at the worst**, and the
+ordering survives whoever's harness you believe. The fastest figure in the sweep is a GPU method with
+`OptiX` and `CUDA` under it.
+
+**Every method labelled "real-time" precomputes, and each says so in its own words.** Müller,
+Chentanez & Kim (`10.1145/2461912.2461934`) — the source usually reached for on real-time destruction
+— state that the *"pre-computed convex decomposition is independent of the fracture pattern exposed at
+real-time."* Sellán et al. (`10.1145/3549540`) grant that their fracture modes are *"slower to compute
+than geometric-only procedural prefracture"* and that *"this cost is added only at the offline
+precomputation stage."* What runs at frame rate in both is **pattern selection**, never decomposition.
+
+**Consequence.** Reporting `collider::readiness()` per shard, and decomposing offline or not at all,
+is the position the literature supports rather than a holding pattern waiting on a faster library. Two
+independent measurements now agree from opposite directions: 241 ms measured here, seconds-per-model
+published there.
+
+**And the precondition list turns out to be this crate's validator output.** Every method in the sweep
+assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input. VisACD
+preprocesses *"using SDF remeshing to make the meshes watertight"* before it will run, and declines to
+evaluate CoACD's merging step at all because *"merging produces intersecting convex hulls in 35% of
+cases"* — disabling merging in its own algorithm *"for the same reason."* So T-001's checklist is not
+mesh hygiene for its own sake; it is the entry condition for anything downstream that decomposes.
+**R-011 is open on the single gap this exposes:** `ColliderReadiness` does not fold in
+`SelfIntersectionReport`, so the one precondition that a 35% failure rate is actually about is the one
+`readiness()` cannot currently report.
+
+**Would be shown wrong by:** a published method decomposing a game-scale mesh inside a frame budget
+with no precomputation step, or a closer read of VisACD's Table 1 showing 16.97 s is not the best
+figure it reports.
+
+
+### M-298 — orientation catches a fan that *reverses*, not a fan that *folds*, and a star polygon is invisible to both counters (T-020)
+
+**M.** The proposed equivalence was **fan-fold ⟺ `inconsistently_oriented_edges > 0`**, tolerance-free
+and needing no narrow phase, for fans whose winding is fixed per triangle to face a chosen outward
+normal. Half of that is exactly right and the other half is too strong. **The counter is an exact test
+for a fan that reverses its sweep. A fan can fold without reversing, and then nothing sees it.**
+
+**The mechanism, derived rather than measured.** Adjacent slices of a fan share the spoke
+`{apex, p_i}`. Writing `T_i` unflipped as `(c, p_i, p_{i+1})` and flipped as `(c, p_{i+1}, p_i)`, the
+four cases collapse to one rule:
+
+| `T_i` | `T_{i+1}` | spoke traversed | verdict |
+|---|---|---|---|
+| unflipped | unflipped | `p→c` then `c→p` | consistent |
+| flipped | flipped | `c→p` then `p→c` | consistent |
+| either mixed pair | | the same way twice | **inconsistent** |
+
+So `inconsistently_oriented_edges` on a fan is precisely **the number of flip-state changes around
+it** — and the flip state is `sign((p_i − c) × (p_{i+1} − c) · outward)`, the sign of the slice's
+signed area. It fires on a *sign change*, which is a reversal of sweep direction. Nothing else.
+
+**Measured, on two synthetic fans in `validate/tests.rs`:**
+
+| fan | boundary winding | `inconsistently_oriented_edges` | self-intersections | pairs tested |
+|---|---|---|---|---|
+| convex hexagon (control) | 1 | **0** | 0 | 0 |
+| four CCW points then one that backtracks | 1 | **2** | 0 | **0**, 10 skipped |
+| pentagram, every second vertex of a pentagon | **2** | **0** | 0 | **0** |
+
+The reversing fan gives exactly two, one spoke entering the reversal and one leaving it, matching the
+derivation before it was run. The pentagram is the counterexample: every slice spans +144°, so every
+slice has the same sign, so **no triangle is flipped and no spoke changes state** — while the boundary
+winds *twice*, which means the cap covers its disk twice. Both counters report zero on a cap that is
+definitively wrong.
+
+**And self-intersection cannot cover the gap, which is M-83 again.** Every fan triangle shares the
+apex, so every pair is skipped: **10 of 10 skipped, 0 tested** on a five-slice fan. The zero is
+vacuous in the precise sense M-83 established, and the test asserts `tested_pairs == 0` alongside it so
+the green tick cannot be misread as coverage.
+
+**Why the counterexample was looked for at all.** QEx (Ebke, Kobbelt, Bommes & Campen,
+`10.1145/2508363.2508372`) records the analogous failure for their own fold-over detector — *"this
+assumption fails in one special case: around a vertex-q-vertex we can arrange the fold-overs in such a
+way that the entire triangle fan spans an absolute range of less than 180°."* Different detector,
+different domain, same shape of claim. Taking that as a prompt rather than asserting the equivalence
+was total is what found the pentagram.
+
+**Consequence.** The claim is worth having and must be stated with both qualifiers attached: it holds
+**for fans wound per-triangle against an outward normal**, and it detects **reversal**, not folding.
+A fan built with uniform winding produces no signal at all, and a fan that folds monotonically
+produces none either.
+
+**Would be shown wrong by:** a fan that reverses its sweep and reports zero inconsistently oriented
+edges, or a per-triangle-outward construction under which a star-polygon cap does flip a slice.

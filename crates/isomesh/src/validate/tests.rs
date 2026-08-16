@@ -617,3 +617,198 @@ fn the_weld_lattice_does_not_collapse_far_from_the_origin() {
         mesh.vertex_count()
     );
 }
+
+// ─── T-020: fan folds, and which counter can see one ────────────────────────
+
+/// Fan-triangulate a closed planar loop around its centroid, giving every
+/// triangle the `+z` normal by flipping its winding when the slice faces the
+/// other way.
+///
+/// This reproduces `bevy_autogib`'s `push_cap_tri` rule rather than depending
+/// on it: that crate is outside this workspace, and a fixture that moves when
+/// somebody else's cap builder moves is not a fixture. The loop lies in `z = 0`
+/// and the outward normal is `+z`, so a slice is flipped exactly when its
+/// signed area is negative.
+///
+/// Vertex 0 is the apex. Vertex `1 + i` is `loop_xy[i]`.
+fn cap_fan(loop_xy: &[[f64; 2]]) -> (Vec<[f64; 3]>, Vec<u32>) {
+    let n = loop_xy.len();
+    let cx = loop_xy.iter().map(|p| p[0]).sum::<f64>() / n as f64;
+    let cy = loop_xy.iter().map(|p| p[1]).sum::<f64>() / n as f64;
+
+    let mut positions = vec![[cx, cy, 0.0]];
+    positions.extend(loop_xy.iter().map(|p| [p[0], p[1], 0.0]));
+
+    let mut indices = Vec::new();
+    for i in 0..n {
+        let (a, b) = (1 + i as u32, 1 + ((i + 1) % n) as u32);
+        let (u, v) = (loop_xy[i], loop_xy[(i + 1) % n]);
+        // z-component of (u − c) × (v − c): twice the slice's signed area.
+        let twice_area = (u[0] - cx) * (v[1] - cy) - (u[1] - cy) * (v[0] - cx);
+        if twice_area >= 0.0 {
+            indices.extend_from_slice(&[0, a, b]);
+        } else {
+            indices.extend_from_slice(&[0, b, a]);
+        }
+    }
+    (positions, indices)
+}
+
+/// How many times the loop winds around its own centroid.
+///
+/// The independent witness that a fan is broken, computed from the loop alone
+/// and never from the counters under test. A cap whose boundary winds twice
+/// covers its disk twice, whatever the validator makes of it.
+fn winding_turns(loop_xy: &[[f64; 2]]) -> f64 {
+    let n = loop_xy.len();
+    let cx = loop_xy.iter().map(|p| p[0]).sum::<f64>() / n as f64;
+    let cy = loop_xy.iter().map(|p| p[1]).sum::<f64>() / n as f64;
+    let tau = 2.0 * core::f64::consts::PI;
+
+    let mut total = 0.0;
+    for i in 0..n {
+        let (u, v) = (loop_xy[i], loop_xy[(i + 1) % n]);
+        let a = libm::atan2(u[1] - cy, u[0] - cx);
+        let b = libm::atan2(v[1] - cy, v[0] - cx);
+        let mut d = b - a;
+        while d > core::f64::consts::PI {
+            d -= tau;
+        }
+        while d < -core::f64::consts::PI {
+            d += tau;
+        }
+        total += d;
+    }
+    total / tau
+}
+
+/// The control: a convex loop never reverses its sweep, so nothing fires.
+#[test]
+fn a_convex_cap_fan_is_consistently_oriented() {
+    let hexagon: Vec<[f64; 2]> = (0..6)
+        .map(|k| {
+            let t = 2.0 * core::f64::consts::PI * f64::from(k) / 6.0;
+            [Real::cos(t), Real::sin(t)]
+        })
+        .collect();
+
+    assert!((winding_turns(&hexagon) - 1.0).abs() < 1e-12, "winds once");
+
+    let (p, idx) = cap_fan(&hexagon);
+    let r = validate_indexed(&p, &idx, &cfg());
+
+    assert_eq!(r.faces, 6);
+    assert_eq!(r.inconsistently_oriented_edges, 0);
+    assert_eq!(r.non_manifold_edges, 0);
+    assert_eq!(r.degenerate_triangles, 0);
+    assert_eq!(r.boundary_edges, 6, "the rim, and only the rim");
+}
+
+/// **T-020's acceptance.** A fan that reverses its sweep is invisible to
+/// `self_intersections` and unmissable in `inconsistently_oriented_edges`.
+///
+/// The mechanism: adjacent slices share the spoke `{apex, p_i}` and traverse it
+/// in *opposite* directions whenever they agree about which way is outward. The
+/// per-triangle flip reverses one of them, so a slice that disagrees with its
+/// neighbour makes them traverse that spoke the **same** way — which is what
+/// this counter is. Equivalently, it counts flip-state *changes* around the fan.
+///
+/// Both numbers are asserted in the same test on purpose: the zero is vacuous
+/// (M-83 — every pair shares the apex, so none is ever compared) and reading it
+/// alone would say this mesh is clean.
+#[test]
+fn a_fan_that_reverses_its_sweep_is_caught_by_orientation_and_missed_by_self_intersection() {
+    // Four points sweeping counter-clockwise, then one that backtracks.
+    let folded = [
+        [2.0, 0.0],
+        [0.0, 2.0],
+        [-2.0, 0.0],
+        [0.0, -2.0],
+        [-1.0, -1.0],
+    ];
+
+    assert!(
+        (winding_turns(&folded) - 1.0).abs() < 1e-12,
+        "the loop still winds exactly once -- the defect is the reversal, not a double cover"
+    );
+
+    let (p, idx) = cap_fan(&folded);
+    let r = validate_indexed(&p, &idx, &cfg());
+    let si = self_intersections(&p, &idx, 1.0).expect("valid cell size");
+
+    std::println!(
+        "measured: T-020 reversing fold -- inconsistently_oriented_edges {}, \
+         self-intersections {} from {} tested, {} skipped for sharing the apex",
+        r.inconsistently_oriented_edges,
+        si.count(),
+        si.tested_pairs,
+        si.adjacent_pairs_skipped
+    );
+
+    // Exactly one slice disagrees with its neighbours, so exactly two spokes
+    // change flip state: the one entering the reversal and the one leaving it.
+    assert_eq!(r.inconsistently_oriented_edges, 2);
+
+    // And the counter that is supposed to find folds finds nothing, because it
+    // never compared anything. Asserting the skip count rather than only the
+    // zero is what keeps the green tick from reading as coverage.
+    assert_eq!(si.count(), 0);
+    assert_eq!(si.tested_pairs, 0);
+    assert_eq!(
+        si.adjacent_pairs_skipped, 10,
+        "5 choose 2, all sharing apex"
+    );
+
+    assert_eq!(r.non_manifold_edges, 0, "a fold is not a non-manifold edge");
+    assert_eq!(r.degenerate_triangles, 0);
+}
+
+/// **The limit of the equivalence, and why it must be stated with its
+/// construction attached.**
+///
+/// A star polygon folds over itself without ever reversing its sweep: every
+/// slice of a pentagram keeps the same sign, so no triangle is flipped, so no
+/// spoke changes flip state. The cap double-covers its disk and *both* counters
+/// report zero. QEx (Ebke, Kobbelt, Bommes & Campen, `10.1145/2508363.2508372`)
+/// records the analogous special case for their fold-over test — "this
+/// assumption fails in one special case … the entire triangle fan spans an
+/// absolute range of less than 180°" — which is what prompted looking for this
+/// one rather than asserting the equivalence was total.
+///
+/// So `inconsistently_oriented_edges > 0` is an exact test for a fan that
+/// *reverses*, not for a fan that *folds*.
+#[test]
+fn a_star_polygon_fan_double_covers_its_disk_and_both_counters_report_zero() {
+    // Every second vertex of a regular pentagon: each slice spans +144°.
+    let pentagram: Vec<[f64; 2]> = (0..5)
+        .map(|k| {
+            let t = 2.0 * core::f64::consts::PI * f64::from(2 * k) / 5.0;
+            [Real::cos(t), Real::sin(t)]
+        })
+        .collect();
+
+    let turns = winding_turns(&pentagram);
+    assert!(
+        (turns - 2.0).abs() < 1e-12,
+        "the boundary winds twice, so the cap covers its disk twice: {turns}"
+    );
+
+    let (p, idx) = cap_fan(&pentagram);
+    let r = validate_indexed(&p, &idx, &cfg());
+    let si = self_intersections(&p, &idx, 1.0).expect("valid cell size");
+
+    std::println!(
+        "measured: T-020 star polygon -- winding {turns}, \
+         inconsistently_oriented_edges {}, self-intersections {} from {} tested",
+        r.inconsistently_oriented_edges,
+        si.count(),
+        si.tested_pairs
+    );
+
+    assert_eq!(
+        r.inconsistently_oriented_edges, 0,
+        "no slice is flipped, so no spoke changes flip state"
+    );
+    assert_eq!(si.count(), 0);
+    assert_eq!(si.tested_pairs, 0);
+}

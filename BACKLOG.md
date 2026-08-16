@@ -1,12 +1,12 @@
 # isomesh — BACKLOG
 
-**Updated:** 2026-08-15
+**Updated:** 2026-08-16
 **Companions:** `CLAUDE.md` (rules), `FINDINGS.md` (what we know and how well),
 `BACKLOG_ARCHIVE.md` (completed tickets + why they changed),
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**179 tickets archived, 5 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**180 tickets archived, 8 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -301,6 +301,7 @@ source of truth* to check the first against.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
+| ☐ | **S-008** | **`MeshField`: evaluate a mesh's field on demand instead of sampling it into a grid.** S-001 → S-006 → S-007 was built as a construction chain answering *"produce a sampled distance volume from a mesh."* That is the wrong shape for a consumer that queries where it needs to rather than reading a grid, and **Manifold Dual Contouring is exactly that consumer** — so the split serves this crate independently of anything downstream. The per-point work already exists inside `signed_distance_from_mesh`: `Bounds`, `closest_on_triangle` and `Pseudonormals` in `construct/from_mesh.rs`, and `winding_numbers` in `construct/winding.rs`. This exposes it as a borrowing type implementing `Sdf`, with the pseudonormal and winding backends chosen at construction rather than by two entry points. **The existing grid functions stay as the batch path and must be re-expressed over the new type** — one implementation, not two, or the grid answer and the on-demand answer drift apart and nothing catches it. **Acceptance:** meshing through the on-demand field is byte-identical to meshing the `Vec<R>` S-006 produces, on the round trip M-259 already built. | M | S-006, S-007 |
 
 ---
 
@@ -335,6 +336,7 @@ expectations into docs that measurement then disproved (✗1, ✗3, ✗14, O-14)
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
+| ☐ | **R-011** | **Convex Primitive Decomposition, and whether `ColliderReadiness` already reports what a decomposer needs.** Knodt & Gao (`10.48550/arXiv.2602.07369`, Lightspeed Studios) argue convex-*hull* ACD is the wrong output under a game's budget, guarantee enclosure of the input surface, and beat V-HACD and CoACD on mean and median one-way Hausdorff and Chamfer at **22.5 KB per collider against 93.8 and 68.9**. Two caveats its abstract does not carry: it does **not** guarantee non-overlapping primitives — the intersection-volume term is dropped deliberately, *"in practice, primitives do not overlap much"* — and like QEM it needs a caller-supplied target primitive count, which per-shard use would have to choose automatically. **H:** every published decomposition method requires only preconditions `ColliderReadiness` already reports. **Harness:** a precondition table across CoACD, V-HACD, VisACD and this paper, committed to `docs/research/`, each row naming the `ColliderReadiness` field that covers it. **Records:** that table. **Falsified by:** any method requiring a property `readiness()` does not report — **self-intersection-freedom is the standing candidate and H is expected to die on it**, since `SelfIntersectionReport` is a separate type that `ColliderReadiness` does not fold in, and VisACD disables CoACD's merging step precisely because it yields intersecting hulls in 35% of cases. If H dies there, self-intersections per 1,000 triangles stops being a recorded metric and becomes a **gating** one for any mesh headed into decomposition. **FINDINGS:** `M-` either way, and it re-tiers `O-2`. | M | — |
 
 
 ---
@@ -368,6 +370,17 @@ Guéziec et al. 1998 (`10.1145/280953.281628`, acquired) state M-59's framing ve
 emitted by an isosurface extractor**, and nobody publishes the measured rejection rate. That is the
 contribution — modest, real, and a paragraph rather than a paper.
 
+> **The predicate died, and this section's contribution claim died with it (2026-08-16).** R-001 ran
+> it. P-8 is falsified in both clauses and the gated weld is recorded as **strictly worse than no
+> gate** (E×4): across 56 configurations it removed **at most 4 non-manifold edges and added up to
+> 791 non-manifold vertices**, taking `noise_cavity` + subgrid from 301 to **1,092** and `sphere` +
+> Marching Cubes from 0 to **96**. The mechanism is the k-way sentence above, read the other way
+> round: a bucket of ≥3 coincident vertices is not atomic, so refusing one pair of `k` leaves the
+> representative a **bowtie** — which is why the damage lands in the vertex column while the edge
+> column barely moves. The rejection rate did get measured; it simply does not buy what this section
+> predicted it would. **R-010 is what survives** — the same hook, an equivalence-relation key instead
+> of a pairwise test, and no topological claim attached to it.
+
 **Note the interaction with A-018.** That ticket already established, on `noise_cavity`, that the
 positional weld can *create* a non-manifold edge and that the subgrid validity suite therefore stopped
 welding before judging (M-226). R-001 is the general form of the same mechanism; read A-018's archive
@@ -375,6 +388,7 @@ row before starting, because half the evidence is already there.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
+| ☐ | **R-010** | **A merge predicate on `Welder`, for attribute preservation — and only that.** **Read E×4 before starting**, and the note above it. The link-condition gate this section was written around is dead: measured at R-001, strictly worse than no gate, reverted. The reason is what makes *this* predicate a different object rather than the same one with a new key. The link condition is a **pairwise** test applied to a **k-way** coincidence class, so it refuses one member of a set that would otherwise merge whole, and the leftover representative is a bowtie. A composite key such as `(class, normal, uv)` is an **equivalence relation**: it partitions the class into complete sub-classes, every member of each merges, and no proper subset is ever refused — so it cannot reproduce E×4's failure, and it is the only instantiation this ticket ships. `MeshBuffer` carries no UVs and no vertex class, so the key is **caller-supplied**, which also keeps hard rule 1; the hook is the general form of `Welder::remap()`, already documented as how consumers move their own parallel data. **H:** splitting on a caller-supplied key moves no topology metric relative to the unconditional weld beyond the splits the key itself names, on all eight fields × all extractors. **Harness:** the P-8 bench shape in `benches/experiment_p8.rs`, both welds in one pass. **Records:** non-manifold edges and vertices, boundary edges, Δ vertex count and split count, both ways, to `docs/measurements/`. **Falsified by:** any topology metric moving where the key is constant — which would mean the hook itself, not the key, is doing something. **FINDINGS:** `M-` either way. | M | — |
 
 ---
 
