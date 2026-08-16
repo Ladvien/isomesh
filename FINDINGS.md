@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**364 entries** — 19 falsified, 290 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**365 entries** — 19 falsified, 291 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -348,6 +348,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-293` | the excluded workspace's fourth gate incident, and this one is local (A-025 follow-on) |
 | `M-294` | the defect in 48 samples, and the same signs give the decider two answers (A-025) |
 | `M-295` | the documentation drifted in thirteen places, and one number rotted twice (docs) |
+| `M-296` | the README answered "is the GPU faster" with no, and its own CSV said 37× (docs) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -3561,3 +3562,56 @@ detects that; a capture hook has no test that fails when nobody calls it.
 **Would be shown wrong by:** a document stating one of these counts correctly while `doc_facts.sh`
 reports drift, or the reverse — a drift the gate does not see. The second is expected and bounded: the
 gate checks five counts, not every number in the tree.
+
+
+### M-296 — the README answered "is the GPU faster" with **no**, and its own CSV said 37× (docs)
+
+**Tier M.** Found by a reader asking the obvious question of the demo page: *does this tell me whether
+the GPU is faster?*
+
+`README.md`'s "Is this for you?" table read:
+
+> *GPU extraction to make CPU meshing faster — **no** — with readback the GPU path measures slower
+> than the CPU at every resolution tried; it pays off only when you render from GPU memory and never
+> read back.*
+
+`docs/measurements/gpu_vs_cpu.csv`, committed, in the same repository:
+
+| samples/axis | CPU ms | GPU, uploaded field | GPU, field on the GPU | |
+|---|---|---|---|---|
+| 17³ | **0.059** | 0.300 | 0.219 | CPU ahead 3.7× |
+| 33³ | 0.340 | 0.418 | **0.225** | GPU ahead 1.5× |
+| 49³ | 1.049 | 0.780 | **0.265** | GPU ahead 4.0× |
+| 65³ | 2.444 | 1.349 | **0.272** | GPU ahead 9.0× |
+| 97³ | 8.618 | 3.715 | **0.327** | GPU ahead 26× |
+| 129³ | 20.141 | 8.369 | **0.536** | GPU ahead **37.6×** |
+
+**The claim was true once and nothing re-read it.** It describes the state before GPU-010a moved the
+prefix scan onto the device (M-150) and GPU-011a moved field evaluation there (M-155) — three tickets
+that took the 129³ path from 15.01 ms to 0.54 ms, **none of which made the extractor faster**. Every
+one of those findings is in this file, each with the number, and the README kept saying "no" for as
+long as they took to land.
+
+**And I propagated it.** Rewriting `crates/isomesh-gpu/src/lib.rs` earlier the same day, I carried
+*"with a readback, this is slower than the CPU… measured, at every resolution tried"* into the crate's
+docs.rs landing page — a fresh assertion of a falsified claim, written while holding the CSV that
+disproves it, because it was inherited from prose rather than checked against data. This is M-149's
+lesson recurring exactly: *"the error being recorded is an overclaim in prose that the repo's own
+committed CSV contradicted. Checking a claim against data already in the repository costs one query."*
+
+**What is true**, and now stated in all four places:
+
+- The GPU wins above about **33³** and loses below it, on roughly 0.22 ms of fixed cost.
+- The GPU column is **nearly flat** — 0.22 → 0.54 ms across a **420×** rise in cells — because
+  extraction was never the cost. `count + emit` is **0.045 ms at 129³** and does not move.
+- **Where the field is evaluated decides the rest.** Uploading CPU-sampled data makes the upload 87%
+  of the path (2.4× ahead instead of 37×), and it does not take field evaluation off the CPU's budget
+  — it adds a copy to it.
+
+**Why nothing caught it.** `doc_facts.sh` (M-295) gates *counts* with one mechanical source. A
+directional claim — "slower", "faster", "never" — has no such source, so no gate of that shape can
+see it. What would have caught it is the rule M-149 already earned and this repository failed to
+apply twice.
+
+**Would be shown wrong by:** a re-run of `gpu_vs_cpu` on this hardware showing the crossover somewhere
+other than ~33³, or `gpu_field_total_ms` losing its flatness with resolution.
