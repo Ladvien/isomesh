@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**181 tickets archived, 7 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**182 tickets archived, 7 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -255,6 +255,7 @@ measurement count.** It is past the size at which anyone reads it end to end.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
+| ☐ | **T-021** | **`ColliderReadiness` drops the one manifold check that edge counts cannot make.** `MeshReport` computes `non_manifold_vertices` with the link walk; `collider::from_report` forwards ten fields and not that one. So a **bowtie** — two cones sharing an apex — reports zero boundary edges, zero non-manifold edges and zero inconsistently oriented edges, and passes `supports_inside_outside()` on a surface that is not a 2-manifold and has no single normal at the apex. Found by M-300 while auditing what a decomposer requires: CoACD's plane cutting is stated over manifold meshes. **The omission reads as forgotten rather than argued** — every other `MeshReport` field the collider view drops is discussed in its doc comment, and this one is absent without comment. **Note the semver-visible half:** tightening `supports_inside_outside()` makes a mesh that passes today fail, which is correct and is still a behaviour change. **Acceptance:** a hand-built bowtie fails readiness where it currently passes, and the doc comment says what the field is for. | S | — |
 
 ---
 
@@ -335,7 +336,6 @@ expectations into docs that measurement then disproved (✗1, ✗3, ✗14, O-14)
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-011** | **Convex Primitive Decomposition, and whether `ColliderReadiness` already reports what a decomposer needs.** Knodt & Gao (`10.48550/arXiv.2602.07369`, Lightspeed Studios) argue convex-*hull* ACD is the wrong output under a game's budget, guarantee enclosure of the input surface, and beat V-HACD and CoACD on mean and median one-way Hausdorff and Chamfer at **22.5 KB per collider against 93.8 and 68.9**. Two caveats its abstract does not carry: it does **not** guarantee non-overlapping primitives — the intersection-volume term is dropped deliberately, *"in practice, primitives do not overlap much"* — and like QEM it needs a caller-supplied target primitive count, which per-shard use would have to choose automatically. **H:** every published decomposition method requires only preconditions `ColliderReadiness` already reports. **Harness:** a precondition table across CoACD, V-HACD, VisACD and this paper, committed to `docs/research/`, each row naming the `ColliderReadiness` field that covers it. **Records:** that table. **Falsified by:** any method requiring a property `readiness()` does not report — **self-intersection-freedom is the standing candidate and H is expected to die on it**, since `SelfIntersectionReport` is a separate type that `ColliderReadiness` does not fold in, and VisACD disables CoACD's merging step precisely because it yields intersecting hulls in 35% of cases. If H dies there, self-intersections per 1,000 triangles stops being a recorded metric and becomes a **gating** one for any mesh headed into decomposition. **FINDINGS:** `M-` either way, and it re-tiers `O-2`. | M | — |
 
 
 ---

@@ -31,6 +31,11 @@ false. No public signature moved.
 
 ### Documentation
 
+- **`docs/research/2026-08-16-decomposition-preconditions.md`** — what four published convex
+  decomposition methods actually require of their input, from their own papers. Two of the four
+  require nothing: V-HACD voxelizes, and CPD *"handles non-manifold, non-watertight meshes directly
+  without preprocessing."* Input cleanliness is a quality axis, not a gate (R-011, M-300, ✗20).
+
 - **`FINDINGS.md` M-297, M-298, M-299.** No published convex decomposition runs at interactive rates,
   which corroborates M-116's 241–272 ms per fragment from the literature side; a fan's
   `inconsistently_oriented_edges` count is exactly its flip-state changes, so it detects a fan that

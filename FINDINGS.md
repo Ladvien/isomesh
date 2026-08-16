@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**368 entries** — 19 falsified, 294 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**370 entries** — 20 falsified, 295 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -58,6 +58,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗17` | "Only the interior test can make Marching Cubes 33 non-manifold, so the face decider alone cannot" |
 | `✗18` | "A hairline seam difference is a crack no weld can close" |
 | `✗19` | "Manifold Dual Contouring's uniform-grid surface is always a manifold" |
+| `✗20` | "Every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input" |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -352,6 +353,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-297` | no published convex decomposition runs at interactive rates, so this crate's own 241 ms was not an outlier (O-2) |
 | `M-298` | orientation catches a fan that reverses, not a fan that folds, and a star polygon is invisible to both counters (T-020) |
 | `M-299` | the on-demand split is free for the pseudonormal and costs a factor of N for the winding number (S-008) |
+| `M-300` | FALSIFIED, and not where it was predicted: the gap is non-manifold vertices, not self-intersections (R-011) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1527,6 +1529,7 @@ Rules with no incident behind them get ignored. These all have one.
 
 | Rule | Earned from |
 |---|---|
+| **A precondition claim needs the sentence from the method's own paper, and "what it requires" is a different question from "what it guarantees"** | ✗20 — *"every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input"* was two conflations at once. A method that **preprocesses** bad input was read as one that **requires** clean input, when Andrews 2024 names preprocessing as an axis methods differ along; and VisACD's 35% intersecting-hull rate, which describes the hulls **CoACD emits**, was read as a condition on the mesh it is **given**. Two of the four methods audited require nothing at all, and CPD says so in one sentence |
 | **A count stated in prose needs a gate, or it rots — and the second rot looks exactly like the first** | The golden-hash count was wrong in the root README, fixed at 0.0.4 from 147 to 168, and was wrong again at 216. The reference-field count was wrong in six places at once. Both were found by a person reading, twice, because `readme_sync.sh` compared one code fence and nothing watched the prose. `scripts/doc_facts.sh` derives each count from its source. The gate's *first* version is the other half of the lesson: it matched any number before "fields" and flagged "five of the seven reference fields", which is correct prose about a subset — **a gate that cries wolf is a gate somebody disables**, so it now matches only phrases that can mean the total |
 | **Derive a measurement's bounds from the thing being measured. A hand-written bound is wrong twice before anyone notices** | B-006 and B-007 — the same seam-counting helper had its exclusion list written out by hand twice. The first version omitted the `y` axis entirely and accused Marching Cubes of a seam defect it does not have; the fix for that left `z` with a bound of `8.0` on a chunk `4.0` deep, and the uncounted wall produced a phantom open edge that made subgrid look non-conforming and got shipped as `Unverified` in a public API. Both readings were plausible and both were the fixture. The bounds now come from `layout.cell_size() * layout.cells()`, which cannot disagree with the chunks it is measuring |
 | **A counter that is only populated on the success path cannot report the failure. Register what is being checked *before* the thing that fixes it** | E-205 — the crack counter built its list of seam planes inside `if transitions`, so running with transitions **off** left nothing to compare against and the demo reported a confident **0 cracks** on a world with 182 open edges in it. The zero was not wrong about the geometry; it was computed over an empty set. Moving the seam-plane scan out of the conditional makes the control real: 71 low and 102–111 high with transitions off, 0 and 0 with them on. **Seventh instance in one session** of a number that was a property of the fixture rather than of the code |
@@ -3777,3 +3780,85 @@ count is the difference between a prediction and a rationalisation, and this pro
 caught itself putting expectations into docs that measurement then disproved (✗1, ✗3, ✗14, O-14). If H
 survives, the surprise is the finding; if it dies where predicted, the *audit* is still the product,
 because "which field covers which precondition" is not currently written down anywhere.
+
+
+### ✗20 — "Every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input"
+
+**Believed because:** a literature sweep summarised the ACD line's preprocessing steps as a shared
+requirement, and this repository accepted it as the bridge from T-001's checklist to downstream
+colliders — *"isomesh's verification checklist isn't mesh hygiene, it's the precondition list for
+whatever decomposes downstream."*
+
+**Falsified by:** R-011's audit of the four methods' own papers. **Two of the four require nothing.**
+V-HACD *"addresses this by voxelizing the input, guaranteeing a solid input for decomposition at the
+cost of some accuracy"* (Andrews 2024, `10.1145/3641519.3657479` §2.1.3). CPD — the method the sweep
+singled out as the best fit for plane-cut shards — states it outright: *"Unlike prior work, our
+approach handles **non-manifold, non-watertight meshes directly without preprocessing**"*
+(`10.48550/arXiv.2602.07369` §4), and its Figure 1 is *"a complex non-manifold mesh with boundaries."*
+
+**Root cause: two conflations, in the same sentence.**
+
+1. **Preprocessing read as requirement.** CoACD and VisACD both clean their input, so their papers
+   describe watertight meshes — but Andrews 2024 names *"whether to perform preprocessing or
+   discretization of the input"* as one of the **three axes methods differ along**. Clean input is a
+   quality lever, not a gate: what it buys is skipping the repair pass and the accuracy it costs —
+   V-HACD's voxelization error, CoACD's *"slightly offset version of bad inputs"*, VisACD's SDF
+   remesh.
+2. **Output read as input.** VisACD's *"merging produces intersecting convex hulls in 35% of cases"*
+   is about the hulls **CoACD emits**, in a sentence explaining which methods VisACD will benchmark:
+   *"We do not evaluate methods that produce decompositions with intersecting convex hulls."* Read as
+   an input condition, it put self-intersection-freedom on the precondition list. **No audited method
+   requires a self-intersection-free input.** CoACD *guarantees* intersection-free output instead —
+   *"In this way, we ensure convex hulls of the decomposed components are intersection-free."*
+
+**Consequence for this crate.** Self-intersections per 1,000 triangles **stays a recorded metric and
+does not become a gate**. The conditional that would have promoted it — *"if decomposition ever
+enters the pipeline"* — does not fire.
+
+**Method rule earned:** in Part 5. A precondition claim needs the sentence from the method's own
+paper, and *"what it requires"* is a different question from *"what it guarantees."*
+
+**Would be shown wrong by:** a decomposition method that refuses, rather than repairs, an input
+failing one of these five properties.
+
+
+### M-300 / P-18 — FALSIFIED, and not where it was predicted: the gap is non-manifold vertices, not self-intersections (R-011)
+
+**M.** P-18 predicted that every precondition a published convex decomposition method requires is
+already reported by `ColliderReadiness`, and was **registered expecting to die on
+self-intersection-freedom**. It died, and that candidate was not the reason — self-intersection-freedom
+turned out not to be an input precondition of anything (✗20).
+
+**7 required preconditions across the four methods. 5 covered. 2 not, and they are the same field
+twice.** `docs/experiments/p-18.csv`, sources row by row in
+`docs/research/2026-08-16-decomposition-preconditions.md`.
+
+| precondition | `ColliderReadiness` field | covered |
+|---|---|---|
+| closed / watertight | `boundary_edges` | yes |
+| 2-manifold **edges** | `non_manifold_edges` | yes |
+| consistent orientation | `inconsistently_oriented_edges` | yes |
+| 2-manifold **vertices** | — | **no** |
+
+**`MeshReport` computes `non_manifold_vertices` with the link walk and `collider::from_report` does
+not copy it across.** Ten fields are forwarded; that one is not. So a **bowtie** — two cones sharing
+an apex — reports `boundary_edges = 0`, `non_manifold_edges = 0`,
+`inconsistently_oriented_edges = 0`, and passes `supports_inside_outside()`. `CLAUDE.md` already
+states why edge counts cannot see it: *"two cones sharing an apex have 2k of each, every edge has
+exactly 2 faces, and χ can come out right."* A bowtie is not a 2-manifold, and CoACD's plane cutting
+is stated over manifold meshes.
+
+**The omission looks deliberate and is not.** `ColliderReadiness`'s doc comment explains, field by
+field, which validator numbers a collider cares about and which it does not — a duplicate vertex is
+argued about at length, a degenerate triangle is argued about at length. `non_manifold_vertices` is
+not argued about; it is simply absent, and no test names it. That is the signature of a field
+forgotten rather than excluded. Tracked as **T-021**.
+
+**What the audit is worth independently of the verdict.** *"Which readiness field covers which
+decomposition precondition"* was written down nowhere, in this repo or in the papers, and the four
+methods disagree so widely — two requiring nothing — that the mapping is not derivable from any one
+of them.
+
+**Would be shown wrong by:** a fifth method requiring an input property none of these four does, or a
+demonstration that a bowtie vertex is harmless to plane-cut decomposition — which would make the
+omission correct and the doc comment merely silent about it.

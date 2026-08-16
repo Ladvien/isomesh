@@ -1,0 +1,21 @@
+# experiment P-18 (R-011)
+# hypothesis: Every precondition a published convex decomposition method requires of its input mesh is already reported by ColliderReadiness, so a caller holding a readiness report has everything it needs to decide whether a mesh can be handed to a decomposer.
+# falsified by: Any precondition required by a method in the audit that no ColliderReadiness field reports. Self-intersection-freedom is the standing candidate.
+# commit 3f68af4 on amd-ryzen-9-5900x-12-core at 2026-08-16T16:14:59Z
+# This is a source audit, not a machine measurement: every 'required' cell is a
+# statement the method's own paper makes about its input. Sources are cited row
+# by row in docs/research/2026-08-16-decomposition-preconditions.md.
+# required: yes = stated requirement; repaired = the method preprocesses bad
+# input itself, at a stated accuracy cost; no = explicitly not required.
+method,precondition,required,readiness_field,covered
+coacd,closed_watertight,repaired,boundary_edges,yes
+coacd,2_manifold_edges,repaired,non_manifold_edges,yes
+coacd,2_manifold_vertices,repaired,none,no
+coacd,consistent_orientation,repaired,inconsistently_oriented_edges,yes
+coacd,self_intersection_free_input,no,n/a,n/a
+vhacd,any,no,n/a,n/a
+visacd,closed_watertight,repaired,boundary_edges,yes
+visacd,2_manifold_edges,repaired,non_manifold_edges,yes
+visacd,2_manifold_vertices,repaired,none,no
+visacd,self_intersection_free_input,no,n/a,n/a
+cpd,any,no,n/a,n/a
