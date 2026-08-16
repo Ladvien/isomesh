@@ -68,7 +68,7 @@ Surface Nets loses, and it loses on both machines — **run on two, not one**. W
 
 So both halves of the usual case for Surface Nets — fewer triangles, lower cost — are falsified by measurement in this repository. What it actually buys is quad connectivity and one vertex per cell.
 
-![Surface Nets against Dual Contouring on a box](../screenshots/e104-dual-contouring-box.png)
+![Surface Nets against Dual Contouring on a box](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/dual-contouring-vs-surface-nets.gif)
 
 *`dual_contouring_cube` — the same box, the same 19³ grid, the same edge crossings. Surface Nets on the left, Dual Contouring on the right. The only difference between the two meshes is one function: where a cell's vertex goes. Both emit **972 triangles** with identical connectivity. On [`csg_difference`](../screenshots/e104-dual-contouring-csg.png) the concave seam holds too.*
 
@@ -79,7 +79,7 @@ The corners are the real difference, and dual contouring is what closes them. Me
 | Surface Nets | 0.0888 | **0.58** |
 | Dual Contouring | 0.0009 | **0.01** |
 
-Guaranteed intersection-free extraction turns out to be free *for placement*, and not sufficient overall — which is not what the folklore predicts in either direction. Confining each solved vertex to its own cell drives self-intersections to **exactly zero** on five of the seven test fields — `torus` goes 2.66 → 0 pairs per 1,000 triangles — and the corner above measures **identically** clamped or not, because a convex corner's solution is already inside its cell. What survives the clamp is 3.12 on the gyroid and 13.84 on fbm terrain, and those are precisely the two fields where two sheets of surface share a cell: a connectivity defect, not a placement one.
+Guaranteed intersection-free extraction turns out to be free *for placement*, and not sufficient overall — which is not what the folklore predicts in either direction. Confining each solved vertex to its own cell drives self-intersections to **exactly zero** on five of the eight test fields — `torus` goes 2.66 → 0 pairs per 1,000 triangles — and the corner above measures **identically** clamped or not, because a convex corner's solution is already inside its cell. What survives the clamp is 3.12 on the gyroid and 13.84 on fbm terrain, and those are precisely the two fields where two sheets of surface share a cell: a connectivity defect, not a placement one.
 
 It costs about **3%** over Surface Nets to do it, and the two meshes are otherwise the same mesh: identical index buffers, and 864 of 1016 vertices agreeing to within `2e-15` cells. Only the 152 on edges and corners move.
 
@@ -113,11 +113,18 @@ cd bevy_isomesh && cargo run --example subgrid_features --release
 
 ---
 
----
+## Seven algorithms, one process, one run
 
-## Six algorithms, one process, one run
+No paper since 2020 benchmarks Marching Cubes against Surface Nets against Dual Contouring, and Surface Nets has no credible published timings at all. So they are measured here — eight fields, two grids, seven algorithms, one process — and the headline is not what the folklore says.
 
-No paper since 2020 benchmarks Marching Cubes against Surface Nets against Dual Contouring, and Surface Nets has no credible published timings at all. So they are measured here — seven fields, two grids, six algorithms, one process — and the headline is not what the folklore says.
+**The timings moved by 4.26× on 2026-08-16 and the numbers below do not include it.** Two
+optimisations — a `const`-generic loop axis and an odd sample row stride — took Surface Nets at 256³
+from 693.8 ms to **162.7 ms** and its IPC from 1.20 to **4.09**, without changing a triangle. The
+`SN/MC` ratio went from 5.43× to **1.26×**, and Surface Nets is now *faster* than Marching Cubes at
+16³, 24³ and 32³. See [the experiments page](../experiments.md#the-426-and-not-one-triangle-changed);
+`docs/measurements/family.csv` is the current run.
+
+Correctness is unaffected — that is what "not one triangle changed" means — so the table below stands:
 
 | | manifold | intersection-free |
 |---|---|---|
@@ -142,15 +149,13 @@ cargo bench --bench shootout        # writes docs/measurements/shootout.csv
 
 ---
 
----
-
 ## The blocky path, and a published number that is one scene's
 
 ![Blocky terrain meshed twice: every cell face, then merged into large quads](../screenshots/e106-greedy-quads-terrain.png)
 
 *`greedy_quads` — the same fBm terrain and the same occupancy, meshed twice. Left, one quad per visible cell face: **5,014 quads**. Right, coplanar runs merged: **1,089**, and that side wall is two triangles. The wireframe is the demo, because the two surfaces are identical.*
 
-Greedy meshing is quoted everywhere as **2.76× fewer triangles than face culling**, from one UE5 benchmark. Measured across seven fields at one resolution, it is not a constant:
+Greedy meshing is quoted everywhere as **2.76× fewer triangles than face culling**, from one UE5 benchmark. Measured across eight fields at one resolution, it is not a constant:
 
 | `gyroid` | `sphere` | `torus` | `fbm_terrain` | `csg_difference` | `box_exact` |
 |---|---|---|---|---|---|
@@ -172,7 +177,7 @@ cd bevy_isomesh && cargo run --example greedy_quads --release
 
 ## The sharpness knob, and what it costs at both ends
 
-![Dual Contouring on a capped gyroid with the lambda slider, showing the runaway and rounding measurements in the HUD](../screenshots/e109-sharp-features-gyroid.png)
+![Dual Contouring on a capped gyroid with the lambda slider, showing the runaway and rounding measurements in the HUD](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/sharp-features-lambda-sweep.gif)
 
 *`sharp_features` — one model, a live slider on **λ**, the Tikhonov regularizer in the vertex solve. It
 is the whole sharpness/stability trade in one number, and it was a compile-time constant until this

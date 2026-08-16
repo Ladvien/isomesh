@@ -8,7 +8,7 @@ that someone else can use — which is a different and stricter thing than takin
 
 | File | Written by | What it is |
 |---|---|---|
-| `shootout.csv` | `cargo bench --bench shootout` | Every extractor × eight fields × three resolutions: timing, counts, manifoldness, self-intersection, Hausdorff |
+| `shootout.csv` | `cargo bench --bench shootout` | Every extractor × eight fields × **two** resolutions (33³ and 65³): timing, counts, manifoldness, self-intersection, Hausdorff |
 | `ablation.csv` | `cargo bench --bench ablation` | One algorithm, two vertex rules — X-002's seam |
 | `resolution_sweep.csv` | `cargo bench --bench resolution_sweep` | 16³…256³, and the `t = a + b·n³` fit |
 | `stage_breakdown.csv` | `cargo bench --bench stage_breakdown` | Where the time goes inside one extraction |
@@ -73,3 +73,23 @@ records that it did.
 because the resolution sweep was run on a second box: Surface Nets' superlinearity reproduced there
 and got *worse*, which is what ruled out one cache hierarchy as the explanation. A measurement taken
 on one machine describes that machine until a second one agrees.
+
+## `docs/experiments/` is a separate directory, and deliberately
+
+The CSVs above answer *"how does this perform"* and *"is this correct"*. The ones in
+[`docs/experiments/`](../experiments/) answer a different question — **was the prediction registered
+before the number was known** — and each carries its hypothesis and its falsifier as `#` comment lines
+in the header, above the data:
+
+```text
+# hypothesis: ...
+# falsified by: ...
+```
+
+That header is not decoration. It is what makes the file re-checkable by someone who was not there,
+and it is written by the bench rather than by hand, from the registration in
+`crates/isomesh/src/experiment.rs`. A result file whose hypothesis was typed in afterwards would look
+exactly like one whose hypothesis was registered first, which is the failure the whole practice exists
+to prevent.
+
+The narrative version, with verdicts, is [`docs/experiments.md`](../experiments.md).

@@ -12,7 +12,7 @@ page. A physics engine forgives none of them.
 
 ## Where a mesh stops being a manifold
 
-![Marching Cubes and Surface Nets on the capped gyroid, non-manifold features marked](../screenshots/e111-manifold-check-gyroid-surface-nets.png)
+![Marching Cubes and Surface Nets on the capped gyroid, non-manifold features marked](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/manifold-check-resolution.gif)
 
 *`manifold_check` — the capped gyroid at 19³ under Surface Nets. Every red sphere is a non-manifold vertex and every red line a non-manifold edge, drawn where the validator found them: 39 edges and 61 vertices, clustered around the tunnel mouths where two sheets of surface share a cell. The same field and grid under Marching Cubes reports `0` on every counter and `MANIFOLD, CLOSED` ([screenshot](../screenshots/e111-manifold-check-gyroid-marching-cubes.png)).*
 
@@ -82,7 +82,7 @@ The third strategy is where it gets interesting. Area-weighted normals track the
 
 ## An ambiguous face, and how rarely one turns up
 
-![Marching Cubes beside the asymptotic decider on a capped gyroid, ambiguous cells marked](../screenshots/e102-ambiguity-gyroid.png)
+![Marching Cubes beside the asymptotic decider on a capped gyroid, ambiguous cells marked](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/ambiguous-faces-are-rare.gif)
 
 *`marching_cubes_ambiguity` — plain Marching Cubes on the left, the same extraction with `FaceAmbiguity::AsymptoticDecider` on the right. Every box is a cell with an ambiguous face: **amber where the decider agreed and separated the corners, magenta where it disagreed and joined them.** Magenta is the only place the two meshes can differ, and on the gyroid at 33³ there are nine such cells out of 5,240.*
 

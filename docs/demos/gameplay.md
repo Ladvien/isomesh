@@ -236,7 +236,7 @@ cd bevy_isomesh && cargo run --example game_budget --release
 
 ## Undo without a snapshot, and an order that is load-bearing
 
-![A carved block with the edit log and the commutation audit on the HUD](../screenshots/e207-editor.png)
+![A carved block with the edit log and the commutation audit on the HUD](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/undo-is-a-refold.gif)
 
 *Eight brushes folded over a block. The field **is** the log — `BrushStack { base, brushes: &log[..cursor] }`
 — and undo moves the cursor back by one.*
@@ -279,7 +279,7 @@ cd bevy_isomesh && cargo run --example game_editor --release
 
 ## The whole pipeline on the GPU, and the bus is never touched
 
-![A carved sphere resting on a slab, drawn entirely by a mesh shader](../screenshots/e303-gpu-mesh-shader.png)
+![A carved sphere resting on a slab, drawn entirely by a mesh shader](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/gpu-resident-mesh-shader.gif)
 
 *16,436 triangles at 65³, extracted and drawn in **0.41 ms**, 60 fps. Per frame the CPU sends a camera
 matrix and three brushes. Nothing else crosses the bus in either direction.*
@@ -315,7 +315,7 @@ cd bevy_isomesh && cargo run --example gpu_mesh_shader --release
 
 ## Graffiti that survives the wall it was sprayed on
 
-![Coloured paint on a wall with two holes blown through it, the paint intact and the rims bare](../screenshots/e208-game-paint.png)
+![Coloured paint on a wall with two holes blown through it, the paint intact and the rims bare](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/paint-that-survives-the-wall.gif)
 
 *Twelve sprays, then two holes blown through patches that were definitely painted. The paint around
 each hole has not moved, and the freshly exposed rim is bare — paint reaches a fixed depth from the
@@ -469,7 +469,7 @@ cd bevy_isomesh && cargo run --example game_walk --release
 
 ## Digging, with the numbers a game actually cares about
 
-![Carving a tunnel into terrain, with the re-meshed chunks outlined](../screenshots/e202-game-dig.png)
+![Carving a tunnel into terrain, with the re-meshed chunks outlined](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/digging-a-tunnel.gif)
 
 *`game_dig` — first person, left click to carve. The blue boxes are the chunks the **last edit** re-meshed: 3 of them, in `0.41 ms`. Nine chunks are resident; the other six were not touched and were not looked at.*
 
