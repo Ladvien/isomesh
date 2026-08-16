@@ -60,6 +60,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗19` | "Manifold Dual Contouring's uniform-grid surface is always a manifold" |
 | `✗20` | "Every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input" |
 | `✗21` | "Convex Primitive Decomposition is the cutting substrate a plane-cut fracture pipeline wants" |
+| `✗22` | "`MeshReport` applies a closed-solid test to render meshes, so it must be split into two report types" |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -3884,6 +3885,61 @@ mentions it.
 **Would be shown wrong by:** a construction that recovers a disjoint interior partition from CPD's
 output at a cost below decomposing with a partitioning method directly. The boolean union of the
 primitives is the obvious candidate and is what CPD measured at 30× for a related computation.
+
+
+### ✗22 — "`MeshReport` applies a closed-solid test to render meshes, so it must be split into two report types"
+
+**Believed because:** T-023 (2026-08-16 brief) read a downstream *"2/12 manifold"* figure as a
+measurement category error inside this crate, and prescribed *"two report types with distinct
+assertion sets."*
+
+**Falsified by reading `validate.rs` and `property.rs` (T-023, before any code was written).** The
+distinction the ticket asks for **already exists**, and it is older and finer than what was proposed:
+
+- `MeshReport::is_manifold` is documented *"**The gate for open fields**"* and does **not** look at
+  `boundary_edges`. `is_closed` is *"**The gate for closed fields**"* and adds the boundary and χ-parity
+  checks. `has_structural_errors` is the third. The type's own doc comment already says why:
+  *"'Valid' is not one thing, so there are three predicates rather than one."*
+- `violations()` deliberately excludes `degenerate_triangles`, `duplicate_vertices` and
+  `unreferenced_vertices` because *"a correct extractor produces non-zero counts of all three for
+  perfectly ordinary reasons"* — recorded-not-asserted, which is exactly T-023's ask.
+- `SurfaceGate` is a **three**-case enum, not the two the ticket assumes, and is *"deliberately an enum
+  rather than a `bool`"* because *"a blanket gate is unsatisfiable for at least one field **and** at
+  least one algorithm."* The third case, `ClosedPossiblyNonManifold`, covers a grid that may not
+  resolve the field — which no two-type split expresses.
+- The choice is driven by field metadata, never by the caller: `ReferenceField::closed_in_domain()`
+  gates it in seven test modules, and `assert_extracted_mesh_is_valid`'s doc says *"`gate` comes from
+  the field and the algorithm, never from the caller's intuition."*
+
+**So the proposed fix would have added a second path to a question already answered once** — two report
+types where three predicates and a three-case enum exist — and re-baselined every golden hash, since
+`MeshReport`'s `Display` block is hashed.
+
+**But there is a real defect underneath, and it is a visibility bug, not a type bug.** `mod property;`
+is **private** (`lib.rs:129`) and `SurfaceGate` is `pub(crate)`, while `MeshReport` and
+`ReferenceField::closed_in_domain` are both **public**. A consumer therefore receives the report and
+its three predicates with **no reachable statement of which one to call**, and re-derives the rule —
+badly. That is precisely the downstream symptom: calling `is_closed()` on a render mesh that was never
+a solid. **This crate's own example does the same thing**: `bevy_isomesh/examples/manifold_check.rs:379-381`
+hand-rolls `if report.is_closed() … else if report.is_manifold()`, an if/else re-derivation of a rule
+that exists, typed and documented, twenty lines away behind a private module.
+
+**Consequence.** T-023 is re-scoped from *split the report* to *publish the gate*. The acceptance
+clause worth keeping is its last one — the docs state which artefact each belongs to — because that
+was always the part that bites.
+
+**Source-reliability note, which is the durable half.** This is the **third** premise from the
+2026-08-16 brief to fail against this codebase, and the three fail the same way. Its claims about the
+**external literature** have held up under checking every time — CPD's three claims (✗21), Shewchuk's
+PSLG flood fill, Müller's architecture, ✗20's input-tolerance audit. Its claims about **this
+codebase's internal state** have been wrong three times running: *"Manifold Dual Contouring queries
+where it needs to"* (false at `dual.rs:257`, retired by D-011), *"decompose and cut the cells"* (✗21),
+and this one. **Read the brief as a literature review, and verify every sentence it writes about
+`crates/` against `crates/`.**
+
+**Would be shown wrong by:** a consumer requirement that the three predicates genuinely cannot express
+— a report where solid and surface assertions must coexist on one mesh rather than being selected
+between.
 
 
 ### M-300 / P-18 — FALSIFIED, and not where it was predicted: the gap is non-manifold vertices, not self-intersections (R-011)
