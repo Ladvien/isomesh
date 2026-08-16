@@ -185,13 +185,8 @@ fn fast_expansion_sum<R: Real>(e: &[R], f: &[R], h: &mut [R]) -> Option<usize> {
         return Some(if g0 == R::ZERO {
             0
         } else {
-            match h.first_mut() {
-                Some(slot) => {
-                    *slot = g0;
-                    1
-                }
-                None => return None,
-            }
+            *h.first_mut()? = g0;
+            1
         });
     };
 
@@ -228,13 +223,8 @@ fn fast_expansion_sum<R: Real>(e: &[R], f: &[R], h: &mut [R]) -> Option<usize> {
     // even when zero if nothing else survived, so that the empty expansion is
     // represented as a single zero rather than as nothing at all.
     if q != R::ZERO || written == 0 {
-        match h.get_mut(written) {
-            Some(slot) => {
-                *slot = q;
-                written += 1;
-            }
-            None => return None,
-        }
+        *h.get_mut(written)? = q;
+        written += 1;
     }
 
     Some(written)

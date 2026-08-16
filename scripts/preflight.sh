@@ -68,6 +68,7 @@ step "backlog gate" ./scripts/backlog_gate.sh
 step "findings index" ./scripts/findings_index.sh --check
 step "doc facts" ./scripts/doc_facts.sh
 step "readme sync" ./scripts/readme_sync.sh
+step "toolchain drift" ./scripts/toolchain_drift.sh
 step "root: clippy" cargo clippy --workspace --all-targets -- -D warnings
 # **The step whose absence is M-293.** A type-check of every target in the other
 # workspace, which is exactly what CI's `bevy` job runs and what nothing local

@@ -53,12 +53,21 @@ fn every_registration_states_what_would_refute_it() {
             "{}: an experiment that records nothing cannot be checked",
             p.id
         );
-        assert!(
-            p.ticket.starts_with('R') || p.ticket.starts_with('A') || p.ticket.starts_with('T'),
-            "{}: `{}` is not a ticket id",
-            p.id,
-            p.ticket
-        );
+        // The *shape* of a ticket id, not a list of series that run experiments.
+        // This was `starts_with('R') || 'A' || 'T'` and went stale the first time
+        // an `S` ticket registered one (S-009/P-19) -- Part 5's rule about
+        // hand-written bounds, third instance. The shape here is the one
+        // `scripts/backlog_gate.sh` uses: `[A-Za-z]+-[0-9]+[a-z]?`.
+        let well_formed = match p.ticket.split_once('-') {
+            Some((series, number)) => {
+                !series.is_empty()
+                    && series.chars().all(|c| c.is_ascii_alphabetic())
+                    && number.chars().next().is_some_and(|c| c.is_ascii_digit())
+                    && number.chars().all(|c| c.is_ascii_alphanumeric())
+            }
+            None => false,
+        };
+        assert!(well_formed, "{}: `{}` is not a ticket id", p.id, p.ticket);
     }
 }
 

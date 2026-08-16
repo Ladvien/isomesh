@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**377 entries** — 23 falsified, 298 measured, 36 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**378 entries** — 23 falsified, 299 measured, 36 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -360,6 +360,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-301` | the bowtie that passed: a closed, edge-manifold, consistently oriented surface that is not a 2-manifold (T-021) |
 | `M-302` | the naive orient2d fails by reporting collinear, not by reporting a false crossing (T-024a) |
 | `M-303` | HELD: the winding crossover is N², not N³, and the per-point cost is linear in boundary edges (S-009) |
+| `M-304` | a green preflight.sh is not a green CI, because the toolchains differ (0.0.6 release) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1539,6 +1540,7 @@ Rules with no incident behind them get ignored. These all have one.
 |---|---|
 | **A precondition claim needs the sentence from the method's own paper, and "what it requires" is a different question from "what it guarantees"** | ✗20 — *"every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input"* was two conflations at once. A method that **preprocesses** bad input was read as one that **requires** clean input, when Andrews 2024 names preprocessing as an axis methods differ along; and VisACD's 35% intersecting-hull rate, which describes the hulls **CoACD emits**, was read as a condition on the mesh it is **given**. Two of the four methods audited require nothing at all, and CPD says so in one sentence |
 | **Verify a citation's *claims* and its *problem* separately. Three true claims do not make a method the right one** | ✗21 — A-026 chose CPD as the substrate a plane-cut fracture pipeline cuts, on three claims that all survived verification against the paper: input tolerance, *"guaranteed to enclose the input surface"*, under a third of the collider bytes. The architecture needed a fourth property nobody checked for — a **disjoint partition of the interior** — and CPD has none: Algorithm 1 merges the **face adjacency graph**, its §3.4 says *"the union of all primitives covers the mesh's surface"*, and §3.3 concedes the primitives overlap. **The abstract, which is where the three claims came from, never mentions any of this.** Worse, one of the verified claims was actively disqualifying: *enclosure* is the right guarantee for a collider and the wrong one for a substrate, because a proxy that strictly contains the solid cannot conserve its volume. **This is ✗20's rule one step out** — there it was "requires" vs "guarantees"; here it is "guarantees" vs "what you need" |
+| **Two gates that run the same command are not the same gate if they run different tools. Compare the tool, not the command** | M-304 — `preflight.sh --full` was green on every step and the 0.0.6 release still failed: CI's clippy was 0.1.97 and the local one 0.1.96, and `question_mark` exists in one and not the other. The publish step was skipped and nothing uploaded. The command was byte-identical in both places, which is exactly why nobody looked. `scripts/toolchain_drift.sh` now warns when local `stable` is behind the current release — a warning rather than a failure, because being a patch behind is normal and a gate that cries wolf gets disabled |
 | **A count stated in prose needs a gate, or it rots — and the second rot looks exactly like the first** | The golden-hash count was wrong in the root README, fixed at 0.0.4 from 147 to 168, and was wrong again at 216. The reference-field count was wrong in six places at once. Both were found by a person reading, twice, because `readme_sync.sh` compared one code fence and nothing watched the prose. `scripts/doc_facts.sh` derives each count from its source. The gate's *first* version is the other half of the lesson: it matched any number before "fields" and flagged "five of the seven reference fields", which is correct prose about a subset — **a gate that cries wolf is a gate somebody disables**, so it now matches only phrases that can mean the total |
 | **Derive a measurement's bounds from the thing being measured. A hand-written bound is wrong twice before anyone notices** | B-006 and B-007 — the same seam-counting helper had its exclusion list written out by hand twice. The first version omitted the `y` axis entirely and accused Marching Cubes of a seam defect it does not have; the fix for that left `z` with a bound of `8.0` on a chunk `4.0` deep, and the uncounted wall produced a phantom open edge that made subgrid look non-conforming and got shipped as `Unverified` in a public API. Both readings were plausible and both were the fixture. The bounds now come from `layout.cell_size() * layout.cells()`, which cannot disagree with the chunks it is measuring |
 | **A counter that is only populated on the success path cannot report the failure. Register what is being checked *before* the thing that fixes it** | E-205 — the crack counter built its list of seam planes inside `if transitions`, so running with transitions **off** left nothing to compare against and the demo reported a confident **0 cracks** on a world with 182 open edges in it. The zero was not wrong about the geometry; it was computed over an empty set. Moving the seam-plane scan out of the conditional makes the control real: 71 low and 102–111 high with transitions off, 0 and 0 with them on. **Seventh instance in one session** of a number that was a property of the fixture rather than of the code |
@@ -4134,6 +4136,43 @@ them; this one had no doc comment because it had no field.
 
 **Would be shown wrong by:** a physics engine answering an inside/outside query correctly at a bowtie
 apex, which would make the tightened predicate too strict rather than newly right.
+
+
+### M-304 — a green `preflight.sh` is not a green CI, because the toolchains differ (0.0.6 release)
+
+**M.** The 0.0.6 release ran with `preflight.sh --full` green on every gate and **failed**. The lint
+job raised `clippy::question_mark` twice in `crates/isomesh/src/predicates.rs` — at `188:13` and
+`231:9`, both `match … { Some(x) => …, None => return None }` where `?` now suffices — the job exited
+101, and the `publish to crates.io` step was **skipped**. Nothing uploaded; crates.io stayed at 0.0.5.
+Five other jobs passed, including both test matrices and the packaging dry run.
+
+**Cause: version drift, not a missing gate.** `preflight.sh` runs `cargo clippy` and CI runs `cargo
+clippy`; the *command* is identical and that is exactly why it was invisible. Local was **clippy
+0.1.96** (rustc 1.96.0, 2026-05-25). CI installs whatever `stable` is on the day it runs, which was
+**0.1.97** (rustc 1.97.1, 2026-07-14). `question_mark` fires in the newer and not the older.
+`rustup update stable` reproduced the failure locally in seconds, and the fix — `*h.first_mut()? = g0;`
+and `*h.get_mut(written)? = q;` — is shorter than what it replaced.
+
+**This is M-293's shape with a different mechanism, and that is the point.** There the gap was a
+*target* the local command did not compile (`bevy_isomesh`, excluded from the workspace). Here the
+command covers everything and the **compiler** differs. Both produce the same reading: a fully green
+local run, and a red CI. A gate that runs the right command with the wrong tool is not a weaker gate,
+it is a **silent** one.
+
+**Rule earned, and it is a script rather than a note:** `scripts/toolchain_drift.sh`, wired into
+`preflight.sh` immediately before the clippy step. It compares local `stable` against the current
+release via `rustup check` and prints a warning naming both versions. **Deliberately a warning and not
+a failure** — being a patch behind is normal, and blocking every local run on it is the
+gate-that-cries-wolf Part 5 already has a rule about. What it must not do is stay quiet, because quiet
+is what made this invisible.
+
+**Cost, recorded because it is the argument for the check.** One failed release, ~31 minutes of CI,
+and a stretch where several commits were deliberately held back to avoid cancelling a run that was
+never going to publish.
+
+**Would be shown wrong by:** a CI configuration that pins its toolchain, which would make local and
+remote agree by construction and turn this check into noise. That is a real option and it was not
+taken — pinning would also stop CI seeing new lints, which is the thing that caught this.
 
 
 ### M-303 / P-19 — HELD: the winding crossover is `N²`, not `N³`, and the per-point cost is linear in boundary edges (S-009)
