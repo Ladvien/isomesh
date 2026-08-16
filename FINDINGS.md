@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**358 entries** — 19 falsified, 285 measured, 34 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**359 entries** — 19 falsified, 286 measured, 34 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -343,6 +343,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-288` | FALSIFIED, and the registered definition did not implement the registered claim (R-008) |
 | `M-289` | the reference gradient was noise, and it falsified two hypotheses that were true (R-009) |
 | `M-290` | the ambiguous face in the dual path, with the source read at last (A-022) |
+| `M-291` | FALSIFIED, and the sharper form of it points the other way (A-025) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -3285,3 +3286,67 @@ nothing in the A-002 series has named.
 ambiguous-face cell does — and ambiguous faces are where interior ambiguities live, so that is the
 likely null rather than a remote one. The comparison is against ambiguous-face pairs that are **not**
 offending, measured in the same pass.
+
+### M-291 / P-17 — FALSIFIED, and the sharper form of it points the other way (A-025)
+
+**M.** `benches/experiment_p17.rs`, `docs/experiments/p-17.csv`, 8 rows on `noise_cavity` at four
+resolutions × two face rules.
+
+**The predicate is the crate's own and it reproduces its pinned numbers first.** Offending pairs come
+out **30 and 64** under `Separate` and **8 and 40** under the decider at 17³ and 33³, which is
+`the_defect_count_is_predicted_from_the_grid_alone` exactly. Extended: **53 and 26** under `Separate`
+at 49³ and 65³, **49 and 25** under the decider — and those match M-290's counts, which came from the
+*mesh* with no grid involved, where these come from the *grid* with no mesh involved.
+
+#### P-17 is falsified by the null its own control was built to catch
+
+| | offending, any axis | control, any axis |
+|---|---|---|
+| all 8 rows | **1.0000** | **1.0000** |
+
+Every ambiguous-face pair on `noise_cavity` reports `Interior::Joined` on some sweep — offenders and
+non-offenders alike, at every resolution, under both face rules. The registered falsifier was
+*"offending pairs reporting `Interior::Joined` at about the same rate as the control"*, and the rates
+are not merely close, they are identical and saturated.
+
+**The registration predicted this failure mode in its own text** — *"'offending cells have an interior
+join' is worthless if every ambiguous-face cell does, and ambiguous faces are where interior
+ambiguities live, so that is the likely null rather than a remote one"* — which is what a control is
+for and why it was there.
+
+#### The sharper form, and it runs against the hypothesis
+
+A disjunction over three sweeps is nearly always true, so the sweep across the **shared** face was
+measured separately; Custodio's criterion is about a specific pair of opposite faces, and for an
+offending pair that is the one whose endpoints include the shared face.
+
+| n | rule | offending | control |
+|---|---|---|---|
+| 17 | `Separate` | **0.700** | 0.980 |
+| 33 | `Separate` | **0.578** | 0.953 |
+| 49 | `Separate` | **0.679** | 0.992 |
+| 65 | `Separate` | **0.731** | 0.973 |
+| 17 | decider | 1.000 | 0.911 |
+| 33 | decider | 1.000 | 0.852 |
+| 49 | decider | 1.000 | 0.928 |
+| 65 | decider | 1.000 | 0.949 |
+
+Under the crate's default rule the offenders have the interior join **less often than the control** —
+0.58–0.73 against 0.95–0.99 — so on that arm the interior ambiguity is mildly *anti*-correlated with
+the defect. Under the decider the offenders are at 1.000, but so is nearly everything else (0.85–0.95),
+which is a lift too small to build on.
+
+#### What A-025 now knows, and what it does not
+
+**Excluded:** the residue is not the interior ambiguity, in any of the three forms tried — the
+any-axis disjunction (no discriminating power at all), the shared-face sweep under `Separate` (points
+the wrong way), and the shared-face sweep under the decider (saturated on both arms).
+
+**Newly established, and it is about the fixture rather than the defect:** on `noise_cavity`
+**100% of ambiguous-face cell pairs carry an interior join**. That is A-002e's field doing exactly
+what it was built to do (M-208), and it is why this field and no other produces the residue — but it
+is a property of the whole population, so it cannot be the thing that picks out 26 pairs from 322.
+
+**Still unnamed:** what distinguishes the offending pairs. A-025 stays open for it, and the next step
+is A-021's method rather than a wider census — the offending set is 26 pairs at 65³ and their sign
+configurations can simply be printed.

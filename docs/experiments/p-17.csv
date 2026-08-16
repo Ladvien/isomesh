@@ -1,0 +1,13 @@
+# experiment P-17 (A-025)
+# hypothesis: Manifold Dual Contouring's residual non-manifold edges are an interior ambiguity the face decider cannot see: the cells sharing an offending ambiguous face report Interior::Joined on at least one axis sweep at a rate far above the same measurement over non-offending ambiguous-face pairs.
+# falsified by: Offending pairs reporting Interior::Joined at about the same rate as the control — which would mean the residue is not the interior ambiguity and the one-vertex-per-cycle rule fails for a reason nothing in the A-002 series has named.
+# commit b263bed on amd-ryzen-9-5900x-12-core at 2026-08-16T07:27:26Z
+samples,face_rule,offending_pairs,offending_with_interior_join,control_with_interior_join,control_pairs,control_share,control_shared_axis_share,degenerate_sweeps,offending_share,offending_shared_axis_share
+17,separate,30,30,101,101,1.000000,0.980198,0,1.000000,0.700000
+17,decider,8,8,123,123,1.000000,0.910569,0,1.000000,1.000000
+33,separate,64,64,233,233,1.000000,0.952790,2,1.000000,0.578125
+33,decider,40,40,257,257,1.000000,0.852140,2,1.000000,1.000000
+49,separate,53,53,261,261,1.000000,0.992337,0,1.000000,0.679245
+49,decider,49,49,265,265,1.000000,0.928302,0,1.000000,1.000000
+65,separate,26,26,296,296,1.000000,0.972973,0,1.000000,0.730769
+65,decider,25,25,297,297,1.000000,0.949495,0,1.000000,1.000000
