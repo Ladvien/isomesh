@@ -258,6 +258,30 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "control_with_interior_join",
         ],
     },
+    Preregistration {
+        id: "P-18",
+        ticket: "R-011",
+        hypothesis: "Every precondition a published convex decomposition method \
+                     requires of its input mesh is already reported by \
+                     ColliderReadiness, so a caller holding a readiness report \
+                     has everything it needs to decide whether a mesh can be \
+                     handed to a decomposer.",
+        falsified_by: "Any precondition required by a method in the audit that \
+                       no ColliderReadiness field reports. \
+                       Self-intersection-freedom is the standing candidate and \
+                       this hypothesis is expected to die on it, since \
+                       SelfIntersectionReport is a separate type the readiness \
+                       report does not fold in — registered as a prediction \
+                       anyway, because an expectation that is not written down \
+                       before the count is taken is not evidence.",
+        records: &[
+            "method",
+            "precondition",
+            "required",
+            "readiness_field",
+            "covered",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

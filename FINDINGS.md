@@ -3748,3 +3748,32 @@ different cost curves, which is the shape of thing that ends up giving two answe
 empirical. **Would be shown wrong by:** a per-point winding formulation that reuses casts across
 queries. A persistent per-row cache keyed on `(y, z)` is the obvious attempt, and it would make the
 field stateful and its cost order-dependent, which is why it was not the default.
+
+
+### P-18 — registered for R-011, before the count was taken
+
+**What M-297 leaves.** Every decomposition method in the sweep assumes closed, watertight,
+2-manifold, self-intersection-free, consistently oriented input, and two of them say so in operational
+terms rather than in passing: VisACD SDF-remeshes its inputs *"to make the meshes watertight"* before
+it will run, and refuses CoACD's merging step because *"merging produces intersecting convex hulls in
+35% of cases."* That reframes this crate's validity checklist — it is not mesh hygiene for its own
+sake, it is the entry condition for anything downstream that decomposes. Which raises a question the
+crate can answer about itself.
+
+> **H.** Every precondition a published convex decomposition method requires of its input mesh is
+> already reported by `ColliderReadiness`, so a caller holding a readiness report has everything it
+> needs to decide whether a mesh can be handed to a decomposer.
+
+**Falsified by** any precondition required by a method in the audit that no `ColliderReadiness` field
+reports.
+
+**Records** `method`, `precondition`, `required`, `readiness_field`, `covered`.
+
+**This one is registered expecting to die, and that is why it is registered.**
+`SelfIntersectionReport` is a separate type that `ColliderReadiness` does not fold in — visible by
+reading `collider.rs:78-108` — so self-intersection-freedom is the standing candidate for the gap, and
+R-011's ticket text already says so in the backlog. Writing the expectation down before taking the
+count is the difference between a prediction and a rationalisation, and this project has already
+caught itself putting expectations into docs that measurement then disproved (✗1, ✗3, ✗14, O-14). If H
+survives, the surprise is the finding; if it dies where predicted, the *audit* is still the product,
+because "which field covers which precondition" is not currently written down anywhere.
