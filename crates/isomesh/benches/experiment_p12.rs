@@ -380,19 +380,26 @@ mod experiment {
             ),
         ];
         println!(
-            "{:<8} {:<16} {:>5} {:>10} {:>10} {:>10} {:>10} {:>10} {:>9}",
+            "{:<8} {:<16} {:>5} {:>8} {:>8} {:>6} {:>6} {:>9} {:>9} {:>9} {:>8}",
             "field",
             "extractor",
             "n",
-            "ns/sample",
-            "LLC miss/s",
-            "L1D miss/s",
-            "br miss/s",
-            "pf/sample",
+            "cyc/samp",
+            "ns/samp",
+            "GHz",
+            "IPC",
+            "LLC mis/s",
+            "dTLB mis/s",
+            "br mis/s",
             "triangles"
         );
-        for (field_name, field) in &fields {
-            for samples in RESOLUTIONS {
+        // Resolution outermost and **field innermost**, so `sphere` and `empty`
+        // at one size are measured seconds apart rather than minutes. This host
+        // runs `amd-pstate-epp` on `powersave` over 1.96–5.62 GHz and its clock
+        // wanders (M-280), so a paired comparison has to be paired in time as
+        // well as in code.
+        for samples in RESOLUTIONS {
+            for (field_name, field) in &fields {
                 for (name, measured) in [
                     ("marching_cubes", {
                         let mut e = MarchingCubes::<Scalar>::new();
@@ -419,13 +426,17 @@ mod experiment {
 
                     let per = |c: &Reading| c.count as f64 / total;
                     let ns_per_sample = measured.nanos as f64 / total;
+                    let cycles_per_sample = per(&measured.counts.cycles);
+                    let ghz = cycles_per_sample / ns_per_sample;
+                    let ipc = measured.counts.instructions.count as f64
+                        / measured.counts.cycles.count as f64;
                     println!(
-                        "{field_name:<8} {name:<16} {samples:>5} {ns_per_sample:>10.3} \
-                         {:>10.4} {:>10.4} {:>10.4} {:>10.6} {:>9}",
+                        "{field_name:<8} {name:<16} {samples:>5} {cycles_per_sample:>8.2} \
+                         {ns_per_sample:>8.3} {ghz:>6.2} {ipc:>6.2} {:>9.4} {:>9.5} {:>9.4} \
+                         {:>8}",
                         per(&measured.counts.cache_misses),
-                        per(&measured.counts.l1d_read_misses),
+                        per(&measured.counts.dtlb_read_misses),
                         per(&measured.counts.branch_misses),
-                        per(&measured.counts.page_faults),
                         measured.triangles,
                     );
 
@@ -474,6 +485,7 @@ mod experiment {
                         ),
                         ("triangles", measured.triangles.to_string()),
                         ("counter_time_ratio", format!("{ratio:.4}")),
+                        ("ghz", format!("{ghz:.3}")),
                     ]);
                 }
             }
@@ -484,7 +496,9 @@ mod experiment {
              {WARMUP_RUNS} warmups.\n`empty` is the same code on a field with no surface at all: \
              the dense O(n³) state is identical and\nthe crossed-edge gather happens zero times. \
              `LLC miss/s` is PERF_COUNT_HW_CACHE_MISSES per sample;\n`pf/sample` is page faults, \
-             the allocation proxy."
+             the allocation proxy.\n**Read `cyc/samp`, not `ns/samp`** — this host's governor moves \
+             the clock by nearly 2x between\nruns and the `GHz` column is there so a row says which \
+             one it was measured at (M-280)."
         );
     }
 
@@ -582,6 +596,10 @@ mod experiment {
                     ),
                     ("triangles", measured.triangles.to_string()),
                     ("counter_time_ratio", format!("{ratio:.4}")),
+                    (
+                        "ghz",
+                        format!("{:.3}", per(&measured.counts.cycles) / ns_per_sample),
+                    ),
                 ]);
             }
         }
