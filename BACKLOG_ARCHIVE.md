@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-178 tickets. Line numbers are stable until something above them is edited — grep the ID if
+179 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1387,3 +1387,20 @@ Contouring is manifold on **seven of eight** reference fields under both rules; 
 `noise_cavity` — the field A-002e added because none of the other seven produces a cell with an **interior**
 ambiguity, which a face decider cannot see. **A-025** owns that and owns the default, which is currently
 `Separate` and is not what the paper describes. |
+| ☑ | **I-008** | **One command that checks both workspaces, because "run both" in prose is not a gate.** M-293: `bevy_isomesh` is excluded from the root workspace for a real reason, so `cargo check --workspace --all-targets` does not compile it, and **58 commits went by with every local gate green** while an example there did not build. **Acceptance:** one script running the root gates *and* `bevy_isomesh`'s five, named in `CLAUDE.md`, mutation-tested the way `backlog_gate.sh` was — break each of the five in turn and confirm the script goes red. **The cost to weigh:** a Bevy type-check is slow enough that a single always-run script may be one nobody waits for; if so, split it and say which is which. | S | — |
+| | | ***`scripts/preflight.sh`, split fast/full, and the split is the finding rather than a convenience.*** The
+slow step is not Bevy — `cargo check --all-targets` there is **under a second warm** — it is
+`cargo test -p isomesh` at over four minutes. So the fast set is **11 steps in 12 seconds** and includes every
+cheap thing that would have caught M-293; `--full` adds the three test suites and MSRV. A gate nobody waits for
+is a gate nobody runs, which is how the repository reached the state that produced M-293. |
+| | | ***Mutation-tested, all five bevy steps and three root ones.*** Each broken in turn and the script confirmed
+red on the step named: bevy fmt, bevy `check --all-targets`, bevy clippy, bevy rustdoc, bevy test (via `--full`,
+with a deliberately failing test), plus the backlog gate, the findings index and root fmt. Then reverted and both
+sets re-run green. **A gate that has only ever passed is indistinguishable from one that cannot fail** (M-44). |
+| | | ***Two rule-2 and rule-3 checks folded in, because they are cheap and they are the pitch.*** `cargo metadata
+\| grep -c '"name":"bevy'` must be 0 and `cargo tree -p isomesh -e normal` must be two lines. Both were in
+`CLAUDE.md`'s Commands section and in no gate. |
+| | | ***Deviation, stated rather than hidden: this duplicates `ci.yml`.*** `backlog_gate.sh`'s header sets the
+rule it breaks — CI runs that file rather than a copy of its logic, so there is one path. Here there are two, and
+they can drift. The right fix is for CI to call this script, which is a change to the workflow and therefore the
+owner's; the script's own header says so instead of leaving it to be discovered. |

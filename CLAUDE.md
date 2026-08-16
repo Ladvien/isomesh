@@ -245,9 +245,20 @@ No GPU needed, runs in CI, catches "works on Metal, explodes on DX12."
 ## Commands
 
 ```bash
+# EVERYTHING, in one command. Run this rather than remembering the list.
+#
+# `bevy_isomesh` is excluded from the root workspace on purpose, so
+# `cargo check --workspace --all-targets` does not compile it -- and M-293 is
+# what that costs: F-001 broke an example there and 58 commits went by with
+# every local gate green, because "run both", which this file said in two
+# places, is not a gate. The fast set is 11 steps in about 3 seconds warm and
+# includes every cheap thing that would have caught it.
+./scripts/preflight.sh          # before every commit
+./scripts/preflight.sh --full   # adds the three test suites and MSRV; before pushing
+
 # the lint job, in full. clippy and fmt are two of its three steps; the third
 # catches doc links that point at nothing or at a private item, and nothing else
-# does. Run all three before pushing.
+# does. Run all three before pushing. `preflight.sh` runs all of this.
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps

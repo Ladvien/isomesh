@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**178 tickets archived, 6 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**179 tickets archived, 5 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -52,10 +52,6 @@ attached — read that before re-litigating a decision this project already made
 
 All eleven tickets archived (I-001..I-004, T-001..T-008). The bet paid: every algorithm since has
 been cheap to validate because the harness predated it.
-
-| | ID | Ticket | Size | Blocked by |
-|---|---|---|---|---|
-| ☐ | **I-008** | **One command that checks both workspaces, because "run both" in prose is not a gate.** M-293: `bevy_isomesh` is excluded from the root workspace for a real reason (feature unification, M-190), so `cargo check --workspace --all-targets` — what anyone runs before committing — **does not compile it**. F-001 changed a `ReferenceField` method, broke an example there, and **58 commits went by with every local gate green**; only an end-of-night sweep of the full list found it. CI has run the right command all along and simply had not seen the branch, which was 75 commits unpushed. `CLAUDE.md` already says *"run both"* in two places — the Layout section and the Commands section — and that is the evidence that saying it does not work. **This is the fourth incident from one exclusion (M-190 counted three) and the first where the CI step already existed**, so the remedy is local and mechanical rather than another CI line. **Acceptance:** one script — `scripts/preflight.sh` or the same job list `backlog_gate.sh` already occupies — that runs the root gates *and* `bevy_isomesh`'s five (`fmt --check`, `check --all-targets`, `clippy -D warnings`, `rustdoc -D warnings`, `test`), named in `CLAUDE.md`'s Commands section as the one thing to run, and mutation-tested the way `backlog_gate.sh` was: break each of the five in turn and confirm the script goes red. **The cost to weigh:** a Bevy type-check is a minute or two, so a single always-run script may be too slow to be run — if so, split it into `fast` and `full` and say which is which, rather than writing something nobody will wait for. | S | — |
 
 ---
 
