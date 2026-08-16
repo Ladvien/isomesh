@@ -186,7 +186,12 @@ const fn build_quad_edge() -> [[[u8; 2]; 2]; 3] {
 /// over the cells that produced a vertex, because most cells produce none.
 #[derive(Debug)]
 pub(crate) struct DualMesher<R: Real> {
+    /// Field values, on a grid whose **row length is forced odd** — see
+    /// [`row_stride`] and A-024.
     values: Vec<R>,
+    /// Samples per row in [`values`](Self::values), which is `size[0] | 1` and
+    /// therefore **not** `size[0]` whenever the caller's grid is even.
+    row: usize,
     /// Per cell: the index of its first vertex, or [`u32::MAX`] when the surface
     /// misses it. This doubles as the active flag.
     cell_first: Vec<u32>,
@@ -212,6 +217,7 @@ impl<R: Real> DualMesher<R> {
     pub(crate) const fn new() -> Self {
         Self {
             values: Vec::new(),
+            row: 0,
             cell_first: Vec::new(),
             cell_edge_slot: Vec::new(),
             slot_position: Vec::new(),
@@ -269,6 +275,43 @@ impl<R: Real> DualMesher<R> {
         Ok(())
     }
 
+    /// Where sample `p` lives in [`values`](Self::values).
+    ///
+    /// **Not `shape.linearize`, and the difference is one bit (A-024, M-287).**
+    /// `values` is `size[0]·size[1]·size[2]` floats laid out by the caller's
+    /// shape, so its row stride is `size[0]·4` bytes and its plane stride
+    /// `size[0]·size[1]·4`. At `size[0] = size[1] = 128` those are **512 bytes
+    /// and exactly 64 KiB**, which are a cache-set aliasing period on ordinary
+    /// hardware twice over, and Surface Nets measured **3.37× the cost of 127³
+    /// or 129³** there — on a field with no surface, so it is the scaffolding
+    /// and not the geometry. 256³ pays 1.39× for the same reason.
+    ///
+    /// Forcing the row length **odd** removes both periods at once and cannot
+    /// reintroduce either: `4·odd` is never a multiple of 512, and
+    /// `4·odd·size[1]` is a multiple of 65,536 only if `size[1]` is a multiple
+    /// of 16,384, which is a grid of 2.7×10¹² samples.
+    ///
+    /// It is unconditional on purpose. A pad applied only when the stride looks
+    /// bad would be a second layout reachable from the same call, which is the
+    /// shape `CLAUDE.md`'s one-path rule exists to forbid — and a *fixed* pad of
+    /// one would be worse than nothing, since it maps every `size[0] = 2ᵏ − 1`
+    /// onto the stride it is trying to avoid. `| 1` is idempotent, so it has no
+    /// such image.
+    ///
+    /// The cost is one float per row when the row is even — **0.8% of `values`
+    /// at 128³** — and nothing at all at run time: the multiply is by a
+    /// different constant, not an extra one.
+    #[inline]
+    fn index(&self, p: [u32; 3], size: [u32; 3]) -> usize {
+        p[0] as usize + self.row * (p[1] as usize + size[1] as usize * p[2] as usize)
+    }
+
+    /// Samples per row for a grid of this size.
+    #[inline]
+    fn row_stride(size: [u32; 3]) -> usize {
+        size[0] as usize | 1
+    }
+
     fn sample<S: Sdf<Scalar = R>>(
         &mut self,
         sdf: &S,
@@ -277,8 +320,14 @@ impl<R: Real> DualMesher<R> {
         cell_size: R,
     ) {
         let size = shape.size();
+        self.row = Self::row_stride(size);
+        // One slot per row is padding and is never read; it is filled rather
+        // than skipped so the buffer has no uninitialised gaps and `push` stays
+        // a single sequential write.
+        let pad = self.row - size[0] as usize;
         self.values.clear();
-        self.values.reserve(shape.element_count());
+        self.values
+            .reserve(self.row * size[1] as usize * size[2] as usize);
         for z in 0..size[2] {
             for y in 0..size[1] {
                 for x in 0..size[0] {
@@ -287,6 +336,9 @@ impl<R: Real> DualMesher<R> {
                         origin[1] + cell_size * R::from_f64(f64::from(y)),
                         origin[2] + cell_size * R::from_f64(f64::from(z)),
                     ]));
+                }
+                for _ in 0..pad {
+                    self.values.push(R::ZERO);
                 }
             }
         }
@@ -314,8 +366,11 @@ impl<R: Real> DualMesher<R> {
                     let mut inside_count = 0u32;
                     for (c, slot) in corner.iter_mut().enumerate() {
                         let o = crate::cube::corner_offset(c as u8);
-                        let s = shape.linearize([base[0] + o[0], base[1] + o[1], base[2] + o[2]]);
-                        *slot = self.values[s as usize];
+                        let s = self.index(
+                            [base[0] + o[0], base[1] + o[1], base[2] + o[2]],
+                            shape.size(),
+                        );
+                        *slot = self.values[s];
                         if is_inside(*slot) {
                             inside_count += 1;
                         }
@@ -509,13 +564,13 @@ impl<R: Real> DualMesher<R> {
                         p[u] = b;
                         p[v] = c;
 
-                        let s0 = shape.linearize(p);
+                        let s0 = self.index(p, size);
                         let mut q = p;
                         q[axis] += 1;
-                        let s1 = shape.linearize(q);
+                        let s1 = self.index(q, size);
 
-                        let inside0 = is_inside(self.values[s0 as usize]);
-                        let inside1 = is_inside(self.values[s1 as usize]);
+                        let inside0 = is_inside(self.values[s0]);
+                        let inside1 = is_inside(self.values[s1]);
                         if inside0 == inside1 {
                             continue;
                         }
