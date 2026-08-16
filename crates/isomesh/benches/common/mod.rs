@@ -17,6 +17,7 @@
 )]
 
 pub(crate) mod experiment;
+pub(crate) mod wedge;
 
 // Hardware counters come from `perf_event_open`, a Linux system call with no
 // macOS equivalent a bench can reach. Callers on other platforms either refuse

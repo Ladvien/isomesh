@@ -215,6 +215,27 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "samples",
         ],
     },
+    Preregistration {
+        id: "P-16",
+        ticket: "R-008",
+        hypothesis: "Every vertex whose area-weighted normal is more than 90° \
+                     from the field gradient lies on a grid edge at least one of \
+                     whose incident cells straddles the crease — its eight \
+                     corners do not all have the same nearer plane — so the \
+                     phenomenon is two faces meeting inside one cell rather than \
+                     a winding or ordering defect.",
+        falsified_by: "More than 5% of past-90° vertices whose incident cells \
+                       all lie on one side of the crease, which would make it a \
+                       defect with a location and a fix rather than a property \
+                       of one vertex per crossed edge.",
+        records: &[
+            "dihedral_deg",
+            "samples",
+            "past90_vertices",
+            "past90_in_straddling_cell",
+            "offending_faces_per_past90_vertex",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

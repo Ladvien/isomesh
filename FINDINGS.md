@@ -2954,3 +2954,30 @@ was two keywords.
 the cheap default. Its triangle-count half (✗1, `2χ` more triangles) is untouched; its **cost half is
 now 1.26× at the largest grid and a win below 48³**. Whether that changes the default is not a
 measurement, and this file does not decide it.
+
+### P-16 — registered for R-008, before it was measured
+
+**What M-283 left, stated so it can fail.** 6,959 vertices under Marching Cubes and 4,868 under Dual
+Contouring, on an exact convex wedge, carry an area-weighted normal **more than 90° from the field
+gradient** — worst 128.0°. An area-weighted normal is a convex combination of incident face normals,
+so it lies inside the cone those faces span, and for two planes meeting at `θ` that cone is at most
+`(180° − θ)/2 ≤ 75°` wide. The obvious escape was measured and closed: the median `|f(v)|/h` at those
+vertices is **0.0000**, so they are on the isosurface.
+
+> **H.** Every such vertex lies on a grid edge at least one of whose incident cells **straddles the
+> crease** — its eight corners do not all have the same nearer plane — so the phenomenon is two faces
+> meeting inside one cell rather than a winding or ordering defect.
+
+If that holds, it is M-15's *"any feature thinner than one cell forces two sheets through it"*
+arriving on a sharp field, and it is inherent to one vertex per crossed edge rather than fixable.
+
+**Falsified by** more than 5% of past-90° vertices whose incident cells all lie on one side of the
+crease — which would make it a defect with a location and a fix, and a much better outcome.
+
+**Records** `dihedral_deg`, `samples`, `past90_vertices`, `past90_in_straddling_cell`,
+`offending_faces_per_past90_vertex`.
+
+**The threshold is 5% and not 0% on purpose.** A cell is classified by its eight corners' nearer
+plane, and a corner sitting within rounding of the bisector can be classified either way; a hard zero
+would make the hypothesis fail on arithmetic rather than on geometry. 5% is far above that noise and
+far below "a substantial share".
