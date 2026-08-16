@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**352 entries** — 18 falsified, 281 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**353 entries** — 18 falsified, 282 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -338,6 +338,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-284` | HELD, and the dual's IPC wall is one function (R-007) |
 | `M-285` | the dual's axis had to be a constant, and that was 82% of its cycles (A-023) |
 | `M-286` | the misses M-279 measured as free were hidden behind the stall, and now they cost (A-023) |
+| `M-287` | one bit of the row length was a 3.4× tax at the chunk size everybody uses (A-024) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -2774,6 +2775,12 @@ that residue is now visibly the cache — misses and cycles track at 8.4 cycles 
 they did not track at all. What is left of O-11 is **A-024**, and specifically the **2.6× penalty at
 exactly 128³** that a 64 KiB plane stride buys.
 
+**A-024 landed and O-11 is closed (M-287).** Forcing the row length odd removed the aliasing at
+every size — 128³ against its neighbours goes 3.37× → **1.01×** — and Surface Nets' per-sample
+cost across 16³…256³ is now **8.71 → 9.70 ns, +11%**, against the +40% this question was raised
+about. Two causes, both removed, and neither of them a vertex rule or an algorithm: a dynamically
+indexed coordinate array and a power-of-two row stride.
+
 ### M-285 — the dual's axis had to be a constant, and that was 82% of its cycles (A-023)
 
 **M.** `benches/family`, `benches/experiment_p15`, `benches/experiment_p12`, all re-run at one commit
@@ -2852,7 +2859,98 @@ that is a cache-set aliasing period on this machine. Before A-023 the same spike
 like noise on a curve. **A-024** owns it, and it matters more than its size suggests: 128³ is the
 canonical chunk size in voxel engines.
 
+**A-024 has since landed and removed it (M-287).** 128³ now costs 36.65 cycles per sample against
+127³'s 36.01 and 129³'s 36.20, and the miss rate at 256³ falls from 3.72 to **1.56** per sample —
+so the residual cache term this entry identifies was, at every size and not only at 128, largely
+the same aliasing.
+
 **Method note, and it is the third time tonight.** M-279's null result — *"misses do not cost"* — was
 a correct measurement of a machine whose bottleneck was somewhere else. A null measured under a
 dominant confound is a statement about the confound. The confound has to be removed before the null
 means what it says.
+
+### M-287 — one bit of the row length was a 3.4× tax at the chunk size everybody uses (A-024)
+
+**M.** `benches/a024_aliasing`, `docs/measurements/a024-aliasing.csv`, plus `family`,
+`experiment_p12` and `experiment_p15` re-run.
+
+`DualMesher::values` was laid out by the caller's shape, so its **row** stride was `size[0]·4` bytes
+and its **plane** stride `size[0]·size[1]·4`. At 128 those are **512 bytes and exactly 64 KiB** —
+a cache-set aliasing period twice over on this machine.
+
+#### Diagnosed before anything was changed, by letting the caller arrange the pad
+
+The aliasing depends only on the shape, and the shape is an argument. So adding **one sample** moves
+the stride while changing the work by under 1%:
+
+| | plane bytes | cycles/sample | vs 127³/129³ |
+|---|---|---|---|
+| 127³ | 64,516 | 33.10 | — |
+| **128³** | **65,536 = 2¹⁶** | **108.51** | **3.37×** |
+| 129³ | 66,564 | 31.39 | — |
+| 129×128×128 (pad `x`) | 66,048 | 31.48 | **0.98×** |
+| 128×129×128 (pad `y`) | 66,048 | 36.45 | 1.13× |
+| **128×128×129 (pad `z`, control)** | **65,536 = 2¹⁶** | **107.89** | **3.35×** |
+| 128×131×131 (512-byte rows only) | 67,072 | 36.74 | 1.14× |
+| 256³ | 262,144 = 2¹⁸ | 54.07 | **1.39×** vs 255³/257³ |
+
+**The `z` control is what makes this a measurement rather than a story.** It adds the same 0.8% of
+work and does *not* touch either stride, and it keeps the entire penalty. And the two periods separate
+cleanly: 512-byte rows alone cost 1.14×, the 64 KiB plane costs the remaining ~3×, and only padding
+the **fastest** axis fixes both because `size[0]` appears in both.
+
+#### The fix is `size[0] | 1`
+
+Unconditional, because a pad applied only when the stride looks bad is a second layout reachable from
+one call — the shape the one-path rule forbids. And **idempotent, which is the part that matters**: a
+*fixed* pad of one would be worse than nothing, since it maps every `size[0] = 2ᵏ − 1` onto the stride
+it is trying to avoid. `| 1` has no such image.
+
+It cannot reintroduce either period: `4·odd` is never a multiple of 512, and `4·odd·size[1]` is a
+multiple of 65,536 only if `size[1]` is a multiple of 16,384. The cost is one float per row when the
+row is even — **0.8% of `values` at 128³** — and nothing at run time, because the multiply is by a
+different constant rather than an extra one.
+
+#### After
+
+| | before | after |
+|---|---|---|
+| 128³ against its neighbours | 3.37× | **1.01×** |
+| 256³ against its neighbours | 1.39× | **0.92×** |
+| Surface Nets at 128³ | 48.51 ms | **18.35 ms** (2.64×) |
+| Surface Nets at 256³ | 221.4 ms | **162.7 ms** (1.36×) |
+| Surface Nets IPC at 256³ | 2.80 | **4.09** |
+| cache misses per sample at 256³ | 3.72 | **1.56** |
+
+Marching Cubes and Marching Tetrahedra move 1.02× and 1.01×, which is the control: the change is
+inside `DualMesher`. **Triangle counts across the family are identical and
+`golden_hashes_are_unchanged` passes.**
+
+#### Taken with A-023, and this is the headline
+
+| | this morning | now |
+|---|---|---|
+| Surface Nets at 256³ | 693.8 ms | **162.7 ms** — **4.26×** |
+| Surface Nets IPC | 1.20 | **4.09** |
+| `SN / MC` at 256³ | 5.43× | **1.26×** |
+| per-sample cost, 16³ → 256³ | 29.63 → 41.35 ns (+40%) | **8.71 → 9.70 ns (+11%)** |
+
+Not one triangle changed. And Surface Nets is now **faster than Marching Cubes** on small grids:
+
+| n | 16 | 24 | 32 | 48 | 64 | 96 | 128 | 192 | 256 |
+|---|---|---|---|---|---|---|---|---|---|
+| Marching Cubes ns/sample | 9.37 | 8.87 | 8.29 | 8.03 | 7.74 | 7.41 | 7.48 | 7.62 | 7.67 |
+| Surface Nets ns/sample | **8.71** | **8.59** | **8.05** | 8.24 | 8.42 | 8.53 | 8.75 | 9.53 | 9.70 |
+| ratio | **0.93** | **0.97** | **0.97** | 1.03 | 1.09 | 1.15 | 1.17 | 1.25 | 1.26 |
+
+**O-11 is closed.** *"Why does the dual go superlinear where Marching Cubes does not?"* Two reasons,
+both now removed: a dynamically indexed coordinate array that stalled `emit_quads` on store-to-load
+forwarding (A-023), and a power-of-two row stride that put the sample array on one cache set
+(A-024). What is left is **+11% across four octaves of grid**, against Marching Cubes' own −18% then
+flat. The question was asked at T-006 on 2026-08-13 and it took the counters to answer, but the answer
+was two keywords.
+
+**And it re-opens a design question rather than settling one.** ✗14 exists to say Surface Nets is not
+the cheap default. Its triangle-count half (✗1, `2χ` more triangles) is untouched; its **cost half is
+now 1.26× at the largest grid and a win below 48³**. Whether that changes the default is not a
+measurement, and this file does not decide it.

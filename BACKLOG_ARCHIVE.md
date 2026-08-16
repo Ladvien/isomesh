@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-174 tickets. Line numbers are stable until something above them is edited — grep the ID if
+175 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1289,3 +1289,23 @@ and the 128³ spike 15.8 — **a null measured under a dominant confound is a st
 | | | ***What did not change is the shape.*** Per-sample cost still rises 7.92 → 13.37 ns over 16³…256³ and the
 128³ spike is now the largest feature of the curve at **2.6×** its neighbours, where before it was 1.24× and
 looked like noise. O-11 is narrowed again rather than closed; **A-024** owns the residue. |
+| ☑ | **A-024** | **Surface Nets costs 2.6× more at exactly 128³ than at 127³ or 129³, and 128³ is the chunk size everybody uses.** A-023 removed the constant that was hiding it (M-286). The mechanism is not in doubt in outline: `n²·4 bytes` is exactly **64 KiB** at `n = 128`. **Options: (a)** pad each plane; **(b)** block the traversal; **(c)** accept it and document `n ≠ 2ᵏ` for chunk dimensions. **Acceptance:** `experiment_p12`'s 127/128/129 rows within 10% of each other, `family` and `experiment_p15` re-run, **golden hashes unchanged** — and if (a) is chosen, its cost at every *other* resolution measured and stated. | M | A-023 |
+| | | ***Diagnosed before anything was changed, by letting the caller arrange what padding would do (M-287).***
+The aliasing depends only on the shape and the shape is an argument, so one extra sample moves the stride while
+changing the work by under 1%. `+1` on **x** removed the whole penalty (0.98×), on **y** most of it (1.13×), and
+on **z** — the control, which touches neither stride — **kept it in full (3.35×)**. A 128×131×131 grid isolated
+the smaller period: 512-byte rows alone cost 1.14×, so there are **two** aliasing periods and only the fastest
+axis is in both. 256³ paid 1.39×, so it was never only 128. |
+| | | ***The fix is `size[0] | 1`, and both properties of it are load-bearing.*** Unconditional, because a pad
+applied only when the stride looks bad is a second layout reachable from one call. **Idempotent**, because a
+*fixed* pad of one would be worse than nothing — it maps every `size[0] = 2ᵏ − 1` onto the stride it is avoiding.
+Cost: one float per row when the row is even, **0.8% of `values` at 128³**, and nothing at run time. |
+| | | ***128³ against its neighbours 3.37× → 1.01×; 256³ 1.39× → 0.92×.*** Surface Nets 48.51 → **18.35 ms** at
+128³ and 221.4 → **162.7** at 256³, IPC 2.80 → **4.09**, misses per sample 3.72 → **1.56**. Marching Cubes and
+Marching Tetrahedra move 1.02× and 1.01× — the control. Triangle counts identical, golden hashes pass. |
+| | | ***Taken with A-023: 693.8 → 162.7 ms at 256³, 4.26×, without changing a triangle.*** `SN/MC` goes
+**5.43× → 1.26×**, and Surface Nets is now **faster** than Marching Cubes at 16³, 24³ and 32³. Its per-sample
+curve is 8.71 → 9.70 ns over four octaves, +11%, against the +40% O-11 was raised about. **O-11 is closed.** |
+| | | ***And it hands back a design question rather than settling one.*** ✗14 exists to say Surface Nets is not
+the cheap default. Its triangle-count half is untouched; its cost half is now 1.26× at the largest grid and a
+win below 48³. Whether that changes the crate's default extractor is not a measurement and is not decided here. |
