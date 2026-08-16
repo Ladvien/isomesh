@@ -290,3 +290,68 @@ fn from_report_agrees_with_readiness() {
     let report = crate::validate::validate_indexed(&buffer.positions, &buffer.indices, &cfg);
     assert_eq!(direct, from_report(&report));
 }
+
+/// **T-021.** A bowtie passes every edge counter and is not a 2-manifold.
+///
+/// Two tetrahedra point-reflected through a shared apex: they touch at exactly
+/// one vertex and share no edge. Every edge still has exactly two faces, the
+/// surface is closed, and both halves are wound outward — so `boundary_edges`,
+/// `non_manifold_edges` and `inconsistently_oriented_edges` are all zero and
+/// only the link walk can tell that the apex has two fans rather than one.
+///
+/// Before T-021 `supports_inside_outside()` returned `true` here, which is the
+/// arbitrary-answer case its own doc comment warns about, at the one point on
+/// the surface where it is guaranteed to happen.
+#[test]
+fn a_bowtie_vertex_fails_readiness_that_every_edge_counter_passes() {
+    // Tetrahedron, outward-wound — the same fixture the validity suite uses.
+    let tetra = [
+        [1.0f32, 1.0, 1.0],
+        [1.0, -1.0, -1.0],
+        [-1.0, 1.0, -1.0],
+        [-1.0, -1.0, 1.0],
+    ];
+    let mut positions = Vec::from(tetra);
+    // Its point reflection through vertex 0: `2·v0 − vᵢ`. Shares vertex 0 and
+    // nothing else. Reflection reverses orientation, so every face of the second
+    // copy is wound backwards to keep it outward for its own solid.
+    for v in &tetra[1..] {
+        positions.push([
+            2.0 * tetra[0][0] - v[0],
+            2.0 * tetra[0][1] - v[1],
+            2.0 * tetra[0][2] - v[2],
+        ]);
+    }
+    let indices = alloc::vec![
+        0, 1, 2, 0, 2, 3, 0, 3, 1, 1, 3, 2, // first cone
+        0, 5, 4, 0, 6, 5, 0, 4, 6, 4, 5, 6, // second, reversed
+    ];
+
+    let report = crate::validate::validate_indexed(&positions, &indices, &config(1.0));
+    let r = from_report(&report);
+
+    std::println!(
+        "measured: T-021 bowtie -- chi {}, boundary {}, nm_edges {}, nm_vertices {}, oriented {}",
+        report.euler_characteristic,
+        r.boundary_edges,
+        r.non_manifold_edges,
+        r.non_manifold_vertices,
+        r.inconsistently_oriented_edges
+    );
+
+    // Every edge counter is clean. This is the trap.
+    assert_eq!(r.boundary_edges, 0, "the surface is closed");
+    assert_eq!(r.non_manifold_edges, 0, "every edge has exactly two faces");
+    assert_eq!(
+        r.inconsistently_oriented_edges, 0,
+        "both cones face outward"
+    );
+    assert!(r.is_usable());
+
+    // Only the link walk sees it, and readiness now carries that number.
+    assert_eq!(r.non_manifold_vertices, 1, "the shared apex, and only it");
+    assert!(
+        !r.supports_inside_outside(),
+        "a bowtie has no single normal at the apex"
+    );
+}

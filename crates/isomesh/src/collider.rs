@@ -103,6 +103,20 @@ pub struct ColliderReadiness {
     pub boundary_edges: u64,
     /// Edges used by three or more triangles.
     pub non_manifold_edges: u64,
+    /// Vertices whose incident faces form more than one fan.
+    ///
+    /// **The one manifold fault no edge counter can see.** A bowtie — two cones
+    /// meeting at a shared apex — gives every edge exactly two faces, so
+    /// [`non_manifold_edges`](Self::non_manifold_edges) is zero, `χ` can come out
+    /// right, and the surface still is not a 2-manifold. The apex has no single
+    /// normal, so a pseudo-normal query there is arbitrary rather than wrong.
+    ///
+    /// Read from the validator's link walk, not recomputed. Forwarded at T-021
+    /// after M-300 found it missing while auditing what a convex decomposer
+    /// requires of its input — CoACD's plane cutting is stated over manifold
+    /// meshes, and this is the half of "manifold" the collider view was
+    /// silently dropping.
+    pub non_manifold_vertices: u64,
     /// Edges whose two triangles traverse them the same way.
     pub inconsistently_oriented_edges: u64,
 }
@@ -145,11 +159,18 @@ impl ColliderReadiness {
     /// consistently oriented surface. An open surface has no inside, and a
     /// non-manifold edge has no single normal to speak of — so a query against
     /// one returns an answer that is arbitrary rather than wrong, which is worse.
+    ///
+    /// **A bowtie vertex fails this too, since T-021.** It has to be checked
+    /// separately because no edge counter can see it: two cones sharing an apex
+    /// give every edge exactly two faces (M-300). Before T-021 this returned
+    /// `true` for such a mesh, which is the arbitrary-answer case above, at the
+    /// one point on the surface where it is guaranteed.
     #[must_use]
     pub fn supports_inside_outside(&self) -> bool {
         self.is_usable()
             && self.boundary_edges == 0
             && self.non_manifold_edges == 0
+            && self.non_manifold_vertices == 0
             && self.inconsistently_oriented_edges == 0
     }
 }
@@ -180,6 +201,7 @@ pub fn from_report(report: &MeshReport) -> ColliderReadiness {
         non_finite_positions: report.non_finite_positions,
         boundary_edges: report.boundary_edges,
         non_manifold_edges: report.non_manifold_edges,
+        non_manifold_vertices: report.non_manifold_vertices,
         inconsistently_oriented_edges: report.inconsistently_oriented_edges,
     }
 }

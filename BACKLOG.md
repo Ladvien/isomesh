@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**182 tickets archived, 7 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**183 tickets archived, 6 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -255,7 +255,6 @@ measurement count.** It is past the size at which anyone reads it end to end.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **T-021** | **`ColliderReadiness` drops the one manifold check that edge counts cannot make.** `MeshReport` computes `non_manifold_vertices` with the link walk; `collider::from_report` forwards ten fields and not that one. So a **bowtie** — two cones sharing an apex — reports zero boundary edges, zero non-manifold edges and zero inconsistently oriented edges, and passes `supports_inside_outside()` on a surface that is not a 2-manifold and has no single normal at the apex. Found by M-300 while auditing what a decomposer requires: CoACD's plane cutting is stated over manifold meshes. **The omission reads as forgotten rather than argued** — every other `MeshReport` field the collider view drops is discussed in its doc comment, and this one is absent without comment. **Note the semver-visible half:** tightening `supports_inside_outside()` makes a mesh that passes today fail, which is correct and is still a behaviour change. **Acceptance:** a hand-built bowtie fails readiness where it currently passes, and the doc comment says what the field is for. | S | — |
 
 ---
 

@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**370 entries** — 20 falsified, 295 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**371 entries** — 20 falsified, 296 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -354,6 +354,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-298` | orientation catches a fan that reverses, not a fan that folds, and a star polygon is invisible to both counters (T-020) |
 | `M-299` | the on-demand split is free for the pseudonormal and costs a factor of N for the winding number (S-008) |
 | `M-300` | FALSIFIED, and not where it was predicted: the gap is non-manifold vertices, not self-intersections (R-011) |
+| `M-301` | the bowtie that passed: a closed, edge-manifold, consistently oriented surface that is not a 2-manifold (T-021) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -3862,3 +3863,44 @@ of them.
 **Would be shown wrong by:** a fifth method requiring an input property none of these four does, or a
 demonstration that a bowtie vertex is harmless to plane-cut decomposition — which would make the
 omission correct and the doc comment merely silent about it.
+
+
+### M-301 — the bowtie that passed: a closed, edge-manifold, consistently oriented surface that is not a 2-manifold (T-021)
+
+**M.** M-300 found `non_manifold_vertices` missing from `ColliderReadiness`. This is the fixture that
+shows what it cost, built as two tetrahedra point-reflected through a shared apex — they touch at
+exactly one vertex and share no edge.
+
+| counter | value |
+|---|---|
+| `euler_characteristic` | **3** |
+| `boundary_edges` | 0 |
+| `non_manifold_edges` | 0 |
+| `inconsistently_oriented_edges` | 0 |
+| `non_manifold_vertices` | **1** |
+
+Every edge has exactly two faces, the surface is closed, both cones are wound outward, and it is not a
+2-manifold. **Before T-021 `supports_inside_outside()` returned `true` on this mesh** — the arbitrary-
+answer case its own doc comment warns about, at the one point on the surface where it is guaranteed
+rather than possible.
+
+**χ = 3 is the tell, and nothing was reading it.** Two closed surfaces glued at a point give
+`V − E + F = 7 − 12 + 8 = 3`, and **an odd χ is impossible for a closed orientable surface**, where
+`χ = 2 − 2g` is always even. `MeshReport::is_closed` already folds in that parity check —
+`CLAUDE.md` says so explicitly — so the validator could always see this. The collider view could not,
+because the field it needed was not forwarded to it.
+
+**The three-line fix and the one-line behaviour change.** `from_report` now copies
+`non_manifold_vertices` across, and `supports_inside_outside()` requires it to be zero. That last part
+makes a mesh that passed yesterday fail today, which is correct and is still a semver-visible change
+on a struct whose fields are public.
+
+**Why it was missing is worth recording.** Every other `MeshReport` number the collider view drops is
+argued about in the doc comment — a duplicate vertex gets a paragraph on why it is a correctness
+fault rather than a structural one, a degenerate triangle gets one on why a collider is the consumer
+that has to care. `non_manifold_vertices` got no paragraph. **An omission with a rationale and an
+omission without one look identical in a struct definition**, and only the doc comment distinguishes
+them; this one had no doc comment because it had no field.
+
+**Would be shown wrong by:** a physics engine answering an inside/outside query correctly at a bowtie
+apex, which would make the tightened predicate too strict rather than newly right.

@@ -14,6 +14,14 @@ false. No public signature moved.
 
 ### Changed
 
+- **`ColliderReadiness` gained `non_manifold_vertices`, and `supports_inside_outside()` now requires
+  it to be zero.** `MeshReport` computed it with the link walk; `collider::from_report` forwarded ten
+  fields and not that one, so a **bowtie** — two cones sharing an apex — reported zero on every edge
+  counter and passed. Two tetrahedra point-reflected through a shared apex give `χ = 3`, and an odd
+  `χ` is impossible for a closed orientable surface. **Breaking twice over:** a new public field on a
+  struct with public fields, and a mesh that passed the predicate yesterday fails it today (T-021,
+  M-300, M-301).
+
 - **Surface Nets, Dual Contouring and Manifold Dual Contouring are 2.5–4.3× faster.** Two changes to
   `DualMesher`, which all three share. `emit_quads` took its loop axis as a runtime value, making
   `p[axis] = a` a dynamically indexed store that kept the coordinate array out of registers and
