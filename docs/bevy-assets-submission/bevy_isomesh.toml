@@ -1,0 +1,4 @@
+name = "bevy_isomesh"
+description = "Isosurface extraction: signed distance field in, Bevy Mesh out, off the main thread"
+link = "https://crates.io/crates/bevy_isomesh"
+crate = "bevy_isomesh"

@@ -56,7 +56,7 @@ use bevy::input::mouse::AccumulatedMouseMotion;
 use bevy::prelude::*;
 use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
 use bevy_isomesh::MeshBuilder;
-use common::{CommonPlugin, DemoStats, OrbitCamera};
+use common::{Capture, CommonPlugin, DemoStats, OrbitCamera};
 use isomesh::Sdf;
 use isomesh::brush::Brush;
 use isomesh::chunk::dirty::{DirtySet, mark_edit};
@@ -382,6 +382,7 @@ fn edit(
     camera: Query<&Transform, With<Camera3d>>,
     chunks: Query<(Entity, &Chunk)>,
     mut auto: ResMut<AutoPaint>,
+    capture: Res<Capture>,
 ) {
     for (index, key) in [
         KeyCode::Digit1,
@@ -404,7 +405,13 @@ fn edit(
         world.radius = (world.radius + 0.06).min(1.0);
     }
 
-    let scripted = if auto.remaining > 0 {
+    // **One action per *captured* frame while recording.** The script sprays
+    // for `total - 2` steps and only then carves, so at 60 Hz a clip of any
+    // reasonable length is entirely spraying -- it shows the paint and never the
+    // hole, which is the half of the claim that matters. Pacing off
+    // `capture.taken` puts the two carves at a knowable frame.
+    let ready = !capture.is_active() || capture.taken > 0;
+    let scripted = if auto.remaining > 0 && ready && auto.step <= capture.taken.max(auto.step) {
         auto.remaining -= 1;
         let action = AutoPaint::action(auto.step, auto.total);
         // The script drives its own nozzle through the same fields the keys

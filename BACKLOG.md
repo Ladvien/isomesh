@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**130 tickets archived, 2 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**179 tickets archived, 5 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -92,9 +92,52 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 |---|---|---|---|---|
 | ☐ | **A-002i** | **The singular case — Grosso 2017 §4.2 and its Algorithm 1.** **Re-sequenced 2026-08-15 on a measurement, and no longer blocks A-002b (M-220): it is 0 of 1,838 ambiguous faces on all eight reference fields and 0 of 299,215 over 400,000 random cells.** A singular face needs `v₀·v₂` and `v₁·v₃` bit-identical, which quantised CT voxels collide into readily — Grosso 2017 counts 8, 58 and 20 per volume — and a continuous `f64` field essentially never does. So it cannot change any mesh A-002b's acceptance measures. **It is still worth doing**, because a consumer feeding `u8` density reaches it immediately and that is this crate's audience; the fixture must be *constructed* rather than sampled, as ✗22's was. Note also that this crate already gives ties a defined answer — `ambiguity::face_is_joined` resolves them to *separated* — so what is owed is topological correctness, not a missing branch, and `ambiguity` should not be touched: handle it inside the `trilinear` path, which is opt-in. A saddle sitting exactly *on* a face, where the standard asymptotic decider splits into two branches what is one surface. This is A-002b's own constraint (c): the 2 of M-165's 15,625 opposed configurations where a root of `F` rests on Δ's pole to within last ulps get a **defined** answer here rather than an inherited one. The reference implementation's shape is a per-face singular flag that then snaps the affected quadratic root to 0 or 1, plus an edge-coordinate comparison to choose the face pairing when the decider itself has no answer. Rare but real, and measured rather than assumed: Grosso 2017 Table 1 counts **8, 58 and 20** singular faces across three 512²×~700 CT volumes (tier V). **A second route to it, found at A-020b (M-231).** The `[9,3]` case-13 cells A-020 refuses are singular faces seen from the other side: 261 of 261 have a body saddle within `1e-12` of a cell face, and continuous corner values produce none at all. **That also sharpens this ticket's own reachability claim** — the 0-of-1,838 figure comes from a *bit-exact* product comparison, and 86–100% of those cells have a bit-exact singular face while the rest are the same configuration one rounding away, so the exact test undercounts the phenomenon. **A-020b is now blocked on this ticket and will most likely be closed by it.** | M | A-002h |
 > **PROGRESS 2026-08-15 — detection landed, and the blocker is characterised rather than removed.** `trilinear::singular_face_mask` now says which of a cell's six faces are singular, `how_often_a_face_is_singular` reuses it so the census cannot drift from the extractor, and `a_singular_face_needs_quantised_data` pins the reachability at both ends (M-232): **0** singular ambiguous faces from continuous `f64` over 400,000 cells, **6,658** at quantum 0.1, **20** at 1/255 — the same order as Grosso's 8/58/20 per CT volume. `ambiguity` is untouched, as the ticket requires. **Two things remain, and the second is a rule-5 stop.** (1) The face-keyed vertex cache, which is now a determined piece of work rather than an open design question: Grosso 2017 §4.2 says *"three saddle points will lie on a singular face, but only **one** will be shared with the neighbor cell"*, so one slot per grid face is enough, and a grid face is named by its min-corner sample plus its normal axis exactly as an edge is named by its lower sample plus its direction axis — a structural mirror of `edge_vertices`, same size and shape. (2) **A third face state carried through `Contours`, which is the blocker and is not the cache (M-233).** Definition 3.2 requires a singular face *not* to divide the surface into two branches, so its four cut edges must meet at the hyperbola **centre** — a four-valent junction. `segment_links` takes `joined` as one bit per face: exactly two routings exist and both are permutations of the cut edges, asserted over all 384 (case, ambiguous face, bit) combinations. So the change is to the contour representation the whole trilinear path and A-002's 16,384-pair decider validation rest on, which is larger and more delicate than a second cache and means **this ticket needs splitting, not just re-sizing**. (3) The triangulation. §4.2's fewer-than-six-saddle arm is fully specified — singular saddles become inner vertices, then *"triangles containing edges of the contour which are on singular faces are eliminated"*. **Its six-saddle arm is not**: *"the other two points are **slightly moved** towards the interior of the cell"*, with no distance given, and the recovered reference is the 2016 code whose singular handling is the face-pairing choice rather than §4.2's construction — so no artefact supplies the constant. Deriving or bounding that displacement is what this ticket now turns on.
+> **The artefact search is now closed too (V-35, 2026-08-16).** V-31 recovered the code both Grosso
+> papers cite and found it is the **2016** one. Three further routes are empty: `github.com/rogrosso`
+> has one public repository and it is a lecture course, a GitHub code search returns nothing, and
+> `github.com/reproducibilitystamp/tmc` — a live mirror, so not a deletion — is `pushed_at`
+> 2016-06-06, the same artefact. **The displacement constant is in no published artefact**, so the
+> rule-5 stop is confirmed rather than unresolved, and deriving or bounding it really is what this
+> ticket turns on.
 > BLOCKED: **on architecture, and the size was wrong — it is `M`, not `S` (2026-08-15).** The ticket assumed the fix is a pairing choice inside the cell, which is what the reference implementation does. Grosso 2017's actual rule is not that. Definition 3.2: *"A topologically correct triangulation across singular cell faces will not divide the surface into two branches. **The asymptotes of the hyperbolas at the singular face including the hyperbola center are part of the isosurface.**"* — and §4.2 makes the singular saddle an inner vertex, then *eliminates* the triangles whose edges lie on the singular face. Both cells sharing that face do the same, and the two patches join **through the saddle point on the face**. **That point is shared between two cells, and this crate has nowhere to put it.** `edge_vertices` is keyed on `(lower sample, axis)` — a grid *edge*. A face-interior vertex needs a `(lower sample, face)` slot, or the two cells emit coincident vertices with different indices and the index buffer carries a seam that only `weld` closes; Marching Cubes here does not rely on welding, and A-015's interior vertices are cell-local *precisely* because nothing else can name them, which is the opposite case. So the work is a new cache keyed on faces, not a branch in a decider. **Not urgent, and the measurement says why (M-220):** 0 of 1,838 ambiguous faces on all eight reference fields and 0 of 299,215 over 400,000 random cells — a singular face needs `v₀·v₂` and `v₁·v₃` bit-identical, which continuous `f64` fields do not produce. It stays open because a consumer feeding **quantised** density reaches it immediately, which is where Grosso's 8, 58 and 20 per CT volume come from, and that consumer is this crate's audience.
 | ☐ | **A-020b** | **The disk triangulation for a six-saddle cell that is not a tunnel.** ~~Grosso does not give one; derive it.~~ **Re-scoped on the day it was written, and the premise is gone (M-231).** A-020 classified these cells — an inner hexagon with a contour past Corollary 6's bound of six — as `Topology::SeparateDisks`, and `extract` refuses them with `Error::UnresolvedSixSaddle`. The refusal is right and stays. What is wrong is the assumption that a **new triangulation rule** is what is owed. Two measurements: **continuous corner values produce zero such cells** in 11,354 six-saddle cells drawn from 2,000,000 random ones, and **every one that quantised values produce has a body saddle within `1e-12` of a cell face** — 261 of 261 across four quanta, no exceptions, against a background degeneracy rate among other six-saddle cells that swings between 8% and 79% with the quantum. A saddle *on* a face is Grosso 2017 §4.2's **singular case**, which is **A-002i**; these cells are singular faces that `has_inner_hexagon`'s strict `0 < x < 1` test admits because floating point puts the root a few ulps inside. So this ticket is **blocked on A-002i** and will most likely be closed by it rather than needing work of its own. `every_separate_disks_cell_has_a_saddle_on_a_face` pins both halves, and its continuous arm fails loudly if a non-degenerate one ever appears — which is the only event that puts a triangulation back in scope. **One option deliberately not taken:** widening `has_inner_hexagon` to a tolerance would reclassify these cells directly, and it is not done here because it changes the classification of every six-saddle cell in the crate and that is a design decision, not a bug fix. | S | A-002i |
 > BLOCKED: **on A-002i, and on a measurement rather than on effort (M-231).** The cells this ticket exists to triangulate are singular faces, not a topological subcase — 261 of 261 have a body saddle on a cell face and continuous values produce none at all. A-002i owns the singular case and is itself blocked on architecture: the saddle sits on a face *shared between two cells*, and `edge_vertices` is keyed on `(lower sample, axis)` with no slot for a face-interior vertex. Deriving a disk rule here before that lands would be building the wrong thing carefully.
+| ☐ | **A-025** | **Manifold Dual Contouring is not manifold on `noise_cavity`, and the paper says it should be.** A-022 (✗19, M-290) obtained the source and falsified its claim: §3 says the uniform-grid dual *"is always a manifold because the original MC algorithm always constructs a manifold and the dual preserves the topology of the surface"*, and over eight fields at three resolutions **Marching Cubes measures 0 non-manifold edges under both face rules** while `manifold_dual_contouring` measures **143** with the crate's default table and **114** with the decider-modified one the paper specifies. The premise holds; *"the dual preserves the topology"* does not. **Every one of them is `noise_cavity`** — MDC is manifold on the other seven fields — and that is the field A-002e added because none of the others produces a cell with an **interior** ambiguity (M-208), which a *face* decider cannot see by construction. **H, to pre-register as P-17:** the residue is cells whose two sides resolve one shared ambiguous face to the same cycle pair **because of an interior ambiguity**, so it falls to zero on cells where `InteriorAmbiguity` changes the cycle set and nowhere else. **Two things to settle, and the second is a decision not a measurement.** (1) The mechanism, against `the_defect_count_is_predicted_from_the_grid_alone`, which already predicts the count from the grid — extend it to say *which* cells and check the interior test on each. (2) **The default.** `ManifoldDualContouring` defaults to `FaceAmbiguity::Separate`; the paper's construction is the decider-modified table, which is 20% better on `noise_cavity` and, per the module docs, *worse* on `gyroid` at 25³. Changing it re-baselines every golden hash. **Do not change it as a side effect of (1).** **Acceptance:** the mechanism named with a constructed minimal fixture (A-021's method, not a wider census), and the default either changed with the hash diff explained or left with the reason written down. | M | A-022 |
+> PROGRESS 2026-08-16 — **P-17 falsified, and one candidate is off the list (M-291).** The residue is
+> **not** the interior ambiguity. `Interior::Joined` is reported by **100% of ambiguous-face pairs** on
+> `noise_cavity` — offenders and control alike, all four resolutions, both face rules — so the any-axis
+> test has no discriminating power at all. Restricted to the sweep across the **shared** face it does
+> discriminate and points the *wrong way*: under `Separate` the offenders carry the join **less** often
+> than the control, 0.58–0.73 against 0.95–0.99. The harness reproduces the crate's pinned counts
+> (30/64 and 8/40 at 17³/33³) before reporting anything new, and extends them to 53/26 and 49/25 at
+> 49³/65³ — matching M-290's mesh-derived numbers from the other direction. **What is left is naming
+> the mechanism**, and the next step is A-021's method rather than another census: the offending set is
+> **26 pairs at 65³** and their sign configurations can be printed.
+> PROGRESS 2026-08-16 — **the mechanism is bounded, and the bound is exhaustive (M-292).** All 4,096
+> two-cell sign patterns, with every *consistent* joined-mask assignment on top — the two cells
+> required to agree about the shared face. **512** share an ambiguous face; **18** offend under mask 0,
+> which is exactly what `Separate` does; **476** offend under some consistent mask; and **0** offend
+> under every one. So the defect is **never forced by the sign configuration**. That does not license
+> "a face rule can fix it" — a rule reads the face's values and has none of this enumeration's freedom,
+> and the decider still leaves 25–49 pairs per resolution. **Combinatorially always avoidable; with a
+> rule that is a function of the shared face alone, not.** Anything that fixes it needs strictly more
+> context than the face, which is A-017's two rejected alternatives. Two exact structures fell out: the
+> default's 18 are precisely the `(1, 1)` cycle-count bucket, and `(1, 2)`/`(2, 1)` are the only
+> buckets the mask does not always control (0.700 against 1.0000 everywhere else).
+> PROGRESS 2026-08-16 — **the mechanism, constructed rather than sampled, and half the acceptance is
+> met (M-294).** Two tests on a hand-built `4×4×3` lattice — **48 samples, no field**. On the same
+> samples Marching Cubes measures **0** non-manifold edges and both duals measure **1**, carrying four
+> distinct faces: ✗19 in a single fixture, and the manifold construction priced at nothing on the
+> `(1, 1)` bucket, since splitting a cell by cycle cannot split a cell that has one. The sharper half
+> is that scaling the shared face's two inside corners, **with every sign held fixed**, walks the
+> asymptotic decider's saddle across zero and takes the defect with it — `−0.25` and `−1` separate and
+> offend, `−4` joins and does not, at 20 triangles throughout. So the offending set is not a set of
+> sign configurations at all, which is M-292 seen from the other side. Mutation-tested four ways.
+> BLOCKED: **the second half is a decision, not a measurement.** `ManifoldDualContouring` defaults to
+> `FaceAmbiguity::Separate`; the paper's construction is the decider-modified table (V-34), which is
+> 20% better on `noise_cavity` and, per the module docs, *worse* on `gyroid` at 25³. Changing it
+> re-baselines every golden hash. That is the crate owner's call and the ticket says explicitly not to
+> make it as a side effect of the mechanism work.
 
 ### 4b — Game-shaped
 
@@ -109,6 +152,21 @@ These use the algorithms the way a game does: chunked, edited, budgeted, collide
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
+| ☐ | **M-005** | **The Apple half of the family measurement.** M-001 landed `benches/family` and ran it on the Ryzen (M-282); the same run is owed on the M5, because six findings quote M5 figures that nothing has re-measured. **What it settles, and it is not cosmetic:** M-19's fitted intercept, M-20's *"4.75 ns/sample, 211 M samples/s"* marginal cost, M-22, and M-45's *"the M5 is 2.76× faster than the Ryzen on Marching Cubes at 256³"* — the last of which is currently **unquotable**, since its Ryzen half moved 1.74× and its Apple half did not. **Acceptance:** `cargo bench --bench family` on the M5 at the current commit, the CSV committed as `docs/measurements/family-<slug>.csv`, and those four findings amended against it. Note the counter columns will read `unavailable`: `perf_event_open` is Linux, so the Apple rows carry milliseconds only, and M-281 says a millisecond is comparable **only within one binary and one build** — so the cross-machine comparison must be made on `family` against `family`, never `family` against `resolution_sweep`. | S | M-001 |
+> BLOCKED: **on the machine being quiet, and the earlier reason for this was wrong (2026-08-16).**
+> What was written here first was *"it needs someone else's working tree"* — `mac_air`'s `isomesh`
+> checkout sits at `4369e3c`, over a hundred commits behind, with `BACKLOG.md` modified and two
+> untracked docs in it. **That was never the obstacle**, and it was asserted rather than checked: a
+> clone into a scratch directory does not touch their checkout at all, and the host is reachable, on
+> AC, and carries the same toolchain this branch is built with (`cargo 1.96.1`, `rustc 1.96.1`).
+> **What actually blocks it is contention.** `mac_air` has been running another job at a steady
+> 42–48% of a core for over four hours — sampled six times a minute apart, load average `1.4–1.7`, no
+> sign of ending. `family` is a **single-threaded, memory-bound timing**, and this ticket exists to
+> make four findings quotable again; a figure taken beside a persistent competitor for last-level
+> cache and memory bandwidth is not one. Worse, the release build needed first would take every core
+> the other job is using. So the run is owed a quiet machine, not a working tree, and it remains a
+> ten-minute ticket the moment there is one. Until then the Apple numbers stay marked stale rather
+> than quietly re-used.
 
 ---
 
@@ -142,6 +200,216 @@ tickets put a doctested front door on it and make every claim current. House rul
 no hard line breaks in new prose, no performance number without naming its machine and CSV,
 absolute URLs in anything crates.io or docs.rs renders, the Vibe Coded label stays on every README,
 and every README code fence must be compiled by something.
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+
+---
+
+## Phase 8 — Experiment infrastructure
+
+**Added 2026-08-13 after a re-evaluation against three questions: is the crate ready for novel
+experimentation, is it usable from the Bevy ecosystem, and will the harness make experiments
+iterative?** Phases 0–6 built algorithms and proved them correct. Nothing in them was built for
+*swapping a rule and measuring the difference*, which is the entire shape of the work the research
+docs now point at. This phase is the cost of that gap, paid deliberately.
+
+The evidence it is real, re-verified on 2026-08-15 against the current tree: `benches/shootout.rs` and
+`src/property/extraction.rs` both hand-enumerate every algorithm by name — 26 and 12 references
+respectively, with 9 more in `resolution_sweep.rs`, 10 in `extract.rs` and 2 in `stage_breakdown.rs`.
+There is no library-level `Extractor` trait; the public traits are `MeshSink`, `Real`, `Sdf`,
+`Shape3`, `ReferenceField`, and each extractor is an unrelated struct. **Adding algorithm #9 costs an
+O(N) edit across benches, property tests and examples instead of O(1).**
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+| ☐ | **X-005** | **Give `Extractor` the global sample base its callers cannot supply, and decide whether that is worth the API break.** `extract_into` takes `origin: [R; 3]` and every implementation computes `origin + cell_size · local`. `ChunkLayout::world_of_sample`'s doc calls itself *"the single place a sample's world position is defined — everything else routes through it"*, and **no extractor does**: a chunk at a non-zero base reaches its far sample plane as `(o + h·base) + h·local` where its neighbour reaches the same plane as `o + h·(base + local)`, and those are equal by algebra and not by IEEE. **R-004 priced it (M-278).** Canonical reconstruction gives **0** unmatched seam-plane boundary edges at every spacing tried; what the crate can offer today gives 0 only at a power-of-two spacing and **63–348** at `0.1`, `1/12` and `1/14`, plus a hole 1.05–2.08 cells wide in 2 of 12 rows where an ulp flipped a sign. The crate's weld hides all of it (✗18) and an unwelded consumer — M-69's collider — gets it in full. **The shape that works is one path, not two:** replace the `[R; 3]` origin with a pair `(grid origin, integer base)` and compute `o + h·(base + local)`, which degenerates to today's behaviour at base zero. `TransitionCell::sample` already took exactly this route at A-011b, so the precedent is in the tree. **This is a decision, not a fix, and it is the reason this ticket is unstarted:** it changes the signature of the crate's central trait and every one of its call sites — eight extractors, five benches, the property suite and 32 Bevy examples. **Acceptance:** either the change lands with R-004's harness re-run and the offset arm gone from the crate entirely, or the ticket is closed with a written decision to keep the API and treat power-of-two cell sizes as a documented input contract. Do not ship both paths. **Blast radius, counted rather than estimated:** 7 inherent `extract` methods behind one `forward_extractor!` macro, 39 `origin: [R; 3]` parameters under `crates/`, and **294 call sites across 101 files** — 188 in 45 files under `crates/`, 106 in 56 files under `bevy_isomesh/`, which is a separate workspace with its own lockfile and CI. | L | R-004 |
+> BLOCKED: **on a decision that is the crate owner's, not the implementer's — and the measurement that would settle it is already in (M-278).** Both answers are defensible and they are not close together. **(a) Take the break.** `isomesh` is at 0.0.5, pre-1.0, and the fix makes vertex sharing structural at every cell size instead of at half of them; the cost is 294 call sites and a signature change on the trait X-001 exists to stabilise. **(b) Keep the API and write the contract down.** The crate's own weld closes every hairline (✗18), so nothing a welded consumer sees changes; what is owed then is a documented input contract — *use a power-of-two cell size for a chunked world* — plus the 1.05–2.08-cell holes in 2 of 12 rows stated as a known limit rather than left in a findings file. **What is not acceptable is both**, which is what an added `extract_based` alongside `extract` would be. Ask before starting.
+
+---
+
+## Phase 9 — Usable by someone who is not us
+
+Every example in `bevy_isomesh/examples/` demonstrates an *algorithm*. **None of the 32 shows a person
+how to put a meshed SDF into their own Bevy app.** That is the first thing a prospective user looks
+for, and it does not exist.
+
+> **Re-scoped 2026-08-15 on measurement, and one ticket was deleted.** This phase was written against
+> a base 107 commits behind, when neither crate was on crates.io and `bevy_isomesh` had no README.
+> Phase 7's D-001…D-011 have since landed. **`I-005` (reserve the names on crates.io) is dropped as
+> done** — `isomesh`, `isomesh-gpu` and `bevy_isomesh` are all published. The README, its `readme`
+> key, the compatibility matrix and `CHANGELOG.md` all exist. What survives below is the residue,
+> and each row says what was verified present rather than assuming the original scope.
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+
+---
+
+## Phase 10 — Keeping the harness honest as it grows
+
+`FINDINGS.md` is the most valuable artefact in the repo and it is now **387 KB / 945 lines / 231
+measurements**, with no index. **The figures this phase was written against — 166 KB, 730 lines, 107
+measurements — were already stale when it was written and the file has since more than doubled its
+measurement count.** It is past the size at which anyone reads it end to end.
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+
+---
+
+## Phase 11 — The field contract
+
+**Added 2026-08-15 from the SDF corpus build-out.** The crate has an *input contract it never wrote
+down*, and one reference field already violates it in the exact region where its defects live.
+
+`csg_difference` declares `is_exact_distance() -> bool { true } // away from the seam` — a comment
+admitting the invariant is false, on a function returning true. Marschner, Sellán, Liu & Jacobson 2023
+(`10.1145/3610548.3618170`) name this object: a **Pseudo-SDF**, *eikonal almost everywhere yet not a
+distance function*, with error **concentrated at seams** — the union's medial axis. That is exactly
+where A-014d located `csg_difference`'s coincident polygons.
+
+**And the error is one-signed.** `min` (union) never overestimates — a conservative lower bound, safe.
+`max` (intersection, subtraction) **overestimates near concave seams** — the direction that lets a
+tracer step through a surface and mis-places an interpolated vertex. `csg_difference` is
+`max(box, −sphere)`. **It is wrong in the dangerous direction.**
+
+**The load-bearing distinction for everything below:** `min`/`max` of 1-Lipschitz functions is
+1-Lipschitz. **The Lipschitz bound survives arbitrary CSG; exactness does not.** So a field stays a
+valid conservative bound forever, no matter how many brush strokes — which is what makes Phase 12
+provably correct under unlimited player editing.
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+
+---
+
+## Phase 12 — Exploiting the bound
+
+Everything here rests on Phase 11's finding that **the Lipschitz bound survives editing.** These are
+correct under unlimited player carving; nothing here assumes exactness.
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+
+---
+
+## Phase 13 — SDF construction
+
+The crate consumes fields and has never built one. Every ticket here also gives the harness a *second
+source of truth* to check the first against.
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+
+---
+
+## Phase 14 — Certificates and field harness
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+
+---
+
+## Phase 15 — Research tickets
+
+**Added 2026-08-15 after a full pass over `FINDINGS.md` followed by a literature check on the
+patterns.** Three measurements recur as **mechanisms** rather than incidents. Those are the research
+directions; the rest is history.
+
+### The experimental protocol — mandatory for every ticket in this phase
+
+A ticket here is an **experiment**, not a feature. It is done when the question is answered, including
+when the answer is "no." Each one must carry all five fields, and **the hypothesis must be written
+into `FINDINGS.md` as a `P-` entry before the measurement runs** — a prediction that first appears
+after the number is known is not evidence, and this project has already caught itself writing
+expectations into docs that measurement then disproved (✗1, ✗3, ✗14, O-14).
+
+| Field | Requirement |
+|---|---|
+| **H** — Hypothesis | Falsifiable, numeric where possible, pre-registered as `P-n` in `FINDINGS.md` **in the commit before** the measuring commit |
+| **Harness** | Committed code. Runs in CI or by one documented command. No throwaway probes — M-89's census had to be re-run because the first one wasn't committed |
+| **Records** | Named metrics, to `docs/measurements/*.csv`, wired into T-011's regression baseline |
+| **Falsified by** | The specific observation that kills H. **A ticket with no falsifier is not an experiment** |
+| **FINDINGS obligation** | `M-` if measured, `✗` if a written claim died, `E×-` if the change was reverted (T-013's format). **Same commit.** A result only in a commit message is not retrievable in six weeks |
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+
+
+---
+
+### 15a — Welding is a topology-destroying operation, and the predicate exists
+
+**The strongest pattern in `FINDINGS.md`.** Five measurements, two independent algorithms, one
+mechanism:
+
+- **M-59** — *"The dual of a manifold surface is a manifold complex; the index buffer is where it stops being a manifold mesh."*
+- **M-99** — *"provably manifold and my weld is what breaks it — the same mechanism as M-59, in a second algorithm. Unwelded: 0 non-manifold."*
+- **M-96** — unwelded output has no topology to check at all (2,240 boundary edges / 896 triangles). **The weld is a precondition, not a tidy-up.**
+- **M-93** — 30 reported self-intersections were *all* vertex-duplication artefacts.
+- **M-48** — the edge cache "does not share everything."
+
+So the weld is simultaneously **required** and **destructive**, and the crate has no theory of when a
+merge is safe. **The literature has one, it is already in the corpus, and it is cheap.**
+
+Dey, Fan & Wang (`10.48550/arXiv.1208.5018`, in corpus) give the **link condition**:
+`Lk u ∩ Lk v = Lk{u,v}`. For two *non-adjacent* coincident vertices `Lk{u,v} = ∅`, so on a triangle
+surface it reduces to a one-ring test:
+
+> **merge (u,v) is safe ⟺ `Lk u ∩ Lk v = ∅`** — their one-rings share no vertex. **O(deg u + deg v).**
+
+They also prove a k-way merge decomposes into **k−1 pairwise merges evaluated in the intermediate
+complex** — so a bucket of ≥3 coincident vertices is **not atomic**, which is what R-002 is about.
+Guéziec et al. 1998 (`10.1145/280953.281628`, acquired) state M-59's framing verbatim 28 years early:
+*"Several manifolds can be mapped to the original non-manifold by identifying vertices."*
+
+**What is unclaimed:** nobody states this predicate for **index-buffer welding of coincident vertices
+emitted by an isosurface extractor**, and nobody publishes the measured rejection rate. That is the
+contribution — modest, real, and a paragraph rather than a paper.
+
+**Note the interaction with A-018.** That ticket already established, on `noise_cavity`, that the
+positional weld can *create* a non-manifold edge and that the subgrid validity suite therefore stopped
+welding before judging (M-226). R-001 is the general form of the same mechanism; read A-018's archive
+row before starting, because half the evidence is already there.
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+
+---
+
+### 15b — Coordinate reconstruction is the crack source, not the algorithm
+
+**Second recurring mechanism. Three measurements, three different subsystems, one cause:**
+
+- **M-32** — *"Chunk seams are bit-exact only when the cell size is a power of two."*
+- **M-49** — *"`ChunkLayout::cell_of` inverts `world_of_sample` inside a cell and not reliably on its corner — M-32 in a second place."*
+- **M-73** — *"a transition cell that computes its sample positions by offsetting from a face origin puts a hairline crack in the seam"* — its *"and no weld can close it"* is ✗18, falsified at R-004.
+
+Every one is floating-point coordinate reconstruction, not extraction. **Nobody has published what
+fraction of "seam cracking" in shipped voxel engines is this rather than algorithmic.**
+
+> **R-004 answered that for this crate, and the split is clean (M-278).** The **algorithm** owns the
+> whole visible budget — remove the transition cells and the seam opens to 32–184 boundary edges,
+> 1.03–3.01 cells wide, identically under both arithmetics. The **arithmetic** owns the invisible one:
+> `1.44e-15` world units against a weld epsilon of `h · 1e-4`, so it is 0 cracks welded and 63–348
+> under bit-identity, with a 1.05–2.08-cell hole in 2 of 12 rows where an ulp flipped a sign.
+> Canonical reconstruction takes every column to zero at every spacing; **X-005** is what it would
+> cost to have it.
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+
+---
+
+### 15c — Two mechanisms nobody has explained
+
+> **One of the two is now explained, and it produced a third (M-279).** R-005 asked why the dual goes
+> superlinear and the answer is **IPC**: Surface Nets runs 1.57× Marching Cubes' instructions and
+> 5.24× its cycles, and the growth is a 16% IPC decline on an instruction stream that is flat per
+> sample. The gather everyone suspected is `O(n²)` and the cost is `O(n³)` — a field with **no
+> surface at all** costs the same to within 0.9%. What is left is *where* the IPC goes, which is
+> **R-007**.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|

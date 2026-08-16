@@ -62,7 +62,7 @@ use bevy::input::mouse::AccumulatedMouseMotion;
 use bevy::prelude::*;
 use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
 use bevy_isomesh::MeshBuilder;
-use common::{CommonPlugin, DemoStats, OrbitCamera};
+use common::{Capture, CommonPlugin, DemoStats, OrbitCamera};
 use isomesh::Sdf;
 use isomesh::brush::{Brush, BrushStack};
 use isomesh::chunk::dirty::{DirtySet, EditReport, mark_edit};
@@ -136,6 +136,7 @@ struct SurfaceMaterial(Handle<StandardMaterial>);
 struct AutoCarve {
     remaining: u32,
     step: u32,
+    every: u32,
 }
 
 impl AutoCarve {
@@ -145,6 +146,15 @@ impl AutoCarve {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(0),
+            // Captured frames per carve. One carve per frame digs the whole
+            // visible tunnel in the first half-second of a clip and leaves the
+            // rest of it static, which reads as a jump cut rather than as
+            // digging.
+            every: std::env::var("ISOMESH_AUTOCARVE_EVERY")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .filter(|n| *n >= 1)
+                .unwrap_or(1),
             step: 0,
         }
     }
@@ -354,6 +364,7 @@ fn dig(
     camera: Query<&Transform, With<Camera3d>>,
     chunks: Query<(Entity, &Chunk)>,
     mut auto: ResMut<AutoCarve>,
+    capture: Res<Capture>,
 ) {
     if keys.just_pressed(KeyCode::BracketLeft) {
         world.radius = (world.radius - 0.1).max(0.2);
@@ -365,7 +376,16 @@ fn dig(
         world.show_chunks = !world.show_chunks;
     }
 
-    let scripted = if auto.remaining > 0 {
+    // **One carve per *captured* frame, not per rendered frame.** The tunnel
+    // bores away from the camera at 0.34 units a step, so at 60 Hz it is out of
+    // frame in a quarter of a second -- and a recording cannot begin until the
+    // window has stopped resizing, which is 30 frames in. A clip made that way
+    // photographs the aftermath while all the action happens off-screen. Every
+    // other capture-driven example in this directory paces itself off
+    // `capture.taken` for the same reason.
+    let ready = !capture.is_active() || capture.taken > 0;
+    let due = !capture.is_active() || auto.step <= capture.taken / auto.every.max(1);
+    let scripted = if auto.remaining > 0 && ready && due {
         auto.remaining -= 1;
         let centre = AutoCarve::centre(auto.step);
         auto.step += 1;

@@ -119,6 +119,26 @@ pub trait Real:
     #[must_use]
     fn cos(self) -> Self;
 
+    /// Four-quadrant arc tangent of `self / other`. Same caveat as
+    /// [`Real::sin`].
+    ///
+    /// Added at S-007: van Oosterom & Strackee's solid angle is
+    /// `Ω = 2·atan2(numerator, denominator)`, and the four-quadrant form is
+    /// load-bearing — a plain `atan` of the quotient loses the half-turn that
+    /// distinguishes a triangle subtending nearly `2π` from one subtending
+    /// nearly nothing.
+    #[must_use]
+    fn atan2(self, other: Self) -> Self;
+
+    /// Arc cosine, in radians, on `[-1, 1]`. Same caveat as [`Real::sin`].
+    ///
+    /// Added at S-006: the angle-weighted pseudonormal weights each face normal
+    /// by the incident angle, and `libm` is the only source of that angle that
+    /// stays bit-identical across platforms — which is what T-007's golden
+    /// hashes depend on.
+    #[must_use]
+    fn acos(self) -> Self;
+
     // ── from core ───────────────────────────────────────────────────────────
 
     /// Absolute value.
@@ -216,7 +236,8 @@ macro_rules! impl_real {
     (
         $ty:ty,
         diff_step = $diff_step:expr,
-        sqrt = $sqrt:path, floor = $floor:path, sin = $sin:path, cos = $cos:path $(,)?
+        sqrt = $sqrt:path, floor = $floor:path, sin = $sin:path, cos = $cos:path,
+        acos = $acos:path, atan2 = $atan2:path $(,)?
     ) => {
         impl sealed::Sealed for $ty {}
 
@@ -245,6 +266,14 @@ macro_rules! impl_real {
             #[inline]
             fn cos(self) -> Self {
                 $cos(self)
+            }
+            #[inline]
+            fn acos(self) -> Self {
+                $acos(self)
+            }
+            #[inline]
+            fn atan2(self, other: Self) -> Self {
+                $atan2(self, other)
             }
 
             #[inline]
@@ -308,6 +337,8 @@ impl_real!(
     floor = libm::floorf,
     sin = libm::sinf,
     cos = libm::cosf,
+    acos = libm::acosf,
+    atan2 = libm::atan2f,
 );
 
 impl_real!(
@@ -317,6 +348,8 @@ impl_real!(
     floor = libm::floor,
     sin = libm::sin,
     cos = libm::cos,
+    acos = libm::acos,
+    atan2 = libm::atan2,
 );
 
 #[cfg(test)]

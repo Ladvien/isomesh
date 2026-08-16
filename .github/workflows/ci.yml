@@ -80,6 +80,15 @@ jobs:
       # one file rather than half here and half in the repo.
       - name: backlog gate
         run: ./scripts/backlog_gate.sh
+      # The index is generated, so the only way it stays true is a gate. A stale
+      # index answers confidently and wrongly, which is worse than no index.
+      - name: findings index is current
+        run: ./scripts/findings_index.sh --check
+      # The regression checker itself, not the benches -- those take minutes and
+      # their timings are meaningless on a shared runner. This proves the gate
+      # still detects a regression, which is the half that can rot silently.
+      - name: regression checker detects a regression
+        run: ./scripts/regress.sh --self-test
 
       # The root README's quickstart is a copy of the crate README's doctested
       # one; the doctest compiles the original and this diff pins the copy.
@@ -120,6 +129,11 @@ jobs:
           fi
       - name: doc tests
         run: cargo test --workspace --doc
+      # X-003: the experimental module is exempt from semver and from nothing
+      # else. Its tests only compile with the feature on, so without this step
+      # they would sit there looking like coverage and never run.
+      - name: experimental feature
+        run: cargo test -p isomesh --features experimental --all-targets
 
   bevy:
     name: bevy_isomesh (separate workspace)

@@ -1609,3 +1609,100 @@ fn a_cell_with_no_rule_is_refused_rather_than_holed() {
         .expect("the face rule alone has no such gap");
     assert!(out.triangle_count() > 0);
 }
+
+/// **Refining the crossing helps the *curved* fields and does nothing for the
+/// CSG one — the opposite of what F-007 predicted (M-250).**
+///
+/// The ticket's acceptance was *"`csg_difference`'s Hausdorff improves"*, on the
+/// reasoning that `min`/`max` kink the field along an edge crossing a seam, so a
+/// line through the endpoints misses the root. The reasoning about the kink is
+/// right and the conclusion about the *measurement* is wrong, for a reason the
+/// ticket did not consider: **`csg_difference`'s Hausdorff is not dominated by
+/// crossing placement at all.**
+///
+/// It is `max(box, −sphere)`, and a box is planar — its field is exactly linear
+/// along an axis-aligned edge, so there is nothing for refinement to find. What
+/// its error *is* dominated by is the box's own edges and corners, which
+/// Marching Cubes cannot represent at any resolution. That is A-007's problem,
+/// not this one, and no amount of root-finding touches it.
+///
+/// The fields that improve are the ones whose error really is interpolation
+/// error: a sphere and a torus are **curved**, so `f` along an edge is a curve
+/// and a straight line through its endpoints genuinely misses.
+#[test]
+fn refinement_helps_curved_fields_and_not_the_kinked_one() {
+    use crate::fields::ReferenceField;
+    use crate::validate::{AccuracyConfig, accuracy};
+
+    const SAMPLES: u32 = 33;
+    let mut rows = alloc::vec::Vec::new();
+
+    crate::for_each_reference_field!(f64, |name, field| {
+        // `if` rather than `return`: the macro expands inline blocks, so a
+        // `return` would leave the test function (M-253).
+        if field.bound().is_exact() || name == "csg_difference" {
+            let (lo, hi) = field.domain();
+            let h = (hi[0] - lo[0]) / f64::from(SAMPLES - 1);
+            let shape = crate::RuntimeShape3::new([SAMPLES; 3]).expect("valid shape");
+
+            let measure = |steps: u32| {
+                let mut out = crate::MeshBuffer::<f64>::new();
+                let mut mc = MarchingCubes::<f64>::new();
+                mc.set_crossing_refinement(steps);
+                mc.extract(&field, &shape, lo, h, &mut out)
+                    .expect("extraction");
+                let cfg = AccuracyConfig::from_cell_size(h).expect("valid config");
+                let report = accuracy(&out.positions, &out.indices, &field, &shape, lo, &cfg)
+                    .expect("accuracy");
+                (report.symmetric_hausdorff(), out.triangle_count())
+            };
+
+            let (plain, tris_plain) = measure(0);
+            let (refined, tris_refined) = measure(24);
+            // Refinement moves vertices, never triangles: the sign, and therefore the
+            // case classification, is untouched by it.
+            assert_eq!(
+                tris_plain, tris_refined,
+                "{name}: refinement changed the topology, which it cannot do"
+            );
+            rows.push((name, plain, refined));
+            std::println!(
+                "measured: {name:<16} hausdorff {plain:>10.4e} → {refined:>10.4e}  ({:.3}×)",
+                refined / plain
+            );
+        }
+    });
+
+    let get = |want: &str| {
+        rows.iter()
+            .find(|(n, ..)| *n == want)
+            .map(|(_, p, r)| (*p, *r))
+            .expect("field present")
+    };
+
+    // **The curved fields improve**, by 13-15%: that is the interpolation error
+    // refinement can actually remove.
+    for name in ["sphere", "torus"] {
+        let (plain, refined) = get(name);
+        let ratio = refined / plain;
+        assert!(
+            ratio < 0.95,
+            "{name} was expected to improve; got {ratio:.3}×"
+        );
+    }
+
+    // **And the fields whose error is a sharp feature do not**, `csg_difference`
+    // among them. Asserted rather than remarked, because it is the ticket's
+    // acceptance failing and the reason has to stay attached to the number: a box
+    // is planar, so its field is already linear along an axis-aligned edge, and
+    // its Hausdorff is dominated by corners Marching Cubes cannot represent.
+    for name in ["box_exact", "thin_plate", "csg_difference"] {
+        let (plain, refined) = get(name);
+        let ratio = refined / plain;
+        assert!(
+            (0.98..1.02).contains(&ratio),
+            "{name} changed by {ratio:.3}× — if refinement now helps a planar field, \
+             the diagnosis in M-250 needs revisiting"
+        );
+    }
+}

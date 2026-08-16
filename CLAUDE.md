@@ -169,7 +169,7 @@ It is used **unconditionally** rather than behind a `std` feature switch, for tw
   platform-specific and CI would disagree with the dev machine. `libm` is pure Rust and
   bit-reproducible everywhere.
 
-  **Verified at T-007, not merely argued (M-31):** the 63 golden hashes are generated on
+  **Verified at T-007, not merely argued (M-31):** the 216 golden hashes are generated on
   macOS/arm64 and pass unchanged on Linux/x86-64 in CI — every position, normal and index
   bit-for-bit equal across both.
 
@@ -245,9 +245,21 @@ No GPU needed, runs in CI, catches "works on Metal, explodes on DX12."
 ## Commands
 
 ```bash
+# EVERYTHING, in one command. Run this rather than remembering the list.
+#
+# `bevy_isomesh` is excluded from the root workspace on purpose, so
+# `cargo check --workspace --all-targets` does not compile it -- and M-293 is
+# what that costs: F-001 broke an example there and 58 commits went by with
+# every local gate green, because "run both", which this file said in two
+# places, is not a gate. The fast set is 13 steps in about 3 seconds warm and
+# includes every cheap thing that would have caught it -- including
+# `doc_facts.sh`, which is why the reference-field count can no longer rot.
+./scripts/preflight.sh          # before every commit
+./scripts/preflight.sh --full   # adds the three test suites and MSRV; before pushing
+
 # the lint job, in full. clippy and fmt are two of its three steps; the third
 # catches doc links that point at nothing or at a private item, and nothing else
-# does. Run all three before pushing.
+# does. Run all three before pushing. `preflight.sh` runs all of this.
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps

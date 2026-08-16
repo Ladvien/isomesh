@@ -24,7 +24,7 @@
 //! Two columns are conditional, and the conditions are the fields' own metadata
 //! rather than this file's opinion:
 //!
-//! - **Hausdorff is only reported where `is_exact_distance()`.** `gyroid` and
+//! - **Hausdorff is only reported where the field declares `FieldBound::Exact`.** `gyroid` and
 //!   `fbm_terrain` are not distance fields, so the quantity T-003 computes
 //!   against them is not a distance and printing it would invent a number.
 //! - **Self-intersection is only run at the smaller grid.** It is a
@@ -58,16 +58,12 @@ use std::hint::black_box;
 use std::path::PathBuf;
 use std::time::Instant;
 
-use isomesh::dual_contouring::DualContouring;
+use isomesh::extractor::{ALL_EXTRACTORS, Extractor};
 use isomesh::fields::ReferenceField;
-use isomesh::manifold_dual_contouring::ManifoldDualContouring;
-use isomesh::marching_cubes::{FaceAmbiguity, MarchingCubes};
-use isomesh::marching_tetrahedra::MarchingTetrahedra;
-use isomesh::surface_nets::SurfaceNets;
 use isomesh::validate::{
     AccuracyConfig, ValidateConfig, accuracy, self_intersections, validate_indexed,
 };
-use isomesh::{MeshBuffer, RuntimeShape3, Sdf};
+use isomesh::{MeshBuffer, Sdf};
 
 type Scalar = f64;
 
@@ -80,103 +76,6 @@ const SELF_INTERSECTION_AT: u32 = 33;
 
 const WARMUP_RUNS: u32 = 1;
 const TIMED_RUNS: u32 = 3;
-
-/// Every algorithm in the comparison.
-///
-/// `marching_cubes+decider` is a *row*, not a fifth algorithm: it is
-/// `MarchingCubes` with A-002's asymptotic decider switched on. It earns a row
-/// because the question "does the decider cost anything" is exactly the kind of
-/// thing this table exists to answer, and on five of the seven fields it is
-/// measurably identical (M-40), which is itself the answer.
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Algorithm {
-    MarchingCubes,
-    MarchingCubesDecider,
-    MarchingTetrahedra,
-    SurfaceNets,
-    DualContouring,
-    ManifoldDualContouring,
-    /// Subgrid Marching Tetrahedra, at a fixed 1D sampling resolution.
-    ///
-    /// The only entrant whose cost is not a function of the grid alone — it
-    /// finds every root along every tetrahedron edge, so it also scales with
-    /// [`SUBGRID_SAMPLES`]. Held constant across the sweep so a row comparison
-    /// is about the algorithm rather than about the sampling, and set to the
-    /// same value the golden fixture pins so a timing and a hash describe one
-    /// configuration.
-    SubgridMarchingTetrahedra,
-}
-
-/// The 1D sampling resolution the subgrid rows run at.
-const SUBGRID_SAMPLES: u32 = 16;
-
-impl Algorithm {
-    const ALL: [Self; 7] = [
-        Self::MarchingCubes,
-        Self::MarchingCubesDecider,
-        Self::MarchingTetrahedra,
-        Self::SurfaceNets,
-        Self::DualContouring,
-        Self::ManifoldDualContouring,
-        Self::SubgridMarchingTetrahedra,
-    ];
-
-    fn name(self) -> &'static str {
-        match self {
-            Self::MarchingCubes => "marching_cubes",
-            Self::MarchingCubesDecider => "marching_cubes+decider",
-            Self::MarchingTetrahedra => "marching_tetrahedra",
-            Self::SurfaceNets => "surface_nets",
-            Self::DualContouring => "dual_contouring",
-            Self::ManifoldDualContouring => "manifold_dual_contouring",
-            Self::SubgridMarchingTetrahedra => "subgrid_marching_tetrahedra",
-        }
-    }
-
-    /// Extract into `out`, reusing it. Every arm takes the same reused-buffer
-    /// path a real workload runs, per rule 6.
-    fn extract<F: Sdf<Scalar = Scalar>>(
-        self,
-        field: &F,
-        shape: &RuntimeShape3,
-        origin: [Scalar; 3],
-        cell_size: Scalar,
-        out: &mut MeshBuffer<Scalar>,
-    ) {
-        match self {
-            Self::MarchingCubes => MarchingCubes::<Scalar>::new()
-                .extract(field, shape, origin, cell_size, out)
-                .expect("extraction"),
-            Self::MarchingCubesDecider => {
-                let mut mesher = MarchingCubes::<Scalar>::new();
-                mesher.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
-                mesher
-                    .extract(field, shape, origin, cell_size, out)
-                    .expect("extraction");
-            }
-            Self::MarchingTetrahedra => MarchingTetrahedra::<Scalar>::new()
-                .extract(field, shape, origin, cell_size, out)
-                .expect("extraction"),
-            Self::SurfaceNets => SurfaceNets::<Scalar>::new()
-                .extract(field, shape, origin, cell_size, out)
-                .expect("extraction"),
-            Self::DualContouring => DualContouring::<Scalar>::new()
-                .extract(field, shape, origin, cell_size, out)
-                .expect("extraction"),
-            Self::ManifoldDualContouring => ManifoldDualContouring::<Scalar>::new()
-                .extract(field, shape, origin, cell_size, out)
-                .expect("extraction"),
-            Self::SubgridMarchingTetrahedra => {
-                isomesh::subgrid::extract::SubgridMarchingTetrahedra::<Scalar>::new(
-                    SUBGRID_SAMPLES,
-                )
-                .expect("a positive sampling resolution")
-                .extract(field, shape, origin, cell_size, out)
-                .expect("extraction");
-            }
-        }
-    }
-}
 
 /// One row of the table.
 struct Row {
@@ -202,16 +101,31 @@ fn main() {
         return;
     }
 
-    println!("shootout — seven reference fields, five algorithms, f64, one process\n");
+    // **Counted, not asserted.** This line read "seven reference fields, five
+    // algorithms" while the suite ran eight and seven -- `noise_cavity` landed at
+    // A-002e and the decider row was added later, and neither edit reached the
+    // header. That is exactly the drift X-001 exists to remove, so the counts now
+    // come from the lists themselves.
+    let fields = {
+        let mut n = 0;
+        isomesh::for_each_reference_field!(f64, |_name, _field| {
+            n += 1;
+        });
+        n
+    };
+    println!(
+        "shootout — {fields} reference fields, {} algorithms, f64, one process\n",
+        ALL_EXTRACTORS.len()
+    );
     let mut rows = Vec::new();
     isomesh::for_each_reference_field!(f64, |name, field| {
         for samples in RESOLUTIONS {
-            for algorithm in Algorithm::ALL {
-                if let Some(row) = measure(name, &field, algorithm, samples) {
+            isomesh::for_each_extractor!(f64, |algorithm, extractor| {
+                if let Some(row) = measure(name, &field, algorithm, &mut extractor, samples) {
                     print_row(&row);
                     rows.push(row);
                 }
-            }
+            });
         }
     });
 
@@ -220,12 +134,17 @@ fn main() {
     report(&rows);
 }
 
-fn measure<F: Sdf<Scalar = Scalar> + ReferenceField>(
+fn measure<F, E>(
     field_name: &'static str,
     field: &F,
-    algorithm: Algorithm,
+    algorithm: &'static str,
+    extractor: &mut E,
     samples: u32,
-) -> Option<Row> {
+) -> Option<Row>
+where
+    F: Sdf<Scalar = Scalar> + ReferenceField,
+    E: Extractor<Scalar>,
+{
     let (shape, origin, h) = common::grid(field, samples);
 
     let mut mesh = MeshBuffer::<Scalar>::new();
@@ -233,7 +152,9 @@ fn measure<F: Sdf<Scalar = Scalar> + ReferenceField>(
     for _ in 0..(WARMUP_RUNS + TIMED_RUNS) {
         mesh.reset();
         let start = Instant::now();
-        algorithm.extract(field, &shape, origin, h, &mut mesh);
+        extractor
+            .extract_into(field, &shape, origin, h, &mut mesh)
+            .expect("extraction");
         times.push(start.elapsed());
         black_box(mesh.triangle_count());
     }
@@ -259,7 +180,7 @@ fn measure<F: Sdf<Scalar = Scalar> + ReferenceField>(
     };
 
     // Only where the field's own metadata says the quantity is a distance.
-    let hausdorff = if field.is_exact_distance() {
+    let hausdorff = if field.bound().is_exact() {
         AccuracyConfig::from_cell_size(h)
             .ok()
             .and_then(|acfg| {
@@ -272,7 +193,7 @@ fn measure<F: Sdf<Scalar = Scalar> + ReferenceField>(
 
     Some(Row {
         field: field_name,
-        algorithm: algorithm.name(),
+        algorithm,
         samples,
         median_ms,
         vertices: mesh.vertex_count(),
@@ -366,28 +287,28 @@ fn report(rows: &[Row]) {
     });
 
     println!("\n--- non-manifold edges, total over every field and resolution ---");
-    for algorithm in Algorithm::ALL {
+    for algorithm in ALL_EXTRACTORS {
         let total: u64 = rows
             .iter()
-            .filter(|r| r.algorithm == algorithm.name())
+            .filter(|r| r.algorithm == algorithm)
             .map(|r| r.non_manifold_edges)
             .sum();
-        println!("{:<24} {total:>6}", algorithm.name());
+        println!("{algorithm:<24} {total:>6}");
     }
 
     println!("\n--- worst self-intersections per 1k triangles, at 33^3 ---");
-    for algorithm in Algorithm::ALL {
+    for algorithm in ALL_EXTRACTORS {
         let worst = rows
             .iter()
-            .filter(|r| r.algorithm == algorithm.name())
+            .filter(|r| r.algorithm == algorithm)
             .filter_map(|r| r.self_intersections_per_1k.map(|v| (v, r.field)))
             .fold(None::<(f64, &str)>, |acc, x| match acc {
                 Some((best, _)) if best >= x.0 => acc,
                 _ => Some(x),
             });
         match worst {
-            Some((v, field)) => println!("{:<24} {v:8.3}  on {field}", algorithm.name()),
-            None => println!("{:<24}        -", algorithm.name()),
+            Some((v, field)) => println!("{algorithm:<24} {v:8.3}  on {field}"),
+            None => println!("{algorithm:<24}        -"),
         }
     }
 }

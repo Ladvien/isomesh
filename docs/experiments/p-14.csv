@@ -1,0 +1,29 @@
+# experiment P-14 (R-003)
+# hypothesis: The residual non-manifold vertices under Surface Nets and Dual Contouring are the one-vertex-per-cell rule meeting a cell that contains more than one surface component: almost all of them sit in cells where Manifold Dual Contouring emits more than one vertex, and MDC's own count is strictly lower on every field where either is non-zero.
+# falsified by: A substantial share of non-manifold vertices sitting in cells where MDC emits exactly one vertex — which would mean the defect is not the one-vertex-per-cell rule and is somewhere else entirely.
+# commit 07b5248 (WORKING TREE DIRTY) on amd-ryzen-9-5900x-12-core at 2026-08-16T01:38:57Z
+non_manifold_vertices,non_manifold_edges,multi_vertex_cells,nm_vertices_in_single_vertex_cells,worst_link_components,extractor,field,worst_link_vertex_degree
+0,0,0,0,0,surface_nets,sphere,0
+0,0,0,0,0,dual_contouring,sphere,0
+0,0,0,0,0,manifold_dual_contouring,sphere,0
+0,0,0,0,0,surface_nets,torus,0
+0,0,0,0,0,dual_contouring,torus,0
+0,0,0,0,0,manifold_dual_contouring,torus,0
+0,0,0,0,0,surface_nets,box_exact,0
+0,0,0,0,0,dual_contouring,box_exact,0
+0,0,0,0,0,manifold_dual_contouring,box_exact,0
+0,0,0,0,0,surface_nets,csg_difference,0
+0,0,0,0,0,dual_contouring,csg_difference,0
+0,0,0,0,0,manifold_dual_contouring,csg_difference,0
+0,0,0,0,0,surface_nets,thin_plate,0
+0,0,0,0,0,dual_contouring,thin_plate,0
+0,0,0,0,0,manifold_dual_contouring,thin_plate,0
+99,48,54,45,2,surface_nets,gyroid,4
+99,48,54,45,2,dual_contouring,gyroid,4
+0,0,54,0,0,manifold_dual_contouring,gyroid,0
+38,19,19,19,1,surface_nets,fbm_terrain,4
+38,19,19,19,1,dual_contouring,fbm_terrain,4
+0,0,19,0,0,manifold_dual_contouring,fbm_terrain,0
+597,314,290,307,2,surface_nets,noise_cavity,4
+597,314,290,307,2,dual_contouring,noise_cavity,4
+106,53,290,106,1,manifold_dual_contouring,noise_cavity,4

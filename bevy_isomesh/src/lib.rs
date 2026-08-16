@@ -12,6 +12,6 @@ pub mod plugin;
 
 pub use mesh::{MeshBuilder, to_bevy_mesh};
 pub use plugin::{
-    ChunkMesh, Extractor, IsomeshPlugin, MeshBudget, MeshStats, NeedsRemesh, VolumeField,
-    VoxelChunk, VoxelVolume,
+    ChunkMesh, ChunkSeams, Extractor, IsomeshPlugin, MeshBudget, MeshStats, NeedsRemesh,
+    VolumeField, VoxelChunk, VoxelVolume,
 };

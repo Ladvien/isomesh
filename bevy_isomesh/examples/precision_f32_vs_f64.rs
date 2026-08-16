@@ -98,7 +98,7 @@ use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::prelude::*;
 use common::{Capture, CommonPlugin, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
 use isomesh::dual_contouring::DualContouring;
-use isomesh::fields::{BoxExact, ReferenceField, Sphere, Torus};
+use isomesh::fields::{BoxExact, FieldBound, ReferenceField, Sphere, Torus};
 use isomesh::validate::{ValidateConfig, validate_features};
 use isomesh::{MeshBuffer, Real, RuntimeShape3, Sdf};
 
@@ -329,8 +329,16 @@ impl<F: Sdf + ReferenceField> ReferenceField for Offset<F> {
         self.inner.expected_euler()
     }
 
-    fn is_exact_distance(&self) -> bool {
-        self.inner.is_exact_distance()
+    /// Forwarded, because translation preserves it exactly.
+    ///
+    /// `f(p − by)` has the same Lipschitz constant as `f`, and if `|f|` was the
+    /// distance to the zero set then so is `|f(p − by)|` to the translated one.
+    /// **This replaced a forward of `is_exact_distance`, which F-001 removed
+    /// from the trait** — a `bool` could not say *how* inexact, and this example
+    /// went on calling it for 58 commits because the root workspace excludes
+    /// `bevy_isomesh` and nothing local compiles it (M-293, I-008).
+    fn bound(&self) -> FieldBound {
+        self.inner.bound()
     }
 }
 

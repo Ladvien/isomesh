@@ -28,9 +28,12 @@ side with no resolution error**; the failure arrives much later as `expected Tex
 different TextureFormat`. Verified: this workspace's lockfile and `bevy_isomesh`'s independently
 resolve `wgpu 29.0.4` and `wgpu-types 29.0.4`, the same patch in both.
 
-| `isomesh-gpu` | `wgpu` | `bevy` |
-|---|---|---|
-| 0.0.x | 29.0.4 | 0.19 |
+| `isomesh-gpu` | `wgpu` requirement | resolves to, today | `bevy` |
+|---|---|---|---|
+| 0.0.x | **29.0.3** | 29.0.4 | 0.19 |
+
+`Cargo.toml` declares `29.0.3` and both lockfiles resolve `29.0.4`, because patch releases float by
+design. The major and minor are what `bevy_render` 0.19 pins and what must not move independently.
 
 ## No software fallback
 
@@ -74,6 +77,17 @@ runner has no adapter and `headless::Gpu::new` refuses to pretend otherwise.
 
 - **`MarchingCubesGpu`** — the compute kernel. Two passes (count, prefix-sum, emit) so the output is
   dense *and* in cell order, which is what makes it comparable with the CPU and with itself.
+- **`PrefixScan`, `DeferredScan`, `ScanOutput`, `cpu_prefix_sum`** — the compaction the emit pass
+  needs, and a CPU reference for it that the tests check against.
+- **`GpuField`, `GpuShape`, `GpuOp`, `GpuBrush`, `FieldSampler`** — the field evaluated device-side,
+  brushes folded on the GPU, so an edit does not cross the bus to be applied.
+- **`MeshShaderRenderer`, `IndirectGeometry`, `MeshShaderReport`, `probe_mesh_shaders`** — drawing
+  straight out of the compute output, with no vertex buffer and no readback. Probe before you build:
+  on an adapter without `EXPERIMENTAL_MESH_SHADER` the pipeline is not created and the report says so.
+- **`JumpFlood`** — a distance transform on the GPU.
+- **`ExtractTimings`, `GpuGeometry`, `GpuMesh`** — what came back, and how long each stage took.
+- **The WGSL itself** — `MARCHING_CUBES_WGSL`, `FIELD_WGSL`, `GRID_WGSL`, `SCAN_WGSL`,
+  `JUMP_FLOOD_WGSL`, `MESH_RENDER_WGSL`, all public so a consumer can compose against them.
 
 ## The case table is uploaded, not transcribed
 
@@ -82,7 +96,30 @@ There isn't one. `case_table_bytes()` packs `isomesh::marching_cubes::table::CAS
 by a `const fn` rather than copied from a paper — and a test unpacks the bytes and compares all 256
 entries.
 
-## Measured against the CPU
+## Is it faster? Above about 33³, yes — by 37× at 129³
+
+Sphere, warmed, median of three, RTX 3090 over Vulkan, against a single-threaded CPU extraction.
+`docs/measurements/gpu_vs_cpu.csv`.
+
+| samples/axis | CPU | GPU, field on the GPU | |
+|---|---|---|---|
+| 17³ | **0.06 ms** | 0.22 ms | CPU ahead 3.7× |
+| 33³ | 0.34 ms | **0.23 ms** | GPU ahead 1.5× |
+| 65³ | 2.44 ms | **0.27 ms** | GPU ahead 9× |
+| 129³ | 20.14 ms | **0.54 ms** | GPU ahead **37×** |
+
+That GPU column is nearly flat across a **420×** rise in cell count, because extraction was never the
+cost — `count + emit` is 0.045 ms at 129³ and does not move. Below ~33³ a fixed ~0.22 ms of setup is
+larger than the whole job and the CPU wins.
+
+**Where you evaluate the field decides the rest.** Upload CPU-sampled data and the upload is **87%** of
+the path — 8.37 ms at 129³, so 2.4× rather than 37×, and it does not take field evaluation off the
+CPU's budget, it adds a copy to it. Evaluate it in the shader and that cost stops existing.
+
+Three tickets took this path from 15.01 ms to 0.54 ms at 129³ and none made the extractor faster.
+Every gain was data movement removed (M-145, M-150, M-155).
+
+## Agreement with the CPU, vertex by vertex
 
 Same grid, same samples, same table, 33³ sphere:
 

@@ -1,0 +1,4 @@
+population,crossed_boundary_edges,count
+non_manifold,4,314
+manifold,0,8
+manifold,2,30891

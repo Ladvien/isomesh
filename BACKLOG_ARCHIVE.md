@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-130 tickets. Line numbers are stable until something above them is edited — grep the ID if
+179 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -54,6 +54,30 @@ implementation contradicted the ticket.
 | [`E-213`](#L738) | `marching_cubes_tunnel` — the tunnel made visible |
 | [`A-020`](#L746) | Corollary 6 was the test, and the hole was a misclassification |
 | [`A-017`](#L755) | MDC's non-manifoldness is a limit of the algorithm, documented |
+| [`B-009`](#L764) | The quickstart — the one example that teaches nothing |
+| [`T-012`](#L770) | FINDINGS.md's index, generated and gated |
+| [`X-001`](#L776) | One Extractor trait, one registry, and the gate on it |
+| [`X-002`](#L788) | The ablation seam — a type parameter, not a branch |
+| [`X-003`](#L796) | The experimental feature, with a real inhabitant |
+| [`X-004`](#L802) | Probabilistic quadrics reduce to our own solve |
+| [`B-010`](#L810) | docs.rs metadata, and docs that open with the code |
+| [`B-011`](#L816) | The Bevy Assets entry, staged rather than submitted |
+| [`E-214`](#L822) | The tunnel on screen, and the blocker that was a hypothesis |
+| [`E-215`](#L830) | record_gif.sh — the tenth GIF is a command |
+| [`E-216`](#L838) | Building a field, and the union nobody had noticed was missing |
+| [`T-011`](#L846) | Metric baselines, and a gate that has been seen to fail |
+| [`T-013`](#L854) | Part 4b — experiments run, and what happened to them |
+| [`T-014`](#L862) | Cross-machine protocol, and provenance inside the file |
+| [`F-001`](#L870) | FieldBound — the declaration a bool could not hold |
+| [`F-002`](#L878) | The bound validator, and what eikonal cannot see |
+| [`F-003`](#L886) | Composed bounds, and the asymmetry that is by region |
+| [`F-004`](#L894) | CSG degradation — the tail collapses, the median does not |
+| [`F-005`](#L902) | Empty-cell rejection — one evaluation replaces 576 |
+| [`F-006`](#L910) | Segment tracing — the null result, and where it is not null |
+| [`F-007`](#L918) | Crossing refinement — right mechanism, wrong metric |
+| [`S-001`](#L926) | The exact distance transform, checked two ways |
+| [`S-002`](#L934) | Fast sweeping — the seeding is where the accuracy is |
+| [`S-003`](#L942) | Fast marching, and the macro that swallowed three tests |
 | [`N-001`](#L155) | Spell the algorithm names out |
 | [`A-013`](#L161) | Vertex welding and dedup |
 | `E-101` | *(title not auto-extracted — grep `**E-101**`)* |
@@ -751,3 +775,632 @@ implementation contradicted the ticket.
 | | | ***The diagnosis was already complete, which is why this was a decision and not an investigation.*** Three measurements each killed an explanation (M-224): not tunnels (all 30 offending edges lie within 1.5h of an *ambiguous* cell, only one near a tunnel), not duplication (every offending edge carries four **distinct** triangles, the opposite of ✗17), not the face pairing (`AsymptoticDecider` drops 30 → 8 on `noise_cavity` and *introduces* 3 on `gyroid` at 25³, so no rule is uniformly better). |
 | | | ***The mechanism is predicted from the grid with zero error (M-225).*** `non_manifold_edges == shared ambiguous faces whose four cut edges lie in one cycle on both sides`, asserted grid-against-mesh and exact under both face rules: `Separate` 30 and 64, `AsymptoticDecider` 8 and 40. A limit stated as an identity is worth more than a limit stated as prose, because it fails loudly if it is ever wrong. |
 | | | *What shipped is documentation and nothing else, in three places that each made the claim: the module header now states the precondition where the guarantee is stated, the crate README's tradeoff row carries the exception, and A-010's archive row is amended. `MDC_NON_MANIFOLD_CENSUS` and `MDC_CHI_CENSUS` stay pinned as whole censuses — they fail if the counts spread **and** if they vanish, so a silent fix is as visible as a silent regression.* |
+| ☑ | **B-009** | **A quickstart example — the one thing all 32 examples failed to be.** | M | — |
+| | | ***The README half was already done and the runnable half was the gap.*** `bevy_isomesh/README.md` carries the same call sequence as a `no_run` doctest, so the API is compile-checked on every `cargo test` and cannot rot. What a doctest cannot have is a camera, a light and a window — without those the snippet is correct and shows you nothing. `examples/quickstart.rs` is that snippet made runnable, and the difference between them is exactly the three lines Bevy needs and `bevy_isomesh` does not provide. |
+| | | ***A layout that compiles and shows an empty window is the failure mode, and it happened while writing this.*** `ChunkLayout::new`'s first argument is **cells**, not samples. The first draft passed `new(16, 0.25, …)`, giving each chunk a 4.0-unit span for a radius-1 sphere and leaving seven of the eight chunks empty. It compiled, ran, and would have shipped a quickstart that displays almost nothing. |
+| | | ***So the configuration is asserted rather than assumed.*** `the_quickstart_layout_meshes_every_chunk` runs the example's exact numbers — 16 cells at 1/16 of a unit, eight chunks tiling `[-1,1]³` — through the plugin headlessly and checks **triangle counts per chunk**, not merely that a `ChunkMesh` handle exists: an empty handle satisfies a count and shows nothing. Measured **1,189 triangles in every one of the eight**, identical across all of them, which is the symmetry a sphere at their shared corner must have. |
+| | | *The same cells-versus-samples error was in the README's doctest comment (`// 8 samples per chunk axis`) and is fixed there too. Example count 32 → 33, and both READMEs now point at `quickstart` first.* |
+| ☑ | **T-012** | **`FINDINGS.md` index and split policy.** | S | — |
+| | | ***Generated, not written, because a hand-maintained index of 298 rows is a rotting artefact with extra steps.*** `scripts/findings_index.sh` rewrites a marked block in place; `--check` exits non-zero if it is stale and runs in CI beside `backlog_gate.sh`. The precedent is in this repository: `BACKLOG_ARCHIVE.md`'s index was built by hand and carries rows reading *"(title not auto-extracted — grep the ID)"*, which is what a manual index costs after a few hundred entries. |
+| | | ***The file was worse than the ticket said, which is why it earned an index.*** The ticket cited 166 KB / 730 lines / 107 measurements. Measured on the day: **387 KB / 945 lines / 298 entries** — 17 falsified, 232 measured, 33 verified, 16 open. **And the cost was already being paid**: V-29 and V-32 are the same correction made twice, three days apart, two rows apart in the same table, because nobody could find the first one. |
+| | | ***One extraction bug, found by reading the output rather than trusting it.*** A bare first-bold-run rule returns the *label* on rows that open with one — `O-13` and `O-14` both begin `**Pre-registered:**` — and indexed two distinct predictions as the same string. Anything under 30 characters is now treated as a label and the whole cell is used instead. |
+| | | *The split policy is stated in advance rather than left to whoever is holding the file when it becomes unbearable: at **500 entries or 600 KB**, Parts 1–4 move to `findings/` split by **axis** rather than by date, the index stays generated across all files, and **entry numbering stays global** — `M-231` keeps its identifier wherever it lives, because a year of commit messages and both backlog files name it by number.* |
+| ☑ | **X-001** | **`Extractor` trait and a single registry.** | L | — |
+| | | ***The seven algorithms already had one signature and nothing said so.*** Field, shape, origin, cell size, caller-provided sink, `Result<()>` — identical across all of them, so `Extractor` is a forward and nothing else, generated by one `forward_extractor!` invocation so seven identical bodies cannot drift. |
+| | | ***Configuration is a registry entry, not an associated type — a deliberate deviation from the ticket.*** The case that motivated the associated type is `marching_cubes+decider`, which is **not a seventh algorithm**: it is `MarchingCubes` with `FaceAmbiguity::AsymptoticDecider` set. A `const NAME` on the type cannot name it, and a `Config` would have to be threaded through every caller to reach it. An entry is an *expression*, so it carries its own configuration and its own name, and Dual Contouring's Hermite settings, subgrid's resolution and a future Transvoxel LOD are each expressible without the trait knowing they exist. **This is also X-002's seam**: a variant is another entry rather than another branch. |
+| | | ***A macro, not `Vec<Box<dyn Extractor>>`.*** `extract_into` is generic over field and sink, so the trait is not object-safe and could only be made so by fixing both — forcing one scalar and one sink on every caller, when the crate is generic over `f32` and `f64` on purpose. It is also the idiom already used for the other list that must stay in one place, `for_each_reference_field!`. |
+| | | ***The acceptance is a source check, because Rust has no runtime reflection***, and it matches **names rather than counts**. There are seven impls and seven registry entries and those two sevens are unrelated — `MarchingCubes` appears twice, `GreedyQuads` not at all — so `assert_eq!(7, 7)` would pass on two errors cancelling. `every_extractor_impl_is_registered_or_excused` requires every impl to be registered **xor** listed in `UNREGISTERED` with a written reason. **Both negative controls were run**: removing `GreedyQuads` from `UNREGISTERED` fails with *neither registered nor excused*, adding `SurfaceNets` to it fails with *both*. |
+| | | ***`GreedyQuads` is excused rather than swept, with the reason recorded.*** It fits the trait and is not an isosurface extractor — it classifies whole cells and emits axis-aligned faces, *"a Minecraft surface rather than an isosurface"* — so sweeping it beside the others would compare a blocky mesh's Hausdorff and manifoldness against surfaces that interpolate, which is a category error rather than a measurement. |
+| | | ***One bug in the gate itself, found by running it rather than reading it.*** Bounding the registry text as "everything after the macro" swallowed `UNREGISTERED`, whose whole job is to name what is *not* registered — so every excused type looked registered and the check passed while testing nothing. |
+| | | ***`benches/shootout.rs` went from 26 hand references to zero***, and the registry's order matches the committed `docs/measurements/shootout.csv` exactly, so the evidence in that file stays valid. `benches/resolution_sweep.rs`'s duplicate local `Extractor` trait and its four impls are deleted — about a hundred lines — while its deliberate three-algorithm selection is preserved along with the reason, which is that a fourth row would rewrite committed evidence quoted by ✗14, M-19, M-20, M-21, M-22 and O-11. |
+| | | ***The bench header was counting wrong, which is the exact drift this ticket exists to remove.*** `shootout` printed *"seven reference fields, five algorithms"* while running **eight and seven** — `noise_cavity` landed at A-002e and the decider row was added later, and neither edit reached the header. Both counts now come from the lists themselves. |
+| | | *Not converted, and why: `benches/extract.rs` (15 references) and `benches/stage_breakdown.rs` (2). `extract.rs` is a criterion regression suite whose `bench_function` labels are historical, and collapsing its six near-identical helpers is mechanical but risks those labels; it is worth doing and was kept out of this commit rather than bundled with a trait introduction. `src/property/extraction.rs` names algorithms in per-algorithm property tests that each assert something different, so it does not enumerate uniformly and a registry does not fit it.* |
+| ☑ | **X-002** | **An ablation seam that does not create a second execution path.** | L | X-001 |
+| | | ***The tension the ticket named was real and the resolution is the one it proposed.*** `property/extraction.rs` argues that a swappable *parameter* in the public API *"would be a second execution path in production code, and the crate's rule is one"* — correct, and it blocked every experiment in Phases 11–15. A **type** parameter is not that: there is no value to branch on, so each arm is monomorphised and the binary a consumer ships contains only the rule they named. `DualContouring<R, V: VertexRule<R> = Qef>` — the default means `DualContouring::<f32>::new()` is unchanged, and `with_rule` is the experiment's door. |
+| | | ***Half the seam already existed and nobody had noticed.*** `VertexRule` was a `pub(crate)` trait with three impls — `Qef`, `Centroid`, `CycleQef` — so the abstraction was built and then hardcoded at the point of use. This ticket promoted it, `CellVertices` and `MAX_CELL_VERTICES` to public and added the type parameter; it wrote no new abstraction. |
+| | | ***The measurement is the acceptance, and both halves were pre-registered before the run (M-237).*** Symmetric Hausdorff at 65³ as a ratio of QEF to centroid: **sphere 0.486, torus 0.457, csg_difference 0.255, box_exact 0.010, thin_plate 0.010** — two-fold where the surface is smooth, hundred-fold where it has a feature. Self-intersections per 1,000 triangles at 33³: QEF **3.118 / 13.837 / 29.745** on gyroid, fbm_terrain and noise_cavity against centroid's **0.000** on all three. The QEF buys accuracy and pays for it entirely in self-intersection. |
+| | | ***What makes it a measurement of the rule rather than of two programs.*** Vertex, triangle and non-manifold-edge counts are **identical** between arms on every field at every resolution, so the rule provably does not reach the topology. `the_ablation_arms_differ_only_in_position` pins it behaviourally — 680 vertices, byte-identical index buffers, **all 680 positions different**. A `SurfaceNets`-versus-`DualContouring` comparison cannot say this: those are two structs with two `extract` methods, so any difference between them is a difference between two implementations. |
+| | | *"No `if` in the hot loop" is a type-system property rather than a measurement — a bound generic parameter is statically dispatched, so there is no value for the placement to test. The only way to lose it is `dyn`, so `the_ablation_arms_are_not_branches` asserts the dual path names no trait object.* |
+| ☑ | **X-003** | **An `experimental` feature and module.** | S | X-001 |
+| | | ***Landed with X-004 rather than alone, because an empty module is a stub and the rules forbid one.*** The feature exists because there is something to gate; `ProbabilisticQuadric` is its first and only inhabitant. |
+| | | ***The dependency acceptance is checked exactly rather than sampled.*** Instead of shelling out to `cargo tree`, `the_experimental_feature_adds_no_dependencies` asserts the `[features]` section is exactly `experimental = []` — a feature with an empty list *cannot* enable an optional dependency, since that is the only mechanism by which a feature adds one. `cargo tree -p isomesh -e normal` remains `isomesh + libm`. |
+| | | *"Exempt from semver and from nothing else" needed one CI change to be true: the module's tests only compile with the feature on, so without a `cargo test --features experimental` step they would have sat there looking like coverage and never run.* |
+| ☑ | **X-004** | **First ablation: Probabilistic Quadrics — which turn out to be the solve this crate already had.** | M | X-002 |
+| | | ***The ticket's premise is falsified, and the derivation is the result (M-238).*** X-004 said Trettner & Kobbelt *"supersedes the λ ≈ 0.01 regularizer"*. It does not — it **is** that regularizer. The paper's `A = Σnnᵀ + N·Σₙ`, `b = Σnnᵀq + Σₙ·Σq` rewritten in the centroid-relative coordinates this crate already solves in gives `(M + Nσ²I)Δ = Σnᵢdᵢ + σ²Σrᵢ`, and **`Σrᵢ ≡ 0` because the centroid is the mean of the crossings** — so the paper's extra term vanishes and what is left is `solve_with` at `λ = Nσ²`. |
+| | | ***Verified numerically before anything was built.*** A direct assembly of the paper's equations in world coordinates, sharing no line with the crate's solve, agrees to **1.110e-16 across 296 cells**. Measuring first is what turned an `M` implementation ticket into a one-line rule plus a proof. |
+| | | ***So no solver was written, on purpose.*** A `ProbabilisticQuadric` solver would be a second execution path computing numbers the existing path already computes — precisely what the one-path rule forbids. What shipped is the part that differs: the regularizer scales with the **crossing count**, where `Qef` applies one fixed λ to every cell. |
+| | | ***Measured on all eight fields at 65³.*** Hausdorff as a ratio of scaled to fixed: **1.0000 sphere, 0.9957 torus, 0.9992 csg_difference, 0.7519 box_exact, 0.7519 thin_plate** — never worse, **25% better on both sharp-feature fields**. Self-intersections per 1k at 33³ also fall: gyroid **3.118 → 2.551**, fbm_terrain **13.837 → 13.571**, noise_cavity **29.745 → 28.749**. *The two sharp fields improving by the identical 0.7519 is unexplained and is left recorded rather than rationalised.* |
+| | | *Two things about the paper that do not transfer, stated so nobody re-reads it hoping: its headline is robustness **without an SVD**, and this crate's solve never used one — it is a 3×3 adjugate (✗16). And its real novelty is **anisotropic** `Σₙ`, which needs a per-plane noise model that analytic fields with exact gradients do not have; inventing one so the formula had somewhere to put it would be fitting the data to the method.* |
+| ☑ | **B-010** | **The publishing-metadata residue.** | S | B-009 |
+| | | ***`[package.metadata.docs.rs] all-features = true` on all three manifests.*** It matters more than it did when the ticket was written: X-003 landed a feature-gated `experimental` module, and without this docs.rs would render the crate as though it did not exist — a reader would have to check out the source to learn there was something to enable. |
+| | | ***Both crate headers now open with code rather than with rationale.*** `isomesh`'s opened *"has to serve both a real-time voxel game and a CAD tool"* and `isomesh-gpu`'s with its one architectural rule. Both are the best prose in the crate and both are the wrong first screen — Effective Rust Item 27 splits the jobs (crates.io for **choosing**, docs.rs for **using**), and Carroll's minimalist-instruction finding is that users act rather than read. The rationale is not deleted; it moved under a heading and now follows a working example. |
+| | | *Written as doctests, so the front page cannot rot: `isomesh`'s eleven-line extraction and `isomesh-gpu`'s device-and-mesher snippet both compile on every `cargo test`. The gpu one caught its own error immediately — the first draft invented `headless::device()` and `gpu.device` when the API is `headless::Gpu::new()` and `gpu.device()`, which is exactly the class of mistake an uncompiled example ships with.* |
+| ☑ | **B-011** | **Bevy-ecosystem conventions — the listing, not the changelog.** | S | B-010 |
+| | | ***Two of the three halves were already done, and checking beat assuming.*** `CHANGELOG.md` exists and is maintained per release. The **version-support table also already existed** — `bevy_isomesh 0.0.x | bevy 0.19 | wgpu 29.x` under `## Compatibility` in the crate README — so the ticket's residue was one item, not two. |
+| | | ***The schema is verified against the live repository, not written from memory.*** `Assets/<Category>/` with one `.toml` per entry; `name`, `description` (under 100 characters, no formatting) and `link` required, `image` and `crate` optional — read off `bevyengine/bevy-assets`'s own README and confirmed against two real entries, `bevy_mod_outline.toml` and `bevy_atmosphere.toml`. A submission in the wrong shape is a rejected PR and a wasted round trip, which is the entire risk this ticket carries. |
+| | | ***Staged, not submitted, and that is the ticket's boundary.*** `docs/bevy-assets-submission/` holds the entry and the recipe. **Opening the PR is the maintainer's**: it is outward-facing, it happens under a personal GitHub account, and listing a crate publicly is a claim that it is ready for other people to use. Nothing automated should make that claim. |
+| | | *`Assets/3D` is a judgement call and is recorded as one — the crate meshes 3D volumes, `Shapes` is closer to primitive-geometry helpers, and `bevy_hanabi`, `bevy_mod_outline` and `bevy-hikari` all sit in `3D`. No image ships with it: E-214 is blocked on a capture environment, and the entry is valid without one.* |
+| ☑ | **E-214** | **The tunnel, on screen — the A-002 series had no visual at all.** | S | — |
+| | | ***It was blocked on a wrong diagnosis, and the disproof took one attempt (M-239).*** This ticket sat blocked on installing `xorg-server-xvfb`, because M-235 concluded the capture rig "needs a compositor for geometry". It does not. A window can always resize itself; `size_window` merely ran in `PreStartup`, **before `bevy_winit` creates the OS window**, so the request landed on an entity and was overwritten. Moving the system and re-running settled it. |
+| | | ***Two obvious fixes fail silently before the third works, which is why this is worth reading.*** `PreStartup`: `1280x720` and `1600x900` both give **836×1356**. `Update`, latching when the window reports the size back: **also 836×1356**, because `Window::resolution` reads back the value *this system wrote* rather than what the platform granted — it latches on its own echo. `Update`, re-applying across the first 30 frames: **1493×840 and 1866×1050**, exactly the requests at the display's 1.1666 scale, and 16:9 to four figures. |
+| | | ***What shipped.*** `docs/gifs/the-tunnel-meshed-as-a-tunnel.gif` (900 px, 2.32 MB, 79 frames) and `docs/screenshots/e213-tunnel.png`, wired into the root README with the claim as its caption, the crate README's example row — replacing the catalog link that stood in for a missing image — and the catalog's own E-213 row. The HUD in frame carries the measurement rather than the caption asserting it: components **2 → 1**, χ **2 → 0**, *"a tunnel is a handle, and a handle costs exactly two"*. |
+| | | *The capture goes through Bevy's own screenshot path, so it reads back from the GPU and works over a window the compositor never mapped — no `x11grab`, and no window passing over the top can corrupt a frame.* |
+| ☑ | **E-215** | **Write the GIF recipe down — the mechanism existed in code and the method did not.** | S | E-214 |
+| | | ***The ticket's premise was half wrong and was corrected before starting rather than after.*** `examples/common/mod.rs` already carried the whole capture rig — `ISOMESH_CAPTURE` writing a numbered frame per N ticks, plus `_FRAMES`, `_EVERY`, `_SETTLE`, `ISOMESH_SCREENSHOT` and `ISOMESH_SPIN`. What was undocumented was the **assembly**: nothing said how a frame directory becomes a GIF. |
+| | | ***`scripts/record_gif.sh` drives the rig rather than scraping the screen.*** The obvious `ffmpeg -f x11grab` is the wrong tool — the rig's frames come through Bevy's screenshot path, so they need no window manager and cannot catch another window passing over the top. Two-pass `palettegen`/`paletteuse`, because a single pass bands badly on shaded 3D, and a warning outside the 0.7–4.8 MB the committed GIFs sit within. |
+| | | *Acceptance met by re-recording: the script reproduces the committed GIF at **79 frames and 2.34 MB** against the hand-made 2.32 MB. That comparison is what proves the recipe is the recipe rather than a plausible script nobody ran.* |
+| ☑ | **E-216** | **An SDF *authoring* demo — the gap the eleven game examples did not cover.** | M | — |
+| | | ***It could not be written, because the crate had no `Union` (M-240).*** `Difference` existed because `csg_difference` needs it and `Intersection` because `Gyroid` needs capping — every combinator was there because a *fixture* asked for it, so the most basic CSG operation was the one missing. **The fixture trap in its ninth appearance and from a new direction**: not a wrong belief this time but an absent capability, invisible for exactly as long as nothing exercised it. `Union` and `SmoothUnion` are added, with the set property and the never-overestimates property asserted over 13,824 sample points, and the blend radius asserted **monotone** — more `k`, more material at the seam, never less anywhere. |
+| | | ***`examples/sdf_authoring.rs` has no meshing content on purpose.*** The extractor is the default and the resolution is fixed; the only thing that changes is the expression. Four primitives on a shelf, then `Union { SmoothUnion { stem, Difference { cap, flat }, k }, gills }` — three of the four operators doing visible work. **`[` and `]` sweep `k` and re-mesh**, which is the designer-facing parameter nothing in the repository had ever put on screen. |
+| | | ***Two layout mistakes caught by looking at the recording rather than at the code.*** The gallery ran straight through the HUD, and the 'box' primitive was the *cutter* — a half-space slab far wider than the domain, which is what flattens the cap and which shows a wall rather than a box on a shelf of primitives. Both are fixed and the second is commented, because the next person will reach for the same function. |
+| | | ***Re-recorded after review, and the first pair did not show their claims (M-241).*** The user asked what the GIFs were meant to show, which was the right question: `marching_cubes_tunnel` had **no `Mesh3d` at all** and drew every triangle as three gizmo lines, so "two discs against one cylinder" was a cage of outlines; and `building-a-field` held `k` fixed for all 79 frames, advertising a sweep it never performed. Both fixed — the patches are filled and the sweep is driven by `Capture::taken`, which exists for exactly that — and `kitchen-sink.gif` rebuilt so its panels carry the improved versions. **A single frame is not an inspection of a GIF**, and checking one is how both shipped. |
+| | | *Both halves of the ticket shipped. The visibility half: `docs/gifs/building-a-field.gif`, a screenshot, rows in both READMEs, and **`kitchen-sink.gif` rebuilt from six panels to eight** with the authoring demo leading — plus `scripts/record_kitchen_sink.sh`, since that montage's recipe was as unwritten as the individual GIFs' was before E-215.* |
+| ☑ | **T-011** | **Committed metric baselines and a regression diff.** | M | — |
+| | | ***It earned its keep on the first run (M-242).*** X-001 had just rewritten how `benches/shootout.rs` enumerates its algorithms, which touches every measurement the file produces. Re-run and compared row for row: **112 rows, zero differences** in vertices, triangles or non-manifold edges. That is precisely the change golden hashes cannot see — T-007 pins meshes from the extractors, not from the bench — and *"the diff looked mechanical"* is not evidence. |
+| | | ***Two classes of metric, and only one is noisy.*** Vertices, triangles and non-manifold edges are compared **exactly**: they are deterministic by T-004 and a tolerance there could only hide a real change. `hausdorff` gets 2% and `self_intersections_per_1k` 5%, for float accumulation across architectures. `median_ms` gets **60%** — a tripwire for a doubling, not a benchmark, because wall clock moves with the governor and whatever else is running. |
+| | | ***Baselines are per machine and the machine is in the filename***, matching the `resolution_sweep-ryzen9-5900x.csv` convention already used by hand. A run on another host finds no baseline and says so, rather than comparing against numbers that never applied to it. A timing baseline from another box is worse than none. |
+| | | ***The acceptance is that the gate has been seen to fail, three ways.*** `--self-test` doubles one row's `median_ms` in a copy and requires the failure to **name the row** — it reports *"sphere qef 17: median_ms 0.396 → 0.793 (+100.0%, tolerance 60%)"*. Two real perturbations were also run and caught: a Hausdorff worsened 50% against its 2% band, and a triangle count moved by **two**, which the exact comparison catches where any tolerance would not. It runs in CI, because the half that rots silently is the checker rather than the numbers. |
+| | | *Deviation from the ticket, with the reason: it is `scripts/regress.sh` rather than `cargo run --bin regress`. A `[[bin]]` in `crates/isomesh` would ship an executable to every consumer of a `no_std` library and appear in `cargo install`, and the repo already has four gates as scripts — `backlog_gate.sh`, `readme_sync.sh`, `findings_index.sh`, `record_gif.sh` — so this is the existing idiom rather than a new one.* |
+| ☑ | **T-013** | **An experiment record format.** | S | T-012 |
+| | | ***Populated on arrival, because three experiments had already run without a home.*** A format with no entries is a template; this shipped with `E×1` (Surface Nets' centroid as Dual Contouring's rule), `E×2` (a separate probabilistic-quadric solver) and `E×3` (the crossing-count-scaled regularizer), all from today's X-002 and X-004. |
+| | | ***`E×2` is the entry that proves the section was needed.*** It records a variant **reverted before it was written**: the paper's solver is identical to `solve_with` at `λ = Nσ²` to 1.110e-16, so building it would have been a second execution path computing the same numbers. Nothing left in the tree says that was tried, which is exactly the six-week re-run this section exists to stop — and the entry names the door that *is* open (anisotropic `Σₙ`) so the next attempt starts there rather than repeating this one. |
+| | | ***The verdict line carries the reasoning, not just the outcome.*** `E×1` is *kept as an ablation, not as a default* because neither arm dominates — 100× accuracy on sharp features against zero self-intersections. `E×3` is *kept behind `experimental`, not made default* because promoting it moves T-007's committed golden hashes and 112 baseline rows for a 25% gain on two of eight fields, which is a decision with evidence attached rather than a tidy-up. |
+| | | *Three supporting edits so the slot is real rather than announced: `scripts/findings_index.sh` learned the `E×` kind and now reports experiments in its header line, the how-to-use section states the obligation, and two hardcoded entry counts were removed from the script's own header and the split policy — a generated index that quotes a stale number in its prose is the same defect one level up.* |
+| ☑ | **T-014** | **Cross-machine measurement protocol.** | S | T-011 |
+| | | ***The specs go inside the file because a filename cannot hold them.*** `resolution_sweep-ryzen9-5900x.csv` shows the problem it was solving: a filename has to stay short enough to type, so it carries a nickname and loses core count, memory, kernel and — above all — **which commit produced the numbers**. `scripts/machine.sh --spec` emits `#` lines that every reader here skips, and `--slug` gives the one token a filename can carry. One definition of "which machine is this", shared, so two baselines cannot disagree about their own names. |
+| | | ***The commit line is the field that matters and the one most easily lost.*** Two runs a week apart on the same box are not comparable if the extractor changed between them, and nothing else in a CSV records that it did. The header marks a run **not attributable** when code has moved since the commit — scoped to `crates/`, `bevy_isomesh/` and the manifests, because a dirty README cannot change a triangle count and flagging it would train everyone to ignore the warning that matters. |
+| | | ***The hand-named file is left alone, deliberately.*** `resolution_sweep-ryzen9-5900x.csv` predates the convention and **M-45, ✗14 and O-11 quote figures from it by name**; renaming it to match would silently break five references to buy tidiness. `docs/measurements/README.md` records that it is the exception and why. |
+| | | ***One real bug found in the process, and it exited zero (M-243).*** The script embeds Python in an **unquoted** heredoc, so bash expanded the body — a backtick in a docstring became command substitution, and a comment mentioning `median_ms` made bash run it and print `command not found` on every invocation. The gate still passed: command substitution failing does not fail the script. Fixed structurally by quoting the heredoc and passing values through the environment, which removes the class rather than the instance. **This repository writes unusually long comments and is therefore unusually exposed to prose-inside-a-heredoc being code.** |
+| ☑ | **F-001** | **Replace `is_exact_distance() -> bool` with a declared bound.** | M | — |
+| | | ***Both sources verified in the corpus rather than cited from the ticket.*** Bálint, Valasek & Gergó 2019 (`10.14232/actacyb.24.1.2019.3`) Corollary 1, verbatim: *"Every signed distance function is Lipschitz continuous and their smallest Lipschitz constant is 1."* Their 2023 follow-up (`10.14733/cadaps.2023.1154-1174`) supplies `q` and is blunt about why exactness cannot survive CSG: *"the minimum of two exact signed distance functions… is not an exact SDF, and the error can be arbitrarily large under certain conditions."* |
+| | | ***`FieldBound` has four cases because a `bool` could hold neither half of `true // away from the seam`.*** `Exact`, `Lipschitz { l }`, `Underestimate { q }`, `Unbounded`. The split that matters: `l` bounds how fast the field *changes* and survives arbitrary CSG, which is what Phase 12 needs; `q` bounds how far the *value* is from the distance and does not. |
+| | | ***The test caught its own author, immediately (M-244).*** The first draft declared `noise_cavity` as `Lipschitz { l: 2.598 }`; `every_field_meets_the_bound_it_declares` measured `|∇f|` reaching **7.734** and failed. That is the same defect the ticket existed to remove, reproduced one screen away by the person removing it. **The gyroid's constant was guessed too and survived only by luck** — `√3` declared against a sampled maximum of 1.695. Derived properly: `|∂g/∂x| ≤ 2`, so `|∇g| ≤ 2√3 ≈ 3.464`, twice the guess and in the direction where being wrong lets a tracer step through the surface. |
+| | | ***`noise_cavity` is `Unbounded`, not measured.*** A sampled maximum is a lower bound on a supremum, so declaring one as a Lipschitz constant would be unsound in the dangerous direction. F-002 is where a real constant gets established from the noise's amplitude and octaves. |
+| | | *Acceptance met: every field declares, `csg_difference` is no longer `Exact` and has its own pinned test, and `accuracy.rs`, `shootout` and `ablation` all gate on `bound().is_exact()`. One rotting claim fell out — `accuracy.rs` said Hausdorff is unavailable for "two of the seven" fields; it is **four of the eight**, and nothing could check that until each field declared.* |
+| ☑ | **F-002** | **A Lipschitz-bound validator, in the harness.** | M | F-001 |
+| | | ***The validator is one-sided, and the asymmetry is the design.*** A sampled maximum is a **lower** bound on a supremum, so this can prove a declaration wrong and can never prove one right. Finding `‖∇f‖ = 7.73` against a declared 2.598 settles it; finding nothing above 1.7 against a declared 3.46 says only that the sampling missed. `violates()` therefore asks a one-sided question, and `a_loosened_declaration_is_never_a_violation` pins that as a property rather than leaving it to be read off the code. |
+| | | ***It found something that justifies F-001's shape (M-245).*** `csg_difference` measures **100% eikonal** while not being a distance: away from the seam the active operand *is* an exact distance, and the seam is measure-zero. **So `|∇f| ≈ 1` is necessary and not sufficient**, and the obvious single-number validator — check the field is eikonal — would have passed the exact field this phase exists because of. That is why `FieldBound` carries `l` and `q` separately, and it is now asserted rather than argued. |
+| | | ***The acceptance is that a tightened declaration fails.*** `tightening_a_declaration_by_one_step_is_caught` replaces each field's real bound with the next tighter one and requires the report to catch it — three fields tightened and caught, five already at their tightest, both counts asserted so the test cannot quietly stop testing anything. |
+| | | *The census is recorded because it is interesting in its own right: sup `‖∇f‖` and eikonal fraction are 1.000/100% for the four exact fields and for `csg_difference`, 1.727/67.0% for gyroid, 2.850/11.7% for fbm_terrain, and 7.748/85.6% for noise_cavity — whose pairing of a high eikonal fraction with a gradient reaching 7.7 is a second way the fraction alone misleads.* |
+| ☑ | **F-003** | **CSG combinators that propagate the bound.** | M | F-002 |
+| | | ***The ticket's prediction is refuted, with numbers (M-246).*** It expected `min` of two exact fields to yield a bound F-002 confirms and `max` to yield *"a strictly weaker one"*. Measured against closed-form ground truth over 64,000 points: **union is exact outside (0.000e0) and wrong inside by 6.989e-1; intersection is exact inside (0.000e0) and wrong outside by 6.995e-1** — a ratio of 0.999. They are mirror images. There *is* an asymmetry and it is by **region**, not by operator. |
+| | | ***What composes is the Lipschitz constant; what does not is exactness, and no `q` is invented.*** `min`/`max` of an `l₁`- and an `l₂`-Lipschitz function is `max(l₁,l₂)`-Lipschitz, exactly, which is what keeps a sphere tracer's step size valid through an arbitrary CSG tree. Precision does not: Bálint, Valasek & Gergó's Theorem 6 gives the survivor as `¼·σ(δ)/diam·min(q_f,q_g)`, where `σ` is a **set-contact smoothness** depending on how the solids meet. This crate does not compute `σ`, so a composed field reports `Lipschitz` and stops — a number derived from a factor nobody evaluated is a guess with a citation attached. |
+| | | ***`BoundedSdf` is separate from `ReferenceField` on purpose.*** That trait is about test fixtures and also demands a domain, a closedness flag and an expected Euler characteristic, none of which a CSG node has any business answering. The new trait asks one question, so a combinator can answer it from its operands — and `composed_bound` is one definition shared by all four, because the rule is identical and four copies would drift. |
+| | | *An `Unbounded` operand poisons the composition, asserted: nothing can be claimed about a value composed from a value nothing is claimed about.* |
+| ☑ | **F-004** | **Measure how fast the distance property degrades under repeated CSG.** | M | F-003 |
+| | | ***The ticket's proposed metric could not have seen the thing it was measuring.*** F-004 said to sample `‖∇f‖`. F-002 had since measured `csg_difference` at **100% eikonal** while its values are not distances (M-245), because `max` selects an exact operand pointwise and the seam is measure-zero. The bench keeps `‖∇f‖` as a **control column**, and it reads 100.0% at every stroke count from 0 to 256 — a flat line, exactly as predicted. |
+| | | ***What degrades is the tail, and only the tail (M-247).*** Empirical underestimate ratio over 13,824 points: worst case **0.5774 → 0.1815 → 0.0726 → 0.0040** at 0, 4, 32 and 256 strokes, **143× down**, while the **median stays at 1.0000 throughout**. |
+| | | ***So the ticket's question has two answers, and the useful one is not the one it asked for.*** *"No longer a distance"* happens within a handful of strokes; *"no longer usable"* has not happened at 256, where mean sphere-tracing cost has gone **5.2 → 9.9 steps**. A destructible game should watch the tracing cost rather than the precision bound. |
+| | | *The caveat is in the measurement rather than the field, and is stated in the output rather than buried: `q̂` is built from a **ray** distance, and a ray leaving a box corner runs along the diagonal, so an **uncarved** box reports `q̂_min = 0.5774 ≈ 1/√3`. That is the metric's floor. The curve is read against that baseline, not against 1.0, and reporting the absolute number would have called an exact box degraded.* |
+| ☑ | **F-005** | **Empty-cell rejection by sphere tracing — the attack on M-98's 70×.** | M | F-001 |
+| | | ***One evaluation replaces 576, and the spread is geometric (M-248).*** Cost against Marching Cubes **before → after**: sphere 204× → 36.7×, torus 294× → 45.6×, box_exact 381× → 88.9×, csg_difference 400× → 91.4×, thin_plate 389× → **32.9×**, gyroid 449× → 295×. `thin_plate` gains **11.8×** because a plate leaves nearly all its domain empty; `gyroid` gains **1.5×** because a triply periodic surface reaches almost every cell. |
+| | | ***A loose constant is taxed twice, which is a second reason F-001's had to be derived.*** The rejection radius is `l·(√3/2)·h`, so gyroid's `l = 3.46` inflates it by that factor and disqualifies cells a distance field would have rejected — the optimisation pays in proportion to emptiness and is charged for imprecision. |
+| | | ***Bit-identical output is the safety property, and it is checked rather than argued.*** A rejection test that is ever wrong produces a **hole**, and a hole is invisible to every validity gate in this repository: the mesh is simply missing a piece and stays perfectly manifold, closed and correctly oriented. `rejection_does_not_change_the_mesh` compares both paths byte for byte on every field with a constant. |
+| | | *`None` is the default and the only safe answer when the constant is unknown, which is why `without_a_constant_no_cell_is_rejected` pins that too. A constant smaller than the field's true one rejects cells containing surface — and M-244 is the incident where a hand-reasoned constant was wrong by 3× on the first attempt.* |
+| ☑ | **F-006** | **Segment tracing / enhanced sphere tracing.** | M | F-005 |
+| | | ***A null result on five fields of six, which is what the ticket asked to be told (M-249).*** Galin et al. state the condition for their own method's failure: *"when the implicit objects have an almost uniform distribution of primitives and a uniform Lipschitz bound over their support Ω, the benefit is limited or negative."* `sphere`, `torus`, `box_exact`, `csg_difference` and `thin_plate` are 1-Lipschitz **everywhere**, so no directional bound can be smaller than 1. Steps global → directional: 228 → 228, 360 → 360, 108 → 108, 108 → 108, 148 → 148 — **asserted as equality**, not as a small difference. |
+| | | ***The one field that can gain, gains 1.80×, and its bound is derived rather than sampled.*** Along a coordinate axis the gyroid's directional derivative is a single partial, `|∂g/∂x| = |cos a cos b − sin c sin a| ≤ 2`, against the global `|∇g| ≤ 2√3`. Steps **2184 → 1213** — slightly better than the 1.73× the bound ratio predicts, because fewer steps also accumulate less conservatism. |
+| | | *So the technique is worth exactly what a field's global bound is loose by. That is the sentence to carry forward: it is not a general acceleration, it is a correction for imprecise bounds, and an analytic distance primitive has none to correct.* |
+| ☑ | **F-007** | **Kink-aware edge interpolation — the mechanism was right and the acceptance was not.** | L | F-003 |
+| | | ***The acceptance is falsified, and the reasoning behind it is not (M-250).*** The ticket argued that `min`/`max` kink the field along an edge crossing a seam so linear interpolation misses the root — correct — and set its acceptance as *"`csg_difference`'s Hausdorff improves"*. Measured at 33³ with 24 bisection steps: **csg_difference 1.515e-1 → 1.515e-1 (1.001×)**. No improvement. |
+| | | ***The mechanism nobody checked: `csg_difference` is `max(box, −sphere)` and a box is planar.*** Its field is *exactly* linear along an axis-aligned edge, so there is nothing for a root-finder to find, and its Hausdorff is dominated by the box's own edges and corners — which Marching Cubes cannot represent at any resolution. That is A-007's problem and refinement does not touch it. |
+| | | ***What does improve is the curved fields, by 13–15%***: sphere **5.361e-3 → 4.561e-3 (0.851×)**, torus **1.379e-2 → 1.201e-2 (0.871×)**. Those are the fields whose error genuinely *is* interpolation error, because `f` along an edge is a curve and a straight line through its endpoints misses it. So the feature is worth having; it is aimed at a different target than the ticket believed. |
+| | | ***Shipped as `set_crossing_refinement(steps)`, defaulting to 0.*** Zero is plain linear interpolation, which is what every committed golden hash pins, so the default changes nothing. Refinement moves vertices and **never** triangles — the sign is untouched by it, so the case classification and the topology are already right — and the test asserts the triangle count is identical rather than trusting that. |
+| | | *The method note: "where the field is kinked" and "where the error is" were assumed to be the same place and are not. The ticket reasoned from the defect's mechanism to the metric without checking what the metric was measuring.* |
+| ☑ | **S-001** | **Exact Euclidean distance transform.** | M | — |
+| | | ***Checked two independent ways, because they answer different questions.*** Against an `O(n²)` brute-force search sharing no line of code with it — **1,287 samples, exact equality, not a tolerance** — which proves the lower-envelope pass computes what it intends, its failure mode being plausible numbers. And against the closed-form sphere, which proves the intent is a distance field at all. |
+| | | ***The one-cell gap is structural and is stated as such (M-251).*** Worst disagreement **0.10000 against a spacing of 0.1 — exactly 1.0000 cells**. The transform answers with the distance to the nearest opposite-signed *sample*, and the surface lies between samples, so a point whose nearest crossing falls mid-cell is off by a full spacing. Landing on the bound rather than inside it is the expected result; the test compares against `1 + ε` for that reason and says so, rather than quietly widening the tolerance. |
+| | | ***The test grid is 11×9×13, deliberately not a cube.*** An axis transposition in a separable three-pass transform survives a cube perfectly and dies immediately on unequal extents. |
+| | | *Squared distances throughout with one square root at the end: the recurrence is exact in squared space, and the parabola-intersection formula's `2(q − p)` denominator only has that form because the terms are squares. `far()` is a large finite number rather than infinity, because `∞ − ∞` in that formula is a NaN that propagates silently through the envelope.* |
+| ☑ | **S-002** | **Fast sweeping.** | M | S-001 |
+| | | ***It beats the exact transform everywhere, including where I predicted it would lose (M-252).*** Worst error against the analytic sphere at 41³, by band: **within two cells, swept 0.0333 against 0.1000; beyond eight cells, swept 0.0933 against 0.1000.** Three times better near the surface and still ahead, narrowly, far from it. |
+| | | ***The mechanism is the seed rather than the sweep.*** The exact transform answers with the distance to the nearest opposite-signed **sample**, so it is quantised to the grid with a floor of one full spacing (M-251). Sweeping seeds from the *interpolated* crossing and starts sub-cell; a sphere's characteristics are radial straight lines, the eight-orthant sweep follows them, and that head start survives to the edge of the domain. |
+| | | ***The losing-at-distance prediction was mine and went into a doc comment as though established.*** That is the third time in one day — M-244 and M-250 are the others — that a stated expectation reached prose before a measurement reached a test. The doc is corrected and the assertion is now "does not lose", so a field that flips the ordering fails loudly rather than quietly vindicating the original claim. |
+| | | *Eight sweeps because there are eight orthants, not because eight converged: a characteristic of the eikonal equation is a straight line and every straight line in 3D is monotone in each axis, so some diagonal ordering follows it. The count is a property of the geometry rather than a tuning knob, and the docs say so.* |
+| ☑ | **S-003** | **Fast marching.** | M | S-002 |
+| | | ***It shares `godunov` with sweeping, literally — one function, called from both.*** The two algorithms differ in the *order* they visit samples and not in the arithmetic they do on arrival, and two copies of that arithmetic would drift invisibly, since both would still produce plausible distance fields. A `BTreeSet` keyed on the value's bit pattern rather than a binary heap, because the algorithm needs decrease-key and a heap without it either grows stale entries or needs an index map. |
+| | | ***The comparison S-003 asked for (M-254).*** Means over four exact fields at three resolutions — ms, worst error, worst within two cells: exact **3.430 / 0.18701 / 0.18690**, swept **10.124 / 0.21820 / 0.12560**, marched **39.863 / 0.20591 / 0.12560**. **Sweeping and marching produce identical near-surface error to five figures**, because they share the seed and the update: the near band is decided entirely by the seed. All three scale linearly in practice — 59.7×, 57.9×, 64.6× for 56× the samples — so marching's `O(N log N)` is not what makes it slow; the set traffic is. |
+| | | ***And it refines M-252 rather than contradicting it.*** Sweeping beat the exact transform *at 41³ on a sphere*; at 65³ the exact transform's error has halved with `h` while sweeping's has not, so the ordering flips with resolution. A finding measured at one resolution was a finding about that resolution. |
+| | | ***One real bug, found because the bench exited 0 and wrote nothing (M-253).*** `for_each_reference_field!` expands **inline blocks**, not a closure, so a `return` used to skip a field abandons the enclosing function. Three tests written earlier today carried the same bug and **all three still passed** — the first field each skipped was late enough in the order that its count assertion was already satisfied. Rerun with `if let`, every number is unchanged, because the skipped fields were the unbounded ones with nothing to contribute. The guard and the loop's skip look like the same statement and are not. |
+| ☑ | **S-004** | **Narrow-band reinitialization** — Peng et al. (in corpus). **The best structural match to a brush stroke**, because cost scales with edited *surface area* rather than chunk volume. Carry Sussman & Fatemi's warning explicitly: naive reinitialisation **moves the zero set**, which in a destructible game means geometry creeping after every edit. **Acceptance:** measure the zero-set drift per reinitialisation and assert it below a stated bound — that assertion is the ticket. | L | S-002, F-004 |
+| | | ***The warning was the ticket, and it fired.*** Sussman & Fatemi's creep is not folklore here: the first
+implementation drifted the zero set **0.152 of a cell over twenty reinitialisations** (M-255), and freezing the seeds
+*within* a call did not help because the next call recomputes them from the previous call's output. Restoring the
+**input** values at every sample adjacent to a sign change makes the crossing fraction bit-identical, so the assertion
+is `assert_eq!(worst, 0.0)` — and it is on the total after twenty applications, because a per-application tolerance is
+satisfied by exactly the steady creep it is meant to catch. |
+| | | ***The cost claim needed a second fix nothing else would have caught (M-256).*** Delegating to
+`signed_distance_field_swept` and discarding what fell outside the band passed every accuracy assertion while costing
+the whole volume — fast sweeping visits every sample on every pass whatever its value. Fast marching bounds exactly,
+because the first dequeued value past the limit proves every remaining one is too. **4,802 of 35,937 samples finalised
+— 13.4%**, and the test asserts that share stays under 25%. `march()` gained a `limit`; the unbounded constructor
+passes `far()`, so there is one implementation. |
+| ☑ | **S-005** | **Jump flooding**, GPU. Approximate, `O(log n)` passes, the standard GPU answer. Lives in `isomesh-gpu`. **Acceptance:** error against S-001 quantified rather than assumed; "approximate" is a measurement, not an adjective. | M | S-001, GPU-001 |
+| | | ***The acceptance as written was the wrong assertion, and it failed twice before that was clear (M-257).*** "Error
+against S-001" taken literally asserts the flood *agree* with a CPU constructor, which asserts it reproduce that
+constructor's error — S-001's quantisation to the nearest sample, or S-002's first-order Godunov truncation. Both gates
+failed while the flood was **the most accurate of the three against the analytic field, on all twelve rows**. The gate
+is `flood_err <= xform_err && flood_err <= swept_err` against ground truth; the agreement figures stay recorded,
+because GPU-versus-CPU drift is a real question for a consumer meshing on one and colliding on the other. |
+| | | ***Seeded from the crossing, not the sample, and said so.*** Rong & Tan seed each boundary sample with its own
+position. That floors the error at half a cell and would have made the comparison a comparison of seedings. Seeding the
+interpolated crossing is why these numbers do not transfer to a textbook JFA — noted under rule 5 rather than left for
+someone to rediscover. |
+| | | ***M-258:*** `struct { stride: u32, pad: vec3<u32> }` is **32** bytes under std140, not 16, and wgpu reports it at
+dispatch rather than at pipeline creation. `grid.wgsl` already carried the rule in prose and the new file did not
+follow it. |
+| ☑ | **S-006** | **Mesh → SDF by angle-weighted pseudonormal** — Bærentzen & Aanæs (in corpus). **This is a proof, not a heuristic**, and it is the right tool for geometry isomesh produced itself, which already carries a `V−E+F == 2` guard. **Acceptance:** round-trip — mesh a sphere, convert back to a field, re-mesh, and compare against the original. That round-trip is a strong end-to-end test the crate does not currently have. | M | S-001 |
+| | | ***The round trip passed on the first run and is the crate's first end-to-end test (M-259).*** 1,158 vertices and
+2,312 triangles in, the same counts out; χ 2 → 2; worst `|analytic|` on the output vertices 0.0017 → 0.0038 against a
+half-cell bound of 0.0625. **Zero sign disagreements** with the analytic field over 35,937 samples, which is Theorem 1
+tested rather than trusted. |
+| | | ***It needed an adapter that did not exist.*** Every constructor in `construct` returns a `Vec<R>` and every
+extractor consumes an `Sdf`, so nothing in the crate could mesh what had just been built — the acceptance was not
+merely unimplemented, it was unstateable. `construct::SampledField` closes it, interpolating **trilinearly** because
+that is the interpolant Marching Cubes' case table is derived from. |
+| | | ***The acceleration was wrong first, and the benchmark said so (M-260).*** A uniform grid over the sample cells
+with expanding-shell search measured **3.9× slower than brute force**: reaching radius `k` costs `O(k³)` bins, and most
+samples in any grid are far ones. A two-level box reject — per triangle, and per block of 64 consecutive triangles —
+is **2.3× faster** and asserted bit-identical, and dropped the module's test time from 31.6 s to 3.0 s. It is not a
+BVH, and the doc says so. |
+| | | ***`Real` gained `acos`*** (M-261), `libm`'s and not `std`'s, for the reason the `libm` justification already
+gives: T-007's golden hashes are committed and the platform's `acos` differs between macOS and Linux. |
+| ☑ | **S-007** | **Mesh → SDF by generalized winding number**, for imported or damaged input. **Do not cite Barill 2018 as state of the art** — the 2026 Antipodal paper (`10.1145/3811323`) states its order-0/order-1 expansions are *"very imprecise… not useful for applications."* Use Antipodal or Xie, Hafner & Wojtan (`10.1145/3811339`), both in corpus, both exact and faster: the winding number reduces to one ray-surface intersection plus a sum over **boundary** edges, so **cost scales with holes, not triangles** — a nearly-closed mesh is nearly free. **Use GWN to classify points, never to repair meshes**: Takayama et al. 2014 (in corpus) is the GWN authors' own paper explaining that the orientation-repair application is *"fundamentally flawed."* **Acceptance:** classifies correctly on a deliberately hole-punched mesh where S-006 fails. | L | S-006 |
+| | | ***The acceptance needed a sweep, not a hole (M-262).*** One hole separated the two methods by five samples out
+of 4,491, which is indistinguishable from discretisation noise. Four hole sizes make it a trend: pseudonormal 5 / 131 /
+327 / 1,435 wrong against the winding number's 0 / 27 / 50 / 88 — a margin widening to **16×**. On the closed mesh the
+winding number is exactly 1.000000000 inside and 0.000000000 outside, which calibrates the ray code separately from
+the construction, because with no boundary edges the correction term is identically zero. |
+| | | ***And the winding number is not perfect either, which is the correct behaviour.*** `mean \|w−½\|` over its own
+misclassified samples grows from 0.00 to 0.27 with the hole. That is the question going wrong, not the measure: once
+half the sphere is deleted the mesh does not enclose the points under the hole, so calling them outside is right for
+the surface that exists. The assertion is a 3× margin at every hole size plus exactness on the smallest, not zero
+everywhere. |
+| | | ***Every source checked in the corpus.*** Xie/Hafner/Wojtan give `w_M(q) = Σ sgn(r·nᵢ) − (1/4π) Σ Ωⱼ` with the
+apex *"directly behind the ray"*, and are themselves the reason not to cite Barill 2018 — Barnes–Hut *"values are
+merely approximations."* Martens & Bessmeltsev supply the one-ray-per-row reduction that makes an `n³` grid cost `n²`
+casts. Nothing here writes to a mesh, per Takayama et al. |
+| | | ***M-263: the boundary is counted with multiplicity.*** A boolean "is this a boundary edge" is right on a
+manifold-with-boundary and wrong on the soup this exists for; the net directed count also fixes the closing triangles'
+orientation without a separate pass. `Real` gained `atan2`, four-quadrant because the solid-angle denominator goes
+negative past a hemisphere. |
+| ☑ | **T-015** | **Per-cell normal-variation isotopy certificate.** **Hausdorff error does not certify topological correctness — provably.** Two surfaces can be arbitrarily Hausdorff-close and not homeomorphic. Every real theorem adds a second hypothesis, and the isosurface-specific ones — **Plantinga & Vegter** (`10.1145/1057432.1057465`) and **Boissonnat–Cohen-Steiner–Vegter** (`10.1007/s00454-007-9011-4`), both already in the corpus — certify **isotopy from a per-cell normal-variation condition**. Local, cheap, checkable *during* extraction, and a natural fit for a marching pipeline. **This upgrades the crate's claim from "we report Hausdorff" to "we certify topology," which nothing else in this space does.** **Acceptance:** the predicate is evaluated per cell and its pass rate reported per field; a field engineered to violate it is correctly flagged. | L | F-001 |
+| | | ***The certificate is exact, and the reason it can be is the point (M-264).*** The general condition needs interval
+arithmetic over an arbitrary `F`, which this crate cannot do — a sampled gradient hull *underestimates* variation, so
+the predicate would pass where the truth fails, and that is the one direction a certificate must never err in. But the
+surface Marching Cubes approximates is the **trilinear interpolant**, whose gradient bounds are exact and closed-form:
+`∂F/∂x` is bilinear in `(y, z)`, so its range over the cell is the min and max of the four `x`-edge differences. And
+`0 ∉ □F(C)` is exactly "the cell is inactive", so the first clause is free. No interval library, no sampling. |
+| | | ***The measurement found something the ticket did not ask for.*** Four fields certify at 100% at every
+resolution; the other four climb (`box_exact` 73→94%, `noise_cavity` 36→80%). The scaling says why: the active set
+grows as dimension **2.1** and the uncertified set as **1.0–1.1**. Those cells trace a **feature curve** — the box's
+edges, the CSG seam, the gyroid's ridges — that no spacing will ever certify, rather than being an under-resolved
+area. `noise_cavity` at 1.49 is honestly between the two, consistent with M-244's measured gradient of 7.73. |
+| | | ***Two configurations this crate already cares about are refused, correctly.*** The paper's own Figure 1
+(alternating corner signs) is the ticket's engineered violator, and a **face-ambiguous cell** is refused too — a
+topology that depends on a tie-break is by definition not determined by the corners, which is what the whole A-002
+series is about. |
+| ☑ | **T-016** | **Downsampling operator comparison. Original — the comparison does not exist.** Mean vs min vs re-evaluate vs wavelet, measured on all eight fields across LOD 0–3. **The literature predicts your answer:** you do not downsample, you *re-sample* — every level built by evaluating the field at that spacing (Frisken's ADF, Koschier's hp-adaptive). Under re-sampling, a plate thinner than a coarse cell gives all-positive corners and correctly disappears; under box-filter averaging the straddling ± set survives and Marching Cubes keeps emitting triangles — **which is exactly M-72's measured 4,088 → 1,016 → 248 → 56.** So this ticket's first job is to confirm that M-72's aliasing is the predicted failure of an operator the literature already rejects, and its second is to publish the head-to-head nobody has. | M | F-001 |
+| | | ***Both of the ticket's predictions were falsified by the measurement it asked for.*** It said M-72's
+4,088 → 1,016 → 248 → 56 is what box-filter averaging produces and that re-sampling would make the plate "correctly
+disappear". Measured: **that sequence is re-sampling's**, and the box filter is what deletes the plate — completely,
+from level 1 (M-266). And it said "you do not downsample, you re-sample"; **decimation matches re-sampling
+bit-for-bit** on every field at every level, because decimating a field-sampled grid keeps a subset of the same points
+and decimation composes (M-265). The rule is sound about *filtering* operators and has no bite for decimation on a
+nested grid — until a level is edited rather than sampled, which is where it earns its keep. |
+| | | ***M-72's aliasing is alignment, and half a cell removes it.*** The plate is `0.4 × h` thick and centred at
+`y = 0`; every level has an odd sample count, so `y = 0` is a sample plane at all of them. Shifting the plate half a
+cell gives **zero triangles at every level, including the finest**. `ThinPlate::THICKNESS_IN_CELLS`'s doc claims "no
+grid phase can ever put a corner inside the plate" — the canonical grid puts a whole *plane* of corners inside it. |
+| | | ***The head-to-head, which is the deliverable.*** `Mean` and `Tent` give **fewer triangles and larger error at
+every level** — 5× the geometric error on `sphere` at level 3, and the mean **deletes the entire torus** one level
+before the grid stops resolving it. `Min` never loses anything, by construction, and pays a systematic dilation of
+about one fine cell per level: 4.02 error on `fbm_terrain` against re-sampling's 0.93. **Recommendation: decimate.** |
+| ☑ | **T-017** | **Field-quality metrics as first-class recorded numbers.** `sup‖∇f‖`, eikonal residual distribution, declared-vs-measured bound gap, and F-004's degradation curve — reported per field beside the mesh metrics, and wired into T-011's regression baseline so a field that silently degrades fails CI. **The crate measures its output exhaustively and its input not at all.** | M | F-002, T-011 |
+| | | ***The density sweep found something the ticket did not ask for (M-267).*** `sup ‖∇f‖` re-measured at 8³/16³/32³/
+64³: the five exact fields read **exactly 1.00000 at every density**, the gyroid converges to 1.731, and
+`noise_cavity` reads **8.84 → 7.75 → 9.38 → 9.72** — it goes *down* and then up. M-244's 7.734 was measured at n=16 and
+was already lower than the n=8 figure, so it was not a lower bound that later runs improved on. A sampled maximum is
+not even a *stable* lower bound, which is a sharper argument for `Unbounded` than the one M-244 gave. |
+| | | ***The gyroid's declared bound is loose by 2×, now recorded rather than suspected.*** Declared `2√3 ≈ 3.4641`,
+measured supremum converging to `1.731`, `bound_gap = 0.4994`. The derivation is sound so the bound is *correct*; it is
+not *tight*, because the three terms of `∇g` cannot be extremal at once, and sampling cannot settle whether `2√3` is
+attainable. The cost is real and already measured: M-248's empty-cell rejection gains 1.5× on the gyroid against
+`thin_plate`'s 11.8×, partly because a loose constant inflates the rejection radius. |
+| | | ***Wired into the gate, exactly (M-268).*** All five columns get `None` tolerance in `regress.sh`, and the reason
+is structural: each is a max, a min or a ratio of counts over deterministic `libm` arithmetic, never a sum, so there is
+no accumulation order to differ across architectures. `Unbounded` fields write **empty cells** rather than zeros — a
+literal `0` would read as "nowhere near the bound", the opposite of "there is no bound". |
+| ☑ | **T-018** | **Constructor accuracy harness.** One place that runs S-001..S-007 against analytic ground truth on the reference fields and reports accuracy, wall clock and memory. The `M-001a` shootout for the *input* half of the pipeline. **Acceptance:** a CSV in `docs/measurements/` and a stated recommendation for which constructor a consumer should default to, with the number behind it. | M | S-003, S-006 |
+| | | ***It found a real defect in S-007 on its first run (M-269).*** Putting the pseudonormal and the winding number
+side by side on the same mesh — their magnitudes come from the same code, so any gap is a *sign* gap — showed `torus`
+at a worst error of **1.223 against 0.014**. `intersect_x_ray` tested its barycentric bounds inclusively on both sides
+while its own doc claimed a half-open convention, so a ray through a shared edge counted twice and flipped the parity.
+A grid-aligned ray hits shared edges by **construction**, not by chance: samples lie on grid lines and Marching Cubes
+puts every vertex on a grid edge. Fixed with Plantinga & Vegter's symbolic perturbation of the ray line — and the
+query point and cone apex have to move with it, which the first attempt did not, turning 0 misclassifications into 12. |
+| | | ***S-007's own four tests could not have caught it.*** Its closed-mesh calibration is a **sphere**, which is
+convex, so a grid-aligned ray leaves through one triangle and the double-count has nothing to double. It took a second
+constructor computing the same magnitudes by different means — which is the argument for this ticket existing. |
+| | | ***And the first version of the shootout measured itself (M-270).*** It ranked `band` best on both speed and
+accuracy, because S-004 **keeps** the input outside its band and the harness fed it the analytic field — most of its
+output was ground truth it had copied. The other three read only signs and crossings and gained nothing from the same
+input, so the comparison was unfair without looking unfair. Refed with a 2×-scaled field, the honest numbers are
+near-surface **0.18740 → 0.11325** and far field **2.26132 → 2.26132**: it repairs the band and leaves the rest, which
+is what a band is. Three families now, and a constructor is only ranked against ones answering the same question. |
+| | | ***Memory is half-delivered on purpose.*** `out_kib` is exact; peak working set is not measured, because the
+instrument needs `unsafe impl GlobalAlloc` and the workspace forbids it. Declared as a gap with **T-019** to measure it
+out of process, rather than estimated into the table. |
+| ☑ | **T-019** | **Peak working set per constructor, measured out of process.** T-018 reports `out_kib` exactly and leaves peak memory unmeasured, because the instrument is a counting `GlobalAlloc` and this workspace sets `unsafe_code = "forbid"` — the basis of the "100% safe Rust" claim (M-147). Writing a figure derived from reading the algorithm would be a performance number with no benchmark behind it (rule 4), and it would be wrong for `marched`, whose `BTreeSet` tracks the *front* rather than the grid and can exceed it. **Acceptance:** a harness that runs each constructor in its own process and records peak RSS, folded into `docs/measurements/constructors.csv` — so the instrument lives outside the crate that forbids the tool, rather than the rule being bent. | M | T-018 |
+| | | ***The rule cost a process boundary, not a measurement (M-271).*** T-018 declared this gap because a counting
+`GlobalAlloc` needs `unsafe impl` and the workspace forbids it. Reading `VmHWM` from `/proc/self/status` is a plain
+file read and needs nothing of the kind; what it needs is leaving the *process*, since `VmHWM` is a high-water mark
+over a whole process life. So `--only <constructor>` runs exactly one thing and stops, and
+`scripts/constructor_memory.sh` subtracts a `baseline` run that builds the input and exits. |
+| | | ***The ordering falsifies the asymptotic intuition.*** At 65³ above baseline: swept **4,228 KiB**, marched 4,616,
+exact **6,212**, band 6,704. The *exact* `O(n)` transform is the hungriest of the three, 47% above sweeping, because
+Felzenszwalb & Huttenlocher need per-row envelope state and a squared-distance staging array that the complexity class
+does not mention. And `band` is the most expensive of all, which is the opposite of what "narrow band" sounds like —
+M-256's 13.4% is a saving in *work*, not in footprint. |
+| | | ***The mesh-based pair cost nothing above the mesh they were handed*** at 65³, because meshing allocates more
+transiently than either does. A zero there is the honest reading, not a failed measurement. |
+| ☑ | **R-000** | **Mechanise the protocol.** A `#[experiment]` harness: registers the `P-` id, refuses to run if no pre-registration exists, emits a CSV row with git SHA + machine + timestamp, and prints the FINDINGS stanza ready to paste. **The feedback loop is currently a discipline; make it a compile error.** **Acceptance:** an experiment without a pre-registered `P-` fails to build. | M | T-013 |
+| | | ***No proc macro and no build script (M-272).*** `experiment!("P-n")` expands to a `const` assertion over a
+`const fn` byte-wise `str` comparison — `str`'s `PartialEq` is not const and neither is `<[u8]>::eq`. A `const` item
+is evaluated whether or not its value is read, so an unregistered id cannot reach a run, and the acceptance is proved
+by a **`compile_fail` doctest**, the only kind of test that can assert a compile error. |
+| | | ***The type does two more things the ticket did not ask for.*** `Preregistration` is `#[non_exhaustive]`, so a
+consumer crate cannot build one and the macro is the sole entrance rather than the polite one. `falsified_by` is a
+required field, so a hypothesis with no stated refutation is *unrepresentable*; and `records` names its columns in
+advance, with `Run::record` panicking on any other set, so a metric predicted and then quietly not measured is a
+failure rather than a silence. |
+| | | ***What it cannot enforce, said plainly.*** Nothing in a source file can prove the registration was written
+first. What it does is make registering a **commit**, so git carries the ordering — and the backlog gate gained a
+sixth check: a `P-` id registered in Rust and absent from `FINDINGS.md` fails the build. P-8…P-13 registered for
+R-001…R-006 before a line of any of them was written. |
+| ☑ | **R-001** | **Gate the weld on the one-ring predicate.** **H:** a weld gated on `Lk u ∩ Lk v = ∅`, leaving rejected pairs split, yields **exactly 0 non-manifold edges and 0 non-manifold vertices** on all eight fields × all extractors, where the unconditional weld yields N > 0. **Harness:** both welds run on the same meshes in one pass. **Records:** non-manifold edges/vertices both ways, rejected-merge count R, Δ vertex count, weld wall-clock both ways. **Falsified by:** the gated weld still producing non-manifold output — **which would be the more interesting result**, proving the surface link condition insufficient for index-buffer realisation. **FINDINGS:** `M-` either way; `✗` against M-59's and M-99's framing if the predicate fully explains them. | L | R-000 |
+| | | ***P-8 falsified in both clauses, and the gate is strictly worse.*** Clause one — "where the unconditional weld
+yields N > 0" — is **false in 52 of 56 configurations**: `Welder` produces 0 non-manifold edges and 0 non-manifold
+vertices everywhere except `noise_cavity` under the dual extractors. Clause two is false too: on those four rows the
+gate changes the edge count by **0** and rejects 0–1 merges, because the non-manifoldness was never weld-caused. And
+the gate **introduces** non-manifold vertices in 12 previously-clean configurations, taking
+`subgrid_marching_tetrahedra` on `noise_cavity` from 30 to **117**. |
+| | | ***The mechanism is more specific than the registration guessed.*** `vertex_delta == rejected_merges` in all 56
+rows, so every refusal leaves exactly one extra vertex. The damage is that a `k`-way coincidence is manifold **only if
+all `k` merge**: refusing one leaves the representative carrying cones from some copies and not others — a bowtie,
+every edge with two faces and χ intact, which is exactly what `validate`'s link walk exists to catch and an edge count
+cannot see. The *pairwise* condition is not insufficient for a pairwise merge; it is being applied greedily inside a
+`k`-way group, and Dey/Fan/Wang's decomposition is the thing that does not commute with rejecting one step of it. |
+| | | ***It is also the harness's first real use.*** `experiment!("P-8")` gated the build, `Run::record` enforced the
+eight registered columns, and `docs/experiments/p-8.csv` carries the SHA, the machine, the time and a
+**`WORKING TREE DIRTY`** flag. R-003 is re-scoped on the result rather than left pointing at a premise that is gone. |
+| ☑ | **R-002** | **k-way welds may be order-dependent — this threatens the determinism guarantee.** Dey/Fan/Wang decompose a k-way merge into k−1 pairwise merges *in the intermediate complex*, so bucket order can matter. **H:** for buckets of ≥3 coincident vertices, at least one reference field yields **≥2 distinct outputs** across P seeded permutations of within-bucket merge order. **Harness:** permute, re-weld, compare byte-identity. **Records:** distinct-output count per field, vertex count spread. **Falsified by:** all P permutations byte-identical on every field — meaning k-way weld is confluent and no canonical order is needed. **If H holds, `CLAUDE.md`'s byte-identical guarantee is violated the moment gating lands**, and a canonical merge order must be pinned in the same commit. **Run this before R-001 ships.** | M | R-001 |
+| | | ***P-9 held, and the premise was wrong about why.*** Nine of 56 configurations give more than one distinct output
+across eight seeded permutations, so the weld is **not** confluent. But H said "for buckets of ≥3": every primal
+extractor has **6–32** such buckets and is perfectly confluent, while `torus` under the duals has **none** and yields
+**five** different outputs. The driver is whether the coincident vertices are **bit-identical** — a `k ≥ 3` bucket
+comes from M-48, one chunk placing several vertices at the same computed point, so which survives cannot change a
+byte; a seam bucket spans two chunks whose expressions disagree by an ulp (M-32). |
+| | | ***Two rows change the vertex count, not just the bytes.*** `noise_cavity` spans **4** vertices under
+`dual_contouring` and **2** under `manifold_dual_contouring` across the permutations. Epsilon-closeness is not
+transitive and `Welder` uses first fit, so the order changes **how many representatives are elected**. The weld's docs
+predicted this in prose; this is the first measurement. The live risk is not the gating R-002 feared — that is
+reverted — but a chunked consumer **appending chunks in a different order** getting a different vertex count. |
+| | | ***It found two failures of my own practice.*** **M-273:** the first use of R-000's mechanism was to *amend a
+registration to fit the code*, because `Run::record` demanded the key set be exactly the registered records — a gate
+stricter than the property it protects creates pressure to weaken it. Relaxed to "no missing metric", amendments
+reverted. **M-274:** P-8's original fixture was a 2×2×2 block of 8-cell chunks anchored at `-2.0`, spanning 1.83 of a
+4-unit domain, and P-9's `buckets_of_three_or_more` column read **0 in all 49 rows it produced** — the `k`-way merge both
+experiments were about was never in the fixture. Centred and re-run; P-8's entry replaced. |
+| ☑ | **R-003** | ~~**Is splitting the unsafe merges free?**~~ **Premise removed by R-001 (P-8), and the ticket is re-scoped rather than deleted.** The gated weld is strictly worse — it fixes nothing where there was something to fix and **introduces** non-manifold vertices in 47 previously-clean configurations, up to 0 → 407 — so there is no gated weld to price. `vertex_delta == rejected_merges` in all 56 rows, so the inflation this ticket asked about is exactly one vertex per refusal and was never the cost that mattered. **What is left is the real question R-001 surfaced:** the residual **276 non-manifold edges and 536 non-manifold vertices** on `noise_cavity` under `surface_nets` (277/539 under `dual_contouring`, 66/145 under `manifold_dual_contouring`) are an **extractor** defect, not a weld defect — the gate rejects 1 and 8 merges there respectively and changes the edge count by 0 and 1. **Acceptance:** locate them. Are they M-93's duplication artefact, a genuine non-manifold vertex the dual rule can produce, or an epsilon effect? A count is not a diagnosis. **Pre-registered as P-14.** | M | R-001 |
+| | | ***P-14 falsified on its first clause, and the residue is an edge defect (M-275).*** MDC's count is strictly
+lower everywhere — 99 → 0, 38 → 0, 597 → 106 — so clause two held. But *"almost all sit in cells MDC splits"* is
+false by about half: **45 of 99, 19 of 38 and 307 of 597** sit in cells MDC did **not** split, and MDC's own residual
+106 are **106 of 106** in unsplit cells. |
+| | | ***The vertex-to-edge ratio is exactly 2:1 on every row*** — 597/314, 99/48, 38/19, 106/53. Every non-manifold
+vertex is an *endpoint of a non-manifold edge*, so there are 314 defects on `noise_cavity`, not 597 plus 314. The
+residue is an **edge with three or more incident faces**, which no amount of cell splitting addresses, and it is
+ticketed as **A-021** rather than left inside a closed experiment. |
+| | | ***And a second shape of vertex defect the first run could not see.*** `worst_link_components = 1` on a flagged
+vertex is not a contradiction: a link can be connected and still not a simple cycle, one link vertex reached by four
+link edges. That is a **pinch**, not a bowtie. The added `worst_link_vertex_degree` column reads **4** on every
+non-clean row and separates them — `fbm_terrain` is purely pinches, `gyroid` and `noise_cavity` carry both. Adding a
+column rather than editing the registration is exactly what M-273's relaxation made possible. |
+| ☑ | **A-021** | **The dual rules emit edges with three or more incident faces, and cell splitting does not fix them.** R-003 (P-14) located the residue: on `noise_cavity` at 49³, Surface Nets and Dual Contouring give **314 non-manifold edges** and Manifold Dual Contouring still gives **53** after splitting every multi-component cell it finds. The vertex-to-edge ratio is **exactly 2:1 on every row**, so every non-manifold vertex is an endpoint of one of these edges and there is one defect, not two. Half of them sit in cells MDC does *not* split, so the one-vertex-per-cell rule is not the cause. **Two shapes are present and must be told apart:** a **bowtie** (link in ≥2 components) and a **pinch** (link connected, one link vertex of degree 4) — `fbm_terrain` is purely pinches, `gyroid` and `noise_cavity` carry both. **Acceptance:** name the cell configuration that produces a 3-face edge, with a constructed minimal fixture rather than a field that happens to contain one; then say whether it is fixable inside the dual rule or is inherent to one quad per crossed edge. **Do not guess** — Ju et al.'s MDC paper and Schaefer/Warren are the sources, and if neither defines it, stop and say so (rule 5). | L | R-003 |
+| | | ***All 314, with a control that separates cleanly (M-276).*** Every non-manifold edge has **4** crossed boundary
+edges on its shared grid face; all 30,891 manifold ones have **2** (8 have 0). No overlap, and zero non-manifold edges
+join cells that are only diagonally adjacent, so the quad's triangulation diagonal is never the culprit. |
+| | | ***The configuration has a name and the literature supplies it.*** A square whose four boundary edges are all
+crossed has alternating corner signs — the **ambiguous face**, quoted verbatim from `10.1145/195826.195828`. So this
+is the whole A-002 series arriving from the dual side: the primal path has `FaceAmbiguity::AsymptoticDecider` to make
+*one* choice there, and the dual quad walk makes **both at once** by emitting a quad for each of the four crossed
+edges, all through the same mesh edge. Not inherent to one-quad-per-crossed-edge; ticketed as **A-022**, with the
+instruction to read Schaefer/Ju/Warren before writing, because whether MDC's criterion is face- or component-based
+decides whether it is a new rule or a bug in an existing one. |
+| | | ***It closes P-14's loose end exactly.*** MDC's residual 106 non-manifold vertices sat **106 of 106** in cells
+MDC did not split; MDC splits multi-component *cells*, and an ambiguous *face* between two single-component cells does
+not meet that criterion. |
+| | | ***Method: the reasoning was wrong before it was right.*** Reading `emit_quads` first gave "every dual mesh is
+non-manifold everywhere", which contradicts every measurement in the file — the error was treating a quad as
+contributing two faces to each of its sides. Printing the face-count histogram for a **plain half-space**
+(`{1: 8, 2: 8}`) settled it in one run, for less than the third attempt at the algebra. |
+| ☑ | **R-004** | **Quantify the crack budget: arithmetic vs algorithm.** **H:** with exact/canonical coordinate reconstruction — one canonical `world_of_sample`, never an offset-and-add — seam cracks fall to **0 for all cell sizes**, not only powers of two, and M-73's hairline disappears without any change to the transition-cell construction. **Harness:** sweep non-power-of-two cell sizes × LOD pairs, count unmatched boundary edges and max vertical discontinuity (M-106's metric, which already found a margin across 495 seam crossings). **Records:** crack count and max discontinuity per (cell size, LOD pair), both arithmetic paths. **Falsified by:** cracks surviving canonical reconstruction — which localises the defect back in Transvoxel and is a different ticket. Consider Attene's **indirect predicates** (`10.1016/j.cad.2020.102856`, in corpus): treat a crossing as a *construction* (line, plane) rather than a computed point, and get exact sign tests at near-float cost. **FINDINGS:** `M-`, and `✗` against M-32's power-of-two framing if it turns out to be an artefact of one reconstruction choice rather than a floating-point law. | L | R-000 |
+| | | ***P-11 held in both clauses, and the falsifier did not fire (M-278).*** Canonical reconstruction gives **0**
+seam-plane boundary edges in all 20 rows — five spacings, two LOD pairs, two fields — under *both* a weld and a
+bit-identity merge, and every one of the fine block's seam vertices is bit-identical to its partner. `benches/experiment_p11.rs`,
+`docs/experiments/p-11.csv`, 40 rows. |
+| | | ***The budget splits on a different axis than the ticket assumed.*** The **algorithm** owns the whole *visible*
+crack: remove the transition cells and the seam opens to 32–184 boundary edges, widest hole 1.03–3.01 cells, and the
+arithmetic changes none of that. The **arithmetic** owns the whole *invisible* one: worst disagreement `1.44e-15`
+world units against a weld epsilon of `h · 1e-4`, so the offset arm is 0 cracks welded and 63–348 under bit-identity. |
+| | | ***`✗` went to M-73's weld clause, not to M-32's power-of-two framing.*** M-32 is confirmed where it speaks —
+`0.125` and `0.0625` give bit-identical arms and zero cracks — so it is not an artefact. What the sweep found instead
+is that *"no weld can close it"* is false: `epsilon_for(h)` is nine orders of magnitude above the disagreement and
+closes every one. **✗18.** |
+| | | ***And it sharpened M-32 rather than only confirming it.*** At `h = 0.1` and `1/12` the seam **plane** agreed bit
+for bit while only 24 of 92 vertices did — the disagreement is every coordinate two blocks with different bases reach
+by different groupings, not just the one along the seam normal. Bit-exact sharing runs 100% / 26-of-76 / 24-of-92 /
+**0-of-108** across the five spacings. |
+| | | ***An ulp of coordinate can be a cell of geometry.*** The bit-identity crack is a hairline (`~1e-14` cells) in 8
+of 12 non-power-of-two offset rows and **1.05–2.08 cells** in two, where a perturbed sample crossed zero and the two
+sides stopped agreeing an edge was cut. The control shows the same: with transition cells removed, the offset arm's
+crack count differs from the canonical one in 5 of 20 rows. |
+| | | ***Deviation: `max_discontinuity` is not M-106's ray cast.*** The core crate has no ray caster and the ticket's
+reference is to a Bevy example. Defined instead as lip-to-lip separation — for each endpoint of a seam-plane boundary
+edge, the distance to the nearest such endpoint it is not joined to along the boundary — which is 0 on a closed seam,
+`~1e-14` cells on a hairline and 1–3 cells on a real hole. The first definition tried (nearest vertex of a disjoint
+provenance) reported 4.0 cells on closed seams because a *merged* vertex's nearest foreign block is the coarse grid;
+it was replaced before any number was written down. |
+| | | ***The canonical arm needed a workaround, and the workaround is the follow-up ticket.*** `Extractor::extract_into`
+takes a world origin and computes `origin + h·local`, with nowhere to put an integer base — so a chunk at a non-zero
+base gets the offset arithmetic by construction and no argument avoids it. The canonical arm is reached by rooting the
+extraction at the grid origin and clipping to the block's cells, checked by `clip_agrees_with_the_block` at every
+power-of-two spacing. **X-005** owns the API change; it is a decision about the crate's central trait, not a fix. |
+| ☑ | **R-005** | **Why does the dual go superlinear where Marching Cubes does not?** (O-11, half-answered.) M-21: Surface Nets is not `O(n³)` over the range; Marching Cubes is. M-45: it reproduces on Zen 3 and gets *worse* there, so it is not one cache hierarchy — **the mechanism is still unknown**, and both machines show a per-sample **spike at 128³** specifically, which is a clue nobody has followed. **H:** the cost is the four-cells-around-a-crossed-edge gather at stride `n²`; cache-miss count per sample rises with `n` for Surface Nets and stays flat for Marching Cubes. **Harness:** hardware counters at 96³/128³/192³/256³ on both machines. **Falsified by:** flat miss rates — pointing at branch misprediction or allocation instead. **FINDINGS:** `M-`, and closing O-11 either way. | M | R-000 |
+| | | ***P-12's mechanism is FALSIFIED and its registered falsifier could not have caught it (M-279).*** The
+gather runs once per crossed edge — `O(n²)` — and the cost is `O(n³)`. Re-run on a field with **no surface at
+all**, Surface Nets costs **168.6 cycles/sample and 4.277 misses with 0 triangles** against **170.2 and 4.258
+with 153,552**: 0.9% apart. Miss rates were *not* flat, so by its own `falsified_by` the hypothesis survived. |
+| | | ***Both named alternatives excluded, and one the registration did not name.*** Branch misses per sample
+**fall** (Surface Nets 0.0436 → 0.0267, Marching Cubes 0.0343 → 0.0115); page faults after warmup are **0 on
+all 90 rows**; dTLB read misses peak at 0.104 per sample with transparent huge pages `always`. |
+| | | ***What it is: IPC, on an instruction stream that does not grow.*** Surface Nets runs **1.57×** Marching
+Cubes' instructions and **5.24×** its cycles. Instructions per sample *fall* 210.5 → 206.8 while cycles rise
+144.0 → 170.2, so the whole superlinearity is a **16% IPC decline** (1.46 → 1.22) against Marching Cubes' flat
+4.04–4.28. |
+| | | ***And the miss column does not explain the cycles.*** Three grids of 16.7 M samples differing only in
+axis order: misses **3.274 / 1.362 / 3.360**, cycles **151.49 / 151.74 / 151.14** — a 2.4× spread buying 0.4%.
+Where misses *do* cost is 128³, and that is resolved: 127³/128³/129³ give 152.5 / **178.4** / 152.1 cycles and
+2.468 / **5.465** / 2.413 misses on working sets 2% apart, so it is conflict aliasing on a 64 KiB plane stride,
+and it survives on the empty field. M-45's clue, followed. |
+| | | ***Deviation: one machine, not two.*** The ticket asked for counters on both. `perf_event_open` is Linux;
+macOS has no equivalent a bench can call, so the Apple arm is not runnable with this harness and is not owed —
+the question was *rises or flat*, and it is answered where M-45 says the effect is worst. |
+| | | ***Three method rules, each with an incident.*** A falsifier must separate the hypothesis from its rivals
+(P-12's could not); a control run where it cannot discriminate reports a convincing "no effect" (the axis-order
+test at 4.3 M sat inside L3 and said orientation was irrelevant — at 16.7 M it is a 2.4× spread, so it now runs
+at both sizes); and a new harness must agree with a committed measurement before its new columns are believed
+(this one forgot `MeshBuffer::reset()`, and the tell was `triangles` not being monotone in `n`). |
+| | | ***A second finding fell out, and it is about every timing in the repo (M-280).*** The same binary
+reported Marching Cubes at 48³ as 8.13 and 14.66 ns/sample with cycles unchanged — `amd-pstate-epp` on
+`powersave` over 1.96–5.62 GHz. Rows now carry `ghz`. Chasing it found the committed Zen 3 sweep is **1.45×
+stale** on Marching Cubes (221.363 ms against 152.2–153.3 measured at a steady 4.20 GHz), so ✗14's `SN/MC` at
+256³ is **4.6×** and not 3.72×, and M-45's "M5 is 2.76× faster" cannot be quoted. The CSV was **restored, not
+overwritten** — six findings cite it — and **M-001**, referenced nineteen times as the ticket that re-measures
+the family, turned out to have no row in either file. Now filed. |
+| | | ***Residue: R-007, with P-15 registered in the same commit as this row.*** Where the dual's IPC goes is
+not settled; `STALLED_CYCLES_BACKEND` is the event that would say and AMD does not map it. |
+| ☑ | **M-001** | **Re-measure the whole family in one process and one run — the ticket nineteen references already point at.** `BACKLOG_ARCHIVE.md` says three separate times that a re-measurement "belongs to M-001", `FINDINGS.md` names it ten more, and **it had no row in either file** until R-005 went looking. **Acceptance:** one bench, one process, one run, every extractor in `for_each_extractor!`, reporting cycles per sample and the clock as well as milliseconds, then update ✗14, M-19, M-20, M-21, M-22, M-45 and O-11 against it in the same commit. Do **not** amend `resolution_sweep-ryzen9-5900x.csv` in place; it is the evidence those citations were written against and it stays as the before. | L | — |
+| | | ***Split on the day it was written, and the second machine is now M-005.*** The ticket asked for both hosts. The
+Mac's checkout is 100+ commits behind with uncommitted local changes in its working tree, and updating someone
+else's tree is their call, not the implementer's. Everything else is here; the Apple arm is filed separately. |
+| | | ***`benches/family.rs`, `docs/measurements/family.csv`, 61 rows, one binary, one run, clock 4.17–4.25 GHz on
+every row (M-282).*** Marching Cubes **127.8 ms** at 256³, +decider 130.8, Marching Tetrahedra 261.8, Surface Nets
+693.8, Dual Contouring 751.1, Manifold Dual Contouring 771.0, subgrid Marching Tetrahedra stopped by the 2000 ms
+budget at 128³. |
+| | | ***The strongest thing in the table is a column nobody had looked at.*** IPC partitions the family cleanly:
+everything table-driven runs at **3.7–4.2**, everything on `DualMesher` at **1.20–1.42** — three different vertex
+rules landing within 18% of each other and a factor of three below the rest. The cost is the shared scaffolding,
+not any rule, which is R-007 arrived at from a second direction. |
+| | | ***Four things nobody had priced.*** The asymptotic decider costs **2.4%**; Manifold Dual Contouring's
+guarantee costs **2.6%** over Dual Contouring; Marching Tetrahedra is **2.05× in time and 2.99× in triangles**, so
+P-1's 3.0× prediction lands on the triangles and not the clock; subgrid Marching Tetrahedra is **100.7× classic
+MT** on Zen 3 at 128³ against M-98's 70× on the M5, so its constant is machine-dependent by 1.44×. |
+| | | ***The reason this had to be one bench is itself a measurement (M-281).*** Two of the repo's benches disagreed
+by a uniform **1.24–1.36×** on the same Marching Cubes rows — including at 16³, where the run is 40 µs. Both loop
+shapes in one binary are identical (0.991–1.002, asserted by `benches/layout_bias`), and adding **one unrelated
+function** to `resolution_sweep.rs` moved its own 256³ row from 152.5 to 130.8 ms. Layout bias, Mytkowicz et al.
+ASPLOS 2009. A millisecond is comparable only within one binary and one build. |
+| | | ***And it forced a correction to a finding written three hours earlier.*** M-280 had called the committed Zen 3
+sweep "1.45× stale" from a binary whose layout costs it 17%. Re-running `d2ab82a` in a worktree on this machine
+reproduces its committed CSV to within **1.8%** — so the numbers were sound, the change is real code, and the size
+is **1.74×** against the family run rather than 1.45× against a build. |
+| | | ***✗14, M-21 and M-45 amended; M-19, M-20 and M-22 deliberately not.*** Those three are Apple M5 fit
+coefficients and this run was on the Ryzen — amending them from another machine's numbers is the error the
+amendment exists to fix. They wait for M-005. |
+| ☑ | **R-006** | **A non-convergent error, which should not exist.** M-66: *"On a sharp field the geometry and the field disagree by an angle that does not fall with resolution."* Every other error in this crate falls with `h` — M-12's `h²`, M-65's `h²` on normals. **An error that does not converge is either a real property of sharp features or a bug, and both are worth knowing.** **H:** the angle is bounded below by the dihedral angle of the feature and is therefore a property of sharp edges rather than of resolution — so it should be *predictable from the field*, not merely observed. **Harness:** sweep dihedral angle on a wedge field × resolution; plot measured disagreement against predicted. **Records:** angle vs (dihedral, h). **Falsified by:** the angle failing to track the dihedral prediction — which makes it a defect with a location. **FINDINGS:** `M-`; if it is a bug, `✗` against M-66's framing as a property. | M | R-000 |
+| | | ***P-13 falsified on its second clause, and its own falsifier fired (M-283).*** 384 rows on an exact convex
+wedge. A **5° crease produces an 88° disagreement**, and 149 of Marching Cubes' 168 non-control rows sit at or
+above 60° whatever the dihedral. The angle does not track `(180° − θ)/2` and is not predictable from the field. |
+| | | ***The first clause held, and the control is what settles it.*** With the crease removed — a 180° wedge —
+the disagreement is **0.0000° worst and mean at every resolution**, because Marching Cubes is *exact* on a linear
+field. So the error needs a sharp feature and does not need a coarse grid. |
+| | | ***It reconciles the two halves of M-66 that looked contradictory.*** The **median is 0.000° in every row**:
+the disagreement is confined to a one-dimensional crease inside a two-dimensional mesh, so refining dilutes the
+mean and leaves the worst alone. One mechanism, both halves. |
+| | | ***Dual Contouring does not fix it, and converges the wrong way.*** A-007 exists for sharp features; at
+`θ = 90°` the dual's worst **rises** 36.2 → 90.0 and its mean 2.52 → 6.79 over 17³→129³, while Marching Cubes'
+mean falls 13.3 → 8.5. It starts three times better and converges toward Marching Cubes from below. |
+| | | ***6,959 vertices point into the solid, and they are on the surface.*** Area-weighted normals more than 90°
+from the gradient — worst 128.0° — which a convex combination of two plane normals cannot produce. The escape
+(the vertex is off-surface, since Marching Cubes interpolates linearly and a wedge is not linear at its apex) was
+measured and closed: median `|f|/h` at those vertices is **0.0000**, max 0.28. The crease is bridged by triangles
+facing somewhere else. **R-008** owns whether that is inherent. |
+| | | ***Deviation: two controls the ticket did not ask for, and the second changed the answer.*** The ticket said
+"sweep dihedral × resolution". Done that way — bisector on a grid axis — the fixture reproduces the prediction to
+**four decimal places** (75.0000, 60.0000, 45.0000 at three resolutions) and the hypothesis appears confirmed.
+Turning the wedge 17° about its own crease destroys it. The apex-alignment control (M-266) is the other. |
+| | | ***Method rule, and it is the sharper half of one already here.*** Part 5 says to *search* for a fixture that
+exhibits the property; this adds: **when a measurement matches a prediction exactly, vary the fixture's
+orientation before believing it.** Exactness is the tell, not the confirmation. |
+| | | ***⚠ REVERSED the same night by R-009 (M-289): P-13 HELD.*** The reference gradient this ticket compared
+against normalised a cancellation residue at points epsilon-outside the surface, so about half the vertices near
+a face were measured against a random unit vector. Corrected, the worst angle **tracks** `(180° − θ)/2`, is
+bounded by it in 136 of 168 rows, and is resolution-invariant to four significant figures — which is what P-13
+claimed. The 6,959 past-90° vertices become 472. What the ticket got right it got right for the right reasons:
+the `θ = 180°` control, the median of zero, the four-decimal grid-aligned fixture, and the two controls it added
+beyond the ticket. |
+| ☑ | **R-007** | **Where does the dual's IPC go?** R-005 (M-279) removed every candidate anyone had named and left a number: Surface Nets executes **207 instructions per sample at IPC 1.22** where Marching Cubes executes **132 at 4.04**. **H, pre-registered as P-15:** more than half of the dual mesher's cycles per sample are in `emit_quads`. **Harness:** a per-stage cycle and instruction count inside `DualMesher`, which needs either an ablation seam or counter windows in the extract path — **decide which is acceptable under the one-path rule before writing either**. **Falsified by:** `emit_quads` at half or less. | M | R-005 |
+| | | ***P-15 held, and by more than it claimed: 82% of the cycles (M-284).*** Also 45% of the instructions, at
+**IPC 0.72** against `place_vertices`' 3.83 and `sample`'s 6.49. `place_vertices` reads the same eight corners
+Marching Cubes' march does and runs at Marching Cubes' own speed — **the dual does not have an IPC problem, one
+of its four stages does**. |
+| | | ***Neither of the two instrumentation routes the ticket offered was taken, and the decision it asked for did
+not have to be made.*** Counter windows are impossible before they are undesirable — `isomesh` is `no_std` and
+cannot make a Linux system call — and an ablation seam is public API for one experiment. The stages have
+**different iteration counts that depend on the grid's shape**: `Q/C` is 2.97 on a cube, 1.00 on a slab two
+samples deep, and **exactly 0** on a rod two deep on both minor axes, while `S/C` runs 1 → 4. Thirteen shapes
+make the design matrix separable and least squares reads the stages off it, with no library change at all. |
+| | | ***The fit predicts rather than describes.*** `r²` 0.9954 on instructions and 0.9990 on cycles, and a shape
+held out of the fit entirely — `385×385×17` — comes in at **+0.12% and +0.50%**. |
+| | | ***And it is cross-checked without the fit, including where the cross-check disagrees.*** Two rows whose
+cell counts agree to 0.02% and whose `Q/C` differ by exactly 1 give 60.8 cycles per iteration against the fit's
+43.3 — a 40% gap, reported rather than smoothed, and resolved by noting that 60.8 would exceed the cube's total.
+The fit is the conservative reading, so **82% is a floor**. |
+| | | ***A limitation the sweep found in itself.*** `500001×2×2` and `2×2×500001` have identical `S`, `C` and `Q`
+and differ by **62% in instructions**, because the model has no loop-overhead term and `sample` iterates `x`
+innermost. Recorded as the bound on how far the coefficients travel onto degenerate shapes. |
+| | | ***O-11 is answered and A-023 is filed.*** The question T-006 raised, M-45 half-answered and M-279 narrowed
+is closed: the superlinearity is `emit_quads`' working set outgrowing the caches while the other three stages
+stay flat. |
+| ☑ | **A-023** | **`emit_quads` is 82% of the dual's cycles and 45% of its instructions, at IPC 0.72. Make it stop.** R-007 (M-284) decomposed `DualMesher` by iteration count without touching it. **Three candidate remedies:** (a) fuse the edge sweep into `place_vertices`' cell loop; (b) reorder the loops so the innermost index is the fastest-varying axis; (c) drive it from a crossed-edge list, making the stage `O(surface)`. **Acceptance:** `experiment_p15` and `family` re-run before and after, **T-007's golden hashes unchanged**. | M | R-007 |
+| | | ***None of the three remedies was the answer, and the real one is a keyword (M-285).*** `axis`, `u` and `v`
+were **runtime** values, so `p[axis] = a` was a dynamically indexed store and `p` could not live in registers:
+every iteration wrote three coordinates to the stack and `linearize` read them straight back. Making the axis a
+`const` generic — three monomorphisations of one function, same order, same bounds — took the stage from
+**43.26 cycles per iteration to 3.33** and the whole mesher from **156.0 to 37.1 cycles per cell**. |
+| | | ***Surface Nets 3.09×, Dual Contouring 2.69×, Manifold Dual Contouring 2.52×, byte-identically.*** 693.8 →
+224.4 ms at 256³, IPC 1.20 → 2.77. `golden_hashes_are_unchanged` passes untouched and every triangle count in
+the family matches. The four table-driven entries are unchanged to within noise, which is the control. |
+| | | ***And ✗14's cost case is much weaker than it was this morning.*** `SN/MC` at 256³ goes **5.43× → 1.72×**,
+and at 48³ Surface Nets is now **faster** than Marching Cubes — 30.7 cycles per sample against 33.1, at IPC
+5.29. M-45's *"Surface Nets never wins on Zen 3, at any resolution"* is falsified. |
+| | | ***Remedy (b) was excluded before it was tried, by rows that already existed.*** P-15's sweep isolates each
+axis pass: `1449×2×1449` runs only the stride-1 pass, `1449×1449×2` only the stride-`nx` pass, `2×1449×1449`
+only the stride-`nx·ny` pass. They cost 72.70, 66.63 and 74.81 cycles per cell — within 12%, with the
+*sequential* one in the middle. Stride was never the cost, so reordering the loops would have bought nothing. |
+| | | ***It also invalidated a finding from four hours earlier, and that is recorded rather than quietly fixed
+(M-286).*** M-279 measured that a 2.4× swing in cache misses moved cycles by 0.4% and concluded misses were not
+the driver. They were hidden behind the stall. The same control now gives 5 cycles per miss, the cubic sweep 8.4,
+and the 128³ spike 15.8 — **a null measured under a dominant confound is a statement about the confound**. |
+| | | ***What did not change is the shape.*** Per-sample cost still rises 7.92 → 13.37 ns over 16³…256³ and the
+128³ spike is now the largest feature of the curve at **2.6×** its neighbours, where before it was 1.24× and
+looked like noise. O-11 is narrowed again rather than closed; **A-024** owns the residue. |
+| ☑ | **A-024** | **Surface Nets costs 2.6× more at exactly 128³ than at 127³ or 129³, and 128³ is the chunk size everybody uses.** A-023 removed the constant that was hiding it (M-286). The mechanism is not in doubt in outline: `n²·4 bytes` is exactly **64 KiB** at `n = 128`. **Options: (a)** pad each plane; **(b)** block the traversal; **(c)** accept it and document `n ≠ 2ᵏ` for chunk dimensions. **Acceptance:** `experiment_p12`'s 127/128/129 rows within 10% of each other, `family` and `experiment_p15` re-run, **golden hashes unchanged** — and if (a) is chosen, its cost at every *other* resolution measured and stated. | M | A-023 |
+| | | ***Diagnosed before anything was changed, by letting the caller arrange what padding would do (M-287).***
+The aliasing depends only on the shape and the shape is an argument, so one extra sample moves the stride while
+changing the work by under 1%. `+1` on **x** removed the whole penalty (0.98×), on **y** most of it (1.13×), and
+on **z** — the control, which touches neither stride — **kept it in full (3.35×)**. A 128×131×131 grid isolated
+the smaller period: 512-byte rows alone cost 1.14×, so there are **two** aliasing periods and only the fastest
+axis is in both. 256³ paid 1.39×, so it was never only 128. |
+| | | ***The fix is `size[0] | 1`, and both properties of it are load-bearing.*** Unconditional, because a pad
+applied only when the stride looks bad is a second layout reachable from one call. **Idempotent**, because a
+*fixed* pad of one would be worse than nothing — it maps every `size[0] = 2ᵏ − 1` onto the stride it is avoiding.
+Cost: one float per row when the row is even, **0.8% of `values` at 128³**, and nothing at run time. |
+| | | ***128³ against its neighbours 3.37× → 1.01×; 256³ 1.39× → 0.92×.*** Surface Nets 48.51 → **18.35 ms** at
+128³ and 221.4 → **162.7** at 256³, IPC 2.80 → **4.09**, misses per sample 3.72 → **1.56**. Marching Cubes and
+Marching Tetrahedra move 1.02× and 1.01× — the control. Triangle counts identical, golden hashes pass. |
+| | | ***Taken with A-023: 693.8 → 162.7 ms at 256³, 4.26×, without changing a triangle.*** `SN/MC` goes
+**5.43× → 1.26×**, and Surface Nets is now **faster** than Marching Cubes at 16³, 24³ and 32³. Its per-sample
+curve is 8.71 → 9.70 ns over four octaves, +11%, against the +40% O-11 was raised about. **O-11 is closed.** |
+| | | ***And it hands back a design question rather than settling one.*** ✗14 exists to say Surface Nets is not
+the cheap default. Its triangle-count half is untouched; its cost half is now 1.26× at the largest grid and a
+win below 48³. Whether that changes the crate's default extractor is not a measurement and is not decided here. |
+| ☑ | **R-008** | **The crease is bridged by triangles that face somewhere else — is that inherent?** R-006 (M-283) measured **6,959 vertices under Marching Cubes and 4,868 under Dual Contouring** whose area-weighted normal is more than 90° from the field gradient, worst **128.0°**, and closed the obvious escape: the median `\|f(v)\|/h` at those vertices is **0.0000**, so they are on the isosurface. **H, pre-registered as P-16.** **Falsified by:** past-90° vertices in cells that touch only one face. | M | R-006 |
+| | | ***P-16 falsified, and by four times its own threshold (M-288).*** The falsifier was "more than 5% whose
+incident cells all lie on one side". It is **80%**: of 2,657 past-90° vertices across 23 rows, **536 are on the
+crease** — median 0.69–0.90 cells from it — and 2,121 are **11 to 94 cells** away. |
+| | | ***The mechanism P-16 named is real and is a minority.*** Six rows are unambiguous, and the control says the
+classification is not vacuous: vertices *under* 90° are on the crease only 0–12.8% of the time. So two faces
+meeting inside one cell does produce this; it is simply not what most of it is. |
+| | | ***The registration's operational definition did not implement its own claim, and it did not matter.***
+"straddles the crease — its eight corners do not all have the same nearer plane" splits by the **bisector**
+plane, which runs from the apex through the interior of the solid. The registered test was reported anyway
+because a registration is not edited after its experiment runs, and a corrected one was reported beside it,
+labelled post-hoc. **They agree on every one of the 23 rows.** A wrong definition survived a whole experiment
+because it happened to correlate — worth knowing in both directions. |
+| | | ***What the counts localise, which is more than either classifier managed.*** Offender counts are 31 and 62
+at n=33, 63 and 126 at n=65, 127, 254 and 381 at n=129 — every one an exact multiple of `n − 2`. The wedge is
+extruded along `z`, so any feature of the cross-section repeats once per layer: there are **one to three
+offending locations in the entire cross-section**, 11 to 94 cells from the crease. That is a constructed-fixture
+problem, the same shape as A-021's 314 edges before M-276 named them, and it is **R-009**. |
+| | | ***⚠ REVERSED by R-009 (M-289): P-16 HELD, at 0%.*** The vertices this ticket classified had a reference
+gradient that was noise. Corrected: **442 offenders in 6 rows, 100% on the crease**, median 0.69–0.73 cells from
+it, and only at `θ = 30°` and `60°` — the acute wedges, where the wedge is thin enough for two sheets to share a
+cell. That is M-15 on a sharp field, exactly as registered. **The localisation is what made the correction
+possible**: the counts being exact multiples of `n − 2` is what sent R-009 to dump one configuration rather than
+widen the census, and the answer was in the first six lines. |
+| ☑ | **R-009** | **Find the one-to-three cells per cross-section that face backwards.** R-008 (M-288) failed to locate 80% of the past-90° normals but bounded them tightly: counts are exact multiples of `n − 2`, the wedge is extruded along `z`, so there are one to three offending locations in the whole cross-section, 11 to 94 cells from the crease, on a surface that is otherwise two exact planes. **Approach, and it is not another sweep:** dump one configuration and read the cell. A-021 is the model. **Pre-register as P-17 once there is a hypothesis worth registering; there is not one yet.** | M | R-008 |
+| | | ***The answer was in the first six lines, and it was the instrument (M-289).*** Two cells per cross-section,
+six incident faces each, **every face lying exactly on a plane** — worst face `0.00°` — no slivers, and a stored
+vertex normal exactly equal to a plane normal. The mesh was correct in every respect. The **gradient** it was
+compared against came back `[-0.5156, 0.8568, 0]`, which is neither plane normal. |
+| | | ***`Wedge::gradient` was normalising a cancellation residue.*** Its exterior branch computes
+`away = q − dir·t` and normalises; on a point lying **on** a ray those two vectors are equal, so `away` is a
+residue of order `ε·|q|` and its direction is noise. The guard was `e > 0.0`. Every Marching Cubes vertex is on
+the surface to within an ulp and about half land epsilon-*outside*, so half the vertices near a face were
+compared against a random unit vector. Now thresholded relative to `|q|`, falling back to the plane normal —
+which is what the exterior gradient converges to along the surface, so it is the right answer and not a
+tolerance. R-009's own configuration goes from 126 offenders to **0**. |
+| | | ***It reversed both of the night's wedge verdicts, and no hypothesis was ever registered for it.***
+P-13 HELD, P-16 HELD at 0%. The ticket said not to pre-register before there was something worth registering,
+and there never was: this was a locating step and it found a bug, which is not a prediction anyone could have
+made. |
+| | | ***The rule it earned.*** A reference implementation used as ground truth needs the same scrutiny as the
+thing it checks. Every control R-006 and R-008 carried was about whether the *mesh* was being measured fairly;
+none asked whether the gradient was right. And the tell was there from the start: an area-weighted normal cannot
+leave the cone its faces span, so a past-90° reading was **arithmetically impossible** — M-283 recorded the
+impossibility and went looking for strange geometry instead of a broken instrument. |
+| ☑ | **A-022** | **Disambiguate the face in the dual path, as the primal path already does.** A-021 (M-276) measured that **all 314** of `noise_cavity`'s non-manifold edges under Surface Nets have exactly **4** crossed boundary edges on their shared grid face, against **2** on all 30,891 manifold ones — the *ambiguous face*. **Read `dualsimp_tvcg.pdf` (Schaefer, Ju & Warren) before writing anything** — whether MDC's own criterion is face-based or component-based decides whether this is a new rule or a bug in the existing one, and rule 5 forbids guessing which. **Acceptance:** the 314 goes to 0 on `noise_cavity`, `gyroid` and `fbm_terrain` under Surface Nets and Dual Contouring, with T-007's golden hashes regenerated in the same commit. | L | A-021 |
+| | | ***The block was a lookup failure, not a paywall (M-290).*** The paper is at
+`cs.wustl.edu/~taoju/research/dualsimp_tvcg.pdf` — Tao Ju's own page, **the exact filename this ticket already
+named**. `paper_download` resolves DOIs through arXiv, Unpaywall and provider resolvers, and an author's copy is
+indexed by none of them; the server also omits its certificate's intermediate, so every TLS client refuses it
+until the intermediate is supplied from the certificate's own AIA URL, with verification left on. |
+| | | ***The criterion has a third answer the ticket did not offer (V-34).*** Neither face-based nor
+component-based: **one vertex per cycle of a table whose ambiguous faces the asymptotic decider has already
+resolved**. §3 cites Nielson's Dual MC \[13] for the cycles and Nielson & Hamann's asymptotic decider \[26] for
+the table. The ambiguity is settled upstream and the dual walk needs no rule of its own. |
+| | | ***The acceptance was unreachable, and the paper says so in as many words.*** §3: *"DC leads to nonmanifold
+vertices and edges for **all** of the ambiguous sign configurations."* One vertex per cell is nonmanifold there
+by construction — measured, 1,128 edges over eight fields at three resolutions against Marching Cubes' 0. **The
+314 is the literature's own prediction, not a defect to remove**; removing it means splitting the cell's vertex,
+which is Manifold Dual Contouring, which this crate already has from A-010. |
+| | | ***And the paper's own claim is falsified (✗19).*** It says the uniform-grid dual *"is always a manifold
+because the original MC algorithm always constructs a manifold and the dual preserves the topology"*. The premise
+holds here — **Marching Cubes is 0 on all 24 configurations under both face rules** — and Manifold Dual
+Contouring is still **114** with the decider-modified table the paper specifies, so the step that fails is *"the
+dual preserves the topology"*. The crate's own docs said this was "outside what they guarantee"; that was written
+while the paper was unobtainable and is now corrected in place. |
+| | | ***What the decider buys, measured: 143 → 114 edges (−20%), and the residue is one field.*** Manifold Dual
+Contouring is manifold on **seven of eight** reference fields under both rules; every one of the 143 is
+`noise_cavity` — the field A-002e added because none of the other seven produces a cell with an **interior**
+ambiguity, which a face decider cannot see. **A-025** owns that and owns the default, which is currently
+`Separate` and is not what the paper describes. |
+| ☑ | **I-008** | **One command that checks both workspaces, because "run both" in prose is not a gate.** M-293: `bevy_isomesh` is excluded from the root workspace for a real reason, so `cargo check --workspace --all-targets` does not compile it, and **58 commits went by with every local gate green** while an example there did not build. **Acceptance:** one script running the root gates *and* `bevy_isomesh`'s five, named in `CLAUDE.md`, mutation-tested the way `backlog_gate.sh` was — break each of the five in turn and confirm the script goes red. **The cost to weigh:** a Bevy type-check is slow enough that a single always-run script may be one nobody waits for; if so, split it and say which is which. | S | — |
+| | | ***`scripts/preflight.sh`, split fast/full, and the split is the finding rather than a convenience.*** The
+slow step is not Bevy — `cargo check --all-targets` there is **under a second warm** — it is
+`cargo test -p isomesh` at over four minutes. So the fast set is **11 steps in 12 seconds** and includes every
+cheap thing that would have caught M-293; `--full` adds the three test suites and MSRV. A gate nobody waits for
+is a gate nobody runs, which is how the repository reached the state that produced M-293. |
+| | | ***Mutation-tested, all five bevy steps and three root ones.*** Each broken in turn and the script confirmed
+red on the step named: bevy fmt, bevy `check --all-targets`, bevy clippy, bevy rustdoc, bevy test (via `--full`,
+with a deliberately failing test), plus the backlog gate, the findings index and root fmt. Then reverted and both
+sets re-run green. **A gate that has only ever passed is indistinguishable from one that cannot fail** (M-44). |
+| | | ***Two rule-2 and rule-3 checks folded in, because they are cheap and they are the pitch.*** `cargo metadata
+\| grep -c '"name":"bevy'` must be 0 and `cargo tree -p isomesh -e normal` must be two lines. Both were in
+`CLAUDE.md`'s Commands section and in no gate. |
+| | | ***Deviation, stated rather than hidden: this duplicates `ci.yml`.*** `backlog_gate.sh`'s header sets the
+rule it breaks — CI runs that file rather than a copy of its logic, so there is one path. Here there are two, and
+they can drift. The right fix is for CI to call this script, which is a change to the workflow and therefore the
+owner's; the script's own header says so instead of leaving it to be discovered. |

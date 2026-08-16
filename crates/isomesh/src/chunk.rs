@@ -235,6 +235,22 @@ impl<R: Real> ChunkLayout<R> {
     /// This function returns the chunk origin as
     /// `world_of_sample(base_sample(id))`, which is the best available: one
     /// expression, evaluated once, from exact integers.
+    ///
+    /// # "Best available" is now a measured quantity, and it is not "exact"
+    ///
+    /// R-004 ran both arithmetics over a two-resolution seam (M-278).
+    /// Reconstructing every sample as `o + h·(base + local)` gives **0**
+    /// unmatched seam-plane boundary edges at every spacing tried, power of two
+    /// or not, under a bit-identity merge. What this function can offer —
+    /// a correct origin, followed by the extractor's own `origin + h·local` —
+    /// gives 0 only at a power-of-two spacing, and **63–348** at `0.1`, `1/12`
+    /// and `1/14`.
+    ///
+    /// The gap is not this function's to close: [`Extractor`](crate::extractor::Extractor)
+    /// takes a world origin and has nowhere to put the integer base, so the
+    /// second half of the expression is out of reach from here. **X-005** owns
+    /// that. Until then, M-32's advice stands and is now measured at the LOD
+    /// seam as well: use a power-of-two cell size for a chunked world.
     #[must_use]
     pub fn sample_origin(&self, id: ChunkId) -> [R; 3] {
         self.world_of_sample(self.base_sample(id))

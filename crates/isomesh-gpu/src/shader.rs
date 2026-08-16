@@ -76,6 +76,9 @@ pub const MESH_RENDER_WGSL: &str = include_str!("shaders/mesh_render.wgsl");
 /// The hierarchical exclusive prefix scan over per-cell triangle counts.
 pub const SCAN_WGSL: &str = include_str!("shaders/scan.wgsl");
 
+/// Jump-flood distance transform, S-005. Includes [`GRID_WGSL`].
+pub const JUMP_FLOOD_WGSL: &str = include_str!("shaders/jump_flood.wgsl");
+
 /// Reference fields evaluated on the GPU. Includes [`GRID_WGSL`].
 pub const FIELD_WGSL: &str = include_str!("shaders/field.wgsl");
 
@@ -128,6 +131,7 @@ impl Composer {
         composer.insert("marching_cubes", MARCHING_CUBES_WGSL);
         composer.insert("mesh_render", MESH_RENDER_WGSL);
         composer.insert("scan", SCAN_WGSL);
+        composer.insert("jump_flood", JUMP_FLOOD_WGSL);
         composer.insert("field", FIELD_WGSL);
         composer
     }

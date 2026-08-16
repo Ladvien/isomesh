@@ -831,3 +831,418 @@ fn the_defect_count_is_predicted_from_the_grid_alone() {
     }
     std::println!("measured: A-017 predicted == observed for {rows:?}");
 }
+
+// ─── A-025: the defect, constructed rather than sampled ─────────────────────
+
+const NX: usize = 4;
+const NY: usize = 4;
+const NZ: usize = 3;
+
+/// A field defined by an explicit lattice of sample values, trilinear between
+/// them.
+///
+/// Trilinear is not an arbitrary choice of interpolant: it is the one the
+/// asymptotic decider itself assumes, so the constructed fixture and the rule
+/// under test agree about what lies between the samples.
+struct Lattice {
+    /// `[x][y][z]`, sampled at integer world coordinates with `h = 1`.
+    values: [[[f64; NZ]; NY]; NX],
+}
+
+impl Lattice {
+    /// Base index and fraction on one axis. The index is clamped so the cell is
+    /// always a real one; the fraction is **not**, so just outside the lattice
+    /// the field extends linearly rather than flattening — a flat extension
+    /// would hand the gradient a zero everywhere past the boundary.
+    fn split(p: f64, n: usize) -> (usize, f64) {
+        let floor = libm::floor(p);
+        let i = if floor < 0.0 {
+            0
+        } else if floor as usize > n - 2 {
+            n - 2
+        } else {
+            floor as usize
+        };
+        (i, p - i as f64)
+    }
+
+    fn corners(&self, p: [f64; 3]) -> ([f64; 8], [f64; 3]) {
+        let (i, u) = Self::split(p[0], NX);
+        let (j, v) = Self::split(p[1], NY);
+        let (k, w) = Self::split(p[2], NZ);
+        let mut c = [0.0; 8];
+        for (n, slot) in c.iter_mut().enumerate() {
+            *slot = self.values[i + (n & 1)][j + ((n >> 1) & 1)][k + ((n >> 2) & 1)];
+        }
+        (c, [u, v, w])
+    }
+}
+
+impl Sdf for Lattice {
+    type Scalar = f64;
+
+    fn sample(&self, p: [f64; 3]) -> f64 {
+        let (c, t) = self.corners(p);
+        let mut acc = 0.0;
+        for (n, value) in c.iter().enumerate() {
+            let mut weight = 1.0;
+            for (axis, &frac) in t.iter().enumerate() {
+                weight *= if (n >> axis) & 1 == 0 {
+                    1.0 - frac
+                } else {
+                    frac
+                };
+            }
+            acc += value * weight;
+        }
+        acc
+    }
+
+    /// Analytic, because the default central difference straddles a cell
+    /// boundary wherever the crossing sits on a grid edge — which is every
+    /// crossing there is — and trilinear is only C⁰ there.
+    fn gradient(&self, p: [f64; 3]) -> [f64; 3] {
+        let (c, t) = self.corners(p);
+        let mut g = [0.0; 3];
+        for (axis, slot) in g.iter_mut().enumerate() {
+            for (n, value) in c.iter().enumerate() {
+                let mut factor = 1.0;
+                for (other, &frac) in t.iter().enumerate() {
+                    let bit = (n >> other) & 1;
+                    factor *= if other == axis {
+                        if bit == 0 { -1.0 } else { 1.0 }
+                    } else if bit == 0 {
+                        1.0 - frac
+                    } else {
+                        frac
+                    };
+                }
+                *slot += value * factor;
+            }
+        }
+        g
+    }
+}
+
+/// The 3×3×2-cell block, with the two-cell column at `(1, 1, ·)` carrying
+/// `pattern` — bit `z·4 + (y≪1) + x`, set meaning inside — and everything
+/// around it outside.
+///
+/// **Why 3×3×2 and not 1×1×2.** The defect is four dual quads landing on one
+/// dual edge, and a quad exists only where all four cells around its grid edge
+/// do. The shared face's four grid edges reach out one cell in `x` and one in
+/// `y` on either side, so the two cells alone would produce no quads at all and
+/// the fixture would measure nothing. This is the smallest block in which every
+/// quad the mechanism needs can form.
+fn column_lattice(pattern: u16) -> Lattice {
+    let mut values = [[[1.0f64; NZ]; NY]; NX];
+    for low in 0..4usize {
+        let column = &mut values[1 + (low & 1)][1 + ((low >> 1) & 1)];
+        for (z, slot) in column.iter_mut().enumerate() {
+            if pattern & (1 << (z * 4 + low)) != 0 {
+                *slot = -1.0;
+            }
+        }
+    }
+    Lattice { values }
+}
+
+/// The case index a cell of the column carries, in the crate's corner order.
+fn column_case(pattern: u16, plane: u32) -> u8 {
+    let mut case = 0u8;
+    for c in 0..8u8 {
+        let o = crate::cube::corner_offset(c);
+        let low = (o[1] << 1) | o[0];
+        if pattern & (1 << ((plane + o[2]) * 4 + low)) != 0 {
+            case |= 1 << c;
+        }
+    }
+    case
+}
+
+/// Which cycle owns each cube edge, by the walk the rule uses.
+fn cycle_owners(case: u8, joined: u8) -> [u8; 12] {
+    let contours = crate::marching_cubes::trilinear::Contours::of(case, joined);
+    let mut owner = [255u8; 12];
+    for r in 0..contours.count() {
+        for &e in contours.ring(r) {
+            owner[e as usize] = r as u8;
+        }
+    }
+    owner
+}
+
+/// Every non-manifold edge of a mesh, with the distinct triangles sitting on it.
+fn offending_edges(
+    mesh: &MeshBuffer<f64>,
+) -> alloc::collections::BTreeMap<(u32, u32), alloc::collections::BTreeSet<[u32; 3]>> {
+    use alloc::collections::{BTreeMap, BTreeSet};
+    let (_report, features) = crate::validate::validate_features(
+        &mesh.positions,
+        &mesh.indices,
+        &ValidateConfig::from_cell_size(1.0).expect("valid cell size"),
+    );
+    let bad: BTreeSet<(u32, u32)> = features.edges.iter().map(|e| (e[0], e[1])).collect();
+    let mut distinct: BTreeMap<(u32, u32), BTreeSet<[u32; 3]>> = BTreeMap::new();
+    for t in mesh.indices.chunks_exact(3) {
+        let mut key = [t[0], t[1], t[2]];
+        key.sort_unstable();
+        for k in 0..3 {
+            let (a, b) = (t[k], t[(k + 1) % 3]);
+            let e = (a.min(b), a.max(b));
+            if bad.contains(&e) {
+                distinct.entry(e).or_default().insert(key);
+            }
+        }
+    }
+    distinct
+}
+
+/// One of M-292's eighteen. Bit `z·4 + (y≪1) + x` of the column, set = inside.
+const OFFENDER: u16 = 0b0111_0110_0111;
+
+/// **A-025 — one hand-built configuration that makes Manifold Dual Contouring
+/// non-manifold, with Marching Cubes manifold on the very same samples.**
+///
+/// M-290 measured the defect over eight fields and M-292 bounded it over all
+/// 4,096 two-cell sign patterns; both are censuses. What neither gives is a
+/// fixture small enough to read, and A-021's lesson is that a census names the
+/// *rate* while a constructed case names the *mechanism*. This is the
+/// constructed case: **48 samples**, no field, no noise.
+///
+/// # The configuration
+///
+/// Twelve of those samples, `−1` inside and `+1` outside, in a `2×2×3` column
+/// embedded in a `4×4×3` lattice whose every other sample is outside:
+///
+/// ```text
+///      z = 0          z = 1          z = 2
+///    y↑ in  out     y↑ in  out     y↑ in  out
+///       in  in         out in         in  in
+///          → x
+/// ```
+///
+/// The middle plane is the whole of it: the shared face's four corners alternate
+/// `out, in, in, out`, which is the face saddle — all four of its edges cut, and
+/// the two diagonals equally entitled to be joined. Of the 4,096 patterns this
+/// is one of the **18** that offend under the mask `FaceAmbiguity::Separate`
+/// produces (M-292), and all 18 are, exactly, the ones where both cells resolve
+/// to a **single** cycle.
+///
+/// # What it demonstrates
+///
+/// One cycle per cell is one vertex per cell, so all four quads — one for each
+/// cut edge of the shared face — connect the same two vertices. Four quads, one
+/// dual edge, and each quad puts one of its two triangles on each side of it:
+/// **four faces on an edge that should carry two**.
+///
+/// Marching Cubes reads the same twelve samples and comes out manifold, which is
+/// ✗19 in a single fixture: Schaefer, Ju & Warren's premise — *"the original MC
+/// algorithm always constructs a manifold"* — holds here, and their conclusion
+/// — *"the dual preserves the topology of the surface"* — does not.
+///
+/// Plain Dual Contouring is measured beside it because the paper predicts it
+/// (§3, *"DC leads to nonmanifold vertices and edges for all of the ambiguous
+/// sign configurations"*), and on this configuration the manifold construction
+/// buys **nothing**: splitting a cell by cycle cannot split a cell that has one.
+#[test]
+fn a_constructed_ambiguous_face_makes_the_dual_non_manifold() {
+    use crate::cube::edge_on_face;
+    use crate::marching_cubes::trilinear::Contours;
+
+    // ── first, from the tables alone: this pattern offends, and why ──
+    let (case_a, case_b) = (column_case(OFFENDER, 0), column_case(OFFENDER, 1));
+    assert_eq!(
+        (case_a, case_b),
+        (103, 118),
+        "the fixture's two cases moved"
+    );
+    assert_ne!(
+        AMBIGUOUS_FACES[case_a as usize] & (1 << 5),
+        0,
+        "case {case_a}'s +z face is not ambiguous, so there is nothing to demonstrate"
+    );
+    let (owners_a, owners_b) = (cycle_owners(case_a, 0), cycle_owners(case_b, 0));
+    for (owner, side) in [(&owners_a, 1u8), (&owners_b, 0u8)] {
+        let cut: Vec<u8> = (0..12u8)
+            .filter(|&e| edge_on_face(e, 2, side) && owner[e as usize] != 255)
+            .collect();
+        assert_eq!(cut.len(), 4, "an ambiguous face has all four edges cut");
+        assert!(
+            cut.iter()
+                .all(|&e| owner[e as usize] == owner[cut[0] as usize]),
+            "the four cut edges must land in one cycle — that is the mechanism"
+        );
+    }
+    assert_eq!(
+        (
+            Contours::of(case_a, 0).count(),
+            Contours::of(case_b, 0).count()
+        ),
+        (1, 1),
+        "M-292: the default's eighteen offenders are exactly the (1, 1) bucket"
+    );
+
+    // ── then the meshes ──
+    let field = column_lattice(OFFENDER);
+    let shape = RuntimeShape3::new([NX as u32, NY as u32, NZ as u32]).expect("valid shape");
+    let mut mdc = MeshBuffer::<f64>::new();
+    ManifoldDualContouring::<f64>::new()
+        .extract(&field, &shape, [0.0; 3], 1.0, &mut mdc)
+        .expect("extraction");
+    let mut dc = MeshBuffer::<f64>::new();
+    DualContouring::<f64>::new()
+        .extract(&field, &shape, [0.0; 3], 1.0, &mut dc)
+        .expect("extraction");
+    let mut mc = MeshBuffer::<f64>::new();
+    MarchingCubes::<f64>::new()
+        .extract(&field, &shape, [0.0; 3], 1.0, &mut mc)
+        .expect("extraction");
+
+    // **Marching Cubes, on the same twelve samples, is manifold.** The premise
+    // of the paper's argument holds, which is what makes the rest of this a
+    // falsification of the conclusion rather than of the premise.
+    assert!(
+        offending_edges(&mc).is_empty(),
+        "Marching Cubes is non-manifold here, so the fixture would say nothing about the dual"
+    );
+
+    // **The dual is not**, and by the predicted mechanism exactly.
+    let bad = offending_edges(&mdc);
+    assert_eq!(bad.len(), 1, "expected the one shared face to offend, once");
+    let (edge, faces) = bad.iter().next().expect("just asserted one");
+    assert_eq!(
+        faces.len(),
+        4,
+        "the mechanism is four *distinct* quads on one dual edge; fewer distinct \
+         triangles would be duplication, which is a different defect"
+    );
+
+    // Its two ends are the two cells' vertices, one on each side of the shared
+    // face — which is the claim "all four quads connect the same pair".
+    let (p, q) = (
+        mdc.positions[edge.0 as usize],
+        mdc.positions[edge.1 as usize],
+    );
+    let (below, above) = if p[2] < q[2] { (p, q) } else { (q, p) };
+    for v in [below, above] {
+        assert!(
+            (1.0..=2.0).contains(&v[0]) && (1.0..=2.0).contains(&v[1]),
+            "a dual vertex escaped the column in x or y: {v:?}"
+        );
+    }
+    assert!(
+        below[2] < 1.0 && above[2] > 1.0,
+        "the two ends should straddle the shared face at z = 1: {below:?} {above:?}"
+    );
+
+    // **Plain Dual Contouring measures the same defect**, which is the paper's
+    // own prediction for it and the sharpest statement of what the manifold
+    // construction is worth on this configuration: nothing.
+    assert_eq!(
+        offending_edges(&dc).len(),
+        1,
+        "one vertex per cell should offend here too — the paper says so in as many words"
+    );
+    assert_eq!(
+        (
+            mdc.triangle_count(),
+            dc.triangle_count(),
+            mc.triangle_count()
+        ),
+        (20, 20, 40),
+        "the constructed fixture moved"
+    );
+    std::println!(
+        "measured: 48 samples — MDC and DC each 1 non-manifold edge with 4 distinct faces, MC 0"
+    );
+}
+
+/// **The same signs, and the asymptotic decider gives two different answers —
+/// which is why no face rule closes A-025.**
+///
+/// [`a_constructed_ambiguous_face_makes_the_dual_non_manifold`] fixes the twelve
+/// *signs*. The decider does not read signs; it reads the ambiguous face's four
+/// corner *magnitudes* and asks where the bilinear saddle sits,
+///
+/// ```text
+/// s = (v₀₀·v₁₁ − v₁₀·v₀₁) / (v₀₀ + v₁₁ − v₁₀ − v₀₁)
+/// ```
+///
+/// — Nielson & Hamann, *The Asymptotic Decider* (Visualization '91). Scaling the
+/// face's two **inside** corners, while leaving every sign alone, walks `s`
+/// across zero, and the defect appears and disappears with it:
+///
+/// | inside corners | saddle `s` | the face | non-manifold edges |
+/// |---|---|---|---|
+/// | `−0.25` | `+0.375` | separated | **1** |
+/// | `−1` (the fixture) | `0` — an exact tie | separated | **1** |
+/// | `−4` | `−1.5` | **joined** | **0** |
+///
+/// Three consequences, and the third is the one A-025 is about.
+///
+/// **The tie is resolved, not undefined.** At `s = 0` this crate answers
+/// *separated* (`ambiguity::face_is_joined`), so the perfectly symmetric saddle
+/// — the one a hand-built fixture reaches first — is exactly the case the
+/// decider declines to fix.
+///
+/// **The triangle count never moves.** Twenty either way: joining the face
+/// changes which vertices the quads connect, not how many there are.
+///
+/// **The offending set is not a set of sign configurations.** M-292 enumerated
+/// all 4,096 and found none that offends under every consistent mask; this is
+/// what that looks like from the other side — one configuration, two answers,
+/// chosen by the field rather than by the rule. Which is why the decider still
+/// leaves 25–49 offending faces per resolution on `noise_cavity` (M-291) while
+/// being combinatorially capable of avoiding all of them.
+#[test]
+fn the_decider_fixes_the_constructed_case_only_when_the_magnitudes_break_the_tie() {
+    use crate::cube::{corner_offset, is_inside};
+    use crate::marching_cubes::FaceAmbiguity;
+    use crate::marching_cubes::ambiguity::joined_mask;
+
+    /// Bit 5 of a face mask is the `+z` face — the one the column shares.
+    const SHARED_FACE: u8 = 1 << 5;
+
+    let mut rows = Vec::new();
+    for scale in [0.25f64, 1.0, 4.0] {
+        // Scale the shared face's two inside corners. No sign is touched.
+        let mut field = column_lattice(OFFENDER);
+        field.values[1][2][1] *= scale;
+        field.values[2][1][1] *= scale;
+
+        // What the decider makes of cell A's `+z` face.
+        let mut corner = [0.0f64; 8];
+        let mut case = 0u8;
+        for (c, slot) in corner.iter_mut().enumerate() {
+            let o = corner_offset(c as u8);
+            *slot = field.values[1 + o[0] as usize][1 + o[1] as usize][o[2] as usize];
+            if is_inside(*slot) {
+                case |= 1 << c;
+            }
+        }
+        assert_eq!(case, 103, "scaling a magnitude must not move a sign");
+        let joined = joined_mask(&corner, AMBIGUOUS_FACES[case as usize]) & SHARED_FACE != 0;
+
+        let shape = RuntimeShape3::new([NX as u32, NY as u32, NZ as u32]).expect("valid shape");
+        let mut out = MeshBuffer::<f64>::new();
+        let mut extractor = ManifoldDualContouring::<f64>::new();
+        extractor.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+        extractor
+            .extract(&field, &shape, [0.0; 3], 1.0, &mut out)
+            .expect("extraction");
+        assert_eq!(
+            out.triangle_count(),
+            20,
+            "the face rule changes connectivity, not triangle count"
+        );
+        rows.push((scale, joined, report_of(&out, 1.0).non_manifold_edges));
+    }
+
+    assert_eq!(
+        rows,
+        alloc::vec![(0.25, false, 1), (1.0, false, 1), (4.0, true, 0)],
+        "the decider's answer, and the defect with it, follows the magnitudes"
+    );
+    std::println!("measured: same signs, saddle crossing zero — {rows:?}");
+}

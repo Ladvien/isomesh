@@ -1,9 +1,57 @@
 //! Engine-agnostic isosurface extraction. Field in, triangles out.
 //!
+//! ```
+//! use isomesh::marching_cubes::MarchingCubes;
+//! use isomesh::fields::Sphere;
+//! use isomesh::{MeshBuffer, RuntimeShape3};
+//!
+//! let field = Sphere::<f32>::canonical();          // any `Sdf` -- yours, or one of eight here
+//! let shape = RuntimeShape3::new([33; 3])?;        // 33 samples per axis, so 32 cells
+//! let mut mesh = MeshBuffer::<f32>::new();         // reused across calls; never reallocated
+//!
+//! MarchingCubes::<f32>::new()
+//!     .extract(&field, &shape, [-2.0; 3], 0.125, &mut mesh)?;
+//!
+//! assert!(mesh.triangle_count() > 0);
+//! # Ok::<(), isomesh::Error>(())
+//! ```
+//!
+//! `mesh.positions` is `Vec<[f32; 3]>` and `mesh.indices` is `Vec<u32>` — hand
+//! them to a renderer, a physics engine, or an exporter. There is no mesh type to
+//! learn and no math library in the way.
+//!
+//! # Why it looks like this
+//!
 //! `isomesh` has to serve both a real-time voxel game and a CAD tool, and that
 //! single constraint decides most of its design: no math library appears in a
 //! public signature, output buffers are caller-provided and reusable, and the
 //! scalar type is generic over `f32` and `f64`.
+//!
+//! # Which extractor
+//!
+//! Seven implement [`Extractor`](extractor::Extractor). Two questions decide it,
+//! and both answers are measured rather than argued.
+//!
+//! **Are you chunking?** Then the seam is structural, not a bug someone will fix
+//! later: [`MarchingCubes`](marching_cubes::MarchingCubes) and
+//! [`SubgridMarchingTetrahedra`](subgrid::extract::SubgridMarchingTetrahedra)
+//! tile with zero boundary edges on a shared plane; the dual methods place one
+//! vertex per *cell* and are gapped by construction.
+//!
+//! **Do you need sharp corners?** Then
+//! [`DualContouring`](dual_contouring::DualContouring) reaches a box corner to
+//! **0.01 cells** where [`SurfaceNets`](surface_nets::SurfaceNets) stops at
+//! 0.58, and is 101× closer in Hausdorff distance on a sharp field — and 1.2× on
+//! a smooth one, which is why this is a choice rather than an upgrade.
+//!
+//! You cannot have both today. That is measured and open, not hidden.
+//!
+//! The others are for narrower jobs:
+//! [`MarchingTetrahedra`](marching_tetrahedra::MarchingTetrahedra) trades ~3× the
+//! triangles for better sharp-field accuracy,
+//! [`ManifoldDualContouring`](manifold_dual_contouring::ManifoldDualContouring)
+//! splits a cell by surface component, and
+//! [`GreedyQuads`](greedy_quads::GreedyQuads) is the blocky path.
 //!
 //! # Conventions
 //!
@@ -49,10 +97,20 @@ extern crate std;
 pub mod brush;
 pub mod chunk;
 pub mod collider;
+pub mod construct;
 pub mod dual_contouring;
+pub mod experiment;
+/// Speculative algorithms, behind the `experimental` feature.
+///
+/// Off by default, exempt from semver, and exempt from nothing else — see the
+/// module's own docs.
+#[cfg(feature = "experimental")]
+pub mod experimental;
+pub mod extractor;
 pub mod fields;
 pub mod greedy_quads;
 pub mod hermite;
+pub mod lod;
 pub mod manifold_dual_contouring;
 pub mod marching_cubes;
 pub mod marching_tetrahedra;
@@ -71,7 +129,7 @@ mod golden;
 mod property;
 
 mod cube;
-mod dual;
+pub mod dual;
 mod equivariant;
 mod error;
 mod mesh;

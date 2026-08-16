@@ -10,6 +10,19 @@ Surface Nets against Dual Contouring, and Surface Nets has no credible published
 (V-17, literature review). What circulates instead is folklore, and this project has now falsified
 enough of it to be worth writing down.
 
+> **⚠ Superseded in part, 2026-08-16 — and the timings more than the conclusions.**
+>
+> **The dual methods got 4.26× faster on 2026-08-16 with byte-identical output** (A-023/M-285,
+> A-024/M-287), so every millisecond in this document for Surface Nets, Dual Contouring and Manifold
+> Dual Contouring is now high by roughly that factor. `SN/MC` at 256³ went **5.43× → 1.26×**, and
+> Surface Nets is now *faster* than Marching Cubes below 32³ — which falsifies **✗14**, a conclusion
+> this document helped establish. `docs/measurements/family.csv` is the current run.
+>
+> **Seven extractors ship, not five** — subgrid Marching Tetrahedra and greedy quads landed after
+> this was written — **and there are eight reference fields, not seven** (`noise_cavity`).
+>
+> Everything about accuracy, topology and manifoldness stands: not one triangle changed.
+
 Every number below has a committed benchmark that produced it and a `FINDINGS.md` entry that owns it.
 Where a figure is machine-specific, it says so, because three of the most interesting results here are
 about exactly that.

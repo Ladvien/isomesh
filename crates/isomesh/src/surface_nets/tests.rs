@@ -140,8 +140,8 @@ impl ReferenceField for TwoSpheres {
     fn expected_euler(&self) -> Option<i64> {
         Some(4) // two components, each a sphere
     }
-    fn is_exact_distance(&self) -> bool {
-        true
+    fn bound(&self) -> crate::fields::FieldBound {
+        crate::fields::FieldBound::Exact
     }
 }
 

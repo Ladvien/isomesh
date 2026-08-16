@@ -32,6 +32,108 @@ pub(crate) mod noise;
 use crate::vec3::{length, scale, sub};
 use crate::{Real, Sdf};
 
+/// What a field's *value* is, as distinct from where its zero set is.
+///
+/// Ticket: F-001. Sources: Bálint, Valasek & Gergó, *Operations on signed
+/// distance functions*, Acta Cybernetica 24(1) (`10.14232/actacyb.24.1.2019.3`),
+/// Corollary 1; and their follow-up *Operations on Signed Distance Function
+/// Estimates*, CAD&A 20(6) (`10.14733/cadaps.2023.1154-1174`), for `q`.
+///
+/// # Why a `bool` was the wrong type
+///
+/// This replaced `is_exact_distance() -> bool`, and the thing that made it worth
+/// replacing was sitting in the source: [`CsgDifference`] returned
+///
+/// ```text
+/// fn is_exact_distance(&self) -> bool {
+///     true // away from the seam
+/// }
+/// ```
+///
+/// — a comment admitting the invariant is false, on a function returning true.
+/// The comment is right and the value is wrong, and no `bool` can hold both.
+///
+/// # The two numbers, and what they are for
+///
+/// **`l`, the Lipschitz constant.** Corollary 1 of the 2019 paper is exact about
+/// this: *"Every signed distance function is Lipschitz continuous and their
+/// smallest Lipschitz constant is 1."* So `l` is what bounds how fast the field
+/// can change — a sphere tracer may step by `|f| / l` and be guaranteed not to
+/// pass through the surface. `min`/`max` of 1-Lipschitz functions is
+/// 1-Lipschitz, so **the Lipschitz bound survives arbitrary CSG**, which is what
+/// makes Phase 12's empty-cell rejection correct under unlimited player editing.
+///
+/// **`q`, the underestimate ratio.** The 2023 paper's precision: `q · d(p) ≤
+/// |f(p)|` for the true distance `d`, so the field never overstates distance and
+/// understates it by at most a factor `q`. Exactness does *not* survive CSG —
+/// the paper is blunt that *"the minimum of two exact signed distance functions…
+/// is not an exact SDF, and the error can be arbitrarily large under certain
+/// conditions"* — but a `q` does, degrading in a way their Theorem 6 quantifies.
+///
+/// # What reads this
+///
+/// [`accuracy`](crate::validate::accuracy) and the shootout, which must not
+/// report Hausdorff against a field whose values are not distances: the harness
+/// measures geometry against `|sample|`, so a field that understates distance
+/// makes an extractor look better than it is.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum FieldBound {
+    /// `|f(p)|` **is** the distance to the zero set, everywhere in the domain.
+    ///
+    /// Equivalently `Lipschitz { l: 1 }` with `q = 1`. Only this admits a
+    /// Hausdorff measurement against the field's own values.
+    Exact,
+    /// `|f(x) − f(y)| ≤ l · |x − y|`, but the value is not the distance.
+    ///
+    /// A sphere tracer may still step by `|f| / l`. `l > 1` is the interesting
+    /// case: an implicit function that crosses zero at the right place while
+    /// changing faster than distance does.
+    Lipschitz {
+        /// The smallest constant known to hold. `1` for a true distance.
+        l: f64,
+    },
+    /// A conservative lower bound: `q · d(p) ≤ |f(p)| ≤ d(p)`, with `q ∈ (0, 1]`.
+    ///
+    /// **The safe direction**, and the one CSG produces. A tracer stepping by
+    /// `|f|` only ever under-steps, which costs iterations rather than
+    /// correctness.
+    Underestimate {
+        /// The precision. `1` would be exact; smaller is looser.
+        q: f64,
+    },
+    /// Nothing is claimed beyond the sign.
+    ///
+    /// The zero set is still the surface — extraction only reads signs and
+    /// interpolates — but no step size can be derived and no accuracy figure
+    /// against `|sample|` means anything.
+    Unbounded,
+}
+
+impl FieldBound {
+    /// Whether `|f|` may be compared against a true distance.
+    ///
+    /// The one question the accuracy harness asks. Deliberately not a
+    /// `matches!` at each call site: there is one definition of "exact enough to
+    /// measure against", and it is here.
+    #[must_use]
+    pub const fn is_exact(self) -> bool {
+        matches!(self, Self::Exact)
+    }
+
+    /// The Lipschitz constant a sphere tracer may divide by, if one is known.
+    ///
+    /// `Exact` and `Underestimate` are both 1-Lipschitz — the underestimate
+    /// ratio bounds the *value*, not the rate of change — so both answer `1`.
+    #[must_use]
+    pub const fn lipschitz(self) -> Option<f64> {
+        match self {
+            Self::Exact | Self::Underestimate { .. } => Some(1.0),
+            Self::Lipschitz { l } => Some(l),
+            Self::Unbounded => None,
+        }
+    }
+}
+
 /// What a validity or accuracy harness needs to know about a field before it can
 /// decide what a correct extraction looks like.
 ///
@@ -71,7 +173,7 @@ pub trait ReferenceField: Sdf {
     ///
     /// **False for [`Gyroid`] and [`FbmTerrain`].** An accuracy harness must not
     /// treat `|sample(v)|` as a distance to the surface when this is false.
-    fn is_exact_distance(&self) -> bool;
+    fn bound(&self) -> FieldBound;
 }
 
 /// Runs a block once per reference field, with the field bound to a **concrete
@@ -222,8 +324,9 @@ impl<R: Real> ReferenceField for Sphere<R> {
     fn expected_euler(&self) -> Option<i64> {
         Some(2)
     }
-    fn is_exact_distance(&self) -> bool {
-        true
+    /// Exact. `|p − c| − r` is the distance to the sphere, inside and out.
+    fn bound(&self) -> FieldBound {
+        FieldBound::Exact
     }
 }
 
@@ -310,8 +413,9 @@ impl<R: Real> ReferenceField for Torus<R> {
     fn expected_euler(&self) -> Option<i64> {
         Some(0) // genus 1
     }
-    fn is_exact_distance(&self) -> bool {
-        true
+    /// Exact. The revolved-circle form is a true distance in both regions.
+    fn bound(&self) -> FieldBound {
+        FieldBound::Exact
     }
 }
 
@@ -454,8 +558,11 @@ impl<R: Real> ReferenceField for BoxExact<R> {
     fn expected_euler(&self) -> Option<i64> {
         Some(2)
     }
-    fn is_exact_distance(&self) -> bool {
-        true
+    /// Exact, and that is what distinguishes this from a cheaper box: the
+    /// `max(d, 0).length() + min(max(d), 0)` form is a true distance outside
+    /// *and* inside, where the common `max(d)` form is only correct outside.
+    fn bound(&self) -> FieldBound {
+        FieldBound::Exact
     }
 }
 
@@ -493,9 +600,20 @@ pub struct ThinPlate<R: Real> {
 impl<R: Real> ThinPlate<R> {
     /// Plate thickness as a fraction of the cell size it is built for.
     ///
-    /// Below `1.0` so that no grid phase can ever put a corner inside the plate,
-    /// with margin; far enough above zero that a four-fold refinement resolves
-    /// it comfortably.
+    /// Below `1.0`, and far enough above zero that a four-fold refinement
+    /// resolves it comfortably.
+    ///
+    /// **This used to claim that "no grid phase can ever put a corner inside the
+    /// plate". That is false and the canonical grid is the counterexample**
+    /// (M-266): the plate is centred at `y = 0` and every grid this crate
+    /// measures on has an *odd* sample count, so `y = 0` is a sample plane and a
+    /// whole plane of corners sits inside the plate at every level. Being
+    /// thinner than a cell is not the same as being off-lattice, and the
+    /// difference is what M-72 measured without naming.
+    ///
+    /// Shifting the plate half a cell removes the surface entirely, at every
+    /// level including the finest — `lod::tests::
+    /// the_aliasing_is_alignment_and_a_half_cell_shift_removes_it`.
     pub const THICKNESS_IN_CELLS: f64 = 0.4;
 
     /// A plate `THICKNESS_IN_CELLS × h` thick, spanning `[-1, 1]` in x and z.
@@ -550,8 +668,9 @@ impl<R: Real> ReferenceField for ThinPlate<R> {
     fn expected_euler(&self) -> Option<i64> {
         Some(2)
     }
-    fn is_exact_distance(&self) -> bool {
-        true
+    /// Exact. A slab is a box, and the same exact form is used.
+    fn bound(&self) -> FieldBound {
+        FieldBound::Exact
     }
 }
 
@@ -638,6 +757,160 @@ impl<A: Sdf, B: Sdf<Scalar = A::Scalar>> Sdf for Intersection<A, B> {
     }
 }
 
+/// A field that knows what its own values are worth.
+///
+/// Ticket: F-003. Separate from [`ReferenceField`] because that trait is about
+/// *test fixtures* — it also demands a domain, a closedness flag and an expected
+/// Euler characteristic, none of which a composed field has any business
+/// answering. This asks one question, so a CSG node can answer it from its
+/// operands.
+///
+/// # What composes and what does not
+///
+/// **The Lipschitz constant composes, exactly.** `min` and `max` of an
+/// `l₁`-Lipschitz and an `l₂`-Lipschitz function is `max(l₁, l₂)`-Lipschitz:
+/// each is selected pointwise, so the result's rate of change is never more than
+/// the faster operand's. That is what makes a sphere tracer's step size survive
+/// an arbitrary CSG tree, and it is the half Phase 12 needs.
+///
+/// **Exactness does not compose, and no `q` is invented here.** Bálint, Valasek
+/// & Gergó's 2023 follow-up is explicit that the minimum of two exact SDFs *"is
+/// not an exact SDF, and the error can be arbitrarily large under certain
+/// conditions"*, and their Theorem 6 quantifies the survivor as
+/// `¼ · σ(δ)/diam · min(q_f, q_g)` — where `σ` is a **set-contact smoothness**
+/// depending on how the two solids meet. This crate does not compute `σ`, so it
+/// does not report a `q` for a composed field: a number derived from a factor
+/// nobody evaluated is a guess with a citation attached, which is what rule 5
+/// forbids. A composed field reports the Lipschitz constant it can prove and
+/// stops there.
+pub trait BoundedSdf: Sdf {
+    /// What this field's values are worth. See [`FieldBound`].
+    fn value_bound(&self) -> FieldBound;
+}
+
+/// The bound of a `min`/`max` composition of two fields.
+///
+/// One definition, shared by all four combinators, because the rule is the same
+/// for every one of them and four copies would drift.
+///
+/// - Any operand [`Unbounded`](FieldBound::Unbounded) makes the result so:
+///   nothing can be claimed about a value composed from a value nothing is
+///   claimed about.
+/// - Otherwise the result is [`Lipschitz`](FieldBound::Lipschitz) at
+///   `max(l_a, l_b)`, **including when both operands are exact** — that
+///   downgrade is the point, not an oversight.
+#[must_use]
+pub fn composed_bound(a: FieldBound, b: FieldBound) -> FieldBound {
+    match (a.lipschitz(), b.lipschitz()) {
+        (Some(la), Some(lb)) => FieldBound::Lipschitz {
+            l: if la > lb { la } else { lb },
+        },
+        _ => FieldBound::Unbounded,
+    }
+}
+
+/// Set union `a ∪ b`, as `min(f_a, f_b)`.
+///
+/// The combinator the crate went without until E-216 needed it, and the absence
+/// is worth a sentence: `Difference` caps `csg_difference` and `Intersection`
+/// caps `Gyroid`, so both had a reference field asking for them. **Nothing in
+/// the suite unions anything**, so the most basic CSG operation was the one
+/// missing — a property of the fixtures rather than of the design (M-240).
+///
+/// # Distance, and why this one is the safe direction
+///
+/// `min` of two 1-Lipschitz functions is 1-Lipschitz, and it **never
+/// overestimates** the true distance: away from the seam it is exact, and near
+/// one it is a conservative lower bound. That is the direction a sphere tracer
+/// can survive — a step that is too short only costs iterations. `max`, which
+/// [`Intersection`] and [`Difference`] use, overestimates near concave seams and
+/// is the direction that lets a tracer step *through* a surface. Phase 11's
+/// `F-001` is where that distinction gets a type.
+///
+/// Gradient is that of the active operand; the first wins on the seam, which is
+/// the same deterministic selection from the subdifferential the other two make.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Union<A, B> {
+    /// First operand.
+    pub a: A,
+    /// Second operand.
+    pub b: B,
+}
+
+impl<A: Sdf, B: Sdf<Scalar = A::Scalar>> Sdf for Union<A, B> {
+    type Scalar = A::Scalar;
+
+    #[inline]
+    fn sample(&self, p: [Self::Scalar; 3]) -> Self::Scalar {
+        let (fa, fb) = (self.a.sample(p), self.b.sample(p));
+        if fa <= fb { fa } else { fb }
+    }
+
+    #[inline]
+    fn gradient(&self, p: [Self::Scalar; 3]) -> [Self::Scalar; 3] {
+        let (fa, fb) = (self.a.sample(p), self.b.sample(p));
+        if fa <= fb {
+            self.a.gradient(p)
+        } else {
+            self.b.gradient(p)
+        }
+    }
+}
+
+/// Union with a rounded seam of radius `k`, as
+/// [`smooth_min`](crate::brush::smooth_min).
+///
+/// **The parameter a level designer actually reaches for.** A hard [`Union`]
+/// leaves a crease where two primitives meet; `k` is how wide the fillet is, in
+/// world units, and sweeping it from zero is the difference between two spheres
+/// touching and one blob.
+///
+/// # It is not a distance field, and the blend is where it stops being one
+///
+/// `smooth_min` is smaller than `min` by up to `k/4`, so the value understates
+/// distance inside the blend region. It stays a conservative *lower* bound —
+/// the safe direction, as for [`Union`] — but an accuracy harness must measure
+/// against geometry rather than against `|sample|`. The gradient is the exact
+/// derivative of the blend rather than either operand's, because on this seam
+/// there is no active operand to pick: that is what "smooth" means.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SmoothUnion<A, B, R> {
+    /// First operand.
+    pub a: A,
+    /// Second operand.
+    pub b: B,
+    /// Blend radius, in world units. Zero degenerates to a hard [`Union`].
+    pub k: R,
+}
+
+impl<A: Sdf, B: Sdf<Scalar = A::Scalar>> Sdf for SmoothUnion<A, B, A::Scalar> {
+    type Scalar = A::Scalar;
+
+    #[inline]
+    fn sample(&self, p: [Self::Scalar; 3]) -> Self::Scalar {
+        crate::brush::smooth_min(self.a.sample(p), self.b.sample(p), self.k)
+    }
+
+    /// Central differences, because the blend has no active operand.
+    ///
+    /// [`Union`] can hand back whichever operand is active; here both contribute
+    /// everywhere inside the blend, so the analytic gradient would be a chain
+    /// rule through `smooth_min`'s own `h`. Differencing the composed field is
+    /// shorter, is exact to `O(h²)`, and cannot disagree with `sample` — which
+    /// an independently written analytic form could.
+    #[inline]
+    fn gradient(&self, p: [Self::Scalar; 3]) -> [Self::Scalar; 3] {
+        let e = Self::Scalar::from_f64(1e-4);
+        let at = |q: [Self::Scalar; 3]| self.sample(q);
+        let two = Self::Scalar::ONE + Self::Scalar::ONE;
+        [
+            (at([p[0] + e, p[1], p[2]]) - at([p[0] - e, p[1], p[2]])) / (two * e),
+            (at([p[0], p[1] + e, p[2]]) - at([p[0], p[1] - e, p[2]])) / (two * e),
+            (at([p[0], p[1], p[2] + e]) - at([p[0], p[1], p[2] - e])) / (two * e),
+        ]
+    }
+}
+
 /// A box with a sphere subtracted from one corner.
 pub type CsgDifference<R> = Difference<BoxExact<R>, Sphere<R>>;
 
@@ -673,8 +946,23 @@ impl<R: Real> ReferenceField for CsgDifference<R> {
     fn expected_euler(&self) -> Option<i64> {
         Some(2)
     }
-    fn is_exact_distance(&self) -> bool {
-        true // away from the seam
+    /// **Not exact, and this declaration is why F-001 existed.**
+    ///
+    /// It returned `true` with `// away from the seam` beside it — a comment
+    /// admitting the invariant is false, on a function returning true. The field
+    /// is `max(box, −sphere)`, and `max` of two exact distances is not an exact
+    /// distance: near a concave seam it **overestimates**, which is the direction
+    /// that lets a sphere tracer step through the surface. That seam is exactly
+    /// where A-014d located this field's coincident polygons.
+    ///
+    /// **`q` is declared conservatively rather than derived.** The 2023 paper's
+    /// Theorem 2 gives `min(q_f, q_g)` for `max` on the interior, which is 1 for
+    /// two exact operands, but its Theorem 6 shows the whole-space bound degrades
+    /// by a geometry-dependent factor this crate does not compute. F-003 is the
+    /// ticket that computes it from the operands; until then a loose bound that
+    /// is true beats a tight one that is guessed.
+    fn bound(&self) -> FieldBound {
+        FieldBound::Underestimate { q: 0.5 }
     }
 }
 
@@ -689,8 +977,9 @@ impl<R: Real> ReferenceField for CsgDifference<R> {
 /// # This is not a distance field
 ///
 /// `g` is an implicit function whose zero set is the surface, and nothing more.
-/// `|∇g|` varies with position, so [`is_exact_distance`](ReferenceField::is_exact_distance)
-/// is `false` and `|g(v)|` must not be used as a distance.
+/// `|∇g|` varies with position, so its [`bound`](ReferenceField::bound) is
+/// [`Lipschitz`](FieldBound::Lipschitz) rather than
+/// [`Exact`](FieldBound::Exact), and `|g(v)|` must not be used as a distance.
 ///
 /// It is deliberately **not** normalised by `|∇g|`. Doing so would buy nothing
 /// and cost something: marching cubes' linear edge interpolation `t = a/(a−b)` is
@@ -789,8 +1078,29 @@ impl<R: Real> ReferenceField for CappedGyroid<R> {
     fn expected_euler(&self) -> Option<i64> {
         None // genus depends on how many tunnels the cap encloses
     }
-    fn is_exact_distance(&self) -> bool {
-        false
+    /// Lipschitz, and not a distance — with the constant **derived** rather than
+    /// guessed, because the first attempt at this guessed `√3` and was wrong.
+    ///
+    /// The field is `sin(a)cos(b) + sin(b)cos(c) + sin(c)cos(a)` at unit scale,
+    /// whose partials are
+    ///
+    /// ```text
+    /// ∂/∂x = cos(a)cos(b) − sin(c)sin(a)
+    /// ```
+    ///
+    /// and permutations. Each is a difference of two products of quantities
+    /// bounded by one, so `|∂/∂x| ≤ 2` and `|∇g| ≤ 2√3 ≈ 3.464`. Loose — the
+    /// sampled maximum is about 1.7 — but **sound**, which is the property that
+    /// matters: a sphere tracer dividing by a constant smaller than the true one
+    /// steps through the surface, so an under-declared Lipschitz bound is worse
+    /// than none.
+    ///
+    /// Capped by an exact sphere, and `max` cannot raise the constant above the
+    /// larger of its operands', so the cap does not change this.
+    fn bound(&self) -> FieldBound {
+        FieldBound::Lipschitz {
+            l: 3.464_101_615_137_754_6,
+        }
     }
 }
 
@@ -945,8 +1255,23 @@ impl<R: Real> ReferenceField for NoiseCavity<R> {
     fn expected_euler(&self) -> Option<i64> {
         None // genus depends on how many noise blobs the cap encloses
     }
-    fn is_exact_distance(&self) -> bool {
-        false
+    /// **Unbounded, because the constant has not been derived and a guess was
+    /// caught (M-244).**
+    ///
+    /// This first declared `Lipschitz { l: 2.598 }`, reasoning loosely from
+    /// Perlin noise's gradient bound. `every_field_meets_the_bound_it_declares`
+    /// measured `|∇f|` reaching **7.73** and failed it on the first run — which
+    /// is the whole reason a declared bound is checked rather than trusted, and
+    /// the same defect as the `// away from the seam` comment this ticket
+    /// replaced, made by the person replacing it.
+    ///
+    /// A real constant is derivable from the noise's amplitude, frequency and
+    /// octave count, and **F-002 is where that gets established** — a sampled
+    /// maximum is a *lower* bound on the supremum, so measuring one and
+    /// declaring it would be unsound in exactly the dangerous direction. Until
+    /// then this claims nothing beyond the sign, which is all extraction reads.
+    fn bound(&self) -> FieldBound {
+        FieldBound::Unbounded
     }
 }
 
@@ -958,7 +1283,7 @@ impl<R: Real> ReferenceField for NoiseCavity<R> {
 ///
 /// The value is a vertical distance only, and its Lipschitz constant exceeds one
 /// wherever the terrain is steep, so
-/// [`is_exact_distance`](ReferenceField::is_exact_distance) is `false`. The
+/// its [`bound`](ReferenceField::bound) is [`Unbounded`](FieldBound::Unbounded). The
 /// surface also leaves through the sides of the domain, so
 /// [`closed_in_domain`](ReferenceField::closed_in_domain) is `false` and a caller
 /// must not require zero boundary edges. It is the reference field for the case
@@ -1061,10 +1386,101 @@ impl<R: Real> ReferenceField for FbmTerrain<R> {
     fn expected_euler(&self) -> Option<i64> {
         None // not closed, so there is nothing to assert
     }
-    fn is_exact_distance(&self) -> bool {
-        false
+    /// Unbounded. A heightfield's `y − h(x, z)` is a distance only where the
+    /// surface is level; on a slope it understates by `cos θ`, and fbm has no
+    /// slope bound worth asserting. The sign is right everywhere, which is all
+    /// extraction needs.
+    fn bound(&self) -> FieldBound {
+        FieldBound::Unbounded
     }
 }
 
 #[cfg(test)]
 mod tests;
+
+impl<R: Real> BoundedSdf for Sphere<R> {
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Exact
+    }
+}
+
+impl<R: Real> BoundedSdf for Torus<R> {
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Exact
+    }
+}
+
+impl<R: Real> BoundedSdf for BoxExact<R> {
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Exact
+    }
+}
+
+impl<R: Real> BoundedSdf for ThinPlate<R> {
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Exact
+    }
+}
+
+impl<R: Real> BoundedSdf for Gyroid<R> {
+    /// `2√3` per axis-scale — derived on [`CappedGyroid`]'s
+    /// [`bound`](ReferenceField::bound).
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Lipschitz {
+            l: 3.464_101_615_137_754_6 * self.scale.as_f64().abs(),
+        }
+    }
+}
+
+impl<A: BoundedSdf, B: BoundedSdf<Scalar = A::Scalar>> BoundedSdf for Union<A, B> {
+    fn value_bound(&self) -> FieldBound {
+        composed_bound(self.a.value_bound(), self.b.value_bound())
+    }
+}
+
+impl<A: BoundedSdf, B: BoundedSdf<Scalar = A::Scalar>> BoundedSdf for Intersection<A, B> {
+    fn value_bound(&self) -> FieldBound {
+        composed_bound(self.a.value_bound(), self.b.value_bound())
+    }
+}
+
+impl<A: BoundedSdf, B: BoundedSdf<Scalar = A::Scalar>> BoundedSdf for Difference<A, B> {
+    /// Negating an operand cannot change how fast it moves, so subtraction
+    /// composes exactly as intersection does.
+    fn value_bound(&self) -> FieldBound {
+        composed_bound(self.a.value_bound(), self.b.value_bound())
+    }
+}
+
+impl<A: BoundedSdf, B: BoundedSdf<Scalar = A::Scalar>> BoundedSdf for SmoothUnion<A, B, A::Scalar> {
+    /// The blend never moves faster than the operands it interpolates between:
+    /// `smooth_min` is a convex combination of `a` and `b` less a non-negative
+    /// term, so its gradient is bounded by the larger operand's.
+    fn value_bound(&self) -> FieldBound {
+        composed_bound(self.a.value_bound(), self.b.value_bound())
+    }
+}
+
+impl<R: Real> BoundedSdf for NoiseVolume<R> {
+    /// Unbounded: the constant is derivable from the noise's amplitude and
+    /// octaves and has not been derived, and a sampled maximum would be unsound
+    /// in the dangerous direction (M-244).
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Unbounded
+    }
+}
+
+impl<R: Real> BoundedSdf for FbmTerrain<R> {
+    /// Unbounded. A heightfield's value is a vertical distance, and fbm has no
+    /// slope bound worth asserting.
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Unbounded
+    }
+}
+
+impl<R: Real> BoundedSdf for crate::brush::Capsule<R> {
+    /// Exact. Distance to a segment, which is a true distance in both regions.
+    fn value_bound(&self) -> FieldBound {
+        FieldBound::Exact
+    }
+}

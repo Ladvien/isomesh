@@ -206,6 +206,14 @@ fn thickness_for(step: u8) -> f32 {
 /// The shell the demo opens on. See [`thickness_for`].
 const DEFAULT_STEP: u8 = 1;
 
+/// An `f32` from the environment, or `fallback`.
+fn number(key: &str, fallback: f32) -> f32 {
+    std::env::var(key)
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(fallback)
+}
+
 fn setup(
     mut commands: Commands,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -256,9 +264,14 @@ fn setup(
         volume,
         stream: ChunkStream::new(),
         update: StreamUpdate::new(),
-        view: 34.0,
+        // Both settable from the environment, because both are keyboard-only
+        // otherwise and a capture ignores the keyboard. A recording wants a
+        // slower fly and a wider stream radius than a person exploring does:
+        // chunks then arrive well before they are prominent, so the frontier
+        // pops in the far distance instead of in the middle of the frame.
+        view: number("ISOMESH_STREAM_VIEW", 34.0),
         flying: true,
-        speed: 5.0,
+        speed: number("ISOMESH_SPEED", 5.0),
         travelled: 0.0,
         thickness,
     });

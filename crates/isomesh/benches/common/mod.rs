@@ -2,6 +2,28 @@
 //!
 //! One definition of "this field at N³", so that a criterion benchmark and the
 //! resolution sweep cannot silently disagree about which grid they measured.
+//!
+//! # Why the blanket `dead_code` allow
+//!
+//! Cargo compiles `mod common;` **once per bench target**, so every helper is
+//! unused from the point of view of every bench that does not happen to call it
+//! — `grid` is dead in `experiment_p8`, `experiment` is dead in `shootout`, and
+//! so on. The alternative is one `#[allow]` per item, which grows with the file
+//! and says the same thing eight times.
+
+#![allow(
+    dead_code,
+    reason = "compiled once per bench target, so every helper is unused in most of them"
+)]
+
+pub(crate) mod experiment;
+pub(crate) mod wedge;
+
+// Hardware counters come from `perf_event_open`, a Linux system call with no
+// macOS equivalent a bench can reach. Callers on other platforms either refuse
+// (`experiment_p12`) or record the columns as `unavailable` (`family`).
+#[cfg(target_os = "linux")]
+pub(crate) mod counters;
 
 use isomesh::fields::ReferenceField;
 use isomesh::{Real, RuntimeShape3, Sdf};

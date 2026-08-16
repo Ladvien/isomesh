@@ -51,7 +51,7 @@ use crate::{MeshSink, Real, Sdf, Shape3};
 /// tetrahedron inside, each isolated from the others, each contributing its own
 /// triangle. `every_case_fits_the_slot_budget` proves it over all 256 cases and
 /// all 64 face-resolution masks rather than trusting the argument.
-pub(crate) const MAX_CELL_VERTICES: usize = 4;
+pub const MAX_CELL_VERTICES: usize = 4;
 
 /// No vertex owns this edge, because the surface does not cross it.
 pub(crate) const NO_SLOT: u8 = u8::MAX;
@@ -63,7 +63,7 @@ pub(crate) const NO_SLOT: u8 = u8::MAX;
 /// that lies on the same sheet of surface, and the cell alone does not identify
 /// it.
 #[derive(Debug)]
-pub(crate) struct CellVertices<R: Real> {
+pub struct CellVertices<R: Real> {
     position: [[R; 3]; MAX_CELL_VERTICES],
     /// Which vertex owns each of the twelve edges, or [`NO_SLOT`].
     slot_of_edge: [u8; EDGE_COUNT],
@@ -91,7 +91,7 @@ impl<R: Real> CellVertices<R> {
     /// edge maps to it, including edges the surface does not cross — harmless,
     /// because the quad walk only ever asks about edges it has just found a sign
     /// change on.
-    pub(crate) fn push_whole_cell(&mut self, position: [R; 3]) {
+    pub fn push_whole_cell(&mut self, position: [R; 3]) {
         debug_assert_eq!(self.count, 0, "a whole-cell vertex must be the only one");
         self.position[0] = position;
         self.slot_of_edge = [0; EDGE_COUNT];
@@ -104,7 +104,7 @@ impl<R: Real> CellVertices<R> {
     ///
     /// In debug builds, if more than [`MAX_CELL_VERTICES`] components are pushed
     /// or two components claim the same edge.
-    pub(crate) fn push_component(&mut self, position: [R; 3], edges: u16) {
+    pub fn push_component(&mut self, position: [R; 3], edges: u16) {
         debug_assert!((self.count as usize) < MAX_CELL_VERTICES, "slot budget");
         let slot = self.count;
         self.position[slot as usize] = position;
@@ -132,7 +132,7 @@ impl<R: Real> CellVertices<R> {
 /// The rule receives `base`, `origin` and `cell_size` separately rather than a
 /// pre-computed cell origin so that an implementation can do its arithmetic in
 /// whichever space keeps it exact.
-pub(crate) trait VertexRule<R: Real> {
+pub trait VertexRule<R: Real> {
     /// Place this cell's vertices, given its corner samples in the crate's
     /// corner order.
     fn place<S: Sdf<Scalar = R>>(
@@ -186,7 +186,12 @@ const fn build_quad_edge() -> [[[u8; 2]; 2]; 3] {
 /// over the cells that produced a vertex, because most cells produce none.
 #[derive(Debug)]
 pub(crate) struct DualMesher<R: Real> {
+    /// Field values, on a grid whose **row length is forced odd** — see
+    /// [`row_stride`] and A-024.
     values: Vec<R>,
+    /// Samples per row in [`values`](Self::values), which is `size[0] | 1` and
+    /// therefore **not** `size[0]` whenever the caller's grid is even.
+    row: usize,
     /// Per cell: the index of its first vertex, or [`u32::MAX`] when the surface
     /// misses it. This doubles as the active flag.
     cell_first: Vec<u32>,
@@ -212,6 +217,7 @@ impl<R: Real> DualMesher<R> {
     pub(crate) const fn new() -> Self {
         Self {
             values: Vec::new(),
+            row: 0,
             cell_first: Vec::new(),
             cell_edge_slot: Vec::new(),
             slot_position: Vec::new(),
@@ -269,6 +275,43 @@ impl<R: Real> DualMesher<R> {
         Ok(())
     }
 
+    /// Where sample `p` lives in [`values`](Self::values).
+    ///
+    /// **Not `shape.linearize`, and the difference is one bit (A-024, M-287).**
+    /// `values` is `size[0]·size[1]·size[2]` floats laid out by the caller's
+    /// shape, so its row stride is `size[0]·4` bytes and its plane stride
+    /// `size[0]·size[1]·4`. At `size[0] = size[1] = 128` those are **512 bytes
+    /// and exactly 64 KiB**, which are a cache-set aliasing period on ordinary
+    /// hardware twice over, and Surface Nets measured **3.37× the cost of 127³
+    /// or 129³** there — on a field with no surface, so it is the scaffolding
+    /// and not the geometry. 256³ pays 1.39× for the same reason.
+    ///
+    /// Forcing the row length **odd** removes both periods at once and cannot
+    /// reintroduce either: `4·odd` is never a multiple of 512, and
+    /// `4·odd·size[1]` is a multiple of 65,536 only if `size[1]` is a multiple
+    /// of 16,384, which is a grid of 2.7×10¹² samples.
+    ///
+    /// It is unconditional on purpose. A pad applied only when the stride looks
+    /// bad would be a second layout reachable from the same call, which is the
+    /// shape `CLAUDE.md`'s one-path rule exists to forbid — and a *fixed* pad of
+    /// one would be worse than nothing, since it maps every `size[0] = 2ᵏ − 1`
+    /// onto the stride it is trying to avoid. `| 1` is idempotent, so it has no
+    /// such image.
+    ///
+    /// The cost is one float per row when the row is even — **0.8% of `values`
+    /// at 128³** — and nothing at all at run time: the multiply is by a
+    /// different constant, not an extra one.
+    #[inline]
+    fn index(&self, p: [u32; 3], size: [u32; 3]) -> usize {
+        p[0] as usize + self.row * (p[1] as usize + size[1] as usize * p[2] as usize)
+    }
+
+    /// Samples per row for a grid of this size.
+    #[inline]
+    fn row_stride(size: [u32; 3]) -> usize {
+        size[0] as usize | 1
+    }
+
     fn sample<S: Sdf<Scalar = R>>(
         &mut self,
         sdf: &S,
@@ -277,8 +320,14 @@ impl<R: Real> DualMesher<R> {
         cell_size: R,
     ) {
         let size = shape.size();
+        self.row = Self::row_stride(size);
+        // One slot per row is padding and is never read; it is filled rather
+        // than skipped so the buffer has no uninitialised gaps and `push` stays
+        // a single sequential write.
+        let pad = self.row - size[0] as usize;
         self.values.clear();
-        self.values.reserve(shape.element_count());
+        self.values
+            .reserve(self.row * size[1] as usize * size[2] as usize);
         for z in 0..size[2] {
             for y in 0..size[1] {
                 for x in 0..size[0] {
@@ -287,6 +336,9 @@ impl<R: Real> DualMesher<R> {
                         origin[1] + cell_size * R::from_f64(f64::from(y)),
                         origin[2] + cell_size * R::from_f64(f64::from(z)),
                     ]));
+                }
+                for _ in 0..pad {
+                    self.values.push(R::ZERO);
                 }
             }
         }
@@ -314,8 +366,11 @@ impl<R: Real> DualMesher<R> {
                     let mut inside_count = 0u32;
                     for (c, slot) in corner.iter_mut().enumerate() {
                         let o = crate::cube::corner_offset(c as u8);
-                        let s = shape.linearize([base[0] + o[0], base[1] + o[1], base[2] + o[2]]);
-                        *slot = self.values[s as usize];
+                        let s = self.index(
+                            [base[0] + o[0], base[1] + o[1], base[2] + o[2]],
+                            shape.size(),
+                        );
+                        *slot = self.values[s];
                         if is_inside(*slot) {
                             inside_count += 1;
                         }
@@ -467,10 +522,37 @@ impl<R: Real> DualMesher<R> {
         cells: [u32; 3],
         out: &mut M,
     ) {
+        // Three monomorphisations of one function, not three copies of a loop.
+        //
+        // **The axis has to be a constant, and A-023 measured what it costs when
+        // it is not (M-285).** With `axis`, `u` and `v` as runtime values, every
+        // `p[axis] = a` is a dynamically indexed store, so `p` cannot live in
+        // registers: each iteration writes three coordinates to the stack and
+        // `linearize` reads them straight back, a store-to-load chain the
+        // scheduler cannot break. This stage was **82% of the dual mesher's
+        // cycles at IPC 0.72** (M-284) while the cell loop beside it, doing more
+        // work per iteration, ran at 3.83.
+        //
+        // The emission order is unchanged — same three passes in the same order,
+        // same loop bounds, same triangles in the same sequence — which is why
+        // T-007's golden hashes are untouched by this.
+        self.emit_quad_axis::<0, M>(shape, cells, out);
+        self.emit_quad_axis::<1, M>(shape, cells, out);
+        self.emit_quad_axis::<2, M>(shape, cells, out);
+    }
+
+    /// One axis of [`emit_quads`](Self::emit_quads), with the axis a constant.
+    fn emit_quad_axis<const AXIS: usize, M: MeshSink<Scalar = R>>(
+        &self,
+        shape: &impl Shape3,
+        cells: [u32; 3],
+        out: &mut M,
+    ) {
         let size = shape.size();
-        for axis in 0..3usize {
-            let u = (axis + 1) % 3;
-            let v = (axis + 2) % 3;
+        {
+            let axis = AXIS;
+            let u = (AXIS + 1) % 3;
+            let v = (AXIS + 2) % 3;
 
             // The edge runs from `p` to `p + e_axis`, and all four surrounding
             // cells must exist, which bounds `p` on the other two axes.
@@ -482,13 +564,13 @@ impl<R: Real> DualMesher<R> {
                         p[u] = b;
                         p[v] = c;
 
-                        let s0 = shape.linearize(p);
+                        let s0 = self.index(p, size);
                         let mut q = p;
                         q[axis] += 1;
-                        let s1 = shape.linearize(q);
+                        let s1 = self.index(q, size);
 
-                        let inside0 = is_inside(self.values[s0 as usize]);
-                        let inside1 = is_inside(self.values[s1 as usize]);
+                        let inside0 = is_inside(self.values[s0]);
+                        let inside1 = is_inside(self.values[s1]);
                         if inside0 == inside1 {
                             continue;
                         }
