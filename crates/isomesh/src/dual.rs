@@ -467,10 +467,37 @@ impl<R: Real> DualMesher<R> {
         cells: [u32; 3],
         out: &mut M,
     ) {
+        // Three monomorphisations of one function, not three copies of a loop.
+        //
+        // **The axis has to be a constant, and A-023 measured what it costs when
+        // it is not (M-285).** With `axis`, `u` and `v` as runtime values, every
+        // `p[axis] = a` is a dynamically indexed store, so `p` cannot live in
+        // registers: each iteration writes three coordinates to the stack and
+        // `linearize` reads them straight back, a store-to-load chain the
+        // scheduler cannot break. This stage was **82% of the dual mesher's
+        // cycles at IPC 0.72** (M-284) while the cell loop beside it, doing more
+        // work per iteration, ran at 3.83.
+        //
+        // The emission order is unchanged — same three passes in the same order,
+        // same loop bounds, same triangles in the same sequence — which is why
+        // T-007's golden hashes are untouched by this.
+        self.emit_quad_axis::<0, M>(shape, cells, out);
+        self.emit_quad_axis::<1, M>(shape, cells, out);
+        self.emit_quad_axis::<2, M>(shape, cells, out);
+    }
+
+    /// One axis of [`emit_quads`](Self::emit_quads), with the axis a constant.
+    fn emit_quad_axis<const AXIS: usize, M: MeshSink<Scalar = R>>(
+        &self,
+        shape: &impl Shape3,
+        cells: [u32; 3],
+        out: &mut M,
+    ) {
         let size = shape.size();
-        for axis in 0..3usize {
-            let u = (axis + 1) % 3;
-            let v = (axis + 2) % 3;
+        {
+            let axis = AXIS;
+            let u = (AXIS + 1) % 3;
+            let v = (AXIS + 2) % 3;
 
             // The edge runs from `p` to `p + e_axis`, and all four surrounding
             // cells must exist, which bounds `p` on the other two axes.
