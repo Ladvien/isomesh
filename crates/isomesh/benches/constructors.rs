@@ -54,11 +54,14 @@
 //! anyway: the marching constructor's `BTreeSet` is data-dependent and can
 //! exceed its own grid.
 //!
-//! So the gap is declared rather than filled. What is known without measuring:
-//! all four field → field constructors allocate `O(samples)` auxiliary storage,
-//! and `marched` allocates a fifth structure whose size tracks the *front* and
-//! not the grid. T-019 is the ticket for measuring it out of process, where the
-//! instrument does not have to live inside a crate that forbids the tool.
+//! **T-019 fills the gap from outside.** `--only <constructor>` runs exactly one
+//! constructor on one field at one resolution and nothing else, so the
+//! process's own peak resident set attributes to it;
+//! `scripts/constructor_memory.sh` drives one process per constructor under the
+//! platform's `time` tool and subtracts a `baseline` run that builds the input
+//! and stops. The instrument is then the operating system rather than a
+//! `GlobalAlloc`, and the crate stays free of `unsafe` rather than the rule
+//! being bent.
 
 use std::fmt::Write as _;
 use std::fs;
@@ -96,8 +99,122 @@ struct Row {
     worst_near: f64,
 }
 
+/// The process's peak resident set, in KiB, or `None` where the kernel does not
+/// publish one.
+///
+/// `VmHWM` from `/proc/self/status` — a **file read**, which is ordinary safe
+/// Rust. The instrument that was ruled out is a counting `GlobalAlloc`, because
+/// that needs `unsafe impl` and the workspace forbids it; nothing about the
+/// measurement itself required going outside the crate. What it does require is
+/// going outside the *process*, since `VmHWM` is a high-water mark over a
+/// process's whole life and would otherwise attribute every constructor's peak
+/// to whichever ran first — hence `--only`.
+///
+/// Linux only. macOS has no `/proc`, and its `ru_maxrss` needs `libc`, which
+/// this crate does not depend on. CI runs Linux, which is where the number is
+/// checked, so the figure exists exactly where it is used.
+fn peak_rss_kib() -> Option<u64> {
+    let status = std::fs::read_to_string("/proc/self/status").ok()?;
+    status
+        .lines()
+        .find(|l| l.starts_with("VmHWM:"))
+        .and_then(|l| l.split_whitespace().nth(1))
+        .and_then(|v| v.parse().ok())
+}
+
+/// Value of `--<flag>`, if present.
+fn flag(name: &str) -> Option<String> {
+    let args: Vec<String> = std::env::args().collect();
+    let i = args.iter().position(|a| a == name)?;
+    args.get(i + 1).cloned()
+}
+
+/// One constructor, one field, one resolution, and nothing else in the process.
+///
+/// The whole point is what is *absent*: no other constructor runs, no CSV is
+/// written, and nothing is printed but a single line, so the peak resident set
+/// the caller reads belongs to this constructor plus the input it needed.
+/// `baseline` and `mesh-baseline` build that input and stop, which is what makes
+/// the subtraction meaningful.
+fn run_one(which: &str) {
+    let field_name = flag("--field").unwrap_or_else(|| String::from("sphere"));
+    let samples: u32 = flag("--samples").and_then(|s| s.parse().ok()).unwrap_or(65);
+
+    isomesh::for_each_reference_field!(f64, |name, field| {
+        if name == field_name {
+            let (lo, hi) = field.domain();
+            let h = (hi[0] - lo[0]) / f64::from(samples - 1);
+            let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
+            let size = shape.size();
+            let mut grid = Vec::with_capacity(shape.element_count());
+            for z in 0..size[2] {
+                for y in 0..size[1] {
+                    for x in 0..size[0] {
+                        grid.push(field.sample([
+                            lo[0] + h * f64::from(x),
+                            lo[1] + h * f64::from(y),
+                            lo[2] + h * f64::from(z),
+                        ]));
+                    }
+                }
+            }
+
+            let built: Vec<f64> = match which {
+                "baseline" => Vec::new(),
+                "exact" => signed_distance_field(&grid, &shape, h).expect("exact"),
+                "swept" => signed_distance_field_swept(&grid, &shape, h).expect("swept"),
+                "marched" => signed_distance_field_marched(&grid, &shape, h).expect("marched"),
+                "band" => {
+                    let degraded: Vec<f64> = grid.iter().map(|v| v * 2.0).collect();
+                    reinitialise_narrow_band(&degraded, &shape, h, BAND)
+                        .expect("band")
+                        .0
+                }
+                "mesh-baseline" | "pseudonormal" | "winding" => {
+                    let mesh = mesh_of(&grid, &shape, lo, h);
+                    match which {
+                        "pseudonormal" => {
+                            signed_distance_from_mesh(&mesh.positions, &mesh.indices, &shape, lo, h)
+                                .expect("pseudonormal")
+                        }
+                        "winding" => signed_distance_from_mesh_winding(
+                            &mesh.positions,
+                            &mesh.indices,
+                            &shape,
+                            lo,
+                            h,
+                            0.5,
+                        )
+                        .expect("winding"),
+                        _ => {
+                            // `mesh-baseline`: the mesh is the thing being paid
+                            // for, so it has to survive to the end of the
+                            // process or the peak would not include it.
+                            std::hint::black_box(&mesh);
+                            Vec::new()
+                        }
+                    }
+                }
+                other => {
+                    eprintln!("unknown constructor {other}");
+                    std::process::exit(2);
+                }
+            };
+            std::hint::black_box(&built);
+            match peak_rss_kib() {
+                Some(kib) => println!("{which} {field_name} {samples} {} {kib}", built.len()),
+                None => println!("{which} {field_name} {samples} {} unavailable", built.len()),
+            }
+        }
+    });
+}
+
 fn main() {
     if !std::env::args().any(|arg| arg == "--bench") {
+        return;
+    }
+    if let Some(which) = flag("--only") {
+        run_one(&which);
         return;
     }
 

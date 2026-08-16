@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**162 tickets archived, 10 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**163 tickets archived, 9 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -275,7 +275,6 @@ expectations into docs that measurement then disproved (✗1, ✗3, ✗14, O-14)
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **T-019** | **Peak working set per constructor, measured out of process.** T-018 reports `out_kib` exactly and leaves peak memory unmeasured, because the instrument is a counting `GlobalAlloc` and this workspace sets `unsafe_code = "forbid"` — the basis of the "100% safe Rust" claim (M-147). Writing a figure derived from reading the algorithm would be a performance number with no benchmark behind it (rule 4), and it would be wrong for `marched`, whose `BTreeSet` tracks the *front* rather than the grid and can exceed it. **Acceptance:** a harness that runs each constructor in its own process and records peak RSS, folded into `docs/measurements/constructors.csv` — so the instrument lives outside the crate that forbids the tool, rather than the rule being bent. | M | T-018 |
 
 | ☐ | **R-000** | **Mechanise the protocol.** A `#[experiment]` harness: registers the `P-` id, refuses to run if no pre-registration exists, emits a CSV row with git SHA + machine + timestamp, and prints the FINDINGS stanza ready to paste. **The feedback loop is currently a discipline; make it a compile error.** **Acceptance:** an experiment without a pre-registered `P-` fails to build. | M | T-013 |
 

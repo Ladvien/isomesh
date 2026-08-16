@@ -1776,3 +1776,44 @@ measurement and a description.
 **The taxonomy is the fix, not a tolerance.** Three families now: *signs → field* (exact, swept,
 marched), *field → field* (band, on degraded input), *mesh → field* (pseudonormal, winding). A
 constructor may only be ranked against ones answering the same question.
+
+### M-271 — the *exact* transform is the hungriest constructor, and the mesh-based pair are free (T-019)
+
+**M.** Peak resident set per constructor, measured out of process — one process per constructor via
+`--only`, reading its own `VmHWM` from `/proc/self/status`, minus a `baseline` run that builds the
+input and stops. `sphere`, KiB above baseline:
+
+| constructor | 33³ | 65³ | growth |
+|---|---|---|---|
+| `swept` | 376 | **4,228** | 11.2× |
+| `marched` | 404 | 4,616 | 11.4× |
+| `exact` | 608 | 6,212 | 10.2× |
+| `band` | 784 | 6,704 | 8.6× |
+| `pseudonormal` | 292 | **0** above the mesh | — |
+| `winding` | 208 | **0** above the mesh | — |
+
+Eight times the samples costs 8.6–11.4× the memory, so every one is essentially linear in sample
+count with different constants.
+
+**The ordering is the finding.** `signed_distance_field` is the *exact* transform and the only `O(n)`
+one, and it is the most memory-hungry of the three — **47% more than sweeping**. Felzenszwalb &
+Huttenlocher's separable algorithm needs per-row envelope state and a squared-distance staging array
+on top of its output, and none of that is visible from the complexity class. "Exact and linear" does
+not mean lean, and a chunked consumer choosing a constructor by asymptotics would have chosen wrong.
+
+**`band` is the most expensive of all**, which is the opposite of what a *narrow-band* method sounds
+like. It runs the bounded march and additionally holds the input it is repairing and an `on_surface`
+flag array — M-256 measured it finalising only 13.4% of samples, and that is a saving in *work*, not
+in *footprint*.
+
+**The two mesh-based constructors cost nothing above the mesh they were handed** at 65³. Meshing
+allocates more transiently than either of them does, so their own peak sits underneath it. That is
+the honest reading of a zero here, not a measurement failure — and it means a consumer already
+holding a mesh pays only for the output buffer.
+
+**On the instrument.** T-018 declared this gap because a counting `GlobalAlloc` needs `unsafe impl`
+and the workspace sets `unsafe_code = "forbid"`. Reading `/proc/self/status` is a plain file read and
+needed no such thing; what it needed was leaving the *process*, since `VmHWM` is a high-water mark
+over a whole process life and would otherwise attribute every constructor's peak to whichever ran
+first. So the rule cost a process boundary, not a measurement. Linux only — macOS publishes no
+`/proc` and its `ru_maxrss` needs `libc` — and CI runs Linux, which is where the figure is checked.

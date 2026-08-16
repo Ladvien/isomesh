@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-162 tickets. Line numbers are stable until something above them is edited — grep the ID if
+163 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1031,3 +1031,16 @@ is what a band is. Three families now, and a constructor is only ranked against 
 | | | ***Memory is half-delivered on purpose.*** `out_kib` is exact; peak working set is not measured, because the
 instrument needs `unsafe impl GlobalAlloc` and the workspace forbids it. Declared as a gap with **T-019** to measure it
 out of process, rather than estimated into the table. |
+| ☑ | **T-019** | **Peak working set per constructor, measured out of process.** T-018 reports `out_kib` exactly and leaves peak memory unmeasured, because the instrument is a counting `GlobalAlloc` and this workspace sets `unsafe_code = "forbid"` — the basis of the "100% safe Rust" claim (M-147). Writing a figure derived from reading the algorithm would be a performance number with no benchmark behind it (rule 4), and it would be wrong for `marched`, whose `BTreeSet` tracks the *front* rather than the grid and can exceed it. **Acceptance:** a harness that runs each constructor in its own process and records peak RSS, folded into `docs/measurements/constructors.csv` — so the instrument lives outside the crate that forbids the tool, rather than the rule being bent. | M | T-018 |
+| | | ***The rule cost a process boundary, not a measurement (M-271).*** T-018 declared this gap because a counting
+`GlobalAlloc` needs `unsafe impl` and the workspace forbids it. Reading `VmHWM` from `/proc/self/status` is a plain
+file read and needs nothing of the kind; what it needs is leaving the *process*, since `VmHWM` is a high-water mark
+over a whole process life. So `--only <constructor>` runs exactly one thing and stops, and
+`scripts/constructor_memory.sh` subtracts a `baseline` run that builds the input and exits. |
+| | | ***The ordering falsifies the asymptotic intuition.*** At 65³ above baseline: swept **4,228 KiB**, marched 4,616,
+exact **6,212**, band 6,704. The *exact* `O(n)` transform is the hungriest of the three, 47% above sweeping, because
+Felzenszwalb & Huttenlocher need per-row envelope state and a squared-distance staging array that the complexity class
+does not mention. And `band` is the most expensive of all, which is the opposite of what "narrow band" sounds like —
+M-256's 13.4% is a saving in *work*, not in footprint. |
+| | | ***The mesh-based pair cost nothing above the mesh they were handed*** at 65³, because meshing allocates more
+transiently than either does. A zero there is the honest reading, not a failed measurement. |

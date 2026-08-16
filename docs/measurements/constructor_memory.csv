@@ -1,0 +1,17 @@
+field,samples,constructor,peak_kib,above_baseline_kib
+sphere,33,baseline,2684,0
+sphere,33,mesh-baseline,3228,544
+sphere,33,exact,3292,608
+sphere,33,swept,3060,376
+sphere,33,marched,3088,404
+sphere,33,band,3468,784
+sphere,33,pseudonormal,3520,292
+sphere,33,winding,3436,208
+sphere,65,baseline,4540,0
+sphere,65,mesh-baseline,10176,5636
+sphere,65,exact,10752,6212
+sphere,65,swept,8768,4228
+sphere,65,marched,9156,4616
+sphere,65,band,11244,6704
+sphere,65,pseudonormal,10116,0
+sphere,65,winding,10112,0
