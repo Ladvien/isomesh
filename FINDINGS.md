@@ -3256,3 +3256,32 @@ say which archive"* — one ticket earlier, and this is the same failure with a 
 `paper_download` answers a question about **DOI resolvers**, not about whether the paper is readable.
 A-022 was blocked for a day on a file that a search engine returns first, under the filename the
 ticket had already written down.
+
+### P-17 — registered for A-025, before it was measured
+
+**What ✗19 leaves.** Manifold Dual Contouring's uniform-grid surface is not always a manifold, and the
+step that fails is *"the dual preserves the topology"* rather than its Marching Cubes premise (M-290).
+Every one of the 143 residual non-manifold edges is on `noise_cavity` — the field A-002e added
+**because none of the other seven produces a cell with an interior ambiguity** (M-208) — and a *face*
+decider cannot see an interior one by construction.
+
+> **H.** The residue is an interior ambiguity: the cells sharing an offending ambiguous face report
+> `Interior::Joined` on at least one axis sweep at a rate far above the same measurement over
+> non-offending ambiguous-face pairs.
+
+The crate already predicts the *count* from the grid alone —
+`the_defect_count_is_predicted_from_the_grid_alone` gets 30 and 64 under `Separate` and 8 and 40 under
+the decider, with no mesh involved. What it does not say is **which** pairs, or why those. This adds
+the interior test to the same predicate and a control beside it.
+
+**Falsified by** offending pairs reporting `Interior::Joined` at about the same rate as the control —
+which would mean the residue is not the interior ambiguity and one-vertex-per-cycle fails for a reason
+nothing in the A-002 series has named.
+
+**Records** `samples`, `face_rule`, `offending_pairs`, `offending_with_interior_join`,
+`control_with_interior_join`.
+
+**The control is the whole design.** *"Offending cells have an interior join"* is worthless if every
+ambiguous-face cell does — and ambiguous faces are where interior ambiguities live, so that is the
+likely null rather than a remote one. The comparison is against ambiguous-face pairs that are **not**
+offending, measured in the same pass.

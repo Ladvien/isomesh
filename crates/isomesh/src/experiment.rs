@@ -236,6 +236,28 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "offending_faces_per_past90_vertex",
         ],
     },
+    Preregistration {
+        id: "P-17",
+        ticket: "A-025",
+        hypothesis: "Manifold Dual Contouring's residual non-manifold edges are \
+                     an interior ambiguity the face decider cannot see: the \
+                     cells sharing an offending ambiguous face report \
+                     Interior::Joined on at least one axis sweep at a rate far \
+                     above the same measurement over non-offending \
+                     ambiguous-face pairs.",
+        falsified_by: "Offending pairs reporting Interior::Joined at about the \
+                       same rate as the control — which would mean the residue \
+                       is not the interior ambiguity and the one-vertex-per-cycle \
+                       rule fails for a reason nothing in the A-002 series has \
+                       named.",
+        records: &[
+            "samples",
+            "face_rule",
+            "offending_pairs",
+            "offending_with_interior_join",
+            "control_with_interior_join",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
