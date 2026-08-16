@@ -1662,3 +1662,54 @@ feature that vanishes at a known distance is better than one that survives by lu
 **This also makes `ThinPlate::THICKNESS_IN_CELLS`'s doc comment wrong.** It reads *"Below `1.0` so
 that no grid phase can ever put a corner inside the plate, with margin"*, and the canonical grid puts
 a whole **plane** of corners inside it. Thin enough is not the same as off-lattice.
+
+### M-267 — the sampled gradient supremum is not even monotone in sampling density (T-017)
+
+**M.** `sup ‖∇f‖` re-measured at 8³, 16³, 32³ and 64³ samples over each field's own domain:
+
+| field | n=8 | n=16 | n=32 | n=64 | still climbing |
+|---|---|---|---|---|---|
+| `sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate` | 1.00000 | 1.00000 | 1.00000 | 1.00000 | no |
+| `gyroid` | 1.54383 | 1.72726 | 1.73003 | 1.73131 | no |
+| `fbm_terrain` | 2.35846 | 2.84980 | 2.90822 | 3.04828 | **yes** |
+| `noise_cavity` | 8.84299 | **7.74791** | 9.37619 | 9.72480 | **yes** |
+
+**`noise_cavity` goes down and then up.** M-244 recorded its gradient reaching 7.734 and used that to
+justify declaring the field `Unbounded`; the figure was measured at `n = 16`, and at `n = 8` it was
+already **8.84** — higher. So 7.734 was not a lower bound that later runs merely improved on. A
+sampled maximum over one point set is not nested inside a sampled maximum over a denser one, because
+the denser set is not a superset — F-002's grid is offset by a fixed nudge and rescaled with `n`.
+
+That is a sharper argument than M-244's for the same conclusion. M-244 said a sampled maximum is a
+lower bound on a supremum and so cannot be declared as a Lipschitz constant. This says the sampled
+maximum is not even a *stable* lower bound: no single run establishes anything, and taking the max
+over several runs is the least one would have to do to claim a number.
+
+**The five exact fields read exactly `1.00000` at every density**, which is the eikonal property
+holding to five figures across four independent samplings — a stronger confirmation than any one run.
+
+**The gyroid's declared bound is loose by 2×, and that is now recorded rather than suspected.** It
+declares `Lipschitz { l = 2√3 ≈ 3.4641 }`, derived at M-244 from `|∂g/∂x| ≤ 2`. Measured supremum
+converges to `1.731` — `bound_gap = 0.4994`. The derivation is sound and the bound is therefore
+*correct*; it is not *tight*, because the three terms of `∇g` cannot be extremal simultaneously.
+Sampling cannot settle whether `2√3` is attainable, which is why the declaration stands. The cost is
+paid in F-005's empty-cell rejection, where a loose constant inflates the rejection radius and
+disqualifies cells a tighter one would skip — M-248 measured exactly that, at 1.5× against
+`thin_plate`'s 11.8×.
+
+### M-268 — field quality is now in the regression gate, and every column is exact (T-017)
+
+**M.** `docs/measurements/field_quality.csv`, baselined per machine and diffed by
+`scripts/regress.sh field_quality`. Columns: `sup_grad`, `inf_grad`, `eikonal_pct`, `bound_gap`,
+`certified_pct`, keyed on `(field, samples)`.
+
+**All five are compared exactly**, with `None` tolerance, and the reason is structural rather than
+optimistic: every one is a **max, a min, or a ratio of counts** over deterministic `libm` arithmetic.
+None is a sum, so there is no accumulation order to differ across architectures — unlike `hausdorff`
+and `self_intersections_per_1k`, which carry stated tolerances for exactly that reason. A field is
+not supposed to move at all; if one of these shifts, either a field's definition changed or a
+constant it depends on did, and both should require an acknowledgement.
+
+`Unbounded` fields write **empty cells** for `declared_bound` and `bound_gap` rather than zeros.
+`regress.sh` skips an empty value, and a literal `0` would read as *"the gradient is nowhere near the
+bound"* — the opposite of *"there is no bound"*.

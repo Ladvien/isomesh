@@ -80,6 +80,19 @@ TOLERANCE = {
     # governor, thermal state and whatever else is running.
     "median_ms": 0.60,
     "n_cubed": None,
+    # T-017's field-quality columns. **All exact.** Every one is a max, a min or
+    # a ratio of counts over deterministic `libm` arithmetic -- never a sum, so
+    # there is no accumulation order to differ across architectures, and a
+    # tolerance would only hide the change these exist to catch.
+    #
+    # A field is not supposed to move at all. If one of these shifts, either a
+    # field's definition changed or a constant it depends on did, and both are
+    # things somebody should have to acknowledge.
+    "sup_grad": None,
+    "inf_grad": None,
+    "eikonal_pct": None,
+    "bound_gap": None,
+    "certified_pct": None,
 }
 
 # Metrics where a *smaller* number is better, so only an increase is a
@@ -89,6 +102,12 @@ LOWER_IS_BETTER = {
     "self_intersections_per_1k",
     "median_ms",
     "non_manifold_edges",
+    # A field whose gradient supremum grows is worse-conditioned than it was.
+    # `eikonal_pct` and `certified_pct` are the other way round -- higher is
+    # better -- and are absent here on purpose, but since every field-quality
+    # column is compared exactly the direction never actually decides anything.
+    # It is stated so the next person adding a tolerance does not have to guess.
+    "sup_grad",
 }
 
 

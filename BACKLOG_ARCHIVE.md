@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-160 tickets. Line numbers are stable until something above them is edited — grep the ID if
+161 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -996,3 +996,18 @@ grid phase can ever put a corner inside the plate" — the canonical grid puts a
 every level** — 5× the geometric error on `sphere` at level 3, and the mean **deletes the entire torus** one level
 before the grid stops resolving it. `Min` never loses anything, by construction, and pays a systematic dilation of
 about one fine cell per level: 4.02 error on `fbm_terrain` against re-sampling's 0.93. **Recommendation: decimate.** |
+| ☑ | **T-017** | **Field-quality metrics as first-class recorded numbers.** `sup‖∇f‖`, eikonal residual distribution, declared-vs-measured bound gap, and F-004's degradation curve — reported per field beside the mesh metrics, and wired into T-011's regression baseline so a field that silently degrades fails CI. **The crate measures its output exhaustively and its input not at all.** | M | F-002, T-011 |
+| | | ***The density sweep found something the ticket did not ask for (M-267).*** `sup ‖∇f‖` re-measured at 8³/16³/32³/
+64³: the five exact fields read **exactly 1.00000 at every density**, the gyroid converges to 1.731, and
+`noise_cavity` reads **8.84 → 7.75 → 9.38 → 9.72** — it goes *down* and then up. M-244's 7.734 was measured at n=16 and
+was already lower than the n=8 figure, so it was not a lower bound that later runs improved on. A sampled maximum is
+not even a *stable* lower bound, which is a sharper argument for `Unbounded` than the one M-244 gave. |
+| | | ***The gyroid's declared bound is loose by 2×, now recorded rather than suspected.*** Declared `2√3 ≈ 3.4641`,
+measured supremum converging to `1.731`, `bound_gap = 0.4994`. The derivation is sound so the bound is *correct*; it is
+not *tight*, because the three terms of `∇g` cannot be extremal at once, and sampling cannot settle whether `2√3` is
+attainable. The cost is real and already measured: M-248's empty-cell rejection gains 1.5× on the gyroid against
+`thin_plate`'s 11.8×, partly because a loose constant inflates the rejection radius. |
+| | | ***Wired into the gate, exactly (M-268).*** All five columns get `None` tolerance in `regress.sh`, and the reason
+is structural: each is a max, a min or a ratio of counts over deterministic `libm` arithmetic, never a sum, so there is
+no accumulation order to differ across architectures. `Unbounded` fields write **empty cells** rather than zeros — a
+literal `0` would read as "nowhere near the bound", the opposite of "there is no bound". |
