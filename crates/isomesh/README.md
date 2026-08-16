@@ -79,6 +79,9 @@ counts), an accuracy harness, Hermite data and QEF vertex placement, vertex weld
 with dirty-set re-meshing, brush operations, field-derived LOD, Transvoxel transition cells, collider
 readiness checks, frame-budget scheduling, and chunk streaming with hysteresis.
 
+One optional feature, `experimental`, which adds `ProbabilisticQuadric`. It is off by default and on
+for docs.rs, so you can read what is behind it without checking out the source to discover it exists.
+
 ## Choosing an extractor
 
 The honest tradeoff table, from this repo's own measurements (`docs/measurements/shootout.csv` and the
@@ -91,11 +94,17 @@ a structural property of where each method places vertices, not something a futu
 | `MarchingTetrahedra` | rounded | unmeasured here | 2.87–3.91× the triangles, measured — not the folklore constant — and more accurate on sharp fields |
 | `SurfaceNets` | rounded (0.58 cells off a true corner at 27³) | **no** — gapped, structurally | smoother output, optional smoothing passes |
 | `DualContouring` | **held** (0.01 cells at 27³) | **no** — gapped, structurally | QEF with Tikhonov λ and a cell clamp; self-intersections are a measured, non-zero rate |
-| `ManifoldDualContouring` | **held** | unmeasured here | one vertex per surface *component*: takes the non-manifold counts to zero where `DualContouring` cannot — **except on a shared ambiguous face whose four cut edges land in one cycle on both sides**, which is outside Schaefer/Ju/Warren's guarantee and is a pinned census rather than a bug (A-017) |
+| `ManifoldDualContouring` | **held** | unmeasured here | one vertex per surface *component*: takes the non-manifold counts to zero where `DualContouring` cannot — **except on a shared ambiguous face whose four cut edges land in one cycle on both sides**. Schaefer, Ju & Warren state the uniform-grid dual *"is always a manifold"*; measured over eight fields it is not, and their premise (Marching Cubes is manifold) holds here while their conclusion does not — ✗19, with a 48-sample counterexample at M-294 |
 | `GreedyQuads` | n/a — blocky | open at boundaries by design | Minecraft surface; quad merge measured 1.70×–256× savings depending on the field |
 | `SubgridMarchingTetrahedra` | rounded | **yes** (measured 0 seam edges) | resolves features thinner than a voxel, which no sign-based method can; ~70× classic MT (M-98) |
 
 For a chunked world the seam column decides: use `MarchingCubes` or `SubgridMarchingTetrahedra`.
+
+**On cost, as of 2026-08-16:** the dual methods used to be 5–6× Marching Cubes and are now **1.26–1.72×**
+— two optimisations took Surface Nets at 256³ from 693.8 ms to **162.7 ms** with its IPC going 1.20 to
+**4.09**, and not one triangle changed. Below 32³ Surface Nets is now the *faster* of the two. If you
+ruled out a dual method on speed before that, the reason is gone; see
+[the experiments page](https://github.com/ladvien/isomesh/blob/main/docs/experiments.md).
 
 ## Verification
 

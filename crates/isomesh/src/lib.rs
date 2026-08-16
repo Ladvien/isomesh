@@ -27,6 +27,32 @@
 //! public signature, output buffers are caller-provided and reusable, and the
 //! scalar type is generic over `f32` and `f64`.
 //!
+//! # Which extractor
+//!
+//! Seven implement [`Extractor`](extractor::Extractor). Two questions decide it,
+//! and both answers are measured rather than argued.
+//!
+//! **Are you chunking?** Then the seam is structural, not a bug someone will fix
+//! later: [`MarchingCubes`](marching_cubes::MarchingCubes) and
+//! [`SubgridMarchingTetrahedra`](subgrid::extract::SubgridMarchingTetrahedra)
+//! tile with zero boundary edges on a shared plane; the dual methods place one
+//! vertex per *cell* and are gapped by construction.
+//!
+//! **Do you need sharp corners?** Then
+//! [`DualContouring`](dual_contouring::DualContouring) reaches a box corner to
+//! **0.01 cells** where [`SurfaceNets`](surface_nets::SurfaceNets) stops at
+//! 0.58, and is 101× closer in Hausdorff distance on a sharp field — and 1.2× on
+//! a smooth one, which is why this is a choice rather than an upgrade.
+//!
+//! You cannot have both today. That is measured and open, not hidden.
+//!
+//! The others are for narrower jobs:
+//! [`MarchingTetrahedra`](marching_tetrahedra::MarchingTetrahedra) trades ~3× the
+//! triangles for better sharp-field accuracy,
+//! [`ManifoldDualContouring`](manifold_dual_contouring::ManifoldDualContouring)
+//! splits a cell by surface component, and
+//! [`GreedyQuads`](greedy_quads::GreedyQuads) is the blocky path.
+//!
 //! # Conventions
 //!
 //! These hold for every type and every algorithm in this crate. They are stated
