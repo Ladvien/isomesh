@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**191 tickets archived, 10 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**192 tickets archived, 9 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -116,7 +116,6 @@ backlog citing "isomesh B-010" means **B-014**.
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
 | ☐ | **B-013** | **`proxy_cells` example.** Render A-026's convex decomposition as wireframe cells over the source mesh, with a slider for cell count and a readout of per-cell volume vs source volume. **This is the example that makes the Tier A/Tier B architecture legible** — nobody believes "cut the proxy, not the mesh" until they see the cells. | M | A-026, B-012 |
-| ☐ | **B-014** | **Expose the merge predicate over Bevy attributes.** R-010's `MergePredicate` gates a weld on the link condition (`Lk u ∩ Lk v = ∅`); a Bevy consumer additionally needs to refuse a merge when normals or UVs differ, or a cube corner's three normals collapse to one arbitrary one. **Same mechanism, two predicates** — topological safety and attribute preservation compose. **Acceptance:** welding `Mesh::from(Cuboid)` preserves all 24 vertices under the composite predicate and collapses to 8 without it. **Unblocked 2026-08-16: R-010 shipped `Welder::weld_split_by`, and M-305 already measured this exact case on a hand-built `creased_cube` — 24 kept against 8 without, 16 splits, non-manifold counts 0. What is owed here is the Bevy-attribute key builder, not the mechanism.** | M | — |
 
 ### Reading order, for whoever picks this up
 

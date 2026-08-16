@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-191 tickets. Line numbers are stable until something above them is edited — grep the ID if
+192 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1489,3 +1489,14 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > **The pre-registered fixture could not test the interesting half, and that was caught mid-run rather than reported as a pass.** All 50 field × extractor pairs gave **0 splits** — seam duplicates come from the same field at the same point, so their normals agree and the key had nothing to do. A key that never fires reads exactly like a real negative (M-279). A `creased_cube` fixture was added and disclosed as outside the registration; on it the key keeps 24 vertices against 8, with 16 splits and zero non-manifold anything.
 >
 > **H's wording is amended, and that is the finding.** Boundary edges go 0 → 24 under the split — not a defect and not an independent effect, but *the split seen from the edge column*. Which makes this the exact mirror of E×4: a pairwise refusal did its damage in the **vertex** column, an equivalence refusal does its intended work in the **boundary-edge** column. The column that moves tells you which kind of refusal you built. Reading it correctly needs T-023's `SurfaceGate::Manifold` — a normal-split render mesh is a surface, not a solid — which landed first without either ticket being planned against the other.
+
+| ☑ | **B-014** | **Expose the merge predicate over Bevy attributes.** R-010's `MergePredicate` gates a weld on the link condition (`Lk u ∩ Lk v = ∅`); a Bevy consumer additionally needs to refuse a merge when normals or UVs differ, or a cube corner's three normals collapse to one arbitrary one. **Same mechanism, two predicates** — topological safety and attribute preservation compose. **Acceptance:** welding `Mesh::from(Cuboid)` preserves all 24 vertices under the composite predicate and collapses to 8 without it. **Unblocked 2026-08-16: R-010 shipped `Welder::weld_split_by`, and M-305 already measured this exact case on a hand-built `creased_cube` — 24 kept against 8 without, 16 splits, non-manifold counts 0. What is owed here is the Bevy-attribute key builder, not the mechanism.** | M | — |
+> **Landed 2026-08-16.** `bevy_isomesh::weld_keys(&Mesh, WeldKeyConfig)` → one `u64` per vertex, in the mesh's own vertex order so it lines up with `from_bevy_mesh`'s positions without reindexing. Feeds R-010's `Welder::weld_split_by`. Acceptance met end to end: the cuboid keeps **24** vertices with the key and collapses to **8** without.
+>
+> **The design point the ticket did not anticipate: it is a quantum, not a smoothing angle, and that is forced.** The convention every engine uses is "merge if the normals are within 30°–60°", and **an angle threshold is not transitive** — `a` within 30° of `b` and `b` of `c` does not put `a` within 30° of `c`. So it is not an equivalence relation, and applying it to a `k`-way coincidence class refuses some members while merging others. **That is E×4 exactly**, which measured up to 791 manufactured non-manifold vertices from precisely this shape. Quantising to a lattice *is* an equivalence relation. The cost is the usual bucketing one — two normals a hair apart can straddle a boundary and fail to merge — and that is a *missed merge*, visible as a seam and harmless topologically, which is the right failure to prefer over a manufactured bowtie.
+>
+> **The defaults are stated as conventional rather than derived**, per the brief's own note that no principled source exists: `normal_steps: 16.0` tolerates something in the neighbourhood of a 20°–25° smoothing angle, reached a different way, and it is the caller's to override.
+>
+> **FNV-1a is spelled out rather than reached for.** `DefaultHasher` is explicitly not stable across Rust releases, and a key that changes under you turns a weld into a different mesh on a different toolchain — which this project has just been bitten by from the other direction (M-304). A test pins stability across runs.
+>
+> A mesh with no normals keys every vertex the same, deliberately: an attribute that does not exist cannot be preserved, and refusing to weld over it would be inventing a constraint. UVs are off by default because extracted geometry rarely has them and a missing attribute costs a pass to learn nothing.

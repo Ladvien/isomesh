@@ -10,6 +10,17 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ### Added
 
+- **`bevy_isomesh::weld_keys` — a weld key from a `Mesh`'s normals and UVs.** Feeds
+  `Welder::weld_split_by`, so the crease that makes a cube look like a cube survives a weld:
+  `Mesh::from(Cuboid)` keeps all 24 vertices with the key and collapses to 8 without it. **It takes a
+  quantum, not a smoothing angle, and that is forced rather than preferred** — the conventional
+  "within 30°" test is not transitive, so it is not an equivalence relation, and applying it to a
+  `k`-way coincidence class is E×4's manufactured-bowtie failure. Quantising to a lattice is
+  transitive; the cost is a missed merge at a bucket boundary, which is a seam rather than a topology
+  defect. Defaults are stated as conventional, not derived. Hashing is FNV-1a spelled out, because
+  `DefaultHasher` is not stable across Rust releases and a drifting key silently changes the mesh
+  (B-014).
+
 - **`Welder::weld_split_by` — a weld that refuses to merge vertices whose caller-supplied key
   differs.** One `u64` per vertex, or an empty slice meaning "one class", which is exactly what
   `weld` passes; one implementation, two entry points. **The parameter is a key and not a predicate on

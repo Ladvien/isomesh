@@ -1,7 +1,7 @@
 //! Writing an extracted surface into a Bevy [`Mesh`](bevy_mesh::Mesh).
 
 use bevy_asset::RenderAssetUsages;
-use bevy_mesh::{Indices, Mesh, PrimitiveTopology};
+use bevy_mesh::{Indices, Mesh, PrimitiveTopology, VertexAttributeValues};
 use isomesh::{MeshBuffer, MeshSink};
 
 /// A [`MeshSink`] whose buffers are exactly the arrays a Bevy [`Mesh`] wants.
@@ -418,6 +418,160 @@ pub fn from_bevy_mesh(mesh: &Mesh) -> Result<(Vec<[f32; 3]>, Vec<u32>), SoupErro
     Ok((positions.to_vec(), indices))
 }
 
+/// How finely a vertex attribute is bucketed when building a weld key.
+///
+/// Ticket: B-014.
+///
+/// # These numbers are conventional, not derived
+///
+/// **There is no principled source for a normal tolerance.** Every engine picks
+/// one by eye, and the convention is a smoothing angle somewhere in 30°–60°.
+/// That is said plainly here rather than dressed up: the default below is a
+/// choice, it is the caller's to override, and no measurement in this project
+/// justifies it over a neighbouring value.
+///
+/// # Why a quantum and not a smoothing angle
+///
+/// **Because an angle threshold is pairwise, and pairwise is the defect this
+/// crate already measured.** "Merge if the normals are within 30°" is not
+/// transitive — `a` within 30° of `b` and `b` within 30° of `c` does not put `a`
+/// within 30° of `c` — so it is not an equivalence relation, and applying it to a
+/// `k`-way coincidence class refuses some members while merging others. That is
+/// exactly E×4: over 56 configurations a pairwise weld gate removed at most 4
+/// non-manifold edges and **added up to 791 non-manifold vertices**, because the
+/// leftover representative of a partly-merged class is a bowtie.
+///
+/// Quantising to a lattice *is* an equivalence relation. Two vertices share a key
+/// or they do not, transitively, and a class always splits into complete
+/// sub-classes. The cost is the usual one for bucketing: two normals a hair apart
+/// can straddle a bucket boundary and fail to merge. That is a missed merge —
+/// visible as a seam, harmless topologically — and it is the right failure to
+/// prefer over a manufactured bowtie.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct WeldKeyConfig {
+    /// Lattice steps per unit of a normal component.
+    ///
+    /// `16.0` buckets the `[-1, 1]` range of each component into 32 steps. Two
+    /// normals merge when all three components land in the same bucket, so the
+    /// worst-case angle this tolerates is comparable to a ~20°–25° smoothing
+    /// angle — the same neighbourhood as the convention, reached a different way.
+    pub normal_steps: f32,
+    /// Lattice steps per unit of a UV component.
+    ///
+    /// `4096.0` is fine enough that a texel boundary on a 4K atlas separates, and
+    /// coarse enough that two copies of one seam vertex do not.
+    pub uv_steps: f32,
+    /// Whether to include [`Mesh::ATTRIBUTE_UV_0`] at all.
+    ///
+    /// Off by default. A mesh with no UVs is the common case for extracted
+    /// geometry, and including a missing attribute would key every vertex the
+    /// same — silently correct, but it costs a pass over the buffer to learn
+    /// nothing.
+    pub include_uv: bool,
+}
+
+impl Default for WeldKeyConfig {
+    fn default() -> Self {
+        Self {
+            normal_steps: 16.0,
+            uv_steps: 4096.0,
+            include_uv: false,
+        }
+    }
+}
+
+/// FNV-1a over the quantised attribute bytes.
+///
+/// Spelled out rather than reached for, because the key must be **identical run
+/// to run and machine to machine** — `DefaultHasher` is explicitly not stable
+/// across Rust releases, and a key that changes under you turns a weld into a
+/// different mesh on a different toolchain.
+fn fnv1a(bytes: &[u8]) -> u64 {
+    let mut hash = 0xcbf2_9ce4_8422_2325u64;
+    for &b in bytes {
+        hash ^= u64::from(b);
+        hash = hash.wrapping_mul(0x1000_0000_01b3);
+    }
+    hash
+}
+
+/// One weld key per vertex, from a [`Mesh`]'s normals and optionally its UVs.
+///
+/// Ticket: B-014. Feed the result to `isomesh::weld::Welder::weld_split_by`,
+/// which refuses to merge vertices whose key differs. **Same mechanism, two
+/// predicates**: the weld's own tolerance keeps topology safe, and this key keeps
+/// attributes intact. They compose because both are equivalence relations.
+///
+/// Returns one key per vertex in the mesh's own vertex order, so it lines up with
+/// [`from_bevy_mesh`]'s positions without any reindexing.
+///
+/// # What a missing attribute means
+///
+/// A vertex with no normal — or a mesh with no `ATTRIBUTE_NORMAL` at all — keys
+/// as if its normal were absent, which means every such vertex shares a key and
+/// nothing is split on that axis. That is the correct degenerate case: an
+/// attribute that does not exist cannot be preserved, and refusing to weld
+/// because of it would be inventing a constraint.
+///
+/// # Example
+///
+/// ```
+/// use bevy_isomesh::{WeldKeyConfig, weld_keys};
+/// use bevy_math::primitives::Cuboid;
+/// use bevy_mesh::Mesh;
+///
+/// let mesh = Mesh::from(Cuboid::new(1.0, 1.0, 1.0));
+/// let keys = weld_keys(&mesh, WeldKeyConfig::default());
+///
+/// // 24 vertices, and the three at each corner differ by normal.
+/// assert_eq!(keys.len(), 24);
+/// let mut distinct = keys.clone();
+/// distinct.sort_unstable();
+/// distinct.dedup();
+/// assert_eq!(distinct.len(), 6, "one key per face of the cube");
+/// ```
+#[must_use]
+pub fn weld_keys(mesh: &Mesh, config: WeldKeyConfig) -> Vec<u64> {
+    let count = mesh.count_vertices();
+    let normals = mesh
+        .attribute(Mesh::ATTRIBUTE_NORMAL)
+        .and_then(|values| values.as_float3());
+    let uvs = if config.include_uv {
+        match mesh.attribute(Mesh::ATTRIBUTE_UV_0) {
+            Some(VertexAttributeValues::Float32x2(values)) => Some(values.as_slice()),
+            _ => None,
+        }
+    } else {
+        None
+    };
+
+    (0..count)
+        .map(|i| {
+            let mut bytes = [0u8; 20];
+            let mut len = 0usize;
+            let push = |v: i32, bytes: &mut [u8; 20], len: &mut usize| {
+                bytes[*len..*len + 4].copy_from_slice(&v.to_le_bytes());
+                *len += 4;
+            };
+            if let Some(n) = normals.and_then(|n| n.get(i)) {
+                for c in n {
+                    push(
+                        (c * config.normal_steps).round() as i32,
+                        &mut bytes,
+                        &mut len,
+                    );
+                }
+            }
+            if let Some(uv) = uvs.and_then(|u| u.get(i)) {
+                for c in uv {
+                    push((c * config.uv_steps).round() as i32, &mut bytes, &mut len);
+                }
+            }
+            fnv1a(&bytes[..len])
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -441,6 +595,133 @@ mod tests {
     }
 
     use bevy_math::primitives::Cuboid;
+
+    // ── B-014: the attribute key ────────────────────────────────────────────
+
+    /// B-014's acceptance, end to end: the cuboid keeps all 24 vertices under the
+    /// composite predicate and collapses to 8 without it.
+    #[test]
+    fn the_key_preserves_a_cuboids_creases_and_without_it_they_collapse() {
+        use isomesh::MeshBuffer;
+        use isomesh::weld::{Welder, epsilon_for};
+
+        let mesh = Mesh::from(Cuboid::new(1.0, 1.0, 1.0));
+        let (positions, indices) = from_bevy_mesh(&mesh).expect("triangle list");
+        let normals: Vec<[f32; 3]> = mesh
+            .attribute(Mesh::ATTRIBUTE_NORMAL)
+            .and_then(|v| v.as_float3())
+            .expect("a cuboid has normals")
+            .to_vec();
+        let keys = weld_keys(&mesh, WeldKeyConfig::default());
+
+        let build = || {
+            let mut buffer = MeshBuffer::<f32>::new();
+            buffer.positions.extend_from_slice(&positions);
+            buffer.normals.extend_from_slice(&normals);
+            buffer.indices.extend_from_slice(&indices);
+            buffer
+        };
+
+        // Position only: the eight corners swallow their three copies each.
+        let mut plain = build();
+        Welder::default()
+            .weld(&mut plain, epsilon_for(1.0f32))
+            .expect("weld");
+        assert_eq!(
+            plain.positions.len(),
+            8,
+            "without the key a cube is eight corners and no creases"
+        );
+
+        // With the key: nothing merges, because every coincident triple carries
+        // three different face normals.
+        let mut kept = build();
+        Welder::default()
+            .weld_split_by(&mut kept, epsilon_for(1.0f32), &keys)
+            .expect("weld");
+        assert_eq!(
+            kept.positions.len(),
+            24,
+            "the key is what keeps the crease that makes a cube look like a cube"
+        );
+    }
+
+    #[test]
+    fn one_key_per_face_of_a_cuboid() {
+        let mesh = Mesh::from(Cuboid::new(2.0, 3.0, 4.0));
+        let keys = weld_keys(&mesh, WeldKeyConfig::default());
+        assert_eq!(keys.len(), 24);
+        let mut distinct = keys.clone();
+        distinct.sort_unstable();
+        distinct.dedup();
+        assert_eq!(distinct.len(), 6, "six faces, six normals, six keys");
+    }
+
+    /// The key must not depend on the toolchain, which is why it is FNV-1a
+    /// spelled out rather than `DefaultHasher`.
+    #[test]
+    fn the_key_is_stable_across_runs() {
+        let mesh = Mesh::from(Cuboid::new(1.0, 1.0, 1.0));
+        let first = weld_keys(&mesh, WeldKeyConfig::default());
+        for _ in 0..32 {
+            assert_eq!(weld_keys(&mesh, WeldKeyConfig::default()), first);
+        }
+    }
+
+    #[test]
+    fn a_mesh_with_no_normals_keys_every_vertex_the_same() {
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        );
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            vec![[0.0f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+        );
+        let keys = weld_keys(&mesh, WeldKeyConfig::default());
+        assert_eq!(keys.len(), 3);
+        // An attribute that does not exist cannot be preserved, and refusing to
+        // weld over it would be inventing a constraint.
+        assert!(keys.windows(2).all(|w| w[0] == w[1]));
+    }
+
+    #[test]
+    fn a_coarser_quantum_merges_what_a_finer_one_splits() {
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        );
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            vec![[0.0f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+        );
+        // Three normals a few degrees apart.
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_NORMAL,
+            vec![[0.0f32, 0.0, 1.0], [0.05, 0.0, 0.998], [0.10, 0.0, 0.995]],
+        );
+
+        let fine = weld_keys(
+            &mesh,
+            WeldKeyConfig {
+                normal_steps: 256.0,
+                ..WeldKeyConfig::default()
+            },
+        );
+        let coarse = weld_keys(
+            &mesh,
+            WeldKeyConfig {
+                normal_steps: 1.0,
+                ..WeldKeyConfig::default()
+            },
+        );
+
+        assert!(fine[0] != fine[1] && fine[1] != fine[2], "fine splits them");
+        assert!(
+            coarse[0] == coarse[1] && coarse[1] == coarse[2],
+            "coarse buckets them together"
+        );
+    }
 
     // ── B-012: Mesh -> triangle soup ────────────────────────────────────────
 
