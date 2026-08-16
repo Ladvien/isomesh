@@ -33,6 +33,13 @@ OUTPUT="${1:-docs/gifs/kitchen-sink.gif}"
 : "${PANEL_W:=320}"
 : "${PANEL_H:=180}"
 : "${FPS:=20}"
+# Matching `record_gif.sh`, and for the same reason: `bayer` lays a fixed
+# crosshatch over smooth shading that reads as chunky, and eight panels of
+# smooth shading is what this banner is. The stack is already the largest GIF
+# here, so it takes the cheaper palette than the single clips do -- 192 colours
+# rather than 256 -- and still looks materially better than ordered dithering.
+: "${COLORS:=192}"
+: "${DITHER:=sierra2_4a}"
 export DISPLAY
 
 # Each entry: example name, then any example-specific environment.
@@ -97,11 +104,11 @@ done
 LAYOUT="0_0|w0_0|w0+w1_0|w0+w1+w2_0|0_h0|w0_h0|w0+w1_h0|w0+w1+w2_h0"
 
 ffmpeg -hide_banner -loglevel error -y "${INPUTS[@]}" \
-    -filter_complex "${SCALES}${STACK}xstack=inputs=$index:layout=$LAYOUT[tiled];[tiled]palettegen=max_colors=128:stats_mode=diff[pal]" \
+    -filter_complex "${SCALES}${STACK}xstack=inputs=$index:layout=$LAYOUT[tiled];[tiled]palettegen=max_colors=$COLORS:stats_mode=diff[pal]" \
     -map "[pal]" -frames:v 1 "$WORK/palette.png"
 
 ffmpeg -hide_banner -loglevel error -y "${INPUTS[@]}" -i "$WORK/palette.png" \
-    -filter_complex "${SCALES}${STACK}xstack=inputs=$index:layout=$LAYOUT[tiled];[tiled][$index:v]paletteuse=dither=bayer:bayer_scale=3[out]" \
+    -filter_complex "${SCALES}${STACK}xstack=inputs=$index:layout=$LAYOUT[tiled];[tiled][$index:v]paletteuse=dither=$DITHER[out]" \
     -map "[out]" -frames:v "$SHORTEST" "$OUTPUT"
 
 SIZE="$(stat -c%s "$OUTPUT" 2>/dev/null || stat -f%z "$OUTPUT")"

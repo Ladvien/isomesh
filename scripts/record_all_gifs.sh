@@ -92,7 +92,7 @@ CLIPS=(
     "gpu-resident-mesh-shader|gpu_mesh_shader|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=3"
 
     # -- need a flag to be worth filming --------------------------------------
-    "digging-a-tunnel|game_dig|ISOMESH_AUTOCARVE=18 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=34 ISOMESH_CAPTURE_EVERY=3 FPS=8"
+    "digging-a-tunnel|game_dig|ISOMESH_AUTOCARVE=16 ISOMESH_AUTOCARVE_EVERY=3 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=60 ISOMESH_CAPTURE_EVERY=2 FPS=10"
     "paint-that-survives-the-wall|game_paint|ISOMESH_AUTOPAINT=38 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=60 ISOMESH_CAPTURE_EVERY=2 FPS=10"
 
     # -- the ten that already existed, re-recorded at the current commit ------
@@ -104,7 +104,7 @@ CLIPS=(
     # tick settle**, because slowing the flight also means it has covered less
     # ground by the time recording starts -- at the default settle the camera is
     # still over open plain and half the frame is sky.
-    "flying-through-the-rock|game_showcase|ISOMESH_VIEW=nohud ISOMESH_SPEED=3.0 ISOMESH_STREAM_VIEW=48 ISOMESH_CAPTURE_SETTLE=220 ISOMESH_CAPTURE_FRAMES=52 ISOMESH_CAPTURE_EVERY=2 WIDTH=700"
+    "flying-through-the-rock|game_showcase|ISOMESH_VIEW=nohud ISOMESH_SPEED=3.0 ISOMESH_STREAM_VIEW=48 ISOMESH_CAPTURE_SETTLE=220 ISOMESH_CAPTURE_FRAMES=48 ISOMESH_CAPTURE_EVERY=2 WIDTH=1000"
     "walking-the-seams|game_walk|ISOMESH_CAPTURE_FRAMES=48 ISOMESH_CAPTURE_EVERY=2 WIDTH=640"
     # The narrowest clip here, and it has to be: endless noisy terrain flying
     # past is the worst case a GIF palette can be handed. Every pixel changes

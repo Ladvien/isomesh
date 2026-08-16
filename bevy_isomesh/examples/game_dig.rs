@@ -136,6 +136,7 @@ struct SurfaceMaterial(Handle<StandardMaterial>);
 struct AutoCarve {
     remaining: u32,
     step: u32,
+    every: u32,
 }
 
 impl AutoCarve {
@@ -145,6 +146,15 @@ impl AutoCarve {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(0),
+            // Captured frames per carve. One carve per frame digs the whole
+            // visible tunnel in the first half-second of a clip and leaves the
+            // rest of it static, which reads as a jump cut rather than as
+            // digging.
+            every: std::env::var("ISOMESH_AUTOCARVE_EVERY")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .filter(|n| *n >= 1)
+                .unwrap_or(1),
             step: 0,
         }
     }
@@ -374,7 +384,8 @@ fn dig(
     // other capture-driven example in this directory paces itself off
     // `capture.taken` for the same reason.
     let ready = !capture.is_active() || capture.taken > 0;
-    let scripted = if auto.remaining > 0 && ready && auto.step <= capture.taken.max(auto.step) {
+    let due = !capture.is_active() || auto.step <= capture.taken / auto.every.max(1);
+    let scripted = if auto.remaining > 0 && ready && due {
         auto.remaining -= 1;
         let centre = AutoCarve::centre(auto.step);
         auto.step += 1;

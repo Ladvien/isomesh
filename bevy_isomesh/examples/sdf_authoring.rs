@@ -54,8 +54,12 @@ mod common;
 use common::{Capture, CommonPlugin, DemoStats};
 
 /// Samples per axis for every field on screen. Fixed, because this example is
-/// about the expression and not about resolution.
-const SAMPLES: u32 = 65;
+/// about the expression and not about resolution — but high enough that the
+/// meshing does not become the thing you notice. At 65 the cap's silhouette is
+/// visibly faceted and a viewer reads it as "the mesher is rough" rather than
+/// as "the field is an expression", which is the opposite of the point. Five
+/// small fields at 129³ still re-mesh well inside a frame.
+const SAMPLES: u32 = 129;
 
 /// The domain every field is meshed over.
 const HALF_EXTENT: f32 = 1.25;

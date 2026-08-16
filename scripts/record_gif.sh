@@ -52,6 +52,21 @@ OUTPUT="$2"
 : "${ISOMESH_CAPTURE_SETTLE:=60}"
 : "${FPS:=20}"
 : "${WIDTH:=900}"
+# Palette size and dither.
+#
+# These used to be hard-coded at `128` and `bayer:bayer_scale=3`, and that was
+# the wrong trade for almost every clip here. `bayer` is an *ordered* dither:
+# cheap, very compressible, and it lays a fixed crosshatch over the whole frame
+# that reads as chunky on smooth shading -- which is most of what this project
+# renders. Side by side on the terrain flythrough the difference is not subtle.
+#
+# `sierra2_4a` diffuses the error instead. It looks far better and costs
+# roughly 2-3x the bytes, because error diffusion decorrelates neighbouring
+# frames and defeats the inter-frame compression a GIF relies on. So the good
+# setting is the default, and the handful of clips where full-frame motion makes
+# that unaffordable ask for the cheap one by name.
+: "${COLORS:=256}"
+: "${DITHER:=sierra2_4a}"
 export DISPLAY ISOMESH_WINDOW ISOMESH_CAPTURE_FRAMES ISOMESH_CAPTURE_EVERY ISOMESH_CAPTURE_SETTLE
 
 for tool in ffmpeg cargo; do
@@ -79,9 +94,9 @@ echo "-- $COUNT frames"
 
 PALETTE="$FRAMES/palette.png"
 ffmpeg -hide_banner -loglevel error -y -framerate "$FPS" -i "$FRAMES/frame_%04d.png" \
-    -vf "scale=$WIDTH:-1:flags=lanczos,palettegen=max_colors=128:stats_mode=diff" "$PALETTE"
+    -vf "scale=$WIDTH:-1:flags=lanczos,palettegen=max_colors=$COLORS:stats_mode=diff" "$PALETTE"
 ffmpeg -hide_banner -loglevel error -y -framerate "$FPS" -i "$FRAMES/frame_%04d.png" -i "$PALETTE" \
-    -lavfi "scale=$WIDTH:-1:flags=lanczos[s];[s][1:v]paletteuse=dither=bayer:bayer_scale=3" \
+    -lavfi "scale=$WIDTH:-1:flags=lanczos[s];[s][1:v]paletteuse=dither=$DITHER" \
     "$OUTPUT"
 
 SIZE="$(stat -c%s "$OUTPUT" 2>/dev/null || stat -f%z "$OUTPUT")"
