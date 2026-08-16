@@ -18,6 +18,12 @@
 
 pub(crate) mod experiment;
 
+// Hardware counters come from `perf_event_open`, a Linux system call with no
+// macOS equivalent a bench can reach. Callers on other platforms either refuse
+// (`experiment_p12`) or record the columns as `unavailable` (`family`).
+#[cfg(target_os = "linux")]
+pub(crate) mod counters;
+
 use isomesh::fields::ReferenceField;
 use isomesh::{Real, RuntimeShape3, Sdf};
 

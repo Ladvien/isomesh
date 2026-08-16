@@ -61,9 +61,6 @@ mod experiment {
     use std::hint::black_box;
     use std::time::Instant;
 
-    use perf_event::events::{Cache, CacheOp, CacheResult, Hardware, Software};
-    use perf_event::{Builder, Counter};
-
     use isomesh::dual_contouring::DualContouring;
     use isomesh::extractor::Extractor;
     use isomesh::fields::{ReferenceField, Sphere};
@@ -72,6 +69,7 @@ mod experiment {
     use isomesh::{MeshBuffer, RuntimeShape3};
 
     use crate::common;
+    use crate::common::counters::{Counts, MIN_TIME_RATIO, Probe, Reading};
 
     /// `f32`, because that is what a game passes and what the resolution sweep
     /// measured. Comparing against `f64` numbers would compare two experiments.
@@ -143,163 +141,6 @@ mod experiment {
     /// its own counters with it — mixing one run's time with another's misses
     /// would describe a run that never happened.
     const TIMED_RUNS: usize = 5;
-
-    /// Below this, a counter was multiplexed and its value is an extrapolation.
-    ///
-    /// Zen 3 has six general-purpose counters and this opens five plus one
-    /// software event, so nothing should be scheduled out. Asserted rather than
-    /// hoped: a multiplexed count is a scaled estimate, and reporting one as a
-    /// measurement is the kind of thing this file exists to prevent.
-    const MIN_TIME_RATIO: f64 = 0.99;
-
-    /// One counter, its label, and what it read.
-    struct Reading {
-        count: u64,
-        /// `time_running / time_enabled`. Below 1 means the kernel had to share
-        /// the counter and scaled the result.
-        ratio: f64,
-    }
-
-    /// The six hardware events and one software event, opened together.
-    ///
-    /// Zen 3 has six general-purpose counters, so this is exactly full and
-    /// nothing should be multiplexed; [`MIN_TIME_RATIO`] is what says so rather
-    /// than hoping. `STALLED_CYCLES_BACKEND` would be the seventh and the one
-    /// that would settle where the cycles go — it is **not available on this
-    /// machine**, `perf_event_open` answering ENOENT, because AMD does not map
-    /// the generic event.
-    struct Probe {
-        cycles: Counter,
-        instructions: Counter,
-        cache_misses: Counter,
-        l1d_read_misses: Counter,
-        /// Transparent huge pages are `always` here, so a 67 MB array is ~34
-        /// pages and this should stay near zero. Measured rather than assumed,
-        /// because "the working set grew" and "the page walk grew" are different
-        /// mechanisms with the same symptom.
-        dtlb_read_misses: Counter,
-        branch_misses: Counter,
-        page_faults: Counter,
-    }
-
-    /// What one counted run produced.
-    struct Counts {
-        cycles: Reading,
-        instructions: Reading,
-        cache_misses: Reading,
-        l1d_read_misses: Reading,
-        dtlb_read_misses: Reading,
-        branch_misses: Reading,
-        page_faults: Reading,
-    }
-
-    impl Probe {
-        /// Open every counter, or say which one the kernel refused.
-        ///
-        /// # Panics
-        ///
-        /// If any counter cannot be opened. An experiment that silently drops an
-        /// event reports a column it did not measure.
-        fn open() -> Self {
-            let hardware = |kind: Hardware| {
-                Builder::new()
-                    .kind(kind)
-                    .build()
-                    .unwrap_or_else(|e| panic!("perf_event_open for {kind:?}: {e}"))
-            };
-            Self {
-                cycles: hardware(Hardware::CPU_CYCLES),
-                instructions: hardware(Hardware::INSTRUCTIONS),
-                cache_misses: hardware(Hardware::CACHE_MISSES),
-                l1d_read_misses: Builder::new()
-                    .kind(Cache {
-                        which: perf_event::events::WhichCache::L1D,
-                        operation: CacheOp::READ,
-                        result: CacheResult::MISS,
-                    })
-                    .build()
-                    .unwrap_or_else(|e| panic!("perf_event_open for L1D read miss: {e}")),
-                dtlb_read_misses: Builder::new()
-                    .kind(Cache {
-                        which: perf_event::events::WhichCache::DTLB,
-                        operation: CacheOp::READ,
-                        result: CacheResult::MISS,
-                    })
-                    .build()
-                    .unwrap_or_else(|e| panic!("perf_event_open for dTLB read miss: {e}")),
-                branch_misses: hardware(Hardware::BRANCH_MISSES),
-                page_faults: Builder::new()
-                    .kind(Software::PAGE_FAULTS)
-                    .build()
-                    .unwrap_or_else(|e| panic!("perf_event_open for page faults: {e}")),
-            }
-        }
-
-        fn each(&mut self) -> [&mut Counter; 7] {
-            [
-                &mut self.cycles,
-                &mut self.instructions,
-                &mut self.cache_misses,
-                &mut self.l1d_read_misses,
-                &mut self.dtlb_read_misses,
-                &mut self.branch_misses,
-                &mut self.page_faults,
-            ]
-        }
-
-        fn reset_and_enable(&mut self) {
-            for counter in self.each() {
-                counter.reset().expect("reset");
-                counter.enable().expect("enable");
-            }
-        }
-
-        fn disable(&mut self) {
-            for counter in self.each() {
-                counter.disable().expect("disable");
-            }
-        }
-
-        fn read(&mut self) -> Counts {
-            fn one(counter: &mut Counter) -> Reading {
-                let read = counter.read_count_and_time().expect("read");
-                Reading {
-                    count: read.count,
-                    ratio: if read.time_enabled == 0 {
-                        1.0
-                    } else {
-                        read.time_running as f64 / read.time_enabled as f64
-                    },
-                }
-            }
-            Counts {
-                cycles: one(&mut self.cycles),
-                instructions: one(&mut self.instructions),
-                cache_misses: one(&mut self.cache_misses),
-                l1d_read_misses: one(&mut self.l1d_read_misses),
-                dtlb_read_misses: one(&mut self.dtlb_read_misses),
-                branch_misses: one(&mut self.branch_misses),
-                page_faults: one(&mut self.page_faults),
-            }
-        }
-    }
-
-    impl Counts {
-        /// The worst scheduling ratio of the six.
-        fn worst_ratio(&self) -> f64 {
-            [
-                self.cycles.ratio,
-                self.instructions.ratio,
-                self.cache_misses.ratio,
-                self.l1d_read_misses.ratio,
-                self.dtlb_read_misses.ratio,
-                self.branch_misses.ratio,
-                self.page_faults.ratio,
-            ]
-            .into_iter()
-            .fold(1.0f64, f64::min)
-        }
-    }
 
     /// One timed, counted run.
     struct Run {
