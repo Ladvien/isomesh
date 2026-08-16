@@ -332,6 +332,16 @@ fraction of "seam cracking" in shipped voxel engines is this rather than algorit
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
 | ☐ | **A-022** | **Disambiguate the face in the dual path, as the primal path already does.** A-021 (M-276) measured that **all 314** of `noise_cavity`'s non-manifold edges under Surface Nets have exactly **4** crossed boundary edges on their shared grid face, against **2** on all 30,891 manifold ones — the *ambiguous face*, in the literature's own words. The dual quad walk emits a quad per crossed edge and so makes **both** choices at once, where `FaceAmbiguity::AsymptoticDecider` makes one for Marching Cubes. **Read `dualsimp_tvcg.pdf` (Schaefer, Ju & Warren) before writing anything** — whether MDC's own criterion is face-based or component-based decides whether this is a new rule or a bug in the existing one, and rule 5 forbids guessing which. **Acceptance:** the 314 goes to 0 on `noise_cavity`, `gyroid` and `fbm_terrain` under Surface Nets and Dual Contouring, with T-007's golden hashes regenerated in the same commit and the diff explained rather than accepted. | L | A-021 |
+> BLOCKED: **the source is paywalled and not in the corpus.** Schaefer, Ju & Warren, *Manifold Dual
+> Contouring*, IEEE TVCG 13(3) (2007), `10.1109/TVCG.2007.1012` — `paper_download` reports *"No
+> open-access PDF found"*, and `distill_search` finds only a slide deck that cites it. The nearest
+> thing present is Ju, Losasso, Schaefer & Warren, *Dual Contouring of Hermite Data*
+> (`10.1145/566570.566586`), whose manifold criterion is about **octree simplification** — *"test
+> whether the dual contour for each individual fine cube is a manifold"* — and says nothing about the
+> base-level ambiguous face this ticket is about. **Rule 5 applies exactly:** a wrong disambiguation
+> rule produces meshes that look fine and are subtly non-manifold, which is the failure this crate
+> exists to avoid, so the rule is not being invented. A-021's diagnosis (M-276) stands and needs
+> nothing from the paper; only the remedy does.
 | ☐ | **R-004** | **Quantify the crack budget: arithmetic vs algorithm.** **H:** with exact/canonical coordinate reconstruction — one canonical `world_of_sample`, never an offset-and-add — seam cracks fall to **0 for all cell sizes**, not only powers of two, and M-73's hairline disappears without any change to the transition-cell construction. **Harness:** sweep non-power-of-two cell sizes × LOD pairs, count unmatched boundary edges and max vertical discontinuity (M-106's metric, which already found a margin across 495 seam crossings). **Records:** crack count and max discontinuity per (cell size, LOD pair), both arithmetic paths. **Falsified by:** cracks surviving canonical reconstruction — which localises the defect back in Transvoxel and is a different ticket. Consider Attene's **indirect predicates** (`10.1016/j.cad.2020.102856`, in corpus): treat a crossing as a *construction* (line, plane) rather than a computed point, and get exact sign tests at near-float cost. **FINDINGS:** `M-`, and `✗` against M-32's power-of-two framing if it turns out to be an artefact of one reconstruction choice rather than a floating-point law. | L | R-000 |
 
 ---
