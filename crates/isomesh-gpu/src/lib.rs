@@ -37,14 +37,32 @@
 //! |---|---|---|
 //! | 0.0.x | 29.0.3 | 0.19 |
 //!
-//! # What is here now
+//! # What is here
 //!
-//! The substrate an extraction pipeline sits on, and it is complete rather than
-//! sketched: a validated [`GridParams`] with the std140 packing a shader will
-//! read, a [`FieldBuffer`] that puts a sampled `isomesh` field into GPU memory,
-//! and [`read_buffer`] to get results back. Shaders, their composition and
-//! Marching Cubes itself are GPU-002 through GPU-004; nothing here is a
-//! placeholder waiting for them.
+//! A whole extraction pipeline, not a substrate waiting for one.
+//!
+//! | | |
+//! |---|---|
+//! | **Extraction** | [`MarchingCubesGpu`] — the case table is uploaded rather than transcribed, so there is one table in the repository and the GPU reads the same bytes the CPU does ([`case_table_bytes`]) |
+//! | **Fields on the GPU** | [`GpuField`], [`GpuShape`], [`GpuOp`], [`GpuBrush`], [`FieldSampler`] — brushes folded device-side, so an edit does not cross the bus |
+//! | **The plumbing extraction needs** | [`PrefixScan`] and [`DeferredScan`] for compaction, [`GridParams`] for std140 packing, [`FieldBuffer`], [`read_buffer`] |
+//! | **Drawing without a readback** | [`MeshShaderRenderer`], [`IndirectGeometry`], and [`probe_mesh_shaders`] to ask first |
+//! | **Distance transforms** | [`JumpFlood`] |
+//! | **Shader sources** | [`MARCHING_CUBES_WGSL`], [`FIELD_WGSL`], [`GRID_WGSL`], [`SCAN_WGSL`], [`JUMP_FLOOD_WGSL`], [`MESH_RENDER_WGSL`], composed by [`Composer`] |
+//! | **No device of your own** | [`headless`] |
+//!
+//! # The honest headline: with a readback, this is slower than the CPU
+//!
+//! Measured, at every resolution tried — `docs/measurements/gpu_vs_cpu.csv` and
+//! the `gpu_vs_cpu` example, which breaks one extraction into its five parts.
+//! The cost is not launch overhead; it is the two memory-copy stages, and they
+//! dominate.
+//!
+//! So the GPU path pays off in exactly one shape: **you render from GPU memory
+//! and never read back.** That is what [`MeshShaderRenderer`] is for, and the
+//! `gpu_mesh_shader` example is the whole loop — field, extraction and draw,
+//! with a camera matrix and three brushes as the only things crossing the bus.
+//! Reach for this crate when that is your shape, and stay on the CPU otherwise.
 //!
 //! ```no_run
 //! use isomesh::fields::Sphere;
