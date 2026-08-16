@@ -40,6 +40,15 @@ false. Exact geometric predicates arrived.
 
 ### Changed
 
+- **`signed_distance_from_mesh_winding` is no longer a second implementation of "distance to the
+  nearest triangle".** It carried an unaccelerated scan over every triangle while its own doc comment
+  claimed the magnitude was computed *"exactly as `signed_distance_from_mesh` computes it"*. It now
+  calls `MeshField`, the same code the pseudonormal path runs, and only substitutes the sign — which
+  is the one thing that genuinely differs. **Output is bit-identical**: the old loop took
+  `minₜ √(r·r)` and `MeshField` takes `√(minₜ r·r)`, and `√` is monotone and correctly rounded, so
+  both select the same triangle and root the same value. Golden hashes are unchanged. The speedup is
+  the shape M-260 measured at 3.9× (T-025).
+
 - **`ColliderReadiness` gained `non_manifold_vertices`, and `supports_inside_outside()` now requires
   it to be zero.** `MeshReport` computed it with the link walk; `collider::from_report` forwarded ten
   fields and not that one, so a **bowtie** — two cones sharing an apex — reported zero on every edge
