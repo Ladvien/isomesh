@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-168 tickets. Line numbers are stable until something above them is edited — grep the ID if
+169 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1124,3 +1124,35 @@ not meet that criterion. |
 non-manifold everywhere", which contradicts every measurement in the file — the error was treating a quad as
 contributing two faces to each of its sides. Printing the face-count histogram for a **plain half-space**
 (`{1: 8, 2: 8}`) settled it in one run, for less than the third attempt at the algebra. |
+| ☑ | **R-004** | **Quantify the crack budget: arithmetic vs algorithm.** **H:** with exact/canonical coordinate reconstruction — one canonical `world_of_sample`, never an offset-and-add — seam cracks fall to **0 for all cell sizes**, not only powers of two, and M-73's hairline disappears without any change to the transition-cell construction. **Harness:** sweep non-power-of-two cell sizes × LOD pairs, count unmatched boundary edges and max vertical discontinuity (M-106's metric, which already found a margin across 495 seam crossings). **Records:** crack count and max discontinuity per (cell size, LOD pair), both arithmetic paths. **Falsified by:** cracks surviving canonical reconstruction — which localises the defect back in Transvoxel and is a different ticket. Consider Attene's **indirect predicates** (`10.1016/j.cad.2020.102856`, in corpus): treat a crossing as a *construction* (line, plane) rather than a computed point, and get exact sign tests at near-float cost. **FINDINGS:** `M-`, and `✗` against M-32's power-of-two framing if it turns out to be an artefact of one reconstruction choice rather than a floating-point law. | L | R-000 |
+| | | ***P-11 held in both clauses, and the falsifier did not fire (M-278).*** Canonical reconstruction gives **0**
+seam-plane boundary edges in all 20 rows — five spacings, two LOD pairs, two fields — under *both* a weld and a
+bit-identity merge, and every one of the fine block's seam vertices is bit-identical to its partner. `benches/experiment_p11.rs`,
+`docs/experiments/p-11.csv`, 40 rows. |
+| | | ***The budget splits on a different axis than the ticket assumed.*** The **algorithm** owns the whole *visible*
+crack: remove the transition cells and the seam opens to 32–184 boundary edges, widest hole 1.03–3.01 cells, and the
+arithmetic changes none of that. The **arithmetic** owns the whole *invisible* one: worst disagreement `1.44e-15`
+world units against a weld epsilon of `h · 1e-4`, so the offset arm is 0 cracks welded and 63–348 under bit-identity. |
+| | | ***`✗` went to M-73's weld clause, not to M-32's power-of-two framing.*** M-32 is confirmed where it speaks —
+`0.125` and `0.0625` give bit-identical arms and zero cracks — so it is not an artefact. What the sweep found instead
+is that *"no weld can close it"* is false: `epsilon_for(h)` is nine orders of magnitude above the disagreement and
+closes every one. **✗18.** |
+| | | ***And it sharpened M-32 rather than only confirming it.*** At `h = 0.1` and `1/12` the seam **plane** agreed bit
+for bit while only 24 of 92 vertices did — the disagreement is every coordinate two blocks with different bases reach
+by different groupings, not just the one along the seam normal. Bit-exact sharing runs 100% / 26-of-76 / 24-of-92 /
+**0-of-108** across the five spacings. |
+| | | ***An ulp of coordinate can be a cell of geometry.*** The bit-identity crack is a hairline (`~1e-14` cells) in 8
+of 12 non-power-of-two offset rows and **1.05–2.08 cells** in two, where a perturbed sample crossed zero and the two
+sides stopped agreeing an edge was cut. The control shows the same: with transition cells removed, the offset arm's
+crack count differs from the canonical one in 5 of 20 rows. |
+| | | ***Deviation: `max_discontinuity` is not M-106's ray cast.*** The core crate has no ray caster and the ticket's
+reference is to a Bevy example. Defined instead as lip-to-lip separation — for each endpoint of a seam-plane boundary
+edge, the distance to the nearest such endpoint it is not joined to along the boundary — which is 0 on a closed seam,
+`~1e-14` cells on a hairline and 1–3 cells on a real hole. The first definition tried (nearest vertex of a disjoint
+provenance) reported 4.0 cells on closed seams because a *merged* vertex's nearest foreign block is the coarse grid;
+it was replaced before any number was written down. |
+| | | ***The canonical arm needed a workaround, and the workaround is the follow-up ticket.*** `Extractor::extract_into`
+takes a world origin and computes `origin + h·local`, with nowhere to put an integer base — so a chunk at a non-zero
+base gets the offset arithmetic by construction and no argument avoids it. The canonical arm is reached by rooting the
+extraction at the grid origin and clipping to the block's cells, checked by `clip_agrees_with_the_block` at every
+power-of-two spacing. **X-005** owns the API change; it is a decision about the crate's central trait, not a fix. |

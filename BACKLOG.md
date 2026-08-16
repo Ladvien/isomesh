@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**168 tickets archived, 6 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**169 tickets archived, 6 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -165,6 +165,7 @@ O(N) edit across benches, property tests and examples instead of O(1).**
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
+| ☐ | **X-005** | **Give `Extractor` the global sample base its callers cannot supply, and decide whether that is worth the API break.** `extract_into` takes `origin: [R; 3]` and every implementation computes `origin + cell_size · local`. `ChunkLayout::world_of_sample`'s doc calls itself *"the single place a sample's world position is defined — everything else routes through it"*, and **no extractor does**: a chunk at a non-zero base reaches its far sample plane as `(o + h·base) + h·local` where its neighbour reaches the same plane as `o + h·(base + local)`, and those are equal by algebra and not by IEEE. **R-004 priced it (M-278).** Canonical reconstruction gives **0** unmatched seam-plane boundary edges at every spacing tried; what the crate can offer today gives 0 only at a power-of-two spacing and **63–348** at `0.1`, `1/12` and `1/14`, plus a hole 1.05–2.08 cells wide in 2 of 12 rows where an ulp flipped a sign. The crate's weld hides all of it (✗18) and an unwelded consumer — M-69's collider — gets it in full. **The shape that works is one path, not two:** replace the `[R; 3]` origin with a pair `(grid origin, integer base)` and compute `o + h·(base + local)`, which degenerates to today's behaviour at base zero. `TransitionCell::sample` already took exactly this route at A-011b, so the precedent is in the tree. **This is a decision, not a fix, and it is the reason this ticket is unstarted:** it changes the signature of the crate's central trait and every one of its call sites — eight extractors, five benches, the property suite and 32 Bevy examples. **Acceptance:** either the change lands with R-004's harness re-run and the offset arm gone from the crate entirely, or the ticket is closed with a written decision to keep the API and treat power-of-two cell sizes as a documented input contract. Do not ship both paths. | L | R-004 |
 
 ---
 
@@ -324,10 +325,18 @@ row before starting, because half the evidence is already there.
 
 - **M-32** — *"Chunk seams are bit-exact only when the cell size is a power of two."*
 - **M-49** — *"`ChunkLayout::cell_of` inverts `world_of_sample` inside a cell and not reliably on its corner — M-32 in a second place."*
-- **M-73** — *"a transition cell that computes its sample positions by offsetting from a face origin puts a hairline crack in the seam, and no weld can close it."*
+- **M-73** — *"a transition cell that computes its sample positions by offsetting from a face origin puts a hairline crack in the seam"* — its *"and no weld can close it"* is ✗18, falsified at R-004.
 
 Every one is floating-point coordinate reconstruction, not extraction. **Nobody has published what
 fraction of "seam cracking" in shipped voxel engines is this rather than algorithmic.**
+
+> **R-004 answered that for this crate, and the split is clean (M-278).** The **algorithm** owns the
+> whole visible budget — remove the transition cells and the seam opens to 32–184 boundary edges,
+> 1.03–3.01 cells wide, identically under both arithmetics. The **arithmetic** owns the invisible one:
+> `1.44e-15` world units against a weld epsilon of `h · 1e-4`, so it is 0 cracks welded and 63–348
+> under bit-identity, with a 1.05–2.08-cell hole in 2 of 12 rows where an ulp flipped a sign.
+> Canonical reconstruction takes every column to zero at every spacing; **X-005** is what it would
+> cost to have it.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
@@ -342,7 +351,6 @@ fraction of "seam cracking" in shipped voxel engines is this rather than algorit
 > rule produces meshes that look fine and are subtly non-manifold, which is the failure this crate
 > exists to avoid, so the rule is not being invented. A-021's diagnosis (M-276) stands and needs
 > nothing from the paper; only the remedy does.
-| ☐ | **R-004** | **Quantify the crack budget: arithmetic vs algorithm.** **H:** with exact/canonical coordinate reconstruction — one canonical `world_of_sample`, never an offset-and-add — seam cracks fall to **0 for all cell sizes**, not only powers of two, and M-73's hairline disappears without any change to the transition-cell construction. **Harness:** sweep non-power-of-two cell sizes × LOD pairs, count unmatched boundary edges and max vertical discontinuity (M-106's metric, which already found a margin across 495 seam crossings). **Records:** crack count and max discontinuity per (cell size, LOD pair), both arithmetic paths. **Falsified by:** cracks surviving canonical reconstruction — which localises the defect back in Transvoxel and is a different ticket. Consider Attene's **indirect predicates** (`10.1016/j.cad.2020.102856`, in corpus): treat a crossing as a *construction* (line, plane) rather than a computed point, and get exact sign tests at near-float cost. **FINDINGS:** `M-`, and `✗` against M-32's power-of-two framing if it turns out to be an artefact of one reconstruction choice rather than a floating-point law. | L | R-000 |
 
 ---
 

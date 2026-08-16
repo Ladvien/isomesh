@@ -10,8 +10,18 @@
 //! Not "within a tolerance". Exactly. Two vertices a float apart leave a crack
 //! the width of a rounding error, and A-013 measured what that costs: a seam of
 //! unshared vertices that a renderer draws correctly and a collider reads as a
-//! hole (M-69). The weld can close a seam it can *see*; it cannot invent a shared
-//! vertex where the two sides disagree in the last bit.
+//! hole (M-69).
+//!
+//! An earlier version of this paragraph added *"the weld can close a seam it can
+//! see; it cannot invent a shared vertex where the two sides disagree in the last
+//! bit"*, and **that is ✗18** — measured false at R-004. The welder's rule is
+//! first fit within `epsilon_for(h) = h · 1e-4`, not bit-identity, and a
+//! disagreement of `1.4e-15` is nine orders of magnitude inside it: the offset
+//! arithmetic leaves **0** seam-plane boundary edges once welded, against 63–348
+//! under a bit-identity merge (M-278). So the exactness below buys **sharing by
+//! construction** — which is what M-69's unwelded consumer gets, and what the
+//! weld's own order-dependence (R-002) and ability to *create* a non-manifold
+//! edge (M-226) make worth having rather than leaning on.
 //!
 //! Three facts make the identity hold, and each was measured rather than assumed:
 //!
@@ -110,9 +120,16 @@ impl<R: Real> TransitionCell<R> {
     /// ```
     ///
     /// in IEEE at a spacing that is not a power of two. A hairline difference in
-    /// the last bit is not a rounding curiosity here — it is a **crack**, and one
-    /// no weld can close, because the weld can only merge vertices it can see are
-    /// the same and these two are not.
+    /// the last bit is not a rounding curiosity here — it is a **crack**, and it
+    /// costs the seam its shared vertices: R-004 measured 63–348 unmatched
+    /// seam-plane boundary edges under a bit-identity merge at every spacing that
+    /// is not a power of two, and, in two of twelve cases, a hole **1.05–2.08
+    /// cells** wide where the perturbed sample crossed zero and the two sides
+    /// stopped agreeing that an edge was cut at all (M-278).
+    ///
+    /// The crate's own weld closes the hairline — that much was written here and
+    /// is ✗18 — but not the hole, and not for a consumer that never welds
+    /// (M-69).
     ///
     /// Indexing from the grid origin is the same expression
     /// [`ChunkLayout::world_of_sample`](crate::chunk::ChunkLayout::world_of_sample)

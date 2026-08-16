@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**342 entries** — 17 falsified, 272 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**344 entries** — 18 falsified, 273 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -56,6 +56,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗15` | "Marching Cubes is unconditionally manifold" |
 | `✗16` | "glam 0.32 lands with A-007's vertex solve" |
 | `✗17` | "Only the interior test can make Marching Cubes 33 non-manifold, so the face decider alone cannot" |
+| `✗18` | "A hairline seam difference is a crack no weld can close" |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -328,6 +329,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-275` | FALSIFIED on its first clause, and the residue is an edge defect (R-003) |
 | `M-276` | the dual methods' non-manifold edges are the ambiguous face, all 314 of them (A-021) |
 | `M-277` | the index generator was blind to the shape its own file had moved to (R-004) |
+| `M-278` | HELD, and the crack budget is not where the ticket assumed (R-004) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -795,6 +797,41 @@ negative fitted intercept. So the superlinearity is a property of the **shared d
 sampling and its strided quad walk — and not of either vertex rule. That is a real narrowing of O-11's
 search: the suspect is the gather in `emit_quads`, whose `z`-stride is `n²` cells apart.
 
+### ✗18 — "A hairline seam difference is a crack no weld can close"
+
+**Source: this repository — M-73, and `transvoxel::cell`'s own module docs, which say it twice.**
+
+> *"A weld cannot rescue it: welding merges vertices it can see are the same, and these two differ in
+> the last bit."* (M-73)
+>
+> *"The weld can close a seam it can see; it cannot invent a shared vertex where the two sides
+> disagree in the last bit."* (`cell.rs`, module docs)
+
+**Falsified at R-004 (M-278).** *"Vertices it can see are the same"* reads as bit-identity, and the
+welder's rule is not that: it is **first fit within `epsilon`**, and the one policy is
+`epsilon_for(h) = h · 1e-4`. At `h = 1/12` that is `8.33e-6` against a worst measured seam
+disagreement of `1.440e-15` — **nine orders of magnitude inside the tolerance**, and the 27-cell
+lattice probe means straddling a bucket boundary does not save it either.
+
+Measured on the two-resolution fixture, offset arithmetic, all five spacings and both LOD pairs:
+**0 seam-plane boundary edges in all twenty rows under the crate's own weld** — including the twelve
+where a bit-identity merge leaves **63 to 348**.
+
+**Two things survive, and they are why the M-73 fix was still right.**
+
+- **A consumer that does not weld gets the crack in full.** M-69 is that consumer on the record: *"a
+  seam of unshared vertices that a renderer draws correctly and a collider reads as a hole."* Sharing
+  by construction is structural; sharing by tolerance is a policy someone can change.
+- **The weld is not free to lean on.** R-001 measured that it can *create* a non-manifold edge
+  (M-226) and R-002 that its result depends on input order. *"The weld will catch it"* is a bad
+  thing to design against even when it is true.
+
+**And the claim understates the damage in the other direction, in 2 of 12 rows.** The offset
+arithmetic is not always a hairline: on `torus` at `h = 1/12` the widest bit-identity crack is
+**2.076 cells** at LOD 0–1 and **1.053** at 1–2, because a sample perturbed in its last bit crossed
+zero and the two sides then disagreed about whether an edge was cut at all. That is a hole, not a
+rounding error, and no weld epsilon short of a cell would close it.
+
 ---
 
 ## Part 2 — Measured here (tier M)
@@ -873,7 +910,7 @@ search: the suspect is the gather in `emit_quads`, whose `z`-stride is `n²` cel
 | M-70 | **Field-derived LOD is exact, not approximate: a coarse sample position is bit-identical to the fine one it sits on.** Level `k` doubles the spacing `k` times, so a level-`k` sample at index `s` and a level-0 sample at index `2^k·s` must land on the same world point — and they do, **bit for bit**, over cell sizes `0.125`, `4/35`, `0.1` and `1/3` and levels 0–3. Doubling is exact in IEEE and so is doubling a small integer, so `(h·2^k)·s` and `h·(2^k·s)` are the same real rounded the same way | G-004. Asserted rather than argued, because **M-32 and M-49 both caught this crate assuming an algebraic identity IEEE did not honour** — `cell_of` round-trips 3 of 3 cell corners at `h = 0.125` and 1 of 3 at `h = 4/35`. This one holds at every spacing tried, including those two. It is the precondition A-011b rests on: no coordinate drift can open a crack at an LOD boundary before transition cells get a chance to be wrong |
 | M-71 | **Cells fall by 8 per LOD level and triangles by 4 — and the 4 degrades exactly where the grid stops resolving the surface.** Unit sphere over a fixed world extent, levels 0–3: **262,144 / 32,768 / 4,096 / 512 cells** (exactly `8×` each, by construction) against **9,512 / 2,312 / 536 / 104 triangles**, ratios **4.114, 4.313, 5.154**. A surface is two-dimensional so its triangle count tracks `area / h²`, but that is a *continuum* claim: by level 3 the sphere is four cells across and a 104-triangle staircase is not approximating anything smoothly | G-004. So each level buys back `8×` the sampling work and only `4×` the rendering, which is the whole economics of LOD and the reason the ticket's own acceptance figure is about cells. The tight `3.8–4.6` bound is asserted only on the two steps where the premise holds, and the upward drift is asserted as a *direction* rather than waived as tolerance |
 | M-72 | **A sub-cell feature does not vanish under coarsening — it aliases, which is worse.** `thin_plate` across LOD 0–3: **4,088 → 1,016 → 248 → 56** triangles, still 56 at `h = 0.5` where the plate is a fraction of a cell thick. The test was written asserting it would be *gone* by the coarsest level and that assertion is what failed. Marching Cubes samples **corners** and cuts **edges**, so whichever edges happen to straddle a thin slab still register a sign change and what comes back is a partial, holey remnant | G-004. **The contrast is the mechanism:** A-005 measured the same field returning **zero** triangles under greedy quads, which asks one question per cell *centre* and therefore misses it cleanly. For a streamed world the aliasing is the worse behaviour — a feature that vanishes at a known distance can be faded, one that disintegrates into a resolution-dependent scatter pops. It is also the cost M-67 quantified from the other side |
-| M-73 | **A transition cell that computes its sample positions by offsetting from a face origin puts a hairline crack in the seam, and no weld can close it.** The first version of `TransitionCell::sample` took the face's world origin and added local offsets. At `h = 4/14` a half-resolution crossing came out at `y = -1.11e-16` where the coarse mesh had the same vertex at exactly `0` — because `(origin + h·i) + h ≠ origin + h·(i + 1)` in IEEE at a spacing that is not a power of two. Indexing from the **grid** origin instead, `origin + h·index`, which is exactly `ChunkLayout::world_of_sample`'s expression, makes the coarse `origin + (2h)·c` and the fine `origin + h·(2c)` bit-identical by M-70. Measured after the fix: **56 half-resolution crossings over 256 transition faces on a sphere at `h = 1/8`, and 24 on a torus at `h = 4/14`, every one matching a coarse mesh vertex exactly** | A-011b. **Third time this crate has assumed an algebraic identity IEEE does not honour** — M-32 at a chunk seam, M-49 in `cell_of`, now here — and the first where the consequence is a visible hole rather than a classification wobble. A weld cannot rescue it: welding merges vertices it can see are the same, and these two differ in the last bit. The test searches an actual coarse vertex buffer rather than re-deriving the interpolation, because two copies of a formula agreeing proves only that they were written on the same day |
+| M-73 | **A transition cell that computes its sample positions by offsetting from a face origin puts a hairline crack in the seam, and no weld can close it.** The first version of `TransitionCell::sample` took the face's world origin and added local offsets. At `h = 4/14` a half-resolution crossing came out at `y = -1.11e-16` where the coarse mesh had the same vertex at exactly `0` — because `(origin + h·i) + h ≠ origin + h·(i + 1)` in IEEE at a spacing that is not a power of two. Indexing from the **grid** origin instead, `origin + h·index`, which is exactly `ChunkLayout::world_of_sample`'s expression, makes the coarse `origin + (2h)·c` and the fine `origin + h·(2c)` bit-identical by M-70. Measured after the fix: **56 half-resolution crossings over 256 transition faces on a sphere at `h = 1/8`, and 24 on a torus at `h = 4/14`, every one matching a coarse mesh vertex exactly** | A-011b. **Third time this crate has assumed an algebraic identity IEEE does not honour** — M-32 at a chunk seam, M-49 in `cell_of`, now here — and the first where the consequence is a visible hole rather than a classification wobble. ~~A weld cannot rescue it: welding merges vertices it can see are the same, and these two differ in the last bit.~~ **That clause is ✗18, falsified at R-004 (M-278):** the welder's rule is first fit within `epsilon_for(h) = h · 1e-4`, not bit-identity, and it closes every one of these — 0 seam-plane boundary edges in all twenty offset rows. The headline claim stands and the reason changes: what the offset arithmetic costs is **sharing by construction**, which is what an unwelded consumer gets (M-69's collider), plus a tail where an ulp flips a sign and opens a hole 1.05–2.08 cells wide. The test searches an actual coarse vertex buffer rather than re-deriving the interpolation, because two copies of a formula agreeing proves only that they were written on the same day |
 | M-74 | **A zero-width transition cell stitches the hole and has no normal at all — which is what "severe shading problems" means, precisely.** All nine of a transition cell's samples lie in the transition *face*, so at zero width every crossing does too and every triangle it emits is **coplanar with that face**. Measured: the worst `\|cos\|` between a patch face's normal and the field's gradient is **exactly 0** over 136 faces — the patch stands perpendicular to the surface it is stitching. A winding test against the gradient therefore cannot mean anything, which is how this was found: it reported 136 of 136 faces inward, and reversing the fan reported the same 136 | A-011b. Lengyel 2010 §4.3 says a zero width *"still produce\[s\] results that seamlessly stitch multiresolution meshes together, but this width leads to **severe shading problems**"* — the stitch closes the hole and shades as a hard crease **because it is one**, a flat wall standing edge-on. So the transition width is not a polish item to defer after the gap closes: **it is what gives the patch a normal**, and it is a hard dependency of any correct winding rather than a nicety. A-011c owns it |
 | M-75 | **The transition width is what makes the patch's winding a measurable question at all, and the answer is unanimous.** With Lengyel's `w = 2^(k−2)` — half the adjacent full-resolution cell — the patch stops being coplanar with the transition face and becomes a ribbon: best `\|cos\|` against the surface normal **1.000**, where M-74 measured **0.000** at zero width. The orientation is then decided by measurement rather than convention: one fan order faces away from the solid on **144 of 144** faces and the other on **none**. Also measured, and the property the seam depends on: the width displaces the half-resolution face **and nothing else** — over 256 transition faces, **88 fine crossings unmoved bit-for-bit and 56 coarse crossings displaced by exactly the width along the face normal**, with no in-plane movement | A-011b. Two winding attempts were made before this one and both were meaningless, reporting the identical count in either direction, because the quantity being tested was `dot(face_normal, gradient)` on faces exactly perpendicular to the gradient. **The lesson is the method rule, not the sign:** a test that returns the same answer when you invert the thing it is testing is not measuring that thing |
 | M-76 | **Two blocks at differing resolution leave 88 unmatched boundary edges in the seam plane, and transition cells take it to 0.** A full-resolution block over `x ∈ [−2, 0]` at `h = 1/8` against a half-resolution one over `x ∈ [0, 2]` at `2h`, both meshed with Marching Cubes and welded: the fine side ends on a contour of 32×32 sub-squares, the coarse on 16×16, and **88 boundary edges lying wholly in the seam plane** are the crack between them. Adding one transition cell per coarse cell face — **28 of the 256 were cut** — takes that count to **exactly 0** | A-011b's acceptance. Asserted in both directions: the `before > 0` half is what stops the test passing vacuously if the two resolutions ever stopped disagreeing. Counted *in the seam plane only*, because both blocks are legitimately open at their outer borders — a global boundary count says nothing about a seam, which is the same distinction `collider::ColliderReadiness` draws for a chunk |
@@ -2191,3 +2228,82 @@ Fixed by also matching `### (M|V|O)-n — …` headings, with `M-275 / P-14`'s t
 the first id and a table row winning over a heading for the same id. **`P-` headings stay unindexed
 deliberately** — `### P-8 … P-13` names six predictions in one heading and would collide with each of
 their own outcome sections. Index after the fix: **341 entries, 271 measured.**
+
+### M-278 / P-11 — HELD, and the crack budget is not where the ticket assumed (R-004)
+
+**M.** `benches/experiment_p11.rs`, `docs/experiments/p-11.csv`, 40 rows: `sphere` and `torus` ×
+five level-0 spacings × two LOD pairs × two arithmetics. A fine block meets a half-resolution one
+across a seam, stitched with Lengyel transition cells at zero width, and every block starts twelve
+cells from the grid origin so that both arithmetics can differ at all.
+
+| arm | sample position |
+|---|---|
+| `canonical` | `o + h·(base + local)` — one multiply from a global integer index |
+| `offset` | `(o + h·base) + h·local` — a step added to the block's own corner |
+
+**Both come from the shipped functions.** `TransitionCell::sample` already takes `(origin, base)`, so
+handing it the face's own world origin with a zero base *is* the pre-M-73 code. Marching Cubes has no
+integer base, so its canonical arm roots the extraction at the grid origin and clips to the block's
+cells; `clip_agrees_with_the_block` checks that clip at every power-of-two spacing, where the two
+arms compute identical positions and a difference could only be the clip.
+
+#### The result, in one table — seam-plane boundary edges
+
+| pipeline | `canonical` | `offset` |
+|---|---|---|
+| **weld + transition cells** (what the crate ships) | **0**, all 20 rows | **0**, all 20 rows |
+| **bit-identity + transition cells** | **0**, all 20 rows | **0** at `h = 0.125` and `0.0625`; **63–348** at `0.1`, `1/12`, `1/14` |
+| **weld, transition cells removed** | 32–184 | 32–184, differing from `canonical` in 5 of 20 |
+
+**P-11 HELD, in both clauses.** Canonical reconstruction gives **zero** seam cracks at every cell
+size — not only the powers of two — under *both* merge policies, and every one of the fine block's
+seam vertices is bit-identical to its partner (`shared == pairs`, 20 of 20 rows, up to 124/124). The
+registered falsifier — *"cracks surviving canonical reconstruction"* — did not fire anywhere, so the
+defect does not localise back into Transvoxel.
+
+#### What the ticket assumed, and what is actually true
+
+R-004 is titled *"quantify the crack budget: arithmetic vs algorithm"*, and the split is sharper than
+expected but on a different axis:
+
+- **The algorithm owns the whole of the *visible* budget.** Remove the transition cells and the seam
+  opens to 32–184 boundary edges with a widest hole of **1.03–3.01 cells** — a hole you can see the
+  sky through. Put them back and it is 0. Arithmetic changes none of that.
+- **The arithmetic owns the whole of the *invisible* one.** Its worst positional disagreement is
+  `1.440e-15` world units, and the weld epsilon is `h · 1e-4`. So under the shipped pipeline the
+  offset arm is indistinguishable from the canonical one, and under bit-identity it is 63–348 cracks
+  wide. That is ✗18.
+
+#### Three things the sweep found that were not predicted
+
+**1. The seam *plane* is the wrong unit of analysis, which sharpens M-32 rather than falsifying it.**
+M-32 is confirmed where it speaks: at `h = 0.125` and `0.0625` the two arms are bit-identical
+everywhere and every crack column is 0, so *"recommend power-of-two cell sizes for chunked worlds"*
+holds. But at `h = 0.1` and `1/12` the seam plane's own coordinate agreed **bit for bit**
+(`seam_plane_delta = 0`) while only **24 of 92** vertices did. The disagreement is not confined to
+the coordinate along the seam normal; it is *every* coordinate that two blocks with different bases
+reach by different groupings — the fine block's `(o + h·12) + h·i`, the patch's
+`(o + h·(12 + 2j)) + h·s`, the coarse block's `(o + 2h·6) + 2h·j`. Only `h = 1/14` disagreed on the
+plane itself, at `4.441e-16`.
+
+**2. Bit-exact sharing degrades continuously, and one spacing loses it entirely.** Partners that are
+bit-identical, offset arm: `0.125` and `0.0625` → **100%**; `0.1` → 26/76, 14/48, 6/36, 4/24;
+`1/12` → 24/92, 13/56, 12/44, 9/24; `1/14` → **0 of 108, 0 of 72, 0 of 52, 0 of 40**. There is no
+threshold here to sit above — a spacing either happens to keep the grouping exact or it does not.
+
+**3. An ulp of coordinate can be a cell of geometry.** The bit-identity crack is a hairline
+(`~1e-14` cells) in 8 of the 12 non-power-of-two offset rows, `8.1e-3` and `1.7e-2` cells in two
+more, and **1.053 and 2.076 cells** on `torus` at `h = 1/12`. A sample perturbed in its last bit
+crossed zero, the two sides disagreed about whether an edge was cut, and a patch that should have
+been emitted was not. The same effect shows in the control: with transition cells removed, the offset
+arm's crack count differs from the canonical one in **5 of 20 rows** (68→81, 44→48, 37→41, 152→160,
+72→80). So "the arithmetic only moves things by an ulp" is true on average and false in the tail.
+
+#### The consequence for the crate, which is a ticket rather than a claim
+
+`ChunkLayout::world_of_sample`'s doc calls itself *"the single place a sample's world position is
+defined. Everything else routes through it"* — and **no extractor does.** `Extractor::extract_into`
+takes `origin: [R; 3]` and computes `origin + h·local`, so a chunk at a non-zero base gets the offset
+arithmetic by construction and there is no argument a caller can pass to avoid it. That is why this
+experiment had to reach the canonical arm by clipping an over-extended extraction. **X-005** owns it;
+it is an API change to the crate's central trait and therefore a decision, not a fix.
