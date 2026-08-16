@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**354 entries** — 18 falsified, 283 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**355 entries** — 18 falsified, 284 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -340,6 +340,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-286` | the misses M-279 measured as free were hidden behind the stall, and now they cost (A-023) |
 | `M-287` | one bit of the row length was a 3.4× tax at the chunk size everybody uses (A-024) |
 | `M-288` | FALSIFIED, and the registered definition did not implement the registered claim (R-008) |
+| `M-289` | the reference gradient was noise, and it falsified two hypotheses that were true (R-009) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1478,7 +1479,8 @@ Rules with no incident behind them get ignored. These all have one.
 | **A control run where it cannot discriminate reports "no effect", and reads exactly like a real negative** | M-279 — the axis-order control was first run at 4.3 M samples, a 17 MB array inside this machine's 32 MB L3, where no traversal order can miss. All three orders came out within 20% and the honest-looking conclusion was *"orientation does not matter"*. Re-run at 16.7 M it is a **2.4× spread**. The fixture is now run at **both** sizes, the small one as a control on the control. This is G-003's rule at a different scale: there the fixture's *value* sat in the degenerate region, here its *size* did |
 | **Check a new harness against a committed measurement of the same thing before believing its new columns** | M-279 — `experiment_p12` forgot `MeshBuffer::reset()`, so the output buffer grew by a whole mesh every run and later runs paid reallocation the extraction did not cause. Every exotic column looked plausible; the tell was the boring one, `triangles`, which was **not monotone in `n`** — 145900 at 112³, 190060 at 128³, 144708 at 144³. `resolution_sweep-ryzen9-5900x.csv` has 5180 triangles at 48³ and the fixed harness reproduces it exactly. **A new instrument's first job is to agree with the old one where they overlap** |
 | **On a governed CPU a nanosecond is not a unit. Report cycles, and put the clock on the row** | M-280 — the same binary reported Marching Cubes at 48³ as 8.13 and 14.66 ns/sample with cycles/sample unchanged at ~34, because `amd-pstate-epp` on `powersave` spans 1.96–5.62 GHz. Nothing on the face of either number said which clock it was. Every row now carries `ghz`, computed as cycles ÷ nanoseconds, so the artefact states it rather than inviting the inference |
-| **A fixture can exhibit the property too perfectly. Exactness is the tell, not the confirmation** | M-283 — a wedge whose bisector lay on a grid axis reproduced P-13's predicted angle to **four decimal places** at three dihedrals and three resolutions: 75.0000, 60.0000, 45.0000. Turning the same wedge 17° about its own crease gave 71.6–93.4° for the same dihedrals, and a 5° crease gave 88°. The exact agreement was a property of the symmetry between the crease and the sampling, and nothing about it looked like an artefact. Part 5 already says to *search* for a fixture that exhibits the property; this is the other half — **when a measurement matches a prediction exactly, vary the fixture's orientation before believing it** |
+| **A reference implementation used as ground truth needs the same scrutiny as the thing it checks — and when a measurement is impossible, suspect the instrument before the world** | M-289 — R-006 and R-008 both compared a mesh against an analytic gradient, and every control they carried was about whether the *mesh* was being measured fairly: rotate the fixture, offset the apex, add a no-crease case, check the vertex is on the surface. **None asked whether the gradient was right**, and it was wrong at exactly the points being measured — normalising a cancellation residue for any point epsilon-outside the surface, which is about half of them. Two hypotheses were reported falsified and both were true. The tell was there from the start and was misread twice: an area-weighted normal cannot leave the cone its faces span, so a past-90° reading was **arithmetically impossible**, and M-283 recorded the impossibility and went looking for strange geometry instead of a broken instrument |
+| **A fixture can exhibit the property too perfectly. Exactness is the tell, not the confirmation** | M-283 — a wedge whose bisector lay on a grid axis reproduced P-13's predicted angle to **four decimal places** at three dihedrals and three resolutions: 75.0000, 60.0000, 45.0000. Turning the same wedge 17° or 37° about its own crease gives 20.1–128.0° for the same dihedrals. The exact agreement is a property of the symmetry between the crease and the sampling — the worst vertex is then the symmetric one — and nothing about `75.0000` at three resolutions looks like an artefact. *(The numbers in this row were first taken from the run M-289 corrects; the aligned fixture's four decimals are unchanged by that correction, which is the part the rule is about.)* Part 5 already says to *search* for a fixture that exhibits the property; this is the other half — **when a measurement matches a prediction exactly, vary the fixture's orientation before believing it** |
 | **A millisecond is a property of the binary. Compare within one build and one run, or compare ratios** | M-281 — two of this repo's benches measured Marching Cubes on the same field at the same resolutions with the same median rule and disagreed by a **uniform 1.24–1.36×**, including at 16³ where the whole run is 40 µs. Both loop shapes in **one** binary are identical (0.991–1.002), and adding **one unrelated function** to `resolution_sweep.rs` moved its own 256³ row from 152.5 to 130.8 ms. Layout bias, with a paper — Mytkowicz et al., ASPLOS 2009 (`10.1145/1508284.1508275`). `benches/layout_bias` is the standing check, and it asserts rather than prints |
 | **A generator that recognises one shape stops counting when the shape changes — and its staleness check cannot see that** | M-277 — `findings_index.sh` matched Part 2's table rows and Part 1's `✗` headings. Measurements became `###` sections at M-255 and **twenty-two of them fell out of the index while `--check` stayed green**, because a staleness check compares the file against the generator and the two agreed. The count read *"249 measured"* against 271 present. **Check a generator against its source's own vocabulary, not against its previous output** — one `grep -c '^### M-'` beside `grep -c '^| M-'` is the whole test, and it is the check that was never written |
 | **A file that records state drifts from the state unless something checks it. Write the check the second time, not the third** | E-113 — the demo shipped at `a0859e8`, the README referenced it, and its row sat in `BACKLOG.md` for four more commits; the header counts drifted from the row counts separately. Both were found by audit, both were caused by editing one file with several scripts in one turn where a later write clobbered an earlier one. The same defect was sitting in `FINDINGS.md` unnoticed: **O-1, O-2 and O-4 were still listed as open questions** after G-002, A-009 and G-003 had all landed and answered them. `scripts/backlog_gate.sh` is the check, and it is mutation-tested against all eight ways the two files can disagree — because a gate that has only ever passed is indistinguishable from one that cannot fail (M-44) |
@@ -2589,7 +2591,17 @@ a second direction.
 is **5.43×** here against the 3.72× on record, and **3.19×** at 16³ against M-45's *"2.46× behind even
 at 16³"*. Both are within-binary ratios, which M-281 says is the comparison that survives.
 
-### M-283 / P-13 — FALSIFIED, and the fixture that confirmed it agreed to four decimal places (R-006)
+### M-283 / P-13 — ~~FALSIFIED~~, and the fixture that confirmed it agreed to four decimal places (R-006)
+
+> **⚠ THE VERDICT IN THIS ENTRY IS WRONG. P-13 HELD — see M-289.** The reference gradient this
+> experiment compared against was normalising a cancellation residue at points epsilon-outside the
+> surface, so roughly half the vertices near a face were measured against a random unit vector. The
+> corrected numbers are in M-289: 6,959 past-90° vertices become **472**, the worst angle **tracks**
+> `(180° − θ)/2` and is bounded by it in 136 of 168 rows, and it is resolution-invariant to four
+> significant figures. The entry is kept whole because what it got right — the `θ = 180°` control,
+> the median of zero, the four-decimal fixture — it got right for the right reasons, and because a
+> falsification that was itself falsified is the most useful kind of thing this file can hold.
+
 
 **M.** `benches/experiment_p13.rs`, `docs/experiments/p-13.csv`, 384 rows: an exact convex wedge of
 controllable dihedral × 4 resolutions × 2 apex alignments × 3 rotations × Marching Cubes and Dual
@@ -2989,7 +3001,14 @@ plane, and a corner sitting within rounding of the bisector can be classified ei
 would make the hypothesis fail on arithmetic rather than on geometry. 5% is far above that noise and
 far below "a substantial share".
 
-### M-288 / P-16 — FALSIFIED, and the registered definition did not implement the registered claim (R-008)
+### M-288 / P-16 — ~~FALSIFIED~~, and the registered definition did not implement the registered claim (R-008)
+
+> **⚠ THE VERDICT IN THIS ENTRY IS WRONG. P-16 HELD, at 0% — see M-289.** Every number below is
+> counted over vertices whose reference gradient was noise. Corrected: **442 offenders in 6 rows,
+> 100% of them on the crease**, only at `θ = 30°` and `60°`. What survives is the observation about
+> the registered definition — it splits by the bisector rather than the crease, and it still agrees
+> with the corrected classifier on every row.
+
 
 **M.** `benches/experiment_p16.rs`, `docs/experiments/p-16.csv`, 63 rows: an exact convex wedge ×
 7 dihedrals × 3 rotations × 3 resolutions, Marching Cubes, area-weighted normals.
@@ -3041,3 +3060,83 @@ inherent?"* The answer is that **the crease does that and accounts for a fifth o
 four fifths are somewhere else, at one to three points per cross-section, and this experiment did not
 find them. M-283's reading — that the bridging is M-15's thin-feature mechanism on a sharp field — is
 **narrowed rather than falsified**: it is one of at least two causes and not the main one.
+
+### M-289 — the reference gradient was noise, and it falsified two hypotheses that were true (R-009)
+
+**M.** `benches/r009_locate.rs`, `docs/measurements/r009-locate.csv`, and `experiment_p13` and
+`experiment_p16` re-run.
+
+**This entry reverses M-283's and M-288's verdicts. Read it before either of them.**
+
+#### How it was found, which is the method and not an accident
+
+R-008 left 80% of the past-90° normals unlocated and two classifiers saying only where they were not.
+What it *had* bounded was tight: the counts were exact multiples of `n − 2` and the wedge is extruded
+along `z`, so there were **one to three offending locations in the entire cross-section**. A-021 is
+the model for that situation — it found its answer by printing a face-count histogram for a plain
+half-space, not by widening a census — so R-009 dumped one configuration.
+
+The answer was in the first six lines. Two cells per cross-section, **six** incident faces each,
+**every face lying exactly on a plane** (worst face `0.00°`), no slivers, and a stored vertex normal
+**exactly equal to a plane normal**. The mesh was correct in every respect. And the gradient it was
+being compared against came back `[-0.5156, 0.8568, 0]`, which is neither plane normal.
+
+#### The bug
+
+`Wedge::gradient`'s exterior branch computes `away = q − dir·t` and normalises it. On a point lying
+**on** a ray those two vectors are equal, so `away` is not zero — it is a cancellation residue of
+order `ε·|q|` — and normalising it returns a **random unit vector**. The guard was `e > 0.0`.
+
+Every Marching Cubes vertex is on the surface to within an ulp, and about half of them land
+epsilon-*outside*, so **half the vertices near a face were compared against noise**. The fix is a
+threshold relative to `|q|`, falling back to the plane normal, which is what the exterior gradient
+converges to approaching a ray along the surface — the right answer rather than a tolerance.
+
+#### What it reversed
+
+| | as reported | corrected |
+|---|---|---|
+| past-90° vertices, Marching Cubes | 6,959 | **472** |
+| past-90° vertices, Dual Contouring | 4,868 | **232** |
+| rows containing one (of 168) | 75 | **8** |
+| **P-13** | FALSIFIED | **HELD** |
+| **P-16** | FALSIFIED at 4× its threshold | **HELD at 0%** |
+
+**P-13 holds.** With the corrected gradient the worst angle tracks `(180° − θ)/2` and is bounded by
+it in **136 of 168 rows**, falling monotonically with the dihedral — at rotation 17°, `n = 129`:
+θ = 30° → 58.0 against 75 predicted, 45° → 50.5 against 67.5, 90° → 33.3 against 45, 120° → 25.3
+against 30, 150° → 10.3 against 15, 170° → 2.8 against 5, and 180° → **0.00**. And it is
+**resolution-invariant to four significant figures** — 58.00, 58.00, 58.00, 58.00 across 17³…129³ —
+which is M-66's non-convergence, reproduced cleanly and now predictable from the field. That is
+exactly what P-13 claimed.
+
+**P-16 holds, at 0%.** Its falsifier was *"more than 5% of past-90° vertices whose incident cells all
+lie on one side of the crease"*. The corrected measurement is **442 offenders in 6 rows and 100% of
+them on the crease**, median 0.69–0.73 cells from it — and they occur only at **θ = 30° and 60°**,
+the acute wedges, where the wedge is thin enough for two sheets to share a cell. That is M-15 on a
+sharp field, exactly as registered.
+
+#### What survives from M-283 unchanged
+
+The `θ = 180°` control (**0.0000°** worst and mean at every resolution, because Marching Cubes is
+exact on a linear field), the median of `0.000°` everywhere (the disagreement is confined to a
+one-dimensional crease, which is what reconciles M-66's falling mean with its flat worst), and the
+grid-aligned fixture reporting the prediction to **four decimal places** — 75.0000, 67.5000, 60.0000,
+45.0000 — while rotated ones give 20.1 to 128.0. The fixture is still too perfect; what changed is
+that the rotated values now *bracket* the prediction instead of contradicting it.
+
+#### The rule
+
+**A reference implementation used as ground truth needs the same scrutiny as the thing it checks.**
+Every control in R-006 pointed at the mesh: rotate the wedge, offset the apex, add a no-crease case,
+check the vertex is on the surface. All of them were about whether *Marching Cubes* was being measured
+fairly. **None of them asked whether the `gradient` on the other side of the comparison was right**,
+and it was wrong at precisely the points being measured — which is the only place a reference is ever
+wrong in a way that matters.
+
+The tell was available and was misread twice: an area-weighted normal cannot leave the cone its faces
+span, so a past-90° reading was **arithmetically impossible** from the start. M-283 recorded that
+impossibility, chased the one escape it could think of (the vertex being off-surface), measured it
+closed, and concluded the geometry must be strange — rather than concluding that one of the two
+quantities in the comparison had to be wrong. **When a measurement is impossible, suspect the
+instrument before the world.**

@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**176 tickets archived, 6 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**177 tickets archived, 5 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -372,7 +372,6 @@ fraction of "seam cracking" in shipped voxel engines is this rather than algorit
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-009** | **Find the one-to-three cells per cross-section that face backwards.** R-008 (M-288) failed to locate 80% of the past-90° normals but bounded them tightly. Counts are **31 and 62 at n=33, 63 and 126 at n=65, 127, 254 and 381 at n=129** — every one an exact multiple of `n − 2`. The wedge is extruded along `z`, so the sampling repeats identically in every layer and any cross-section feature repeats once per layer: **there are one, two or three offending locations in the whole two-dimensional cross-section**, and they sit **11 to 94 cells from the crease** on a surface that is otherwise two exact planes, which Marching Cubes reproduces exactly (0.0000° at a 180° wedge). **So a plane is being meshed wrongly somewhere, at one specific place, reproducibly.** **Approach, and it is not another sweep:** dump the offending vertices' positions and their incident triangles for one configuration — `θ = 150°`, rotation 17°, n = 65, which has 126 of them — and read the cell. A-021 is the model: it found its answer by printing a face-count histogram for a **plain half-space**, not by widening a census. **Pre-register as P-17 once there is a hypothesis worth registering; there is not one yet, and inventing one to satisfy the protocol is the failure the protocol exists to prevent.** **Falsified by:** nothing, until it has a hypothesis — this is the locating step, and it is done when the configuration has a name and a constructed minimal fixture. | M | R-008 |
 
 ---
 

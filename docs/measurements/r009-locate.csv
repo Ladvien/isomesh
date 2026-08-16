@@ -1,0 +1,2 @@
+# R-009: locating the past-90° normals
+angle_deg,x,y,z,cell_x,cell_y,cell_z,incident_faces,case,worst_face_deg,min_area_over_h2,max_area_over_h2

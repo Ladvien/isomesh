@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-176 tickets. Line numbers are stable until something above them is edited — grep the ID if
+177 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1243,6 +1243,13 @@ Turning the wedge 17° about its own crease destroys it. The apex-alignment cont
 | | | ***Method rule, and it is the sharper half of one already here.*** Part 5 says to *search* for a fixture that
 exhibits the property; this adds: **when a measurement matches a prediction exactly, vary the fixture's
 orientation before believing it.** Exactness is the tell, not the confirmation. |
+| | | ***⚠ REVERSED the same night by R-009 (M-289): P-13 HELD.*** The reference gradient this ticket compared
+against normalised a cancellation residue at points epsilon-outside the surface, so about half the vertices near
+a face were measured against a random unit vector. Corrected, the worst angle **tracks** `(180° − θ)/2`, is
+bounded by it in 136 of 168 rows, and is resolution-invariant to four significant figures — which is what P-13
+claimed. The 6,959 past-90° vertices become 472. What the ticket got right it got right for the right reasons:
+the `θ = 180°` control, the median of zero, the four-decimal grid-aligned fixture, and the two controls it added
+beyond the ticket. |
 | ☑ | **R-007** | **Where does the dual's IPC go?** R-005 (M-279) removed every candidate anyone had named and left a number: Surface Nets executes **207 instructions per sample at IPC 1.22** where Marching Cubes executes **132 at 4.04**. **H, pre-registered as P-15:** more than half of the dual mesher's cycles per sample are in `emit_quads`. **Harness:** a per-stage cycle and instruction count inside `DualMesher`, which needs either an ablation seam or counter windows in the extract path — **decide which is acceptable under the one-path rule before writing either**. **Falsified by:** `emit_quads` at half or less. | M | R-005 |
 | | | ***P-15 held, and by more than it claimed: 82% of the cycles (M-284).*** Also 45% of the instructions, at
 **IPC 0.72** against `place_vertices`' 3.83 and `sample`'s 6.49. `place_vertices` reads the same eight corners
@@ -1327,3 +1334,30 @@ at n=33, 63 and 126 at n=65, 127, 254 and 381 at n=129 — every one an exact mu
 extruded along `z`, so any feature of the cross-section repeats once per layer: there are **one to three
 offending locations in the entire cross-section**, 11 to 94 cells from the crease. That is a constructed-fixture
 problem, the same shape as A-021's 314 edges before M-276 named them, and it is **R-009**. |
+| | | ***⚠ REVERSED by R-009 (M-289): P-16 HELD, at 0%.*** The vertices this ticket classified had a reference
+gradient that was noise. Corrected: **442 offenders in 6 rows, 100% on the crease**, median 0.69–0.73 cells from
+it, and only at `θ = 30°` and `60°` — the acute wedges, where the wedge is thin enough for two sheets to share a
+cell. That is M-15 on a sharp field, exactly as registered. **The localisation is what made the correction
+possible**: the counts being exact multiples of `n − 2` is what sent R-009 to dump one configuration rather than
+widen the census, and the answer was in the first six lines. |
+| ☑ | **R-009** | **Find the one-to-three cells per cross-section that face backwards.** R-008 (M-288) failed to locate 80% of the past-90° normals but bounded them tightly: counts are exact multiples of `n − 2`, the wedge is extruded along `z`, so there are one to three offending locations in the whole cross-section, 11 to 94 cells from the crease, on a surface that is otherwise two exact planes. **Approach, and it is not another sweep:** dump one configuration and read the cell. A-021 is the model. **Pre-register as P-17 once there is a hypothesis worth registering; there is not one yet.** | M | R-008 |
+| | | ***The answer was in the first six lines, and it was the instrument (M-289).*** Two cells per cross-section,
+six incident faces each, **every face lying exactly on a plane** — worst face `0.00°` — no slivers, and a stored
+vertex normal exactly equal to a plane normal. The mesh was correct in every respect. The **gradient** it was
+compared against came back `[-0.5156, 0.8568, 0]`, which is neither plane normal. |
+| | | ***`Wedge::gradient` was normalising a cancellation residue.*** Its exterior branch computes
+`away = q − dir·t` and normalises; on a point lying **on** a ray those two vectors are equal, so `away` is a
+residue of order `ε·|q|` and its direction is noise. The guard was `e > 0.0`. Every Marching Cubes vertex is on
+the surface to within an ulp and about half land epsilon-*outside*, so half the vertices near a face were
+compared against a random unit vector. Now thresholded relative to `|q|`, falling back to the plane normal —
+which is what the exterior gradient converges to along the surface, so it is the right answer and not a
+tolerance. R-009's own configuration goes from 126 offenders to **0**. |
+| | | ***It reversed both of the night's wedge verdicts, and no hypothesis was ever registered for it.***
+P-13 HELD, P-16 HELD at 0%. The ticket said not to pre-register before there was something worth registering,
+and there never was: this was a locating step and it found a bug, which is not a prediction anyone could have
+made. |
+| | | ***The rule it earned.*** A reference implementation used as ground truth needs the same scrutiny as the
+thing it checks. Every control R-006 and R-008 carried was about whether the *mesh* was being measured fairly;
+none asked whether the gradient was right. And the tell was there from the start: an area-weighted normal cannot
+leave the cone its faces span, so a past-90° reading was **arithmetically impossible** — M-283 recorded the
+impossibility and went looking for strange geometry instead of a broken instrument. |

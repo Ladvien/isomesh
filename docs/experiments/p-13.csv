@@ -1,7 +1,7 @@
 # experiment P-13 (R-006)
 # hypothesis: M-66's non-convergent angle is bounded below by the dihedral angle of the feature, so it is a property of sharp edges rather than of resolution and is predictable from the field.
 # falsified by: The angle failing to track the dihedral prediction, which makes it a defect with a location rather than a property.
-# commit 3b224e8 (WORKING TREE DIRTY) on amd-ryzen-9-5900x-12-core at 2026-08-16T06:42:48Z
+# commit 7e2a27d on amd-ryzen-9-5900x-12-core at 2026-08-16T06:44:39Z
 dihedral_deg,samples,measured_angle_deg,predicted_angle_deg,apex,cell_size,extractor,inverted_offsurface_cells,inverted_vertices,mean_angle_deg,median_angle_deg,p99_angle_deg,rotation_deg,triangles,vertices_counted
 30.0,17,75.0000,75.0000,aligned,2.50000000000000000e-1,marching_cubes,0.0000,0,2.7778,0.0000,75.0000,0,960,405
 30.0,17,13.1868,75.0000,aligned,2.50000000000000000e-1,dual_contouring,0.0000,0,0.5181,0.0000,13.1868,0,870,364
