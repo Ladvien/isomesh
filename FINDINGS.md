@@ -1218,6 +1218,37 @@ two vertices in one cell is exactly what breaks the within-cell partition the cl
 on. ✗2's competing figure (ODC measuring Manifold Dual Contouring at 100% self-intersecting) was on
 the record the whole time and should have been weighted against M-29 before registering this.
 
+
+### P-8 … P-13 — registered before anything was written, and enforced by the compiler (R-000)
+
+**The practice became a compile error.** P-1 through P-7 were pre-registered in prose, and the record
+is good — P-6 was falsified and says so, P-7 held. The weakness was that nothing stopped an
+experiment from being *written first and predicted afterwards*, which is the exact failure the
+practice exists to prevent and is **invisible in the artefact**: a prediction recorded after the
+numbers came in reads identically to one recorded before.
+
+So the predictions now live in `crates/isomesh/src/experiment.rs`, and `isomesh::experiment!("P-n")`
+**does not compile** for an id that is not in `PREREGISTERED`. Registering is a commit, so git carries
+the ordering that prose cannot. `scripts/backlog_gate.sh` checks every registered id reaches this
+file — the Rust is the source, this is the elaboration, and the gate stops the two from parting
+company.
+
+`Preregistration` has a `falsified_by` field and no way to omit it, which is the other half: a
+hypothesis with no stated refutation is a description in the future tense.
+
+| id | ticket | prediction | falsified by |
+|---|---|---|---|
+| **P-8** | R-001 | A weld gated on `Lk u ∩ Lk v = ∅`, leaving rejected pairs split, yields **exactly 0** non-manifold edges and vertices on all eight fields × all extractors, where the unconditional weld yields `N > 0` | The gated weld still producing non-manifold output — which would prove the surface link condition insufficient for index-buffer realisation, and is the more interesting result |
+| **P-9** | R-002 | For buckets of ≥3 coincident vertices, at least one field yields **≥2 distinct outputs** across seeded permutations of within-bucket merge order | All permutations byte-identical on every field, meaning the k-way weld is confluent and no canonical order is needed |
+| **P-10** | R-003 | Vertex inflation from gated-weld-plus-split is **< 1%**, and self-intersections per 1k are unchanged | Inflation > 1% (a real trade-off needing a stated policy), or self-intersections rising (M-93's duplication artefact returns) |
+| **P-11** | R-004 | With one canonical `world_of_sample` rather than offset-and-add, seam cracks fall to **0 for all cell sizes** — not only powers of two — and M-73's hairline disappears with no change to Transvoxel | Cracks surviving canonical reconstruction, which localises the defect back in Transvoxel |
+| **P-12** | R-005 | The dual's superlinear cost is the four-cells-around-a-crossed-edge gather at stride `n²`: cache-miss count per sample **rises with `n`** for Surface Nets and stays flat for Marching Cubes | Flat miss rates, pointing at branch misprediction or allocation instead |
+| **P-13** | R-006 | M-66's non-convergent angle is **bounded below by the dihedral angle** of the feature, so it is a property of sharp edges rather than of resolution | The angle failing to track the dihedral prediction, which makes it a defect with a location |
+
+Each experiment's numbers land in `docs/experiments/p-n.csv`, stamped with the git SHA, the machine
+and the time — and flagged **`WORKING TREE DIRTY`** when the tree was not clean, because numbers that
+correspond to no commit have to say so on the artefact rather than in someone's memory.
+
 ---
 
 ## Part 4b — Experiments run, and what happened to them
@@ -1817,3 +1848,34 @@ needed no such thing; what it needed was leaving the *process*, since `VmHWM` is
 over a whole process life and would otherwise attribute every constructor's peak to whichever ran
 first. So the rule cost a process boundary, not a measurement. Linux only — macOS publishes no
 `/proc` and its `ru_maxrss` needs `libc` — and CI runs Linux, which is where the figure is checked.
+
+### M-272 — the pre-registration gate is a `const` assertion, and that is the whole of it (R-000)
+
+**V.** R-000 asked for *"the feedback loop is currently a discipline; make it a compile error"*, with
+the acceptance *"an experiment without a pre-registered `P-` fails to build"*.
+
+It needs no proc macro and no build script. `experiment!("P-n")` expands to
+
+```rust
+const _CHECK: () = assert!(isomesh::experiment::is_preregistered("P-n"), "…");
+```
+
+and `is_preregistered` is a `const fn` doing a byte-wise `str` comparison, because `str`'s
+`PartialEq` is not const and neither is `<[u8]>::eq`. A `const` item is evaluated whether or not its
+value is read, so an unregistered id cannot reach a run. **The acceptance is proved by a
+`compile_fail` doctest**, which is the only kind of test that can assert a compile error and is
+therefore the only honest way to check this ticket.
+
+`Preregistration` is `#[non_exhaustive]`, so a consumer crate cannot construct one. The harness takes
+`&'static Preregistration` and there is no other way to obtain one, which makes the macro the sole
+entrance rather than the polite one.
+
+**Two smaller things the design gets for free.** `falsified_by` is a required field, so a hypothesis
+with no stated refutation is unrepresentable rather than discouraged. And `records` names the columns
+in advance, with `Run::record` panicking on any other set — so a metric that was predicted and then
+quietly not measured is a failure, not a silence. That is F-002's one-sidedness in another costume:
+the instrument has to be able to report the bad news.
+
+The one thing it cannot enforce is that the registration was written *first*. Nothing in a source
+file can. What it does is make registering a **commit**, so git carries the ordering, and
+`scripts/backlog_gate.sh` fails if a registered id never reaches `FINDINGS.md`.

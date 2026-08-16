@@ -73,6 +73,7 @@ pub mod chunk;
 pub mod collider;
 pub mod construct;
 pub mod dual_contouring;
+pub mod experiment;
 /// Speculative algorithms, behind the `experimental` feature.
 ///
 /// Off by default, exempt from semver, and exempt from nothing else — see the

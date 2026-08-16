@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-163 tickets. Line numbers are stable until something above them is edited — grep the ID if
+164 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1044,3 +1044,17 @@ does not mention. And `band` is the most expensive of all, which is the opposite
 M-256's 13.4% is a saving in *work*, not in footprint. |
 | | | ***The mesh-based pair cost nothing above the mesh they were handed*** at 65³, because meshing allocates more
 transiently than either does. A zero there is the honest reading, not a failed measurement. |
+| ☑ | **R-000** | **Mechanise the protocol.** A `#[experiment]` harness: registers the `P-` id, refuses to run if no pre-registration exists, emits a CSV row with git SHA + machine + timestamp, and prints the FINDINGS stanza ready to paste. **The feedback loop is currently a discipline; make it a compile error.** **Acceptance:** an experiment without a pre-registered `P-` fails to build. | M | T-013 |
+| | | ***No proc macro and no build script (M-272).*** `experiment!("P-n")` expands to a `const` assertion over a
+`const fn` byte-wise `str` comparison — `str`'s `PartialEq` is not const and neither is `<[u8]>::eq`. A `const` item
+is evaluated whether or not its value is read, so an unregistered id cannot reach a run, and the acceptance is proved
+by a **`compile_fail` doctest**, the only kind of test that can assert a compile error. |
+| | | ***The type does two more things the ticket did not ask for.*** `Preregistration` is `#[non_exhaustive]`, so a
+consumer crate cannot build one and the macro is the sole entrance rather than the polite one. `falsified_by` is a
+required field, so a hypothesis with no stated refutation is *unrepresentable*; and `records` names its columns in
+advance, with `Run::record` panicking on any other set, so a metric predicted and then quietly not measured is a
+failure rather than a silence. |
+| | | ***What it cannot enforce, said plainly.*** Nothing in a source file can prove the registration was written
+first. What it does is make registering a **commit**, so git carries the ordering — and the backlog gate gained a
+sixth check: a `P-` id registered in Rust and absent from `FINDINGS.md` fails the build. P-8…P-13 registered for
+R-001…R-006 before a line of any of them was written. |

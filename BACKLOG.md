@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**163 tickets archived, 9 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**164 tickets archived, 8 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -276,7 +276,6 @@ expectations into docs that measurement then disproved (✗1, ✗3, ✗14, O-14)
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
 
-| ☐ | **R-000** | **Mechanise the protocol.** A `#[experiment]` harness: registers the `P-` id, refuses to run if no pre-registration exists, emits a CSV row with git SHA + machine + timestamp, and prints the FINDINGS stanza ready to paste. **The feedback loop is currently a discipline; make it a compile error.** **Acceptance:** an experiment without a pre-registered `P-` fails to build. | M | T-013 |
 
 ---
 

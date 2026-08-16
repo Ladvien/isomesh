@@ -17,6 +17,7 @@ cd "$(dirname "$0")/.."
 
 BACKLOG=BACKLOG.md
 ARCHIVE=BACKLOG_ARCHIVE.md
+FINDINGS="FINDINGS.md"
 # Ticket IDs: A-014b, GPU-001, T-005a, E-201.
 ID='[A-Za-z]+-[0-9]+[a-z]?'
 
@@ -121,6 +122,23 @@ refs=$(grep -E "^\| *[☐☑] *\| *\*\*$ID\*\*" "$BACKLOG" \
 dangling=$(comm -13 <(lines "$known") <(lines "$refs"))
 if [ -n "$dangling" ]; then
     problem "'Blocked by' names tickets that exist in neither file" $dangling
+fi
+
+# --- 6. Every pre-registration reaches FINDINGS.md ----------------------------
+# R-000 moved the `P-` predictions into `crates/isomesh/src/experiment.rs`, where
+# the compiler can refuse an unregistered id. That file is the source; the prose
+# in FINDINGS.md elaborates on it. Two copies of a hypothesis drift, and the
+# drift is undetectable -- a pre-registration that quietly acquired a clause is
+# worse than none -- so this only checks that the prose *mentions* each id, which
+# is enough to make an unrecorded experiment visible without pinning the wording.
+EXPERIMENTS="crates/isomesh/src/experiment.rs"
+if [ -f "$EXPERIMENTS" ]; then
+    registered=$(grep -oE 'id: "P-[0-9]+"' "$EXPERIMENTS" | grep -oE 'P-[0-9]+' | sort -u || true)
+    for p in $registered; do
+        if ! grep -q "$p" "$FINDINGS" 2>/dev/null; then
+            problem "$p is pre-registered in $EXPERIMENTS but appears nowhere in $FINDINGS"
+        fi
+    done
 fi
 
 # --- verdict ------------------------------------------------------------------
