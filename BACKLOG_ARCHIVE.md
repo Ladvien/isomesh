@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-185 tickets. Line numbers are stable until something above them is edited — grep the ID if
+186 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1430,3 +1430,12 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > **One defect found and fixed in review, in this ticket's own code.** `incircle_exact` returns `ZERO` if a buffer overflows — and `ZERO` means *exactly cocircular*. A shortened expansion would not look like a failure, it would look like a legitimate degeneracy, which is the precise failure mode `fast_expansion_sum` returns `None` to avoid. The buffer chain is now derived in a comment (4 → 12 → 24 → 48 → 96 → 384, with the final accumulation exactly filling 384) and pinned by `expansion_buffers_are_exactly_the_worst_case`, so the unreachable arms are unreachable by proof rather than by hope.
 >
 > 23 tests in the module, ~300,000 oracle-matched `incircle` cases across three coordinate regimes — random, degeneracy-rich at `±3`, and large coordinates with `d` adjacent to `a` — plus `f32`. `preflight.sh --full` green including MSRV 1.89; golden hashes unchanged.
+
+| ☑ | **T-025** | **Fix the verified one-path violation.** `signed_distance_from_mesh_winding` computes its distance magnitude with an unaccelerated `for t in 0..triangles` scan (`crates/isomesh/src/construct/winding.rs:380`) while `signed_distance_from_mesh` uses the blocked box reject — and its doc comment claims the magnitude is *"the true distance to the nearest triangle, exactly as `signed_distance_from_mesh` computes it"* (`winding.rs:341-343`). Same answer, different code, and the slow path is the shape **M-260 already measured at 3.9×**. This is the `CLAUDE.md` one-path rule broken inside the crate, not a performance nicety. **Verified in situ 2026-08-16**, both line references checked against the working tree. **Acceptance:** one implementation, and the doc comment becomes true. | S | — |
+> **Landed 2026-08-16.** `signed_distance_from_mesh_winding` now takes its magnitude from `MeshField` — the same code `signed_distance_from_mesh` runs — and only replaces the sign. The unaccelerated `for t in 0..triangles` scan is gone, and the doc comment that claimed the magnitude was computed *"exactly as `signed_distance_from_mesh` computes it"* is now true rather than aspirational.
+>
+> **Why `MeshField`'s closed-mesh precondition is not inherited, which is the one thing that looked like a blocker.** `MeshField::new` validates indices only; *"the mesh must be closed"* constrains its **sign**, not its distance. This function discards that sign (`abs`) and substitutes the winding number's, which is the entire reason it exists — so it borrows exactly the part that is unconditionally valid.
+>
+> **Bit-identical, and provably so before it was run.** The old loop took `min_t sqrt(dot(r,r))`; `MeshField` takes `sqrt(min_t dot(r,r))`. `norm` *is* `dot(a,a).sqrt()` (`from_mesh.rs:124`), and `sqrt` is monotone and correctly rounded, so both select the same triangle and root the same value. `the_magnitude_is_the_pseudonormal_paths_magnitude` pins it on a closed tetrahedron where **both** signs are valid, asserting full equality rather than just equal magnitudes — the stronger statement, and the one that fails if a second distance implementation ever reappears.
+>
+> Two incidental fixes: the sample loop now walks the winding buffer rather than indexing it, removing the only possible out-of-range index, and the grid coordinates are reconstructed from the enumeration so the two cannot drift out of step. `preflight.sh --full` green; golden hashes unchanged, as the bit-identity argument predicts.

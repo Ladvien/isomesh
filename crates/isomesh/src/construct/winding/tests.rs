@@ -272,3 +272,51 @@ fn boundary_edges_are_the_directed_ones_with_no_partner() {
     let tet = std::vec![0u32, 2, 1, 0, 1, 3, 0, 3, 2, 1, 2, 3];
     assert!(super::boundary_edges(&tet).is_empty());
 }
+
+/// T-025. The two functions compute one magnitude, not two.
+///
+/// On a **closed** mesh the pseudonormal sign is valid and the winding sign
+/// agrees with it, so the two functions must agree outright — every sample, bit
+/// for bit. That is a stronger statement than "the magnitudes match" and it is
+/// the one that fails if a second distance implementation ever reappears here.
+// Bit-identity is the claim, not approximate agreement: one implementation
+// produces both numbers, so a tolerance would test nothing.
+#[allow(clippy::float_cmp)]
+#[test]
+fn the_magnitude_is_the_pseudonormal_paths_magnitude() {
+    use crate::construct::from_mesh::signed_distance_from_mesh;
+
+    // A closed, consistently oriented tetrahedron -- the smallest mesh on which
+    // both signs are meaningful.
+    let positions = [
+        [0.0_f64, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0],
+    ];
+    let indices = [0u32, 2, 1, 0, 1, 3, 0, 3, 2, 1, 2, 3];
+    let shape = RuntimeShape3::new([9; 3]).expect("valid shape");
+    let origin = [-0.35_f64, -0.35, -0.35];
+    let h = 0.2_f64;
+
+    let pseudonormal =
+        signed_distance_from_mesh(&positions, &indices, &shape, origin, h).expect("grid is valid");
+    let winding = signed_distance_from_mesh_winding(&positions, &indices, &shape, origin, h, 0.5)
+        .expect("grid is valid");
+
+    assert_eq!(pseudonormal.len(), winding.len());
+    for (i, (&a, &b)) in pseudonormal.iter().zip(winding.iter()).enumerate() {
+        assert_eq!(
+            a.abs(),
+            b.abs(),
+            "sample {i}: magnitudes must come from one implementation"
+        );
+        assert_eq!(
+            a, b,
+            "sample {i}: on a closed mesh both signs are valid and must agree"
+        );
+    }
+    // The fixture is only meaningful if it straddles the surface.
+    assert!(winding.iter().any(|&v| v < 0.0), "some sample is inside");
+    assert!(winding.iter().any(|&v| v > 0.0), "some sample is outside");
+}

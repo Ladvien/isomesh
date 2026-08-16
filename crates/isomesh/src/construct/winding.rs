@@ -60,10 +60,11 @@ mod tests;
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 
+use crate::Sdf;
 use crate::real::Real;
 use crate::shape::Shape3;
 
-use super::from_mesh::{closest_on_triangle, cross, dot, norm, sub};
+use super::from_mesh::{MeshField, cross, dot, norm, sub};
 
 /// How far behind the query point the cone's apex sits, in multiples of the
 /// mesh's bounding-box diagonal.
@@ -340,11 +341,18 @@ fn intersect_x_ray<R: Real>(a: [R; 3], b: [R; 3], c: [R; 3], py: R, pz: R) -> Op
 
 /// A signed distance field from a mesh, signed by the winding number.
 ///
-/// The magnitude is the true distance to the nearest triangle, exactly as
+/// The magnitude is the true distance to the nearest triangle, computed by
+/// [`MeshField`] — the same code
 /// [`signed_distance_from_mesh`](super::from_mesh::signed_distance_from_mesh)
-/// computes it. Only the **sign** differs, and that is the entire point: the
-/// pseudonormal's sign is a theorem about *closed* meshes, so on a mesh with a
-/// hole it is not merely inaccurate, it is answering a different question.
+/// runs, not a second implementation of it. Only the **sign** differs, and that
+/// is the entire point: the pseudonormal's sign is a theorem about *closed*
+/// meshes, so on a mesh with a hole it is not merely inaccurate, it is answering
+/// a different question.
+///
+/// Until T-025 this sentence was false — the magnitude came from an
+/// unaccelerated scan over every triangle, which is both a second implementation
+/// of one query and the shape M-260 measured at 3.9× slower.
+/// `the_magnitude_is_the_pseudonormal_paths_magnitude` now holds it true.
 ///
 /// `threshold` is where the winding number is cut. `0.5` is the standard choice
 /// and is what the literature uses; a higher value is more conservative about
@@ -363,38 +371,45 @@ pub fn signed_distance_from_mesh_winding<R: Real>(
 ) -> crate::Result<Vec<R>> {
     let winding = winding_numbers(positions, indices, shape, origin, cell_size)?;
 
+    // T-025. There is exactly one implementation of "how far is the nearest
+    // triangle", and it is `MeshField`'s -- the same one `signed_distance_from_mesh`
+    // runs, with the same blocked box reject. This function used to carry a second,
+    // an unaccelerated scan over every triangle, while its doc comment claimed the
+    // magnitude was computed "exactly as `signed_distance_from_mesh` computes it".
+    // Two implementations of one query are free to disagree at the eighth digit and
+    // nothing would notice; the slow one was also the shape M-260 measured at 3.9x.
+    //
+    // Only the SIGN differs between the two functions, which is the entire point of
+    // this one: the pseudonormal's sign is a theorem about closed meshes, and the
+    // winding number answers where that theorem does not apply. So the sign is
+    // discarded here (`abs`) and replaced, and `MeshField`'s closed-mesh
+    // precondition -- which constrains only its sign -- is not inherited.
+    let field = MeshField::new(positions, indices)?;
+
     let size = shape.size();
-    let triangles = indices.len() / 3;
-    let (nx, ny, nz) = (size[0], size[1], size[2]);
-    let mut out = Vec::with_capacity(shape.element_count());
+    let (nx, ny) = (size[0] as usize, size[1] as usize);
+    let plane = nx.checked_mul(ny).ok_or(crate::Error::ShapeOverflow {
+        size,
+        product: winding.len() as u64,
+    })?;
 
-    for z in 0..nz {
-        for y in 0..ny {
-            for x in 0..nx {
-                let p = [
-                    origin[0] + cell_size * R::from_f64(f64::from(x)),
-                    origin[1] + cell_size * R::from_f64(f64::from(y)),
-                    origin[2] + cell_size * R::from_f64(f64::from(z)),
-                ];
-                let mut best = super::far::<R>();
-                for t in 0..triangles {
-                    let tri = &indices[t * 3..t * 3 + 3];
-                    let (c, _) = closest_on_triangle(
-                        p,
-                        positions[tri[0] as usize],
-                        positions[tri[1] as usize],
-                        positions[tri[2] as usize],
-                    );
-                    let d = norm(sub(p, c));
-                    if d < best {
-                        best = d;
-                    }
-                }
-                let i = ((z * ny + y) * nx + x) as usize;
-                out.push(if winding[i] > threshold { -best } else { best });
-            }
-        }
-    }
-
-    Ok(out)
+    // Walking the winding buffer rather than indexing it keeps the two in step by
+    // construction -- `winding_numbers` produced it over this same grid, in this
+    // same order -- and removes the only indexing operation that could be out of
+    // range.
+    Ok(winding
+        .iter()
+        .enumerate()
+        .map(|(i, &w)| {
+            let z = i / plane;
+            let rest = i % plane;
+            let p = [
+                origin[0] + cell_size * R::from_f64((rest % nx) as f64),
+                origin[1] + cell_size * R::from_f64((rest / nx) as f64),
+                origin[2] + cell_size * R::from_f64(z as f64),
+            ];
+            let magnitude = field.sample(p).abs();
+            if w > threshold { -magnitude } else { magnitude }
+        })
+        .collect())
 }
