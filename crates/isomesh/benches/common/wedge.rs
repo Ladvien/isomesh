@@ -113,10 +113,21 @@ impl Sdf for Wedge {
             let (a0, e0) = Self::to_ray(q, r0);
             let (a1, e1) = Self::to_ray(q, r1);
             let (away, e) = if e0 <= e1 { (a0, e0) } else { (a1, e1) };
-            if e > 0.0 {
+            // **The threshold is relative, and a bare `e > 0.0` was a real bug
+            // (M-289).** `away = q − dir·t` subtracts two vectors of magnitude
+            // `|q|`, so on a point that is on a ray it is not zero but a
+            // cancellation residue of order `ε·|q|` — and normalising that
+            // returns a **random unit vector**. Every Marching Cubes vertex is
+            // on the surface to within an ulp and roughly half of them land
+            // epsilon-*outside*, which is how R-006 came to report thousands of
+            // "normals pointing into the solid": they were compared against
+            // noise. The limit of the exterior gradient approaching a ray along
+            // the surface is the plane normal, so the fallback is the right
+            // answer and not a fudge.
+            let qlen = (q[0] * q[0] + q[1] * q[1]).sqrt();
+            if e > 1e-10 * (1.0 + qlen) {
                 self.unrotate([away[0] / e, away[1] / e])
             } else {
-                // Exactly on a ray from outside: the plane normal.
                 let n = if e0 <= e1 { n0 } else { n1 };
                 self.unrotate(n)
             }

@@ -190,6 +190,11 @@ harness = false
 test = false
 
 [[bench]]
+name = "r009_locate"
+harness = false
+test = false
+
+[[bench]]
 name = "csg_degradation"
 harness = false
 test = false
