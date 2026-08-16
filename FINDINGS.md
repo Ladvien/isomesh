@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**360 entries** — 19 falsified, 287 measured, 34 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**361 entries** — 19 falsified, 287 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -379,6 +379,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-32` | Two more rows of meshing-library-target.md marked PAYWALL are in the corpus, and the table's status code has now been wr… |
 | `V-33` | A paper_download that reports success can return a landing page, and this is the third producer of that signature. |
 | `V-34` | Manifold Dual Contouring's uniform-grid criterion is one vertex per cycle of a decider-modified Marching Cubes table, an… |
+| `V-35` | Grosso 2017's implementation does not exist publicly, and that is now checked rather than assumed. |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -1204,6 +1205,7 @@ added because none of the other seven produces a cell with an interior ambiguity
 | V-19 | **Dual Contouring's topology is Surface Nets' topology.** The paper's algorithm is literally: vertex at the QEF minimizer for each sign-changing cube, quad joining the four cubes of each sign-changing edge. Only vertex *placement* differs | same, §2.2 |
 | V-20 | A QEF is stored as `AᵀA` (symmetric 3×3), `Aᵀb` (3-vector) and `bᵀb` (scalar) — 10 floats — rather than as `A` and `b` | same, §2.3 |
 | V-34 | **Manifold Dual Contouring's uniform-grid criterion is one vertex per cycle of a *decider-modified* Marching Cubes table, and the paper claims that surface is unconditionally manifold.** §3, *Contouring on a Uniform Grid*: *"On a uniform grid, **DC leads to nonmanifold vertices and edges for all of the ambiguous sign configurations** in the original MC algorithm. … Nielson associates one vertex with each cycle of a **modified MC table [26]**. … each edge is associated with exactly one vertex. … **this surface is always a manifold** because the original MC algorithm always constructs a manifold and the dual preserves the topology of the surface."* **Reference [26] is Nielson & Hamann, *The Asymptotic Decider*, VIS 1991**, and [13] is Nielson's *Dual Marching Cubes*, VIS 2004 — so the face ambiguity is resolved **upstream, inside the table the cycles are read from**, and the dual walk needs no rule of its own. That is the question A-022 was blocked on and could not answer. **The claim itself is ✗19** | Schaefer, Ju & Warren, `10.1109/TVCG.2007.1012`, read at A-022 from `cs.wustl.edu/~taoju/research/dualsimp_tvcg.pdf` |
+| V-35 | **Grosso 2017's implementation does not exist publicly, and that is now checked rather than assumed.** A-002i is rule-5 stopped on §4.2's *"the other two points are **slightly moved** towards the interior of the cell"* — no distance given — and V-31 recovered the artefact both Grosso papers cite from Software Heritage, only to find it is the **2016** code, whose singular handling is the face-pairing choice rather than §4.2's construction. Three further routes, all empty: `github.com/rogrosso` now has **one** public repository and it is a lecture course; a GitHub code search for the algorithm returns **nothing**; and `github.com/reproducibilitystamp/tmc` — a live mirror, so not a deletion problem — has `pushed_at` **2016-06-06**, which is the same artefact again. **So the displacement constant is in no published artefact**, and A-002i's stop is confirmed rather than merely unresolved. Recorded so the search is not repeated | A-002i, checked 2026-08-16 against the GitHub API |
 
 ---
 
