@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-167 tickets. Line numbers are stable until something above them is edited — grep the ID if
+168 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1106,3 +1106,21 @@ vertex is not a contradiction: a link can be connected and still not a simple cy
 link edges. That is a **pinch**, not a bowtie. The added `worst_link_vertex_degree` column reads **4** on every
 non-clean row and separates them — `fbm_terrain` is purely pinches, `gyroid` and `noise_cavity` carry both. Adding a
 column rather than editing the registration is exactly what M-273's relaxation made possible. |
+| ☑ | **A-021** | **The dual rules emit edges with three or more incident faces, and cell splitting does not fix them.** R-003 (P-14) located the residue: on `noise_cavity` at 49³, Surface Nets and Dual Contouring give **314 non-manifold edges** and Manifold Dual Contouring still gives **53** after splitting every multi-component cell it finds. The vertex-to-edge ratio is **exactly 2:1 on every row**, so every non-manifold vertex is an endpoint of one of these edges and there is one defect, not two. Half of them sit in cells MDC does *not* split, so the one-vertex-per-cell rule is not the cause. **Two shapes are present and must be told apart:** a **bowtie** (link in ≥2 components) and a **pinch** (link connected, one link vertex of degree 4) — `fbm_terrain` is purely pinches, `gyroid` and `noise_cavity` carry both. **Acceptance:** name the cell configuration that produces a 3-face edge, with a constructed minimal fixture rather than a field that happens to contain one; then say whether it is fixable inside the dual rule or is inherent to one quad per crossed edge. **Do not guess** — Ju et al.'s MDC paper and Schaefer/Warren are the sources, and if neither defines it, stop and say so (rule 5). | L | R-003 |
+| | | ***All 314, with a control that separates cleanly (M-276).*** Every non-manifold edge has **4** crossed boundary
+edges on its shared grid face; all 30,891 manifold ones have **2** (8 have 0). No overlap, and zero non-manifold edges
+join cells that are only diagonally adjacent, so the quad's triangulation diagonal is never the culprit. |
+| | | ***The configuration has a name and the literature supplies it.*** A square whose four boundary edges are all
+crossed has alternating corner signs — the **ambiguous face**, quoted verbatim from `10.1145/195826.195828`. So this
+is the whole A-002 series arriving from the dual side: the primal path has `FaceAmbiguity::AsymptoticDecider` to make
+*one* choice there, and the dual quad walk makes **both at once** by emitting a quad for each of the four crossed
+edges, all through the same mesh edge. Not inherent to one-quad-per-crossed-edge; ticketed as **A-022**, with the
+instruction to read Schaefer/Ju/Warren before writing, because whether MDC's criterion is face- or component-based
+decides whether it is a new rule or a bug in an existing one. |
+| | | ***It closes P-14's loose end exactly.*** MDC's residual 106 non-manifold vertices sat **106 of 106** in cells
+MDC did not split; MDC splits multi-component *cells*, and an ambiguous *face* between two single-component cells does
+not meet that criterion. |
+| | | ***Method: the reasoning was wrong before it was right.*** Reading `emit_quads` first gave "every dual mesh is
+non-manifold everywhere", which contradicts every measurement in the file — the error was treating a quad as
+contributing two faces to each of its sides. Printing the face-count histogram for a **plain half-space**
+(`{1: 8, 2: 8}`) settled it in one run, for less than the third attempt at the algebra. |

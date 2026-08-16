@@ -2085,3 +2085,57 @@ P-8's entry replaced; the conclusion survived and got much stronger (the gate's 
 produces some, because every other column is populated. **Count the phenomenon, not just the
 outcome** — P-9's `buckets_of_three_or_more` column is what exposed this, and it existed only because
 the pre-registration demanded it.
+
+### M-276 — the dual methods' non-manifold edges are the ambiguous face, all 314 of them (A-021)
+
+**M + V.** `noise_cavity` at 49³ under Surface Nets, no chunking and no weld. For each non-manifold
+edge, the grid face its two cells share, and how many of that face's four boundary edges carry a sign
+change:
+
+| population | crossed boundary edges | count |
+|---|---|---|
+| **non-manifold** edges | **4** | **314** |
+| manifold (2-face) edges | 2 | 30,891 |
+| manifold (2-face) edges | 0 | 8 |
+
+**Every one. No exceptions, and no overlap between the populations.** Zero non-manifold edges join
+cells that are only *diagonally* adjacent, so the quad's triangulation diagonal is never the culprit
+either.
+
+**The mechanism, derived from the code and then confirmed by a control.** `DualMesher::emit_quads`
+winds a quad as `(0,1,2)` and `(0,2,3)`, so each quad **side** lands in exactly one triangle and only
+the diagonal `0–2` lands in two. The mesh edge between two face-adjacent cells is a side of the quad
+of **every crossed boundary edge of their shared grid face**. So the face count on that mesh edge
+*equals* the number of crossed boundary edges: two is manifold, four is not.
+
+A square whose four boundary edges are all crossed is one whose corner signs **alternate** — and that
+is the literature's *ambiguous face*, verbatim (`10.1145/195826.195828`):
+
+> *"Each cell face has four edges, an even number of which will contain intersection points. If two
+> edges of a face contain intersection points, then the only choice is to connect them with an edge…
+> However, if a cell face has intersection points in all four of its edges, there are choices of how
+> to connect up pairs… which justifies the name ambiguous face."*
+
+**So this is the A-002 series arriving from the dual side.** Grosso's trilinear work, the asymptotic
+decider, `FaceAmbiguity::AsymptoticDecider` — all of it exists to make *one* choice on an ambiguous
+face in the Marching Cubes path. The dual path makes **both choices at once**: it emits a quad for
+each of the four crossed edges, and all four pass through the same mesh edge.
+
+**It is therefore not inherent to "one quad per crossed edge".** The ambiguous face has a choice by
+definition, and a decider that picked one pairing would emit two quads there instead of four. That is
+a specific remedy with a precedent inside this crate, and it is **A-022** rather than a claim made
+here — the dual path has no face-ambiguity setting today, and asserting what MDC's own criterion is
+without reading it would be rule 5's failure.
+
+**It also closes P-14's loose end exactly.** P-14 found MDC's residual 106 non-manifold vertices
+sitting **106 of 106** in cells MDC did *not* split. Now explained: MDC splits cells with more than
+one surface component, and an ambiguous *face* between two cells that each hold a single component
+does not meet that criterion. The two measurements interlock — one says the residue is not about
+cells, the other says what it is about.
+
+**Method note: the reasoning was wrong before it was right, and the probe is what caught it.** Reading
+`emit_quads` first produced "a mesh edge gets a quad per crossed boundary edge, and a face with a sign
+change has two, so every dual mesh is non-manifold everywhere" — which contradicts every measurement
+in this file. The error was treating a quad as contributing two faces to each of its sides. Printing
+the face-count histogram for a **plain half-space** (`{1: 8, 2: 8}` — no edge above two) settled it in
+one run and cost less than the third attempt at the algebra.
