@@ -6,7 +6,7 @@
 
 **Bevy 0.19 integration for [`isomesh`](https://crates.io/crates/isomesh): signed distance field in, `Mesh` asset out.** The core crates stay engine-agnostic — this is the one place Bevy types appear.
 
-![Flying through caves and arches meshed from a signed distance field](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e210-showcase-hero.png)
+![Flying through caves and arches meshed from a signed distance field](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/flying-through-the-rock.gif)
 
 *Caves, arches and a roof over your head, from a nine-line field — the whole world is `max(heightfield, |gyroid| − thickness)`, streamed and meshed off the main thread while the camera flies through it. `cargo run --example game_showcase --release`.*
 
@@ -112,23 +112,25 @@ Every Bevy example in the project also lives here, and CI builds them all on eve
 
 ## Examples
 
+**[→ The demo page](DEMOS.md)** — all 34, with an animated capture of each, what it proves, and the exact command.
+
 34 of them. **Start with `quickstart`** — it is the only one that is not a measured experiment, and the only one whose
 job is to show you the shape of a working app rather than to prove something about the library. The rest each carry a
 claim in the header; a taste, with what each one proves:
 
 | Example | The claim it makes | Evidence |
 |---|---|---|
-| `sdf_authoring` | **building** a field rather than meshing one — four primitives, three operators, one asset, and the blend radius on a key | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e216-sdf-authoring.png) |
+| `sdf_authoring` | **building** a field rather than meshing one — four primitives, three operators, one asset, and the blend radius on a key | [clip](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/building-a-field.gif) |
 | `quickstart` | **the shortest path from an SDF to a mesh on screen** — under 60 lines including the prose, and its exact chunk layout is asserted to mesh all eight chunks | [`examples/quickstart.rs`](https://github.com/ladvien/isomesh/blob/main/bevy_isomesh/examples/quickstart.rs) |
-| `game_showcase` | caves and arches a heightfield cannot represent, flown through at 60 fps | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e210-showcase-hero.png) |
-| `game_walk` | 495 chunk-seam crossings walked, 0 holes — the ball stands on the triangles, not the field | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e203-game-walk.png) |
-| `game_dig` | carving tunnels re-meshes only the chunks the brush touched | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e202-game-dig.png) |
-| `game_destruction` | the debris *is* the removed geometry — one boolean, two meshes | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e204-destruction-wall.png) |
-| `game_lod_flyover` | an LOD ladder with 0 open seam edges, and 71–111 with transitions off | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e205-lod-flyover-stitched.png) |
-| `game_paint` | graffiti survives the wall being blown open, drift exactly zero | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e208-game-paint.png) |
+| `game_showcase` | caves and arches a heightfield cannot represent, flown through at 60 fps | [clip](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/flying-through-the-rock.gif) |
+| `game_walk` | 495 chunk-seam crossings walked, 0 holes — the ball stands on the triangles, not the field | [clip](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/walking-the-seams.gif) |
+| `game_dig` | carving tunnels re-meshes only the chunks the brush touched | [clip](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/digging-a-tunnel.gif) |
+| `game_destruction` | the debris *is* the removed geometry — one boolean, two meshes | [clip](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/the-debris-is-the-boolean.gif) |
+| `game_lod_flyover` | an LOD ladder with 0 open seam edges, and 71–111 with transitions off | [clip](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/lod-flyover.gif) |
+| `game_paint` | graffiti survives the wall being blown open, drift exactly zero | [clip](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/paint-that-survives-the-wall.gif) |
 | `game_budget` | every chunk dirtied at once, drained under a frame budget that holds | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e206-budget.png) |
 | `gpu_compute_mc` | GPU Marching Cubes agrees with the CPU vertex-for-vertex, worst case one ULP | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e301-gpu-compute-mc.png) |
-| `marching_cubes_tunnel` | the same cell meshed twice — two discs under the face rule, one cylinder under the interior rule; components 2 → 1, χ 2 → 0, boundary edges unchanged | [screenshot](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e213-tunnel.png) |
+| `marching_cubes_tunnel` | the same cell meshed twice — two discs under the face rule, one cylinder under the interior rule; components 2 → 1, χ 2 → 0, boundary edges unchanged | [clip](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/the-tunnel-meshed-as-a-tunnel.gif) |
 
 ```bash
 cd bevy_isomesh
@@ -137,7 +139,7 @@ cargo run --example game_showcase --release
 
 **Always `--release`.** A debug build meshes 37–62× slower — both ends measured in this repository ([FINDINGS](https://github.com/ladvien/isomesh/blob/main/FINDINGS.md) M-152) — and will convince you something is wrong with the algorithm.
 
-The full inventory is [`bevy_isomesh/examples/`](https://github.com/ladvien/isomesh/tree/main/bevy_isomesh/examples); the measured figures live on the [gameplay](https://github.com/ladvien/isomesh/blob/main/docs/demos/gameplay.md), [algorithms](https://github.com/ladvien/isomesh/blob/main/docs/demos/algorithms.md) and [correctness](https://github.com/ladvien/isomesh/blob/main/docs/demos/correctness.md) pages.
+The full inventory, with a clip of each, is **[the demo page](DEMOS.md)**; the source is [`bevy_isomesh/examples/`](https://github.com/ladvien/isomesh/tree/main/bevy_isomesh/examples) and the measured figures live on the [gameplay](https://github.com/ladvien/isomesh/blob/main/docs/demos/gameplay.md), [algorithms](https://github.com/ladvien/isomesh/blob/main/docs/demos/algorithms.md) and [correctness](https://github.com/ladvien/isomesh/blob/main/docs/demos/correctness.md) pages.
 
 ## Requirements
 
