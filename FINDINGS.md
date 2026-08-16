@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**319 entries** — 17 falsified, 249 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**342 entries** — 17 falsified, 272 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -305,6 +305,29 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-250` | Refining an edge crossing on the real field helps curved fields by 13–15% and does nothing at all for the CSG one — the… |
 | `M-251` | The exact distance transform agrees with brute force to the last bit, and is exactly one sample spacing from the analyti… |
 | `M-252` | Fast sweeping beats the exact transform everywhere, including where it was predicted to lose — because the seeding, not… |
+| `M-255` | naive reinitialisation moves the zero set, measured before it was fixed (S-004) |
+| `M-256` | the narrow band's cost claim needs the march, not the sweep (S-004) |
+| `M-257` | the approximate GPU method beats both exact CPU ones (S-005) |
+| `M-258` | a u32 followed by vec3<u32> is 32 bytes, not 16 (S-005) |
+| `M-259` | the round trip the crate did not have (S-006) |
+| `M-260` | a uniform grid over the sample cells lost to a flat box reject, 3.9× (S-006) |
+| `M-261` | Real gained acos, and libm is why (S-006) |
+| `M-262` | the winding number beats the pseudonormal on holed meshes, by a widening margin (S-007) |
+| `M-263` | the boundary must be counted with multiplicity, not as a boolean (S-007) |
+| `M-264` | the uncertified set is a curve, not a resolution failure (T-015) |
+| `M-265` | decimation is re-sampling on a nested grid, so the literature's rule has no bite here (T-016) |
+| `M-266` | M-72's aliasing is alignment, not chance (T-016) |
+| `M-267` | the sampled gradient supremum is not even monotone in sampling density (T-017) |
+| `M-268` | field quality is now in the regression gate, and every column is exact (T-017) |
+| `M-269` | a grid-aligned ray double-counts shared edges, and the constructor shootout is what found it (T-018) |
+| `M-270` | a benchmark that hands a repair algorithm perfect input measures the benchmark (T-018) |
+| `M-271` | the exact transform is the hungriest constructor, and the mesh-based pair are free (T-019) |
+| `M-272` | the pre-registration gate is a const assertion, and that is the whole of it (R-000) |
+| `M-273` | the first thing done with the pre-registration mechanism was amend a registration to fit the code (R-002) |
+| `M-274` | the fixture never contained the configuration both experiments were about (R-002) |
+| `M-275` | FALSIFIED on its first clause, and the residue is an edge defect (R-003) |
+| `M-276` | the dual methods' non-manifold edges are the ambiguous face, all 314 of them (A-021) |
+| `M-277` | the index generator was blind to the shape its own file had moved to (R-004) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1386,6 +1409,7 @@ Rules with no incident behind them get ignored. These all have one.
 | **A counter that is only populated on the success path cannot report the failure. Register what is being checked *before* the thing that fixes it** | E-205 — the crack counter built its list of seam planes inside `if transitions`, so running with transitions **off** left nothing to compare against and the demo reported a confident **0 cracks** on a world with 182 open edges in it. The zero was not wrong about the geometry; it was computed over an empty set. Moving the seam-plane scan out of the conditional makes the control real: 71 low and 102–111 high with transitions off, 0 and 0 with them on. **Seventh instance in one session** of a number that was a property of the fixture rather than of the code |
 | **A trap that has to be dodged by choosing a constant will be walked into again. Put the dodge in the step, not in the default** | E-104 found that `box_exact` is exactly zero on its whole boundary, so a grid aligned to the box faces lets the sign convention decide instead of the algorithm — over the ±2 domain, whenever `n − 1` is a multiple of 4. E-114 then defaulted to **13**, which is one of them, and opened on the degenerate case it exists to explain: corner 7 sampled `-0.0000`. E-104's own note says the dodge belongs *"in the code rather than left as a warning"*, and it was — **in E-104's code**. The fix that survives is arithmetic rather than vigilance: step by 4 from an odd base so `n − 1 ≡ 2 (mod 4)` throughout and no reachable resolution is aligned |
 | **Frame the camera from the field's own extent. A fixed orbit radius ships a screenshot of the *inside* of the mesh, and it looks like a rendering rather than a framing bug** | E-110, looking at E-109's committed image for a style reference. `sharp_features.rs:131` sets `orbit.radius = 7.0` for every field, and the capped gyroid's domain extent is **14** — so `docs/screenshots/e109-sharp-features-gyroid.png` is a picture of an inner wall, with the HUD legible over a flat beige surface and none of the geometry the demo exists to show. `manifold_check.rs:256-261` already had the fix and the comment explaining it (*"a fixed radius puts the camera comfortably inside the gyroid"*), written one ticket earlier; E-109 did not reuse it. **The image passed review because it is not obviously wrong** — nothing is missing, nothing is inverted, the numbers are correct. That is the failure mode: a framing bug produces a plausible picture, so only comparing against what the field *should* look like catches it |
+| **A generator that recognises one shape stops counting when the shape changes — and its staleness check cannot see that** | M-277 — `findings_index.sh` matched Part 2's table rows and Part 1's `✗` headings. Measurements became `###` sections at M-255 and **twenty-two of them fell out of the index while `--check` stayed green**, because a staleness check compares the file against the generator and the two agreed. The count read *"249 measured"* against 271 present. **Check a generator against its source's own vocabulary, not against its previous output** — one `grep -c '^### M-'` beside `grep -c '^| M-'` is the whole test, and it is the check that was never written |
 | **A file that records state drifts from the state unless something checks it. Write the check the second time, not the third** | E-113 — the demo shipped at `a0859e8`, the README referenced it, and its row sat in `BACKLOG.md` for four more commits; the header counts drifted from the row counts separately. Both were found by audit, both were caused by editing one file with several scripts in one turn where a later write clobbered an earlier one. The same defect was sitting in `FINDINGS.md` unnoticed: **O-1, O-2 and O-4 were still listed as open questions** after G-002, A-009 and G-003 had all landed and answered them. `scripts/backlog_gate.sh` is the check, and it is mutation-tested against all eight ways the two files can disagree — because a gate that has only ever passed is indistinguishable from one that cannot fail (M-44) |
 | **An instrument that cannot report the failure has not reported the success. Show it producing a non-zero before trusting its zero** | E-208 — the paint-drift readout measured "did the colour at this point change", and the scripted run sprayed one colour, so repainting red over red was numerically identical to paint that never moved. It printed **0.000000 at every step**, which is the answer the ticket wanted, and it would have printed the same on an implementation that smeared. Cycling the palette turned the same instrument sensitive — **27 of 40 sprays register drift, up to 0.886** — and only then does the **0.000000 across both carves** mean anything. This is M-75's rule in a different costume (*"a test that returns the same answer when you invert the thing it is testing is not measuring that thing"*), and the reason it earns its own row is that here the instrument was not inverted, it was **starved**: the input never varied in the dimension being measured |
 | A typed error at the call site is louder than an abort — make the invalid state unrepresentable where you can, report it where you can't, and never substitute a default | The no-panic rule, reconciled with "fail loudly": `ValidateConfig` has private fields and one checked constructor, so the validator needs no runtime guard at all |
@@ -2139,3 +2163,31 @@ change has two, so every dual mesh is non-manifold everywhere" — which contrad
 in this file. The error was treating a quad as contributing two faces to each of its sides. Printing
 the face-count histogram for a **plain half-space** (`{1: 8, 2: 8}` — no edge above two) settled it in
 one run and cost less than the third attempt at the algebra.
+
+### M-277 — the index generator was blind to the shape its own file had moved to (R-004)
+
+**M.** `scripts/findings_index.sh` matched exactly two things: table rows `| M-n | … |` in Part 2, and
+`### ✗n` headings in Part 1. Measurements stopped being table rows at **M-255** — the entries had
+outgrown a cell — and the generator never noticed. Counted directly:
+
+| | count |
+|---|---|
+| `^\| M-n \|` table rows | 249 |
+| `^### M-n —` heading sections | 22 |
+| what the index said | **"319 entries — 249 measured"** |
+
+So every measurement from S-004 onward, **twenty-two of them including all of R-001, R-002, R-003 and
+A-021**, was in `FINDINGS.md` and absent from the index a reader is told to consult first.
+
+**`--check` was green throughout, and correctly so.** A staleness check compares the artefact against
+what the generator produces, so it cannot see the generator's own blind spot: both agreed, and the
+one gate guarding the index was structurally unable to report this. The script's own header says an
+index that is allowed to drift *"answers confidently and wrongly"*; it was doing that about itself.
+
+Found while adding R-004's entry, by going to copy the row format and finding that the last
+twenty-two entries do not use one.
+
+Fixed by also matching `### (M|V|O)-n — …` headings, with `M-275 / P-14`'s two-id form resolved to
+the first id and a table row winning over a heading for the same id. **`P-` headings stay unindexed
+deliberately** — `### P-8 … P-13` names six predictions in one heading and would collide with each of
+their own outcome sections. Index after the fix: **341 entries, 271 measured.**

@@ -63,17 +63,29 @@ def claim(cell):
 
 
 rows = []
+seen = set()
 for number, line in enumerate(lines, 1):
     # Table entries: M-, V- and O- all lead their row with the id.
     entry = re.match(r"^\| (M-\d+|V-\d+|O-\d+|E×\d+) \| (.*)$", line)
     if entry:
         body = entry.group(2).split(" | ")[0]
         rows.append((entry.group(1), number, claim(body)))
+        seen.add(entry.group(1))
         continue
-    # Falsified entries are headings rather than rows.
-    killed = re.match(r"^### (✗\d+) — (.*)$", line)
-    if killed:
-        rows.append((killed.group(1), number, claim(killed.group(2))))
+    # Heading entries. Falsified ones were always headings; measurements became
+    # headings too once they outgrew a table cell, and this generator did not
+    # notice -- M-255..M-276 were in the file and not in the index, so the count
+    # read "249 measured" against 271 present. An index that answers confidently
+    # and wrongly is the failure the header of this script names, committed by
+    # the script itself.
+    #
+    # `M-275 / P-14` is one entry under two ids; the first is the one that
+    # numbers it. `P-` headings are deliberately not indexed: `P-8 … P-13`
+    # names six at once and would collide with each of their outcome headings.
+    heading = re.match(r"^### (✗\d+|M-\d+|V-\d+|O-\d+)(?: */ *\S+)? — (.*)$", line)
+    if heading and heading.group(1) not in seen:
+        rows.append((heading.group(1), number, claim(heading.group(2))))
+        seen.add(heading.group(1))
 
 if not rows:
     sys.exit("findings_index: no entries matched -- the file's shape changed")
