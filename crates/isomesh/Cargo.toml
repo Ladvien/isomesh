@@ -82,6 +82,23 @@ criterion = { version = "0.7", default-features = false, features = [
 # this crate asserting against its own idea of what parry wants.
 parry3d = "0.30"
 
+# R-005 / P-12, and Linux only. `perf_event_open` is a Linux system call with no
+# macOS equivalent a bench can reach, and `perf` itself is not installed on the
+# machine this ran on -- so the counters come from the syscall directly. It needs
+# no privileges: `perf_event_paranoid = 2` still permits user-space counting of
+# one's own process.
+#
+# A **dev**-dependency, so `cargo tree -p isomesh -e normal` is still isomesh +
+# libm and rule 3's budget is untouched. Target-gated rather than optional,
+# because a feature flag would make the experiment's availability a build
+# decision; the bench itself refuses and exits non-zero on any other platform
+# rather than reporting a column it did not measure.
+#
+# The crate writes the `unsafe` this workspace forbids, which is the whole reason
+# it is a dependency and not fifty lines here.
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+perf-event = "0.4"
+
 # Both are `harness = false` because criterion supplies its own main, and the
 # resolution sweep supplies one of its own -- see benches/resolution_sweep.rs.
 #
@@ -124,6 +141,11 @@ test = false
 
 [[bench]]
 name = "experiment_p11"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p12"
 harness = false
 test = false
 
