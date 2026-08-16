@@ -153,11 +153,20 @@ These use the algorithms the way a game does: chunked, edited, budgeted, collide
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
 | ☐ | **M-005** | **The Apple half of the family measurement.** M-001 landed `benches/family` and ran it on the Ryzen (M-282); the same run is owed on the M5, because six findings quote M5 figures that nothing has re-measured. **What it settles, and it is not cosmetic:** M-19's fitted intercept, M-20's *"4.75 ns/sample, 211 M samples/s"* marginal cost, M-22, and M-45's *"the M5 is 2.76× faster than the Ryzen on Marching Cubes at 256³"* — the last of which is currently **unquotable**, since its Ryzen half moved 1.74× and its Apple half did not. **Acceptance:** `cargo bench --bench family` on the M5 at the current commit, the CSV committed as `docs/measurements/family-<slug>.csv`, and those four findings amended against it. Note the counter columns will read `unavailable`: `perf_event_open` is Linux, so the Apple rows carry milliseconds only, and M-281 says a millisecond is comparable **only within one binary and one build** — so the cross-machine comparison must be made on `family` against `family`, never `family` against `resolution_sweep`. | S | M-001 |
-> BLOCKED: **it needs someone else's working tree, which is their call.** `mac_air` has an `isomesh`
-> checkout at `4369e3c` — over a hundred commits behind — with `BACKLOG.md` modified and two untracked
-> docs in it. Fetching and checking out the current commit there would touch uncommitted work that is
-> not this repository's to move. Say the word and it is a ten-minute ticket; until then the Apple
-> numbers stay as they are, marked stale rather than quietly re-used.
+> BLOCKED: **on the machine being quiet, and the earlier reason for this was wrong (2026-08-16).**
+> What was written here first was *"it needs someone else's working tree"* — `mac_air`'s `isomesh`
+> checkout sits at `4369e3c`, over a hundred commits behind, with `BACKLOG.md` modified and two
+> untracked docs in it. **That was never the obstacle**, and it was asserted rather than checked: a
+> clone into a scratch directory does not touch their checkout at all, and the host is reachable, on
+> AC, and carries the same toolchain this branch is built with (`cargo 1.96.1`, `rustc 1.96.1`).
+> **What actually blocks it is contention.** `mac_air` has been running another job at a steady
+> 42–48% of a core for over four hours — sampled six times a minute apart, load average `1.4–1.7`, no
+> sign of ending. `family` is a **single-threaded, memory-bound timing**, and this ticket exists to
+> make four findings quotable again; a figure taken beside a persistent competitor for last-level
+> cache and memory bandwidth is not one. Worse, the release build needed first would take every core
+> the other job is using. So the run is owed a quiet machine, not a working tree, and it remains a
+> ten-minute ticket the moment there is one. Until then the Apple numbers stay marked stale rather
+> than quietly re-used.
 
 ---
 
