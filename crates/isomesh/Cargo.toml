@@ -113,6 +113,11 @@ harness = false
 test = false
 
 [[bench]]
+name = "experiment_p8"
+harness = false
+test = false
+
+[[bench]]
 name = "csg_degradation"
 harness = false
 test = false

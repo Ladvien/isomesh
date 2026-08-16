@@ -84,6 +84,8 @@ pub const PREREGISTERED: &[Preregistration] = &[
                        for index-buffer realisation, and is the more interesting \
                        result.",
         records: &[
+            "field",
+            "extractor",
             "non_manifold_edges_ungated",
             "non_manifold_edges_gated",
             "non_manifold_vertices_ungated",

@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**318 entries** — 17 falsified, 249 measured, 33 verified, 16 open, 3 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**319 entries** — 17 falsified, 249 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -357,6 +357,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `E×1` | Surface Nets' centroid as Dual Contouring's vertex rule |
 | `E×2` | A separate probabilistic-quadric solver |
 | `E×3` | Crossing-count-scaled regularizer |
+| `E×4` | Weld gated on the pairwise link condition, rejected pairs left split |
 
 <!-- END GENERATED INDEX -->
 
@@ -1249,6 +1250,54 @@ Each experiment's numbers land in `docs/experiments/p-n.csv`, stamped with the g
 and the time — and flagged **`WORKING TREE DIRTY`** when the tree was not clean, because numbers that
 correspond to no commit have to say so on the artefact rather than in someone's memory.
 
+
+### P-8 — FALSIFIED, in both clauses, and the gate makes things worse (R-001)
+
+**M.** Eight reference fields × seven extractors × a 2×2×2 block of independently meshed chunks at
+`h = 4/35`, both welds run on the same meshes in one pass. `docs/experiments/p-8.csv`.
+
+**Clause one — "where the unconditional weld yields `N > 0`" — is false in 52 of 56 configurations.**
+`Welder` produces **zero** non-manifold edges and **zero** non-manifold vertices everywhere except
+`noise_cavity`, and there only under the dual extractors:
+
+| field | extractor | ungated e/v | gated e/v | rejected |
+|---|---|---|---|---|
+| `noise_cavity` | `surface_nets` | 25 / 53 | **25 / 53** | 0 |
+| `noise_cavity` | `dual_contouring` | 25 / 53 | **25 / 53** | 1 |
+| `noise_cavity` | `manifold_dual_contouring` | 2 / 9 | **2 / 9** | 1 |
+| `noise_cavity` | `subgrid_marching_tetrahedra` | 20 / 30 | 20 / **117** | 99 |
+
+**Clause two — "yields exactly 0" — is false too, and where there was something to fix the gate fixed
+none of it.** On all four rows the non-manifold *edge* count is unchanged. Three of the four reject
+zero or one merge, because the non-manifoldness was never weld-caused: it is in the extractor's own
+output, and welding neither created nor could remove it.
+
+**And the gate introduces non-manifoldness where there was none.** Twelve configurations that were
+clean ungated acquire non-manifold vertices under the gate — `torus`, `gyroid` and `noise_cavity`
+under every **primal** extractor. `subgrid_marching_tetrahedra` on `noise_cavity` goes 30 → **117**.
+The dual extractors are untouched, which is the clue: they key a vertex on the *cell*, so a `k`-way
+coincidence with `k > 2` barely arises.
+
+**The mechanism, and it is more specific than the registration guessed.** `vertex_delta` equals
+`rejected_merges` exactly in all 49 rows, so every refusal leaves one extra vertex, as designed. The
+damage is that a coincidence of `k` vertices is manifold **only when all `k` are merged**: merging a
+subset leaves the representative carrying cones from some copies and not others, which is a bowtie —
+two cones sharing an apex, every edge with exactly two faces, χ intact. That is precisely the
+configuration `validate`'s link walk exists to catch and that an edge count cannot see.
+
+So the pre-registration's stated falsifier — *"proving the surface link condition insufficient for
+index-buffer realisation"* — is right about the verdict and wrong about the reason. The **pairwise**
+condition is not insufficient for a pairwise merge; it is being applied greedily inside a `k`-way
+group, and Dey, Fan & Wang's decomposition into `k − 1` pairwise merges *in the intermediate complex*
+is exactly the thing that does not commute with rejecting one of them. Rejecting a merge is not a
+safe no-op — it is a decision to split, and a split part-way through a group is worse than either
+whole.
+
+**Two consequences for the tickets downstream.** R-003 asked whether splitting the unsafe merges is
+free; it is not, and the cost is not the vertex inflation it anticipated (that is exactly one vertex
+per rejection) but new non-manifoldness. And the residual 25/53 on `noise_cavity` is an **extractor**
+defect rather than a weld defect, which is a different ticket from any of R-001…R-003.
+
 ---
 
 ## Part 4b — Experiments run, and what happened to them
@@ -1272,6 +1321,7 @@ point; the numbers are what make it re-checkable.
 | E×1 | **Surface Nets' centroid as Dual Contouring's vertex rule** | The QEF is worth its cost on sharp fields and not on smooth ones, and pays for it in self-intersection | Hausdorff at 65³, QEF ÷ centroid: sphere **0.486**, torus **0.457**, csg_difference **0.255**, box_exact **0.010**, thin_plate **0.010**. Self-intersections per 1k at 33³: QEF **3.118 / 13.837 / 29.745** on gyroid, fbm_terrain, noise_cavity against centroid's **0.000** | **KEPT as an ablation, not as a default.** Both arms are real answers to different questions and neither dominates — 100× accuracy on sharp features against zero self-intersections. The seam stays so the comparison can be re-run; `Qef` stays the default because sharp-feature recovery is what A-007 exists for | X-002, `benches/ablation.rs`, M-237 |
 | E×2 | **A separate probabilistic-quadric solver** (Trettner & Kobbelt, `10.1111/cgf.13933`) | It supersedes the Tikhonov regularizer and is more robust on near-singular cells | Never measured as a separate solver, because it was shown identical first: a direct assembly of the paper's equations agrees with `solve_with` at `λ = Nσ²` to **1.110e-16 over 296 cells** | **REVERTED before it was written.** In this crate's centroid-relative coordinates the paper's extra term is `σ²Σrᵢ`, and `Σrᵢ ≡ 0` because the centroid *is* the mean of the crossings. A second solver would have been a second execution path computing identical numbers. **Do not re-attempt for isotropic noise**; the open door is anisotropic `Σₙ`, which needs a noise model analytic fields do not have | X-004, `the_probabilistic_quadric_is_the_existing_solve`, M-238 |
 | E×3 | **Crossing-count-scaled regularizer** (`λ = Nσ²`, the part of E×2 that *is* different) | Scaling λ with the number of planes beats one fixed λ per cell | Hausdorff at 65³, scaled ÷ fixed: sphere **1.0000**, torus **0.9957**, csg_difference **0.9992**, box_exact **0.7519**, thin_plate **0.7519**. Self-intersections at 33³ fall on all three noisy fields: **3.118→2.551, 13.837→13.571, 29.745→28.749** | **KEPT behind `experimental`, not made default.** Never worse and 25% better on both sharp fields, which is a real improvement — but the default carries T-007's committed golden hashes and 112 baseline rows, and moving those for a 25% gain on two of eight fields is a decision with evidence attached, not a tidy-up. Promoting it is its own ticket | X-004, `crates/isomesh/src/experimental.rs`, M-238 |
+| E×4 | **Weld gated on the pairwise link condition, rejected pairs left split** | H (P-8): exactly 0 non-manifold edges and vertices on all eight fields × all extractors, where the unconditional weld yields N > 0 | 56 configurations. Ungated is **0/0 in 52 of them**; the four exceptions are all `noise_cavity` under dual extractors, where the gate changes the edge count by **0** and rejects 0–1 merges. Gated **introduces** non-manifold vertices in 12 previously-clean configurations, and takes `subgrid_marching_tetrahedra` on `noise_cavity` from 30 to **117** | **REVERTED, and it was never merged.** The gate is strictly worse: it fixes nothing where there was something to fix and breaks what was working. A `k`-way coincidence is manifold only if all `k` merge; refusing one leaves the representative a bowtie. `vertex_delta == rejected_merges` in all 49 rows, so the inflation R-003 predicted is exactly one vertex per refusal and is not the cost that matters | R-001, `benches/experiment_p8.rs`, `docs/experiments/p-8.csv`, P-8 |
 
 ---
 

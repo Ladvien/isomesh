@@ -28,7 +28,7 @@ use std::process::Command;
 use isomesh::experiment::Preregistration;
 
 /// Rows accumulated by one experiment.
-pub struct Run {
+pub(crate) struct Run {
     prereg: &'static Preregistration,
     rows: Vec<BTreeMap<&'static str, String>>,
 }
@@ -41,7 +41,7 @@ impl Run {
     /// If the keys are not exactly `Preregistration::records`. Deliberate: a
     /// missing column is a metric that was predicted and then not measured, and
     /// finding that out from a silent CSV is how a falsified hypothesis survives.
-    pub fn record(&mut self, values: &[(&'static str, String)]) {
+    pub(crate) fn record(&mut self, values: &[(&'static str, String)]) {
         let mut row = BTreeMap::new();
         for (k, v) in values {
             assert!(
@@ -86,7 +86,7 @@ fn ask(program: &str, args: &[&str]) -> String {
 /// The `Preregistration` can only come from `isomesh::experiment!`, which is a
 /// compile error for an unregistered id — so there is no way to reach this
 /// function without having registered first.
-pub fn run(prereg: &'static Preregistration, body: impl FnOnce(&mut Run)) {
+pub(crate) fn run(prereg: &'static Preregistration, body: impl FnOnce(&mut Run)) {
     let mut run = Run {
         prereg,
         rows: Vec::new(),

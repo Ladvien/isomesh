@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-164 tickets. Line numbers are stable until something above them is edited — grep the ID if
+165 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1058,3 +1058,19 @@ failure rather than a silence. |
 first. What it does is make registering a **commit**, so git carries the ordering — and the backlog gate gained a
 sixth check: a `P-` id registered in Rust and absent from `FINDINGS.md` fails the build. P-8…P-13 registered for
 R-001…R-006 before a line of any of them was written. |
+| ☑ | **R-001** | **Gate the weld on the one-ring predicate.** **H:** a weld gated on `Lk u ∩ Lk v = ∅`, leaving rejected pairs split, yields **exactly 0 non-manifold edges and 0 non-manifold vertices** on all eight fields × all extractors, where the unconditional weld yields N > 0. **Harness:** both welds run on the same meshes in one pass. **Records:** non-manifold edges/vertices both ways, rejected-merge count R, Δ vertex count, weld wall-clock both ways. **Falsified by:** the gated weld still producing non-manifold output — **which would be the more interesting result**, proving the surface link condition insufficient for index-buffer realisation. **FINDINGS:** `M-` either way; `✗` against M-59's and M-99's framing if the predicate fully explains them. | L | R-000 |
+| | | ***P-8 falsified in both clauses, and the gate is strictly worse.*** Clause one — "where the unconditional weld
+yields N > 0" — is **false in 52 of 56 configurations**: `Welder` produces 0 non-manifold edges and 0 non-manifold
+vertices everywhere except `noise_cavity` under the dual extractors. Clause two is false too: on those four rows the
+gate changes the edge count by **0** and rejects 0–1 merges, because the non-manifoldness was never weld-caused. And
+the gate **introduces** non-manifold vertices in 12 previously-clean configurations, taking
+`subgrid_marching_tetrahedra` on `noise_cavity` from 30 to **117**. |
+| | | ***The mechanism is more specific than the registration guessed.*** `vertex_delta == rejected_merges` in all 49
+rows, so every refusal leaves exactly one extra vertex. The damage is that a `k`-way coincidence is manifold **only if
+all `k` merge**: refusing one leaves the representative carrying cones from some copies and not others — a bowtie,
+every edge with two faces and χ intact, which is exactly what `validate`'s link walk exists to catch and an edge count
+cannot see. The *pairwise* condition is not insufficient for a pairwise merge; it is being applied greedily inside a
+`k`-way group, and Dey/Fan/Wang's decomposition is the thing that does not commute with rejecting one step of it. |
+| | | ***It is also the harness's first real use.*** `experiment!("P-8")` gated the build, `Run::record` enforced the
+eight registered columns, and `docs/experiments/p-8.csv` carries the SHA, the machine, the time and a
+**`WORKING TREE DIRTY`** flag. R-003 is re-scoped on the result rather than left pointing at a premise that is gone. |
