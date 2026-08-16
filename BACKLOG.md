@@ -124,6 +124,15 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 > context than the face, which is A-017's two rejected alternatives. Two exact structures fell out: the
 > default's 18 are precisely the `(1, 1)` cycle-count bucket, and `(1, 2)`/`(2, 1)` are the only
 > buckets the mask does not always control (0.700 against 1.0000 everywhere else).
+> PROGRESS 2026-08-16 — **the mechanism, constructed rather than sampled, and half the acceptance is
+> met (M-294).** Two tests on a hand-built `4×4×3` lattice — **48 samples, no field**. On the same
+> samples Marching Cubes measures **0** non-manifold edges and both duals measure **1**, carrying four
+> distinct faces: ✗19 in a single fixture, and the manifold construction priced at nothing on the
+> `(1, 1)` bucket, since splitting a cell by cycle cannot split a cell that has one. The sharper half
+> is that scaling the shared face's two inside corners, **with every sign held fixed**, walks the
+> asymptotic decider's saddle across zero and takes the defect with it — `−0.25` and `−1` separate and
+> offend, `−4` joins and does not, at 20 triangles throughout. So the offending set is not a set of
+> sign configurations at all, which is M-292 seen from the other side. Mutation-tested four ways.
 > BLOCKED: **the second half is a decision, not a measurement.** `ManifoldDualContouring` defaults to
 > `FaceAmbiguity::Separate`; the paper's construction is the decider-modified table (V-34), which is
 > 20% better on `noise_cavity` and, per the module docs, *worse* on `gyroid` at 25³. Changing it

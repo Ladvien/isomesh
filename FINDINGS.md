@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**362 entries** — 19 falsified, 288 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**363 entries** — 19 falsified, 289 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -346,6 +346,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-291` | FALSIFIED, and the sharper form of it points the other way (A-025) |
 | `M-292` | no two-cell configuration forces Manifold Dual Contouring's defect (A-025) |
 | `M-293` | the excluded workspace's fourth gate incident, and this one is local (A-025 follow-on) |
+| `M-294` | the defect in 48 samples, and the same signs give the decider two answers (A-025) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -3433,3 +3434,72 @@ doc comment already argued it — *"a translated field is still the same field: 
 Euler characteristic, same distance property"*. `f(p − by)` has `f`'s Lipschitz constant, and if `|f|`
 was the distance to the zero set then `|f(p − by)|` is the distance to the translated one. The full
 `bevy` job — fmt, check, clippy, rustdoc, test — passes.
+
+
+### M-294 — the defect in 48 samples, and the same signs give the decider two answers (A-025)
+
+**Tier M.** `crates/isomesh/src/manifold_dual_contouring/tests.rs`,
+`a_constructed_ambiguous_face_makes_the_dual_non_manifold` and
+`the_decider_fixes_the_constructed_case_only_when_the_magnitudes_break_the_tie`.
+
+M-290 measured ✗19 over eight fields, M-291 falsified the first mechanism, M-292 bounded the
+mechanism over all 4,096 two-cell sign patterns. All three are censuses, and a census names a *rate*.
+This is the constructed case A-025 asked for — **48 samples, no field** — and it names the mechanism.
+
+**Twelve of the 48 carry it.** A `2×2×3` column of `±1` in a `4×4×3` lattice, trilinear between the
+samples, the rest outside. Its middle plane is `out, in, in, out` — the face saddle. It is one of
+M-292's **18** patterns that offend under the mask `FaceAmbiguity::Separate` produces, and all 18 are
+exactly the ones where both cells resolve to a **single** cycle. One cycle is one vertex, so the four
+quads — one per cut edge of the shared face — connect the same pair of vertices:
+
+| on the same 48 samples | triangles | non-manifold edges |
+|---|---|---|
+| Marching Cubes | 40 | **0** |
+| Dual Contouring | 20 | **1**, carrying four distinct faces |
+| Manifold Dual Contouring | 20 | **1**, carrying four distinct faces |
+
+**That is ✗19 in one fixture.** Schaefer, Ju & Warren's premise — *"the original MC algorithm always
+constructs a manifold"* — holds on these samples, and their conclusion — *"the dual preserves the
+topology of the surface"* — does not. It also prices the manifold construction on this configuration
+at **nothing**: splitting a cell by cycle cannot split a cell that has one cycle, so MDC and plain DC
+measure the same defect, which is what §3 predicts for DC in as many words.
+
+**Why the block is `3×3×2` cells and not `1×1×2`.** A quad exists only where all four cells around its
+grid edge do, and the shared face's four edges reach one cell out in `x` and in `y` on both sides. The
+two cells alone produce no quads at all. Mutation-tested: moving the column into the lattice corner
+takes the defect to zero, which is the claim.
+
+**The sharper half — one sign configuration, two answers.** The asymptotic decider does not read
+signs. It reads the ambiguous face's four corner *magnitudes* and asks where the bilinear saddle sits,
+`s = (v₀₀·v₁₁ − v₁₀·v₀₁) / (v₀₀ + v₁₁ − v₁₀ − v₀₁)` (Nielson & Hamann, Visualization '91). Scaling the
+face's two **inside** corners, with every sign held fixed, walks `s` across zero and the defect goes
+with it:
+
+| inside corners | saddle `s` | the face | non-manifold edges | triangles |
+|---|---|---|---|---|
+| `−0.25` | `+0.375` | separated | **1** | 20 |
+| `−1` — the fixture | `0`, an exact tie | separated | **1** | 20 |
+| `−4` | `−1.5` | **joined** | **0** | 20 |
+
+Three things fall out.
+
+- **The tie is resolved, not undefined.** At `s = 0` this crate answers *separated*
+  (`ambiguity::face_is_joined`), so the perfectly symmetric saddle — the first thing a hand-built
+  fixture reaches — is precisely the case the decider declines to fix.
+- **The triangle count never moves.** Twenty either way: a face rule changes which vertices the quads
+  connect, not how many there are. So the defect is pure connectivity, and so is its removal.
+- **The offending set is not a set of sign configurations.** M-292 found no pattern that offends under
+  every consistent mask; this is that result from the other side. One configuration, two answers,
+  chosen by the *field* rather than by the rule — which is why the decider still leaves 25–49
+  offending faces per resolution on `noise_cavity` (M-291) while being combinatorially capable of
+  avoiding all of them.
+
+**Mutation-tested, four ways**, because a test that has only ever passed is indistinguishable from one
+that cannot fail (M-44): flipping one bit of the pattern (the table stanza fires), moving the column to
+the lattice corner (the defect vanishes), pointing the "Marching Cubes is manifold here" arm at Dual
+Contouring instead (fires), and running the decider sweep with the magnitudes never scaled (the row
+assertion fires). Each went red on the named test and only there.
+
+**What this does not settle**, and deliberately: whether `ManifoldDualContouring` should default to
+`AsymptoticDecider` instead of `Separate`. That re-baselines every golden hash and is the crate
+owner's call — A-025 says so explicitly, and it stays open on exactly that.
