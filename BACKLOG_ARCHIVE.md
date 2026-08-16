@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-173 tickets. Line numbers are stable until something above them is edited — grep the ID if
+174 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1266,3 +1266,26 @@ innermost. Recorded as the bound on how far the coefficients travel onto degener
 | | | ***O-11 is answered and A-023 is filed.*** The question T-006 raised, M-45 half-answered and M-279 narrowed
 is closed: the superlinearity is `emit_quads`' working set outgrowing the caches while the other three stages
 stay flat. |
+| ☑ | **A-023** | **`emit_quads` is 82% of the dual's cycles and 45% of its instructions, at IPC 0.72. Make it stop.** R-007 (M-284) decomposed `DualMesher` by iteration count without touching it. **Three candidate remedies:** (a) fuse the edge sweep into `place_vertices`' cell loop; (b) reorder the loops so the innermost index is the fastest-varying axis; (c) drive it from a crossed-edge list, making the stage `O(surface)`. **Acceptance:** `experiment_p15` and `family` re-run before and after, **T-007's golden hashes unchanged**. | M | R-007 |
+| | | ***None of the three remedies was the answer, and the real one is a keyword (M-285).*** `axis`, `u` and `v`
+were **runtime** values, so `p[axis] = a` was a dynamically indexed store and `p` could not live in registers:
+every iteration wrote three coordinates to the stack and `linearize` read them straight back. Making the axis a
+`const` generic — three monomorphisations of one function, same order, same bounds — took the stage from
+**43.26 cycles per iteration to 3.33** and the whole mesher from **156.0 to 37.1 cycles per cell**. |
+| | | ***Surface Nets 3.09×, Dual Contouring 2.69×, Manifold Dual Contouring 2.52×, byte-identically.*** 693.8 →
+224.4 ms at 256³, IPC 1.20 → 2.77. `golden_hashes_are_unchanged` passes untouched and every triangle count in
+the family matches. The four table-driven entries are unchanged to within noise, which is the control. |
+| | | ***And ✗14's cost case is much weaker than it was this morning.*** `SN/MC` at 256³ goes **5.43× → 1.72×**,
+and at 48³ Surface Nets is now **faster** than Marching Cubes — 30.7 cycles per sample against 33.1, at IPC
+5.29. M-45's *"Surface Nets never wins on Zen 3, at any resolution"* is falsified. |
+| | | ***Remedy (b) was excluded before it was tried, by rows that already existed.*** P-15's sweep isolates each
+axis pass: `1449×2×1449` runs only the stride-1 pass, `1449×1449×2` only the stride-`nx` pass, `2×1449×1449`
+only the stride-`nx·ny` pass. They cost 72.70, 66.63 and 74.81 cycles per cell — within 12%, with the
+*sequential* one in the middle. Stride was never the cost, so reordering the loops would have bought nothing. |
+| | | ***It also invalidated a finding from four hours earlier, and that is recorded rather than quietly fixed
+(M-286).*** M-279 measured that a 2.4× swing in cache misses moved cycles by 0.4% and concluded misses were not
+the driver. They were hidden behind the stall. The same control now gives 5 cycles per miss, the cubic sweep 8.4,
+and the 128³ spike 15.8 — **a null measured under a dominant confound is a statement about the confound**. |
+| | | ***What did not change is the shape.*** Per-sample cost still rises 7.92 → 13.37 ns over 16³…256³ and the
+128³ spike is now the largest feature of the curve at **2.6×** its neighbours, where before it was 1.24× and
+looked like noise. O-11 is narrowed again rather than closed; **A-024** owns the residue. |
