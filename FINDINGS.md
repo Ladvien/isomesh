@@ -1543,3 +1543,59 @@ oriented.
 `Real` gained `atan2` for van Oosterom & Strackee's solid angle. The four-quadrant form is
 load-bearing: the denominator goes negative for a triangle subtending more than a hemisphere, and a
 plain `atan` of the quotient loses the half-turn.
+
+### M-264 — the uncertified set is a curve, not a resolution failure (T-015)
+
+**M.** Plantinga & Vegter's per-cell condition evaluated on all eight reference fields at 17³, 33³
+and 65³. Share of **active** cells carrying the isotopy guarantee:
+
+| field | 17³ | 33³ | 65³ |
+|---|---|---|---|
+| `sphere` | 100% | 100% | 100% |
+| `torus` | 100% | 100% | 100% |
+| `thin_plate` | 100% | 100% | 100% |
+| `fbm_terrain` | 100% | 100% | 100% |
+| `box_exact` | 72.97% | 86.98% | 93.62% |
+| `csg_difference` | 69.26% | 85.66% | 92.75% |
+| `gyroid` | 84.84% | 92.94% | 96.36% |
+| `noise_cavity` | 35.89% | 48.59% | 80.02% |
+
+`docs/measurements/isotopy.csv`.
+
+**The interesting number is not the fraction, it is how it scales.** Halving `h` multiplies a
+`d`-dimensional set's cell count by `2^d`, so two doublings give `2^(2d)` and
+`d = log₂(growth) / 2`. Measured 17³ → 65³:
+
+| field | active `d` | uncertified `d` |
+|---|---|---|
+| `box_exact` | 2.14 | **1.10** |
+| `csg_difference` | 2.17 | **1.13** |
+| `gyroid` | 2.07 | **1.04** |
+| `noise_cavity` | 2.33 | **1.49** |
+
+The active set is two-dimensional, because a surface is. **The uncertified set is one-dimensional.**
+So those cells are not scattered failures of an under-resolved field — they trace a *feature curve*:
+the box's edges, the CSG seam, the gyroid's high-curvature ridges. No spacing will certify them,
+because the feature is genuinely not smooth, and the fraction climbing toward 100% is just the 1-D
+set thinning against a 2-D one rather than the problem going away.
+
+`noise_cavity` at 1.49 sits between the two, which is the honest reading of a field that is *both*
+under-resolved at 17³ and creased: its fraction jumps 36% → 49% → 80%, far faster than the others.
+That is consistent with M-244, where its gradient was measured at 7.73 against a first draft's
+declared 2.598.
+
+**The certificate is exact here, and the reason it can be is worth recording.** The general condition
+needs interval arithmetic over an arbitrary `F`, which this crate cannot do — an `Sdf` returns point
+values, and a sampled gradient hull *underestimates* variation, so the predicate would pass where the
+truth fails. That is the one direction a certificate must never err in. But the surface Marching
+Cubes approximates is the **trilinear interpolant**, and for that the bounds are exact and
+closed-form: `∂F/∂x` is bilinear in `(y, z)`, hence a convex combination of the four `x`-edge
+differences, so its exact range is their min and max. `F` is a convex combination of the eight
+corners, so `0 ∉ □F(C)` is exactly *"the cell is inactive"* — the first clause is free and the
+predicate reduces to the inner product. No interval library, no sampling, and `h²` factors out of the
+sign test on isotropic cells.
+
+**Two configurations this crate already cares about are refused, and correctly.** The paper's own
+Figure 1 — alternating corner signs — is refused, which is the ticket's "engineered violator". So is
+a face-ambiguous cell: a configuration whose topology depends on a tie-break is by definition not
+determined by the corners, and A-002's entire series exists because of it.

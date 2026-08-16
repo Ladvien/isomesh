@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-158 tickets. Line numbers are stable until something above them is edited — grep the ID if
+159 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -964,3 +964,19 @@ casts. Nothing here writes to a mesh, per Takayama et al. |
 manifold-with-boundary and wrong on the soup this exists for; the net directed count also fixes the closing triangles'
 orientation without a separate pass. `Real` gained `atan2`, four-quadrant because the solid-angle denominator goes
 negative past a hemisphere. |
+| ☑ | **T-015** | **Per-cell normal-variation isotopy certificate.** **Hausdorff error does not certify topological correctness — provably.** Two surfaces can be arbitrarily Hausdorff-close and not homeomorphic. Every real theorem adds a second hypothesis, and the isosurface-specific ones — **Plantinga & Vegter** (`10.1145/1057432.1057465`) and **Boissonnat–Cohen-Steiner–Vegter** (`10.1007/s00454-007-9011-4`), both already in the corpus — certify **isotopy from a per-cell normal-variation condition**. Local, cheap, checkable *during* extraction, and a natural fit for a marching pipeline. **This upgrades the crate's claim from "we report Hausdorff" to "we certify topology," which nothing else in this space does.** **Acceptance:** the predicate is evaluated per cell and its pass rate reported per field; a field engineered to violate it is correctly flagged. | L | F-001 |
+| | | ***The certificate is exact, and the reason it can be is the point (M-264).*** The general condition needs interval
+arithmetic over an arbitrary `F`, which this crate cannot do — a sampled gradient hull *underestimates* variation, so
+the predicate would pass where the truth fails, and that is the one direction a certificate must never err in. But the
+surface Marching Cubes approximates is the **trilinear interpolant**, whose gradient bounds are exact and closed-form:
+`∂F/∂x` is bilinear in `(y, z)`, so its range over the cell is the min and max of the four `x`-edge differences. And
+`0 ∉ □F(C)` is exactly "the cell is inactive", so the first clause is free. No interval library, no sampling. |
+| | | ***The measurement found something the ticket did not ask for.*** Four fields certify at 100% at every
+resolution; the other four climb (`box_exact` 73→94%, `noise_cavity` 36→80%). The scaling says why: the active set
+grows as dimension **2.1** and the uncertified set as **1.0–1.1**. Those cells trace a **feature curve** — the box's
+edges, the CSG seam, the gyroid's ridges — that no spacing will ever certify, rather than being an under-resolved
+area. `noise_cavity` at 1.49 is honestly between the two, consistent with M-244's measured gradient of 7.73. |
+| | | ***Two configurations this crate already cares about are refused, correctly.*** The paper's own Figure 1
+(alternating corner signs) is the ticket's engineered violator, and a **face-ambiguous cell** is refused too — a
+topology that depends on a tie-break is by definition not determined by the corners, which is what the whole A-002
+series is about. |
