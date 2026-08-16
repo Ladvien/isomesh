@@ -1086,7 +1086,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_isomesh"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "avian3d",
  "bevy",
@@ -3394,14 +3394,14 @@ dependencies = [
 
 [[package]]
 name = "isomesh"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "libm",
 ]
 
 [[package]]
 name = "isomesh-gpu"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "isomesh",
  "wgpu",

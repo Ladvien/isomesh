@@ -86,6 +86,40 @@ assert!(mesh.count_vertices() > 0);
 
 **`IsomeshPlugin`** is the chunked, frame-budgeted layer above it, shown in the quickstart. `to_bevy_mesh` is the copying alternative for an `isomesh::MeshBuffer` you are reusing across chunks.
 
+## Going the other way — a `Mesh` as triangles
+
+`from_bevy_mesh` turns a Bevy `Mesh` into the `(positions, indices)` pair every `isomesh` entry point takes. `Indices::U16` widens to `u32`, so you never handle both.
+
+```rust
+use bevy_isomesh::from_bevy_mesh;
+use bevy_math::primitives::Cuboid;
+use bevy_mesh::Mesh;
+
+let mesh = Mesh::from(Cuboid::new(1.0, 1.0, 1.0));
+let (positions, indices) = from_bevy_mesh(&mesh).expect("a cuboid is a triangle list");
+assert_eq!(positions.len(), 24);   // four per face, not eight corners
+```
+
+**It does not weld, and it does not repair.** A cuboid has 24 vertices over 8 distinct corners because each face needs its own normal; collapsing them is a decision only you can make. Nothing is guessed either — a `TriangleStrip` is refused rather than expanded, because expanding one silently flips every other triangle's winding, and you get a `SoupError` naming which property failed rather than a `warn!` you may not be listening for.
+
+## Welding without flattening your creases
+
+Position-only welding turns a cube into eight corners and loses every crease. `weld_keys` builds the key that stops it, and `isomesh::weld::Welder::weld_split_by` honours it:
+
+```rust
+use bevy_isomesh::{WeldKeyConfig, weld_keys};
+use bevy_math::primitives::Cuboid;
+use bevy_mesh::Mesh;
+
+let mesh = Mesh::from(Cuboid::new(1.0, 1.0, 1.0));
+let keys = weld_keys(&mesh, WeldKeyConfig::default());
+// One key per face: the three vertices at each corner differ by normal.
+```
+
+Feed `keys` to `weld_split_by` and the cuboid keeps all 24 vertices; weld without it and you get 8.
+
+**It takes a quantum, not a smoothing angle, and that is forced rather than preferred.** The usual "merge if the normals are within 30°" test is **not transitive** — so it is not an equivalence relation, and applied to a `k`-way coincidence it merges some members and refuses others, leaving the leftover a bowtie. This repo measured that exact shape adding **up to 791 non-manifold vertices**. Quantising to a lattice is transitive; its failure mode is a *missed merge* at a bucket boundary, which is a visible seam rather than a topology defect. The defaults are conventional, not derived, and they are yours to override.
+
 ## What the plugin exposes
 
 The contract, stated rather than implied:
@@ -112,7 +146,7 @@ Every Bevy example in the project also lives here, and CI builds them all on eve
 
 ## Examples
 
-**[→ The demo page](DEMOS.md)** — all 34, with an animated capture of each, what it proves, and the exact command.
+**[→ The demo page](DEMOS.md)** — all 35 examples, each with an animated capture, what it proves, and the exact command.
 
 34 of them. **Start with `quickstart`** — it is the only one that is not a measured experiment, and the only one whose
 job is to show you the shape of a working app rather than to prove something about the library. The rest each carry a

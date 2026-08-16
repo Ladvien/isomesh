@@ -8,6 +8,29 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.0.7] — 2026-08-16
+
+### Documentation
+
+- **Every README, both demo pages and the experiments page brought up to the shipped API.** None of
+  them mentioned the exact predicates, the public validity gate, the attribute-preserving weld or the
+  Bevy `Mesh` interop. The experiments page stopped at P-17 and now carries P-18, P-19 and P-20 —
+  including the falsification, which is the point of that page existing.
+
+- **A `weld_creases` example** (`cargo run --example weld_creases --release`): two cubes, same input,
+  same tolerance, one welded on position alone and one with a normal key. The left loses the flat
+  shading that made it read as a cube; the right keeps it. Both welds are correct, which is the thing
+  the example exists to show.
+
+- **`doc_facts.sh` now checks the example count it has always derived.** It computed the number,
+  printed it, and never compared it to the prose — so both READMEs said "34 examples" while the
+  directory held 35. That is precisely the rot the script was written to stop, sitting inside the
+  script. The first version of the fix matched a bare `examples` and fired on `isomesh-gpu`'s
+  perfectly true "Three examples", which is the script's own header warning — *"adding a loose one
+  costs everybody who runs this"* — landing on its author.
+
 ### Added
 
 - **`bevy_isomesh::weld_keys` — a weld key from a `Mesh`'s normals and UVs.** Feeds
@@ -31,23 +54,6 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
   class into complete sub-classes and that failure is **unrepresentable in the signature** rather than
   merely discouraged (R-010).
 
-### Fixed
-
-- **The generalized-winding backend is `O(N³·B)` in boundary-edge count, and nothing said so.** A
-  hole-punched sphere at `65³` takes **43.6 seconds** to batch, against 0.35 s for the same mesh
-  closed. Both factors grow, so the cost on genuinely damaged input — which is the input this backend
-  exists for — is far worse than any closed-mesh benchmark shows. Measured, not yet mitigated
-  (M-303).
-
-- **`MeshField`'s docs claimed Manifold Dual Contouring is a sparse consumer of it. It is not.**
-  `ManifoldDualContouring::extract` pre-samples all N³ grid points into a buffer before visiting any
-  cell, so it reads a grid like every other extractor here. The claim was lifted from a summary of the
-  paper rather than checked against the code, and it had reached shipped documentation on a public
-  type. The type is unaffected and stays — it is still the one implementation of the query, and T-025
-  routed the winding path through it — but the motivating consumer named in its docs was wrong
-  (D-011, ✗23).
-
-### Added
 
 - **`bevy_isomesh::from_bevy_mesh` — a Bevy `Mesh` as the `(positions, indices)` pair every `isomesh`
   entry point takes.** The inbound half of a conversion whose outbound half already shipped.
@@ -70,6 +76,22 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
   sits beside it now. Surface Nets and plain Dual Contouring earn `ClosedAllowingUnresolvedTopology`
   on a closed field rather than `Closed`, because one-vertex-per-cell is *legitimately* non-manifold
   at coarse resolutions (M-4, M-15).
+
+### Fixed
+
+- **The generalized-winding backend is `O(N³·B)` in boundary-edge count, and nothing said so.** A
+  hole-punched sphere at `65³` takes **43.6 seconds** to batch, against 0.35 s for the same mesh
+  closed. Both factors grow, so the cost on genuinely damaged input — which is the input this backend
+  exists for — is far worse than any closed-mesh benchmark shows. Measured, not yet mitigated
+  (M-303).
+
+- **`MeshField`'s docs claimed Manifold Dual Contouring is a sparse consumer of it. It is not.**
+  `ManifoldDualContouring::extract` pre-samples all N³ grid points into a buffer before visiting any
+  cell, so it reads a grid like every other extractor here. The claim was lifted from a summary of the
+  paper rather than checked against the code, and it had reached shipped documentation on a public
+  type. The type is unaffected and stays — it is still the one implementation of the query, and T-025
+  routed the winding path through it — but the motivating consumer named in its docs was wrong
+  (D-011, ✗23).
 
 ## [0.0.6] — 2026-08-16
 

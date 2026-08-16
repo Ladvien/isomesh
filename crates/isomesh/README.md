@@ -79,6 +79,22 @@ counts), an accuracy harness, Hermite data and QEF vertex placement, vertex weld
 with dirty-set re-meshing, brush operations, field-derived LOD, Transvoxel transition cells, collider
 readiness checks, frame-budget scheduling, and chunk streaming with hysteresis.
 
+**Exact geometric predicates** (`predicates::orient2d`, `predicates::incircle`). Shewchuk's adaptive
+method: a floating-point estimate returned only where a proven error bound shows its sign cannot be
+wrong, over an exact expansion otherwise. `no_std`, no allocation, no new dependency. A float
+orientation test does not merely lose accuracy near degeneracy — it returns the **wrong sign**, and a
+triangulation built on wrong signs contradicts itself. The measured failure is not the one you would
+guess: exactly collinear input cannot break it, because `fl(x·y)` depends only on the real product, so
+two equal products round identically. The reachable defect is a **false zero** — three points whose
+exact determinant is `1` reported as collinear, which is the reading a triangulator trusts.
+
+**A weld that can be told what to preserve** (`Welder::weld_split_by`). One opaque `u64` per vertex;
+vertices whose key differs never merge. It takes a *key* and not a *predicate* on purpose: this repo
+measured a pairwise weld gate adding **up to 791 non-manifold vertices**, because a `k`-way coincidence
+is manifold only if all `k` merge and a pairwise test leaves the odd one out a bowtie. Equality on a
+key is an equivalence relation, so that failure is unrepresentable in the signature rather than merely
+discouraged.
+
 One optional feature, `experimental`, which adds `ProbabilisticQuadric`. It is off by default and on
 for docs.rs, so you can read what is behind it without checking out the source to discover it exists.
 
@@ -111,6 +127,29 @@ ruled out a dual method on speed before that, the reason is gone; see
 Every algorithm ships with a validity gate chosen by the field rather than a blanket rule, a determinism
 check, golden hashes that are bit-identical across macOS and Linux, and property tests. Nothing claims a
 performance number without a committed benchmark that produced it.
+
+**That gate is public, and you should use it.** "Valid" is not one thing: a closed solid must have no
+boundary edges, an open surface is *supposed* to have them, and a grid too coarse to resolve its field
+is permitted to be non-manifold without that being a mesher defect. Name which one your artefact earns
+and ask:
+
+```rust
+use isomesh::validate::{SurfaceGate, ValidateConfig, validate_indexed};
+
+// A tetrahedron: closed, and the smallest thing that can be.
+let positions = [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
+let indices = [0, 2, 1, 0, 1, 3, 0, 3, 2, 1, 2, 3];
+
+let cfg = ValidateConfig::from_cell_size(1.0).expect("positive cell size");
+let report = validate_indexed(&positions, &indices, &cfg);
+
+assert!(report.satisfies(SurfaceGate::Closed));   // a solid
+// ...or SurfaceGate::Manifold for a chunk, an open field, or a render mesh that
+// is a subset of some larger body. Its open edges are a number, not a failure.
+```
+
+Picking a predicate by intuition instead is how a correct mesh comes to read as broken — which happened
+to a downstream consumer of this crate before the rule was reachable from outside it.
 
 The repository keeps a [`FINDINGS.md`](https://github.com/ladvien/isomesh/blob/main/FINDINGS.md) recording what is known and how well — measured here, verified from
 a primary source, reported, or folklore — including the published figures that failed verification.

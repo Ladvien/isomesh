@@ -178,20 +178,20 @@ Early. **Seven** extraction algorithms — including one that resolves features 
 
 | | |
 |---|---|
-| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · **MC33's interior ambiguity (tunnels and the twelve-vertex contour)** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **seven-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · eight reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · **frame-budget scheduling** · **subgrid Marching Tetrahedra** · **chunk streaming with hysteresis** · Bevy 0.19 bridge and plugin · **GPU compute Marching Cubes** · **GPU prefix scan** · **GPU field evaluation** · **mesh-shader rendering** · distance-field construction · **paint that lives in the edit log** · orientation repair · **pre-registration the compiler enforces** |
+| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · **MC33's interior ambiguity (tunnels and the twelve-vertex contour)** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **seven-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · eight reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · **frame-budget scheduling** · **subgrid Marching Tetrahedra** · **chunk streaming with hysteresis** · Bevy 0.19 bridge and plugin · **GPU compute Marching Cubes** · **GPU prefix scan** · **GPU field evaluation** · **mesh-shader rendering** · distance-field construction · **paint that lives in the edit log** · orientation repair · **pre-registration the compiler enforces** · **exact geometric predicates (`orient2d`, `incircle`)** · **a public validity gate you name rather than guess** · **attribute-preserving welds** · **Bevy `Mesh` → triangle soup** |
 | **Not yet** | the singular face — a saddle lying *on* a cell face, which quantised input reaches and continuous `f64` does not (A-002i) · convex decomposition |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
 One optional feature: `experimental`, which adds `ProbabilisticQuadric`. It is off by default and on for docs.rs, so you can read what is behind it without checking out the source to find that it exists.
 
-Published on crates.io: [`isomesh`](https://crates.io/crates/isomesh) and [`isomesh-gpu`](https://crates.io/crates/isomesh-gpu). Releases are CI-driven: `scripts/publish.sh` is version-driven and uploads only what crates.io does not already have, so a version bump landing on `main` is the release.
+Published on crates.io: [`isomesh`](https://crates.io/crates/isomesh), [`isomesh-gpu`](https://crates.io/crates/isomesh-gpu) and [`bevy_isomesh`](https://crates.io/crates/bevy_isomesh). Releases are CI-driven: `scripts/publish.sh` is version-driven and uploads only what crates.io does not already have, so a version bump landing on `main` is the release.
 
 ---
 
 ## Experiments that held, and what they buy you
 
-Seventeen times, this project wrote down what it expected to measure — and what result would prove it
-wrong — **before running the measurement**. Ten of those are enforced by the compiler:
+Twenty times, this project wrote down what it expected to measure — and what result would prove it
+wrong — **before running the measurement**. Thirteen of those are enforced by the compiler:
 
 ```rust,ignore
 // This line does not compile if "P-8" is not in `PREREGISTERED`.
@@ -260,7 +260,7 @@ The math-library pin is the load-bearing one. Bevy 0.19 wants glam 0.32, `parry3
 
 ## Demos
 
-**[→ The demo page](bevy_isomesh/DEMOS.md)** — all 34 examples, each with an animated capture, the
+**[→ The demo page](bevy_isomesh/DEMOS.md)** — all 35 examples, each with an animated capture, the
 exact command, its controls, and the finding it demonstrates. There is a **[hosted version](https://claude.ai/code/artifact/cc28fc70-8d82-4655-afee-582ea00f5513)** too, if a link is easier to send than a clone.
 
 The longer write-ups live on three further pages, so this one stays short. Every figure on them came

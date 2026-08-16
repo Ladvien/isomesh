@@ -102,6 +102,48 @@ cd bevy_isomesh && cargo run --example marching_cubes_ambiguity --release
 
 ---
 
+## A weld that keeps the crease, and one that does not
+
+```bash
+cargo run --example weld_creases --release
+```
+
+Two cubes, same input, same tolerance. The left one is welded on **position alone**: its eight corners
+swallow all 24 vertices, the six faces end up sharing normals, and the flat shading that made it read
+as a cube is gone. The right one is welded with a key built from the vertex normals, keeps all 24, and
+still looks like a cube.
+
+**Neither is a bug.** The left weld did exactly what "merge coincident vertices" means. It is just that
+merging coincident vertices and preserving a crease are different requests, and only the caller knows
+which one it wants — so `Welder::weld_split_by` takes the key rather than guessing.
+
+### Why the key is a quantum and not a smoothing angle
+
+The conventional test is *"merge if the normals are within 30°"*, and this crate deliberately does not
+offer it. **An angle threshold is not transitive**: `a` within 30° of `b` and `b` within 30° of `c`
+does not put `a` within 30° of `c`. So it is not an equivalence relation, and applied to a `k`-way
+coincidence class it merges some members and refuses others — leaving the leftover representative a
+bowtie. This repository measured that exact shape adding **up to 791 non-manifold vertices**, taking
+`noise_cavity` from 301 to 1,092 and `sphere` + Marching Cubes from 0 to 96 (E×4).
+
+Quantising to a lattice *is* transitive, so a class always splits into complete sub-classes. Its
+failure mode is a **missed merge** at a bucket boundary — a visible seam, harmless topologically —
+which is the right failure to prefer over a manufactured bowtie.
+
+### The number that surprises people
+
+The key-welded cube reports **24 boundary edges** where the position-welded one reports none. That is
+not damage: keeping six faces apart necessarily opens the edges between them, so the split mesh is a
+**surface**, not a solid. Its open edges are a recorded number rather than a failure, and
+`SurfaceGate::Manifold` is how you say so — asserting `Closed` on it would report correct output as
+broken (M-305).
+
+Which makes this the mirror of E×4. There a *pairwise* refusal did its damage in the **vertex** column;
+here an *equivalence* refusal does its intended work in the **boundary-edge** column. The column that
+moves tells you which kind of refusal you built.
+
+---
+
 ## A crack between two chunks, and welding it shut
 
 ![Two chunks of a torus, meshed independently, with the open seam marked in red](../screenshots/e115-chunk-seam-unwelded.png)

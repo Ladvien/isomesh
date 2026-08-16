@@ -132,6 +132,18 @@ check "$EXTRACTORS" "extractors" 'isosurface extractors'
 check "$HASHES" "golden hashes" 'golden hashes'
 check "$SHOOTOUT_ALGS" "algorithms in the shootout" '[-]?algorithm shootout'
 
+# Derived since the first version of this gate and never checked against the
+# prose, which is the failure this whole script exists to prevent -- caught when
+# B-014's example made it 35 and both READMEs went on saying 34.
+#
+# The phrase is deliberately the long one. A bare `examples` also matches
+# "Three examples" in `isomesh-gpu/README.md`, which is a true claim about that
+# crate's own three and has nothing to do with the Bevy set -- the loose version
+# was written first and failed on exactly that, which is this script's own header
+# warning ("adding a loose one costs everybody who runs this") landing on its
+# author.
+check "$EXAMPLES" "examples" 'examples, each with an animated capture'
+
 # --- media referenced but absent ----------------------------------------------
 #
 # A broken image is worse than a missing section: it renders as alt text and a

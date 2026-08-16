@@ -398,6 +398,7 @@ cargo run --example precision_f32_vs_f64 --release   # - = offset exponent · 1-
 | `chunk_seam_weld` | Two chunks meshed independently — as a real game does, since an edit only dirties what it touches. Red lines are the crack; `V` welds it shut, `E` slides the chunks apart to prove they are separate meshes |
 | `transvoxel_seams` | Two LOD blocks meeting on a plane, with and without transition cells. `T` toggles. Reproduce the committed stills with `ISOMESH_FIELD=3 ISOMESH_SAMPLES=6 ISOMESH_TRANSITIONS=0` |
 | `hermite_debug` | What Dual Contouring actually operates on: one cell blown up, its eight corners, its edge crossings, the normal at each, where the QEF put the vertex — and in red, where it was before the clamp dragged it back |
+| `weld_creases` | Two cubes, same input, same tolerance. The left is welded on position alone and its eight corners swallow all 24 vertices, so the flat shading that made it read as a cube is gone; the right is welded with a key built from the normals and keeps all 24. **Both welds are correct** — only the caller knows which was wanted. The readout also shows the right mesh gaining 24 boundary edges, which is the split seen from the edge column rather than damage |
 
 ---
 
