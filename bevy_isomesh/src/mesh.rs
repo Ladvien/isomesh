@@ -299,6 +299,125 @@ pub fn to_bevy_mesh(buffer: &MeshBuffer<f32>) -> Mesh {
     mesh
 }
 
+/// Why a [`Mesh`] could not be read as a triangle soup.
+///
+/// Every variant is a property of the asset, not of this crate — which is why
+/// this is an enum a caller can match on rather than a `warn!` swallowed here.
+/// A scene walker merging many meshes wants to skip the ones it cannot use and
+/// say which; only the caller knows whether one bad mesh is a warning or a stop.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum SoupError {
+    /// The mesh is not a `TriangleList`.
+    ///
+    /// Strips, fans and line topologies are **refused rather than converted**.
+    /// A strip *can* be expanded into triangles, and doing it silently would
+    /// change the winding of every other triangle — which produces a mesh that
+    /// looks right until something asks which side is out.
+    NotTriangleList(PrimitiveTopology),
+    /// No `ATTRIBUTE_POSITION`, or it is not `Float32x3`.
+    NoPositions,
+    /// No index buffer.
+    ///
+    /// Refused rather than synthesised. An unindexed `TriangleList` *is* a valid
+    /// soup — vertex `3n`, `3n+1`, `3n+2` — but a caller that meant to hand over
+    /// an indexed mesh and lost its indices somewhere upstream is better served
+    /// by an error than by a silently de-indexed one.
+    NoIndices,
+    /// The index count is not a multiple of three.
+    RaggedIndices(usize),
+    /// An index points past the end of the position buffer.
+    IndexOutOfRange {
+        /// The offending index.
+        index: u32,
+        /// How many vertices there are.
+        vertices: usize,
+    },
+}
+
+impl core::fmt::Display for SoupError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::NotTriangleList(topology) => {
+                write!(f, "topology is {topology:?}, not TriangleList")
+            }
+            Self::NoPositions => write!(f, "no Float32x3 ATTRIBUTE_POSITION"),
+            Self::NoIndices => write!(f, "no index buffer"),
+            Self::RaggedIndices(n) => write!(f, "{n} indices is not a multiple of three"),
+            Self::IndexOutOfRange { index, vertices } => {
+                write!(f, "index {index} but only {vertices} vertices")
+            }
+        }
+    }
+}
+
+impl core::error::Error for SoupError {}
+
+/// A Bevy [`Mesh`] as the `(positions, indices)` pair every `isomesh` entry
+/// point takes.
+///
+/// Ticket: B-012. Consumers were each merging scene meshes into one soup by
+/// hand; this is that conversion, once.
+///
+/// # It does not weld, and that is the contract
+///
+/// `Mesh::from(Cuboid)` has **24** vertices, not 8 — four per face, because each
+/// face needs its own normal. This returns all 24. Welding them to 8 would
+/// destroy the crease that makes a cube look like a cube, and whether that trade
+/// is worth making depends on what the caller is doing with the result. B-014
+/// exposes the predicate that decides it; this function does not decide for you.
+///
+/// # Errors
+///
+/// [`SoupError`], one variant per property of the asset that makes it
+/// unreadable. Nothing is repaired and nothing is guessed — see the variant docs
+/// for why each is refused rather than worked around.
+///
+/// # Example
+///
+/// ```
+/// use bevy_isomesh::from_bevy_mesh;
+/// use bevy_math::primitives::Cuboid;
+/// use bevy_mesh::Mesh;
+///
+/// let mesh = Mesh::from(Cuboid::new(1.0, 1.0, 1.0));
+/// let (positions, indices) = from_bevy_mesh(&mesh).expect("a cuboid is a triangle list");
+///
+/// // Four vertices per face, because each face carries its own normal.
+/// assert_eq!(positions.len(), 24);
+/// assert_eq!(indices.len(), 36);
+/// ```
+pub fn from_bevy_mesh(mesh: &Mesh) -> Result<(Vec<[f32; 3]>, Vec<u32>), SoupError> {
+    let topology = mesh.primitive_topology();
+    if topology != PrimitiveTopology::TriangleList {
+        return Err(SoupError::NotTriangleList(topology));
+    }
+
+    let positions = mesh
+        .attribute(Mesh::ATTRIBUTE_POSITION)
+        .and_then(|values| values.as_float3())
+        .ok_or(SoupError::NoPositions)?;
+
+    // `Indices` is U16 or U32; both widen to the u32 every isomesh entry point
+    // takes, so the caller never has to know which one the asset happened to use.
+    let indices: Vec<u32> = match mesh.indices().ok_or(SoupError::NoIndices)? {
+        Indices::U16(values) => values.iter().map(|&i| u32::from(i)).collect(),
+        Indices::U32(values) => values.clone(),
+    };
+
+    if !indices.len().is_multiple_of(3) {
+        return Err(SoupError::RaggedIndices(indices.len()));
+    }
+    if let Some(&index) = indices.iter().find(|&&i| i as usize >= positions.len()) {
+        return Err(SoupError::IndexOutOfRange {
+            index,
+            vertices: positions.len(),
+        });
+    }
+
+    Ok((positions.to_vec(), indices))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -319,6 +438,133 @@ mod tests {
         )
         .expect("extraction");
         builder
+    }
+
+    use bevy_math::primitives::Cuboid;
+
+    // ── B-012: Mesh -> triangle soup ────────────────────────────────────────
+
+    /// The acceptance criterion: a cuboid round-trips as **24** vertices, not 8.
+    #[test]
+    fn a_cuboid_keeps_its_twenty_four_vertices() {
+        let mesh = Mesh::from(Cuboid::new(2.0, 3.0, 4.0));
+        let (positions, indices) = from_bevy_mesh(&mesh).expect("cuboid is a triangle list");
+
+        assert_eq!(
+            positions.len(),
+            24,
+            "welding is the caller's decision, not this function's"
+        );
+        assert_eq!(indices.len(), 36, "12 triangles");
+        assert!(indices.iter().all(|&i| (i as usize) < positions.len()));
+
+        // Only 8 distinct positions underneath, which is exactly why welding
+        // would be lossy: the 24 differ by normal, not by position.
+        let mut distinct: Vec<[u32; 3]> = positions
+            .iter()
+            .map(|p| [p[0].to_bits(), p[1].to_bits(), p[2].to_bits()])
+            .collect();
+        distinct.sort_unstable();
+        distinct.dedup();
+        assert_eq!(distinct.len(), 8, "a box has eight corners");
+    }
+
+    /// The isomesh direction and the Bevy direction compose.
+    #[test]
+    fn an_extracted_sphere_survives_the_round_trip() {
+        let builder = sphere_builder();
+        let (want_positions, want_indices) =
+            (builder.positions().to_vec(), builder.indices().to_vec());
+
+        let mesh = builder.into_mesh();
+        let (got_positions, got_indices) = from_bevy_mesh(&mesh).expect("round trip");
+
+        assert_eq!(got_positions, want_positions);
+        assert_eq!(got_indices, want_indices);
+    }
+
+    #[test]
+    fn a_u16_index_buffer_widens_rather_than_being_refused() {
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        );
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            vec![[0.0f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+        );
+        mesh.insert_indices(Indices::U16(vec![0, 1, 2]));
+
+        let (positions, indices) = from_bevy_mesh(&mesh).expect("u16 is a valid index type");
+        assert_eq!(positions.len(), 3);
+        assert_eq!(indices, vec![0u32, 1, 2]);
+    }
+
+    #[test]
+    fn a_strip_is_refused_rather_than_expanded() {
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleStrip,
+            RenderAssetUsages::default(),
+        );
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            vec![[0.0f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+        );
+        mesh.insert_indices(Indices::U32(vec![0, 1, 2]));
+
+        // Expanding a strip silently would flip every other triangle's winding.
+        assert_eq!(
+            from_bevy_mesh(&mesh),
+            Err(SoupError::NotTriangleList(PrimitiveTopology::TriangleStrip))
+        );
+    }
+
+    #[test]
+    fn missing_positions_and_missing_indices_are_distinguished() {
+        let mut no_positions = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        );
+        no_positions.insert_indices(Indices::U32(vec![0, 1, 2]));
+        assert_eq!(from_bevy_mesh(&no_positions), Err(SoupError::NoPositions));
+
+        let mut no_indices = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::default(),
+        );
+        no_indices.insert_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            vec![[0.0f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+        );
+        assert_eq!(from_bevy_mesh(&no_indices), Err(SoupError::NoIndices));
+    }
+
+    #[test]
+    fn a_ragged_or_out_of_range_index_buffer_is_refused() {
+        let make = |indices: Vec<u32>| {
+            let mut mesh = Mesh::new(
+                PrimitiveTopology::TriangleList,
+                RenderAssetUsages::default(),
+            );
+            mesh.insert_attribute(
+                Mesh::ATTRIBUTE_POSITION,
+                vec![[0.0f32, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+            );
+            mesh.insert_indices(Indices::U32(indices));
+            mesh
+        };
+
+        assert_eq!(
+            from_bevy_mesh(&make(vec![0, 1, 2, 0])),
+            Err(SoupError::RaggedIndices(4))
+        );
+        assert_eq!(
+            from_bevy_mesh(&make(vec![0, 1, 7])),
+            Err(SoupError::IndexOutOfRange {
+                index: 7,
+                vertices: 3
+            })
+        );
     }
 
     #[test]

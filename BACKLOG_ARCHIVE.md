@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-189 tickets. Line numbers are stable until something above them is edited — grep the ID if
+190 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1467,3 +1467,14 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > **Verdict: build it, with the regime stated honestly.** At `65³` on a closed mesh the crossover is **4,791 queries against 274,625 samples** — on-demand pays below about **1.7% of the grid**. That is a real regime for a point probe or collision query and F-005 is plausibly inside it, but it is not the general-purpose win the retired premise implied. **The construction itself is left to a follow-up rather than done here**, because this ticket's deliverable was the answer and the answer changes what should be built.
 >
 > **One incidental finding that is not small**: the holed mesh at `65³` takes **43.6 seconds** to batch, because the correction is `O(N³·B)` and both factors grow. The winding backend's cost on genuinely damaged input — the input it exists for — is far worse than any closed-mesh benchmark would show, and nothing warns about it.
+
+| ☑ | **B-012** | **`Mesh` → triangle soup, and back.** Downstream consumers merge scene meshes into one soup by hand today. Expose the conversion once, handling `Indices::U16`/`U32`, non-`TriangleList` topology refusal, and missing `Float32x3` positions — the same `warn!`-and-skip discipline the consumers already use. **Acceptance:** round-trip a `Mesh::from(Cuboid)` and get 24 vertices back, not 8 — i.e. the conversion does **not** weld, because welding is the caller's decision (see B-014). | M | — |
+> **Landed 2026-08-16.** `bevy_isomesh::from_bevy_mesh` — the inbound half of a conversion whose outbound half (`to_bevy_mesh`) already shipped. `Indices::U16` widens to the `u32` every `isomesh` entry point takes, so a caller never has to know which width the asset happened to use.
+>
+> **Acceptance met and pinned:** `Mesh::from(Cuboid)` returns **24** positions, not 8, and the test also asserts there are only **8 distinct** positions underneath — which is the reason welding would be lossy rather than merely a choice. The 24 differ by *normal*, not by position, so collapsing them destroys the crease that makes a cube read as a cube. B-014 exposes the predicate that decides it; this function does not decide for the caller.
+>
+> **The ticket said `warn!`-and-skip; it returns a `SoupError` instead, and the change is deliberate.** That discipline was described as *"the same the consumers already use"* — but a scene walker merging many meshes needs to know **which** mesh it skipped and **why**, and only the caller knows whether one bad asset is a warning or a stop. Swallowing it in a `warn!` here would take that decision away and log it into a channel the caller may not even have installed. The enum is `#[non_exhaustive]`.
+>
+> **Nothing is repaired or guessed, and each refusal has a reason in its variant docs.** A `TriangleStrip` is refused rather than expanded, because expanding one silently flips every other triangle's winding — a mesh that looks right until something asks which side is out. An unindexed `TriangleList` is refused rather than de-indexed, because a caller that lost its indices upstream is better served by an error than by a plausible mesh.
+>
+> `bevy_math` joins the dev-dependencies for the `Cuboid` fixture — named as a leaf rather than reached through the `bevy` umbrella already sitting there, since this crate's whole argument is that the umbrella is unnecessary. Already in the tree via `bevy_mesh`, so the resolved graph is unchanged. 25 tests plus the doctest green; `preflight --full` green.

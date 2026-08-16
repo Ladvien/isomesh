@@ -26,6 +26,15 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ### Added
 
+- **`bevy_isomesh::from_bevy_mesh` — a Bevy `Mesh` as the `(positions, indices)` pair every `isomesh`
+  entry point takes.** The inbound half of a conversion whose outbound half already shipped.
+  `Indices::U16` widens to `u32`, so callers never handle both. **It does not weld**:
+  `Mesh::from(Cuboid)` returns 24 positions over 8 distinct corners, and collapsing them would destroy
+  the crease that makes a cube look like a cube — B-014 exposes the predicate that decides it. Returns
+  a `#[non_exhaustive]` `SoupError` rather than logging and skipping, because a scene walker needs to
+  know which mesh it skipped and why. Nothing is repaired: a `TriangleStrip` is refused rather than
+  expanded, since expanding one silently flips every other triangle's winding (B-012).
+
 - **`validate::SurfaceGate` and `MeshReport::satisfies(gate)` — the rule for *which* validity check
   applies, which until now was compiled out of every shipped build.** `MeshReport` offered three
   predicates and no reachable statement of which one belongs to what, so consumers re-derived it and

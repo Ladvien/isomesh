@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**189 tickets archived, 12 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**190 tickets archived, 11 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -115,7 +115,6 @@ backlog citing "isomesh B-010" means **B-014**.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **B-012** | **`Mesh` → triangle soup, and back.** Downstream consumers merge scene meshes into one soup by hand today. Expose the conversion once, handling `Indices::U16`/`U32`, non-`TriangleList` topology refusal, and missing `Float32x3` positions — the same `warn!`-and-skip discipline the consumers already use. **Acceptance:** round-trip a `Mesh::from(Cuboid)` and get 24 vertices back, not 8 — i.e. the conversion does **not** weld, because welding is the caller's decision (see B-014). | M | — |
 | ☐ | **B-013** | **`proxy_cells` example.** Render A-026's convex decomposition as wireframe cells over the source mesh, with a slider for cell count and a readout of per-cell volume vs source volume. **This is the example that makes the Tier A/Tier B architecture legible** — nobody believes "cut the proxy, not the mesh" until they see the cells. | M | A-026, B-012 |
 | ☐ | **B-014** | **Expose the merge predicate over Bevy attributes.** R-010's `MergePredicate` gates a weld on the link condition (`Lk u ∩ Lk v = ∅`); a Bevy consumer additionally needs to refuse a merge when normals or UVs differ, or a cube corner's three normals collapse to one arbitrary one. **Same mechanism, two predicates** — topological safety and attribute preservation compose. **Acceptance:** welding `Mesh::from(Cuboid)` preserves all 24 vertices under the composite predicate and collapses to 8 without it. | M | R-010 |
 
