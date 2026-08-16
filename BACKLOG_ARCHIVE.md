@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-188 tickets. Line numbers are stable until something above them is edited — grep the ID if
+189 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1456,3 +1456,14 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > **The acceptance was written slightly too strictly and is amended.** It asked that `grep -rn "queries where it needs to"` return only the `✗` entry. Four hits remain and all four are *records of the retirement* rather than assertions of it: `S-009`'s ticket, this ticket, the struck-through archive note, and ✗21's amendment table. The rule this file actually keeps is that a falsified premise is never deleted, only removed from the places that still **act** on it — and nothing acts on it now.
 >
 > **✗23 records it**, and it earned its own entry rather than a line in ✗21 for one reason: it is the only one of that family's three failures to reach shipped documentation. `MeshField` itself is untouched and stays — S-008's `the_grid_path_is_this_field_in_a_loop` still makes it the one implementation of the query, and T-025 since routed the winding path through it. **The type was right and its stated reason was wrong.**
+
+| ☑ | **S-009** | **RE-PARENTED — on-demand GWN field.** The original justification was that Manifold Dual Contouring "queries where it needs to." **That is false for this codebase (✗23, retired at D-011)** — `extract` calls `self.sample(sdf, shape, origin, cell_size)` at `crates/isomesh/src/dual.rs:257`, which loops all N³ points into a buffer before anything else runs — so the dense N³ ray cost is the right price *for extractors*. The question survives for genuinely sparse consumers, and the real one is **internal**: F-005's empty-cell rejection by sphere tracing, and any future collision query against the field. **H:** on-demand GWN beats the batch path below a query-count crossover Q\* < N³; pre-register Q\*. **Falsified by:** no crossover existing above the point where batching is trivially cheaper. **Not blocked by any downstream consumer.** | M | F-005 |
+> **Answered 2026-08-16 (P-19 HELD, M-303).** A Phase 15 ticket is done when the question is answered, and it is: **`Q*` is of order `N²`, not `N³`.** Measured 1.13–1.43 × `N²` on a closed sphere at 17³/33³/65³, against a registered band of 0.5×–4×, with `Q*/N³` at 0.017–0.084 against a 0.1 falsifier.
+>
+> **The harness measures the two cost terms rather than simulating an on-demand field**, deliberately: P-19's second falsifier could have *closed* this ticket, so building the field to find out whether it is worth building would have been backwards. Timing three grid shapes — `(2,2,2)`, `(2,N,N)`, `(N,N,N)` — isolates the per-point term exactly, since the last two cast an identical number of rays.
+>
+> **The control is what makes it a result.** Punching holes moves `Q*/N²` from ~1.2 to 13–42, so the hypothesis was at genuine risk. And the mechanism is confirmed quantitatively: boundary edges ×16.2 → per-point cost ×15.7, so the correction is **linear in `B`**, exactly as derived. Two terms, two drivers, both as predicted.
+>
+> **Verdict: build it, with the regime stated honestly.** At `65³` on a closed mesh the crossover is **4,791 queries against 274,625 samples** — on-demand pays below about **1.7% of the grid**. That is a real regime for a point probe or collision query and F-005 is plausibly inside it, but it is not the general-purpose win the retired premise implied. **The construction itself is left to a follow-up rather than done here**, because this ticket's deliverable was the answer and the answer changes what should be built.
+>
+> **One incidental finding that is not small**: the holed mesh at `65³` takes **43.6 seconds** to batch, because the correction is `O(N³·B)` and both factors grow. The winding backend's cost on genuinely damaged input — the input it exists for — is far worse than any closed-mesh benchmark would show, and nothing warns about it.

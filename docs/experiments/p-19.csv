@@ -1,0 +1,11 @@
+# experiment P-19 (S-009)
+# hypothesis: The on-demand-versus-batch crossover for the generalized winding number is set by the batch path's one-ray-per-grid-row sharing, not by its point count: on a nearly-closed mesh the crossover query count Q* is of order N² rather than N³, landing within 0.5x to 4x of N² for grids from 17³ to 65³. The naive expectation -- that an on-demand field wins below N³ queries, since that is how many the batch path answers -- is registered here as the thing this is expected to beat.
+# falsified by: Q* reaching a tenth of N³ or more on a nearly-closed mesh, which would put the cost in the per-point boundary-edge correction rather than in the per-row ray, and mean the row sharing M-299 identified is not what sets the crossover. Also falsified if no crossover exists at all above the point where batching is trivially cheaper -- a single query -- which would say the on-demand field has no regime and S-009 should be closed rather than built.
+# commit ef6f73d (WORKING TREE DIRTY) on amd-ryzen-9-5900x-12-core at 2026-08-16T19:27:01Z
+samples_per_axis,triangles,boundary_edges,batch_total_ns,on_demand_ns_per_query,crossover_queries,crossover_over_n_squared,crossover_over_n_cubed
+17,1064,0,1742144,3844.2431,414,1.4330,0.084295
+17,912,420,50177483,13047.4814,3835,13.2690,0.780528
+33,4280,0,23416158,16036.9460,1418,1.3019,0.039451
+33,3668,1702,1444076774,55700.9879,25914,23.7964,0.721104
+65,17192,0,354001532,73325.8283,4791,1.1339,0.017445
+65,14736,6794,43582258998,243492.6941,178978,42.3616,0.651716

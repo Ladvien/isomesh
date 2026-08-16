@@ -10,6 +10,12 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ### Fixed
 
+- **The generalized-winding backend is `O(N³·B)` in boundary-edge count, and nothing said so.** A
+  hole-punched sphere at `65³` takes **43.6 seconds** to batch, against 0.35 s for the same mesh
+  closed. Both factors grow, so the cost on genuinely damaged input — which is the input this backend
+  exists for — is far worse than any closed-mesh benchmark shows. Measured, not yet mitigated
+  (M-303).
+
 - **`MeshField`'s docs claimed Manifold Dual Contouring is a sparse consumer of it. It is not.**
   `ManifoldDualContouring::extract` pre-samples all N³ grid points into a buffer before visiting any
   cell, so it reads a grid like every other extractor here. The claim was lifted from a summary of the

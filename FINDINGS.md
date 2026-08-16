@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**376 entries** — 23 falsified, 297 measured, 36 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**377 entries** — 23 falsified, 298 measured, 36 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -359,6 +359,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-300` | FALSIFIED, and not where it was predicted: the gap is non-manifold vertices, not self-intersections (R-011) |
 | `M-301` | the bowtie that passed: a closed, edge-manifold, consistently oriented surface that is not a 2-manifold (T-021) |
 | `M-302` | the naive orient2d fails by reporting collinear, not by reporting a false crossing (T-024a) |
+| `M-303` | HELD: the winding crossover is N², not N³, and the per-point cost is linear in boundary edges (S-009) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -4133,6 +4134,52 @@ them; this one had no doc comment because it had no field.
 
 **Would be shown wrong by:** a physics engine answering an inside/outside query correctly at a bowtie
 apex, which would make the tightened predicate too strict rather than newly right.
+
+
+### M-303 / P-19 — HELD: the winding crossover is `N²`, not `N³`, and the per-point cost is linear in boundary edges (S-009)
+
+**M.** `cargo bench --bench experiment_p19` → `docs/experiments/p-19.csv`. The batch cost is decomposed
+into setup, per-ray and per-point terms by timing three grid shapes — `(2,2,2)`, `(2,N,N)` and
+`(N,N,N)` — where `T_full − T_thin` isolates the per-point term exactly, because the two shapes cast an
+identical number of rays.
+
+| fixture | `N` | boundary edges | per-ray ns | per-point ns | `Q*` | `Q*/N²` | `Q*/N³` |
+|---|---|---|---|---|---|---|---|
+| sphere, closed | 17 | 0 | 3,740 | 104.0 | 414 | **1.43** | 0.084 |
+| sphere, closed | 33 | 0 | 15,886 | 151.3 | 1,418 | **1.30** | 0.040 |
+| sphere, closed | 65 | 0 | 73,172 | 153.4 | 4,791 | **1.13** | 0.017 |
+| holed control | 17 | 420 | 3,043 | 10,005 | 3,835 | 13.27 | 0.78 |
+| holed control | 33 | 1,702 | 16,020 | 39,681 | 25,914 | 23.80 | 0.72 |
+| holed control | 65 | 6,794 | 86,130 | 157,363 | 178,978 | 42.36 | 0.65 |
+
+**H held on both arms.** `Q*/N²` is 1.13–1.43 against a registered band of 0.5×–4×, and `Q*/N³` stays
+below the 0.1 falsifier at 0.017–0.084. The second falsifier — no crossover at all — did not fire
+either: `Q*` is below `N³` on every row, so an on-demand field always has *some* regime.
+
+**The control did its job, and it is the part worth keeping.** Punching holes moves `Q*/N²` from ~1.2
+to 13–42, so the hypothesis was genuinely at risk rather than unfalsifiable. And the mechanism is
+confirmed *quantitatively*, not merely directionally: from `N = 17` to `N = 65` the holed fixture's
+boundary-edge count rises **16.2×** and its per-point cost rises **15.7×** — the correction term is
+**linear in boundary edges**, exactly as the derivation says. The per-ray term meanwhile tracks
+triangle count (16.2× more triangles, 19.6× the ray cost), and barely moves between the closed and
+holed fixtures at fixed `N`. Two terms, two different drivers, both as predicted.
+
+**What this decides for S-009: build it, but the regime is narrower than the ticket assumed.** The
+naive reading — an on-demand field wins below `N³` queries — overstates the win by a factor of `N`.
+At `65³` on a closed mesh the real crossover is **4,791 queries against 274,625 samples**, so
+on-demand pays only below about **1.7% of the grid**. That is a real regime for a point probe or a
+collision query, and F-005's sphere-traced empty-cell rejection is plausibly inside it — but it is not
+the general-purpose win "queries where it needs to" implied, and ✗23 already retired the consumer that
+sentence named.
+
+**Incidental, and it is not small.** The holed mesh at `65³` takes **43.6 seconds** to batch. The
+correction is `O(N³·B)` and both factors are growing, so the winding backend's cost on genuinely
+damaged input — which is the input it exists for — is far worse than the closed-mesh figures anyone
+would benchmark with. Nothing currently warns about that.
+
+**Would be shown wrong by:** a boundary correction whose cost is not linear in boundary-edge count —
+which would break the `O(N³·B)` model the crossover is derived from, even though the crossover numbers
+themselves came out inside the band.
 
 
 ### M-302 — the naive `orient2d` fails by reporting collinear, not by reporting a false crossing (T-024a)
