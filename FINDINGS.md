@@ -1256,47 +1256,98 @@ correspond to no commit have to say so on the artefact rather than in someone's 
 **M.** Eight reference fields × seven extractors × a 2×2×2 block of independently meshed chunks at
 `h = 4/35`, both welds run on the same meshes in one pass. `docs/experiments/p-8.csv`.
 
-**Clause one — "where the unconditional weld yields `N > 0`" — is false in 52 of 56 configurations.**
-`Welder` produces **zero** non-manifold edges and **zero** non-manifold vertices everywhere except
-`noise_cavity`, and there only under the dual extractors:
+> **These numbers replace a first run whose fixture was broken (M-274).** The block was placed at
+> `-2.0` with 8-cell chunks, which spans 1.83 of the 4-unit domain and clipped a corner off every
+> field. It produced **no bucket with more than two members**, so the mechanism the first write-up
+> asserted was about a configuration the run never contained. The block is now centred and 18-cell,
+> and P-9 reports 6–32 buckets of `k ≥ 3` per configuration.
+
+**Clause one — "where the unconditional weld yields `N > 0`" — is false in 47 of 56 configurations.**
+`Welder` produces zero non-manifold edges and zero non-manifold vertices everywhere except nine rows,
+all under **dual or subgrid** extractors:
 
 | field | extractor | ungated e/v | gated e/v | rejected |
 |---|---|---|---|---|
-| `noise_cavity` | `surface_nets` | 25 / 53 | **25 / 53** | 0 |
-| `noise_cavity` | `dual_contouring` | 25 / 53 | **25 / 53** | 1 |
-| `noise_cavity` | `manifold_dual_contouring` | 2 / 9 | **2 / 9** | 1 |
-| `noise_cavity` | `subgrid_marching_tetrahedra` | 20 / 30 | 20 / **117** | 99 |
+| `torus` | `dual_contouring` | 0 / 4 | 0 / 4 | 0 |
+| `torus` | `manifold_dual_contouring` | 0 / 4 | 0 / 4 | 0 |
+| `thin_plate` | `subgrid_marching_tetrahedra` | 4 / 6 | **0** / 135 | 143 |
+| `fbm_terrain` | `surface_nets` | 1 / 2 | 1 / 2 | 0 |
+| `fbm_terrain` | `dual_contouring` | 1 / 2 | 1 / 2 | 0 |
+| `noise_cavity` | `surface_nets` | 276 / 536 | 276 / 536 | 1 |
+| `noise_cavity` | `dual_contouring` | 277 / 539 | 276 / 537 | 8 |
+| `noise_cavity` | `manifold_dual_contouring` | 66 / 145 | 65 / 143 | 9 |
+| `noise_cavity` | `subgrid_marching_tetrahedra` | 222 / 301 | 218 / **1,092** | 928 |
 
-**Clause two — "yields exactly 0" — is false too, and where there was something to fix the gate fixed
-none of it.** On all four rows the non-manifold *edge* count is unchanged. Three of the four reject
-zero or one merge, because the non-manifoldness was never weld-caused: it is in the extractor's own
-output, and welding neither created nor could remove it.
+**Clause two — "yields exactly 0" — is false, and the trade is catastrophic.** Across all 56
+configurations the gate removes **at most 4** non-manifold edges (`thin_plate` + subgrid, 4 → 0) and
+adds **up to 791** non-manifold vertices (`noise_cavity` + subgrid, 301 → 1,092). On every **primal**
+extractor — where the weld was perfectly clean — it manufactures non-manifoldness from nothing:
+`sphere` 0 → 96, `torus` 0 → 108, `box_exact` 0 → 102, `noise_cavity` 0 → 407.
 
-**And the gate introduces non-manifoldness where there was none.** Twelve configurations that were
-clean ungated acquire non-manifold vertices under the gate — `torus`, `gyroid` and `noise_cavity`
-under every **primal** extractor. `subgrid_marching_tetrahedra` on `noise_cavity` goes 30 → **117**.
-The dual extractors are untouched, which is the clue: they key a vertex on the *cell*, so a `k`-way
-coincidence with `k > 2` barely arises.
-
-**The mechanism, and it is more specific than the registration guessed.** `vertex_delta` equals
-`rejected_merges` exactly in all 49 rows, so every refusal leaves one extra vertex, as designed. The
-damage is that a coincidence of `k` vertices is manifold **only when all `k` are merged**: merging a
-subset leaves the representative carrying cones from some copies and not others, which is a bowtie —
-two cones sharing an apex, every edge with exactly two faces, χ intact. That is precisely the
-configuration `validate`'s link walk exists to catch and that an edge count cannot see.
+**The mechanism.** `vertex_delta` equals `rejected_merges` in all 49 rows, so every refusal leaves
+exactly one extra vertex — the inflation is arithmetic and harmless. The damage is that a coincidence
+of `k` vertices is manifold **only when all `k` merge**: refusing one leaves the representative
+carrying cones from some copies and not others, which is a bowtie — two cones sharing an apex, every
+edge with exactly two faces, χ intact. That is precisely what `validate`'s link walk exists to catch
+and what an edge count cannot see, and it is why the damage shows up in the *vertex* column while the
+edge column barely moves.
 
 So the pre-registration's stated falsifier — *"proving the surface link condition insufficient for
-index-buffer realisation"* — is right about the verdict and wrong about the reason. The **pairwise**
-condition is not insufficient for a pairwise merge; it is being applied greedily inside a `k`-way
+index-buffer realisation"* — has the verdict right and the reason half right. The **pairwise**
+condition is not insufficient for a pairwise merge. It is being applied greedily inside a `k`-way
 group, and Dey, Fan & Wang's decomposition into `k − 1` pairwise merges *in the intermediate complex*
-is exactly the thing that does not commute with rejecting one of them. Rejecting a merge is not a
-safe no-op — it is a decision to split, and a split part-way through a group is worse than either
-whole.
+is exactly what does not commute with rejecting one of them. Rejecting a merge is not a safe no-op —
+it is a decision to split, and a split part-way through a group is worse than either whole.
 
-**Two consequences for the tickets downstream.** R-003 asked whether splitting the unsafe merges is
-free; it is not, and the cost is not the vertex inflation it anticipated (that is exactly one vertex
-per rejection) but new non-manifoldness. And the residual 25/53 on `noise_cavity` is an **extractor**
-defect rather than a weld defect, which is a different ticket from any of R-001…R-003.
+**Two consequences downstream.** R-003 asked whether splitting the unsafe merges is free; it is not,
+and the cost is not the vertex inflation it anticipated but new non-manifoldness. And the residue —
+276 edges and 536 vertices on `noise_cavity` under `surface_nets`, which the gate rejects **one**
+merge against and changes not at all — is an **extractor** defect rather than a weld defect.
+
+### P-9 — HELD, and the driver is not `k` (R-002)
+
+**M.** Eight seeded permutations of within-bucket order per configuration, re-welded, compared by
+byte-identity. Same fixture as P-8. `docs/experiments/p-9.csv`.
+
+**Nine of 56 configurations produce more than one distinct output**, so H holds: the `k`-way weld is
+**not** confluent and `CLAUDE.md`'s byte-identity guarantee rests on the input order being
+deterministic rather than on the weld being order-free.
+
+**But the premise is wrong about why.** H said *"for buckets of ≥3 coincident vertices"*. Measured, the
+correlation runs the other way:
+
+| field | extractor | distinct | vertex spread | buckets `k ≥ 3` |
+|---|---|---|---|---|
+| `sphere` | `marching_cubes` | **1** | 0 | **6** |
+| `box_exact` | `marching_tetrahedra` | **1** | 0 | **6** |
+| `torus` | `dual_contouring` | **5** | 0 | **0** |
+| `torus` | `manifold_dual_contouring` | **5** | 0 | **0** |
+| `noise_cavity` | `dual_contouring` | **8** | **4** | 1 |
+| `noise_cavity` | `manifold_dual_contouring` | **8** | **2** | 2 |
+| `noise_cavity` | `marching_tetrahedra` | 6 | 0 | 21 |
+
+Every primal extractor has 6–32 buckets of `k ≥ 3` and is **perfectly confluent**. `torus` under the
+duals has **none** and yields five different outputs.
+
+**The driver is whether the coincident vertices are bit-identical, not how many there are.** A `k ≥ 3`
+bucket on a primal extractor comes from M-48 — a grid sample landing exactly on the isosurface, so
+every cut edge meeting there places its vertex at the *same computed point*, within one chunk, by the
+same expression. Those are bit-identical, so which survives cannot change a byte. A seam bucket spans
+two chunks that computed the plane by different expressions, and M-32 measured those disagreeing by
+an ulp — so which survives changes the output exactly.
+
+**And two rows change the vertex *count*, which is the part that matters.** `noise_cavity` under
+`dual_contouring` spans **4** vertices across the eight permutations, and under
+`manifold_dual_contouring` **2**. Epsilon-closeness is not transitive and `Welder` uses first fit, so
+permuting the order changes **how many representatives are elected**, not merely which. The weld's own
+documentation predicted this in prose (*"a chain `a ~ b ~ c` with `a` and `c` further than `ε` apart
+yields two representatives"*); this is the first measurement of it.
+
+**What it means for a consumer, which is not what the ticket feared.** R-002 worried that gating would
+break determinism; gating is reverted (P-8), so that threat is gone. The live one is that a chunked
+consumer **appending chunks in a different order** gets a different vertex count on `noise_cavity`,
+not merely different bytes. The order is deterministic today because the loops are; nothing enforces
+it.
 
 ---
 
@@ -1321,7 +1372,7 @@ point; the numbers are what make it re-checkable.
 | E×1 | **Surface Nets' centroid as Dual Contouring's vertex rule** | The QEF is worth its cost on sharp fields and not on smooth ones, and pays for it in self-intersection | Hausdorff at 65³, QEF ÷ centroid: sphere **0.486**, torus **0.457**, csg_difference **0.255**, box_exact **0.010**, thin_plate **0.010**. Self-intersections per 1k at 33³: QEF **3.118 / 13.837 / 29.745** on gyroid, fbm_terrain, noise_cavity against centroid's **0.000** | **KEPT as an ablation, not as a default.** Both arms are real answers to different questions and neither dominates — 100× accuracy on sharp features against zero self-intersections. The seam stays so the comparison can be re-run; `Qef` stays the default because sharp-feature recovery is what A-007 exists for | X-002, `benches/ablation.rs`, M-237 |
 | E×2 | **A separate probabilistic-quadric solver** (Trettner & Kobbelt, `10.1111/cgf.13933`) | It supersedes the Tikhonov regularizer and is more robust on near-singular cells | Never measured as a separate solver, because it was shown identical first: a direct assembly of the paper's equations agrees with `solve_with` at `λ = Nσ²` to **1.110e-16 over 296 cells** | **REVERTED before it was written.** In this crate's centroid-relative coordinates the paper's extra term is `σ²Σrᵢ`, and `Σrᵢ ≡ 0` because the centroid *is* the mean of the crossings. A second solver would have been a second execution path computing identical numbers. **Do not re-attempt for isotropic noise**; the open door is anisotropic `Σₙ`, which needs a noise model analytic fields do not have | X-004, `the_probabilistic_quadric_is_the_existing_solve`, M-238 |
 | E×3 | **Crossing-count-scaled regularizer** (`λ = Nσ²`, the part of E×2 that *is* different) | Scaling λ with the number of planes beats one fixed λ per cell | Hausdorff at 65³, scaled ÷ fixed: sphere **1.0000**, torus **0.9957**, csg_difference **0.9992**, box_exact **0.7519**, thin_plate **0.7519**. Self-intersections at 33³ fall on all three noisy fields: **3.118→2.551, 13.837→13.571, 29.745→28.749** | **KEPT behind `experimental`, not made default.** Never worse and 25% better on both sharp fields, which is a real improvement — but the default carries T-007's committed golden hashes and 112 baseline rows, and moving those for a 25% gain on two of eight fields is a decision with evidence attached, not a tidy-up. Promoting it is its own ticket | X-004, `crates/isomesh/src/experimental.rs`, M-238 |
-| E×4 | **Weld gated on the pairwise link condition, rejected pairs left split** | H (P-8): exactly 0 non-manifold edges and vertices on all eight fields × all extractors, where the unconditional weld yields N > 0 | 56 configurations. Ungated is **0/0 in 52 of them**; the four exceptions are all `noise_cavity` under dual extractors, where the gate changes the edge count by **0** and rejects 0–1 merges. Gated **introduces** non-manifold vertices in 12 previously-clean configurations, and takes `subgrid_marching_tetrahedra` on `noise_cavity` from 30 to **117** | **REVERTED, and it was never merged.** The gate is strictly worse: it fixes nothing where there was something to fix and breaks what was working. A `k`-way coincidence is manifold only if all `k` merge; refusing one leaves the representative a bowtie. `vertex_delta == rejected_merges` in all 49 rows, so the inflation R-003 predicted is exactly one vertex per refusal and is not the cost that matters | R-001, `benches/experiment_p8.rs`, `docs/experiments/p-8.csv`, P-8 |
+| E×4 | **Weld gated on the pairwise link condition, rejected pairs left split** | H (P-8): exactly 0 non-manifold edges and vertices on all eight fields × all extractors, where the unconditional weld yields N > 0 | 56 configurations on a centred 2×2×2 block. Ungated is **0/0 in 47 of them**. Across all 56 the gate removes **at most 4** non-manifold edges and adds **up to 791** non-manifold vertices — `noise_cavity` + subgrid goes 301 → **1,092**, and `sphere` + Marching Cubes goes 0 → 96 | **REVERTED, and it was never merged.** Strictly worse: it fixes almost nothing where there was something to fix and manufactures non-manifoldness where there was none. A `k`-way coincidence is manifold only if all `k` merge; refusing one leaves the representative a bowtie, which is why the damage is in the vertex column and the edge column barely moves | R-001, `benches/experiment_p8.rs`, `docs/experiments/p-8.csv`, P-8 |
 
 ---
 
@@ -1929,3 +1980,48 @@ the instrument has to be able to report the bad news.
 The one thing it cannot enforce is that the registration was written *first*. Nothing in a source
 file can. What it does is make registering a **commit**, so git carries the ordering, and
 `scripts/backlog_gate.sh` fails if a registered id never reaches `FINDINGS.md`.
+
+### M-273 — the first thing done with the pre-registration mechanism was amend a registration to fit the code (R-002)
+
+**✗ against my own practice, caught by the mechanism itself.** R-000 shipped a harness whose
+`Run::record` demanded the row's keys be **exactly** the registered `records`. The first experiment
+needed a `field` column to identify its rows — and the path of least resistance was to edit `P-8`'s
+registration and add it. Which is amending a prediction to fit the code, one commit after building
+the thing whose entire purpose is to stop that.
+
+It was caught on the next experiment, when P-9 panicked with *"`field` is not one of the records this
+experiment registered"* and the same edit beckoned again.
+
+**The design was wrong, not only the act.** `records` is a list of **metrics that must be reported**,
+not a schema for the file. Row keys are not anybody's hypothesis. `Run::record` now panics only on a
+**missing** metric and permits extra columns, which are written after the registered ones, sorted —
+so identifying a row never requires touching a prediction. Both amendments were reverted to what
+R-000 committed.
+
+**The general rule, which is Part 5 material.** A gate that is stricter than the thing it protects
+creates pressure to weaken the gate, and the weakening is indistinguishable from the abuse it was
+built to stop. Check exactly the property you mean: *"every registered metric appears"* was the
+property; *"the columns are exactly these"* was a stronger claim nobody needed and could not keep.
+
+### M-274 — the fixture never contained the configuration both experiments were about (R-002)
+
+**✗.** P-8's first run used a 2×2×2 block of **8-cell** chunks at `h = 4/35` anchored at `-2.0`. That
+spans `16 × 4/35 = 1.83` units of a 4-unit domain, so the block covered a **corner** of every
+reference field and never reached the origin. P-8 recorded numbers, they were internally consistent,
+and the write-up asserted a mechanism about `k`-way merges.
+
+P-9 measured the same fixture and reported **`buckets_of_three_or_more = 0` in all 49 rows it produced**. There
+was no `k`-way merge anywhere in it. The mechanism was a description of something the run did not
+contain, arrived at by reasoning from the algorithm rather than from the data — which is the failure
+mode this file exists to catch, committed while writing an entry for this file.
+
+Centring the block and taking 18-cell chunks — `36 × 4/35 = 4.11`, covering `[-2, 2]` — puts the
+eight-chunk corner at the origin and the four-chunk edges through the surface. `k ≥ 3` buckets appear
+immediately: **6–32 per configuration** on every primal extractor. Both experiments were re-run and
+P-8's entry replaced; the conclusion survived and got much stronger (the gate's damage went from
+"up to 42 non-manifold vertices" to "up to 791"), which is luck rather than vindication.
+
+**The rule.** A fixture that produces zero of the thing being studied looks exactly like one that
+produces some, because every other column is populated. **Count the phenomenon, not just the
+outcome** — P-9's `buckets_of_three_or_more` column is what exposed this, and it existed only because
+the pre-registration demanded it.

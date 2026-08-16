@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-165 tickets. Line numbers are stable until something above them is edited — grep the ID if
+166 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1065,7 +1065,7 @@ vertices everywhere except `noise_cavity` under the dual extractors. Clause two 
 gate changes the edge count by **0** and rejects 0–1 merges, because the non-manifoldness was never weld-caused. And
 the gate **introduces** non-manifold vertices in 12 previously-clean configurations, taking
 `subgrid_marching_tetrahedra` on `noise_cavity` from 30 to **117**. |
-| | | ***The mechanism is more specific than the registration guessed.*** `vertex_delta == rejected_merges` in all 49
+| | | ***The mechanism is more specific than the registration guessed.*** `vertex_delta == rejected_merges` in all 56
 rows, so every refusal leaves exactly one extra vertex. The damage is that a `k`-way coincidence is manifold **only if
 all `k` merge**: refusing one leaves the representative carrying cones from some copies and not others — a bowtie,
 every edge with two faces and χ intact, which is exactly what `validate`'s link walk exists to catch and an edge count
@@ -1074,3 +1074,21 @@ cannot see. The *pairwise* condition is not insufficient for a pairwise merge; i
 | | | ***It is also the harness's first real use.*** `experiment!("P-8")` gated the build, `Run::record` enforced the
 eight registered columns, and `docs/experiments/p-8.csv` carries the SHA, the machine, the time and a
 **`WORKING TREE DIRTY`** flag. R-003 is re-scoped on the result rather than left pointing at a premise that is gone. |
+| ☑ | **R-002** | **k-way welds may be order-dependent — this threatens the determinism guarantee.** Dey/Fan/Wang decompose a k-way merge into k−1 pairwise merges *in the intermediate complex*, so bucket order can matter. **H:** for buckets of ≥3 coincident vertices, at least one reference field yields **≥2 distinct outputs** across P seeded permutations of within-bucket merge order. **Harness:** permute, re-weld, compare byte-identity. **Records:** distinct-output count per field, vertex count spread. **Falsified by:** all P permutations byte-identical on every field — meaning k-way weld is confluent and no canonical order is needed. **If H holds, `CLAUDE.md`'s byte-identical guarantee is violated the moment gating lands**, and a canonical merge order must be pinned in the same commit. **Run this before R-001 ships.** | M | R-001 |
+| | | ***P-9 held, and the premise was wrong about why.*** Nine of 56 configurations give more than one distinct output
+across eight seeded permutations, so the weld is **not** confluent. But H said "for buckets of ≥3": every primal
+extractor has **6–32** such buckets and is perfectly confluent, while `torus` under the duals has **none** and yields
+**five** different outputs. The driver is whether the coincident vertices are **bit-identical** — a `k ≥ 3` bucket
+comes from M-48, one chunk placing several vertices at the same computed point, so which survives cannot change a
+byte; a seam bucket spans two chunks whose expressions disagree by an ulp (M-32). |
+| | | ***Two rows change the vertex count, not just the bytes.*** `noise_cavity` spans **4** vertices under
+`dual_contouring` and **2** under `manifold_dual_contouring` across the permutations. Epsilon-closeness is not
+transitive and `Welder` uses first fit, so the order changes **how many representatives are elected**. The weld's docs
+predicted this in prose; this is the first measurement. The live risk is not the gating R-002 feared — that is
+reverted — but a chunked consumer **appending chunks in a different order** getting a different vertex count. |
+| | | ***It found two failures of my own practice.*** **M-273:** the first use of R-000's mechanism was to *amend a
+registration to fit the code*, because `Run::record` demanded the key set be exactly the registered records — a gate
+stricter than the property it protects creates pressure to weaken it. Relaxed to "no missing metric", amendments
+reverted. **M-274:** P-8's original fixture was a 2×2×2 block of 8-cell chunks anchored at `-2.0`, spanning 1.83 of a
+4-unit domain, and P-9's `buckets_of_three_or_more` column read **0 in all 49 rows it produced** — the `k`-way merge both
+experiments were about was never in the fixture. Centred and re-run; P-8's entry replaced. |

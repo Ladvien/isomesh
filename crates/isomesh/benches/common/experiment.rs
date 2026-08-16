@@ -8,11 +8,18 @@
 //! # Why the columns are checked against the registration
 //!
 //! A prediction that names its records and then quietly drops one is a
-//! prediction that cannot be falsified on that metric. [`Run::record`] takes
-//! exactly the keys `Preregistration::records` lists and panics on any other
-//! set — so a metric abandoned mid-experiment is a failure rather than a
-//! silence. That is the same rule as F-002's one-sidedness in a different
+//! prediction that cannot be falsified on that metric. [`Run::record`] panics on
+//! a **missing** one, so a metric abandoned mid-experiment is a failure rather
+//! than a silence — the same rule as F-002's one-sidedness in a different
 //! costume: the instrument has to be able to report the bad news.
+//!
+//! **Extra columns are allowed, and the first version of this was wrong to
+//! forbid them (M-273).** It demanded the key set be *exactly* the registered
+//! records, and the immediate consequence was that adding a `field` column to
+//! identify a row required **editing the registration** — which is amending a
+//! prediction to fit the code, the one thing the whole mechanism exists to stop.
+//! `records` is a list of metrics that must be reported, not a schema for the
+//! file. Row keys are written after them, sorted, and are nobody's hypothesis.
 //!
 //! # Provenance is a comment, not a column
 //!
@@ -44,12 +51,6 @@ impl Run {
     pub(crate) fn record(&mut self, values: &[(&'static str, String)]) {
         let mut row = BTreeMap::new();
         for (k, v) in values {
-            assert!(
-                self.prereg.records.contains(k),
-                "{}: `{k}` is not one of the records this experiment registered: {:?}",
-                self.prereg.id,
-                self.prereg.records
-            );
             row.insert(*k, v.clone());
         }
         for expected in self.prereg.records {
@@ -126,10 +127,27 @@ pub(crate) fn run(prereg: &'static Preregistration, body: impl FnOnce(&mut Run))
             " (WORKING TREE DIRTY)"
         }
     );
-    let _ = writeln!(csv, "{}", prereg.records.join(","));
+    // Registered metrics first, in the order they were registered, then any
+    // extra row keys, sorted. The registration decides the columns it named and
+    // nothing else.
+    let mut extra: Vec<&'static str> = Vec::new();
     for row in &run.rows {
-        let line: Vec<&str> = prereg
-            .records
+        for k in row.keys() {
+            if !prereg.records.contains(k) && !extra.contains(k) {
+                extra.push(k);
+            }
+        }
+    }
+    extra.sort_unstable();
+    let columns: Vec<&'static str> = prereg
+        .records
+        .iter()
+        .copied()
+        .chain(extra.iter().copied())
+        .collect();
+    let _ = writeln!(csv, "{}", columns.join(","));
+    for row in &run.rows {
+        let line: Vec<&str> = columns
             .iter()
             .map(|k| row.get(k).map_or("", String::as_str))
             .collect();

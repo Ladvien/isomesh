@@ -44,14 +44,26 @@ use isomesh::validate::{ValidateConfig, validate_indexed};
 use isomesh::weld::{Welder, epsilon_for};
 use isomesh::{MeshBuffer, Sdf};
 
-/// Cells per chunk. Small enough that eight chunks stay quick, large enough that
-/// each carries surface.
-const CELLS: u32 = 8;
+/// Cells per chunk.
+///
+/// **18, not 8, and the first version's 8 was a fixture bug (M-274).** A 2×2×2
+/// block of 8-cell chunks at `h = 4/35` spans 1.83 units from `-2.0`, which does
+/// not reach the origin — so it clipped a corner off every field and no chunk
+/// edge crossed the surface anywhere interesting. 36 cells spans 4.11, which
+/// covers the `[-2, 2]` domain with the block **centred**, so the four-chunk
+/// edges and the eight-chunk corner sit where the surface is.
+const CELLS: u32 = 18;
 
 /// Cell size. `4/35` rather than a power of two, deliberately: M-32 measured
 /// that a seam is bit-exact **only** at a power of two, so a nicer spacing would
 /// hand both arms a mesh with no duplicates to reason about.
 const CELL_SIZE: f64 = 4.0 / 35.0;
+
+/// Block origin, placed so the 2×2×2 block is **centred on the field**.
+///
+/// The eight-chunk corner then sits at the origin and the four-chunk edges cross
+/// the surface, which is where a bucket can hold more than two vertices at all.
+const ORIGIN: f64 = -(2.0 * CELLS as f64) * CELL_SIZE / 2.0;
 
 /// Vertices adjacent to each vertex, from the triangle list.
 ///
@@ -236,7 +248,7 @@ fn main() {
 
     let prereg = isomesh::experiment!("P-8");
     common::experiment::run(prereg, |run| {
-        let layout = ChunkLayout::<f64>::new(CELLS, CELL_SIZE, [-2.0; 3]).expect("valid layout");
+        let layout = ChunkLayout::<f64>::new(CELLS, CELL_SIZE, [ORIGIN; 3]).expect("valid layout");
         let cfg = ValidateConfig::from_cell_size(CELL_SIZE).expect("valid cell size");
 
         println!(

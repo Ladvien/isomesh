@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**165 tickets archived, 7 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**166 tickets archived, 6 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -315,7 +315,6 @@ row before starting, because half the evidence is already there.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-002** | **k-way welds may be order-dependent — this threatens the determinism guarantee.** Dey/Fan/Wang decompose a k-way merge into k−1 pairwise merges *in the intermediate complex*, so bucket order can matter. **H:** for buckets of ≥3 coincident vertices, at least one reference field yields **≥2 distinct outputs** across P seeded permutations of within-bucket merge order. **Harness:** permute, re-weld, compare byte-identity. **Records:** distinct-output count per field, vertex count spread. **Falsified by:** all P permutations byte-identical on every field — meaning k-way weld is confluent and no canonical order is needed. **If H holds, `CLAUDE.md`'s byte-identical guarantee is violated the moment gating lands**, and a canonical merge order must be pinned in the same commit. **Run this before R-001 ships.** | M | R-001 |
 | ☐ | **R-003** | ~~**Is splitting the unsafe merges free?**~~ **Premise removed by R-001 (P-8), and the ticket is re-scoped rather than deleted.** The gated weld is strictly worse — it fixes nothing where there was something to fix and **introduces** non-manifold vertices in 12 previously-clean configurations — so there is no gated weld to price. `vertex_delta == rejected_merges` in all 49 rows, so the inflation this ticket asked about is exactly one vertex per refusal and was never the cost that mattered. **What is left is the real question R-001 surfaced:** the residual 25 non-manifold edges and 53 non-manifold vertices on `noise_cavity` under `surface_nets` and `dual_contouring` are an **extractor** defect, not a weld defect — the gate rejects 0 and 1 merges there respectively and changes nothing. **Acceptance:** locate them. Are they M-93's duplication artefact, a genuine non-manifold vertex the dual rule can produce, or an epsilon effect? A count is not a diagnosis. | M | R-001 |
 
 ---
