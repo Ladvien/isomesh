@@ -78,6 +78,30 @@ pub trait Real:
     const HALF: Self;
     /// Machine epsilon: the gap between `1.0` and the next representable value.
     const EPSILON: Self;
+    /// Unit roundoff `2⁻ᵖ`: the bound on the *relative* error of one correctly
+    /// rounded operation, `|err(a ∘ b)| ≤ UNIT_ROUNDOFF · |a ∘ b|`.
+    ///
+    /// **Half of [`EPSILON`](Self::EPSILON), and not interchangeable with it.**
+    /// `EPSILON` is the 1.0-to-next gap — `2⁻⁵²` for `f64`, `2⁻²³` for `f32`.
+    /// This is `2⁻⁵³` and `2⁻²⁴`, which is the `ε` that Shewchuk's error bounds
+    /// are written in terms of: *"in IEEE 754 double precision arithmetic,
+    /// ε = 2⁻⁵³; in single precision, ε = 2⁻²⁴"* (§3.1). Substituting `EPSILON`
+    /// would double every bound in [`crate::predicates`] — still *correct*,
+    /// since a looser bound only defers to the exact stage more often, but
+    /// slower for no reason.
+    ///
+    /// Shewchuk, *Adaptive Precision Floating-Point Arithmetic and Fast Robust
+    /// Geometric Predicates*, [`10.1007/pl00009321`](https://doi.org/10.1007/pl00009321).
+    const UNIT_ROUNDOFF: Self;
+    /// `2^⌈p/2⌉ + 1`, the Dekker–Veltkamp splitting constant.
+    ///
+    /// `p` is the significand width in bits — 53 for `f64`, 24 for `f32` — so
+    /// this is `2²⁷ + 1` and `2¹² + 1`. Used only by
+    /// [`crate::predicates`]'s `split`, which needs `a` broken into two halves
+    /// of at most `⌈p/2⌉` and `⌊p/2⌋ − 1` bits so that the four cross products
+    /// in `two_product` are each exact. Shewchuk Theorem 18, which also carries
+    /// the precondition `p > 6` — satisfied by both types by a wide margin.
+    const SPLITTER: Self;
     /// Positive infinity. Initialises bounding boxes and minimum searches.
     const INFINITY: Self;
     /// Negative infinity.
@@ -236,6 +260,7 @@ macro_rules! impl_real {
     (
         $ty:ty,
         diff_step = $diff_step:expr,
+        splitter = $splitter:expr,
         sqrt = $sqrt:path, floor = $floor:path, sin = $sin:path, cos = $cos:path,
         acos = $acos:path, atan2 = $atan2:path $(,)?
     ) => {
@@ -247,6 +272,8 @@ macro_rules! impl_real {
             const TWO: Self = 2.0;
             const HALF: Self = 0.5;
             const EPSILON: Self = <$ty>::EPSILON;
+            const UNIT_ROUNDOFF: Self = <$ty>::EPSILON * 0.5;
+            const SPLITTER: Self = $splitter;
             const INFINITY: Self = <$ty>::INFINITY;
             const NEG_INFINITY: Self = <$ty>::NEG_INFINITY;
             const DIFF_STEP: Self = $diff_step;
@@ -333,6 +360,8 @@ macro_rules! impl_real {
 impl_real!(
     f32,
     diff_step = 4.921_567e-3,
+    // 2^ceil(24/2) + 1. f32's significand is 24 bits including the implicit one.
+    splitter = 4_097.0,
     sqrt = libm::sqrtf,
     floor = libm::floorf,
     sin = libm::sinf,
@@ -344,6 +373,8 @@ impl_real!(
 impl_real!(
     f64,
     diff_step = 6.055_454_452_393_343e-6,
+    // 2^ceil(53/2) + 1. f64's significand is 53 bits including the implicit one.
+    splitter = 134_217_729.0,
     sqrt = libm::sqrt,
     floor = libm::floor,
     sin = libm::sin,

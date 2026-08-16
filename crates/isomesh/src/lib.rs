@@ -117,6 +117,7 @@ pub mod marching_tetrahedra;
 pub mod normals;
 pub mod orient;
 pub mod paint;
+pub mod predicates;
 pub mod subgrid;
 pub mod surface_nets;
 pub mod transvoxel;

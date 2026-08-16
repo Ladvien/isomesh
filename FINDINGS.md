@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**372 entries** — 21 falsified, 296 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**374 entries** — 22 falsified, 297 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -60,7 +60,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗19` | "Manifold Dual Contouring's uniform-grid surface is always a manifold" |
 | `✗20` | "Every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input" |
 | `✗21` | "Convex Primitive Decomposition is the cutting substrate a plane-cut fracture pipeline wants" |
-| `✗22` | "`MeshReport` applies a closed-solid test to render meshes, so it must be split into two report types" |
+| `✗22` | "MeshReport applies a closed-solid test to render meshes, so it must be split into two report types" |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -357,6 +357,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-299` | the on-demand split is free for the pseudonormal and costs a factor of N for the winding number (S-008) |
 | `M-300` | FALSIFIED, and not where it was predicted: the gap is non-manifold vertices, not self-intersections (R-011) |
 | `M-301` | the bowtie that passed: a closed, edge-manifold, consistently oriented surface that is not a 2-manifold (T-021) |
+| `M-302` | the naive orient2d fails by reporting collinear, not by reporting a false crossing (T-024a) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -4027,3 +4028,42 @@ them; this one had no doc comment because it had no field.
 
 **Would be shown wrong by:** a physics engine answering an inside/outside query correctly at a bowtie
 apex, which would make the tightened predicate too strict rather than newly right.
+
+
+### M-302 — the naive `orient2d` fails by reporting collinear, not by reporting a false crossing (T-024a)
+
+**M.** T-024a's acceptance asked for *"a degenerate fixture (three collinear points, two coincident
+within ε) that the float path misclassifies and the exact path does not."* Two constructions built to
+that description **cannot exist**, and finding out why sharpened what the predicate is actually for.
+
+**Exactly collinear input does not break the naive determinant, provided the differences are exact.**
+`fl(x · y)` is a function of the real product `x · y` alone. So if `u₁v₂ = u₂v₁` exactly as reals —
+which is what collinearity *means* for the difference vectors — then `fl(u₁v₂)` and `fl(u₂v₁)` are the
+**same float**, and their difference is exactly `0.0`. Rounding cannot manufacture a disagreement
+between two equal real quantities. Measured, not argued: a first fixture of three points on `y = x`
+gave the naive form exactly `0.0`, and a search over 3,000,000 near-collinear integer triples at
+coordinates up to `2³⁰` found **zero** sign disagreements.
+
+**So the error lives in the subtractions, and the failure mode is the opposite of the expected one.**
+The reachable defect is a **false zero**: points that are *not* collinear reported as collinear. The
+committed fixture is `a = (2147483647, 2147483645)`, `b = (−1073741823, −1073741822)`, `c = (0, 0)` —
+an extended-Euclid pair whose exact determinant is **1**, the smallest nonzero value integer input
+admits, while both products land near `2⁶¹` where one ulp is 512. The naive form returns exactly
+`0.0`; `orient2d` returns positive. Coordinates stay below `2⁵³`, so every one is exactly
+representable and the `i128` oracle is exact.
+
+**Why this matters more than the symmetric case would have.** A false *crossing* is self-correcting —
+downstream code sees an inconsistency. A false *collinear* is the reading a triangulator trusts: it is
+the answer that says "no decision needed here", so it silently drops a constraint rather than
+producing a visible contradiction. T-022's flood fill halts at constrained edges, and an edge the
+predicate calls degenerate is an edge the fill walks straight through.
+
+**Method note.** Both dead fixtures were written from a plausible description of the failure — the
+one in the ticket, which came from the same 2026-08-16 brief as ✗21 and ✗22 — and neither was tested
+against an oracle before being believed. The search that replaced them took minutes. **A fixture that
+"obviously" exercises a path is a hypothesis about the path.**
+
+**Would be shown wrong by:** a collinear configuration where the difference vectors themselves round,
+making `u₁v₂` and `u₂v₁` unequal as reals even though the original points are collinear. That is
+reachable — it needs coordinates far enough apart that `a − c` is inexact — and would mean the
+false-nonzero mode exists too, at coordinate ranges this fixture does not reach.
