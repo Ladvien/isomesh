@@ -123,7 +123,10 @@ done
 # Each phrase below can only be a claim about the whole set. Adding one is
 # cheap; adding a loose one costs everybody who runs this.
 
-check "$FIELDS" "reference fields" 'reference fields'
+# `[a-z]* ?` absorbs one adjective, because "seven **shipped** reference
+# fields" hid from the first version of this check while "seven reference
+# fields" three lines away did not.
+check "$FIELDS" "reference fields" '[a-z]* ?reference fields'
 check "$EXTRACTORS" "extractors" 'extractors, side by side'
 check "$EXTRACTORS" "extractors" 'isosurface extractors'
 check "$HASHES" "golden hashes" 'golden hashes'

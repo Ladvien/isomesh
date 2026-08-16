@@ -10,10 +10,11 @@
 
 ![Eight of the examples running at once: a field built from primitives and smooth-unioned into a mushroom, caves and arches, letters thinner than a single voxel, one cell meshed as two discs and as a tunnel, Surface Nets against Marching Cubes, terrain being carved, a ball crossing streamed chunk seams, and a slab blown apart into debris](docs/gifs/kitchen-sink.gif)
 
-*Six examples, all running. **Top:** caves and arches from a nine-line field; eight edits replayed as a
-re-fold of the log; a ball walking 1,348 chunk-seam crossings with zero holes. **Bottom:** a slab
-blown apart, where the debris is the boolean; letters 1.00 voxels thick resolved by subgrid marching
-tetrahedra; the same sphere under Surface Nets and Marching Cubes.*
+*Eight examples, all running, all recorded from this commit. **Top:** a mushroom assembled from four
+primitives by smooth union; caves and arches from a nine-line field; letters thinner than one voxel
+that Marching Cubes cannot see; one cell meshed as two discs and as a tunnel. **Bottom:** Surface Nets
+against Marching Cubes on the same grid; a tunnel being carved; a ball walking 495 chunk-seam
+crossings with zero holes; a slab blown apart, where the debris is the boolean.*
 
 Every one of those is `cargo run --example` in `bevy_isomesh/`, and each has its own section below.
 
@@ -23,7 +24,7 @@ Every one of those is `cargo run --example` in `bevy_isomesh/`, and each has its
 cargo add isomesh
 ```
 
-Implement `Sdf` for your field — or use one of the seven shipped reference fields — and extract:
+Implement `Sdf` for your field — or use one of the eight shipped reference fields — and extract:
 
 ```rust
 use isomesh::marching_cubes::MarchingCubes;
@@ -98,28 +99,6 @@ cd bevy_isomesh && cargo run --example game_showcase --release
 
 ![A ball walking across streamed terrain, chunks loading continuously around it](docs/gifs/walking-the-seams.gif)
 
-## Building the field, not meshing it
-
-![Four SDF primitives on a shelf — capsule, sphere, box, torus — and one mushroom assembled from them by smooth union and difference](docs/gifs/building-a-field.gif)
-
-*Every other example here starts from a field that already exists. This one has no meshing content at
-all: the extractor is the default and the only thing that changes is the expression. Left, the four
-primitives. Right, `Union { SmoothUnion { stem, Difference { cap, flat }, k }, gills }`. **`k` is the
-knob a level designer reaches for** — at zero the stem meets the cap in a crease, and by 0.25 it is a
-fillet — and `[` and `]` sweep it and re-mesh while the triangle count and extraction time update.*
-
-## One cell, meshed twice
-
-![The same cell meshed twice: two separate discs under the face rule, one cylinder under the interior rule, with the inner hexagon drawn](docs/gifs/the-tunnel-meshed-as-a-tunnel.gif)
-
-*Marching Cubes 33's interior ambiguity, which is the hardest thing in this repository and the easiest
-to show once the surfaces are filled rather than drawn as outlines. **Left** the face rule alone: two separate discs, two components, χ = 2. **Right** the same
-cell with the interior rule: one cylinder through it, one component, χ = 0. A tunnel is a handle and a
-handle costs exactly two — the difference is arithmetic, not a matter of opinion, and the HUD reports
-it every frame. The gold ring is the inner hexagon: six body saddles of the trilinear interpolant,
-the points Grosso's whole construction is built from.*
-
-
 *Nothing here is pre-baked. Every chunk under that ball was extracted while the camera flew toward it,
 on a background thread, under a frame budget — and the ball is standing on the **triangles**, not on the
 field they came from.*
@@ -149,9 +128,37 @@ frame budget bounds is turning finished extractions into assets.
 cd bevy_isomesh && cargo run --example game_walk --release
 ```
 
+## Building the field, not meshing it
+
+![Four SDF primitives on a shelf — capsule, sphere, box, torus — and one mushroom assembled from them by smooth union and difference](docs/gifs/building-a-field.gif)
+
+*Every other example here starts from a field that already exists. This one has no meshing content at
+all: the extractor is the default and the only thing that changes is the expression. Left, the four
+primitives. Right, `Union { SmoothUnion { stem, Difference { cap, flat }, k }, gills }`. **`k` is the
+knob a level designer reaches for** — at zero the stem meets the cap in a crease, and by 0.25 it is a
+fillet — and `[` and `]` sweep it and re-mesh while the triangle count and extraction time update.*
+
+## One cell, meshed twice
+
+![The same cell meshed twice: two separate discs under the face rule, one cylinder under the interior rule, with the inner hexagon drawn](docs/gifs/the-tunnel-meshed-as-a-tunnel.gif)
+
+*Marching Cubes 33's interior ambiguity, which is the hardest thing in this repository and the easiest
+to show once the surfaces are filled rather than drawn as outlines. **Left** the face rule alone: two separate discs, two components, χ = 2. **Right** the same
+cell with the interior rule: one cylinder through it, one component, χ = 0. A tunnel is a handle and a
+handle costs exactly two — the difference is arithmetic, not a matter of opinion, and the HUD reports
+it every frame. The gold ring is the inner hexagon: six body saddles of the trilinear interpolant,
+the points Grosso's whole construction is built from.*
+
+
 ---
 
 ## Marching Cubes returns 0 triangles here. Subgrid returns 1,340.
+
+![The word ISO meshed by two extractors as the letters thin; the Marching Cubes panel loses them entirely while the subgrid panel is unchanged](docs/gifs/subgrid-letters-thinner-than-a-voxel.gif)
+
+*One field, one grid, two extractors, and a sweep driving the letters from 1.6 voxels thick down to
+0.2. Left, Marching Cubes: first a scatter, then nothing. Right, subgrid Marching Tetrahedra,
+unchanged.*
 
 A feature thinner than a voxel does not exist to a method that asks *"what sign is this grid corner"* —
 one bit per edge, and a thin sheet fits between the samples. **M-67** puts a number on the gap: a sign
@@ -161,7 +168,7 @@ test cannot distinguish **95.6%** of the configurations a tetrahedron can actual
 letters 0.35 voxels thick, Marching Cubes returns **0** triangles and subgrid returns **1,340** — on the
 same grid, at any resolution you like.
 
-[See it lose them, on the algorithms page →](docs/demos/algorithms.md)
+[The measured version, on the algorithms page →](docs/demos/algorithms.md)
 
 ---
 
@@ -171,11 +178,66 @@ Early. **Seven** extraction algorithms — including one that resolves features 
 
 | | |
 |---|---|
-| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · **MC33's interior ambiguity (tunnels and the twelve-vertex contour)** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **seven-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · eight reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · **frame-budget scheduling** · **subgrid Marching Tetrahedra** · **chunk streaming with hysteresis** · Bevy 0.19 bridge and plugin · **GPU compute Marching Cubes** · **GPU prefix scan** · **GPU field evaluation** · **mesh-shader rendering** |
+| **Working** | Marching Cubes · **Marching Cubes 33's asymptotic decider** · **MC33's interior ambiguity (tunnels and the twelve-vertex contour)** · Marching Tetrahedra · Surface Nets · **Dual Contouring** · **Manifold Dual Contouring** · greedy quads · Hermite data · mesh validity harness · accuracy harness · **seven-algorithm shootout** · chunk coordinates · dirty-set re-meshing · brushes · self-intersection counter · determinism harness · eight reference fields · property tests · vertex welding · **collider readiness** · **field-derived LOD** · **Transvoxel transition cells** · **frame-budget scheduling** · **subgrid Marching Tetrahedra** · **chunk streaming with hysteresis** · Bevy 0.19 bridge and plugin · **GPU compute Marching Cubes** · **GPU prefix scan** · **GPU field evaluation** · **mesh-shader rendering** · distance-field construction · **paint that lives in the edit log** · orientation repair · **pre-registration the compiler enforces** |
 | **Not yet** | the singular face — a saddle lying *on* a cell face, which quantised input reaches and continuous `f64` does not (A-002i) · convex decomposition |
 | **Deliberately absent** | any math library in the public API · any `bevy` mention under `crates/` · any performance number without a committed benchmark |
 
+One optional feature: `experimental`, which adds `ProbabilisticQuadric`. It is off by default and on for docs.rs, so you can read what is behind it without checking out the source to find that it exists.
+
 Published on crates.io: [`isomesh`](https://crates.io/crates/isomesh) and [`isomesh-gpu`](https://crates.io/crates/isomesh-gpu). Releases are CI-driven: `scripts/publish.sh` is version-driven and uploads only what crates.io does not already have, so a version bump landing on `main` is the release.
+
+---
+
+## Experiments that held, and what they buy you
+
+Seventeen times, this project wrote down what it expected to measure — and what result would prove it
+wrong — **before running the measurement**. Ten of those are enforced by the compiler:
+
+```rust,ignore
+// This line does not compile if "P-8" is not in `PREREGISTERED`.
+let p = isomesh::experiment!("P-8");
+```
+
+An unregistered id is a **compile error**, not a test failure. `Preregistration` is `#[non_exhaustive]`
+so the macro is the only way to obtain one. And `falsified_by` is not optional — there is no way to
+express a registration without it, which is the point of the field existing.
+
+Registering is a commit, so git carries the ordering that prose cannot.
+
+| prediction | verdict | what it means if you depend on this |
+|---|---|---|
+| one canonical `world_of_sample` closes seam cracks at every cell size | **held** | Chunk seams are exact **only at power-of-two cell sizes** today — 0 unmatched edges there, 63–348 at `0.1`. The weld hides it; an unwelded consumer gets it in full |
+| over half the dual mesher's cycles are in `emit_quads` | **held**, `r²` = 0.995 | 45% of instructions, **82% of the time**. This is the measurement that made the 4.26× below possible |
+| the k-way weld's order changes its output | **held** | It is not confluent, so vertex order is pinned deliberately. Your meshes reproduce byte-for-byte |
+| sharp-feature angles are a property of the field, not a defect with a location | **held**, after a bug reversed two wrong verdicts | Nothing to fix; something to know |
+| a link-condition-gated weld reaches zero non-manifold output | **falsified**, both clauses | The gate makes it **worse**. The crate does not ship one, and now you know why rather than wondering |
+| the dual's superlinearity is a cache-miss effect | **falsified** … then true | A null measured under a dominant confound is a statement about the confound |
+| Manifold Dual Contouring's residue is an interior ambiguity | **falsified** | Bounded exhaustively instead, then reduced to a 48-sample fixture |
+
+Five of the ten held, four were falsified, one never ran. A section called "experiments that held"
+which quietly dropped the failures would be exactly the failure this machinery exists to prevent, so
+they are all here.
+
+**Three that are worth your time:**
+
+- **The 4.26×, and not one triangle changed.** Making the dual's loop axis a `const` generic and
+  forcing its sample row length odd took Surface Nets at 256³ from **693.8 ms to 162.7 ms**, IPC from
+  **1.20 to 4.09**, and `SN/MC` from **5.43× to 1.26×**. Golden hashes untouched. It also falsified
+  ✗14, this repository's own claim that Surface Nets *"never wins on Zen 3, at any resolution"* — it
+  now wins at 16³, 24³ and 32³.
+- **One bit of a row length cost 3.4× at 128³**, the canonical voxel chunk size, because a 64 KiB plane
+  stride is a cache-set aliasing period. Diagnosed before any code changed, with a `z`-axis control
+  that adds the same work and keeps the whole penalty.
+- **A reference gradient was returning noise**, and it had recorded two true hypotheses as falsified.
+  Past-90° vertices went 6,959 → **472** when it was fixed. Both falsified entries are still in the
+  ledger under a banner, because deleting them would delete the evidence that the instrument can be
+  the broken thing.
+
+Every number in these docs carries a tier: **M** measured here · **V** verified from a primary source ·
+**R** reported · **F** folklore · **✗** falsified. Never cite an R or F claim as justification for a
+design decision without saying which it is.
+
+**[The full record →](docs/experiments.md)** · [`FINDINGS.md`](FINDINGS.md), 363 entries
 
 ---
 
@@ -198,14 +260,17 @@ The math-library pin is the load-bearing one. Bevy 0.19 wants glam 0.32, `parry3
 
 ## Demos
 
-The rest of the pictures live on three pages, so this one stays short. Every figure on them came from a
-command you can run, and every number is measured on one of the two machines in
+**[→ The demo page](bevy_isomesh/DEMOS.md)** — all 34 examples, each with an animated capture, the
+exact command, its controls, and the finding it demonstrates.
+
+The longer write-ups live on three further pages, so this one stays short. Every figure on them came
+from a command you can run, and every number is measured on one of the two machines in
 [`FINDINGS.md`](FINDINGS.md)'s header rather than quoted from a paper.
 
 | | |
 |---|---|
 | **[Gameplay](docs/demos/gameplay.md)** | the whole extract-and-draw pipeline on the GPU · streaming a world past a camera · walking every chunk seam with a rigid body · digging tunnels · shooting a wall so the debris *is* the boolean · spraying graffiti that survives the wall being blown open · flying an LOD ladder and counting what opens up · handing a mesh to a physics engine |
-| **[Algorithms](docs/demos/algorithms.md)** | Marching Cubes · Surface Nets · Dual Contouring · Manifold Dual Contouring · Marching Tetrahedra · greedy quads · subgrid Marching Tetrahedra, and a six-way shootout in one process |
+| **[Algorithms](docs/demos/algorithms.md)** | Marching Cubes · Surface Nets · Dual Contouring · Manifold Dual Contouring · Marching Tetrahedra · greedy quads · subgrid Marching Tetrahedra, and a seven-way shootout in one process |
 | **[Correctness](docs/demos/correctness.md)** | where a mesh stops being a manifold · what splitting the vertex costs · which way the surface faces · ambiguous faces · the crack between two chunks |
 
 Between them they carry every measured figure this crate makes a claim about, and each one names the command that regenerates it.
