@@ -2774,18 +2774,31 @@ fn without_a_constant_no_cell_is_rejected() {
     assert!(out.triangle_count() > 0);
 }
 
-/// **What empty-cell rejection buys, per field (F-005, M-248).**
+/// **What empty-cell rejection buys, per field (F-005, M-248, ✗24).**
 ///
 /// M-98 found this extractor's cost is entirely its constant — `6 tets × 6 edges
 /// × 16 samples = 576` field evaluations per cell against Marching Cubes' 8 —
 /// and F-005's claim is that one evaluation deletes that constant for every cell
-/// the surface does not reach. This is the measurement, recorded rather than
-/// asserted, because the interesting part is how much it varies.
+/// the surface does not reach.
 ///
-/// Timing is a ratio against Marching Cubes on the same grid in the same
-/// process, so it is comparable across machines in a way a millisecond is not.
-/// **Not a regression gate** — the thresholds are loose enough to survive a busy
-/// machine, and `docs/measurements/` is where precise figures live.
+/// # The thing asserted is the rejected-cell count, and it used to be a stopwatch
+///
+/// This test asserted `speedup > 1.0` **per field**, under a doc comment that
+/// said in the same breath *"recorded rather than asserted"* and *"not a
+/// regression gate"*. The code and the prose disagreed, the code won, and it
+/// failed the 0.0.7 release on a macOS runner at `gyroid 0.98x` — a number whose
+/// sign is set by which side of the noise the runner landed on.
+///
+/// ✗24 is why that was never a threshold problem. What rejection can save is
+/// bounded by **how many cells it rejects**, and that count is a property of the
+/// field: `gyroid` is triply periodic and its surface reaches essentially every
+/// cell, so there is nothing to reject and the one extra evaluation per cell is
+/// pure overhead. *"Every field must benefit, however little"* is false on the
+/// merits, not merely unmeasurable.
+///
+/// So the gate is the count — deterministic, identical on every machine — and
+/// the ratio stays as a printed record. The correctness half is unchanged and is
+/// the one that always mattered: **rejection must not move a single triangle.**
 #[test]
 fn empty_cell_rejection_is_measured_per_field() {
     use crate::MeshBuffer;
@@ -2793,6 +2806,7 @@ fn empty_cell_rejection_is_measured_per_field() {
     use std::time::Instant;
 
     const SAMPLES: u32 = 17;
+    const CELLS: u32 = SAMPLES - 1;
     let mut rows = alloc::vec::Vec::new();
 
     crate::for_each_reference_field!(f64, |name, field| {
@@ -2800,6 +2814,22 @@ fn empty_cell_rejection_is_measured_per_field() {
             let (lo, hi) = field.domain();
             let h = (hi[0] - lo[0]) / f64::from(SAMPLES - 1);
             let shape = crate::RuntimeShape3::new([SAMPLES; 3]).expect("valid shape");
+
+            // The deterministic half: how many cells one evaluation can prove
+            // empty. This is what bounds the saving, and it is the same integer
+            // on every machine.
+            let mut prover = SubgridMarchingTetrahedra::<f64>::new(16).expect("valid resolution");
+            prover.set_lipschitz(Some(l));
+            let mut rejected = 0u32;
+            for z in 0..CELLS {
+                for y in 0..CELLS {
+                    for x in 0..CELLS {
+                        if prover.cell_is_provably_empty(&field, lo, h, [x, y, z]) {
+                            rejected += 1;
+                        }
+                    }
+                }
+            }
 
             let best = |lipschitz: Option<f64>| {
                 let mut out = MeshBuffer::<f64>::new();
@@ -2823,22 +2853,46 @@ fn empty_cell_rejection_is_measured_per_field() {
                 tris, tris_fast,
                 "{name}: rejection changed the triangle count"
             );
-            rows.push((name, slow / fast));
+            let share = f64::from(rejected) / f64::from(CELLS * CELLS * CELLS);
+            rows.push((name, rejected, share));
             std::println!(
-                "measured: {name:<16} rejection speedup {:>5.2}x",
+                "measured: {name:<16} rejected {rejected:>5} of {:<5} ({:>5.1}%)  \
+                 speedup {:>5.2}x",
+                CELLS * CELLS * CELLS,
+                share * 100.0,
                 slow / fast
             );
         }
     });
 
     assert!(rows.len() >= 5, "only {} fields had a constant", rows.len());
-    // Every field must benefit, however little: a cell the surface does not
-    // reach exists in every one of them.
-    for (name, speedup) in &rows {
+
+    // The mechanism fires on every field that offers a constant. Zero here
+    // would mean the predicate never proves anything, which is a different bug
+    // from proving little.
+    for (name, rejected, _) in &rows {
         assert!(
-            *speedup > 1.0,
-            "{name}: rejection made it slower ({speedup:.2}x), which means the test \
-             is costing more than the 576 evaluations it saves"
+            *rejected > 0,
+            "{name}: rejection proved no cell empty at all"
         );
     }
+
+    // ✗24, as a number rather than a stopwatch. The benefit is bounded by the
+    // rejected share and that share is a property of the *field*: a triply
+    // periodic surface reaches nearly every cell and leaves nothing to reject,
+    // while a compact one leaves almost everything. Asserted as a spread rather
+    // than per field, because naming a field in a gate is what this repo's
+    // validity rules forbid — and because the spread is the finding.
+    let lowest = rows.iter().map(|r| r.2).fold(f64::INFINITY, f64::min);
+    let highest = rows.iter().map(|r| r.2).fold(f64::NEG_INFINITY, f64::max);
+    assert!(
+        lowest < 0.25,
+        "no field rejects under a quarter of its cells (lowest {lowest:.3}); the \
+         suite has lost the case where rejection cannot pay for itself"
+    );
+    assert!(
+        highest > 0.9,
+        "no field rejects over nine tenths of its cells (highest {highest:.3}); the \
+         suite has lost the case rejection exists for"
+    );
 }

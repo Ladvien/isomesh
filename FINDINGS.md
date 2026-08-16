@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**379 entries** — 23 falsified, 300 measured, 36 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**381 entries** — 24 falsified, 301 measured, 36 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -62,6 +62,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗21` | "Convex Primitive Decomposition is the cutting substrate a plane-cut fracture pipeline wants" |
 | `✗22` | "MeshReport applies a closed-solid test to render meshes, so it must be split into two report types" |
 | `✗23` | "Manifold Dual Contouring queries where it needs to, so it wants an on-demand field" |
+| `✗24` | "Empty-cell rejection benefits every field, however little" |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -362,6 +363,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-303` | HELD: the winding crossover is N², not N³, and the per-point cost is linear in boundary edges (S-009) |
 | `M-304` | a green preflight.sh is not a green CI, because the toolchains differ (0.0.6 release) |
 | `M-305` | the weld key does what it says, and H's wording was wrong anyway (R-010) |
+| `M-306` | what empty-cell rejection can save is bounded by a count, and that count is a property of the field (✗24) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1558,6 +1560,7 @@ Rules with no incident behind them get ignored. These all have one.
 | **A generator that recognises one shape stops counting when the shape changes — and its staleness check cannot see that** | M-277 — `findings_index.sh` matched Part 2's table rows and Part 1's `✗` headings. Measurements became `###` sections at M-255 and **twenty-two of them fell out of the index while `--check` stayed green**, because a staleness check compares the file against the generator and the two agreed. The count read *"249 measured"* against 271 present. **Check a generator against its source's own vocabulary, not against its previous output** — one `grep -c '^### M-'` beside `grep -c '^| M-'` is the whole test, and it is the check that was never written |
 | **A file that records state drifts from the state unless something checks it. Write the check the second time, not the third** | E-113 — the demo shipped at `a0859e8`, the README referenced it, and its row sat in `BACKLOG.md` for four more commits; the header counts drifted from the row counts separately. Both were found by audit, both were caused by editing one file with several scripts in one turn where a later write clobbered an earlier one. The same defect was sitting in `FINDINGS.md` unnoticed: **O-1, O-2 and O-4 were still listed as open questions** after G-002, A-009 and G-003 had all landed and answered them. `scripts/backlog_gate.sh` is the check, and it is mutation-tested against all eight ways the two files can disagree — because a gate that has only ever passed is indistinguishable from one that cannot fail (M-44) |
 | **An instrument that cannot report the failure has not reported the success. Show it producing a non-zero before trusting its zero** | E-208 — the paint-drift readout measured "did the colour at this point change", and the scripted run sprayed one colour, so repainting red over red was numerically identical to paint that never moved. It printed **0.000000 at every step**, which is the answer the ticket wanted, and it would have printed the same on an implementation that smeared. Cycling the palette turned the same instrument sensitive — **27 of 40 sprays register drift, up to 0.886** — and only then does the **0.000000 across both carves** mean anything. This is M-75's rule in a different costume (*"a test that returns the same answer when you invert the thing it is testing is not measuring that thing"*), and the reason it earns its own row is that here the instrument was not inverted, it was **starved**: the input never varied in the dimension being measured |
+| **A wall-clock ratio is not a gate. Gate the count the ratio samples** | ✗24 — `empty_cell_rejection_is_measured_per_field` asserted `speedup > 1.0` on every field under a doc comment that said *"recorded rather than asserted"* and *"not a regression gate"*. It failed the 0.0.7 release on a macOS runner at `gyroid 0.98×`, having passed at `1.10×` here — the **same measurement**, with the sign set by the runner. The fix is not a looser threshold: what rejection can save is bounded by **how many cells it proves empty**, and that is an integer, identical everywhere, **16.8%** on `gyroid` against **80.6–95.1%** on every other field. Find the deterministic quantity the timing is a proxy for and assert *that*; print the timing. Related to M-281 (*a millisecond is a property of the binary*) and its sibling: a **ratio** survives the build, and still does not survive the machine when the true ratio is 1 |
 | A typed error at the call site is louder than an abort — make the invalid state unrepresentable where you can, report it where you can't, and never substitute a default | The no-panic rule, reconciled with "fail loudly": `ValidateConfig` has private fields and one checked constructor, so the validator needs no runtime guard at all |
 | Corpus presence is decided by `catalog_read`, never by `distill_search` | ✗4 — 342 documents readable but unsearchable |
 | **`for_each_reference_field!` looks like a closure and is not. A `return` in its body exits the whole test** | M-199 — the macro takes `\|name, field\|` and **inlines its body once per field as a plain block**, because each field is a different type and no single closure can take all seven. So `if name != "gyroid" { return; }` returned from the *test function* on `sphere`, and the test **passed while running neither control nor the assertion that both had run**. Use `if name == …` instead. The `continue`/`break` uses elsewhere in the tree are all inside genuine inner loops and are fine — a bare one would not compile, which is the only reason this trap is spelt `return` and nothing else. The macro's own doc now says so |
@@ -4348,3 +4351,73 @@ against an oracle before being believed. The search that replaced them took minu
 making `u₁v₂` and `u₂v₁` unequal as reals even though the original points are collinear. That is
 reachable — it needs coordinates far enough apart that `a − c` is inexact — and would mean the
 false-nonzero mode exists too, at coordinate ranges this fixture does not reach.
+
+
+### ✗24 — "Empty-cell rejection benefits every field, however little"
+
+**Believed because:** the sentence sitting in `empty_cell_rejection_is_measured_per_field` as a code
+comment — *"a cell the surface does not reach exists in every one of them"* — which is **true** and
+does not imply what was inferred from it. Every field does have unreached cells. What decides whether
+rejection pays is not whether such cells exist but **what fraction of the grid they are**, and nobody
+counted.
+
+**Falsified by the 0.0.7 release, on a macOS runner, at `gyroid 0.98×`.** The assertion was
+`speedup > 1.0` per field, and the test's own doc comment said in the same breath *"recorded rather
+than asserted"* and *"not a regression gate"*. The prose was right and the code was the gate. The
+publish step was skipped and nothing uploaded — the second release in this repo stopped by a green
+local suite and a red CI one (M-304 was the first).
+
+**What's true instead, counted rather than timed (M-306).** The rejected-cell share at 17³ is
+**16.8%** on `gyroid` and **80.6–95.1%** on every other field that offers a constant. `gyroid` is
+triply periodic; its surface reaches nearly every cell in any finite box, so there is almost nothing
+to prove empty and the one extra evaluation per cell is close to pure overhead. A 1.10× ratio on the
+Ryzen and 0.98× on a contended runner are the *same measurement*, and which side of 1.0 it lands on is
+set by the runner rather than by the code.
+
+**So this was never a threshold problem.** Loosening `> 1.0` to `> 0.9` would have bought a release
+and kept a gate whose subject is the runner. The gate is now the **rejected count**, which is an
+integer, identical on every machine, and bounds the saving that the ratio can only sample. The ratio
+stays printed.
+
+**Would be shown wrong by:** a field with a low rejected share that nonetheless shows a large speedup,
+which would mean the saving is not bounded by the count and the mechanism is something else.
+
+**The residual, named rather than fixed.** `the_reject_agrees_with_brute_force_and_is_faster` in
+`construct/from_mesh` asserts `fast_ms < brute_ms` and is the last wall-clock gate in the suite. Its
+margin is **2.4×** on this machine in a debug build, against `gyroid`'s 1.10×, and the asymmetry it
+tests is algorithmic (`O(samples × triangles)` against a two-level box reject) rather than a per-cell
+constant. Left as-is with the margin on record; if it ever flakes, the same treatment applies —
+assert the rejected-triangle count, print the ratio.
+
+
+### M-306 — what empty-cell rejection can save is bounded by a count, and that count is a property of the field (✗24)
+
+**M.** `cargo test -p isomesh --lib empty_cell_rejection_is_measured_per_field -- --nocapture`, 17³
+(4,096 cells), `SubgridMarchingTetrahedra` at 16 samples per edge, Ryzen 9 5900X, debug build. The
+rejected count is `cell_is_provably_empty` over every cell — deterministic, and the same integer on
+any machine. The ratio is best-of-three each way in one process.
+
+| field | rejected / 4,096 | share | speedup |
+|---|---|---|---|
+| `thin_plate` | 3,896 | 95.1% | 7.2–7.7× |
+| `torus` | 3,768 | 92.0% | 3.8× |
+| `sphere` | 3,752 | 91.6% | 3.9× |
+| `box_exact` | 3,312 | 80.9% | 2.6× |
+| `csg_difference` | 3,300 | 80.6% | 2.7× |
+| **`gyroid`** | **688** | **16.8%** | **1.1×** |
+
+**The spread is 5.7× in the count and it is the whole story.** `gyroid` is the only field below a
+quarter and the only field whose ratio is near 1; every other field is above four fifths and every
+other ratio is comfortably above 2. F-005's claim — one evaluation deletes the 576-evaluation constant
+for every cell the surface does not reach — **holds exactly as stated and is silent about how many
+such cells there are**, which is the quantity that decides whether the technique is worth switching
+on.
+
+**Rejection moves no triangle on any field**, asserted rather than sampled, and that half is unchanged
+from the original test: it is the only property of rejection that has to hold, and it is the one a
+consumer is entitled to rely on.
+
+**Note the ratio is not monotone in the share at the top end** — `sphere` 91.6% / 3.9× against `torus`
+92.0% / 3.8×, and `box_exact` 80.9% / 2.6× against `csg_difference` 80.6% / 2.7×. Both pairs are
+within the run-to-run spread of each other, so the count separates the *regimes* and does not predict
+the ratio to a decimal. That is exactly why the count is the gate and the ratio is a print.
