@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**361 entries** — 19 falsified, 287 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**362 entries** — 19 falsified, 288 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -345,6 +345,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-290` | the ambiguous face in the dual path, with the source read at last (A-022) |
 | `M-291` | FALSIFIED, and the sharper form of it points the other way (A-025) |
 | `M-292` | no two-cell configuration forces Manifold Dual Contouring's defect (A-025) |
+| `M-293` | the excluded workspace's fourth gate incident, and this one is local (A-025 follow-on) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1530,6 +1531,7 @@ Rules with no incident behind them get ignored. These all have one.
 | **On a governed CPU a nanosecond is not a unit. Report cycles, and put the clock on the row** | M-280 — the same binary reported Marching Cubes at 48³ as 8.13 and 14.66 ns/sample with cycles/sample unchanged at ~34, because `amd-pstate-epp` on `powersave` spans 1.96–5.62 GHz. Nothing on the face of either number said which clock it was. Every row now carries `ghz`, computed as cycles ÷ nanoseconds, so the artefact states it rather than inviting the inference |
 | **A reference implementation used as ground truth needs the same scrutiny as the thing it checks — and when a measurement is impossible, suspect the instrument before the world** | M-289 — R-006 and R-008 both compared a mesh against an analytic gradient, and every control they carried was about whether the *mesh* was being measured fairly: rotate the fixture, offset the apex, add a no-crease case, check the vertex is on the surface. **None asked whether the gradient was right**, and it was wrong at exactly the points being measured — normalising a cancellation residue for any point epsilon-outside the surface, which is about half of them. Two hypotheses were reported falsified and both were true. The tell was there from the start and was misread twice: an area-weighted normal cannot leave the cone its faces span, so a past-90° reading was **arithmetically impossible**, and M-283 recorded the impossibility and went looking for strange geometry instead of a broken instrument |
 | **A fixture can exhibit the property too perfectly. Exactness is the tell, not the confirmation** | M-283 — a wedge whose bisector lay on a grid axis reproduced P-13's predicted angle to **four decimal places** at three dihedrals and three resolutions: 75.0000, 60.0000, 45.0000. Turning the same wedge 17° or 37° about its own crease gives 20.1–128.0° for the same dihedrals. The exact agreement is a property of the symmetry between the crease and the sampling — the worst vertex is then the symmetric one — and nothing about `75.0000` at three resolutions looks like an artefact. *(The numbers in this row were first taken from the run M-289 corrects; the aligned fixture's four decimals are unchanged by that correction, which is the part the rule is about.)* Part 5 already says to *search* for a fixture that exhibits the property; this is the other half — **when a measurement matches a prediction exactly, vary the fixture's orientation before believing it** |
+| **A deliberately excluded workspace is excluded from your pre-commit loop too, and "run both" in prose is not a gate** | M-293 — `bevy_isomesh` is out of the root workspace for a real reason (feature unification, M-190), so `cargo check --workspace --all-targets` does not compile it. F-001 changed a `ReferenceField` method and broke an example there; **58 commits went by** with every local gate green, and only the full end-of-night sweep found it. CI has run the right command all along and simply had not seen the branch — 75 commits unpushed. `CLAUDE.md` says *"run both"* in two separate places, which is the evidence that saying it is not sufficient. **The fourth incident from one exclusion, and the first where the CI step already existed** |
 | **A millisecond is a property of the binary. Compare within one build and one run, or compare ratios** | M-281 — two of this repo's benches measured Marching Cubes on the same field at the same resolutions with the same median rule and disagreed by a **uniform 1.24–1.36×**, including at 16³ where the whole run is 40 µs. Both loop shapes in **one** binary are identical (0.991–1.002), and adding **one unrelated function** to `resolution_sweep.rs` moved its own 256³ row from 152.5 to 130.8 ms. Layout bias, with a paper — Mytkowicz et al., ASPLOS 2009 (`10.1145/1508284.1508275`). `benches/layout_bias` is the standing check, and it asserts rather than prints |
 | **A generator that recognises one shape stops counting when the shape changes — and its staleness check cannot see that** | M-277 — `findings_index.sh` matched Part 2's table rows and Part 1's `✗` headings. Measurements became `###` sections at M-255 and **twenty-two of them fell out of the index while `--check` stayed green**, because a staleness check compares the file against the generator and the two agreed. The count read *"249 measured"* against 271 present. **Check a generator against its source's own vocabulary, not against its previous output** — one `grep -c '^### M-'` beside `grep -c '^| M-'` is the whole test, and it is the check that was never written |
 | **A file that records state drifts from the state unless something checks it. Write the check the second time, not the third** | E-113 — the demo shipped at `a0859e8`, the README referenced it, and its row sat in `BACKLOG.md` for four more commits; the header counts drifted from the row counts separately. Both were found by audit, both were caused by editing one file with several scripts in one turn where a later write clobbered an earlier one. The same defect was sitting in `FINDINGS.md` unnoticed: **O-1, O-2 and O-4 were still listed as open questions** after G-002, A-009 and G-003 had all landed and answered them. `scripts/backlog_gate.sh` is the check, and it is mutation-tested against all eight ways the two files can disagree — because a gate that has only ever passed is indistinguishable from one that cannot fail (M-44) |
@@ -3399,3 +3401,35 @@ a share of 0.700, where all fourteen other cycle-count buckets are 1.0000. So a 
 meeting a cell with two is the only pairing whose outcome the mask does not always control, and the
 36 patterns no mask can make offend are all there. Both facts are exact over the full enumeration
 rather than estimated from a field.
+
+### M-293 — the excluded workspace's fourth gate incident, and this one is local (A-025 follow-on)
+
+**M.** Found by running the whole gate list at the end of the night rather than the part that is fast.
+`cd bevy_isomesh && cargo check --all-targets` fails at HEAD, and has since **F-001** — 58 commits.
+The example `precision_f32_vs_f64.rs` implements `ReferenceField::is_exact_distance`, which F-001
+replaced with `bound() -> FieldBound` because *"a `bool` could not hold both"*. Three errors: a method
+that is not a member of the trait, a missing required one, and a call to a method the bound no longer
+provides.
+
+**It never reached CI, and that is the finding.** `.github/workflows/ci.yml` has a `bevy` job that runs
+exactly this command, so a push would have gone red immediately. The branch is **75 commits ahead of
+`origin`** and F-001 is not among the pushed ones. So this is not M-174's *"an accepted CI failure is
+indistinguishable from a new one"* — CI would have caught it on contact. It is the other thing:
+
+> **Nothing local compiles `bevy_isomesh`.** `cargo check --workspace --all-targets`, which is what
+> anyone runs before committing, **excludes it by design** — that is the whole point of the exclusion
+> (feature unification, M-190) — so a change to a `crates/` trait can break every example in the other
+> workspace and the pre-commit loop stays green.
+
+**M-190 called it three incidents, one cause: rustfmt, rustdoc and MSRV each had to be patched into
+the `bevy` CI job after the gap was found. This is the fourth, and it is the first where the CI step
+already existed.** The three before were *missing steps*; this one is a present step that local work
+never runs. So the remedy is not another CI line — it is one local command that covers both
+workspaces, and `CLAUDE.md` already says *"run both"* in two places, which 58 commits show is not
+enough. **I-008** owns making it mechanical.
+
+**Fixed here**: the wrapper forwards `bound()` instead, which is exactly right and the example's own
+doc comment already argued it — *"a translated field is still the same field: same topology, same
+Euler characteristic, same distance property"*. `f(p − by)` has `f`'s Lipschitz constant, and if `|f|`
+was the distance to the zero set then `|f(p − by)|` is the distance to the translated one. The full
+`bevy` job — fmt, check, clippy, rustdoc, test — passes.
