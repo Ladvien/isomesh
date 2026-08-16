@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**344 entries** — 18 falsified, 273 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**346 entries** — 18 falsified, 275 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -330,6 +330,8 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-276` | the dual methods' non-manifold edges are the ambiguous face, all 314 of them (A-021) |
 | `M-277` | the index generator was blind to the shape its own file had moved to (R-004) |
 | `M-278` | HELD, and the crack budget is not where the ticket assumed (R-004) |
+| `M-279` | the mechanism is FALSIFIED, and the registered falsifier could not have caught it (R-005) |
+| `M-280` | this harness's nanoseconds are not a unit, and the committed Zen 3 sweep is 1.45× stale (R-005) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1147,7 +1149,7 @@ Each has the test that would settle it. **An open question with no proposed test
 | O-8 | Does Dual Contouring's vertex placement need f64 in practice, or is f32 enough? | E-112, with the QEF condition number in the HUD | `M = AᵀA` squares the condition number. **Half answered by V-18**: the original paper measures f32 error ~1 on flat regions at 256³, and recommends f64. **Partially answered by M-23**: on extraction paths with no solve, `f64` costs only 8–10% of wall time, so precision is cheap where there is no QEF. Still open for the vertex solve itself, and for *our* fields at *our* resolutions — which sidesteps `AᵀA` entirely and may not degrade the same way |
 | O-9 | How much does T-003's gradient-flow chord **over**-estimate distance at a concave seam? | A comparison against nearest-point search over a dense surface point cloud, or E-104 once Dual Contouring lands | The chord follows `∇f` to the zero set, which near `csg_difference`'s seam can land further away than the true nearest point. The bias direction is known and safe for a "below X" gate; the *magnitude* is not measured, and M-001's shootout column would inherit it. `csg_difference` measured forward `0.0833` at 33³ — how much of that is seam bias is unknown |
 | O-10 | ~~What is Surface Nets' non-manifold **rate** as a function of feature thickness over `h`?~~ **First curve measured at A-010 (M-60)**, as the multi-sheet-cell rate: `gyroid` 3.13% → 2.05% → 0.53% and `fbm_terrain` 1.70% → 0.84% → 0.77% at 17³/25³/33³, and exactly zero on the other five fields at every resolution. Still open only as the *slab* sweep, which would give thickness-over-`h` directly rather than resolution-at-fixed-field | A-010 drove it to zero, which was the ticket's job; a sweep over a slab of shrinking thickness would give the parametrised form | M-15 established it is a resolution effect rather than a topology one, and M-4 has counts at two resolutions on two fields. It decides whether Surface Nets is usable at game resolutions or needs A-010 first |
-| O-11 | **Why does the dual topology go superlinear in `n³` while Marching Cubes does not?** *(Half-answered at M-45: it is not one machine's cache hierarchy. Surface Nets degrades on Zen 3 too — 37.4 → 49.1 ns/sample — and the `Surface Nets/Marching Cubes` ratio is worse there than on the M5. What remains open is the mechanism, not whether the effect is real.)* | A profile or cache-miss counter at 192³ vs 256³. The cross-machine experiment is **done**; a second one would not add anything | The working-set hypothesis survives and is strengthened: Surface Nets gathers the four cells around each crossed edge with one stride `n²` cells apart, and that stride is architecture-independent, which is exactly the kind of cost that would reproduce across microarchitectures. Note both machines show a per-sample **spike at 128³** (M5 Surface Nets 9.35, Zen 3 Surface Nets 53.84 against 45.6 at 96³ and 47.3 at 192³) — a working-set effect at one specific grid size on two unrelated cache hierarchies, which is itself a clue nobody has followed |
+| O-11 | **Why does the dual topology go superlinear in `n³` while Marching Cubes does not?** *(Half-answered at M-45: it is not one machine's cache hierarchy. Surface Nets degrades on Zen 3 too — 37.4 → 49.1 ns/sample — and the `Surface Nets/Marching Cubes` ratio is worse there than on the M5. What remains open is the mechanism, not whether the effect is real.)* | A profile or cache-miss counter at 192³ vs 256³. The cross-machine experiment is **done**; a second one would not add anything | The working-set hypothesis survives and is strengthened: Surface Nets gathers the four cells around each crossed edge with one stride `n²` cells apart, and that stride is architecture-independent, which is exactly the kind of cost that would reproduce across microarchitectures. Note both machines show a per-sample **spike at 128³** (M5 Surface Nets 9.35, Zen 3 Surface Nets 53.84 against 45.6 at 96³ and 47.3 at 192³) — a working-set effect at one specific grid size on two unrelated cache hierarchies, which is itself a clue nobody has followed. **Narrowed at R-005 (M-279), and the working-set hypothesis in this cell is wrong.** The counters are in: the gather is `O(n²)` and the cost is `O(n³)`, and a field with **no surface at all** costs the same to within 0.9%, so it is not the gather. Nor branches (they fall), nor allocation (0 page faults), nor the TLB. What is left is a 16% IPC decline on an instruction stream that is flat per sample — and at 16.7 M samples a **2.4× swing in misses moves the cycles by 0.4%**, so the miss column is not the driver either. The 128³ spike **is** resolved: 127³ and 129³ are normal and only 128 has a 64 KiB plane stride, so it is conflict aliasing, and it survives on the empty field. Residue is **R-007** |
 | O-12 | **Is Marching Cubes unconditionally manifold now?** ✗15's only counterexample was the fan chord and A-015 removed it; the strict gate passes 8,000 generated cases where it used to fail on the first seed. But nothing proves a second mechanism does not exist | An exhaustive search over configurations spanning more than two cells — the two-cell sweep is exhaustive and the vertex-link case is not covered by it at all. Or a proof that a cell-local cycle triangulation plus shared face segments cannot produce a non-manifold **vertex** | The strict gate is now asserted, so if a second mechanism exists CI will find it on some future seed. That is the intended outcome: a failure there is a finding, not a regression, and the failing case would be the first example of whatever the mechanism is |
 | O-13 | ~~**Pre-registered:** Marching Tetrahedra vertex count = **3.0× Marching Cubes**, converging from above~~ **Confirmed at A-003/M-001, exactly and including the convergence.** Measured on `sphere`: 33³ **3.036**, 49³ **3.026**, 65³ **3.003** — from above, onto 3.0 | *(closed)* | And M-52 supplies the mechanism the prediction did not need but turns out to have: the ratio is `4.0` in one octant and `2.0` across a sign change, so `2.992` is an average hiding a factor-of-two spread. That is why the shootout CSV carries every field |
 | O-14 | ~~**Pre-registered:** Marching Tetrahedra symmetric Hausdorff at 64³ ≈ **2.6e-3**, about **1.86×** Marching Cubes, i.e. slightly worse than Surface Nets~~ **Falsified at A-003/M-001 (M-55): measured 1.4386e-3, which is 1.043×.** Not slightly worse than Surface Nets — **better by 1.6×** (Surface Nets is 2.251e-3, 1.69× Marching Cubes) | *(closed)* | The prediction's stated counterintuitive part, *"more vertices **and** worse accuracy"*, is the half that is wrong. Marching Tetrahedra buys 3× the vertices for 4% worse accuracy on smooth fields and **better** accuracy on sharp ones |
@@ -1446,6 +1448,10 @@ Rules with no incident behind them get ignored. These all have one.
 | **A counter that is only populated on the success path cannot report the failure. Register what is being checked *before* the thing that fixes it** | E-205 — the crack counter built its list of seam planes inside `if transitions`, so running with transitions **off** left nothing to compare against and the demo reported a confident **0 cracks** on a world with 182 open edges in it. The zero was not wrong about the geometry; it was computed over an empty set. Moving the seam-plane scan out of the conditional makes the control real: 71 low and 102–111 high with transitions off, 0 and 0 with them on. **Seventh instance in one session** of a number that was a property of the fixture rather than of the code |
 | **A trap that has to be dodged by choosing a constant will be walked into again. Put the dodge in the step, not in the default** | E-104 found that `box_exact` is exactly zero on its whole boundary, so a grid aligned to the box faces lets the sign convention decide instead of the algorithm — over the ±2 domain, whenever `n − 1` is a multiple of 4. E-114 then defaulted to **13**, which is one of them, and opened on the degenerate case it exists to explain: corner 7 sampled `-0.0000`. E-104's own note says the dodge belongs *"in the code rather than left as a warning"*, and it was — **in E-104's code**. The fix that survives is arithmetic rather than vigilance: step by 4 from an odd base so `n − 1 ≡ 2 (mod 4)` throughout and no reachable resolution is aligned |
 | **Frame the camera from the field's own extent. A fixed orbit radius ships a screenshot of the *inside* of the mesh, and it looks like a rendering rather than a framing bug** | E-110, looking at E-109's committed image for a style reference. `sharp_features.rs:131` sets `orbit.radius = 7.0` for every field, and the capped gyroid's domain extent is **14** — so `docs/screenshots/e109-sharp-features-gyroid.png` is a picture of an inner wall, with the HUD legible over a flat beige surface and none of the geometry the demo exists to show. `manifold_check.rs:256-261` already had the fix and the comment explaining it (*"a fixed radius puts the camera comfortably inside the gyroid"*), written one ticket earlier; E-109 did not reuse it. **The image passed review because it is not obviously wrong** — nothing is missing, nothing is inverted, the numbers are correct. That is the failure mode: a framing bug produces a plausible picture, so only comparing against what the field *should* look like catches it |
+| **A falsifier has to separate the hypothesis from its rivals, not merely be capable of failing** | M-279 — P-12 registered *"flat miss rates"* as its refutation. Miss rates were not flat, so by its own falsifier the hypothesis survived, and its mechanism was false anyway: *"the crossed-edge gather misses"* and *"the `O(n³)` scan misses"* both predict rising misses on a growing grid, so the stated observation could never have told them apart. The control that settled it — the same sweep on a field with **no surface**, where the gather runs zero times and the dense state is unchanged — was not in the registration. **When registering, ask what else would produce the same reading** |
+| **A control run where it cannot discriminate reports "no effect", and reads exactly like a real negative** | M-279 — the axis-order control was first run at 4.3 M samples, a 17 MB array inside this machine's 32 MB L3, where no traversal order can miss. All three orders came out within 20% and the honest-looking conclusion was *"orientation does not matter"*. Re-run at 16.7 M it is a **2.4× spread**. The fixture is now run at **both** sizes, the small one as a control on the control. This is G-003's rule at a different scale: there the fixture's *value* sat in the degenerate region, here its *size* did |
+| **Check a new harness against a committed measurement of the same thing before believing its new columns** | M-279 — `experiment_p12` forgot `MeshBuffer::reset()`, so the output buffer grew by a whole mesh every run and later runs paid reallocation the extraction did not cause. Every exotic column looked plausible; the tell was the boring one, `triangles`, which was **not monotone in `n`** — 145900 at 112³, 190060 at 128³, 144708 at 144³. `resolution_sweep-ryzen9-5900x.csv` has 5180 triangles at 48³ and the fixed harness reproduces it exactly. **A new instrument's first job is to agree with the old one where they overlap** |
+| **On a governed CPU a nanosecond is not a unit. Report cycles, and put the clock on the row** | M-280 — the same binary reported Marching Cubes at 48³ as 8.13 and 14.66 ns/sample with cycles/sample unchanged at ~34, because `amd-pstate-epp` on `powersave` spans 1.96–5.62 GHz. Nothing on the face of either number said which clock it was. Every row now carries `ghz`, computed as cycles ÷ nanoseconds, so the artefact states it rather than inviting the inference |
 | **A generator that recognises one shape stops counting when the shape changes — and its staleness check cannot see that** | M-277 — `findings_index.sh` matched Part 2's table rows and Part 1's `✗` headings. Measurements became `###` sections at M-255 and **twenty-two of them fell out of the index while `--check` stayed green**, because a staleness check compares the file against the generator and the two agreed. The count read *"249 measured"* against 271 present. **Check a generator against its source's own vocabulary, not against its previous output** — one `grep -c '^### M-'` beside `grep -c '^| M-'` is the whole test, and it is the check that was never written |
 | **A file that records state drifts from the state unless something checks it. Write the check the second time, not the third** | E-113 — the demo shipped at `a0859e8`, the README referenced it, and its row sat in `BACKLOG.md` for four more commits; the header counts drifted from the row counts separately. Both were found by audit, both were caused by editing one file with several scripts in one turn where a later write clobbered an earlier one. The same defect was sitting in `FINDINGS.md` unnoticed: **O-1, O-2 and O-4 were still listed as open questions** after G-002, A-009 and G-003 had all landed and answered them. `scripts/backlog_gate.sh` is the check, and it is mutation-tested against all eight ways the two files can disagree — because a gate that has only ever passed is indistinguishable from one that cannot fail (M-44) |
 | **An instrument that cannot report the failure has not reported the success. Show it producing a non-zero before trusting its zero** | E-208 — the paint-drift readout measured "did the colour at this point change", and the scripted run sprayed one colour, so repainting red over red was numerically identical to paint that never moved. It printed **0.000000 at every step**, which is the answer the ticket wanted, and it would have printed the same on an implementation that smeared. Cycling the palette turned the same instrument sensitive — **27 of 40 sprays register drift, up to 0.886** — and only then does the **0.000000 across both carves** mean anything. This is M-75's rule in a different costume (*"a test that returns the same answer when you invert the thing it is testing is not measuring that thing"*), and the reason it earns its own row is that here the instrument was not inverted, it was **starved**: the input never varied in the dimension being measured |
@@ -2307,3 +2313,158 @@ takes `origin: [R; 3]` and computes `origin + h·local`, so a chunk at a non-zer
 arithmetic by construction and there is no argument a caller can pass to avoid it. That is why this
 experiment had to reach the canonical arm by clipping an over-extended extraction. **X-005** owns it;
 it is an API change to the crate's central trait and therefore a decision, not a fix.
+
+### P-15 — registered for R-007, before it was measured
+
+**The residue M-279 leaves, stated so it can fail.** Surface Nets executes 207 instructions per
+sample at IPC 1.22 where Marching Cubes executes 132 at 4.04 — 1.57× the instructions and 5.24× the
+cycles — and none of the obvious candidates survived: not the crossed-edge gather (a field with no
+surface costs the same), not branches (they fall), not allocation (zero page faults), not the TLB,
+and not, at 16.7 M samples, the misses (a 2.4× swing moves cycles by 0.4%).
+
+> **H.** More than half of the dual mesher's cycles per sample are spent in `emit_quads`, which is
+> three unconditional `O(n³)` sweeps over the sample grid rather than work proportional to the
+> surface.
+
+The reasoning, so the prediction is a claim and not a shrug: `place_vertices` reads the same eight
+corners per cell that Marching Cubes' march does, and `sample` is identical, so the dual's extra ~75
+instructions per sample have to come from `emit_quads` — which walks every grid edge on all three
+axes and loads two samples *before* the sign test that would let it skip. Two of its three passes
+have their innermost loop on the wrong axis (`v = (axis + 2) % 3`), giving strides of `nx` and
+`nx·ny`. Whether that is where the *cycles* go rather than merely the instructions is exactly what is
+not known.
+
+**Falsified by** `emit_quads` accounting for half or less, which puts the cost in `sample` or
+`place_vertices` — work Marching Cubes does too, at four times the IPC — and means the dual's IPC is
+lost to something other than its extra traversal.
+
+**Records** `stage`, `cycles_per_sample`, `instructions_per_sample`, `ipc`, `samples`.
+
+**A note on the instrument, because the obvious one is unavailable.** `STALLED_CYCLES_BACKEND` would
+answer this directly and AMD does not map it (`perf_event_open` → ENOENT). An intra-extractor
+breakdown therefore needs either an ablation seam in `DualMesher` or per-stage counter windows inside
+it, and which of those is acceptable under the one-path rule is part of R-007.
+
+### M-279 / P-12 — the mechanism is FALSIFIED, and the registered falsifier could not have caught it (R-005)
+
+**M.** `benches/experiment_p12.rs`, `docs/experiments/p-12.csv`, 90 rows on the Ryzen 9 5900X.
+Six hardware events and one software event through `perf_event_open`; every counter ran the whole
+window (`counter_time_ratio` 1.0 on all 90 rows) and the clock held at **4.148–4.188 GHz**, which the
+rows carry rather than imply (M-280).
+
+#### What P-12 predicted, and what the numbers say
+
+`sphere`, `f32`, the resolution sweep's own grid:
+
+| n | MC cyc/sample | MC instr | MC IPC | MC miss | SN cyc/sample | SN instr | SN IPC | SN miss |
+|---|---|---|---|---|---|---|---|---|
+| 48 | 33.7 | 138.8 | 4.12 | 0.104 | 144.0 | 210.5 | 1.46 | 1.635 |
+| 128 | 32.4 | 133.2 | 4.11 | 0.022 | **178.4** | 207.7 | **1.16** | **5.465** |
+| 256 | 32.5 | 131.5 | 4.04 | 0.020 | 170.2 | 206.8 | 1.22 | 4.258 |
+
+Both of P-12's *observable* clauses came out its way. Marching Cubes' miss rate stays flat
+(0.104 → 0.020, falling); Surface Nets' rises 2.6× (1.635 → 4.258), though not monotonically — 112³
+and 144³ sit *below* 64³.
+
+#### The mechanism clause is false, and one control settles it
+
+P-12 says the cost **is** the four-cells-around-a-crossed-edge gather. That gather runs once per
+crossed edge, which is `O(n²)`; the cost is `O(n³)`. So the sweep is run a second time on a field
+with **no surface at all** — a sphere of radius 10 over a domain of half-extent 2, every sample
+negative, no edge crossed, no vertex placed, no quad walked — while the dense per-cell state is
+allocated, filled and scanned exactly as before.
+
+At 256³, Surface Nets: **168.6 cycles/sample and 4.277 misses/sample with 0 triangles**, against
+**170.2 and 4.258 with 153,552**. A difference of 0.9%. Removing every gather the hypothesis blames
+changes nothing, so **the hypothesis is false**. Dual Contouring, which shares the engine, lands on
+the same number (167.4 cycles, 4.240 misses, 0 triangles).
+
+#### The other two candidates the registration named are excluded too
+
+**Branch misprediction cannot produce a rising cost because it falls**: Surface Nets 0.0436 → 0.0267
+misses per sample across the sweep, Marching Cubes 0.0343 → 0.0115. **Allocation is not it either**:
+page faults after the two warmup runs are **0 on all 90 rows**. And a candidate the registration did
+not name, added because "the working set grew" and "the page walk grew" have the same symptom:
+**dTLB read misses peak at 0.104 per sample and are typically ~1e-3**, transparent huge pages being
+`always` on this host.
+
+#### What it actually is: IPC, on an instruction stream that does not grow
+
+Surface Nets executes **1.57×** Marching Cubes' instructions and takes **5.24×** the cycles. Its
+instruction count per sample **falls** across the sweep (210.5 → 206.8) while its cycles **rise**
+(144.0 → 170.2), so the whole of the superlinearity is a **16% decline in IPC** (1.46 → 1.22) on a
+constant instruction stream. Marching Cubes' IPC is flat at 4.04–4.28.
+
+#### And the miss column does not explain the cycles either
+
+Three grids of **16.7 M samples**, no surface, same code, differing only in axis order:
+
+| shape | SN misses/sample | SN cycles/sample |
+|---|---|---|
+| `68×496×496` | 3.274 | 151.49 |
+| `496×68×496` | **1.362** | 151.74 |
+| `496×496×68` | 3.360 | 151.14 |
+
+**A 2.4× spread in misses buys 0.4% of cycles.** At this size the misses are streaming and the
+prefetcher hides them, so the LLC-miss column tracks the dual's cost without accounting for it.
+
+**The one place misses do cost is the 128³ spike, and it is a stride effect.** 127³ / 128³ / 129³ on
+`sphere`: **152.5 / 178.4 / 152.1** cycles and **2.468 / 5.465 / 2.413** misses. Their working sets
+differ by 2%; only 128 has a plane stride of exactly 64 KiB. The same spike is on the empty field
+(149.1 / 176.4 / 148.8 cycles), so it is not the surface. These misses are conflict misses and cost
+about 10 cycles each; the streaming ones above cost nothing. That is the clue M-45 recorded on two
+machines and nobody had followed.
+
+#### The registered falsifier was insufficient, which is the method finding
+
+`falsified_by` was *"flat miss rates, pointing at branch misprediction or allocation instead."* Miss
+rates were **not** flat, so **by its own stated falsifier P-12 survives** — and its mechanism is
+still false. The falsifier named an observation the hypothesis could fail, but not one that could
+separate it from its rival: "the gather misses" and "the `O(n³)` scan misses" both predict rising
+misses on a growing grid. The control that settled it — a field with no surface — was not in the
+registration and was added while writing the harness.
+
+#### O-11 is narrowed rather than closed
+
+It asked for *"a profile or cache-miss counter at 192³ vs 256³"* and hypothesised the stride-`n²`
+gather. The counters are in and the gather is out. What remains is **where the dual's IPC goes** —
+not the gather, not branches, not allocation, not the TLB, and not, at this size, the misses.
+`STALLED_CYCLES_BACKEND` is the event that would name it and **AMD does not map it**;
+`perf_event_open` answers ENOENT. **R-007** owns the residue.
+
+### M-280 — this harness's nanoseconds are not a unit, and the committed Zen 3 sweep is 1.45× stale (R-005)
+
+**M.** Two runs of the same binary at the same commit reported Marching Cubes at 48³ as **8.13 and
+14.66 ns/sample** while cycles/sample held at ~34 both times. This host runs `amd-pstate-epp` on the
+`powersave` governor over **1.96–5.62 GHz**, so that is a 1.8× clock excursion and nothing about the
+code. `experiment_p12` now leads with `cyc/samp` and carries a `ghz` column — cycles ÷ nanoseconds —
+so a row states the clock it was taken at instead of leaving it to be inferred from a number that
+looks like a measurement.
+
+Two full 90-row runs after that change: **ns median |Δ| 0.43%, cycles 0.31%**, clock 4.15–4.20 GHz
+throughout. The nanosecond is fine *when the clock is*; the column is what says which.
+
+**Which then found something bigger.** Re-running `benches/resolution_sweep` at the current commit,
+with the clock sampled every five seconds and steady at **4.20 GHz**, five times:
+
+| | committed `resolution_sweep-ryzen9-5900x.csv` | measured now | |
+|---|---|---|---|
+| Marching Cubes 256³ | 221.363 ms | **152.2–153.3 ms** | **1.45× faster** |
+| Surface Nets 256³ | 823.442 ms | **693–721 ms** | 1.18× faster |
+
+**Consequences for what is written down.** ✗14's Zen 3 ratio was `SN/MC = 3.72×` at 256³; on the
+current code it is **4.6×**, so ✗14's conclusion is strengthened and its number is wrong. M-45's
+*"the M5 is 2.76× faster than the Ryzen on Marching Cubes at 256³ (80.2 vs 221.4 ms)"* **cannot be
+quoted at all**: its Ryzen half is stale by 1.45× and its M5 half was not re-run, so the true figure
+is somewhere below 1.90× and unmeasured.
+
+**One excursion in six runs, unexplained.** One of the six gave **264.714 ms** for Marching Cubes at
+256³ at the same steady 4.20 GHz and the same binary — 1.74× the other five, which cluster within
+0.7%. Surface Nets did not move in that run (697.8 against 693–721). No cause identified; recorded so
+that a single ms figure from this host is not read as a measurement.
+
+**The CSV was restored rather than overwritten.** ✗14, M-19, M-20, M-21, M-22 and O-11 all quote
+exact figures from it, and the archive says three separate times that re-measuring the family belongs
+to **M-001**. M-001 is referenced **nineteen times** across `FINDINGS.md` and `BACKLOG_ARCHIVE.md`
+and **had no ticket row in either file** — so the designated home for this re-measurement did not
+exist and it could never have been taken off the queue. Now filed.

@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**169 tickets archived, 6 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**170 tickets archived, 7 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -109,6 +109,7 @@ These use the algorithms the way a game does: chunked, edited, budgeted, collide
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
+| ☐ | **M-001** | **Re-measure the whole family in one process and one run — the ticket nineteen references already point at.** `BACKLOG_ARCHIVE.md` says three separate times that a re-measurement "belongs to M-001", `FINDINGS.md` names it ten more, and **it had no row in either file** until R-005 went looking for it. So the designated home for every deferred re-measurement did not exist and none of them could be taken off the queue. **It is now overdue rather than merely absent (M-280):** re-running `benches/resolution_sweep` at the current commit, clock steady at 4.20 GHz and sampled to prove it, gives Marching Cubes at 256³ as **152.2–153.3 ms** against the committed `resolution_sweep-ryzen9-5900x.csv`'s **221.363 ms**, and Surface Nets **693–721 ms** against **823.442**. So ✗14's Zen 3 `SN/MC` ratio is **4.6×** and not the 3.72× on record, and M-45's *"the M5 is 2.76× faster than the Ryzen"* is unquotable because only one half was re-run. **Acceptance:** one bench, one process, one run, every extractor in `for_each_extractor!` — Marching Tetrahedra included, which the sweep deliberately omits — over the committed resolution set, reporting **cycles per sample and the clock** as well as milliseconds (M-280), on both machines. Then update ✗14, M-19, M-20, M-21, M-22, M-45 and O-11 against it **in the same commit**, because six findings quote exact figures from a file this replaces. Do **not** amend `resolution_sweep-ryzen9-5900x.csv` in place; it is the evidence those citations were written against and it stays as the before. | L | — |
 
 ---
 
@@ -357,10 +358,17 @@ fraction of "seam cracking" in shipped voxel engines is this rather than algorit
 
 ### 15c — Two mechanisms nobody has explained
 
+> **One of the two is now explained, and it produced a third (M-279).** R-005 asked why the dual goes
+> superlinear and the answer is **IPC**: Surface Nets runs 1.57× Marching Cubes' instructions and
+> 5.24× its cycles, and the growth is a 16% IPC decline on an instruction stream that is flat per
+> sample. The gather everyone suspected is `O(n²)` and the cost is `O(n³)` — a field with **no
+> surface at all** costs the same to within 0.9%. What is left is *where* the IPC goes, which is
+> **R-007**.
+
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-005** | **Why does the dual go superlinear where Marching Cubes does not?** (O-11, half-answered.) M-21: Surface Nets is not `O(n³)` over the range; Marching Cubes is. M-45: it reproduces on Zen 3 and gets *worse* there, so it is not one cache hierarchy — **the mechanism is still unknown**, and both machines show a per-sample **spike at 128³** specifically, which is a clue nobody has followed. **H:** the cost is the four-cells-around-a-crossed-edge gather at stride `n²`; cache-miss count per sample rises with `n` for Surface Nets and stays flat for Marching Cubes. **Harness:** hardware counters at 96³/128³/192³/256³ on both machines. **Falsified by:** flat miss rates — pointing at branch misprediction or allocation instead. **FINDINGS:** `M-`, and closing O-11 either way. | M | R-000 |
 | ☐ | **R-006** | **A non-convergent error, which should not exist.** M-66: *"On a sharp field the geometry and the field disagree by an angle that does not fall with resolution."* Every other error in this crate falls with `h` — M-12's `h²`, M-65's `h²` on normals. **An error that does not converge is either a real property of sharp features or a bug, and both are worth knowing.** **H:** the angle is bounded below by the dihedral angle of the feature and is therefore a property of sharp edges rather than of resolution — so it should be *predictable from the field*, not merely observed. **Harness:** sweep dihedral angle on a wedge field × resolution; plot measured disagreement against predicted. **Records:** angle vs (dihedral, h). **Falsified by:** the angle failing to track the dihedral prediction — which makes it a defect with a location. **FINDINGS:** `M-`; if it is a bug, `✗` against M-66's framing as a property. | M | R-000 |
+| ☐ | **R-007** | **Where does the dual's IPC go?** R-005 (M-279) removed every candidate anyone had named and left a number: Surface Nets executes **207 instructions per sample at IPC 1.22** where Marching Cubes executes **132 at 4.04** — 1.57× the instructions, 5.24× the cycles — and its superlinearity is a **16% IPC decline on an instruction stream that is flat per sample**. Not the crossed-edge gather (a field with no surface costs the same to within 0.9%), not branch misprediction (it falls), not allocation (0 page faults on all 90 rows), not the TLB (dTLB ≤ 0.104/sample under `always` huge pages), and not the misses (a 2.4× swing at 16.7 M samples moves cycles by 0.4%). **H, pre-registered as P-15:** more than half of the dual mesher's cycles per sample are in `emit_quads`, which is three unconditional `O(n³)` sweeps over the sample grid rather than work proportional to the surface — two of them with the innermost loop on the wrong axis, at strides `nx` and `nx·ny`. **Harness:** a per-stage cycle and instruction count inside `DualMesher`, which needs either an ablation seam (X-002's) or counter windows in the extract path — **decide which is acceptable under the one-path rule before writing either**, since instrumenting a hot path permanently is not obviously allowed. **Falsified by:** `emit_quads` at half or less, which puts the cost in `sample` or `place_vertices` — work Marching Cubes does too, at four times the IPC. **Records:** cycles, instructions and IPC per stage per sample, to `docs/experiments/p-15.csv`. **FINDINGS:** `M-`, and closing O-11. **Note the instrument gap:** `STALLED_CYCLES_BACKEND` would answer this directly and AMD does not map it — `perf_event_open` returns ENOENT — so a stage split is the way in rather than a stall attribution. | M | R-005 |
 
 ---
 

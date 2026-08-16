@@ -196,6 +196,25 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "worst_link_components",
         ],
     },
+    Preregistration {
+        id: "P-15",
+        ticket: "R-007",
+        hypothesis: "More than half of the dual mesher's cycles per sample are \
+                     spent in emit_quads, which is three unconditional O(n³) \
+                     sweeps over the sample grid rather than work proportional \
+                     to the surface.",
+        falsified_by: "emit_quads accounting for half or less, which puts the \
+                       cost in sample or place_vertices — work Marching Cubes \
+                       does too, at four times the IPC — and means the dual's \
+                       IPC is lost to something other than its extra traversal.",
+        records: &[
+            "stage",
+            "cycles_per_sample",
+            "instructions_per_sample",
+            "ipc",
+            "samples",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

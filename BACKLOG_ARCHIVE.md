@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-169 tickets. Line numbers are stable until something above them is edited — grep the ID if
+170 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1156,3 +1156,37 @@ takes a world origin and computes `origin + h·local`, with nowhere to put an in
 base gets the offset arithmetic by construction and no argument avoids it. The canonical arm is reached by rooting the
 extraction at the grid origin and clipping to the block's cells, checked by `clip_agrees_with_the_block` at every
 power-of-two spacing. **X-005** owns the API change; it is a decision about the crate's central trait, not a fix. |
+| ☑ | **R-005** | **Why does the dual go superlinear where Marching Cubes does not?** (O-11, half-answered.) M-21: Surface Nets is not `O(n³)` over the range; Marching Cubes is. M-45: it reproduces on Zen 3 and gets *worse* there, so it is not one cache hierarchy — **the mechanism is still unknown**, and both machines show a per-sample **spike at 128³** specifically, which is a clue nobody has followed. **H:** the cost is the four-cells-around-a-crossed-edge gather at stride `n²`; cache-miss count per sample rises with `n` for Surface Nets and stays flat for Marching Cubes. **Harness:** hardware counters at 96³/128³/192³/256³ on both machines. **Falsified by:** flat miss rates — pointing at branch misprediction or allocation instead. **FINDINGS:** `M-`, and closing O-11 either way. | M | R-000 |
+| | | ***P-12's mechanism is FALSIFIED and its registered falsifier could not have caught it (M-279).*** The
+gather runs once per crossed edge — `O(n²)` — and the cost is `O(n³)`. Re-run on a field with **no surface at
+all**, Surface Nets costs **168.6 cycles/sample and 4.277 misses with 0 triangles** against **170.2 and 4.258
+with 153,552**: 0.9% apart. Miss rates were *not* flat, so by its own `falsified_by` the hypothesis survived. |
+| | | ***Both named alternatives excluded, and one the registration did not name.*** Branch misses per sample
+**fall** (Surface Nets 0.0436 → 0.0267, Marching Cubes 0.0343 → 0.0115); page faults after warmup are **0 on
+all 90 rows**; dTLB read misses peak at 0.104 per sample with transparent huge pages `always`. |
+| | | ***What it is: IPC, on an instruction stream that does not grow.*** Surface Nets runs **1.57×** Marching
+Cubes' instructions and **5.24×** its cycles. Instructions per sample *fall* 210.5 → 206.8 while cycles rise
+144.0 → 170.2, so the whole superlinearity is a **16% IPC decline** (1.46 → 1.22) against Marching Cubes' flat
+4.04–4.28. |
+| | | ***And the miss column does not explain the cycles.*** Three grids of 16.7 M samples differing only in
+axis order: misses **3.274 / 1.362 / 3.360**, cycles **151.49 / 151.74 / 151.14** — a 2.4× spread buying 0.4%.
+Where misses *do* cost is 128³, and that is resolved: 127³/128³/129³ give 152.5 / **178.4** / 152.1 cycles and
+2.468 / **5.465** / 2.413 misses on working sets 2% apart, so it is conflict aliasing on a 64 KiB plane stride,
+and it survives on the empty field. M-45's clue, followed. |
+| | | ***Deviation: one machine, not two.*** The ticket asked for counters on both. `perf_event_open` is Linux;
+macOS has no equivalent a bench can call, so the Apple arm is not runnable with this harness and is not owed —
+the question was *rises or flat*, and it is answered where M-45 says the effect is worst. |
+| | | ***Three method rules, each with an incident.*** A falsifier must separate the hypothesis from its rivals
+(P-12's could not); a control run where it cannot discriminate reports a convincing "no effect" (the axis-order
+test at 4.3 M sat inside L3 and said orientation was irrelevant — at 16.7 M it is a 2.4× spread, so it now runs
+at both sizes); and a new harness must agree with a committed measurement before its new columns are believed
+(this one forgot `MeshBuffer::reset()`, and the tell was `triangles` not being monotone in `n`). |
+| | | ***A second finding fell out, and it is about every timing in the repo (M-280).*** The same binary
+reported Marching Cubes at 48³ as 8.13 and 14.66 ns/sample with cycles unchanged — `amd-pstate-epp` on
+`powersave` over 1.96–5.62 GHz. Rows now carry `ghz`. Chasing it found the committed Zen 3 sweep is **1.45×
+stale** on Marching Cubes (221.363 ms against 152.2–153.3 measured at a steady 4.20 GHz), so ✗14's `SN/MC` at
+256³ is **4.6×** and not 3.72×, and M-45's "M5 is 2.76× faster" cannot be quoted. The CSV was **restored, not
+overwritten** — six findings cite it — and **M-001**, referenced nineteen times as the ticket that re-measures
+the family, turned out to have no row in either file. Now filed. |
+| | | ***Residue: R-007, with P-15 registered in the same commit as this row.*** Where the dual's IPC goes is
+not settled; `STALLED_CYCLES_BACKEND` is the event that would say and AMD does not map it. |
