@@ -31,6 +31,12 @@ false. No public signature moved.
 
 ### Documentation
 
+- **`FINDINGS.md` M-297, M-298, M-299.** No published convex decomposition runs at interactive rates,
+  which corroborates M-116's 241–272 ms per fragment from the literature side; a fan's
+  `inconsistently_oriented_edges` count is exactly its flip-state changes, so it detects a fan that
+  *reverses* and is blind to a star polygon that folds without reversing; and the on-demand/batch
+  split is free for the pseudonormal backend and costs a factor of `N` for the winding one.
+
 - **`isomesh-gpu`'s docs.rs landing page said the shaders were still to be written.** They shipped;
   the module docs now list what is exported, and state the finding the crate had been burying — with a
   readback the GPU path is *slower* than the CPU at every resolution measured, and it pays off only
@@ -44,6 +50,15 @@ false. No public signature moved.
   capture-driven animation code which had never been run.
 
 ### Added
+
+- **`construct::from_mesh::MeshField<'a, R>`** — a mesh's signed distance field, evaluated **on
+  demand** rather than sampled onto a grid. Implements `Sdf`, builds the angle-weighted pseudonormals
+  and blocked bounding boxes once, and borrows the mesh. `signed_distance_from_mesh` is now this type
+  in a loop, so there is one implementation of the query and
+  `the_grid_path_is_this_field_in_a_loop` pins the two to **identical bits** across all 35,937 samples
+  of the round trip. Deliberately pseudonormal-only: `winding_numbers` casts one ray per grid row and
+  shares it across the row, so an on-demand winding twin would cast `N³` rays where the batch casts
+  `N²` (S-008, M-299).
 
 - **`scripts/doc_facts.sh`** — derives the counts that keep rotting from their source and fails when a
   document states a different one. The golden-hash count had by then been wrong in the root README
