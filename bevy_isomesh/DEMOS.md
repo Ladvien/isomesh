@@ -3,6 +3,8 @@
 Thirty-four runnable examples. This page shows what each one looks like, what it proves, and the exact
 line to run it.
 
+**[The hosted version of this page](https://claude.ai/code/artifact/cc28fc70-8d82-4655-afee-582ea00f5513)** carries the same clips in one link, if you would rather send someone a URL than a repository.
+
 Everything here is `cargo run --example <name> --release` from this directory. **Use `--release`** —
 debug meshing is 37–62× slower and you will think something is broken.
 
