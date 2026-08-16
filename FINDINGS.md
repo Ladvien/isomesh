@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**348 entries** — 18 falsified, 277 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**349 entries** — 18 falsified, 278 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -334,6 +334,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-280` | this harness's nanoseconds are not a unit, and the committed Zen 3 sweep is 1.45× stale (R-005) |
 | `M-281` | a timing here is a property of the binary, not only of the code (M-001) |
 | `M-282` | the whole family, in one binary and one run (M-001) |
+| `M-283` | FALSIFIED, and the fixture that confirmed it agreed to four decimal places (R-006) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -916,7 +917,7 @@ rounding error, and no weld epsilon short of a cell would close it.
 | M-63 | **Both papers `docs/research/` lists as "genuinely absent, blocking" are in the home-still corpus, so the acquisition lists are stale rather than the corpus thin.** `catalog-v2.md:629` names *"Transvoxel (Lengyel 2010 …); Manifold Dual Contouring"* as blocking absences, and `catalog.md:711` and `meshing-library-target.md:97` repeat the second. Both were retrieved and read this session: `10.1109/TVCG.2007.1012` as stem `dualsimp_tvcg`, and the Lengyel dissertation as `transvoxel_dissertation_lengyel2010`. Two out of two | A-010, A-011a. **Method rule, added to Part 5:** search home-still before believing a doc that says a paper is missing. The cost of not doing so is high and asymmetric — A-010's ticket named the wrong paper for its own algorithm precisely because nobody had opened the right one |
 | M-64 | **A Transvoxel lateral face does not always cross the resolution boundary, and the exception is what transition cells are *for*.** Written as an assertion — "a lateral link always joins a full-resolution sub-edge to a half-resolution one" — and falsified by the case with only the midpoint sample inside: both fine sub-edges are cut, the coarse edge is not, and the lateral links **fine to fine**, capping the feature off entirely on the fine side. Correct, because the coarse neighbour has both endpoints outside and cannot represent that feature at all. The rule that does hold is sharper: a lateral link crosses the resolution boundary **iff its half-resolution edge is cut**. Over all 512 cases and every ambiguity mask: **2,080 links stitch the seam, 1,128 cap a sub-coarse feature** **And the dissertation prescribes exactly this, which was found only after the assertion failed** — §4.3: *"In the two configurations for which the sample states alternate, either inside-outside-inside or outside-inside-outside, a mesh edge is placed on the boundary edge between the lateral face and the full-resolution face, and it is thus **not connected to the half-resolution face**."* So the derivation reproduces a rule the paper states, without the rule having been read into it | A-011a. Also measured, and both needed by A-011b: the longest cycle is **12** edges and a cell yields at most **4** cycles — the same slot budget the cube needed at A-010, so `CellVertices` transfers unchanged |
 | M-65 | **Central differences at the cell size cost under half a degree of normal direction, and converge at `h²`.** Analytic gradient against `CentralDifference { step: h }` on `sphere`, worst and mean angle between the two normals: **0.460° / 0.299°** at 17³, **0.121° / 0.079°** at 33³, **0.031° / 0.020°** at 65³. Successive mean ratios **3.76** and **3.92** — `h²`, which is what a central difference must be, asserted as a range rather than only printed | A-012. This is the number a game without an analytic field actually gets, because a sampled voxel buffer has nothing finer than its own spacing to difference over. Same convergence order M-12 measured for *position* error, now for direction, and measured independently of it |
-| M-66 | **On a sharp field the geometry and the field disagree by an angle that does not fall with resolution.** Mean angle between area-weighted face normals and the analytic gradient: `sphere` **3.25° → 2.16° → 1.08°** and `torus` **11.65° → 6.07° → 2.45°** at 17/33/65³, both falling; `box_exact`'s mean falls **13.55° → 6.73° → 3.34°** but its **worst is 35.796° at all three resolutions, identical to six figures**. Refining a grid does not soften a corner — the disagreement there is geometry, not discretisation, where on a smooth field it is discretisation and shrinks | A-012. So "which way does the surface face" and "which way does the field increase" are different questions wherever the surface has a crease, and that is the whole reason the strategy is selectable rather than fixed. Asserted as the mechanism (box worst resolution-invariant, sphere worst falling) rather than as a pinned constant, since the constant is a property of the box's corner angle and would move with a different field |
+| M-66 | **On a sharp field the geometry and the field disagree by an angle that does not fall with resolution.** Mean angle between area-weighted face normals and the analytic gradient: `sphere` **3.25° → 2.16° → 1.08°** and `torus` **11.65° → 6.07° → 2.45°** at 17/33/65³, both falling; `box_exact`'s mean falls **13.55° → 6.73° → 3.34°** but its **worst is 35.796° at all three resolutions, identical to six figures**. Refining a grid does not soften a corner — the disagreement there is geometry, not discretisation, where on a smooth field it is discretisation and shrinks | A-012. So "which way does the surface face" and "which way does the field increase" are different questions wherever the surface has a crease, and that is the whole reason the strategy is selectable rather than fixed. Asserted as the mechanism (box worst resolution-invariant, sphere worst falling) rather than as a pinned constant, since the constant is a property of the box's corner angle and would move with a different field | **Amended at R-006 (M-283), and the caution at the end was right for the wrong reason.** The constant is not a property of the corner *angle*: on a wedge with one crease and no corners it does not track the dihedral at all — 5° of crease gives 87.9° — and 149 of 168 rows sit at or above 60° whatever the dihedral. What *is* confirmed is the mechanism: with the crease removed (a 180° wedge) the disagreement is **0.0000° worst and mean at every resolution**, because Marching Cubes is exact on a linear field. And the two halves of this row are one thing: the **median is 0.000° everywhere**, so the disagreement is confined to a one-dimensional crease, which dilutes out of the mean as the grid refines and leaves the worst untouched |
 | M-67 | **A sign test cannot distinguish 95.6% of the configurations a tetrahedron can actually be in.** Over every edge-coordinate vector with counts 0–3 on a tet's six edges, **181** satisfy normal surface theory's two conditions (even sum, triangle inequality) and only **8** are *classic* — every edge carrying at most one crossing. The other **173** put two or more crossings on some edge, where a sign test reads the parity alone and returns the classic configuration with the same parities. And classic Marching Tetrahedra is exactly the 0/1 corner of this encoding: taking `eᵢⱼ = 1` where corner signs differ reproduces A-003's triangle count on **all 96 (tet, configuration) pairs**, as 48 corner cuts and 36 diagonal cuts | A-014a, from Baktash, Gillespie & Crane `10.48550/arXiv.2606.00454` §2. The paper's own framing is that marching tetrahedra *"reinvented a small piece of this story"* — this puts a number on how small. It is also the quantitative form of A-005's `thin_plate` result: a feature thinner than a cell does not exist to a sign-based method, and 173 of 181 is how much else does not either |
 | M-68 | **`parry3d`'s constructor is not a validity check: the only mesh it refuses is one with no triangles.** `TriMesh::new` returns `Result`, and its documented failure is *"the index buffer is empty (at least one triangle is required)."* Measured: it accepts a single zero-area triangle (three collinear points) and it accepts a two-chunk mesh with an unwelded seam, both without complaint. What *does* check is `set_flags(TriMeshFlags::HALF_EDGE_TOPOLOGY)`, which builds the half-edge adjacency and returns `TopologyError` when the mesh cannot support one, and `TriMeshFlags::ORIENTED`, which needs a closed consistently-oriented surface to compute pseudo-normals from | G-005, parry3d 0.30.2. So a caller who treats "the constructor took it" as "the mesh is fine" has checked nothing, which is the gap `collider::ColliderReadiness` exists to fill. The carved acceptance case — `csg_difference` at 41³, 4,484 triangles — passes both flags |
 | M-69 | **A chunk seam costs 72 boundary edges, and welding removes exactly those and nothing else.** Two adjacent 16-cell chunks of a torus, meshed independently and concatenated: **36 duplicate vertices and 180 boundary edges**. After a weld at `1e-4` cells: **0 duplicate vertices and 108 boundary edges.** The 108 that remain are the two-chunk slab's own outer border, which is legitimately open — the surface leaves through the sides — so the weld closed the 72 that were the seam and left the rest alone | G-005. A renderer draws the unwelded version correctly and a physics engine reads those 72 as a hole, which is the concrete form of G-005's ticket note *"a chunked collider must be welded first or parry sees a seam of unshared vertices."* M-46 measured the same seam at A-013 as 80 boundary edges and 40 duplicated vertices on a different chunk pair; the mechanism is the same and the count is a property of the pair |
@@ -1463,6 +1464,7 @@ Rules with no incident behind them get ignored. These all have one.
 | **A control run where it cannot discriminate reports "no effect", and reads exactly like a real negative** | M-279 — the axis-order control was first run at 4.3 M samples, a 17 MB array inside this machine's 32 MB L3, where no traversal order can miss. All three orders came out within 20% and the honest-looking conclusion was *"orientation does not matter"*. Re-run at 16.7 M it is a **2.4× spread**. The fixture is now run at **both** sizes, the small one as a control on the control. This is G-003's rule at a different scale: there the fixture's *value* sat in the degenerate region, here its *size* did |
 | **Check a new harness against a committed measurement of the same thing before believing its new columns** | M-279 — `experiment_p12` forgot `MeshBuffer::reset()`, so the output buffer grew by a whole mesh every run and later runs paid reallocation the extraction did not cause. Every exotic column looked plausible; the tell was the boring one, `triangles`, which was **not monotone in `n`** — 145900 at 112³, 190060 at 128³, 144708 at 144³. `resolution_sweep-ryzen9-5900x.csv` has 5180 triangles at 48³ and the fixed harness reproduces it exactly. **A new instrument's first job is to agree with the old one where they overlap** |
 | **On a governed CPU a nanosecond is not a unit. Report cycles, and put the clock on the row** | M-280 — the same binary reported Marching Cubes at 48³ as 8.13 and 14.66 ns/sample with cycles/sample unchanged at ~34, because `amd-pstate-epp` on `powersave` spans 1.96–5.62 GHz. Nothing on the face of either number said which clock it was. Every row now carries `ghz`, computed as cycles ÷ nanoseconds, so the artefact states it rather than inviting the inference |
+| **A fixture can exhibit the property too perfectly. Exactness is the tell, not the confirmation** | M-283 — a wedge whose bisector lay on a grid axis reproduced P-13's predicted angle to **four decimal places** at three dihedrals and three resolutions: 75.0000, 60.0000, 45.0000. Turning the same wedge 17° about its own crease gave 71.6–93.4° for the same dihedrals, and a 5° crease gave 88°. The exact agreement was a property of the symmetry between the crease and the sampling, and nothing about it looked like an artefact. Part 5 already says to *search* for a fixture that exhibits the property; this is the other half — **when a measurement matches a prediction exactly, vary the fixture's orientation before believing it** |
 | **A millisecond is a property of the binary. Compare within one build and one run, or compare ratios** | M-281 — two of this repo's benches measured Marching Cubes on the same field at the same resolutions with the same median rule and disagreed by a **uniform 1.24–1.36×**, including at 16³ where the whole run is 40 µs. Both loop shapes in **one** binary are identical (0.991–1.002), and adding **one unrelated function** to `resolution_sweep.rs` moved its own 256³ row from 152.5 to 130.8 ms. Layout bias, with a paper — Mytkowicz et al., ASPLOS 2009 (`10.1145/1508284.1508275`). `benches/layout_bias` is the standing check, and it asserts rather than prints |
 | **A generator that recognises one shape stops counting when the shape changes — and its staleness check cannot see that** | M-277 — `findings_index.sh` matched Part 2's table rows and Part 1's `✗` headings. Measurements became `###` sections at M-255 and **twenty-two of them fell out of the index while `--check` stayed green**, because a staleness check compares the file against the generator and the two agreed. The count read *"249 measured"* against 271 present. **Check a generator against its source's own vocabulary, not against its previous output** — one `grep -c '^### M-'` beside `grep -c '^| M-'` is the whole test, and it is the check that was never written |
 | **A file that records state drifts from the state unless something checks it. Write the check the second time, not the third** | E-113 — the demo shipped at `a0859e8`, the README referenced it, and its row sat in `BACKLOG.md` for four more commits; the header counts drifted from the row counts separately. Both were found by audit, both were caused by editing one file with several scripts in one turn where a later write clobbered an earlier one. The same defect was sitting in `FINDINGS.md` unnoticed: **O-1, O-2 and O-4 were still listed as open questions** after G-002, A-009 and G-003 had all landed and answered them. `scripts/backlog_gate.sh` is the check, and it is mutation-tested against all eight ways the two files can disagree — because a gate that has only ever passed is indistinguishable from one that cannot fail (M-44) |
@@ -2572,3 +2574,104 @@ a second direction.
 **✗14's ratio has widened and its numbers are superseded.** `surface_nets / marching_cubes` at 256³
 is **5.43×** here against the 3.72× on record, and **3.19×** at 16³ against M-45's *"2.46× behind even
 at 16³"*. Both are within-binary ratios, which M-281 says is the comparison that survives.
+
+### M-283 / P-13 — FALSIFIED, and the fixture that confirmed it agreed to four decimal places (R-006)
+
+**M.** `benches/experiment_p13.rs`, `docs/experiments/p-13.csv`, 384 rows: an exact convex wedge of
+controllable dihedral × 4 resolutions × 2 apex alignments × 3 rotations × Marching Cubes and Dual
+Contouring. The metric is M-66's: the angle between a vertex's **area-weighted face normal** and the
+field's own gradient there, over vertices more than one cell from the domain boundary.
+
+#### The prediction, and the fixture that appeared to confirm it exactly
+
+Across a crease of dihedral `θ` the surface normal turns by `180° − θ`, so a vertex given the average
+of the two faces should sit at most `(180° − θ)/2` from either. With the wedge's bisector on a grid
+axis — the obvious way to build the fixture — that is what comes out, **to four decimal places**:
+
+| θ | predicted | 17³ | 33³ | 65³ | 129³ |
+|---|---|---|---|---|---|
+| 30° | 75.0 | **75.0000** | **75.0000** | **75.0000** | **75.0000** |
+| 60° | 60.0 | **60.0000** | **60.0000** | **60.0000** | **60.0000** |
+| 90° | 45.0 | **45.0000** | **45.0000** | **45.0000** | 90.0000 |
+
+Four significant figures, three resolutions, three dihedrals. It is wrong.
+
+#### Rotate the wedge by 17° and the agreement is gone
+
+Same dihedrals, same resolutions, apex off the lattice, wedge turned 17° about its own crease
+(129³, and the p99 is there because one vertex should not set a conclusion):
+
+| θ | predicted | MC worst | MC p99 | MC median | DC worst | DC p99 | DC median |
+|---|---|---|---|---|---|---|---|
+| 30° | 75.0 | 90.96 | 89.04 | 0.000 | 75.00 | 75.00 | 0.045 |
+| 45° | 67.5 | 85.93 | 85.93 | 0.000 | 98.46 | 41.88 | 0.036 |
+| 60° | 60.0 | 92.13 | 60.00 | 0.000 | 60.05 | 60.00 | 0.035 |
+| 90° | 45.0 | 71.57 | 71.57 | 0.000 | 90.00 | 71.57 | 0.028 |
+| 120° | 30.0 | 93.43 | 60.00 | 0.000 | 75.12 | 74.95 | 0.048 |
+| 150° | 15.0 | 90.96 | 78.43 | 0.000 | 78.43 | 78.14 | 0.019 |
+| **170°** | **5.0** | **87.88** | **87.88** | 0.000 | **91.91** | **91.42** | 0.396 |
+| **180°** | **0.0** | **0.0000** | 0.0000 | 0.000 | 0.0028 | 0.0000 | 0.000 |
+
+**A five-degree crease produces an eighty-eight-degree disagreement.** Across all 168 non-control
+rows, Marching Cubes' worst runs 5.00°–128.00° and **149 of them are at or above 60°** whatever the
+dihedral. The registered falsifier — *"the angle failing to track the dihedral prediction, which makes
+it a defect with a location rather than a property"* — fires.
+
+#### One clause of P-13 held, and it is the one the `θ = 180°` control settles
+
+With the crease removed entirely the disagreement is **0.0000° worst and 0.0000° mean for Marching
+Cubes at every resolution**, and 0.0028/0.0003 for Dual Contouring. Marching Cubes is *exact* on a
+linear field — every crossing lands on the plane — so this is not a floor, it is zero. So the error
+does require a sharp feature and does not require a coarse grid, which is P-13's first clause. What
+is false is the second: the magnitude is **not** a function of the dihedral and is **not** predictable
+from the field.
+
+#### And it reconciles the two halves of M-66 that looked contradictory
+
+M-66 reported a *mean* that falls with resolution and a *worst* that does not. The median here is
+**0.000° in every row** — the disagreement is confined to the crease, which is a one-dimensional set
+in a two-dimensional mesh. So refining the grid adds smooth vertices that are exactly right and
+dilutes the mean, while leaving the crease's own error untouched. Both halves, one mechanism.
+
+#### Dual Contouring does not fix it, and on one axis is worse
+
+A-007 exists to recover sharp features, so the dual is the natural remedy. It is not one. At `θ = 90°`
+its worst **rises** with resolution where Marching Cubes' does not, and so does its mean:
+
+| | 17³ | 33³ | 65³ | 129³ |
+|---|---|---|---|---|
+| Marching Cubes worst / mean | 90.00 / 13.28 | 90.00 / 8.51 | 90.00 / 9.13 | 71.57 / **8.45** |
+| Dual Contouring worst / mean | 36.17 / 2.52 | 44.96 / 3.33 | 71.57 / 5.06 | 90.00 / **6.79** |
+
+The dual starts three times better and converges *toward* Marching Cubes from below. Its median stays
+an order of magnitude worse than Marching Cubes' exact 0.000, which is the QEF placing vertices off
+the plane in the smooth region — the trade ✗12 and E×1 already describe, now visible in the normals.
+
+#### The past-90° vertices are real, and they are on the surface
+
+6,959 vertices under Marching Cubes and 4,868 under Dual Contouring, over the non-control rows, have
+an area-weighted normal **more than 90° from the field gradient** — pointing into the solid. Worst
+128.00° and 125.30°.
+
+That should be impossible: an area-weighted normal is a convex combination of incident face normals,
+so it lies in the cone they span, which for two planes is `(180° − θ)/2 ≤ 75°` wide. The obvious
+escape is that the vertex is not on the surface — Marching Cubes interpolates linearly and a wedge is
+not linear near its apex. **Measured rather than assumed, and the escape is closed:** over the rows
+that have one, the median `|f(v)| / h` at those vertices is **0.0000** and the largest is 0.28. They
+are on the isosurface.
+
+So the incident faces are not confined to the two planes' cone: **the crease is bridged by triangles
+that face somewhere else**, and for an acute wedge a whole band along it is thinner than a cell, which
+is M-15's *"any feature thinner than one cell forces two sheets through it"* arriving on a sharp
+field. Whether that is inherent to one vertex per crossed edge or a defect with a fix is **R-008**.
+
+#### The method finding, which is the one worth keeping
+
+**The fixture agreed with the prediction to four decimal places and was wrong.** A wedge whose
+bisector lies on a grid axis puts its crease in a symmetric relationship to the sampling, and the
+worst vertex is then exactly the symmetric one — the average of two faces, at exactly half the turn.
+The number is a property of that symmetry, not of the dihedral, and nothing about `75.0000` at three
+resolutions looks like a fixture artefact. Only turning the fixture 17° showed it. Part 5 already
+carries *"choose a fixture by searching for one that exhibits the property"*; this is the harder
+version — **a fixture can exhibit the property too perfectly, and exactness is the tell rather than
+the confirmation.**

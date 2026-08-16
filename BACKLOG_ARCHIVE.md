@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-171 tickets. Line numbers are stable until something above them is edited — grep the ID if
+172 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1218,3 +1218,28 @@ is **1.74×** against the family run rather than 1.45× against a build. |
 | | | ***✗14, M-21 and M-45 amended; M-19, M-20 and M-22 deliberately not.*** Those three are Apple M5 fit
 coefficients and this run was on the Ryzen — amending them from another machine's numbers is the error the
 amendment exists to fix. They wait for M-005. |
+| ☑ | **R-006** | **A non-convergent error, which should not exist.** M-66: *"On a sharp field the geometry and the field disagree by an angle that does not fall with resolution."* Every other error in this crate falls with `h` — M-12's `h²`, M-65's `h²` on normals. **An error that does not converge is either a real property of sharp features or a bug, and both are worth knowing.** **H:** the angle is bounded below by the dihedral angle of the feature and is therefore a property of sharp edges rather than of resolution — so it should be *predictable from the field*, not merely observed. **Harness:** sweep dihedral angle on a wedge field × resolution; plot measured disagreement against predicted. **Records:** angle vs (dihedral, h). **Falsified by:** the angle failing to track the dihedral prediction — which makes it a defect with a location. **FINDINGS:** `M-`; if it is a bug, `✗` against M-66's framing as a property. | M | R-000 |
+| | | ***P-13 falsified on its second clause, and its own falsifier fired (M-283).*** 384 rows on an exact convex
+wedge. A **5° crease produces an 88° disagreement**, and 149 of Marching Cubes' 168 non-control rows sit at or
+above 60° whatever the dihedral. The angle does not track `(180° − θ)/2` and is not predictable from the field. |
+| | | ***The first clause held, and the control is what settles it.*** With the crease removed — a 180° wedge —
+the disagreement is **0.0000° worst and mean at every resolution**, because Marching Cubes is *exact* on a linear
+field. So the error needs a sharp feature and does not need a coarse grid. |
+| | | ***It reconciles the two halves of M-66 that looked contradictory.*** The **median is 0.000° in every row**:
+the disagreement is confined to a one-dimensional crease inside a two-dimensional mesh, so refining dilutes the
+mean and leaves the worst alone. One mechanism, both halves. |
+| | | ***Dual Contouring does not fix it, and converges the wrong way.*** A-007 exists for sharp features; at
+`θ = 90°` the dual's worst **rises** 36.2 → 90.0 and its mean 2.52 → 6.79 over 17³→129³, while Marching Cubes'
+mean falls 13.3 → 8.5. It starts three times better and converges toward Marching Cubes from below. |
+| | | ***6,959 vertices point into the solid, and they are on the surface.*** Area-weighted normals more than 90°
+from the gradient — worst 128.0° — which a convex combination of two plane normals cannot produce. The escape
+(the vertex is off-surface, since Marching Cubes interpolates linearly and a wedge is not linear at its apex) was
+measured and closed: median `|f|/h` at those vertices is **0.0000**, max 0.28. The crease is bridged by triangles
+facing somewhere else. **R-008** owns whether that is inherent. |
+| | | ***Deviation: two controls the ticket did not ask for, and the second changed the answer.*** The ticket said
+"sweep dihedral × resolution". Done that way — bisector on a grid axis — the fixture reproduces the prediction to
+**four decimal places** (75.0000, 60.0000, 45.0000 at three resolutions) and the hypothesis appears confirmed.
+Turning the wedge 17° about its own crease destroys it. The apex-alignment control (M-266) is the other. |
+| | | ***Method rule, and it is the sharper half of one already here.*** Part 5 says to *search* for a fixture that
+exhibits the property; this adds: **when a measurement matches a prediction exactly, vary the fixture's
+orientation before believing it.** Exactness is the tell, not the confirmation. |
