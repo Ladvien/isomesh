@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**381 entries** — 24 falsified, 301 measured, 36 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**382 entries** — 24 falsified, 301 measured, 37 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -400,6 +400,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-34` | Manifold Dual Contouring's uniform-grid criterion is one vertex per cycle of a decider-modified Marching Cubes table, an… |
 | `V-35` | Grosso 2017's implementation does not exist publicly, and that is now checked rather than assumed. |
 | `V-36` | CoACD's intersection-free guarantee is a property of its cut, and its own default merge stage breaks it — which resolves… |
+| `V-37` | the instrument R-024 needs is published and in this corpus; the question it asks is not |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -4421,3 +4422,90 @@ consumer is entitled to rely on.
 92.0% / 3.8×, and `box_exact` 80.9% / 2.6× against `csg_difference` 80.6% / 2.7×. Both pairs are
 within the run-to-run spread of each other, so the count separates the *regimes* and does not predict
 the ratio to a decimal. That is exactly why the count is the gate and the ratio is a print.
+
+
+### V-37 — the instrument R-024 needs is published and in this corpus; the question it asks is not
+
+**V.** R-024 is written as *"nobody has established this, and every paper treats the two as
+interchangeable."* Half of that needs narrowing, and the narrowing is worth more than the original
+sentence.
+
+**The instrument exists and has been shipping since 2010.** Wojtan, Thürey, Gross & Turk,
+*Physics-inspired topology changes for thin fluid features* (`10.1145/1778765.1778787`, in corpus as
+`eth-cgl-sim_anim-Woj10`) defines exactly the test R-024 needs, verbatim:
+
+> *"we determine the complexity of a cell edge by counting the number and orientation of its
+> intersections with triangles in the surface mesh and comparing the result with a single line segment
+> (0-sphere). If there are too many components, or if the surface is oriented the wrong way at any of
+> the intersection points, then the edge is complex."*
+
+They call it the **complex edge test**, run it over every edge of the signed-distance grid, and state
+its coverage precisely: it *"is guaranteed to identify any topological flaws that are well-resolved in
+at least two dimensions"*, with complex-face and complex-cell tests above it for thinner defects. The
+2024 multi-material surface-tracking paper (`sig2024_Multi-Material_Mesh-Based_Surface_Tracking…`)
+reuses the same hierarchy — complex edge, complex face, complex cell — so this is a standard
+instrument, not a one-off.
+
+**What they use it for is a different question, and that is the part that leaves R-024 standing.**
+Their mesh is *advected by a velocity field* and the SDF is rebuilt around it; disagreement between
+the two is **expected**, is the thing they are detecting, and is then repaired. Their sentence says so
+directly: *"We detect disagreements between the explicit surface mesh and the fluid grid."* Nobody in
+that line asks whether a mesh **freshly extracted from a field** agrees with the field that produced
+it, per extractor — because in their setting the mesh never was extracted from that field.
+
+**An independent search returned nothing for the question itself** — *does an extracted isosurface
+preserve the connected components of the sublevel set* — across arXiv, OpenAlex, Semantic Scholar and
+CrossRef. The nearest hits are persistent-homology reviews and volume-rendering work, neither of which
+is this.
+
+**So the claim R-024 may make is narrower and still unoccupied:** the *test* is borrowed prior art and
+must be cited as such; what is new is running it as a **correctness audit of extraction itself**,
+across a family of extractors on a shared fixture, and reporting which of them seal and which do not.
+Claiming the instrument would be the third instance of ✗21's family — reading a method's *purpose*
+off its *mechanism*.
+
+**Would be shown wrong by:** a paper that runs an edge-crossing or equivalent audit on a
+freshly-extracted isosurface and reports per-algorithm agreement with the field's own sign. That is
+the exact thing being claimed as absent, and finding it closes R-024's novelty rather than its result.
+
+
+### P-21 — registered for R-024, before the harness was written
+
+**What is being asked.** The crate validates a mesh against *itself* — manifoldness, orientation,
+Euler characteristic, self-intersection — and against the field's *geometry*, in `validate::accuracy`.
+It has never checked the mesh against the field's **partition of space**. Those are different claims:
+a mesh can be closed, manifold, correctly oriented and Hausdorff-close while sealing a passage the
+field leaves open, or opening one it seals.
+
+**The discrete form, and why the probe is a grid edge.** The extractor never sees the field anywhere
+but at the samples, so the air sublevel set *as the extractor could know it* is the 6-connected graph
+on samples with `!is_inside`. Probing along the grid edges keeps both sides on the same lattice and
+keeps the test **local**, which is what lets it run on `gyroid` and `fbm_terrain` — fields whose
+surface leaves the domain, where any global inside/outside test is undefined at the boundary. The
+instrument is Wojtan et al.'s complex-edge test and is cited as theirs (V-37).
+
+> **H.** For every 6-adjacent pair of grid samples, the mesh crosses the segment between them an
+> **odd** number of times when the two samples straddle the surface and an **even** number when they
+> do not — so the air sublevel set's components and the same samples' components under mesh-cut
+> adjacency agree in count and in partition. **Marching Cubes achieves this on all eight reference
+> fields**, because its vertex *is* the root of the interpolant along the very edge being probed. **At
+> least one dual method does not**, because it places its vertex by solve.
+
+**Falsified by** universal agreement — every extractor sealing every field at every resolution, which
+would be a stronger correctness statement than this crate currently makes and would be worth stating
+as one. **And separately, more interestingly, by Marching Cubes disagreeing**: the crossing on a
+sign-changing edge is on the interpolant by construction there, so a failure would locate the defect
+in *triangulation* rather than in *vertex placement*, and would invert the mechanism this hypothesis
+rests on.
+
+**Records** `field`, `extractor`, `samples_per_axis`, `field_air_components`, `mesh_air_components`,
+`unsealed_walls`, `spurious_walls`, `mixed_regions`.
+
+**The degeneracy this has to get right, stated before the numbers arrive.** A Marching Cubes vertex
+lies **exactly on** the probed segment and is shared by every triangle in its fan, so counting
+*triangle* hits would report 4 where the *surface* crosses once, and every sign-changing edge in the
+crate's flagship extractor would read even. Crossings are therefore counted as **distinct points**,
+deduplicated at the crate's own weld tolerance, and the number of raw hits that collapsed is reported
+so the mechanism is visible rather than assumed. A harness that got this wrong would falsify H in the
+loudest possible way while measuring nothing but its own convention — which is M-279's rule, applied
+before the fact for once.

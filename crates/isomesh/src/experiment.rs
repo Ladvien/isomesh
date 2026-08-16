@@ -341,6 +341,41 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "boundary_edges",
         ],
     },
+    Preregistration {
+        id: "P-21",
+        ticket: "R-024",
+        hypothesis: "A freshly extracted mesh separates exactly the sample pairs \
+                     the field's own sign separates. For every 6-adjacent pair of \
+                     grid samples, the mesh crosses the segment between them an \
+                     ODD number of times when the two samples straddle the \
+                     surface and an EVEN number when they do not -- so the \
+                     connected components of the air sublevel set and the \
+                     components of the same samples under mesh-cut adjacency \
+                     agree in count and in partition. Marching Cubes achieves \
+                     this on all eight reference fields, because its vertex is \
+                     the root of the interpolant along the very edge being \
+                     probed. At least one dual method does not, because it \
+                     places its vertex by solve.",
+        falsified_by: "Universal agreement -- every extractor sealing every field \
+                       at every resolution, which would be a stronger \
+                       correctness statement than this crate currently makes and \
+                       is worth saying so. Separately falsified, and more \
+                       interestingly, by Marching Cubes disagreeing: that would \
+                       put the defect in the primal path, where the crossing is \
+                       on the interpolant by construction, and would mean the \
+                       failure is in triangulation rather than in vertex \
+                       placement.",
+        records: &[
+            "field",
+            "extractor",
+            "samples_per_axis",
+            "field_air_components",
+            "mesh_air_components",
+            "unsealed_walls",
+            "spurious_walls",
+            "mixed_regions",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
