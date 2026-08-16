@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**359 entries** — 19 falsified, 286 measured, 34 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**360 entries** — 19 falsified, 287 measured, 34 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -344,6 +344,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-289` | the reference gradient was noise, and it falsified two hypotheses that were true (R-009) |
 | `M-290` | the ambiguous face in the dual path, with the source read at last (A-022) |
 | `M-291` | FALSIFIED, and the sharper form of it points the other way (A-025) |
+| `M-292` | no two-cell configuration forces Manifold Dual Contouring's defect (A-025) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -3350,3 +3351,49 @@ is a property of the whole population, so it cannot be the thing that picks out 
 **Still unnamed:** what distinguishes the offending pairs. A-025 stays open for it, and the next step
 is A-021's method rather than a wider census — the offending set is 26 pairs at 65³ and their sign
 configurations can simply be printed.
+
+### M-292 — no two-cell configuration forces Manifold Dual Contouring's defect (A-025)
+
+**M.** `benches/a025_configurations.rs`, `docs/measurements/a025-configurations.csv`. All
+`2¹² = 4,096` sign patterns of two cells stacked along one axis — ✗17's method — with every
+**consistent** assignment of the joined bits enumerated on top: 16,384 combinations, the two cells
+required to agree about the shared face because a face rule evaluates the *face* and both cells see
+the same four corners.
+
+| | patterns |
+|---|---|
+| share an ambiguous face | **512** |
+| offend under **mask 0**, which is exactly `FaceAmbiguity::Separate` | **18** |
+| offend under **some** consistent mask — what any face rule could reach | 476 |
+| offend under **every** consistent mask — what no face rule could fix | **0** |
+
+**Zero.** For every one of the 512 configurations there is a consistent choice of joined bits under
+which the four cut edges do **not** all land in one cycle on both sides. **The defect is never forced
+by the sign configuration**, which is the question A-025 asked and which sampling `noise_cavity` could
+never have answered — a field says which configurations it reaches, not which exist.
+
+#### What that does and does not license
+
+It does **not** say a face rule can fix it. A rule reads the face's *values*, and the values that make
+a face ambiguous also determine what the rule answers — the freedom this enumeration has, a real rule
+does not. The evidence that it cannot is already in: the asymptotic decider is the canonical
+value-determined rule and it still leaves **25 to 49** offending pairs per resolution on
+`noise_cavity` (M-290, M-291).
+
+So the two halves fit together. **Combinatorially the defect is always avoidable; with a rule that is
+a function of the shared face alone, it is not.** Anything that fixes it needs strictly more context
+than the face — the two cells' other faces, or a second vertex, which are the two alternatives A-017
+recorded and rejected.
+
+#### Two structures in the table, both sharp
+
+**The default's 18 are exactly the `(1, 1)` bucket.** Every configuration where both cells resolve to
+a *single* cycle offends under mask 0, and there are exactly 18 of them. That is the whole of
+`Separate`'s combinatorial exposure, and it is why the default's count on a real field tracks how
+often two one-cycle cells meet across an ambiguous face.
+
+**`(1, 2)` and `(2, 1)` are the only buckets that are not saturated** — 42 offending against 18 not,
+a share of 0.700, where all fourteen other cycle-count buckets are 1.0000. So a cell with one cycle
+meeting a cell with two is the only pairing whose outcome the mask does not always control, and the
+36 patterns no mask can make offend are all there. Both facts are exact over the full enumeration
+rather than estimated from a field.

@@ -106,6 +106,17 @@ fields at three resolutions; T-004 determinism passes; T-005 covers it; and a be
 > 49³/65³ — matching M-290's mesh-derived numbers from the other direction. **What is left is naming
 > the mechanism**, and the next step is A-021's method rather than another census: the offending set is
 > **26 pairs at 65³** and their sign configurations can be printed.
+> PROGRESS 2026-08-16 — **the mechanism is bounded, and the bound is exhaustive (M-292).** All 4,096
+> two-cell sign patterns, with every *consistent* joined-mask assignment on top — the two cells
+> required to agree about the shared face. **512** share an ambiguous face; **18** offend under mask 0,
+> which is exactly what `Separate` does; **476** offend under some consistent mask; and **0** offend
+> under every one. So the defect is **never forced by the sign configuration**. That does not license
+> "a face rule can fix it" — a rule reads the face's values and has none of this enumeration's freedom,
+> and the decider still leaves 25–49 pairs per resolution. **Combinatorially always avoidable; with a
+> rule that is a function of the shared face alone, not.** Anything that fixes it needs strictly more
+> context than the face, which is A-017's two rejected alternatives. Two exact structures fell out: the
+> default's 18 are precisely the `(1, 1)` cycle-count bucket, and `(1, 2)`/`(2, 1)` are the only
+> buckets the mask does not always control (0.700 against 1.0000 everywhere else).
 > BLOCKED: **the second half is a decision, not a measurement.** `ManifoldDualContouring` defaults to
 > `FaceAmbiguity::Separate`; the paper's construction is the decider-modified table (V-34), which is
 > 20% better on `noise_cavity` and, per the module docs, *worse* on `gyroid` at 25³. Changing it
