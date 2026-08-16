@@ -282,6 +282,36 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "covered",
         ],
     },
+    Preregistration {
+        id: "P-19",
+        ticket: "S-009",
+        hypothesis: "The on-demand-versus-batch crossover for the generalized \
+                     winding number is set by the batch path's one-ray-per-grid-row \
+                     sharing, not by its point count: on a nearly-closed mesh the \
+                     crossover query count Q* is of order N² rather than N³, \
+                     landing within 0.5x to 4x of N² for grids from 17³ to 65³. \
+                     The naive expectation -- that an on-demand field wins below \
+                     N³ queries, since that is how many the batch path answers -- \
+                     is registered here as the thing this is expected to beat.",
+        falsified_by: "Q* reaching a tenth of N³ or more on a nearly-closed mesh, \
+                       which would put the cost in the per-point boundary-edge \
+                       correction rather than in the per-row ray, and mean the \
+                       row sharing M-299 identified is not what sets the \
+                       crossover. Also falsified if no crossover exists at all \
+                       above the point where batching is trivially cheaper -- a \
+                       single query -- which would say the on-demand field has no \
+                       regime and S-009 should be closed rather than built.",
+        records: &[
+            "samples_per_axis",
+            "triangles",
+            "boundary_edges",
+            "batch_total_ns",
+            "on_demand_ns_per_query",
+            "crossover_queries",
+            "crossover_over_n_squared",
+            "crossover_over_n_cubed",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

@@ -3761,6 +3761,44 @@ queries. A persistent per-row cache keyed on `(y, z)` is the obvious attempt, an
 field stateful and its cost order-dependent, which is why it was not the default.
 
 
+### P-19 — registered for S-009, before the harness was written
+
+**What ✗23 leaves.** S-009's original justification is gone: Manifold Dual Contouring does not query
+where it needs to, it pre-samples all N³ points at `dual.rs:257`, so the dense path is the right price
+for extractors. What survives is the question for a *genuinely* sparse consumer — F-005's empty-cell
+rejection by sphere tracing, a collision query, a point probe. But M-299 already measured the thing
+that decides it, and it makes the obvious prediction the wrong one.
+
+**The batch winding path casts one ray per grid *row*, not per sample.** `winding_numbers` shares each
+`+x` ray across every sample on it, so an `n³` grid costs `n²` casts — Martens states the same
+reduction, *"to compute voxelizations of resolution N³, we only need to shoot N² rays."* An on-demand
+field cannot share anything: it casts one ray per query. So the two paths differ by a factor of `N` in
+ray count, and the naive crossover — "on-demand wins below N³ queries, because that is how many the
+batch path answers" — charges the batch path for work it does not do.
+
+> **H.** The crossover is set by the row sharing, not by the point count: on a nearly-closed mesh the
+> crossover query count `Q*` is of order `N²` rather than `N³`, landing within `0.5×` to `4×` of `N²`
+> for grids from 17³ to 65³.
+
+**Falsified by** `Q*` reaching a tenth of `N³` or more on a nearly-closed mesh, which would put the
+cost in the per-point boundary-edge correction rather than in the per-row ray, and mean the row
+sharing is not what sets the crossover. **Also falsified** if no crossover exists above a single
+query — which would say the on-demand field has no regime at all, and S-009 should be **closed rather
+than built**.
+
+**Records** `samples_per_axis`, `triangles`, `boundary_edges`, `batch_total_ns`,
+`on_demand_ns_per_query`, `crossover_queries`, `crossover_over_n_squared`, `crossover_over_n_cubed`.
+
+**Why "nearly-closed" is in the hypothesis rather than left implicit.** The two terms scale
+differently: the ray cost is `O(N²·T)` for the batch and `O(Q·T)` on demand, while the boundary
+correction is `O(N³·B)` against `O(Q·B)`, with `B` the boundary-edge count. On a mesh with *many*
+holes the correction term dominates and `Q*` really should approach `N³` — so the hypothesis is
+specifically that the **row sharing** governs, and it is only testable where `B` is small. A
+hole-punched fixture is the control that should push `Q*` up, and if it does not, the mechanism named
+here is wrong even if the number on the nearly-closed fixture comes out right. **That control is part
+of the registration, not an afterthought** — M-279's rule, that a falsifier has to separate the
+hypothesis from its rivals rather than merely be capable of failing.
+
 ### P-18 — registered for R-011, before the count was taken
 
 **What M-297 leaves.** Every decomposition method in the sweep assumes closed, watertight,
