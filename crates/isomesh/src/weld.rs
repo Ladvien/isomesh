@@ -294,6 +294,59 @@ impl<R: Real> Welder<R> {
     /// [`MeshSink::vertex`](crate::MeshSink::vertex) writes both — so a mismatch
     /// is a caller that hand-built a malformed buffer.
     pub fn weld(&mut self, mesh: &mut MeshBuffer<R>, epsilon: R) -> Result<WeldReport> {
+        self.weld_split_by(mesh, epsilon, &[])
+    }
+
+    /// [`weld`](Self::weld), but refusing to merge vertices whose caller-supplied
+    /// key differs.
+    ///
+    /// Ticket: R-010. `keys` holds one opaque `u64` per vertex, or is **empty**
+    /// to mean "every vertex has the same key", which is exactly what
+    /// [`weld`](Self::weld) passes. One implementation, two entry points.
+    ///
+    /// # Why a key and not a predicate
+    ///
+    /// **Because a predicate can express the thing that already failed here, and
+    /// a key cannot.** E×4 gated the weld on the pairwise link condition and was
+    /// reverted as strictly worse: on 56 configurations it removed at most 4
+    /// non-manifold edges and *added up to 791 non-manifold vertices*, taking
+    /// `noise_cavity` from 301 to 1,092. The mechanism is that a `k`-way
+    /// coincidence is manifold only if **all `k`** merge, and a pairwise test
+    /// refuses one member of the set, leaving its representative a bowtie.
+    ///
+    /// Equality on a key is an **equivalence relation**. It partitions each
+    /// coincidence class into complete sub-classes: every member of a sub-class
+    /// merges with every other, and no proper subset is ever refused. So the
+    /// E×4 failure is not merely avoided by care — it is **unrepresentable in
+    /// this signature**. That is why the parameter is `&[u64]` and not
+    /// `impl Fn(u32, u32) -> bool`.
+    ///
+    /// # Building a key
+    ///
+    /// The caller hashes whatever it needs to preserve — a smoothing group, a
+    /// quantised normal, a UV, a material id — into one `u64`. Quantise before
+    /// hashing: two normals that differ in the last bit must land on the same key
+    /// or they will not merge, and an exact float comparison makes that a coin
+    /// toss. `MeshBuffer` carries no UVs and no vertex class, so this crate
+    /// cannot build the key for you; that also keeps the public signature free of
+    /// any math type.
+    ///
+    /// # Errors
+    ///
+    /// As [`weld`](Self::weld), plus [`Error::WeldKeyLengthMismatch`] when `keys`
+    /// is neither empty nor one per vertex.
+    pub fn weld_split_by(
+        &mut self,
+        mesh: &mut MeshBuffer<R>,
+        epsilon: R,
+        keys: &[u64],
+    ) -> Result<WeldReport> {
+        if !keys.is_empty() && keys.len() != mesh.positions.len() {
+            return Err(Error::WeldKeyLengthMismatch {
+                keys: keys.len() as u64,
+                vertices: mesh.positions.len() as u64,
+            });
+        }
         if !epsilon.is_finite() || epsilon <= R::ZERO {
             // Narrowed only to carry the value in the message; the decision above
             // is made at full width.
@@ -372,6 +425,12 @@ impl<R: Real> Welder<R> {
                                 continue;
                             }
                             if best.is_some_and(|b| u >= b) {
+                                continue;
+                            }
+                            // R-010: a differing key refuses the merge. Empty
+                            // `keys` means one class, so this is a no-op for the
+                            // unconditional weld and there is no second path.
+                            if !keys.is_empty() && keys.get(u as usize) != keys.get(v) {
                                 continue;
                             }
                             let q = mesh.positions[u as usize];

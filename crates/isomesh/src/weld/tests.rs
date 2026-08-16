@@ -500,3 +500,119 @@ fn the_one_policy_is_one_number_however_it_is_reached() {
         (ValidateConfig::WELD_EPSILON_REL as f32).to_bits()
     );
 }
+
+// ── R-010: splitting a weld on a caller-supplied key ────────────────────────
+
+/// Four coincident vertices, as a `k`-way class with `k = 4`.
+fn coincident_quad() -> MeshBuffer<f64> {
+    let mut mesh = MeshBuffer::<f64>::default();
+    for _ in 0..4 {
+        mesh.positions.push([1.0, 2.0, 3.0]);
+        mesh.normals.push([0.0, 1.0, 0.0]);
+    }
+    // Two triangles that do not collapse, so the weld has something to rewrite.
+    mesh.positions.push([9.0, 0.0, 0.0]);
+    mesh.normals.push([0.0, 1.0, 0.0]);
+    mesh.positions.push([0.0, 9.0, 0.0]);
+    mesh.normals.push([0.0, 1.0, 0.0]);
+    mesh.indices.extend_from_slice(&[0, 4, 5, 1, 5, 4]);
+    mesh
+}
+
+#[test]
+fn an_empty_key_slice_is_the_unconditional_weld() {
+    let mut a = coincident_quad();
+    let mut b = coincident_quad();
+
+    let ra = Welder::default().weld(&mut a, 1e-6).expect("weld");
+    let rb = Welder::default()
+        .weld_split_by(&mut b, 1e-6, &[])
+        .expect("weld");
+
+    assert_eq!(ra.vertices_after, rb.vertices_after);
+    assert_eq!(a.positions, b.positions);
+    assert_eq!(a.indices, b.indices);
+    // The four coincident vertices became one.
+    assert_eq!(ra.vertices_before - ra.vertices_after, 3);
+}
+
+/// The property that makes this a different object from E×4's gate: a key
+/// partitions a `k`-way class into **complete** sub-classes, so every member of
+/// a sub-class merges and no proper subset is ever left as a lone bowtie.
+#[test]
+fn a_key_partitions_a_class_into_complete_subclasses() {
+    let mut mesh = coincident_quad();
+    // Two classes of two, over the same four coincident positions.
+    let keys = [7u64, 7, 9, 9, 0, 1];
+    let report = Welder::default()
+        .weld_split_by(&mut mesh, 1e-6, &keys)
+        .expect("weld");
+
+    // Four coincident vertices collapse to exactly two, not one and not four.
+    assert_eq!(report.vertices_before, 6);
+    assert_eq!(report.vertices_after, 4);
+}
+
+#[test]
+fn distinct_keys_everywhere_refuse_every_merge() {
+    let mut mesh = coincident_quad();
+    let keys = [1u64, 2, 3, 4, 5, 6];
+    let report = Welder::default()
+        .weld_split_by(&mut mesh, 1e-6, &keys)
+        .expect("weld");
+    assert_eq!(
+        report.vertices_after, report.vertices_before,
+        "every vertex is its own class, so nothing may merge"
+    );
+}
+
+#[test]
+fn one_key_everywhere_is_the_unconditional_weld() {
+    let mut split = coincident_quad();
+    let mut plain = coincident_quad();
+    let keys = [42u64; 6];
+
+    let a = Welder::default()
+        .weld_split_by(&mut split, 1e-6, &keys)
+        .expect("weld");
+    let b = Welder::default().weld(&mut plain, 1e-6).expect("weld");
+
+    assert_eq!(a.vertices_after, b.vertices_after);
+    assert_eq!(split.positions, plain.positions);
+    assert_eq!(split.indices, plain.indices);
+}
+
+#[test]
+fn a_key_slice_of_the_wrong_length_is_refused() {
+    let mut mesh = coincident_quad();
+    let err = Welder::default()
+        .weld_split_by(&mut mesh, 1e-6, &[1u64, 2, 3])
+        .expect_err("three keys for six vertices");
+    assert!(matches!(
+        err,
+        crate::Error::WeldKeyLengthMismatch {
+            keys: 3,
+            vertices: 6
+        }
+    ));
+    // Refused before any mutation.
+    assert_eq!(mesh.positions.len(), 6);
+}
+
+#[test]
+fn splitting_on_a_key_is_deterministic() {
+    let keys = [7u64, 7, 9, 9, 0, 1];
+    let mut first = coincident_quad();
+    let report = Welder::default()
+        .weld_split_by(&mut first, 1e-6, &keys)
+        .expect("weld");
+    for _ in 0..64 {
+        let mut again = coincident_quad();
+        let r = Welder::default()
+            .weld_split_by(&mut again, 1e-6, &keys)
+            .expect("weld");
+        assert_eq!(r.vertices_after, report.vertices_after);
+        assert_eq!(again.positions, first.positions);
+        assert_eq!(again.indices, first.indices);
+    }
+}

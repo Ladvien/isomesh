@@ -3764,6 +3764,42 @@ queries. A persistent per-row cache keyed on `(y, z)` is the obvious attempt, an
 field stateful and its cost order-dependent, which is why it was not the default.
 
 
+### P-20 — registered for R-010, before the harness was written
+
+**What E×4 leaves.** The link-condition gate was measured and reverted: over 56 configurations it
+removed **at most 4** non-manifold edges and added **up to 791** non-manifold vertices, taking
+`noise_cavity` + subgrid from 301 to **1,092** and `sphere` + Marching Cubes from **0 to 96**. The
+mechanism is named there and it is the whole reason this ticket is a different object: a `k`-way
+coincidence is manifold only if **all `k`** merge, and a *pairwise* test refuses one member of the
+set, leaving its representative a bowtie. That is why the damage was in the vertex column while the
+edge column barely moved.
+
+**What changes here is the shape of the refusal, not its strictness.** Equality on a key is an
+**equivalence relation**: it partitions each coincidence class into *complete* sub-classes, every
+member of a sub-class merges with every other, and no proper subset is ever refused. The API takes
+`&[u64]` rather than `impl Fn(u32, u32) -> bool` precisely so that E×4's shape is **unrepresentable**
+rather than merely discouraged.
+
+> **H.** Splitting on a caller-supplied key moves no topology metric relative to the unconditional
+> weld beyond the splits the key itself names: with a **constant** key every metric is identical, and
+> with a **varying** key the only change is the vertex count rising by the number of sub-classes the
+> key creates. All eight reference fields, every extractor.
+
+**Falsified by** any topology metric moving where the key is **constant** — which would mean the hook
+itself, not the key, is doing something. **And separately** by a non-manifold vertex count that rises
+by *more* than the split count under a varying key, which would be E×4's failure reappearing through a
+different door.
+
+**Records** `field`, `extractor`, `key`, `vertices_after`, `splits`, `non_manifold_edges`,
+`non_manifold_vertices`, `boundary_edges`.
+
+**Note what the constant-key arm actually tests.** It is a control on the *mechanism*, not on the
+hypothesis' interesting half: if a constant key changes anything at all, the plumbing is wrong and no
+result from the varying arm can be trusted. It is registered as an arm rather than assumed because
+M-279's rule says a falsifier must separate the hypothesis from its rivals — and "the hook perturbs
+the weld" is exactly the rival that a varying-key-only experiment could not tell apart from "the key
+does what it says."
+
 ### P-19 — registered for S-009, before the harness was written
 
 **What ✗23 leaves.** S-009's original justification is gone: Manifold Dual Contouring does not query

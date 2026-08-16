@@ -8,6 +8,18 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+### Added
+
+- **`Welder::weld_split_by` — a weld that refuses to merge vertices whose caller-supplied key
+  differs.** One `u64` per vertex, or an empty slice meaning "one class", which is exactly what
+  `weld` passes; one implementation, two entry points. **The parameter is a key and not a predicate on
+  purpose**: E×4 gated the weld on the pairwise link condition and was reverted as strictly worse —
+  over 56 configurations it removed at most 4 non-manifold edges and *added up to 791 non-manifold
+  vertices*, because a `k`-way coincidence is manifold only if all `k` merge and a pairwise test
+  leaves the odd one out a bowtie. Equality on a key is an equivalence relation, so it partitions each
+  class into complete sub-classes and that failure is **unrepresentable in the signature** rather than
+  merely discouraged (R-010).
+
 ### Fixed
 
 - **The generalized-winding backend is `O(N³·B)` in boundary-edge count, and nothing said so.** A

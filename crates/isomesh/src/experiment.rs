@@ -312,6 +312,35 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "crossover_over_n_cubed",
         ],
     },
+    Preregistration {
+        id: "P-20",
+        ticket: "R-010",
+        hypothesis: "Splitting a weld on a caller-supplied key moves no topology \
+                     metric relative to the unconditional weld beyond the splits \
+                     the key itself names: with a constant key every metric is \
+                     identical, and with a varying key the only change is the \
+                     vertex count rising by the number of sub-classes the key \
+                     creates. Across all eight reference fields and every \
+                     extractor.",
+        falsified_by: "Any topology metric -- non-manifold edges, non-manifold \
+                       vertices, boundary edges -- moving where the key is \
+                       constant, which would mean the hook itself rather than \
+                       the key is doing something. Or, with a varying key, a \
+                       non-manifold vertex count that rises by more than the \
+                       split count, which would be E*4's failure reappearing: a \
+                       partial refusal within one coincidence class leaving its \
+                       representative a bowtie.",
+        records: &[
+            "field",
+            "extractor",
+            "key",
+            "vertices_after",
+            "splits",
+            "non_manifold_edges",
+            "non_manifold_vertices",
+            "boundary_edges",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

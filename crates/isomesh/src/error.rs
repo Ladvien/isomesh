@@ -86,6 +86,20 @@ pub enum Error {
         value: f64,
     },
 
+    /// A weld key slice that is neither empty nor one key per vertex.
+    ///
+    /// Ticket: R-010. Empty means "one class", which is what the unconditional
+    /// weld passes. Any other length is a caller that built its keys from a
+    /// different vertex list than the one it is welding — reported rather than
+    /// zero-extended, because a short key slice would silently merge everything
+    /// past its end.
+    WeldKeyLengthMismatch {
+        /// Keys supplied.
+        keys: u64,
+        /// Vertices in the buffer.
+        vertices: u64,
+    },
+
     /// A spacing that does not describe the mesh it was given.
     ///
     /// Reported rather than absorbed: a broadphase grid finer than the mesh
@@ -247,6 +261,10 @@ impl fmt::Display for Error {
             Self::InvalidWeldEpsilon { value } => {
                 write!(f, "weld epsilon must be finite and positive, got {value}")
             }
+            Self::WeldKeyLengthMismatch { keys, vertices } => write!(
+                f,
+                "{keys} weld keys for {vertices} vertices: pass one per vertex, or none at all"
+            ),
             Self::CellSizeMismatch {
                 triangle,
                 cells,
