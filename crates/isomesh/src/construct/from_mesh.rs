@@ -452,8 +452,17 @@ pub fn signed_distance_from_mesh<R: Real>(
 ///
 /// Ticket: S-008. [`signed_distance_from_mesh`] answers *"sample this mesh onto
 /// that grid"*. This answers *"what is the distance **here**"*, which is what a
-/// consumer that queries where it needs to actually wants — Manifold Dual
-/// Contouring is exactly that consumer, and so is any point probe.
+/// genuinely sparse consumer wants — a point probe, a collision query, an
+/// empty-cell rejection by sphere tracing.
+///
+/// **Not Manifold Dual Contouring**, which S-008 named as the motivating
+/// consumer and which is **not one** (D-011). Its `extract` calls
+/// `self.sample(sdf, shape, origin, cell_size)` at `dual.rs:257`, looping every
+/// one of the N³ grid points into a buffer before anything else runs, so it
+/// reads a grid like every other extractor here and the dense path is the right
+/// price for it. The claim came from a summary of the paper rather than from
+/// this codebase; whether an on-demand field beats the batch one for a *truly*
+/// sparse consumer is open, and S-009 owns it with a crossover to pre-register.
 ///
 /// The acceleration structures — the angle-weighted pseudonormals and the
 /// blocked bounding boxes — are built once by [`new`](Self::new) and reused by

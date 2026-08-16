@@ -8,6 +8,16 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`MeshField`'s docs claimed Manifold Dual Contouring is a sparse consumer of it. It is not.**
+  `ManifoldDualContouring::extract` pre-samples all N³ grid points into a buffer before visiting any
+  cell, so it reads a grid like every other extractor here. The claim was lifted from a summary of the
+  paper rather than checked against the code, and it had reached shipped documentation on a public
+  type. The type is unaffected and stays — it is still the one implementation of the query, and T-025
+  routed the winding path through it — but the motivating consumer named in its docs was wrong
+  (D-011, ✗23).
+
 ### Added
 
 - **`validate::SurfaceGate` and `MeshReport::satisfies(gate)` — the rule for *which* validity check

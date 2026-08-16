@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**375 entries** — 22 falsified, 297 measured, 36 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**376 entries** — 23 falsified, 297 measured, 36 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -61,6 +61,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗20` | "Every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input" |
 | `✗21` | "Convex Primitive Decomposition is the cutting substrate a plane-cut fracture pipeline wants" |
 | `✗22` | "MeshReport applies a closed-solid test to render meshes, so it must be split into two report types" |
+| `✗23` | "Manifold Dual Contouring queries where it needs to, so it wants an on-demand field" |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -3976,6 +3977,41 @@ and this one. **Read the brief as a literature review, and verify every sentence
 **Would be shown wrong by:** a consumer requirement that the three predicates genuinely cannot express
 — a report where solid and surface assertions must coexist on one mesh rather than being selected
 between.
+
+
+### ✗23 — "Manifold Dual Contouring queries where it needs to, so it wants an on-demand field"
+
+**Believed because:** S-008 needed a motivating consumer for `MeshField` and named one. The sentence
+reads like a summary of Schaefer, Ju & Warren — dual methods place one vertex per cell, so it is
+*plausible* that such a method evaluates the field at scattered points rather than sweeping a grid.
+It went into the S-008 archive note, into S-009's justification, and — the part that mattered — into
+the **shipped doc comment** on `MeshField`, a public type, where it told every reader of docs.rs that
+MDC is *"exactly that consumer"*.
+
+**Falsified by reading this codebase (D-011, S-009).** `ManifoldDualContouring::extract` calls
+`self.sample(sdf, shape, origin, cell_size)` at `dual.rs:257`, which loops **every one of the N³ grid
+points into a buffer** before any cell is visited. MDC reads a grid exactly like Marching Cubes does.
+There is no scattered evaluation anywhere in it.
+
+**What survives, and it is most of the work.** `MeshField` itself is not in question: S-008's own
+`the_grid_path_is_this_field_in_a_loop` makes it *the* implementation of the query and pins
+`signed_distance_from_mesh` to identical bits across all 35,937 samples of the round trip. T-025 then
+made the winding path use it too. **The type was right and its stated reason was wrong** — which is
+why this is a `✗` and not a revert.
+
+**What it changes.** S-009 is re-parented: the on-demand-versus-batch question is real but belongs to
+a *genuinely* sparse consumer — F-005's empty-cell rejection by sphere tracing, a collision query, a
+point probe — and it owes a pre-registered crossover `Q*` rather than an appeal to MDC. Nothing else
+in the crate acted on the premise.
+
+**Family.** This is the first of the three failures ✗21's amendment tabulates, and the cleanest
+example of the shape: *the summary was accurate about what the method is for, and the inference was
+about what it does*. It is also the only one of the three that reached **shipped documentation**,
+which is why it earned a ticket of its own rather than a line in someone else's.
+
+**Would be shown wrong by:** a dual method in this crate that evaluates the field per-cell rather than
+pre-sampling — which is a legitimate thing to build, and would make the premise true of *that*
+extractor rather than of MDC.
 
 
 ### M-300 / P-18 — FALSIFIED, and not where it was predicted: the gap is non-manifold vertices, not self-intersections (R-011)
