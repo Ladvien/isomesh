@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-175 tickets. Line numbers are stable until something above them is edited — grep the ID if
+176 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1309,3 +1309,21 @@ curve is 8.71 → 9.70 ns over four octaves, +11%, against the +40% O-11 was rai
 | | | ***And it hands back a design question rather than settling one.*** ✗14 exists to say Surface Nets is not
 the cheap default. Its triangle-count half is untouched; its cost half is now 1.26× at the largest grid and a
 win below 48³. Whether that changes the crate's default extractor is not a measurement and is not decided here. |
+| ☑ | **R-008** | **The crease is bridged by triangles that face somewhere else — is that inherent?** R-006 (M-283) measured **6,959 vertices under Marching Cubes and 4,868 under Dual Contouring** whose area-weighted normal is more than 90° from the field gradient, worst **128.0°**, and closed the obvious escape: the median `\|f(v)\|/h` at those vertices is **0.0000**, so they are on the isosurface. **H, pre-registered as P-16.** **Falsified by:** past-90° vertices in cells that touch only one face. | M | R-006 |
+| | | ***P-16 falsified, and by four times its own threshold (M-288).*** The falsifier was "more than 5% whose
+incident cells all lie on one side". It is **80%**: of 2,657 past-90° vertices across 23 rows, **536 are on the
+crease** — median 0.69–0.90 cells from it — and 2,121 are **11 to 94 cells** away. |
+| | | ***The mechanism P-16 named is real and is a minority.*** Six rows are unambiguous, and the control says the
+classification is not vacuous: vertices *under* 90° are on the crease only 0–12.8% of the time. So two faces
+meeting inside one cell does produce this; it is simply not what most of it is. |
+| | | ***The registration's operational definition did not implement its own claim, and it did not matter.***
+"straddles the crease — its eight corners do not all have the same nearer plane" splits by the **bisector**
+plane, which runs from the apex through the interior of the solid. The registered test was reported anyway
+because a registration is not edited after its experiment runs, and a corrected one was reported beside it,
+labelled post-hoc. **They agree on every one of the 23 rows.** A wrong definition survived a whole experiment
+because it happened to correlate — worth knowing in both directions. |
+| | | ***What the counts localise, which is more than either classifier managed.*** Offender counts are 31 and 62
+at n=33, 63 and 126 at n=65, 127, 254 and 381 at n=129 — every one an exact multiple of `n − 2`. The wedge is
+extruded along `z`, so any feature of the cross-section repeats once per layer: there are **one to three
+offending locations in the entire cross-section**, 11 to 94 cells from the crease. That is a constructed-fixture
+problem, the same shape as A-021's 314 edges before M-276 named them, and it is **R-009**. |

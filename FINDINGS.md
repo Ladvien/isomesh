@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**353 entries** — 18 falsified, 282 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**354 entries** — 18 falsified, 283 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -339,6 +339,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-285` | the dual's axis had to be a constant, and that was 82% of its cycles (A-023) |
 | `M-286` | the misses M-279 measured as free were hidden behind the stall, and now they cost (A-023) |
 | `M-287` | one bit of the row length was a 3.4× tax at the chunk size everybody uses (A-024) |
+| `M-288` | FALSIFIED, and the registered definition did not implement the registered claim (R-008) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -2678,6 +2679,12 @@ that face somewhere else**, and for an acute wedge a whole band along it is thin
 is M-15's *"any feature thinner than one cell forces two sheets through it"* arriving on a sharp
 field. Whether that is inherent to one vertex per crossed edge or a defect with a fix is **R-008**.
 
+**R-008 answered it and this reading is narrowed (M-288): the crease accounts for 20% of them.**
+536 of 2,657 past-90° vertices sit under a cell from the crease; the other 2,121 are 11 to 94 cells
+away. The counts are exact multiples of `n − 2` and the wedge is extruded along `z`, so there are
+**one to three offending locations in the whole cross-section** and neither classifier found them.
+**R-009** owns that.
+
 #### The method finding, which is the one worth keeping
 
 **The fixture agreed with the prediction to four decimal places and was wrong.** A wedge whose
@@ -2981,3 +2988,56 @@ crease — which would make it a defect with a location and a fix, and a much be
 plane, and a corner sitting within rounding of the bisector can be classified either way; a hard zero
 would make the hypothesis fail on arithmetic rather than on geometry. 5% is far above that noise and
 far below "a substantial share".
+
+### M-288 / P-16 — FALSIFIED, and the registered definition did not implement the registered claim (R-008)
+
+**M.** `benches/experiment_p16.rs`, `docs/experiments/p-16.csv`, 63 rows: an exact convex wedge ×
+7 dihedrals × 3 rotations × 3 resolutions, Marching Cubes, area-weighted normals.
+
+**23 rows contain a past-90° vertex, 2,657 in total, and 536 of them — 20% — are on the crease.**
+The registered falsifier was *"more than 5% whose incident cells all lie on one side"*. It is 80%.
+
+| | rows | median distance to the crease |
+|---|---|---|
+| offenders **on** the crease | 6 | **0.69–0.90 cells** |
+| offenders **elsewhere** | 17 | **11.14–93.81 cells** |
+
+So the mechanism P-16 named is real and is a **minority**. Two faces meeting inside one cell does
+produce past-90° normals — the six rows where it happens are unambiguous, the offenders sit under a
+cell from the crease, and the control (vertices under 90°) is on the crease only 0–12.8% of the time,
+so the classification is not vacuous. It is simply not what most of them are.
+
+#### The registration's operational definition was wrong, and it did not matter
+
+P-16 reads *"straddles the crease — **its eight corners do not all have the same nearer plane**"*. The
+clause after the dash does not implement the claim before it: `d0 ≥ d1` splits by the **bisector**
+plane, which runs from the apex through the *interior* of the solid, not by the crease. A cell deep
+inside the wedge and nowhere near the surface straddles the bisector; a cell holding the crease need
+not.
+
+The registered test was kept and reported anyway, because a registration is not edited after its
+experiment runs, and a corrected test — does the cell hold the crease line, which rotation does not
+move — was reported beside it and labelled post-hoc. **They agree on the verdict of every one of the
+23 rows.** The error was real and changed nothing, which is worth knowing in both directions: the
+result does not depend on the mistake, and a wrong definition can survive a whole experiment
+undetected because it happened to correlate.
+
+#### What the counts localise, which is more than either classifier managed
+
+Offender counts are **31, 62 at n = 33; 63, 126 at n = 65; 127, 254, 381 at n = 129** — every one an
+exact multiple of `n − 2`. The wedge is extruded along `z`, so the sampling is identical in every
+layer and any feature of the two-dimensional cross-section repeats once per layer. **There are
+therefore one, two or three offending locations in the entire cross-section**, and they are 11 to 94
+cells from the crease.
+
+That is a small, specific, reproducible configuration rather than a diffuse effect — the same shape
+as A-021's 314 non-manifold edges before M-276 named them. Finding it wants a constructed minimal
+fixture, not a wider sweep, and that is **R-009**.
+
+#### What R-008 concludes
+
+The question was *"is the crease bridged by triangles that face somewhere else, and is that
+inherent?"* The answer is that **the crease does that and accounts for a fifth of it**; the other
+four fifths are somewhere else, at one to three points per cross-section, and this experiment did not
+find them. M-283's reading — that the bridging is M-15's thin-feature mechanism on a sharp field — is
+**narrowed rather than falsified**: it is one of at least two causes and not the main one.
