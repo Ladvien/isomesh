@@ -3915,8 +3915,10 @@ distinction the ticket asks for **already exists**, and it is older and finer th
 types where three predicates and a three-case enum exist — and re-baselined every golden hash, since
 `MeshReport`'s `Display` block is hashed.
 
-**But there is a real defect underneath, and it is a visibility bug, not a type bug.** `mod property;`
-is **private** (`lib.rs:129`) and `SurfaceGate` is `pub(crate)`, while `MeshReport` and
+**But there is a real defect underneath, and it is a visibility bug, not a type bug — and it is worse
+than "private".** `mod property;` is `#[cfg(test)]` (`lib.rs:129`), so `SurfaceGate` is not merely
+`pub(crate)`, it **does not exist in a release build at all**: the gate-selection rule is test-only
+scaffolding that no consumer can reach under any feature. `MeshReport` and
 `ReferenceField::closed_in_domain` are both **public**. A consumer therefore receives the report and
 its three predicates with **no reachable statement of which one to call**, and re-derives the rule —
 badly. That is precisely the downstream symptom: calling `is_closed()` on a render mesh that was never
@@ -3924,9 +3926,11 @@ a solid. **This crate's own example does the same thing**: `bevy_isomesh/example
 hand-rolls `if report.is_closed() … else if report.is_manifold()`, an if/else re-derivation of a rule
 that exists, typed and documented, twenty lines away behind a private module.
 
-**Consequence.** T-023 is re-scoped from *split the report* to *publish the gate*. The acceptance
-clause worth keeping is its last one — the docs state which artefact each belongs to — because that
-was always the part that bites.
+**Consequence.** T-023 is re-scoped from *split the report* to *publish the gate*, and that is a
+promotion of test-only code into the shipped API rather than a one-word visibility change — which
+makes it a larger `M` than it looked, not a smaller one. The acceptance clause worth keeping is its
+last one — the docs state which artefact each belongs to — because that was always the part that
+bites.
 
 **Source-reliability note, which is the durable half.** This is the **third** premise from the
 2026-08-16 brief to fail against this codebase, and the three fail the same way. Its claims about the
