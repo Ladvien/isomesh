@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**166 tickets archived, 6 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**167 tickets archived, 6 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -315,7 +315,6 @@ row before starting, because half the evidence is already there.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-003** | ~~**Is splitting the unsafe merges free?**~~ **Premise removed by R-001 (P-8), and the ticket is re-scoped rather than deleted.** The gated weld is strictly worse — it fixes nothing where there was something to fix and **introduces** non-manifold vertices in 47 previously-clean configurations, up to 0 → 407 — so there is no gated weld to price. `vertex_delta == rejected_merges` in all 56 rows, so the inflation this ticket asked about is exactly one vertex per refusal and was never the cost that mattered. **What is left is the real question R-001 surfaced:** the residual **276 non-manifold edges and 536 non-manifold vertices** on `noise_cavity` under `surface_nets` (277/539 under `dual_contouring`, 66/145 under `manifold_dual_contouring`) are an **extractor** defect, not a weld defect — the gate rejects 1 and 8 merges there respectively and changes the edge count by 0 and 1. **Acceptance:** locate them. Are they M-93's duplication artefact, a genuine non-manifold vertex the dual rule can produce, or an epsilon effect? A count is not a diagnosis. **Pre-registered as P-14.** | M | R-001 |
 
 ---
 
@@ -332,6 +331,7 @@ fraction of "seam cracking" in shipped voxel engines is this rather than algorit
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
+| ☐ | **A-021** | **The dual rules emit edges with three or more incident faces, and cell splitting does not fix them.** R-003 (P-14) located the residue: on `noise_cavity` at 49³, Surface Nets and Dual Contouring give **314 non-manifold edges** and Manifold Dual Contouring still gives **53** after splitting every multi-component cell it finds. The vertex-to-edge ratio is **exactly 2:1 on every row**, so every non-manifold vertex is an endpoint of one of these edges and there is one defect, not two. Half of them sit in cells MDC does *not* split, so the one-vertex-per-cell rule is not the cause. **Two shapes are present and must be told apart:** a **bowtie** (link in ≥2 components) and a **pinch** (link connected, one link vertex of degree 4) — `fbm_terrain` is purely pinches, `gyroid` and `noise_cavity` carry both. **Acceptance:** name the cell configuration that produces a 3-face edge, with a constructed minimal fixture rather than a field that happens to contain one; then say whether it is fixable inside the dual rule or is inherent to one quad per crossed edge. **Do not guess** — Ju et al.'s MDC paper and Schaefer/Warren are the sources, and if neither defines it, stop and say so (rule 5). | L | R-003 |
 | ☐ | **R-004** | **Quantify the crack budget: arithmetic vs algorithm.** **H:** with exact/canonical coordinate reconstruction — one canonical `world_of_sample`, never an offset-and-add — seam cracks fall to **0 for all cell sizes**, not only powers of two, and M-73's hairline disappears without any change to the transition-cell construction. **Harness:** sweep non-power-of-two cell sizes × LOD pairs, count unmatched boundary edges and max vertical discontinuity (M-106's metric, which already found a margin across 495 seam crossings). **Records:** crack count and max discontinuity per (cell size, LOD pair), both arithmetic paths. **Falsified by:** cracks surviving canonical reconstruction — which localises the defect back in Transvoxel and is a different ticket. Consider Attene's **indirect predicates** (`10.1016/j.cad.2020.102856`, in corpus): treat a crossing as a *construction* (line, plane) rather than a computed point, and get exact sign tests at near-float cost. **FINDINGS:** `M-`, and `✗` against M-32's power-of-two framing if it turns out to be an artefact of one reconstruction choice rather than a floating-point law. | L | R-000 |
 
 ---

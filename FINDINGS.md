@@ -1993,7 +1993,53 @@ exactly one vertex — which would mean the defect is not the one-vertex-per-cel
 else entirely.
 
 Records: `non_manifold_vertices`, `non_manifold_edges`, `multi_vertex_cells`,
-`nm_vertices_in_single_vertex_cells`, `worst_link_components`.
+`nm_vertices_in_single_vertex_cells`, `worst_link_components`. **Answered above — falsified on its
+first clause.**
+
+### M-275 / P-14 — FALSIFIED on its first clause, and the residue is an *edge* defect (R-003)
+
+**M.** One 49³ grid per field, one extraction per dual rule, no chunking and no weld anywhere — so a
+seam cannot be a second explanation. `docs/experiments/p-14.csv`.
+
+| field | extractor | nm vertices | nm edges | cells MDC split | nm vertices in **un**split cells | link components | worst link degree |
+|---|---|---|---|---|---|---|---|
+| `gyroid` | `surface_nets` | 99 | 48 | 54 | **45** | 2 | 4 |
+| `gyroid` | `manifold_dual_contouring` | **0** | 0 | 54 | 0 | — | — |
+| `fbm_terrain` | `surface_nets` | 38 | 19 | 19 | **19** | 1 | 4 |
+| `fbm_terrain` | `manifold_dual_contouring` | **0** | 0 | 19 | 0 | — | — |
+| `noise_cavity` | `surface_nets` | 597 | 314 | 290 | **307** | 2 | 4 |
+| `noise_cavity` | `dual_contouring` | 597 | 314 | 290 | 307 | 2 | 4 |
+| `noise_cavity` | `manifold_dual_contouring` | 106 | 53 | 290 | **106** | 1 | 4 |
+
+`sphere`, `torus`, `box_exact`, `csg_difference` and `thin_plate` are clean under all three.
+
+**Clause two held.** Manifold Dual Contouring's count is strictly lower on every field where either
+is non-zero — 99 → 0, 38 → 0, 597 → 106. Splitting multi-component cells removes the defect entirely
+on two of three fields.
+
+**Clause one is false, by about half.** *"Almost all of them sit in cells where MDC emits more than
+one vertex"* — measured, **45 of 99, 19 of 38 and 307 of 597 sit in cells MDC did not split**, and
+MDC's own residual 106 are **106 of 106** in unsplit cells. So the one-vertex-per-cell rule explains
+roughly half the defect on the dual rules and none of what survives its own remedy.
+
+**What the other half is, and it reframes the ticket.** The vertex-to-edge ratio is 597/314, 99/48,
+38/19 and 106/53 — **exactly two to one, on every row**. Every non-manifold vertex is an *endpoint of
+a non-manifold edge*. So there are not 597 defects plus 314 defects; there are 314 defects, each
+counted twice more by the vertex walk. The residue is an **edge with three or more incident faces**,
+which is a different failure from a vertex whose link falls apart, and no amount of cell splitting
+addresses it — MDC splits the cells and the edges remain.
+
+**A second shape of vertex defect, which the first run of this experiment could not see.**
+`worst_link_components = 1` on a vertex `validate` flagged looks like a contradiction and is not: a
+link can be **connected and still not a simple cycle**, with one link vertex reached by four link
+edges instead of two. That is a **pinch**, not a bowtie. The added `worst_link_vertex_degree` column
+reads **4** on every non-clean row, and separates them: `fbm_terrain` and MDC's residue on
+`noise_cavity` are *purely* pinches (components 1, degree 4); `gyroid` and `noise_cavity` under
+Surface Nets and Dual Contouring carry both (components 2 **and** degree 4).
+
+**The instrument was wrong before the hypothesis was.** `link_components` alone would have reported
+`fbm_terrain` as having non-manifold vertices with one-component links and left that unexplained.
+Adding a column rather than editing the registration is what M-273's relaxation made possible.
 
 ### M-273 — the first thing done with the pre-registration mechanism was amend a registration to fit the code (R-002)
 

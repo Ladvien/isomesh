@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-166 tickets. Line numbers are stable until something above them is edited — grep the ID if
+167 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1092,3 +1092,17 @@ stricter than the property it protects creates pressure to weaken it. Relaxed to
 reverted. **M-274:** P-8's original fixture was a 2×2×2 block of 8-cell chunks anchored at `-2.0`, spanning 1.83 of a
 4-unit domain, and P-9's `buckets_of_three_or_more` column read **0 in all 49 rows it produced** — the `k`-way merge both
 experiments were about was never in the fixture. Centred and re-run; P-8's entry replaced. |
+| ☑ | **R-003** | ~~**Is splitting the unsafe merges free?**~~ **Premise removed by R-001 (P-8), and the ticket is re-scoped rather than deleted.** The gated weld is strictly worse — it fixes nothing where there was something to fix and **introduces** non-manifold vertices in 47 previously-clean configurations, up to 0 → 407 — so there is no gated weld to price. `vertex_delta == rejected_merges` in all 56 rows, so the inflation this ticket asked about is exactly one vertex per refusal and was never the cost that mattered. **What is left is the real question R-001 surfaced:** the residual **276 non-manifold edges and 536 non-manifold vertices** on `noise_cavity` under `surface_nets` (277/539 under `dual_contouring`, 66/145 under `manifold_dual_contouring`) are an **extractor** defect, not a weld defect — the gate rejects 1 and 8 merges there respectively and changes the edge count by 0 and 1. **Acceptance:** locate them. Are they M-93's duplication artefact, a genuine non-manifold vertex the dual rule can produce, or an epsilon effect? A count is not a diagnosis. **Pre-registered as P-14.** | M | R-001 |
+| | | ***P-14 falsified on its first clause, and the residue is an edge defect (M-275).*** MDC's count is strictly
+lower everywhere — 99 → 0, 38 → 0, 597 → 106 — so clause two held. But *"almost all sit in cells MDC splits"* is
+false by about half: **45 of 99, 19 of 38 and 307 of 597** sit in cells MDC did **not** split, and MDC's own residual
+106 are **106 of 106** in unsplit cells. |
+| | | ***The vertex-to-edge ratio is exactly 2:1 on every row*** — 597/314, 99/48, 38/19, 106/53. Every non-manifold
+vertex is an *endpoint of a non-manifold edge*, so there are 314 defects on `noise_cavity`, not 597 plus 314. The
+residue is an **edge with three or more incident faces**, which no amount of cell splitting addresses, and it is
+ticketed as **A-021** rather than left inside a closed experiment. |
+| | | ***And a second shape of vertex defect the first run could not see.*** `worst_link_components = 1` on a flagged
+vertex is not a contradiction: a link can be connected and still not a simple cycle, one link vertex reached by four
+link edges. That is a **pinch**, not a bowtie. The added `worst_link_vertex_degree` column reads **4** on every
+non-clean row and separates them — `fbm_terrain` is purely pinches, `gyroid` and `noise_cavity` carry both. Adding a
+column rather than editing the registration is exactly what M-273's relaxation made possible. |

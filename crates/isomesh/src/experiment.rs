@@ -175,6 +175,27 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "predicted_angle_deg",
         ],
     },
+    Preregistration {
+        id: "P-14",
+        ticket: "R-003",
+        hypothesis: "The residual non-manifold vertices under Surface Nets and \
+                     Dual Contouring are the one-vertex-per-cell rule meeting a \
+                     cell that contains more than one surface component: almost \
+                     all of them sit in cells where Manifold Dual Contouring \
+                     emits more than one vertex, and MDC's own count is strictly \
+                     lower on every field where either is non-zero.",
+        falsified_by: "A substantial share of non-manifold vertices sitting in \
+                       cells where MDC emits exactly one vertex — which would \
+                       mean the defect is not the one-vertex-per-cell rule and \
+                       is somewhere else entirely.",
+        records: &[
+            "non_manifold_vertices",
+            "non_manifold_edges",
+            "multi_vertex_cells",
+            "nm_vertices_in_single_vertex_cells",
+            "worst_link_components",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
