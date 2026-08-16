@@ -10,7 +10,26 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 The dual path got **4.26× faster with byte-identical output**, a published manifoldness claim was
 falsified, and a bug in a reference implementation was found to have recorded two true hypotheses as
-false. No public signature moved.
+false. Exact geometric predicates arrived.
+
+### Added
+
+- **`predicates::orient2d` — a 2D orientation test whose sign is never wrong.** Shewchuk's adaptive
+  method ([`10.1007/pl00009321`](https://doi.org/10.1007/pl00009321)): a floating-point estimate,
+  returned only where a proven error bound shows its sign cannot be wrong, over an exact expansion
+  otherwise. `no_std`, no allocation, no new dependency, and no panic path. Both branches answer the
+  same question — this is one algorithm with an early exit, not a fast path with a fallback, and the
+  module documents the distinction (T-024a).
+
+- **`Real::UNIT_ROUNDOFF` and `Real::SPLITTER`.** The predicates' error bounds are written in terms of
+  the unit roundoff `2⁻ᵖ`, which is **half** `Real::EPSILON` — the latter is the 1.0-to-next gap.
+  Additive on a sealed trait, so no downstream implementation can break (T-024a).
+
+- **The naive orientation determinant fails by reporting *collinear*, not by reporting a false
+  crossing.** Exactly collinear input cannot break it: `fl(x·y)` depends only on the real product, so
+  two equal real products round identically and the difference is exactly zero. The reachable defect
+  is a **false zero** — a fixture with exact determinant `1` for which the naive form returns `0.0` —
+  which is the worse mode, because "collinear" is the reading a triangulator trusts (M-302).
 
 ### Changed
 
