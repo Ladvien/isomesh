@@ -1284,7 +1284,7 @@ adds **up to 791** non-manifold vertices (`noise_cavity` + subgrid, 301 → 1,09
 extractor — where the weld was perfectly clean — it manufactures non-manifoldness from nothing:
 `sphere` 0 → 96, `torus` 0 → 108, `box_exact` 0 → 102, `noise_cavity` 0 → 407.
 
-**The mechanism.** `vertex_delta` equals `rejected_merges` in all 49 rows, so every refusal leaves
+**The mechanism.** `vertex_delta` equals `rejected_merges` in all 56 rows, so every refusal leaves
 exactly one extra vertex — the inflation is arithmetic and harmless. The damage is that a coincidence
 of `k` vertices is manifold **only when all `k` merge**: refusing one leaves the representative
 carrying cones from some copies and not others, which is a bowtie — two cones sharing an apex, every
