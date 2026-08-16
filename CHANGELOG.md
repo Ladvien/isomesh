@@ -12,32 +12,6 @@ The dual path got **4.26× faster with byte-identical output**, a published mani
 falsified, and a bug in a reference implementation was found to have recorded two true hypotheses as
 false. Exact geometric predicates arrived.
 
-### Added
-
-- **`predicates::orient2d` — a 2D orientation test whose sign is never wrong.** Shewchuk's adaptive
-  method ([`10.1007/pl00009321`](https://doi.org/10.1007/pl00009321)): a floating-point estimate,
-  returned only where a proven error bound shows its sign cannot be wrong, over an exact expansion
-  otherwise. `no_std`, no allocation, no new dependency, and no panic path. Both branches answer the
-  same question — this is one algorithm with an early exit, not a fast path with a fallback, and the
-  module documents the distinction (T-024a).
-
-- **`predicates::incircle` — whether a point is inside the circle through three others, exactly.**
-  Same two-stage shape: filtered estimate over an exact determinant. Its stage-A bound is Shewchuk's
-  Table 5, `(10ε + 96ε²)` — deliberately not `orient2d`'s, since the incircle determinant is 3×3 with
-  squared entries. The exact path forms **no coordinate differences**, because differences round; it
-  expands the lifted 4×4 by cofactors instead. The sign convention is stated for counterclockwise
-  `a, b, c` and inverts with their winding, which the docs say and a test pins (T-024b).
-
-- **`Real::UNIT_ROUNDOFF` and `Real::SPLITTER`.** The predicates' error bounds are written in terms of
-  the unit roundoff `2⁻ᵖ`, which is **half** `Real::EPSILON` — the latter is the 1.0-to-next gap.
-  Additive on a sealed trait, so no downstream implementation can break (T-024a).
-
-- **The naive orientation determinant fails by reporting *collinear*, not by reporting a false
-  crossing.** Exactly collinear input cannot break it: `fl(x·y)` depends only on the real product, so
-  two equal real products round identically and the difference is exactly zero. The reachable defect
-  is a **false zero** — a fixture with exact determinant `1` for which the naive form returns `0.0` —
-  which is the worse mode, because "collinear" is the reading a triangulator trusts (M-302).
-
 ### Changed
 
 - **`signed_distance_from_mesh_winding` is no longer a second implementation of "distance to the
@@ -98,6 +72,29 @@ false. Exact geometric predicates arrived.
   capture-driven animation code which had never been run.
 
 ### Added
+- **`predicates::orient2d` — a 2D orientation test whose sign is never wrong.** Shewchuk's adaptive
+  method ([`10.1007/pl00009321`](https://doi.org/10.1007/pl00009321)): a floating-point estimate,
+  returned only where a proven error bound shows its sign cannot be wrong, over an exact expansion
+  otherwise. `no_std`, no allocation, no new dependency, and no panic path. Both branches answer the
+  same question — this is one algorithm with an early exit, not a fast path with a fallback, and the
+  module documents the distinction (T-024a).
+
+- **`predicates::incircle` — whether a point is inside the circle through three others, exactly.**
+  Same two-stage shape: filtered estimate over an exact determinant. Its stage-A bound is Shewchuk's
+  Table 5, `(10ε + 96ε²)` — deliberately not `orient2d`'s, since the incircle determinant is 3×3 with
+  squared entries. The exact path forms **no coordinate differences**, because differences round; it
+  expands the lifted 4×4 by cofactors instead. The sign convention is stated for counterclockwise
+  `a, b, c` and inverts with their winding, which the docs say and a test pins (T-024b).
+
+- **`Real::UNIT_ROUNDOFF` and `Real::SPLITTER`.** The predicates' error bounds are written in terms of
+  the unit roundoff `2⁻ᵖ`, which is **half** `Real::EPSILON` — the latter is the 1.0-to-next gap.
+  Additive on a sealed trait, so no downstream implementation can break (T-024a).
+
+- **The naive orientation determinant fails by reporting *collinear*, not by reporting a false
+  crossing.** Exactly collinear input cannot break it: `fl(x·y)` depends only on the real product, so
+  two equal real products round identically and the difference is exactly zero. The reachable defect
+  is a **false zero** — a fixture with exact determinant `1` for which the naive form returns `0.0` —
+  which is the worse mode, because "collinear" is the reading a triangulator trusts (M-302).
 
 - **`construct::from_mesh::MeshField<'a, R>`** — a mesh's signed distance field, evaluated **on
   demand** rather than sampled onto a grid. Implements `Sdf`, builds the angle-weighted pseudonormals
