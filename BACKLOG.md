@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**183 tickets archived, 6 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**183 tickets archived, 16 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -45,6 +45,85 @@ attached — read that before re-litigating a decision this project already made
   is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
+
+---
+
+## Phase 16 — The fracture substrate
+
+**Added 2026-08-16, and placed above Phase 0 deliberately.** Rule 1 of this file reads top-down, so the
+topmost unblocked row is what gets taken next; this is the current work front and the phases below it
+are history. Nothing here replaces an existing ticket except **D-011**, which retires a premise.
+
+**Phase 15's experimental protocol applies to every ticket in this phase** — **H** pre-registered as a
+`P-` entry in `FINDINGS.md` *in the commit before* the measuring commit, a committed **Harness** behind
+one documented command, named **Records** to `docs/measurements/*.csv`, an explicit **Falsified by**,
+and the **FINDINGS obligation** discharged in the same commit. See the table under Phase 15 for the
+exact requirements; they are not restated here.
+
+### Why this phase exists — the reframe, in one paragraph
+
+A downstream consumer (`bevy_autogib`, a plane-cut fracture crate) measured its own output for the
+first time and found two independent causes, only one of them about manifoldness: a **non-convex
+cross-section** breaks its centroid-fan capper (a closed manifold U-prism fails; a cuboid passes only
+because it is *convex*), and **non-manifold multi-shell input** breaks loop recovery (22 open cut
+edges across 12 shards). The literature's answer is not to repair either: **production fracture does
+not cut the triangle soup at all.** Müller, Chentanez & Kim (`10.1145/2461912.2461934` — the NVIDIA
+lineage behind PhysX Blast) cut a *volumetric convex decomposition* and carry the visual triangles as
+a payload assigned to a cell. Because plane ∩ convex polyhedron = convex polygon, the centroid fan is
+**provably correct for every cap** — which is why the cuboid scores 8/8 and is not luck. Sellán et al.
+(`10.1145/3549540`) reach the same architecture independently.
+
+Three consequences for *this* crate: convex decomposition stops being "the collider answer that blocks
+nothing" and becomes **the cutting substrate**; the SDF/GWN backend drops off the fracture critical
+path (S-009 is re-parented, D-011 retires its premise); and the boundary-loop triangulation problem
+dissolves into a solved one — Shewchuk's PSLG, not a polygon.
+
+**Union-first is ruled out by measurement, not only by Takayama et al.** Sacht et al. ran exactly this
+experiment on interpenetrating character limbs and report the legs sticking together and the arms
+sticking to the belly and head. For fracture that is a *correctness* loss — you lose the ability to
+separate head from torso, which is the whole point.
+
+### 16a — isomesh core
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+| ☐ | **A-026** | **Convex decomposition as a cutting substrate. RE-PRIORITISED — this was ranked last twice and that was wrong.** It was scoped as "the collider *answer*, not a dependency." Under the production architecture it is the thing you cut, and every downstream defect in a plane-cut fracture pipeline is downstream of not having it. **Use Convex Primitive Decomposition** (`10.48550/arXiv.2602.07369`) over the V-HACD/CoACD line: it *"handles non-manifold, non-watertight meshes directly without preprocessing"*, **guarantees enclosure of the input surface**, and beats both on Hausdorff/Chamfer at **under a third of the collider bytes**. Correction to an earlier claim in this repo's research: input cleanliness is a **quality axis, not an entry condition** — V-HACD and CPD require nothing; VisACD's 35% intersecting-hull figure describes the hulls CoACD *emits*, not the mesh it is *given*. **H:** decomposing a closed shell and plane-cutting the *cells* yields fragments that are closed, manifold, χ=2 and volume-conserved to 1e-3 — matching the convex-cuboid baseline — on input where cutting the soup does not. **Harness:** a torso+head fixture, per-shell decomposition, same 12-plane sequence. **Records:** per-fragment closed/manifold/χ/volume, cell count, decomposition wall-clock per shell. **Falsified by:** any proxy fragment reporting open cut edges — which would locate the defect in plane-cell intersection rather than in the shells. **FINDINGS:** `M-`. **Renumbered from A-030 as written in the 2026-08-16 brief**, per rule 7 — A-026 is the next free number in the series. A consumer backlog citing "isomesh A-030" means this ticket. | L | — |
+| ☐ | **T-023** | **Split `MeshReport` into a solid report and a surface report — this is a measurement category error, not a defect.** A closed-solid test (χ=2, manifold, watertight) is currently applied to render meshes that are **not solids**. The downstream "2/12 manifold" reading is partly an artefact of this. Under a Tier A (proxy) / Tier B (render) split the *proxy* is a solid and must assert χ=2, manifoldness and volume conservation; the *render mesh* is a surface subset and should have open-edge count **recorded, not asserted** — the same discipline the validity gate in `CLAUDE.md` already applies to `gyroid` and `fbm_terrain`, which have boundary by construction. **Acceptance:** two report types with distinct assertion sets, and the docs state which artefact each belongs to. **This is cheap and it makes every downstream number legible.** | M | — |
+| ☐ | **T-024** | **Exact `orient2d` / `incircle`.** T-022 reduces entirely to these; ear clipping admits no such reduction. Shewchuk 1997 for the adaptive-precision originals; **Attene's indirect predicates** (`10.1016/j.cad.2020.102856`, in corpus) for *constructed* points — an edge crossing is a construction, not an input, and keeping it symbolic as (line, plane) gives exact sign tests at near-float cost. Must stay `no_std` + `libm` (rule 3): no new dependency without a written justification in `CLAUDE.md` in the same commit. **Acceptance:** a degenerate fixture (three collinear cut points, two coincident within ε) that the float path misclassifies and the exact path does not. | M | — |
+| ☐ | **T-022** | **A 2D constrained-Delaunay capper with exact predicates, replacing loop-recovery-plus-fan.** The decisive result is that **the loop is the wrong data structure.** Shewchuk's `Triangle` (`10.1007/bfb0014497`, in corpus) takes a **PSLG** — vertices and segments — not a polygon, and its own parenthetical answers the nesting question: holes are handled by a flood fill *halted at constrained edges*, which "saves both the user and the implementation from a common outlook wherein one must define oriented curves whose insides are clearly distinguishable from their outsides." That kills four failure modes at once: a **figure-eight cannot be constructed** (a self-touching vertex is just degree-4); **crossing segments** resolve by inserting the intersection vertex; **non-convex sections** need no star-shapedness anywhere; and **nested loops stay holes with no containment query**, which is what makes it robust to welded shared vertices. Pipeline: collect segments in the plane's 2D frame → weld with tolerance **relative to the model bounding box, not an absolute epsilon** → resolve crossings → CDT → flood-fill from outside the bounding box, halting at constrained edges → emit inside-labelled triangles only. **One asymmetry in our favour:** the CDT-existence pathology Diazzi & Attene name (*"the CDT is not guaranteed to exist for arbitrary input triangles"*) is **3D-only** — in a cut plane it never arises. **H:** on a U-prism, CDT+flood-fill matches analytic cap area to 1e-6 with zero inconsistently-oriented edges, where a centroid fan overshoots **by exactly the notch area**. **Records:** cap area vs analytic, oriented-edge violations, both methods. **Falsified by:** the fan *not* overshooting by the notch area — meaning the star-shaped diagnosis is incomplete. **FINDINGS:** `M-`, plus `✗` against "the capper is correct on manifold input" (it is correct on *convex* input). | L | T-024 |
+| ☐ | **T-025** | **Fix the verified one-path violation.** `signed_distance_from_mesh_winding` computes its distance magnitude with an unaccelerated `for t in 0..triangles` scan (`crates/isomesh/src/construct/winding.rs:380`) while `signed_distance_from_mesh` uses the blocked box reject — and its doc comment claims the magnitude is *"the true distance to the nearest triangle, exactly as `signed_distance_from_mesh` computes it"* (`winding.rs:341-343`). Same answer, different code, and the slow path is the shape **M-260 already measured at 3.9×**. This is the `CLAUDE.md` one-path rule broken inside the crate, not a performance nicety. **Verified in situ 2026-08-16**, both line references checked against the working tree. **Acceptance:** one implementation, and the doc comment becomes true. | S | — |
+| ☐ | **S-009** | **RE-PARENTED — on-demand GWN field.** The original justification was that Manifold Dual Contouring "queries where it needs to." **That is false for this codebase** — `extract` calls `self.sample(sdf, shape, origin, cell_size)` at `crates/isomesh/src/dual.rs:257`, which loops all N³ points into a buffer before anything else runs — so the dense N³ ray cost is the right price *for extractors*. The question survives for genuinely sparse consumers, and the real one is **internal**: F-005's empty-cell rejection by sphere tracing, and any future collision query against the field. **H:** on-demand GWN beats the batch path below a query-count crossover Q\* < N³; pre-register Q\*. **Falsified by:** no crossover existing above the point where batching is trivially cheaper. **Not blocked by any downstream consumer.** | M | F-005 |
+| ☐ | **D-011** | **Retire the premise that Manifold Dual Contouring "queries where it needs to."** It is false for this codebase and now verified false at `dual.rs:257` (see S-009). Delete it from the `S-007`/`S-008` archive notes in `BACKLOG_ARCHIVE.md` and from the Ask-2 commentary wherever it appears, and record the retirement as a `✗` in `FINDINGS.md` — a falsified premise is never deleted from `FINDINGS.md`, only from the places that still act on it. **This is the D-003/D-004 truth-pass pattern**, applied to a claim rather than a figure. **Acceptance:** `grep -rn "queries where it needs to"` returns only the `✗` entry. | S | — |
+
+### 16b — bevy_isomesh
+
+Thin by design: the downstream fracture crate depends on `bevy` directly and does its own `Mesh`
+handling, so the Bevy layer is not on its critical path. These exist so the 16a work is reachable from
+an app without re-implementing the glue.
+
+**The three rows below were written as B-008/B-009/B-010 in the 2026-08-16 brief. All three numbers are
+already taken** by archived tickets that mean something else entirely (scratch pooling, the quickstart
+example, publishing metadata), so they are renumbered to the next free block per rule 7. A consumer
+backlog citing "isomesh B-010" means **B-014**.
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+| ☐ | **B-012** | **`Mesh` → triangle soup, and back.** Downstream consumers merge scene meshes into one soup by hand today. Expose the conversion once, handling `Indices::U16`/`U32`, non-`TriangleList` topology refusal, and missing `Float32x3` positions — the same `warn!`-and-skip discipline the consumers already use. **Acceptance:** round-trip a `Mesh::from(Cuboid)` and get 24 vertices back, not 8 — i.e. the conversion does **not** weld, because welding is the caller's decision (see B-014). | M | — |
+| ☐ | **B-013** | **`proxy_cells` example.** Render A-026's convex decomposition as wireframe cells over the source mesh, with a slider for cell count and a readout of per-cell volume vs source volume. **This is the example that makes the Tier A/Tier B architecture legible** — nobody believes "cut the proxy, not the mesh" until they see the cells. | M | A-026, B-012 |
+| ☐ | **B-014** | **Expose the merge predicate over Bevy attributes.** R-010's `MergePredicate` gates a weld on the link condition (`Lk u ∩ Lk v = ∅`); a Bevy consumer additionally needs to refuse a merge when normals or UVs differ, or a cube corner's three normals collapse to one arbitrary one. **Same mechanism, two predicates** — topological safety and attribute preservation compose. **Acceptance:** welding `Mesh::from(Cuboid)` preserves all 24 vertices under the composite predicate and collapses to 8 without it. | M | R-010 |
+
+### Reading order, for whoever picks this up
+
+1. **Müller, Chentanez & Kim 2013** — `10.1145/2461912.2461934`. §1–2 and the VACD section. The
+   production answer; dissolves the capper problem as a side effect.
+2. **Shewchuk 1996, *Triangle*** — `10.1007/bfb0014497`, in the corpus. The PSLG definition and the
+   hole/concavity flood fill. Answers figure-eights and nesting together.
+3. **Diazzi & Attene 2021** — `10.1145/3478513.3480564`. The only method whose *stated* input tolerance
+   matches a glTF character: self-intersecting, non-manifold, disconnected, holes and gaps. Reference
+   implementation exists.
+
+Ten-minute runner-up: **Sacht et al.**, *Consistent Volumetric Discretizations Inside Self-Intersecting
+Surfaces*, Figs. 10–11 — the picture of a GWN union welding a character's limbs to its torso.
 
 ---
 
