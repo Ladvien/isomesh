@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**180 tickets archived, 8 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**181 tickets archived, 7 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -301,7 +301,6 @@ source of truth* to check the first against.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **S-008** | **`MeshField`: evaluate a mesh's field on demand instead of sampling it into a grid.** S-001 → S-006 → S-007 was built as a construction chain answering *"produce a sampled distance volume from a mesh."* That is the wrong shape for a consumer that queries where it needs to rather than reading a grid, and **Manifold Dual Contouring is exactly that consumer** — so the split serves this crate independently of anything downstream. The per-point work already exists inside `signed_distance_from_mesh`: `Bounds`, `closest_on_triangle` and `Pseudonormals` in `construct/from_mesh.rs`, and `winding_numbers` in `construct/winding.rs`. This exposes it as a borrowing type implementing `Sdf`, with the pseudonormal and winding backends chosen at construction rather than by two entry points. **The existing grid functions stay as the batch path and must be re-expressed over the new type** — one implementation, not two, or the grid answer and the on-demand answer drift apart and nothing catches it. **Acceptance:** meshing through the on-demand field is byte-identical to meshing the `Vec<R>` S-006 produces, on the round trip M-259 already built. | M | S-006, S-007 |
 
 ---
 

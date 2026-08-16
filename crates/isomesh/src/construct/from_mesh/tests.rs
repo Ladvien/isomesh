@@ -9,7 +9,7 @@ use crate::mesh::MeshBuffer;
 use crate::validate;
 use crate::{RuntimeShape3, Sdf, Shape3};
 
-use super::signed_distance_from_mesh;
+use super::{MeshField, signed_distance_from_mesh};
 
 /// Sample a field onto a grid, x fastest.
 fn sample_grid<F: Sdf<Scalar = f64>>(
@@ -345,5 +345,68 @@ fn the_reject_agrees_with_brute_force_and_is_faster() {
     assert!(
         fast_ms < brute_ms,
         "the box reject lost to brute force: {fast_ms} vs {brute_ms} ms"
+    );
+}
+
+/// **S-008's acceptance.** The grid path is this field in a loop, bit for bit.
+///
+/// Asserted on identical bits rather than within a tolerance, deliberately: the
+/// two are the same code since S-008, so any tolerance would be an allowance for
+/// them to become different code without the test noticing.
+#[test]
+fn the_grid_path_is_this_field_in_a_loop() {
+    let field = Sphere::<f64>::canonical();
+    let shape = RuntimeShape3::new([33; 3]).expect("valid shape");
+    let h = 0.125_f64;
+    let origin = [-2.0; 3];
+
+    let meshed = mesh(&sample_grid(&field, &shape, origin, h), &shape, origin, h);
+    assert!(!meshed.indices.is_empty(), "nothing meshed");
+
+    let batch = signed_distance_from_mesh(&meshed.positions, &meshed.indices, &shape, origin, h)
+        .expect("mesh to field");
+
+    let on_demand = MeshField::new(&meshed.positions, &meshed.indices).expect("build");
+    assert_eq!(on_demand.triangles(), meshed.indices.len() / 3);
+    let queried = sample_grid(&on_demand, &shape, origin, h);
+
+    assert_eq!(batch.len(), queried.len());
+    let differing = batch
+        .iter()
+        .zip(&queried)
+        .filter(|(a, b)| a.to_bits() != b.to_bits())
+        .count();
+    assert_eq!(
+        differing,
+        0,
+        "the batch path and the on-demand path disagree at {differing} of {} samples",
+        batch.len()
+    );
+}
+
+/// A ragged index buffer loses its tail; an index naming a vertex that does not
+/// exist is refused at the door rather than part-way through a query.
+#[test]
+fn a_ragged_tail_is_dropped_and_a_bad_index_is_refused() {
+    let positions = std::vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]];
+
+    let ragged = MeshField::new(&positions, &[0, 1, 2, 0]).expect("build");
+    assert_eq!(
+        ragged.triangles(),
+        1,
+        "the trailing index is not a triangle"
+    );
+
+    let err = MeshField::new(&positions, &[0, 1, 3]).expect_err("index 3 does not exist");
+    assert!(
+        matches!(
+            err,
+            crate::Error::IndexOutOfRange {
+                at: 2,
+                index: 3,
+                vertices: 3
+            }
+        ),
+        "expected IndexOutOfRange, got {err:?}"
     );
 }

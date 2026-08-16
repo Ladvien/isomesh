@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**367 entries** — 19 falsified, 293 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**368 entries** — 19 falsified, 294 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -351,6 +351,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-296` | the README answered "is the GPU faster" with no, and its own CSV said 37× (docs) |
 | `M-297` | no published convex decomposition runs at interactive rates, so this crate's own 241 ms was not an outlier (O-2) |
 | `M-298` | orientation catches a fan that reverses, not a fan that folds, and a star polygon is invisible to both counters (T-020) |
+| `M-299` | the on-demand split is free for the pseudonormal and costs a factor of N for the winding number (S-008) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -3716,3 +3717,34 @@ produces none either.
 
 **Would be shown wrong by:** a fan that reverses its sweep and reports zero inconsistently oriented
 edges, or a per-triangle-outward construction under which a star-polygon cap does flip a slice.
+
+
+### M-299 — the on-demand split is free for the pseudonormal and costs a factor of N for the winding number (S-008)
+
+**V.** S-008 was scoped to put *both* mesh-to-field backends behind one
+`Sdf`-implementing type. Only one of them fits, and the reason is a property of the published method
+rather than of this implementation.
+
+**The pseudonormal path decomposes exactly.** Its per-sample work is self-contained — nearest triangle
+by the blocked box reject, then Theorem 1's sign from that triangle's feature pseudonormal — so
+lifting it into `MeshField::sample` and rewriting `signed_distance_from_mesh` as that method in a loop
+leaves the batch path running the same instructions in the same order.
+`the_grid_path_is_this_field_in_a_loop` asserts the two agree on **identical bits**, not within a
+tolerance, across all 35,937 samples of the M-259 round trip. A tolerance there would have been an
+allowance for the two to become different code without the test noticing.
+
+**The winding path does not decompose, because its efficiency is a row amortisation.**
+`winding_numbers` casts **one ray per grid row** and shares that hit list across every sample in the
+row — Martens & Bessmeltsev's construction as M-262 recorded it, *"to compute voxelizations of
+resolution N³, we only need to shoot N² rays."* A per-point query cannot share a cast with points it
+has not been given, so an on-demand winding field would cast one ray per query: **N³ rather than N², a
+factor of N.** At the round trip's 33³ that is **35,937 casts against 1,089**.
+
+So `MeshField` is the pseudonormal backend and there is deliberately no on-demand winding twin.
+Building one anyway would have put two implementations of the same formula in the crate on two
+different cost curves, which is the shape of thing that ends up giving two answers to one question.
+
+**No timing was taken and none is needed for this decision** — the ray counts are structural, not
+empirical. **Would be shown wrong by:** a per-point winding formulation that reuses casts across
+queries. A persistent per-row cache keyed on `(y, z)` is the obvious attempt, and it would make the
+field stateful and its cost order-dependent, which is why it was not the default.

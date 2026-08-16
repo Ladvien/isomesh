@@ -73,6 +73,7 @@ use alloc::vec;
 use alloc::vec::Vec;
 
 use crate::real::Real;
+use crate::sdf::Sdf;
 use crate::shape::Shape3;
 
 /// Which feature of a triangle a closest point landed on.
@@ -232,6 +233,7 @@ fn corner_angle<R: Real>(x: [R; 3], y: [R; 3], z: [R; 3]) -> R {
 /// Unnormalised sums throughout: only the **sign** of `n_α · r` is used, and
 /// dividing by `‖Σ αᵢ nᵢ‖` cannot change it. Skipping the normalisation removes
 /// the one place a zero-length sum could produce a NaN.
+#[derive(Debug)]
 struct Pseudonormals<R: Real> {
     /// Per triangle, the unit face normal.
     face: Vec<[R; 3]>,
@@ -304,6 +306,7 @@ impl<R: Real> Pseudonormals<R> {
 const BLOCK: usize = 64;
 
 /// Axis-aligned bounds, per triangle and per block of [`BLOCK`] triangles.
+#[derive(Debug)]
 struct Bounds<R: Real> {
     /// `[lo, hi]` per triangle.
     tri: Vec<[[R; 3]; 2]>,
@@ -425,63 +428,162 @@ pub fn signed_distance_from_mesh<R: Real>(
         });
     }
 
+    let field = MeshField::new(positions, indices)?;
     let count = shape.element_count();
-    let normals = Pseudonormals::build(positions, indices);
-    let bounds = Bounds::build(positions, indices);
-    let triangles = indices.len() / 3;
-
     let (nx, ny, nz) = (size[0], size[1], size[2]);
     let mut out = Vec::with_capacity(count);
 
     for z in 0..nz {
         for y in 0..ny {
             for x in 0..nx {
-                let p = [
+                out.push(field.sample([
                     origin[0] + cell_size * R::from_f64(f64::from(x)),
                     origin[1] + cell_size * R::from_f64(f64::from(y)),
                     origin[2] + cell_size * R::from_f64(f64::from(z)),
-                ];
-
-                // Squared throughout, rooted once at the end. The comparison
-                // that drives the reject is monotone in the square, so the
-                // square root is pure cost inside the loop.
-                let mut best_sq = super::far::<R>();
-                let mut best_sign = R::ONE;
-
-                for (b, bbox) in bounds.block.iter().enumerate() {
-                    if box_distance_sq(p, bbox) >= best_sq {
-                        continue;
-                    }
-                    let lo = b * BLOCK;
-                    let hi = (lo + BLOCK).min(triangles);
-                    for t in lo..hi {
-                        if box_distance_sq(p, &bounds.tri[t]) >= best_sq {
-                            continue;
-                        }
-                        let tri = &indices[t * 3..t * 3 + 3];
-                        let (c, feature) = closest_on_triangle(
-                            p,
-                            positions[tri[0] as usize],
-                            positions[tri[1] as usize],
-                            positions[tri[2] as usize],
-                        );
-                        let r = sub(p, c);
-                        let d_sq = dot(r, r);
-                        if d_sq < best_sq {
-                            best_sq = d_sq;
-                            // Theorem 1: the sign is that of `n_α · r`, with
-                            // `n_α` the pseudonormal of the *feature* the
-                            // closest point landed on.
-                            let n = normals.at(indices, t, feature);
-                            best_sign = if dot(n, r) < R::ZERO { -R::ONE } else { R::ONE };
-                        }
-                    }
-                }
-
-                out.push(best_sq.sqrt() * best_sign);
+                ]));
             }
         }
     }
 
     Ok(out)
+}
+
+/// A mesh's signed distance field, evaluated on demand.
+///
+/// Ticket: S-008. [`signed_distance_from_mesh`] answers *"sample this mesh onto
+/// that grid"*. This answers *"what is the distance **here**"*, which is what a
+/// consumer that queries where it needs to actually wants — Manifold Dual
+/// Contouring is exactly that consumer, and so is any point probe.
+///
+/// The acceleration structures — the angle-weighted pseudonormals and the
+/// blocked bounding boxes — are built once by [`new`](Self::new) and reused by
+/// every [`sample`](Sdf::sample). The mesh itself is borrowed, never copied.
+///
+/// # There is one implementation of the query, and this is it
+///
+/// [`signed_distance_from_mesh`] is this type in a loop, literally, since S-008.
+/// Two implementations of *"where is the nearest triangle and which side of it
+/// am I on"* would be free to disagree at the eighth digit and nothing would
+/// notice; `the_grid_path_is_this_field_in_a_loop` asserts they are bit-equal.
+/// What batching still buys is building the pseudonormals and the block boxes
+/// once for a whole grid rather than once per caller.
+///
+/// # The same requirement as the batch path, for the same reason
+///
+/// **The mesh must be closed and consistently oriented.** The sign is
+/// `sign(n_α · r)`, and an open mesh has boundary edges whose pseudonormal
+/// answers a question that has no answer, because there is no inside. See
+/// [`signed_distance_from_mesh`] for the full statement, and
+/// [`winding`](super::winding) for the tool that handles imported or damaged
+/// input instead.
+///
+/// # Not available for the winding backend, and that is measured rather than
+/// unfinished
+///
+/// S-008 was scoped for both backends behind one type. The generalized winding
+/// number does not fit: [`winding_numbers`](super::winding::winding_numbers)
+/// casts **one ray per grid row** and shares it across every sample in that row,
+/// which is Martens & Bessmeltsev's *"to compute voxelizations of resolution
+/// N³, we only need to shoot N² rays."* A per-point query cannot share a cast
+/// with points it has never seen, so an on-demand winding field would cast N³
+/// rays for the same grid — a factor of N, not a constant. The batch function
+/// keeps the row amortisation and there is no on-demand twin of it.
+#[derive(Debug)]
+pub struct MeshField<'a, R: Real> {
+    positions: &'a [[R; 3]],
+    indices: &'a [u32],
+    normals: Pseudonormals<R>,
+    bounds: Bounds<R>,
+}
+
+impl<'a, R: Real> MeshField<'a, R> {
+    /// Build the query structures over `positions` and `indices`.
+    ///
+    /// A trailing partial triangle is dropped rather than rejected — the same
+    /// convention [`validate`](crate::validate) counts as `trailing_indices` and
+    /// [`collider::triangle_indices`](crate::collider::triangle_indices) applies
+    /// with `chunks_exact`. One answer to a ragged index buffer, in all three
+    /// places.
+    ///
+    /// **Nothing here checks that the mesh is closed**, deliberately:
+    /// [`validate`](crate::validate) already does it better, and a weaker copy
+    /// of that check here would be a second path to the same verdict.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::IndexOutOfRange`](crate::Error::IndexOutOfRange) if an index
+    /// names a vertex the buffer does not have.
+    pub fn new(positions: &'a [[R; 3]], indices: &'a [u32]) -> crate::Result<Self> {
+        if let Some((at, &index)) = indices
+            .iter()
+            .enumerate()
+            .find(|&(_, &i)| i as usize >= positions.len())
+        {
+            return Err(crate::Error::IndexOutOfRange {
+                at: at as u64,
+                index,
+                vertices: positions.len() as u64,
+            });
+        }
+
+        let whole = indices.len() - indices.len() % 3;
+        let indices = &indices[..whole];
+        Ok(Self {
+            positions,
+            indices,
+            normals: Pseudonormals::build(positions, indices),
+            bounds: Bounds::build(positions, indices),
+        })
+    }
+
+    /// Triangles the field is built over, after any ragged tail is dropped.
+    #[must_use]
+    pub const fn triangles(&self) -> usize {
+        self.indices.len() / 3
+    }
+}
+
+impl<R: Real> Sdf for MeshField<'_, R> {
+    type Scalar = R;
+
+    fn sample(&self, p: [R; 3]) -> R {
+        let triangles = self.triangles();
+
+        // Squared throughout, rooted once at the end. The comparison that drives
+        // the reject is monotone in the square, so the square root is pure cost
+        // inside the loop.
+        let mut best_sq = super::far::<R>();
+        let mut best_sign = R::ONE;
+
+        for (b, bbox) in self.bounds.block.iter().enumerate() {
+            if box_distance_sq(p, bbox) >= best_sq {
+                continue;
+            }
+            let lo = b * BLOCK;
+            let hi = (lo + BLOCK).min(triangles);
+            for t in lo..hi {
+                if box_distance_sq(p, &self.bounds.tri[t]) >= best_sq {
+                    continue;
+                }
+                let tri = &self.indices[t * 3..t * 3 + 3];
+                let (c, feature) = closest_on_triangle(
+                    p,
+                    self.positions[tri[0] as usize],
+                    self.positions[tri[1] as usize],
+                    self.positions[tri[2] as usize],
+                );
+                let r = sub(p, c);
+                let d_sq = dot(r, r);
+                if d_sq < best_sq {
+                    best_sq = d_sq;
+                    // Theorem 1: the sign is that of `n_α · r`, with `n_α` the
+                    // pseudonormal of the *feature* the closest point landed on.
+                    let n = self.normals.at(self.indices, t, feature);
+                    best_sign = if dot(n, r) < R::ZERO { -R::ONE } else { R::ONE };
+                }
+            }
+        }
+
+        best_sq.sqrt() * best_sign
+    }
 }
