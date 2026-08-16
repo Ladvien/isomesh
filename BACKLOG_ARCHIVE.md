@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-172 tickets. Line numbers are stable until something above them is edited — grep the ID if
+173 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1243,3 +1243,26 @@ Turning the wedge 17° about its own crease destroys it. The apex-alignment cont
 | | | ***Method rule, and it is the sharper half of one already here.*** Part 5 says to *search* for a fixture that
 exhibits the property; this adds: **when a measurement matches a prediction exactly, vary the fixture's
 orientation before believing it.** Exactness is the tell, not the confirmation. |
+| ☑ | **R-007** | **Where does the dual's IPC go?** R-005 (M-279) removed every candidate anyone had named and left a number: Surface Nets executes **207 instructions per sample at IPC 1.22** where Marching Cubes executes **132 at 4.04**. **H, pre-registered as P-15:** more than half of the dual mesher's cycles per sample are in `emit_quads`. **Harness:** a per-stage cycle and instruction count inside `DualMesher`, which needs either an ablation seam or counter windows in the extract path — **decide which is acceptable under the one-path rule before writing either**. **Falsified by:** `emit_quads` at half or less. | M | R-005 |
+| | | ***P-15 held, and by more than it claimed: 82% of the cycles (M-284).*** Also 45% of the instructions, at
+**IPC 0.72** against `place_vertices`' 3.83 and `sample`'s 6.49. `place_vertices` reads the same eight corners
+Marching Cubes' march does and runs at Marching Cubes' own speed — **the dual does not have an IPC problem, one
+of its four stages does**. |
+| | | ***Neither of the two instrumentation routes the ticket offered was taken, and the decision it asked for did
+not have to be made.*** Counter windows are impossible before they are undesirable — `isomesh` is `no_std` and
+cannot make a Linux system call — and an ablation seam is public API for one experiment. The stages have
+**different iteration counts that depend on the grid's shape**: `Q/C` is 2.97 on a cube, 1.00 on a slab two
+samples deep, and **exactly 0** on a rod two deep on both minor axes, while `S/C` runs 1 → 4. Thirteen shapes
+make the design matrix separable and least squares reads the stages off it, with no library change at all. |
+| | | ***The fit predicts rather than describes.*** `r²` 0.9954 on instructions and 0.9990 on cycles, and a shape
+held out of the fit entirely — `385×385×17` — comes in at **+0.12% and +0.50%**. |
+| | | ***And it is cross-checked without the fit, including where the cross-check disagrees.*** Two rows whose
+cell counts agree to 0.02% and whose `Q/C` differ by exactly 1 give 60.8 cycles per iteration against the fit's
+43.3 — a 40% gap, reported rather than smoothed, and resolved by noting that 60.8 would exceed the cube's total.
+The fit is the conservative reading, so **82% is a floor**. |
+| | | ***A limitation the sweep found in itself.*** `500001×2×2` and `2×2×500001` have identical `S`, `C` and `Q`
+and differ by **62% in instructions**, because the model has no loop-overhead term and `sample` iterates `x`
+innermost. Recorded as the bound on how far the coefficients travel onto degenerate shapes. |
+| | | ***O-11 is answered and A-023 is filed.*** The question T-006 raised, M-45 half-answered and M-279 narrowed
+is closed: the superlinearity is `emit_quads`' working set outgrowing the caches while the other three stages
+stay flat. |

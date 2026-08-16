@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**349 entries** — 18 falsified, 278 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**350 entries** — 18 falsified, 279 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -335,6 +335,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-281` | a timing here is a property of the binary, not only of the code (M-001) |
 | `M-282` | the whole family, in one binary and one run (M-001) |
 | `M-283` | FALSIFIED, and the fixture that confirmed it agreed to four decimal places (R-006) |
+| `M-284` | HELD, and the dual's IPC wall is one function (R-007) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -378,7 +379,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `O-8` | Does Dual Contouring's vertex placement need f64 in practice, or is f32 enough? |
 | `O-9` | How much does T-003's gradient-flow chord over-estimate distance at a concave seam? |
 | `O-10` | What is Surface Nets' non-manifold rate as a function of feature thickness over h? First curve measured at A-010 (M-60),… |
-| `O-11` | Why does the dual topology go superlinear in n³ while Marching Cubes does not? |
+| `O-11` | (ANSWERED at R-007, M-284: the dual carries a fourth stage Marching Cubes has not — emit_quads, which walks every grid e… |
 | `O-12` | Is Marching Cubes unconditionally manifold now? |
 | `O-13` | Pre-registered: Marching Tetrahedra vertex count = 3.0× Marching Cubes, converging from above Confirmed at A-003/M-001,… |
 | `O-14` | Pre-registered: Marching Tetrahedra symmetric Hausdorff at 64³ ≈ 2.6e-3, about 1.86× Marching Cubes, i.e. slightly worse… |
@@ -1161,7 +1162,7 @@ Each has the test that would settle it. **An open question with no proposed test
 | O-8 | Does Dual Contouring's vertex placement need f64 in practice, or is f32 enough? | E-112, with the QEF condition number in the HUD | `M = AᵀA` squares the condition number. **Half answered by V-18**: the original paper measures f32 error ~1 on flat regions at 256³, and recommends f64. **Partially answered by M-23**: on extraction paths with no solve, `f64` costs only 8–10% of wall time, so precision is cheap where there is no QEF. Still open for the vertex solve itself, and for *our* fields at *our* resolutions — which sidesteps `AᵀA` entirely and may not degrade the same way |
 | O-9 | How much does T-003's gradient-flow chord **over**-estimate distance at a concave seam? | A comparison against nearest-point search over a dense surface point cloud, or E-104 once Dual Contouring lands | The chord follows `∇f` to the zero set, which near `csg_difference`'s seam can land further away than the true nearest point. The bias direction is known and safe for a "below X" gate; the *magnitude* is not measured, and M-001's shootout column would inherit it. `csg_difference` measured forward `0.0833` at 33³ — how much of that is seam bias is unknown |
 | O-10 | ~~What is Surface Nets' non-manifold **rate** as a function of feature thickness over `h`?~~ **First curve measured at A-010 (M-60)**, as the multi-sheet-cell rate: `gyroid` 3.13% → 2.05% → 0.53% and `fbm_terrain` 1.70% → 0.84% → 0.77% at 17³/25³/33³, and exactly zero on the other five fields at every resolution. Still open only as the *slab* sweep, which would give thickness-over-`h` directly rather than resolution-at-fixed-field | A-010 drove it to zero, which was the ticket's job; a sweep over a slab of shrinking thickness would give the parametrised form | M-15 established it is a resolution effect rather than a topology one, and M-4 has counts at two resolutions on two fields. It decides whether Surface Nets is usable at game resolutions or needs A-010 first |
-| O-11 | **Why does the dual topology go superlinear in `n³` while Marching Cubes does not?** *(Half-answered at M-45: it is not one machine's cache hierarchy. Surface Nets degrades on Zen 3 too — 37.4 → 49.1 ns/sample — and the `Surface Nets/Marching Cubes` ratio is worse there than on the M5. What remains open is the mechanism, not whether the effect is real.)* | A profile or cache-miss counter at 192³ vs 256³. The cross-machine experiment is **done**; a second one would not add anything | The working-set hypothesis survives and is strengthened: Surface Nets gathers the four cells around each crossed edge with one stride `n²` cells apart, and that stride is architecture-independent, which is exactly the kind of cost that would reproduce across microarchitectures. Note both machines show a per-sample **spike at 128³** (M5 Surface Nets 9.35, Zen 3 Surface Nets 53.84 against 45.6 at 96³ and 47.3 at 192³) — a working-set effect at one specific grid size on two unrelated cache hierarchies, which is itself a clue nobody has followed. **Narrowed at R-005 (M-279), and the working-set hypothesis in this cell is wrong.** The counters are in: the gather is `O(n²)` and the cost is `O(n³)`, and a field with **no surface at all** costs the same to within 0.9%, so it is not the gather. Nor branches (they fall), nor allocation (0 page faults), nor the TLB. What is left is a 16% IPC decline on an instruction stream that is flat per sample — and at 16.7 M samples a **2.4× swing in misses moves the cycles by 0.4%**, so the miss column is not the driver either. The 128³ spike **is** resolved: 127³ and 129³ are normal and only 128 has a 64 KiB plane stride, so it is conflict aliasing, and it survives on the empty field. Residue is **R-007** |
+| O-11 | *(**ANSWERED at R-007, M-284**: the dual carries a fourth stage Marching Cubes has not — `emit_quads`, which walks every grid edge on all three axes and loads both endpoints **before** the sign test that would let it skip. It is `O(n³)` where the surface is `O(n²)`, runs at **IPC 0.72** against the rest of the mesher's 3.8–6.5, and is **82% of the cycles**. Every other candidate was excluded by measurement first — see M-279. The remedy is **A-023**, and it is not a vertex rule.)* **Why does the dual topology go superlinear in `n³` while Marching Cubes does not?** *(Half-answered at M-45: it is not one machine's cache hierarchy. Surface Nets degrades on Zen 3 too — 37.4 → 49.1 ns/sample — and the `Surface Nets/Marching Cubes` ratio is worse there than on the M5. What remains open is the mechanism, not whether the effect is real.)* | A profile or cache-miss counter at 192³ vs 256³. The cross-machine experiment is **done**; a second one would not add anything | The working-set hypothesis survives and is strengthened: Surface Nets gathers the four cells around each crossed edge with one stride `n²` cells apart, and that stride is architecture-independent, which is exactly the kind of cost that would reproduce across microarchitectures. Note both machines show a per-sample **spike at 128³** (M5 Surface Nets 9.35, Zen 3 Surface Nets 53.84 against 45.6 at 96³ and 47.3 at 192³) — a working-set effect at one specific grid size on two unrelated cache hierarchies, which is itself a clue nobody has followed. **Narrowed at R-005 (M-279), and the working-set hypothesis in this cell is wrong.** The counters are in: the gather is `O(n²)` and the cost is `O(n³)`, and a field with **no surface at all** costs the same to within 0.9%, so it is not the gather. Nor branches (they fall), nor allocation (0 page faults), nor the TLB. What is left is a 16% IPC decline on an instruction stream that is flat per sample — and at 16.7 M samples a **2.4× swing in misses moves the cycles by 0.4%**, so the miss column is not the driver either. The 128³ spike **is** resolved: 127³ and 129³ are normal and only 128 has a 64 KiB plane stride, so it is conflict aliasing, and it survives on the empty field. Residue is **R-007** |
 | O-12 | **Is Marching Cubes unconditionally manifold now?** ✗15's only counterexample was the fan chord and A-015 removed it; the strict gate passes 8,000 generated cases where it used to fail on the first seed. But nothing proves a second mechanism does not exist | An exhaustive search over configurations spanning more than two cells — the two-cell sweep is exhaustive and the vertex-link case is not covered by it at all. Or a proof that a cell-local cycle triangulation plus shared face segments cannot produce a non-manifold **vertex** | The strict gate is now asserted, so if a second mechanism exists CI will find it on some future seed. That is the intended outcome: a failure there is a finding, not a regression, and the failing case would be the first example of whatever the mechanism is |
 | O-13 | ~~**Pre-registered:** Marching Tetrahedra vertex count = **3.0× Marching Cubes**, converging from above~~ **Confirmed at A-003/M-001, exactly and including the convergence.** Measured on `sphere`: 33³ **3.036**, 49³ **3.026**, 65³ **3.003** — from above, onto 3.0 | *(closed)* | And M-52 supplies the mechanism the prediction did not need but turns out to have: the ratio is `4.0` in one octant and `2.0` across a sign change, so `2.992` is an average hiding a factor-of-two spread. That is why the shootout CSV carries every field |
 | O-14 | ~~**Pre-registered:** Marching Tetrahedra symmetric Hausdorff at 64³ ≈ **2.6e-3**, about **1.86×** Marching Cubes, i.e. slightly worse than Surface Nets~~ **Falsified at A-003/M-001 (M-55): measured 1.4386e-3, which is 1.043×.** Not slightly worse than Surface Nets — **better by 1.6×** (Surface Nets is 2.251e-3, 1.69× Marching Cubes) | *(closed)* | The prediction's stated counterintuitive part, *"more vertices **and** worse accuracy"*, is the half that is wrong. Marching Tetrahedra buys 3× the vertices for 4% worse accuracy on smooth fields and **better** accuracy on sharp ones |
@@ -2675,3 +2676,82 @@ resolutions looks like a fixture artefact. Only turning the fixture 17° showed 
 carries *"choose a fixture by searching for one that exhibits the property"*; this is the harder
 version — **a fixture can exhibit the property too perfectly, and exactness is the tell rather than
 the confirmation.**
+
+### M-284 / P-15 — HELD, and the dual's IPC wall is one function (R-007)
+
+**M.** `benches/experiment_p15.rs`, `docs/experiments/p-15.csv`, 16 rows, Ryzen 9 5900X, `f32`,
+Surface Nets, no surface. **P-15 predicted more than half the cycles; the answer is 82%.**
+
+#### The instrument, which needed nothing from the library
+
+R-007 offered two ways into a private function and asked which was allowed: counter windows inside
+`DualMesher::extract`, or an ablation seam. Neither was used. The first is impossible before it is
+undesirable — `isomesh` is `no_std` and cannot make a Linux system call — and the second is public
+API for one experiment.
+
+The third way is that the stages have **different iteration counts, and the counts depend on the
+grid's shape rather than only its size**: `sample` runs `S = ∏ size`, the two resizes and
+`place_vertices` run `C = ∏ (size − 1)`, and `emit_quads` runs
+`Q = Σ_axis (size[axis] − 1)(cells[u] − 1)(cells[v] − 1)`. On a cube `Q/C = 2.97`; on a slab two
+samples deep it is `1.00`; on a **rod two samples deep on both minor axes the inner loops are empty
+and it is exactly 0**, while `S/C` runs 1 → 4 across the same shapes. Thirteen shapes make the design
+matrix separable and least squares reads the stages off it.
+
+| shape | cells | `S/C` | `Q/C` | cycles/cell | instructions/cell |
+|---|---|---|---|---|---|
+| 193×193×193 | 7,077,888 | 1.02 | 2.97 | 156.04 | 205.29 |
+| 513×513×9 | 2,097,152 | 1.13 | 2.74 | 153.21 | 199.29 |
+| 1025×1025×3 | 2,097,152 | 1.50 | 2.00 | 126.06 | 179.88 |
+| 1449×1449×2 | 2,096,704 | 2.00 | **1.00** | **66.63** | 145.92 |
+| 500001×2×2 | 500,000 | 4.00 | **0.00** | **31.32** | 145.88 |
+
+#### The decomposition, and the number that answers R-007
+
+| per iteration | instructions | cycles | **IPC** |
+|---|---|---|---|
+| `sample` | 16.31 | 2.51 | 6.49 |
+| `place_vertices` + resizes | 95.82 | 24.99 | **3.83** |
+| **`emit_quads`** | 31.24 | 43.26 | **0.72** |
+
+`r² = 0.9954` on instructions and `0.9990` on cycles, and the model **predicts rather than
+describes**: a shape held out of the fit entirely, `385×385×17`, comes in at **+0.12% on instructions
+and +0.50% on cycles**.
+
+**At 193³, `emit_quads` is 45% of the instructions and 82% of the cycles.** So P-15 held, and by more
+than it claimed.
+
+**The punchline is the IPC column.** `place_vertices` — the dual's cell loop, which reads the same
+eight corners Marching Cubes' march does — runs at **3.83**, which is Marching Cubes' own 4.04 (M-282).
+`sample` runs at 6.49. Only `emit_quads` is slow, at **0.72**, and it is slow enough to drag the whole
+mesher to 1.20. **The dual does not have an IPC problem; one of its four stages does**, and that
+stage is 45% of the instructions and 82% of the time.
+
+#### The fit-free cross-check, and where it disagrees
+
+`1025×1025×3` and `1449×1449×2` have cell counts agreeing to **0.02%** and `Q/C` differing by exactly
+1, so their difference in cost per cell is one `emit_quads` iteration with only a small `S/C`
+correction. It gives **60.8 cycles and 42.2 instructions** against the fit's 43.3 and 31.2.
+
+That is a 40% disagreement and it is reported rather than smoothed: 60.8 × 2.97 = 181 cycles per cell
+would **exceed** the cube's measured 156, so the two-row estimate over-attributes — the two slabs
+differ in more than `Q/C`. The fit is the conservative reading and the one with a validated
+out-of-sample prediction, so **82% is a floor**.
+
+#### A limitation the sweep found in itself
+
+`500001×2×2` and `2×2×500001` have identical `S`, `C` and `Q` and differ by **62% in instructions**
+(145.88 against 236.88). The model has no term for loop overhead, which dominates when the innermost
+trip count is 2 — and `sample` iterates `x` innermost, so which axis is short decides how many times
+the loop preamble runs. It does not affect the conclusion (both rods anchor `Q = 0` and the two
+`500001×2×2`-shaped rows agree exactly at 145.88), and it bounds how far the coefficients should be
+trusted on degenerate shapes.
+
+#### O-11 is answered
+
+*"Why does the dual topology go superlinear in `n³` while Marching Cubes does not?"* — asked at T-006,
+half-answered at M-45, narrowed at M-279, and closed here. The dual carries a fourth stage Marching
+Cubes does not have, `emit_quads`, which walks every grid edge on all three axes and loads both
+endpoint samples **before** the sign test that would let it skip. It is `O(n³)` where the surface is
+`O(n²)`, it runs at one sixth of the rest of the mesher's IPC, and it is 82% of the cost. The
+superlinearity M-21 saw is that stage's working set growing past the caches while the other three
+stay flat — and the remedy is **A-023**, not a vertex rule.
