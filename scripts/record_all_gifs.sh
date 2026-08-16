@@ -32,15 +32,42 @@ mkdir -p "$OUT"
 
 # Every clip: output stem, example, then the environment it needs.
 #
+# **`ISOMESH_FIELD` is a zero-based index into each example's own list, and the
+# lists differ.** `surface_nets_vs_marching_cubes` is [sphere, box_exact, torus,
+# csg_difference, gyroid]; `sharp_features` is [box_exact, csg_difference,
+# gyroid, fbm_terrain]; `qef_clamp` is [gyroid, torus, fbm_terrain,
+# csg_difference]; `manifold_check` uses the crate's reference-field order.
+# Guessing cost three clips filed under names their contents did not match.
+#
 # `nohud` on anything meant to be *looked at* rather than read -- the harness
 # added that flag for exactly this. It stays **off** where the HUD is the
-# content, which is `game_lod_flyover` (seam counts per side) and
-# `resolution_plot` (the fit).
+# content: `game_lod_flyover` (seam counts per side), `resolution_plot` (the
+# fit), and `sdf_authoring`, where the blend radius `k` is the demo and the
+# geometry change between steps is too subtle to read without the number.
+#
+# # Two calibrations that a first pass got wrong, both measured
+#
+# **A scripted sequence must outlast the settle.** `record_gif.sh` waits 60 ticks
+# before frame zero, and `ISOMESH_AUTOCARVE=60` carves one per frame -- so the
+# whole tunnel was dug before the recording began and the clip was a still of the
+# end state. `game_paint` and `resolution_plot` failed the same way. The window is
+# `SETTLE + FRAMES x EVERY` ticks, and the animation has to cover it.
+#
+# **A wide stride is what makes a GIF enormous.** `ISOMESH_CAPTURE_EVERY=3` on the
+# flying demos put so much motion between frames that the palette could not
+# compress them: `terrain-streaming` came back at **24 MB** against a 2.7 MB
+# predecessor. Stride 2 and a narrower `WIDTH` fix it. More frames of a smaller
+# picture beat fewer frames of a bigger one, every time.
 CLIPS=(
     # -- the seven whose sweep code was written for this and never used --------
     "dual-contouring-vs-surface-nets|dual_contouring_cube|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=60 ISOMESH_CAPTURE_EVERY=2"
-    "sharp-features-lambda-sweep|sharp_features|ISOMESH_VIEW=nohud ISOMESH_FIELD=3 ISOMESH_CAPTURE_FRAMES=96 ISOMESH_CAPTURE_EVERY=2"
-    "qef-clamp-self-intersections|qef_clamp|ISOMESH_FIELD=2 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+    # `csg_difference`, after trying the other two. `box_exact` is grid-aligned
+    # enough that the sweep barely moves a pixel, and `gyroid` fills the frame at
+    # the harness's default camera radius of 7 -- you end up inside the surface.
+    # A box with a sphere bitten out of it has both a convex rim and a concave
+    # one, at a scale the default camera frames, and both visibly round over.
+    "sharp-features-lambda-sweep|sharp_features|ISOMESH_VIEW=nohud ISOMESH_FIELD=1 ISOMESH_CAPTURE_FRAMES=48 ISOMESH_CAPTURE_EVERY=2 WIDTH=700"
+    "qef-clamp-self-intersections|qef_clamp|ISOMESH_FIELD=0 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
     "precision-f32-tears|precision_f32_vs_f64|ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
     "manifold-check-resolution|manifold_check|ISOMESH_ALGORITHM=sn ISOMESH_FIELD=5 ISOMESH_CAPTURE_FRAMES=72 ISOMESH_CAPTURE_EVERY=2"
     "ambiguous-faces-are-rare|marching_cubes_ambiguity|ISOMESH_FIELD=0 ISOMESH_CAPTURE_FRAMES=60 ISOMESH_CAPTURE_EVERY=2"
@@ -52,24 +79,26 @@ CLIPS=(
     "a-boolean-remeshed-every-frame|game_csg_props|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=4"
     # Fires every 0.9 s up to 24 shots. 100x8 ticks is ~13 s, about 14 shots.
     "the-debris-is-the-boolean|game_destruction|ISOMESH_TARGET=shell ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=100 ISOMESH_CAPTURE_EVERY=8"
-    "lod-flyover|game_lod_flyover|ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=3"
+    "lod-flyover|game_lod_flyover|ISOMESH_CAPTURE_FRAMES=64 ISOMESH_CAPTURE_EVERY=2 WIDTH=800"
     "gpu-resident-mesh-shader|gpu_mesh_shader|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=3"
-    # The 89^3 points dominate, so it fills in slowly. Long stride, few frames.
-    "the-fit-drawing-itself|resolution_plot|ISOMESH_CAPTURE_FRAMES=60 ISOMESH_CAPTURE_EVERY=4"
 
     # -- need a flag to be worth filming --------------------------------------
-    "digging-a-tunnel|game_dig|ISOMESH_AUTOCARVE=60 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
-    "paint-that-survives-the-wall|game_paint|ISOMESH_AUTOPAINT=60 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+    "digging-a-tunnel|game_dig|ISOMESH_AUTOCARVE=240 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_SETTLE=20 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+    "paint-that-survives-the-wall|game_paint|ISOMESH_AUTOPAINT=240 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_SETTLE=20 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
 
     # -- the ten that already existed, re-recorded at the current commit ------
-    "flying-through-the-rock|game_showcase|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=3"
-    "walking-the-seams|game_walk|ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=3"
-    "terrain-streaming|game_terrain_stream|ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=3"
-    "building-a-field|sdf_authoring|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+    "flying-through-the-rock|game_showcase|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=52 ISOMESH_CAPTURE_EVERY=2 WIDTH=700"
+    "walking-the-seams|game_walk|ISOMESH_CAPTURE_FRAMES=48 ISOMESH_CAPTURE_EVERY=2 WIDTH=640"
+    # The narrowest clip here, and it has to be: endless noisy terrain flying
+    # past is the worst case a GIF palette can be handed. Every pixel changes
+    # every frame and none of it repeats, so this is the one demo where the
+    # picture has to shrink rather than the clip get shorter.
+    "terrain-streaming|game_terrain_stream|ISOMESH_CAPTURE_FRAMES=40 ISOMESH_CAPTURE_EVERY=2 WIDTH=540"
+    "building-a-field|sdf_authoring|ISOMESH_CAPTURE_FRAMES=72 ISOMESH_CAPTURE_EVERY=2"
     "the-tunnel-meshed-as-a-tunnel|marching_cubes_tunnel|ISOMESH_SPIN=0.012 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
     "subgrid-letters-thinner-than-a-voxel|subgrid_features|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
-    "surface-nets-vs-marching-cubes-box|surface_nets_vs_marching_cubes|ISOMESH_FIELD=2 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
-    "surface-nets-vs-marching-cubes-gyroid|surface_nets_vs_marching_cubes|ISOMESH_FIELD=3 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+    "surface-nets-vs-marching-cubes-box|surface_nets_vs_marching_cubes|ISOMESH_FIELD=1 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+    "surface-nets-vs-marching-cubes-gyroid|surface_nets_vs_marching_cubes|ISOMESH_FIELD=4 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
     "marching-cubes-sphere-resolution-sweep|marching_cubes_sphere|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
 )
 
