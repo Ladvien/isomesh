@@ -39,11 +39,20 @@ mkdir -p "$OUT"
 # csg_difference]; `manifold_check` uses the crate's reference-field order.
 # Guessing cost three clips filed under names their contents did not match.
 #
-# `nohud` on anything meant to be *looked at* rather than read -- the harness
-# added that flag for exactly this. It stays **off** where the HUD is the
-# content: `game_lod_flyover` (seam counts per side), `resolution_plot` (the
-# fit), and `sdf_authoring`, where the blend radius `k` is the demo and the
-# geometry change between steps is too subtle to read without the number.
+# # `nohud` only where nothing on screen needs naming
+#
+# The harness added that flag for "a GIF meant to be looked at rather than
+# read", and a first pass applied it to every clip that was not obviously a
+# numbers demo. That was wrong for a whole class: **on a side-by-side comparison
+# the label is the content.** `dual_contouring_cube` puts Surface Nets and Dual
+# Contouring next to each other in two shades, and without the HUD a viewer
+# cannot tell which is which -- so the clip shows two objects and proves nothing.
+# Same for both `surface_nets_vs_marching_cubes` clips, for `subgrid_features`
+# (the letter thickness is the sweep) and `sharp_features` (lambda is).
+#
+# So `nohud` is for the *worlds* -- showcase, terrain, dig, paint, destruction,
+# csg props, mesh shader -- where the picture describes itself. Anything that
+# compares, sweeps or counts keeps its HUD.
 #
 # # Two calibrations that a first pass got wrong, both measured
 #
@@ -60,13 +69,13 @@ mkdir -p "$OUT"
 # picture beat fewer frames of a bigger one, every time.
 CLIPS=(
     # -- the seven whose sweep code was written for this and never used --------
-    "dual-contouring-vs-surface-nets|dual_contouring_cube|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=60 ISOMESH_CAPTURE_EVERY=2"
+    "dual-contouring-vs-surface-nets|dual_contouring_cube|ISOMESH_CAPTURE_FRAMES=60 ISOMESH_CAPTURE_EVERY=2"
     # `csg_difference`, after trying the other two. `box_exact` is grid-aligned
     # enough that the sweep barely moves a pixel, and `gyroid` fills the frame at
     # the harness's default camera radius of 7 -- you end up inside the surface.
     # A box with a sphere bitten out of it has both a convex rim and a concave
     # one, at a scale the default camera frames, and both visibly round over.
-    "sharp-features-lambda-sweep|sharp_features|ISOMESH_VIEW=nohud ISOMESH_FIELD=1 ISOMESH_CAPTURE_FRAMES=48 ISOMESH_CAPTURE_EVERY=2 WIDTH=700"
+    "sharp-features-lambda-sweep|sharp_features|ISOMESH_FIELD=1 ISOMESH_CAPTURE_FRAMES=48 ISOMESH_CAPTURE_EVERY=2 WIDTH=700 FPS=8"
     "qef-clamp-self-intersections|qef_clamp|ISOMESH_FIELD=0 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
     "precision-f32-tears|precision_f32_vs_f64|ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
     "manifold-check-resolution|manifold_check|ISOMESH_ALGORITHM=sn ISOMESH_FIELD=5 ISOMESH_CAPTURE_FRAMES=72 ISOMESH_CAPTURE_EVERY=2"
@@ -83,11 +92,19 @@ CLIPS=(
     "gpu-resident-mesh-shader|gpu_mesh_shader|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=3"
 
     # -- need a flag to be worth filming --------------------------------------
-    "digging-a-tunnel|game_dig|ISOMESH_AUTOCARVE=240 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_SETTLE=20 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
-    "paint-that-survives-the-wall|game_paint|ISOMESH_AUTOPAINT=240 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_SETTLE=20 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+    "digging-a-tunnel|game_dig|ISOMESH_AUTOCARVE=18 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=34 ISOMESH_CAPTURE_EVERY=3 FPS=8"
+    "paint-that-survives-the-wall|game_paint|ISOMESH_AUTOPAINT=38 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=60 ISOMESH_CAPTURE_EVERY=2 FPS=10"
 
     # -- the ten that already existed, re-recorded at the current commit ------
-    "flying-through-the-rock|game_showcase|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=52 ISOMESH_CAPTURE_EVERY=2 WIDTH=700"
+    # Three knobs, and each fixes something a first pass got wrong. **Speed
+    # 3.0** rather than the interactive default of 5: at 5 a chunk goes from
+    # appearing to filling the frame in about a second and the clip reads as
+    # flashing. **A 48-metre stream radius** rather than 34, so arrivals happen
+    # in the far distance where they belong rather than mid-frame. And a **220
+    # tick settle**, because slowing the flight also means it has covered less
+    # ground by the time recording starts -- at the default settle the camera is
+    # still over open plain and half the frame is sky.
+    "flying-through-the-rock|game_showcase|ISOMESH_VIEW=nohud ISOMESH_SPEED=3.0 ISOMESH_STREAM_VIEW=48 ISOMESH_CAPTURE_SETTLE=220 ISOMESH_CAPTURE_FRAMES=52 ISOMESH_CAPTURE_EVERY=2 WIDTH=700"
     "walking-the-seams|game_walk|ISOMESH_CAPTURE_FRAMES=48 ISOMESH_CAPTURE_EVERY=2 WIDTH=640"
     # The narrowest clip here, and it has to be: endless noisy terrain flying
     # past is the worst case a GIF palette can be handed. Every pixel changes
@@ -96,9 +113,9 @@ CLIPS=(
     "terrain-streaming|game_terrain_stream|ISOMESH_CAPTURE_FRAMES=40 ISOMESH_CAPTURE_EVERY=2 WIDTH=540"
     "building-a-field|sdf_authoring|ISOMESH_CAPTURE_FRAMES=72 ISOMESH_CAPTURE_EVERY=2"
     "the-tunnel-meshed-as-a-tunnel|marching_cubes_tunnel|ISOMESH_SPIN=0.012 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
-    "subgrid-letters-thinner-than-a-voxel|subgrid_features|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
-    "surface-nets-vs-marching-cubes-box|surface_nets_vs_marching_cubes|ISOMESH_FIELD=1 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
-    "surface-nets-vs-marching-cubes-gyroid|surface_nets_vs_marching_cubes|ISOMESH_FIELD=4 ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+    "subgrid-letters-thinner-than-a-voxel|subgrid_features|ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+    "surface-nets-vs-marching-cubes-box|surface_nets_vs_marching_cubes|ISOMESH_FIELD=1 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+    "surface-nets-vs-marching-cubes-gyroid|surface_nets_vs_marching_cubes|ISOMESH_FIELD=4 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
     "marching-cubes-sphere-resolution-sweep|marching_cubes_sphere|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
 )
 

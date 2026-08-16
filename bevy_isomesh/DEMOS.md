@@ -423,10 +423,32 @@ cargo run --example gpu_mesh_shader --release   # [ ] resolution · Space pause 
 | example | what it shows |
 |---|---|
 | `gpu_compute_mc` | The same Marching Cubes on both paths. Two meshes look identical at any resolution including when one is wrong, so `V` colours the surface by CPU/GPU agreement instead. Triangle counts match; most vertices are bit-identical and the rest differ by one ULP, because WGSL permits FMA contraction |
-| `gpu_vs_cpu` | One extraction broken into its five parts. **The GPU is behind at every resolution this runs at**, and the reason is not launch overhead — it is read-back. The two memory-copy stages dominate |
+| `gpu_vs_cpu` | One extraction broken into its five parts, which is the only way to see that **the extraction is not what costs anything** — `count + emit` is 0.045 ms at 129³ and barely moves across a 420× rise in cells. Everything the GPU path costs is data movement around it |
 
-That last one is why the root README answers "GPU extraction to make CPU meshing faster" with **no**.
-It pays off when you render from GPU memory and never read back, which is what `gpu_mesh_shader` does.
+### So is the GPU faster?
+
+**Yes, above about 33 samples per axis — and by 37× at 129³.** Below that it is not, and the reason is
+a fixed cost of roughly 0.22 ms that does not care how big the grid is.
+
+| samples per axis | CPU, single thread | GPU, field evaluated on the GPU | |
+|---|---|---|---|
+| 17³ | **0.06 ms** | 0.22 ms | CPU ahead 3.7× |
+| 33³ | 0.34 ms | **0.23 ms** | GPU ahead 1.5× |
+| 65³ | 2.44 ms | **0.27 ms** | GPU ahead 9× |
+| 129³ | 20.14 ms | **0.54 ms** | GPU ahead **37×** |
+
+The shape matters more than any single row: the GPU column is **nearly flat** — 0.22 to 0.54 ms across
+a 420× rise in cell count — because the extraction itself was never the cost. `count + emit` is
+0.045 ms at 129³ and does not move.
+
+**Where the field is evaluated decides everything.** Sample on the CPU and upload, and the upload is
+87% of the path — 8.37 ms at 129³, or 2.4× ahead of the CPU instead of 37×. Evaluate it in the shader
+and that entire cost disappears, because the samples are produced where they are read. Three tickets
+took this path from 15.01 ms to 0.54 ms at 129³ and **none of them made the extractor faster**; every
+gain was data movement removed.
+
+Numbers from `docs/measurements/gpu_vs_cpu.csv`, warmed, median of three, RTX 3090 over Vulkan
+(M-145, M-150, M-155).
 
 ---
 

@@ -216,19 +216,48 @@ fn aim_camera(mut cameras: Query<&mut Transform, With<Camera3d>>) {
 /// the GIF is reproducible and every frame lands on a value someone chose.
 ///
 /// It returns to the start so the loop closes without a jump.
-const SWEEP: [f32; 12] = [
-    0.0, 0.04, 0.08, 0.13, 0.19, 0.26, 0.34, 0.26, 0.19, 0.13, 0.08, 0.04,
-];
-
-/// Capture frames spent on each step of [`SWEEP`].
+/// Capture frames spent on each step of [`STORY`].
 const FRAMES_PER_STEP: u32 = 6;
+
+/// **What a recording of this example has to say, in order.**
+///
+/// A blend sweep on its own shows a mushroom changing slightly and never says
+/// where the mushroom came from — which is the one thing this example exists to
+/// say. So a capture walks the parts first, assembles them, and only then turns
+/// the knob. That is the order the module doc describes and the order somebody
+/// authoring a field actually works in.
+///
+/// Each entry is `(isolate, blend)`: `isolate` is `0` for the assembly and
+/// `1..=4` for a single primitive, matching the `0`–`4` keys a human presses.
+/// The sweep tail returns to `0.0` so the clip loops without a jump.
+const STORY: [(usize, f32); 12] = [
+    // The four parts, one at a time, each with the expression that made it.
+    (1, 0.0),
+    (2, 0.0),
+    (3, 0.0),
+    (4, 0.0),
+    // Assembled, with the junction still a crease.
+    (0, 0.0),
+    (0, 0.0),
+    // The knob a level designer reaches for, up and back.
+    (0, 0.08),
+    (0, 0.19),
+    (0, 0.34),
+    (0, 0.19),
+    (0, 0.08),
+    (0, 0.0),
+];
 
 fn controls(keys: Res<ButtonInput<KeyCode>>, capture: Res<Capture>, mut state: ResMut<Authoring>) {
     // While recording, the sweep drives itself. A human pressing `[` and `]` gets
     // the same values; this only removes the human.
     if capture.is_active() {
-        let step = (capture.taken / FRAMES_PER_STEP) as usize % SWEEP.len();
-        let wanted = SWEEP[step];
+        let step = (capture.taken / FRAMES_PER_STEP) as usize % STORY.len();
+        let (isolate, wanted) = STORY[step];
+        if state.isolate != isolate {
+            state.isolate = isolate;
+            state.dirty = true;
+        }
         if (state.blend - wanted).abs() > f32::EPSILON {
             state.blend = wanted;
             state.dirty = true;

@@ -51,8 +51,8 @@ SECTIONS = [
          "The terrain is a function, so there is no edge to reach. Fly long enough and every chunk you can see was meshed while you were watching. The number that matters is frame time <em>while chunks are landing</em>, not after.",
          "cargo run --example game_terrain_stream --release"),
         ("—", "demo", "Building the field, not meshing it", "building-a-field",
-         "Four SDF primitives, and a mushroom assembled from them.",
-         "The only demo with no meshing content at all — the extractor is the default and the resolution is fixed. The one thing that changes is the expression. Watch the stem-to-cap junction: at <code>k = 0</code> it is a crease, and by 0.25 it is a fillet. That knob is what a level designer reaches for.",
+         "A capsule, a sphere, a torus — then the mushroom they add up to.",
+         "The only demo with no meshing content at all: the extractor is the default, the resolution is fixed, and the one thing that changes is the expression. It shows the parts first, then <code>Union { SmoothUnion { stem, Difference { cap, flat }, k }, gills }</code>, then sweeps <code>k</code> — the stem meets the cap in a crease at zero and a fillet by 0.34. That last knob is the one a level designer reaches for, and none of this is authored geometry.",
          "cargo run --example sdf_authoring --release"),
     ]),
     ("Algorithms, side by side", "Same field, same grid, same crossings. What differs is one function.", [
@@ -117,10 +117,10 @@ SECTIONS = [
          "No mesh at all — one wire cell and the bilinear saddle tracked as a plane sweeps through it. The trail draws a hyperbola that runs off to infinity and returns from the other side at the pole plane. Two verdicts print side by side, and <strong>12.6%</strong> of the time the classic numerator-only test is the wrong one.",
          "cargo run --example marching_cubes_interior --release"),
     ]),
-    ("On the GPU", "One shape pays off, and the crate says which.", [
+    ("On the GPU", "Faster above about 33 samples per axis, and by 37× at 129³ — provided the field is evaluated on the GPU rather than uploaded to it.", [
         ("GPU-011b", "measured", "Never touching the bus", "gpu-resident-mesh-shader",
          "A field with three brushes moving through it, extracted and drawn entirely on the GPU.",
-         "Field evaluation, extraction and draw, all device-side. Per frame the CPU sends a camera matrix and three brushes, and waits. No vertex buffer, no index buffer, and zero mesh entities. <strong>With a readback the GPU path is slower than the CPU at every resolution measured</strong> — the cost is the memory copies, not launch overhead — so this is the one shape where it wins.",
+         "Field evaluation, extraction and draw, all device-side. Per frame the CPU sends a camera matrix and three brushes, and waits. No vertex buffer, no index buffer, and zero mesh entities. <strong>0.54 ms at 129³ against a single-threaded CPU's 20.14</strong> — and that GPU figure is nearly flat across a 420× rise in cell count, because extraction was never the cost. <code>count + emit</code> is 0.045 ms and does not move. Everything the path costs is data movement, which is why where you evaluate the field decides the rest: upload CPU-sampled data instead and the upload alone is 87% of it.",
          "cargo run --example gpu_mesh_shader --release"),
         ("—", "demo", "A boolean re-meshed every frame", "a-boolean-remeshed-every-frame",
          "A CSG solid whose cutter orbits, re-meshed continuously.",

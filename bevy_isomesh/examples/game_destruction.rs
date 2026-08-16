@@ -60,8 +60,11 @@ use isomesh::{RuntimeShape3, Sdf};
 
 /// Grid the *targets* are meshed on.
 const TARGET_SAMPLES: u32 = 65;
-/// Grid a *fragment* is meshed on. Smaller, and over a much smaller box.
-const FRAGMENT_SAMPLES: u32 = 21;
+/// Grid a *fragment* is meshed on. Smaller than the target's, because the box is
+/// smaller — but not *much* smaller, because the debris is what this example is
+/// named for. At 21 the fragments' silhouettes are visibly faceted and the demo
+/// reads as low-poly rubble rather than as the boolean it is.
+const FRAGMENT_SAMPLES: u32 = 41;
 const HALF_EXTENT: f32 = 4.0;
 
 /// Anything below this has fallen out of the world.

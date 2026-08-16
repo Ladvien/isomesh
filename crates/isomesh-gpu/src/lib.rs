@@ -51,18 +51,40 @@
 //! | **Shader sources** | [`MARCHING_CUBES_WGSL`], [`FIELD_WGSL`], [`GRID_WGSL`], [`SCAN_WGSL`], [`JUMP_FLOOD_WGSL`], [`MESH_RENDER_WGSL`], composed by [`Composer`] |
 //! | **No device of your own** | [`headless`] |
 //!
-//! # The honest headline: with a readback, this is slower than the CPU
+//! # Is it faster than the CPU? Above about 33³, yes — by 37× at 129³
 //!
-//! Measured, at every resolution tried — `docs/measurements/gpu_vs_cpu.csv` and
-//! the `gpu_vs_cpu` example, which breaks one extraction into its five parts.
-//! The cost is not launch overhead; it is the two memory-copy stages, and they
-//! dominate.
+//! Sphere, warmed, median of three, RTX 3090 over Vulkan, against a
+//! single-threaded CPU extraction. `docs/measurements/gpu_vs_cpu.csv`.
 //!
-//! So the GPU path pays off in exactly one shape: **you render from GPU memory
-//! and never read back.** That is what [`MeshShaderRenderer`] is for, and the
-//! `gpu_mesh_shader` example is the whole loop — field, extraction and draw,
-//! with a camera matrix and three brushes as the only things crossing the bus.
-//! Reach for this crate when that is your shape, and stay on the CPU otherwise.
+//! | samples/axis | CPU | GPU, field evaluated on the GPU | |
+//! |---|---|---|---|
+//! | 17³ | **0.06 ms** | 0.22 ms | CPU ahead 3.7× |
+//! | 33³ | 0.34 ms | **0.23 ms** | GPU ahead 1.5× |
+//! | 65³ | 2.44 ms | **0.27 ms** | GPU ahead 9× |
+//! | 129³ | 20.14 ms | **0.54 ms** | GPU ahead **37×** |
+//!
+//! **The shape is the finding.** That GPU column is nearly flat across a 420×
+//! rise in cell count, because extraction was never the cost: `count + emit` is
+//! **0.045 ms at 129³** and does not move with resolution. Below ~33³ a fixed
+//! ~0.22 ms of setup is larger than the whole job, and the CPU wins.
+//!
+//! # Where you evaluate the field decides the rest
+//!
+//! Sample on the CPU and hand over a [`FieldBuffer`] and the **upload is 87% of
+//! the path** — 8.37 ms at 129³, so 2.4× ahead instead of 37×. Worse, that
+//! design does not take field evaluation off the CPU's budget; it adds a copy to
+//! it, and field evaluation is 65–74% of the whole job on a noise field.
+//!
+//! Evaluate it in the shader instead — [`GpuField`], [`GpuShape`], [`GpuOp`],
+//! [`GpuBrush`] — and the upload stops existing, because the samples are
+//! produced where they are read.
+//!
+//! Three tickets took this path from 15.01 ms to 0.54 ms at 129³ and **none of
+//! them made the extractor faster.** Every gain was data movement removed: a GPU
+//! prefix scan so 8.4 MB of per-cell counts never come home (M-150), then
+//! device-side field evaluation (M-155). What is left after that is the geometry
+//! read-back, and [`MeshShaderRenderer`] removes even that by drawing straight
+//! out of the compute output.
 //!
 //! ```no_run
 //! use isomesh::fields::Sphere;

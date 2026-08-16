@@ -96,7 +96,30 @@ There isn't one. `case_table_bytes()` packs `isomesh::marching_cubes::table::CAS
 by a `const fn` rather than copied from a paper — and a test unpacks the bytes and compares all 256
 entries.
 
-## Measured against the CPU
+## Is it faster? Above about 33³, yes — by 37× at 129³
+
+Sphere, warmed, median of three, RTX 3090 over Vulkan, against a single-threaded CPU extraction.
+`docs/measurements/gpu_vs_cpu.csv`.
+
+| samples/axis | CPU | GPU, field on the GPU | |
+|---|---|---|---|
+| 17³ | **0.06 ms** | 0.22 ms | CPU ahead 3.7× |
+| 33³ | 0.34 ms | **0.23 ms** | GPU ahead 1.5× |
+| 65³ | 2.44 ms | **0.27 ms** | GPU ahead 9× |
+| 129³ | 20.14 ms | **0.54 ms** | GPU ahead **37×** |
+
+That GPU column is nearly flat across a **420×** rise in cell count, because extraction was never the
+cost — `count + emit` is 0.045 ms at 129³ and does not move. Below ~33³ a fixed ~0.22 ms of setup is
+larger than the whole job and the CPU wins.
+
+**Where you evaluate the field decides the rest.** Upload CPU-sampled data and the upload is **87%** of
+the path — 8.37 ms at 129³, so 2.4× rather than 37×, and it does not take field evaluation off the
+CPU's budget, it adds a copy to it. Evaluate it in the shader and that cost stops existing.
+
+Three tickets took this path from 15.01 ms to 0.54 ms at 129³ and none made the extractor faster.
+Every gain was data movement removed (M-145, M-150, M-155).
+
+## Agreement with the CPU, vertex by vertex
 
 Same grid, same samples, same table, 33³ sphere:
 
