@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-177 tickets. Line numbers are stable until something above them is edited — grep the ID if
+178 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1361,3 +1361,29 @@ thing it checks. Every control R-006 and R-008 carried was about whether the *me
 none asked whether the gradient was right. And the tell was there from the start: an area-weighted normal cannot
 leave the cone its faces span, so a past-90° reading was **arithmetically impossible** — M-283 recorded the
 impossibility and went looking for strange geometry instead of a broken instrument. |
+| ☑ | **A-022** | **Disambiguate the face in the dual path, as the primal path already does.** A-021 (M-276) measured that **all 314** of `noise_cavity`'s non-manifold edges under Surface Nets have exactly **4** crossed boundary edges on their shared grid face, against **2** on all 30,891 manifold ones — the *ambiguous face*. **Read `dualsimp_tvcg.pdf` (Schaefer, Ju & Warren) before writing anything** — whether MDC's own criterion is face-based or component-based decides whether this is a new rule or a bug in the existing one, and rule 5 forbids guessing which. **Acceptance:** the 314 goes to 0 on `noise_cavity`, `gyroid` and `fbm_terrain` under Surface Nets and Dual Contouring, with T-007's golden hashes regenerated in the same commit. | L | A-021 |
+| | | ***The block was a lookup failure, not a paywall (M-290).*** The paper is at
+`cs.wustl.edu/~taoju/research/dualsimp_tvcg.pdf` — Tao Ju's own page, **the exact filename this ticket already
+named**. `paper_download` resolves DOIs through arXiv, Unpaywall and provider resolvers, and an author's copy is
+indexed by none of them; the server also omits its certificate's intermediate, so every TLS client refuses it
+until the intermediate is supplied from the certificate's own AIA URL, with verification left on. |
+| | | ***The criterion has a third answer the ticket did not offer (V-34).*** Neither face-based nor
+component-based: **one vertex per cycle of a table whose ambiguous faces the asymptotic decider has already
+resolved**. §3 cites Nielson's Dual MC \[13] for the cycles and Nielson & Hamann's asymptotic decider \[26] for
+the table. The ambiguity is settled upstream and the dual walk needs no rule of its own. |
+| | | ***The acceptance was unreachable, and the paper says so in as many words.*** §3: *"DC leads to nonmanifold
+vertices and edges for **all** of the ambiguous sign configurations."* One vertex per cell is nonmanifold there
+by construction — measured, 1,128 edges over eight fields at three resolutions against Marching Cubes' 0. **The
+314 is the literature's own prediction, not a defect to remove**; removing it means splitting the cell's vertex,
+which is Manifold Dual Contouring, which this crate already has from A-010. |
+| | | ***And the paper's own claim is falsified (✗19).*** It says the uniform-grid dual *"is always a manifold
+because the original MC algorithm always constructs a manifold and the dual preserves the topology"*. The premise
+holds here — **Marching Cubes is 0 on all 24 configurations under both face rules** — and Manifold Dual
+Contouring is still **114** with the decider-modified table the paper specifies, so the step that fails is *"the
+dual preserves the topology"*. The crate's own docs said this was "outside what they guarantee"; that was written
+while the paper was unobtainable and is now corrected in place. |
+| | | ***What the decider buys, measured: 143 → 114 edges (−20%), and the residue is one field.*** Manifold Dual
+Contouring is manifold on **seven of eight** reference fields under both rules; every one of the 143 is
+`noise_cavity` — the field A-002e added because none of the other seven produces a cell with an **interior**
+ambiguity, which a face decider cannot see. **A-025** owns that and owns the default, which is currently
+`Separate` and is not what the paper describes. |

@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**355 entries** — 18 falsified, 284 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**358 entries** — 19 falsified, 285 measured, 34 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -57,6 +57,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗16` | "glam 0.32 lands with A-007's vertex solve" |
 | `✗17` | "Only the interior test can make Marching Cubes 33 non-manifold, so the face decider alone cannot" |
 | `✗18` | "A hairline seam difference is a crack no weld can close" |
+| `✗19` | "Manifold Dual Contouring's uniform-grid surface is always a manifold" |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -341,6 +342,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-287` | one bit of the row length was a 3.4× tax at the chunk size everybody uses (A-024) |
 | `M-288` | FALSIFIED, and the registered definition did not implement the registered claim (R-008) |
 | `M-289` | the reference gradient was noise, and it falsified two hypotheses that were true (R-009) |
+| `M-290` | the ambiguous face in the dual path, with the source read at last (A-022) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -374,6 +376,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-31` | The reference implementation both Grosso papers cite has been deleted from GitHub, and it survives — the paper's own lis… |
 | `V-32` | Two more rows of meshing-library-target.md marked PAYWALL are in the corpus, and the table's status code has now been wr… |
 | `V-33` | A paper_download that reports success can return a landing page, and this is the third producer of that signature. |
+| `V-34` | Manifold Dual Contouring's uniform-grid criterion is one vertex per cycle of a decider-modified Marching Cubes table, an… |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -861,6 +864,47 @@ arithmetic is not always a hairline: on `torus` at `h = 1/12` the widest bit-ide
 zero and the two sides then disagreed about whether an edge was cut at all. That is a hole, not a
 rounding error, and no weld epsilon short of a cell would close it.
 
+### ✗19 — "Manifold Dual Contouring's uniform-grid surface is always a manifold"
+
+**Source: the paper itself, read at A-022 (V-34).** Schaefer, Ju & Warren, §3:
+
+> *"To create polygons, the algorithm constructs one polygon connecting the vertices associated with
+> that edge in the four adjacent cells. … **this surface is always a manifold** because the original
+> MC algorithm always constructs a manifold and the dual preserves the topology of the surface."*
+
+Unconditional, and at the uniform-grid level — before any octree, any simplification, any clustering.
+
+**Falsified at A-022 (M-290).** Eight reference fields × three resolutions, no chunking, no weld:
+
+| extractor | non-manifold edges | non-manifold vertices |
+|---|---|---|
+| `marching_cubes` | **0** | **0** |
+| `marching_cubes` + asymptotic decider | **0** | **0** |
+| `manifold_dual_contouring`, unmodified table | 143 | 286 |
+| `manifold_dual_contouring`, **decider-modified table** — the paper's own construction | **114** | **222** |
+| `surface_nets` / `dual_contouring` | 1,128 | 2,156 |
+
+**The interesting part is which half of the argument fails.** The premise is *"the original MC
+algorithm always constructs a manifold"* — ✗15 records that as false in general, so the obvious guess
+is that the premise is what breaks. It is not: **Marching Cubes measures 0 on all 24 configurations
+here, under both face rules**, A-015 having removed the fan chords that made ✗15's counterexample.
+The premise holds and the conclusion still fails, so what is false is *"the dual preserves the
+topology of the surface"*.
+
+**And the mechanism was already written down in this crate, as something the paper did not claim.**
+`manifold_dual_contouring`'s module docs say the residue is *"two crossed edges of one **shared** face
+resolving to the same cycle pair"*, producing four quads on one dual edge, and then: *"Schaefer, Ju
+and Warren separate sheets within a cell and **never claimed** to handle [this], so this is outside
+what they guarantee rather than a defect against it."* That charitable reading was written while the
+paper was unobtainable. **They do claim it**, in one sentence, unconditionally. So the residue is a
+defect against the paper's stated guarantee and not outside it, and the crate's own docs need the
+correction — which they now have.
+
+**What is not falsified.** The paper's *contribution* is the octree vertex-clustering algorithm and
+its topology-preservation proofs, none of which this touches. What fails is the one-sentence argument
+for the uniform-grid base case it builds on, and it fails on `noise_cavity` only — the field A-002e
+added because none of the other seven produces a cell with an interior ambiguity (M-208).
+
 ---
 
 ## Part 2 — Measured here (tier M)
@@ -1157,6 +1201,7 @@ rounding error, and no weld epsilon short of a cell would close it.
 | V-18 | **Dual Contouring's own paper quantifies the f32 QEF failure.** At 256³, `bᵀb` reaches ~10⁶; f32 carries six decimal digits, so `E[x]` evaluated on a flat region — where it should be zero — has error **on the order of 1**. The paper's own remedy is double precision | Ju, Losasso, Schaefer & Warren 2002, `10.1145/566570.566586`, §2.3, read this session |
 | V-19 | **Dual Contouring's topology is Surface Nets' topology.** The paper's algorithm is literally: vertex at the QEF minimizer for each sign-changing cube, quad joining the four cubes of each sign-changing edge. Only vertex *placement* differs | same, §2.2 |
 | V-20 | A QEF is stored as `AᵀA` (symmetric 3×3), `Aᵀb` (3-vector) and `bᵀb` (scalar) — 10 floats — rather than as `A` and `b` | same, §2.3 |
+| V-34 | **Manifold Dual Contouring's uniform-grid criterion is one vertex per cycle of a *decider-modified* Marching Cubes table, and the paper claims that surface is unconditionally manifold.** §3, *Contouring on a Uniform Grid*: *"On a uniform grid, **DC leads to nonmanifold vertices and edges for all of the ambiguous sign configurations** in the original MC algorithm. … Nielson associates one vertex with each cycle of a **modified MC table [26]**. … each edge is associated with exactly one vertex. … **this surface is always a manifold** because the original MC algorithm always constructs a manifold and the dual preserves the topology of the surface."* **Reference [26] is Nielson & Hamann, *The Asymptotic Decider*, VIS 1991**, and [13] is Nielson's *Dual Marching Cubes*, VIS 2004 — so the face ambiguity is resolved **upstream, inside the table the cycles are read from**, and the dual walk needs no rule of its own. That is the question A-022 was blocked on and could not answer. **The claim itself is ✗19** | Schaefer, Ju & Warren, `10.1109/TVCG.2007.1012`, read at A-022 from `cs.wustl.edu/~taoju/research/dualsimp_tvcg.pdf` |
 
 ---
 
@@ -3140,3 +3185,74 @@ impossibility, chased the one escape it could think of (the vertex being off-sur
 closed, and concluded the geometry must be strange — rather than concluding that one of the two
 quantities in the comparison had to be wrong. **When a measurement is impossible, suspect the
 instrument before the world.**
+
+### M-290 — the ambiguous face in the dual path, with the source read at last (A-022)
+
+**M.** `benches/a022_decider.rs`, `docs/measurements/a022-decider.csv`, 144 rows: eight reference
+fields × three resolutions × six extractor configurations, `f64`, no chunking and no weld (matching
+A-021, because the weld can create a non-manifold edge — M-226).
+
+#### The block was a lookup failure, not a paywall
+
+A-022 sat blocked on *"the source is paywalled and not in the corpus"*, with `paper_download`
+reporting *"No open-access PDF found"* for `10.1109/TVCG.2007.1012`. The paper is at
+**`cs.wustl.edu/~taoju/research/dualsimp_tvcg.pdf`** — Tao Ju's own publications page, and **the exact
+filename A-022's own text already named**. One web search found it.
+
+Two obstacles were in the way and neither was the publisher. `paper_download` resolves a DOI through
+arXiv, Unpaywall and provider resolvers; an author's personal copy is indexed by none of them. And the
+server presents a valid InCommon certificate **without its intermediate**, so every TLS client refuses
+it — fetched by supplying the missing intermediate from the certificate's own AIA URL, with
+verification left on.
+
+**It is still not in the corpus**, and `paper_download` still answers *"No open-access PDF found"* —
+re-checked after reading it. So the recipe is recorded rather than left to be rediscovered:
+
+```bash
+curl -sSo inter.crt http://repository.emsign.com/certs/EEEMIncommonDVG2C.crt
+openssl x509 -inform DER -in inter.crt -out inter.pem
+cat /etc/ssl/certs/ca-certificates.crt inter.pem > chain.pem
+curl -sSL --cacert chain.pem -o dualsimp_tvcg.pdf \\
+  https://www.cs.wustl.edu/~taoju/research/dualsimp_tvcg.pdf
+```
+
+`--cacert` **adds** the missing intermediate to the system bundle; nothing is disabled, and the root
+(`emSign Root TLS CA - G1`) is one the system already trusts.
+
+#### What it says, and it answers the question A-022 could not
+
+V-34 has the quotations. The criterion is **one vertex per cycle of a table whose ambiguous faces the
+asymptotic decider has already resolved**, each edge owned by exactly one vertex. So A-022's framing —
+*"whether MDC's own criterion is face-based or component-based decides whether this is a new rule or a
+bug in the existing one"* — has a third answer: it is **component-based over a face-resolved table**,
+and the dual walk needs no rule of its own because the ambiguity is settled upstream.
+
+#### A-022's acceptance was unreachable, and the paper says so
+
+It asked for M-276's 314 non-manifold edges to go to **zero under Surface Nets and Dual Contouring**.
+Those are one vertex per cell, and §3 says *"DC leads to nonmanifold vertices and edges for **all** of
+the ambiguous sign configurations"*. Measured here: 1,128 edges across the 24 configurations, against
+Marching Cubes' 0. **The 314 is the literature's own prediction and not a defect to remove** — removing
+it means splitting the cell's vertex, which is Manifold Dual Contouring, which this crate already has.
+
+#### The decider helps by a fifth and does not eliminate
+
+`manifold_dual_contouring` **defaults to `FaceAmbiguity::Separate`**, which is not the table the paper
+specifies. Switching to the decider-modified one takes it from **143 to 114** non-manifold edges over
+the 24 configurations — `noise_cavity` at 33³ from 64 to 40, at 49³ from 53 to 49, at 65³ from 26 to
+25. Better, sourced, and still not zero, which is ✗19.
+
+**And the residue is one field.** Manifold Dual Contouring is manifold on **seven of the eight**
+reference fields under both rules; every one of the 143 is `noise_cavity`. That is the field A-002e
+added precisely because none of the other seven produces a cell with an **interior** ambiguity
+(M-208), which a *face* decider cannot see by construction. That is the next question and it is
+**A-025**, not this ticket.
+
+#### The rule
+
+**A paywalled DOI is not a missing paper. Check the author's own page before taking a rule-5 stop.**
+V-31 earned the sibling of this — *"a deleted repository is not a missing source; ask an archive, and
+say which archive"* — one ticket earlier, and this is the same failure with a different resolver:
+`paper_download` answers a question about **DOI resolvers**, not about whether the paper is readable.
+A-022 was blocked for a day on a file that a search engine returns first, under the filename the
+ticket had already written down.

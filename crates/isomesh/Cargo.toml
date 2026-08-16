@@ -180,6 +180,11 @@ harness = false
 test = false
 
 [[bench]]
+name = "a022_decider"
+harness = false
+test = false
+
+[[bench]]
 name = "a024_aliasing"
 harness = false
 test = false

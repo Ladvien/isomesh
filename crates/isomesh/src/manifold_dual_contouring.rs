@@ -82,9 +82,20 @@
 //! is asserted from the grid against the mesh and holds with **zero error** under
 //! both face rules: `Separate` 30 and 64, `AsymptoticDecider` 8 and 40.
 //!
-//! Schaefer, Ju and Warren separate sheets *within* a cell and never claimed to
+//! ~~Schaefer, Ju and Warren separate sheets *within* a cell and never claimed to
 //! handle two crossed edges of one **shared** face resolving to the same cycle
-//! pair, so this is outside what they guarantee rather than a defect against it.
+//! pair, so this is outside what they guarantee rather than a defect against
+//! it.~~ **That was written while the paper was unobtainable, and it is wrong
+//! (✗19, V-34).** A-022 read it: §3 says the uniform-grid surface *"is always a
+//! manifold because the original MC algorithm always constructs a manifold and
+//! the dual preserves the topology of the surface"* — unconditional, and before
+//! any octree. So this **is** a defect against their stated guarantee.
+//!
+//! Which half of their argument fails is measured rather than assumed (M-290):
+//! Marching Cubes here is **0** non-manifold edges over eight fields at three
+//! resolutions under both face rules, so the premise holds and the step that
+//! fails is *"the dual preserves the topology"*. Their contribution — the octree
+//! clustering and its proofs — is untouched by this.
 //! **It is documented rather than fixed**, deliberately: splitting the cycle needs
 //! a second vertex where the paper gives one, which would no longer be their
 //! algorithm. A-017 recorded the decision and the two alternatives it rejected.
@@ -275,6 +286,14 @@ impl<R: Real> ManifoldDualContouring<R> {
     ///
     /// Defaults to [`FaceAmbiguity::Separate`] — Marching Cubes proper — for the
     /// same reason Marching Cubes does.
+    ///
+    /// **That default is not the construction the paper describes (V-34), and
+    /// A-025 owns the decision.** §3 takes its cycles from *"a modified MC table
+    /// \[26]"*, and reference \[26] is the asymptotic decider. Measured over eight
+    /// fields at three resolutions, the decider-modified table leaves **114**
+    /// non-manifold edges against this default's **143** (M-290) — better,
+    /// sourced, and still not zero. Changing the default re-baselines every
+    /// golden hash, so it is a decision rather than a fix.
     pub fn set_face_ambiguity(&mut self, face_ambiguity: FaceAmbiguity) {
         self.rule.face_ambiguity = face_ambiguity;
     }
