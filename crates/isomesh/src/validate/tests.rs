@@ -812,3 +812,109 @@ fn a_star_polygon_fan_double_covers_its_disk_and_both_counters_report_zero() {
     assert_eq!(si.count(), 0);
     assert_eq!(si.tested_pairs, 0);
 }
+
+// ── T-023: the gate rule, now that it ships ─────────────────────────────────
+
+/// A report with every counter clean, to be spoiled one field at a time.
+fn clean_report() -> MeshReport {
+    MeshReport {
+        vertices: 4,
+        referenced_vertices: 4,
+        edges: 6,
+        faces: 4,
+        faces_skipped: 0,
+        euler_characteristic: 2,
+        components: 1,
+        boundary_loops: 0,
+        genus: Some(0),
+        non_manifold_edges: 0,
+        non_manifold_vertices: 0,
+        boundary_edges: 0,
+        inconsistently_oriented_edges: 0,
+        degenerate_triangles: 0,
+        repeated_index_triangles: 0,
+        duplicate_vertices: 0,
+        unreferenced_vertices: 0,
+        weld_buckets: 4,
+        out_of_range_indices: 0,
+        trailing_indices: 0,
+        non_finite_positions: 0,
+        normal_count_mismatch: false,
+        config: ValidateConfig::from_cell_size(1.0).expect("valid cell size"),
+    }
+}
+
+#[test]
+fn a_closed_solid_satisfies_every_gate() {
+    let report = clean_report();
+    assert!(report.satisfies(SurfaceGate::Closed));
+    assert!(report.satisfies(SurfaceGate::Manifold));
+    assert!(report.satisfies(SurfaceGate::ClosedAllowingUnresolvedTopology));
+}
+
+/// The case the whole ticket exists for: an open surface is **not** a broken
+/// solid, and only the gate can tell those apart.
+#[test]
+fn an_open_surface_fails_the_solid_gate_and_passes_the_surface_one() {
+    let mut report = clean_report();
+    report.boundary_edges = 12;
+    report.boundary_loops = 1;
+    report.euler_characteristic = 1;
+
+    assert!(
+        !report.satisfies(SurfaceGate::Closed),
+        "a surface with boundary is not a closed solid"
+    );
+    assert!(
+        report.satisfies(SurfaceGate::Manifold),
+        "and that is not a defect -- an open field is supposed to have boundary"
+    );
+    assert!(
+        !report.satisfies(SurfaceGate::ClosedAllowingUnresolvedTopology),
+        "this gate still requires the surface not to leave the grid"
+    );
+}
+
+/// The loosest gate waives non-manifoldness and nothing else.
+#[test]
+fn the_unresolved_topology_gate_waives_manifoldness_only() {
+    let mut report = clean_report();
+    report.non_manifold_edges = 3;
+    report.euler_characteristic = 1;
+
+    assert!(!report.satisfies(SurfaceGate::Closed));
+    assert!(!report.satisfies(SurfaceGate::Manifold));
+    assert!(
+        report.satisfies(SurfaceGate::ClosedAllowingUnresolvedTopology),
+        "a grid too coarse to resolve its field may be non-manifold"
+    );
+
+    // But winding and boundary are still asserted under it.
+    let mut flipped = report;
+    flipped.inconsistently_oriented_edges = 1;
+    assert!(!flipped.satisfies(SurfaceGate::ClosedAllowingUnresolvedTopology));
+
+    let mut leaked = report;
+    leaked.boundary_edges = 1;
+    assert!(!leaked.satisfies(SurfaceGate::ClosedAllowingUnresolvedTopology));
+}
+
+/// A malformed mesh satisfies nothing, including the loosest gate. `is_closed`
+/// and `is_manifold` already fold this in; the third arm would not without the
+/// explicit check, which is why `satisfies` hoists it.
+#[test]
+fn a_structurally_broken_mesh_satisfies_no_gate() {
+    let mut report = clean_report();
+    report.out_of_range_indices = 1;
+    assert!(report.has_structural_errors());
+    for gate in [
+        SurfaceGate::Closed,
+        SurfaceGate::Manifold,
+        SurfaceGate::ClosedAllowingUnresolvedTopology,
+    ] {
+        assert!(
+            !report.satisfies(gate),
+            "{gate:?} must reject malformed input"
+        );
+    }
+}

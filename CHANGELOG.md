@@ -8,7 +8,20 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **`validate::SurfaceGate` and `MeshReport::satisfies(gate)` — the rule for *which* validity check
+  applies, which until now was compiled out of every shipped build.** `MeshReport` offered three
+  predicates and no reachable statement of which one belongs to what, so consumers re-derived it and
+  got it wrong in the obvious way: calling `is_closed()` on a render mesh that was never a solid, and
+  reading the failure as a mesher defect. The tag is data, the method is policy; both ship. The enum
+  is `#[non_exhaustive]`, so a fourth case later is not a breaking change (T-023, ✗22).
+
+- **`manifold_check` now says whether a mesh met the gate it was *supposed* to.** Its descriptive
+  cascade is unchanged — "what is this mesh" is a correct use of the three predicates — but a verdict
+  sits beside it now. Surface Nets and plain Dual Contouring earn `ClosedAllowingUnresolvedTopology`
+  on a closed field rather than `Closed`, because one-vertex-per-cell is *legitimately* non-manifold
+  at coarse resolutions (M-4, M-15).
 
 ## [0.0.6] — 2026-08-16
 

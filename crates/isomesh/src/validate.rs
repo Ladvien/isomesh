@@ -136,6 +136,23 @@ impl ValidateConfig {
 /// [`is_manifold`](Self::is_manifold) for a surface that may have boundary, and
 /// [`is_closed`](Self::is_closed) for one that may not. Which of the last two
 /// applies is a property of the field being meshed, not of the mesher.
+///
+/// **If you are asking "did this pass", use [`satisfies`](Self::satisfies) and
+/// name the [`SurfaceGate`] your artefact earns** — that is the rule, and
+/// picking a predicate by intuition is how a correct mesh comes to read as
+/// broken (✗22). Reaching for the three predicates directly is right when you
+/// want to *describe* a mesh rather than judge it; `manifold_check` does exactly
+/// that to print what it found.
+///
+/// # Solids and surfaces are measured differently, on purpose
+///
+/// A closed solid must have no boundary edges. An open surface — an open field,
+/// one chunk of a larger extraction, a render mesh that is a subset of some
+/// body — is **supposed** to have them, and its
+/// [`boundary_edges`](Self::boundary_edges) count is a recorded number rather
+/// than a failure. The same split runs through
+/// [`violations`](Self::violations), which deliberately excludes the metrics a
+/// correct extractor produces non-zero counts of.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MeshReport {
     // ── census ──────────────────────────────────────────────────────────────
@@ -292,6 +309,42 @@ impl MeshReport {
     #[must_use]
     pub fn is_closed(&self) -> bool {
         self.is_manifold() && self.boundary_edges == 0 && self.euler_characteristic % 2 == 0
+    }
+
+    /// Whether this mesh meets the gate its field and algorithm earn.
+    ///
+    /// **This is the rule, and it is not the caller's to guess.** "Valid" is not
+    /// one thing: a closed solid must have no boundary, an open surface is
+    /// *supposed* to, and a grid too coarse to resolve its field is permitted to
+    /// be non-manifold without that being a mesher defect. Applying the wrong one
+    /// makes a correct mesh read as broken — which is exactly what happened
+    /// downstream before this was public (✗22).
+    ///
+    /// Every arm additionally requires
+    /// [`has_structural_errors`](Self::has_structural_errors) to be false: a
+    /// malformed mesh satisfies nothing, including the loosest gate.
+    ///
+    /// # Which artefact gets which
+    ///
+    /// - A **solid** — a closed proxy, a watertight body, a chunk-free extraction
+    ///   of a closed field — takes [`SurfaceGate::Closed`].
+    /// - A **surface** — an open field, a single chunk, a render mesh that is a
+    ///   subset of some larger body — takes [`SurfaceGate::Manifold`]. Its open
+    ///   edges are a **recorded number, not a failure**.
+    /// - A solid on a grid that may not resolve it takes
+    ///   [`SurfaceGate::ClosedAllowingUnresolvedTopology`].
+    #[must_use]
+    pub fn satisfies(&self, gate: SurfaceGate) -> bool {
+        if self.has_structural_errors() {
+            return false;
+        }
+        match gate {
+            SurfaceGate::Closed => self.is_closed(),
+            SurfaceGate::Manifold => self.is_manifold(),
+            SurfaceGate::ClosedAllowingUnresolvedTopology => {
+                self.boundary_edges == 0 && self.inconsistently_oriented_edges == 0
+            }
+        }
     }
 
     /// Total of every violation counter that gates correctness.
@@ -904,6 +957,92 @@ pub fn validate<R: Real>(mesh: &MeshBuffer<R>, cfg: &ValidateConfig) -> MeshRepo
     let mut report = validate_indexed(&mesh.positions, &mesh.indices, cfg);
     report.normal_count_mismatch = mesh.normals.len() != mesh.positions.len();
     report
+}
+
+/// Which validity gate a mesh is held to.
+///
+/// Deliberately an enum rather than a `bool`, and deliberately three cases: a
+/// blanket gate is unsatisfiable for at least one field *and* at least one
+/// algorithm, so the caller has to name which one applies and why.
+///
+/// # Why this is public (T-023, ✗22)
+///
+/// [`MeshReport`] offers three predicates and, until T-023, no reachable
+/// statement of **which one applies to what**. That rule existed and was
+/// correct, but lived in a `#[cfg(test)]` module — so it was compiled out of
+/// every shipped build, and consumers re-derived it. They got it wrong in the
+/// obvious way: calling [`is_closed`](MeshReport::is_closed) on a *render* mesh,
+/// which was never a solid, and reading the failure as a mesher defect.
+///
+/// This type is the data half of the rule and
+/// [`MeshReport::satisfies`] is the policy half. Both ship, because a tag with
+/// no policy makes every consumer reinvent it, and a policy with no tag makes a
+/// different one impossible.
+///
+/// # Choosing one
+///
+/// **Not from intuition.** The gate is a property of the *field and the
+/// algorithm*, not of the caller's expectations — a closed field on a grid that
+/// resolves it earns [`Closed`](Self::Closed), an open field earns
+/// [`Manifold`](Self::Manifold), and a grid that may not resolve the field's
+/// topology earns
+/// [`ClosedAllowingUnresolvedTopology`](Self::ClosedAllowingUnresolvedTopology).
+/// A field that knows whether it is closed in its own domain should say so; see
+/// `ReferenceField::closed_in_domain` for how this crate's own fields do it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum SurfaceGate {
+    /// A closed, oriented 2-manifold. **The gate for a closed field on a grid
+    /// that resolves it** — the seven reference fields at their own resolutions,
+    /// meshed by Marching Cubes.
+    ///
+    /// Note the condition is on the *pair*, not on the algorithm. Marching Cubes
+    /// was believed to earn this unconditionally, by placing vertices on grid
+    /// edges rather than one per cell. ✗15 shows it does not: refine far enough
+    /// and it does, but a surface that pinches inside one cell defeats it.
+    Closed,
+    /// A 2-manifold, possibly with boundary. **The gate for an open field**, and
+    /// for any single chunk once G-001 lands.
+    Manifold,
+    /// Closed, correctly oriented and wholly inside the grid, but *permitted* to
+    /// be non-manifold.
+    ///
+    /// **The gate for a grid that may not resolve the field's topology.** Note
+    /// what this is *not* keyed on: it started life as "the gate for
+    /// one-vertex-per-cell methods", and that was wrong twice over.
+    ///
+    /// Two distinct mechanisms land here, which is why the name is about the
+    /// grid rather than the algorithm:
+    ///
+    /// - **Surface Nets and plain Dual Contouring** place one vertex per cell, so
+    ///   two sheets passing through one cell must share it. The literature calls
+    ///   this DC's *"actual structural defect"*; A-010 fixes it architecturally
+    ///   by vertex splitting. M-4 measured it on `gyroid` and `fbm_terrain` and
+    ///   read it as a high-genus/open-field effect; M-15 corrected that — a
+    ///   generated **convex body** does it too, so it is about resolution.
+    /// - **Marching Cubes**, which was believed unconditionally manifold, does it
+    ///   too where the surface *pinches* inside a single cell: the shared grid
+    ///   edge ends up carrying four faces. See ✗15 and
+    ///   `an_under_resolved_pinch_makes_marching_cubes_non_manifold`, which pins
+    ///   the exact counts at `h = 2/3` and their disappearance by `h = 1/2`.
+    ///
+    /// The strict [`Closed`](Self::Closed) claim is still tested where it is
+    /// actually true — the seven reference fields at their own resolutions, in
+    /// `mc/tests.rs`. It is only the *generated* fields, which are adversarial by
+    /// construction and go as coarse as `h = 2/3`, that need this.
+    ///
+    /// What is still asserted is everything unrelated to unresolved topology: no
+    /// structural errors, no boundary (the surface did not leave the grid), and
+    /// consistent winding.
+    ///
+    /// **The even-`χ` parity check is deliberately *not* asserted here**, and
+    /// that is not an oversight. `χ = 2 − 2g` — hence `χ` even — holds for a
+    /// closed *orientable manifold*, so parity is a corollary of manifoldness
+    /// rather than an independent check. Waiving manifoldness and keeping the
+    /// parity check is incoherent, and measurably so: Surface Nets on a generated
+    /// convex body produces `χ = 1` with one non-manifold edge and zero boundary
+    /// edges. A-010 is where this becomes assertable again.
+    ClosedAllowingUnresolvedTopology,
 }
 
 #[cfg(test)]

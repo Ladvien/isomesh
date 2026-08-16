@@ -54,7 +54,7 @@ use isomesh::fields::ReferenceField;
 use isomesh::manifold_dual_contouring::ManifoldDualContouring;
 use isomesh::marching_cubes::MarchingCubes;
 use isomesh::surface_nets::SurfaceNets;
-use isomesh::validate::{ValidateConfig, validate_features};
+use isomesh::validate::{SurfaceGate, ValidateConfig, validate_features};
 use isomesh::{RuntimeShape3, Sdf};
 
 /// Defect gizmos get their own config group so they can be thick and drawn in
@@ -85,6 +85,28 @@ impl Algorithm {
             Self::SurfaceNets => "surface nets",
             Self::DualContouring => "dual contouring",
             Self::ManifoldDualContouring => "manifold dual contouring",
+        }
+    }
+
+    /// The gate a mesh from this algorithm earns on a field, given whether that
+    /// field is closed in the domain.
+    ///
+    /// **From the field and the algorithm, never from what the viewer hopes to
+    /// see** — that is the whole point of `SurfaceGate` being a type rather than
+    /// a bool. Surface Nets and plain Dual Contouring place one vertex per cell,
+    /// so two sheets crossing one cell must share it; on a closed field they are
+    /// *legitimately* non-manifold at coarse resolutions (M-4, M-15), and holding
+    /// them to `Closed` would report a correct mesh as broken. That is exactly
+    /// the confusion this example exists to dispel.
+    fn gate(self, closed_in_domain: bool) -> SurfaceGate {
+        if !closed_in_domain {
+            return SurfaceGate::Manifold;
+        }
+        match self {
+            Self::MarchingCubes | Self::ManifoldDualContouring => SurfaceGate::Closed,
+            Self::SurfaceNets | Self::DualContouring => {
+                SurfaceGate::ClosedAllowingUnresolvedTopology
+            }
         }
     }
 
@@ -376,12 +398,24 @@ where
         cell_size,
     };
 
+    // What the mesh IS. Reading the three predicates in this order to classify is
+    // a correct use of them -- it describes, it does not judge.
     let verdict = if report.is_closed() {
         "MANIFOLD, CLOSED"
     } else if report.is_manifold() {
         "MANIFOLD, WITH BOUNDARY"
     } else {
         "!! NON-MANIFOLD - see the red marks"
+    };
+
+    // Whether that is what it was SUPPOSED to be, which the line above cannot
+    // say. On an open field "MANIFOLD, WITH BOUNDARY" is the right answer; on a
+    // closed one the same string is a bug. Only the gate separates them (T-023).
+    let gate = algorithm.gate(field.closed_in_domain());
+    let against_gate = if report.satisfies(gate) {
+        "meets its gate"
+    } else {
+        "!! FAILS ITS GATE"
     };
 
     let lines = vec![
@@ -411,7 +445,9 @@ where
             "{:>9} closed in domain (from the field, not a guess)",
             field.closed_in_domain()
         ),
+        format!("{gate:>9?} gate (from field + algorithm)"),
         format!("          {verdict}"),
+        format!("          {against_gate}"),
     ];
 
     Some(Built {

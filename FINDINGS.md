@@ -3883,6 +3883,24 @@ true claims about collider quality were carried into an architecture that needed
 nobody had checked for, and the paper's abstract — which is what the claims came from — never
 mentions it.
 
+**Amended 2026-08-16 with the ticket author's own account, which is sharper than the reconstruction
+above.** *"I read a virtue for collision as a virtue for cutting without checking what the method
+actually produces. Same shape as the MDC mistake earlier: a property lifted from a summary, not from
+the thing itself."*
+
+That names the family. **Three premises have now failed the same way**, and none of them failed
+because a source was wrong:
+
+| Premise | Lifted from | The thing itself said |
+|---|---|---|
+| *"Manifold Dual Contouring queries where it needs to"* (D-011) | a summary of the paper | `dual.rs:257` pre-samples all N³ |
+| CPD's three virtues make it the substrate (this entry) | the abstract | Algorithm 1 merges the **face** graph; §3.4 covers the *surface* |
+| *"`MeshReport` applies a closed-solid test to render meshes"* (✗22) | a downstream symptom | `is_manifold` is already *"the gate for open fields"* |
+
+In each case the summary was **accurate** and the inference from it was not. So the rule is not
+"distrust summaries" — it is that a summary states what a thing *is for*, and every one of these
+questions was about what it *does*. **Read the artefact when the question is mechanical.**
+
 **Would be shown wrong by:** a construction that recovers a disjoint interior partition from CPD's
 output at a cost below decomposing with a partitioning method directly. The boolean union of the
 primitives is the obvious candidate and is what CPD measured at 30× for a related computation.
@@ -3923,9 +3941,20 @@ scaffolding that no consumer can reach under any feature. `MeshReport` and
 `ReferenceField::closed_in_domain` are both **public**. A consumer therefore receives the report and
 its three predicates with **no reachable statement of which one to call**, and re-derives the rule —
 badly. That is precisely the downstream symptom: calling `is_closed()` on a render mesh that was never
-a solid. **This crate's own example does the same thing**: `bevy_isomesh/examples/manifold_check.rs:379-381`
-hand-rolls `if report.is_closed() … else if report.is_manifold()`, an if/else re-derivation of a rule
-that exists, typed and documented, twenty lines away behind a private module.
+a solid.
+
+**Correction, made on closer reading before the fix was written.** This entry first claimed
+`bevy_isomesh/examples/manifold_check.rs:379-381` *"does the same thing"* by hand-rolling
+`if report.is_closed() … else if report.is_manifold()`. **That was overstated and is withdrawn.** The
+example is a *descriptive cascade* — it answers "what **is** this mesh", printing `MANIFOLD, CLOSED`
+or `MANIFOLD, WITH BOUNDARY` — and reading the three predicates in that order to classify is a
+correct use of them. It never judges a mesh against a gate it was not meant to meet.
+
+What the example *does* lack is the other half: it cannot say whether the boundary it found is
+**expected**. On `gyroid`, `MANIFOLD, WITH BOUNDARY` is the right answer and not a defect; on a closed
+field the same string is a bug. Without the field's gate the example reports the observation and
+withholds the verdict. That is a smaller and more accurate statement of the gap, and it changes
+T-023's acceptance: the if/else is **kept**, and the expected-gate verdict is **added** beside it.
 
 **Consequence.** T-023 is re-scoped from *split the report* to *publish the gate*, and that is a
 promotion of test-only code into the shipped API rather than a one-word visibility change — which
