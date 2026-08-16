@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**190 tickets archived, 11 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**191 tickets archived, 10 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -116,7 +116,7 @@ backlog citing "isomesh B-010" means **B-014**.
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
 | ☐ | **B-013** | **`proxy_cells` example.** Render A-026's convex decomposition as wireframe cells over the source mesh, with a slider for cell count and a readout of per-cell volume vs source volume. **This is the example that makes the Tier A/Tier B architecture legible** — nobody believes "cut the proxy, not the mesh" until they see the cells. | M | A-026, B-012 |
-| ☐ | **B-014** | **Expose the merge predicate over Bevy attributes.** R-010's `MergePredicate` gates a weld on the link condition (`Lk u ∩ Lk v = ∅`); a Bevy consumer additionally needs to refuse a merge when normals or UVs differ, or a cube corner's three normals collapse to one arbitrary one. **Same mechanism, two predicates** — topological safety and attribute preservation compose. **Acceptance:** welding `Mesh::from(Cuboid)` preserves all 24 vertices under the composite predicate and collapses to 8 without it. | M | R-010 |
+| ☐ | **B-014** | **Expose the merge predicate over Bevy attributes.** R-010's `MergePredicate` gates a weld on the link condition (`Lk u ∩ Lk v = ∅`); a Bevy consumer additionally needs to refuse a merge when normals or UVs differ, or a cube corner's three normals collapse to one arbitrary one. **Same mechanism, two predicates** — topological safety and attribute preservation compose. **Acceptance:** welding `Mesh::from(Cuboid)` preserves all 24 vertices under the composite predicate and collapses to 8 without it. **Unblocked 2026-08-16: R-010 shipped `Welder::weld_split_by`, and M-305 already measured this exact case on a hand-built `creased_cube` — 24 kept against 8 without, 16 splits, non-manifold counts 0. What is owed here is the Bevy-attribute key builder, not the mechanism.** | M | — |
 
 ### Reading order, for whoever picks this up
 
@@ -471,7 +471,6 @@ row before starting, because half the evidence is already there.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-010** | **A merge predicate on `Welder`, for attribute preservation — and only that.** **Read E×4 before starting**, and the note above it. The link-condition gate this section was written around is dead: measured at R-001, strictly worse than no gate, reverted. The reason is what makes *this* predicate a different object rather than the same one with a new key. The link condition is a **pairwise** test applied to a **k-way** coincidence class, so it refuses one member of a set that would otherwise merge whole, and the leftover representative is a bowtie. A composite key such as `(class, normal, uv)` is an **equivalence relation**: it partitions the class into complete sub-classes, every member of each merges, and no proper subset is ever refused — so it cannot reproduce E×4's failure, and it is the only instantiation this ticket ships. `MeshBuffer` carries no UVs and no vertex class, so the key is **caller-supplied**, which also keeps hard rule 1; the hook is the general form of `Welder::remap()`, already documented as how consumers move their own parallel data. **H:** splitting on a caller-supplied key moves no topology metric relative to the unconditional weld beyond the splits the key itself names, on all eight fields × all extractors. **Harness:** the P-8 bench shape in `benches/experiment_p8.rs`, both welds in one pass. **Records:** non-manifold edges and vertices, boundary edges, Δ vertex count and split count, both ways, to `docs/measurements/`. **Falsified by:** any topology metric moving where the key is constant — which would mean the hook itself, not the key, is doing something. **FINDINGS:** `M-` either way. | M | — |
 
 ---
 

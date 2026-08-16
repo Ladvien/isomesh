@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**378 entries** — 23 falsified, 299 measured, 36 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**379 entries** — 23 falsified, 300 measured, 36 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -361,6 +361,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-302` | the naive orient2d fails by reporting collinear, not by reporting a false crossing (T-024a) |
 | `M-303` | HELD: the winding crossover is N², not N³, and the per-point cost is linear in boundary edges (S-009) |
 | `M-304` | a green preflight.sh is not a green CI, because the toolchains differ (0.0.6 release) |
+| `M-305` | the weld key does what it says, and H's wording was wrong anyway (R-010) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -4172,6 +4173,59 @@ them; this one had no doc comment because it had no field.
 
 **Would be shown wrong by:** a physics engine answering an inside/outside query correctly at a bowtie
 apex, which would make the tightened predicate too strict rather than newly right.
+
+
+### M-305 / P-20 — the weld key does what it says, and H's wording was wrong anyway (R-010)
+
+**M.** `cargo bench --bench experiment_p20` → `docs/experiments/p-20.csv`. 51 configurations × 3 arms:
+`none` (the unconditional weld), `constant` (every vertex keyed `0`), `normal` (the vertex normal
+quantised to `1/16`).
+
+**Both registered falsifiers held.**
+
+- **Constant key moves nothing, anywhere.** 0 of 51 configurations differ from `none` on any of
+  vertices, non-manifold edges, non-manifold vertices or boundary edges. The hook is inert when the
+  key is; nothing in the third arm is the plumbing.
+- **No E×4 reappearance.** Non-manifold vertices rise by more than the split count in **0** rows. The
+  equivalence-relation argument survives contact: a key partitions each coincidence class into
+  complete sub-classes, and no class is ever left with a lone representative. Contrast E×4's pairwise
+  gate on this same fixture shape, which added up to **791** non-manifold vertices.
+
+**The pre-registered fixture could not test the interesting half, and that was found mid-experiment.**
+On all **50** field × extractor pairs the normal key produced **0 splits**. At a chunk seam the two
+copies of a vertex come from the same field evaluated at the same point, so their normals agree far
+inside the quantum — there is no attribute discontinuity for the key to preserve. A key that never
+fires is a control that cannot discriminate, and it reads exactly like a real negative (M-279). **So a
+`creased_cube` fixture was added: 6 quads, 24 vertices, every corner shared by three vertices with
+three different face normals. This was not in the registration and is disclosed rather than folded
+in.** On it: `none` and `constant` both collapse 24 → **8**; `normal` keeps all **24**, 16 splits,
+non-manifold edges and vertices **0**.
+
+**H's wording is contradicted even though neither falsifier fired, and this is the finding.** H said
+the only change under a varying key is *"the vertex count rising by the number of sub-classes."*
+Boundary edges go **0 → 24** on the crease fixture. That is not a defect and not an independent
+effect — it **is** the split, seen from the edge column instead of the vertex column. Keeping a cube's
+faces apart necessarily opens the edges between them; a position-welded cube is a closed solid and a
+normal-split one is six disconnected quads.
+
+**Which makes this the exact mirror of E×4.** There, a *pairwise* refusal did its damage in the
+**vertex** column while the edge column barely moved. Here an *equivalence* refusal does its intended
+work in the **boundary-edge** column while the vertex column shows only the splits. Same fixture
+family, same two columns, opposite readings — and the column that moves tells you which kind of
+refusal you built.
+
+**It also needs T-023's gate to read correctly**, which is why that ticket landed first without either
+being planned against the other. A normal-split render mesh **is a surface, not a solid**: its 24
+boundary edges are a recorded number under `SurfaceGate::Manifold`, and asserting `Closed` on it would
+report correct output as broken — ✗22's failure, arriving from a new direction.
+
+**H is amended rather than marked falsified**, because both of its stated falsifiers are the load-bearing
+claims and both held: *the only change beyond the splits the key names is the boundary opened between
+sub-classes, which is the same event counted on a different edge.*
+
+**Would be shown wrong by:** a key whose sub-classes are not separated by any edge — two coincident
+vertices in the interior of a face — where the vertex count should rise with no boundary change at
+all. Untested here; the crease fixture puts every split on an edge by construction.
 
 
 ### M-304 — a green `preflight.sh` is not a green CI, because the toolchains differ (0.0.6 release)
