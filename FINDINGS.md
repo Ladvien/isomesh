@@ -1981,6 +1981,20 @@ The one thing it cannot enforce is that the registration was written *first*. No
 file can. What it does is make registering a **commit**, so git carries the ordering, and
 `scripts/backlog_gate.sh` fails if a registered id never reaches `FINDINGS.md`.
 
+### P-14 — registered for R-003, before it was measured
+
+**The residual non-manifold output under the dual extractors is the one-vertex-per-cell rule meeting
+a cell with more than one surface component.** Almost all of it should sit in cells where Manifold
+Dual Contouring emits more than one vertex, and MDC's own count should be strictly lower on every
+field where either is non-zero.
+
+**Falsified by** a substantial share of non-manifold vertices sitting in cells where MDC emits
+exactly one vertex — which would mean the defect is not the one-vertex-per-cell rule and is somewhere
+else entirely.
+
+Records: `non_manifold_vertices`, `non_manifold_edges`, `multi_vertex_cells`,
+`nm_vertices_in_single_vertex_cells`, `worst_link_components`.
+
 ### M-273 — the first thing done with the pre-registration mechanism was amend a registration to fit the code (R-002)
 
 **✗ against my own practice, caught by the mechanism itself.** R-000 shipped a harness whose
