@@ -8,6 +8,56 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+The dual path got **4.26× faster with byte-identical output**, a published manifoldness claim was
+falsified, and a bug in a reference implementation was found to have recorded two true hypotheses as
+false. No public signature moved.
+
+### Changed
+
+- **Surface Nets, Dual Contouring and Manifold Dual Contouring are 2.5–4.3× faster.** Two changes to
+  `DualMesher`, which all three share. `emit_quads` took its loop axis as a runtime value, making
+  `p[axis] = a` a dynamically indexed store that kept the coordinate array out of registers and
+  created a store-to-load forwarding chain; it is now three `const`-generic monomorphisations. And
+  `values` was laid out by the caller's shape, so at 128 samples per axis the plane stride was exactly
+  64 KiB — a cache-set aliasing period, worth **3.37×** at the canonical voxel chunk size. The row
+  length is now forced odd, unconditionally and idempotently.
+
+  At 256³: Surface Nets **693.8 → 162.7 ms**, IPC **1.20 → 4.09**, `SN/MC` **5.43× → 1.26×**. Below
+  32³ Surface Nets is now *faster* than Marching Cubes, which falsifies ✗14 — this repository's own
+  earlier claim. **The golden hashes are unchanged**: an optimisation that changes the mesh is a bug in
+  the optimisation. (A-023/M-285, A-024/M-287.)
+- **`bevy_isomesh` re-exports `ChunkSeams`.** Its README named `ChunkSeams::Gapped` in prose while the
+  type was reachable only through `bevy_isomesh::plugin`.
+
+### Documentation
+
+- **`isomesh-gpu`'s docs.rs landing page said the shaders were still to be written.** They shipped;
+  the module docs now list what is exported, and state the finding the crate had been burying — with a
+  readback the GPU path is *slower* than the CPU at every resolution measured, and it pays off only
+  when you render from GPU memory and never read back.
+- **A demo page**, [`bevy_isomesh/DEMOS.md`](bevy_isomesh/DEMOS.md): all 34 examples, an animated
+  capture of each, the command, the controls, and the finding it demonstrates.
+- **An experiments page**, [`docs/experiments.md`](docs/experiments.md): seventeen predictions
+  registered before their measurement, ten of them compiler-enforced, with verdicts. Five of the ten
+  held and four were falsified; all are listed.
+- **Every GIF re-recorded** at the current commit, and fourteen added for examples that had carried
+  capture-driven animation code which had never been run.
+
+### Added
+
+- **`scripts/doc_facts.sh`** — derives the counts that keep rotting from their source and fails when a
+  document states a different one. The golden-hash count had by then been wrong in the root README
+  twice; 0.0.4 below records fixing the same number from 147 to 168, and it was 216. Wired into
+  `scripts/preflight.sh`.
+- **`scripts/record_all_gifs.sh`** — the per-example capture parameters, which existed only as shell
+  history.
+
+### Fixed
+
+- **`scripts/readme_sync.sh` compared every Rust fence rather than the first**, so adding a second
+  snippet to either README failed the gate with a diff about the new snippet instead of about drift in
+  the quickstart.
+
 ## [0.0.5] — 2026-08-15
 
 MC33's interior ambiguity, corrected where it was wrong and refused where the published

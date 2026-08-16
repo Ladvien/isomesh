@@ -6,6 +6,14 @@
 Every number below is from a paper in home-still with the DOI attached. Where a number is
 second-hand or unverifiable, it says so.
 
+> **⚠ The dual figures here are superseded, 2026-08-16.**
+>
+> This document surveys what the *corpus* says, and that part is unaffected. But where it is compared
+> against this repository's own numbers, note that the dual mesher became **4.26× faster** on
+> 2026-08-16 without changing a triangle (A-023/M-285, A-024/M-287) — so any conclusion drawn here
+> about dual methods being structurally slow was measuring a dynamically indexed store and a
+> power-of-two row stride, not the algorithm. See `docs/experiments.md`.
+
 ---
 
 ## The one-line answer
