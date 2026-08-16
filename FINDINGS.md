@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**363 entries** — 19 falsified, 289 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**364 entries** — 19 falsified, 290 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -347,6 +347,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-292` | no two-cell configuration forces Manifold Dual Contouring's defect (A-025) |
 | `M-293` | the excluded workspace's fourth gate incident, and this one is local (A-025 follow-on) |
 | `M-294` | the defect in 48 samples, and the same signs give the decider two answers (A-025) |
+| `M-295` | the documentation drifted in thirteen places, and one number rotted twice (docs) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1522,6 +1523,7 @@ Rules with no incident behind them get ignored. These all have one.
 
 | Rule | Earned from |
 |---|---|
+| **A count stated in prose needs a gate, or it rots — and the second rot looks exactly like the first** | The golden-hash count was wrong in the root README, fixed at 0.0.4 from 147 to 168, and was wrong again at 216. The reference-field count was wrong in six places at once. Both were found by a person reading, twice, because `readme_sync.sh` compared one code fence and nothing watched the prose. `scripts/doc_facts.sh` derives each count from its source. The gate's *first* version is the other half of the lesson: it matched any number before "fields" and flagged "five of the seven reference fields", which is correct prose about a subset — **a gate that cries wolf is a gate somebody disables**, so it now matches only phrases that can mean the total |
 | **Derive a measurement's bounds from the thing being measured. A hand-written bound is wrong twice before anyone notices** | B-006 and B-007 — the same seam-counting helper had its exclusion list written out by hand twice. The first version omitted the `y` axis entirely and accused Marching Cubes of a seam defect it does not have; the fix for that left `z` with a bound of `8.0` on a chunk `4.0` deep, and the uncounted wall produced a phantom open edge that made subgrid look non-conforming and got shipped as `Unverified` in a public API. Both readings were plausible and both were the fixture. The bounds now come from `layout.cell_size() * layout.cells()`, which cannot disagree with the chunks it is measuring |
 | **A counter that is only populated on the success path cannot report the failure. Register what is being checked *before* the thing that fixes it** | E-205 — the crack counter built its list of seam planes inside `if transitions`, so running with transitions **off** left nothing to compare against and the demo reported a confident **0 cracks** on a world with 182 open edges in it. The zero was not wrong about the geometry; it was computed over an empty set. Moving the seam-plane scan out of the conditional makes the control real: 71 low and 102–111 high with transitions off, 0 and 0 with them on. **Seventh instance in one session** of a number that was a property of the fixture rather than of the code |
 | **A trap that has to be dodged by choosing a constant will be walked into again. Put the dodge in the step, not in the default** | E-104 found that `box_exact` is exactly zero on its whole boundary, so a grid aligned to the box faces lets the sign convention decide instead of the algorithm — over the ±2 domain, whenever `n − 1` is a multiple of 4. E-114 then defaulted to **13**, which is one of them, and opened on the degenerate case it exists to explain: corner 7 sampled `-0.0000`. E-104's own note says the dodge belongs *"in the code rather than left as a warning"*, and it was — **in E-104's code**. The fix that survives is arithmetic rather than vigilance: step by 4 from an odd base so `n − 1 ≡ 2 (mod 4)` throughout and no reachable resolution is aligned |
@@ -3503,3 +3505,59 @@ assertion fires). Each went red on the named test and only there.
 **What this does not settle**, and deliberately: whether `ManifoldDualContouring` should default to
 `AsymptoticDecider` instead of `Separate`. That re-baselines every golden hash and is the crate
 owner's call — A-025 says so explicitly, and it stays open on exactly that.
+
+
+### M-295 — the documentation drifted in thirteen places, and one number rotted twice (docs)
+
+**Tier M.** A full audit of every documentation file on 2026-08-16, against the source.
+
+**Thirteen drifts**, and the distribution is the finding: none of them is in the algorithms, all of
+them are in prose that describes the algorithms. Ranked as found —
+
+| | where | said | was |
+|---|---|---|---|
+| 1 | `crates/isomesh-gpu/src/lib.rs` | shaders are GPU-002…004, still to come | shipped — **and this is the docs.rs landing page** |
+| 2 | root README | 168 golden hashes | **216** |
+| 3 | README + six sites in `docs/demos/` | seven reference fields | **eight** |
+| 4 | two sites | six-algorithm shootout | **seven** |
+| 5 | `docs/measurements/README.md` | three resolutions | **two** |
+| 6 | `isomesh-gpu` README | wgpu 29.0.4 | manifest and `lib.rs` say 29.0.3 |
+| 7 | README hero | alt text "eight examples", caption "six" | one image, two captions |
+| 8 | README hero | 1,348 seam crossings | **495**, in four other places |
+| 9 | `isomesh-gpu` README | the export list | omitted eight public types and six shader constants |
+| 10 | `bevy_isomesh` README | names `ChunkSeams::Gapped` | not re-exported — unreachable by that name |
+| 11 | README | — | a heading separated from its own prose by two unrelated sections |
+| 12 | examples catalog | 31 examples | **34** |
+| 13 | README | — | six public modules mentioned nowhere |
+
+**The one that matters is #2, because it is the second time.** `CHANGELOG.md` 0.0.4 records fixing
+that exact number from 147 to 168. It then rotted to 216. A number that has rotted twice will rot a
+third time, and the reason is structural rather than careless: `scripts/readme_sync.sh` was the **only**
+doc-content check in CI and it compares one code fence.
+
+`scripts/doc_facts.sh` now derives the counts that keep rotting from their sources and fails on a
+document that states a different one. Mutation-tested six ways.
+
+**The gate's first version is half the finding.** It checked any number-word before `fields` or
+`extractors` and flagged *"five of the seven reference fields go to exactly zero"* — correct prose
+about a subset. Twenty-odd false positives on the first run. **A gate that cries wolf is a gate
+somebody disables**, so the patterns were narrowed until only a phrase that can mean the total
+matches. Note what survives: in that same sentence the subset "five" is fine and the total "seven
+reference fields" is wrong, and the narrowed gate catches the second without touching the first.
+
+**A second structural finding, from the same audit: `readme_sync.sh` compared *every* Rust fence.**
+Its `awk` collected all of them concatenated, so adding a second Rust snippet to either README failed
+the gate with a diff pointing at the new snippet rather than at drift in the quickstart — a gate
+failing for a reason it is not about, which is the other way gates get switched off. Fixed to take the
+first fence, which is what its own header always claimed.
+
+**And an unspent-work finding.** Seven examples carry a capture-driven animation sweep that exists
+only to be recorded — `dual_contouring_cube` steps around grid-aligned resolutions on purpose so a
+clip cannot show the comparison inverting, `qef_clamp` flips the clamp on a fixed dwell *"so the GIF
+is the same GIF on any machine"*, `sharp_features` ping-pongs λ logarithmically so it loops. **Not one
+of them had ever been recorded.** The code was written, commented, committed and never run. Nothing
+detects that; a capture hook has no test that fails when nobody calls it.
+
+**Would be shown wrong by:** a document stating one of these counts correctly while `doc_facts.sh`
+reports drift, or the reverse — a drift the gate does not see. The second is expected and bounded: the
+gate checks five counts, not every number in the tree.
