@@ -1,6 +1,6 @@
 # Algorithm demos
 
-Six extractors, side by side, on the same fields and the same grids, in one process. That last part
+Seven extractors, side by side, on the same fields and the same grids, in one process. That last part
 is the point: most published comparisons are not comparisons at all, but one algorithm on one machine
 against a number someone else measured on another.
 
@@ -230,7 +230,7 @@ whole content of this demo. On the capped gyroid at 33³:
 | manifold dual contouring | 41.383 | **5.669** |
 
 Pairs per 1,000 triangles. The clamp removes **95.6%** of them and leaves 3.118 — and what it leaves is
-not a smaller version of the same problem. Five of the seven reference fields go to *exactly* zero;
+not a smaller version of the same problem. Five of the eight reference fields go to *exactly* zero;
 `torus` reads 2.66 → 0. The two that don't are `gyroid` and `fbm_terrain`, which are precisely the
 fields with cells carrying two sheets of surface. That residue is a **connectivity** defect, and no
 constraint on where a vertex sits can reach it.
