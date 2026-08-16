@@ -329,6 +329,16 @@ mod experiment {
         let mut mesh = MeshBuffer::<Scalar>::new();
 
         for _ in 0..WARMUP_RUNS {
+            // `extract_into` appends; the caller owns the buffer and resets it,
+            // which is `MeshBuffer::reset`'s whole reason to exist (rule 6) and
+            // `resolution_sweep` does the same. **Leaving it out contaminates
+            // everything here**: the buffer grows by a full mesh on every run,
+            // so later runs pay reallocation, page faults and cache pressure
+            // that the extraction did not cause, and `triangles` reports
+            // whatever had accumulated by the median run. The first version of
+            // this bench left it out and the triangle column was not even
+            // monotone in `n`, which is what gave it away.
+            mesh.reset();
             extractor
                 .extract_into(field, shape, origin, cell_size, &mut mesh)
                 .expect("extraction");
@@ -338,6 +348,7 @@ mod experiment {
         let mut runs: Vec<Run> = Vec::with_capacity(TIMED_RUNS);
         let mut probe = Probe::open();
         for _ in 0..TIMED_RUNS {
+            mesh.reset();
             probe.reset_and_enable();
             let started = Instant::now();
             extractor
