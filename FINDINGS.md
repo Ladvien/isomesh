@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**371 entries** — 20 falsified, 296 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**372 entries** — 21 falsified, 296 measured, 35 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -59,6 +59,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗18` | "A hairline seam difference is a crack no weld can close" |
 | `✗19` | "Manifold Dual Contouring's uniform-grid surface is always a manifold" |
 | `✗20` | "Every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input" |
+| `✗21` | "Convex Primitive Decomposition is the cutting substrate a plane-cut fracture pipeline wants" |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -1531,6 +1532,7 @@ Rules with no incident behind them get ignored. These all have one.
 | Rule | Earned from |
 |---|---|
 | **A precondition claim needs the sentence from the method's own paper, and "what it requires" is a different question from "what it guarantees"** | ✗20 — *"every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input"* was two conflations at once. A method that **preprocesses** bad input was read as one that **requires** clean input, when Andrews 2024 names preprocessing as an axis methods differ along; and VisACD's 35% intersecting-hull rate, which describes the hulls **CoACD emits**, was read as a condition on the mesh it is **given**. Two of the four methods audited require nothing at all, and CPD says so in one sentence |
+| **Verify a citation's *claims* and its *problem* separately. Three true claims do not make a method the right one** | ✗21 — A-026 chose CPD as the substrate a plane-cut fracture pipeline cuts, on three claims that all survived verification against the paper: input tolerance, *"guaranteed to enclose the input surface"*, under a third of the collider bytes. The architecture needed a fourth property nobody checked for — a **disjoint partition of the interior** — and CPD has none: Algorithm 1 merges the **face adjacency graph**, its §3.4 says *"the union of all primitives covers the mesh's surface"*, and §3.3 concedes the primitives overlap. **The abstract, which is where the three claims came from, never mentions any of this.** Worse, one of the verified claims was actively disqualifying: *enclosure* is the right guarantee for a collider and the wrong one for a substrate, because a proxy that strictly contains the solid cannot conserve its volume. **This is ✗20's rule one step out** — there it was "requires" vs "guarantees"; here it is "guarantees" vs "what you need" |
 | **A count stated in prose needs a gate, or it rots — and the second rot looks exactly like the first** | The golden-hash count was wrong in the root README, fixed at 0.0.4 from 147 to 168, and was wrong again at 216. The reference-field count was wrong in six places at once. Both were found by a person reading, twice, because `readme_sync.sh` compared one code fence and nothing watched the prose. `scripts/doc_facts.sh` derives each count from its source. The gate's *first* version is the other half of the lesson: it matched any number before "fields" and flagged "five of the seven reference fields", which is correct prose about a subset — **a gate that cries wolf is a gate somebody disables**, so it now matches only phrases that can mean the total |
 | **Derive a measurement's bounds from the thing being measured. A hand-written bound is wrong twice before anyone notices** | B-006 and B-007 — the same seam-counting helper had its exclusion list written out by hand twice. The first version omitted the `y` axis entirely and accused Marching Cubes of a seam defect it does not have; the fix for that left `z` with a bound of `8.0` on a chunk `4.0` deep, and the uncounted wall produced a phantom open edge that made subgrid look non-conforming and got shipped as `Unverified` in a public API. Both readings were plausible and both were the fixture. The bounds now come from `layout.cell_size() * layout.cells()`, which cannot disagree with the chunks it is measuring |
 | **A counter that is only populated on the success path cannot report the failure. Register what is being checked *before* the thing that fixes it** | E-205 — the crack counter built its list of seam planes inside `if transitions`, so running with transitions **off** left nothing to compare against and the demo reported a confident **0 cracks** on a world with 182 open edges in it. The zero was not wrong about the geometry; it was computed over an empty set. Moving the seam-plane scan out of the conditional makes the control real: 71 low and 102–111 high with transitions off, 0 and 0 with them on. **Seventh instance in one session** of a number that was a property of the fixture rather than of the code |
@@ -3821,6 +3823,67 @@ paper, and *"what it requires"* is a different question from *"what it guarantee
 
 **Would be shown wrong by:** a decomposition method that refuses, rather than repairs, an input
 failing one of these five properties.
+
+
+### ✗21 — "Convex Primitive Decomposition is the cutting substrate a plane-cut fracture pipeline wants"
+
+**Believed because:** A-026 (as written in the 2026-08-16 brief, and as ✗20's aside above already
+repeated — *"the method the sweep singled out as the best fit for plane-cut shards"*) selected CPD
+over the V-HACD/CoACD line on three claims. **All three are true and all three were verified here**,
+in `10.48550/arXiv.2602.07369`: the input tolerance quoted in ✗20 (§4, verbatim), *"guaranteed to
+enclose the input surface"* (abstract), and *"less than one-third of the complexity as measured by
+total bytes"* against V-HACD and CoACD (abstract). The ticket then built an architecture on top of
+them: decompose a shell, plane-cut the **cells**, call a fragment a set of cells on one side, and
+predicted the fragments would be closed, manifold, χ=2 and **volume-conserved to 1e-3**.
+
+**Falsified by reading the method rather than the results (A-026, before any code was written).** CPD
+does not produce cells, and it does not partition a volume. **Algorithm 1 operates on the face
+adjacency graph**: it starts at one primitive per face and greedily merges topologically adjacent
+primitives under an excess-volume cost, QEM-style. Its own §3.4 says what comes out — *"Each primitive
+covers all vertices of each face it subsumes, **allowing vertices to be covered by multiple
+primitives** and the union of all primitives covers the mesh's **surface**."* And the primitives
+**overlap by design and by admission**: §3.3 titles a paragraph *"Overlapping Primitives"* and states
+that the cost function *"does not account for double-counted volume of intersecting primitives"*,
+declining the exact computation because it is *"at least 30× the wall-clock time"* for *"minuscule
+improvement"* — *"in practice, primitives do not overlap much."* Not zero. Not a partition.
+
+**Root cause: the third conflation in this family, and ✗20 named the first two.** ✗20's rule was that
+*"what it requires"* differs from *"what it guarantees."* This one is a step further: **"what it
+guarantees" is not "what you need."**
+
+- **Enclosure is the wrong guarantee for a substrate.** A collider may be a conservative superset of
+  the solid — that is what makes it safe. A cutting substrate must *approximate the solid from both
+  sides*, ideally equal it, because the fragment volumes are read off it. A proxy guaranteed to
+  strictly contain the input yields fragments that are systematically too large, so **volume
+  conservation to 1e-3 is unreachable by construction** — the predicted acceptance measure is
+  falsified by the choice of decomposer, not by any implementation of it.
+- **Overlap makes "a fragment is a set of cells on one side" ill-defined.** Disjoint cells that tile
+  the interior are what makes that sentence mean something; overlapping covers double-count every
+  shared region.
+- **A surface cover has no interior to cut.** plane ∩ convex polyhedron = convex polygon still holds
+  per primitive, but the union of overlapping primitives is neither convex nor a manifold solid
+  without a boolean union — and that union is precisely the operation CPD avoids paying for.
+
+**The tension is structural, not an oversight in the paper.** The property that makes CPD tolerant of
+non-manifold, non-watertight input — it never needs an interior, only faces and their adjacency — is
+the same property that denies it an interior partition. CPD's own §2 describes what the alternatives
+do instead: prior ACD work *"remesh or voxelize the input to make it manifold, then **partition** the
+manifold mesh top-down along cutting planes."* Partitioning is the property the substrate needs, and
+it belongs to the line A-026 rejected.
+
+**Consequence.** A-026 is blocked on a decomposer choice, which is a design decision and not a
+measurement — recorded on the ticket rather than settled here. Nothing is owed to CPD as a
+**collider**: ✗20 stands, the three verified claims stand, and AG-007-shaped "colliders from the
+proxy" work is unaffected. What does not survive is CPD as the thing you cut.
+
+**Method rule earned:** in Part 5. Verify a citation's *claims* and its *problem* separately. Three
+true claims about collider quality were carried into an architecture that needed a fourth property
+nobody had checked for, and the paper's abstract — which is what the claims came from — never
+mentions it.
+
+**Would be shown wrong by:** a construction that recovers a disjoint interior partition from CPD's
+output at a cost below decomposing with a partitioning method directly. The boolean union of the
+primitives is the obvious candidate and is what CPD measured at 30× for a related computation.
 
 
 ### M-300 / P-18 — FALSIFIED, and not where it was predicted: the gap is non-manifold vertices, not self-intersections (R-011)
