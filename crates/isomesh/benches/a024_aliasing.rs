@@ -204,7 +204,32 @@ mod probe {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let dir = root.join("docs/measurements");
         fs::create_dir_all(&dir).expect("create docs/measurements");
+        // Provenance, for the same reason every experiment CSV carries it: a
+        // number that corresponds to no commit has to say so on the artefact.
+        let ask = |program: &str, args: &[&str]| -> String {
+            std::process::Command::new(program)
+                .args(args)
+                .output()
+                .ok()
+                .filter(|o| o.status.success())
+                .and_then(|o| String::from_utf8(o.stdout).ok())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| String::from("unknown"))
+        };
+        let dirty = ask("git", &["status", "--porcelain"]);
         let mut csv = String::from("# A-024: is the 128³ penalty a 64 KiB plane stride?\n");
+        let _ = writeln!(
+            csv,
+            "# commit {}{} at {}",
+            ask("git", &["rev-parse", "--short", "HEAD"]),
+            if dirty == "unknown" || dirty.is_empty() {
+                ""
+            } else {
+                " (WORKING TREE DIRTY)"
+            },
+            ask("date", &["-u", "+%Y-%m-%dT%H:%M:%SZ"])
+        );
         let _ = writeln!(
             csv,
             "group,shape,samples,plane_bytes,plane_is_power_of_two,cycles_per_sample,\
