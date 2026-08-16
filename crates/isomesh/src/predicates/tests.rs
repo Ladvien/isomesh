@@ -1,4 +1,5 @@
-//! T-024a. The oracle is exact `i128` arithmetic over integer-valued inputs,
+//! T-024a and T-024b. The oracle is exact `i128` arithmetic over integer-valued
+//! inputs,
 //! deliberately **not** this module's own expansion code — checking an exact
 //! predicate against itself proves only that it is self-consistent.
 
@@ -355,4 +356,226 @@ fn orient2d_is_deterministic() {
     for _ in 0..1_000 {
         assert_eq!(orient2d(a, b, c), first);
     }
+}
+
+// ── incircle ────────────────────────────────────────────────────────────────
+
+/// The lifted 4x4 determinant, computed exactly in `i128`.
+///
+/// `z = x^2 + y^2`, so at coordinates up to `2^20` a lift is `2^41`, a 2x2 cross
+/// product `2^41`, and their product `2^82` -- well inside `i128`.
+fn incircle_oracle(a: [i64; 2], b: [i64; 2], c: [i64; 2], d: [i64; 2]) -> i128 {
+    let cross = |u: [i64; 2], v: [i64; 2]| -> i128 {
+        i128::from(u[0]) * i128::from(v[1]) - i128::from(u[1]) * i128::from(v[0])
+    };
+    let lift = |p: [i64; 2]| -> i128 {
+        i128::from(p[0]) * i128::from(p[0]) + i128::from(p[1]) * i128::from(p[1])
+    };
+    let (ab, ac, ad) = (cross(a, b), cross(a, c), cross(a, d));
+    let (bc, bd, cd) = (cross(b, c), cross(b, d), cross(c, d));
+    lift(a) * (bc - bd + cd) - lift(b) * (ac - ad + cd) + lift(c) * (ab - ad + bd)
+        - lift(d) * (ab - ac + bc)
+}
+
+fn sign_of(v: f64) -> i32 {
+    if v > 0.0 {
+        1
+    } else if v < 0.0 {
+        -1
+    } else {
+        0
+    }
+}
+
+#[test]
+fn incircle_matches_a_hand_computed_circle() {
+    // The unit circle through (0,0), (1,0), (0,1) is centred (0.5, 0.5). These
+    // three are counterclockwise -- orient2d says so -- which fixes the sign.
+    let a = [0.0_f64, 0.0];
+    let b = [1.0_f64, 0.0];
+    let c = [0.0_f64, 1.0];
+    assert!(orient2d(a, b, c) > 0.0, "fixture must be counterclockwise");
+
+    // The centre is inside.
+    assert!(incircle(a, b, c, [0.5, 0.5]) > 0.0);
+    // (1, 1) is exactly on the circle.
+    assert_eq!(incircle(a, b, c, [1.0, 1.0]), 0.0);
+    // Far away is outside.
+    assert!(incircle(a, b, c, [5.0, 5.0]) < 0.0);
+    // Each defining point is on its own circle, exactly.
+    assert_eq!(incircle(a, b, c, a), 0.0);
+    assert_eq!(incircle(a, b, c, b), 0.0);
+    assert_eq!(incircle(a, b, c, c), 0.0);
+}
+
+#[test]
+fn incircle_inverts_with_the_winding_of_abc() {
+    let a = [0.0_f64, 0.0];
+    let b = [1.0_f64, 0.0];
+    let c = [0.0_f64, 1.0];
+    let inside = [0.5_f64, 0.5];
+    // Swapping two of the first three reverses the winding, hence the sign.
+    assert_eq!(
+        sign_of(incircle(a, b, c, inside)),
+        -sign_of(incircle(b, a, c, inside)),
+        "the documented sign convention is stated for counterclockwise abc"
+    );
+}
+
+#[test]
+fn incircle_matches_the_exact_oracle_on_random_input() {
+    let mut lcg = Lcg(24_009);
+    for _ in 0..100_000 {
+        let a = [lcg.coord(1 << 20), lcg.coord(1 << 20)];
+        let b = [lcg.coord(1 << 20), lcg.coord(1 << 20)];
+        let c = [lcg.coord(1 << 20), lcg.coord(1 << 20)];
+        let d = [lcg.coord(1 << 20), lcg.coord(1 << 20)];
+        let want = incircle_oracle(a, b, c, d).signum() as i32;
+        let got = incircle(as_f64(a), as_f64(b), as_f64(c), as_f64(d));
+        assert_eq!(
+            sign_of(got),
+            want,
+            "incircle({a:?}, {b:?}, {c:?}, {d:?}) = {got}"
+        );
+    }
+}
+
+/// Small coordinates so cocircular and near-cocircular configurations are common
+/// and the exact path actually runs.
+#[test]
+fn incircle_matches_the_oracle_where_degeneracy_is_common() {
+    let mut lcg = Lcg(24_010);
+    let mut cocircular = 0u32;
+    for _ in 0..100_000 {
+        let a = [lcg.coord(3), lcg.coord(3)];
+        let b = [lcg.coord(3), lcg.coord(3)];
+        let c = [lcg.coord(3), lcg.coord(3)];
+        let d = [lcg.coord(3), lcg.coord(3)];
+        let want = incircle_oracle(a, b, c, d).signum() as i32;
+        if want == 0 {
+            cocircular += 1;
+        }
+        let got = incircle(as_f64(a), as_f64(b), as_f64(c), as_f64(d));
+        assert_eq!(
+            sign_of(got),
+            want,
+            "incircle({a:?}, {b:?}, {c:?}, {d:?}) = {got}"
+        );
+    }
+    assert!(
+        cocircular > 5_000,
+        "fixture should be degenerate often; saw {cocircular}"
+    );
+}
+
+/// Large coordinates, where the lifted terms reach `2^80` and the filtered
+/// estimate has no chance -- this is the case that exercises `incircle_exact`
+/// and its 384-component accumulator hardest.
+#[test]
+fn incircle_matches_the_oracle_at_large_coordinates() {
+    let mut lcg = Lcg(24_011);
+    for _ in 0..50_000 {
+        let a = [lcg.coord(1 << 25), lcg.coord(1 << 25)];
+        let b = [lcg.coord(1 << 25), lcg.coord(1 << 25)];
+        let c = [lcg.coord(1 << 25), lcg.coord(1 << 25)];
+        // Put d very close to a, so the determinant is small against the lifts.
+        let d = [a[0] + lcg.coord(2), a[1] + lcg.coord(2)];
+        let want = incircle_oracle(a, b, c, d).signum() as i32;
+        let got = incircle(as_f64(a), as_f64(b), as_f64(c), as_f64(d));
+        assert_eq!(
+            sign_of(got),
+            want,
+            "incircle({a:?}, {b:?}, {c:?}, {d:?}) = {got}"
+        );
+    }
+}
+
+#[test]
+fn incircle_works_in_f32_too() {
+    let mut lcg = Lcg(24_012);
+    for _ in 0..50_000 {
+        let a = [lcg.coord(1 << 8), lcg.coord(1 << 8)];
+        let b = [lcg.coord(1 << 8), lcg.coord(1 << 8)];
+        let c = [lcg.coord(1 << 8), lcg.coord(1 << 8)];
+        let d = [lcg.coord(1 << 8), lcg.coord(1 << 8)];
+        let want = incircle_oracle(a, b, c, d).signum() as i32;
+        let f = |p: [i64; 2]| [p[0] as f32, p[1] as f32];
+        let got = incircle(f(a), f(b), f(c), f(d));
+        assert_eq!(
+            sign_of(f64::from(got)),
+            want,
+            "f32 incircle({a:?}, {b:?}, {c:?}, {d:?}) = {got}"
+        );
+    }
+}
+
+#[test]
+fn incircle_is_deterministic() {
+    let a = [0.1_f64, 0.2];
+    let b = [0.3, 0.4];
+    let c = [0.5, 0.600_000_000_000_000_1];
+    let d = [0.7, 0.8];
+    let first = incircle(a, b, c, d);
+    for _ in 0..1_000 {
+        assert_eq!(incircle(a, b, c, d), first);
+    }
+}
+
+#[test]
+fn scale_expansion_is_exact() {
+    let mut lcg = Lcg(24_013);
+    for _ in 0..20_000 {
+        let p = lcg.coord(1 << 31);
+        let q = lcg.coord(1 << 31);
+        let r = lcg.coord(1 << 31);
+        let s = lcg.coord(1 << 31);
+        let (hi, lo) = two_product(p as f64, q as f64);
+        let (hi2, lo2) = two_product(r as f64, s as f64);
+        let e = two_two_diff(hi, lo, hi2, lo2);
+        let scale = lcg.coord(1 << 20);
+        let mut out = [0.0; 8];
+        let len = scale_expansion(&e, scale as f64, &mut out).expect("sized 2n");
+        let want =
+            (i128::from(p) * i128::from(q) - i128::from(r) * i128::from(s)) * i128::from(scale);
+        let got: i128 = out.iter().take(len).copied().map(exact).sum();
+        assert_eq!(got, want, "({p}*{q} - {r}*{s}) * {scale}");
+    }
+}
+
+/// The buffer chain in `incircle_exact` is sized at its exact worst case, and
+/// every `None` arm there is unreachable only because of it. If a buffer were
+/// ever too small the function would return `ZERO`, which reads as "exactly
+/// cocircular" -- a wrong answer that looks like a legitimate degeneracy rather
+/// than a failure. So the lengths are pinned here directly, on the helpers.
+#[test]
+fn expansion_buffers_are_exactly_the_worst_case() {
+    let mut lcg = Lcg(24_014);
+    let mut worst_minor = 0usize;
+    let mut worst_term = 0usize;
+    for _ in 0..20_000 {
+        // Full-width coordinates, which is what makes the expansions longest.
+        let p = |lcg: &mut Lcg| [lcg.coord(1 << 26) as f64, lcg.coord(1 << 26) as f64];
+        let (a, b, c, d) = (p(&mut lcg), p(&mut lcg), p(&mut lcg), p(&mut lcg));
+
+        let bc = cross_exact(b, c);
+        let bd = cross_exact(b, d);
+        let cd = cross_exact(c, d);
+        assert_eq!(bc.len(), 4, "cross_exact is always four components");
+
+        let mut minor = [0.0; 12];
+        let minor_len = sum3(&bc, &negated(bd), &cd, &mut minor).expect("12 is the bound");
+        worst_minor = worst_minor.max(minor_len);
+
+        let mut term = [0.0; 96];
+        let term_len = lift(a, &minor[..minor_len], &mut term).expect("96 is the bound");
+        worst_term = worst_term.max(term_len);
+    }
+    // Observed lengths must sit inside the declared buffers. These are ceilings,
+    // not equalities -- zero elimination usually keeps them well under.
+    assert!(worst_minor <= 12, "minor reached {worst_minor}");
+    assert!(worst_term <= 96, "term reached {worst_term}");
+    // The accumulator's bound follows arithmetically: four terms of at most 96
+    // is 384, which is what `incircle_exact` declares. Nothing to assert -- the
+    // load-bearing checks are the two above, plus the 300,000 oracle-matched
+    // cases, any of which would report a spurious zero if a buffer overflowed.
 }

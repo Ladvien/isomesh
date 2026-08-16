@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-184 tickets. Line numbers are stable until something above them is edited — grep the ID if
+185 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1419,3 +1419,14 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > **Two amendments to the ticket as written.** (1) **The acceptance fixture it specified cannot exist**, and M-302 is the finding: exactly collinear input does *not* break the naive determinant, because `fl(x·y)` depends only on the real product, so two equal real products round identically and the difference is exactly `0.0`. A search over 3,000,000 near-collinear triples found zero sign disagreements. The committed fixture is the opposite failure — a **false zero**, exact determinant 1 reported as `0.0` — which is the more dangerous mode, since "collinear" is the reading a triangulator trusts. (2) The `i128` oracle was extended from `orient2d` down to every primitive; `two_product_is_exact` is what fails loudly if a compiler ever contracts the multiply into an FMA, which the module's whole correctness rests on.
 >
 > 14 tests, 470,000 oracle-checked cases across `f64` and `f32`. `preflight.sh --full` green including MSRV 1.89 and the golden hashes, which are unchanged — nothing existing routes through this module yet.
+
+| ☑ | **T-024b** | **Exact `incircle`. SPLIT from T-024 2026-08-16.** Only the Delaunay property needs it, so it gates triangle *quality* in T-022's CDT and not the cap's correctness — see T-024a. Materially bigger than `orient2d`: the determinant is 4×4 and Shewchuk's exact stage runs to hundreds of components, which matters here because the crate is `no_std` and the buffers must be fixed-size arrays rather than allocations. **Decide the staging explicitly and record it:** the paper's full four-stage A/B/C/D, or two stages — the paper's A filter followed straight to exact. Two stages is *not* a fallback in the one-path sense (both branches return the same sign; the filter is a proven early exit, not a degraded substitute) but the docs must say so, because it reads like one. Error-bound coefficients must come from the paper, not from memory — see T-024a's note (2) on the `ε` convention, which applies identically. | M | T-024a |
+> **Landed 2026-08-16.** `scale_expansion` (Shewchuk §2.6) and `incircle`, same two-stage shape as T-024a: the filtered estimate over the exact determinant.
+>
+> **The staging decision the ticket asked for: two stages, not four.** The paper's B and C stages are pure economy — they narrow the band where the exact path runs, and change no answer. Skipping them costs time in a band that is already rare and buys a third of the code. Stage A's coefficient is **Table 5**, read from the paper rather than memory: `(10ε + 96ε²)`, and note it is *not* `orient2d`'s `(3ε + 16ε²)` — the incircle determinant is 3×3 with squared entries and accumulates more roundoff. The permanent is the same construction as `orient2d`'s `det_sum`, one dimension up: every subtraction made an addition, every factor its magnitude.
+>
+> **The exact path forms no coordinate differences.** Differences round, so `incircle_exact` expands the lifted 4×4 by cofactors along the `x²+y²` column into `z_a·M_a − z_b·M_b + z_c·M_c − z_d·M_d`. Each `z·M` is built as `x·(x·M) + y·(y·M)`, which keeps every multiplication expansion-by-scalar and avoids needing expansion-by-expansion at all.
+>
+> **One defect found and fixed in review, in this ticket's own code.** `incircle_exact` returns `ZERO` if a buffer overflows — and `ZERO` means *exactly cocircular*. A shortened expansion would not look like a failure, it would look like a legitimate degeneracy, which is the precise failure mode `fast_expansion_sum` returns `None` to avoid. The buffer chain is now derived in a comment (4 → 12 → 24 → 48 → 96 → 384, with the final accumulation exactly filling 384) and pinned by `expansion_buffers_are_exactly_the_worst_case`, so the unreachable arms are unreachable by proof rather than by hope.
+>
+> 23 tests in the module, ~300,000 oracle-matched `incircle` cases across three coordinate regimes — random, degeneracy-rich at `±3`, and large coordinates with `d` adjacent to `a` — plus `f32`. `preflight.sh --full` green including MSRV 1.89; golden hashes unchanged.

@@ -12,9 +12,10 @@
 //!
 //! # This is one path, not a fast path with a fallback
 //!
-//! [`orient2d`] computes a floating-point estimate, and returns it **only when a
-//! proven error bound shows its sign cannot be wrong**. Otherwise it computes
-//! the determinant exactly. Both branches return the same sign for the same
+//! [`orient2d`] and [`incircle`] each compute a floating-point estimate, and
+//! return it **only when a proven error bound shows its sign cannot be wrong**.
+//! Otherwise they compute the determinant exactly. Both branches return the same
+//! sign for the same
 //! input — the filter is an early exit from one algorithm, not a cheaper
 //! substitute for it, and there is no input for which the two disagree. That is
 //! the distinction between this and the degraded-fallback pattern the crate
@@ -239,6 +240,79 @@ fn fast_expansion_sum<R: Real>(e: &[R], f: &[R], h: &mut [R]) -> Option<usize> {
     Some(written)
 }
 
+/// `SCALE-EXPANSION` with zero elimination: the exact product of an expansion
+/// and a single scalar.
+///
+/// Shewchuk §2.6, Theorem 19. The paper's line structure is fixed by its own
+/// proof, which names the invariant
+/// `Q₂ᵢ + Σⱼ₌₁^(2i−1) hⱼ = Σⱼ₌₁^i eⱼb`, states that it *"holds for i = 1 after
+/// Line 1 is executed"*, inducts *"on Lines 3, 4, and 5"*, notes *"the use of
+/// FAST-TWO-SUM in Line 5"*, and concludes that *"after Line 6 is executed,
+/// Σⱼ₌₁^(2m) hⱼ = b Σⱼ₌₁^m eⱼ"*.
+///
+/// `h` must have room for `2 · e.len()`; returns `None` rather than truncating,
+/// for the reason [`fast_expansion_sum`] does.
+fn scale_expansion<R: Real>(e: &[R], b: R, h: &mut [R]) -> Option<usize> {
+    if h.len() < e.len().checked_mul(2)? {
+        return None;
+    }
+    let mut written = 0usize;
+    let push = |value: R, h: &mut [R], written: &mut usize| -> bool {
+        if value == R::ZERO {
+            return true;
+        }
+        match h.get_mut(*written) {
+            Some(slot) => {
+                *slot = value;
+                *written += 1;
+                true
+            }
+            None => false,
+        }
+    };
+
+    let Some((&first, rest)) = e.split_first() else {
+        return Some(0);
+    };
+    // Line 1.
+    let (mut q, h1) = two_product(first, b);
+    if !push(h1, h, &mut written) {
+        return None;
+    }
+    // Lines 2-5.
+    for &e_i in rest {
+        let (t_hi, t_lo) = two_product(e_i, b);
+        let (q_sum, h_even) = two_sum(q, t_lo);
+        if !push(h_even, h, &mut written) {
+            return None;
+        }
+        // FAST-TWO-SUM is sound here because `t_hi` is a product's high word and
+        // `q_sum` is the accumulated remainder, so |t_hi| >= |q_sum|.
+        let (h_odd, q_next) = fast_two_sum(t_hi, q_sum);
+        if !push(h_odd, h, &mut written) {
+            return None;
+        }
+        q = q_next;
+    }
+    // Line 6.
+    if (q != R::ZERO || written == 0) && !push_final(q, h, &mut written) {
+        return None;
+    }
+    Some(written)
+}
+
+/// The `q != 0 || nothing written` tail shared by the two expansion routines.
+fn push_final<R: Real>(value: R, h: &mut [R], written: &mut usize) -> bool {
+    match h.get_mut(*written) {
+        Some(slot) => {
+            *slot = value;
+            *written += 1;
+            true
+        }
+        None => false,
+    }
+}
+
 // ── ORIENT2D (§4.3) ─────────────────────────────────────────────────────────
 
 /// Error bound for the unfiltered floating-point estimate: `(3ε + 16ε²)`.
@@ -346,6 +420,209 @@ fn orient2d_exact<R: Real>(a: [R; 2], b: [R; 2], c: [R; 2]) -> R {
         .checked_sub(1)
         .and_then(|last| total.get(last).copied())
         .unwrap_or(R::ZERO)
+}
+
+// ── INCIRCLE (§4.4) ─────────────────────────────────────────────────────────
+
+/// Error bound for the unfiltered floating-point estimate: `(10ε + 96ε²)`.
+///
+/// Shewchuk Table 5, stage A — *"Error bounds for the expansions calculated by
+/// INCIRCLE"*. Note it is **not** [`ccw_error_bound_a`]'s constant: the incircle
+/// determinant is 3×3 with squared entries, so it accumulates more roundoff.
+#[inline]
+fn incircle_error_bound_a<R: Real>() -> R {
+    let e = R::UNIT_ROUNDOFF;
+    (R::from_f64(10.0) + R::from_f64(96.0) * e) * e
+}
+
+/// `u ⨯ v` as an exact four-component expansion: `uₓv_y − u_yvₓ`.
+#[inline]
+fn cross_exact<R: Real>(u: [R; 2], v: [R; 2]) -> [R; 4] {
+    let (p1, p0) = two_product(u[0], v[1]);
+    let (q1, q0) = two_product(u[1], v[0]);
+    two_two_diff(p1, p0, q1, q0)
+}
+
+/// Negate every component. Exact: negation of a float is exact, and it preserves
+/// both the nonoverlapping property and the magnitude ordering.
+#[inline]
+fn negated<R: Real>(e: [R; 4]) -> [R; 4] {
+    [-e[0], -e[1], -e[2], -e[3]]
+}
+
+/// Whether `d` lies inside the circle through `a`, `b` and `c`; **the sign is
+/// always correct**.
+///
+/// Positive when `d` is strictly inside, negative when strictly outside, and
+/// exactly zero **only** when the four points are exactly cocircular. As with
+/// [`orient2d`], only the sign carries a guarantee.
+///
+/// # Orientation matters
+///
+/// The sign is stated for `a`, `b`, `c` in **counterclockwise** order — that is,
+/// `orient2d(a, b, c) > 0`. If they are clockwise the sense inverts, because the
+/// determinant is antisymmetric under swapping two points. Callers that cannot
+/// guarantee the winding should test it with [`orient2d`] first; this function
+/// does not, because doing so silently would cost every caller a predicate they
+/// usually already know the answer to.
+///
+/// # Coordinate order
+///
+/// Each point is `[x, y]`. The determinant is the standard lifted one,
+/// `|aₓ a_y aₓ²+a_y² 1; …|`, expanded by cofactors so that no coordinate
+/// difference is ever formed — differences round, and an exact predicate cannot
+/// afford that.
+///
+/// # Cost
+///
+/// The filtered estimate plus a comparison in the common case; the exact
+/// expansion only where the proven bound does not separate the estimate from
+/// zero. See the module docs on why this is one algorithm rather than two.
+#[must_use]
+pub fn incircle<R: Real>(a: [R; 2], b: [R; 2], c: [R; 2], d: [R; 2]) -> R {
+    let adx = a[0] - d[0];
+    let ady = a[1] - d[1];
+    let bdx = b[0] - d[0];
+    let bdy = b[1] - d[1];
+    let cdx = c[0] - d[0];
+    let cdy = c[1] - d[1];
+
+    let bdxcdy = bdx * cdy;
+    let cdxbdy = cdx * bdy;
+    let alift = adx * adx + ady * ady;
+
+    let cdxady = cdx * ady;
+    let adxcdy = adx * cdy;
+    let blift = bdx * bdx + bdy * bdy;
+
+    let adxbdy = adx * bdy;
+    let bdxady = bdx * ady;
+    let clift = cdx * cdx + cdy * cdy;
+
+    let det = alift * (bdxcdy - cdxbdy) + blift * (cdxady - adxcdy) + clift * (adxbdy - bdxady);
+
+    // The permanent: the same expression with every subtraction made an addition
+    // and every factor its magnitude, which bounds the roundoff the subtractions
+    // can hide. This is orient2d's `det_sum` construction one dimension up.
+    let permanent = (bdxcdy.abs() + cdxbdy.abs()) * alift
+        + (cdxady.abs() + adxcdy.abs()) * blift
+        + (adxbdy.abs() + bdxady.abs()) * clift;
+
+    let error_bound = incircle_error_bound_a::<R>() * permanent;
+    if det > error_bound || -det > error_bound {
+        return det;
+    }
+
+    incircle_exact(a, b, c, d)
+}
+
+/// The lifted determinant as an exact expansion, reduced to its most significant
+/// component.
+///
+/// Expanded by cofactors along the `x² + y²` column, which gives
+/// `z_a·M_a − z_b·M_b + z_c·M_c − z_d·M_d` where each `M` is a signed sum of
+/// three 2×2 cross products and `z = x² + y²`. Every `z·M` is formed as
+/// `x·(x·M) + y·(y·M)` so that only expansion-times-scalar is ever needed —
+/// [`scale_expansion`] — rather than expansion-times-expansion.
+///
+/// **Nothing here forms a coordinate difference.** The filtered estimate above
+/// subtracts `d` from each point first, which is what makes it cheap and what
+/// makes it inexact; the exact path cannot, because those differences round.
+fn incircle_exact<R: Real>(a: [R; 2], b: [R; 2], c: [R; 2], d: [R; 2]) -> R {
+    let ab = cross_exact(a, b);
+    let ac = cross_exact(a, c);
+    let ad = cross_exact(a, d);
+    let bc = cross_exact(b, c);
+    let bd = cross_exact(b, d);
+    let cd = cross_exact(c, d);
+
+    // Buffer sizes are the exact worst case, derived rather than guessed, and
+    // `expansion_buffers_are_exactly_the_worst_case` pins the chain. Every
+    // `None` arm below is therefore unreachable -- which matters, because the
+    // only thing this function could return on overflow is `ZERO`, and `ZERO`
+    // means "exactly cocircular". A silently shortened expansion here would not
+    // look like a failure, it would look like a degenerate configuration.
+    //
+    //   cross_exact                     -> 4          (two_two_diff is always 4)
+    //   sum3      = 4+4 -> 8, 8+4       -> 12
+    //   lift      = scale(12) -> 24, scale(24) -> 48, per coordinate
+    //               48 + 48             -> 96
+    //   total     = 96, 192, 288        -> 384        (four terms accumulated)
+    //
+    // `fast_expansion_sum` needs `e.len() + f.len()`, and the final accumulation
+    // is 288 + 96 = 384, so `scratch` is exactly filled at the worst case.
+    let mut minor = [R::ZERO; 12];
+    let mut term = [R::ZERO; 96];
+    let mut total = [R::ZERO; 384];
+    let mut total_len = 0usize;
+    let mut scratch = [R::ZERO; 384];
+
+    // (point, its minor's three signed cross products, the term's sign)
+    let contributions: [([R; 2], [[R; 4]; 3], bool); 4] = [
+        (a, [bc, negated(bd), cd], false),
+        (b, [ac, negated(ad), cd], true),
+        (c, [ab, negated(ad), bd], false),
+        (d, [ab, negated(ac), bc], true),
+    ];
+
+    for (point, parts, negate_term) in contributions {
+        let Some(minor_len) = sum3(&parts[0], &parts[1], &parts[2], &mut minor) else {
+            return R::ZERO;
+        };
+        let Some(term_len) = lift(point, minor.get(..minor_len).unwrap_or(&[]), &mut term) else {
+            return R::ZERO;
+        };
+        if negate_term {
+            for slot in term.iter_mut().take(term_len) {
+                *slot = -*slot;
+            }
+        }
+        let Some(next) = fast_expansion_sum(
+            total.get(..total_len).unwrap_or(&[]),
+            term.get(..term_len).unwrap_or(&[]),
+            &mut scratch,
+        ) else {
+            return R::ZERO;
+        };
+        match total.get_mut(..next) {
+            Some(dst) => match scratch.get(..next) {
+                Some(src) => dst.copy_from_slice(src),
+                None => return R::ZERO,
+            },
+            None => return R::ZERO,
+        }
+        total_len = next;
+    }
+
+    total_len
+        .checked_sub(1)
+        .and_then(|last| total.get(last).copied())
+        .unwrap_or(R::ZERO)
+}
+
+/// `e + f + g` for three four-component expansions, into a buffer of 12.
+fn sum3<R: Real>(e: &[R; 4], f: &[R; 4], g: &[R; 4], out: &mut [R; 12]) -> Option<usize> {
+    let mut ef = [R::ZERO; 8];
+    let ef_len = fast_expansion_sum(e, f, &mut ef)?;
+    fast_expansion_sum(ef.get(..ef_len).unwrap_or(&[]), g, out)
+}
+
+/// `(x² + y²) · minor`, as `x·(x·minor) + y·(y·minor)`.
+///
+/// Squaring by scaling twice keeps every multiplication expansion-by-scalar. The
+/// intermediate lengths are `12 → 24 → 48` per coordinate, so the sum fits 96.
+fn lift<R: Real>(point: [R; 2], minor: &[R], out: &mut [R; 96]) -> Option<usize> {
+    let mut once = [R::ZERO; 24];
+    let mut x_squared = [R::ZERO; 48];
+    let mut y_squared = [R::ZERO; 48];
+
+    let once_len = scale_expansion(minor, point[0], &mut once)?;
+    let x_len = scale_expansion(once.get(..once_len)?, point[0], &mut x_squared)?;
+
+    let once_len = scale_expansion(minor, point[1], &mut once)?;
+    let y_len = scale_expansion(once.get(..once_len)?, point[1], &mut y_squared)?;
+
+    fast_expansion_sum(x_squared.get(..x_len)?, y_squared.get(..y_len)?, out)
 }
 
 #[cfg(test)]

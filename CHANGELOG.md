@@ -21,6 +21,13 @@ false. Exact geometric predicates arrived.
   same question — this is one algorithm with an early exit, not a fast path with a fallback, and the
   module documents the distinction (T-024a).
 
+- **`predicates::incircle` — whether a point is inside the circle through three others, exactly.**
+  Same two-stage shape: filtered estimate over an exact determinant. Its stage-A bound is Shewchuk's
+  Table 5, `(10ε + 96ε²)` — deliberately not `orient2d`'s, since the incircle determinant is 3×3 with
+  squared entries. The exact path forms **no coordinate differences**, because differences round; it
+  expands the lifted 4×4 by cofactors instead. The sign convention is stated for counterclockwise
+  `a, b, c` and inverts with their winding, which the docs say and a test pins (T-024b).
+
 - **`Real::UNIT_ROUNDOFF` and `Real::SPLITTER`.** The predicates' error bounds are written in terms of
   the unit roundoff `2⁻ᵖ`, which is **half** `Real::EPSILON` — the latter is the 1.0-to-next gap.
   Additive on a sealed trait, so no downstream implementation can break (T-024a).
