@@ -195,6 +195,11 @@ harness = false
 test = false
 
 [[bench]]
+name = "a025_configurations"
+harness = false
+test = false
+
+[[bench]]
 name = "a021_minimal"
 harness = false
 test = false
