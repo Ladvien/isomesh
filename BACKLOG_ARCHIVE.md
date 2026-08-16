@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-170 tickets. Line numbers are stable until something above them is edited — grep the ID if
+171 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1190,3 +1190,31 @@ overwritten** — six findings cite it — and **M-001**, referenced nineteen ti
 the family, turned out to have no row in either file. Now filed. |
 | | | ***Residue: R-007, with P-15 registered in the same commit as this row.*** Where the dual's IPC goes is
 not settled; `STALLED_CYCLES_BACKEND` is the event that would say and AMD does not map it. |
+| ☑ | **M-001** | **Re-measure the whole family in one process and one run — the ticket nineteen references already point at.** `BACKLOG_ARCHIVE.md` says three separate times that a re-measurement "belongs to M-001", `FINDINGS.md` names it ten more, and **it had no row in either file** until R-005 went looking. **Acceptance:** one bench, one process, one run, every extractor in `for_each_extractor!`, reporting cycles per sample and the clock as well as milliseconds, then update ✗14, M-19, M-20, M-21, M-22, M-45 and O-11 against it in the same commit. Do **not** amend `resolution_sweep-ryzen9-5900x.csv` in place; it is the evidence those citations were written against and it stays as the before. | L | — |
+| | | ***Split on the day it was written, and the second machine is now M-005.*** The ticket asked for both hosts. The
+Mac's checkout is 100+ commits behind with uncommitted local changes in its working tree, and updating someone
+else's tree is their call, not the implementer's. Everything else is here; the Apple arm is filed separately. |
+| | | ***`benches/family.rs`, `docs/measurements/family.csv`, 61 rows, one binary, one run, clock 4.17–4.25 GHz on
+every row (M-282).*** Marching Cubes **127.8 ms** at 256³, +decider 130.8, Marching Tetrahedra 261.8, Surface Nets
+693.8, Dual Contouring 751.1, Manifold Dual Contouring 771.0, subgrid Marching Tetrahedra stopped by the 2000 ms
+budget at 128³. |
+| | | ***The strongest thing in the table is a column nobody had looked at.*** IPC partitions the family cleanly:
+everything table-driven runs at **3.7–4.2**, everything on `DualMesher` at **1.20–1.42** — three different vertex
+rules landing within 18% of each other and a factor of three below the rest. The cost is the shared scaffolding,
+not any rule, which is R-007 arrived at from a second direction. |
+| | | ***Four things nobody had priced.*** The asymptotic decider costs **2.4%**; Manifold Dual Contouring's
+guarantee costs **2.6%** over Dual Contouring; Marching Tetrahedra is **2.05× in time and 2.99× in triangles**, so
+P-1's 3.0× prediction lands on the triangles and not the clock; subgrid Marching Tetrahedra is **100.7× classic
+MT** on Zen 3 at 128³ against M-98's 70× on the M5, so its constant is machine-dependent by 1.44×. |
+| | | ***The reason this had to be one bench is itself a measurement (M-281).*** Two of the repo's benches disagreed
+by a uniform **1.24–1.36×** on the same Marching Cubes rows — including at 16³, where the run is 40 µs. Both loop
+shapes in one binary are identical (0.991–1.002, asserted by `benches/layout_bias`), and adding **one unrelated
+function** to `resolution_sweep.rs` moved its own 256³ row from 152.5 to 130.8 ms. Layout bias, Mytkowicz et al.
+ASPLOS 2009. A millisecond is comparable only within one binary and one build. |
+| | | ***And it forced a correction to a finding written three hours earlier.*** M-280 had called the committed Zen 3
+sweep "1.45× stale" from a binary whose layout costs it 17%. Re-running `d2ab82a` in a worktree on this machine
+reproduces its committed CSV to within **1.8%** — so the numbers were sound, the change is real code, and the size
+is **1.74×** against the family run rather than 1.45× against a build. |
+| | | ***✗14, M-21 and M-45 amended; M-19, M-20 and M-22 deliberately not.*** Those three are Apple M5 fit
+coefficients and this run was on the Ryzen — amending them from another machine's numbers is the error the
+amendment exists to fix. They wait for M-005. |

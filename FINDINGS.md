@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**346 entries** — 18 falsified, 275 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**348 entries** — 18 falsified, 277 measured, 33 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -332,6 +332,8 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-278` | HELD, and the crack budget is not where the ticket assumed (R-004) |
 | `M-279` | the mechanism is FALSIFIED, and the registered falsifier could not have caught it (R-005) |
 | `M-280` | this harness's nanoseconds are not a unit, and the committed Zen 3 sweep is 1.45× stale (R-005) |
+| `M-281` | a timing here is a property of the binary, not only of the code (M-001) |
+| `M-282` | the whole family, in one binary and one run (M-001) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -782,6 +784,15 @@ a default extractor for the game should be revisited.
 **Would be shown wrong by:** a machine where Surface Nets' per-sample cost stays flat to 256³, which
 would localise this to one cache hierarchy rather than to the algorithm.
 
+**Amended 2026-08-16 (M-282), and the conclusion is stronger while every number here is superseded.**
+Measured in one binary and one run on the Ryzen: `surface_nets / marching_cubes` at 256³ is **5.43×**
+against the 3.72× above, and **3.19×** at 16³. Marching Cubes got 1.74× faster between `d2ab82a` and
+now while Surface Nets got 1.17×, which is where the widening comes from. The mechanism is also no
+longer "per-sample cost rises": M-279 measured that the whole family divides on **IPC** — everything
+table-driven runs at 3.7–4.2 and everything on `DualMesher` at 1.20–1.42 — and that the dual's rise
+with `n` is a 16% IPC decline on an instruction stream that is flat per sample. And per M-281, the
+absolute milliseconds in this entry are comparable only against others from the same binary.
+
 **Confirmed on a second machine at O-11, and harder — but the crossover is not (M-45).** On an AMD
 Ryzen 9 5900X, Surface Nets' per-sample cost climbs `37.4 → 49.1 ns` over the same sweep, so the
 falsification condition above is not met: the verdict is a property of the algorithm rather than of one
@@ -860,7 +871,7 @@ rounding error, and no weld epsilon short of a cell would close it.
 | M-18 | *(refined by T-008 — the arithmetic below is about **adjacent cells**; the effect on a real mesh is **gradual**, because a mesh whose vertices span many lattice cells keeps resolving them for a while after neighbours have merged. Measured on a 1158-vertex sphere at `h = 0.125`: no collapse at all at `1e4`, and **1158 → 918 buckets**, a 21% loss, at `1e6`. Fixed by anchoring the lattice to the mesh's own minimum corner, so the scale depends on the mesh's extent rather than its position)* **`quantise`'s weld lattice collapses beyond ~105 world units, and it is a performance cliff rather than a correctness one.** It scales absolute coordinates by `1/(h·1e-4)` — 160,000 at `h = 0.0625` — so it passes `f32`'s exact-integer range at `2²⁴·weld_epsilon ≈ 104.86`. Measured: at `p = 104` two cells one apart stay distinct; at `p = 105` they collapse; by `p = 1000` a whole region is one bucket. **Correctness survives** — coarsening only *merges* buckets, and the 27-neighbour probe plus exact distance test still finds every duplicate — but the scan degrades toward quadratic, silently, at exactly the coordinates G-001 chunking and G-007 streaming produce. `TriangleGrid` is immune because it quantises *relative* to its own AABB origin, which is the fix pattern | T-005b follow-up, ✗13. Ticketed as T-008 |
 | M-19 | **There is no meaningful fixed cost on the CPU extraction path, and the prediction saying so was written down before the run.** Marching Cubes' fitted `a` is `0.49 ms` against a largest measured run of `80.3 ms` — **0.61%**. V-6's "73% of a published 64³ figure was fixed launch overhead" is a *GPU dispatch* property and does not transfer; the "stop trusting single-grid numbers" rule belongs to Phase 6, not here. **Caveat that matters:** `a` is 543% of the *smallest* measured run, so the fit must not be extrapolated below 16³ — down there the `O(n²)` surface term dominates | T-006, `benches/resolution_sweep.rs`. The prediction is in that file's module docs, committed before the first measurement |
 | M-20 | **Marching Cubes' marginal cost is `4.75 ns/sample` — `211 M samples/s`, single-threaded, `f32`, Apple M5.** Per-sample cost is flat within 2% from 128³ upward, `r² = 0.99986` | T-006. Against V-3's `5.42 G voxel/s` on an RTX 2080 Ti that is a **~26× gap**, which is the number the Phase 6 GPU decision should be argued from rather than from folklore |
-| M-21 | **Surface Nets is not `O(n³)` over this range; Marching Cubes is.** Surface Nets' fitted intercept is **negative** — `−3.13 ms` full sweep, `−7.32 ms` on the tail — which is physically impossible and is the signature of a curve convex in `n³`. `r² = 0.9899` against Marching Cubes' `0.99986`. Per-sample cost rises `9.0 → 13.19 ns` while Marching Cubes' falls and flattens | T-006. Cause unmeasured — see O-11. This is why ✗14's gap widens rather than staying constant | **Amended at O-11: the intercept-sign diagnostic is machine-specific; the per-sample rise it stands in for is not.** On Zen 3 *both* fitted intercepts come back negative and both are numerically negligible — −0.04% of the largest run either way, `r² = 0.99999` — so the sign diagnoses nothing there. What reproduces is the underlying effect: Surface Nets' per-sample cost rises **31%** across the sweep (37.4 → 49.1 ns) while Marching Cubes' *falls* 13% (15.2 → 13.2). Report the per-sample curve, not the intercept
+| M-21 | **Surface Nets is not `O(n³)` over this range; Marching Cubes is.** Surface Nets' fitted intercept is **negative** — `−3.13 ms` full sweep, `−7.32 ms` on the tail — which is physically impossible and is the signature of a curve convex in `n³`. `r² = 0.9899` against Marching Cubes' `0.99986`. Per-sample cost rises `9.0 → 13.19 ns` while Marching Cubes' falls and flattens | T-006. Cause unmeasured — see O-11. This is why ✗14's gap widens rather than staying constant | **Amended at O-11: the intercept-sign diagnostic is machine-specific; the per-sample rise it stands in for is not.** On Zen 3 *both* fitted intercepts come back negative and both are numerically negligible — −0.04% of the largest run either way, `r² = 0.99999` — so the sign diagnoses nothing there. What reproduces is the underlying effect: Surface Nets' per-sample cost rises **31%** across the sweep (37.4 → 49.1 ns) while Marching Cubes' *falls* 13% (15.2 → 13.2). Report the per-sample curve, not the intercept. **Zen 3 figures re-measured 2026-08-16 (M-282): 29.63 → 41.35 ns for Surface Nets, a 40% rise, and 9.29 → 7.62 for Marching Cubes, an 18% fall** — same shape, both faster, and the gap wider. The M5 half of this row has not been re-run (M-005)
 | M-22 | **✗1's identity holds at every resolution to 256³**: `V_sn − V_mc = 2` and `F_sn − F_mc = 4` exactly, nine resolutions, `χ = 2`. The original table topped out at 49³, so this is corroboration at **5× the resolution** and 16.8 M samples | T-006's sweep, which records vertex and triangle counts alongside the timings |
 | M-23 | **`f64` costs 8–10% on extraction paths with no matrix solve in them.** At 65³ on a sphere: Marching Cubes `1.3928 ms` (f32) against `1.5083 ms` (f64), **+8.3%**; Surface Nets `2.3625` against `2.6036`, **+10.2%**. Not the 2× a naive "twice the bytes" guess suggests, because the work is dominated by field evaluation and branchy table lookup rather than by memory bandwidth | T-006, `benches/extract.rs`, the `precision` group. **Partially answers O-8** for the non-QEF paths; A-007's solve is where `AᵀA` squares the condition number and the answer may differ |
 | M-24 | **Bit-exact lattice equivariance needs magnitude-ordered *products*, not just sums.** The audit prescribes "magnitude-sorted 3-term dot products", which is necessary and **not sufficient**: a cofactor expansion of `det(M+λI)` along a fixed row selects three of the six entries *by position*, so relabelling the axes evaluates a different expression. Measured **19 ULP** disagreement under a cyclic permutation, on all three fixtures, with the dots already sorted. Fixed by the symmetric determinant form with magnitude-ordered 3-factor products — FP multiplication is commutative but not associative, so `(a·b)·c ≠ (b·c)·a`. Now **72/72** rotation×fixture cases are bit-identical | A-007, `the_vertex_is_bit_exactly_equivariant_under_lattice_rotations`, which failed before the fix |
@@ -884,7 +895,7 @@ rounding error, and no weld epsilon short of a cell would close it.
 | M-42 | **The asymptotic decider is free to within a few percent, which is the first time this repo's "~free" claim has had a benchmark behind it.** Median extraction, f32, Apple M5: `sphere` 33³ **206.25 → 205.65 µs** (−0.3%, i.e. noise), `sphere` 65³ **1.4954 → 1.5189 ms** (+1.6%), `gyroid` 33³ **786.89 → 795.44 µs** (+1.1%), `gyroid` 65³ **5.6378 → 5.8236 ms** (+3.3%). `sphere` has no ambiguous face at all (M-40), so its difference is the price of *asking* — one table lookup and a branch per surface cell; `gyroid`'s extra ~1.7 points is the price of *answering*, building the cell's triangulation at run time instead of reading it | A-002, `cargo bench --bench extract -- decider`. Confirms the v1 catalog's "~free" (tier R) for the decider, against its "730 subcases in the LUT" for the guaranteed version |
 | M-43 | **The decider needs no division and no epsilon, and the brief's "guard the denominator" is unnecessary.** On an ambiguous face one diagonal is strictly negative and the other non-negative — a sample of exactly zero is outside — so `v0 + v2 − v1 − v3` is strictly non-zero *by the sign rule alone*. Only `sign(S)` is wanted and the denominator's sign is already known, so the whole test is **`joined ⟺ d_in > d_out`** on the two diagonal products. Both branches of the derivation reduce to the same comparison, and it is invariant under rotation and reflection of the corner order because IEEE multiplication is commutative and correctly rounded — which is what makes two adjacent cells agree bit for bit | A-002. Structurally the same argument as `edge_crossing`'s missing epsilon: strictness in the sign rule pays for itself twice |
 | M-44 | **The decider does not widen M-32's chunk-seam problem, and there is margin to spare.** Over 217 seam planes where the two chunk expressions differ bit for bit and 499,968 faces lying in them: **0** where the ulp moved a corner across zero (which would be a crack for plain Marching Cubes too, not just for the decider), 205 ambiguous faces, **0** decision flips. The closest any ambiguous seam face came to its own decision boundary was a relative margin of **1.535e-2** — about fourteen orders of magnitude above the `~1e-16` perturbation the seam arithmetic introduces | A-002, `the_decider_at_a_chunk_seam_is_measured`. A count of zero says nothing about how nearly it happened, which is why the margin is recorded alongside it. The first sweep found **0** ambiguous seam faces and the test's own reachability gate caught it — the fixture trap for the third time |
-| M-45 | **✗14 reproduces on a second machine and gets worse; its crossover does not reproduce at all.** Same sweep, same field, same commit, AMD Ryzen 9 5900X (Zen 3, x86-64, single thread) against the Apple M5. Per-sample cost, `16³ → 256³`: **Marching Cubes M5 24.99 → 4.78 ns, Marching Cubes Zen 3 15.18 → 13.19; Surface Nets M5 8.40 → 12.66, Surface Nets Zen 3 37.38 → 49.08.** So Surface Nets degrades on both — the effect is the algorithm's memory pattern, not one cache hierarchy — and `Surface Nets/Marching Cubes` at 256³ is **3.72× on Zen 3 against 2.65× on the M5**. But Surface Nets never wins on Zen 3, at any resolution: `2.46×` behind even at 16³. The M5 crossover exists only because Marching Cubes starts expensive there and converges, which Zen 3's Marching Cubes does not do because it is flat from the start | O-11, `cargo bench --bench resolution_sweep` on `big` at commit `d2ab82a`. Raw data committed as `docs/measurements/resolution_sweep-ryzen9-5900x.csv` beside the M5's. Also: the M5 is **2.76× faster than the Ryzen on Marching Cubes at 256³** (80.2 vs 221.4 ms) single-threaded, while the Ryzen is faster below about 32³ |
+| M-45 | **✗14 reproduces on a second machine and gets worse; its crossover does not reproduce at all.** Same sweep, same field, same commit, AMD Ryzen 9 5900X (Zen 3, x86-64, single thread) against the Apple M5. Per-sample cost, `16³ → 256³`: **Marching Cubes M5 24.99 → 4.78 ns, Marching Cubes Zen 3 15.18 → 13.19; Surface Nets M5 8.40 → 12.66, Surface Nets Zen 3 37.38 → 49.08.** So Surface Nets degrades on both — the effect is the algorithm's memory pattern, not one cache hierarchy — and `Surface Nets/Marching Cubes` at 256³ is **3.72× on Zen 3 against 2.65× on the M5**. But Surface Nets never wins on Zen 3, at any resolution: `2.46×` behind even at 16³. The M5 crossover exists only because Marching Cubes starts expensive there and converges, which Zen 3's Marching Cubes does not do because it is flat from the start | O-11, `cargo bench --bench resolution_sweep` on `big` at commit `d2ab82a`. Raw data committed as `docs/measurements/resolution_sweep-ryzen9-5900x.csv` beside the M5's. Also: the M5 is **2.76× faster than the Ryzen on Marching Cubes at 256³** (80.2 vs 221.4 ms) single-threaded, while the Ryzen is faster below about 32³ | **Amended 2026-08-16: that cross-machine figure is withdrawn and the Zen 3 half is superseded (M-280, M-282).** A worktree at `d2ab82a` re-run on the same Ryzen tonight reproduces this row to within 1.8% (222.649 ms against 221.363), so the numbers were sound — and Marching Cubes has since got **1.74× faster** (127.8 ms) while Surface Nets got 1.17×. The M5 half was not re-run, so `2.76×` compares a current Ryzen against a stale Mac and must not be quoted; the within-machine claims — Surface Nets degrading on both, no crossover on Zen 3 — are unaffected |
 | M-46 | **A chord is only collidable when its two cut edges share a cube face, and that makes the manifold fix nearly free.** The naive repair — centroid-fan every cycle of four or more — costs **+73.1% vertices and +73.8% triangles** over the seven reference fields at three resolutions (23,034 → 39,881 and 45,662 → 79,356), worst on `box_exact` at **+99.7%**, because nearly every cycle qualifies. Restricting it to cycles with no chord-safe apex costs **+6 vertices and +12 triangles, on one row of eighty-four**. The enabling fact is local: only a cell containing both of a chord's cut edges can emit that mesh edge, and two cells share a pair of cube edges only if the edges share a face. **A safe apex exists for every cycle of length 3–7 and 48 of the 60 length-8 cycles; plain Marching Cubes never exceeds length 7**, so it never pays anything and `V_mc = C` survives | A-015. The naive version was implemented and measured first, which is the only reason the cheap one was looked for — the ticket had been written expecting to re-baseline ✗1/M-2/M-22 and the whole golden fixture |
 | M-47 | **The validator's `duplicate_vertices` is an upper bound on what a weld removes, not the count.** It asks whether *any* earlier vertex is within ε; the welder asks for the lowest-indexed *kept* one, and the two part company wherever a chain of near-misses exists — the validator counts the middle of a chain as a duplicate of its start, the welder leaves the end of the chain unwelded. Predicted before running and both halves held: **equal on a real chunk seam** (14 and 14), where duplicates are pairs an ulp apart with no chains, and **different on a constructed chain** (2 against 1). Also measured, two chunks of a unit sphere at `h = 4/35`: `273 → 259` vertices, boundary edges `85 → 59`, `duplicate_vertices 14 → 0`, `χ 2 → 1` — two discs glued along an arc | A-013. The two share one `Lattice` so they cannot disagree about *which* cells are probed; what differs is the question, and that difference is now measured rather than assumed |
 | M-48 | **The edge-vertex cache does not share everything, and welding removes a class of sliver nobody expected it to.** The cache shares vertices between cells meeting on a grid *edge*; when a grid **sample** lands on the isosurface, `t` is 0 or 1 and the crossing sits *at that sample*, so every cut edge meeting there places its own vertex at the same point and nothing shares them. Whole-volume weld census over the seven fields at 17/25/33³: `sphere` 25³ **48 vertices and 96 triangles**, `gyroid` **2 and 4** at all three resolutions, `fbm_terrain` 33³ **1 and 2**, everything else **zero**. The 96 is exactly the degenerate-sliver count A-001 measured at that resolution from the 30 lattice points sitting exactly on the unit sphere — the same 96, so **welding is a fix for that class of sliver** | A-013. Falsified a claim written in `weld.rs`'s own module docs the same day — "every reference mesh reports `duplicate_vertices == 0`" — which was asserted from the edge cache's design rather than measured. The test that disproved it was written to *confirm* it |
@@ -1452,6 +1463,7 @@ Rules with no incident behind them get ignored. These all have one.
 | **A control run where it cannot discriminate reports "no effect", and reads exactly like a real negative** | M-279 — the axis-order control was first run at 4.3 M samples, a 17 MB array inside this machine's 32 MB L3, where no traversal order can miss. All three orders came out within 20% and the honest-looking conclusion was *"orientation does not matter"*. Re-run at 16.7 M it is a **2.4× spread**. The fixture is now run at **both** sizes, the small one as a control on the control. This is G-003's rule at a different scale: there the fixture's *value* sat in the degenerate region, here its *size* did |
 | **Check a new harness against a committed measurement of the same thing before believing its new columns** | M-279 — `experiment_p12` forgot `MeshBuffer::reset()`, so the output buffer grew by a whole mesh every run and later runs paid reallocation the extraction did not cause. Every exotic column looked plausible; the tell was the boring one, `triangles`, which was **not monotone in `n`** — 145900 at 112³, 190060 at 128³, 144708 at 144³. `resolution_sweep-ryzen9-5900x.csv` has 5180 triangles at 48³ and the fixed harness reproduces it exactly. **A new instrument's first job is to agree with the old one where they overlap** |
 | **On a governed CPU a nanosecond is not a unit. Report cycles, and put the clock on the row** | M-280 — the same binary reported Marching Cubes at 48³ as 8.13 and 14.66 ns/sample with cycles/sample unchanged at ~34, because `amd-pstate-epp` on `powersave` spans 1.96–5.62 GHz. Nothing on the face of either number said which clock it was. Every row now carries `ghz`, computed as cycles ÷ nanoseconds, so the artefact states it rather than inviting the inference |
+| **A millisecond is a property of the binary. Compare within one build and one run, or compare ratios** | M-281 — two of this repo's benches measured Marching Cubes on the same field at the same resolutions with the same median rule and disagreed by a **uniform 1.24–1.36×**, including at 16³ where the whole run is 40 µs. Both loop shapes in **one** binary are identical (0.991–1.002), and adding **one unrelated function** to `resolution_sweep.rs` moved its own 256³ row from 152.5 to 130.8 ms. Layout bias, with a paper — Mytkowicz et al., ASPLOS 2009 (`10.1145/1508284.1508275`). `benches/layout_bias` is the standing check, and it asserts rather than prints |
 | **A generator that recognises one shape stops counting when the shape changes — and its staleness check cannot see that** | M-277 — `findings_index.sh` matched Part 2's table rows and Part 1's `✗` headings. Measurements became `###` sections at M-255 and **twenty-two of them fell out of the index while `--check` stayed green**, because a staleness check compares the file against the generator and the two agreed. The count read *"249 measured"* against 271 present. **Check a generator against its source's own vocabulary, not against its previous output** — one `grep -c '^### M-'` beside `grep -c '^| M-'` is the whole test, and it is the check that was never written |
 | **A file that records state drifts from the state unless something checks it. Write the check the second time, not the third** | E-113 — the demo shipped at `a0859e8`, the README referenced it, and its row sat in `BACKLOG.md` for four more commits; the header counts drifted from the row counts separately. Both were found by audit, both were caused by editing one file with several scripts in one turn where a later write clobbered an earlier one. The same defect was sitting in `FINDINGS.md` unnoticed: **O-1, O-2 and O-4 were still listed as open questions** after G-002, A-009 and G-003 had all landed and answered them. `scripts/backlog_gate.sh` is the check, and it is mutation-tested against all eight ways the two files can disagree — because a gate that has only ever passed is indistinguishable from one that cannot fail (M-44) |
 | **An instrument that cannot report the failure has not reported the success. Show it producing a non-zero before trusting its zero** | E-208 — the paint-drift readout measured "did the colour at this point change", and the scripted run sprayed one colour, so repainting red over red was numerically identical to paint that never moved. It printed **0.000000 at every step**, which is the answer the ticket wanted, and it would have printed the same on an implementation that smeared. Cycling the palette turned the same instrument sensitive — **27 of 40 sprays register drift, up to 0.886** — and only then does the **0.000000 across both carves** mean anything. This is M-75's rule in a different costume (*"a test that returns the same answer when you invert the thing it is testing is not measuring that thing"*), and the reason it earns its own row is that here the instrument was not inverted, it was **starved**: the input never varied in the dimension being measured |
@@ -2452,19 +2464,111 @@ with the clock sampled every five seconds and steady at **4.20 GHz**, five times
 | Marching Cubes 256³ | 221.363 ms | **152.2–153.3 ms** | **1.45× faster** |
 | Surface Nets 256³ | 823.442 ms | **693–721 ms** | 1.18× faster |
 
-**Consequences for what is written down.** ✗14's Zen 3 ratio was `SN/MC = 3.72×` at 256³; on the
-current code it is **4.6×**, so ✗14's conclusion is strengthened and its number is wrong. M-45's
-*"the M5 is 2.76× faster than the Ryzen on Marching Cubes at 256³ (80.2 vs 221.4 ms)"* **cannot be
-quoted at all**: its Ryzen half is stale by 1.45× and its M5 half was not re-run, so the true figure
-is somewhere below 1.90× and unmeasured.
+**Consequences for what is written down.** ✗14's Zen 3 ratio was `SN/MC = 3.72×` at 256³; measured in
+one binary and one run it is **5.43×** (M-282), so ✗14's conclusion is strengthened and its number is
+wrong. M-45's *"the M5 is 2.76× faster than the Ryzen on Marching Cubes at 256³ (80.2 vs 221.4 ms)"*
+**cannot be quoted at all**: its Ryzen half is superseded by a real code change and its M5 half was
+not re-run, so the figure is unmeasured rather than merely stale.
 
 **One excursion in six runs, unexplained.** One of the six gave **264.714 ms** for Marching Cubes at
 256³ at the same steady 4.20 GHz and the same binary — 1.74× the other five, which cluster within
 0.7%. Surface Nets did not move in that run (697.8 against 693–721). No cause identified; recorded so
 that a single ms figure from this host is not read as a measurement.
 
+**Corrected the same night, and the correction matters (M-281).** The table above attributes the gap
+to the code, and that attribution was not earned when it was written: the "measured now" column came
+from the *current* `resolution_sweep` binary, and adding one unrelated function to that binary moves
+its own Marching Cubes 256³ row from 152.5 to **130.8 ms**. So 152.5 is a property of a build, not of
+the algorithm.
+
+**Settled by re-running the old commit rather than by arguing.** A worktree at `d2ab82a` — the commit
+M-45 cites — built and run on this machine tonight reproduces its committed CSV to within 1.8%:
+Marching Cubes 256³ **222.649 ms** against 221.363, Surface Nets **813.964** against 823.442, Dual
+Contouring **861.370** against 877.359. **The committed Zen 3 figures are sound and reproducible**, so
+the difference *is* a real code change and not the clock and not the machine — but its size is
+`222.6 → 127.8`, **1.74×**, measured against M-282's family run rather than against a binary whose
+layout costs it 17%. Read the direction from this entry and the magnitude from M-282.
+
 **The CSV was restored rather than overwritten.** ✗14, M-19, M-20, M-21, M-22 and O-11 all quote
 exact figures from it, and the archive says three separate times that re-measuring the family belongs
 to **M-001**. M-001 is referenced **nineteen times** across `FINDINGS.md` and `BACKLOG_ARCHIVE.md`
 and **had no ticket row in either file** — so the designated home for this re-measurement did not
 exist and it could never have been taken off the queue. Now filed.
+
+### M-281 — a timing here is a property of the binary, not only of the code (M-001)
+
+**M.** `benches/family` and `benches/resolution_sweep` measure Marching Cubes on the same field, the
+same resolutions, the same warmup and median rule, on this machine with the clock held at 4.18 GHz —
+and disagreed by a **uniform 1.24–1.36×** at every resolution:
+
+| n | `resolution_sweep` ms | `family` ms | ratio |
+|---|---|---|---|
+| 16 | 0.047 | 0.038 | 1.24 |
+| 64 | 2.681 | 2.011 | 1.33 |
+| 128 | 20.972 | 15.461 | 1.36 |
+| 256 | 172.477 | 127.605 | 1.35 |
+
+A uniform ratio **at 16³**, where the whole run is 40 µs and nothing is under memory pressure, rules
+out cache, TLB and allocation at a stroke.
+
+**What it is not.** `benches/layout_bias` puts both loop shapes in **one binary** — the sweep's single
+drained loop with `black_box(triangle_count())` against `family`'s split loops with
+`black_box(&mesh)` — in both orders, so M-197's *"whichever runs second pays"* cannot apply. They come
+out **identical, ratio 0.991–1.002**, and the file asserts that rather than printing it. Nor is it the
+counters (`family` without them: 127.6 ms against 127.1 with), nor extractor lifetime (rebuilt per
+resolution: 127.1 against 131.6 carried).
+
+**What it is.** Adding **one unrelated function** to `resolution_sweep.rs` — a copy of the probe,
+called once before the sweep — moved that binary's own Marching Cubes 256³ row from **152.5 ms to
+130.8 ms**. Same measured code, same loop, same machine, same clock; 17% from linking something else
+in beside it. This is layout bias, and it has a paper: Mytkowicz, Diwan, Hauswirth & Sweeney,
+*Producing Wrong Data Without Doing Anything Obviously Wrong!*, ASPLOS 2009
+(`10.1145/1508284.1508275`), whose finding is that link order and environment size move measurements
+by enough to invert a conclusion.
+
+**The consequence for this repository, which is the point.** A millisecond figure is comparable
+**only against other figures from the same binary and the same build**. Ratios measured side by side
+in one run survive; absolute numbers quoted across benches do not. That is precisely M-001's design —
+one bench, one process, one run — and it is now measured rather than asserted.
+
+### M-282 — the whole family, in one binary and one run (M-001)
+
+**M.** `benches/family`, `docs/measurements/family.csv`. `sphere`, `f32`, the sweep's resolution set,
+median of 5 after 2 warmups, clock 4.17–4.25 GHz on every row, Ryzen 9 5900X, single thread.
+
+| algorithm | 256³ ms | × MC | ns/sample | cycles/sample | **IPC** | triangles |
+|---|---|---|---|---|---|---|
+| `marching_cubes` | **127.8** | 1.00 | 7.62 | 31.8 | **4.13** | 153,548 |
+| `marching_cubes+decider` | 130.8 | 1.02 | 7.80 | 32.6 | **4.16** | 153,548 |
+| `marching_tetrahedra` | 261.8 | 2.05 | 15.60 | 65.3 | **4.19** | 458,568 |
+| `surface_nets` | 693.8 | 5.43 | 41.35 | 172.7 | **1.20** | 153,552 |
+| `dual_contouring` | 751.1 | 5.88 | 44.77 | 187.0 | **1.35** | 153,552 |
+| `manifold_dual_contouring` | 771.0 | 6.03 | 45.96 | 192.0 | **1.42** | 153,552 |
+| `subgrid_marching_tetrahedra` | *budget* | — | 1575.0 | 6583.2 | **3.69** | 113,568 (at 128³) |
+
+**The strongest pattern in the table is the IPC column, and it is a clean partition.** Everything
+table-driven runs at **3.7–4.2** instructions per cycle; everything built on `DualMesher` runs at
+**1.20–1.42**. Three algorithms with three different vertex rules — a centroid, a QEF, a QEF with
+cell splitting — land within 18% of each other and a factor of three below the rest, which says the
+cost is the shared scaffolding rather than any of the rules. That is R-007's target, arrived at from
+a second direction.
+
+**Four things nobody had priced.**
+
+- **The asymptotic decider costs 2.4%** — 130.8 against 127.8 ms, same 153,548 triangles. ✗11 and the
+  whole A-002 series argue about what it *fixes*; this is what it costs.
+- **Marching Tetrahedra is 2.05× Marching Cubes in time and 2.99× in triangles** (458,568 against
+  153,548). P-1 predicted the *3.0× ratio* and it lands at 2.99 — but the time ratio is only 2.05,
+  because Marching Tetrahedra has the **highest IPC in the family**. Three times the triangles for
+  twice the time.
+- **Manifold Dual Contouring's guarantee costs 2.6% over Dual Contouring** — 771.0 against 751.1 ms.
+  Given A-010 and M-59, this is the price of the entry that takes the manifold zero, and it is
+  approximately free.
+- **Subgrid Marching Tetrahedra is 100.7× classic Marching Tetrahedra and 215× Marching Cubes**, at
+  128³ on Zen 3. M-98 measured 70× and 196× on the Apple M5 at 33³/65³, and said *"the constant is
+  the whole story"* — so the constant is also machine-dependent, by 1.44× between these two hosts.
+  It is the one entry the 2000 ms budget stops, at 128³, which the CSV records rather than omitting.
+
+**✗14's ratio has widened and its numbers are superseded.** `surface_nets / marching_cubes` at 256³
+is **5.43×** here against the 3.72× on record, and **3.19×** at 16³ against M-45's *"2.46× behind even
+at 16³"*. Both are within-binary ratios, which M-281 says is the comparison that survives.

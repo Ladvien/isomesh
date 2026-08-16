@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**170 tickets archived, 7 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**171 tickets archived, 7 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -109,7 +109,12 @@ These use the algorithms the way a game does: chunked, edited, budgeted, collide
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **M-001** | **Re-measure the whole family in one process and one run — the ticket nineteen references already point at.** `BACKLOG_ARCHIVE.md` says three separate times that a re-measurement "belongs to M-001", `FINDINGS.md` names it ten more, and **it had no row in either file** until R-005 went looking for it. So the designated home for every deferred re-measurement did not exist and none of them could be taken off the queue. **It is now overdue rather than merely absent (M-280):** re-running `benches/resolution_sweep` at the current commit, clock steady at 4.20 GHz and sampled to prove it, gives Marching Cubes at 256³ as **152.2–153.3 ms** against the committed `resolution_sweep-ryzen9-5900x.csv`'s **221.363 ms**, and Surface Nets **693–721 ms** against **823.442**. So ✗14's Zen 3 `SN/MC` ratio is **4.6×** and not the 3.72× on record, and M-45's *"the M5 is 2.76× faster than the Ryzen"* is unquotable because only one half was re-run. **Acceptance:** one bench, one process, one run, every extractor in `for_each_extractor!` — Marching Tetrahedra included, which the sweep deliberately omits — over the committed resolution set, reporting **cycles per sample and the clock** as well as milliseconds (M-280), on both machines. Then update ✗14, M-19, M-20, M-21, M-22, M-45 and O-11 against it **in the same commit**, because six findings quote exact figures from a file this replaces. Do **not** amend `resolution_sweep-ryzen9-5900x.csv` in place; it is the evidence those citations were written against and it stays as the before. | L | — |
+| ☐ | **M-005** | **The Apple half of the family measurement.** M-001 landed `benches/family` and ran it on the Ryzen (M-282); the same run is owed on the M5, because six findings quote M5 figures that nothing has re-measured. **What it settles, and it is not cosmetic:** M-19's fitted intercept, M-20's *"4.75 ns/sample, 211 M samples/s"* marginal cost, M-22, and M-45's *"the M5 is 2.76× faster than the Ryzen on Marching Cubes at 256³"* — the last of which is currently **unquotable**, since its Ryzen half moved 1.74× and its Apple half did not. **Acceptance:** `cargo bench --bench family` on the M5 at the current commit, the CSV committed as `docs/measurements/family-<slug>.csv`, and those four findings amended against it. Note the counter columns will read `unavailable`: `perf_event_open` is Linux, so the Apple rows carry milliseconds only, and M-281 says a millisecond is comparable **only within one binary and one build** — so the cross-machine comparison must be made on `family` against `family`, never `family` against `resolution_sweep`. | S | M-001 |
+> BLOCKED: **it needs someone else's working tree, which is their call.** `mac_air` has an `isomesh`
+> checkout at `4369e3c` — over a hundred commits behind — with `BACKLOG.md` modified and two untracked
+> docs in it. Fetching and checking out the current commit there would touch uncommitted work that is
+> not this repository's to move. Say the word and it is a ten-minute ticket; until then the Apple
+> numbers stay as they are, marked stale rather than quietly re-used.
 
 ---
 
