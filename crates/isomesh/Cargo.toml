@@ -108,6 +108,11 @@ harness = false
 test = false
 
 [[bench]]
+name = "constructors"
+harness = false
+test = false
+
+[[bench]]
 name = "csg_degradation"
 harness = false
 test = false

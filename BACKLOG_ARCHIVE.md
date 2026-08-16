@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-161 tickets. Line numbers are stable until something above them is edited — grep the ID if
+162 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1011,3 +1011,23 @@ attainable. The cost is real and already measured: M-248's empty-cell rejection 
 is structural: each is a max, a min or a ratio of counts over deterministic `libm` arithmetic, never a sum, so there is
 no accumulation order to differ across architectures. `Unbounded` fields write **empty cells** rather than zeros — a
 literal `0` would read as "nowhere near the bound", the opposite of "there is no bound". |
+| ☑ | **T-018** | **Constructor accuracy harness.** One place that runs S-001..S-007 against analytic ground truth on the reference fields and reports accuracy, wall clock and memory. The `M-001a` shootout for the *input* half of the pipeline. **Acceptance:** a CSV in `docs/measurements/` and a stated recommendation for which constructor a consumer should default to, with the number behind it. | M | S-003, S-006 |
+| | | ***It found a real defect in S-007 on its first run (M-269).*** Putting the pseudonormal and the winding number
+side by side on the same mesh — their magnitudes come from the same code, so any gap is a *sign* gap — showed `torus`
+at a worst error of **1.223 against 0.014**. `intersect_x_ray` tested its barycentric bounds inclusively on both sides
+while its own doc claimed a half-open convention, so a ray through a shared edge counted twice and flipped the parity.
+A grid-aligned ray hits shared edges by **construction**, not by chance: samples lie on grid lines and Marching Cubes
+puts every vertex on a grid edge. Fixed with Plantinga & Vegter's symbolic perturbation of the ray line — and the
+query point and cone apex have to move with it, which the first attempt did not, turning 0 misclassifications into 12. |
+| | | ***S-007's own four tests could not have caught it.*** Its closed-mesh calibration is a **sphere**, which is
+convex, so a grid-aligned ray leaves through one triangle and the double-count has nothing to double. It took a second
+constructor computing the same magnitudes by different means — which is the argument for this ticket existing. |
+| | | ***And the first version of the shootout measured itself (M-270).*** It ranked `band` best on both speed and
+accuracy, because S-004 **keeps** the input outside its band and the harness fed it the analytic field — most of its
+output was ground truth it had copied. The other three read only signs and crossings and gained nothing from the same
+input, so the comparison was unfair without looking unfair. Refed with a 2×-scaled field, the honest numbers are
+near-surface **0.18740 → 0.11325** and far field **2.26132 → 2.26132**: it repairs the band and leaves the rest, which
+is what a band is. Three families now, and a constructor is only ranked against ones answering the same question. |
+| | | ***Memory is half-delivered on purpose.*** `out_kib` is exact; peak working set is not measured, because the
+instrument needs `unsafe impl GlobalAlloc` and the workspace forbids it. Declared as a gap with **T-019** to measure it
+out of process, rather than estimated into the table. |

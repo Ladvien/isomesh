@@ -1713,3 +1713,66 @@ constant it depends on did, and both should require an acknowledgement.
 `Unbounded` fields write **empty cells** for `declared_bound` and `bound_gap` rather than zeros.
 `regress.sh` skips an empty value, and a literal `0` would read as *"the gradient is nowhere near the
 bound"* — the opposite of *"there is no bound"*.
+
+### M-269 — a grid-aligned ray double-counts shared edges, and the constructor shootout is what found it (T-018)
+
+**M, and it is a defect in S-007 that S-007's own tests missed.** T-018 put the pseudonormal and the
+winding number side by side on the same mesh for the first time. Their **magnitudes are computed by
+the same code**, so any difference is a sign difference — and on `torus` the winding number read a
+worst error of `1.223` against the pseudonormal's `0.014`, and `1.168` against `0.004` at 65³.
+
+The cause: `intersect_x_ray` tested `u ∈ [0,1]` and `u + v ∈ [0,1]` **inclusively on both sides**,
+while its own doc comment claimed a half-open convention. A ray passing exactly through an edge
+shared by two triangles is therefore counted **twice**, which flips the parity and so the sign.
+
+**And a grid-aligned ray hits shared edges constantly, not rarely.** The samples lie on grid lines,
+and Marching Cubes places every vertex on a grid *edge*, so a `+x` ray from a sample runs along a
+line that triangle edges also lie on. This is not a floating-point near-miss; it is exact
+coincidence, by construction.
+
+A half-open barycentric rule does not fix it in 3D: two triangles meeting at an edge do not agree on
+which of their own `u`, `v`, `w` that edge is, so there is no local rule that makes exactly one of
+them own it. The fix is Plantinga & Vegter's device, and they state the licence — *"We can take ε
+arbitrarily small using a symbolic perturbation"* — so the ray **line** is nudged off the lattice by
+`~1e-5` of a cell, with different fractions on `y` and `z` so it cannot land back on a cell diagonal.
+
+**The perturbation has to move the query point too, and getting that wrong is a second bug the tests
+caught immediately.** The first attempt nudged only the line and left `q` and the cone apex on the
+sample: `χ` was then counted along one line while the correction was subtracted for a cone whose apex
+sat on another, which is not the construction. It turned 0 misclassifications into **12** on the
+smallest hole. With the query point moved with the line, `torus` matches the pseudonormal to the last
+digit at both resolutions and the hole sweep is unchanged.
+
+**The method note is the point.** S-007 shipped with four passing tests including a closed-sphere
+calibration that read exactly `1.000000000` and `0.000000000`. A sphere is convex, so a grid-aligned
+ray leaves through one triangle and the double-count has nothing to double. **It took a second
+constructor computing the same magnitudes by different means to expose it** — which is what a
+head-to-head harness is for, and is the argument for T-018 existing at all.
+
+### M-270 — a benchmark that hands a repair algorithm perfect input measures the benchmark (T-018)
+
+**M.** The first version of this shootout ranked all four field-based constructors in one table and
+put **`band` first on both speed and accuracy** — 5.02 ms against the exact transform's 5.11, and a
+worst error of `0.0729` against `0.1206`, `0.1623` and `0.1453`.
+
+That was an artefact and the algorithm deserved no credit for it. S-004 **keeps the input** outside
+its band by design; the harness fed it the analytic field, so most of its output was ground truth it
+had merely copied. The other three read only signs and sub-cell crossings and discard magnitudes, so
+they gained nothing from the same input — which is exactly why the comparison was unfair without
+looking unfair.
+
+Refed with the analytic field **scaled by two** — same zero set, twice the gradient, the shape a CSG
+scale or a careless composition produces — the honest numbers are:
+
+| | worst | worst near surface |
+|---|---|---|
+| degraded input | 2.26132 | 0.18740 |
+| after reinitialisation | 2.26132 | **0.11325** |
+
+It repairs the near band and **leaves the far field exactly as it found it**. That is what a narrow
+band *is*, and stating it as a number rather than as a design intent is the difference between a
+measurement and a description.
+
+**The taxonomy is the fix, not a tolerance.** Three families now: *signs → field* (exact, swept,
+marched), *field → field* (band, on degraded input), *mesh → field* (pseudonormal, winding). A
+constructor may only be ranked against ones answering the same question.

@@ -76,6 +76,27 @@ use super::from_mesh::{closest_on_triangle, cross, dot, norm, sub};
 /// apex at `1e12` diagonals throws away mantissa for nothing.
 const APEX_DISTANCE: f64 = 64.0;
 
+/// Symbolic perturbation of the ray line, as a fraction of a cell.
+///
+/// **A grid-aligned ray hits shared edges constantly, and that is fatal.** The
+/// samples lie on grid lines and Marching Cubes puts every vertex on a grid
+/// edge, so a `+x` ray from a sample runs along a line that triangle edges also
+/// lie on. A hit exactly on a shared edge is counted by *both* incident
+/// triangles, which flips the parity and therefore the sign — measured at T-018
+/// as `torus` reading a worst error of `1.223` against the pseudonormal's
+/// `0.014`, entirely from sign flips.
+///
+/// Nudging the line off the lattice makes an edge or vertex hit a measure-zero
+/// event again. This is Plantinga & Vegter's device, and they state the licence
+/// for it: *"We can take ε arbitrarily small using a symbolic perturbation."*
+/// The `χ` computed is then that of a point infinitesimally displaced from the
+/// sample, which is in the same winding class unless the sample is **on** the
+/// surface — where the winding number is undefined anyway.
+///
+/// Two different irrational-ish fractions on the two axes, so the nudge cannot
+/// land back on the diagonal of a cell.
+const PERTURB: [f64; 2] = [1.234_567e-5, 7.654_321e-5];
+
 /// Solid angle subtended at `q` by triangle `abc`, signed by its orientation.
 ///
 /// Van Oosterom & Strackee, *The solid angle of a plane triangle*, IEEE TBME
@@ -144,6 +165,12 @@ struct Hit<R> {
 /// outside, and `2` means the surface wraps twice — the measure is not a
 /// boolean, which is the point of it.
 ///
+/// The value returned for a sample is the winding number at a point
+/// symbolically displaced from it by about `1e-5` of a cell, so that a ray along
+/// a grid line does not hit a shared triangle edge (M-269). That is the same
+/// winding class unless the sample lies **on** the surface, where the number is
+/// undefined rather than wrong.
+///
 /// # Errors
 ///
 /// As [`signed_distance_from_mesh`](super::from_mesh::signed_distance_from_mesh).
@@ -204,6 +231,14 @@ pub fn winding_numbers<R: Real>(
         for y in 0..ny {
             let py = origin[1] + cell_size * R::from_f64(f64::from(y));
             let pz = origin[2] + cell_size * R::from_f64(f64::from(z));
+            // The ray line, nudged off the lattice. **The query point moves with
+            // it.** `χ` and the cone correction must be evaluated at the same
+            // point and along the same line -- counting intersections on one
+            // line while subtracting a cone whose apex sits on another is not
+            // the construction, and measured 12 misclassifications where the
+            // consistent version has none.
+            let ry = py + cell_size * R::from_f64(PERTURB[0]);
+            let rz = pz + cell_size * R::from_f64(PERTURB[1]);
 
             // **One cast for the whole row.** Every sample in it lies on this
             // line, so its `χ` is the sum of the signs beyond it.
@@ -213,7 +248,7 @@ pub fn winding_numbers<R: Real>(
                 let a = positions[tri[0] as usize];
                 let b = positions[tri[1] as usize];
                 let c = positions[tri[2] as usize];
-                if let Some(hit) = intersect_x_ray(a, b, c, py, pz) {
+                if let Some(hit) = intersect_x_ray(a, b, c, ry, rz) {
                     hits.push(hit);
                 }
             }
@@ -232,8 +267,8 @@ pub fn winding_numbers<R: Real>(
                 // The cone correction. Apex directly behind the ray, so the
                 // cone contributes no forward intersections and the count above
                 // is the closed mesh's winding number.
-                let q = [px, py, pz];
-                let apex = [px - back, py, pz];
+                let q = [px, ry, rz];
+                let apex = [px - back, ry, rz];
                 let mut omega = R::ZERO;
                 for &([u, v], n) in &boundary {
                     // The closing mesh carries the *reverse* directed edge, so
@@ -263,10 +298,12 @@ pub fn winding_numbers<R: Real>(
 /// of Graphics Tools 2(1) (1997), specialised to the `+x` direction so the
 /// determinant is a plain component of the edge cross product.
 ///
-/// **Boundaries are `>= 0` and `<= 1` on one side only.** A ray passing exactly
-/// through a shared edge must be counted once, not twice or zero times; the
-/// half-open convention is what makes that happen, and it is the same rule the
-/// crate's own case tables use for edge ownership.
+/// **The boundary tests are inclusive, and the ray is perturbed instead.** A hit
+/// exactly on a shared edge would be counted by both incident triangles, and a
+/// half-open barycentric rule does not fix that in 3D — two triangles meeting at
+/// an edge do not agree on which of their own `u`, `v`, `w` that edge is. The
+/// caller nudges the ray line off the lattice ([`PERTURB`]), which makes such a
+/// hit measure-zero rather than routine.
 fn intersect_x_ray<R: Real>(a: [R; 3], b: [R; 3], c: [R; 3], py: R, pz: R) -> Option<Hit<R>> {
     let ab = sub(b, a);
     let ac = sub(c, a);
