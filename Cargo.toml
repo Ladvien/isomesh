@@ -9,7 +9,7 @@ members = ["crates/*"]
 exclude = ["bevy_isomesh"]
 
 [workspace.package]
-version = "0.0.5"
+version = "0.0.6"
 edition = "2024"
 # The floor is set by the dependency graph the msrv CI job actually checks
 # (`--workspace --all-targets`, so dev-dependencies count): wgpu/naga 29.x

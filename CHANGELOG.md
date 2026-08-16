@@ -8,6 +8,10 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.0.6] — 2026-08-16
+
 The dual path got **4.26× faster with byte-identical output**, a published manifoldness claim was
 falsified, and a bug in a reference implementation was found to have recorded two true hypotheses as
 false. Exact geometric predicates arrived.
