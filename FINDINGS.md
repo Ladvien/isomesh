@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**412 entries** — 27 falsified, 319 measured, 46 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**414 entries** — 27 falsified, 320 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -385,6 +385,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-322` | chunking makes the bisect bounded rather than cheap, and the advantage is exactly the chunk count (R-028) |
 | `M-323` | the chunk is the bound; the cost is the edited chunk's share of the severed component, and the two differ by 35× (R-028) |
 | `M-324` | HELD on both clauses, and the exact zero is a coordinate-origin artifact (R-029) |
+| `M-325` | the discrete medial score converges O(h) and the mechanics live; the clause that died was C1's own tolerance derivation… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -447,6 +448,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `O-14` | Pre-registered: Marching Tetrahedra symmetric Hausdorff at 64³ ≈ 2.6e-3, about 1.86× Marching Cubes, i.e. slightly worse… |
 | `O-15` | Answered at A-003 (M-52): the normal's sign pattern, not its direction. |
 | `O-16` | Can the parallel dual-edge collapse (M-59) be removed without giving up the cycle partition? |
+| `O-19` | Which direction does the λ-medial-axis filter run — Attali's keep-r ≥ λ, or the 3D Skeletons STAR's discard-circumradius… |
 | `E×1` | Surface Nets' centroid as Dual Contouring's vertex rule |
 | `E×2` | A separate probabilistic-quadric solver |
 | `E×3` | Crossing-count-scaled regularizer |
@@ -1294,6 +1296,7 @@ Each has the test that would settle it. **An open question with no proposed test
 | O-14 | ~~**Pre-registered:** Marching Tetrahedra symmetric Hausdorff at 64³ ≈ **2.6e-3**, about **1.86×** Marching Cubes, i.e. slightly worse than Surface Nets~~ **Falsified at A-003/M-001 (M-55): measured 1.4386e-3, which is 1.043×.** Not slightly worse than Surface Nets — **better by 1.6×** (Surface Nets is 2.251e-3, 1.69× Marching Cubes) | *(closed)* | The prediction's stated counterintuitive part, *"more vertices **and** worse accuracy"*, is the half that is wrong. Marching Tetrahedra buys 3× the vertices for 4% worse accuracy on smooth fields and **better** accuracy on sharp ones |
 | O-15 | ~~Why does a plane cost `3.94×` and a sphere `3.00×` when both are locally flat at cell scale?~~ **Answered at A-003 (M-52): the normal's sign pattern, not its direction.** One octant gives `4.0` exactly, a sign change gives `2.0`, and the isotropic average is P-1's `2.992`. A plane has one normal and a sphere has all of them | *(closed)* | What remains is small and not worth a ticket: the mixed-sign measurement spreads `1.98–2.27` against a predicted flat `2.0`, so the continuum model gets the mechanism exactly and carries a discretisation term it does not describe |
 | O-16 | **Can the parallel dual-edge collapse (M-59) be removed without giving up the cycle partition?** The dual is a manifold complex; the index buffer is where it stops being a manifold mesh. A finer split — one vertex per *face-segment adjacency* rather than per cycle — would separate the endpoints, but it is not obviously topology-preserving and would cost vertices on every field rather than the two that need them | Enumerate, over all `(case, joined)` pairs on both sides of a shared face, the configurations where both cells put both of that face's segments in one cycle. That is a finite two-cell sweep of the same shape as ✗17's, and it would say whether the collapse is rare-and-coarse-only or merely unobserved on the seven fields | Bounded in practice: zero on all seven reference fields at every tested resolution, one edge on the ✗15 fixture at `h = 2/3`, gone by `h = 1/2`. So it is the same "coarse grid does not resolve the surface" regime as ✗15 and ✗17, and the same answer probably applies — refine, or accept it and pin the count |
+| O-19 | **Which direction does the λ-medial-axis filter run — Attali's keep-`r ≥ λ`, or the 3D Skeletons STAR's discard-circumradius-larger-than-λ?** The two surveys state it in opposite directions; one is inverted, or they describe dual constructions. R-030's instrument was insensitive to the discrepancy (M-325 measures `r`, not the filter), but any *build* on the identity picks a direction, and picking the wrong one keeps noise and discards signal. (O-17 and O-18 live in BACKLOG's deliberately-not-in-scope list; numbering is global.) | Obtain the primary source, Chazal & Lieutier `10.1016/j.gmod.2005.01.002` — acquisition #1 in the 2026-08-17 dossier — or derive the direction from the Attali survey's own constructions, which are in the corpus and READ | The Calibre/throat/handhold builds are gated on M-325's measured convergence *and* this definition; it is the last thing standing between the identity and a build ticket |
 
 ### Pre-registered predictions
 
@@ -1583,6 +1586,7 @@ Rules with no incident behind them get ignored. These all have one.
 
 | Rule | Earned from |
 |---|---|
+| **A tolerance on a √-amplified quantity must be derived at the amplification's maximum, not at the population's comfortable middle** | P-28's C1 — a `1e-9·G` "float dust" tolerance held at `2.8e-17` in the band interior and lost 50–75% of rows at the band's `u → 1` edge, where `d r/d(radicand) = ρ/(2√(1−u²))` multiplies the same dust into `1e-9`. The amplification that killed the clause is the amplification C2 measures as signal; the tolerance was derived where the function is flat and applied where it is vertical |
 | **A precondition claim needs the sentence from the method's own paper, and "what it requires" is a different question from "what it guarantees"** | ✗20 — *"every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input"* was two conflations at once. A method that **preprocesses** bad input was read as one that **requires** clean input, when Andrews 2024 names preprocessing as an axis methods differ along; and VisACD's 35% intersecting-hull rate, which describes the hulls **CoACD emits**, was read as a condition on the mesh it is **given**. Two of the four methods audited require nothing at all, and CPD says so in one sentence |
 | **Verify a citation's *claims* and its *problem* separately. Three true claims do not make a method the right one** | ✗21 — A-026 chose CPD as the substrate a plane-cut fracture pipeline cuts, on three claims that all survived verification against the paper: input tolerance, *"guaranteed to enclose the input surface"*, under a third of the collider bytes. The architecture needed a fourth property nobody checked for — a **disjoint partition of the interior** — and CPD has none: Algorithm 1 merges the **face adjacency graph**, its §3.4 says *"the union of all primitives covers the mesh's surface"*, and §3.3 concedes the primitives overlap. **The abstract, which is where the three claims came from, never mentions any of this.** Worse, one of the verified claims was actively disqualifying: *enclosure* is the right guarantee for a collider and the wrong one for a substrate, because a proxy that strictly contains the solid cannot conserve its volume. **This is ✗20's rule one step out** — there it was "requires" vs "guarantees"; here it is "guarantees" vs "what you need" |
 | **Two gates that run the same command are not the same gate if they run different tools. Compare the tool, not the command** | M-304 — `preflight.sh --full` was green on every step and the 0.0.6 release still failed: CI's clippy was 0.1.97 and the local one 0.1.96, and `question_mark` exists in one and not the other. The publish step was skipped and nothing uploaded. The command was byte-identical in both places, which is exactly why nobody looked. `scripts/toolchain_drift.sh` now warns when local `stable` is behind the current release — a warning rather than a failure, because being a patch behind is normal and a gate that cries wolf gets disabled |
@@ -6515,3 +6519,75 @@ it is out of the registration.
 
 **Records** `fixture`, `samples_per_axis`, `band_samples`, `within_tol_pct`,
 `band_median_residual_world`, `clearance_true_voxels`, `clearance_est_voxels`, `clamped`.
+
+### 🔬 M-325 / P-28 — the discrete medial score converges O(h) and the mechanics live; the clause that died was C1's own tolerance derivation (R-030)
+
+> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉
+>
+> 🥇 **The identity's discrete score has a curvature-noise floor that halves per resolution doubling
+> — end-to-end ratio 0.146 against a registered 0.35 bound and a 0.7 kill-line — so the gate opens
+> and Calibre, the throat metric and handholds live on a measured convergence rather than an
+> assumption. And the one clause that died, C1, was killed by the very amplification C2 measures as
+> signal: √(1−u²) turns 1e-16 representation dust into 1e-9 residuals at the band edge.**
+>
+> 🧪 **Tested by:** `cargo bench --bench experiment_p28` (P-28), `docs/experiments/p-28.csv`
+> 🎯 **Result:** C2 medians **7.81e-2 / 2.27e-2 / 1.14e-2** world across 33³/65³/129³ (ratio
+> **0.146**); C3 **24/24** rows inside the derived envelope, phase profile matching
+> `(W−φh)·√(1−φ²)` to four digits; C1 **1/9** rows at 100% — **falsified as registered**; the
+> wrong-form inversion red on **99.9%** of the mid-band.
+> 📐 **Why it earns the banner:** 💥 a pre-registered clause was falsified instructively — the
+> float-dust tolerance was derived where the function is flat and applied where it is vertical, and
+> that earned a new Part 5 rule — and 🔓 the dossier's #2-ranked open question moved: the identity
+> survives discretisation with an O(h) floor, measured against derived truths that a wrong closed
+> form demonstrably fails.
+> 💣 **Would be shown wrong by:** a finer-resolution run where the C2 ratio stops falling, or any
+> fixture on which the wrong form passes the mid-band inversion.
+
+**M.** `cargo bench --bench experiment_p28`, `docs/experiments/p-28.csv`.
+
+| clause | registered | measured | verdict |
+|---|---|---|---|
+| C2 — curvature floor halves per doubling | 33³→129³ world-median ratio ≤ 0.35, kill at ≥ 0.7 | 7.81e-2 → 2.27e-2 → 1.14e-2, ratio **0.146** | **HELD** |
+| C3 — clearance envelope | band-max `r_f` ∈ [√3/2·(W−h/2), W], 24/24 | **24/24**, and per-phase max equals the derived `(W−φh)√(1−φ²)` to 4 digits | **HELD** |
+| C1 — form at float dust | \|r_f − r̃\| ≤ 1e-9·G on 100% of band, 9 rows | **1/9** rows; failing medians 1.5–3.3e-9, i.e. 12 orders below the gap and ~4× above the tolerance | **FALSIFIED** |
+| inversion | wrong form fails ≥ 30% of mid-band by > 0.1·G | **99.9%** (12.9% over the whole band — the u→1 edges collapse both forms, which is why the registration said *mid-band*) | red demonstrated |
+
+**C2 is the row the mechanics live on.** On the capsule's exact-cylinder band every sample has a
+unique closest point and the true inscribed radius is zero, so `r_f` there is pure instrument: the
+O(h²/s²) central-difference error √-amplified to first order. It came out **O(h) and cleanly so** —
+successive ratios 0.29 and 0.50 — with the voxel-unit ceiling resolution-invariant at ≈ 1.6 voxels
+(the `ρ·h/s` prediction seen from the other side: in voxels, `ρ·c/s` does not depend on `h`). The
+registered falsifier — an h-independent floor, the one outcome that killed Calibre, the throat
+metric and handholds together — did not fire. What a build inherits: at fixed world geometry the
+score's noise floor is ~1.6 voxels at the band's inner edge and halves with every resolution
+doubling; a λ-test needs λ comfortably above that floor at the coarsest resolution it will run at.
+
+**C1 falsified its own tolerance, not the transcription.** The failing rows' medians sit at
+1.5–3.3e-9 — twelve orders below the gap — and every corroborating read says the form is wired
+right: the 33³ slab matched at **2.8e-17** (true dust, 100% of 2,178 samples), C3's phase profile
+reproduced the derived closed form to four digits, and the wrong form missed by five orders more.
+What the registration got wrong is now a Part 5 rule: `d r/d(radicand) = ρ/(2√(1−u²))` is unbounded
+at the band's `u → 1` edge, so a uniform dust tolerance derived in the interior must lose the edge —
+the `clamped` column (up to 39% of a band) is the same fact, measured: `‖CD‖` crosses 1 by dust and
+the radicand goes negative. A tolerance of `dust · ρ/(2√(1−u²))`, per sample, is what C1 should have
+registered.
+
+**The first run aborted itself, and that is part of the record.** The inversion gate fired at 12.9%
+because the check populated the whole band instead of the registered mid-band; no clause was printed
+and no CSV written before the abort, so the operationalisation (derived-truth `u ∈ [0.2, 0.95]`) was
+fixed blind to outcomes. The whole-band number stays printed beside the mid-band one because the gap
+between them — 12.9% against 99.9% — is V-46's collapse mechanism, seen once more from inside the
+working instrument.
+
+**Recorded beside the registration:** the min-composition characterisation (three-sphere union
+against analytic true distance) was descoped from this run's fixtures during the redesign — it is a
+statement about brush-composed fields, not about the identity — and remains open for the Calibre
+build ticket to demand.
+
+**Consequence:** R-030 closes with the gate open: the identity is buildable-on, pending only O-19
+(the λ-filter direction, the last definitional discrepancy). ✗27/M-324's continuous-score reading
+now has its convergence constant.
+
+**Would be shown wrong by:** a 257³ run where the capsule floor's median stops halving; a fixture
+where the mid-band inversion passes the wrong form; or a C1 rerun with the per-sample amplified
+tolerance still losing rows — which would mean the residual is not representation dust after all.
