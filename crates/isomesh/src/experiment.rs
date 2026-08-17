@@ -412,6 +412,37 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "triangles",
         ],
     },
+    Preregistration {
+        id: "P-23",
+        ticket: "R-022a",
+        hypothesis: "Repairing the air sublevel set's connectivity after a \
+                     brush dig costs work proportional to the DIRTY SET and not \
+                     to the lattice. Concretely: at a fixed brush radius, the \
+                     number of union operations an incremental insertion-only \
+                     update performs is constant as the lattice grows through \
+                     33, 65 and 129 cubed, so unions divided by newly-air \
+                     samples stays inside a narrow band and never exceeds 6 -- \
+                     the degree of the lattice -- while a full rebuild's union \
+                     count grows as n cubed. Digging only ever inserts, and an \
+                     insert joins at most two trees with no replacement-edge \
+                     search, so a union-find is the entire structure.",
+        falsified_by: "The incremental union count growing with n cubed at a \
+                       fixed brush size. That is R-022's own stated falsifier \
+                       and it would mean edit-proportional repair is \
+                       unavailable even in the easy direction, which closes the \
+                       whole direction rather than only this half. Separately \
+                       falsified by unions per dirty sample exceeding 6, which \
+                       would mean the harness is visiting something other than \
+                       the six incident lattice edges and is measuring its own \
+                       traversal rather than the repair.",
+        records: &[
+            "samples_per_axis",
+            "dirty_samples",
+            "incremental_unions",
+            "rebuild_unions",
+            "unions_per_dirty",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

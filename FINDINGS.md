@@ -5074,3 +5074,44 @@ in `O(k log(1 + n/k))` work and `O(log² n)` span. At `n = 128³ ≈ 2.1M` and a
 **Consequence for the ticket:** it needs splitting before measuring, and the pre-registration must name
 which half it predicts. Measuring digging and reporting it as "dynamic connectivity" would be the
 easy half wearing the hard half's name.
+
+
+### P-23 — registered for R-022a, before the harness was written
+
+**What V-41 leaves.** R-022 asked whether batched dynamic connectivity sustains a brush-sized edit under
+1 ms at 128³, and V-41 found that is two questions. Digging removes solid, so air samples **appear** —
+insertion only, and Durfee et al.'s *"an insert can cause at most two trees in `F` to be joined"* means a
+union-find is the entire structure. Filling makes them vanish, needs a replacement-edge search, and is
+R-022b.
+
+**This registers the easy half, and says so.** Measuring digging and reporting it as *dynamic
+connectivity* would be the easy half wearing the hard half's name.
+
+> **H.** At a fixed brush radius, the number of union operations an incremental insertion-only update
+> performs is **constant as the lattice grows** through 33³, 65³ and 129³ — so unions per newly-air
+> sample stays inside a narrow band and **never exceeds 6**, the degree of the lattice — while a full
+> rebuild's union count grows as `n³`.
+
+**Falsified by** the incremental union count growing with `n³` at fixed brush size. That is R-022's own
+stated falsifier, and it would close the whole direction rather than only this half. **And separately**
+by unions per dirty sample exceeding **6**, which would mean the harness is visiting something other than
+the six incident lattice edges and is measuring its own traversal rather than the repair.
+
+**The second falsifier is the one that earns its place**, and it is E-208's rule in a new costume: the
+first arm can only fail if the *world* is a certain way, while the second fails if the *instrument* is.
+A harness that walked a 26-neighbourhood, or re-visited each edge from both ends, would produce a
+beautifully flat curve against `n³` and would still be wrong — flat is the answer H wants, so a flat
+reading is exactly where a bug would hide.
+
+**Counted, not timed.** Union calls are integers and identical on every machine, so the gate is a count
+and the wall-clock is printed beside it — ✗24's rule applied *before* the fact for once, rather than
+after a release failed on it.
+
+**Records** `samples_per_axis`, `dirty_samples`, `incremental_unions`, `rebuild_unions`,
+`unions_per_dirty`.
+
+**The number to read the result against is the paper's, not a stopwatch.** Acar et al. bound a batch of
+`k` updates by `O(k log(1 + n/k))` work; at `n = 128³ ≈ 2.1M` and a brush-sized `k ≈ 10³` the logarithmic
+factor is about **11**. H is the stronger claim that for *insertions alone* the factor is a constant
+under 6 rather than logarithmic — which is what a union-find buys and what a general dynamic-trees
+structure has to pay for because it also supports the deletions R-022b needs.
