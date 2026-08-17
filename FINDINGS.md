@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**414 entries** — 27 falsified, 320 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**415 entries** — 27 falsified, 321 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -386,6 +386,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-323` | the chunk is the bound; the cost is the edited chunk's share of the severed component, and the two differ by 35× (R-028) |
 | `M-324` | HELD on both clauses, and the exact zero is a coordinate-origin artifact (R-029) |
 | `M-325` | the discrete medial score converges O(h) and the mechanics live; the clause that died was C1's own tolerance derivation… |
+| `M-326` | FALSIFIED on both clauses, while the recorded columns show the mechanism both registered instruments missed (R-031) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1586,6 +1587,7 @@ Rules with no incident behind them get ignored. These all have one.
 
 | Rule | Earned from |
 |---|---|
+| **A percentile trim must be checked against the size of the mode it could eat** | P-29's C1 — the central-gap statistic dropped 1% tails from 8,128 edges (81 of them) while a winning wormhole path is at most ~63 edges (0.78%), so the detector trimmed away the exact mode it was registered to find, and the "unimodal" control scored a *higher* gap than the bimodal-expected arm. The winner-mode's minimum size was derivable from the lattice before any run — one input→output path — and never checked against the trim |
 | **A tolerance on a √-amplified quantity must be derived at the amplification's maximum, not at the population's comfortable middle** | P-28's C1 — a `1e-9·G` "float dust" tolerance held at `2.8e-17` in the band interior and lost 50–75% of rows at the band's `u → 1` edge, where `d r/d(radicand) = ρ/(2√(1−u²))` multiplies the same dust into `1e-9`. The amplification that killed the clause is the amplification C2 measures as signal; the tolerance was derived where the function is flat and applied where it is vertical |
 | **A precondition claim needs the sentence from the method's own paper, and "what it requires" is a different question from "what it guarantees"** | ✗20 — *"every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input"* was two conflations at once. A method that **preprocesses** bad input was read as one that **requires** clean input, when Andrews 2024 names preprocessing as an axis methods differ along; and VisACD's 35% intersecting-hull rate, which describes the hulls **CoACD emits**, was read as a condition on the mesh it is **given**. Two of the four methods audited require nothing at all, and CPD says so in one sentence |
 | **Verify a citation's *claims* and its *problem* separately. Three true claims do not make a method the right one** | ✗21 — A-026 chose CPD as the substrate a plane-cut fracture pipeline cuts, on three claims that all survived verification against the paper: input tolerance, *"guaranteed to enclose the input surface"*, under a third of the collider bytes. The architecture needed a fourth property nobody checked for — a **disjoint partition of the interior** — and CPD has none: Algorithm 1 merges the **face adjacency graph**, its §3.4 says *"the union of all primitives covers the mesh's surface"*, and §3.3 concedes the primitives overlap. **The abstract, which is where the three claims came from, never mentions any of this.** Worse, one of the verified claims was actively disqualifying: *enclosure* is the right guarantee for a collider and the wrong one for a substrate, because a proxy that strictly contains the solid cannot conserve its volume. **This is ✗20's rule one step out** — there it was "requires" vs "guarantees"; here it is "guarantees" vs "what you need" |
@@ -6665,3 +6667,70 @@ through. Both corrections precede any simulation output.
 
 **Records** `arm`, `ticks`, `years`, `breakthrough_years`, `max_gap_ln`, `bimodal`,
 `flux_top10_pct`, `gini_flow`, `max_da_over_a_pct`, `tick_ms_median`.
+
+### 💥 M-326 / P-29 — FALSIFIED on both clauses, while the recorded columns show the mechanism both registered instruments missed (R-031)
+
+> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉
+>
+> 🥇 **The pre-registered bimodality detector trimmed away the wormhole it was built to find — a 1%
+> tail cut on 8,128 edges eats an entire 63-edge winning path — and the pre-registered 90%
+> dissolution share is capped by the paper's own surface kinetics at a measured 78%, even as water
+> flux concentrated to a Gini of 0.976. Both clauses died; the competition, the winner, and the
+> recharge suppression are all visible in the recorded columns.**
+>
+> 🧪 **Tested by:** `cargo bench --bench experiment_p29` (P-29), `docs/experiments/p-29.csv`
+> 🎯 **Result:** C1 gaps 0.060 / 0.022 / 0.052 (hom / het / recharge) — all under the 0.2 threshold,
+> with the "unimodal" control *outscoring* the bimodal-expected arm; C2 dissolution share 16.1% /
+> 78.1% against a registered > 90%. Recorded: flow Gini **0.976** (het) vs **0.560**
+> (recharge-limited); the recharge arm dissolved the same at-breakthrough rock volume with **no
+> breakthrough at all**; het broke through before hom (23 vs 181 yr — the paper's ordering).
+> 📐 **Why it earns the banner:** 💥 two pre-registered clauses falsified instructively — one by an
+> instrument defect that was derivable before the run (the winner mode's minimum size is the
+> lattice's own input→output path length; a new Part 5 rule records it), one by a physical
+> correction to the dossier's number (surface kinetics rate-limits the winner while water flux
+> runs away). The detector's own red/green passed; what failed was never checked against the mode
+> size.
+> 💣 **Would be shown wrong by:** the trim-free, mode-guarded statistic (P-30) still reading no
+> gap on the constant-head arms — which would make the falsification the kinetics' after all.
+
+**M.** `cargo bench --bench experiment_p29`, `docs/experiments/p-29.csv`.
+
+| arm | ticks | years | breakthrough | max gap (trimmed) | flux top-10% | Gini(flow) |
+|---|---:|---:|---:|---:|---:|---:|
+| hom_seeded3 | 896 | 216.8 | 180.6 | 0.060 | 16.1% | 0.742 |
+| heterogeneous | 250 | 27.5 | 22.9 | 0.022 | 78.1% | **0.976** |
+| het_dt_control (5% cap) | 473 | 26.3 | 21.9 | 0.024 | 80.0% | 0.976 |
+| recharge_limited | 175 | 35.4 | **none** | 0.052 | 100.0% | **0.560** |
+
+**C1 falsified by the instrument, and the data says so from inside.** The registered statistic
+dropped 1% tails — 81 of 8,128 edges — while a winning wormhole path is at most one input→output
+chain, ~63 edges: the upper mode is smaller than the trim, so the detector returned the *bulk's*
+spacing on every arm and the ordering came out nonsensical (recharge 0.052 > het 0.022). Meanwhile
+the untrimmed columns carry the split: het's flow Gini 0.976 against recharge's 0.560, and the
+dt-control arm reproduced both readings at half the step, so discretisation is not the story.
+
+**C2 falsified by the physics, and that is the more interesting half.** Water flux concentrates as
+the paper says — but dissolution flux cannot follow it all the way, because the winner's edges are
+rate-limited at `k·P·l` by surface kinetics no matter how much undersaturated water passes, while
+small-flow edges each dissolve their entire inflow (`Q·c_eq`). Measured share at 1.2·T_B: **78%**,
+not the dossier's > 90%. The dossier's number was its own R-tier extrapolation; the corrected figure
+is now measured, and the "re-mesh cost decreases monotonically post-breakthrough" story it fed needs
+the 78% version.
+
+**The suppression is real and quantified.** With recharge capped at the head arm's own t = 0 inflow,
+the same cumulative rock volume that carried the competitive arm to breakthrough (5.54×10⁴ mol)
+produced no breakthrough, a flow Gini of 0.560, and dissolution parked at the input column — Perne,
+Covington & Gabrovšek's *"further expansion of the network is suppressed"*, as a number.
+
+**Recorded scale caveat:** breakthrough times are ~8–25× shorter than the paper's (a 63-fracture
+domain at ~3× the per-fracture gradient); the paper comparison was registered as an ordering, not a
+magnitude, and the ordering held.
+
+**Consequence:** the kinetics are *not* convicted — the registered detector was. P-30 re-registers
+C1 only, with the trim replaced by a mode-size guard derived from the lattice (a gap counts only
+with ≥ 8 edges on each side; the smallest possible winner mode is 63). C2 is answered and closed at
+78%.
+
+**Would be shown wrong by:** P-30's guarded statistic still finding no gap on the constant-head
+arms; or a finer-domain rerun showing the 78% share was an artifact of the 1.2·T_B evaluation epoch
+rather than of the kinetics cap.
