@@ -6253,3 +6253,48 @@ M-318 already says the encoding is not the cost.
 pure function of the grid and the field rather than of call history — which would keep the third run
 meaningful. Nothing in M-318's three shapes is that, but the ticket has not been asked the question in
 those terms.
+
+### P-27 — registered for R-029, before the harness was written
+
+**What M-172 is and is not.** M-172 measured `BrushStack::gradient` returning exactly `[0.0, 0.0, 0.0]`
+on a wall slab's mid-plane and the row reads as "the gradient is exactly zero on the medial axis". The
+dossier's correction (§4.1, from the Attali/Boissonnat/Edelsbrunner survey, READ): on the medial axis
+generally `‖∇ρ‖ = cos(θ/2)` where θ is the separation angle of the two nearest boundary points — an
+exact zero needs them antipodal, θ = π, which is a slab's mid-plane and nothing else a player digs. And
+even the slab case should die under a sub-voxel translation, because the zero is a cancellation the
+sampling lattice happens to sit on, not a property the field carries with it.
+
+> **H.** Offsetting the slab's mid-plane by half a voxel takes the count of lattice samples whose
+> default `Sdf::gradient` returns exactly `[0, 0, 0]` from one full lattice plane (65² = 4,225 at 65³)
+> to **zero**, while the count of sub-voxel probes with voxel-step central-difference `‖∇ρ‖ < 0.1`
+> changes by **< 5%**.
+
+**Two populations, because on one of them the second clause is vacuous.** Under voxel-step central
+differencing a slab's gradient magnitude at distance `d` from the mid-plane is exactly `d/h` for
+`|d| < h`, so the sub-threshold set is the band `|d| < 0.1h` — thickness `0.2h`, thinner than the
+lattice pitch. Counted on the voxel lattice itself, clause 2 collapses from one full plane to zero
+under *any* misalignment and would be false for the instrument's reason rather than the field's. The
+registered instrument is therefore split: clause 1 on the voxel lattice with the default gradient
+(M-172's actual instrument, `DIFF_STEP`-scaled), clause 2 on a fixed regular probe lattice of pitch
+`h/200` spanning `|y| ≤ 2h`, gradient by `normals::central_difference` at step `h` — the voxel regime a
+game actually has. Derived, not tuned: a width-`0.2h` window sliding over a pitch-`h/200` lattice holds
+40 ± 1 probes, so the worst count change any rigid offset can produce is **1/40 = 2.5%** — half the
+registered bound, and the margin between the two numbers is exactly the room left for the discrete band
+to misbehave.
+
+**Falsified by** exact zeros surviving the offset — the discrete gradient doing something the
+continuous identity does not describe, a question R-030 would inherit before anything else runs. Clause
+2 separately falsified by the band count moving more than 5%, which the 2.5% instrument bound says can
+only happen if the discrete band is not the rigid `0.2h` ramp the arithmetic assumes.
+
+**The fixture is exact on purpose.** `h = 2⁻⁴` over `[-2, 2]`, offset `2⁻⁵`, slab half-thickness `0.5`
+— every lattice coordinate and both plane positions representable, so an exact zero is a property of
+the field and not of a rounding accident, and `y = 0` lands on the lattice by construction. A generic
+`y₀` would manufacture clause 1's confirmation out of floating point.
+
+**Inversion, in the harness before the verdict is read:** a third probe pass at voxel pitch must show
+the ≈100% collapse — the > 5% branch demonstrated reachable, and the vacuity trap the registration
+routes around documented as a row rather than a footnote. And a full-voxel offset must bring the exact
+zeros back: the cancellation is the lattice's, and re-aligning the lattice must re-create it.
+
+**Records** `arm`, `offset_voxels`, `exact_zeros`, `band_count`, `probe_pitch_voxels`.

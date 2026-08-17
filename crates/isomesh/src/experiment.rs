@@ -570,6 +570,41 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "rebuild_visited",
         ],
     },
+    Preregistration {
+        id: "P-27",
+        ticket: "R-029",
+        hypothesis: "Offsetting a slab's mid-plane by half a voxel takes the \
+                     count of lattice samples whose default SDF gradient is \
+                     exactly [0,0,0] from one full lattice plane (65-squared = \
+                     4,225 at 65 samples per axis) to ZERO, while the \
+                     medial-stability population -- sub-voxel probes with \
+                     voxel-step central-difference gradient magnitude under \
+                     0.1 -- changes by less than 5 percent. Two populations \
+                     on purpose: the sub-threshold set is a band of thickness \
+                     0.2h, thinner than the lattice pitch, so counted on the \
+                     voxel lattice itself clause two would be vacuously false \
+                     under ANY misalignment. On the registered probe lattice \
+                     of pitch h/200 the worst change a rigid offset can \
+                     produce is 1/40 = 2.5 percent -- derived, half the \
+                     registered bound, and the margin between them is the \
+                     room for the discrete band to misbehave.",
+        falsified_by: "Exact zeros surviving the half-voxel offset -- the \
+                       discrete gradient is doing something the continuous \
+                       identity does not describe, and R-030 inherits that \
+                       question before anything else runs. Clause two is \
+                       separately falsified by the band count moving more \
+                       than 5 percent, which the derived 2.5 percent \
+                       instrument bound says can only happen if the discrete \
+                       band is not the rigid 0.2h ramp the arithmetic \
+                       assumes.",
+        records: &[
+            "arm",
+            "offset_voxels",
+            "exact_zeros",
+            "band_count",
+            "probe_pitch_voxels",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
