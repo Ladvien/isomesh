@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**396 entries** — 25 falsified, 308 measured, 43 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**397 entries** — 25 falsified, 309 measured, 43 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -372,6 +372,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-311` | HELD on both clauses that were about the world, and the clause about the comparison was wrong (R-022a) |
 | `M-312` | FALSIFIED before it ran, on arithmetic; and the margin that replaces it is bounded by half the field's scale (R-023) |
 | `M-313` | R-023's hypothesis is falsified: a margin threshold acts away from where the published algorithms disagree (R-023) |
+| `M-314` | the computation after a local edit is edit-proportional; the output buffer throws that away, and the culprit is a counte… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -5431,3 +5432,57 @@ scalar field**. What it may not: priority over self-adjusting computation in mes
 **Would be shown wrong by:** a paper applying self-adjusting computation or change propagation to a
 *scalar-field* isosurface specifically, which is the exact gap this narrows to and which the ticket's own
 five-database sweep reports as empty.
+
+
+### M-314 — the computation after a local edit is edit-proportional; the *output buffer* throws that away, and the culprit is a counter (R-020)
+
+**M.** `cargo bench --bench edit_trace`, `docs/measurements/edit_trace.csv`. A sphere sampled at 33³,
+65³ and 129³; one spherical brush of radius 5 carved at its equator, **identical at every resolution**;
+Marching Cubes. Every column is a count.
+
+**No `P-` id, and that is deliberate.** This phase registered two clauses whose arithmetic died on
+contact (P-23 clause 3, P-24 entirely) and got one right by measuring first (M-313). This measured
+first. R-020's H — *"the recorded trace changes proportionally to the number of cells touched, not to
+grid size"* — was written in the phase spec before any of this ran, so it is a prediction in prose; it
+was never in `experiment.rs`, so it has no compile-time guarantee and should be read as the weaker
+thing it is.
+
+| n | cells | dirty cells | case changed | vertices | **buffer moved** | **geometric moved** | first moved |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 33 | 32,768 | **792** | 432 | 1,758 | 1,348 (77%) | **330** | 414 |
+| 65 | 262,144 | **792** | 412 | 6,918 | 4,257 (62%) | **322** | 2,609 |
+| 129 | 2,097,152 | **792** | 500 | 27,822 | 15,706 (56%) | **346** | 12,257 |
+
+**The computation side holds, and holds exactly.** The lattice grows **64×** — 32,768 cells to 2,097,152
+— and the dirty set does not move by one: **792 cells** at every resolution, from 515 changed samples.
+That is comfortably inside the `8k = 4,120` bound arithmetic gives, since each sample is a corner of at
+most eight cells. Cells whose **case index** actually changed stay at 412–500 throughout. **R-020's
+hypothesis is confirmed on this half.**
+
+**The output side is not edit-proportional and the gap grows with the grid.** Vertices that genuinely
+appeared or vanished — compared as a *set of positions*, not by index — are **330, 322, 346**: flat,
+edit-proportional, and about the size of the dirty set. Vertices whose **buffer slot** changed are
+**1,348, 4,257, 15,706**: growing, and **56–77% of the entire buffer**. The ratio between them goes
+**4.1× → 13.2× → 45.4×**, tracking the vertex count, which is `O(n²)` for a surface.
+
+**So more than half the output is rewritten for an edit that touches 0.038% of the cells**, and the
+cause is identified rather than inferred: `first moved` is **12,257** of 27,822 at 129³, and essentially
+everything from there on differs. **Vertices are appended in scan order and indices name buffer
+positions**, so a cell emitting a different *number* of triangles shifts every index after it. A
+sequential counter is the classic instability in Acar's sense, and the field's locality does not protect
+against it.
+
+**The control is what makes both numbers mean anything (E-208).** An index-wise diff cannot tell *the
+surface moved* from *the buffer was reshuffled*, and it reports the same large number either way. The
+set-difference column separates them, and it is the column that turns this from "re-meshing is
+expensive" into "**re-meshing is cheap and the encoding is expensive**".
+
+**What this says R-020 can claim, with V-43's narrowing already applied.** The dependency structure of
+Marching Cubes *is* stable under a local field edit — measured, at three grid sizes, with the dirty set
+constant. What is not stable is the crate's **output encoding**, and that is a fixable property of the
+implementation rather than of the algorithm: the crate already names vertices stably *internally* — the
+edge cache is keyed on `(lower sample, axis)` — and then discards that naming when packing the buffer.
+
+**Would be shown wrong by:** an edit that changes the case of cells far from the brush, which would
+break the 792 constant. The sphere is smooth and the brush is compact; a field with long-range structure
+through one cell — a thin sheet, `noise_cavity` — is the case that could differ, and was not run.
