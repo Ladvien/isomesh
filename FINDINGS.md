@@ -6734,3 +6734,28 @@ with ≥ 8 edges on each side; the smallest possible winner mode is 63). C2 is a
 **Would be shown wrong by:** P-30's guarded statistic still finding no gap on the constant-head
 arms; or a finer-domain rerun showing the 78% share was an artifact of the 1.2·T_B evaluation epoch
 rather than of the kinetics cap.
+
+### P-30 — registered for R-031, before the corrected instrument ran; P-29's prediction with the trim replaced by a mode guard
+
+**The M-289 shape, deliberately.** P-29's bimodality clause was falsified by its own detector's trim
+(M-326); this registration re-asks the *same* question with the defect removed and nothing else
+changed — the same deterministic runs, seeds and constants, re-read. The correction is derivable
+without the data: a winning wormhole path is at least one input→output chain, **63 edges** on this
+lattice, so the guard requires **≥ 8 edges on each side** of a candidate gap (0.1% — eight-fold
+below the smallest possible winner mode, eight-fold above single-edge outliers) and drops the
+percentile trim entirely.
+
+> **H.** With the guarded statistic — max gap in sorted `ln a` over all 8,128 edges, qualifying only
+> with ≥ 8 edges on both sides, threshold 0.2 — the constant-head arms (3-seed homogeneous,
+> lognormal heterogeneous) read **bimodal** post-breakthrough and the recharge-limited arm reads
+> **unimodal** at the same at-breakthrough dissolved volume. Recorded beside it: the water-flux
+> top-10% share, next to the dissolution share M-326 closed at 78%.
+
+**Falsified by** no qualifying gap on either constant-head arm — which, with the guard in place,
+would mean the aperture histogram genuinely is not gapped-bimodal: the dossier's tier-R "bimodal"
+reading dies, and the competition claim stands on the concentration columns M-326 already measured
+(flow Gini 0.976 vs 0.560; suppression at matched rock volume). The positive-feedback premise itself
+is convicted only if those columns also regress, which M-326 shows they do not. The detector's
+red/green (synthetic +4σ half-shift, t = 0 lognormal) runs again before any verdict.
+
+**Records** the P-29 columns plus `guarded_gap_ln`, `guarded_bimodal`, `flux_water_top10_pct`.

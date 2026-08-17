@@ -703,6 +703,55 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "tick_ms_median",
         ],
     },
+    Preregistration {
+        id: "P-30",
+        ticket: "R-031",
+        hypothesis: "P-29's clause one with its INSTRUMENT replaced and its \
+                     prediction unchanged; the falsification is M-326. The \
+                     central-gap detector trimmed 1 percent tails -- 81 of \
+                     8,128 edges -- while a winning wormhole path is at most \
+                     one input-to-output chain of 63 edges, so the registered \
+                     statistic ate the mode it was looking for. Replaced: no \
+                     trim; a split counts as bimodal only when the gap in \
+                     sorted ln(a) is at least 0.2 AND both sides hold at \
+                     least 8 edges -- 0.1 percent, eight-fold below the \
+                     smallest possible winner mode (the lattice's own path \
+                     length, 63, knowable before any run) and eight-fold \
+                     above single-edge outliers. Unchanged: under constant \
+                     heads the post-breakthrough aperture distribution is \
+                     bimodal on both the seeded-homogeneous and \
+                     lognormal-heterogeneous nets, and the recharge-limited \
+                     arm stays unimodal at the same at-breakthrough \
+                     dissolved volume. Recorded beside it: the water-flux \
+                     top-10-percent share, next to the dissolution share \
+                     M-326 closed at 78 percent.",
+        falsified_by: "No qualifying gap on either constant-head arm. With \
+                       the mode guard in place that verdict would mean the \
+                       aperture histogram is genuinely not gapped-bimodal -- \
+                       the dossier's tier-R bimodality reading dies, and the \
+                       competition claim rests on the concentration columns \
+                       M-326 already measured (Gini 0.976 against 0.560). \
+                       The positive-feedback premise itself is convicted \
+                       only if those concentration columns also regress, \
+                       which M-326 shows they do not. Instrument-falsified, \
+                       as before, if the recharge arm reads bimodal while \
+                       the t-zero green also fails; the synthetic red and \
+                       t-zero green run again before any verdict is read.",
+        records: &[
+            "arm",
+            "ticks",
+            "years",
+            "breakthrough_years",
+            "max_gap_ln",
+            "guarded_gap_ln",
+            "guarded_bimodal",
+            "flux_top10_pct",
+            "flux_water_top10_pct",
+            "gini_flow",
+            "max_da_over_a_pct",
+            "tick_ms_median",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
