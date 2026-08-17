@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**392 entries** — 25 falsified, 306 measured, 41 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**393 entries** — 25 falsified, 306 measured, 42 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -411,6 +411,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-39` | the comparable triangle-quality baseline is Grosso & Zint's, not FlexiCubes', and it comes with a prediction (T-026) |
 | `V-40` | Open SciVis Datasets is HTTP-only, and the publisher's own SHA-512 is what makes that fine (M-006) |
 | `V-41` | R-022's hypothesis is two problems with different costs, and a voxel lattice is the easy case for one of them (R-022) |
+| `V-42` | R-023's quantity does not exist as stated, and the one that does is a decision margin rather than a persistence (R-023) |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -5165,3 +5166,92 @@ union-find's path compression matters — the counts here are all from a single 
 rock, and `merges` is therefore close to `unions`. A field with many small pre-existing cavities would
 exercise the find path harder without changing the union count, which is a different measurement rather
 than a contradiction.
+
+
+### V-42 — R-023's quantity does not exist as stated, and the one that does is a decision margin rather than a persistence (R-023)
+
+**V.** Read from this crate's own `marching_cubes::interior`, against Edelsbrunner, Letscher &
+Zomorodian (`10.1007/s00454-002-2885-2`, in corpus) and Kissi, Pont, Levine & Tierny
+(`10.48550/arXiv.2407.12399`, in corpus, the paper R-023 names). Done **before** registering, which is
+the P-23 lesson applied.
+
+**The good news first, and it is better than the ticket hoped.** `Interior::test()` is not a table
+lookup. It is a **sign test on a value**: `Joined` iff `saddle(t) > 0` for some `t` in the sweep. So a
+thresholded version is not a replacement for the decider — it is a **one-parameter family containing
+it**, with `ε = 0` recovering the published test *exactly*. R-023's H says a persistence threshold
+*"reproduces MC33's topology on the fields where MC33 is agreed correct"*; on this construction that
+clause is **true by construction rather than by measurement**.
+
+**The bad news, and it is the arithmetic the ticket did not do.** `saddle(t) = numerator(t) /
+denominator(t)`, and `pole()` exists precisely because the denominator **has a root in `(0, 1)`** on
+some configurations. So `max_t saddle(t)` is **unbounded** — `+∞` — on exactly the cells Custodio's
+correction is about, which are exactly the cells R-023 exists to resolve. **The naive margin does not
+exist where it is needed.** This crate's own doc comment says why: *"as the sweep approaches `pole` the
+saddle runs off to infinity and returns from the other side. A point that leaves `[0, 1]²` has left the
+face, which is why the value there can change sign without the numerator doing anything."*
+
+**What is bounded and meaningful is the body-saddle value of the trilinear interpolant.** `F(s)` at an
+interior body saddle is a genuine **critical value**, has the field's units, and is the value at which
+this cell's topology changes as the isovalue sweeps — which is the quantity a filtration is about.
+`BodySaddles::of` already locates `s` and reports which saddles are interior; only a trilinear evaluator
+is missing, and that is eight terms.
+
+**Now the honest scoping the ticket demanded, and it is a narrowing.** Persistence pairs a **creator**
+with a **destroyer**, both critical points, and reports the lifetime between them. `|F(s)|` pairs a
+critical value with the **isovalue**, which is not a critical point. It is therefore **not a persistence
+pair** and calling it persistence without qualification would overclaim — the third such overclaim this
+phase has caught before it shipped, after V-38 and V-39.
+
+**What it is instead:** the **decision margin** — how far the isovalue would have to move for the
+interior ambiguity to flip. It has the shape of a persistence (a function-value difference at a topology
+change) and inherits the reason persistence is worth having (stability under perturbation), and it is a
+distance-to-a-critical-value rather than a critical-pair lifetime. **That is exactly the claim to make,
+and R-023's own instruction was to claim exactly what is true**: *"This does not remove the modelling
+choice — it relocates it."* It relocates it into a margin, not into a persistence.
+
+**Consequence for the ticket, and it survives intact.** Everything R-023 wants — a computable scalar, a
+tunable threshold, a stability argument, retiring a disputed 730-entry table in favour of one knob — is
+available from `F(s)`. What changes is the name and one line of the pitch.
+
+**Would be shown wrong by:** a bounded reformulation of `max_t saddle(t)` that stays finite through the
+pole — restricting `t` to where `saddle_position(t)` lies inside `[0, 1]²` is the obvious candidate and
+was not pursued, because the body-saddle value is simpler and is already a critical value.
+
+
+### P-24 — registered for R-023, before the harness was written
+
+**What V-42 leaves.** R-023 proposed thresholding a tunnel's *persistence*. That quantity does not exist
+as stated — `max_t saddle(t)` is unbounded through the pole, on exactly the cells the ticket is about —
+and the quantity that does exist is the **body-saddle value** `F(s)`, a genuine critical value of the
+trilinear interpolant. It is a **decision margin**, not a persistence pair, and V-42 says why the
+distinction is worth keeping.
+
+**The claim is structural, and deliberately carries no tuned constant.** `Interior::test()` is
+`saddle(t) > 0` for some `t`. If `F(s)` is the quantity that test is a sign of, the two must agree
+wherever Chernyaev's construction is exact — and Custodio's whole correction is that it is **not** exact
+when the sweep's denominator has a root inside `(0, 1)`, because the tracked saddle has left the face.
+
+> **H.** `sign(F(s))` agrees with `Interior::test()` on **every** ambiguous cell whose sweep has **no
+> pole in `(0, 1)`**, and **every** disagreement between them has a pole inside the sweep.
+
+**Falsified by** a disagreement on a cell with **no** pole. Chernyaev's quadratic is exact there, so a
+difference would mean the body-saddle value is not what the interior test is a sign of, and the
+reframing collapses rather than needing a tolerance. **There is no percentage band to hide in**, which
+is the point: after M-309's clause-2 band failed for being pointed at the wrong input class, a
+structural claim is worth more than a tuned one.
+
+**And separately falsified by universal agreement**, including on the poled cells. That would mean
+Custodio's correction is unreachable on this crate's fields and the census cannot discriminate — a null
+that indicts the **fixture** rather than the hypothesis, and would send this to constructed cells the
+way A-021 and M-294 went. Registering that arm is E-208's rule: an instrument that cannot report the
+interesting case has not reported its absence either.
+
+**Records** `field`, `samples_per_axis`, `ambiguous_cells`, `agreements`, `disagreements`,
+`disagreements_with_pole`, `disagreements_without_pole`.
+
+**What holding buys, stated so it cannot inflate later.** Not "persistence resolves Marching Cubes
+ambiguity". It buys: **the interior decider is the `ε = 0` member of a one-parameter family**, the
+parameter is a margin in the field's own units, and a caller who wants tunnels below a size suppressed
+gets a knob instead of a fork. A-002b, A-002i and A-020b are *not* retired by that on its own — they are
+about which topology to emit, and this is about how confidently the cell was classified. **The ticket's
+"retires three tickets" is the thing most likely to be overclaimed here**, and it is not what H says.

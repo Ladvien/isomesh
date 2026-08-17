@@ -443,6 +443,40 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "unions_per_dirty",
         ],
     },
+    Preregistration {
+        id: "P-24",
+        ticket: "R-023",
+        hypothesis: "The trilinear body-saddle value F(s) is a DECISION MARGIN \
+                     for the interior ambiguity, not merely correlated with it: \
+                     sign(F(s)) agrees with Interior::test() on every ambiguous \
+                     cell whose sweep has NO pole in (0, 1), and every \
+                     disagreement between them has a pole inside the sweep. A \
+                     pole is the term Chernyaev's test drops and is what \
+                     Custodio's Figure 6 counterexample is built from, so that \
+                     is where the published algorithms part company and is the \
+                     only place H permits a difference. Thresholding |F(s)| at \
+                     epsilon is then a one-parameter family whose epsilon = 0 \
+                     member is the published decider exactly.",
+        falsified_by: "A disagreement on an ambiguous cell whose sweep has no \
+                       pole in (0, 1). Chernyaev's quadratic is exact there, so \
+                       a difference would mean the body-saddle value is not the \
+                       quantity the interior test is a sign of, and the whole \
+                       reframing collapses rather than needing a tolerance. \
+                       Separately falsified if the two agree on every cell \
+                       INCLUDING the poled ones, which would mean Custodio's \
+                       correction is unreachable on this crate's fields and the \
+                       census cannot discriminate -- a null that says the \
+                       fixture is wrong rather than the hypothesis.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "ambiguous_cells",
+            "agreements",
+            "disagreements",
+            "disagreements_with_pole",
+            "disagreements_without_pole",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
