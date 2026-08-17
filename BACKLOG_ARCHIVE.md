@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-202 tickets. Line numbers are stable until something above them is edited — grep the ID if
+203 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1548,3 +1548,6 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > **The global graph is rebuilt from scratch on every restitch**, which is the one thing ✗26 leaves a union-find safe to do: it only ever unions. It is affordable because its nodes are *components*, not samples. The `O(cells²)` part — scanning a shared plane for label pairs — is cached per seam and recomputed only for seams touching a chunk that changed.
 > 
 > **One API edge surfaced by the tests and now documented on `component_at`**: chunks `0..k` answer for global samples `0..k·cells`, and the plane at `k·cells` belongs to chunk `k`. A consumer covering a finite region loads one chunk beyond it — the same thing it already does to mesh that region's far face.
+
+| ☑ | **R-029** | **The exact-zero medial reading dies at half a voxel — probably.** Dossier §4.1: M-172's *"an SDF gradient is exactly zero on its medial axis"* describes one measure-zero point of the axis, not the axis. On the axis generally `‖∇ρ‖ = cos(θ/2)` where θ is the separation angle (Attali, Boissonnat & Edelsbrunner `10.1007/b106657_6`, in corpus, READ in full), and exact zero needs θ = π — the two nearest boundary points antipodal, which is a slab's mid-plane and nothing a player actually digs. **H:** offsetting the slab's mid-plane by half a voxel takes the count of samples returning exactly `[0,0,0]` to **zero**, while the count with `‖∇ρ‖ < 0.1` changes by **< 5%**. **Falsified by:** exact zeros surviving the offset — the discrete gradient is doing something the continuous identity does not describe, and R-030 inherits the question before anything else runs. **On confirmation M-172 gets its amendment the way ✗-rows always do** — old reading left visible; retire "exact zero detects the axis", adopt "`‖∇ρ‖` magnitude scores medial stability". **FINDINGS:** `M-`, plus the M-172 amendment. | S | — |
+> **DONE 2026-08-17 — M-324 / P-27 HELD on both clauses, ✗27 written, M-172 amended in place.** Exact zeros **4,225 → 0** at half a voxel; the `‖∇ρ‖ < 0.1` band moved **0.00%** against a derived 2.5% instrument bound and the registered 5%. Two traps were caught *before the first measurement* and are part of the record: counted on a single voxel lattice, clause 2 is vacuously false for the instrument's reason (the band is `0.2h` thick), so the registration split the populations; and the registration's own "full-voxel offset restores the zeros" inversion was arithmetically wrong — corrected pre-run to a computed **3,136 of 4,225** partial restore, which the run hit exactly. The exact zero is a *coordinate-origin* artifact, not merely a lattice-alignment one. The medial line re-opens on `‖∇ρ‖` as a continuous stability score; R-030 gates what may be built on it.

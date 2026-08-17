@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**409 entries** — 26 falsified, 318 measured, 45 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**411 entries** — 27 falsified, 319 measured, 45 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -65,6 +65,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗24` | "Empty-cell rejection benefits every field, however little" |
 | `✗25` | "Marching Cubes is the only one of the family in the good corner of manifold × intersection-free" |
 | `✗26` | P-25's mechanism clause is false, and P-25's own falsifier is what named it (R-022b) |
+| `✗27` | "an exactly-zero SDF gradient detects the medial axis" |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -383,6 +384,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-321` | HELD on the measured distribution, and the adversarial fixture it demanded costs 1.1× a full rebuild (R-022b) |
 | `M-322` | chunking makes the bisect bounded rather than cheap, and the advantage is exactly the chunk count (R-028) |
 | `M-323` | the chunk is the bound; the cost is the edited chunk's share of the severed component, and the two differ by 35× (R-028) |
+| `M-324` | HELD on both clauses, and the exact zero is a coordinate-origin artifact (R-029) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1104,7 +1106,7 @@ added because none of the other seven produces a cell with an interior ambiguity
 | M-176 | **Zero-padding a reduction is transparent, negative zero included — and the reason is the accumulator's seed, not the sort.** A-016 reduces over twelve slots keyed by edge label with absent edges at `R::ZERO`, so the padding question is load-bearing: a twelve-slot reduction over three real terms must give the same bits as a three-slot one or every cell with fewer than twelve crossings would answer differently for nothing. It does. The one place an exception was predicted — every real term `−0.0`, where the padded form was expected to return `+0.0` against an unpadded `−0.0` — **does not occur**, because `sum_equivariant` seeds at `R::ZERO` and `+0.0 + (−0.0)` is `+0.0` under round-to-nearest, so *both* return `+0.0` | A-016, `negative_zero_survives_padding_because_the_accumulator_starts_positive`. The predicted exception came from reasoning about the sorted sequence and forgetting the seed. Pinned in both directions rather than deleted, because the golden hash deliberately distinguishes signed zero and this is exactly the kind of claim that gets re-derived wrongly later |
 | M-177 | **Reordering cannot buy negation equivariance, and the obstruction is structural rather than a missing tie-break.** A-016's brief was to make the QEF accumulation "a function of the set of terms". Permutation invariance is achievable and is delivered. `φ(−S) = −φ(S)` is **not achievable by any ordering rule**: a magnitude tie group holds `m` copies of `−c` and `n` of `+c`, negation swaps those counts, and no order that is a function of the multiset can map the group onto its own reverse unless `m == n`. Witness: `[1e-16, +1, −1]` sums to `1.11e-16`, its negation to `0` | A-016, `negation_equivariance_is_not_achievable_by_ordering_and_here_is_the_witness`. **This bounds what ✗12's "bit-exact equivariance" can mean for a sum of *components*.** A lattice rotation can negate a component, so a sum of positions or of normal-outer-product entries is not bit-exactly equivariant under the full octahedral group by this route — where the three-term dot product is, for M-175's reason. The property the extractors actually need and now have is the weaker, sufficient one: the vertex is a function of the crossings, not of the edge labels they arrived under. Anything stronger needs exact summation, not a better sort |
 | M-178 | **A-016 moved 34 of 168 golden rows, not the 42 predicted, and the 8 that held identify their own mechanism.** All 21 dual-contouring rows and all 21 manifold rows were expected to shift, since both share the solve path. 17 of 21 did, twice over: **34 hashes changed, 0 vertex or triangle counts changed**, and no algorithm outside those two was touched. The four that held are `box_exact` and `thin_plate` at **17³ and 33³** — the two axis-aligned fields at the two resolutions whose cell size is a binary fraction of the domain (`16` and `32` cells; `25³`'s `24` is not). On axis-aligned geometry at an exactly-representable spacing the crossing coordinates are exact, their sums are exact, and reordering cannot change a result that was never rounded — which is why the same two fields *did* move at 25³ | A-016. **This is M-94's fixture trap in its useful direction**: the fields that are easiest to reason about are also the ones least able to detect a floating-point defect, and a suite that only used them would have reported this fix as a no-op |
-| M-172 | **A signed distance field's gradient is exactly zero on its medial axis, and for a slab the medial plane is precisely where you would aim.** `game_destruction` fires charges at `Vec3::new(u * 1.9, v * 1.5, 0.0)` — `z = 0` is the wall slab's mid-plane, equidistant from both faces — and `BrushStack::gradient` there returns `[0.0, 0.0, 0.0]`, measured on two consecutive shots. On a third, off-centre shot it returned `[0.17, 0.98, 0.00]`: non-zero, and pointing **along** the wall rather than out of its face, because the nearest surface to that charge was the top edge | E-204's z-fighting fix. "Which way is out of the solid" reads as the obvious use for a gradient and is wrong twice over here — it is undefined exactly where the geometry is symmetric, and where it is defined it names the nearest surface, which is not necessarily the one you meant. **The general rule is that a gradient answers "where is the nearest surface", never "which way did the projectile go"**; the second question needs a second piece of information, and in this case the camera already had it |
+| M-172 | **A signed distance field's gradient is exactly zero on its medial axis, and for a slab the medial plane is precisely where you would aim.** `game_destruction` fires charges at `Vec3::new(u * 1.9, v * 1.5, 0.0)` — `z = 0` is the wall slab's mid-plane, equidistant from both faces — and `BrushStack::gradient` there returns `[0.0, 0.0, 0.0]`, measured on two consecutive shots. On a third, off-centre shot it returned `[0.17, 0.98, 0.00]`: non-zero, and pointing **along** the wall rather than out of its face, because the nearest surface to that charge was the top edge | E-204's z-fighting fix. "Which way is out of the solid" reads as the obvious use for a gradient and is wrong twice over here — it is undefined exactly where the geometry is symmetric, and where it is defined it names the nearest surface, which is not necessarily the one you meant. **The general rule is that a gradient answers "where is the nearest surface", never "which way did the projectile go"**; the second question needs a second piece of information, and in this case the camera already had it. **⚠ AMENDED 2026-08-17 — the medial-axis reading is retired (✗27, M-324). The measurement stands; the detector does not.** The zeros are real and reproduce — 4,225 of 4,225 on an aligned slab — but they are the sampling arithmetic's, not the axis's: half a voxel of plane offset takes them to 0 while the field's `‖∇ρ‖ < 0.1` band moves 0.00%, and even a full-voxel re-alignment restores only 3,136, because the cancellation needs the plane at the coordinate origin. On the axis generally `‖∇ρ‖ = cos(θ/2)`, zero only for antipodal nearest points — a slab's mid-plane and nothing a player digs. Read `‖∇ρ‖` as a continuous stability score, never a boolean detector; do not build on this row's headline — quote ✗27 |
 | M-173 | **Two coincident surfaces are not a rendering bug to be biased away, they are a modelling statement — and the fix is to stop the geometry coinciding.** `game_destruction`'s fragment is `solid ∩ charge` and its crater is `solid − charge`, so the two share a surface *exactly*: the same sphere, extracted twice from two different fields. A fragment left at rest in the hole it came from renders as a chunk fused into the wall | E-204. **Velocity alone did not fix it, measured**: some fragments leave at 9 m/s while others sit at the impact with a velocity of **0.004 and no response to gravity**, on bodies whose mass is a healthy **1.19** and whose sleeping is disabled — so the cause is inside avian's solver and not somewhere the example can reach. What does fix it is spawning the fragment at the **mouth** of the crater rather than inside it: a fragment that fails to move then fails *clear of the wall*, which is the only place its faces are not coincident by construction. **Depth bias would have been the wrong instrument** — it would hide the overlap at one camera angle and not another, where moving the geometry removes the overlap at every angle |
 | M-171 | **A shipped example panicked on every run, and three siblings carried the same race unfired.** `game_terrain_stream` dies with *"Entity despawned: the entity with ID 404v0 is invalid; its index now has generation 1"* — `attach_meshes` queues `commands.entity(e).insert(Mesh3d…)` for a chunk in the same frame the streamer queues `commands.entity(e).despawn()`, and whichever order the queue flushes, the insert can land on a dead entity | Found while re-recording the README's GIFs, not by a test — nothing in CI opens a window, so no example is ever *run*. `game_walk`, `game_showcase` and `game_capsule_walk` have the identical pattern and had simply never streamed aggressively enough to hit it. Fixed with `try_insert` at all five sites. **That is not a swallowed error and the distinction matters here**: attaching a mesh to a chunk that no longer exists is *vacuous*, not degraded — there is no other thing it could correctly do — where a fallback would be picking a different, worse outcome for the same input. **The gap this exposes is coverage, not the fix**: 30 examples compile in CI and none of them runs, so a panic on frame 200 is invisible until a human launches it |
 | M-174 | **CI has been red on every push of the GPU series, and behind the one accepted failure three unrelated ones accumulated unseen — including the two that block the release itself.** The `test (ubuntu)` job runs `cargo test --workspace --all-targets` and GitHub's ubuntu runners expose no GPU adapter, so every isomesh-gpu device test has panicked there since GPU-001 (`headless.rs` refuses software rasterisers by design — GPU-009, M-147 — so there is nothing to fall back to; macOS runners expose Metal and stayed green). With that job red as the norm, nobody saw: (1) the lint job's rule-2 gate `grep -ril bevy crates/` matching **11 files** — every one a comment, README or manifest note *explaining* the wgpu-follows-Bevy pin, zero dependencies (verified: non-comment `.rs` matches = 0, comment-stripped manifest matches = 0, resolved-graph bevy count = 0); (2) the msrv job failing because `rust-version = "1.85"` was never true once isomesh-gpu existed — **wgpu/naga 29.0.3 and 29.0.4 both declare 1.87** (registry index), and the dev graph's `wide`/`safe_arch` (via parry3d) declare **1.89**, while `bevy_isomesh` claimed 1.85 against Bevy 0.19's own **1.95**; (3) a one-line rustdoc `redundant explicit link` in `bevy_isomesh/src/mesh.rs`. The `publish` job `needs: [lint, test, bevy, msrv, package]` and reports `publish to crates.io: skipped` on every run — four of its five gates red. **This finding's first draft concluded that 0.0.3 and 0.0.4 were therefore never uploaded, and checking it against the registry falsified that outright**: both are on crates.io (0.0.3 at `11:37:52Z`, 0.0.4 at `12:17:57Z`, 2026-08-14), uploaded **by hand from the developer machine seconds after each push, and before the publish job existed at all** — that job landed at `d01756f`, `12:22Z`, after both. So the release process was never dead; it was **manual**, and the automation written to replace it has still never run once. That is the worse of the two states and much the harder to see, because *versions appearing on crates.io is exactly the evidence you would use to conclude the pipeline worked* | Review of 2026-08-14, from `gh run list` (failures back through the whole visible GPU series) + `--log-failed` on run 31796991183, each cause reproduced locally; the upload claim re-checked against the crates.io API and `gh run view --json jobs` on 2026-08-14, which is what falsified it. Fixes in the same session: the ubuntu leg now tests the CPU crate (the one the cross-OS golden-hash claim is about) and macOS keeps the full workspace; rule 2's gate checks dependency positions and non-comment code instead of prose; `rust-version = "1.89"` verified by `cargo +1.89 check --workspace --all-targets` clean. **The method failure is the interesting part: an accepted red is indistinguishable from a new red.** GPU-009 accepted a *coverage* hole and left it expressed as a permanent *failure*, which converted CI from a signal into noise for the entire series |
@@ -6311,3 +6313,92 @@ sharper reading it carries: M-172's exact zero is not even a lattice-alignment a
 (4,225) against the half-voxel arm (0), and the probe-pitch collapse pass stands as registered.
 
 **Records** `arm`, `offset_voxels`, `exact_zeros`, `band_count`, `probe_pitch_voxels`.
+
+### 💥 ✗27 — "an exactly-zero SDF gradient detects the medial axis"
+
+**Believed because:** M-172. `game_destruction` fired charges at a wall slab's mid-plane and
+`BrushStack::gradient` returned exactly `[0.0, 0.0, 0.0]` on consecutive shots — real, reproduced here
+(4,225 of 4,225 aligned lattice points), and read as a detector: the gradient is exactly zero on the
+medial axis, so the medial axis is free. The dossier's survey reading (Attali, Boissonnat &
+Edelsbrunner, `10.1007/b106657_6`, READ) already bounded the belief: on the axis `‖∇ρ‖ = cos(θ/2)`,
+zero only at θ = π — the two nearest boundary points antipodal, which is a slab's mid-plane and
+nothing a player digs. P-27 tested whether even the slab case survives the lattice moving.
+
+**Tested by:** `cargo bench --bench experiment_p27` (P-27, R-029), `docs/experiments/p-27.csv`.
+
+**Result:** it does not survive. Half a voxel of mid-plane offset: **4,225 → 0** exact zeros. A full
+voxel — the lattice perfectly re-aligned with the plane — restores only **3,136**, exactly as the
+pre-run IEEE enumeration predicted: the cancellation needs `fl(y₀ + h_cd) − y₀ == h_cd` on both probe
+sides, which holds unconditionally only at `y₀ = 0.0`. The exact zero is a *coordinate-origin*
+artifact riding on a lattice-alignment artifact. Meanwhile the field's medial band `‖∇ρ‖ < 0.1`
+moved **0.00%** under the same offset.
+
+**Consequence:** the detector is retired; the *score* survives. `‖∇ρ‖` magnitude reads medial
+stability continuously — small `‖∇ρ‖` with large `ρ` is medial and stable — and that is the quantity
+the identity `r = ρ·√(1 − ‖∇ρ‖²)` consumes, which R-030 now checks against a brute-force oracle.
+M-172 amended in place; quote this row, not its headline.
+
+**Would be shown wrong by:** exact `[0,0,0]` returns from the default gradient at points off the
+coordinate-origin cancellation set — zeros that belong to the field after all.
+
+### 🔬 M-324 / P-27 — HELD on both clauses, and the exact zero is a coordinate-origin artifact (R-029)
+
+> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉
+>
+> 🥇 **The exact-zero medial detector dies at half a voxel of offset, the `‖∇ρ‖ < 0.1` medial band
+> does not move at all, and the zero was never even a lattice-alignment artifact — a full-voxel
+> re-alignment restores only 3,136 of 4,225, the exact integer the pre-run IEEE derivation named.**
+>
+> 🧪 **Tested by:** `cargo bench --bench experiment_p27` (P-27), `docs/experiments/p-27.csv`
+> 🎯 **Result:** exact zeros **4,225 → 0** at half a voxel; band **43,560 → 43,560** (0.00% against
+> a registered 5% and a derived 2.5% bound); full-voxel restore partial at **exactly 3,136**
+> 📐 **Why it earns the banner:** 🪤 twice before the first measurement — the single-lattice reading
+> of clause 2 is vacuously false for the instrument's reason (the band is `0.2h` thick, thinner than
+> the lattice pitch), and the registration's own full-voxel inversion was arithmetically wrong,
+> corrected pre-run to a derivation the run then hit to the integer. And the held prediction
+> re-opens a line this project had closed around a boolean: what survives M-172's amendment is
+> `‖∇ρ‖` as a *continuous* stability score — the reading the identity `r = ρ√(1−‖∇ρ‖²)` needs, and
+> R-030 now gates.
+> 💣 **Would be shown wrong by:** exact `[0,0,0]` returns off the coordinate-origin cancellation
+> set, or the band moving under sub-voxel translation on a fixture this slab does not represent.
+
+**M.** `cargo bench --bench experiment_p27`, `docs/experiments/p-27.csv`.
+
+| arm | offset (voxels) | exact zeros | band count | probe pitch (voxels) |
+|---|---:|---:|---:|---:|
+| aligned | 0 | **4,225** | 43,560 | 0.005 |
+| offset_half | 0.5 | **0** | **43,560** | 0.005 |
+| offset_full | 1 | **3,136** | 43,560 | 0.005 |
+| naive_aligned | 0 | 4,225 | 1,089 | 1 |
+| naive_half | 0.5 | 0 | **0** | 1 |
+
+**Clause 1 held exactly as registered.** One full lattice plane of exact `[0, 0, 0]`s — the
+reachability arm, so the counter demonstrably fires — goes to zero under a half-voxel offset of the
+plane. The zero belongs to the sampling arithmetic, not to the field.
+
+**Clause 2 held at its predicted 0.00%.** The half-voxel offset is 100 probe pitches, so both arms
+share a probe phase and the band count is not merely inside the 5% registered and 2.5% derived
+bounds — it is identical: 40 per column on all 1,089 columns, both arms, per the registration's own
+40 ± 1 arithmetic. The field's medial neighbourhood does not care where the lattice sits; only the
+boolean does.
+
+**The corrected third prediction hit its integer.** 3,136 of 4,225 zeros return at a full-voxel
+offset — perfect lattice re-alignment — because `fl(y₀ + h_cd) − y₀ == h_cd` holds unconditionally
+only at `y₀ = 0.0`; which columns survive depends on how `DIFF_STEP·scale` rounds against
+`ulp(2⁻⁴)` and `ulp(0.5)`, and the pre-run enumeration of exactly that arithmetic named the count.
+M-172's zeros were measured at `z = 0` — the one plane in the world where the cancellation is
+unconditional.
+
+**The naive rows document the trap the registration routed around.** At voxel probe pitch the band
+holds one probe per column and collapses 1,089 → 0 under the same offset that moved the real band by
+nothing — the > 5% branch of clause 2 demonstrated reachable, and the single-lattice instrument shown
+to measure lattice phase rather than the field.
+
+**Consequence:** ✗27 retires the boolean reading and M-172 is amended in place. The medial line
+re-opens on `‖∇ρ‖` as a continuous stability score, and R-030's identity oracle is the next gate:
+Calibre, the throat metric and handholds now rest on it.
+
+**Would be shown wrong by:** a fixture producing exact `[0,0,0]` default-gradient returns at points
+off the coordinate-origin cancellation set; or a field whose `‖∇ρ‖ < 0.1` population shifts by more
+than the derived bound under a sub-voxel translation — which would mean the band is a lattice
+artifact too, and the continuous score inherits the boolean's disease.
