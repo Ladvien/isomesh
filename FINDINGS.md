@@ -6994,14 +6994,21 @@ semicircular arch, **0.1075** (their solver: 0.10746, at a 100-block tessellatio
   the closed-form `(2sin β/3β)·(R_o³−R_i³)/(R_o²−R_i²)` — because a centerline-lumped weight
   reproduces **Heyman's 0.106**, not Milankovitch's 0.1075, and the third decimal is the whole
   point of using this as a gate (the memo's highest-ranked trap for this ticket).
-- *The solver is FISTA on the residual form.* Minimise `‖A_eq·f + w‖²` over the per-vertex friction
-  cones — feasibility decisions identical to Whiting's split-variable QP (both optima are zero iff
-  a compression-only equilibrium exists), the cone projection is closed-form per vertex, and the
-  compression constraint is exact rather than penalised. 20,000 fixed iterations; the decision reads
-  residual-per-unit-weight, **feasible < 10⁻⁵, infeasible > 10⁻⁴**, the band between asserted never
-  hit. The thresholds are scale-invariant (gravity-doubling must move nothing, asserted) and are
-  themselves policed by the golden values: a mis-set threshold cannot land on 0.1075 from both
-  sides of a bisection. Whiting's own `Σ(f_n⁻)²` reading is reported beside it at spot values.
+- *The solver is alternating projection, and it replaced FISTA before the first run.* As first
+  registered, the solver was FISTA on `‖A_eq·f + w‖²` over the cones, 20,000 iterations — and the
+  convergence arithmetic kills that instrument before it runs: FISTA's residual tail is O(1/k), so
+  the registered budget lands near `3×10⁻³·W`, two orders above the 10⁻⁵ feasibility band, and the
+  band-abort would fire on every feasible probe. **Corrected before any run:** plain alternating
+  projection between the equilibrium affine set `{f : A_eq·f = −w}` — *exact* per iteration via one
+  prefactored dense Cholesky of `A·Aᵀ` (300×300) — and the per-vertex friction cones, whose
+  projection is closed-form. Feasible probes converge to the intersection; infeasible probes stall
+  at the minimal-distance pair, and the decision reads the **cone-side** iterate's equilibrium
+  residual per unit weight: **feasible < 10⁻⁵, infeasible > 10⁻⁴**, band asserted never hit; both
+  bisections stop at a width that keeps every probe a classification margin away from the
+  threshold (4×10⁻⁴ in t/r, 0.02° in tilt — both well inside the registered tolerances). The
+  thresholds are scale-invariant (gravity-doubling must move nothing, asserted) and are policed by
+  the golden values: a mis-set threshold cannot land on 0.1075 from both sides. Whiting's own
+  `Σ(f_n⁻)²` reading is reported beside it at spot values.
 
 **Recorded, not registered:** the threshold at N ∈ {25, 50, 100, 200} — the paper's own warning
 that coarser blocks *over-estimate* stability (a hidden gameplay parameter), so the coarse
