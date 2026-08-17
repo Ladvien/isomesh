@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**415 entries** — 27 falsified, 321 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**416 entries** — 27 falsified, 322 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -387,6 +387,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-324` | HELD on both clauses, and the exact zero is a coordinate-origin artifact (R-029) |
 | `M-325` | the discrete medial score converges O(h) and the mechanics live; the clause that died was C1's own tolerance derivation… |
 | `M-326` | FALSIFIED on both clauses, while the recorded columns show the mechanism both registered instruments missed (R-031) |
+| `M-327` | FALSIFIED again, by the distribution this time: heterogeneous wormholing has no gapped aperture histogram, and the same… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -6759,3 +6760,54 @@ is convicted only if those columns also regress, which M-326 shows they do not. 
 red/green (synthetic +4σ half-shift, t = 0 lognormal) runs again before any verdict.
 
 **Records** the P-29 columns plus `guarded_gap_ln`, `guarded_bimodal`, `flux_water_top10_pct`.
+
+### 💥 M-327 / P-30 — FALSIFIED again, by the distribution this time: heterogeneous wormholing has no gapped aperture histogram, and the same run proves the detector could have seen one (R-031)
+
+> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉
+>
+> 🥇 **With the mode guard in place the homogeneous arm's split is found at 0.222 — the instrument
+> demonstrably sees a real gap — and the heterogeneous arm still reads 0.037: its aperture
+> histogram is a broad continuum, not two modes. The dossier's tier-R "goes bimodal" reading is
+> dead on the fixture the mechanic would actually run on, while the competition itself is
+> overwhelming in the water column: 99.8% of flow in the top decile of edges, against 35.7%
+> recharge-limited.**
+>
+> 🧪 **Tested by:** `cargo bench --bench experiment_p30` (P-30), `docs/experiments/p-30.csv` — the
+> same deterministic runs as M-326, re-read.
+> 🎯 **Result:** guarded gaps 0.222 / 0.037 / 0.063 (hom / het / recharge); water-flux top-10%
+> share 53.9% / **99.8%** / **35.7%**; dissolution share stands at M-326's 78%.
+> 📐 **Why it earns the banner:** 💥 a pre-registered prediction falsified for the *world's* reason
+> after M-326 falsified it for the instrument's — the pair is exactly what pre-registration exists
+> to separate. The literature claims wormhole *competition*; "bimodal aperture distribution" was
+> the dossier's gloss on it, and the gloss is what died.
+> 💣 **Would be shown wrong by:** a longer post-breakthrough run in which the heterogeneous
+> histogram opens a qualifying gap after all — the evaluation epoch is 1.2·T_B, registered.
+
+**M.** `cargo bench --bench experiment_p30`, `docs/experiments/p-30.csv`.
+
+| arm | trimmed gap (M-326) | guarded gap | water top-10% | dissolution top-10% | Gini(flow) |
+|---|---:|---:|---:|---:|---:|
+| hom_seeded3 | 0.060 | **0.222 — bimodal** | 53.9% | 16.1% | 0.742 |
+| heterogeneous | 0.022 | **0.037 — no gap** | **99.8%** | 78.1% | 0.976 |
+| het_dt_control (5% cap) | 0.024 | 0.038 | 99.8% | 80.0% | 0.976 |
+| recharge_limited | 0.052 | 0.063 — unimodal ✓ | **35.7%** | 100.0% | 0.560 |
+
+**The discrimination is inside the run.** The homogeneous arm's bulk is a point mass at `a₀` and its
+widened mode clears the guard: 0.222 found, bimodal called — so a real split does not hide from this
+instrument. On the lognormal net the winner's apertures connect to the bulk through the
+partially-widened front and laterals: a continuum, no qualifying gap at any split with 8 edges a
+side. That is a property of heterogeneous wormholing, not of the reader — and the heterogeneous net
+is the one the dossier itself says nature resembles (*"wormholes start to grow immediately, which is
+more likely expected in nature"*).
+
+**What R-031 actually established, across M-326 and M-327:** the paper's mechanism reproduces from
+its own constants — competition, a winner, breakthrough ordering (het before hom), and
+recharge-limited suppression at matched rock volume — and its game-facing observable is
+**flow concentration** (water top-10% share, Gini), not a histogram shape. The dissolution share is
+capped by surface kinetics at 78% even as water hits 99.8%, which is the number the "re-mesh cost
+falls post-breakthrough" story must use. The build ticket, when written, should emit brushes and
+budget re-meshing off the concentration columns.
+
+**Would be shown wrong by:** any of the three registered fixtures replayed with a different seed
+family reversing a verdict (the runs are deterministic; the seed is registered); or a
+post-breakthrough epoch at which the heterogeneous histogram genuinely separates.
