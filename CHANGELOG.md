@@ -8,6 +8,20 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.0.8] — 2026-08-17
+
+Phase 17's measured results, shipped. Two of them answer questions this crate had been asking without
+being able to check: **does the mesh separate what the field separates** (`validate::sealing`), and
+**what does the air region's connectivity cost to maintain rather than rebuild** (`connectivity::Air`).
+
+**One behaviour change, and it is not confined to the type it touches.** `construct::SampledField`
+now supplies the exact trilinear gradient, which moves **Dual Contouring's output on sampled fields**.
+Reference-field extraction is untouched and every golden hash is unchanged — those fields carry their
+own analytic gradients and never used the default — so this is visible only to callers who mesh a
+sampled volume. Numbers below.
+
 ### Added
 
 - **`isomesh::connectivity::Air` — connected components of the air region, repaired as you dig.**
