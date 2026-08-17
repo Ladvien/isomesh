@@ -5642,6 +5642,19 @@ very substitution `sdf.rs`'s own doc comment warns about for `&S` forwarding, *"
 gradient, checked against a central difference **inside** cells to `1e-6` on a random field, and the
 `18 / −1 / 18` shape is a committed fixture.
 
+**Counted properly, against the denominator that matters.** The extractor evaluates a gradient at a
+corner only where the surface passes **exactly through** it, which `corners_on_surface` selects. On
+`bonsai`: **16,284 of 529,508 surface-cell corners have value exactly zero** — **3%**, because `u8` data
+with an integer isovalue lands *on* the isosurface constantly, and 16,284 is not an edge case. **33 of
+those 16,284 also have a zero gradient**, so the isosurface passes through a **critical point of the
+field** and the surface is singular there. Over all surface-cell corners, 1,071 of 529,508 have a zero
+gradient; the 33 are the subset the extractor actually asks about.
+
+**That reframes what is left.** At a point that is both on the surface and critical, **there is no
+normal** — not a missing one, an absent one. The extractor is right to refuse; what is in question is
+only whether **33 singular points should refuse a 16 MB volume**, which is a granularity decision rather
+than a correctness one.
+
 **It moved the failure and did not remove it: `vertex 1` → `vertex 3`.** A second mechanism, distinct
 and now characterised: **at a cell corner `frac = (0, 0, 0)`, so the analytic gradient reduces to the
 three *forward* differences alone** — `c₁₀₀ − c₀₀₀`, `c₀₁₀ − c₀₀₀`, `c₀₀₁ − c₀₀₀` — and is zero whenever

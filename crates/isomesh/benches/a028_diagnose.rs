@@ -73,7 +73,9 @@ fn main() {
     let mut found = 0usize;
     let mut scanned = 0u64;
     let mut zero_total = 0u64;
-    'outer: for z in 0..N {
+    let mut on_surface_corners = 0u64;
+    let mut zero_and_on_surface = 0u64;
+    for z in 0..N {
         for y in 0..N {
             for x in 0..N {
                 // Only corners of cells the surface actually crosses matter.
@@ -96,6 +98,14 @@ fn main() {
                 }
                 scanned += 1;
 
+                // **The extractor evaluates a gradient at a corner only when the
+                // surface passes exactly THROUGH that corner** — that is what
+                // `corners_on_surface` selects. Scanning every corner of every
+                // surface-crossing cell asks a wider question than the one that
+                // fails, so both are counted.
+                if at(x, y, z) == 0.0 {
+                    on_surface_corners += 1;
+                }
                 let p = [f64::from(x), f64::from(y), f64::from(z)];
                 let g = field.gradient(p);
                 let len = (g[0] * g[0] + g[1] * g[1] + g[2] * g[2]).sqrt();
@@ -103,6 +113,9 @@ fn main() {
                     continue;
                 }
                 zero_total += 1;
+                if at(x, y, z) == 0.0 {
+                    zero_and_on_surface += 1;
+                }
                 if found < 3 {
                     found += 1;
                     println!("--- zero gradient #{found} at corner [{x}, {y}, {z}] ---");
@@ -196,9 +209,6 @@ fn main() {
                              slopes {rise:+.1} / {fall:+.1}  -> {verdict}"
                         );
                     }
-                    if found == 3 {
-                        break 'outer;
-                    }
                 }
             }
         }
@@ -208,6 +218,11 @@ fn main() {
     println!(
         "{zero_total} zero-length gradients among {scanned} surface-cell corners scanned \
          (stopped after {found} reports)"
+    );
+    println!(
+        "{on_surface_corners} of those corners have value exactly 0 -- the ones the \
+         extractor actually evaluates a gradient at -- and {zero_and_on_surface} of \
+         those have a zero gradient"
     );
     if zero_total == 0 {
         println!(
