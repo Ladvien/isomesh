@@ -252,6 +252,11 @@ harness = false
 test = false
 
 [[bench]]
+name = "r035a_substrate"
+harness = false
+test = false
+
+[[bench]]
 name = "a028_diagnose"
 harness = false
 
