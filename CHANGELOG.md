@@ -8,6 +8,19 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.0.9] — 2026-08-17
+
+**The air region's connectivity is now maintained in both directions, and across chunk seams.** 0.0.8
+shipped `connectivity::Air` as a dig-only structure with a note saying a `fill` could not exist. It can;
+the note was right about the union-find and wrong about the problem.
+
+**Breaking:** `Repair::unions` is now `Repair::relabels` and `Repair::unions_per_dirty` is
+`relabels_per_dirty`. There are no union calls any more, so the old names stopped denoting anything.
+`Air::connected` and `Air::components` now take `&self` rather than `&mut self`, which is a relaxation
+and breaks nothing.
+
 ### Added
 
 - **`connectivity::Air` now fills as well as digs**, and `connected` is `O(1)` and takes `&self`.
