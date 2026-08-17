@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**421 entries** — 27 falsified, 327 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**422 entries** — 27 falsified, 328 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -393,6 +393,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-330` | HELD on both golden values: the feasibility solver is now held to external truth, and the coarsening warning would not r… |
 | `M-331` | FALSIFIED as registered, by an instrument floor the registration promised was fine, and by a corpus that mixed two edit… |
 | `M-332` | HELD on all three clauses: warm-starting the admissibility solve is bimodal by edit class, and the tilts confirm their o… |
+| `M-333` | the heat-operator substrate verifies against a dense reference, and its own numbers pre-shrink two of R-035b's expectati… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -7178,3 +7179,28 @@ the paper's warning, and the big-structure timing scale stays open for the build
 showing the local-edit advantage collapsing (the extrapolation failing exactly where it matters);
 or any corpus where removals reroute *nothing* (a wall with no bond) reading bimodal anyway — which
 would mean the classes measure the solver, not the structure.
+
+### 🔬 M-333 — the heat-operator substrate verifies against a dense reference, and its own numbers pre-shrink two of R-035b's expectations (R-035a)
+
+**M.** `cargo bench --bench r035a_substrate`, `docs/measurements/r035a-substrate.csv`. Comparative,
+deliberately without a `P-` id — correctness against a reference is not a hypothesis (the M-322
+precedent).
+
+On a 447-vertex Surface Nets mesh, the up-looking sparse LDLᵀ under the BFS-bisection
+nested-dissection ordering matches a dense LDLᵀ of the permuted heat operator entrywise at
+**3.1×10⁻¹⁶** and their solves agree at 1.4×10⁻¹⁴. On the 64³ chunk — **12,615 vertices** (the
+dossier extrapolated ~15k), 24,366 triangles, `h̄ = 0.0577`, `t = h̄²` — the factor holds
+`‖LDLᵀ − A‖_F/‖A‖_F = 2.0×10⁻¹⁶` against the derived 1.4×10⁻¹⁰ bound with `nnz(L) = 1,144,427`,
+and a partial refactor over an ancestor closure with **unchanged values reproduces the factor
+bit-for-bit** across 11,228 closure rows — the update path demonstrated to be a no-op exactly when
+nothing changed, which is the cheapest strong correctness check this machinery admits.
+
+**Two numbers that pre-shrink R-035b, recorded before it runs.** The full refactorisation costs
+**87.7 ms** — already under the ticket's "> 100 ms" absolute, which is why R-035b registered the
+*ratio* as its load-bearing clause. And 131 *scattered* seeds closed over **89% of all rows**: the
+elimination-tree paths are long even under nested dissection, so everything rests on whether a
+*clustered* brush halo closes small — which is precisely the question the experiment exists to
+answer rather than assume.
+
+**Would be shown wrong by:** any input on which the no-op partial refactor is not bit-identical, or
+a mesh whose heat operator fails the SPD pivot assert — both abort loudly rather than report.
