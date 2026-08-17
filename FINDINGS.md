@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**422 entries** — 27 falsified, 328 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**423 entries** — 27 falsified, 329 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -394,6 +394,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-331` | FALSIFIED as registered, by an instrument floor the registration promised was fine, and by a corpus that mixed two edit… |
 | `M-332` | HELD on all three clauses: warm-starting the admissibility solve is bimodal by edit class, and the tilts confirm their o… |
 | `M-333` | the heat-operator substrate verifies against a dense reference, and its own numbers pre-shrink two of R-035b's expectati… |
+| `M-334` | FALSIFIED at 1.7× against a registered 20×: the separators eat the update, the prefactored family is dead for live carvi… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1594,6 +1595,7 @@ Rules with no incident behind them get ignored. These all have one.
 
 | Rule | Earned from |
 |---|---|
+| **A parameter derived from the fixture must be pinned across the fixtures it compares** | P-36 — the heat time `t = h̄²` was recomputed per mesh, so an 86-vertex displacement shifted the mean edge length and *every* entry of the edited operator moved by the t-shift: the update path read a 2.5×10⁻⁵ residual for the fixture's reason, not its own. M-333's no-op identity check could never see it, because nothing moved there. Pinned, the residual returned to 2×10⁻¹⁶ |
 | **A percentile trim must be checked against the size of the mode it could eat** | P-29's C1 — the central-gap statistic dropped 1% tails from 8,128 edges (81 of them) while a winning wormhole path is at most ~63 edges (0.78%), so the detector trimmed away the exact mode it was registered to find, and the "unimodal" control scored a *higher* gap than the bimodal-expected arm. The winner-mode's minimum size was derivable from the lattice before any run — one input→output path — and never checked against the trim |
 | **A tolerance on a √-amplified quantity must be derived at the amplification's maximum, not at the population's comfortable middle** | P-28's C1 — a `1e-9·G` "float dust" tolerance held at `2.8e-17` in the band interior and lost 50–75% of rows at the band's `u → 1` edge, where `d r/d(radicand) = ρ/(2√(1−u²))` multiplies the same dust into `1e-9`. The amplification that killed the clause is the amplification C2 measures as signal; the tolerance was derived where the function is flat and applied where it is vertical |
 | **A precondition claim needs the sentence from the method's own paper, and "what it requires" is a different question from "what it guarantees"** | ✗20 — *"every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input"* was two conflations at once. A method that **preprocesses** bad input was read as one that **requires** clean input, when Andrews 2024 names preprocessing as an axis methods differ along; and VisACD's 35% intersecting-hull rate, which describes the hulls **CoACD emits**, was read as a condition on the mesh it is **given**. Two of the four methods audited require nothing at all, and CPD says so in one sentence |
@@ -7238,3 +7240,67 @@ re-scopes M-318's extrapolation without deciding the routing by itself.
 
 **Records** `rep`, `order`, `update_ms`, `refactor_ms`, `update_flops`, `refactor_flops`,
 `changed_slots`, `changed_rows`, `closure_rows`.
+
+### 💥 M-334 / P-36 — FALSIFIED at 1.7× against a registered 20×: the separators eat the update, the prefactored family is dead for live carving, and the intrinsic lane routes to the Closest Point Method (R-035b)
+
+> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉
+>
+> 🥇 **An 86-vertex brush halo — four times under the registered slot budget — drags an
+> elimination-tree ancestor closure of 5,853 rows, 46.4% of the matrix, through exactly the
+> nested-dissection separator columns where the factorization's work lives: the "update" costs as
+> many flops as the full refactorization and saves only 1.7× of wall. The failure is structural,
+> not implementational — the halo was tiny and the validity was perfect — and it makes the routing
+> decision the ticket existed to make: everything surface-intrinsic goes to the Closest Point
+> Method.**
+>
+> 🧪 **Tested by:** `cargo bench --bench experiment_p36` (P-36), `docs/experiments/p-36.csv`
+> 🎯 **Result:** update **46.9 ms** vs refactor **81.8 ms** (medians, interleaved both orders) —
+> wall **1.7×** against the registered ≥ 20× and the ≥ 10× kill-line; update flop count ≥ the full
+> refactor's; slots 86 ≤ 400 (that clause HELD); validity: residual 2.0×10⁻¹⁶, solves **bitwise
+> identical**, skipped-column inversion red at 5.2×10⁻⁶.
+> 📐 **Why it earns the banner:** 💥 a pre-registered prediction falsified with a clean structural
+> mechanism — M-333's scattered-seed flag (89% closure) confirmed in clustered form, which is the
+> form that mattered — and the consequence is a routing decision, made on measurement rather than
+> on the dossier's hope. Two 🪤 rode along: field-level value edits *always* change the slot set
+> near the zero set (M-318's "appears, vanishes, or moves" is the common case, recorded from two
+> aborted fixtures), and a per-fixture-derived parameter leaked global change into a local-edit
+> experiment (the new Part 5 rule).
+> 💣 **Would be shown wrong by:** a supernodal or subtree-cached update (the Herholz line the
+> dossier lists as unobtained acquisitions) beating the closure barrier on this same fixture.
+
+**M.** `cargo bench --bench experiment_p36`, `docs/experiments/p-36.csv`.
+
+| quantity | value | registered |
+|---|---:|---|
+| changed slots (cell-keyed) | **86** | ≤ 400 — HELD (M-318 extrapolated 346) |
+| changed operator rows (1-ring) | 122 (1.4×) | recorded (memo guessed 3–6×; a contiguous ball's ring is mostly internal) |
+| ancestor closure | **5,853 / 12,615 rows (46.4%)** | the unknown M-333 flagged, now measured |
+| update vs refactor, wall | 46.9 ms vs 81.8 ms — **1.7×** | ≥ 20× (H), < 10× kills — **FALSIFIED** |
+| flop comparison | update ≥ refactor | the ≥ 10× floor, unreachable |
+| validity | 2.0×10⁻¹⁶ residual; solves bitwise equal; inversion red | all asserted before timing |
+
+**The mechanism, and why no tuning rescues it.** The halo is not the problem — 86 slots is *better*
+than M-318 promised. The problem is where the closure goes: every clustered edit's elimination-tree
+paths climb into the top separators, the separators on a surface mesh are O(√n) wide, and their
+columns are where the factorisation's arithmetic is concentrated. Recomputing 46% of the rows *is*
+recomputing most of the work. (The recorded update-flop counter additionally over-counts scan-past
+entries in partial mode; the wall ratio is the honest figure, and at 1.7× the over-count changes
+nothing — both readings sit an order under the kill-line.)
+
+**The routing, per the dossier's own three escapes:** chunk-scoped refactorisation survives as a
+background-budget option (81.8 ms per 64³ chunk, off the frame path); CHOLMOD-style updating is
+**dead here** on structure, not implementation; and live surface-intrinsic work routes to the
+**Closest Point Method** (Dziuk & Elliott, `10.4171/ifb/182`, READ: the matrices depend only on the
+level-set gradient — a brush touching k voxels changes exactly k stencils, no global factor to
+repair). The Herholz-line update papers remain unobtained; if acquired and their subtree machinery
+beats the closure barrier, this row is the fixture to re-run.
+
+**Two fixture lessons, kept as data:** field-level value edits at 0.3 *and* 0.08 voxel amplitudes
+both changed the slot set — near the zero set there are always samples under any amplitude, so a
+value-only factor update can never serve a whole real brush edit anyway; and the heat time `t`
+must be pinned across compared meshes (the new Part 5 rule), which the first validity run found at
+a cost of one morning's confusion and no data contamination.
+
+**Would be shown wrong by:** the banner's supernodal escape; or a chunk size at which the closure
+fraction drops enough to clear 10× (smaller chunks shrink the separators — but also the refactor
+they're racing).

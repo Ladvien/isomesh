@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**210 tickets archived, 16 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**211 tickets archived, 15 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -91,7 +91,6 @@ the dossier with the specific number that kills each one; they get no rows here 
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-035b** | **Sparse-Cholesky update vs refactor at brush scale.** The experiment half of R-035, on R-035a's verified substrate. **H:** on the 64³ chunk (~15k Surface Nets vertices) a radius-4 brush changes ≤ **400** vertex slots (extrapolating M-318's 346 of 15,706 — counted by cell identity, with the 1-ring operator-row halo counted beside it, expected 3–6×); a **partial refactorization over the elimination-tree ancestor closure** of the changed columns — not Davis–Hager rank-1 sweeps, whose downdates can lose definiteness and whose cost explodes on path-shaped subtrees — re-establishes a valid factorisation ≥ **20×** cheaper than a full refactorisation, with the RATIO as the load-bearing clause and the < 5 ms / > 100 ms absolutes recorded (a hand-rolled refactor may land under 100 ms while the ratio holds). **A hold additionally requires the flop ratio ≥ 10** — a large time ratio over a small flop ratio is an implementation artifact. **Falsified by:** the update under 10× cheaper — the prefactored family is dead for live carving and everything intrinsic goes to the Closest Point Method (Dziuk & Elliott `10.4171/ifb/182`, READ). Oracles: Frobenius residual + solve agreement, with a deliberately-skipped-column inversion. A/B interleaved both orders. **FINDINGS:** `M-`. | M | R-035a |
 | ☐ | **R-036** | **Sabine RT60 per air component — the cheapest thing in the dossier a player can hear.** Dossier §1.3. R-022a/R-028's tracker already maintains the two accumulators a Sabine estimate needs (component volume, boundary surface area); the reverb domain *is* the connected air component, and the invalidation trigger is the split/merge event M-319–M-323 measured — one fill in six splits, the median split sheds one voxel and is discarded without simulating. Shipped tech is a static bake (Project Acoustics: *"similar to static lighting"*), which a destructible world invalidates on every dig. **H:** on the frame a breach changes the player's component ID, a Sabine RT60 for the new component is available in **< 0.1 ms**; a Planeverb-style 2D FDTD re-bake of a 64×64 slice (`10.1111/cgf.14099`, public C++ source) completes in **< 30 ms** on one core, amortisable over two frames. **Falsified by:** either figure exceeding its bound by 3×. No eigensolver, a public reference implementation, and it monetises infrastructure already built and measured — the one Tier 1 row with no premise left to falsify first. **FINDINGS:** `M-`. | M | — |
 
 ---
