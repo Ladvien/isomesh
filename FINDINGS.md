@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**397 entries** — 25 falsified, 309 measured, 43 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**398 entries** — 25 falsified, 310 measured, 43 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -373,6 +373,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-312` | FALSIFIED before it ran, on arithmetic; and the margin that replaces it is bounded by half the field's scale (R-023) |
 | `M-313` | R-023's hypothesis is falsified: a margin threshold acts away from where the published algorithms disagree (R-023) |
 | `M-314` | the computation after a local edit is edit-proportional; the output buffer throws that away, and the culprit is a counte… |
+| `M-315` | R-025's 20% is above the ceiling on any vertex placement, measured before a placement rule was written (R-025) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -5486,3 +5487,61 @@ edge cache is keyed on `(lower sample, axis)` — and then discards that naming 
 **Would be shown wrong by:** an edit that changes the case of cells far from the brush, which would
 break the 792 constant. The sphere is smooth and the brush is compact; a field with long-range structure
 through one cell — a thin sheet, `noise_cavity` — is the case that could differ, and was not run.
+
+
+### M-315 — R-025's 20% is above the ceiling on *any* vertex placement, measured before a placement rule was written (R-025)
+
+**M.** `cargo bench --bench placement_ceiling`, `docs/measurements/placement_ceiling.csv`. The two
+smooth reference fields that publish an exact distance — `sphere` and `torus` — at 17³/33³/65³/129³,
+Marching Cubes and Dual Contouring. Distances are **closed form** for both surfaces, so nothing here
+depends on a projection converging.
+
+**No `P-` id.** R-025 was not registered, and this is why: the run exists to check its arithmetic
+*first*. Third time this phase, after M-313 and M-314, and against two registrations that died on
+contact when the check was skipped.
+
+**The method.** The reported Hausdorff is the worst mesh sample, and the harness samples **vertices and
+triangle centroids**, so it is `max(vertex, centroid)`. Project every vertex exactly onto the true
+surface and the vertex term goes to zero, leaving the centroid term recomputed on perfect vertices.
+**That residue is the floor no placement rule can go below**, because a flat triangle inscribed in a
+curved surface deviates at its interior whatever its corners do.
+
+**The ceiling is 1.5% to 21.5% across 16 rows, median 12.3%, and exactly one row reaches 20%.**
+
+| | sphere 17³/33³/65³/129³ | torus 17³/33³/65³/129³ |
+|---|---|---|
+| dual contouring | 9.2, 17.4, 10.7, 12.3 % | 12.2, 16.8, **1.5**, 8.0 % |
+| marching cubes | **21.5**, 14.5, 13.8, 9.0 % | 16.0, 12.1, 12.3, 5.7 % |
+
+**R-025 predicts *">20% better Hausdorff on smooth fields"*. That is above the ceiling in 15 of 16
+measurements**, and the one exception is the coarsest grid of the pair. The hypothesis is falsified by
+arithmetic, before implementation — and **not** for the reason the ticket anticipated. It expected
+Aamari & Levrard's minimax bound to bite, i.e. curvature estimation too noisy at game resolutions.
+Something more basic is true: **there is not 20% of placement error to win.**
+
+**A structural fact fell out, and it is crisper than the ceiling.** Which term *is* the Hausdorff:
+
+- **Dual Contouring: the vertex term, in 8 of 8 rows.** Its accuracy is **placement-limited**.
+- **Marching Cubes: the centroid term, in 8 of 8 rows.** Its accuracy is **tessellation-limited**.
+
+So curvature-aware placement is aimed at Dual Contouring and cannot help Marching Cubes at all —
+which the ticket does not distinguish, and which halves the target before the ceiling is even applied.
+
+**And the QEF is already trading in the direction a placement rule would want to.** Dual Contouring's
+*centroid* error is **better than the floor** — better than it would be with vertices placed perfectly
+on the surface — at 7 of 8 rows, by **2.9–3.6×** on `sphere` and 1.2–1.5× on `torus`. The QEF does not
+try to put a vertex on the surface; it minimises distance to the tangent planes, and that produces
+**better-centred facets at the cost of worse-placed vertices**. Pushing vertices onto the surface would
+make the triangles fit *worse*.
+
+**One limit, stated rather than discovered later.** This measures the **mesh → field** direction only.
+It reproduces `docs/measurements/shootout.csv` exactly wherever that direction dominates — Dual
+Contouring on both fields, Marching Cubes on `sphere`, matching to every published digit — and comes out
+5% under on `torus` + Marching Cubes, where the symmetric metric's field → mesh half is larger.
+Placement is a mesh → field property, so the ceiling is unaffected; the absolute numbers for that one
+row are a slight underestimate.
+
+**Would be shown wrong by:** a smooth field where the vertex term dominates *and* exceeds the centroid
+term by more than 25%, which would leave room a placement rule could take. Neither of the two fields
+that publish an exact distance is such a field, and `gyroid` — the third R-025 names — publishes none,
+so this crate cannot currently produce that counterexample even if it exists.
