@@ -2896,3 +2896,191 @@ fn empty_cell_rejection_is_measured_per_field() {
          suite has lost the case rejection exists for"
     );
 }
+
+// ── A-028: a normal that does not exist, reported rather than fatal ─────────
+
+/// **A critical point *on* the isosurface has no normal, and the extractor now
+/// says so instead of refusing the volume.**
+///
+/// The fixture is the shape measured on `bonsai` (M-316), built rather than
+/// sampled: a corner whose value is exactly zero — so the surface passes through
+/// it — and whose three forward neighbours match it, so the trilinear gradient
+/// there is exactly zero. `u8` data against an integer isovalue produces this
+/// constantly; **3% of `bonsai`'s surface-cell corners sit exactly on the
+/// surface**, and 33 of those are also critical.
+///
+/// What is asserted is the contract: **extraction succeeds**, the mesh is a
+/// mesh, and the report names what was skipped and where. Silence would be the
+/// failure — a hole nobody was told about.
+#[test]
+fn a_critical_point_on_the_surface_is_reported_rather_than_fatal() {
+    use crate::MeshBuffer;
+    use crate::construct::SampledField;
+
+    const N: u32 = 4;
+    let shape = crate::RuntimeShape3::new([N; 3]).expect("valid shape");
+    let idx =
+        |x: u32, y: u32, z: u32| (z as usize * N as usize + y as usize) * N as usize + x as usize;
+
+    // A solid block with a surface through it, then the degeneracy planted.
+    let mut values = alloc::vec![-1.0_f64; shape.element_count()];
+    for z in 0..N {
+        for y in 0..N {
+            for x in 2..N {
+                values[idx(x, y, z)] = 1.0;
+            }
+        }
+    }
+    // The critical point: exactly on the surface, with all three forward
+    // neighbours equal, so the trilinear gradient at the corner is zero.
+    for (x, y, z) in [(1, 1, 1), (2, 1, 1), (1, 2, 1), (1, 1, 2)] {
+        values[idx(x, y, z)] = 0.0;
+    }
+
+    let field = SampledField::new(&values, &shape, [0.0; 3], 1.0).expect("wrap");
+    let mut out = MeshBuffer::<f64>::new();
+    let mut mesher = SubgridMarchingTetrahedra::<f64>::new(8).expect("valid resolution");
+
+    let result = mesher.extract(&field, &shape, [0.0; 3], 1.0, &mut out);
+    assert!(
+        result.is_ok(),
+        "a critical point on the surface must not refuse the whole grid: {result:?}"
+    );
+
+    let report = mesher.report();
+    assert!(
+        !report.is_complete(),
+        "the fixture plants a degeneracy and the report did not see it"
+    );
+    assert_eq!(
+        report.sites.len() as u64,
+        report.skipped_tetrahedra,
+        "one site per skipped tetrahedron, or the positions are not usable"
+    );
+    assert!(
+        report.degenerate > 0,
+        "the planted point has an exactly-zero gradient, so it is Degenerate, \
+         not IllConditioned: {report:?}"
+    );
+    for site in &report.sites {
+        assert!(
+            site.gradient_length.abs() < 1e-12,
+            "a Degenerate site should carry a zero gradient length, got {}",
+            site.gradient_length
+        );
+    }
+}
+
+/// A field with no degeneracy reports nothing, which is what makes the test
+/// above mean something (E-208: show the instrument silent before trusting it
+/// loud).
+#[test]
+fn a_clean_field_reports_no_skipped_tetrahedra() {
+    use crate::MeshBuffer;
+    use crate::fields::{ReferenceField, Sphere};
+
+    let field = Sphere::<f64>::canonical();
+    let (lo, hi) = field.domain();
+    let h = (hi[0] - lo[0]) / 16.0;
+    let shape = crate::RuntimeShape3::new([17; 3]).expect("valid shape");
+
+    let mut out = MeshBuffer::<f64>::new();
+    let mut mesher = SubgridMarchingTetrahedra::<f64>::new(8).expect("valid resolution");
+    mesher
+        .extract(&field, &shape, lo, h, &mut out)
+        .expect("extraction");
+
+    assert!(out.triangle_count() > 0);
+    let report = mesher.report();
+    assert!(
+        report.is_complete(),
+        "a sphere has no critical point on its surface: {report:?}"
+    );
+    assert_eq!(report.sites.len(), 0);
+}
+
+/// **The report is cleared per extraction**, so a clean run after a dirty one
+/// does not inherit its sites. A counter that only ever grows would read as a
+/// permanent defect on the second call.
+#[test]
+fn the_report_does_not_survive_the_next_extraction() {
+    use crate::MeshBuffer;
+    use crate::construct::SampledField;
+    use crate::fields::{ReferenceField, Sphere};
+
+    const N: u32 = 4;
+    let shape = crate::RuntimeShape3::new([N; 3]).expect("valid shape");
+    let idx =
+        |x: u32, y: u32, z: u32| (z as usize * N as usize + y as usize) * N as usize + x as usize;
+    let mut values = alloc::vec![-1.0_f64; shape.element_count()];
+    for z in 0..N {
+        for y in 0..N {
+            for x in 2..N {
+                values[idx(x, y, z)] = 1.0;
+            }
+        }
+    }
+    for (x, y, z) in [(1, 1, 1), (2, 1, 1), (1, 2, 1), (1, 1, 2)] {
+        values[idx(x, y, z)] = 0.0;
+    }
+
+    let mut out = MeshBuffer::<f64>::new();
+    let mut mesher = SubgridMarchingTetrahedra::<f64>::new(8).expect("valid resolution");
+    {
+        let dirty = SampledField::new(&values, &shape, [0.0; 3], 1.0).expect("wrap");
+        mesher
+            .extract(&dirty, &shape, [0.0; 3], 1.0, &mut out)
+            .expect("extraction");
+        assert!(
+            !mesher.report().is_complete(),
+            "the dirty run should report"
+        );
+    }
+
+    let clean = Sphere::<f64>::canonical();
+    let (lo, hi) = clean.domain();
+    let h = (hi[0] - lo[0]) / 16.0;
+    let sphere_shape = crate::RuntimeShape3::new([17; 3]).expect("valid shape");
+    out.reset();
+    mesher
+        .extract(&clean, &sphere_shape, lo, h, &mut out)
+        .expect("extraction");
+    assert!(
+        mesher.report().is_complete(),
+        "the clean run inherited the dirty run's sites: {:?}",
+        mesher.report()
+    );
+}
+
+/// **The half-offset isovalue removes the case entirely**, which is the guidance
+/// the extractor's docs give and is worth a test rather than a sentence.
+///
+/// Integer samples cannot equal a half-integer, so no sample sits on the
+/// isosurface, so the extractor never asks for a normal at a grid point — the
+/// position where the trilinear gradient is one-sided and can vanish.
+#[test]
+fn a_half_offset_isovalue_puts_no_sample_on_the_surface() {
+    // Every representable `u8` against an integer isovalue, then against a
+    // half-integer one.
+    let integer_iso = 32.0_f64;
+    let half_iso = 32.5_f64;
+    let mut on_surface_integer = 0;
+    let mut on_surface_half = 0;
+    for density in 0..=255u16 {
+        let v = f64::from(density);
+        if integer_iso - v == 0.0 {
+            on_surface_integer += 1;
+        }
+        if half_iso - v == 0.0 {
+            on_surface_half += 1;
+        }
+    }
+    assert_eq!(
+        on_surface_integer, 1,
+        "an integer isovalue is attainable by integer data, which is the problem"
+    );
+    assert_eq!(
+        on_surface_half, 0,
+        "a half-integer isovalue is not attainable by integer data, which is the fix"
+    );
+}

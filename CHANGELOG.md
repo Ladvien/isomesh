@@ -62,6 +62,27 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ### Fixed
 
+- **Subgrid Marching Tetrahedra no longer refuses a whole volume for want of one normal.** Where the
+  field has a critical point *on* the isosurface, no normal exists — and if the isosurface passes
+  through it, the level set is genuinely singular rather than merely awkward. That tetrahedron is now
+  **skipped**, leaving a hole its size, and `SubgridMarchingTetrahedra::report()` returns a
+  `NormalReport` giving the count, the cause, and **the position of every one**.
+
+  **Positions, not just a count**: a count can stay the same while the sites move, so a count alone is
+  not a regression test, and a caller repairing the mesh needs to know where. The cause separates
+  `Degenerate` (gradient exactly zero — a critical point, no normal exists) from `IllConditioned`
+  (non-zero but below the conditioning floor — a normal exists and is not trustworthy), because those
+  have different remedies and folding them together would let a precision bug hide inside a topology
+  count.
+
+  **Nothing is substituted.** A wider stencil would return the gradient of a *smoothed* field, which is
+  a different field, and at a saddle there may be no correct normal at all.
+
+  **If your data is integer, contour at a half-offset isovalue** — `127.5` rather than `127`. Integer
+  samples cannot equal a half-integer, so no sample sits on the isosurface and the degeneracy never
+  arises. On `bonsai`, **3% of surface-cell corners sit exactly on the surface** against an integer
+  isovalue (M-316). Standard practice in volume rendering, for this reason.
+
 - **`construct::SampledField` now supplies the exact trilinear gradient** instead of inheriting
   `Sdf::gradient`'s central difference. **A central difference is identically zero at a local extremum,
   however steep the field is around it** — and quantised data manufactures those: on the `bonsai` CT

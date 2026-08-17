@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**400 entries** — 25 falsified, 311 measured, 44 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**401 entries** — 25 falsified, 312 measured, 44 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -375,6 +375,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-314` | the computation after a local edit is edit-proportional; the output buffer throws that away, and the culprit is a counte… |
 | `M-315` | R-025's 20% is above the ceiling on any vertex placement, measured before a placement rule was written (R-025) |
 | `M-316` | a central difference is identically zero at a local extremum, and quantised data manufactures them (A-028) |
+| `M-317` | the volume meshes: 483 tetrahedra declined around 33 singular points, reported rather than fatal (A-028) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -5024,6 +5025,8 @@ construction was designed for, and this is the first measurement in this repo on
 M-309's five-versus-three split in a third place: a face rule changes the mesh exactly where ambiguous
 faces occur, and quantised CT data has them.
 
+**⚠ NO LONGER TRUE — A-028 fixed it (M-317). `bonsai` meshes: 1,572,901 vertices, 3,138,925 triangles, 232 s, with 483 tetrahedra declined around 33 singular points and reported rather than fatal.** What follows is the original observation.
+
 **Subgrid Marching Tetrahedra refuses `bonsai`** — *"vertex 1 has no normal to derive: a zero gradient,
 or no incident area"* — while meshing `fuel` fine at 3.9 s. The error names two possible causes and this
 measurement does not separate them. **⚠ SEPARATED AND HALF-FIXED at A-028 (M-316): it is the
@@ -5675,3 +5678,66 @@ reference-field path: those fields carry their own analytic gradients and never 
 
 **Would be shown wrong by:** a failing corner whose three forward neighbours differ from it, which would
 mean the residual zero has a third cause and the one-sided reading is incomplete.
+
+
+### M-317 — the volume meshes: 483 tetrahedra declined around 33 singular points, reported rather than fatal (A-028)
+
+**M.** `./scripts/fetch_volumes.sh && cargo bench --bench a028_diagnose`, plus `cargo bench --bench
+volumes`. Ryzen 9 5900X. A-028's acceptance, answered.
+
+**`bonsai` meshes.** 232.3 s, **1,572,901 vertices, 3,138,925 triangles**, 879 non-manifold edges, mean
+ratio 0.6770. It previously produced nothing at all.
+
+**What was declined, and the split is not decoration:**
+
+| | |
+|---|---|
+| tetrahedra skipped | **483** |
+| of those, `Degenerate` (gradient exactly zero) | **475** |
+| of those, `IllConditioned` (non-zero, below the floor) | **8** |
+| sites at a cell corner the surface passes exactly through | **475** of 483 |
+
+**The 8 would have been invisible inside a single count.** They are a *precision* problem — a normal
+exists and its direction is dominated by rounding — where the 475 are a *topology* one, where no normal
+exists at all. Different remedies, and folding them together would have let one hide inside the other.
+Note that 475 is also the on-surface-corner count; **this run did not cross-tabulate the two**, so their
+equality is a coincidence of totals until someone checks it.
+
+**483 tetrahedra is 33 places, not 483.** The scan finds **33 distinct corners** that are both on the
+surface and critical, and a grid corner is incident to at most 8 cells × 6 tetrahedra = 48; 483 / 33 =
+**14.6** tetrahedra per corner. So the mesh has **33 small clusters of holes**, not 483 scattered ones —
+which is what makes them repairable, and is visible only because the report carries positions.
+
+**The design, and the reason each part is there.** Sites carry **positions**: a count can stay at 483
+while the sites move, so a count alone is not a regression test, and a caller repairing the mesh needs
+to know where. The floor for `IllConditioned` is relative to the **tetrahedron's own slope** — its
+corner-value spread over the cell size — because an absolute floor on a gradient means a different thing
+at every field magnitude and grid spacing, the same reasoning `ValidateConfig`'s thresholds use.
+**Nothing is substituted**: a wider stencil returns the gradient of a *smoothed* field, which is a
+different field, and at a saddle there may be no correct normal at all.
+
+**The guidance that means most callers never reach any of this.** Integer samples against an **integer**
+isovalue land exactly on the surface constantly — 3% of `bonsai`'s surface-cell corners (M-316) — and a
+corner the surface passes through is where this extractor asks for a normal at a grid point. **Contour
+at a half-offset isovalue** (`127.5`, not `127`) and no sample can sit on the isosurface at all, because
+a half-integer is unattainable by integer data. It does not remove ill-conditioning and the critical
+points are still in the field; it removes the *exact* zero that fires. Standard practice in volume
+rendering, now in the extractor's docs with a test.
+
+**A regression the pinned counts caught, and it is the reason they are pinned.** Splitting emission into
+resolve-then-emit moved `shared.insert` into the second pass, so two tetrahedron edges meeting at an
+on-surface corner stopped collapsing to one vertex (A-014h). The zero-area sliver between them then
+stopped looking degenerate and **got emitted** — the index buffer M-185 says this crate's own validator
+calls invalid. It surfaced as the orphan count going **46 → 0**, and a falling defect count reads as an
+improvement. Without M-203's pinned 46 it would have shipped. Fixed by resolving the within-tetrahedron
+repeat before anything reaches the sink.
+
+**Two cross-checks that the instrument is measuring what it claims.** `fuel`'s output is **byte-identical
+to before** — 9,517 vertices, 18,946 triangles, 8 non-manifold edges, 0.6622 — so the change is a no-op
+on data that already worked. And 232.3 s against Marching Cubes' 0.49 s on the same volume is **471×**,
+against M-308's ~200× on `sphere`; the constant is larger on real data, which is worth knowing before
+anyone plans to use this extractor on a scan.
+
+**Would be shown wrong by:** a volume where the skipped tetrahedra are *not* clustered — many distinct
+singular corners rather than a few — which would make the holes scattered and much harder to repair, and
+would change the advice this entry gives.

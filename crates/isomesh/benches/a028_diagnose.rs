@@ -30,7 +30,9 @@ mod common;
 
 use std::path::PathBuf;
 
+use isomesh::MeshBuffer;
 use isomesh::construct::SampledField;
+use isomesh::subgrid::extract::{NormalCause, SubgridMarchingTetrahedra};
 use isomesh::{RuntimeShape3, Sdf};
 
 const FILE: &str = "bonsai_256x256x256_uint8.raw";
@@ -211,6 +213,58 @@ fn main() {
                     }
                 }
             }
+        }
+    }
+
+    // ── the acceptance: extract it, and read the report ────────────────────
+    //
+    // The ticket asks which branch fired and where. The report answers both, and
+    // this is the run that produces it. Once, not best-of-three: it is minutes.
+    {
+        println!();
+        println!("extracting with subgrid marching tetrahedra (this takes minutes) ...");
+        let mut out = MeshBuffer::<f64>::new();
+        let mut mesher = match SubgridMarchingTetrahedra::<f64>::new(16) {
+            Ok(m) => m,
+            Err(e) => {
+                println!("::error:: {e}");
+                return;
+            }
+        };
+        let started = std::time::Instant::now();
+        match mesher.extract(&field, &shape, [0.0; 3], 1.0, &mut out) {
+            Ok(()) => {
+                let report = mesher.report();
+                println!(
+                    "  meshed in {:.1} s: {} vertices, {} triangles",
+                    started.elapsed().as_secs_f64(),
+                    out.positions.len(),
+                    out.indices.len() / 3
+                );
+                println!(
+                    "  skipped {} tetrahedra -- {} degenerate, {} ill-conditioned",
+                    report.skipped_tetrahedra, report.degenerate, report.ill_conditioned
+                );
+                let on_corner = report.sites.iter().filter(|s| s.on_surface_corner).count();
+                println!(
+                    "  {on_corner} of {} sites are at a cell corner the surface passes through",
+                    report.sites.len()
+                );
+                for site in report.sites.iter().take(3) {
+                    println!(
+                        "    cell {:?} tet {} at {:?}  |grad| {:.3e}  {}",
+                        site.cell,
+                        site.tet,
+                        site.position,
+                        site.gradient_length,
+                        match site.cause {
+                            NormalCause::Degenerate => "Degenerate",
+                            NormalCause::IllConditioned => "IllConditioned",
+                        }
+                    );
+                }
+            }
+            Err(e) => println!("  ::error:: still refuses: {e}"),
         }
     }
 
