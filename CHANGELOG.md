@@ -10,6 +10,29 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ### Added
 
+- **`isomesh::connectivity::Air` — connected components of the air region, repaired as you dig.**
+  *Is this cave sealed? Did I just break through?* are questions about the connected components of the
+  air sublevel set, asked after every edit. Digging removes solid, so air samples only ever **appear**,
+  and an insert joins at most two trees with no replacement-edge search — so a union-find is the entire
+  structure.
+
+  Measured (M-311): one brush of fixed radius into lattices of 33³, 65³ and 129³ costs **4,872 union
+  operations at every one of them**, while the lattice grows 59.7×. A rebuild pays **2,146,689 samples
+  scanned to discover the 925 that changed**, which is a 104× wall-clock gap at 129³ that widens with
+  the lattice.
+
+  **There is deliberately no `fill`.** Removing air is a deletion, a union-find cannot do deletions at
+  any price, and an API that offered one and silently rebuilt would be a second execution path.
+
+- **`MeshReport::mean_ratio` and `MeshReport::irregular_vertices`** — triangle-shape quality, in the
+  definition the isosurfacing literature reports so the columns can be read beside it. Recorded, never
+  gated, the same standing `degenerate_triangles` has.
+
+- **`scripts/fetch_volumes.sh`** — fetches real scanned volumes from Open SciVis and verifies them
+  against the **publisher's own SHA-512**. The data is gitignored; `docs/measurements/volumes/PROVENANCE.md`
+  is committed. Benchmarks that read them skip cleanly when they are absent, so a clean clone with no
+  network still builds.
+
 - **`isomesh::validate::sealing` — does the mesh separate what the field separates?** Every other
   validity metric in this crate judges a mesh against itself (manifoldness, orientation, Euler
   characteristic) or against the field's geometry (`validate::accuracy`). None asked whether the mesh

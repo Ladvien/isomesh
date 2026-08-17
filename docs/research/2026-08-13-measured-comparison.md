@@ -2,9 +2,10 @@
 
 **2026-08-13, re-derived 2026-08-16.** Marching Cubes, Marching Cubes + asymptotic decider, Marching
 Tetrahedra, Surface Nets, Dual Contouring, Manifold Dual Contouring and subgrid Marching Tetrahedra, on
-**eight** fields, from one codebase. Speed, accuracy, topology, whether the mesh separates what the
-field separates, and — the part nobody publishes — what fraction of a *usable* mesh the extraction
-actually is.
+**eight** fields plus **two real scanned volumes**, from one codebase. Speed, accuracy, topology,
+triangle quality, whether the mesh separates what the field separates, what it costs to keep the air
+region's connectivity up to date as you dig, and — the part nobody publishes — what fraction of a
+*usable* mesh the extraction actually is.
 
 This exists because the comparison does not. **No paper since 2020 benchmarks Marching Cubes against
 Surface Nets against Dual Contouring, and Surface Nets has no credible published timings at all**
@@ -27,7 +28,10 @@ Every number below has a committed benchmark that produced it and a `FINDINGS.md
 > - **Eight fields, not seven.** `noise_cavity` landed at A-002e and is the worst field in every
 >   topology column for every method. Every figure here is re-derived over eight.
 > - **One machine, not two.** The Apple M5 half is stale and is not quoted (M-005).
-> - **§6 is new** — R-024's sealing audit, which no published comparison contains.
+> - **§6, §7 and §8 are new** — R-024's sealing audit, T-026's triangle quality against a published
+>   baseline, and R-022a's incremental-connectivity cost. No published comparison contains any of them.
+> - **Real volumes, for the first time.** `fuel` and `bonsai` from Open SciVis, fetched rather than
+>   vendored (M-006). §7 is where they change a conclusion.
 
 ---
 
@@ -352,6 +356,94 @@ only field where any of this is reachable.
 
 ---
 
+## 7. Triangle quality, and a band that only transfers on the right kind of field
+
+**New in the 2026-08-16 re-derivation** (T-026, M-309, M-310). The metric is Grosso & Zint's **mean
+ratio** (`10.1007/s00371-021-02139-w` §5):
+
+```text
+q = 4√3 · A / Σᵢ lᵢ²        1 for equilateral, 0 for degenerate
+```
+
+Chosen over the `AR > 4` figures the differentiable-isosurfacing line reports, because those are
+measured on meshes extracted from **learned** fields inside an optimisation loop and are not comparable
+with meshing on a uniform grid (V-38). Grosso & Zint mesh uniform grids and report Marching Cubes,
+topologically correct Marching Cubes and Dual Contouring by name.
+
+Averaged over 17³/25³/33³:
+
+| extractor | `sphere` | `torus` | `box_exact` | `thin_plate` | `gyroid` | `fbm_terrain` | `noise_cavity` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| marching cubes | 0.728 | 0.714 | 0.858 | 0.866 | 0.687 | 0.691 | 0.688 |
+| surface nets | **0.814** | **0.797** | **0.863** | 0.743 | **0.795** | **0.770** | **0.758** |
+| dual contouring | 0.815 | 0.736 | 0.845 | 0.743 | 0.727 | 0.600 | 0.621 |
+| marching tetrahedra | 0.674 | 0.675 | **0.250** | 0.499 | 0.652 | 0.652 | 0.637 |
+
+**Surface Nets beats Marching Cubes on all eight fields. Dual Contouring beats it on the smooth ones and
+*loses* on the rough ones** — 0.600 against 0.691 on `fbm_terrain`. The QEF places a vertex to fit
+planes, and where there is no feature to fit it places it badly; a centroid has no such failure mode.
+**The published claim that the dual is better is a claim about smooth data.**
+
+**Marching Tetrahedra scores 0.250 on `box_exact`** against Marching Cubes' 0.858 — while being the
+*most accurate* primal method on that same field, §2's 5.103e-2 against 7.217e-2. A 6-tetrahedron
+decomposition cuts an axis-aligned face along tet diagonals and the triangles that result are needles.
+**Accuracy and triangle quality point in opposite directions there by a factor of three**, which is not
+a trade-off anyone lists.
+
+### The band transfers on real volumes and not on analytic ones
+
+Their Marching Cubes sits at **0.65–0.71**. Ours measures **outside** that on analytic fields — 0.7785,
+0.7131, 0.7510 — which read as a falsification until the same metric ran on real scanned data (M-006,
+M-310):
+
+| volume | marching cubes | surface nets | dual contouring | manifold DC |
+|---|---:|---:|---:|---:|
+| `fuel` 64³ | **0.7006** | 0.7976 | 0.7228 | 0.7233 |
+| `bonsai` 256³ | **0.6888** | 0.7957 | 0.6649 | 0.6650 |
+
+**Both inside 0.65–0.71.** Their band was measured on CT and simulation data and it reproduces on CT and
+simulation data — **the band is a property of the input class, not of the implementation**, and the
+earlier reading was measuring the wrong kind of field. Their *Dual Contouring* figure does not reproduce
+at all (0.6649 here against their 0.82–0.86, below our own Marching Cubes), and that asymmetry is
+recorded unexplained.
+
+**On real data, Marching Cubes emits 0 non-manifold edges on a million-triangle CT surface**, and
+Manifold Dual Contouring takes `bonsai` from **1,776 non-manifold edges to 85** — the manifold
+construction earning its keep on the input class it was designed for, where on the analytic fields it
+was 0 extra vertices on five of seven (M-60). **Subgrid Marching Tetrahedra refuses `bonsai` outright**
+on a zero-gradient error; that is A-028.
+
+---
+
+## 8. Repairing connectivity costs the edit, not the lattice
+
+**New** (R-022a, M-311). *Is this cave sealed? Did I just break through?* are questions about the
+connected components of the air region, asked after every edit. Digging removes solid, so air samples
+only ever **appear** — and Durfee et al. note that *"an insert can cause at most two trees in `F` to be
+joined"*, with no replacement-edge search. A union-find is the entire structure.
+
+One spherical brush of radius 6, **identical at every resolution**, into a solid lattice:
+
+| n | samples scanned | dirty | incremental unions | rebuild unions | incr ms | rebuild ms |
+|---:|---:|---:|---:|---:|---:|---:|
+| 33 | 35,937 | 925 | **4,872** | 2,436 | 0.028 | 0.2 |
+| 65 | 274,625 | 925 | **4,872** | 2,436 | 0.032 | 1.3 |
+| 129 | 2,146,689 | 925 | **4,872** | 2,436 | 0.051 | 5.3 |
+
+**The lattice grows 59.7× and the incremental union count does not move by one.**
+
+**The `n³` is in the scan, not in the unions**, and that was worth getting wrong to learn: the rebuild's
+union count is *also* flat, because a union-find build unions only air-air edges and the air volume is
+the brush. What a rebuild actually pays is **visiting 2,146,689 samples to discover that 925 changed** —
+2,321 touched per sample that mattered, and a **104×** wall-clock gap at 129³ that widens with the
+lattice.
+
+**Filling is not this problem.** Removing air is a deletion, which needs a replacement-edge search and
+which a union-find cannot do at any price. `connectivity::Air` therefore ships `dig` and no `fill`,
+and the other half is a different data structure rather than a longer version of this one.
+
+---
+
 ## What surprised us
 
 1. **A conclusion of ours was falsified by an optimisation of ours** (§4). Not by a better instrument,
@@ -365,9 +457,18 @@ only field where any of this is reachable.
    workload, not of the code.
 5. **Every dual method leaves the domain boundary unsealed, identically** (§6), and no primal method
    does.
-6. **Marching Tetrahedra is more accurate than Marching Cubes on sharp fields** — the opposite of the
+6. **A borrowed band failed on our fields and held on real ones** (§7). Grosso & Zint's 0.65–0.71 for
+   Marching Cubes reads as falsified on analytic fields and reproduces on CT data, because it was a
+   property of the **input class** all along. The eighth field-dependent figure this project has caught,
+   and the first that was somebody else's.
+7. **Marching Tetrahedra is the most accurate primal method on `box_exact` and by far the worst-shaped**
+   — 5.103e-2 against Marching Cubes' 7.217e-2 on Hausdorff, and 0.250 against 0.858 on triangle
+   quality. Two metrics, opposite verdicts, factor of three.
+8. **The `n³` in a connectivity rebuild is the scan, not the work** (§8). Both union counts are flat;
+   what a rebuild pays is visiting 2.1 M samples to find the 925 that changed.
+9. **Marching Tetrahedra is more accurate than Marching Cubes on sharp fields** — the opposite of the
    registered prediction, and for a reason (more edge families) the prediction did not consider.
-7. **The sharp-feature solve is nearly free**, and so is the clamp that makes it safe, and so is the
+10. **The sharp-feature solve is nearly free**, and so is the clamp that makes it safe, and so is the
    asymptotic decider. Three "expensive" features that are not.
 
 ## What we would now distrust
@@ -397,6 +498,11 @@ cargo bench --bench shootout          # topology + accuracy -> docs/measurements
 cargo bench --bench family            # per-sample timing   -> docs/measurements/family.csv
 cargo bench --bench stage_breakdown   # stage shares        -> docs/measurements/stage_breakdown.csv
 cargo bench --bench experiment_p21    # sealing audit       -> docs/experiments/p-21.csv
+cargo bench --bench experiment_p22    # triangle quality    -> docs/experiments/p-22.csv
+cargo bench --bench experiment_p23    # connectivity repair -> docs/experiments/p-23.csv
+
+./scripts/fetch_volumes.sh            # real volumes; not committed, verified by published SHA-512
+cargo bench --bench volumes           # every extractor on them -> docs/measurements/volumes.csv
 ```
 
 Always `--release`; `cargo bench` handles that.
@@ -404,5 +510,6 @@ Always `--release`; `cargo bench` handles that.
 ---
 
 *Ledger entries behind this document: M-4, M-15, M-20, M-21, M-23, M-25, M-28, M-42, M-52, M-54, M-55,
-M-56, M-60, M-62, M-98, M-134, M-135, M-136, M-208, M-285, M-286, M-287, M-290, M-307, M-308, V-37,
-✗14, ✗19 and ✗25. Tickets: M-001a, M-001b, M-002, M-003, M-004, A-023, A-024, R-024, R-026.*
+M-56, M-60, M-62, M-98, M-134, M-135, M-136, M-208, M-285, M-286, M-287, M-290, M-307, M-308, M-309,
+M-310, M-311, V-37, V-38, V-39, V-40, V-41, ✗14, ✗19 and ✗25. Tickets: M-001a, M-001b, M-002, M-003,
+M-004, M-006, A-023, A-024, R-022a, R-024, R-026, T-026.*
