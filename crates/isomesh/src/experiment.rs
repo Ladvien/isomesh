@@ -969,6 +969,56 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "feasible",
         ],
     },
+
+Preregistration {
+        id: "P-36",
+        ticket: "R-035b",
+        hypothesis: "On M-333's verified substrate -- the 64-cubed gyroid \
+                     chunk, 12,615 Surface Nets vertices, heat operator at \
+                     t = h-bar squared, nested-dissection ordering -- a \
+                     radius-4-voxel surface perturbation changes at most 400 \
+                     vertex slots (M-318's 346 of 15,706, keyed by cell \
+                     identity; the 1-ring operator-row halo is counted \
+                     beside it, expected 3 to 6 times more), and a partial \
+                     refactorization over the elimination-tree ancestor \
+                     closure of the changed columns re-establishes a valid \
+                     factorisation at least 20 TIMES cheaper than a full \
+                     refactorisation by wall time, with the flop ratio at \
+                     least 10 alongside -- a large time ratio over a small \
+                     flop ratio is an implementation artifact, not a result. \
+                     The absolutes (the ticket's under-5-ms and over-100-ms) \
+                     are recorded, not load-bearing: M-333 already measured \
+                     the full refactor at 87.7 ms. Validity is asserted, not \
+                     assumed: the updated factor holds the same Frobenius \
+                     residual bound as a fresh one, its solve agrees with \
+                     the refactored solve within 1e-8 relative, and a \
+                     deliberately skipped closure column must push the \
+                     residual past its bound before any verdict is read. \
+                     Timing is interleaved in both orders, 11 repetitions, \
+                     medians.",
+        falsified_by: "The update under 10 times cheaper by wall or under \
+                       the flop-ratio floor -- the prefactored family is \
+                       dead for live carving and everything \
+                       surface-intrinsic routes to the Closest Point Method \
+                       instead, the routing decision this ticket exists to \
+                       make. Separately: the slot count exceeding 400 \
+                       re-scopes M-318's extrapolation; the slot SET \
+                       changing at all aborts the fixture (the experiment \
+                       is about value updates on a stable pattern, and says \
+                       so); and the skipped-column inversion failing to go \
+                       red voids the validity oracle and the run with it.",
+        records: &[
+            "rep",
+            "order",
+            "update_ms",
+            "refactor_ms",
+            "update_flops",
+            "refactor_flops",
+            "changed_slots",
+            "changed_rows",
+            "closure_rows",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

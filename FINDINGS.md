@@ -7204,3 +7204,37 @@ answer rather than assume.
 
 **Would be shown wrong by:** any input on which the no-op partial refactor is not bit-identical, or
 a mesh whose heat operator fails the SPD pivot assert — both abort loudly rather than report.
+
+### P-36 — registered for R-035b, before the harness was written; the routing decision, on a verified substrate
+
+**What this decides.** The dossier's Law 2 disqualifies any prefactored surface operator for live
+carving unless its factorisation can be *updated* rather than rebuilt; if the update is not clearly
+cheaper, everything surface-intrinsic routes to the Closest Point Method (Dziuk & Elliott,
+`10.4171/ifb/182`, READ: the matrices *"depend only on the evaluation of the gradient of the level
+set function"* — a brush touching k voxels changes exactly k stencils). M-333 verified the
+substrate and pre-shrank two expectations: the full refactor already costs **87.7 ms** (under the
+ticket's > 100 ms absolute — the ratio is the registered clause), and *scattered* seeds close 89%
+of the elimination tree; whether a **clustered brush halo** closes small is exactly what this
+measures.
+
+> **H.** A radius-4-voxel surface perturbation changes ≤ **400** vertex slots (M-318's 346 of
+> 15,706, keyed by cell identity; the 1-ring operator-row halo counted beside it, expected 3–6×),
+> and a partial refactorization over the elimination-tree ancestor closure of the changed columns
+> re-establishes a valid factorisation ≥ **20×** cheaper than a full refactorisation by wall time,
+> with the **flop ratio ≥ 10** alongside — a large time ratio over a small flop ratio is an
+> implementation artifact, not a result.
+
+**Validity asserted, never assumed:** the updated factor must hold the same Frobenius bound a fresh
+one does; its solve must agree with the refactored solve within 10⁻⁸ relative (κ-derived with five
+orders of margin); and a deliberately skipped closure column must push the residual past its bound
+— the inversion seen red before any verdict. The fixture is a *value* update on a stable pattern:
+the slot **set** changing at all aborts the run, and says so. Timing interleaved both orders
+(ABAB/BABA), 11 repetitions, medians, flops counted beside wall (✗24, M-197 both honored).
+
+**Falsified by** the update under **10×** by wall or under the flop floor — the prefactored family
+is dead for live carving and the CPM takes the intrinsic lane; that routing decision is the
+ticket's whole point, and it gets recorded whichever way it lands. The slot count exceeding 400
+re-scopes M-318's extrapolation without deciding the routing by itself.
+
+**Records** `rep`, `order`, `update_ms`, `refactor_ms`, `update_flops`, `refactor_flops`,
+`changed_slots`, `changed_rows`, `closure_rows`.
