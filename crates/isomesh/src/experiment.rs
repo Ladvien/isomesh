@@ -838,6 +838,57 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "certificate_rel",
         ],
     },
+    Preregistration {
+        id: "P-33",
+        ticket: "R-034a",
+        hypothesis: "A pure-Rust reimplementation of Whiting, Ochsendorf and \
+                     Durand's rigid-block feasibility program -- per-vertex \
+                     interface forces, equilibrium A f = -w, friction cone \
+                     at mu = 0.7, compression-only -- reproduces the only \
+                     external ground truths in the dossier. Bisecting \
+                     thickness over centerline radius on a 100-block \
+                     semicircular arch (the paper's own tessellation) finds \
+                     the infeasibility threshold at 0.1075 plus or minus \
+                     0.0010 -- Milankovitch's 1907 analytic value, which \
+                     Whiting's solver hit at 0.10746 -- and bisecting ground \
+                     tilt at t/r = 0.20 finds 15.84 degrees plus or minus \
+                     0.05, Ochsendorf's value. The solver is FISTA on the \
+                     equivalent residual form: minimize the equilibrium \
+                     residual over per-vertex friction cones, feasible iff \
+                     the minimum is zero, compression exact in the cone \
+                     rather than penalized; 20,000 fixed iterations; \
+                     decision thresholds on residual per unit weight at 1e-5 \
+                     feasible and 1e-4 infeasible, the band between asserted \
+                     never hit, and the thresholds themselves are checked by \
+                     the golden values -- a tuned-wrong threshold cannot hit \
+                     0.1075 from both sides. Block weights act at exact \
+                     annular-sector centroids, because centerline weights \
+                     reproduce Heyman's 0.106 rather than Milankovitch's \
+                     0.1075 and the third decimal is the whole point. \
+                     Recorded, not registered: the threshold at 25, 50, 100 \
+                     and 200 blocks -- the paper's own warning that coarser \
+                     blocks over-estimate stability, so coarse thresholds \
+                     should sit BELOW fine ones.",
+        falsified_by: "Missing either golden value -- the solver is wrong \
+                       somewhere between the formulation and the arithmetic, \
+                       and nothing structural may be built on it. \
+                       Instrument-aborts before any verdict: doubling \
+                       gravity moving any feasibility decision (the program \
+                       is scale-invariant or it is wrong), or any bisection \
+                       step landing in the undecided residual band. The \
+                       game-facing rule and the warm-start economics are \
+                       R-034b's, deliberately not here.",
+        records: &[
+            "test",
+            "blocks",
+            "value",
+            "target",
+            "abs_error",
+            "within_tolerance",
+            "residual_feasible",
+            "residual_infeasible",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

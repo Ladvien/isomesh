@@ -6972,3 +6972,44 @@ audible in principle), and mode-concentration at near-failure hinges as a creak 
 
 **Would be shown wrong by:** the two fixture classes the banner names; or a certificate bug — the
 inversion demonstrated red, so that path is covered.
+
+### P-33 — registered for R-034a, before the harness was written; the only external ground truth in the batch
+
+**What this one is for.** Every other Phase 18 experiment checks a prediction against this repo's own
+constructions; R-034a checks a solver against numbers the world already knows. Whiting, Ochsendorf &
+Durand (`10.1145/1618452.1618458`, READ in full — including its appendix's equilibrium indexing)
+validated their rigid-block program on two closed-form results, and a reimplementation either hits
+them or is wrong: **Milankovitch 1907** — minimum thickness over *centerline* radius of a
+semicircular arch, **0.1075** (their solver: 0.10746, at a 100-block tessellation) — and
+**Ochsendorf 2002** — critical ground tilt **15.84°** at t/r = 0.20, which they matched exactly.
+
+> **H.** The pure-Rust program — per-vertex interface forces at the two ends of each radial cut,
+> equilibrium `A_eq·f = −w` (3 rows per block in 2-D: forces and torque), friction cone `|f_t| ≤
+> 0.7·f_n`, compression-only — reports the 100-block threshold at **0.1075 ± 0.0010** and the tilt
+> at **15.84° ± 0.05°**.
+
+**Two decisions with reasons committed in advance.**
+
+- *Weights at exact annular-sector centroids.* Sector area is `Δθ·R·t` and the centroid radius is
+  the closed-form `(2sin β/3β)·(R_o³−R_i³)/(R_o²−R_i²)` — because a centerline-lumped weight
+  reproduces **Heyman's 0.106**, not Milankovitch's 0.1075, and the third decimal is the whole
+  point of using this as a gate (the memo's highest-ranked trap for this ticket).
+- *The solver is FISTA on the residual form.* Minimise `‖A_eq·f + w‖²` over the per-vertex friction
+  cones — feasibility decisions identical to Whiting's split-variable QP (both optima are zero iff
+  a compression-only equilibrium exists), the cone projection is closed-form per vertex, and the
+  compression constraint is exact rather than penalised. 20,000 fixed iterations; the decision reads
+  residual-per-unit-weight, **feasible < 10⁻⁵, infeasible > 10⁻⁴**, the band between asserted never
+  hit. The thresholds are scale-invariant (gravity-doubling must move nothing, asserted) and are
+  themselves policed by the golden values: a mis-set threshold cannot land on 0.1075 from both
+  sides of a bisection. Whiting's own `Σ(f_n⁻)²` reading is reported beside it at spot values.
+
+**Recorded, not registered:** the threshold at N ∈ {25, 50, 100, 200} — the paper's own warning
+that coarser blocks *over-estimate* stability (a hidden gameplay parameter), so the coarse
+thresholds should sit below the fine ones; the direction is the claim, the magnitude is data.
+
+**Falsified by** missing either golden value. Instrument-aborts, before any verdict: a gravity-scale
+variance, or any bisection step in the undecided band. R-034b (split at registration, per the
+ticket's own note) carries the warm-start bimodality clause and the game-facing economics.
+
+**Records** `test`, `blocks`, `value`, `target`, `abs_error`, `within_tolerance`,
+`residual_feasible`, `residual_infeasible`.
