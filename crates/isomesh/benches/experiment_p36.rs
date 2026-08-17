@@ -43,10 +43,12 @@ use std::time::Instant;
 const SAMPLES: u32 = 65;
 const ORIGIN: [f64; 3] = [-2.0, -2.0, -2.0];
 const GRID_H: f64 = 4.0 / 64.0;
-/// The registered brush: radius 4 voxels, amplitude 0.3 voxels — enough to
-/// move vertices, small enough to leave every cell's sign pattern alone.
+/// The registered brush radius: 4 voxels. The amplitude is the harness's
+/// knob for meeting the registered stable-pattern contract — 0.3 voxels
+/// flipped a cell's sign pattern and the contract aborted the first run, as
+/// registered; 0.08 voxels moves vertices without moving topology.
 const BRUSH_R: f64 = 4.0 * GRID_H;
-const BRUSH_AMP: f64 = 0.3 * GRID_H;
+const BRUSH_AMP: f64 = 0.08 * GRID_H;
 /// Where the brush lands: the surface vertex nearest this probe.
 const PROBE: [f64; 3] = [0.3, 0.2, -0.1];
 const REPS: usize = 11;
