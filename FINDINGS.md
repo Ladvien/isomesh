@@ -7121,3 +7121,25 @@ counts, and tilt as its own recorded class.
 **Would be shown wrong by:** P-35 finding the weight-nudge class *still* above 0.15 with the floor
 removed — which would mean the 0.400 was never the instrument's and the cheap-incremental story
 dies on merit.
+
+### P-35 — registered for R-034b, before the corrected instrument ran; P-34 with its floor removed and its corpus unmixed
+
+**The M-289 shape, third use today.** M-331 falsified P-34's clauses through an instrument floor
+(probe granularity 10 over 50-iteration cold solves puts the minimum measurable ratio at 0.2, above
+the 0.15 bound) and a mixed corpus (tilts are global re-loads, not local edits). This re-asks the
+ticket's own prediction once, with every correction derivable in advance: the decision probed
+**every iteration** (floor = 1/cold); the wall grown to **20 courses × 24 blocks (~470 blocks)** so
+cold counts get three digits of dynamic range; tilts out of the registered corpus and recorded as
+their own class.
+
+> **H.** Over 10 single-block weight nudges the median warm/cold iteration ratio is ≤ **0.15**;
+> over 10 interior removals it is ≥ **0.5**; the class medians separate by **> 3×**. (M-331's
+> floor-pinned nudges and 0.8 removal median already point here at 4×, undecidably.)
+
+**Falsified by** the weight-nudge median still above 0.15 with the floor at 1/cold — then the 0.400
+was never the instrument's, and the cheap-incremental story dies on merit, demoting the
+admissibility gate to background-budget-only exactly as the original R-034 registered. Or medians
+within 3× — unimodal, same consequence. Collapsed removals excluded on the record as in P-34,
+aborting past three.
+
+**Records** `edit`, `class`, `iters_cold`, `iters_warm`, `ratio`, `feasible`.

@@ -925,6 +925,32 @@ pub const PREREGISTERED: &[Preregistration] = &[
                        fixture failure and aborts; and every surviving edit \
                        must reach the decision line within the cap or the \
                        count, not the clock, has failed to decide.",
+    Preregistration {
+        id: "P-35",
+        ticket: "R-034b",
+        hypothesis: "P-34 with its instrument floor removed and its corpus \
+                     unmixed; the falsification is M-331. Corrections, all \
+                     derivable before running: the decision is probed every \
+                     ITERATION (the floor becomes 1/cold instead of \
+                     10/cold); the wall grows to 20 courses of 24 blocks \
+                     (~470 blocks) so the cold count has three digits of \
+                     dynamic range; and tilts leave the registered corpus \
+                     -- a gravity rotation moves every interface force and \
+                     is recorded as its own class, not averaged into local \
+                     edits. Unchanged prediction, the ticket's own: over 10 \
+                     single-block weight nudges the median warm-to-cold \
+                     ratio is at most 0.15; over 10 interior removals it is \
+                     at least 0.5; the class medians separate by more than \
+                     3x. M-331's floor-pinned weight nudges and 0.8 removal \
+                     median already point this way at 4x, undecidably.",
+        falsified_by: "The weight-nudge median still above 0.15 with the \
+                       floor at 1/cold -- then the 0.400 was never the \
+                       instrument's, the cheap-incremental story dies on \
+                       merit, and the admissibility gate is \
+                       background-budget-only as the original R-034 \
+                       registered. Or medians within 3x -- unimodal, same \
+                       consequence. Collapsed removals excluded on the \
+                       record as in P-34, aborting past three.",
         records: &[
             "edit",
             "class",
