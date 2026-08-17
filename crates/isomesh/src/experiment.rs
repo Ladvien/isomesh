@@ -1018,6 +1018,45 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "closure_rows",
         ],
     },
+    Preregistration {
+        id: "P-37",
+        ticket: "R-036",
+        hypothesis: "The ticket's premise is half false, and the correction \
+                     is the first finding: the tracker maintains component \
+                     volume (Air::component_size) and does NOT maintain \
+                     boundary surface area -- nothing in the crate does. \
+                     With the accumulator added (per-label air-solid face \
+                     counts, delta-maintained through build, dig's blob \
+                     growth, fill's retirement, merge transfer and split \
+                     hand-off; domain-boundary faces count as solid, the \
+                     sealed-box convention; AirWorld roll-up deliberately \
+                     out of scope), clause one: a Sabine RT60 for the \
+                     breach-frame component -- 0.161 times volume over \
+                     absorption times area, two accumulator reads and a \
+                     divide -- costs under 0.1 ms, and structurally so. \
+                     Clause two: a Planeverb-style 2D FDTD re-bake of a \
+                     64x64 slice (Rosen, Godin and Raghuvanshi, \
+                     10.1111/cgf.14099, public C++ reference; leapfrog \
+                     pressure-velocity, 1,000 steps -- about half a second \
+                     of audio at the CFL step, the length a decay \
+                     measurement needs -- damped edges, cost is the claim \
+                     and acoustic fidelity is not) completes in under 30 ms \
+                     single-threaded. Recorded, not registered: dig and \
+                     fill costs with the accumulator in place, and the \
+                     split rate against M-319's one-in-six -- a divergence \
+                     THERE would be news; the clauses holding is not.",
+        falsified_by: "Either figure exceeding its bound by 3x, the \
+                       ticket's own falsifier. Instrument notes: the area \
+                       invariant -- a full recount equals the maintained \
+                       counts, and the label-free global face total equals \
+                       their sum -- is asserted in the crate's own tests \
+                       over synchronous op sequences, with a deliberate \
+                       corruption shown to turn the checker red; \
+                       budget-truncated ops leave area conservatively stale \
+                       exactly as labels already are, scoped and documented \
+                       rather than solved.",
+        records: &["quantity", "value", "unit", "bound", "held"],
+    },
 ];
 
 /// `a == b`, in a const context.

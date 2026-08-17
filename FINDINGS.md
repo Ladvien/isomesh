@@ -7304,3 +7304,38 @@ a cost of one morning's confusion and no data contamination.
 **Would be shown wrong by:** the banner's supernodal escape; or a chunk size at which the closure
 fraction drops enough to clear 10× (smaller chunks shrink the separators — but also the refactor
 they're racing).
+
+### P-37 — registered for R-036, before the harness was written; and the ticket's premise correction is the registration's first line
+
+**The premise, checked against the code (workflow step 1).** The ticket says the tracker *"already
+maintains the two accumulators a Sabine estimate needs (component volume, boundary surface area)"*.
+Half true: `Air::component_size` maintains volume; **no surface-area accumulator exists anywhere in
+the crate** — verified by read (`connectivity.rs` holds `size`, `free`, `live`, `pending` and
+scratch; nothing counts faces). The contradiction is the finding, and the measurement requires this
+batch's one public-API addition, plan-approved: `area: Vec<u32>` maintained beside `size`, exposed
+as `component_area(label)`.
+
+> **H.** With per-label air–solid face counts delta-maintained through `build`, `dig`'s blob
+> growth, `fill`'s retirement, merge transfer and split hand-off — domain-boundary faces counted
+> as solid (the sealed-box convention; a component touching the chunk edge is `AirWorld`'s problem,
+> deliberately out of scope) — **(C1)** a Sabine RT60 for the breach-frame component
+> (`0.161·V/(α·S)`, two accumulator reads and a divide) costs **< 0.1 ms**, structurally; **(C2)**
+> a Planeverb-style 2-D FDTD re-bake of a 64×64 slice (Rosen, Godin & Raghuvanshi,
+> `10.1111/cgf.14099`, public C++ reference; leapfrog pressure–velocity, 1,000 steps ≈ half a
+> second of audio at the CFL step — the length a decay measurement needs; damped edges, cost is
+> the claim and acoustic fidelity is not) completes in **< 30 ms** single-threaded. Falsified by
+> either figure exceeding its bound by 3× — the ticket's own falsifier.
+
+**The invariant, and its red demonstration.** After any synchronous op sequence, a full O(6n)
+recount must equal the maintained per-label counts, and a label-free global face total must equal
+their sum — asserted in the crate's own tests over build/dig/fill/split/merge sequences on the
+`noise_cavity` distribution fixture and the P-26 bisect fixture, with a deliberate one-count
+corruption shown to turn the checker red. Budget-truncated ops leave `area` conservatively stale
+exactly as labels already are — scoped and documented, not solved (the drained state is the
+contract, as it is for `label`).
+
+**Recorded, not registered:** dig/fill costs with the accumulator in place (the O(dirty·6) claim,
+read against M-321's baselines), and the split rate against M-319's one-in-six — a divergence
+*there* would be news; the clauses holding is not, and this row expects no banner.
+
+**Records** `quantity`, `value`, `unit`, `bound`, `held`.
