@@ -2124,3 +2124,64 @@ fn a_face_has_only_two_routings_so_a_singular_face_has_nowhere_to_go() {
          of cut edges — no face junction is representable"
     );
 }
+
+/// **The interpolant is zero at every body saddle, which is what a body saddle
+/// *is* here — and it is the fact that killed P-24.**
+///
+/// [`BodySaddles`] documents that *"the zero level set is assumed"*, and
+/// [`BodySaddles::coefficients`] solves a quadratic *"at the zero level set"*.
+/// So these points are where the **level set is singular**, not where `∇F = 0`.
+/// The two are different objects and the distinction is easy to lose: a critical
+/// point of `F` has a critical *value*, while a singular point of `F = 0` has
+/// value zero by construction.
+///
+/// P-24 was registered on `sign(F(s))` as a decision margin for the interior
+/// ambiguity. It is `sign(0)`. Measured here rather than argued: **2.3e-15 worst
+/// case**, which is rounding, over every interior saddle of 200,000 random
+/// cells (M-312).
+///
+/// The invariant is worth asserting for its own sake — nothing else in the suite
+/// says `BodySaddles` returns points *on* the surface, and a future change that
+/// made it return critical points of `F` instead would be silent without this.
+#[test]
+fn the_interpolant_is_zero_at_every_body_saddle() {
+    fn trilinear(f: &[f64; 8], p: [f64; 3]) -> f64 {
+        let (u, v, w) = (p[0], p[1], p[2]);
+        let (su, sv, sw) = (1.0 - u, 1.0 - v, 1.0 - w);
+        f[0] * su * sv * sw
+            + f[1] * u * sv * sw
+            + f[2] * su * v * sw
+            + f[3] * u * v * sw
+            + f[4] * su * sv * w
+            + f[5] * u * sv * w
+            + f[6] * su * v * w
+            + f[7] * u * v * w
+    }
+
+    let mut rng = Lcg::new(0x0000_A023_D000_0001);
+    let mut worst: f64 = 0.0;
+    let mut checked = 0usize;
+
+    for _ in 0..200_000 {
+        let f = rng.corners();
+        let saddles = BodySaddles::of(&f);
+        if !saddles.has_inner_hexagon() {
+            continue;
+        }
+        let (u, v, w) = (saddles.axis(0), saddles.axis(1), saddles.axis(2));
+        for k in 0..2 {
+            worst = worst.max(trilinear(&f, [u[k], v[k], w[k]]).abs());
+            checked += 1;
+        }
+    }
+
+    assert!(
+        checked > 1000,
+        "only {checked} saddles reached the check, which measures nothing"
+    );
+    assert!(
+        worst < 1e-9,
+        "F is {worst:.3e} at a body saddle, so these are not points on the level \
+         set and P-24's premise would be recoverable after all"
+    );
+}

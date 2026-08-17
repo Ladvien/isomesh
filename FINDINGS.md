@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**393 entries** — 25 falsified, 306 measured, 42 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**394 entries** — 25 falsified, 307 measured, 42 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -370,6 +370,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-309` | FALSIFIED on both clauses, and the first one fails for a reason sharper than the hypothesis (T-026) |
 | `M-310` | on real scanned volumes, Marching Cubes lands inside the published quality band that analytic fields put it outside of (… |
 | `M-311` | HELD on both clauses that were about the world, and the clause about the comparison was wrong (R-022a) |
+| `M-312` | FALSIFIED before it ran, on arithmetic; and the margin that replaces it is bounded by half the field's scale (R-023) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -5255,3 +5256,65 @@ parameter is a margin in the field's own units, and a caller who wants tunnels b
 gets a knob instead of a fork. A-002b, A-002i and A-020b are *not* retired by that on its own — they are
 about which topology to emit, and this is about how confidently the cell was classified. **The ticket's
 "retires three tickets" is the thing most likely to be overclaimed here**, and it is not what H says.
+
+
+### M-312 / P-24 — FALSIFIED before it ran, on arithmetic; and the margin that replaces it is bounded by half the field's scale (R-023)
+
+**M.** Two measurements. `cargo test -p isomesh --lib -- the_interpolant_is_zero_at_every_body_saddle`
+and `cargo bench --bench interior_margin`, `docs/measurements/interior_margin.csv`. Ryzen 9 5900X, and
+every number here is a count or a ratio of field values, so none of it is machine-dependent.
+
+**P-24 is dead and it never reached a fixture.** It registered `sign(F(s))` at a body saddle as the
+decision margin for the interior ambiguity. **`F` is zero at every body saddle by construction** — 2.3e-15
+worst case over the interior saddles of 200,000 random cells — so the registered quantity is `sign(0)`.
+`BodySaddles` says so in its own doc comment (*"the zero level set is assumed"*) and
+`BodySaddles::coefficients` solves its quadratic *"at the zero level set"*: these are points where the
+**level set is singular**, not where `∇F = 0`. A critical point of `F` has a critical *value*; a singular
+point of `F = 0` has value zero.
+
+**This is the second clause in this phase registered without checking its arithmetic**, after P-23's
+clause 3, and the second time the check would have taken a minute. The rule earned at P-23 was stated and
+then not followed, which is worth more than the rule was: **a rule that has been written down once has
+not been applied once.** The invariant is now a committed test rather than a hazard, and the test's own
+doc says which registration it killed.
+
+**What replaces it is structural rather than hypothesised.** `SweptFaces::margin()` returns the largest
+saddle value the sweep reaches over the candidate points `test()` already walks, and **`test()` is now
+literally `margin() > 0`** — it calls it. So *"the interior decider is the `ε = 0` member of a
+one-parameter family"* is true by construction and cannot drift, which is the strongest form R-023's
+first clause could take and needs no census at all.
+
+**The open question was whether that parameter means anything, and it does.** `saddle(t)` is a ratio
+whose denominator vanishes at the pole, so the margin had no *a priori* bound — and a threshold on an
+unbounded quantity measures the pole rather than the tunnel. Measured over 400,000 random cells per
+population, corner values in `[-1, 1]`:
+
+| population | ambiguous cells | joined | poled | max \|margin\| | over scale | over **half** scale | \|margin\| < 1e-6 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| continuous | 6,348 | 5,608 | 3,150 | 0.4338 | **0** | **0** | 0 |
+| quantum 1/255 | 6,366 | 5,605 | 3,154 | 0.4333 | **0** | **0** | 1 |
+| quantum 1/16 | 6,377 | 5,432 | 3,184 | 0.4356 | **0** | **0** | 27 |
+| quantum 1/4 | 5,994 | 4,267 | 3,040 | 0.4355 | **0** | **0** | 371 |
+
+**Never above half the corner scale, in 25,085 ambiguous cells, and never infinite.** The mechanism is
+that ambiguity itself supplies the bound: on an ambiguous face one diagonal is strictly negative and the
+other is not, so the denominator's four terms **add rather than cancel**, and AM-GM on the numerator
+gives `|saddle| ≤ max|corner| / 2`. Observed maximum 0.436 against that 0.5. **The pole is not exotic** —
+it is present on **half** the ambiguous sweeps, 3,150 of 6,348 — and the margin stays bounded through it,
+which is the result that makes a threshold in the field's own units meaningful and portable.
+
+**Near-degenerate cells are a quantisation phenomenon, which is the third sighting of that pattern.**
+Margins under `1e-6` go **0 → 1 → 27 → 371** as the quantum coarsens from continuous to `1/4`. A
+threshold has almost nothing to act on in continuous data and something real to act on in quantised
+data, exactly as M-220 and M-232 found for singular faces, and exactly where M-310's real `u8` volumes
+live.
+
+**What this does not establish, stated because the ticket invites the overclaim.** Nothing here says a
+threshold reproduces MC33's topology, retires A-002b, A-002i or A-020b, or resolves any ambiguity. It
+says the decider is the sign of a bounded scalar, and that the scalar is bounded by half the field's
+scale on the configurations it is defined for. R-023's remaining half — what a non-zero `ε` does to the
+emitted topology, and whether the differences land only where published algorithms disagree — is
+unmeasured and is a hypothesis that can now be registered against a quantity known to exist.
+
+**Would be shown wrong by:** an ambiguous sweep whose margin exceeds half the corner scale, which would
+break the AM-GM reading and mean the bound is empirical rather than structural.

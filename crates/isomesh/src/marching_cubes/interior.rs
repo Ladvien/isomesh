@@ -251,6 +251,41 @@ impl<R: Real> SweptFaces<R> {
     /// "joined" there names the inside (negative) corners — see [`Interior`].
     #[must_use]
     pub fn test(&self) -> Interior {
+        if self.margin() > R::ZERO {
+            Interior::Joined
+        } else {
+            Interior::Separated
+        }
+    }
+
+    /// The largest saddle value the sweep reaches, over the same candidate
+    /// points [`test`](Self::test) walks.
+    ///
+    /// **[`test`](Self::test) is the sign of this**, structurally rather than by
+    /// agreement — it calls this and compares with zero, so the two cannot
+    /// drift. That makes the interior decider the `ε = 0` member of a
+    /// one-parameter family: thresholding at `ε > 0` suppresses a tunnel whose
+    /// margin is smaller than `ε`.
+    ///
+    /// # It is a decision margin, not a persistence
+    ///
+    /// It answers *how far would the field have to move for the interior
+    /// answer to flip*, in the field's own units. That is the property a
+    /// persistence threshold is wanted for — stability under perturbation — but
+    /// it is **not** a persistence pair, which would pair two critical points and
+    /// report the lifetime between them. V-42 records the distinction; do not
+    /// call it persistence.
+    ///
+    /// # Do not assume it is bounded
+    ///
+    /// `saddle(t)` is a ratio whose denominator has a root at
+    /// [`pole`](Self::pole), so the value can be large near one. The candidate
+    /// points are the faces and one interior point of each subinterval *between*
+    /// the breakpoints, so none sits on the pole — but a subinterval can be
+    /// narrow and its midpoint close. What the range actually is, is measured
+    /// rather than argued: see M-312.
+    #[must_use]
+    pub fn margin(&self) -> R {
         let mut breaks = [R::ZERO; 3];
         let mut count = 0;
         for t in self.numerator_roots().chain(self.pole()) {
@@ -271,10 +306,11 @@ impl<R: Real> SweptFaces<R> {
         }
 
         // The faces, then one interior point of every subinterval between them.
+        // The maximum rather than a short circuit: the sign is what `test` wants
+        // and the value is what a threshold wants, and computing both from one
+        // walk is what keeps them from disagreeing.
         let half = R::ONE / (R::ONE + R::ONE);
-        if self.saddle(R::ZERO) > R::ZERO || self.saddle(R::ONE) > R::ZERO {
-            return Interior::Joined;
-        }
+        let mut best = self.saddle(R::ZERO).max(self.saddle(R::ONE));
         let mut previous = R::ZERO;
         for k in 0..=breaks.len() {
             let next = breaks.get(k).copied().unwrap_or(R::ONE);
@@ -283,12 +319,12 @@ impl<R: Real> SweptFaces<R> {
             // empty, which happens when two breakpoints are equal; the saddle is
             // then zero or undefined there and the neighbouring subintervals
             // carry the answer.
-            if mid > previous && mid < next && self.saddle(mid) > R::ZERO {
-                return Interior::Joined;
+            if mid > previous && mid < next {
+                best = best.max(self.saddle(mid));
             }
             previous = next;
         }
-        Interior::Separated
+        best
     }
 
     /// The real roots of `F` in `(0, 1)`, as the breakpoints the sign walk needs.
