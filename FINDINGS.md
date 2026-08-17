@@ -6297,4 +6297,17 @@ the ≈100% collapse — the > 5% branch demonstrated reachable, and the vacuity
 routes around documented as a row rather than a footnote. And a full-voxel offset must bring the exact
 zeros back: the cancellation is the lattice's, and re-aligning the lattice must re-create it.
 
+**Corrected before the first run, same day — the full-voxel inversion above is arithmetically wrong,
+and the correction sharpens the claim.** Checked against the actual IEEE operations before the harness
+was written: a full-voxel offset does **not** cleanly restore the zeros, and cannot. The cancellation
+needs `fl(y₀ + h_cd) − y₀ == h_cd` exactly on both probe sides, which holds unconditionally only at
+`y₀ = 0.0`, where `0 + x` is exact. At `y₀ = h = 2⁻⁴` the probe additions round at `ulp(2⁻⁴) = 2⁻⁵⁶`
+and the `− t` subtractions rebucket at `ulp(0.5) = 2⁻⁵³`, so whether a plane point keeps its exact zero
+depends on its `DIFF_STEP·scale` — computed point-by-point with the crate's own literal
+(`6.055_454_452_393_343e-6`) over the fixture's scale classes: **3,136 of 4,225**. The full-voxel arm
+is therefore no longer an inversion but a third pre-stated prediction — **exactly 3,136** — and the
+sharper reading it carries: M-172's exact zero is not even a lattice-alignment artifact, it is a
+*coordinate-origin* artifact. Clause 1's two branches are instead demonstrated by the aligned arm
+(4,225) against the half-voxel arm (0), and the probe-pitch collapse pass stands as registered.
+
 **Records** `arm`, `offset_voxels`, `exact_zeros`, `band_count`, `probe_pitch_voxels`.
