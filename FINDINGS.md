@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**405 entries** — 25 falsified, 315 measured, 45 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**406 entries** — 26 falsified, 315 measured, 45 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -64,6 +64,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗23` | "Manifold Dual Contouring queries where it needs to, so it wants an on-demand field" |
 | `✗24` | "Empty-cell rejection benefits every field, however little" |
 | `✗25` | "Marching Cubes is the only one of the family in the good corner of manifold × intersection-free" |
+| `✗26` | P-25's mechanism clause is false, and P-25's own falsifier is what named it (R-022b) |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -5188,6 +5189,27 @@ exercise the find path harder without changing the union count, which is a diffe
 than a contradiction.
 
 
+**AMENDED 2026-08-17 (R-022b, ✗26). The claim survives; the instrument does not.** Adding `fill` forced
+the union-find to go **flat** — every sample pointing directly at its component id — because a
+path-compressed forest cannot absorb deletion (✗26). Under flat labels there is no such thing as a
+"union call": the quantity this row reports **stops naming anything that exists**, and `Repair.unions`
+and `Repair.merges` become relabel counts.
+
+**The finding itself is unharmed.** This row's claim is that repair is proportional to the edit and not
+to the lattice, and its benchmark digs a brush into a **solid** lattice — one component growing, so the
+flat-label cost is one write per newly-air sample and the edit-proportionality is exactly as measured.
+What changed is the unit, from union calls to relabels.
+
+**What is genuinely new, and is not measured here.** Flat labels give `dig` a worst case this row never
+exercised: breaking through into a **large** cave relabels the smaller side. Union by size bounds that
+to `log₂ n` relabels per voxel amortised — but amortised is the wrong statistic for the frame the
+breakthrough lands on (M-124), which is why repair became budgeted rather than synchronous. **This row
+does not measure a breakthrough and should not be read as bounding one.**
+
+The row is kept rather than restated because the gap between what was measured and what the quantity
+turned out to be is itself the data. A silently vanished metric is the thing that gets rediscovered in
+four months.
+
 ### V-42 — R-023's quantity does not exist as stated, and the one that does is a decision margin rather than a persistence (R-023)
 
 **V.** Read from this crate's own `marching_cubes::interior`, against Edelsbrunner, Letscher &
@@ -5936,6 +5958,95 @@ That would mean the structure is **fast and wrong**, which is worse than slow an
 failure a measurement of cost alone cannot see. It gets its own assertion rather than its own benchmark.
 
 **Records:** `samples_per_axis`, `fills`, `dirty_samples`, `seeds`, `visited`, `splits`,
+`shed_components`, `vanished_components`, `rebuild_visited`.
+
+### ✗26 — P-25's mechanism clause is false, and P-25's own falsifier is what named it (R-022b)
+
+**Falsified by analysis, before the harness ran.** P-25 claimed a union-find can absorb deletion:
+*"a parent pointer only has to reach the correct root, and a filled sample sitting mid-tree is never
+queried."* The first half is true. The second half is true **of the filled sample and of nothing hanging
+off it**, and that is the whole error.
+
+**Parent pointers encode union history, not spatial adjacency.** `Q → P → A` records that `Q` was merged
+in via `P` at some point in the past. It says nothing about whether `Q` touches `P` in the lattice. So a
+filled sample can be an articulation point **of the tree** while being nothing of the kind **in the
+graph**:
+
+```
+component {A, B, P, Q}, union-find tree: A root, B → A, P → A, Q → P
+a fill sheds {P} spatially, so P is re-rooted
+find(Q) now walks Q → P → P = P
+```
+
+`connected(Q, B)` returns **false** while `Q` and `B` are still genuinely connected — `Q` may even be
+adjacent to `A` directly. **The queries that break are the descendants', not the filled sample's own.**
+
+**What caught it is the thing worth recording.** P-25's *second* falsifier says: *"any disagreement
+between the incrementally maintained components and a full rebuild over the same values: component
+count, or any `connected()` answer."* That is exactly the failure above. **The mechanism clause and the
+falsifier clause contradicted each other inside a single pre-registration**, and writing both down is
+what made the contradiction visible before a line of the structure existed.
+
+This is the practice paying for itself, and it is the reason this row is kept in full rather than
+quietly replaced by its successor: the *reasoning* generalises where the fact does not. A registration
+that names a strong falsifier can refute its own mechanism at zero cost. One that only asserts a
+mechanism cannot.
+
+**What survives.** Only the mechanism dies. **P-25's cost prediction was never in doubt and is
+re-registered unchanged as P-26** — flat labels fix the *representation*, not the *search*. The lockstep
+replacement search was always required; the union-find was falsely promising it could be skipped.
+
+### P-26 — P-25 with one clause replaced, registered for R-022b
+
+**Pre-registration.** `crates/isomesh/src/experiment.rs`, id `P-26`. **This is P-25 minus its mechanism
+clause**, and it is registered as a new id rather than as an amendment because `experiment.rs`'s own
+docs require it: *"Amending a `Preregistration` after its experiment has run is a rewrite of the
+prediction, and the only honest way to do it is to register a new id and record why the first one was
+inadequate."* ✗26 is the why.
+
+**Unchanged from P-25 — the cost claim.** Repairing the air sublevel set after a brush **fill** costs
+work proportional to the **shed volume** and not to the surviving component nor to the lattice. At a
+fixed brush radius, visited voxels stay flat as the lattice grows through 33³, 49³ and 65³.
+
+**Replaced — the mechanism.** Not a union-find. A **flat** label array: every sample carries its
+component id directly, so re-rooting a shed piece is a write per member and no surviving sample can
+route through it (✗26). `connected` becomes `O(1)` and `&self` rather than `&mut self`. Union by size
+over a **dense `Vec` indexed by label with an explicit free list** — not a `HashMap`, whose iteration
+order is a determinism hazard and determinism is load-bearing (M-36).
+
+**Added — the adversarial clause, because the flat curve would otherwise measure the fixture.**
+Lockstep's stop condition bounds work by the **second-largest** piece, so M-320's *"1 at the median"* is
+a property of the **edit distribution**, not of the structure. Fill one voxel at the midpoint of a
+tunnel joining two equal caverns and both frontiers are huge: the search walks until one exhausts, which
+is `O(half the component)`, and `visited` grows with `n` at a fixed brush size. **That fires P-25's
+first falsifier for a reason that has nothing to do with the stop condition being wrong.**
+
+That edit is not exotic — sealing a passage between two spaces *is* the sealed-volume mechanic, which is
+the thing this layer exists to support. So the harness carries a deliberate **bisect-a-tunnel fixture**
+beside the measured distribution, and the prediction is stated separately for each: **flat on the
+distribution, growing on the bisect.** A structure that is flat on both would mean the bisect fixture is
+not adversarial and needs rebuilding.
+
+**Consequently "the levelled HDT scheme is unnecessary here" is conditioned, not asserted.** It is
+unnecessary *for the measured edit distribution*. The bisect case is where it would earn its keep, and
+the answer this crate reaches for instead is a **budgeted** repair rather than a bounded one — see below.
+
+**Deferring the repair fails safe in both directions, which is not obvious.** Before a `fill` repair
+completes the two pieces still share a label, so `connected` says yes and the caller reads *"not sealed
+yet"*. Before a `dig` repair completes the labels are still distinct, so the caller reads *"not connected
+yet"* and the breakthrough event fires late. Water leaking for three frames is recoverable; water **not**
+leaking out of a room the engine wrongly believes is sealed is a broken game rule. **The conservative
+answer is the cheap answer in both directions**, so repair takes the `spend: FnMut() -> bool` predicate
+shape `mesh_within_budget` already uses (M-78) rather than being synchronous — because amortised is the
+wrong statistic for the frame a breakthrough lands on (M-124: 20.62 ms unbudgeted against a 2.10 ms
+budgeted peak).
+
+**Falsified by:** visited voxels growing as `n³` **on the measured distribution** at a fixed brush size.
+Growth on the *bisect* fixture is predicted, not falsifying. And, as in P-25 and more seriously, by any
+disagreement between the maintained components and a full rebuild — component count or any `connected`
+answer.
+
+**Records:** `samples_per_axis`, `fixture`, `fills`, `dirty_samples`, `seeds`, `visited`, `splits`,
 `shed_components`, `vanished_components`, `rebuild_visited`.
 
 ### V-45 — R-027's design does not merely change `extract_into`'s contract; it converts a shipped determinism check's failure condition into its intent (R-027)

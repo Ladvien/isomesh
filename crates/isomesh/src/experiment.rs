@@ -522,6 +522,54 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "rebuild_visited",
         ],
     },
+    Preregistration {
+        id: "P-26",
+        ticket: "R-022b",
+        hypothesis: "P-25 with its MECHANISM clause replaced and its COST \
+                     clause unchanged; see the falsification in FINDINGS as \
+                     cross-26. Unchanged: repairing the air sublevel set after \
+                     a brush fill costs work proportional to the SHED VOLUME, \
+                     not to the surviving component nor to the lattice, so \
+                     visited voxels stay flat through 33, 49 and 65 cubed at a \
+                     fixed brush radius. Replaced: the structure is not a \
+                     union-find but a FLAT label array -- every sample carries \
+                     its component id directly, so re-rooting a shed piece is \
+                     one write per member and no surviving sample can route \
+                     through it. Flat labels fix the REPRESENTATION, not the \
+                     SEARCH: the lockstep replacement search was always \
+                     required and the union-find merely promised falsely that \
+                     it could be skipped. Added: lockstep bounds work by the \
+                     SECOND-LARGEST piece, so M-320's one-voxel median is a \
+                     property of the edit distribution rather than of the \
+                     structure. Bisecting a tunnel between two equal caverns \
+                     makes both frontiers huge and visited then grows with n at \
+                     a fixed brush size. So the prediction is stated per \
+                     fixture: FLAT on the measured distribution, GROWING on a \
+                     deliberate bisect.",
+        falsified_by: "Visited voxels growing as n cubed ON THE MEASURED \
+                       DISTRIBUTION at a fixed brush size. Growth on the bisect \
+                       fixture is predicted and is not falsifying; a structure \
+                       that came out flat on BOTH would instead mean the bisect \
+                       fixture is not adversarial and needs rebuilding, which \
+                       is a fixture failure rather than a result. Separately \
+                       and more seriously falsified, as in P-25, by any \
+                       disagreement between the maintained components and a \
+                       full rebuild over the same values -- component count, or \
+                       any connected() answer. Fast and wrong is worse than \
+                       slow and right.",
+        records: &[
+            "samples_per_axis",
+            "fixture",
+            "fills",
+            "dirty_samples",
+            "seeds",
+            "visited",
+            "splits",
+            "shed_components",
+            "vanished_components",
+            "rebuild_visited",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
