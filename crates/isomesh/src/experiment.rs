@@ -788,6 +788,56 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "samples_per_axis",
         ],
     },
+    Preregistration {
+        id: "P-32",
+        ticket: "R-033",
+        hypothesis: "A one-voxel interior edit does not move a carved \
+                     pillar's fundamental eigenvalue audibly. The pitch JND \
+                     is 0.6 percent on FREQUENCY and f is proportional to \
+                     sqrt(lambda), so the audibility threshold on lambda-one \
+                     is 1.2 percent -- the conversion is registered because \
+                     applying 0.6 to lambda directly would be a silent \
+                     factor of two. Clause one: all 8 seeded \
+                     strictly-interior one-voxel digs move lambda-one by \
+                     less than 1.2 percent. Clause two: at least 1 of 4 digs \
+                     adjacent to the fixture's two-cell web exceeds 1.2 \
+                     percent -- the ticket's 'only edits near a thin feature \
+                     are audible', both sides of it. Clause three, the \
+                     null's reachability: carving a 20-percent-volume cavity \
+                     moves lambda-one by more than 15 percent. Instrument: \
+                     hexahedral FEM assembled directly on the occupancy grid \
+                     (trilinear, 2x2x2 Gauss, E=1 nu=0.3 rho=1, lumped mass, \
+                     base layer fixed), matrix-free inverse power iteration \
+                     (48 outer) over Jacobi-preconditioned CG (256 inner, \
+                     warm-started), and every reported eigenvalue carries an \
+                     a-posteriori certificate -- the residual Kx minus \
+                     lambda Mx in the M-inverse norm, at or below 5e-4 of \
+                     lambda -- so fixed iteration counts can never mean \
+                     silently wrong.",
+        falsified_by: "Any strictly-interior dig moving lambda-one at or \
+                       above 1.2 percent -- per-edit modal audio earns its \
+                       ticket, bounded in advance by Picard's O(m^2.8) \
+                       scaling at about 40 modes in a 5 ms budget. Clause \
+                       two failing the other way -- no web-adjacent dig \
+                       audible -- closes the modal direction entirely at the \
+                       cost of a day, the outcome the dossier priced. \
+                       Instrument-falsified by the certificate exceeding its \
+                       bound, the two deterministic starts disagreeing \
+                       beyond twice the certificate, the control cavity \
+                       moving lambda-one by less than 15 percent, or the \
+                       free single-element spectrum holding other than \
+                       exactly six rigid modes.",
+        records: &[
+            "edit",
+            "cells",
+            "dof",
+            "lambda1_base",
+            "lambda1_edited",
+            "delta_pct",
+            "audible",
+            "certificate_rel",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

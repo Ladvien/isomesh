@@ -6873,3 +6873,43 @@ epistemic footing is now fully measured; only O-19's definition direction remain
 (disjoint fat chambers with fat connectors) reporting comfortable wfs — which would mean the result
 is a property of *overlapping* brush edits specifically, and level designers who avoid overlaps
 could buy the certificate back.
+
+### P-32 — registered for R-033, before the harness was written; the kill-shot carries its own unit conversion
+
+**The factor of two that decides the verdict, registered up front.** The ~0.6% just-noticeable
+difference is a *pitch* threshold — it lives on frequency — and `f ∝ √λ`, so
+`audible ⟺ ½·|Δλ|/λ ≥ 0.6%`: the λ₁ threshold is **1.2%**. Applying 0.6% to λ directly would make
+the null twice as hard to hold, silently. (The JND constant itself is the ticket's, tier-F; the
+conversion is arithmetic.)
+
+> **H.** On a carved, mildly asymmetric, base-anchored pillar (~32³ occupancy): **(C1)** all 8
+> seeded strictly-interior one-voxel digs move λ₁ by **< 1.2%**; **(C2)** at least 1 of 4 digs
+> adjacent to the fixture's two-cell-thick web **exceeds** 1.2% — the ticket's "only edits near a
+> thin feature are audible", both sides of it; **(C3)** carving a 20%-volume cavity moves λ₁ by
+> **> 15%** — the null's reachability, so "inaudible" is a reading of the edit and not of a numb
+> instrument.
+
+**The instrument, and what makes fixed counts safe.** Trilinear hexahedral FEM assembled directly on
+the occupancy grid — the discretisation the sound literature itself uses, no tetrahedralisation —
+with one reference 24×24 element stiffness from 2×2×2 Gauss quadrature of `BᵀDB` (`E = 1`,
+`ν = 0.3`, `ρ = 1`; units cancel in `Δλ/λ`), lumped diagonal mass, base layer fixed. λ₁ by
+matrix-free inverse power iteration (48 outer) over Jacobi-preconditioned CG (256 inner,
+warm-started). The safety is not the counts but the **certificate**: with M diagonal,
+`ε = ‖Kx − λ_R·Mx‖_{M⁻¹} / ‖x‖_M` is a one-pass a-posteriori bound and there is an eigenvalue
+within ε of `λ_R`; every reported value must carry `ε ≤ 5·10⁻⁴·λ_R` — 24× under the decision
+threshold — or the run fails loudly. Two deterministic starts must agree within 2ε. The certificate
+is itself shown able to go red on a deliberately under-converged (2-outer) run before any verdict is
+read. Element validation: the free single element's spectrum must hold **exactly six** rigid modes
+(Jacobi eigensolver over the 24×24), symmetry to 1e-10, and translation/rotation null vectors.
+
+**Descoped, deliberately:** the k ∈ {8..128} mode-count timing sweep the dossier sketched. The
+registered hypothesis is λ₁-only; block deflation is several hundred lines that matter only if the
+kill-shot survives, and premise-falsifiers-first is this backlog's own ordering rule.
+
+**Falsified by** any interior dig at ≥ 1.2% (modal audio earns its ticket, pre-bounded at ≈40 modes
+in 5 ms by Picard's `O(m^2.8)`); C2 failing the other way closes the direction entirely; and
+instrument-falsified by the certificate, the two-start disagreement, the numb control, or a
+single-element spectrum with other than six rigid modes.
+
+**Records** `edit`, `cells`, `dof`, `lambda1_base`, `lambda1_edited`, `delta_pct`, `audible`,
+`certificate_rel`.
