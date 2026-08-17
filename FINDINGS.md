@@ -6458,3 +6458,60 @@ inversion go measurably red on any registered clause — if it does, this analys
 instrument discriminates after all, and R-030 proceeds as written. (The wrong form's *global median*
 is predicted ~6× the right form's — 0.2 against 0.03 voxels — but both sit far beneath every
 registered threshold, which is rule 9's complaint stated as a number.)
+
+### P-28 — registered for R-030, before the harness was written; the matched-analytic instrument V-46 asked for
+
+**The shape change, in one line.** V-46 killed the MEB-oracle comparison because it compared two
+different mollifiers of a spike; this registration compares the measured `r_f = ρ·√(1 − ‖∇ρ‖²)`
+(voxel-step central differences through the crate's real code path) against **derived truths** —
+exact closed forms where the field is piecewise linear, an analytic zero where the true inscribed
+radius vanishes — so the residual isolates the discrete-gradient behaviour and a wrong closed form
+has somewhere to go red.
+
+> **H.** **C1 (form).** On air-slab, air-wedge and triangular-prism fixtures in generic position, the
+> measured `r_f` matches the derived voxel-step mollified truth `r̃` within `1e-9` of the gap on
+> **100%** of medial-band samples — the two-point (slab θ = π, wedge θ = π − 2γ) and three-point
+> (prism axis, `|Π| = 3`) cases both exercised. **C2 (curvature).** On a capsule at generic off-axis
+> band samples — true inscribed radius **zero** — the formula's own noise floor `r_f = ρ·√(2δ)`,
+> `δ = O(h²/s²)`, has world-unit median that **halves per resolution doubling**: 33³→129³ end-to-end
+> ratio ≤ **0.35**. **C3 (clearance).** For slab gaps `W ∈ {3h, 6h, 10h}` at 8 controlled sub-voxel
+> phases, the band-max `r_f` sits in the derived envelope **[√3/2 · (W − h/2), W]** on 24 of 24 rows.
+
+**The derivations, committed before the run.**
+
+- *Slab (normal `n̂`, half-gap `W`, signed offset `s` from the mid-plane):* per-axis voxel-step CD of
+  `ρ = W − |s|` is exactly `g_i = −sign(s)·n̂_i` where `|s| ≥ h·|n̂_i|` and `−(s/h)·sign(n̂_i)` where
+  `|s| < h·|n̂_i|`; `r̃ = (W − |s|)·√(max(0, 1 − ‖g‖²))`. Axis-aligned case: `r̃(e) = (W−|e|)·√(1 −
+  (e/h)²)` — the profile whose maximum over a phase-`φ` lattice is `(W − φh)·√(1 − φ²)`, bounded
+  below over `φ ∈ [0, ½]` by `√3/2·(W − h/2)`: C3's envelope.
+- *Wedge and prism:* `ρ = min` of two (three) linear distances; each probe evaluates the min of
+  shifted linears, so `r̃` is the same construction casewise. On the prism axis the three feet sit at
+  120° and the enclosing-ball radius equals `ρ` — the `|Π| = 3` case the original ticket demanded,
+  now with the analytic `Π` instead of a brute-force cloud (the "MEB oracle" reduced to its exact
+  value, recorded as `clearance_true_voxels`).
+- *Capsule floor:* at radius `s` from the axis, worst probe orientation gives `‖CD‖² ≈ 1 − O(h²/s²)`,
+  so `r_f ≈ ρ·h/s · c_or` with `c_or ∈ [0, ~1]` — first order in `h` at fixed world geometry, which
+  is the honest version of the dossier's "median residual halves": it is the **formula's own
+  curvature noise**, and whether it shrinks with resolution is exactly whether the score is usable at
+  a fixed world scale. Predicted 65³ band median **0.05–1.5 voxels**; orientation anisotropy
+  recorded.
+
+**Falsified by** C2's end-to-end ratio ≥ **0.7** — an h-independent noise floor, the one outcome that
+kills Calibre, the throat metric and handholds together, exactly the teeth the ticket's falsifier
+always meant. C1 failing is an implementation/transcription finding, not a verdict on the identity.
+C3 failing breaks the clearance-envelope derivation and the λ-test's accuracy claim with it. A ratio
+in (0.35, 0.7) is a loud UNDECIDED, reported as falsification-shaped rather than absorbed.
+
+**The inversion this instrument was rebuilt to have:** the wrong form `ρ·(1 − ‖∇ρ‖)` must fail C1 on
+≥ 30% of mid-band samples by more than `0.1·W` — the two forms agree at `u ∈ {0, 1}` and differ by up
+to `0.41·ρ` at `u ≈ 0.7`, which the wedge's mid-range band hits by construction. If the wrong form
+does not go red here, V-46 applies to this design too and the ticket stops again.
+
+**Recorded, unregistered:** the min-composition characterisation the original fixture conflated —
+three overlapping spheres, `ρ_field = |min(f₁,f₂,f₃)|` against the analytic true distance to the
+union boundary (swallowed-cap geometry computed exactly): gap fraction and magnitude, predicted
+h-independent. It is a statement about brush-composed *fields*, not about the identity, which is why
+it is out of the registration.
+
+**Records** `fixture`, `samples_per_axis`, `band_samples`, `within_tol_pct`,
+`band_median_residual_world`, `clearance_true_voxels`, `clearance_est_voxels`, `clamped`.

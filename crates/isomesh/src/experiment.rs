@@ -605,6 +605,53 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "probe_pitch_voxels",
         ],
     },
+    Preregistration {
+        id: "P-28",
+        ticket: "R-030",
+        hypothesis: "The matched-analytic re-instrumentation of the identity \
+                     r = rho * sqrt(1 - |grad rho|^2), after V-46 showed the \
+                     ticket's MEB-oracle shape cannot discriminate. Three \
+                     clauses. C1, form: on slab, wedge and triangular-prism \
+                     air fixtures in generic position -- piecewise-linear \
+                     fields, so the voxel-step mollified truth is derivable \
+                     exactly -- the measured r matches the derived closed \
+                     form within 1e-9 of the gap on 100 percent of \
+                     medial-band samples, exercising the two-point AND \
+                     three-point closest-point cases. C2, curvature: on a \
+                     capsule at generic off-axis samples, where the true \
+                     inscribed radius is zero, the formula's own noise floor \
+                     has a world-unit median that HALVES per resolution \
+                     doubling -- 33-to-129 end-to-end ratio at most 0.35 -- \
+                     the O(h) sqrt-amplification of the O(h squared) \
+                     curvature error in the discrete gradient. C3, clearance: \
+                     for slab gaps of 3, 6 and 10 voxels across 8 sub-voxel \
+                     phases, the band-max r sits inside the derived envelope \
+                     [sqrt(3)/2 * (W - h/2), W] on 24 of 24 rows.",
+        falsified_by: "C2's end-to-end ratio at or above 0.7 -- an \
+                       h-independent noise floor, meaning the discrete score \
+                       cannot separate medial signal from curvature noise at \
+                       any fixed world scale, and Calibre, the throat metric \
+                       and handholds die together as the dossier said. C1 \
+                       failing instead is an implementation or transcription \
+                       finding, not a verdict on the identity. C3 failing \
+                       means the clearance-envelope derivation is wrong and \
+                       the lambda test loses its accuracy claim. And the \
+                       wrong-form inversion -- rho times (1 - |grad rho|) -- \
+                       must fail C1 on at least 30 percent of mid-band \
+                       samples by more than a tenth of the gap, or this \
+                       instrument has not been shown able to go red and V-46 \
+                       applies to it too.",
+        records: &[
+            "fixture",
+            "samples_per_axis",
+            "band_samples",
+            "within_tol_pct",
+            "band_median_residual_world",
+            "clearance_true_voxels",
+            "clearance_est_voxels",
+            "clamped",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
