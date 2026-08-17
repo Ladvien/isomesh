@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**387 entries** — 25 falsified, 303 measured, 39 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**388 entries** — 25 falsified, 304 measured, 39 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -367,6 +367,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-306` | what empty-cell rejection can save is bounded by a count, and that count is a property of the field (✗24) |
 | `M-307` | HELD: the primal family seals every reference field, and all three duals leave the domain boundary open (R-024) |
 | `M-308` | the family comparison's headline conclusion was overturned by optimising one member of the family, not by a better measu… |
+| `M-309` | FALSIFIED on both clauses, and the first one fails for a reason sharper than the hypothesis (T-026) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -4851,3 +4852,81 @@ and is written for **closed** medical volumes. Every boundary vertex on an open 
 construction, so `gyroid` and `fbm_terrain` will read high for a reason that has nothing to do with
 triangle quality. The count is reported raw to match their definition, and the caveat belongs on the
 column rather than in a correction later.
+
+
+### M-309 / P-22 — FALSIFIED on both clauses, and the first one fails for a reason sharper than the hypothesis (T-026)
+
+**M.** `cargo bench --bench experiment_p22`, `docs/experiments/p-22.csv`. Eight reference fields × seven
+extractors × `[17, 25, 33]`, Ryzen 9 5900X. Metric: Grosso & Zint's mean ratio
+`q = 4√3·A / Σᵢlᵢ²`, verified in `validate::tests` against closed forms — **exactly 1** for an
+equilateral triangle and **exactly √3/2** for a right isosceles one — before any mesh was measured.
+
+**Clause 1 — "the two Marching Cubes entries measure identically" — FALSIFIED, 9 of 24 pairs differ.
+The 9 are not scattered.**
+
+| field | MC vs MC+decider |
+|---|---|
+| `sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate` | **bit-identical**, all three resolutions |
+| `gyroid` | differs, max **0.0030** |
+| `fbm_terrain` | differs, max **0.0014** |
+| `noise_cavity` | differs, max **0.0292** |
+
+**The mechanism H proposed is right and its conclusion does not follow from it.** The asymptotic decider
+genuinely moves **no vertex** — both entries place the crossing at the root of the interpolant along a
+grid edge, and five of the eight fields come out *bit-identical*, which is that half of H confirmed
+exactly. **Note what bit-identity proves and what it does not**: it says the decider resolved every
+ambiguous face on those fields **the same way the default table does**, which is implied by having no
+ambiguous faces but does not require it. But the rule changes **which triangles
+exist**, and mean ratio is a property of *triangles*, not of *vertices*. Same points, different
+triangulation, different shape statistics. H conflated "does not move geometry" with "does not change
+the mesh", and the five identical fields are what make the distinction visible rather than arguable.
+
+**The published table is reconciled rather than contradicted, and the arithmetic is the reconciliation.**
+Grosso & Zint report MC and TMC agreeing **to two decimals** on all seven rows. `gyroid`'s 0.0030 and
+`fbm_terrain`'s 0.0014 **round away at two decimals**. Only `noise_cavity`'s **0.0292** would show at
+their precision — and that is the field A-002e added *because none of the others produces a cell with an
+interior ambiguity* (M-208). Their datasets are medical scans and a synthetic volume; nothing says any
+of them is as ambiguity-rich as `noise_cavity`. **Two-decimal agreement is evidence of a small
+difference, not of no difference**, and this is the second time in two days that a published agreement
+turned out to be a rounding window (after ✗25's inflated metric).
+
+**Clause 2 — "our Marching Cubes lands inside their 0.65–0.71" — FALSIFIED, 3 of 6 rows outside, all
+above.**
+
+| | 17³ | 25³ | 33³ |
+|---|---:|---:|---:|
+| `sphere` | **0.7785** | 0.6920 | **0.7131** |
+| `torus` | 0.7039 | **0.7510** | 0.6884 |
+
+**And the resolution-independence does not reproduce either.** Their `gen2` is flat at 0.71 across 64³,
+128³ and 256³; `sphere` here goes 0.7785 → 0.6920 → 0.7131, non-monotone. So the borrowed band fails in
+both of the ways P-22 registered as the risk, and this is the sixth cross-source comparison in this
+project to need an amendment.
+
+**What does transfer is the ordering, and only partly.** Their DC (0.82–0.86) beats their MC
+(0.65–0.71) on every dataset. Here, averaged over the three resolutions:
+
+| extractor | `sphere` | `torus` | `box_exact` | `thin_plate` | `gyroid` | `fbm_terrain` | `noise_cavity` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| marching cubes | 0.728 | 0.714 | 0.858 | 0.866 | 0.687 | 0.691 | 0.688 |
+| surface nets | **0.814** | **0.797** | **0.863** | 0.743 | **0.795** | **0.770** | **0.758** |
+| dual contouring | 0.815 | 0.736 | 0.845 | 0.743 | 0.727 | **0.600** | **0.621** |
+| marching tetrahedra | 0.674 | 0.675 | **0.250** | 0.499 | 0.652 | 0.652 | 0.637 |
+
+**Surface Nets beats Marching Cubes on all eight fields. Dual Contouring beats it on the smooth ones and
+*loses* on the rough ones** — 0.600 against 0.691 on `fbm_terrain`, 0.621 against 0.688 on
+`noise_cavity`. The QEF places a vertex to fit planes, and where the field has no feature to fit it
+places it badly; Surface Nets' centroid does not have that failure mode. **The published claim that the
+dual is better is a claim about smooth data.**
+
+**The largest number in the table is the one nobody was looking for.** Marching Tetrahedra measures
+**0.250 on `box_exact`** and 0.322 on `csg_difference` — against Marching Cubes' 0.858 and subgrid
+Marching Tetrahedra's 0.862 on the same field. A 6-tetrahedron decomposition of a cube cuts an
+axis-aligned flat face along tet diagonals, and the triangles that result are needles. **Its accuracy on
+that field is the best of the primal methods** (M-55, `box_exact` 5.103e-2 against Marching Cubes'
+7.217e-2), so this is a case where accuracy and triangle quality point in opposite directions by a
+factor of three.
+
+**Would be shown wrong by:** a field on which the decider changes the mean ratio while changing no
+triangle, which would mean the difference is arithmetic rather than combinatorial and would break the
+mechanism stated above. The five-versus-three split itself is not at risk — it is the measurement.
