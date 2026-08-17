@@ -363,3 +363,179 @@ fn label_of_names_the_component_for_stitching() {
     assert_eq!(a.label_of([0, 0, 0]), None, "solid has no label");
     assert_eq!(a.label_of([99, 0, 0]), None, "off the lattice has no label");
 }
+
+/// The R-036 area invariant, checked from outside: a full recount of
+/// air–solid faces per label must equal the maintained counts, and a
+/// label-free global face total must equal their sum.
+fn assert_area_invariant(a: &Air) {
+    assert_eq!(a.pending(), 0, "the invariant is a drained-state contract");
+    let mut recount = alloc::vec![0u32; a.label_count()];
+    let mut global = 0u64;
+    let mut nb = [0usize; 6];
+    let count = a.air.len();
+    for i in 0..count {
+        if a.air.get(i) != Some(&true) {
+            continue;
+        }
+        let used = a.neighbours(i, &mut nb);
+        let air_faces = nb
+            .iter()
+            .take(used)
+            .filter(|&&j| a.air.get(j) == Some(&true))
+            .count() as u32;
+        let solid = 6 - air_faces;
+        global += u64::from(solid);
+        let Some(&l) = a.label.get(i) else { continue };
+        if l == NONE {
+            continue;
+        }
+        if let Some(slot) = recount.get_mut(l as usize) {
+            *slot += solid;
+        }
+    }
+    let mut maintained_sum = 0u64;
+    for l in 0..a.label_count() as u32 {
+        assert_eq!(
+            a.component_area(l),
+            recount.get(l as usize).copied().unwrap_or(0),
+            "maintained area for label {l} diverges from the recount"
+        );
+        maintained_sum += u64::from(a.component_area(l));
+    }
+    assert_eq!(
+        maintained_sum, global,
+        "label-free global face total diverges from the per-label sum"
+    );
+}
+
+/// Every synchronous op keeps the area invariant: build, dig with merges,
+/// fill with splits and vanishes, on the P-26-shaped bisect fixture.
+#[test]
+fn the_area_accumulator_survives_dig_merge_fill_split_and_vanish() {
+    const N: u32 = 10;
+    let mut a = air_of(N);
+    assert_area_invariant(&a);
+
+    // Two caverns and a tunnel — the bisect shape.
+    let mut cells = alloc::vec::Vec::new();
+    for x in 1..4u32 {
+        for y in 4..7u32 {
+            for z in 4..7u32 {
+                cells.push([x, y, z]);
+            }
+        }
+    }
+    for x in 6..9u32 {
+        for y in 4..7u32 {
+            for z in 4..7u32 {
+                cells.push([x, y, z]);
+            }
+        }
+    }
+    a.dig(&cells, || true);
+    assert_area_invariant(&a);
+    assert_eq!(a.components(), 2);
+
+    // The tunnel merges them — and the merged component's area is the
+    // recount, not the sum of stale halves.
+    a.dig(&[[4, 5, 5], [5, 5, 5]], || true);
+    assert_area_invariant(&a);
+    assert_eq!(a.components(), 1);
+
+    // Filling the tunnel midpoint severs them again (the split hand-off).
+    a.fill(&[[4, 5, 5]], || true);
+    assert_area_invariant(&a);
+    assert_eq!(a.components(), 2);
+
+    // Consume one cavern entirely (retire must leave its area at zero).
+    let mut right = alloc::vec::Vec::new();
+    right.push([5, 5, 5]);
+    for x in 6..9u32 {
+        for y in 4..7u32 {
+            for z in 4..7u32 {
+                right.push([x, y, z]);
+            }
+        }
+    }
+    a.fill(&right, || true);
+    assert_area_invariant(&a);
+    assert_eq!(a.components(), 1);
+}
+
+/// A seeded random op sequence holds the invariant at every drained step —
+/// merges, splits, re-digs and vanishes included.
+#[test]
+fn the_area_invariant_holds_across_a_seeded_op_sequence() {
+    const N: u32 = 12;
+    let mut a = air_of(N);
+    let mut state = 0x00C0_FFEE_u64;
+    let mut next = move || {
+        state = state
+            .wrapping_mul(6_364_136_223_846_793_005)
+            .wrapping_add(1_442_695_040_888_963_407);
+        (state >> 33) as u32
+    };
+    for step in 0..60 {
+        let cx = 1 + next() % (N - 2);
+        let cy = 1 + next() % (N - 2);
+        let cz = 1 + next() % (N - 2);
+        let r = 1 + next() % 3;
+        let mut ball = alloc::vec::Vec::new();
+        for x in cx.saturating_sub(r)..(cx + r + 1).min(N) {
+            for y in cy.saturating_sub(r)..(cy + r + 1).min(N) {
+                for z in cz.saturating_sub(r)..(cz + r + 1).min(N) {
+                    let d = (i64::from(x) - i64::from(cx)).pow(2)
+                        + (i64::from(y) - i64::from(cy)).pow(2)
+                        + (i64::from(z) - i64::from(cz)).pow(2);
+                    if d <= i64::from(r * r) {
+                        ball.push([x, y, z]);
+                    }
+                }
+            }
+        }
+        if step % 3 == 2 {
+            a.fill(&ball, || true);
+        } else {
+            a.dig(&ball, || true);
+        }
+        assert_area_invariant(&a);
+    }
+}
+
+/// The oracle itself can go red: a deliberate one-count corruption must be
+/// caught. (`should_panic` is the inversion — an oracle that cannot fail is
+/// not checking anything.)
+#[test]
+#[should_panic(expected = "diverges from the recount")]
+fn the_area_oracle_goes_red_on_a_corrupted_count() {
+    const N: u32 = 8;
+    let mut a = air_of(N);
+    a.dig(&[[3, 3, 3], [4, 3, 3]], || true);
+    let l = a.label_of([3, 3, 3]).expect("dug air has a label");
+    if let Some(slot) = a.area.get_mut(l as usize) {
+        *slot += 1;
+    }
+    assert_area_invariant(&a);
+}
+
+/// The split hands both sides a non-zero area, and the Sabine read is two
+/// lookups — the structural half of R-036's first clause.
+#[test]
+fn a_severed_tunnel_leaves_both_components_with_boundary_area() {
+    const N: u32 = 10;
+    let mut a = air_of(N);
+    let mut cells = alloc::vec::Vec::new();
+    for x in 1..9u32 {
+        cells.push([x, 5, 5]);
+    }
+    a.dig(&cells, || true);
+    a.fill(&[[4, 5, 5]], || true);
+    assert_eq!(a.components(), 2);
+    let left = a.label_of([1, 5, 5]).expect("left survives");
+    let right = a.label_of([8, 5, 5]).expect("right survives");
+    assert!(a.component_area(left) > 0, "left side has boundary faces");
+    assert!(a.component_area(right) > 0, "right side has boundary faces");
+    // A 1×1×3 tube sealed at both ends: 3 samples × 6 faces − 2·2 shared.
+    assert_eq!(a.component_size(left), 3);
+    assert_eq!(a.component_area(left), 14);
+}

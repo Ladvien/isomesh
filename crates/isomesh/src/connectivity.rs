@@ -226,6 +226,14 @@ pub struct Air {
     label: Vec<u32>,
     /// Air samples per label, indexed by label. Dense, never a map (M-36).
     size: Vec<u32>,
+    /// Air–solid faces per label, indexed by label — the boundary surface
+    /// area a Sabine estimate needs (R-036), in face units (× h² for world
+    /// area). Domain-boundary faces count as solid: the sealed-box
+    /// convention, because a component touching the grid edge is a stitching
+    /// layer's problem, not this grid's. Delta-maintained everywhere `label`
+    /// is; under a budget-truncated op it is conservatively stale exactly as
+    /// `label` is, and exact again once drained.
+    area: Vec<u32>,
     /// Retired label ids, reusable.
     free: Vec<u32>,
     /// Live component count, maintained rather than counted.
@@ -275,6 +283,7 @@ impl Air {
             air: values.iter().map(|v| !crate::cube::is_inside(*v)).collect(),
             label: alloc::vec![NONE; count],
             size: Vec::new(),
+            area: Vec::new(),
             free: Vec::new(),
             live: 0,
             pending: Vec::new(),
@@ -296,6 +305,18 @@ impl Air {
             me.set_size(l, grown);
             repair.dirty += grown as u64;
             repair.relabels += grown as u64;
+        }
+        // Face counts in one pass over the finished labelling — O(6n), once.
+        for i in 0..count {
+            if me.air.get(i) != Some(&true) {
+                continue;
+            }
+            let Some(&l) = me.label.get(i) else { continue };
+            if l == NONE {
+                continue;
+            }
+            let solid = me.solid_faces(i);
+            me.area_add(l, solid);
         }
         Ok((me, repair))
     }
@@ -387,6 +408,7 @@ impl Air {
 
         // Retire the removed samples first, so sizes are correct before any
         // search reads them.
+        let mut nb_area = [0usize; 6];
         for &g in &gone {
             let i = g as usize;
             let Some(&l) = self.label.get(i) else {
@@ -395,6 +417,25 @@ impl Air {
             if l == NONE {
                 continue;
             }
+            // Face bookkeeping against the finished phase field (every gone
+            // sample is already marked solid). A face to still-air gains a
+            // boundary count on that side; a face to originally-solid (or off
+            // the lattice) stops being this component's boundary; a face to
+            // another gone sample was air–air and is now solid–solid — zero
+            // either way (R-036).
+            let used = self.neighbours(i, &mut nb_area);
+            for &n in nb_area.iter().take(used) {
+                if self.air.get(n) == Some(&true) {
+                    if let Some(&ln) = self.label.get(n)
+                        && ln != NONE
+                    {
+                        self.area_add(ln, 1);
+                    }
+                } else if gone.binary_search(&(n as u32)).is_err() {
+                    self.area_sub(l, 1);
+                }
+            }
+            self.area_sub(l, 6 - used as u32);
             if let Some(slot) = self.label.get_mut(i) {
                 *slot = NONE;
             }
@@ -544,6 +585,17 @@ impl Air {
         self.size_of(label)
     }
 
+    /// Air–solid faces bounding this component; `0` if it is retired or was
+    /// never issued. Face units — multiply by `h²` for world area. Together
+    /// with [`component_size`](Self::component_size) this is what a Sabine
+    /// RT60 estimate reads (R-036). Domain-boundary faces count as solid (the
+    /// sealed-box convention). Exact in the drained state; under a
+    /// budget-truncated op it is conservatively stale exactly as labels are.
+    #[must_use]
+    pub fn component_area(&self, label: u32) -> u32 {
+        self.area.get(label as usize).copied().unwrap_or(0)
+    }
+
     // --- internals ---------------------------------------------------------
 
     fn in_range(&self, p: [u32; 3]) -> bool {
@@ -599,6 +651,7 @@ impl Air {
             Some(l) => l,
             None => {
                 self.size.push(0);
+                self.area.push(0);
                 (self.size.len() - 1) as u32
             }
         }
@@ -607,6 +660,9 @@ impl Air {
     fn retire(&mut self, l: u32) {
         self.live = self.live.saturating_sub(1);
         if let Some(slot) = self.size.get_mut(l as usize) {
+            *slot = 0;
+        }
+        if let Some(slot) = self.area.get_mut(l as usize) {
             *slot = 0;
         }
         self.free.push(l);
@@ -621,6 +677,31 @@ impl Air {
 
     fn size_of(&self, l: u32) -> u32 {
         self.size.get(l as usize).copied().unwrap_or(0)
+    }
+
+    fn area_add(&mut self, l: u32, n: u32) {
+        if let Some(slot) = self.area.get_mut(l as usize) {
+            *slot = slot.saturating_add(n);
+        }
+    }
+
+    fn area_sub(&mut self, l: u32, n: u32) {
+        if let Some(slot) = self.area.get_mut(l as usize) {
+            *slot = slot.saturating_sub(n);
+        }
+    }
+
+    /// Faces of `i` that touch solid or leave the lattice — the sample's
+    /// contribution to its component's boundary area.
+    fn solid_faces(&self, i: usize) -> u32 {
+        let mut nb = [0usize; 6];
+        let used = self.neighbours(i, &mut nb);
+        let air = nb
+            .iter()
+            .take(used)
+            .filter(|&&j| self.air.get(j) == Some(&true))
+            .count();
+        6 - air as u32
     }
 
     /// Label every air sample reachable from `start` with `l`. Returns the count.
@@ -702,11 +783,17 @@ impl Air {
             *slot = provisional;
         }
         let mut grown = 0u32;
+        let mut blob_faces = 0u32;
         let mut head = 0;
         let mut nb = [0usize; 6];
         while let Some(&at) = queue.get(head) {
             head += 1;
             grown += 1;
+            // The blob member's own boundary contribution, read off the
+            // finished phase field; faces it shares with established air were
+            // counted on the established side while `at` was solid, and stop
+            // being boundary now (R-036).
+            blob_faces += self.solid_faces(at);
             let used = self.neighbours(at, &mut nb);
             for &j in nb.iter().take(used) {
                 if self.air.get(j) != Some(&true) {
@@ -719,8 +806,11 @@ impl Air {
                         }
                         queue.push(j);
                     }
-                    Some(l) if l != provisional && !touched.iter().any(|(t, _)| *t == l) => {
-                        touched.push((l, j));
+                    Some(l) if l != provisional => {
+                        self.area_sub(l, 1);
+                        if !touched.iter().any(|(t, _)| *t == l) {
+                            touched.push((l, j));
+                        }
                     }
                     _ => {}
                 }
@@ -728,6 +818,7 @@ impl Air {
         }
         self.queue = queue;
         self.set_size(provisional, grown);
+        self.area_add(provisional, blob_faces);
         repair.relabels += u64::from(grown);
 
         // Union by size: whichever component is largest keeps its label, and
@@ -750,6 +841,9 @@ impl Air {
             repair.relabels += u64::from(moved);
             repair.merges += 1;
             merged += moved;
+            let transfer = self.component_area(l);
+            self.area_sub(l, transfer);
+            self.area_add(best, transfer);
             self.retire(l);
         }
         if best != provisional {
@@ -760,6 +854,9 @@ impl Air {
             repair.relabels += u64::from(moved);
             repair.merges += 1;
             merged += moved;
+            let transfer = self.component_area(provisional);
+            self.area_sub(provisional, transfer);
+            self.area_add(best, transfer);
             self.retire(provisional);
         }
         let total = self.size_of(best) + merged;
@@ -952,12 +1049,16 @@ impl Air {
                 continue;
             }
             let fresh = self.take_label();
+            let mut moved_faces = 0u32;
             for &i in &members {
                 if let Some(slot) = self.label.get_mut(i) {
                     *slot = fresh;
                 }
+                moved_faces += self.solid_faces(i);
             }
             self.set_size(fresh, members.len() as u32);
+            self.area_sub(l, moved_faces);
+            self.area_add(fresh, moved_faces);
             let left = self.size_of(l).saturating_sub(members.len() as u32);
             self.set_size(l, left);
             out.shed += 1;
