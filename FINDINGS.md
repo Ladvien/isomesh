@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**385 entries** — 25 falsified, 303 measured, 37 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**386 entries** — 25 falsified, 303 measured, 38 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -404,6 +404,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-35` | Grosso 2017's implementation does not exist publicly, and that is now checked rather than assumed. |
 | `V-36` | CoACD's intersection-free guarantee is a property of its cut, and its own default merge stage breaks it — which resolves… |
 | `V-37` | the instrument R-024 needs is published and in this corpus; the question it asks is not |
+| `V-38` | the published AR>4 and sliver figures are not a baseline this crate can be measured against, and one of them is misattri… |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -4699,3 +4700,45 @@ this, and it was applied to the *result* of a ticket and not to the *fallout* of
 current straddle test misses — which would mean the fix over-corrected and the metric is now deflated
 rather than inflated. The tangential-contact exclusion is the module's stated contract, so that would
 be a contract question rather than a bug.
+
+
+### V-38 — the published AR>4 and sliver figures are not a baseline this crate can be measured against, and one of them is misattributed (T-026)
+
+**V.** Read directly from FlexiCubes (Shen et al., `10.48550/arXiv.2308.05371`), Fig. 15, against
+`docs/research/2026-08-10-meshing-algorithm-catalog-v2.md` §10 and against T-026 as this repo first
+wrote it.
+
+**The misattribution first.** The catalog's table has a row *"Aspect ratio >4 | **MC** 11.46%"* and
+*"Slivers <10° | **MC** 11.82%"*. In the paper those two numbers are on the row labelled **`MC + Reg.`**
+— Marching Cubes with the **equilateral-edge regularisation** loss applied. That is not plain Marching
+Cubes, and the paper's own Fig. 16 exists to show what the regulariser does: *"MC and DMTet lose details
+in the local geometry."*
+
+**The deeper problem, and it is the one that matters.** Every figure in that table comes from a
+**differentiable-rendering optimisation loop** — Source A is 79 Myles shapes under depth + silhouette +
+SDF loss for 1000 iterations; Source B is 75 ThreeDScan shapes under mask + depth + normal loss. The
+mesh is extracted from a **learned** signed distance field that the loop has been bending for a thousand
+steps. This crate meshes **analytic** fields on a uniform grid. A learned SDF's level set is far less
+regular than `sphere`'s, so the triangle-shape statistics are properties of *that field*, not of
+Marching Cubes.
+
+**So T-026's premise as first written is wrong and is corrected here before anything was built on it.**
+It said *"without these two columns this crate's comparison cannot be read beside any of those tables."*
+Matching the **definition** makes the column *readable*; it does not make the **values** comparable, and
+publishing this crate's `sphere` AR>4 next to FlexiCubes' 2.93% would be exactly the
+one-scene-number error this repo has now catalogued five times (M-56, M-60, M-136, ✗14, M-308).
+
+**What is still worth having, unchanged:** AR>4 and min-angle<10° are the two quantities that line of
+work reports, so emitting them in the same definition lets a reader *convert* rather than guess. **The
+comparison T-026 can honestly make is within this crate** — seven extractors on one fixture — which is
+the same shape as every other table in the head-to-head.
+
+**The definition is pinned to a tool rather than to a formula, and that is the lead to follow.**
+FlexiCubes' Fig. 15 names **PyVista** as the measurement tool, which wraps VTK's Verdict library, so the
+definition to match is Verdict's triangle aspect ratio rather than any of the three plausible textbook
+forms (longest edge ÷ inradius, circumradius ÷ inradius, longest edge ÷ shortest altitude). **Confirm it
+from Verdict before implementing** — rule 5, and the whole point of the ticket is that a differently
+computed ratio is an incomparable column.
+
+**Would be shown wrong by:** a plain-Marching-Cubes AR>4 figure in either paper, measured on a
+non-optimised field, which would restore the baseline this entry withdraws.
