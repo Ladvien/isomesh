@@ -8,7 +8,33 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **`connectivity::Air` now fills as well as digs**, and `connected` is `O(1)` and takes `&self`.
+
+  `Air` was a union-find, and a union-find **cannot** absorb deletion — parent pointers encode union
+  *history*, not spatial adjacency, so re-rooting a shed piece severs its **descendants** from a
+  component they are still part of (✗26). The structure is now a flat label array, which is what makes
+  a fill one write per shed member. `components()` is `O(1)` maintained rather than an `O(n)` scan, and
+  `Repair::unions` became `Repair::relabels` because the old name stopped denoting anything.
+
+  **`fill` costs the shed volume, not the component** (M-321): **3.09 → 3.38 voxels visited per seed**
+  while the lattice grows 7.6×, and **436×** less work than rebuilding at 65³. The replacement search is
+  lockstep — every seed grows a frontier, frontiers that meet merge, and the walk stops when all but one
+  exhausts, so the surviving piece is never walked to completion.
+
+  **The tail is real and is documented rather than hidden.** Bisecting a tunnel between two equal
+  caverns costs **1.1× a full rebuild**: both frontiers are half the component, and there is no
+  replacement edge to find because the component genuinely split. HDT's levels are not the remedy — they
+  bound a *search*, and the remedy is decomposition. `Air::label_of` ships as the one accessor a
+  chunk-stitching layer needs (R-028).
+
+  **Repair is budgeted, not synchronous**, taking the same `spend: FnMut() -> bool` predicate
+  `mesh_within_budget` uses — because amortised is the wrong statistic for the frame a breakthrough
+  lands on. **Both directions of staleness are conservative:** an unfinished fill reads *"not sealed
+  yet"* and an unfinished dig reads *"not connected yet"*. Water leaking for three frames is
+  recoverable; water not leaking out of a room the engine wrongly believes is sealed is a broken game
+  rule.
 
 ## [0.0.8] — 2026-08-17
 

@@ -230,12 +230,21 @@ pub struct Air {
     free: Vec<u32>,
     /// Live component count, maintained rather than counted.
     live: u64,
-    /// Labels whose component may have been severed and not yet searched.
-    pending: Vec<u32>,
+    /// Components that may have been severed, with the surviving samples
+    /// adjacent to the removal that caused it.
+    ///
+    /// The seeds are carried rather than recomputed. Rederiving them as "air
+    /// adjacent to solid" collects the whole cave surface instead of the
+    /// fill's own neighbourhood, which is thousands of frontiers rather than a
+    /// handful and makes the search explore the entire component — measured,
+    /// and it falsified P-26 on the first run.
+    pending: Vec<(u32, Vec<u32>)>,
     /// Visit stamps for the search, avoiding an `O(n)` clear per call.
     stamp: Vec<u32>,
     /// Current stamp generation.
     epoch: u32,
+    /// Which frontier claimed a sample; meaningful only where `stamp == epoch`.
+    claim: Vec<u32>,
     dims: [u32; 3],
     /// Reusable scratch, so a repair allocates nothing.
     queue: Vec<usize>,
@@ -271,6 +280,7 @@ impl Air {
             pending: Vec::new(),
             stamp: alloc::vec![0u32; count],
             epoch: 0,
+            claim: alloc::vec![NONE; count],
             dims,
             queue: Vec::new(),
             scratch: Vec::new(),
@@ -420,8 +430,13 @@ impl Air {
                     continue;
                 }
                 out.seeds += 1;
-                if !self.pending.contains(&l) {
-                    self.pending.push(l);
+                match self.pending.iter_mut().find(|(p, _)| *p == l) {
+                    Some((_, seeds)) => {
+                        if !seeds.contains(&(j as u32)) {
+                            seeds.push(j as u32);
+                        }
+                    }
+                    None => self.pending.push((l, alloc::vec![j as u32])),
                 }
             }
         }
@@ -442,12 +457,12 @@ impl Air {
     /// what is still outstanding.
     pub fn repair<B: FnMut() -> bool>(&mut self, spend: &mut B) -> Fill {
         let mut out = Fill::default();
-        while let Some(&l) = self.pending.first() {
+        while !self.pending.is_empty() {
             if !spend() {
                 break;
             }
-            self.pending.remove(0);
-            self.search(l, &mut out);
+            let (l, seeds) = self.pending.remove(0);
+            self.search(l, &seeds, &mut out);
         }
         out.pending = self.pending.len() as u64;
         out
@@ -577,7 +592,7 @@ impl Air {
             *slot = 0;
         }
         self.free.push(l);
-        self.pending.retain(|p| *p != l);
+        self.pending.retain(|(p, _)| *p != l);
     }
 
     fn set_size(&mut self, l: u32, n: u32) {
@@ -658,7 +673,10 @@ impl Air {
         // Claim the blob with a provisional label, collecting the existing
         // labels it touches.
         let provisional = self.take_label();
-        let mut touched = Vec::new();
+        // Label *and* a member of it, recorded as it is discovered. Searching
+        // for a member afterwards would be a scan of the whole lattice per
+        // merge, which is the cost this whole module exists to avoid.
+        let mut touched: Vec<(u32, usize)> = Vec::new();
         let mut queue = core::mem::take(&mut self.queue);
         queue.clear();
         queue.push(i);
@@ -683,7 +701,9 @@ impl Air {
                         }
                         queue.push(j);
                     }
-                    Some(l) if l != provisional && !touched.contains(&l) => touched.push(l),
+                    Some(l) if l != provisional && !touched.iter().any(|(t, _)| *t == l) => {
+                        touched.push((l, j));
+                    }
                     _ => {}
                 }
             }
@@ -696,7 +716,7 @@ impl Air {
         // every other one is rewritten into it. Ties go to the smaller id so the
         // outcome does not depend on discovery order (M-36).
         let mut best = provisional;
-        for &l in &touched {
+        for &(l, _) in &touched {
             let (sl, sb) = (self.size_of(l), self.size_of(best));
             if sl > sb || (sl == sb && l < best) {
                 best = l;
@@ -704,14 +724,11 @@ impl Air {
         }
 
         let mut merged = 0u32;
-        for &l in &touched {
+        for &(l, member) in &touched {
             if l == best {
                 continue;
             }
-            let Some(seed) = self.any_member(l) else {
-                continue;
-            };
-            let moved = self.recolour(seed, l, best);
+            let moved = self.recolour(member, l, best);
             repair.relabels += u64::from(moved);
             repair.merges += 1;
             merged += moved;
@@ -721,10 +738,7 @@ impl Air {
             // The newly-dug blob is itself a component being absorbed, so this
             // is a join and counts as one. Only when the blob is the largest
             // does it keep its label and absorb the others instead.
-            let Some(seed) = self.any_member(provisional) else {
-                return;
-            };
-            let moved = self.recolour(seed, provisional, best);
+            let moved = self.recolour(i, provisional, best);
             repair.relabels += u64::from(moved);
             repair.merges += 1;
             merged += moved;
@@ -734,37 +748,20 @@ impl Air {
         self.set_size(best, total);
     }
 
-    /// Any air sample carrying `l`, or `None`. Linear, and used only where the
-    /// component is about to be walked anyway.
-    fn any_member(&self, l: u32) -> Option<usize> {
-        self.label.iter().position(|x| *x == l)
-    }
-
-    /// Lockstep replacement search over the component labelled `l`.
+    /// Lockstep replacement search over the component labelled `l`, starting
+    /// from `seeds`.
     ///
     /// Every seed grows a frontier one voxel per round; frontiers that meet
     /// merge. The search stops when at most one frontier is still active, so the
     /// surviving piece is **never walked to completion** and the cost is the
     /// second-largest piece rather than the component (P-26).
-    fn search(&mut self, l: u32, out: &mut Fill) {
-        let mut seeds = Vec::new();
-        let mut nb = [0usize; 6];
-        // A seed is an air sample of `l` adjacent to solid: only those can have
-        // been separated by a removal.
-        for i in 0..self.label.len() {
-            if self.label.get(i) != Some(&l) {
-                continue;
-            }
-            let used = self.neighbours(i, &mut nb);
-            let touches_solid = used < 6
-                || nb
-                    .iter()
-                    .take(used)
-                    .any(|&j| self.air.get(j) != Some(&true));
-            if touches_solid {
-                seeds.push(i);
-            }
-        }
+    ///
+    /// **The seeds are given, not rederived.** Rederiving them as "air adjacent
+    /// to solid" collects the entire cave surface rather than this fill's own
+    /// neighbourhood — thousands of frontiers instead of a handful, which makes
+    /// the walk explore the whole component. That is not a slow version of this
+    /// function; it is a different one, and it falsified P-26 on the first run.
+    fn search(&mut self, l: u32, seeds: &[u32], out: &mut Fill) {
         if seeds.len() < 2 {
             return;
         }
@@ -776,18 +773,19 @@ impl Air {
         }
         let epoch = self.epoch;
 
-        // One frontier per seed, each with its own queue. `owner` maps a visited
-        // voxel to the frontier that claimed it; `into` resolves frontier merges.
-        let mut owner: Vec<u32> = alloc::vec![NONE; self.label.len().min(seeds.len().max(1))];
-        owner.clear();
-        let mut claim: Vec<u32> = alloc::vec![NONE; self.label.len()];
+        // One frontier per seed. `queues` holds what is still to expand and
+        // `seen` the members found so far, so an exhausted frontier already
+        // knows its piece and nothing has to be scanned for afterwards.
         let mut queues: Vec<Vec<usize>> = Vec::new();
+        let mut seen: Vec<Vec<usize>> = Vec::new();
         let mut into: Vec<u32> = Vec::new();
         let mut done: Vec<bool> = Vec::new();
         for (f, &s) in seeds.iter().enumerate() {
-            if self.stamp.get(s) == Some(&epoch) {
-                // Already claimed by an earlier seed's frontier this round.
+            let s = s as usize;
+            if self.label.get(s) != Some(&l) || self.stamp.get(s) == Some(&epoch) {
+                // Solid now, or already claimed by an earlier seed's frontier.
                 queues.push(Vec::new());
+                seen.push(Vec::new());
                 into.push(f as u32);
                 done.push(true);
                 continue;
@@ -795,21 +793,23 @@ impl Air {
             if let Some(slot) = self.stamp.get_mut(s) {
                 *slot = epoch;
             }
-            if let Some(slot) = claim.get_mut(s) {
+            if let Some(slot) = self.claim.get_mut(s) {
                 *slot = f as u32;
             }
             queues.push(alloc::vec![s]);
+            seen.push(alloc::vec![s]);
             into.push(f as u32);
             done.push(false);
         }
 
-        let resolve = |into: &Vec<u32>, mut f: u32| -> u32 {
+        fn resolve(into: &[u32], mut f: u32) -> u32 {
             while into.get(f as usize).copied().unwrap_or(f) != f {
                 f = into.get(f as usize).copied().unwrap_or(f);
             }
             f
-        };
+        }
 
+        let mut nb = [0usize; 6];
         loop {
             let active: Vec<u32> = (0..queues.len() as u32)
                 .filter(|&f| resolve(&into, f) == f && done.get(f as usize) != Some(&true))
@@ -837,49 +837,63 @@ impl Air {
                         continue;
                     }
                     if self.stamp.get(j) == Some(&epoch) {
-                        let g = claim.get(j).copied().unwrap_or(NONE);
+                        let g = self.claim.get(j).copied().unwrap_or(NONE);
                         if g == NONE {
                             continue;
                         }
                         let (rf, rg) = (resolve(&into, f), resolve(&into, g));
-                        if rf != rg {
-                            // Two frontiers met: the pieces are one piece.
-                            let (keep, gone) = if rf < rg { (rf, rg) } else { (rg, rf) };
-                            if let Some(slot) = into.get_mut(gone as usize) {
-                                *slot = keep;
-                            }
-                            let moved = queues.get(gone as usize).cloned().unwrap_or_default();
-                            if let Some(dst) = queues.get_mut(keep as usize) {
-                                dst.extend(moved);
-                            }
-                            if let Some(slot) = queues.get_mut(gone as usize) {
-                                slot.clear();
-                            }
-                            if done.get(gone as usize) == Some(&true)
-                                && let Some(slot) = done.get_mut(keep as usize)
-                            {
-                                *slot = false;
-                            }
+                        if rf == rg {
+                            continue;
+                        }
+                        // Two frontiers met: their pieces are one piece.
+                        let (keep, drop_) = if rf < rg { (rf, rg) } else { (rg, rf) };
+                        if let Some(slot) = into.get_mut(drop_ as usize) {
+                            *slot = keep;
+                        }
+                        let moved_q = queues.get(drop_ as usize).cloned().unwrap_or_default();
+                        let moved_s = seen.get(drop_ as usize).cloned().unwrap_or_default();
+                        if let Some(dst) = queues.get_mut(keep as usize) {
+                            dst.extend(moved_q);
+                        }
+                        if let Some(dst) = seen.get_mut(keep as usize) {
+                            dst.extend(moved_s);
+                        }
+                        if let Some(slot) = queues.get_mut(drop_ as usize) {
+                            slot.clear();
+                        }
+                        if let Some(slot) = seen.get_mut(drop_ as usize) {
+                            slot.clear();
+                        }
+                        let revived = done.get(drop_ as usize) == Some(&true);
+                        if revived && let Some(slot) = done.get_mut(keep as usize) {
+                            *slot = false;
                         }
                         continue;
                     }
                     if let Some(slot) = self.stamp.get_mut(j) {
                         *slot = epoch;
                     }
-                    if let Some(slot) = claim.get_mut(j) {
-                        *slot = resolve(&into, f);
+                    let root = resolve(&into, f);
+                    if let Some(slot) = self.claim.get_mut(j) {
+                        *slot = root;
                     }
-                    if let Some(q) = queues.get_mut(resolve(&into, f) as usize) {
+                    if let Some(q) = queues.get_mut(root as usize) {
                         q.push(j);
+                    }
+                    if let Some(sset) = seen.get_mut(root as usize) {
+                        sset.push(j);
                     }
                 }
             }
         }
 
-        // Frontiers that exhausted are complete pieces. Whichever frontier is
-        // still active (or, if all finished, the largest) keeps `l`.
+        // Frontiers that exhausted are complete pieces, and each already holds
+        // its own members. Whichever frontier is still active keeps `l`; if all
+        // of them finished, the largest does.
         let roots: Vec<u32> = (0..queues.len() as u32)
-            .filter(|&f| resolve(&into, f) == f)
+            .filter(|&f| {
+                resolve(&into, f) == f && seen.get(f as usize).is_some_and(|m| !m.is_empty())
+            })
             .collect();
         if roots.len() < 2 {
             return;
@@ -890,55 +904,49 @@ impl Air {
             .filter(|&f| done.get(f as usize) != Some(&true))
             .collect();
 
-        let mut members: Vec<(u32, Vec<usize>)> = Vec::new();
+        let keeper = match unfinished.first() {
+            Some(&f) if unfinished.len() == 1 => f,
+            _ => {
+                // All finished: the largest piece keeps the label.
+                let mut best = *roots.first().unwrap_or(&0);
+                for &f in &roots {
+                    let (a, b) = (
+                        seen.get(f as usize).map_or(0, Vec::len),
+                        seen.get(best as usize).map_or(0, Vec::len),
+                    );
+                    if a > b {
+                        best = f;
+                    }
+                }
+                best
+            }
+        };
+
+        let mut split = false;
         for &f in &roots {
-            if unfinished.len() == 1 && unfinished.first() == Some(&f) {
+            if f == keeper {
                 continue;
             }
-            let mut m = Vec::new();
-            for i in 0..self.label.len() {
-                if self.label.get(i) == Some(&l)
-                    && self.stamp.get(i) == Some(&epoch)
-                    && claim.get(i).map(|c| resolve(&into, *c)) == Some(f)
-                {
-                    m.push(i);
-                }
+            let Some(members) = seen.get(f as usize).cloned() else {
+                continue;
+            };
+            if members.is_empty() {
+                continue;
             }
-            if !m.is_empty() {
-                members.push((f, m));
-            }
-        }
-        if members.is_empty() {
-            return;
-        }
-        // If every frontier finished, the largest keeps the old label.
-        if unfinished.is_empty() {
-            let mut biggest = 0;
-            for (k, (_, m)) in members.iter().enumerate() {
-                if m.len() > members.get(biggest).map_or(0, |b| b.1.len()) {
-                    biggest = k;
-                }
-            }
-            if biggest < members.len() {
-                members.remove(biggest);
-            }
-        }
-        if members.is_empty() {
-            return;
-        }
-
-        out.splits += 1;
-        for (_, m) in &members {
             let fresh = self.take_label();
-            for &i in m {
+            for &i in &members {
                 if let Some(slot) = self.label.get_mut(i) {
                     *slot = fresh;
                 }
             }
-            self.set_size(fresh, m.len() as u32);
-            let left = self.size_of(l).saturating_sub(m.len() as u32);
+            self.set_size(fresh, members.len() as u32);
+            let left = self.size_of(l).saturating_sub(members.len() as u32);
             self.set_size(l, left);
             out.shed += 1;
+            split = true;
+        }
+        if split {
+            out.splits += 1;
         }
     }
 }

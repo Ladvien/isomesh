@@ -198,6 +198,11 @@ name = "replacement_search"
 harness = false
 
 [[bench]]
+name = "experiment_p26"
+harness = false
+test = false
+
+[[bench]]
 name = "a028_diagnose"
 harness = false
 

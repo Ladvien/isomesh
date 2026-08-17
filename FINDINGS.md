@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**406 entries** — 26 falsified, 315 measured, 45 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**407 entries** — 26 falsified, 316 measured, 45 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -380,6 +380,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-318` | a grid-edge naming would close the whole edit-proportionality gap, and the obstacle is not the encoding (R-027) |
 | `M-319` | filling disconnects the air region about one time in six, so R-022b's cheap escape does not exist (R-022b) |
 | `M-320` | the median split sheds one voxel, so the replacement search the literature is built around is answering a question this… |
+| `M-321` | HELD on the measured distribution, and the adversarial fixture it demanded costs 1.1× a full rebuild (R-022b) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -5959,6 +5960,60 @@ failure a measurement of cost alone cannot see. It gets its own assertion rather
 
 **Records:** `samples_per_axis`, `fills`, `dirty_samples`, `seeds`, `visited`, `splits`,
 `shed_components`, `vanished_components`, `rebuild_visited`.
+
+### M-321 / P-26 — HELD on the measured distribution, and the adversarial fixture it demanded costs 1.1× a full rebuild (R-022b)
+
+**M.** `cargo bench --bench experiment_p26`, `docs/experiments/p-26.csv`. Two fixtures, because P-26
+predicted differently for each and a harness running only the first would have measured M-320's fixture
+rather than the structure.
+
+| fixture | n | dirty | seeds | visited | **per seed** | **vs 200 rebuilds** |
+|---|---:|---:|---:|---:|---:|---:|
+| distribution | 33 | 21,299 | 19,019 | 58,837 | **3.09** | 122× |
+| distribution | 49 | 32,123 | 32,428 | 96,950 | **2.99** | 243× |
+| distribution | 65 | 35,381 | 37,244 | 126,030 | **3.38** | **436×** |
+| bisect | 33 | 1 | 2 | 28,830 | 14,415 | 1.2× |
+| bisect | 49 | 1 | 2 | 101,614 | 50,807 | 1.2× |
+| bisect | 65 | 1 | 2 | 246,078 | **123,039** | **1.1×** |
+
+**HELD on the distribution — but the raw column is not the claim, and saying so is part of the result.**
+`visited` grew 2.14× across the sweep, which read alone looks like the first falsifier firing. It is not:
+the **edit itself grew**. The same radius-4 brush removes more air at 65³ than at 33³ because there is
+more air to remove, so `seeds` grew 1.96×. P-23 could legitimately say *"flat"* because its fixture held
+the edit constant; this one cannot, and P-26 inherited that phrasing without inheriting the fixture
+property that made it true. **The quantity the hypothesis is actually about — work per unit of edit — is
+`visited/seed`, and that is 3.09 → 2.99 → 3.38 while the lattice grows 7.6×.** Flat, and the advantage
+over rebuilding *widens* from 122× to **436×**.
+
+**The bisect fixture behaves exactly as P-26 predicted, and the number is worse than "grows".** Filling
+one voxel — the midpoint of a tunnel joining two equal caverns — visits 246,078 voxels at 65³ against a
+274,625-sample rebuild. **That is 1.1×.** Lockstep buys essentially nothing on this edit: both frontiers
+are half the component, so *"stop when all but one exhausts"* stops only after walking half of it. The
+`per seed` column makes the gap between the two regimes plain — **3.38 against 123,039**, four orders of
+magnitude, for the same structure on the same lattice.
+
+**So "the levelled HDT scheme is unnecessary here" is now conditioned by measurement rather than by
+caution.** It is unnecessary for the measured edit distribution and it is not the remedy for the bisect
+either — HDT's levels bound a *replacement-edge search*, and here there is no replacement edge to find:
+the component genuinely split, and the cost is the unavoidable one of discovering which side is smaller.
+**The remedy is decomposition, not a better search.** A per-chunk `Air` bounds any walk by the chunk,
+so bisecting a tunnel costs 33³ rather than the world — which is why `Air::label_of` ships now, as the
+one accessor a stitching layer needs (R-028).
+
+**One implementation defect, caught by the falsifier rather than by a test.** The first run reported
+887,123 visited at 33³ — 15× the corrected figure — and grew 5.44×. Cause: `search` **rederived** its
+seeds as *"any air sample adjacent to solid"*, which in a cave field is the entire cave surface, so it
+ran thousands of frontiers instead of a handful and lockstep explored nearly the whole component. The
+correct seed set is the air adjacent to *this fill's own removals*, which `fill` already computed and
+threw away. Two further `O(n³)` scans (`any_member`, and a member-collection pass) were removed with it.
+
+**Every one of the 15 unit tests passed both before and after that fix**, including the pairwise
+rebuild-agreement test — because the defect made the structure **slow, not wrong**. A correctness suite
+cannot see a cost defect, which is the argument for a pre-registered cost falsifier existing at all.
+
+**Would be shown wrong by:** a field whose caves are wide relative to the brush, where the distribution's
+own splits start shedding large pieces and `visited/seed` climbs. `noise_cavity` at radius 4 is the
+adversarial end for split *frequency* (M-319) and, per M-320, the friendly end for split *size*.
 
 ### ✗26 — P-25's mechanism clause is false, and P-25's own falsifier is what named it (R-022b)
 
