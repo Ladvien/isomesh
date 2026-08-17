@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**394 entries** — 25 falsified, 307 measured, 42 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**395 entries** — 25 falsified, 308 measured, 42 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -371,6 +371,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-310` | on real scanned volumes, Marching Cubes lands inside the published quality band that analytic fields put it outside of (… |
 | `M-311` | HELD on both clauses that were about the world, and the clause about the comparison was wrong (R-022a) |
 | `M-312` | FALSIFIED before it ran, on arithmetic; and the margin that replaces it is bounded by half the field's scale (R-023) |
+| `M-313` | R-023's hypothesis is falsified: a margin threshold acts away from where the published algorithms disagree (R-023) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -5318,3 +5319,60 @@ unmeasured and is a hypothesis that can now be registered against a quantity kno
 
 **Would be shown wrong by:** an ambiguous sweep whose margin exceeds half the corner scale, which would
 break the AM-GM reading and mean the bound is empirical rather than structural.
+
+
+### M-313 — R-023's hypothesis is falsified: a margin threshold acts *away* from where the published algorithms disagree (R-023)
+
+**M.** `cargo bench --bench interior_margin`, `docs/measurements/interior_margin.csv` and
+`docs/measurements/interior_margin_epsilon.csv`. 400,000 random cells per population; the disagreement
+set is `SweptFaces::test() != chernyaev_numerator_test()`, which **is** the set on which the corrected
+and uncorrected published constructions differ.
+
+**R-023's H, verbatim:** *"a persistence threshold reproduces MC33's topology on the fields where MC33
+is agreed correct, and differs only on cells where the published algorithms disagree with each other."*
+The second clause is **false**, and not marginally.
+
+| ε (relative to corner scale) | flipped by the threshold | disagreeing | **both** | expected if independent |
+|---:|---:|---:|---:|---:|
+| `1e-1` | 1,818 | 1,005 | **156** | 287.8 |
+| `1e-2` | 81 | 1,005 | **2** | 12.8 |
+| `1e-3` | 3 | 1,005 | **0** | 0.5 |
+| `1e-4` | 0 | 1,005 | 0 | 0.0 |
+
+**The overlap is smaller than chance at every ε** — 0.54×, 0.16×, 0 against independence. A threshold
+does not act *on* the disagreement set; it acts **away** from it. H predicted the two sets would
+coincide; they are anti-correlated.
+
+**The mechanism is geometric and makes the anti-correlation obvious in hindsight.** A **small margin** is
+a *near-tangency*: the swept saddle barely crosses zero, so the interior decision is nearly a coin
+toss. A **disagreement** is a *pole* phenomenon: the sweep's denominator vanishes, the saddle position
+leaves the face, and Chernyaev's numerator-only test reads a value at a point that is no longer on the
+surface. Those are different conditions — and a poled sweep's margin is set by the large excursion near
+the pole, which pushes it **away** from zero rather than toward it. Measured directly: the largest
+margin on a disagreeing sweep is **0.406**, against a maximum of 0.436 over all sweeps. **Disagreeing
+cells have among the largest margins there are.**
+
+**Disagreement is common, which is the other thing worth recording.** 1,005 of 6,348 ambiguous sweeps —
+**16%** — and 1,342 of 5,994 at quantum `1/4`, **22%**. Custodio reports the misread *"once in 10,000
+random 5×5×5 fields"*; that is a rate over **fields**, and this is the rate over the **configurations
+that can exhibit it at all**. The two differ by three orders of magnitude and must not be confused,
+which this crate's own `how_often_the_correction_changes_the_answer` already warned about and is now
+quantified over random cells rather than a magnitude grid.
+
+**So R-023 is closed by measurement rather than by effort, and the phase's own note applies:** *"Do not
+treat a null as a wasted ticket."* What survives is real and shipped — `SweptFaces::margin()`, the
+interior decider being the `ε = 0` member of a one-parameter family **by construction**, and the bound
+`|margin| ≤ max|corner|/2` (M-312). What dies is the reason the ticket gave for wanting it: thresholding
+this scalar is **not** a route to resolving the cells the published algorithms fight over, and cannot
+retire A-002b, A-002i or A-020b. Those cells are decided by the *pole*, and the margin is largest
+exactly there.
+
+**What the margin is still good for**, stated so the surviving claim is not inflated: suppressing
+tunnels whose interior decision is numerically marginal — a knob for a game that would rather have a
+closed cell than a coin toss. **371 of 5,994 cells at quantum `1/4` have a margin under `1e-6`**, against
+**0** in continuous data, so that knob has something to act on exactly where quantised input lives
+(M-220, M-232, M-310).
+
+**Would be shown wrong by:** a field-driven census — these are random corner tuples, and the eight
+reference fields might populate the joint distribution differently. The anti-correlation is strong
+enough at three ε that a reversal seems unlikely, and the mechanism does not depend on the population.

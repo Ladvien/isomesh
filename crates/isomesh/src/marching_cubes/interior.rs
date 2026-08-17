@@ -384,7 +384,7 @@ impl<R: Real> SweptFaces<R> {
 /// Chernyaev's numerator-only test, kept purely as a cross-check.
 ///
 /// **This is not the test the crate uses**, in the same way and for the same
-/// reason [`super::reference`] is not the table it uses: it exists so that
+/// reason `marching_cubes::reference` is not the table it uses: it exists so that
 /// [`SweptFaces::test`] can be checked against the construction it corrects, and
 /// so that the disagreement Custodio §5.1 predicts can be *demonstrated* rather
 /// than described.
@@ -392,8 +392,13 @@ impl<R: Real> SweptFaces<R> {
 /// It reports whether `F` is positive anywhere in `[0, 1]`, which is the sign
 /// Chernyaev's three conditions track. Where `Δ > 0` throughout the sweep the
 /// two agree, because dividing by a positive number does not change a sign.
-#[cfg(test)]
-pub(super) fn chernyaev_numerator_test<R: Real>(faces: &SweptFaces<R>) -> Interior {
+///
+/// **Public, and not `#[cfg(test)]`, since R-023.** The set of cells on which
+/// this and [`SweptFaces::test`] disagree *is* the set where the published
+/// algorithms disagree, and that set is the subject of a measurement rather than
+/// only of a test. A caller reproducing this crate's comparison needs the thing
+/// being compared against.
+pub fn chernyaev_numerator_test<R: Real>(faces: &SweptFaces<R>) -> Interior {
     // The maximum of a quadratic over a closed interval is at an endpoint or at
     // its vertex, so three evaluations decide it — no sweep required.
     let d = |k: usize| faces.hi[k] - faces.lo[k];
