@@ -32,6 +32,13 @@
 //! edit-proportional" are different claims and this measures both**, on the same
 //! edit, at three grid sizes with the brush held fixed.
 
+// Exact equality throughout: this measures whether a value *changed*, and a
+// tolerance would call an edit smaller than it was.
+#![allow(
+    clippy::float_cmp,
+    reason = "the question is whether a value changed at all"
+)]
+
 mod common;
 
 use std::fmt::Write as _;
@@ -95,20 +102,12 @@ fn main() {
     }
 
     println!(
-        "{:>5} {:>10} {:>8} {:>7} {:>7} {:>9} {:>10} {:>11} {:>12}",
-        "n",
-        "cells",
-        "dirty s",
-        "dirty c",
-        "case ch",
-        "verts",
-        "buf moved",
-        "geom moved",
-        "first moved"
+        "{:>5} {:>10} {:>8} {:>9} {:>10} {:>11} {:>8} {:>12}",
+        "n", "cells", "dirty c", "verts", "buf moved", "geom moved", "KEYED", "first moved"
     );
     let mut csv = String::from(
         "samples_per_axis,cells,dirty_samples,dirty_cells,case_changed,eight_k,\
-         vertices_before,vertices_after,buffer_moved,geometric_moved,first_moved_index\n",
+         vertices_before,vertices_after,buffer_moved,geometric_moved,keyed_moved,first_moved_index\n",
     );
 
     for n in RESOLUTIONS {
@@ -195,6 +194,46 @@ fn main() {
             }
         }
 
+        // ── the counterfactual: what a grid-edge key would cost ─────────────
+        //
+        // **R-027's ceiling, measured without changing anything.** A Marching
+        // Cubes vertex lives on a grid edge, and `(lower sample, axis)` names
+        // that edge globally — the crate already keys its edge cache that way
+        // and discards the name when packing. Under such a naming a vertex
+        // entry changes only when its edge's crossing **appears, vanishes, or
+        // moves**, and a crossing moves only when one of the edge's two samples
+        // does. So this counts edges, from the value arrays alone, with no
+        // extractor involved.
+        //
+        // It is deliberately *not* keyed on position: position-keying makes the
+        // answer equal `geometric_moved` by construction and measures nothing.
+        let mut keyed_moved = 0u64;
+        for z in 0..n {
+            for y in 0..n {
+                for x in 0..n {
+                    for axis in 0..3 {
+                        let mut to = [x, y, z];
+                        to[axis] += 1;
+                        if to[axis] >= n {
+                            continue;
+                        }
+                        let i = (z as usize * n as usize + y as usize) * n as usize + x as usize;
+                        let j = (to[2] as usize * n as usize + to[1] as usize) * n as usize
+                            + to[0] as usize;
+                        let (ai, aj) = (before[i], before[j]);
+                        let (bi, bj) = (after[i], after[j]);
+                        let had = is_inside(ai) != is_inside(aj);
+                        let has = is_inside(bi) != is_inside(bj);
+                        // Appeared or vanished, or still there and the root
+                        // moved because an endpoint value changed.
+                        if had != has || (has && (ai != bi || aj != bj)) {
+                            keyed_moved += 1;
+                        }
+                    }
+                }
+            }
+        }
+
         // ── the output side: how much of the buffer actually moved ───────────
         let a = mesh(&before, &shape, h);
         let b = mesh(&after, &shape, h);
@@ -246,13 +285,13 @@ fn main() {
 
         let total_cells = u64::from(cells[0]) * u64::from(cells[1]) * u64::from(cells[2]);
         println!(
-            "{n:>5} {total_cells:>10} {dirty_samples:>8} {dirty_cells:>7} {case_changed:>7} \
-             {:>9} {moved:>10} {geometric:>11} {first_moved:>12}",
+            "{n:>5} {total_cells:>10} {dirty_cells:>8} {:>9} {moved:>10} {geometric:>11} \
+             {keyed_moved:>8} {first_moved:>12}",
             a.positions.len()
         );
         let _ = writeln!(
             csv,
-            "{n},{total_cells},{dirty_samples},{dirty_cells},{case_changed},{},{},{},{moved},{geometric},{first_moved}",
+            "{n},{total_cells},{dirty_samples},{dirty_cells},{case_changed},{},{},{},{moved},{geometric},{keyed_moved},{first_moved}",
             8 * dirty_samples,
             a.positions.len(),
             b.positions.len()

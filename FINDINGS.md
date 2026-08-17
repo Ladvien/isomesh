@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**401 entries** — 25 falsified, 312 measured, 44 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**402 entries** — 25 falsified, 313 measured, 44 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -376,6 +376,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-315` | R-025's 20% is above the ceiling on any vertex placement, measured before a placement rule was written (R-025) |
 | `M-316` | a central difference is identically zero at a local extremum, and quantised data manufactures them (A-028) |
 | `M-317` | the volume meshes: 483 tetrahedra declined around 33 singular points, reported rather than fatal (A-028) |
+| `M-318` | a grid-edge naming would close the whole edit-proportionality gap, and the obstacle is not the encoding (R-027) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -5741,3 +5742,51 @@ anyone plans to use this extractor on a scan.
 **Would be shown wrong by:** a volume where the skipped tetrahedra are *not* clustered — many distinct
 singular corners rather than a few — which would make the holes scattered and much harder to repair, and
 would change the advice this entry gives.
+
+
+### M-318 — a grid-edge naming would close the whole edit-proportionality gap, and the obstacle is not the encoding (R-027)
+
+**M.** `cargo bench --bench edit_trace`, `docs/measurements/edit_trace.csv`. The counterfactual computed
+from the value arrays alone, with no API changed and no extractor involved — **measure the ceiling
+before pricing the break**, which is the order that closed R-025 and P-24 cheaply.
+
+**The counterfactual, and why it is not circular.** A Marching Cubes vertex lives on a grid edge, and
+`(lower sample, axis)` names that edge globally — the crate already keys its edge cache that way and
+discards the name when packing. Under such a naming an entry changes only when its edge's crossing
+**appears, vanishes, or moves**, and a crossing moves only when one of the edge's two samples does. So
+the column counts *edges*. It is deliberately **not** keyed on position: position-keying makes the
+answer equal `geometric_moved` by construction and would measure nothing.
+
+| n | dirty cells | vertices | buffer moved | geometric moved | **keyed** |
+|---:|---:|---:|---:|---:|---:|
+| 33 | 792 | 1,758 | 1,348 | 330 | **318** |
+| 65 | 792 | 6,918 | 4,257 | 322 | **310** |
+| 129 | 792 | 27,822 | 15,706 | 346 | **346** |
+
+**Flat, and equal to the true geometric change.** 318 / 310 / 346 against 330 / 322 / 346 — the small
+gap is a definitional one, since a vertex that *moves* counts twice in the set difference (vanished plus
+appeared) and once as an edge. At 129³ they are identical, so nothing merely moved there.
+
+**So the break would buy the whole gap: 15,706 → 346 at 129³, a 45× reduction, and flat in `n` where the
+packed buffer grows with the `O(n²)` vertex count.** M-314's split — computation edit-proportional,
+output not — has no residue once the naming changes. There is nothing else in the way.
+
+**But the encoding is not the hard part, and this is the thing to know before scoping.** Three shapes,
+and only the third works:
+
+- **Stable *order*** — emit in grid-edge order rather than cell-scan order. **Does not help.** A
+  crossing appearing still shifts every index after it; the churn is `O(n²)` again.
+- **Index *is* the edge id**, with holes. Stable, and **230× the memory**: 3·129³ ≈ 6.4 M slots for
+  27,822 vertices.
+- **A persistent edge → slot map**, allocating on first use, never reusing, compacted occasionally.
+  This is the one an incremental engine actually runs — and it is **state carried across extractions**,
+  which is a larger change than the index encoding. `extract_into` is currently a pure function of its
+  inputs, and this makes it not one.
+
+**So R-027 is an architecture question wearing an encoding question's clothes**, and X-005's 294 call
+sites are the *smaller* half of its cost. The measurement says the prize is real and undiminished; it
+does not say the shape is cheap.
+
+**Would be shown wrong by:** a field whose edits change crossings far from the dirty set — the keyed
+column is flat here because a brush is compact, and a field with long-range coupling through one cell
+would break that. `noise_cavity` is the candidate and was not run.
