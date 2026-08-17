@@ -28,8 +28,9 @@ Every number below has a committed benchmark that produced it and a `FINDINGS.md
 > - **Eight fields, not seven.** `noise_cavity` landed at A-002e and is the worst field in every
 >   topology column for every method. Every figure here is re-derived over eight.
 > - **One machine, not two.** The Apple M5 half is stale and is not quoted (M-005).
-> - **§6, §7 and §8 are new** — R-024's sealing audit, T-026's triangle quality against a published
->   baseline, and R-022a's incremental-connectivity cost. No published comparison contains any of them.
+> - **§6 through §10 are new** — R-024's sealing audit, T-026's triangle quality against a published
+>   baseline, R-022a's incremental-connectivity cost, R-020's edit-proportionality split and R-025's
+>   accuracy floor. No published comparison contains any of them.
 > - **Real volumes, for the first time.** `fuel` and `bonsai` from Open SciVis, fetched rather than
 >   vendored (M-006). §7 is where they change a conclusion.
 
@@ -444,6 +445,76 @@ and the other half is a different data structure rather than a longer version of
 
 ---
 
+## 9. What a local edit costs, and why the answer is two answers
+
+**New** (R-020, M-314). Every published extractor's incrementality axis reads *"full re-mesh"*, and a
+voxel game re-meshes after every brush stroke. So: after a local field edit, does the work track the
+**edit** or the **grid**?
+
+One spherical brush of radius 5 carved at a sphere's equator, **identical at every resolution**:
+
+| n | cells | dirty cells | vertices | **buffer moved** | **geometric moved** | first moved |
+|---:|---:|---:|---:|---:|---:|---:|
+| 33 | 32,768 | **792** | 1,758 | 1,348 (77%) | **330** | 414 |
+| 65 | 262,144 | **792** | 6,918 | 4,257 (62%) | **322** | 2,609 |
+| 129 | 2,097,152 | **792** | 27,822 | 15,706 (56%) | **346** | 12,257 |
+
+**The computation is edit-proportional and exactly so.** The lattice grows **64×** and the dirty set
+does not move by one: **792 cells**, from 515 changed samples, comfortably inside the `8k = 4,120` bound
+arithmetic gives since each sample is a corner of at most eight cells.
+
+**The output encoding is not.** Vertices that genuinely appeared or vanished — compared as a *set of
+positions*, not by index — are **330, 322, 346**: flat, and about the size of the dirty set. Vertices
+whose **buffer slot** changed are **1,348, 4,257, 15,706**: growing with the `O(n²)` vertex count, and
+**56–77% of the whole buffer**. So more than half the output is rewritten for an edit touching **0.038%**
+of the cells.
+
+**The cause is a counter, not the algorithm.** `first moved` is 12,257 of 27,822 at 129³ and essentially
+everything after it differs: vertices are appended in scan order and indices name buffer positions, so a
+cell emitting a different *number* of triangles shifts every index after it.
+
+**The control is what makes either number mean anything.** An index-wise diff reports the same large
+number whether the surface moved or the buffer was merely reshuffled. Separating them turns *"re-meshing
+is expensive"* into ***"re-meshing is cheap and the encoding is expensive"*** — and the crate already
+names vertices stably *internally*, on `(lower sample, axis)`, then discards that naming when packing.
+**R-027** is that fix.
+
+---
+
+## 10. Accuracy has a floor, and it decides which method a better vertex rule could help
+
+**New** (R-025, M-315). The reported Hausdorff is the worst mesh sample, and the harness samples
+**vertices and triangle centroids** — so it is `max(vertex, centroid)`. Project every vertex exactly onto
+the true surface and the vertex term vanishes, leaving the centroid term on perfect vertices. **That
+residue is a floor no vertex placement can go below**, because a flat triangle inscribed in a curved
+surface deviates at its interior whatever its corners do.
+
+Over the two smooth fields that publish an exact distance:
+
+| | sphere 17³/33³/65³/129³ | torus 17³/33³/65³/129³ |
+|---|---|---|
+| dual contouring | 9.2, 17.4, 10.7, 12.3 % | 12.2, 16.8, **1.5**, 8.0 % |
+| marching cubes | **21.5**, 14.5, 13.8, 9.0 % | 16.0, 12.1, 12.3, 5.7 % |
+
+**A perfect placement rule is worth 1.5–21.5%, median 12.3%, and only one of sixteen rows reaches 20%.**
+
+**Which term *is* the Hausdorff is the crisper result**, and it is clean:
+
+- **Dual Contouring — the vertex term, 8 of 8 rows. Placement-limited.**
+- **Marching Cubes — the centroid term, 8 of 8 rows. Tessellation-limited.**
+
+So a better vertex rule is aimed at Dual Contouring and **cannot help Marching Cubes at all**; refining
+Marching Cubes' accuracy means more triangles, not better-placed ones.
+
+**And the QEF is already trading in the direction such a rule would want.** Dual Contouring's *centroid*
+error is **better than the floor** at 7 of 8 rows — by **2.9–3.6×** on `sphere` — because the QEF
+minimises distance to the tangent planes rather than putting a vertex on the surface. It buys
+better-centred facets at the cost of worse-placed vertices, and **pushing its vertices onto the surface
+would make the triangles fit worse**. §2's *"the whole case for the QEF is that it buys a corner"* needs
+this beside it: on a smooth field it is buying facet fit, quietly.
+
+---
+
 ## What surprised us
 
 1. **A conclusion of ours was falsified by an optimisation of ours** (§4). Not by a better instrument,
@@ -466,9 +537,16 @@ and the other half is a different data structure rather than a longer version of
    quality. Two metrics, opposite verdicts, factor of three.
 8. **The `n³` in a connectivity rebuild is the scan, not the work** (§8). Both union counts are flat;
    what a rebuild pays is visiting 2.1 M samples to find the 925 that changed.
-9. **Marching Tetrahedra is more accurate than Marching Cubes on sharp fields** — the opposite of the
+9. **Re-meshing after an edit is cheap and the *encoding* is expensive** (§9). The dirty set is 792 cells
+   whether the grid is 32 thousand cells or 2 million; the buffer rewrites 56–77% of itself either way,
+   because indices name positions in a sequentially packed array.
+10. **A perfect vertex placement is worth about 12%** (§10), and only to Dual Contouring. Marching Cubes'
+    error is in its triangles, not its vertices, at every resolution on both smooth fields.
+11. **Dual Contouring's facets fit better than perfectly-placed vertices would** (§10), by 2.9–3.6× on a
+    sphere. The QEF is not trying to put a vertex on the surface, and the accident is a good one.
+12. **Marching Tetrahedra is more accurate than Marching Cubes on sharp fields** — the opposite of the
    registered prediction, and for a reason (more edge families) the prediction did not consider.
-10. **The sharp-feature solve is nearly free**, and so is the clamp that makes it safe, and so is the
+13. **The sharp-feature solve is nearly free**, and so is the clamp that makes it safe, and so is the
    asymptotic decider. Three "expensive" features that are not.
 
 ## What we would now distrust
@@ -500,6 +578,9 @@ cargo bench --bench stage_breakdown   # stage shares        -> docs/measurements
 cargo bench --bench experiment_p21    # sealing audit       -> docs/experiments/p-21.csv
 cargo bench --bench experiment_p22    # triangle quality    -> docs/experiments/p-22.csv
 cargo bench --bench experiment_p23    # connectivity repair -> docs/experiments/p-23.csv
+cargo bench --bench edit_trace        # edit-proportionality -> docs/measurements/edit_trace.csv
+cargo bench --bench placement_ceiling # the accuracy floor   -> docs/measurements/placement_ceiling.csv
+cargo bench --bench interior_margin   # the interior decider's margin
 
 ./scripts/fetch_volumes.sh            # real volumes; not committed, verified by published SHA-512
 cargo bench --bench volumes           # every extractor on them -> docs/measurements/volumes.csv
@@ -511,5 +592,5 @@ Always `--release`; `cargo bench` handles that.
 
 *Ledger entries behind this document: M-4, M-15, M-20, M-21, M-23, M-25, M-28, M-42, M-52, M-54, M-55,
 M-56, M-60, M-62, M-98, M-134, M-135, M-136, M-208, M-285, M-286, M-287, M-290, M-307, M-308, M-309,
-M-310, M-311, V-37, V-38, V-39, V-40, V-41, ✗14, ✗19 and ✗25. Tickets: M-001a, M-001b, M-002, M-003,
-M-004, M-006, A-023, A-024, R-022a, R-024, R-026, T-026.*
+M-310, M-311, M-314, M-315, V-37, V-38, V-39, V-40, V-41, V-43, ✗14, ✗19 and ✗25. Tickets: M-001a,
+M-001b, M-002, M-003, M-004, M-006, A-023, A-024, R-020, R-022a, R-024, R-025, R-026, T-026.*

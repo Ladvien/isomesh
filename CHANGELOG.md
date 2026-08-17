@@ -28,6 +28,16 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
   definition the isosurfacing literature reports so the columns can be read beside it. Recorded, never
   gated, the same standing `degenerate_triangles` has.
 
+- **`SweptFaces::margin`** — the value `Interior::test` is the sign of. `test()` now literally calls it
+  and compares with zero, so the interior ambiguity decider is the `ε = 0` member of a one-parameter
+  family **by construction**. Bounded by half the field's scale (M-312). Note it is a **decision
+  margin**, not a persistence, and thresholding it does **not** resolve the cells where the published
+  algorithms disagree — measured, and the overlap is *below chance* (M-313).
+
+- **`marching_cubes::interior::chernyaev_numerator_test` is public** and no longer test-only, so the
+  comparison between the corrected interior test and the construction it corrects is reproducible
+  outside this crate's own suite.
+
 - **`scripts/fetch_volumes.sh`** — fetches real scanned volumes from Open SciVis and verifies them
   against the **publisher's own SHA-512**. The data is gitignored; `docs/measurements/volumes/PROVENANCE.md`
   is committed. Benchmarks that read them skip cleanly when they are absent, so a clean clone with no
