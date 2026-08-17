@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**202 tickets archived, 14 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**202 tickets archived, 22 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -45,6 +45,60 @@ attached — read that before re-litigating a decision this project already made
   is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
+
+---
+
+## Phase 18 — Mechanics from the field
+
+**Added 2026-08-17, and placed above Phase 17 for the same reason Phase 17 sits above Phase 16:** rule
+1 reads top-down and this is the current work front. Nothing here supersedes Phase 17's open rows —
+R-027a in particular stays live and stays cheap; if a sitting is short, it is still the best S in the
+file.
+
+**Source: `docs/research/2026-08-17-mechanics-from-the-field.md`** — five parallel corpus hunts
+(surface-intrinsic computation, modal analysis, structural mechanics, shape semantics, volumetric
+processes), 20 papers acquired, every candidate required to name the shipped game that already does it.
+**The whole document is tier R** — five agents' reading, not this project's measurement; where a claim
+touches an M-row, the M-row wins. Its two triage laws are worth reading before any ticket here: a
+process is log-expressible exactly when its state is sparse, and candidates are classified by whether a
+local edit has a *local answer*, not by whether the operator is cheap.
+
+**Phase 15's protocol applies in full** — `P-` entry in the commit *before* the measuring commit,
+committed harness behind one documented command, named records to `docs/measurements/*.csv`, explicit
+falsifier, FINDINGS obligation in the same commit.
+
+**These eight tickets are the dossier's Part 5, in its order: premise falsifiers first.** The dossier
+itself expects three of the first five to come back negative, and that is why they are on top — a
+negative here costs a day, and the same negative discovered during implementation costs a sprint (the
+✗26 discipline). **Do not treat a null as a wasted ticket.** Build tickets for the Tier 1 candidates
+(Calibre §1.1, speleogenesis §1.2, dynamic acoustics §1.3, the safe-to-dig field §1.4) are
+**deliberately not written yet** — each is gated on its premise experiment below, and writing them
+first would be building the wrong thing carefully (A-020b's lesson). The Tier 3 losers are recorded in
+the dossier with the specific number that kills each one; they get no rows here on purpose.
+
+**Ordering within this phase — this table governs rule 1.**
+
+| Order | Ticket | Why here |
+|---|---|---|
+| 1 | **R-029** | Thirty minutes, and it re-tiers M-172's reading either way |
+| 2 | **R-030** | The identity gate — three candidates die together if it fails |
+| 3 | **R-031** | Validates the kinetics against published geomorphology before a voxel is touched |
+| 4 | **R-032** | Decides whether the homotopy certificate is available at all |
+| 5 | **R-033** | The cheapest possible kill-shot on the modal direction — run before assembling anything |
+| 6 | **R-034** | The only external ground truth in the dossier |
+| 7 | **R-035** | Decides prefactored-family vs Closest Point Method for everything intrinsic |
+| 8 | **R-036** | Nothing left to falsify — cheapest audible ship, monetises R-022a/R-028 |
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+| ☐ | **R-029** | **The exact-zero medial reading dies at half a voxel — probably.** Dossier §4.1: M-172's *"an SDF gradient is exactly zero on its medial axis"* describes one measure-zero point of the axis, not the axis. On the axis generally `‖∇ρ‖ = cos(θ/2)` where θ is the separation angle (Attali, Boissonnat & Edelsbrunner `10.1007/b106657_6`, in corpus, READ in full), and exact zero needs θ = π — the two nearest boundary points antipodal, which is a slab's mid-plane and nothing a player actually digs. **H:** offsetting the slab's mid-plane by half a voxel takes the count of samples returning exactly `[0,0,0]` to **zero**, while the count with `‖∇ρ‖ < 0.1` changes by **< 5%**. **Falsified by:** exact zeros surviving the offset — the discrete gradient is doing something the continuous identity does not describe, and R-030 inherits the question before anything else runs. **On confirmation M-172 gets its amendment the way ✗-rows always do** — old reading left visible; retire "exact zero detects the axis", adopt "`‖∇ρ‖` magnitude scores medial stability". **FINDINGS:** `M-`, plus the M-172 amendment. | S | — |
+| ☐ | **R-030** | **The inscribed-ball identity against a brute-force oracle.** `r(x) = ρ(x)·√(1 − ‖∇ρ(x)‖²)` — derived in the dossier from the Attali survey's Eq. 1 plus Chazal & Lieutier's λ-medial axis, cross-checked against the survey's printed two-point case. If it survives discrete gradients, λ-medial-axis membership is a pointwise O(1) test on two quantities every sample already has, and the threshold λ is **a length in metres equal to a creature's shoulder width** — the principled constant whose absence closed the Morse–Smale line. **H:** on a 64³ grid with ≥3 overlapping brushes, the closed form matches a brute-force minimal-enclosing-ball radius (collect `Π(x)` exhaustively within `ρ+tol`, solve with Welzl) to within **1 voxel for ≥99% of samples**, and the median residual **halves when the voxel size halves** — O(h). **Falsified by:** an h-independent residual — the discrete gradient has broken the identity, and **Calibre (§1.1), the throat metric (§2.4) and handholds (§3.3) all die together**, which is why this runs before any of them. **Carry §4.2's warning:** the λ-medial-axis definition is stated in opposite directions by the two surveys and the primary source (`10.1016/j.gmod.2005.01.002`) is unobtained — the oracle check is insensitive to the discrepancy, but nothing may be *built* on the identity until it is resolved. **FINDINGS:** `M-`. | M | — |
+| ☐ | **R-031** | **Speleogenesis, headless: does the wormhole competition reproduce?** Dossier §1.2. A graph simulator with no field, no renderer, no engine: 64×64 lattice (E ≈ 8,000), constant-head in/out, log-normal initial apertures, linear dissolution kinetics (Dreybrodt & Gabrovšek `10.5194/hess-23-1995-2019`). The published mechanism is competitive flow — a widening conduit steals flow from its neighbours, one pathway wins and breaks through, the losers stay hairline forever. **H:** the aperture distribution goes **bimodal** under competitive flow and stays **unimodal** when recharge-limited; post-breakthrough **>90% of dissolution flux concentrates in <10% of edges**. **Falsified by:** no bimodal split, or flux failing to concentrate — the kinetics is wrong and the mechanic's positive-feedback premise dies with it. A pass validates the kinetics against published geomorphology before a single voxel is touched; the build ticket (SDF capsule brush per edge, the coaxial-collapse O(E) log bound, M-36 commutativity inheritance) is written only after this holds. **FINDINGS:** `M-`. | M | — |
+| ☐ | **R-032** | **The wfs histogram: is the homotopy certificate ever available?** Dossier §4.1's second registration. The λ-medial axis's homotopy guarantee needs `λ < wfs`, where the weak feature size is the smallest distance from a critical point of `∇ρ` to the boundary — and destruction creates near-tangential features, which put critical points close to the boundary. **H:** on **>80%** of dug scenes, `wfs < 2` voxels — so `λ < wfs` essentially never holds and the medial line rests on Hausdorff stability alone (Chazal–Lieutier; Lieutier & Wintraecken `10.1145/3564246.3585113`), which is weaker and still better than a tuned persistence constant. **Falsified by:** wfs comfortably above brush scale, which would make the stronger guarantee live. The dossier expects the negative; either answer decides what §1.1's build may claim. **FINDINGS:** `M-`. | S | — |
+| ☐ | **R-033** | **Mode-shape drift under a one-voxel edit — the modal kill-shot.** Dossier Part 5 row 5. Hexahedral FEM assembled directly on the voxel grid — no tetrahedralisation; the discretisation the sound literature itself uses — smallest eigenpair before and after a single one-voxel edit on a carved shape. **H:** an interior edit moves λ₁ by less than the ~0.6% pitch JND, and only edits within ~2 voxels of a thin feature exceed it — in which case per-edit modal sound is dead and the direction closes at the cost of a day. **Falsified by:** interior edits moving λ₁ audibly, which earns the modal direction a real ticket — bounded in advance at ≈40 modes in a 5 ms budget by Picard's O(m^2.8) scaling (`10.1155/2010/392782` — single-sourced, the dossier says verify before betting). Run before assembling anything. **FINDINGS:** `M-`. | M | — |
+| ☐ | **R-034** | **Arch golden values: a feasibility solver held to 0.1075 and 15.84°.** Dossier §2.1. Reimplement Whiting, Ochsendorf & Durand 2009 §3.1 (`10.1145/1618452.1618458`, in corpus, READ in full): equilibrium `A_eq·f = −w`, linearised friction pyramid, compression-only, minimise `Σ(f_n⁻)²` — two physical parameters, no stiffness matrix, because limit analysis is the right question where elasticity is the wrong one (Block 2006, quoted in the paper). **H:** the solver reports the semicircular arch's minimum thickness/radius at **0.1075 ± 0.0010** (Milankovitch 1907) and the critical tilt at t/r = 0.20 at **15.84°** (Ochsendorf) — the only external ground truths in the dossier. Second registered clause: warm-started re-solve is **bimodal** — under 15% of cold time for edits that do not sever a load path, under 2× speedup for edits that do. **Falsified by:** a unimodal warm-start distribution, which kills the cheap-incremental story and demotes the admissibility gate to background-budget-only. **Rule-3 note:** the LP/QP lands as pure Rust in a committed harness or outside the workspace — no new dependency in `crates/isomesh` either way. Carry the paper's own warning: coarser blocks *over-estimate* stability, so the block decomposition is a gameplay parameter and must be a pure function of the edit log. Sized L against the dossier's "a day" — the solver alone argues for a split; split rather than half-finish. **FINDINGS:** `M-`. | L | — |
+| ☐ | **R-035** | **Sparse-Cholesky update vs refactor at brush scale.** Dossier §2.2 and Law 2: a prefactored surface operator (the heat method — 21–68× faster per query, and a 0.21 s → 63.4 s precompute that *is* the carve cost) is disqualified for live carving unless the factorisation can be updated rather than rebuilt. M-318 is exactly the statement that a brush's changed vertex slots are O(brush support) rather than O(N), which is what makes the update plausible. **H:** on a 64³ chunk (~15k Surface Nets vertices), a radius-4 brush changes ≤ **400** vertex slots (extrapolating M-318's 346 of 15,706), and a row-restricted update re-establishes a valid factorisation in **< 5 ms** against **> 100 ms** for a full refactorisation — ≥ 20×. **Falsified by:** the update coming in under 10× cheaper — the prefactored family is dead for live carving and everything intrinsic (§2.2 firebreak, §2.3 reaction–diffusion) goes to the Closest Point Method instead (Dziuk & Elliott `10.4171/ifb/182`, READ: the matrices depend only on ∇Φ, so a brush touching k voxels changes exactly k stencils). **Rule-3 stop, named up front:** CHOLMOD is C — the harness lives outside the workspace or uses a pure-Rust sparse Cholesky; this ticket is a measurement, not a dependency decision. **FINDINGS:** `M-`. | M | — |
+| ☐ | **R-036** | **Sabine RT60 per air component — the cheapest thing in the dossier a player can hear.** Dossier §1.3. R-022a/R-028's tracker already maintains the two accumulators a Sabine estimate needs (component volume, boundary surface area); the reverb domain *is* the connected air component, and the invalidation trigger is the split/merge event M-319–M-323 measured — one fill in six splits, the median split sheds one voxel and is discarded without simulating. Shipped tech is a static bake (Project Acoustics: *"similar to static lighting"*), which a destructible world invalidates on every dig. **H:** on the frame a breach changes the player's component ID, a Sabine RT60 for the new component is available in **< 0.1 ms**; a Planeverb-style 2D FDTD re-bake of a 64×64 slice (`10.1111/cgf.14099`, public C++ source) completes in **< 30 ms** on one core, amortisable over two frames. **Falsified by:** either figure exceeding its bound by 3×. No eigensolver, a public reference implementation, and it monetises infrastructure already built and measured — the one Tier 1 row with no premise left to falsify first. **FINDINGS:** `M-`. | M | — |
 
 ---
 
