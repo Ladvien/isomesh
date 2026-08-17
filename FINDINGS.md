@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**395 entries** — 25 falsified, 308 measured, 42 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**396 entries** — 25 falsified, 308 measured, 43 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -414,6 +414,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-40` | Open SciVis Datasets is HTTP-only, and the publisher's own SHA-512 is what makes that fine (M-006) |
 | `V-41` | R-022's hypothesis is two problems with different costs, and a voxel lattice is the easy case for one of them (R-022) |
 | `V-42` | R-023's quantity does not exist as stated, and the one that does is a decision margin rather than a persistence (R-023) |
+| `V-43` | R-020's "unobtainable" prior art has been in the corpus since the day before the ticket was written, and it narrows the… |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -5376,3 +5377,57 @@ closed cell than a coin toss. **371 of 5,994 cells at quantum `1/4` have a margi
 **Would be shown wrong by:** a field-driven census — these are random corner tuples, and the eight
 reference fields might populate the joint distribution differently. The anti-correlation is strong
 enough at three ε that a reversal seems unlikely, and the mechanism does not depend on the population.
+
+
+### V-43 — R-020's "unobtainable" prior art has been in the corpus since the day before the ticket was written, and it narrows the novelty claim (R-020)
+
+**V.** R-020 flags its own biggest risk: *"the closest prior art — Acar's own Dynamic Well-Spaced Point
+Sets (`10.1145/1810959.1811011`) and Kinetic Mesh Refinement in 2D (`10.1145/1998196.1998254`) — is
+**unobtainable through the pipeline** and does output-sensitive incremental meshing. Read before
+claiming novelty."*
+
+**Both are obtainable and both are already read into the pipeline.** Downloaded **2026-08-13**,
+converted, and embedded **2026-08-15** with 25 and 23 chunks — the phase spec that calls them
+unobtainable is dated **2026-08-16**. A **third** copy is there too: `10.1016/j.comgeo.2012.11.007` is
+the 2013 *Computational Geometry* journal version of the first paper, independently in the corpus. This
+is V-29's incident in a second place — *"recorded as `PAYWALL` and in fact indexed in home-still since
+2026-08-10"* — and the rule it earned is unchanged: **check the corpus before recording a source as
+unavailable.**
+
+**What they actually prove, which is more than the ticket allowed for:**
+
+| | Dynamic Well-Spaced Point Sets | Kinetic Mesh Refinement in 2D |
+|---|---|---|
+| update cost | `O(log Δ)` per insert/delete | `O(log Δ)` per certificate failure **and** per insert/delete |
+| optimality | **proved time-optimal**, `Ω(log Δ)` lower bound; **size-optimal** output | events `O(n² log³ Δ)`, *"optimal up to a polylogarithmic factor"* |
+| self-adjusting | keyword | keyword, and stated: *"inspired by recent advances on self-adjusting computation"* |
+
+`Δ` is the **geometric spread** — diameter over closest-pair distance.
+
+**So "self-adjusting computation applied to meshing" is occupied territory, by the author R-020 proposes
+to build on.** The novelty claim cannot be *"the first incremental meshing bound"*. What is genuinely
+unoccupied is narrower and survives: **their input is a point set whose points move, appear or vanish,
+and their output is a quality mesh of the domain.** R-020's input is a **scalar field on a fixed
+lattice** whose *values* change, and its output is an **isosurface** — a codimension-one object whose
+combinatorics are decided by sign changes, not by Voronoi cells. Those are different problems and the
+transfer is not mechanical.
+
+**And their lower bound does not bind R-020, for a reason worth stating before anyone reconciles it
+wrongly.** `Ω(log Δ)` is proved by exhibiting inputs where an update *"require[s] `Ω(log Δ)` **Steiner
+points** to be inserted to the output"*. A fixed sampling lattice inserts **no Steiner points** — the
+sampling is given and does not adapt — so the mechanism that forces their lower bound is absent, and
+R-020's `O(|edit|)` with no logarithm is not in tension with it. **This crate already has one measured
+instance of exactly that**: M-311's connectivity repair is `O(|edit|)` on a lattice with no log factor,
+because a union-find is `α(n)` and the lattice never grows a vertex.
+
+**On a lattice `log Δ` is `log n`, not a constant** — diameter `≈ n√3·h` over closest pair `h` — so had
+the bound bound, it would cost a factor of about 11 at 128³. That is the arithmetic, done here rather
+than left as a reassurance.
+
+**What R-020 may claim after this**: the first incremental bound for **isosurface extraction from a
+scalar field**. What it may not: priority over self-adjusting computation in meshing, an unqualified
+"first proved incremental bound", or novelty for change propagation as a technique.
+
+**Would be shown wrong by:** a paper applying self-adjusting computation or change propagation to a
+*scalar-field* isosurface specifically, which is the exact gap this narrows to and which the ticket's own
+five-database sweep reports as empty.
