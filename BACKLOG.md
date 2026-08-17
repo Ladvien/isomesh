@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**194 tickets archived, 17 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**195 tickets archived, 16 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -97,7 +97,6 @@ rather than sequential.**
 > **NOTE 2026-08-16: `H-005` and `H-003` do not exist and never have.** This ticket names them as its remaining work; there is **no `H-` ticket series anywhere in this repo** — not in `BACKLOG.md`, not in `BACKLOG_ARCHIVE.md`, not in `docs/`. The backlog gate cannot see it because the reference is in prose rather than in the *Blocked by* column. They are re-created below under the next free numbers in their own series, per rule 7: **`T-026`** is the mesh-quality metrics and **`M-006`** is the Open SciVis volumes. A consumer backlog citing "isomesh H-003" means T-026, and "H-005" means M-006.
 > 
 > **Neither blocks this ticket, and the scoping is deliberate.** The ticket's own claim is that the result is already in hand, and it is: `docs/research/2026-08-13-measured-comparison.md` is the draft, 325 lines of it, with every figure owned by a `FINDINGS.md` entry. What that document needs first is **re-derivation, not new data** — its own banner says the dual timings are high by ~4.26× since A-023/A-024, that it covers **five** extractors where seven ship, and **seven** fields where eight do. **R-024 has since added a result it does not carry at all** (M-307): the primal family seals all eight fields and all three duals leave the domain boundary open, which is a head-to-head axis no paper reports. T-026 and M-006 make the table more comparable; they do not gate the prose.
-| ☐ | **M-006** | **Open SciVis volumes as a comparability fixture.** **Was `H-005`; see the note under R-026.** Every reference field in this crate is **analytic**, which is what makes the accuracy harness exact and is exactly why the timings cannot be set beside a published isosurfacing benchmark — those are run on real CT and simulation volumes. **Scope this before starting: it is a data dependency, not a code one**, so it needs a decision about whether volumes are vendored, downloaded by a script, or left to the reader, and rule 3 means no new crate dependency for whatever format they arrive in. **It reaches further than the paper, and that is the strongest argument for it.** A-002i's whole reachability argument is that a singular face needs `v₀·v₂` and `v₁·v₃` bit-identical, which continuous `f64` never produces and **quantised CT voxels produce readily** — Grosso 2017 counts **8, 58 and 20** per 512²×~700 volume, and M-232 reproduced the order of magnitude at quantum 1/255 with synthetic data. A real volume is the fixture that makes A-002i and A-020b reachable with data rather than with a constructed lattice. **Acceptance:** at least one real volume behind one documented command, its provenance and licence recorded, and the shootout re-run on it. **FINDINGS:** `M-`. | L | — |
 
 ### 17a — The empty column
 

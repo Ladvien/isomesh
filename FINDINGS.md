@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**388 entries** — 25 falsified, 304 measured, 39 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**390 entries** — 25 falsified, 305 measured, 40 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -368,6 +368,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-307` | HELD: the primal family seals every reference field, and all three duals leave the domain boundary open (R-024) |
 | `M-308` | the family comparison's headline conclusion was overturned by optimising one member of the family, not by a better measu… |
 | `M-309` | FALSIFIED on both clauses, and the first one fails for a reason sharper than the hypothesis (T-026) |
+| `M-310` | on real scanned volumes, Marching Cubes lands inside the published quality band that analytic fields put it outside of (… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -407,6 +408,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-37` | the instrument R-024 needs is published and in this corpus; the question it asks is not |
 | `V-38` | the published AR>4 and sliver figures are not a baseline this crate can be measured against, and one of them is misattri… |
 | `V-39` | the comparable triangle-quality baseline is Grosso & Zint's, not FlexiCubes', and it comes with a prediction (T-026) |
+| `V-40` | Open SciVis Datasets is HTTP-only, and the publisher's own SHA-512 is what makes that fine (M-006) |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -4930,3 +4932,95 @@ factor of three.
 **Would be shown wrong by:** a field on which the decider changes the mean ratio while changing no
 triangle, which would mean the difference is arithmetic rather than combinatorial and would break the
 mechanism stated above. The five-versus-three split itself is not at risk — it is the measurement.
+
+
+### V-40 — Open SciVis Datasets is HTTP-only, and the publisher's own SHA-512 is what makes that fine (M-006)
+
+**V.** Measured, not assumed. `klacansky.com` resolves (`178.63.98.254`), answers on port 80 with `200`,
+and **refuses the connection on port 443** — `openssl s_client` reports `connect:errno=111`, a refusal
+rather than a timeout or a certificate error. Egress from this machine is not the cause: `github.com`
+and `google.com` both answer `200` over HTTPS in the same run.
+
+**So there is no HTTPS URL to prefer and nothing to fall back from**, which is the one-path rule
+satisfied by the world rather than by a decision.
+
+**The integrity guarantee comes from the data, not the transport, and it is stronger than a
+self-computed hash.** Each dataset page publishes a **SHA-512**. `scripts/fetch_volumes.sh` verifies
+against *those*, and both files matched on the first fetch:
+
+| file | bytes | published SHA-512 verified |
+|---|---:|---|
+| `fuel_64x64x64_uint8.raw` | 262,144 | yes |
+| `bonsai_256x256x256_uint8.raw` | 16,777,216 | yes |
+
+The distinction matters and the script says so: a hash computed from the file it had just downloaded
+would verify nothing at all.
+
+**Two format statements from the site, both load-bearing:** *"All datasets are in little-endian byte
+order"* and *"Dimensions are width x height x depth (e.g., `array[depth][height][width]` in C)"* — so
+**x is fastest**, which is exactly `SampledField`'s documented layout and `Shape3::linearize`'s
+definition. No transpose is needed and none is done.
+
+**No blanket licence exists.** The site asks *"Please, cite individual datasets to support authors"*, and
+each dataset carries its own acknowledgement. That is an attribution request, **not a redistribution
+grant**, which is the concrete reason the volumes are fetched rather than vendored.
+
+
+### M-310 — on real scanned volumes, Marching Cubes lands inside the published quality band that analytic fields put it outside of (M-006)
+
+**M.** `./scripts/fetch_volumes.sh && cargo bench --bench volumes`,
+`docs/measurements/volumes.csv`. Two Open SciVis `uint8` volumes, `fuel` 64³ and `bonsai` 256³, isovalue
+32, one world unit per voxel, Ryzen 9 5900X. Read through `construct::SampledField` as `f = iso − value`,
+since the datasets are densities and this crate's convention is negative inside.
+
+| volume | extractor | ms | triangles | non-manifold edges | mean ratio |
+|---|---|---:|---:|---:|---:|
+| `fuel` | marching cubes | 6.2 | 6,338 | **0** | 0.7006 |
+| `fuel` | surface nets | 6.4 | 6,352 | 8 | 0.7976 |
+| `fuel` | dual contouring | 10.9 | 6,352 | 8 | 0.7228 |
+| `fuel` | manifold dual contouring | 11.5 | 6,352 | **0** | 0.7233 |
+| `bonsai` | marching cubes | 506 | 1,061,042 | **0** | 0.6888 |
+| `bonsai` | marching cubes + decider | 601 | 1,061,438 | **0** | 0.6884 |
+| `bonsai` | marching tetrahedra | 903 | 3,271,492 | **0** | 0.6375 |
+| `bonsai` | surface nets | 608 | 1,057,710 | 1,776 | **0.7957** |
+| `bonsai` | dual contouring | 1,518 | 1,057,710 | 1,776 | 0.6649 |
+| `bonsai` | manifold dual contouring | 1,619 | 1,057,710 | **85** | 0.6650 |
+| `bonsai` | subgrid marching tetrahedra | — | refused | — | — |
+
+**This partially rescues P-22's clause 2, and locates why it failed.** M-309 recorded our Marching Cubes
+*outside* Grosso & Zint's 0.65–0.71 on analytic fields — 0.7785, 0.7131, 0.7510. On **real scanned
+volumes it is inside**: `bonsai` **0.6888** and `fuel` **0.7006**. Their band was measured on CT and
+simulation data, and it reproduces on CT and simulation data. **The band is a property of the input class,
+not of the implementation**, and M-309's falsification was measuring the wrong kind of field — which is
+this project's own recurring lesson (M-56, M-60, M-136, ✗14) arriving for the eighth time, now about a
+*borrowed* number rather than one of ours.
+
+**Their Dual Contouring does not reproduce, and the asymmetry is unexplained.** Grosso & Zint put DC at
+0.82–0.86 against their MC's 0.65–0.71; here DC measures **0.6649** on `bonsai`, *below* Marching Cubes.
+The entry that lands near their DC figure is **Surface Nets, at 0.7957**. This is M-309's finding on real
+data — the QEF places a vertex to fit planes and does badly where there is no feature to fit — and CT
+data is rough everywhere. Whether their "DC" is this DC is not established.
+
+**Marching Cubes emits zero non-manifold edges on a million-triangle CT surface**, as do the decider
+variant and Marching Tetrahedra. ✗25's three-occupant good corner holds on real data.
+
+**The manifold construction earns its keep here in a way the reference fields never showed.** Manifold
+Dual Contouring takes `bonsai` from **1,776 non-manifold edges to 85** — a 95% reduction — where on the
+analytic fields it was 0 extra vertices on five of seven (M-60). Real scanned data is the input that
+construction was designed for, and this is the first measurement in this repo on that input.
+
+**The decider fires on real CT data and not on `fuel`.** `bonsai` gives 533,221 vertices plain against
+533,270 with the decider, and 1,061,042 triangles against 1,061,438; `fuel` is identical on both. That is
+M-309's five-versus-three split in a third place: a face rule changes the mesh exactly where ambiguous
+faces occur, and quantised CT data has them.
+
+**Subgrid Marching Tetrahedra refuses `bonsai`** — *"vertex 1 has no normal to derive: a zero gradient,
+or no incident area"* — while meshing `fuel` fine at 3.9 s. The error names two possible causes and this
+measurement does not separate them. What is measured: **0.3% of `bonsai`'s voxels within 8 of the
+isovalue sit on a 6-neighbour plateau, against 0.0% of `fuel`'s**, which is consistent with the
+zero-gradient branch and does not establish it. Settling it needs the failing cell printed, which is a
+ticket rather than a line here. **The refusal is the crate behaving correctly** — one path, fail loudly —
+and it also means this extractor is unusable on the input class M-006 exists to test.
+
+**Would be shown wrong by:** a third real volume on which Marching Cubes lands outside 0.65–0.71, which
+would make the two agreements here a coincidence of two files rather than a property of scanned data.

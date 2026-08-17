@@ -19,3 +19,9 @@ target
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# M-006: Open SciVis volumes are fetched by scripts/fetch_volumes.sh and
+# verified against the publisher SHA-512, never committed. The provenance
+# beside them is committed; the bytes are not.
+docs/measurements/volumes/*.raw
+docs/measurements/volumes/*.part
