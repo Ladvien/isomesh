@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**402 entries** — 25 falsified, 313 measured, 44 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**403 entries** — 25 falsified, 314 measured, 44 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -377,6 +377,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-316` | a central difference is identically zero at a local extremum, and quantised data manufactures them (A-028) |
 | `M-317` | the volume meshes: 483 tetrahedra declined around 33 singular points, reported rather than fatal (A-028) |
 | `M-318` | a grid-edge naming would close the whole edit-proportionality gap, and the obstacle is not the encoding (R-027) |
+| `M-319` | filling disconnects the air region about one time in six, so R-022b's cheap escape does not exist (R-022b) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -5790,3 +5791,50 @@ does not say the shape is cheap.
 **Would be shown wrong by:** a field whose edits change crossings far from the dirty set — the keyed
 column is flat here because a brush is compact, and a field with long-range coupling through one cell
 would break that. `noise_cavity` is the candidate and was not run.
+
+
+### M-319 — filling disconnects the air region about one time in six, so R-022b's cheap escape does not exist (R-022b)
+
+**M.** `cargo bench --bench fill_disconnect`, `docs/measurements/fill_disconnect.csv`. `noise_cavity`
+sampled at 33³/49³/65³ — the reference field with real cave structure, which is why it exists (M-208) —
+then 200 spherical brush fills of radius 4 at random positions, with the air component count **rebuilt**
+after each rather than maintained. Rebuilding is the point: a maintained count cannot be used to judge
+whether maintenance is needed.
+
+**The question this was built to answer.** V-41 split R-022, and M-311 settled the digging half at
+`O(|edit|)`. Filling deletes, and a deletion may split a component and then needs a **replacement-edge
+search** — the expensive half. But that machinery is only earned if deletions **actually disconnect
+things**. R-022's own framing is that *"most digging does not alter connectivity"*; if filling were the
+same, the ticket would collapse from *implement dynamic connectivity* to *detect the rare split and
+recompute*, which is a much smaller thing.
+
+| n | air samples | fills | changed | split | emptied | changed | **air left** |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 33 | 30,120 | 200 | 82 | 49 | 33 | 41.0% | 29.3% |
+| 49 | 97,830 | 200 | 38 | 32 | 6 | 19.0% | 67.2% |
+| 65 | 227,567 | 200 | 32 | 27 | 5 | **16.0%** | **84.5%** |
+
+**Read the 65³ row and discount the others, for a reason the table makes visible rather than hides.**
+The fills accumulate, so a run that consumes most of the domain is measuring a vanishing field rather
+than a steady one: 33³ has **29.3%** of its air left at the end and its 41% is largely the domain being
+eaten. 65³ ends with **84.5%** and is the least confounded.
+
+**So about one fill in six changes connectivity, and the cheap escape does not exist.** A
+detect-and-recompute design would rebuild once every six edits at `O(n³)` — which is precisely the cost
+R-022 exists to avoid, and at 65³ that is 275,000 samples scanned to repair a brush of a few hundred.
+**This validates R-022b rather than closing it**, which is a different outcome from R-023 and R-025 and
+worth saying plainly: three exploratory measurements in this phase killed their tickets, and this one
+does not.
+
+**Two structures in the change, not one.** Splits outnumber emptyings 27:5 at 65³, but both happen: a
+fill can **sever** a component in two, or **consume** a small pocket entirely. A deletion structure has
+to handle both, and the second is the easy one — a component that vanishes needs no replacement edge.
+
+**The rate is a property of the brush-to-feature ratio, not a constant.** Radius 4 in a 65³ domain is a
+large brush — about 6% of the domain per axis — and a smaller one would sever less often. **16% is not
+universal**; what is established is that the rate is *tens of percent* rather than the fraction of a
+percent that would justify recomputing.
+
+**Would be shown wrong by:** a fill sequence on a field with fewer, larger caves, where a brush is small
+relative to a passage and severs almost nothing. `noise_cavity` is deliberately near its own feature
+size, which is the adversarial end; a game's caves are usually wider than its brush.
