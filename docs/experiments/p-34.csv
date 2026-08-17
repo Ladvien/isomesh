@@ -1,0 +1,25 @@
+# experiment P-34 (R-034b)
+# hypothesis: Warm-started re-solves of the M-330-validated feasibility program are BIMODAL over an edit corpus, in the ticket's two classes. Fixture: a running-bond masonry wall (8 courses, ~96 blocks, bed and head joints, mu = 0.7) -- chosen over the arch because redundancy is what lets a severing edit leave a standing structure, and M-330 showed the arch too simple to discriminate anything block-structural. Cost is COUNTED, not timed: iterations of the alternating projection until the cone-side residual first crosses the 1e-5 feasibility line, cold (from zero) versus warm (from the pre-edit solution, mapped by interface identity). Clause one: over 10 non-severing edits (single-block weight nudges, small gravity tilts) the median warm-to-cold ratio is at most 0.15 -- under 15 percent of cold, the ticket's number. Clause two: over 10 severing edits (an interior block removed, forces rerouted around the hole) the median ratio is at least 0.5 -- under 2x speedup. The bimodality IS the prediction: the two class medians separated by more than 3x.
+# falsified by: A unimodal ratio distribution -- class medians within 3x of each other -- which kills the cheap-incremental story and demotes the admissibility gate to background-budget-only, exactly as the original R-034 registered. Instrument notes: any edit that classifies infeasible at the 20,000-iteration cap is recorded as collapsed and excluded with its count printed -- a corpus that mostly collapses is a fixture failure and aborts; and every surviving edit must reach the decision line within the cap or the count, not the clock, has failed to decide.
+# commit d5409fa on amd-ryzen-9-5900x-12-core at 2026-08-17T23:04:47Z
+edit,class,iters_cold,iters_warm,ratio,feasible
+weight_0,non_severing,50,10,0.2000,true
+weight_1,non_severing,50,10,0.2000,true
+weight_2,non_severing,50,10,0.2000,true
+weight_3,non_severing,50,10,0.2000,true
+weight_4,non_severing,50,10,0.2000,true
+tilt_0,non_severing,50,20,0.4000,true
+tilt_1,non_severing,50,20,0.4000,true
+tilt_2,non_severing,50,30,0.6000,true
+tilt_3,non_severing,50,30,0.6000,true
+tilt_4,non_severing,50,30,0.6000,true
+remove_0,severing,50,30,0.6000,true
+remove_1,severing,50,40,0.8000,true
+remove_2,severing,50,40,0.8000,true
+remove_3,severing,50,30,0.6000,true
+remove_4,severing,60,60,1.0000,true
+remove_5,severing,70,60,0.8571,true
+remove_6,severing,40,20,0.5000,true
+remove_7,severing,50,30,0.6000,true
+remove_8,severing,50,30,0.6000,true
+remove_9,severing,80,70,0.8750,true

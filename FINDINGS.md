@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**419 entries** — 27 falsified, 325 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**420 entries** — 27 falsified, 326 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -391,6 +391,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-328` | HELD at 20 of 20: the homotopy certificate is never available in a dug scene, and the instrument proved it could have sa… |
 | `M-329` | the modal kill-shot fired: no one-voxel edit is audible anywhere, including against the thin web, and the direction clos… |
 | `M-330` | HELD on both golden values: the feasibility solver is now held to external truth, and the coarsening warning would not r… |
+| `M-331` | FALSIFIED as registered, by an instrument floor the registration promised was fine, and by a corpus that mixed two edit… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -7088,3 +7089,35 @@ mostly collapses is a fixture failure and aborts); every surviving edit must rea
 line within the cap.
 
 **Records** `edit`, `class`, `iters_cold`, `iters_warm`, `ratio`, `feasible`.
+
+### 💥 M-331 / P-34 — FALSIFIED as registered, by an instrument floor the registration promised was fine, and by a corpus that mixed two edit species (R-034b)
+
+**M.** `cargo bench --bench experiment_p34`, `docs/experiments/p-34.csv`.
+
+C1 read a non-severing median ratio of **0.400** against the registered ≤ 0.15; C2 held (severing
+median **0.800** ≥ 0.5); the bimodality clause read **2.0×** separation against the registered
+> 3× — FALSIFIED. And the registration's own sentence — *"counts carry that granularity — recorded,
+and far finer than the 3× separation under test"* — is where the defect lives, in three parts:
+
+- **The probe floor sat above the registered bound.** Cold solves took 40–80 iterations on this
+  wall (the base stood in **50**), and the decision was probed every 10 — so the minimum
+  *measurable* ratio was 10/50 = **0.2**. All five weight-nudge edits pinned exactly there: an
+  instant warm solve could not have scored under 0.2, and C1's 0.15 was unreachable by construction.
+  The granularity promise was written against an estimated cold count of hundreds, never checked
+  against the fixture — the same failure shape as P-29's tick arithmetic, one experiment later.
+- **The fixture is too easy for the question.** A 92-block wall decides in 50 iterations from
+  zero; there is no dynamic range for incrementality to show in. The dossier's warm-start question
+  lives at ~1,000 blocks and 30–200 ms solves.
+- **Tilts are not local edits.** A 0.3–0.7° gravity rotation moves *every* interface force; the
+  measured 0.4–0.6 ratios are honest for what tilts are — a global re-load — and mixing them into
+  the "non-severing" class buried the local-edit signal.
+
+**The signal underneath, recorded not registered:** single-block weight nudges (floor-pinned
+≤ 0.2) against block removals (0.5–1.0, median 0.8) separate by **≥ 4×** — consistent with the
+bimodality the ticket wants, and undecidable at this instrument's floor. P-35 re-asks once, with
+the corrections derivable in advance: probe every iteration, a wall sized for three-digit cold
+counts, and tilt as its own recorded class.
+
+**Would be shown wrong by:** P-35 finding the weight-nudge class *still* above 0.15 with the floor
+removed — which would mean the 0.400 was never the instrument's and the cheap-incremental story
+dies on merit.
