@@ -6647,5 +6647,21 @@ than transcribed.
 mechanic's positive-feedback premise dies with the kinetics. Instrument-falsified if the recharge
 arm goes bimodal while the detector also flags the t = 0 sample.
 
+**Corrected before the first run, same day — two defects found by arithmetic, not by data.**
+*First, the tick count.* The "~10³ ticks by the log-growth arithmetic" above assumed the entrance
+segment binds the 1% step cap; it does not — the **front** does. A freshly-reached segment always
+sits at `a ≈ a₀` with `F ≈ k`, so `ȧ/a ≈ 4.6 yr⁻¹` holds somewhere for the whole run and a 1% cap
+means `dt ≈ 2.2×10⁻³ yr` throughout: ~10⁶ ticks to a 1,890-year breakthrough. The corrected step
+policy: the aperture ODE is non-stiff and self-limiting (`k(a)` falls with `a`, saturation bounds
+`c`, growth is monotone), so the cap is re-derived at **10%** per tick (~10⁵ ticks), and the
+discretisation claim is *measured* rather than argued: a control arm reruns the heterogeneous case
+at a 5% cap and every registered verdict — both bimodal flags and C2's share within 2 points — must
+be unchanged, or the run fails loudly. *Second, the matched-volume target.* Matching the recharge
+arm to the head arm's *final* dissolved volume is unreachable by construction — the post-breakthrough
+surge dissolves at a rate a capped-recharge arm can never reach, which is the suppression itself,
+not a fair epoch. The registered target becomes the head arm's cumulative dissolved volume **at its
+breakthrough**: the same rock removed as the competitive arm had removed when its winner broke
+through. Both corrections precede any simulation output.
+
 **Records** `arm`, `ticks`, `years`, `breakthrough_years`, `max_gap_ln`, `bimodal`,
 `flux_top10_pct`, `gini_flow`, `max_da_over_a_pct`, `tick_ms_median`.
