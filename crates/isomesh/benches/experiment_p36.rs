@@ -194,8 +194,12 @@ fn main() {
         let changed_rows: Vec<usize> = (0..in_rows.len()).filter(|&i| in_rows[i]).collect();
 
         // ---- operators, ordering, base factor ------------------------------
-        let (a_base, _) = heat::heat_operator(&base_mesh);
-        let (a_edit, _) = heat::heat_operator(&edit_mesh);
+        // t is pinned from the base mesh: the heat time is the operator
+        // family's parameter, and letting it float with h̄ made every entry
+        // of A' differ on the first validity run (residual 2.5e-5) — the
+        // closure was right and the fixture was leaking through t.
+        let (a_base, _, t_used) = heat::heat_operator(&base_mesh, None);
+        let (a_edit, _, _) = heat::heat_operator(&edit_mesh, Some(t_used));
         let perm = heat::nested_dissection(&a_base, 8);
         let mut inv = vec![0usize; perm.len()];
         for (new, &old) in perm.iter().enumerate() {

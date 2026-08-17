@@ -43,9 +43,13 @@ pub(crate) struct LdlFactor {
     pub flops: u64,
 }
 
-/// Cotan heat operator on a triangle mesh, plus the mean edge length that
-/// sets `t`. Entries are (i, j, w) with `i ≤ j` merged.
-pub(crate) fn heat_operator(mesh: &MeshBuffer<f64>) -> (SymUpper, f64) {
+/// Cotan heat operator on a triangle mesh. `t_fixed` pins the heat-time
+/// parameter across meshes — `t` belongs to the operator family, not to one
+/// mesh, and letting it float with the mean edge length makes EVERY entry of
+/// an edited operator differ (found the hard way: P-36's first validity run
+/// failed at 2.5e-5 residual because h̄ moved with an 86-vertex displacement).
+/// Returns (operator, h̄, t used).
+pub(crate) fn heat_operator(mesh: &MeshBuffer<f64>, t_fixed: Option<f64>) -> (SymUpper, f64, f64) {
     let n = mesh.positions.len();
     let mut diag = vec![0.0f64; n];
     let mut mass = vec![0.0f64; n];
@@ -100,7 +104,7 @@ pub(crate) fn heat_operator(mesh: &MeshBuffer<f64>) -> (SymUpper, f64) {
         }
     }
     let h_bar = edge_len_sum / edge_count as f64;
-    let t = h_bar * h_bar;
+    let t = t_fixed.unwrap_or(h_bar * h_bar);
     let mut cols: Vec<Vec<(usize, f64)>> = vec![Vec::new(); n];
     for (i, (&m, &w)) in mass.iter().zip(diag.iter()).enumerate() {
         cols[i].push((i, m + t * w));
@@ -111,7 +115,7 @@ pub(crate) fn heat_operator(mesh: &MeshBuffer<f64>) -> (SymUpper, f64) {
     for col in &mut cols {
         col.sort_unstable_by_key(|&(i, _)| i);
     }
-    (SymUpper { n, cols }, h_bar)
+    (SymUpper { n, cols }, h_bar, t)
 }
 
 /// Permute a `SymUpper`: `perm[new] = old`.

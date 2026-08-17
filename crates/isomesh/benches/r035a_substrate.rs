@@ -80,7 +80,7 @@ fn main() {
 
     // ---- stage 1: dense reference on a small mesh -------------------------
     let small = mesh_at(13);
-    let (a_small, _) = heat::heat_operator(&small);
+    let (a_small, _, _) = heat::heat_operator(&small, None);
     let perm = heat::nested_dissection(&a_small, 4);
     let ap = heat::permute(&a_small, &perm);
     let f = heat::ldl_factor(&ap);
@@ -137,7 +137,7 @@ fn main() {
 
     // ---- stage 2: the 64³ chunk --------------------------------------------
     let big = mesh_at(65);
-    let (a_big, h_bar) = heat::heat_operator(&big);
+    let (a_big, h_bar, _) = heat::heat_operator(&big, None);
     let perm = heat::nested_dissection(&a_big, 8);
     let apb = heat::permute(&a_big, &perm);
     let start = std::time::Instant::now();
