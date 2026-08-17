@@ -397,10 +397,10 @@ Their Marching Cubes sits at **0.65–0.71**. Ours measures **outside** that on 
 0.7131, 0.7510 — which read as a falsification until the same metric ran on real scanned data (M-006,
 M-310):
 
-| volume | marching cubes | surface nets | dual contouring | manifold DC |
-|---|---:|---:|---:|---:|
-| `fuel` 64³ | **0.7006** | 0.7976 | 0.7228 | 0.7233 |
-| `bonsai` 256³ | **0.6888** | 0.7957 | 0.6649 | 0.6650 |
+| volume | marching cubes | surface nets | dual contouring | manifold DC | subgrid MT |
+|---|---:|---:|---:|---:|---:|
+| `fuel` 64³ | **0.7006** | 0.7976 | 0.6876 | 0.6891 | 0.6622 |
+| `bonsai` 256³ | **0.6888** | 0.7957 | 0.6443 | 0.6444 | 0.6770 |
 
 **Both inside 0.65–0.71.** Their band was measured on CT and simulation data and it reproduces on CT and
 simulation data — **the band is a property of the input class, not of the implementation**, and the
@@ -411,8 +411,33 @@ recorded unexplained.
 **On real data, Marching Cubes emits 0 non-manifold edges on a million-triangle CT surface**, and
 Manifold Dual Contouring takes `bonsai` from **1,776 non-manifold edges to 85** — the manifold
 construction earning its keep on the input class it was designed for, where on the analytic fields it
-was 0 extra vertices on five of seven (M-60). **Subgrid Marching Tetrahedra refuses `bonsai` outright**
-on a zero-gradient error; that is A-028.
+was 0 extra vertices on five of seven (M-60).
+
+### Subgrid Marching Tetrahedra costs 471× on real data, and that is the number to decide on
+
+**It refused `bonsai` outright until A-028**, on a zero-gradient error, and the diagnosis is worth more
+than the fix (M-316, M-317). The cause was not a plateau: the failing corners are **local extrema in
+every axis**, one with neighbour slopes of **∓19** — steep, and *exactly* symmetric because `u8`
+quantisation put both neighbours on the same integer. **A central difference is identically zero at a
+local extremum however steep the field is**, and `SampledField` was inheriting one instead of supplying
+the trilinear gradient it had in closed form.
+
+It now meshes: **1,572,901 vertices, 3,138,925 triangles, 879 non-manifold edges** — and **232.3 s**
+against Marching Cubes' 0.49 s on the same volume, which is **471×**. §4's sphere figure was ~200×
+(M-308); **the constant is more than twice as bad on real data**, and that is the number anyone
+considering this extractor for a scan should be deciding on rather than the sphere one.
+
+**483 tetrahedra are declined, clustered around 33 points.** Where the field has a critical point *on*
+the isosurface there is no normal — not a missing one, an absent one — so those tetrahedra are skipped
+and the report says where. 475 are `Degenerate` and **8 are `IllConditioned`**, a precision problem
+rather than a topological one, which a single count would have hidden. 483 / 33 = **14.6** tetrahedra
+per singular corner, so the holes are 33 small clusters rather than 483 scattered ones.
+
+**If your data is integer, contour at a half-offset isovalue.** `127.5` rather than `127`: integer
+samples cannot equal a half-integer, so no sample sits on the isosurface and the degeneracy never
+arises. On `bonsai` against an integer isovalue, **16,284 of 529,508 surface-cell corners — 3% — sit
+exactly on the surface**, which is where this extractor asks for a normal at a grid point. One line,
+and it removes the case rather than reporting it.
 
 ---
 
@@ -580,6 +605,7 @@ cargo bench --bench experiment_p22    # triangle quality    -> docs/experiments/
 cargo bench --bench experiment_p23    # connectivity repair -> docs/experiments/p-23.csv
 cargo bench --bench edit_trace        # edit-proportionality -> docs/measurements/edit_trace.csv
 cargo bench --bench placement_ceiling # the accuracy floor   -> docs/measurements/placement_ceiling.csv
+cargo bench --bench a028_diagnose     # the zero-gradient diagnosis, on a real volume
 cargo bench --bench interior_margin   # the interior decider's margin
 
 ./scripts/fetch_volumes.sh            # real volumes; not committed, verified by published SHA-512
@@ -592,5 +618,5 @@ Always `--release`; `cargo bench` handles that.
 
 *Ledger entries behind this document: M-4, M-15, M-20, M-21, M-23, M-25, M-28, M-42, M-52, M-54, M-55,
 M-56, M-60, M-62, M-98, M-134, M-135, M-136, M-208, M-285, M-286, M-287, M-290, M-307, M-308, M-309,
-M-310, M-311, M-314, M-315, V-37, V-38, V-39, V-40, V-41, V-43, ✗14, ✗19 and ✗25. Tickets: M-001a,
-M-001b, M-002, M-003, M-004, M-006, A-023, A-024, R-020, R-022a, R-024, R-025, R-026, T-026.*
+M-310, M-311, M-314, M-315, M-316, M-317, V-37, V-38, V-39, V-40, V-41, V-43, ✗14, ✗19 and ✗25. Tickets: M-001a,
+M-001b, M-002, M-003, M-004, M-006, A-023, A-024, A-028, R-020, R-022a, R-024, R-025, R-026, T-026.*
