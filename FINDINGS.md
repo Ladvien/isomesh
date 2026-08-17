@@ -7055,3 +7055,36 @@ unblocked and next in the phase order.
 bisection width (the paper's own value moved in the fifth digit, ours in the fourth); or the tilt
 value failing to track μ once sliding governs (μ = 0.7 keeps hinging in charge here, tan 15.85° =
 0.28 ≪ 0.7).
+
+### P-34 — registered for R-034b, before the harness was written; the cheap-incremental question, counted
+
+**What the original R-034 registered and the split deferred.** Warm-started re-solve is bimodal —
+under 15% of cold cost for edits that do not sever a load path, under 2× speedup for those that do —
+or the cheap-incremental story dies and the admissibility gate is background-budget-only. M-330's
+solver is now trusted; this measures its economics.
+
+> **H.** On a running-bond masonry wall (8 courses, ~96 blocks, bed and head joints, μ = 0.7):
+> **(C1)** over 10 non-severing edits — single-block weight nudges, small gravity tilts — the median
+> warm/cold ratio of *iterations to the feasibility decision* is ≤ **0.15**; **(C2)** over 10
+> severing edits — an interior block removed, forces rerouted around the hole — the median ratio is
+> ≥ **0.5**; and the two class medians are separated by **> 3×**, which is the bimodality claim
+> stated as a number.
+
+**Fixture chosen for redundancy, on M-330's evidence.** A severing edit can only leave a *standing*
+structure if an alternate load path exists; the arch has none, and M-330 measured the arch too
+simple to discriminate block-structural effects at all. A running-bond wall reroutes around a hole
+by corbel action through its bond — the classic redundant masonry element.
+
+**Counted, not timed (✗24).** Cost is the alternating-projection iteration count until the
+cone-side residual per unit weight first crosses the 10⁻⁵ feasibility line — cold from zero, warm
+from the pre-edit solution carried across by interface identity (a removal drops its own
+interfaces; every other variable maps 1:1). Wall-clock is printed beside the counts and gates
+nothing.
+
+**Falsified by** a unimodal ratio distribution — class medians within 3× — which kills the
+cheap-incremental story. Instrument notes, registered: an edit that classifies infeasible at the
+20,000-iteration cap is recorded `collapsed` and excluded with its count printed (a corpus that
+mostly collapses is a fixture failure and aborts); every surviving edit must reach the decision
+line within the cap.
+
+**Records** `edit`, `class`, `iters_cold`, `iters_warm`, `ratio`, `feasible`.

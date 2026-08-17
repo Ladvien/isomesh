@@ -891,6 +891,49 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "residual_infeasible",
         ],
     },
+    Preregistration {
+        id: "P-34",
+        ticket: "R-034b",
+        hypothesis: "Warm-started re-solves of the M-330-validated feasibility \
+                     program are BIMODAL over an edit corpus, in the ticket's \
+                     two classes. Fixture: a running-bond masonry wall (8 \
+                     courses, ~96 blocks, bed and head joints, mu = 0.7) -- \
+                     chosen over the arch because redundancy is what lets a \
+                     severing edit leave a standing structure, and M-330 \
+                     showed the arch too simple to discriminate anything \
+                     block-structural. Cost is COUNTED, not timed: iterations \
+                     of the alternating projection until the cone-side \
+                     residual first crosses the 1e-5 feasibility line, cold \
+                     (from zero) versus warm (from the pre-edit solution, \
+                     mapped by interface identity). Clause one: over 10 \
+                     non-severing edits (single-block weight nudges, small \
+                     gravity tilts) the median warm-to-cold ratio is at most \
+                     0.15 -- under 15 percent of cold, the ticket's number. \
+                     Clause two: over 10 severing edits (an interior block \
+                     removed, forces rerouted around the hole) the median \
+                     ratio is at least 0.5 -- under 2x speedup. The \
+                     bimodality IS the prediction: the two class medians \
+                     separated by more than 3x.",
+        falsified_by: "A unimodal ratio distribution -- class medians within \
+                       3x of each other -- which kills the cheap-incremental \
+                       story and demotes the admissibility gate to \
+                       background-budget-only, exactly as the original \
+                       R-034 registered. Instrument notes: any edit that \
+                       classifies infeasible at the 20,000-iteration cap is \
+                       recorded as collapsed and excluded with its count \
+                       printed -- a corpus that mostly collapses is a \
+                       fixture failure and aborts; and every surviving edit \
+                       must reach the decision line within the cap or the \
+                       count, not the clock, has failed to decide.",
+        records: &[
+            "edit",
+            "class",
+            "iters_cold",
+            "iters_warm",
+            "ratio",
+            "feasible",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
