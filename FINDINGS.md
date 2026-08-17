@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**391 entries** — 25 falsified, 305 measured, 41 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**392 entries** — 25 falsified, 306 measured, 41 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -369,6 +369,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-308` | the family comparison's headline conclusion was overturned by optimising one member of the family, not by a better measu… |
 | `M-309` | FALSIFIED on both clauses, and the first one fails for a reason sharper than the hypothesis (T-026) |
 | `M-310` | on real scanned volumes, Marching Cubes lands inside the published quality band that analytic fields put it outside of (… |
+| `M-311` | HELD on both clauses that were about the world, and the clause about the comparison was wrong (R-022a) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -5115,3 +5116,52 @@ after a release failed on it.
 factor is about **11**. H is the stronger claim that for *insertions alone* the factor is a constant
 under 6 rather than logarithmic — which is what a union-find buys and what a general dynamic-trees
 structure has to pay for because it also supports the deletions R-022b needs.
+
+
+### M-311 / P-23 — HELD on both clauses that were about the world, and the clause about the *comparison* was wrong (R-022a)
+
+**M.** `cargo bench --bench experiment_p23`, `docs/experiments/p-23.csv`. A solid lattice at 33³, 65³
+and 129³; one spherical brush of radius 6, **identical at every resolution**; `isomesh::connectivity::Air`.
+Ryzen 9 5900X. Union calls are integers, so every count here is machine-independent.
+
+| n | samples scanned | dirty | incremental unions | rebuild unions | per dirty | incr ms | rebuild ms |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 33 | 35,937 | 925 | **4,872** | 2,436 | 5.27 | 0.028 | 0.2 |
+| 65 | 274,625 | 925 | **4,872** | 2,436 | 5.27 | 0.032 | 1.3 |
+| 129 | 2,146,689 | 925 | **4,872** | 2,436 | 5.27 | 0.051 | 5.3 |
+
+**Clause 1 held exactly.** The lattice grows **59.7×** and the incremental union count does not move by
+one: 4,872 three times. Repair after a dig is a function of the edit, and of nothing else.
+
+**Clause 2 held.** 5.27 unions per newly-air sample, under the lattice degree of 6 at every resolution.
+The instrument is visiting the six incident edges and not a wider neighbourhood, which is what that
+falsifier existed to check — and it is the arm that would have caught a bug hiding behind the flat
+curve clause 1 wants.
+
+**Clause 3 — mine, and false.** P-23 says *"while a full rebuild's union count grows as `n³`."* It does
+not. It is **flat at 2,436**, because a union-find build unions only **air-air** edges and the air volume
+*is* the brush, which is fixed. The comparison the hypothesis proposed does not exist, and one minute of
+arithmetic before registering would have found that.
+
+**What actually grows is the scan, and that is the real result.** A rebuild must visit **2,146,689
+samples to discover that 925 changed** — 2,321 samples touched per sample that mattered. The union work
+was never the `n³` term; the *search for what to union* is. In wall-clock: **0.051 ms against 5.3 ms at
+129³, a 104× advantage**, and the gap widens with the lattice while the incremental side stays flat.
+
+**The 2× between the columns is the two traversals, and it is not a defect.** `build` visits three
+forward edges per air sample so each lattice edge is seen once; `dig` visits all six, because a
+newly-air sample's backward neighbours are not in the dirty set and will never visit it. 4,872 = 2 ×
+2,436 exactly.
+
+**What this does and does not establish.** It establishes the **digging** half — R-022's *"most digging
+does not alter connectivity"* is now measured rather than asserted, and edit-proportional repair is
+real in the insertion direction. It establishes nothing about **filling**, which needs deletion and a
+replacement-edge search (V-41), and is R-022b. **A union-find has no deletion at any price**, so the
+structure that answers this half cannot be extended to the other one — R-022b is a different data
+structure, not a longer version of this.
+
+**Would be shown wrong by:** a brush that straddles two existing components at a scale where the
+union-find's path compression matters — the counts here are all from a single connected cavity in solid
+rock, and `merges` is therefore close to `unions`. A field with many small pre-existing cavities would
+exercise the find path harder without changing the union count, which is a different measurement rather
+than a contradiction.

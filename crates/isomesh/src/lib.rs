@@ -97,6 +97,7 @@ extern crate std;
 pub mod brush;
 pub mod chunk;
 pub mod collider;
+pub mod connectivity;
 pub mod construct;
 pub mod dual_contouring;
 pub mod experiment;
