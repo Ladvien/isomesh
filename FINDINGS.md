@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**411 entries** — 27 falsified, 319 measured, 45 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**412 entries** — 27 falsified, 319 measured, 46 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -430,6 +430,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-43` | R-020's "unobtainable" prior art has been in the corpus since the day before the ticket was written, and it narrows the… |
 | `V-44` | R-021's caveat is contradicted by the paper R-021 is built on, and the cheap half is already delivered (R-021) |
 | `V-45` | R-027's design does not merely change extract_into's contract; it converts a shipped determinism check's failure conditi… |
+| `V-46` | R-030's specified oracle cannot tell the identity from a wrong one; the inversion rule fails before the harness exists (… |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -6402,3 +6403,58 @@ Calibre, the throat metric and handholds now rest on it.
 off the coordinate-origin cancellation set; or a field whose `‖∇ρ‖ < 0.1` population shifts by more
 than the derived bound under a sub-voxel translation — which would mean the band is a lattice
 artifact too, and the continuous score inherits the boolean's disease.
+
+### 📖 V-46 — R-030's specified oracle cannot tell the identity from a wrong one; the inversion rule fails before the harness exists (R-030)
+
+**V.** Derived pre-build from the ticket's own specification, arithmetic checked numerically; the
+survey's printed two-point case (`r = ρ·sin(θ/2)`, `‖∇ρ‖ = cos(θ/2)`) is the one population the
+instrument does handle, and lattice samples land on it with probability zero. **P-28 is deliberately
+not registered** — registering a harness this analysis says cannot go red would be pre-registration
+theatre.
+
+**The ticket's shape:** compare `r_formula = ρ·√(1 − ‖∇ρ‖²)` (voxel-step central differences)
+against a brute-force minimal-enclosing-ball oracle over boundary samples within `ρ + tol`, on a 64³
+grid with ≥ 3 overlapping brushes; ≥ 99% agreement within 1 voxel, median residual O(h); falsified
+by an h-independent residual. The trouble is that `r(x)` in the continuum is **zero almost
+everywhere and O(ρ) on a measure-zero medial set** — a spike — and the two estimators mollify that
+spike at different scales, so the comparison has three regimes and no discriminating one:
+
+- **Generic samples (~95–99% of the population).** True `r = 0`; both the correct form and a
+  deliberately wrong one (`r = ρ·(1 − ‖∇ρ‖)`) output ≈ 0 — the correct form `ρ√(2δ)` with
+  `δ = O(h²)` gradient error, the wrong form `ρδ`. The oracle's own floor — cap radius
+  `√(2ρ·tol) ≈ 0.43` voxels at the derived `tol = 3h_c²/8ρ` — dominates both residuals. Every
+  registered clause passes for **both** forms here; the median-halves-with-h clause passes for both
+  too, because the oracle floor is itself O(h). What the clauses measure is the oracle.
+- **Medial shells, thickness ~h (the only place `r` is large).** The CD formula is a mollifier of
+  width h: half a voxel off a capsule's axis it still reads `≈ 0.87ρ` (11 voxels); the tight-tol
+  oracle has already collapsed to its 0.4-voxel cap floor at offsets beyond `tol/2 ≈ 0.004h`. They
+  disagree at **O(ρ), h-independently in shape** — for the *correct* form. The wrong form reads
+  *smaller* on the shell and therefore sits **closer** to the oracle: inverting the formula improves
+  the score where the score is largest. An inversion check cannot go red; it goes green.
+- **Exact medial hits.** On the sheet the CD formula reproduces the survey's own two-point relation
+  — that is the identity working — but on-sheet lattice hits are measure-zero, and R-029/M-324 is
+  the measured demonstration of what lattice-exact coincidences are worth.
+
+**The population arithmetic seals it.** The shells are exactly the samples the ≥ 99% clause has room
+to lose: a capsule's codim-2 axis shell is **1.5% of interior samples at 33³, 0.38% at 65³, 0.10% at
+129³** — the clause *flips between resolutions for geometry's reasons*, nothing about the identity —
+and the ticket's own ≥-3-brush union fixture has codim-1 medial *sheets* whose ~h shells are **~4–7%
+of the interior at 65³**, so the headline clause is predicted to fail on the specified fixture for
+the mollifier's reason, not the gradient's. A pass and a fail are both pre-computable from shell
+geometry; neither would say anything about `√(1 − ‖∇ρ‖²)`.
+
+**What is not in question:** the continuum identity (Attali/Boissonnat/Edelsbrunner Eq. 1 plus the
+enclosing-ball radius; Lieutier's `‖∇ρ‖² = 1 − r²/ρ²`) — a theorem, not a hypothesis. And the
+mollified reading M-324 established: `‖∇ρ‖` as a continuous stability score is stable under
+sub-voxel translation. What died is the proposed *empirical test*, which compares a width-h
+mollifier against a width-h_c²-tolerance spike-estimator and calls the difference evidence.
+Calibre, the throat metric and handholds do not die from this; their gate moves to whichever
+instrument replaces it — the candidate with teeth is a **matched-analytic oracle**: fixtures (wedge,
+capsule) where the CD-mollified truth is itself computable in closed form, with the MEB oracle
+demoted to a recorded column. Options and the decision are on the ticket's BLOCKED line.
+
+**Would be shown wrong by:** building the specified harness anyway and watching the wrong-form
+inversion go measurably red on any registered clause — if it does, this analysis is wrong, the
+instrument discriminates after all, and R-030 proceeds as written. (The wrong form's *global median*
+is predicted ~6× the right form's — 0.2 against 0.03 voxels — but both sit far beneath every
+registered threshold, which is rule 9's complaint stated as a number.)
