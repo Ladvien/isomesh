@@ -43,7 +43,7 @@ contradict.
 |---|---|---|---|---|
 | P-1 … P-7 | prose in `FINDINGS.md` | 5 | 2 | — |
 | P-8 … P-17 | `crates/isomesh/src/experiment.rs` | 5 | 4 | 1 |
-| P-18 … P-20 | `crates/isomesh/src/experiment.rs` | 2 | 1 | — |
+| P-18 … P-21 | `crates/isomesh/src/experiment.rs` | 3 | 1 | — |
 
 A page called "experiments that held" which quietly dropped the four falsifications would be exactly
 the failure this machinery exists to prevent. They are all here.
@@ -66,6 +66,7 @@ the failure this machinery exists to prevent. They are all here.
 | **P-10** — vertex inflation from gate-plus-split is under 1% | **never ran** | Superseded. P-8 killed the gate P-10 presupposed before P-10 could measure its cost |
 | **P-19** — the winding number's on-demand crossover is set by row sharing, so `Q*` is of order `N²` not `N³` | **held**, both arms (M-303) | `Q*/N²` came out **1.13–1.43** at 17³/33³/65³ against a registered 0.5×–4× band. The naive reading overstates the win by a factor of `N`: at 65³ the real crossover is **4,791 queries against 274,625 samples**, so an on-demand field pays below about **1.7% of the grid**. The hole-punched control moved `Q*/N²` to 13–42, and per-point cost tracked boundary-edge count to **×15.7 against ×16.2** — the mechanism confirmed by number, not by direction |
 | **P-20** — a weld key moves no topology metric beyond the splits it names | **held on both falsifiers, wording amended** (M-305) | A constant key moves nothing on **0 of 51** configurations, and non-manifold vertices never rise by more than the split count — so E×4's manufactured bowties do not come back. But boundary edges go **0 → 24** on a creased cube, which H said would not happen. That is not a defect: it **is** the split, seen from the edge column. The exact mirror of E×4, where a *pairwise* refusal did its damage in the vertex column |
+| **P-21** — a freshly extracted mesh separates exactly the sample pairs the field's own sign separates | **held**, both clauses (M-307) | **Marching Cubes, MC+decider and Marching Tetrahedra seal 24 of 24** — eight fields × three resolutions, 9.15 M probes, zero holes and zero membranes. **All three duals fail `fbm_terrain` with the identical count** (92 / 138 / 190) and **every one of those holes is on a face of the sampled domain**: a dual's quad needs all four cells around a sign-changing grid edge and at the domain face only one or two exist. **For a chunked world that face is the chunk seam**, so a dual chunk's collider is not watertight on its own. The property that splits the family is not primal-versus-dual but *does the method put its crossing on the probed grid edge* — subgrid Marching Tetrahedra is primal and scores worst, 18 of 24 |
 | **P-18** — every convex-decomposition precondition is already reported by `ColliderReadiness` | **falsified**, and not where predicted (M-300) | Registered *expecting* to die on self-intersection-freedom. It died on **non-manifold vertices** instead, and self-intersection-freedom turned out not to be an input precondition of anything (✗20). The audit was the product either way |
 
 ---
@@ -257,7 +258,7 @@ is what generalises.
 | | |
 |---|---|
 | the registrations | [`crates/isomesh/src/experiment.rs`](../crates/isomesh/src/experiment.rs) |
-| the full ledger, 363 entries | [`FINDINGS.md`](../FINDINGS.md) |
+| the full ledger, 383 entries | [`FINDINGS.md`](../FINDINGS.md) |
 | per-experiment result data | [`docs/experiments/`](experiments/) — each CSV carries its `# hypothesis:` and `# falsified by:` header |
 | timing and quality measurements | [`docs/measurements/`](measurements/) |
-| what falsified beliefs cost | `FINDINGS.md` Part 1 — 19 entries, each recording where the wrong belief came from, because provenance predicts the next error |
+| what falsified beliefs cost | `FINDINGS.md` Part 1 — 24 entries, each recording where the wrong belief came from, because provenance predicts the next error |

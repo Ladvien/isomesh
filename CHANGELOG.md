@@ -8,7 +8,33 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **`isomesh::validate::sealing` — does the mesh separate what the field separates?** Every other
+  validity metric in this crate judges a mesh against itself (manifoldness, orientation, Euler
+  characteristic) or against the field's geometry (`validate::accuracy`). None asked whether the mesh
+  partitions *space* the way the field's sign does, and neither claim implies the other: a mesh can be
+  closed, manifold, correctly wound and Hausdorff-close while sealing a passage the field leaves open.
+  `SealingReport` reports holes, membranes, the two air-component counts, and how many holes touch a
+  face of the sampled domain.
+
+  The measurement it produced (M-307, `docs/experiments/p-21.csv`): **Marching Cubes, Marching Cubes +
+  decider and Marching Tetrahedra seal all eight reference fields at all three resolutions.** All three
+  dual methods leave `fbm_terrain`'s domain boundary open, with identical counts, and **every one of
+  those holes is on a domain face** — a dual emits one quad per sign-changing grid edge and that quad
+  needs all four cells around it. **For a chunked world that face is the chunk seam.**
+
+  The test itself is Wojtan, Thürey, Gross & Turk's complex-edge test (`10.1145/1778765.1778787`) and
+  is cited as theirs; running it as a correctness audit of extraction is what is new.
+
+### Fixed
+
+- **A wall-clock assertion inside a unit test failed the 0.0.7 release on a macOS runner.**
+  `empty_cell_rejection_is_measured_per_field` asserted a speedup above 1.0 on every reference field,
+  under a doc comment that called itself "not a regression gate". `gyroid` is triply periodic, its
+  surface reaches nearly every cell, and empty-cell rejection has almost nothing to reject there — 16.8%
+  of cells against 80.6–95.1% on every other field. The gate is now that count, which is an integer and
+  the same on every machine; the ratio is printed.
 
 ## [0.0.7] — 2026-08-16
 

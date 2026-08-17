@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**382 entries** — 24 falsified, 301 measured, 37 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**383 entries** — 24 falsified, 302 measured, 37 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -364,6 +364,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-304` | a green preflight.sh is not a green CI, because the toolchains differ (0.0.6 release) |
 | `M-305` | the weld key does what it says, and H's wording was wrong anyway (R-010) |
 | `M-306` | what empty-cell rejection can save is bounded by a count, and that count is a property of the field (✗24) |
+| `M-307` | HELD: the primal family seals every reference field, and all three duals leave the domain boundary open (R-024) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -4509,3 +4510,76 @@ deduplicated at the crate's own weld tolerance, and the number of raw hits that 
 so the mechanism is visible rather than assumed. A harness that got this wrong would falsify H in the
 loudest possible way while measuring nothing but its own convention — which is M-279's rule, applied
 before the fact for once.
+
+
+### M-307 / P-21 — HELD: the primal family seals every reference field, and all three duals leave the domain boundary open (R-024)
+
+**M.** `cargo bench --bench experiment_p21`, `docs/experiments/p-21.csv`. Eight reference fields ×
+seven extractors × `[17, 25, 33]` = **168 rows, 9,151,296 probes**. Ryzen 9 5900X. The instrument is
+`validate::sealing`; it is Wojtan et al.'s complex-edge test and is cited as theirs (V-37).
+
+**P-21 held in both clauses, and its stated falsifier — universal agreement — did not occur.**
+
+| extractor | sealed | where it fails |
+|---|---|---|
+| `marching_cubes` | **24 / 24** | — |
+| `marching_cubes+decider` | **24 / 24** | — |
+| `marching_tetrahedra` | **24 / 24** | — |
+| `surface_nets` | 21 / 24 | `fbm_terrain`, all three resolutions |
+| `dual_contouring` | 21 / 24 | `fbm_terrain`, all three resolutions |
+| `manifold_dual_contouring` | 21 / 24 | `fbm_terrain`, all three resolutions |
+| `subgrid_marching_tetrahedra` | 18 / 24 | `fbm_terrain` **and** `noise_cavity` |
+
+**The three duals report the identical count** — 92 at 17³, 138 at 25³, 190 at 33³ — and
+`unsealed_on_domain_face` equals `unsealed_walls` in **every one of those nine rows**. Three
+independent implementations agreeing to the unit, all of it on the boundary, is what says the
+mechanism is *one vertex per cell* rather than any particular solve or face rule.
+
+**The mechanism.** A dual emits one quad per sign-changing grid edge and that quad needs all **four**
+cells around the edge. On a face of the sampled domain only one or two exist, so no quad is emitted
+and the wall is left open. A primal method emits per *cell*, meshes every cell it has, and seals the
+same edge. `fbm_terrain` is the only reference field whose surface leaves through the sides, which is
+why it is the only field where this is reachable — `gyroid` is capped and the other six are closed in
+the domain.
+
+**For a chunked world the domain face is the chunk seam**, so this is the measured statement of why a
+dual chunk's collider is not watertight on its own. It is adjacent to M-4 (Surface Nets' pinned
+non-zero `boundary_edges`) and is a different claim: that one is about the mesh's own topology, this
+one is about whether the mesh separates what the field separates.
+
+**The split is not primal versus dual. It is whether the method puts its crossing *on the probed grid
+edge*.** `subgrid_marching_tetrahedra` is primal by family and is the **worst** performer here,
+because it samples along tet edges *inside* the cell and its crossings are nowhere near the grid
+edges. Its `fbm_terrain` failures are mostly **not** on the domain face — 1 of 4, 1 of 3, 0 of 4 — and
+its `noise_cavity` failures are **entirely** interior, 0 of 3, 0 of 3, 0 of 4.
+
+**That interior residue is recorded and is *not* attributed to subgrid MT as a defect.** This harness
+compares against the sign pattern **at the grid corners**, because that is all the other six
+extractors ever see. Subgrid MT deliberately looks between the corners, so where it disagrees it may
+be the more faithful of the two — a sub-cell feature the corner signs cannot represent is exactly what
+it exists to find. Deciding which is right needs a probe of the analytic field along the edge and is
+not this ticket.
+
+**The two degeneracies, and both had to be resolved before any number above means anything.**
+
+1. **A sample exactly on the surface.** `sphere` at 17³ passes through its six axis intercepts, and a
+   primal method places its vertex at `t = a/(a − b)` — so `a = 0` puts it **at the sample**, and its
+   fan then touches all five same-sign probes there. Before the exclusion, all four grid-edge primal
+   methods reported **exactly 30** spurious walls (6 samples × 5 edges) and every dual reported 0. The
+   first reading of this experiment was that Marching Cubes fails and the duals are clean — the exact
+   inverse of the truth, produced entirely by the instrument.
+2. **One rounding away from that, which the exact test misses.** `sphere` at 25³ carries a sample at
+   `−1.11e−16`: solid by `is_inside`, and the surface to within one ulp. `value == 0` does not catch
+   it; the crossing at `t = 1.0` does. **This is A-002i's lesson in a second place** — *"the exact test
+   undercounts the phenomenon"* — and the fix is to detect the degeneracy from the mesh side as well
+   as the field side.
+
+**159,816 of 9,151,296 probes (1.7%) are set aside as undecidable**, and the exclusion is symmetric:
+both graphs lose the same edges, so `field_air_components` and `mesh_air_components` are equal in all
+168 rows including every failing one. The component counts are R-024's own wording and they agree
+everywhere; **it is the edge-level columns that carry the result**, which is itself worth knowing —
+holes at a boundary do not always change a component count.
+
+**Would be shown wrong by:** a dual method that seals `fbm_terrain`'s domain face — which is buildable,
+by emitting a partial quad where the ring is incomplete, and would be a change to the extractors rather
+than to this finding.

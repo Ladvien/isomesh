@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**192 tickets archived, 17 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**193 tickets archived, 16 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -83,7 +83,6 @@ rather than sequential.**
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-024** | **Does field-sealed imply mesh-sealed?** **Nobody has established this, and every paper treats the two as interchangeable.** A cell can be topologically connected in the field and still produce a watertight surface, or the reverse, depending on the case table and the interpolant. **This is a day of work and it is publishable alone:** extract a mesh; compute connected components of the air sublevel set; compute connected components of the mesh complement; **assert they agree.** **H:** they agree for Marching Cubes on all eight reference fields, and **disagree for at least one dual method** — the duals place vertices by solve rather than on the interpolant, which is exactly where the correspondence could break. **Harness:** committed, behind one documented command. **Records:** per field × extractor × resolution, the two component counts and the per-edge disagreement columns. **Falsified by:** universal agreement — a stronger correctness statement than the crate currently makes, and worth saying so. **Worth either way:** it is the precondition for every mechanic in R-022, and the gap sits exactly on the seam this crate occupies. **FINDINGS:** `M-`. | M | — |
 | ☐ | **R-025** | **Second-order vertex placement.** **Both ingredients are published separately and have never been composed.** Jet/Hessian fitting (Cazals & Pouget; Jiao & Zha, in corpus) and QEF placement (Ju et al.) — nobody fits the **second fundamental form** per cell instead of tangent planes. **It attacks a measured term.** P-2's error model is `O(\|e\|²κ)`, and on a true SDF the Hessian's nonzero eigenvalues at a surface point are `−κᵢ/(1−κᵢd)` — **principal curvatures fall out of samples already taken**, no medial axis involved. **H:** curvature-aware placement improves Hausdorff on smooth fields (`sphere`, `torus`, `gyroid`) by >20% over planar QEF at fixed resolution, and **does not** improve it on `box_exact` — where the surface is flat and the second-order term is zero. **Falsified by:** no improvement on smooth fields, meaning curvature estimation is too noisy at game resolutions — which is Aamari & Levrard's minimax bound biting, and worth recording as such. **FINDINGS:** `M-`. | M | — |
 
 ### 17d — The result you already have and have not claimed
