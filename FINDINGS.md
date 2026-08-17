@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**386 entries** — 25 falsified, 303 measured, 38 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**387 entries** — 25 falsified, 303 measured, 39 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -405,6 +405,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-36` | CoACD's intersection-free guarantee is a property of its cut, and its own default merge stage breaks it — which resolves… |
 | `V-37` | the instrument R-024 needs is published and in this corpus; the question it asks is not |
 | `V-38` | the published AR>4 and sliver figures are not a baseline this crate can be measured against, and one of them is misattri… |
+| `V-39` | the comparable triangle-quality baseline is Grosso & Zint's, not FlexiCubes', and it comes with a prediction (T-026) |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -4742,3 +4743,62 @@ computed ratio is an incomparable column.
 
 **Would be shown wrong by:** a plain-Marching-Cubes AR>4 figure in either paper, measured on a
 non-optimised field, which would restore the baseline this entry withdraws.
+
+
+### V-39 — the comparable triangle-quality baseline is Grosso & Zint's, not FlexiCubes', and it comes with a prediction (T-026)
+
+**V.** Read from Grosso & Zint, *A parallel dual marching cubes approach to quad only surface
+reconstruction* (`10.1007/s00371-021-02139-w`, in corpus), §5 and Table 7 — found while looking for the
+Verdict aspect-ratio definition V-38 said to pin.
+
+**The metric is one line and it is cited rather than invented.** *"Quality of triangles is computed
+using the mean ratio metric"*
+
+```
+q_tri = 4√3 · A / Σᵢ lᵢ²
+```
+
+*"where A is the area of the triangle, and lᵢ is the length of their incident edges [13, 33]."* It is
+**1 for equilateral and 0 for degenerate**, so it is a normalised distribution rather than a
+threshold count — no `> 4` cutoff to match, which is exactly the fragility V-38 flagged.
+
+**This baseline is comparable where FlexiCubes' is not**, and the difference is the whole point of
+V-38: Grosso & Zint mesh **uniform grids** of synthetic, CT and MRI volumes with no optimisation loop
+and no learned field, and they report **MC, TMC and DC by name** — three of this crate's seven
+extractors.
+
+| dataset | DMC | DMCS | DC | TMC | **MC** |
+|---|---:|---:|---:|---:|---:|
+| Skull | **0.83** | 0.82 | 0.82 | 0.69 | 0.69 |
+| Body | **0.81** | 0.78 | 0.80 | 0.67 | 0.67 |
+| Skeleton | **0.83** | 0.81 | 0.81 | 0.67 | 0.67 |
+| iWP | 0.84 | 0.82 | **0.86** | 0.65 | 0.65 |
+| gen2 (64³/128³/256³) | **0.87** | 0.82–0.83 | 0.84 | 0.71 | 0.71 |
+
+**The sharpest thing in the table is a column pair, and it is a prediction this crate can test
+directly.** `MC` and `TMC` are **identical to two decimals on every one of the seven rows** —
+0.69/0.69, 0.67/0.67, 0.67/0.67, 0.65/0.65, 0.71/0.71/0.71. The paper gives the mechanism in its own
+words: both *"place their vertices also on the trilinear interpolant but along the voxel edges not
+within the voxel cells."* **Topological correction does not move triangle shape**, because it changes
+which crossings are joined and not where they are. This crate has that exact pair — `marching_cubes`
+and `marching_cubes+decider` — and the shootout already shows them emitting identical vertex and
+triangle counts on most fields.
+
+**A second axis comes free and this crate has never measured it:** *irregular vertices*, valence ≠ 6 for
+a triangle mesh, reported as a percentage. MC sits at **44–60%** across their datasets and DMC at
+**24–54%**.
+
+**`gen2` is the row to compare against**, because it is synthetic rather than scanned and MC scores
+**0.71 at 64³, 128³ and 256³ alike** — a resolution-independent constant, which is what a comparison
+against this crate's analytic fields wants.
+
+**So T-026's metric is decided by evidence rather than taste, and it is not the one the ticket was
+written around.** Mean ratio, from a uniform-grid isosurfacing paper covering three of our extractors,
+beats AR>4 from a differentiable-rendering paper whose values V-38 already withdrew. The Verdict
+definition remains worth having only if someone wants to cross-read the neural line's tables, which
+V-38 says is a conversion aid and not a comparison.
+
+**Would be shown wrong by:** this crate's Marching Cubes measuring a mean ratio far outside 0.65–0.71
+on a smooth analytic field, which would mean the metric is not implementation-independent and the
+baseline is not usable after all — a real possibility, since their MC is somebody else's code and the
+field is not ours.
