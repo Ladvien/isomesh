@@ -852,16 +852,18 @@ pub const PREREGISTERED: &[Preregistration] = &[
                      0.0010 -- Milankovitch's 1907 analytic value, which \
                      Whiting's solver hit at 0.10746 -- and bisecting ground \
                      tilt at t/r = 0.20 finds 15.84 degrees plus or minus \
-                     0.05, Ochsendorf's value. The solver is FISTA on the \
-                     equivalent residual form: minimize the equilibrium \
-                     residual over per-vertex friction cones, feasible iff \
-                     the minimum is zero, compression exact in the cone \
-                     rather than penalized; 20,000 fixed iterations; \
-                     decision thresholds on residual per unit weight at 1e-5 \
-                     feasible and 1e-4 infeasible, the band between asserted \
-                     never hit, and the thresholds themselves are checked by \
-                     the golden values -- a tuned-wrong threshold cannot hit \
-                     0.1075 from both sides. Block weights act at exact \
+                     0.05, Ochsendorf's value. The solver is alternating \
+                     projection between the equilibrium affine set -- exact \
+                     per iteration via one prefactored Cholesky of A times \
+                     A-transpose -- and the per-vertex friction cones, whose \
+                     projection is closed-form; compression is exact in the \
+                     cone rather than penalized; 20,000 fixed iterations; \
+                     the decision reads the CONE-side iterate's equilibrium \
+                     residual per unit weight, 1e-5 feasible and 1e-4 \
+                     infeasible, the band between asserted never hit, and \
+                     the thresholds themselves are checked by the golden \
+                     values -- a tuned-wrong threshold cannot hit 0.1075 \
+                     from both sides. Block weights act at exact \
                      annular-sector centroids, because centerline weights \
                      reproduce Heyman's 0.106 rather than Milankovitch's \
                      0.1075 and the third decimal is the whole point. \
