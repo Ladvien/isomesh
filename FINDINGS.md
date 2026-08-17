@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**416 entries** — 27 falsified, 322 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**417 entries** — 27 falsified, 323 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -388,6 +388,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-325` | the discrete medial score converges O(h) and the mechanics live; the clause that died was C1's own tolerance derivation… |
 | `M-326` | FALSIFIED on both clauses, while the recorded columns show the mechanism both registered instruments missed (R-031) |
 | `M-327` | FALSIFIED again, by the distribution this time: heterogeneous wormholing has no gapped aperture histogram, and the same… |
+| `M-328` | HELD at 20 of 20: the homotopy certificate is never available in a dug scene, and the instrument proved it could have sa… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -6847,3 +6848,28 @@ available, the stronger guarantee live, the Hausdorff fallback unnecessary. Eith
 decides what §1.1's build may claim, and neither outcome halts the list.
 
 **Records** `scene`, `air_samples`, `critical_points`, `wfs_voxels`, `epsilon`, `samples_per_axis`.
+
+### 🔬 M-328 / P-31 — HELD at 20 of 20: the homotopy certificate is never available in a dug scene, and the instrument proved it could have said otherwise (R-032)
+
+**M.** `cargo bench --bench experiment_p31`, `docs/experiments/p-31.csv`.
+
+Across 20 seeded scenes carved by 12 overlapping `BrushStack` capsules each: **every scene's wfs is
+under 2 voxels** — and not marginally. The measured values sit at **0.00–0.15 voxels** on 19 scenes
+and 0.66 on the twentieth: the critical points of a dug scene's distance function live essentially
+*on* the boundary, which is the near-tangential-intersection mechanism the dossier predicted stated
+as a number. A homotopy certificate `λ < wfs` would need λ under a tenth of a voxel — no gameplay λ
+(a shoulder width is many voxels) can ever satisfy it. The control cavity reported the certificate
+**available at 19.5 voxels from exactly one critical point**, so the twenty absent-verdicts are
+readings of the scenes, not of a blind instrument.
+
+**Consequence, recorded so nobody re-derives the strong claim:** the λ-medial direction drops the
+homotopy guarantee permanently and rests on **Hausdorff stability** — Chazal–Lieutier, with Lieutier
+& Wintraecken's `d_H ≲ d_H^{1/2}` / `d_GH ≲ d_H^{1/4}` bounds (`10.1145/3564246.3585113`) — which is
+weaker, parameter-free beyond λ itself, and still far better than a tuned persistence constant. With
+M-325 (the score converges O(h)) and ✗27/M-324 (the score, not the boolean), the Calibre line's
+epistemic footing is now fully measured; only O-19's definition direction remains.
+
+**Would be shown wrong by:** a dug-scene generator whose carves are deliberately non-tangential
+(disjoint fat chambers with fat connectors) reporting comfortable wfs — which would mean the result
+is a property of *overlapping* brush edits specifically, and level designers who avoid overlaps
+could buy the certificate back.

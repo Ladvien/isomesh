@@ -1,0 +1,26 @@
+# experiment P-31 (R-032)
+# hypothesis: On 20 seeded dug scenes -- a solid block carved by 12 random overlapping capsule brushes through the crate's own BrushStack composition -- the weak feature size, measured as the minimum air-side distance-to-boundary over discrete critical points (voxel-step central-difference gradient magnitude under 0.5, the dossier's own theta-above-120-degrees filter constant, non-maximum-suppressed over 26-neighbourhoods), is below 2 voxels on MORE THAN 80 PERCENT of scenes -- so the homotopy certificate lambda < wfs essentially never holds at brush scale and the lambda-medial line rests on Hausdorff stability instead. A single-cavity control scene, one 20-voxel sphere in generic position, must report wfs of at least 10 voxels, demonstrating the instrument can call the certificate AVAILABLE before it is trusted calling it absent.
+# falsified by: wfs at or above 2 voxels on half or more of the dug scenes -- the certificate comfortably available at brush scale, which would make the stronger homotopy guarantee live and the Hausdorff fallback unnecessary. Instrument-falsified by any dug scene reporting zero critical points (a minimum over an empty set is not a measurement), or by the control cavity failing its 10-voxel floor.
+# commit 88bf3dc on amd-ryzen-9-5900x-12-core at 2026-08-17T22:28:00Z
+scene,air_samples,critical_points,wfs_voxels,epsilon,samples_per_axis
+dug_00,10455,81,0.050,0.5,65
+dug_01,6891,56,0.073,0.5,65
+dug_02,11017,91,0.034,0.5,65
+dug_03,13425,64,0.057,0.5,65
+dug_04,13778,126,0.020,0.5,65
+dug_05,10457,55,0.093,0.5,65
+dug_06,11725,69,0.125,0.5,65
+dug_07,10550,69,0.081,0.5,65
+dug_08,10295,83,0.033,0.5,65
+dug_09,10746,55,0.036,0.5,65
+dug_10,13256,84,0.002,0.5,65
+dug_11,11405,75,0.086,0.5,65
+dug_12,11759,92,0.000,0.5,65
+dug_13,9836,63,0.009,0.5,65
+dug_14,10600,60,0.152,0.5,65
+dug_15,7543,50,0.079,0.5,65
+dug_16,7333,48,0.062,0.5,65
+dug_17,12180,56,0.658,0.5,65
+dug_18,10381,108,0.006,0.5,65
+dug_19,12470,91,0.041,0.5,65
+control_cavity,33522,1,19.502,0.5,65
