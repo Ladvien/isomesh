@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**211 tickets archived, 15 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**212 tickets archived, 14 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -91,7 +91,6 @@ the dossier with the specific number that kills each one; they get no rows here 
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-036** | **Sabine RT60 per air component — the cheapest thing in the dossier a player can hear.** Dossier §1.3. R-022a/R-028's tracker already maintains the two accumulators a Sabine estimate needs (component volume, boundary surface area); the reverb domain *is* the connected air component, and the invalidation trigger is the split/merge event M-319–M-323 measured — one fill in six splits, the median split sheds one voxel and is discarded without simulating. Shipped tech is a static bake (Project Acoustics: *"similar to static lighting"*), which a destructible world invalidates on every dig. **H:** on the frame a breach changes the player's component ID, a Sabine RT60 for the new component is available in **< 0.1 ms**; a Planeverb-style 2D FDTD re-bake of a 64×64 slice (`10.1111/cgf.14099`, public C++ source) completes in **< 30 ms** on one core, amortisable over two frames. **Falsified by:** either figure exceeding its bound by 3×. No eigensolver, a public reference implementation, and it monetises infrastructure already built and measured — the one Tier 1 row with no premise left to falsify first. **FINDINGS:** `M-`. | M | — |
 
 ---
 

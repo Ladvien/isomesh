@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**423 entries** — 27 falsified, 329 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**424 entries** — 27 falsified, 330 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -395,6 +395,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-332` | HELD on all three clauses: warm-starting the admissibility solve is bimodal by edit class, and the tilts confirm their o… |
 | `M-333` | the heat-operator substrate verifies against a dense reference, and its own numbers pre-shrink two of R-035b's expectati… |
 | `M-334` | FALSIFIED at 1.7× against a registered 20×: the separators eat the update, the prefactored family is dead for live carvi… |
+| `M-335` | HELD on both clauses with orders to spare, and the premise correction is the part that mattered (R-036) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -7339,3 +7340,38 @@ read against M-321's baselines), and the split rate against M-319's one-in-six �
 *there* would be news; the clauses holding is not, and this row expects no banner.
 
 **Records** `quantity`, `value`, `unit`, `bound`, `held`.
+
+### 🔬 M-335 / P-37 — HELD on both clauses with orders to spare, and the premise correction is the part that mattered (R-036)
+
+**M.** `cargo bench --bench experiment_p37`, `docs/experiments/p-37.csv`.
+
+| quantity | value | bound | margin |
+|---|---:|---:|---|
+| RT60 read on the breach frame | **0.0015 µs** | 100 µs | ~66,000× — two counter reads and a divide, structural as registered |
+| 64×64 FDTD re-bake, 1,000 steps | **3.07 ms** | 30 ms | ~10× |
+| RT60 of the merged chamber | 0.70 s | recorded | a plausible cave-chamber reverb at 0.25 m voxels, α = 0.15 |
+| split rate over 200 fills | 0.050/fill | recorded | fixture-dependent — see below |
+| fill / dig medians with the accumulator | 0.004 / 0.0003 ms | recorded | the O(dirty·6) claim, held in practice |
+
+**The part that earned the ticket was never the timing.** The dossier called this "the one Tier 1
+row with no premise left to falsify" — and its premise was still half wrong: no surface-area
+accumulator existed. The work was `Air`'s one public-API addition (`component_area`,
+delta-maintained at every site `label` is, sealed-box boundary convention, drained-state contract),
+policed by a recount oracle that runs after every op in the crate's tests, survives a seeded 60-op
+merge/split/vanish sequence, and was shown to go red on a deliberate one-count corruption. Once the
+counters exist, the Sabine read is nanoseconds *by construction* — which is what "structurally so"
+in the registration meant.
+
+**The split-rate note, kept honest:** 0.050/fill here against M-319's ~0.167 is two *fixtures*, not
+a divergence of the tracker — M-319 measured a noise-cavity distribution, this run fills two big
+open chambers. The registered would-be-news condition was a divergence on comparable geometry; this
+is not that, and no banner is claimed.
+
+**What a build inherits:** the reverb domain is the connected air component; its Sabine estimate is
+free on the frame of any breach; the invalidation trigger (splits/merges) is already counted by
+`Repair`/`Fill`; and the 2-D re-bake fits comfortably inside two frames. `AirWorld` roll-up (seam
+faces) remains the stitching layer's problem, deliberately.
+
+**Would be shown wrong by:** the recount oracle diverging on any op sequence (it has its own red
+demonstration); or a real-geometry fixture where the accumulator's O(dirty·6) maintenance shows up
+against M-321's baselines — the recorded medians say it does not.
