@@ -44,6 +44,13 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
   But 34,848 is still 0.970× a *chunk* rebuild: chunking converts an unbounded cost into one bounded by
   a unit the mesher already budgets per edit.
 
+  **A `sealed_cave` example demonstrates it** — two chambers in different chunks, a tunnel through the
+  chunk between them, `F` to plug it. It is also what produced M-323: the bound and the cost are
+  different claims. Chunking bounds the search by the chunk, but what it *costs* is the edited chunk's
+  share of the severed component — **0.03× a chunk** here, where the chambers live elsewhere and the
+  boundary graph resolves the global split, against **0.97×** when both halves sit inside the edited
+  chunk. Same operation, 35× apart, decided by geometry.
+
   The global component graph is **rebuilt from scratch** on every restitch, which is the one thing a
   union-find is safe to do after ✗26 — it only ever unions — and is affordable because its nodes are
   components rather than samples. The `O(cells²)` seam scan is cached and recomputed only for seams

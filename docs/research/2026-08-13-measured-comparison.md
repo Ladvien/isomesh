@@ -507,6 +507,38 @@ it matters because the published systems are benchmarked on social and web graph
 Bounded degree was the expected difference; the split-size distribution is the one that actually decides
 the data structure.
 
+
+### What was built, and the one number that decides how it is deployed
+
+**New** (R-022b and R-028, M-321 → M-323). The structure is not HDT. `connectivity::Air` is a **flat
+label array** — every sample carries its component id directly — because a union-find cannot absorb
+deletion at all: parent pointers encode union *history*, not adjacency, so re-rooting a shed piece
+severs its **descendants** from a component they are still part of (✗26). Flat makes `connected` `O(1)`
+and `&self`; the replacement search is lockstep, stopping when all but one frontier exhausts.
+
+| | visited | against |
+|---|---:|---|
+| ordinary edits (200 brush fills, 65³) | **3.38 per seed** | 436× less than rebuilding |
+| bisect, both halves in the edited chunk | 0.970× | one chunk's samples |
+| bisect, halves in *neighbouring* chunks | **0.028×** | one chunk's samples |
+| bisect, unchunked single grid | 0.998× | **the whole world's samples** |
+
+**Read the last row against the third.** On a single grid the incremental structure buys nothing on
+this edit at any world size — 557,568 visited against 557,568 air samples, because two equal halves
+exhaust together and the walk covers both. `connectivity::AirWorld` puts one `Air` per chunk and joins
+components across the sample plane adjacent chunks share, which bounds that walk by the chunk: flat at
+34,848 while the world grows 8×, an advantage equal to the chunk count and growing without bound.
+
+**The bound and the cost are different claims, and conflating them was a mistake made once here
+already.** The bound is structural. What the search *actually* costs is the **edited chunk's share of
+the severed component** — 0.970× when the fixture puts both halves inside that chunk, 0.028× when the
+chambers live in neighbouring chunks and the boundary graph resolves the global split instead. Same
+operation, 35× apart, decided entirely by geometry (M-323).
+
+**No paper we can find reports any of this**, for the same reason the split-size distribution is
+unreported: the published dynamic-connectivity systems are benchmarked on social and web graphs, where
+there is no chunk to decompose along and no spatial locality to exploit.
+
 ---
 
 ## 9. What a local edit costs, and why the answer is two answers

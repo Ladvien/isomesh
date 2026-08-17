@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**408 entries** — 26 falsified, 317 measured, 45 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**409 entries** — 26 falsified, 318 measured, 45 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -382,6 +382,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-320` | the median split sheds one voxel, so the replacement search the literature is built around is answering a question this… |
 | `M-321` | HELD on the measured distribution, and the adversarial fixture it demanded costs 1.1× a full rebuild (R-022b) |
 | `M-322` | chunking makes the bisect bounded rather than cheap, and the advantage is exactly the chunk count (R-028) |
+| `M-323` | the chunk is the bound; the cost is the edited chunk's share of the severed component, and the two differ by 35× (R-028) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -5962,6 +5963,52 @@ failure a measurement of cost alone cannot see. It gets its own assertion rather
 **Records:** `samples_per_axis`, `fills`, `dirty_samples`, `seeds`, `visited`, `splits`,
 `shed_components`, `vanished_components`, `rebuild_visited`.
 
+### M-323 — the chunk is the *bound*; the cost is the edited chunk's share of the severed component, and the two differ by 35× (R-028)
+
+**M.** `cd bevy_isomesh && cargo run --example sealed_cave --release`, and reproduced as a standalone
+check while writing it. Three chunks of 16 cells, two chambers in chunks 0 and 2, a tunnel through
+chunk 1, a plug filled at the world origin:
+
+```
+components before = 1        A<->B before = true
+plug: 179 samples, 83 dirty (96 already solid), 34 seeds, 138 visited, 1 split
+components after  = 2        A<->B after  = false
+one chunk = 4,913 samples
+```
+
+**138 visited is 0.028× a chunk.** M-322 measured the *same operation* — sever a passage by filling
+one plug — at **0.970× a chunk**. Same structure, same kind of edit, **35× apart**, and nothing about
+the structure changed between them.
+
+**The difference is where the severed component's mass lives.** M-322's fixture pinched a cavern that
+filled the edited chunk, so lockstep separated two large halves *within that chunk* and walked both.
+Here the chambers are in chunks 0 and 2 while the plug is in chunk 1, so the pieces the **local** search
+separates are two short tunnel stubs. The split between the two large components is then resolved by
+the **boundary graph**, whose nodes are components rather than samples, and which costs nothing
+proportional to the caverns at all.
+
+**So M-322's headline needs a distinction it did not draw.** *"Chunking bounds the search by the
+chunk"* is structural and stands. *"A bisect costs about a chunk rebuild"* is **not** a property of
+chunking — it is a property of M-322's fixture, which deliberately put both halves inside one chunk to
+be adversarial. The general statement is:
+
+> the search costs **the edited chunk's share of the severed component**, bounded above by the chunk.
+
+**This is the second time in this phase that a fixture's own shape was mistaken for a structural
+property** — M-320's one-voxel median was the first, and P-26 carried the correction by predicting
+separately per fixture. The pattern is now three-for-three with ✗14, M-51, M-56, M-60 and M-40, and it
+argues for the same remedy each time: run the adversarial fixture *and* a representative one, and never
+quote one number for both.
+
+**Found by building an example, not by benchmarking.** The example exists because `AirWorld` shipped
+with no consumer, and its first consumer immediately produced a number no fixture in the suite did.
+That is the argument for CLAUDE.md's *"prefer adding an example over adding prose"* being about
+correctness rather than presentation.
+
+**Would be shown wrong by:** a chunking where a component's mass concentrates in the chunk being
+edited — which is exactly M-322's fixture, so this is not a disagreement between the two rows but a
+statement of what varies between them.
+
 ### M-322 — chunking makes the bisect **bounded** rather than cheap, and the advantage is exactly the chunk count (R-028)
 
 **M.** `cargo bench --bench chunked_bisect`, `docs/measurements/chunked_bisect.csv`. **Comparative, and
@@ -6008,6 +6055,14 @@ the thing being searched smaller.
 where the split has to propagate through the global graph to many chunks' labels. The graph handles that
 — its nodes are components, not samples — but this measurement does not stress it, because the fixture's
 pinch severs a component that only ever needed relabelling within one chunk.
+
+**AMENDED 2026-08-17 (M-323). One sentence here is about the fixture, not the structure.** *"Chunking
+converts an unbounded cost into a bounded one"* stands. *"34,848 is 0.970× a chunk rebuild"* is what
+**this fixture** costs, because it deliberately pinches a cavern that fills the edited chunk so both
+halves are walked. The `sealed_cave` example severs a passage between chambers in *other* chunks and
+the same operation costs **0.028×** a chunk — 35× less — because the local search separates two tunnel
+stubs and the boundary graph resolves the rest. The general form is *the edited chunk's share of the
+severed component, bounded above by the chunk*.
 
 ### M-321 / P-26 — HELD on the measured distribution, and the adversarial fixture it demanded costs 1.1× a full rebuild (R-022b)
 
