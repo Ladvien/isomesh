@@ -925,6 +925,15 @@ pub const PREREGISTERED: &[Preregistration] = &[
                        fixture failure and aborts; and every surviving edit \
                        must reach the decision line within the cap or the \
                        count, not the clock, has failed to decide.",
+        records: &[
+            "edit",
+            "class",
+            "iters_cold",
+            "iters_warm",
+            "ratio",
+            "feasible",
+        ],
+    },
     Preregistration {
         id: "P-35",
         ticket: "R-034b",
