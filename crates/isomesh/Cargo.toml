@@ -232,6 +232,11 @@ harness = false
 test = false
 
 [[bench]]
+name = "experiment_p32"
+harness = false
+test = false
+
+[[bench]]
 name = "a028_diagnose"
 harness = false
 
