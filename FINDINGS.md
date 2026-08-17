@@ -6811,3 +6811,39 @@ budget re-meshing off the concentration columns.
 **Would be shown wrong by:** any of the three registered fixtures replayed with a different seed
 family reversing a verdict (the runs are deterministic; the seed is registered); or a
 post-breakthrough epoch at which the heterogeneous histogram genuinely separates.
+
+### P-31 — registered for R-032, before the harness was written
+
+**What the certificate needs, and why the dossier expects it missing.** The λ-medial axis's homotopy
+guarantee needs `λ < wfs`, the weak feature size — the smallest distance from a critical point of
+the air's distance function to the boundary. Destruction carves near-tangential intersections, and
+near-tangential geometry puts critical points close to the boundary; the dossier predicts the
+certificate essentially never holds at brush scale, and this registration is that prediction with
+its instrument pinned. M-325 opened the gate on the *stability* side; this decides what the build
+may *claim* — a homotopy guarantee, or Hausdorff stability (Chazal–Lieutier; Lieutier & Wintraecken
+`10.1145/3564246.3585113`) alone.
+
+> **H.** On **> 80%** of 20 seeded dug scenes — a solid block carved by 12 random overlapping
+> capsule brushes through the crate's own `BrushStack` composition — the measured `wfs` is
+> **< 2 voxels**. The control scene (one 20-voxel cavity in generic position) reports
+> `wfs ≥ 10 voxels`.
+
+**The instrument, derived where it can be.** Critical-point candidates are interior air samples
+whose voxel-step central-difference `‖∇ρ‖ < 0.5` — the dossier's own filter constant (`θ > 120°`,
+since on a two-sheet medial `‖∇ρ‖ = cos(θ/2)`), stated in §2.4 and reused rather than re-invented —
+non-maximum-suppressed over 26-neighbourhoods (a sample survives only when no neighbour reads a
+strictly smaller magnitude). `wfs` = min ρ over survivors, in voxels. The scan is restricted to
+`|xᵢ| ≤ 1.5`, inside the block, so the exterior shell (gradient ≡ 1, no critical points, boundary
+partially outside the sampled domain) cannot contribute.
+
+**Reachability and inversion in one control:** the single-cavity scene's centre is a genuine
+critical point at `ρ ≈ 20` voxels. An instrument that cannot report the certificate *available*
+there is not to be trusted reporting it *absent* on the dug scenes; its 10-voxel floor is asserted
+before any verdict is read, as is a non-empty critical set and a sane carved fraction (2–60% air) on
+every dug scene.
+
+**Falsified by** `wfs ≥ 2` voxels on half or more of the dug scenes — the certificate comfortably
+available, the stronger guarantee live, the Hausdorff fallback unnecessary. Either way the answer
+decides what §1.1's build may claim, and neither outcome halts the list.
+
+**Records** `scene`, `air_samples`, `critical_points`, `wfs_voxels`, `epsilon`, `samples_per_axis`.

@@ -752,6 +752,42 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "tick_ms_median",
         ],
     },
+    Preregistration {
+        id: "P-31",
+        ticket: "R-032",
+        hypothesis: "On 20 seeded dug scenes -- a solid block carved by 12 \
+                     random overlapping capsule brushes through the crate's \
+                     own BrushStack composition -- the weak feature size, \
+                     measured as the minimum air-side distance-to-boundary \
+                     over discrete critical points (voxel-step \
+                     central-difference gradient magnitude under 0.5, the \
+                     dossier's own theta-above-120-degrees filter constant, \
+                     non-maximum-suppressed over 26-neighbourhoods), is \
+                     below 2 voxels on MORE THAN 80 PERCENT of scenes -- so \
+                     the homotopy certificate lambda < wfs essentially \
+                     never holds at brush scale and the lambda-medial line \
+                     rests on Hausdorff stability instead. A single-cavity \
+                     control scene, one 20-voxel sphere in generic \
+                     position, must report wfs of at least 10 voxels, \
+                     demonstrating the instrument can call the certificate \
+                     AVAILABLE before it is trusted calling it absent.",
+        falsified_by: "wfs at or above 2 voxels on half or more of the dug \
+                       scenes -- the certificate comfortably available at \
+                       brush scale, which would make the stronger homotopy \
+                       guarantee live and the Hausdorff fallback \
+                       unnecessary. Instrument-falsified by any dug scene \
+                       reporting zero critical points (a minimum over an \
+                       empty set is not a measurement), or by the control \
+                       cavity failing its 10-voxel floor.",
+        records: &[
+            "scene",
+            "air_samples",
+            "critical_points",
+            "wfs_voxels",
+            "epsilon",
+            "samples_per_axis",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
