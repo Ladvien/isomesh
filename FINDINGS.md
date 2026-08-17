@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**417 entries** — 27 falsified, 323 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**418 entries** — 27 falsified, 324 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -389,6 +389,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-326` | FALSIFIED on both clauses, while the recorded columns show the mechanism both registered instruments missed (R-031) |
 | `M-327` | FALSIFIED again, by the distribution this time: heterogeneous wormholing has no gapped aperture histogram, and the same… |
 | `M-328` | HELD at 20 of 20: the homotopy certificate is never available in a dug scene, and the instrument proved it could have sa… |
+| `M-329` | the modal kill-shot fired: no one-voxel edit is audible anywhere, including against the thin web, and the direction clos… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -6913,3 +6914,61 @@ single-element spectrum with other than six rigid modes.
 
 **Records** `edit`, `cells`, `dof`, `lambda1_base`, `lambda1_edited`, `delta_pct`, `audible`,
 `certificate_rel`.
+
+### 💥 M-329 / P-32 — the modal kill-shot fired: no one-voxel edit is audible anywhere, including against the thin web, and the direction closes for a day's cost (R-033)
+
+> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉
+>
+> 🥇 **One voxel cannot move a carved body's fundamental audibly — the worst interior dig shifted
+> λ₁ by 0.11% against a 1.2% audibility threshold, and the digs against the two-cell-thick web did
+> even less (≤ 0.032%, forty-fold under audible). The ticket's own second clause — "edits near thin
+> features are audible" — is what died, and with it the whole per-edit modal direction, at the
+> price the dossier set: a day, not a sprint.**
+>
+> 🧪 **Tested by:** `cargo bench --bench experiment_p32` (P-32), `docs/experiments/p-32.csv`
+> 🎯 **Result:** C1 HELD (8/8 interior digs, worst 0.1126%); C2 **FALSIFIED the closing way** (best
+> near-web dig 0.0321%); C3 control: a 20%-volume cavity moved λ₁ **63.9%**, certificates at
+> 5.5×10⁻⁸ relative — four orders under their bound — and both starts agreed on every solve.
+> 📐 **Why it earns the banner:** 💥 a pre-registered clause falsified in the direction that kills
+> a candidate mechanic outright, before anything was built on it — the exact trade the premise-first
+> ordering exists to buy. And the numbers carry the mechanism: a one-voxel dig moves λ₁ by roughly
+> its share of modal strain energy, ~1/N — so the result is not marginal and no fixture tuning
+> rescues it.
+> 💣 **Would be shown wrong by:** a fixture whose fundamental *is* a thin-feature mode (a body that
+> is mostly web), or edits at a near-failure hinge where the mode concentrates — either would make
+> single-voxel audibility real for that body class.
+
+**M.** `cargo bench --bench experiment_p32`, `docs/experiments/p-32.csv`.
+
+| edit set | Δλ₁/λ₁ range | verdict at 1.2% |
+|---|---:|---|
+| 8 strictly-interior digs | 0.0020% – 0.1126% | inaudible, 8/8 (C1 HELD) |
+| 4 digs adjacent to the 2-cell web | 0.0065% – 0.0321% | inaudible, 4/4 (**C2 FALSIFIED**) |
+| 20%-volume cavity (886 cells, 4 orphan fragments fell away, printed) | **63.9%** | the null's reachability (C3 HELD) |
+
+**The mechanism, visible in the spread.** A single cell is ~0.025% of this 3,982-cell body, and the
+interior deltas bracket exactly that: first-order eigenvalue perturbation says `Δλ/λ` ≈ the removed
+cell's share of the mode's strain energy. The web digs move λ₁ *less* than interior digs because the
+fundamental is the pillar's sway and the web is a passenger in it — "near a thin feature" was never
+the right variable; **modal strain density** is. Audibility therefore needs either ~50+ cells
+removed at once (the cavity's regime, on this body) or an edit where the mode concentrates —
+a near-failure hinge — which is a different mechanic (pre-fracture creaking) with a different
+trigger, not per-edit modal audio.
+
+**The margin survives the constant's tier.** The 0.6% pitch JND is the ticket's tier-F constant;
+the conversion to 1.2% on λ is arithmetic. The measured worst case sits 11× under the threshold and
+the web case 37× under — a JND wrong by an order of magnitude would not flip the verdict.
+
+**Instrument record:** element validated before trust (symmetry, translation/rotation nulls,
+exactly 6 rigid modes from the free-element Jacobi spectrum); certificate shown red on a 2-outer
+run (2.3×10⁻¹ vs the 5×10⁻⁴ bound) before any verdict; every reported eigenvalue certified at
+≤ 5.6×10⁻⁸ relative; the control cavity's 4 orphaned fragment cells pruned as fallen debris, on the
+record.
+
+**Consequence:** the modal direction closes. Picard's ≈40-modes-in-5-ms budget is moot for per-edit
+audio; no build ticket is earned. What survives as a lead worth a *different* premise experiment
+someday: λ₁ tracking as a *structural* signal (the cavity's 63.9% says large-scale carving is very
+audible in principle), and mode-concentration at near-failure hinges as a creak trigger.
+
+**Would be shown wrong by:** the two fixture classes the banner names; or a certificate bug — the
+inversion demonstrated red, so that path is covered.

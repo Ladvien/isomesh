@@ -1,0 +1,19 @@
+# experiment P-32 (R-033)
+# hypothesis: A one-voxel interior edit does not move a carved pillar's fundamental eigenvalue audibly. The pitch JND is 0.6 percent on FREQUENCY and f is proportional to sqrt(lambda), so the audibility threshold on lambda-one is 1.2 percent -- the conversion is registered because applying 0.6 to lambda directly would be a silent factor of two. Clause one: all 8 seeded strictly-interior one-voxel digs move lambda-one by less than 1.2 percent. Clause two: at least 1 of 4 digs adjacent to the fixture's two-cell web exceeds 1.2 percent -- the ticket's 'only edits near a thin feature are audible', both sides of it. Clause three, the null's reachability: carving a 20-percent-volume cavity moves lambda-one by more than 15 percent. Instrument: hexahedral FEM assembled directly on the occupancy grid (trilinear, 2x2x2 Gauss, E=1 nu=0.3 rho=1, lumped mass, base layer fixed), matrix-free inverse power iteration (48 outer) over Jacobi-preconditioned CG (256 inner, warm-started), and every reported eigenvalue carries an a-posteriori certificate -- the residual Kx minus lambda Mx in the M-inverse norm, at or below 5e-4 of lambda -- so fixed iteration counts can never mean silently wrong.
+# falsified by: Any strictly-interior dig moving lambda-one at or above 1.2 percent -- per-edit modal audio earns its ticket, bounded in advance by Picard's O(m^2.8) scaling at about 40 modes in a 5 ms budget. Clause two failing the other way -- no web-adjacent dig audible -- closes the modal direction entirely at the cost of a day, the outcome the dossier priced. Instrument-falsified by the certificate exceeding its bound, the two deterministic starts disagreeing beyond twice the certificate, the control cavity moving lambda-one by less than 15 percent, or the free single-element spectrum holding other than exactly six rigid modes.
+# commit 3a4565e on amd-ryzen-9-5900x-12-core at 2026-08-17T22:44:11Z
+edit,cells,dof,lambda1_base,lambda1_edited,delta_pct,audible,certificate_rel
+baseline,3982,14760,2.049651e-4,2.049651e-4,0.0000,false,5.520e-8
+interior_0,3981,14760,2.049651e-4,2.047389e-4,0.1104,false,5.340e-8
+interior_1,3981,14760,2.049651e-4,2.047721e-4,0.0942,false,5.385e-8
+interior_2,3981,14760,2.049651e-4,2.048746e-4,0.0442,false,5.437e-8
+interior_3,3981,14760,2.049651e-4,2.049427e-4,0.0110,false,5.598e-8
+interior_4,3981,14760,2.049651e-4,2.049692e-4,0.0020,false,5.551e-8
+interior_5,3981,14760,2.049651e-4,2.049554e-4,0.0047,false,5.468e-8
+interior_6,3981,14760,2.049651e-4,2.050477e-4,0.0403,false,5.549e-8
+interior_7,3981,14760,2.049651e-4,2.051958e-4,0.1126,false,5.532e-8
+near_web_0,3981,14760,2.049651e-4,2.049785e-4,0.0065,false,5.462e-8
+near_web_1,3981,14760,2.049651e-4,2.049930e-4,0.0136,false,5.481e-8
+near_web_2,3981,14760,2.049651e-4,2.049951e-4,0.0146,false,5.596e-8
+near_web_3,3981,14760,2.049651e-4,2.050309e-4,0.0321,false,5.581e-8
+cavity_20pct,3092,12819,2.049651e-4,7.392056e-5,63.9351,true,2.268e-11
