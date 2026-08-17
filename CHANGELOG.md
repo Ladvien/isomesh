@@ -26,8 +26,28 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
   **The tail is real and is documented rather than hidden.** Bisecting a tunnel between two equal
   caverns costs **1.1× a full rebuild**: both frontiers are half the component, and there is no
   replacement edge to find because the component genuinely split. HDT's levels are not the remedy — they
-  bound a *search*, and the remedy is decomposition. `Air::label_of` ships as the one accessor a
-  chunk-stitching layer needs (R-028).
+  bound a *search*, and the remedy is decomposition, which is what `connectivity::AirWorld` below is.
+
+- **`connectivity::AirWorld` — many `Air` grids over one `ChunkLayout`, so `connected` answers across a
+  chunk seam.** Adjacent chunks share exactly one sample plane (`sample_shape` is `cells + 1`), so two
+  components are joined where that shared sample is air on both sides: nothing interpolated, nothing
+  matched by tolerance.
+
+  **This is what makes `fill` usable, not an optimisation on top of it.** Without it a consumer chooses
+  between one large `Air` — which has the bisect tail — and one `Air` per chunk, which cannot answer
+  across a seam at all. Every extractor here is driven per chunk, so the second is the natural shape and
+  it silently cannot answer the question the module exists for.
+
+  **Measured (M-322): the bisect becomes bounded rather than cheap.** A single grid visits every air
+  sample it has — 557,568 at 16 chunks wide, 0.998× its own rebuild — while the chunked world is **flat
+  at 34,848** as the world grows 8×. The advantage is exactly the chunk count and grows without bound.
+  But 34,848 is still 0.970× a *chunk* rebuild: chunking converts an unbounded cost into one bounded by
+  a unit the mesher already budgets per edit.
+
+  The global component graph is **rebuilt from scratch** on every restitch, which is the one thing a
+  union-find is safe to do after ✗26 — it only ever unions — and is affordable because its nodes are
+  components rather than samples. The `O(cells²)` seam scan is cached and recomputed only for seams
+  touching a chunk that changed.
 
   **Repair is budgeted, not synchronous**, taking the same `spend: FnMut() -> bool` predicate
   `mesh_within_budget` uses — because amortised is the wrong statistic for the frame a breakthrough

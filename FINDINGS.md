@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**407 entries** — 26 falsified, 316 measured, 45 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**408 entries** — 26 falsified, 317 measured, 45 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -381,6 +381,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-319` | filling disconnects the air region about one time in six, so R-022b's cheap escape does not exist (R-022b) |
 | `M-320` | the median split sheds one voxel, so the replacement search the literature is built around is answering a question this… |
 | `M-321` | HELD on the measured distribution, and the adversarial fixture it demanded costs 1.1× a full rebuild (R-022b) |
+| `M-322` | chunking makes the bisect bounded rather than cheap, and the advantage is exactly the chunk count (R-028) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -5960,6 +5961,53 @@ failure a measurement of cost alone cannot see. It gets its own assertion rather
 
 **Records:** `samples_per_axis`, `fills`, `dirty_samples`, `seeds`, `visited`, `splits`,
 `shed_components`, `vanished_components`, `rebuild_visited`.
+
+### M-322 — chunking makes the bisect **bounded** rather than cheap, and the advantage is exactly the chunk count (R-028)
+
+**M.** `cargo bench --bench chunked_bisect`, `docs/measurements/chunked_bisect.csv`. **Comparative, and
+deliberately without a `P-` id**: the bound is not a hypothesis. A lockstep search runs inside one `Air`
+and therefore cannot visit more samples than that `Air` holds — a property of the construction, asserted
+by `connectivity::world::tests::a_bisect_visits_no_more_than_one_chunk`. What was not settled by
+construction is the *size of the gap* against the unchunked structure, which is what this measures.
+
+The fixture is M-321's: one cavern spanning the world, **pinched to a single air voxel** at the
+midplane, and that voxel filled. 32 cells per chunk, so a chunk is 33³.
+
+| arm | chunks | world air | visited | its own rebuild | ratio | **× a chunk** |
+|---|---:|---:|---:|---:|---:|---:|
+| single | 2 | 69,696 | 69,696 | 70,785 | 0.985 | 1.94 |
+| single | 4 | 139,392 | 139,392 | 140,481 | 0.992 | 3.88 |
+| single | 8 | 278,784 | 278,784 | 279,873 | 0.996 | 7.76 |
+| single | 16 | 557,568 | **557,568** | 558,657 | 0.998 | **15.52** |
+| chunked | 2 | 69,696 | 34,848 | 35,937 | 0.970 | 0.97 |
+| chunked | 4 | 139,392 | 34,848 | 35,937 | 0.970 | 0.97 |
+| chunked | 8 | 278,784 | 34,848 | 35,937 | 0.970 | 0.97 |
+| chunked | 16 | 557,568 | **34,848** | 35,937 | 0.970 | **0.97** |
+
+**The single grid visits every air sample it has.** 69,696 visited against 69,696 air is not a
+coincidence: lockstep stops when all but one frontier exhausts, and when the two halves are the *same
+size* they exhaust together, so the walk covers both. That is why M-321 measured 1.1× a rebuild and why
+this arm sits at 0.985–0.998 — the incremental structure buys nothing on this edit, at any world size.
+
+**The chunked arm is flat at 34,848 while the world grows 8×.** The advantage over the single grid is
+**exactly the chunk count** — 16× at width 16 — and it grows linearly with the world, without bound,
+because one number is constant and the other is not.
+
+**What this does not do, stated plainly: it does not make a bisect cheap.** 34,848 is 0.970× a *chunk*
+rebuild. Inside the middle chunk the pinch still splits it into two equal halves and lockstep still
+walks both. **Chunking converts an unbounded cost into a bounded one**, and the bound is "rebuild one
+chunk" — which is a cost the mesher already pays per edit, so it is now proportional to something the
+engine has already budgeted for rather than to the size of the world.
+
+**So the remedy M-321 named was the right one, and for the reason it gave.** HDT's levels bound a
+replacement-edge *search*; on a genuine bisect there is no replacement edge, and no search strategy can
+avoid discovering which side is smaller. Decomposition does not make the discovery cheaper — it makes
+the thing being searched smaller.
+
+**Would be shown wrong by:** a component that spans many chunks *and* is pinched inside one of them,
+where the split has to propagate through the global graph to many chunks' labels. The graph handles that
+— its nodes are components, not samples — but this measurement does not stress it, because the fixture's
+pinch severs a component that only ever needed relabelling within one chunk.
 
 ### M-321 / P-26 — HELD on the measured distribution, and the adversarial fixture it demanded costs 1.1× a full rebuild (R-022b)
 

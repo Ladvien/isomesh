@@ -526,6 +526,24 @@ impl Air {
         self.pending.len() as u64
     }
 
+    /// One past the largest component id this grid has ever issued.
+    ///
+    /// Component ids are dense and reused, so this bounds them without being a
+    /// live count — ask [`component_size`](Self::component_size) whether a given
+    /// id is in use. A stitching layer needs it to size its own per-label table
+    /// (R-028).
+    #[must_use]
+    pub fn label_count(&self) -> usize {
+        self.size.len()
+    }
+
+    /// Air samples carrying this component id; `0` if it is retired or was never
+    /// issued.
+    #[must_use]
+    pub fn component_size(&self, label: u32) -> u32 {
+        self.size_of(label)
+    }
+
     // --- internals ---------------------------------------------------------
 
     fn in_range(&self, p: [u32; 3]) -> bool {
@@ -950,6 +968,9 @@ impl Air {
         }
     }
 }
+
+mod world;
+pub use world::{AirWorld, Seams};
 
 #[cfg(test)]
 mod tests;

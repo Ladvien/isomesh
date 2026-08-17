@@ -198,6 +198,10 @@ name = "replacement_search"
 harness = false
 
 [[bench]]
+name = "chunked_bisect"
+harness = false
+
+[[bench]]
 name = "experiment_p26"
 harness = false
 test = false
