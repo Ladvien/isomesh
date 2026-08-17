@@ -477,6 +477,51 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "disagreements_without_pole",
         ],
     },
+    Preregistration {
+        id: "P-25",
+        ticket: "R-022b",
+        hypothesis: "Repairing the air sublevel set's connectivity after a \
+                     brush FILL costs work proportional to the SHED VOLUME -- \
+                     the air samples that leave their component -- and not to \
+                     the surviving component, nor to the lattice. Concretely: \
+                     at a fixed brush radius the voxels the replacement search \
+                     visits stays flat as the lattice grows through 33, 49 and \
+                     65 cubed, while a rebuild's visit count grows as n cubed. \
+                     Two mechanisms, both already measured. A union-find CAN \
+                     absorb deletion, because a parent pointer only has to \
+                     reach the right root and a filled sample sitting mid-tree \
+                     is never queried -- so only the shed pieces are re-rooted \
+                     and the surviving side is never walked. And the shed \
+                     pieces are tiny: M-320 measured the smaller side of a \
+                     split at ONE voxel at the median and 120 at the observed \
+                     maximum, against 227,567 air samples. The levelled HDT \
+                     scheme is therefore unnecessary here; lockstep search \
+                     outward from every seed, stopping when all but one \
+                     frontier exhausts, is enough.",
+        falsified_by: "Visited voxels growing as n cubed at a fixed brush size, \
+                       which would mean the search is exploring the SURVIVING \
+                       component rather than the shed pieces -- i.e. the \
+                       lockstep stop condition is wrong and the structure is \
+                       walking the thing it was built to avoid walking. \
+                       Separately and more seriously falsified by any \
+                       disagreement between the incrementally maintained \
+                       components and a full rebuild over the same values: \
+                       component count, or any connected() answer. That would \
+                       mean the structure is fast and WRONG, which is worse \
+                       than slow and right, and it is the failure a \
+                       measurement of cost alone cannot see.",
+        records: &[
+            "samples_per_axis",
+            "fills",
+            "dirty_samples",
+            "seeds",
+            "visited",
+            "splits",
+            "shed_components",
+            "vanished_components",
+            "rebuild_visited",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

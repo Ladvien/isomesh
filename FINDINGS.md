@@ -5900,6 +5900,44 @@ passage mid-span and shed half a component. `noise_cavity` at radius 4 is the ad
 *frequency* (M-319) and may well be the friendly end for *size* — a brush comparable to the passage width
 consumes a junction whole instead of cutting across it. Measuring one wide-cave field would settle it.
 
+### P-25 — registered for R-022b, before the structure was written
+
+**Pre-registration.** `crates/isomesh/src/experiment.rs`, id `P-25`. Recorded here and compiled into the
+crate **before** the harness exists, which is the only thing that makes the result falsifiable rather
+than narrated.
+
+**H.** Repairing the air sublevel set's connectivity after a brush **fill** costs work proportional to
+the **shed volume** — the air samples that leave their component — and not to the surviving component,
+nor to the lattice. At a fixed brush radius the voxels the replacement search visits stays **flat** as
+the lattice grows through 33³, 49³ and 65³, while a rebuild's visit count grows as `n³`.
+
+**Two mechanisms, and both are already measured rather than hoped for.**
+
+**A union-find can absorb deletion.** This module's own docs say it cannot — *"a union-find cannot do
+deletions at any price"* — and that is right about the general operation and wrong about the one needed
+here. A parent pointer only has to reach the correct **root**; a filled sample sitting mid-tree is never
+queried, because `connected` gates on `air` before it walks. So a fill does not have to rebuild a
+component: it has to **re-root the shed pieces** and leave the surviving side untouched. The pieces are
+what get re-rooted, and the pieces are small.
+
+**And M-320 measured how small.** The smaller side of a split is **1 voxel at the median** and 120 at the
+observed maximum, against 227,567 air samples. That is what makes the levelled HDT scheme — `O(log n)`
+levels, non-replacement edges demoted a level to amortise a failed search — unnecessary on this lattice.
+Lockstep search outward from every seed, stopping when all but one frontier exhausts, costs
+`O(shed)` and needs none of it.
+
+**Falsified by:** visited voxels growing as `n³` at a fixed brush size, which would mean the search is
+exploring the **surviving** component rather than the shed pieces — the lockstep stop condition wrong,
+and the structure walking exactly the thing it exists not to walk.
+
+**Separately and more seriously falsified by** any disagreement between the incrementally maintained
+components and a full rebuild over the same values: the component count, or any `connected` answer.
+That would mean the structure is **fast and wrong**, which is worse than slow and right, and it is the
+failure a measurement of cost alone cannot see. It gets its own assertion rather than its own benchmark.
+
+**Records:** `samples_per_axis`, `fills`, `dirty_samples`, `seeds`, `visited`, `splits`,
+`shed_components`, `vanished_components`, `rebuild_visited`.
+
 ### V-45 — R-027's design does not merely change `extract_into`'s contract; it converts a shipped determinism check's failure condition into its intent (R-027)
 
 **V.** Verified in this repo's own source, `crates/isomesh/src/validate/determinism.rs:268–300`.
