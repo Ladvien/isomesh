@@ -315,6 +315,55 @@ fn web_cells(occ: &[bool]) -> Vec<usize> {
     web
 }
 
+/// Keep only the base-anchored component — the control cavity can pinch off
+/// tiny fragments at its surface, and physically that debris falls away.
+/// Returns the number of cells dropped.
+fn prune_to_base_component(occ: &mut [bool]) -> usize {
+    let total = occ.iter().filter(|&&o| o).count();
+    let mut seen = vec![false; occ.len()];
+    let mut queue: Vec<usize> = (0..SIDE * SIDE)
+        .map(|i| {
+            let (x, y) = (i % SIDE, i / SIDE);
+            cell(x, y, 0)
+        })
+        .filter(|&c| occ[c])
+        .collect();
+    for &q in &queue {
+        seen[q] = true;
+    }
+    let mut reached = queue.len();
+    while let Some(c) = queue.pop() {
+        let x = c % SIDE;
+        let y = (c / SIDE) % SIDE;
+        let z = c / (SIDE * SIDE);
+        let mut push = |xx: i64, yy: i64, zz: i64| {
+            if (0..SIDE as i64).contains(&xx)
+                && (0..SIDE as i64).contains(&yy)
+                && (0..SIDE as i64).contains(&zz)
+            {
+                let n = cell(xx as usize, yy as usize, zz as usize);
+                if occ[n] && !seen[n] {
+                    seen[n] = true;
+                    reached += 1;
+                    queue.push(n);
+                }
+            }
+        };
+        push(x as i64 + 1, y as i64, z as i64);
+        push(x as i64 - 1, y as i64, z as i64);
+        push(x as i64, y as i64 + 1, z as i64);
+        push(x as i64, y as i64 - 1, z as i64);
+        push(x as i64, y as i64, z as i64 + 1);
+        push(x as i64, y as i64, z as i64 - 1);
+    }
+    for (c, o) in occ.iter_mut().enumerate() {
+        if *o && !seen[c] {
+            *o = false;
+        }
+    }
+    total - reached
+}
+
 /// Occupied cells must form one component containing the base layer.
 fn assert_connected(occ: &[bool]) {
     let total = occ.iter().filter(|&&o| o).count();
@@ -731,7 +780,30 @@ fn main() {
             radius += 0.5;
             assert!(radius < SIDE as f64, "cavity never reached 20%");
         };
-        let control_delta = run_edit("cavity_20pct".to_string(), &cavity);
+        // The cavity can orphan surface fragments; debris falls away, and the
+        // drop count is printed so the pruning is on the record.
+        let control_delta = {
+            let mut occ2 = occ.clone();
+            for &c in &cavity {
+                occ2[c] = false;
+            }
+            let dropped = prune_to_base_component(&mut occ2);
+            println!(
+                "cavity: {} cells carved, {dropped} orphaned fragment cells fell away",
+                cavity.len()
+            );
+            assert_connected(&occ2);
+            let mesh2 = build_mesh(&occ2, &ke);
+            let r = lambda1_certified(&mesh2, &ke);
+            rows.push((
+                "cavity_20pct".to_string(),
+                mesh2.cells.len(),
+                mesh2.ndof,
+                r.lambda,
+                r.cert_rel,
+            ));
+            100.0 * (r.lambda - base.lambda).abs() / base.lambda
+        };
         assert!(
             control_delta > CONTROL_PCT,
             "control cavity moved λ₁ by only {control_delta:.2}% — the instrument cannot see \
