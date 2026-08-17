@@ -449,3 +449,127 @@ fn reinitialisation_refuses_what_the_others_refuse() {
     let v = alloc::vec![1.0f64; shape.element_count()];
     assert!(super::reinitialise_narrow_band(&v, &shape, 0.1, 3).is_err());
 }
+
+// ── A-028: SampledField's analytic gradient ─────────────────────────────────
+
+/// **The analytic gradient agrees with a central difference wherever the
+/// central difference is valid**, which is the check that says it is the
+/// gradient of the same interpolant `sample` evaluates.
+///
+/// Tested strictly *inside* cells, away from the corners and faces where the
+/// interpolant's gradient is one-sided and the two constructions legitimately
+/// differ. A random field rather than a smooth one, so the corner differences
+/// are unrelated to each other and a sign or axis transposition cannot hide.
+#[test]
+fn the_analytic_gradient_matches_a_central_difference_inside_a_cell() {
+    use crate::Sdf;
+    use crate::construct::SampledField;
+
+    const N: u32 = 6;
+    let shape = RuntimeShape3::new([N; 3]).expect("valid shape");
+    let mut state = 0x2026_A028_u64;
+    let mut values = alloc::vec![0.0_f64; shape.element_count()];
+    for v in &mut values {
+        state = state
+            .wrapping_mul(6_364_136_223_846_793_005)
+            .wrapping_add(1_442_695_040_888_963_407);
+        *v = (state >> 11) as f64 / (1u64 << 53) as f64 * 2.0 - 1.0;
+    }
+
+    let h = 0.25_f64;
+    let field = SampledField::new(&values, &shape, [0.0; 3], h).expect("wrap");
+
+    let mut worst = 0.0_f64;
+    let mut checked = 0usize;
+    // Interior points of interior cells, at fractions that are not 0 or 1.
+    for cell in 1..(N - 2) {
+        for frac in [0.2_f64, 0.5, 0.8] {
+            let p = [
+                (f64::from(cell) + frac) * h,
+                (f64::from(cell) + 0.37) * h,
+                (f64::from(cell) + 0.61) * h,
+            ];
+            let analytic = field.gradient(p);
+            // A central difference at a step small against the cell but large
+            // against rounding.
+            let d = h * 1e-4;
+            for axis in 0..3 {
+                let mut a = p;
+                let mut b = p;
+                a[axis] += d;
+                b[axis] -= d;
+                let numeric = (field.sample(a) - field.sample(b)) / (2.0 * d);
+                worst = worst.max((analytic[axis] - numeric).abs());
+                checked += 1;
+            }
+        }
+    }
+
+    assert!(
+        checked > 20,
+        "only {checked} comparisons, which measures nothing"
+    );
+    assert!(
+        worst < 1e-6,
+        "analytic and numeric gradients differ by {worst:.3e}; the analytic form is not \
+         the gradient of the interpolant `sample` evaluates"
+    );
+}
+
+/// **The failure A-028 is about, as a fixture: a central difference is zero at a
+/// local extremum however steep the field is, and the analytic form is not.**
+///
+/// Three samples along one axis, `18, -1, 18` — the shape measured on `bonsai`,
+/// where `u8` quantisation put both neighbours on the same integer. The slopes
+/// are ∓19, so nothing here is flat; the field is *symmetric*, which is what
+/// zeroes a central difference.
+#[test]
+fn a_central_difference_is_zero_at_a_local_extremum_and_the_analytic_form_is_not() {
+    use crate::Sdf;
+    use crate::construct::SampledField;
+
+    const N: u32 = 3;
+    let shape = RuntimeShape3::new([N; 3]).expect("valid shape");
+    let mut values = alloc::vec![5.0_f64; shape.element_count()];
+    // A symmetric trough along x through the middle of the grid.
+    for z in 0..N {
+        for y in 0..N {
+            for (x, v) in [(0u32, 18.0), (1, -1.0), (2, 18.0)] {
+                let i = (z as usize * N as usize + y as usize) * N as usize + x as usize;
+                values[i] = v;
+            }
+        }
+    }
+
+    let field = SampledField::new(&values, &shape, [0.0; 3], 1.0).expect("wrap");
+    let p = [1.0, 1.0, 1.0];
+
+    // The default central difference, spelled out rather than called, so this
+    // test still means something if `Sdf::gradient`'s default changes.
+    let step = f64::EPSILON.cbrt() * 1.0_f64.max(1.0);
+    let numeric = (field.sample([1.0 + step, 1.0, 1.0]) - field.sample([1.0 - step, 1.0, 1.0]))
+        / (2.0 * step);
+    let analytic = field.gradient(p);
+
+    // The true slope either side is 19. The central difference averages `-19`
+    // and `+19` and keeps only what rounding leaves behind; on `bonsai` that
+    // residue was **exactly zero** and the extractor refused the volume. Here
+    // it is merely negligible, which is the same failure at a different set of
+    // float values, so the assertion is on the ratio rather than on zero.
+    assert!(
+        numeric.abs() < 1.0,
+        "a central difference across a symmetric extremum should keep almost \
+         nothing of a slope of 19, got {numeric}"
+    );
+    assert!(
+        analytic[0].abs() > 18.0,
+        "the analytic gradient should see the 19 slope of the cell it is in, got {analytic:?}"
+    );
+    assert!(
+        analytic[0].abs() > numeric.abs() * 1e6,
+        "the point of this fixture is the gap between the two, and it is only \
+         {:.3e} against {:.3e}",
+        analytic[0].abs(),
+        numeric.abs()
+    );
+}

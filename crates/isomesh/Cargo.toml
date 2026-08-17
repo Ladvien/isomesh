@@ -190,6 +190,10 @@ harness = false
 test = false
 
 [[bench]]
+name = "a028_diagnose"
+harness = false
+
+[[bench]]
 name = "placement_ceiling"
 harness = false
 

@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**399 entries** — 25 falsified, 310 measured, 44 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**400 entries** — 25 falsified, 311 measured, 44 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -374,6 +374,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-313` | R-023's hypothesis is falsified: a margin threshold acts away from where the published algorithms disagree (R-023) |
 | `M-314` | the computation after a local edit is edit-proportional; the output buffer throws that away, and the culprit is a counte… |
 | `M-315` | R-025's 20% is above the ceiling on any vertex placement, measured before a placement rule was written (R-025) |
+| `M-316` | a central difference is identically zero at a local extremum, and quantised data manufactures them (A-028) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -5025,7 +5026,13 @@ faces occur, and quantised CT data has them.
 
 **Subgrid Marching Tetrahedra refuses `bonsai`** — *"vertex 1 has no normal to derive: a zero gradient,
 or no incident area"* — while meshing `fuel` fine at 3.9 s. The error names two possible causes and this
-measurement does not separate them. What is measured: **0.3% of `bonsai`'s voxels within 8 of the
+measurement does not separate them. **⚠ SEPARATED AND HALF-FIXED at A-028 (M-316): it is the
+zero-gradient branch, the cause is not the plateau guessed below but a *local extremum* — steep and
+exactly symmetric, because `u8` quantisation put both neighbours on the same integer — and
+`SampledField` now supplies an exact trilinear gradient instead of inheriting a central difference. The
+refusal moved to `vertex 3` on a second, one-sided mechanism. Two figures in the table below moved with
+it: Dual Contouring on `bonsai` is now 529,383 vertices / 1,770 non-manifold edges / 0.6443, and on
+`fuel` 0.6876. Manifold Dual Contouring's 85 and Marching Cubes' 0 are unchanged.** What is measured: **0.3% of `bonsai`'s voxels within 8 of the
 isovalue sit on a 6-neighbour plateau, against 0.0% of `fuel`'s**, which is consistent with the
 zero-gradient branch and does not establish it. Settling it needs the failing cell printed, which is a
 ticket rather than a line here. **The refusal is the crate behaving correctly** — one path, fail loudly —
@@ -5599,3 +5606,59 @@ blocked on a consumer**, and that is a different and more honest reason than the
 
 **Would be shown wrong by:** a game mechanic in this project's own backlog that needs the topology of
 *more than one* threshold at once. None is written down.
+
+
+### M-316 — a central difference is identically zero at a local extremum, and quantised data manufactures them (A-028)
+
+**M.** `cargo bench --bench a028_diagnose` on `bonsai` (Open SciVis, `uint8`, 256³, iso 32), plus the
+full suite. The subgrid extractor's refusal of that volume (M-310) is diagnosed and **half of it is
+fixed**.
+
+**Which branch fired is decided by the call site, not by the message.** `Error::DegenerateNormal` reads
+*"a zero gradient, or no incident area"* and is raised from two places with different causes —
+`normals.rs`, where a vertex has no incident triangle area, and `subgrid/extract.rs:548`, where
+`vec3::length(sdf.gradient(p))` is not positive. Only the subgrid extractor refuses `bonsai`, so it is
+unambiguously **the zero-gradient branch**. The message obscured what the code already determined.
+
+**The cause is not a plateau, and that is the interesting part.** M-310 guessed plateaus, on 0.3% of
+near-isovalue voxels sitting on a 6-neighbour plateau. The three failing corners are **steep**:
+
+| corner | axis | neighbour / value / neighbour | slopes |
+|---|---|---|---|
+| `[24, 19, 35]` | x | 1.0 / **−1.0** / 1.0 | −2 / +2 |
+| | y | 18.0 / **−1.0** / 18.0 | **−19 / +19** |
+| | z | 0.0 / **−1.0** / 0.0 | −1 / +1 |
+
+Every failing corner is a **local extremum in all three axes**, and a central difference is identically
+zero at a local extremum *however steep the field is around it*. The field there is not flat — it is
+**symmetric**, and it is exactly symmetric because `u8` quantisation put both neighbours on the same
+integer. **Steep and symmetric is a sharper failure than flat**, and it is the one an eight-corner
+analytic form cannot have.
+
+**The fix is a bug fix rather than a workaround: `SampledField` had a closed-form gradient and did not
+provide one.** It implemented `sample` only, so it inherited `Sdf::gradient`'s central difference — the
+very substitution `sdf.rs`'s own doc comment warns about for `&S` forwarding, *"six times the cost,
+`O(h²)` instead of exact, and nothing anywhere would fail"*. It now returns the exact trilinear
+gradient, checked against a central difference **inside** cells to `1e-6` on a random field, and the
+`18 / −1 / 18` shape is a committed fixture.
+
+**It moved the failure and did not remove it: `vertex 1` → `vertex 3`.** A second mechanism, distinct
+and now characterised: **at a cell corner `frac = (0, 0, 0)`, so the analytic gradient reduces to the
+three *forward* differences alone** — `c₁₀₀ − c₀₀₀`, `c₀₁₀ − c₀₀₀`, `c₀₀₁ − c₀₀₀` — and is zero whenever
+those three neighbours match the corner. On quantised data that is common, and it is not a plateau
+either: the `+`-side cell is **not uniform** at all three residual failures. **The subgrid extractor asks
+for a gradient at a cell corner**, where the interpolant's gradient is one-sided by construction, and
+that is where A-028 now sits.
+
+**What changed downstream, recorded because M-310's numbers move.** Dual Contouring uses gradients in its
+QEF, so an exact gradient changes its output on real volumes: on `bonsai`, **529,488 → 529,383**
+vertices, **1,776 → 1,770** non-manifold edges, mean ratio **0.6649 → 0.6443**; on `fuel`, mean ratio
+**0.7228 → 0.6876**. **M-310's headline is unaffected** — Manifold Dual Contouring still takes `bonsai`
+from 1,770 to **85**, and Marching Cubes still emits **0** non-manifold edges on a million-triangle CT
+surface.
+
+**All 688 lib tests pass, golden hashes included**, which is the check that this touched nothing on the
+reference-field path: those fields carry their own analytic gradients and never used the default.
+
+**Would be shown wrong by:** a failing corner whose three forward neighbours differ from it, which would
+mean the residual zero has a third cause and the one-sided reading is incomplete.

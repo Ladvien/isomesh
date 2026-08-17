@@ -971,4 +971,83 @@ impl<R: Real, S: Shape3> crate::Sdf for SampledField<'_, R, S> {
         let y1 = lerp(x2, x3, frac[1]);
         lerp(y0, y1, frac[2])
     }
+
+    /// The **exact** gradient of the trilinear interpolant, not a difference of
+    /// samples.
+    ///
+    /// # Why this exists, and it is a bug fix rather than an optimisation (A-028)
+    ///
+    /// Without it this field inherits [`crate::Sdf::gradient`]'s central difference,
+    /// and a central difference is **identically zero at a local extremum** —
+    /// however steep the field is around it. Quantised data manufactures those:
+    /// on `bonsai`, a `u8` CT volume, **3 of 29,300 surface-cell corners** are
+    /// local extrema in every axis, one of them with neighbour slopes of
+    /// `∓19` because both sides quantised to the same integer. The subgrid
+    /// extractor asks for a normal at cell corners and **refused the whole
+    /// volume** on the first of them, correctly and uselessly.
+    ///
+    /// A plateau would also give zero, and that is *not* what these are: the
+    /// field is steep there and **symmetric**, which is the sharper failure and
+    /// the one an eight-corner analytic form cannot have.
+    ///
+    /// # It is one-sided at a shared corner, and that is inherent
+    ///
+    /// The interpolant is defined per cell, so its gradient at a corner differs
+    /// between the eight cells meeting there. This returns the one belonging to
+    /// the cell [`sample`](crate::Sdf::sample) reads — the cell whose base is
+    /// `floor(t)` — so the value and the gradient always describe the *same*
+    /// interpolant. Any other choice would make them disagree.
+    fn gradient(&self, p: [R; 3]) -> [R; 3] {
+        let size = self.shape.size();
+        let (nx, ny, nz) = (size[0] as usize, size[1] as usize, size[2] as usize);
+
+        // Identical to `sample`'s, deliberately: the two must agree about which
+        // cell they are in or the gradient describes a different interpolant
+        // from the value.
+        let mut base = [0usize; 3];
+        let mut frac = [R::ZERO; 3];
+        let limit = [nx - 2, ny - 2, nz - 2];
+        for axis in 0..3 {
+            let t = (p[axis] - self.origin[axis]) / self.cell_size;
+            let floor = t.floor();
+            let i = floor.as_f64();
+            let clamped = if i < 0.0 {
+                0
+            } else if i > limit[axis] as f64 {
+                limit[axis]
+            } else {
+                i as usize
+            };
+            base[axis] = clamped;
+            frac[axis] = t - R::from_f64(clamped as f64);
+        }
+
+        let at = |dx: usize, dy: usize, dz: usize| {
+            let x = base[0] + dx;
+            let y = base[1] + dy;
+            let z = base[2] + dz;
+            self.values[(z * ny + y) * nx + x]
+        };
+
+        let (u, v, w) = (frac[0], frac[1], frac[2]);
+        let (su, sv, sw) = (R::ONE - u, R::ONE - v, R::ONE - w);
+        // Each partial is the bilinear blend, over the other two axes, of the
+        // four corner differences along this one.
+        let dx = (at(1, 0, 0) - at(0, 0, 0)) * sv * sw
+            + (at(1, 1, 0) - at(0, 1, 0)) * v * sw
+            + (at(1, 0, 1) - at(0, 0, 1)) * sv * w
+            + (at(1, 1, 1) - at(0, 1, 1)) * v * w;
+        let dy = (at(0, 1, 0) - at(0, 0, 0)) * su * sw
+            + (at(1, 1, 0) - at(1, 0, 0)) * u * sw
+            + (at(0, 1, 1) - at(0, 0, 1)) * su * w
+            + (at(1, 1, 1) - at(1, 0, 1)) * u * w;
+        let dz = (at(0, 0, 1) - at(0, 0, 0)) * su * sv
+            + (at(1, 0, 1) - at(1, 0, 0)) * u * sv
+            + (at(0, 1, 1) - at(0, 1, 0)) * su * v
+            + (at(1, 1, 1) - at(1, 1, 0)) * u * v;
+
+        // `frac` is in cell units, so each partial is per cell; divide once.
+        let inv = self.cell_size.recip();
+        [dx * inv, dy * inv, dz * inv]
+    }
 }

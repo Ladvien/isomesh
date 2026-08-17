@@ -62,6 +62,18 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ### Fixed
 
+- **`construct::SampledField` now supplies the exact trilinear gradient** instead of inheriting
+  `Sdf::gradient`'s central difference. **A central difference is identically zero at a local extremum,
+  however steep the field is around it** — and quantised data manufactures those: on the `bonsai` CT
+  volume, corners with neighbour slopes of ∓19 came out exactly symmetric because `u8` quantisation put
+  both neighbours on the same integer. The subgrid extractor asks for a normal there and **refused the
+  whole volume** (A-028, M-316).
+
+  **This changes Dual Contouring's output on sampled fields**, since its QEF uses gradients: on `bonsai`,
+  529,488 → 529,383 vertices and 1,776 → 1,770 non-manifold edges. Reference-field extraction is
+  untouched — those fields carry their own analytic gradients and never used the default — and all
+  golden hashes are unchanged.
+
 - **A wall-clock assertion inside a unit test failed the 0.0.7 release on a macOS runner.**
   `empty_cell_rejection_is_measured_per_field` asserted a speedup above 1.0 on every reference field,
   under a doc comment that called itself "not a regression gate". `gyroid` is triply periodic, its
