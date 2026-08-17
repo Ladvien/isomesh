@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**398 entries** — 25 falsified, 310 measured, 43 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**399 entries** — 25 falsified, 310 measured, 44 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -417,6 +417,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-41` | R-022's hypothesis is two problems with different costs, and a voxel lattice is the easy case for one of them (R-022) |
 | `V-42` | R-023's quantity does not exist as stated, and the one that does is a decision margin rather than a persistence (R-023) |
 | `V-43` | R-020's "unobtainable" prior art has been in the corpus since the day before the ticket was written, and it narrows the… |
+| `V-44` | R-021's caveat is contradicted by the paper R-021 is built on, and the cheap half is already delivered (R-021) |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -5545,3 +5546,56 @@ row are a slight underestimate.
 term by more than 25%, which would leave room a placement rule could take. Neither of the two fields
 that publish an exact distance is such a field, and `gyroid` — the third R-025 names — publishes none,
 so this crate cannot currently produce that counterexample even if it exists.
+
+
+### V-44 — R-021's caveat is contradicted by the paper R-021 is built on, and the cheap half is already delivered (R-021)
+
+**V.** Read from Agarwal, Arge, Mølhave, Revsbæk & Yang, *Maintaining Contour Trees of Dynamic Terrains*
+(`10.48550/arXiv.1406.4005`, in corpus), §1.1–1.2, against R-021's own text.
+
+**What the ticket says:** *"Edelsbrunner's 3-manifold Reeb maintenance is `O(n)` per certificate failure,
+asymptotically no better than rebuilding"*, and *"the two 3D results the question hinges on — Tarasov &
+Vyalyi 1998 and Safa & Wang 2014 — are **both unobtainable**."*
+
+**What the paper says, in its related-work paragraph:**
+
+> *"…of time varying piecewise linear 2-manifolds. **This algorithm handles certificate failures in
+> `O(log(n))` time**, however, they need to process a much larger number of certificate failures since a
+> certificate fails each time any two vertices of `M` lie on the same contour. **Their algorithm also
+> works for simple 3-manifolds where the Reeb Graph is a contour tree.**"*
+
+**Both halves of the caveat are in trouble.** A prior algorithm is `O(log n)` per certificate failure,
+not `O(n)`; and it **already covers simple 3-manifolds**. Its weakness is not the per-event cost the
+ticket names — it is the **event count**, because certificates fail whenever any two vertices share a
+contour rather than only on adjacent-vertex swaps. **That is a different objection with a different
+remedy**, and it is the one the 2014 paper's contribution is aimed at.
+
+**One thing not resolved, and stated rather than glossed.** The quoted sentence is a related-work
+paragraph and does not name its subject inside the chunk read, so whether it describes the Edelsbrunner
+result the ticket attributes the `O(n)` to cannot be pinned from here. What is certain is that **the
+paper R-021 uses as its reframe asserts a prior `O(log n)`-per-failure algorithm that extends to
+3-manifolds**, and that is incompatible with *"asymptotically no better than rebuilding"* however the
+attribution resolves.
+
+**The 2-manifold restriction on the 2014 paper itself is confirmed**, which is the half of the caveat
+that holds: its abstract is explicit that `h : ℝ² → ℝ` and `M` is a triangulation of `ℝ²`.
+
+**Tarasov & Vyalyi is findable.** `10.1145/276884.276892`, *"Construction of contour trees in 3D in
+`O(n log n)` steps"*, 1998, 60 citations — via CrossRef, with no open download link, so *paywalled* is
+the accurate word rather than *unobtainable*. Note also what its title says: it is **construction**, not
+maintenance, so it is weaker support for a maintenance claim than the ticket implies.
+
+**And the scoping point that matters more than any of this.** R-022 called itself *"the cheap half of
+R-021"*, and **that half is delivered and measured**: M-311 has connectivity repair on a lattice at
+`O(|edit|)` with no logarithm, 792 dirty cells constant across a 64× lattice. R-022's own framing is
+that the questions a game asks — *is this sealed, did I break through, is this a chokepoint* — are
+**single-threshold**. A contour tree answers **all** thresholds, which is strictly more, and **nothing
+in this phase establishes a consumer that needs it.**
+
+**Together with M-314** — the extractor's dependency trace is *already* edit-proportional and the
+bottleneck is the output encoding (R-027) — the marginal value of contour-tree maintenance for this
+crate is unestablished rather than small. **R-021 is not blocked on evidence about the algorithm; it is
+blocked on a consumer**, and that is a different and more honest reason than the one it carries.
+
+**Would be shown wrong by:** a game mechanic in this project's own backlog that needs the topology of
+*more than one* threshold at once. None is written down.
