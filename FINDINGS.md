@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**390 entries** — 25 falsified, 305 measured, 40 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**391 entries** — 25 falsified, 305 measured, 41 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -409,6 +409,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-38` | the published AR>4 and sliver figures are not a baseline this crate can be measured against, and one of them is misattri… |
 | `V-39` | the comparable triangle-quality baseline is Grosso & Zint's, not FlexiCubes', and it comes with a prediction (T-026) |
 | `V-40` | Open SciVis Datasets is HTTP-only, and the publisher's own SHA-512 is what makes that fine (M-006) |
+| `V-41` | R-022's hypothesis is two problems with different costs, and a voxel lattice is the easy case for one of them (R-022) |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -5024,3 +5025,52 @@ and it also means this extractor is unusable on the input class M-006 exists to 
 
 **Would be shown wrong by:** a third real volume on which Marching Cubes lands outside 0.65–0.71, which
 would make the two agreements here a coincidence of two files rather than a property of scanned data.
+
+
+### V-41 — R-022's hypothesis is two problems with different costs, and a voxel lattice is the easy case for one of them (R-022)
+
+**V.** Read from Durfee, Dhulipala, Kulkarni, Peng, Sawlani & Sun, *Parallel Batch-Dynamic Graphs*
+(`10.48550/arXiv.1908.01956`, in corpus) §Connectivity, and Acar, Anderson, Blelloch, Dhulipala &
+Westrick, *Parallel Batch-dynamic Trees via Change Propagation* (`10.48550/arXiv.2002.05129`, the paper
+R-022 names).
+
+**The asymmetry is stated plainly by Durfee et al. and R-022 does not carry it:**
+
+> *"An **insert** can cause at most two trees in `F` to be joined to form a single tree."*
+>
+> *"A **delete** may split a tree into two, but if there exists another edge between these two resulting
+> trees, they should then be connected together to ensure that the forest is maximal."*
+
+An insertion is a union. A deletion needs a **replacement-edge search**, and that is what the whole
+sketching apparatus in that paper exists for — *"Handling a set of edge deletions, however, is more
+complex."*
+
+**Mapped onto what a game actually does, that split is the whole ticket:**
+
+| player action | air sublevel set | structure needed |
+|---|---|---|
+| **digging** — removing solid | air nodes and edges **appear** | insertion only; a union-find is enough |
+| **filling** — adding solid | air nodes and edges **vanish** | deletion; replacement search, the expensive half |
+
+R-022's H — *"batched dynamic connectivity sustains a brush-sized edit under 1 ms at 128³"* — does not
+say which, and the two are not the same measurement. **Digging is the common case and is the cheap one**;
+`validate::sealing` already builds exactly the union-find that answers it. Filling is where the
+polylogarithmic machinery is actually needed, and where the constant factors live.
+
+**And the lattice is a good fit for the structure, which is not obvious.** The 2025 follow-up
+(`10.48550/arXiv.2506.16477`) records the standing awkwardness of RC-trees: *"RC-trees, however, only
+directly support trees with constant vertex degree. Prior work has had to apply ad-hoc techniques to
+simulate trees with higher degree."* A 6-connected voxel air graph **is** bounded degree, so the
+restriction that forces ad-hoc work on social and web graphs costs nothing here — and it makes the
+bounds **deterministic** rather than randomized, per that paper's Theorem 1.1. **R-022's claim that
+nobody has run these structures on a voxel lattice is a claim about a case that suits them better than
+the ones they were benchmarked on.**
+
+**The bound to measure against, from the paper R-022 names:** a batch of `k` edge insertions or deletions
+in `O(k log(1 + n/k))` work and `O(log² n)` span. At `n = 128³ ≈ 2.1M` and a brush-sized `k ≈ 10³`, the
+`log(1 + n/k)` factor is about **11**, so the predicted work is ~`10⁴` units — which is what makes the
+1 ms target plausible and is the number the harness should be read against rather than a bare stopwatch.
+
+**Consequence for the ticket:** it needs splitting before measuring, and the pre-registration must name
+which half it predicts. Measuring digging and reporting it as "dynamic connectivity" would be the
+easy half wearing the hard half's name.
