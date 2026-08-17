@@ -4802,3 +4802,52 @@ V-38 says is a conversion aid and not a comparison.
 on a smooth analytic field, which would mean the metric is not implementation-independent and the
 baseline is not usable after all — a real possibility, since their MC is somebody else's code and the
 field is not ours.
+
+
+### P-22 — registered for T-026, before the metric was implemented
+
+**What V-38 and V-39 leave.** The ticket was written around FlexiCubes' `AR > 4`, and that baseline is
+withdrawn: those figures come from a differentiable-rendering loop on **learned** fields, and the
+`11.46%` attributed to Marching Cubes in this repo's own catalog is the paper's `MC + Reg.` row (V-38).
+V-39 replaced it with Grosso & Zint's **mean ratio**, from a paper that meshes **uniform grids** and
+reports **MC, TMC and DC by name**:
+
+```
+q = 4√3 · A / Σᵢ lᵢ²        1 for equilateral, 0 for degenerate
+```
+
+**The prediction is theirs, not ours, and that is what makes it worth registering.** Their MC and TMC
+columns agree to two decimals on **all seven rows** — 0.69/0.69, 0.67/0.67, 0.67/0.67, 0.65/0.65, and
+0.71/0.71/0.71 — and they state the mechanism: both *"place their vertices also on the trilinear
+interpolant but along the voxel edges not within the voxel cells."* This crate has that exact pair.
+
+> **H, clause 1.** `marching_cubes` and `marching_cubes+decider` measure the **identical** mean ratio on
+> every reference field, because a face rule changes *which crossings are joined*, not *where they are*.
+>
+> **H, clause 2.** This crate's Marching Cubes lands inside **0.65–0.71** on a smooth analytic field —
+> the band their MC occupies, and their `gen2` figure is resolution-independent at 64³, 128³ and 256³.
+
+**Falsified by** the two Marching Cubes entries differing at all, which would mean the face rule moves
+geometry rather than only connectivity and would contradict the mechanism the paper states for its own
+two columns. **Or** a mean ratio outside 0.65–0.71 on a smooth analytic field, which would mean the
+metric is not implementation-independent and the published baseline cannot be compared against.
+
+**Clause 2 is the one expected to be interesting, and it is registered as a real risk rather than a
+formality.** Their MC is somebody else's code, measured on somebody else's fields — `gen2` is a
+synthetic volume this repo has never seen. **Every cross-source comparison this project has attempted
+has needed an amendment** (✗7, ✗8, M-45's withdrawn cross-machine figure, M-51, M-55). A band borrowed
+from another implementation is exactly that shape again, and registering it *as* the prediction is the
+only way the borrowing gets tested rather than assumed.
+
+**Records** `field`, `extractor`, `samples_per_axis`, `mean_ratio`, `irregular_vertices`,
+`referenced_vertices`, `triangles`.
+
+**Both metrics are recorded, never gated** — the standing `degenerate_triangles` already has, and for
+the same reason: Marching Cubes emits slivers wherever a grid corner sits near zero, and that is the
+algorithm rather than a defect.
+
+**One caveat carried in before the numbers.** *Irregular* means valence ≠ 6, which is their definition
+and is written for **closed** medical volumes. Every boundary vertex on an open field is irregular by
+construction, so `gyroid` and `fbm_terrain` will read high for a reason that has nothing to do with
+triangle quality. The count is reported raw to match their definition, and the caveat belongs on the
+column rather than in a correction later.

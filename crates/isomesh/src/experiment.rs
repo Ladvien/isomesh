@@ -376,6 +376,42 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "mixed_regions",
         ],
     },
+    Preregistration {
+        id: "P-22",
+        ticket: "T-026",
+        hypothesis: "Two clauses about Grosso & Zint's mean-ratio triangle \
+                     quality, q = 4*sqrt(3)*A / sum(l_i^2). (1) \
+                     `marching_cubes` and `marching_cubes+decider` measure the \
+                     IDENTICAL mean ratio on every reference field, because both \
+                     place their vertices at the root of the interpolant along a \
+                     grid edge and a face rule changes which crossings are \
+                     joined rather than where they are. That is the paper's own \
+                     explanation for its MC and TMC columns agreeing to two \
+                     decimals on all seven of its rows. (2) This crate's \
+                     Marching Cubes lands inside 0.65 to 0.71 on a smooth \
+                     analytic field, the band their MC occupies, whose gen2 \
+                     figure is resolution-independent at 64, 128 and 256 cubed.",
+        falsified_by: "The two Marching Cubes entries differing at all, which \
+                       would mean the face rule moves geometry and not only \
+                       connectivity -- and would contradict the mechanism the \
+                       paper states for its own two columns. Or a mean ratio \
+                       outside 0.65-0.71 on a smooth analytic field, which would \
+                       mean the metric is not implementation-independent and the \
+                       published baseline cannot be compared against at all. The \
+                       second is a real possibility rather than a formality: \
+                       their MC is somebody else's code measured on somebody \
+                       else's fields, and every cross-source comparison this \
+                       repo has attempted so far has needed an amendment.",
+        records: &[
+            "field",
+            "extractor",
+            "samples_per_axis",
+            "mean_ratio",
+            "irregular_vertices",
+            "referenced_vertices",
+            "triangles",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
