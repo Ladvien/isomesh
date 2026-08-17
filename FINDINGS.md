@@ -470,15 +470,26 @@ The index above carries the current count; it is generated, so it cannot drift f
 
 ## Confidence tiers
 
-| Tier | Meaning | Bar |
-|---|---|---|
-| **M** | **Measured here** | We ran it. Code and numbers in this repo, reproducible by checkout. |
-| **V** | **Verified externally** | We read the primary source ourselves. DOI or file attached. |
-| **R** | **Reported** | A credible source asserts it; we have not independently checked. |
-| **F** | **Folklore** | Widely repeated, no verified primary source found. |
-| **✗** | **Falsified** | Tested and found false. Includes what we believed and why. |
+| Tier | Glyph | Meaning | Bar |
+|---|---|---|---|
+| **M** | 🔬 | **Measured here** | We ran it. Code and numbers in this repo, reproducible by checkout. |
+| **V** | 📖 | **Verified externally** | We read the primary source ourselves. DOI or file attached. |
+| **R** | 📄 | **Reported** | A credible source asserts it; we have not independently checked. |
+| **F** | 🗣️ | **Folklore** | Widely repeated, no verified primary source found. |
+| **✗** | 💥 | **Falsified** | Tested and found false. Includes what we believed and why. |
 
 **Never cite an R or F claim as justification for a design decision without saying which tier it is.**
+
+**Glyphs, from 2026-08-17.** A new `###` entry opens with its tier glyph before the id — `### 🔬
+M-324 — …` — and 🧊 stands in for 🔬 when the measurement's finding is a null: no effect, and that is
+the result. Emoji are reserved for rows that carry news, so they stay a signal rather than
+decoration. A result that moved an open question, died instructively as a pre-registered
+prediction, or survived a targeted literature search that came back empty earns a
+`> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉` blockquote directly under its heading, and the banner must say
+which of those it claims; a banner on a routine row devalues every other banner in the file, so
+routine confirmations and expected timings stay austere. `scripts/findings_index.sh` parses the
+glyph and fails loudly on any entry-shaped heading it cannot index (the M-277 class, now guarded).
+Rows older than this date carry no glyph and are not retrofitted.
 
 ---
 
