@@ -17,13 +17,23 @@
 //! elimination-tree ancestor closure against a full refactorization,
 //! interleaved both orders, flops counted beside wall time.
 //!
-//! # The fixture contract, asserted
+//! # The fixture contract, asserted — and what the first two runs taught
 //!
 //! The edited mesh must have the **same cell-keyed slot set and the same
 //! index buffer** as the base mesh — this experiment is about value updates
 //! on a stable pattern, and a pattern change aborts rather than measures.
-//! Changed slots are cells whose vertex moved at all; changed operator rows
-//! are those vertices plus their one-ring (cotan weights read the ring).
+//! Two field-level bump amplitudes (0.3 and 0.08 voxels) both aborted on
+//! that contract before any verdict: near the zero set there are always
+//! samples with |f| below any amplitude, so a *field* value edit flips grid
+//! edges and changes the slot set — M-318's "appears, vanishes, or moves"
+//! is the common case for real brushes, not the edge case. The perturbation
+//! therefore acts at the **mesh level**: every vertex inside the radius-4
+//! ball is displaced 0.1 voxels along its normal, clamped to stay inside its
+//! own cell — changed values, provably stable pattern, which is exactly the
+//! component of a brush edit a value-only factor update can serve. The
+//! slot-set component needs symbolic repair on top, and the FINDINGS row
+//! says so. Changed slots are the displaced vertices; changed operator rows
+//! add their one-ring (cotan weights read the ring).
 //!
 //! # Validity, asserted before any verdict
 //!
@@ -43,42 +53,15 @@ use std::time::Instant;
 const SAMPLES: u32 = 65;
 const ORIGIN: [f64; 3] = [-2.0, -2.0, -2.0];
 const GRID_H: f64 = 4.0 / 64.0;
-/// The registered brush radius: 4 voxels. The amplitude is the harness's
-/// knob for meeting the registered stable-pattern contract — 0.3 voxels
-/// flipped a cell's sign pattern and the contract aborted the first run, as
-/// registered; 0.08 voxels moves vertices without moving topology.
+/// The registered brush radius: 4 voxels. Displacement amplitude 0.1 voxels
+/// along the vertex normal, clamped into the vertex's own cell — the
+/// mesh-level edit that satisfies the registered stable-pattern contract
+/// after two field-level amplitudes aborted on it (see the module docs).
 const BRUSH_R: f64 = 4.0 * GRID_H;
-const BRUSH_AMP: f64 = 0.08 * GRID_H;
+const BRUSH_AMP: f64 = 0.1 * GRID_H;
 /// Where the brush lands: the surface vertex nearest this probe.
 const PROBE: [f64; 3] = [0.3, 0.2, -0.1];
 const REPS: usize = 11;
-
-/// The base field plus a smooth compact bump: `f + amp·(1−s²)²` inside the
-/// ball, untouched outside.
-struct Perturbed<F> {
-    base: F,
-    center: [f64; 3],
-}
-
-impl<F: Sdf<Scalar = f64>> Sdf for Perturbed<F> {
-    type Scalar = f64;
-
-    fn sample(&self, p: [f64; 3]) -> f64 {
-        let d = [
-            p[0] - self.center[0],
-            p[1] - self.center[1],
-            p[2] - self.center[2],
-        ];
-        let d2 = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
-        let r2 = BRUSH_R * BRUSH_R;
-        let f = self.base.sample(p);
-        if d2 >= r2 {
-            return f;
-        }
-        let b = 1.0 - d2 / r2;
-        f + BRUSH_AMP * b * b
-    }
-}
 
 fn extract(field: &impl Sdf<Scalar = f64>) -> MeshBuffer<f64> {
     let shape = RuntimeShape3::new([SAMPLES; 3]).expect("grid fits");
@@ -131,11 +114,31 @@ fn main() {
             })
             .copied()
             .expect("mesh has vertices");
-        let edited_field = Perturbed {
-            base: capped_gyroid::<f64>(),
-            center,
-        };
-        let edit_mesh = extract(&edited_field);
+        // Mesh-level edit: displace in-ball vertices along their normals,
+        // clamped inside their own cells so the slot keys cannot move.
+        let mut edit_mesh = base_mesh.clone();
+        for i in 0..edit_mesh.positions.len() {
+            let p = edit_mesh.positions[i];
+            let d2 = (p[0] - center[0]).powi(2)
+                + (p[1] - center[1]).powi(2)
+                + (p[2] - center[2]).powi(2);
+            if d2 >= BRUSH_R * BRUSH_R {
+                continue;
+            }
+            let n = edit_mesh.normals[i];
+            let mut q = [
+                p[0] + BRUSH_AMP * n[0],
+                p[1] + BRUSH_AMP * n[1],
+                p[2] + BRUSH_AMP * n[2],
+            ];
+            for axis in 0..3 {
+                let cell = ((p[axis] - ORIGIN[axis]) / GRID_H).floor();
+                let lo = ORIGIN[axis] + cell * GRID_H + 0.01 * GRID_H;
+                let hi = ORIGIN[axis] + (cell + 1.0) * GRID_H - 0.01 * GRID_H;
+                q[axis] = q[axis].clamp(lo, hi);
+            }
+            edit_mesh.positions[i] = q;
+        }
 
         // ---- fixture contract: stable slot set, identical topology --------
         assert!(
