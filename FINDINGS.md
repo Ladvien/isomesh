@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**383 entries** — 24 falsified, 302 measured, 37 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**385 entries** — 25 falsified, 303 measured, 37 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -63,6 +63,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗22` | "MeshReport applies a closed-solid test to render meshes, so it must be split into two report types" |
 | `✗23` | "Manifold Dual Contouring queries where it needs to, so it wants an on-demand field" |
 | `✗24` | "Empty-cell rejection benefits every field, however little" |
+| `✗25` | "Marching Cubes is the only one of the family in the good corner of manifold × intersection-free" |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -365,6 +366,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-305` | the weld key does what it says, and H's wording was wrong anyway (R-010) |
 | `M-306` | what empty-cell rejection can save is bounded by a count, and that count is a property of the field (✗24) |
 | `M-307` | HELD: the primal family seals every reference field, and all three duals leave the domain boundary open (R-024) |
+| `M-308` | the family comparison's headline conclusion was overturned by optimising one member of the family, not by a better measu… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -988,7 +990,7 @@ added because none of the other seven produces a cell with an interior ambiguity
 | M-50 | **E1 and M-34's ratio both reproduce live, under a mouse.** E-202 carves with a brush and re-meshes only the dirty chunks, reporting per edit: a typical carve is **265 of 1,728 cells in the brush's bounding box = E1 15.3%**, against **756 cells whose sample value moved** — a ratio of **2.85×**, inside M-34's measured 2.8–3.7×, and E1 inside M-33's 15–36%. Over a scripted 60-carve run E1 ranges **0.6% to 27.3%**. Cost per re-meshed chunk against edit-log length, median: **0.158 / 0.354 / 0.525 / 0.589 ms** for logs of 1–15 / 16–30 / 31–45 / 46–60 — **3.7× for 7× the log, and flattening.** So the `BrushStack` walk is a real cost and *not* proportional at these lengths, which is weaker than "every sample walks every brush" suggests | E-202, `ISOMESH_AUTOCARVE=60`. The first offline measurements of E1 (M-33) and of the value-versus-output ratio (M-34) were made on synthetic edits; this is the first time either has been measured on the interactive path they were written to justify |
 | M-51 | **Marching Tetrahedra costs ~3× the triangles for ~4% worse geometry — and the literature's `2–3×` is too low.** Vertex and triangle ratio against Marching Cubes on identical grids, seven reference fields at 33³ and 49³: `gyroid` and `fbm_terrain` **2.87×**, `sphere` and `torus` **3.04×**, `csg_difference` **3.83×**, `thin_plate` **3.84×**, `box_exact` **3.91×**. The tier-R figure from `10.1109/2945.485620` covers only the two roughest fields. On the other side, Lewiner et al. 2003's *"weaker geometrical accuracy… the vertex position cannot be adjusted to fit the geometrical trilinear approximation"* measures **4.3%**: symmetric Hausdorff on a unit sphere at 64³, marching cubes `1.3798e-3` against marching tetrahedra `1.4386e-3`. Directionally right and far weaker than it reads | A-003. The marching cubes figure reproduces **M-10's recorded `1.380e-3` exactly**, so the harness is measuring what it measured before. **P-1's `2.992` is confirmed on the smooth closed fields** and is not the whole story — see M-52 |
 | M-52 | **The Marching Tetrahedra ratio is `4.0` when the surface normal lies in one octant and `2.0` when it changes sign, and P-1's `2.992` is the average of the two.** Written out for a single plane of normal `n`, the crossings are `Σ\|nᵢ\|` on the three axis families, `Σ\|nᵢ+nⱼ\|` on the three face diagonals and `\|nₓ+n_y+n_z\|` on the body diagonal. With every component the same sign nothing cancels and those sum to **exactly `4·Σ\|nᵢ\|`** — so the ratio is `4.0` for *any* orientation inside one octant, which is why a plane at four different orientations measured `3.919 / 3.939 / 3.945 / 3.943`. Across a sign change the diagonal terms cancel to `2.0`; measured `1.980 / 2.265 / 2.267`. Integrating over the sphere gives **2.9916**, reproducing P-1 to four figures | A-003, O-15. **This explains the whole reference-field spread with no new mechanism:** `box_exact`'s faces are axis-aligned one-octant normals (3.91), a sphere samples every octant (3.04), `gyroid` sits just below the isotropic average because its normals favour the cancelling ones (2.87). Two earlier hypotheses of mine — orientation, then curvature — were tested and killed first; the second failure is what forced doing the algebra instead of guessing a third time |
-| M-53 | **The five algorithms fill three of the four corners of manifold × intersection-free, and Marching Cubes is the only one in the good one.** Seven reference fields, two grids, one process, one run: `marching_cubes` and `marching_cubes+decider` **0 non-manifold edges and 0 self-intersections**; `marching_tetrahedra` **0 non-manifold but 3.405 per 1k** on `csg_difference`; `surface_nets` **128 non-manifold and 0 self-intersections**; `dual_contouring` **128 and 13.837 per 1k** on `fbm_terrain`. So each of the three non-Marching-Cubes methods fails exactly one property or both, and the method the folklore treats as the crude baseline is the only one that fails neither | M-001. Cross-checks that the numbers are the same numbers: `dual_contouring`'s 13.837 and 3.118 reproduce **M-28**'s clamped `fbm_terrain` 13.84 and `gyroid` 3.12 exactly, and Surface Nets' triangle ratio of `0.977–1.001` is **✗1**'s `F_sn = F_mc + 2χ` seen from the other side |
+| M-53 | **The five algorithms fill three of the four corners of manifold × intersection-free, and Marching Cubes is the only one in the good one.** Seven reference fields, two grids, one process, one run: `marching_cubes` and `marching_cubes+decider` **0 non-manifold edges and 0 self-intersections**; `marching_tetrahedra` **0 non-manifold but 3.405 per 1k** on `csg_difference`; `surface_nets` **128 non-manifold and 0 self-intersections**; `dual_contouring` **128 and 13.837 per 1k** on `fbm_terrain`. So each of the three non-Marching-Cubes methods fails exactly one property or both, and the method the folklore treats as the crude baseline is the only one that fails neither | M-001. Cross-checks that the numbers are the same numbers: `dual_contouring`'s 13.837 and 3.118 reproduce **M-28**'s clamped `fbm_terrain` 13.84 and `gyroid` 3.12 exactly, and Surface Nets' triangle ratio of `0.977–1.001` is **✗1**'s `F_sn = F_mc + 2χ` seen from the other side | **⚠ AMENDED 2026-08-16 — the headline is FALSIFIED (✗25). Marching Tetrahedra's `3.405` was a false positive**, produced by the straddle test `99415af` fixed the day after this ran: a triangle merely *touching* another's plane counted as a transverse crossing, and MT's six face-sharing tets make that the common case rather than an edge case. MT measures **0** self-intersections on every field at every grid, so the good corner has **three** occupants and *"Marching Cubes is the only one"* is wrong. Over the **eight** fields this row predates, `manifold_dual_contouring` also loses its zero — **90** non-manifold edges, all `noise_cavity` (✗19) — and the 128s are **747**. Do not quote this row; quote ✗25 |
 | M-54 | **Dual Contouring is 101× more accurate than Marching Cubes on a sharp field, and indistinguishable on a smooth one.** Symmetric Hausdorff at 65³: `box_exact` **7.217e-2 → 7.145e-4 (101×)**, `thin_plate` **4.593e-2 → 5.892e-4 (77.9×)**, `csg_difference` **7.655e-2 → 2.057e-2 (3.7×)** — against `sphere` **1.2×** and `torus` **1.6×**. Marching Tetrahedra sits within 6% of Marching Cubes on the smooth fields and *better* on the sharp ones (`box_exact` 5.103e-2 against 7.217e-2), because its extra edge families sample the corner from more directions | M-001. M-26 measured this as a corner *gap* — 0.01 cells against 0.58 — and this is the same result as a whole-surface distance, which is the form that transfers to a field whose features are not corners. It also puts a number on the sentence the crate's pitch rests on: the sharp-feature solve is worth two orders of magnitude exactly where the features are sharp, and nothing at all where they are not |
 | M-55 | **O-14 falsified: Marching Tetrahedra's accuracy penalty is 4.3%, not 86%, and it beats Surface Nets rather than losing to it.** Symmetric Hausdorff on a unit sphere at 64³: Marching Cubes **1.3798e-3**, Marching Tetrahedra **1.4386e-3** (`1.043×`, against a pre-registered `2.6e-3` and `1.86×`), Surface Nets **2.251e-3** (`1.69×`). And on the sharp fields Marching Tetrahedra is *better* than Marching Cubes — `box_exact` **5.103e-2** against **7.217e-2** — because its extra edge families sample a corner from more directions | M-001b. **The prediction was registered before the measurement and is wrong in its most interesting clause**: "more vertices and worse accuracy" was flagged as the counterintuitive part, and the accuracy half does not hold. Lewiner et al. 2003's underlying claim survives in direction and not in magnitude — see M-51 |
 | M-56 | **Greedy meshing's `2.76×` saving over face culling is a property of one scene, not of the algorithm: measured `1.70×` to `256×`.** Same occupancy, merge on against merge off, seven reference fields at 33³: `gyroid` **1.70×**, `sphere` **1.94×**, `torus` **2.69×**, `fbm_terrain` **4.60×**, `csg_difference` **10.64×**, `box_exact` **256×**. Merging pays for flat runs, so a grid-aligned box collapses to **six quads at every resolution** — 12 triangles at 17³, 33³ and 65³ alike — while a sphere's staircase surface barely merges at all. The published figure (tier R, the UE5 benchmark) happens to sit beside `torus` | A-005. **Predicted before running** that it would not reproduce as a constant and that `box_exact` would collapse while `sphere` would not, for exactly this reason. Against Marching Cubes the blocky path costs `0.004×` the triangles on `box_exact` and `0.32–0.58×` elsewhere, which is the budget end of the tradeoff table with numbers on it |
@@ -4583,3 +4585,117 @@ holes at a boundary do not always change a component count.
 **Would be shown wrong by:** a dual method that seals `fbm_terrain`'s domain face — which is buildable,
 by emitting a partial quad where the ring is incomplete, and would be a change to the extractors rather
 than to this finding.
+
+
+### M-308 — the family comparison's headline conclusion was overturned by optimising one member of the family, not by a better measurement (R-026)
+
+**M.** `docs/measurements/family.csv`, Ryzen 9 5900X, `f32`, `sphere`, one binary, one run. Read
+against `docs/research/2026-08-13-measured-comparison.md` §4 and against M-45, which that section
+quotes.
+
+**What §4 says, and it is this repo's own published conclusion:**
+
+> *"On Zen 3 there is no crossover at any resolution — Surface Nets is 2.46× behind even at 16³. **So
+> the crossover is a property of one machine's cache behaviour**, and the degradation is a property of
+> the algorithm."*
+
+**Both halves of the observation are now false on that same machine.**
+
+| samples per axis | marching cubes | surface nets | SN / MC |
+|---:|---:|---:|---:|
+| 16³ | 9.24 ns | **8.63** | **0.93×** |
+| 24³ | 8.68 | **8.32** | **0.96×** |
+| 32³ | 8.11 | **7.96** | **0.98×** |
+| 48³ | 7.86 | 8.10 | 1.03× |
+| 64³ | 7.64 | 8.41 | 1.10× |
+| 128³ | 7.56 | 8.78 | 1.16× |
+| 256³ | 7.60 | 9.80 | **1.29×** |
+
+**The crossover exists on Zen 3, at about 40³**, where §4 says it does not exist at any resolution. And
+`SN/MC` at 256³ has gone **5.43× (M-282) → 1.29×**, against the 3.72× M-45 recorded and the 2.65× it
+attributed to the M5.
+
+**Nothing about the machine changed.** A-023 made the dual mesher's loop axis a const-generic parameter
+and A-024 forced the row length odd; together **4.26× on the dual path with byte-identical output**
+(M-285, M-287). The comparison's most-quoted conclusion inverted because **one member of the family got
+optimised**, not because anything was measured better or measured elsewhere.
+
+**So the published claim was never about the algorithms.** *"Surface Nets is slower than Marching
+Cubes"* was a measurement of **one implementation of Surface Nets** at one moment, and it read as a
+statement about the method — including to us, who wrote it. ✗14 was folklore that measurement
+falsified; §4 is measurement that **our own optimisation** falsified, which is the same failure one
+level up.
+
+**What survives, and it is the part worth keeping.** Surface Nets' per-sample cost still *rises* with
+resolution — 7.96 ns at 32³ to 9.80 at 256³, a **23%** rise — while Marching Cubes' falls and then
+flattens, 9.24 → 7.60. That shape is unchanged by the 4.26× and is what M-21 and M-286 identify as a
+cache term. **The shape is the finding; the ratio never was.**
+
+**Scope, stated rather than implied.** `family.csv` is `sphere`, `f32`, one machine. §4's wording is
+*"on every field measured, on both machines"*, and neither half of that is currently re-derivable: the
+eight-field authority is `shootout.csv`, whose timing column the document itself disclaims as noisy,
+and the Apple half is stale and blocked on a quiet machine (M-005). **The honest current statement is
+one field, one scalar, one machine** — which is a weaker claim than the one being retired, and is the
+point.
+
+**Incidental, and it is a large number nobody has quoted.** `subgrid_marching_tetrahedra` runs at
+**1,553–1,704 ns/sample** across the same sweep — **200× Marching Cubes**, and roughly 100× classic
+Marching Tetrahedra. M-98 measured 70× against classic MT at a different sampling resolution; this is
+the same constant seen on the current binary.
+
+**Would be shown wrong by:** a re-run in which the crossover is absent again, which would mean 40³ is
+noise rather than a crossing — the two curves are within 4% of each other from 16³ to 48³, so the
+*location* is soft even though the inversion at 256³ is not.
+
+
+### ✗25 — "Marching Cubes is the only one of the family in the good corner of manifold × intersection-free"
+
+**Believed because:** M-53 measured it, and it is the headline of
+`docs/research/2026-08-13-measured-comparison.md` §1 — *"the algorithm the folklore treats as the crude
+baseline is alone in the good one."* It was a real measurement, faithfully transcribed, and it was
+already wrong when the document quoted it.
+
+**Falsified by the detector it was measured with (R-026).** `99415af`, 2026-08-14 — **one day after the
+document was written** — rewrote `validate::self_intersection`'s straddle test, and its own commit
+message says what that cost: *"A triangle merely **touching** another's plane was being counted as a
+transverse intersection, **which inflated a metric this repo quotes**."* `all_above`/`all_below` became
+one `straddles`, requiring vertices strictly on **both** sides of the other's plane, and the coplanar
+branch moved ahead of it.
+
+**Marching Tetrahedra's `3.405 per 1k` on `csg_difference` was that false positive, and it is the whole
+of M-53's case against MT.** The mechanism fits the method exactly: MT splits each cell into six
+tetrahedra that **share faces**, so tangential triangle-plane contact is not an edge case for it, it is
+the common case. Measured now, and also in the CSV committed at T-011 on 2026-08-15, Marching
+Tetrahedra has **zero** self-intersections on every field at every grid.
+
+**The good corner has three occupants, not one.** Eight fields × two grids, `docs/measurements/shootout.csv`:
+
+| algorithm | non-manifold edges | worst self-int / 1k |
+|---|---:|---:|
+| **marching cubes** | **0** | **0** |
+| **marching cubes + decider** | **0** | **0** |
+| **marching tetrahedra** | **0** | **0** |
+| surface nets | 747 | 0 |
+| dual contouring | 747 | 29.745 (`noise_cavity`) |
+| manifold dual contouring | 90 | 45.232 (`noise_cavity`) |
+| subgrid marching tetrahedra | 446 | 0 |
+
+**Two further things the eighth field changed, neither of which the document carries.** `noise_cavity`
+is the worst field in **every** column for **every** method — it was added at A-002e precisely because
+the other seven cannot reach an interior ambiguity (M-208). And `manifold_dual_contouring` is no longer
+the entry that takes the zero: **90 non-manifold edges**, all of them `noise_cavity`, which is ✗19.
+
+**Self-intersections appear only at 33³ and never at 65³** — all six non-zero rows are the coarse grid,
+for both duals. Refining removes them, which is M-15's mechanism (*any feature thinner than one cell
+forces two sheets through it*) seen in a third place after M-60's falling manifold-split rate.
+
+**The method failure is the retrievability one, and this repo has a rule for it.** The defect was found,
+fixed, and its consequence for a quoted metric was written down — **in a commit message**. M-53 was
+never amended and the research document went on saying it for two days. *"A result only in a commit
+message is not retrievable in six weeks"* is the definition-of-done clause that exists for exactly
+this, and it was applied to the *result* of a ticket and not to the *fallout* of a fix.
+
+**Would be shown wrong by:** a transverse self-intersection in Marching Tetrahedra output that the
+current straddle test misses — which would mean the fix over-corrected and the metric is now deflated
+rather than inflated. The tangential-contact exclusion is the module's stated contract, so that would
+be a contract question rather than a bug.
