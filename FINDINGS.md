@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**418 entries** — 27 falsified, 324 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**419 entries** — 27 falsified, 325 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -390,6 +390,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-327` | FALSIFIED again, by the distribution this time: heterogeneous wormholing has no gapped aperture histogram, and the same… |
 | `M-328` | HELD at 20 of 20: the homotopy certificate is never available in a dug scene, and the instrument proved it could have sa… |
 | `M-329` | the modal kill-shot fired: no one-voxel edit is audible anywhere, including against the thin web, and the direction clos… |
+| `M-330` | HELD on both golden values: the feasibility solver is now held to external truth, and the coarsening warning would not r… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -7020,3 +7021,37 @@ ticket's own note) carries the warm-start bimodality clause and the game-facing 
 
 **Records** `test`, `blocks`, `value`, `target`, `abs_error`, `within_tolerance`,
 `residual_feasible`, `residual_infeasible`.
+
+### 🔬 M-330 / P-33 — HELD on both golden values: the feasibility solver is now held to external truth, and the coarsening warning would not reproduce on an arch (R-034a)
+
+**M.** `cargo bench --bench experiment_p33`, `docs/experiments/p-33.csv`.
+
+| test | value | target | error | tolerance |
+|---|---:|---:|---:|---:|
+| Milankovitch minimum thickness, 100 blocks | **0.10734** | 0.1075 | 0.00016 | ± 0.0010 (Whiting: 0.10746) |
+| Ochsendorf critical tilt at t/r = 0.20 | **15.850°** | 15.84° | 0.0096° | ± 0.05° |
+
+**The instrument behaved exactly as corrected.** Feasible probes land *in* the intersection —
+cone-side equilibrium residuals of **10⁻¹⁶ of total weight** — while infeasible probes stall three
+orders above the 10⁻⁴ line, so the undecided band (asserted never hit) was never even approached;
+gravity-doubling moved no verdict; both bracket ends classified as registered before either
+bisection was trusted. The pre-run FISTA→alternating-projection correction is what made those
+readings possible at 20,000 fixed iterations.
+
+**The recorded coarsening sweep is a small falsification of an expectation that was never
+registered here, and worth keeping.** The paper warns that coarser blocks over-estimate stability,
+and the dossier's own sketch predicted a ≥ 5% unconservative shift under 2× coarsening. Measured on
+the arch: thr(25) = 0.10703, thr(50) = thr(100) = thr(200) = **0.10734** — a 0.3% shift at 25
+blocks and *flat* from 50 up, at a 4×10⁻⁴ bisection width. The brief's own caveat applies verbatim:
+a plain arch is too simple to discriminate the block-size effect; measuring it needs a compound
+structure (vaults, buttresses — where Whiting's own hinging-mechanism warning lives). R-034b's
+fixture should be built to discriminate it.
+
+**Consequence:** the solver is trusted — nothing structural was buildable on it until these two
+numbers hit, and they hit. R-034b (warm-start bimodality, the cheap-incremental question) is
+unblocked and next in the phase order.
+
+**Would be shown wrong by:** a tessellation sweep showing the 0.10734 drifting with N beyond the
+bisection width (the paper's own value moved in the fifth digit, ours in the fourth); or the tilt
+value failing to track μ once sliding governs (μ = 0.7 keeps hinging in charge here, tan 15.85° =
+0.28 ≪ 0.7).
