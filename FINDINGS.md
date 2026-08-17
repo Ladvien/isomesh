@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**420 entries** — 27 falsified, 326 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**421 entries** — 27 falsified, 327 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -392,6 +392,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-329` | the modal kill-shot fired: no one-voxel edit is audible anywhere, including against the thin web, and the direction clos… |
 | `M-330` | HELD on both golden values: the feasibility solver is now held to external truth, and the coarsening warning would not r… |
 | `M-331` | FALSIFIED as registered, by an instrument floor the registration promised was fine, and by a corpus that mixed two edit… |
+| `M-332` | HELD on all three clauses: warm-starting the admissibility solve is bimodal by edit class, and the tilts confirm their o… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -7143,3 +7144,37 @@ within 3× — unimodal, same consequence. Collapsed removals excluded on the re
 aborting past three.
 
 **Records** `edit`, `class`, `iters_cold`, `iters_warm`, `ratio`, `feasible`.
+
+### 🔬 M-332 / P-35 — HELD on all three clauses: warm-starting the admissibility solve is bimodal by edit class, and the tilts confirm their own exile (R-034b)
+
+**M.** `cargo bench --bench experiment_p35`, `docs/experiments/p-35.csv`.
+
+| class | ratios (warm/cold iterations) | median | registered |
+|---|---|---:|---|
+| local (10 single-block weight nudges) | 0.036 – 0.179 | **0.143** | ≤ 0.15 — HELD |
+| severing (10 interior removals, all stood) | 0.536 – 0.971 | **0.679** | ≥ 0.5 — HELD |
+| separation | — | **4.8×** | > 3× — HELD |
+| tilt (recorded, exiled by M-331) | 0.607 – 0.774 | 0.72 | severing-grade, as diagnosed |
+
+**The floor is gone and the answer is the ticket's.** With the decision probed every iteration, the
+minimum measurable ratio fell to 1/28 and one nudge decided in a **single** warm iteration; the
+local-edit class landed at a 7× median advantage, structural edits at ~1.5×, and the class medians
+separate 4.8×. Warm-started re-solve of the M-330-validated program is **bimodal by edit class** —
+the cheap-incremental story the original R-034 registered survives, with two caveats on the row:
+C1's median clears its bar by a fifth of one iteration quantum (0.143 vs 0.15 at a 0.036 quantum),
+and at these sizes even the cold solve is trivial — the 470-block wall stood in **28 iterations**
+from zero, so the economics that matter at the dossier's 1,000-block, 30–200 ms scale are
+extrapolated from counts, not yet from big-structure walls.
+
+**The tilt class confirms M-331 from inside the data:** every tilt ratio sits in the severing band.
+"Does this edit re-load the whole structure" is the variable; adjacency was never it — the same
+lesson M-329 taught about modal strain density, in statics costume.
+
+**Consequence:** the admissibility gate may plan on warm starts for local edits and budget cold
+re-solves for structural ones; the block decomposition remains a pure function of the edit log per
+the paper's warning, and the big-structure timing scale stays open for the build ticket.
+
+**Would be shown wrong by:** a wall or compound structure whose cold count reaches the hundreds
+showing the local-edit advantage collapsing (the extrapolation failing exactly where it matters);
+or any corpus where removals reroute *nothing* (a wall with no bond) reading bimodal anyway — which
+would mean the classes measure the solver, not the structure.
