@@ -124,7 +124,7 @@ fn main() {
             let centre = [n / 2; 3];
             let cells = brush(centre);
             let dig_start = std::time::Instant::now();
-            let incr = air.dig(&cells);
+            let incr = air.dig(&cells, || true);
             let incr_ms = dig_start.elapsed().as_secs_f64() * 1e3;
 
             // The rebuild an engine without this structure would pay: the whole
@@ -150,28 +150,28 @@ fn main() {
             let rebuild_after_ms = after_start.elapsed().as_secs_f64() * 1e3;
             let _ = rebuild;
 
-            if incr.unions > 6 * incr.dirty {
+            if incr.relabels > 6 * incr.dirty {
                 over_degree += 1;
             }
-            incremental_counts.push(incr.unions);
-            rebuild_counts.push(rebuild_after.unions);
+            incremental_counts.push(incr.relabels);
+            rebuild_counts.push(rebuild_after.relabels);
 
             println!(
                 "{n:>5} {count:>10} {:>8} {:>13} {:>12} {:>9.2} {incr_ms:>10.3} {rebuild_after_ms:>11.1}",
                 incr.dirty,
-                incr.unions,
-                rebuild_after.unions,
-                incr.unions_per_dirty()
+                incr.relabels,
+                rebuild_after.relabels,
+                incr.relabels_per_dirty()
             );
 
             run.record(&[
                 ("samples_per_axis", n.to_string()),
                 ("dirty_samples", incr.dirty.to_string()),
-                ("incremental_unions", incr.unions.to_string()),
-                ("rebuild_unions", rebuild_after.unions.to_string()),
+                ("incremental_unions", incr.relabels.to_string()),
+                ("rebuild_unions", rebuild_after.relabels.to_string()),
                 (
                     "unions_per_dirty",
-                    format!("{:.6}", incr.unions_per_dirty()),
+                    format!("{:.6}", incr.relabels_per_dirty()),
                 ),
                 ("lattice_samples", count.to_string()),
                 ("incremental_merges", incr.merges.to_string()),

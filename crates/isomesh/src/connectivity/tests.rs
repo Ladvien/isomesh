@@ -15,7 +15,7 @@ fn air_of(n: u32) -> Air {
 
 #[test]
 fn a_solid_block_has_no_air_and_no_components() {
-    let mut a = air_of(8);
+    let a = air_of(8);
     assert_eq!(a.air_samples(), 0);
     assert_eq!(a.components(), 0);
     assert!(!a.connected([1, 1, 1], [2, 1, 1]), "solid is not connected");
@@ -30,19 +30,19 @@ fn a_solid_block_has_no_air_and_no_components() {
 fn digging_through_merges_two_caves_and_the_merge_is_the_event() {
     let mut a = air_of(8);
 
-    a.dig(&[[1, 1, 1], [2, 1, 1]]);
-    a.dig(&[[5, 1, 1], [6, 1, 1]]);
+    a.dig(&[[1, 1, 1], [2, 1, 1]], || true);
+    a.dig(&[[5, 1, 1], [6, 1, 1]], || true);
     assert_eq!(a.components(), 2, "two separate caves");
     assert!(!a.connected([1, 1, 1], [6, 1, 1]));
 
     // Still two: this widens one cave without reaching the other.
-    let r = a.dig(&[[3, 1, 1]]);
+    let r = a.dig(&[[3, 1, 1]], || true);
     assert_eq!(r.dirty, 1);
     assert_eq!(r.merges, 1, "joined to the left cave only");
     assert_eq!(a.components(), 2);
 
     // The breakthrough.
-    let r = a.dig(&[[4, 1, 1]]);
+    let r = a.dig(&[[4, 1, 1]], || true);
     assert_eq!(r.dirty, 1);
     assert_eq!(
         r.merges, 2,
@@ -61,11 +61,11 @@ fn the_same_brush_twice_has_an_empty_dirty_set() {
     let mut a = air_of(8);
     let cells = [[1, 1, 1], [2, 1, 1], [3, 1, 1]];
 
-    let first = a.dig(&cells);
+    let first = a.dig(&cells, || true);
     assert_eq!(first.dirty, 3);
     assert_eq!(first.already_air, 0);
 
-    let second = a.dig(&cells);
+    let second = a.dig(&cells, || true);
     assert_eq!(second.dirty, 0);
     assert_eq!(second.already_air, 3);
     assert_eq!(second.merges, 0, "nothing left to merge");
@@ -79,7 +79,7 @@ fn the_same_brush_twice_has_an_empty_dirty_set() {
 /// curve against `n³` that H predicts, which is why this is asserted separately
 /// from the flatness. Flat is the answer we want, so flat is where a bug hides.
 #[test]
-fn union_calls_never_exceed_the_lattice_degree() {
+fn label_writes_never_exceed_the_lattice_degree() {
     for n in [8u32, 12, 16] {
         let mut a = air_of(n);
         // A solid slab dug in one batch: interior samples have all six
@@ -92,12 +92,23 @@ fn union_calls_never_exceed_the_lattice_degree() {
                 }
             }
         }
-        let r = a.dig(&cells);
+        let r = a.dig(&cells, || true);
         assert!(r.dirty > 0);
+        // Was `unions <= 6 * dirty` when this was a union-find. Under flat
+        // labels (✗26) there are no union calls, and the instrument is label
+        // writes -- so the invariant is restated rather than dropped: every
+        // newly-air sample is written at least once, and the repair must not
+        // touch more than the lattice degree per sample.
         assert!(
-            r.unions <= 6 * r.dirty,
-            "n={n}: {} unions for {} dirty is more than six per sample",
-            r.unions,
+            r.relabels >= r.dirty,
+            "n={n}: {} relabels for {} dirty leaves a sample unwritten",
+            r.relabels,
+            r.dirty
+        );
+        assert!(
+            r.relabels <= 6 * r.dirty,
+            "n={n}: {} relabels for {} dirty is more than six per sample",
+            r.relabels,
             r.dirty
         );
     }
@@ -114,12 +125,12 @@ fn union_calls_never_exceed_the_lattice_degree() {
 fn a_batch_is_order_independent() {
     let line: Vec<[u32; 3]> = (1..7).map(|x| [x, 3, 3]).collect();
     let mut forward = air_of(8);
-    let f = forward.dig(&line);
+    let f = forward.dig(&line, || true);
 
     let mut reversed: Vec<[u32; 3]> = line.clone();
     reversed.reverse();
     let mut backward = air_of(8);
-    let b = backward.dig(&reversed);
+    let b = backward.dig(&reversed, || true);
 
     assert_eq!(forward.components(), 1);
     assert_eq!(backward.components(), 1);
@@ -148,7 +159,7 @@ fn incremental_digging_agrees_with_a_rebuild() {
 
     let mut incremental = air_of(N);
     for c in &cells {
-        incremental.dig(&[*c]);
+        incremental.dig(&[*c], || true);
     }
 
     let mut values = alloc::vec![-1.0_f64; shape.element_count()];
@@ -156,7 +167,7 @@ fn incremental_digging_agrees_with_a_rebuild() {
         let i = (c[2] as usize * N as usize + c[1] as usize) * N as usize + c[0] as usize;
         values[i] = 1.0;
     }
-    let (mut rebuilt, _) = Air::build(&values, &shape).expect("build");
+    let (rebuilt, _) = Air::build(&values, &shape).expect("build");
 
     assert_eq!(incremental.air_samples(), rebuilt.air_samples());
     assert_eq!(incremental.components(), rebuilt.components());
@@ -178,7 +189,7 @@ fn exactly_zero_is_air_like_everywhere_else() {
 #[test]
 fn a_brush_over_the_edge_ignores_what_is_not_there() {
     let mut a = air_of(4);
-    let r = a.dig(&[[1, 1, 1], [99, 1, 1], [1, 99, 1]]);
+    let r = a.dig(&[[1, 1, 1], [99, 1, 1], [1, 99, 1]], || true);
     assert_eq!(r.dirty, 1);
     assert_eq!(a.air_samples(), 1);
 }
@@ -189,4 +200,166 @@ fn the_wrong_number_of_values_is_an_error() {
     let shape = RuntimeShape3::new([4; 3]).expect("valid shape");
     let values = alloc::vec![-1.0_f64; 5];
     assert!(Air::build(&values, &shape).is_err());
+}
+
+/// **Filling the midpoint of a tunnel severs the two caverns it joined.**
+///
+/// The smallest form of P-26's adversarial fixture, and the sealed-volume
+/// mechanic in miniature: this is the edit the connectivity layer exists for.
+#[test]
+fn filling_a_tunnel_midpoint_severs_the_two_caverns() {
+    let mut a = air_of(9);
+    let line: Vec<[u32; 3]> = (1..8).map(|x| [x, 4, 4]).collect();
+    a.dig(&line, || true);
+    assert_eq!(a.components(), 1);
+    assert!(a.connected([1, 4, 4], [7, 4, 4]));
+
+    let f = a.fill(&[[4, 4, 4]], || true);
+    assert_eq!(f.dirty, 1);
+    assert_eq!(f.splits, 1, "one component was severed");
+    assert_eq!(f.shed, 1, "into two pieces, so one is new");
+    assert_eq!(f.vanished, 0);
+    assert_eq!(a.components(), 2);
+    assert!(!a.connected([1, 4, 4], [7, 4, 4]), "the passage is sealed");
+    assert!(a.connected([1, 4, 4], [3, 4, 4]), "the left side is intact");
+    assert!(a.connected([5, 4, 4], [7, 4, 4]), "so is the right");
+}
+
+/// **A fill that does not disconnect anything reports no split.**
+///
+/// Most filling is this — M-319 measured five fills in six changing nothing.
+#[test]
+fn filling_the_end_of_a_tunnel_shortens_it_without_splitting() {
+    let mut a = air_of(9);
+    let line: Vec<[u32; 3]> = (1..8).map(|x| [x, 4, 4]).collect();
+    a.dig(&line, || true);
+
+    let f = a.fill(&[[7, 4, 4]], || true);
+    assert_eq!(f.dirty, 1);
+    assert_eq!(f.splits, 0);
+    assert_eq!(f.shed, 0);
+    assert_eq!(a.components(), 1);
+    assert!(a.connected([1, 4, 4], [6, 4, 4]));
+}
+
+/// **A component consumed outright vanishes, and needs no search.**
+///
+/// The other half of M-319's split-or-vanish pair: 27 severed against 5 consumed
+/// at 65³. A vanished component has no surviving piece to relabel.
+#[test]
+fn consuming_a_pocket_vanishes_it() {
+    let mut a = air_of(9);
+    a.dig(&[[1, 1, 1], [2, 1, 1]], || true);
+    a.dig(&[[6, 6, 6]], || true);
+    assert_eq!(a.components(), 2);
+
+    let f = a.fill(&[[6, 6, 6]], || true);
+    assert_eq!(f.vanished, 1);
+    assert_eq!(f.splits, 0);
+    assert_eq!(a.components(), 1);
+    assert!(!a.connected([6, 6, 6], [1, 1, 1]));
+}
+
+/// **Filling agrees with a rebuild — P-26's serious falsifier.**
+///
+/// Cost measurement cannot see a structure that is fast and wrong, so this is an
+/// assertion rather than a benchmark. Every air sample's component membership
+/// must match a from-scratch flood fill, not merely the component *count*: two
+/// wrong labellings can agree on the total.
+#[test]
+fn filling_agrees_with_a_rebuild() {
+    let n = 12;
+    let (mut values, shape) = solid(n);
+    // A cross of tunnels, so fills have something to sever.
+    let mut air_cells: Vec<[u32; 3]> = Vec::new();
+    for t in 1..n - 1 {
+        air_cells.push([t, 5, 5]);
+        air_cells.push([5, t, 5]);
+        air_cells.push([5, 5, t]);
+    }
+    let (mut a, _) = Air::build(&values, &shape).expect("build");
+    a.dig(&air_cells, || true);
+    for c in &air_cells {
+        let i = (c[2] as usize * n as usize + c[1] as usize) * n as usize + c[0] as usize;
+        if let Some(v) = values.get_mut(i) {
+            *v = 1.0;
+        }
+    }
+
+    // Fill one arm's midpoint at a time; each is a potential severance.
+    for cut in [[3, 5, 5], [5, 3, 5], [5, 5, 3], [8, 5, 5], [5, 8, 5]] {
+        a.fill(&[cut], || true);
+        let i = (cut[2] as usize * n as usize + cut[1] as usize) * n as usize + cut[0] as usize;
+        if let Some(v) = values.get_mut(i) {
+            *v = -1.0;
+        }
+        let (rebuilt, _) = Air::build(&values, &shape).expect("rebuild");
+
+        assert_eq!(
+            a.components(),
+            rebuilt.components(),
+            "component count diverged after filling {cut:?}"
+        );
+        assert_eq!(a.air_samples(), rebuilt.air_samples());
+
+        // Membership, not just the count. Every pair of air samples must agree.
+        for p in &air_cells {
+            for q in &air_cells {
+                assert_eq!(
+                    a.connected(*p, *q),
+                    rebuilt.connected(*p, *q),
+                    "after filling {cut:?}, connected({p:?}, {q:?}) diverged"
+                );
+            }
+        }
+    }
+}
+
+/// **A budget of zero defers the repair, and the deferred answer is the safe
+/// one.**
+///
+/// Before a `fill` repair completes the severed pieces still share a label, so
+/// `connected` says yes and a caller reads *"not sealed yet"*. Water leaking for
+/// three frames is recoverable; water not leaking out of a room the engine
+/// wrongly believes is sealed is a broken game rule.
+#[test]
+fn an_exhausted_budget_defers_and_reads_conservatively() {
+    let mut a = air_of(9);
+    let line: Vec<[u32; 3]> = (1..8).map(|x| [x, 4, 4]).collect();
+    a.dig(&line, || true);
+
+    let f = a.fill(&[[4, 4, 4]], || false);
+    assert_eq!(f.dirty, 1, "the removal itself always happens");
+    assert_eq!(f.splits, 0, "but the search did not run");
+    assert_eq!(f.pending, 1);
+    assert_eq!(a.pending(), 1);
+    assert!(
+        a.connected([1, 4, 4], [7, 4, 4]),
+        "stale reads as still-connected, which is the safe direction"
+    );
+
+    // Draining finishes the job and the answer corrects itself.
+    let drained = a.repair(&mut || true);
+    assert_eq!(drained.splits, 1);
+    assert_eq!(a.pending(), 0);
+    assert!(!a.connected([1, 4, 4], [7, 4, 4]));
+    assert_eq!(a.components(), 2);
+}
+
+/// **`label_of` exposes what a chunk-stitching layer needs.**
+///
+/// Two samples share a label exactly when they are connected, which is what lets
+/// a higher layer join `Air`s across a shared face without this type knowing
+/// anything about chunks.
+#[test]
+fn label_of_names_the_component_for_stitching() {
+    let mut a = air_of(9);
+    a.dig(&[[1, 1, 1], [2, 1, 1]], || true);
+    a.dig(&[[6, 6, 6]], || true);
+
+    let left = a.label_of([1, 1, 1]).expect("air");
+    assert_eq!(a.label_of([2, 1, 1]), Some(left), "same cave, same label");
+    assert_ne!(a.label_of([6, 6, 6]), Some(left), "other cave, other label");
+    assert_eq!(a.label_of([0, 0, 0]), None, "solid has no label");
+    assert_eq!(a.label_of([99, 0, 0]), None, "off the lattice has no label");
 }

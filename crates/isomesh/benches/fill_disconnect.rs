@@ -113,7 +113,7 @@ fn main() {
             }
         }
 
-        let Ok((mut air, _)) = Air::build(&values, &shape) else {
+        let Ok((air, _)) = Air::build(&values, &shape) else {
             continue;
         };
         let air_samples = air.air_samples();
@@ -158,7 +158,7 @@ fn main() {
             dirty_total += dirty;
 
             // Rebuilt, not maintained — see the module docs.
-            let Ok((mut rebuilt, _)) = Air::build(&filled, &shape) else {
+            let Ok((rebuilt, _)) = Air::build(&filled, &shape) else {
                 continue;
             };
             let now = rebuilt.components();
