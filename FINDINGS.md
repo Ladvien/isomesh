@@ -6591,3 +6591,61 @@ now has its convergence constant.
 **Would be shown wrong by:** a 257³ run where the capsule floor's median stops halving; a fixture
 where the mid-band inversion passes the wrong form; or a C1 rerun with the per-sample amplified
 tolerance still losing rows — which would mean the residual is not representation dust after all.
+
+### P-29 — registered for R-031, before the harness was written; the kinetics come from the source, not from tuning
+
+**The sourcing that had to happen first, and did.** The dossier recorded Dreybrodt & Gabrovšek
+(`10.5194/hess-23-1995-2019`) as *downloaded, conversion failed* — a rule-5 stop waiting to happen,
+since "linear dissolution kinetics" was the dossier's entire specification. The conversion has since
+succeeded on the corpus (20 pages, 2026-08-17), and the paper is now READ. Everything the simulator
+needs is in it, verbatim: the 2-D net of 1-D fractures (length `l = 200 cm`, width `b = 100 cm`,
+aperture `a₀ = 0.02 cm`); constant heads 15 m → 0 with **periodic** transverse boundaries (their
+cylinder topology, which makes evolution independent of border distance); cubic-law resistance
+`R = (12η/ρg)·∫dx/(a³b)`; linear kinetics `F(c) = k·(1 − c/c_eq)` with the composite constant
+`k = k₁·(1 + k₁a/6Dc_eq)⁻¹`, `k₁ = 4×10⁻¹¹ mol cm⁻² s⁻¹`, `c_eq = 10⁻⁶ mol cm⁻³`,
+`D = 10⁻⁵ cm² s⁻¹`; the closed-form transport `F(x) = F(0)·exp(−x/λ)`, `λ = Q·c_eq/(P·k)`; widening
+`da/dt = 2γF`; the seeding protocol (`Δa = 10⁻⁹·a₀` on the first ten downstream fractures); the
+lognormal heterogeneous net (`a` in `[0.015, 0.025]` cm about a 0.02 peak, σ = 0.2); and the
+interaction ranges (seeds 10 nodes apart fight, 50 apart ignore each other). One OCR ambiguity is
+carried rather than resolved silently: the composite `k` renders once cleanly as `6Dc_eq` and once
+garbled as `3-D·c_eq`; **6D is adopted from the clean occurrence**, and the alternative would shift
+late-stage rates ≤ 2× without touching any registered claim's mechanism. `γ` is the standard
+mol-to-retreat conversion via calcite's molar volume, `100.09 g mol⁻¹ / 2.71 g cm⁻³ = 36.93 cm³
+mol⁻¹` — derived from handbook constants, not fitted. The recharge-limited contrast is sourced too:
+Perne, Covington & Gabrovšek (`10.5194/hess-18-4617-2014`, READ in relevant part) run exactly the
+two post-breakthrough scenarios and state that with recharge capped at `Q_max` *"further expansion
+of the network is suppressed as the head along the growing existing pathways decreases in time."*
+
+> **H.** With the paper's constants on a 64×64 lattice (~8k edges, 8 segments per fracture):
+> **(C1)** under constant heads, the post-breakthrough aperture distribution is **bimodal** by the
+> central-gap statistic — max consecutive gap in sorted `ln a`, 1% tails dropped, threshold **0.2**
+> (the registered initial log-sd) — on both the 3-seed homogeneous net and the lognormal
+> heterogeneous net, while the fixed-flux recharge-limited arm stays **unimodal** at matched
+> cumulative dissolved volume; **(C2)** past breakthrough, **> 90%** of dissolution flux (mol/s per
+> edge) sits in **< 10%** of edges.
+
+**The statistic is derived, not tuned.** For N ≈ 8k draws from any unimodal bulk comparable to the
+initial lognormal, the maximum central spacing is O(σ·ln N/N) ≈ **2×10⁻⁴** — three orders under the
+0.2 threshold — while the published mechanism freezes losers near `a₀` and runs the winner to
+`~50–100·a₀`, a gap of `ln 50 ≈ 3.9`. (Ashman's D was rejected on its own null: a forced 2-means
+split of one Gaussian scores D ≈ 2.65 and passes.) Detector red/green run before any verdict: the
+t = 0 lognormal apertures must read unimodal, a synthetic half-shifted (+4σ) sample must read
+bimodal, and the recharge arm is the physics inversion — both-arms-bimodal indicts the statistic,
+both-unimodal the kinetics.
+
+**Flow is solved exactly, so bimodality cannot be solver noise.** Cubic-law contrast reaches
+`(a_max/a_min)³ ~ 10⁶` exactly when the dynamics get interesting, which is where a fixed-iteration
+Krylov solve quietly turns the pressure field into noise. The harness therefore does no iteration at
+all: one banded Cholesky factorisation per tick (y-major indexing, periodic wrap Δ = 63, bandwidth
+65; Dirichlet elimination keeps it SPD), ~9 MFLOP/tick. The time step is adaptive-deterministic — a
+pure function of state, `dt = 1%·min_s(a_s / ȧ_s)` clamped to [10⁻³, 1] yr — with a per-tick
+`max(da/a) ≤ 1.01%` assert; ~10³ ticks per arm by the log-growth arithmetic. The recharge arm's
+per-input flux is the constant-head arm's own computed t = 0 inflow, frozen — self-consistent rather
+than transcribed.
+
+**Falsified by** no bimodal split on either constant-head arm, or C2's concentration failing — the
+mechanic's positive-feedback premise dies with the kinetics. Instrument-falsified if the recharge
+arm goes bimodal while the detector also flags the t = 0 sample.
+
+**Records** `arm`, `ticks`, `years`, `breakthrough_years`, `max_gap_ln`, `bimodal`,
+`flux_top10_pct`, `gini_flow`, `max_da_over_a_pct`, `tick_ms_median`.
