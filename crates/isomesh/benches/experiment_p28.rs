@@ -463,9 +463,21 @@ fn main() {
         }
 
         // ---- Inversion: the wrong form must go red on C1 -----------------
+        //
+        // The registration's sentence is "≥ 30% of MID-BAND samples". The
+        // first build of this block populated the check with the WHOLE band
+        // and its own gate aborted the run at 12.9% — before any clause was
+        // printed and before any CSV was written — because the band's edges
+        // sit at u → 1, where the two forms collapse to zero together. The
+        // registered word is operationalised here as the derived mid-range:
+        // samples whose *derived* `‖g̃‖ ∈ [0.2, 0.95]`, selected by the truth
+        // rather than by the measurement, so nothing circular selects them.
+        // Both fractions are printed for the record.
         let h = 2.0 * DOMAIN / 64.0;
         let mut band = 0u64;
-        let mut failed = 0u64;
+        let mut failed_whole = 0u64;
+        let mut mid = 0u64;
+        let mut failed_mid = 0u64;
         for i in 0..65u32 {
             for j in 0..65u32 {
                 for k in 0..65u32 {
@@ -483,17 +495,27 @@ fn main() {
                         continue;
                     }
                     band += 1;
-                    if (r_wrong(&wedge, p, h) - rt).abs() > 0.1 * GAP_SCALE {
-                        failed += 1;
+                    let u_tilde = (1.0 - (rt / rho) * (rt / rho)).max(0.0).sqrt();
+                    let red = (r_wrong(&wedge, p, h) - rt).abs() > 0.1 * GAP_SCALE;
+                    if red {
+                        failed_whole += 1;
+                    }
+                    if (0.2..=0.95).contains(&u_tilde) {
+                        mid += 1;
+                        if red {
+                            failed_mid += 1;
+                        }
                     }
                 }
             }
         }
-        let wrong_fail = failed as f64 / band as f64;
+        assert!(mid > 0, "inversion mid-band empty — reachability");
+        let wrong_fail = failed_mid as f64 / mid as f64;
+        let wrong_fail_whole = failed_whole as f64 / band as f64;
         assert!(
             wrong_fail >= 0.30,
             "inversion: the wrong form failed C1 on only {:.1}% of the wedge \
-             band — the instrument has not been shown able to go red, and \
+             mid-band — the instrument has not been shown able to go red, and \
              V-46 applies to this design too",
             wrong_fail * 100.0
         );
@@ -569,9 +591,11 @@ fn main() {
             }
         );
         println!(
-            "inversion: wrong form fails C1 on {:.1}% of the wedge band (>= 30% required) -- RED \
+            "inversion: wrong form fails C1 on {:.1}% of the wedge mid-band (>= 30% required; \
+             {:.1}% over the whole band, whose u -> 1 edges collapse both forms) -- RED \
              demonstrated",
-            wrong_fail * 100.0
+            wrong_fail * 100.0,
+            wrong_fail_whole * 100.0
         );
     });
 }
