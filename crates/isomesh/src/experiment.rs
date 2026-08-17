@@ -969,8 +969,7 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "feasible",
         ],
     },
-
-Preregistration {
+    Preregistration {
         id: "P-36",
         ticket: "R-035b",
         hypothesis: "On M-333's verified substrate -- the 64-cubed gyroid \
