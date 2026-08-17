@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**403 entries** — 25 falsified, 314 measured, 44 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**405 entries** — 25 falsified, 315 measured, 45 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -378,6 +378,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-317` | the volume meshes: 483 tetrahedra declined around 33 singular points, reported rather than fatal (A-028) |
 | `M-318` | a grid-edge naming would close the whole edit-proportionality gap, and the obstacle is not the encoding (R-027) |
 | `M-319` | filling disconnects the air region about one time in six, so R-022b's cheap escape does not exist (R-022b) |
+| `M-320` | the median split sheds one voxel, so the replacement search the literature is built around is answering a question this… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -422,6 +423,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-42` | R-023's quantity does not exist as stated, and the one that does is a decision margin rather than a persistence (R-023) |
 | `V-43` | R-020's "unobtainable" prior art has been in the corpus since the day before the ticket was written, and it narrows the… |
 | `V-44` | R-021's caveat is contradicted by the paper R-021 is built on, and the cheap half is already delivered (R-021) |
+| `V-45` | R-027's design does not merely change extract_into's contract; it converts a shipped determinism check's failure conditi… |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -5838,3 +5840,98 @@ percent that would justify recomputing.
 **Would be shown wrong by:** a fill sequence on a field with fewer, larger caves, where a brush is small
 relative to a passage and severs almost nothing. `noise_cavity` is deliberately near its own feature
 size, which is the adversarial end; a game's caves are usually wider than its brush.
+
+### M-320 — the median split sheds **one voxel**, so the replacement search the literature is built around is answering a question this lattice does not ask (R-022b)
+
+**M.** `cargo bench --bench replacement_search`, `docs/measurements/replacement_search.csv`. Same field,
+same brush, same seed and same 200 fills as M-319, so the two tables are the same run seen two ways. The
+spanning forest is rebuilt by BFS **before** each fill and the component labelling rebuilt **after** it —
+M-319's discipline, for M-319's reason: a structure that maintained either could not be evidence about
+whether maintaining it is worthwhile.
+
+**Two clauses, and only the first had a prediction.** M-319 established that R-022b is real. It did not
+say which deletion structure the lattice needs, and two numbers from the literature decide that.
+
+| n | air | edges deleted | tree edges | **free** | splits | min side | **median side** | max side |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 33 | 30,120 | 64,327 | 24,980 | 61.2% | 72 | 1 | **1** | 19 |
+| 49 | 97,830 | 105,184 | 38,025 | 63.8% | 33 | 1 | **1** | 47 |
+| 65 | 227,567 | 119,179 | 41,966 | **64.8%** | 29 | 1 | **1** | 120 |
+
+**Clause 1 held, with the deviation explained by the same arithmetic that predicted it.** Deleting a
+*non-tree* edge cannot change connectivity, and HDT separates the cases in `O(1)` from a hash table —
+`10.48550/arXiv.2411.11781` names this as why HDT stays practical *"on dense graphs where most of the
+deletions target non-tree edges"*. For a 6-connected lattice `|E| = 3n²(n-1)` against a forest of about
+`|V| = n³`, predicting `1 - n/(3(n-1))` — 65.6%, 66.0%, 66.1%. Measured **61.2 → 63.8 → 64.8**: below,
+and **rising toward it**. The gap is the air region's own surface, where every voxel touching solid is
+missing that edge and so has degree below 6; as the lattice grows the region's surface-to-volume ratio
+falls and the measurement climbs toward the closed-form value. So about **two thirds of the deletion
+work is free**, and that is a constant factor of 3 rather than an asymptotic win.
+
+**Clause 2 was deliberately left unpredicted, and it is the one that resizes the ticket.** D-Tree finds a
+replacement edge by running BFS **on the smaller component of the split**, with *"no theoretical
+guarantees"* and good measured behaviour (`10.48550/arXiv.2509.14433`, describing [13]). Its cost is
+therefore exactly the size of the smaller side. **That size is 1 at the median, at every resolution.**
+The largest observed anywhere is 120 voxels against 227,567 air samples — **0.05% of the domain**.
+
+**The mechanism is the brush's shape, not the field's.** A sphere advancing into a cave mostly strands
+single fringe voxels — voxels whose only surviving neighbours were themselves inside the brush — rather
+than severing a passage cleanly in two. The split is real and the search is real; what is absent is the
+*large* smaller side that HDT's levelled scheme exists to amortise.
+
+**So the structure R-022b needs is not HDT.** The `O(log n)` levels, the pushing of non-replacement edges
+down a level, the whole amortisation argument, all exist to bound a search whose cost can otherwise be a
+constant fraction of the graph. On this lattice it is one voxel at the median. What that leaves is the
+much older technique HDT also uses: **alternating BFS outward from the two endpoints of the deleted tree
+edge, stopping when either side exhausts**, which costs `O(smaller side)` without needing to know in
+advance which side is smaller. No levels, no edge demotion, no amortisation scheme.
+
+**The split counts here and in M-319 differ, and that is a different denominator rather than a
+disagreement.** M-319 counted *fills whose component count changed*; this counts *split events* — pre-fill
+components that map to two or more post-fill components. One fill can split twice, and a split coinciding
+with a pocket vanishing leaves the net count unmoved. Hence 72 against 49 at 33³, where the air is most
+fragmented, and 29 against 27 at 65³, where it is barely different.
+
+**Do not read a growth law off the maxima.** 19 → 47 → 120 is an extreme-value statistic over 29–72
+samples and more fills would find larger ones. The **median** is the robust column and it is flat at 1.
+
+**Would be shown wrong by:** a field whose caves are wide relative to the brush, where a fill can sever a
+passage mid-span and shed half a component. `noise_cavity` at radius 4 is the adversarial end for
+*frequency* (M-319) and may well be the friendly end for *size* — a brush comparable to the passage width
+consumes a junction whole instead of cutting across it. Measuring one wide-cave field would settle it.
+
+### V-45 — R-027's design does not merely change `extract_into`'s contract; it converts a shipped determinism check's failure condition into its intent (R-027)
+
+**V.** Verified in this repo's own source, `crates/isomesh/src/validate/determinism.rs:268–300`.
+
+M-318 measured R-027's ceiling and found the encoding was not the obstacle: of three shapes, stable
+*order* does not help, index-is-edge-id costs 230× memory, and only a **persistent edge→slot map** — state
+carried across extractions — delivers the 45×. The ticket weighed that as an API cost, with X-005's 294
+call sites as the headline. **That accounting missed the binding constraint.**
+
+`check_determinism` runs the extractor **three** times, and the third is the one that matters:
+
+```rust
+let mut reused = MeshBuffer::<R>::new();
+extract(&mut reused);
+reused.reset();
+extract(&mut reused);
+```
+
+under a doc comment that states the intent in as many words — *"one reused buffer to catch output that
+depends on the buffer's prior state… every algorithm in this crate is meant to be driven by resetting one
+buffer across thousands of chunks, and nothing else checks that it survives being driven that way."*
+
+**A persistent edge→slot map makes that dependence intentional.** The third run's whole purpose is to fail
+when output depends on prior state; R-027's only working shape is output that depends on prior state by
+design. So R-027 does not cost an API migration on top of a working design — **it invalidates the check
+that would otherwise police it**, and T-004 is a committed gate rather than a preference.
+
+**This is a stop rather than a preference**, and it splits the ticket: an S to locate where M-318's 45×
+actually goes, before any L touches `extract_into`'s contract. That measurement may dissolve the L, since
+M-318 already says the encoding is not the cost.
+
+**Would be shown wrong by:** a formulation where the persistent map is *derivable from the inputs* — a
+pure function of the grid and the field rather than of call history — which would keep the third run
+meaningful. Nothing in M-318's three shapes is that, but the ticket has not been asked the question in
+those terms.

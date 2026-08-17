@@ -194,6 +194,10 @@ name = "fill_disconnect"
 harness = false
 
 [[bench]]
+name = "replacement_search"
+harness = false
+
+[[bench]]
 name = "a028_diagnose"
 harness = false
 

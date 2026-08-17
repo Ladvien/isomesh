@@ -468,6 +468,45 @@ lattice.
 which a union-find cannot do at any price. `connectivity::Air` therefore ships `dig` and no `fill`,
 and the other half is a different data structure rather than a longer version of this one.
 
+### And the deletion half wants a *smaller* structure than the literature builds
+
+**New** (R-022b, M-319 and M-320). Two questions decide what that structure is, and the answers point the
+same way.
+
+**Does filling disconnect anything often enough to matter?** Yes — **one fill in six** changes the air
+component count (200 radius-4 brush fills into `noise_cavity` at 65³, count rebuilt rather than
+maintained). So the cheap escape of *detect the rare split and recompute* is not available: it would
+rebuild at `O(n³)` every sixth edit, which is the cost this whole section exists to avoid.
+
+**How big is the piece that gets cut off?** This is the question that sizes the machinery, because the
+standard practical answer — D-Tree's — searches for a replacement edge by running BFS on the **smaller**
+side of the split, and therefore costs exactly that side's size.
+
+| n | edges deleted | tree edges | **free** | splits | median smaller side | max |
+|---:|---:|---:|---:|---:|---:|---:|
+| 33 | 64,327 | 24,980 | 61.2% | 72 | **1** | 19 |
+| 49 | 105,184 | 38,025 | 63.8% | 33 | **1** | 47 |
+| 65 | 119,179 | 41,966 | **64.8%** | 29 | **1** | 120 |
+
+**The median split sheds one voxel.** The largest seen anywhere is 120 against 227,567 air samples —
+0.05% of the domain. A sphere advancing into a cave mostly strands single fringe voxels, whose only
+surviving neighbours were themselves inside the brush; it rarely severs a passage mid-span.
+
+Two thirds of the deletions never reach a search at all: deleting a **non-tree** edge cannot change
+connectivity, and a 6-connected lattice predicts `1 - n/(3(n-1))` ≈ 66% non-tree, measured 64.8% and
+rising toward it as the air region's surface-to-volume ratio falls.
+
+**So the levelled HDT scheme is the wrong shape for a voxel lattice.** Its `O(log n)` levels and its
+demotion of non-replacement edges exist to amortise a search whose cost can otherwise be a constant
+fraction of the graph. Here it is one voxel. What survives is the older technique HDT also uses —
+alternating BFS outward from the deleted edge's two endpoints, stopping when either side exhausts, which
+is `O(smaller side)` without knowing in advance which side is smaller.
+
+**This is the first measurement of a split-size distribution on a voxel lattice that we can find**, and
+it matters because the published systems are benchmarked on social and web graphs at 81K–280K vertices.
+Bounded degree was the expected difference; the split-size distribution is the one that actually decides
+the data structure.
+
 ---
 
 ## 9. What a local edit costs, and why the answer is two answers
