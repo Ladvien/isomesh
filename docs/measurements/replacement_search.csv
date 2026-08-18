@@ -1,0 +1,4 @@
+samples_per_axis,air_samples,edges_deleted,tree_edges_deleted,free_pct,splits,smaller_side_min,smaller_side_median,smaller_side_max,smaller_side_median_pct_of_air
+33,30120,64327,24980,61.17,72,1,1,19,0.0033
+49,97830,105184,38025,63.85,33,1,1,47,0.0010
+65,227567,119179,41966,64.79,29,1,1,120,0.0004

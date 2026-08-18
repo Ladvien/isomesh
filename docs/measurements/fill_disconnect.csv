@@ -1,0 +1,4 @@
+samples_per_axis,samples,air_samples,components_before,fills,fills_changing_components,fills_splitting,fills_emptying,mean_dirty,air_left_pct
+33,35937,30120,66,200,82,49,33,106.50,29.29
+49,117649,97830,35,200,38,32,6,160.62,67.16
+65,274625,227567,20,200,32,27,5,176.91,84.45

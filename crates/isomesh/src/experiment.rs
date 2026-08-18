@@ -341,6 +341,722 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "boundary_edges",
         ],
     },
+    Preregistration {
+        id: "P-21",
+        ticket: "R-024",
+        hypothesis: "A freshly extracted mesh separates exactly the sample pairs \
+                     the field's own sign separates. For every 6-adjacent pair of \
+                     grid samples, the mesh crosses the segment between them an \
+                     ODD number of times when the two samples straddle the \
+                     surface and an EVEN number when they do not -- so the \
+                     connected components of the air sublevel set and the \
+                     components of the same samples under mesh-cut adjacency \
+                     agree in count and in partition. Marching Cubes achieves \
+                     this on all eight reference fields, because its vertex is \
+                     the root of the interpolant along the very edge being \
+                     probed. At least one dual method does not, because it \
+                     places its vertex by solve.",
+        falsified_by: "Universal agreement -- every extractor sealing every field \
+                       at every resolution, which would be a stronger \
+                       correctness statement than this crate currently makes and \
+                       is worth saying so. Separately falsified, and more \
+                       interestingly, by Marching Cubes disagreeing: that would \
+                       put the defect in the primal path, where the crossing is \
+                       on the interpolant by construction, and would mean the \
+                       failure is in triangulation rather than in vertex \
+                       placement.",
+        records: &[
+            "field",
+            "extractor",
+            "samples_per_axis",
+            "field_air_components",
+            "mesh_air_components",
+            "unsealed_walls",
+            "spurious_walls",
+            "mixed_regions",
+        ],
+    },
+    Preregistration {
+        id: "P-22",
+        ticket: "T-026",
+        hypothesis: "Two clauses about Grosso & Zint's mean-ratio triangle \
+                     quality, q = 4*sqrt(3)*A / sum(l_i^2). (1) \
+                     `marching_cubes` and `marching_cubes+decider` measure the \
+                     IDENTICAL mean ratio on every reference field, because both \
+                     place their vertices at the root of the interpolant along a \
+                     grid edge and a face rule changes which crossings are \
+                     joined rather than where they are. That is the paper's own \
+                     explanation for its MC and TMC columns agreeing to two \
+                     decimals on all seven of its rows. (2) This crate's \
+                     Marching Cubes lands inside 0.65 to 0.71 on a smooth \
+                     analytic field, the band their MC occupies, whose gen2 \
+                     figure is resolution-independent at 64, 128 and 256 cubed.",
+        falsified_by: "The two Marching Cubes entries differing at all, which \
+                       would mean the face rule moves geometry and not only \
+                       connectivity -- and would contradict the mechanism the \
+                       paper states for its own two columns. Or a mean ratio \
+                       outside 0.65-0.71 on a smooth analytic field, which would \
+                       mean the metric is not implementation-independent and the \
+                       published baseline cannot be compared against at all. The \
+                       second is a real possibility rather than a formality: \
+                       their MC is somebody else's code measured on somebody \
+                       else's fields, and every cross-source comparison this \
+                       repo has attempted so far has needed an amendment.",
+        records: &[
+            "field",
+            "extractor",
+            "samples_per_axis",
+            "mean_ratio",
+            "irregular_vertices",
+            "referenced_vertices",
+            "triangles",
+        ],
+    },
+    Preregistration {
+        id: "P-23",
+        ticket: "R-022a",
+        hypothesis: "Repairing the air sublevel set's connectivity after a \
+                     brush dig costs work proportional to the DIRTY SET and not \
+                     to the lattice. Concretely: at a fixed brush radius, the \
+                     number of union operations an incremental insertion-only \
+                     update performs is constant as the lattice grows through \
+                     33, 65 and 129 cubed, so unions divided by newly-air \
+                     samples stays inside a narrow band and never exceeds 6 -- \
+                     the degree of the lattice -- while a full rebuild's union \
+                     count grows as n cubed. Digging only ever inserts, and an \
+                     insert joins at most two trees with no replacement-edge \
+                     search, so a union-find is the entire structure.",
+        falsified_by: "The incremental union count growing with n cubed at a \
+                       fixed brush size. That is R-022's own stated falsifier \
+                       and it would mean edit-proportional repair is \
+                       unavailable even in the easy direction, which closes the \
+                       whole direction rather than only this half. Separately \
+                       falsified by unions per dirty sample exceeding 6, which \
+                       would mean the harness is visiting something other than \
+                       the six incident lattice edges and is measuring its own \
+                       traversal rather than the repair.",
+        records: &[
+            "samples_per_axis",
+            "dirty_samples",
+            "incremental_unions",
+            "rebuild_unions",
+            "unions_per_dirty",
+        ],
+    },
+    Preregistration {
+        id: "P-24",
+        ticket: "R-023",
+        hypothesis: "The trilinear body-saddle value F(s) is a DECISION MARGIN \
+                     for the interior ambiguity, not merely correlated with it: \
+                     sign(F(s)) agrees with Interior::test() on every ambiguous \
+                     cell whose sweep has NO pole in (0, 1), and every \
+                     disagreement between them has a pole inside the sweep. A \
+                     pole is the term Chernyaev's test drops and is what \
+                     Custodio's Figure 6 counterexample is built from, so that \
+                     is where the published algorithms part company and is the \
+                     only place H permits a difference. Thresholding |F(s)| at \
+                     epsilon is then a one-parameter family whose epsilon = 0 \
+                     member is the published decider exactly.",
+        falsified_by: "A disagreement on an ambiguous cell whose sweep has no \
+                       pole in (0, 1). Chernyaev's quadratic is exact there, so \
+                       a difference would mean the body-saddle value is not the \
+                       quantity the interior test is a sign of, and the whole \
+                       reframing collapses rather than needing a tolerance. \
+                       Separately falsified if the two agree on every cell \
+                       INCLUDING the poled ones, which would mean Custodio's \
+                       correction is unreachable on this crate's fields and the \
+                       census cannot discriminate -- a null that says the \
+                       fixture is wrong rather than the hypothesis.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "ambiguous_cells",
+            "agreements",
+            "disagreements",
+            "disagreements_with_pole",
+            "disagreements_without_pole",
+        ],
+    },
+    Preregistration {
+        id: "P-25",
+        ticket: "R-022b",
+        hypothesis: "Repairing the air sublevel set's connectivity after a \
+                     brush FILL costs work proportional to the SHED VOLUME -- \
+                     the air samples that leave their component -- and not to \
+                     the surviving component, nor to the lattice. Concretely: \
+                     at a fixed brush radius the voxels the replacement search \
+                     visits stays flat as the lattice grows through 33, 49 and \
+                     65 cubed, while a rebuild's visit count grows as n cubed. \
+                     Two mechanisms, both already measured. A union-find CAN \
+                     absorb deletion, because a parent pointer only has to \
+                     reach the right root and a filled sample sitting mid-tree \
+                     is never queried -- so only the shed pieces are re-rooted \
+                     and the surviving side is never walked. And the shed \
+                     pieces are tiny: M-320 measured the smaller side of a \
+                     split at ONE voxel at the median and 120 at the observed \
+                     maximum, against 227,567 air samples. The levelled HDT \
+                     scheme is therefore unnecessary here; lockstep search \
+                     outward from every seed, stopping when all but one \
+                     frontier exhausts, is enough.",
+        falsified_by: "Visited voxels growing as n cubed at a fixed brush size, \
+                       which would mean the search is exploring the SURVIVING \
+                       component rather than the shed pieces -- i.e. the \
+                       lockstep stop condition is wrong and the structure is \
+                       walking the thing it was built to avoid walking. \
+                       Separately and more seriously falsified by any \
+                       disagreement between the incrementally maintained \
+                       components and a full rebuild over the same values: \
+                       component count, or any connected() answer. That would \
+                       mean the structure is fast and WRONG, which is worse \
+                       than slow and right, and it is the failure a \
+                       measurement of cost alone cannot see.",
+        records: &[
+            "samples_per_axis",
+            "fills",
+            "dirty_samples",
+            "seeds",
+            "visited",
+            "splits",
+            "shed_components",
+            "vanished_components",
+            "rebuild_visited",
+        ],
+    },
+    Preregistration {
+        id: "P-26",
+        ticket: "R-022b",
+        hypothesis: "P-25 with its MECHANISM clause replaced and its COST \
+                     clause unchanged; see the falsification in FINDINGS as \
+                     cross-26. Unchanged: repairing the air sublevel set after \
+                     a brush fill costs work proportional to the SHED VOLUME, \
+                     not to the surviving component nor to the lattice, so \
+                     visited voxels stay flat through 33, 49 and 65 cubed at a \
+                     fixed brush radius. Replaced: the structure is not a \
+                     union-find but a FLAT label array -- every sample carries \
+                     its component id directly, so re-rooting a shed piece is \
+                     one write per member and no surviving sample can route \
+                     through it. Flat labels fix the REPRESENTATION, not the \
+                     SEARCH: the lockstep replacement search was always \
+                     required and the union-find merely promised falsely that \
+                     it could be skipped. Added: lockstep bounds work by the \
+                     SECOND-LARGEST piece, so M-320's one-voxel median is a \
+                     property of the edit distribution rather than of the \
+                     structure. Bisecting a tunnel between two equal caverns \
+                     makes both frontiers huge and visited then grows with n at \
+                     a fixed brush size. So the prediction is stated per \
+                     fixture: FLAT on the measured distribution, GROWING on a \
+                     deliberate bisect.",
+        falsified_by: "Visited voxels growing as n cubed ON THE MEASURED \
+                       DISTRIBUTION at a fixed brush size. Growth on the bisect \
+                       fixture is predicted and is not falsifying; a structure \
+                       that came out flat on BOTH would instead mean the bisect \
+                       fixture is not adversarial and needs rebuilding, which \
+                       is a fixture failure rather than a result. Separately \
+                       and more seriously falsified, as in P-25, by any \
+                       disagreement between the maintained components and a \
+                       full rebuild over the same values -- component count, or \
+                       any connected() answer. Fast and wrong is worse than \
+                       slow and right.",
+        records: &[
+            "samples_per_axis",
+            "fixture",
+            "fills",
+            "dirty_samples",
+            "seeds",
+            "visited",
+            "splits",
+            "shed_components",
+            "vanished_components",
+            "rebuild_visited",
+        ],
+    },
+    Preregistration {
+        id: "P-27",
+        ticket: "R-029",
+        hypothesis: "Offsetting a slab's mid-plane by half a voxel takes the \
+                     count of lattice samples whose default SDF gradient is \
+                     exactly [0,0,0] from one full lattice plane (65-squared = \
+                     4,225 at 65 samples per axis) to ZERO, while the \
+                     medial-stability population -- sub-voxel probes with \
+                     voxel-step central-difference gradient magnitude under \
+                     0.1 -- changes by less than 5 percent. Two populations \
+                     on purpose: the sub-threshold set is a band of thickness \
+                     0.2h, thinner than the lattice pitch, so counted on the \
+                     voxel lattice itself clause two would be vacuously false \
+                     under ANY misalignment. On the registered probe lattice \
+                     of pitch h/200 the worst change a rigid offset can \
+                     produce is 1/40 = 2.5 percent -- derived, half the \
+                     registered bound, and the margin between them is the \
+                     room for the discrete band to misbehave.",
+        falsified_by: "Exact zeros surviving the half-voxel offset -- the \
+                       discrete gradient is doing something the continuous \
+                       identity does not describe, and R-030 inherits that \
+                       question before anything else runs. Clause two is \
+                       separately falsified by the band count moving more \
+                       than 5 percent, which the derived 2.5 percent \
+                       instrument bound says can only happen if the discrete \
+                       band is not the rigid 0.2h ramp the arithmetic \
+                       assumes.",
+        records: &[
+            "arm",
+            "offset_voxels",
+            "exact_zeros",
+            "band_count",
+            "probe_pitch_voxels",
+        ],
+    },
+    Preregistration {
+        id: "P-28",
+        ticket: "R-030",
+        hypothesis: "The matched-analytic re-instrumentation of the identity \
+                     r = rho * sqrt(1 - |grad rho|^2), after V-46 showed the \
+                     ticket's MEB-oracle shape cannot discriminate. Three \
+                     clauses. C1, form: on slab, wedge and triangular-prism \
+                     air fixtures in generic position -- piecewise-linear \
+                     fields, so the voxel-step mollified truth is derivable \
+                     exactly -- the measured r matches the derived closed \
+                     form within 1e-9 of the gap on 100 percent of \
+                     medial-band samples, exercising the two-point AND \
+                     three-point closest-point cases. C2, curvature: on a \
+                     capsule at generic off-axis samples, where the true \
+                     inscribed radius is zero, the formula's own noise floor \
+                     has a world-unit median that HALVES per resolution \
+                     doubling -- 33-to-129 end-to-end ratio at most 0.35 -- \
+                     the O(h) sqrt-amplification of the O(h squared) \
+                     curvature error in the discrete gradient. C3, clearance: \
+                     for slab gaps of 3, 6 and 10 voxels across 8 sub-voxel \
+                     phases, the band-max r sits inside the derived envelope \
+                     [sqrt(3)/2 * (W - h/2), W] on 24 of 24 rows.",
+        falsified_by: "C2's end-to-end ratio at or above 0.7 -- an \
+                       h-independent noise floor, meaning the discrete score \
+                       cannot separate medial signal from curvature noise at \
+                       any fixed world scale, and Calibre, the throat metric \
+                       and handholds die together as the dossier said. C1 \
+                       failing instead is an implementation or transcription \
+                       finding, not a verdict on the identity. C3 failing \
+                       means the clearance-envelope derivation is wrong and \
+                       the lambda test loses its accuracy claim. And the \
+                       wrong-form inversion -- rho times (1 - |grad rho|) -- \
+                       must fail C1 on at least 30 percent of mid-band \
+                       samples by more than a tenth of the gap, or this \
+                       instrument has not been shown able to go red and V-46 \
+                       applies to it too.",
+        records: &[
+            "fixture",
+            "samples_per_axis",
+            "band_samples",
+            "within_tol_pct",
+            "band_median_residual_world",
+            "clearance_true_voxels",
+            "clearance_est_voxels",
+            "clamped",
+        ],
+    },
+    Preregistration {
+        id: "P-29",
+        ticket: "R-031",
+        hypothesis: "Dreybrodt and Gabrovsek's wormhole competition reproduces \
+                     on a 64x64 fracture lattice with their own constants, \
+                     read from the converted primary source rather than \
+                     tuned: cubic-law resistance, linear kinetics \
+                     F = k(1 - c/ceq) with the composite k(a), \
+                     k1 = 4e-11 mol/cm2/s, ceq = 1e-6 mol/cm3, \
+                     D = 1e-5 cm2/s, penetration-length transport, \
+                     da/dt = 2*gamma*F. Clause one: under constant-head \
+                     boundaries the post-breakthrough aperture distribution \
+                     is BIMODAL by the central-gap statistic -- max gap in \
+                     ln(a) with 1 percent tails dropped, at least 0.2, the \
+                     registered initial log-sd -- on both the \
+                     seeded-homogeneous and lognormal-heterogeneous nets, \
+                     while the fixed-flux recharge-limited arm stays \
+                     UNIMODAL at matched cumulative dissolved volume, per \
+                     Perne, Covington and Gabrovsek's limited-recharge \
+                     suppression. Clause two: past breakthrough, more than \
+                     90 percent of dissolution flux concentrates in fewer \
+                     than 10 percent of edges. Recorded, not registered: \
+                     heterogeneous breakthrough earlier than \
+                     seeded-homogeneous (the paper's 560 against 1890 \
+                     years, as an ordering, not a magnitude), per-tick \
+                     cost, and the Gini-over-flow series.",
+        falsified_by: "No bimodal split on either constant-head arm, or \
+                       dissolution flux failing to concentrate past \
+                       breakthrough -- the positive-feedback premise of the \
+                       mechanic dies with the kinetics. Separately falsified \
+                       as an INSTRUMENT if the recharge-limited arm goes \
+                       bimodal while the detector also calls the t-zero \
+                       lognormal apertures bimodal -- both-arms-bimodal \
+                       indicts the statistic, both-arms-unimodal indicts \
+                       the kinetics. The detector's own red and green -- a \
+                       synthetic half-shifted sample it must call bimodal, \
+                       the t-zero sample it must call unimodal -- run before \
+                       any verdict is read.",
+        records: &[
+            "arm",
+            "ticks",
+            "years",
+            "breakthrough_years",
+            "max_gap_ln",
+            "bimodal",
+            "flux_top10_pct",
+            "gini_flow",
+            "max_da_over_a_pct",
+            "tick_ms_median",
+        ],
+    },
+    Preregistration {
+        id: "P-30",
+        ticket: "R-031",
+        hypothesis: "P-29's clause one with its INSTRUMENT replaced and its \
+                     prediction unchanged; the falsification is M-326. The \
+                     central-gap detector trimmed 1 percent tails -- 81 of \
+                     8,128 edges -- while a winning wormhole path is at most \
+                     one input-to-output chain of 63 edges, so the registered \
+                     statistic ate the mode it was looking for. Replaced: no \
+                     trim; a split counts as bimodal only when the gap in \
+                     sorted ln(a) is at least 0.2 AND both sides hold at \
+                     least 8 edges -- 0.1 percent, eight-fold below the \
+                     smallest possible winner mode (the lattice's own path \
+                     length, 63, knowable before any run) and eight-fold \
+                     above single-edge outliers. Unchanged: under constant \
+                     heads the post-breakthrough aperture distribution is \
+                     bimodal on both the seeded-homogeneous and \
+                     lognormal-heterogeneous nets, and the recharge-limited \
+                     arm stays unimodal at the same at-breakthrough \
+                     dissolved volume. Recorded beside it: the water-flux \
+                     top-10-percent share, next to the dissolution share \
+                     M-326 closed at 78 percent.",
+        falsified_by: "No qualifying gap on either constant-head arm. With \
+                       the mode guard in place that verdict would mean the \
+                       aperture histogram is genuinely not gapped-bimodal -- \
+                       the dossier's tier-R bimodality reading dies, and the \
+                       competition claim rests on the concentration columns \
+                       M-326 already measured (Gini 0.976 against 0.560). \
+                       The positive-feedback premise itself is convicted \
+                       only if those concentration columns also regress, \
+                       which M-326 shows they do not. Instrument-falsified, \
+                       as before, if the recharge arm reads bimodal while \
+                       the t-zero green also fails; the synthetic red and \
+                       t-zero green run again before any verdict is read.",
+        records: &[
+            "arm",
+            "ticks",
+            "years",
+            "breakthrough_years",
+            "max_gap_ln",
+            "guarded_gap_ln",
+            "guarded_bimodal",
+            "flux_top10_pct",
+            "flux_water_top10_pct",
+            "gini_flow",
+            "max_da_over_a_pct",
+            "tick_ms_median",
+        ],
+    },
+    Preregistration {
+        id: "P-31",
+        ticket: "R-032",
+        hypothesis: "On 20 seeded dug scenes -- a solid block carved by 12 \
+                     random overlapping capsule brushes through the crate's \
+                     own BrushStack composition -- the weak feature size, \
+                     measured as the minimum air-side distance-to-boundary \
+                     over discrete critical points (voxel-step \
+                     central-difference gradient magnitude under 0.5, the \
+                     dossier's own theta-above-120-degrees filter constant, \
+                     non-maximum-suppressed over 26-neighbourhoods), is \
+                     below 2 voxels on MORE THAN 80 PERCENT of scenes -- so \
+                     the homotopy certificate lambda < wfs essentially \
+                     never holds at brush scale and the lambda-medial line \
+                     rests on Hausdorff stability instead. A single-cavity \
+                     control scene, one 20-voxel sphere in generic \
+                     position, must report wfs of at least 10 voxels, \
+                     demonstrating the instrument can call the certificate \
+                     AVAILABLE before it is trusted calling it absent.",
+        falsified_by: "wfs at or above 2 voxels on half or more of the dug \
+                       scenes -- the certificate comfortably available at \
+                       brush scale, which would make the stronger homotopy \
+                       guarantee live and the Hausdorff fallback \
+                       unnecessary. Instrument-falsified by any dug scene \
+                       reporting zero critical points (a minimum over an \
+                       empty set is not a measurement), or by the control \
+                       cavity failing its 10-voxel floor.",
+        records: &[
+            "scene",
+            "air_samples",
+            "critical_points",
+            "wfs_voxels",
+            "epsilon",
+            "samples_per_axis",
+        ],
+    },
+    Preregistration {
+        id: "P-32",
+        ticket: "R-033",
+        hypothesis: "A one-voxel interior edit does not move a carved \
+                     pillar's fundamental eigenvalue audibly. The pitch JND \
+                     is 0.6 percent on FREQUENCY and f is proportional to \
+                     sqrt(lambda), so the audibility threshold on lambda-one \
+                     is 1.2 percent -- the conversion is registered because \
+                     applying 0.6 to lambda directly would be a silent \
+                     factor of two. Clause one: all 8 seeded \
+                     strictly-interior one-voxel digs move lambda-one by \
+                     less than 1.2 percent. Clause two: at least 1 of 4 digs \
+                     adjacent to the fixture's two-cell web exceeds 1.2 \
+                     percent -- the ticket's 'only edits near a thin feature \
+                     are audible', both sides of it. Clause three, the \
+                     null's reachability: carving a 20-percent-volume cavity \
+                     moves lambda-one by more than 15 percent. Instrument: \
+                     hexahedral FEM assembled directly on the occupancy grid \
+                     (trilinear, 2x2x2 Gauss, E=1 nu=0.3 rho=1, lumped mass, \
+                     base layer fixed), matrix-free inverse power iteration \
+                     (48 outer) over Jacobi-preconditioned CG (256 inner, \
+                     warm-started), and every reported eigenvalue carries an \
+                     a-posteriori certificate -- the residual Kx minus \
+                     lambda Mx in the M-inverse norm, at or below 5e-4 of \
+                     lambda -- so fixed iteration counts can never mean \
+                     silently wrong.",
+        falsified_by: "Any strictly-interior dig moving lambda-one at or \
+                       above 1.2 percent -- per-edit modal audio earns its \
+                       ticket, bounded in advance by Picard's O(m^2.8) \
+                       scaling at about 40 modes in a 5 ms budget. Clause \
+                       two failing the other way -- no web-adjacent dig \
+                       audible -- closes the modal direction entirely at the \
+                       cost of a day, the outcome the dossier priced. \
+                       Instrument-falsified by the certificate exceeding its \
+                       bound, the two deterministic starts disagreeing \
+                       beyond twice the certificate, the control cavity \
+                       moving lambda-one by less than 15 percent, or the \
+                       free single-element spectrum holding other than \
+                       exactly six rigid modes.",
+        records: &[
+            "edit",
+            "cells",
+            "dof",
+            "lambda1_base",
+            "lambda1_edited",
+            "delta_pct",
+            "audible",
+            "certificate_rel",
+        ],
+    },
+    Preregistration {
+        id: "P-33",
+        ticket: "R-034a",
+        hypothesis: "A pure-Rust reimplementation of Whiting, Ochsendorf and \
+                     Durand's rigid-block feasibility program -- per-vertex \
+                     interface forces, equilibrium A f = -w, friction cone \
+                     at mu = 0.7, compression-only -- reproduces the only \
+                     external ground truths in the dossier. Bisecting \
+                     thickness over centerline radius on a 100-block \
+                     semicircular arch (the paper's own tessellation) finds \
+                     the infeasibility threshold at 0.1075 plus or minus \
+                     0.0010 -- Milankovitch's 1907 analytic value, which \
+                     Whiting's solver hit at 0.10746 -- and bisecting ground \
+                     tilt at t/r = 0.20 finds 15.84 degrees plus or minus \
+                     0.05, Ochsendorf's value. The solver is alternating \
+                     projection between the equilibrium affine set -- exact \
+                     per iteration via one prefactored Cholesky of A times \
+                     A-transpose -- and the per-vertex friction cones, whose \
+                     projection is closed-form; compression is exact in the \
+                     cone rather than penalized; 20,000 fixed iterations; \
+                     the decision reads the CONE-side iterate's equilibrium \
+                     residual per unit weight, 1e-5 feasible and 1e-4 \
+                     infeasible, the band between asserted never hit, and \
+                     the thresholds themselves are checked by the golden \
+                     values -- a tuned-wrong threshold cannot hit 0.1075 \
+                     from both sides. Block weights act at exact \
+                     annular-sector centroids, because centerline weights \
+                     reproduce Heyman's 0.106 rather than Milankovitch's \
+                     0.1075 and the third decimal is the whole point. \
+                     Recorded, not registered: the threshold at 25, 50, 100 \
+                     and 200 blocks -- the paper's own warning that coarser \
+                     blocks over-estimate stability, so coarse thresholds \
+                     should sit BELOW fine ones.",
+        falsified_by: "Missing either golden value -- the solver is wrong \
+                       somewhere between the formulation and the arithmetic, \
+                       and nothing structural may be built on it. \
+                       Instrument-aborts before any verdict: doubling \
+                       gravity moving any feasibility decision (the program \
+                       is scale-invariant or it is wrong), or any bisection \
+                       step landing in the undecided residual band. The \
+                       game-facing rule and the warm-start economics are \
+                       R-034b's, deliberately not here.",
+        records: &[
+            "test",
+            "blocks",
+            "value",
+            "target",
+            "abs_error",
+            "within_tolerance",
+            "residual_feasible",
+            "residual_infeasible",
+        ],
+    },
+    Preregistration {
+        id: "P-34",
+        ticket: "R-034b",
+        hypothesis: "Warm-started re-solves of the M-330-validated feasibility \
+                     program are BIMODAL over an edit corpus, in the ticket's \
+                     two classes. Fixture: a running-bond masonry wall (8 \
+                     courses, ~96 blocks, bed and head joints, mu = 0.7) -- \
+                     chosen over the arch because redundancy is what lets a \
+                     severing edit leave a standing structure, and M-330 \
+                     showed the arch too simple to discriminate anything \
+                     block-structural. Cost is COUNTED, not timed: iterations \
+                     of the alternating projection until the cone-side \
+                     residual first crosses the 1e-5 feasibility line, cold \
+                     (from zero) versus warm (from the pre-edit solution, \
+                     mapped by interface identity). Clause one: over 10 \
+                     non-severing edits (single-block weight nudges, small \
+                     gravity tilts) the median warm-to-cold ratio is at most \
+                     0.15 -- under 15 percent of cold, the ticket's number. \
+                     Clause two: over 10 severing edits (an interior block \
+                     removed, forces rerouted around the hole) the median \
+                     ratio is at least 0.5 -- under 2x speedup. The \
+                     bimodality IS the prediction: the two class medians \
+                     separated by more than 3x.",
+        falsified_by: "A unimodal ratio distribution -- class medians within \
+                       3x of each other -- which kills the cheap-incremental \
+                       story and demotes the admissibility gate to \
+                       background-budget-only, exactly as the original \
+                       R-034 registered. Instrument notes: any edit that \
+                       classifies infeasible at the 20,000-iteration cap is \
+                       recorded as collapsed and excluded with its count \
+                       printed -- a corpus that mostly collapses is a \
+                       fixture failure and aborts; and every surviving edit \
+                       must reach the decision line within the cap or the \
+                       count, not the clock, has failed to decide.",
+        records: &[
+            "edit",
+            "class",
+            "iters_cold",
+            "iters_warm",
+            "ratio",
+            "feasible",
+        ],
+    },
+    Preregistration {
+        id: "P-35",
+        ticket: "R-034b",
+        hypothesis: "P-34 with its instrument floor removed and its corpus \
+                     unmixed; the falsification is M-331. Corrections, all \
+                     derivable before running: the decision is probed every \
+                     ITERATION (the floor becomes 1/cold instead of \
+                     10/cold); the wall grows to 20 courses of 24 blocks \
+                     (~470 blocks) so the cold count has three digits of \
+                     dynamic range; and tilts leave the registered corpus \
+                     -- a gravity rotation moves every interface force and \
+                     is recorded as its own class, not averaged into local \
+                     edits. Unchanged prediction, the ticket's own: over 10 \
+                     single-block weight nudges the median warm-to-cold \
+                     ratio is at most 0.15; over 10 interior removals it is \
+                     at least 0.5; the class medians separate by more than \
+                     3x. M-331's floor-pinned weight nudges and 0.8 removal \
+                     median already point this way at 4x, undecidably.",
+        falsified_by: "The weight-nudge median still above 0.15 with the \
+                       floor at 1/cold -- then the 0.400 was never the \
+                       instrument's, the cheap-incremental story dies on \
+                       merit, and the admissibility gate is \
+                       background-budget-only as the original R-034 \
+                       registered. Or medians within 3x -- unimodal, same \
+                       consequence. Collapsed removals excluded on the \
+                       record as in P-34, aborting past three.",
+        records: &[
+            "edit",
+            "class",
+            "iters_cold",
+            "iters_warm",
+            "ratio",
+            "feasible",
+        ],
+    },
+    Preregistration {
+        id: "P-36",
+        ticket: "R-035b",
+        hypothesis: "On M-333's verified substrate -- the 64-cubed gyroid \
+                     chunk, 12,615 Surface Nets vertices, heat operator at \
+                     t = h-bar squared, nested-dissection ordering -- a \
+                     radius-4-voxel surface perturbation changes at most 400 \
+                     vertex slots (M-318's 346 of 15,706, keyed by cell \
+                     identity; the 1-ring operator-row halo is counted \
+                     beside it, expected 3 to 6 times more), and a partial \
+                     refactorization over the elimination-tree ancestor \
+                     closure of the changed columns re-establishes a valid \
+                     factorisation at least 20 TIMES cheaper than a full \
+                     refactorisation by wall time, with the flop ratio at \
+                     least 10 alongside -- a large time ratio over a small \
+                     flop ratio is an implementation artifact, not a result. \
+                     The absolutes (the ticket's under-5-ms and over-100-ms) \
+                     are recorded, not load-bearing: M-333 already measured \
+                     the full refactor at 87.7 ms. Validity is asserted, not \
+                     assumed: the updated factor holds the same Frobenius \
+                     residual bound as a fresh one, its solve agrees with \
+                     the refactored solve within 1e-8 relative, and a \
+                     deliberately skipped closure column must push the \
+                     residual past its bound before any verdict is read. \
+                     Timing is interleaved in both orders, 11 repetitions, \
+                     medians.",
+        falsified_by: "The update under 10 times cheaper by wall or under \
+                       the flop-ratio floor -- the prefactored family is \
+                       dead for live carving and everything \
+                       surface-intrinsic routes to the Closest Point Method \
+                       instead, the routing decision this ticket exists to \
+                       make. Separately: the slot count exceeding 400 \
+                       re-scopes M-318's extrapolation; the slot SET \
+                       changing at all aborts the fixture (the experiment \
+                       is about value updates on a stable pattern, and says \
+                       so); and the skipped-column inversion failing to go \
+                       red voids the validity oracle and the run with it.",
+        records: &[
+            "rep",
+            "order",
+            "update_ms",
+            "refactor_ms",
+            "update_flops",
+            "refactor_flops",
+            "changed_slots",
+            "changed_rows",
+            "closure_rows",
+        ],
+    },
+    Preregistration {
+        id: "P-37",
+        ticket: "R-036",
+        hypothesis: "The ticket's premise is half false, and the correction \
+                     is the first finding: the tracker maintains component \
+                     volume (Air::component_size) and does NOT maintain \
+                     boundary surface area -- nothing in the crate does. \
+                     With the accumulator added (per-label air-solid face \
+                     counts, delta-maintained through build, dig's blob \
+                     growth, fill's retirement, merge transfer and split \
+                     hand-off; domain-boundary faces count as solid, the \
+                     sealed-box convention; AirWorld roll-up deliberately \
+                     out of scope), clause one: a Sabine RT60 for the \
+                     breach-frame component -- 0.161 times volume over \
+                     absorption times area, two accumulator reads and a \
+                     divide -- costs under 0.1 ms, and structurally so. \
+                     Clause two: a Planeverb-style 2D FDTD re-bake of a \
+                     64x64 slice (Rosen, Godin and Raghuvanshi, \
+                     10.1111/cgf.14099, public C++ reference; leapfrog \
+                     pressure-velocity, 1,000 steps -- about half a second \
+                     of audio at the CFL step, the length a decay \
+                     measurement needs -- damped edges, cost is the claim \
+                     and acoustic fidelity is not) completes in under 30 ms \
+                     single-threaded. Recorded, not registered: dig and \
+                     fill costs with the accumulator in place, and the \
+                     split rate against M-319's one-in-six -- a divergence \
+                     THERE would be news; the clauses holding is not.",
+        falsified_by: "Either figure exceeding its bound by 3x, the \
+                       ticket's own falsifier. Instrument notes: the area \
+                       invariant -- a full recount equals the maintained \
+                       counts, and the label-free global face total equals \
+                       their sum -- is asserted in the crate's own tests \
+                       over synchronous op sequences, with a deliberate \
+                       corruption shown to turn the checker red; \
+                       budget-truncated ops leave area conservatively stale \
+                       exactly as labels already are, scoped and documented \
+                       rather than solved.",
+        records: &["quantity", "value", "unit", "bound", "held"],
+    },
 ];
 
 /// `a == b`, in a const context.

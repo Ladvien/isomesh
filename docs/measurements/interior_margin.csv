@@ -1,0 +1,5 @@
+population,cells,ambiguous,joined,poled,finite,max_abs_margin,over_corner_scale,over_half_scale,tiny,disagree,flipped,disagree_and_flipped,disagree_max_margin
+continuous,400000,6348,5608,3150,6348,4.338192448e-1,0,0,0,1005,3,0,4.051841982e-1
+quantum 1/255,400000,6366,5605,3154,6366,4.332773109e-1,0,0,1,1015,5,0,4.058823529e-1
+quantum 1/16,400000,6377,5432,3184,6377,4.355468750e-1,0,0,27,1040,3,0,4.062500000e-1
+quantum 1/4,400000,5994,4267,3040,5994,4.355435906e-1,0,0,371,1342,1,0,3.750000000e-1

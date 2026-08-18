@@ -2774,18 +2774,31 @@ fn without_a_constant_no_cell_is_rejected() {
     assert!(out.triangle_count() > 0);
 }
 
-/// **What empty-cell rejection buys, per field (F-005, M-248).**
+/// **What empty-cell rejection buys, per field (F-005, M-248, ✗24).**
 ///
 /// M-98 found this extractor's cost is entirely its constant — `6 tets × 6 edges
 /// × 16 samples = 576` field evaluations per cell against Marching Cubes' 8 —
 /// and F-005's claim is that one evaluation deletes that constant for every cell
-/// the surface does not reach. This is the measurement, recorded rather than
-/// asserted, because the interesting part is how much it varies.
+/// the surface does not reach.
 ///
-/// Timing is a ratio against Marching Cubes on the same grid in the same
-/// process, so it is comparable across machines in a way a millisecond is not.
-/// **Not a regression gate** — the thresholds are loose enough to survive a busy
-/// machine, and `docs/measurements/` is where precise figures live.
+/// # The thing asserted is the rejected-cell count, and it used to be a stopwatch
+///
+/// This test asserted `speedup > 1.0` **per field**, under a doc comment that
+/// said in the same breath *"recorded rather than asserted"* and *"not a
+/// regression gate"*. The code and the prose disagreed, the code won, and it
+/// failed the 0.0.7 release on a macOS runner at `gyroid 0.98x` — a number whose
+/// sign is set by which side of the noise the runner landed on.
+///
+/// ✗24 is why that was never a threshold problem. What rejection can save is
+/// bounded by **how many cells it rejects**, and that count is a property of the
+/// field: `gyroid` is triply periodic and its surface reaches essentially every
+/// cell, so there is nothing to reject and the one extra evaluation per cell is
+/// pure overhead. *"Every field must benefit, however little"* is false on the
+/// merits, not merely unmeasurable.
+///
+/// So the gate is the count — deterministic, identical on every machine — and
+/// the ratio stays as a printed record. The correctness half is unchanged and is
+/// the one that always mattered: **rejection must not move a single triangle.**
 #[test]
 fn empty_cell_rejection_is_measured_per_field() {
     use crate::MeshBuffer;
@@ -2793,6 +2806,7 @@ fn empty_cell_rejection_is_measured_per_field() {
     use std::time::Instant;
 
     const SAMPLES: u32 = 17;
+    const CELLS: u32 = SAMPLES - 1;
     let mut rows = alloc::vec::Vec::new();
 
     crate::for_each_reference_field!(f64, |name, field| {
@@ -2800,6 +2814,22 @@ fn empty_cell_rejection_is_measured_per_field() {
             let (lo, hi) = field.domain();
             let h = (hi[0] - lo[0]) / f64::from(SAMPLES - 1);
             let shape = crate::RuntimeShape3::new([SAMPLES; 3]).expect("valid shape");
+
+            // The deterministic half: how many cells one evaluation can prove
+            // empty. This is what bounds the saving, and it is the same integer
+            // on every machine.
+            let mut prover = SubgridMarchingTetrahedra::<f64>::new(16).expect("valid resolution");
+            prover.set_lipschitz(Some(l));
+            let mut rejected = 0u32;
+            for z in 0..CELLS {
+                for y in 0..CELLS {
+                    for x in 0..CELLS {
+                        if prover.cell_is_provably_empty(&field, lo, h, [x, y, z]) {
+                            rejected += 1;
+                        }
+                    }
+                }
+            }
 
             let best = |lipschitz: Option<f64>| {
                 let mut out = MeshBuffer::<f64>::new();
@@ -2823,22 +2853,234 @@ fn empty_cell_rejection_is_measured_per_field() {
                 tris, tris_fast,
                 "{name}: rejection changed the triangle count"
             );
-            rows.push((name, slow / fast));
+            let share = f64::from(rejected) / f64::from(CELLS * CELLS * CELLS);
+            rows.push((name, rejected, share));
             std::println!(
-                "measured: {name:<16} rejection speedup {:>5.2}x",
+                "measured: {name:<16} rejected {rejected:>5} of {:<5} ({:>5.1}%)  \
+                 speedup {:>5.2}x",
+                CELLS * CELLS * CELLS,
+                share * 100.0,
                 slow / fast
             );
         }
     });
 
     assert!(rows.len() >= 5, "only {} fields had a constant", rows.len());
-    // Every field must benefit, however little: a cell the surface does not
-    // reach exists in every one of them.
-    for (name, speedup) in &rows {
+
+    // The mechanism fires on every field that offers a constant. Zero here
+    // would mean the predicate never proves anything, which is a different bug
+    // from proving little.
+    for (name, rejected, _) in &rows {
         assert!(
-            *speedup > 1.0,
-            "{name}: rejection made it slower ({speedup:.2}x), which means the test \
-             is costing more than the 576 evaluations it saves"
+            *rejected > 0,
+            "{name}: rejection proved no cell empty at all"
         );
     }
+
+    // ✗24, as a number rather than a stopwatch. The benefit is bounded by the
+    // rejected share and that share is a property of the *field*: a triply
+    // periodic surface reaches nearly every cell and leaves nothing to reject,
+    // while a compact one leaves almost everything. Asserted as a spread rather
+    // than per field, because naming a field in a gate is what this repo's
+    // validity rules forbid — and because the spread is the finding.
+    let lowest = rows.iter().map(|r| r.2).fold(f64::INFINITY, f64::min);
+    let highest = rows.iter().map(|r| r.2).fold(f64::NEG_INFINITY, f64::max);
+    assert!(
+        lowest < 0.25,
+        "no field rejects under a quarter of its cells (lowest {lowest:.3}); the \
+         suite has lost the case where rejection cannot pay for itself"
+    );
+    assert!(
+        highest > 0.9,
+        "no field rejects over nine tenths of its cells (highest {highest:.3}); the \
+         suite has lost the case rejection exists for"
+    );
+}
+
+// ── A-028: a normal that does not exist, reported rather than fatal ─────────
+
+/// **A critical point *on* the isosurface has no normal, and the extractor now
+/// says so instead of refusing the volume.**
+///
+/// The fixture is the shape measured on `bonsai` (M-316), built rather than
+/// sampled: a corner whose value is exactly zero — so the surface passes through
+/// it — and whose three forward neighbours match it, so the trilinear gradient
+/// there is exactly zero. `u8` data against an integer isovalue produces this
+/// constantly; **3% of `bonsai`'s surface-cell corners sit exactly on the
+/// surface**, and 33 of those are also critical.
+///
+/// What is asserted is the contract: **extraction succeeds**, the mesh is a
+/// mesh, and the report names what was skipped and where. Silence would be the
+/// failure — a hole nobody was told about.
+#[test]
+fn a_critical_point_on_the_surface_is_reported_rather_than_fatal() {
+    use crate::MeshBuffer;
+    use crate::construct::SampledField;
+
+    const N: u32 = 4;
+    let shape = crate::RuntimeShape3::new([N; 3]).expect("valid shape");
+    let idx =
+        |x: u32, y: u32, z: u32| (z as usize * N as usize + y as usize) * N as usize + x as usize;
+
+    // A solid block with a surface through it, then the degeneracy planted.
+    let mut values = alloc::vec![-1.0_f64; shape.element_count()];
+    for z in 0..N {
+        for y in 0..N {
+            for x in 2..N {
+                values[idx(x, y, z)] = 1.0;
+            }
+        }
+    }
+    // The critical point: exactly on the surface, with all three forward
+    // neighbours equal, so the trilinear gradient at the corner is zero.
+    for (x, y, z) in [(1, 1, 1), (2, 1, 1), (1, 2, 1), (1, 1, 2)] {
+        values[idx(x, y, z)] = 0.0;
+    }
+
+    let field = SampledField::new(&values, &shape, [0.0; 3], 1.0).expect("wrap");
+    let mut out = MeshBuffer::<f64>::new();
+    let mut mesher = SubgridMarchingTetrahedra::<f64>::new(8).expect("valid resolution");
+
+    let result = mesher.extract(&field, &shape, [0.0; 3], 1.0, &mut out);
+    assert!(
+        result.is_ok(),
+        "a critical point on the surface must not refuse the whole grid: {result:?}"
+    );
+
+    let report = mesher.report();
+    assert!(
+        !report.is_complete(),
+        "the fixture plants a degeneracy and the report did not see it"
+    );
+    assert_eq!(
+        report.sites.len() as u64,
+        report.skipped_tetrahedra,
+        "one site per skipped tetrahedron, or the positions are not usable"
+    );
+    assert!(
+        report.degenerate > 0,
+        "the planted point has an exactly-zero gradient, so it is Degenerate, \
+         not IllConditioned: {report:?}"
+    );
+    for site in &report.sites {
+        assert!(
+            site.gradient_length.abs() < 1e-12,
+            "a Degenerate site should carry a zero gradient length, got {}",
+            site.gradient_length
+        );
+    }
+}
+
+/// A field with no degeneracy reports nothing, which is what makes the test
+/// above mean something (E-208: show the instrument silent before trusting it
+/// loud).
+#[test]
+fn a_clean_field_reports_no_skipped_tetrahedra() {
+    use crate::MeshBuffer;
+    use crate::fields::{ReferenceField, Sphere};
+
+    let field = Sphere::<f64>::canonical();
+    let (lo, hi) = field.domain();
+    let h = (hi[0] - lo[0]) / 16.0;
+    let shape = crate::RuntimeShape3::new([17; 3]).expect("valid shape");
+
+    let mut out = MeshBuffer::<f64>::new();
+    let mut mesher = SubgridMarchingTetrahedra::<f64>::new(8).expect("valid resolution");
+    mesher
+        .extract(&field, &shape, lo, h, &mut out)
+        .expect("extraction");
+
+    assert!(out.triangle_count() > 0);
+    let report = mesher.report();
+    assert!(
+        report.is_complete(),
+        "a sphere has no critical point on its surface: {report:?}"
+    );
+    assert_eq!(report.sites.len(), 0);
+}
+
+/// **The report is cleared per extraction**, so a clean run after a dirty one
+/// does not inherit its sites. A counter that only ever grows would read as a
+/// permanent defect on the second call.
+#[test]
+fn the_report_does_not_survive_the_next_extraction() {
+    use crate::MeshBuffer;
+    use crate::construct::SampledField;
+    use crate::fields::{ReferenceField, Sphere};
+
+    const N: u32 = 4;
+    let shape = crate::RuntimeShape3::new([N; 3]).expect("valid shape");
+    let idx =
+        |x: u32, y: u32, z: u32| (z as usize * N as usize + y as usize) * N as usize + x as usize;
+    let mut values = alloc::vec![-1.0_f64; shape.element_count()];
+    for z in 0..N {
+        for y in 0..N {
+            for x in 2..N {
+                values[idx(x, y, z)] = 1.0;
+            }
+        }
+    }
+    for (x, y, z) in [(1, 1, 1), (2, 1, 1), (1, 2, 1), (1, 1, 2)] {
+        values[idx(x, y, z)] = 0.0;
+    }
+
+    let mut out = MeshBuffer::<f64>::new();
+    let mut mesher = SubgridMarchingTetrahedra::<f64>::new(8).expect("valid resolution");
+    {
+        let dirty = SampledField::new(&values, &shape, [0.0; 3], 1.0).expect("wrap");
+        mesher
+            .extract(&dirty, &shape, [0.0; 3], 1.0, &mut out)
+            .expect("extraction");
+        assert!(
+            !mesher.report().is_complete(),
+            "the dirty run should report"
+        );
+    }
+
+    let clean = Sphere::<f64>::canonical();
+    let (lo, hi) = clean.domain();
+    let h = (hi[0] - lo[0]) / 16.0;
+    let sphere_shape = crate::RuntimeShape3::new([17; 3]).expect("valid shape");
+    out.reset();
+    mesher
+        .extract(&clean, &sphere_shape, lo, h, &mut out)
+        .expect("extraction");
+    assert!(
+        mesher.report().is_complete(),
+        "the clean run inherited the dirty run's sites: {:?}",
+        mesher.report()
+    );
+}
+
+/// **The half-offset isovalue removes the case entirely**, which is the guidance
+/// the extractor's docs give and is worth a test rather than a sentence.
+///
+/// Integer samples cannot equal a half-integer, so no sample sits on the
+/// isosurface, so the extractor never asks for a normal at a grid point — the
+/// position where the trilinear gradient is one-sided and can vanish.
+#[test]
+fn a_half_offset_isovalue_puts_no_sample_on_the_surface() {
+    // Every representable `u8` against an integer isovalue, then against a
+    // half-integer one.
+    let integer_iso = 32.0_f64;
+    let half_iso = 32.5_f64;
+    let mut on_surface_integer = 0;
+    let mut on_surface_half = 0;
+    for density in 0..=255u16 {
+        let v = f64::from(density);
+        if integer_iso - v == 0.0 {
+            on_surface_integer += 1;
+        }
+        if half_iso - v == 0.0 {
+            on_surface_half += 1;
+        }
+    }
+    assert_eq!(
+        on_surface_integer, 1,
+        "an integer isovalue is attainable by integer data, which is the problem"
+    );
+    assert_eq!(
+        on_surface_half, 0,
+        "a half-integer isovalue is not attainable by integer data, which is the fix"
+    );
 }

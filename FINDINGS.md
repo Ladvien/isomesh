@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**379 entries** — 23 falsified, 300 measured, 36 verified, 16 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**424 entries** — 27 falsified, 330 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -62,6 +62,10 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗21` | "Convex Primitive Decomposition is the cutting substrate a plane-cut fracture pipeline wants" |
 | `✗22` | "MeshReport applies a closed-solid test to render meshes, so it must be split into two report types" |
 | `✗23` | "Manifold Dual Contouring queries where it needs to, so it wants an on-demand field" |
+| `✗24` | "Empty-cell rejection benefits every field, however little" |
+| `✗25` | "Marching Cubes is the only one of the family in the good corner of manifold × intersection-free" |
+| `✗26` | P-25's mechanism clause is false, and P-25's own falsifier is what named it (R-022b) |
+| `✗27` | "an exactly-zero SDF gradient detects the medial axis" |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -362,6 +366,36 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-303` | HELD: the winding crossover is N², not N³, and the per-point cost is linear in boundary edges (S-009) |
 | `M-304` | a green preflight.sh is not a green CI, because the toolchains differ (0.0.6 release) |
 | `M-305` | the weld key does what it says, and H's wording was wrong anyway (R-010) |
+| `M-306` | what empty-cell rejection can save is bounded by a count, and that count is a property of the field (✗24) |
+| `M-307` | HELD: the primal family seals every reference field, and all three duals leave the domain boundary open (R-024) |
+| `M-308` | the family comparison's headline conclusion was overturned by optimising one member of the family, not by a better measu… |
+| `M-309` | FALSIFIED on both clauses, and the first one fails for a reason sharper than the hypothesis (T-026) |
+| `M-310` | on real scanned volumes, Marching Cubes lands inside the published quality band that analytic fields put it outside of (… |
+| `M-311` | HELD on both clauses that were about the world, and the clause about the comparison was wrong (R-022a) |
+| `M-312` | FALSIFIED before it ran, on arithmetic; and the margin that replaces it is bounded by half the field's scale (R-023) |
+| `M-313` | R-023's hypothesis is falsified: a margin threshold acts away from where the published algorithms disagree (R-023) |
+| `M-314` | the computation after a local edit is edit-proportional; the output buffer throws that away, and the culprit is a counte… |
+| `M-315` | R-025's 20% is above the ceiling on any vertex placement, measured before a placement rule was written (R-025) |
+| `M-316` | a central difference is identically zero at a local extremum, and quantised data manufactures them (A-028) |
+| `M-317` | the volume meshes: 483 tetrahedra declined around 33 singular points, reported rather than fatal (A-028) |
+| `M-318` | a grid-edge naming would close the whole edit-proportionality gap, and the obstacle is not the encoding (R-027) |
+| `M-319` | filling disconnects the air region about one time in six, so R-022b's cheap escape does not exist (R-022b) |
+| `M-320` | the median split sheds one voxel, so the replacement search the literature is built around is answering a question this… |
+| `M-321` | HELD on the measured distribution, and the adversarial fixture it demanded costs 1.1× a full rebuild (R-022b) |
+| `M-322` | chunking makes the bisect bounded rather than cheap, and the advantage is exactly the chunk count (R-028) |
+| `M-323` | the chunk is the bound; the cost is the edited chunk's share of the severed component, and the two differ by 35× (R-028) |
+| `M-324` | HELD on both clauses, and the exact zero is a coordinate-origin artifact (R-029) |
+| `M-325` | the discrete medial score converges O(h) and the mechanics live; the clause that died was C1's own tolerance derivation… |
+| `M-326` | FALSIFIED on both clauses, while the recorded columns show the mechanism both registered instruments missed (R-031) |
+| `M-327` | FALSIFIED again, by the distribution this time: heterogeneous wormholing has no gapped aperture histogram, and the same… |
+| `M-328` | HELD at 20 of 20: the homotopy certificate is never available in a dug scene, and the instrument proved it could have sa… |
+| `M-329` | the modal kill-shot fired: no one-voxel edit is audible anywhere, including against the thin web, and the direction clos… |
+| `M-330` | HELD on both golden values: the feasibility solver is now held to external truth, and the coarsening warning would not r… |
+| `M-331` | FALSIFIED as registered, by an instrument floor the registration promised was fine, and by a corpus that mixed two edit… |
+| `M-332` | HELD on all three clauses: warm-starting the admissibility solve is bimodal by edit class, and the tilts confirm their o… |
+| `M-333` | the heat-operator substrate verifies against a dense reference, and its own numbers pre-shrink two of R-035b's expectati… |
+| `M-334` | FALSIFIED at 1.7× against a registered 20×: the separators eat the update, the prefactored family is dead for live carvi… |
+| `M-335` | HELD on both clauses with orders to spare, and the premise correction is the part that mattered (R-036) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -398,6 +432,16 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-34` | Manifold Dual Contouring's uniform-grid criterion is one vertex per cycle of a decider-modified Marching Cubes table, an… |
 | `V-35` | Grosso 2017's implementation does not exist publicly, and that is now checked rather than assumed. |
 | `V-36` | CoACD's intersection-free guarantee is a property of its cut, and its own default merge stage breaks it — which resolves… |
+| `V-37` | the instrument R-024 needs is published and in this corpus; the question it asks is not |
+| `V-38` | the published AR>4 and sliver figures are not a baseline this crate can be measured against, and one of them is misattri… |
+| `V-39` | the comparable triangle-quality baseline is Grosso & Zint's, not FlexiCubes', and it comes with a prediction (T-026) |
+| `V-40` | Open SciVis Datasets is HTTP-only, and the publisher's own SHA-512 is what makes that fine (M-006) |
+| `V-41` | R-022's hypothesis is two problems with different costs, and a voxel lattice is the easy case for one of them (R-022) |
+| `V-42` | R-023's quantity does not exist as stated, and the one that does is a decision margin rather than a persistence (R-023) |
+| `V-43` | R-020's "unobtainable" prior art has been in the corpus since the day before the ticket was written, and it narrows the… |
+| `V-44` | R-021's caveat is contradicted by the paper R-021 is built on, and the cheap half is already delivered (R-021) |
+| `V-45` | R-027's design does not merely change extract_into's contract; it converts a shipped determinism check's failure conditi… |
+| `V-46` | R-030's specified oracle cannot tell the identity from a wrong one; the inversion rule fails before the harness exists (… |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -414,6 +458,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `O-14` | Pre-registered: Marching Tetrahedra symmetric Hausdorff at 64³ ≈ 2.6e-3, about 1.86× Marching Cubes, i.e. slightly worse… |
 | `O-15` | Answered at A-003 (M-52): the normal's sign pattern, not its direction. |
 | `O-16` | Can the parallel dual-edge collapse (M-59) be removed without giving up the cycle partition? |
+| `O-19` | Which direction does the λ-medial-axis filter run — Attali's keep-r ≥ λ, or the 3D Skeletons STAR's discard-circumradius… |
 | `E×1` | Surface Nets' centroid as Dual Contouring's vertex rule |
 | `E×2` | A separate probabilistic-quadric solver |
 | `E×3` | Crossing-count-scaled regularizer |
@@ -440,15 +485,26 @@ The index above carries the current count; it is generated, so it cannot drift f
 
 ## Confidence tiers
 
-| Tier | Meaning | Bar |
-|---|---|---|
-| **M** | **Measured here** | We ran it. Code and numbers in this repo, reproducible by checkout. |
-| **V** | **Verified externally** | We read the primary source ourselves. DOI or file attached. |
-| **R** | **Reported** | A credible source asserts it; we have not independently checked. |
-| **F** | **Folklore** | Widely repeated, no verified primary source found. |
-| **✗** | **Falsified** | Tested and found false. Includes what we believed and why. |
+| Tier | Glyph | Meaning | Bar |
+|---|---|---|---|
+| **M** | 🔬 | **Measured here** | We ran it. Code and numbers in this repo, reproducible by checkout. |
+| **V** | 📖 | **Verified externally** | We read the primary source ourselves. DOI or file attached. |
+| **R** | 📄 | **Reported** | A credible source asserts it; we have not independently checked. |
+| **F** | 🗣️ | **Folklore** | Widely repeated, no verified primary source found. |
+| **✗** | 💥 | **Falsified** | Tested and found false. Includes what we believed and why. |
 
 **Never cite an R or F claim as justification for a design decision without saying which tier it is.**
+
+**Glyphs, from 2026-08-17.** A new `###` entry opens with its tier glyph before the id — `### 🔬
+M-324 — …` — and 🧊 stands in for 🔬 when the measurement's finding is a null: no effect, and that is
+the result. Emoji are reserved for rows that carry news, so they stay a signal rather than
+decoration. A result that moved an open question, died instructively as a pre-registered
+prediction, or survived a targeted literature search that came back empty earns a
+`> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉` blockquote directly under its heading, and the banner must say
+which of those it claims; a banner on a routine row devalues every other banner in the file, so
+routine confirmations and expected timings stay austere. `scripts/findings_index.sh` parses the
+glyph and fails loudly on any entry-shaped heading it cannot index (the M-277 class, now guarded).
+Rows older than this date carry no glyph and are not retrofitted.
 
 ---
 
@@ -984,7 +1040,7 @@ added because none of the other seven produces a cell with an interior ambiguity
 | M-50 | **E1 and M-34's ratio both reproduce live, under a mouse.** E-202 carves with a brush and re-meshes only the dirty chunks, reporting per edit: a typical carve is **265 of 1,728 cells in the brush's bounding box = E1 15.3%**, against **756 cells whose sample value moved** — a ratio of **2.85×**, inside M-34's measured 2.8–3.7×, and E1 inside M-33's 15–36%. Over a scripted 60-carve run E1 ranges **0.6% to 27.3%**. Cost per re-meshed chunk against edit-log length, median: **0.158 / 0.354 / 0.525 / 0.589 ms** for logs of 1–15 / 16–30 / 31–45 / 46–60 — **3.7× for 7× the log, and flattening.** So the `BrushStack` walk is a real cost and *not* proportional at these lengths, which is weaker than "every sample walks every brush" suggests | E-202, `ISOMESH_AUTOCARVE=60`. The first offline measurements of E1 (M-33) and of the value-versus-output ratio (M-34) were made on synthetic edits; this is the first time either has been measured on the interactive path they were written to justify |
 | M-51 | **Marching Tetrahedra costs ~3× the triangles for ~4% worse geometry — and the literature's `2–3×` is too low.** Vertex and triangle ratio against Marching Cubes on identical grids, seven reference fields at 33³ and 49³: `gyroid` and `fbm_terrain` **2.87×**, `sphere` and `torus` **3.04×**, `csg_difference` **3.83×**, `thin_plate` **3.84×**, `box_exact` **3.91×**. The tier-R figure from `10.1109/2945.485620` covers only the two roughest fields. On the other side, Lewiner et al. 2003's *"weaker geometrical accuracy… the vertex position cannot be adjusted to fit the geometrical trilinear approximation"* measures **4.3%**: symmetric Hausdorff on a unit sphere at 64³, marching cubes `1.3798e-3` against marching tetrahedra `1.4386e-3`. Directionally right and far weaker than it reads | A-003. The marching cubes figure reproduces **M-10's recorded `1.380e-3` exactly**, so the harness is measuring what it measured before. **P-1's `2.992` is confirmed on the smooth closed fields** and is not the whole story — see M-52 |
 | M-52 | **The Marching Tetrahedra ratio is `4.0` when the surface normal lies in one octant and `2.0` when it changes sign, and P-1's `2.992` is the average of the two.** Written out for a single plane of normal `n`, the crossings are `Σ\|nᵢ\|` on the three axis families, `Σ\|nᵢ+nⱼ\|` on the three face diagonals and `\|nₓ+n_y+n_z\|` on the body diagonal. With every component the same sign nothing cancels and those sum to **exactly `4·Σ\|nᵢ\|`** — so the ratio is `4.0` for *any* orientation inside one octant, which is why a plane at four different orientations measured `3.919 / 3.939 / 3.945 / 3.943`. Across a sign change the diagonal terms cancel to `2.0`; measured `1.980 / 2.265 / 2.267`. Integrating over the sphere gives **2.9916**, reproducing P-1 to four figures | A-003, O-15. **This explains the whole reference-field spread with no new mechanism:** `box_exact`'s faces are axis-aligned one-octant normals (3.91), a sphere samples every octant (3.04), `gyroid` sits just below the isotropic average because its normals favour the cancelling ones (2.87). Two earlier hypotheses of mine — orientation, then curvature — were tested and killed first; the second failure is what forced doing the algebra instead of guessing a third time |
-| M-53 | **The five algorithms fill three of the four corners of manifold × intersection-free, and Marching Cubes is the only one in the good one.** Seven reference fields, two grids, one process, one run: `marching_cubes` and `marching_cubes+decider` **0 non-manifold edges and 0 self-intersections**; `marching_tetrahedra` **0 non-manifold but 3.405 per 1k** on `csg_difference`; `surface_nets` **128 non-manifold and 0 self-intersections**; `dual_contouring` **128 and 13.837 per 1k** on `fbm_terrain`. So each of the three non-Marching-Cubes methods fails exactly one property or both, and the method the folklore treats as the crude baseline is the only one that fails neither | M-001. Cross-checks that the numbers are the same numbers: `dual_contouring`'s 13.837 and 3.118 reproduce **M-28**'s clamped `fbm_terrain` 13.84 and `gyroid` 3.12 exactly, and Surface Nets' triangle ratio of `0.977–1.001` is **✗1**'s `F_sn = F_mc + 2χ` seen from the other side |
+| M-53 | **The five algorithms fill three of the four corners of manifold × intersection-free, and Marching Cubes is the only one in the good one.** Seven reference fields, two grids, one process, one run: `marching_cubes` and `marching_cubes+decider` **0 non-manifold edges and 0 self-intersections**; `marching_tetrahedra` **0 non-manifold but 3.405 per 1k** on `csg_difference`; `surface_nets` **128 non-manifold and 0 self-intersections**; `dual_contouring` **128 and 13.837 per 1k** on `fbm_terrain`. So each of the three non-Marching-Cubes methods fails exactly one property or both, and the method the folklore treats as the crude baseline is the only one that fails neither | M-001. Cross-checks that the numbers are the same numbers: `dual_contouring`'s 13.837 and 3.118 reproduce **M-28**'s clamped `fbm_terrain` 13.84 and `gyroid` 3.12 exactly, and Surface Nets' triangle ratio of `0.977–1.001` is **✗1**'s `F_sn = F_mc + 2χ` seen from the other side | **⚠ AMENDED 2026-08-16 — the headline is FALSIFIED (✗25). Marching Tetrahedra's `3.405` was a false positive**, produced by the straddle test `99415af` fixed the day after this ran: a triangle merely *touching* another's plane counted as a transverse crossing, and MT's six face-sharing tets make that the common case rather than an edge case. MT measures **0** self-intersections on every field at every grid, so the good corner has **three** occupants and *"Marching Cubes is the only one"* is wrong. Over the **eight** fields this row predates, `manifold_dual_contouring` also loses its zero — **90** non-manifold edges, all `noise_cavity` (✗19) — and the 128s are **747**. Do not quote this row; quote ✗25 |
 | M-54 | **Dual Contouring is 101× more accurate than Marching Cubes on a sharp field, and indistinguishable on a smooth one.** Symmetric Hausdorff at 65³: `box_exact` **7.217e-2 → 7.145e-4 (101×)**, `thin_plate` **4.593e-2 → 5.892e-4 (77.9×)**, `csg_difference` **7.655e-2 → 2.057e-2 (3.7×)** — against `sphere` **1.2×** and `torus` **1.6×**. Marching Tetrahedra sits within 6% of Marching Cubes on the smooth fields and *better* on the sharp ones (`box_exact` 5.103e-2 against 7.217e-2), because its extra edge families sample the corner from more directions | M-001. M-26 measured this as a corner *gap* — 0.01 cells against 0.58 — and this is the same result as a whole-surface distance, which is the form that transfers to a field whose features are not corners. It also puts a number on the sentence the crate's pitch rests on: the sharp-feature solve is worth two orders of magnitude exactly where the features are sharp, and nothing at all where they are not |
 | M-55 | **O-14 falsified: Marching Tetrahedra's accuracy penalty is 4.3%, not 86%, and it beats Surface Nets rather than losing to it.** Symmetric Hausdorff on a unit sphere at 64³: Marching Cubes **1.3798e-3**, Marching Tetrahedra **1.4386e-3** (`1.043×`, against a pre-registered `2.6e-3` and `1.86×`), Surface Nets **2.251e-3** (`1.69×`). And on the sharp fields Marching Tetrahedra is *better* than Marching Cubes — `box_exact` **5.103e-2** against **7.217e-2** — because its extra edge families sample a corner from more directions | M-001b. **The prediction was registered before the measurement and is wrong in its most interesting clause**: "more vertices and worse accuracy" was flagged as the counterintuitive part, and the accuracy half does not hold. Lewiner et al. 2003's underlying claim survives in direction and not in magnitude — see M-51 |
 | M-56 | **Greedy meshing's `2.76×` saving over face culling is a property of one scene, not of the algorithm: measured `1.70×` to `256×`.** Same occupancy, merge on against merge off, seven reference fields at 33³: `gyroid` **1.70×**, `sphere` **1.94×**, `torus` **2.69×**, `fbm_terrain` **4.60×**, `csg_difference` **10.64×**, `box_exact` **256×**. Merging pays for flat runs, so a grid-aligned box collapses to **six quads at every resolution** — 12 triangles at 17³, 33³ and 65³ alike — while a sphere's staircase surface barely merges at all. The published figure (tier R, the UE5 benchmark) happens to sit beside `torus` | A-005. **Predicted before running** that it would not reproduce as a constant and that `box_exact` would collapse while `sphere` would not, for exactly this reason. Against Marching Cubes the blocky path costs `0.004×` the triangles on `box_exact` and `0.32–0.58×` elsewhere, which is the budget end of the tradeoff table with numbers on it |
@@ -1063,7 +1119,7 @@ added because none of the other seven produces a cell with an interior ambiguity
 | M-176 | **Zero-padding a reduction is transparent, negative zero included — and the reason is the accumulator's seed, not the sort.** A-016 reduces over twelve slots keyed by edge label with absent edges at `R::ZERO`, so the padding question is load-bearing: a twelve-slot reduction over three real terms must give the same bits as a three-slot one or every cell with fewer than twelve crossings would answer differently for nothing. It does. The one place an exception was predicted — every real term `−0.0`, where the padded form was expected to return `+0.0` against an unpadded `−0.0` — **does not occur**, because `sum_equivariant` seeds at `R::ZERO` and `+0.0 + (−0.0)` is `+0.0` under round-to-nearest, so *both* return `+0.0` | A-016, `negative_zero_survives_padding_because_the_accumulator_starts_positive`. The predicted exception came from reasoning about the sorted sequence and forgetting the seed. Pinned in both directions rather than deleted, because the golden hash deliberately distinguishes signed zero and this is exactly the kind of claim that gets re-derived wrongly later |
 | M-177 | **Reordering cannot buy negation equivariance, and the obstruction is structural rather than a missing tie-break.** A-016's brief was to make the QEF accumulation "a function of the set of terms". Permutation invariance is achievable and is delivered. `φ(−S) = −φ(S)` is **not achievable by any ordering rule**: a magnitude tie group holds `m` copies of `−c` and `n` of `+c`, negation swaps those counts, and no order that is a function of the multiset can map the group onto its own reverse unless `m == n`. Witness: `[1e-16, +1, −1]` sums to `1.11e-16`, its negation to `0` | A-016, `negation_equivariance_is_not_achievable_by_ordering_and_here_is_the_witness`. **This bounds what ✗12's "bit-exact equivariance" can mean for a sum of *components*.** A lattice rotation can negate a component, so a sum of positions or of normal-outer-product entries is not bit-exactly equivariant under the full octahedral group by this route — where the three-term dot product is, for M-175's reason. The property the extractors actually need and now have is the weaker, sufficient one: the vertex is a function of the crossings, not of the edge labels they arrived under. Anything stronger needs exact summation, not a better sort |
 | M-178 | **A-016 moved 34 of 168 golden rows, not the 42 predicted, and the 8 that held identify their own mechanism.** All 21 dual-contouring rows and all 21 manifold rows were expected to shift, since both share the solve path. 17 of 21 did, twice over: **34 hashes changed, 0 vertex or triangle counts changed**, and no algorithm outside those two was touched. The four that held are `box_exact` and `thin_plate` at **17³ and 33³** — the two axis-aligned fields at the two resolutions whose cell size is a binary fraction of the domain (`16` and `32` cells; `25³`'s `24` is not). On axis-aligned geometry at an exactly-representable spacing the crossing coordinates are exact, their sums are exact, and reordering cannot change a result that was never rounded — which is why the same two fields *did* move at 25³ | A-016. **This is M-94's fixture trap in its useful direction**: the fields that are easiest to reason about are also the ones least able to detect a floating-point defect, and a suite that only used them would have reported this fix as a no-op |
-| M-172 | **A signed distance field's gradient is exactly zero on its medial axis, and for a slab the medial plane is precisely where you would aim.** `game_destruction` fires charges at `Vec3::new(u * 1.9, v * 1.5, 0.0)` — `z = 0` is the wall slab's mid-plane, equidistant from both faces — and `BrushStack::gradient` there returns `[0.0, 0.0, 0.0]`, measured on two consecutive shots. On a third, off-centre shot it returned `[0.17, 0.98, 0.00]`: non-zero, and pointing **along** the wall rather than out of its face, because the nearest surface to that charge was the top edge | E-204's z-fighting fix. "Which way is out of the solid" reads as the obvious use for a gradient and is wrong twice over here — it is undefined exactly where the geometry is symmetric, and where it is defined it names the nearest surface, which is not necessarily the one you meant. **The general rule is that a gradient answers "where is the nearest surface", never "which way did the projectile go"**; the second question needs a second piece of information, and in this case the camera already had it |
+| M-172 | **A signed distance field's gradient is exactly zero on its medial axis, and for a slab the medial plane is precisely where you would aim.** `game_destruction` fires charges at `Vec3::new(u * 1.9, v * 1.5, 0.0)` — `z = 0` is the wall slab's mid-plane, equidistant from both faces — and `BrushStack::gradient` there returns `[0.0, 0.0, 0.0]`, measured on two consecutive shots. On a third, off-centre shot it returned `[0.17, 0.98, 0.00]`: non-zero, and pointing **along** the wall rather than out of its face, because the nearest surface to that charge was the top edge | E-204's z-fighting fix. "Which way is out of the solid" reads as the obvious use for a gradient and is wrong twice over here — it is undefined exactly where the geometry is symmetric, and where it is defined it names the nearest surface, which is not necessarily the one you meant. **The general rule is that a gradient answers "where is the nearest surface", never "which way did the projectile go"**; the second question needs a second piece of information, and in this case the camera already had it. **⚠ AMENDED 2026-08-17 — the medial-axis reading is retired (✗27, M-324). The measurement stands; the detector does not.** The zeros are real and reproduce — 4,225 of 4,225 on an aligned slab — but they are the sampling arithmetic's, not the axis's: half a voxel of plane offset takes them to 0 while the field's `‖∇ρ‖ < 0.1` band moves 0.00%, and even a full-voxel re-alignment restores only 3,136, because the cancellation needs the plane at the coordinate origin. On the axis generally `‖∇ρ‖ = cos(θ/2)`, zero only for antipodal nearest points — a slab's mid-plane and nothing a player digs. Read `‖∇ρ‖` as a continuous stability score, never a boolean detector; do not build on this row's headline — quote ✗27 |
 | M-173 | **Two coincident surfaces are not a rendering bug to be biased away, they are a modelling statement — and the fix is to stop the geometry coinciding.** `game_destruction`'s fragment is `solid ∩ charge` and its crater is `solid − charge`, so the two share a surface *exactly*: the same sphere, extracted twice from two different fields. A fragment left at rest in the hole it came from renders as a chunk fused into the wall | E-204. **Velocity alone did not fix it, measured**: some fragments leave at 9 m/s while others sit at the impact with a velocity of **0.004 and no response to gravity**, on bodies whose mass is a healthy **1.19** and whose sleeping is disabled — so the cause is inside avian's solver and not somewhere the example can reach. What does fix it is spawning the fragment at the **mouth** of the crater rather than inside it: a fragment that fails to move then fails *clear of the wall*, which is the only place its faces are not coincident by construction. **Depth bias would have been the wrong instrument** — it would hide the overlap at one camera angle and not another, where moving the geometry removes the overlap at every angle |
 | M-171 | **A shipped example panicked on every run, and three siblings carried the same race unfired.** `game_terrain_stream` dies with *"Entity despawned: the entity with ID 404v0 is invalid; its index now has generation 1"* — `attach_meshes` queues `commands.entity(e).insert(Mesh3d…)` for a chunk in the same frame the streamer queues `commands.entity(e).despawn()`, and whichever order the queue flushes, the insert can land on a dead entity | Found while re-recording the README's GIFs, not by a test — nothing in CI opens a window, so no example is ever *run*. `game_walk`, `game_showcase` and `game_capsule_walk` have the identical pattern and had simply never streamed aggressively enough to hit it. Fixed with `try_insert` at all five sites. **That is not a swallowed error and the distinction matters here**: attaching a mesh to a chunk that no longer exists is *vacuous*, not degraded — there is no other thing it could correctly do — where a fallback would be picking a different, worse outcome for the same input. **The gap this exposes is coverage, not the fix**: 30 examples compile in CI and none of them runs, so a panic on frame 200 is invisible until a human launches it |
 | M-174 | **CI has been red on every push of the GPU series, and behind the one accepted failure three unrelated ones accumulated unseen — including the two that block the release itself.** The `test (ubuntu)` job runs `cargo test --workspace --all-targets` and GitHub's ubuntu runners expose no GPU adapter, so every isomesh-gpu device test has panicked there since GPU-001 (`headless.rs` refuses software rasterisers by design — GPU-009, M-147 — so there is nothing to fall back to; macOS runners expose Metal and stayed green). With that job red as the norm, nobody saw: (1) the lint job's rule-2 gate `grep -ril bevy crates/` matching **11 files** — every one a comment, README or manifest note *explaining* the wgpu-follows-Bevy pin, zero dependencies (verified: non-comment `.rs` matches = 0, comment-stripped manifest matches = 0, resolved-graph bevy count = 0); (2) the msrv job failing because `rust-version = "1.85"` was never true once isomesh-gpu existed — **wgpu/naga 29.0.3 and 29.0.4 both declare 1.87** (registry index), and the dev graph's `wide`/`safe_arch` (via parry3d) declare **1.89**, while `bevy_isomesh` claimed 1.85 against Bevy 0.19's own **1.95**; (3) a one-line rustdoc `redundant explicit link` in `bevy_isomesh/src/mesh.rs`. The `publish` job `needs: [lint, test, bevy, msrv, package]` and reports `publish to crates.io: skipped` on every run — four of its five gates red. **This finding's first draft concluded that 0.0.3 and 0.0.4 were therefore never uploaded, and checking it against the registry falsified that outright**: both are on crates.io (0.0.3 at `11:37:52Z`, 0.0.4 at `12:17:57Z`, 2026-08-14), uploaded **by hand from the developer machine seconds after each push, and before the publish job existed at all** — that job landed at `d01756f`, `12:22Z`, after both. So the release process was never dead; it was **manual**, and the automation written to replace it has still never run once. That is the worse of the two states and much the harder to see, because *versions appearing on crates.io is exactly the evidence you would use to conclude the pipeline worked* | Review of 2026-08-14, from `gh run list` (failures back through the whole visible GPU series) + `--log-failed` on run 31796991183, each cause reproduced locally; the upload claim re-checked against the crates.io API and `gh run view --json jobs` on 2026-08-14, which is what falsified it. Fixes in the same session: the ubuntu leg now tests the CPU crate (the one the cross-OS golden-hash claim is about) and macOS keeps the full workspace; rule 2's gate checks dependency positions and non-comment code instead of prose; `rust-version = "1.89"` verified by `cargo +1.89 check --workspace --all-targets` clean. **The method failure is the interesting part: an accepted red is indistinguishable from a new red.** GPU-009 accepted a *coverage* hole and left it expressed as a permanent *failure*, which converted CI from a signal into noise for the entire series |
@@ -1250,6 +1306,7 @@ Each has the test that would settle it. **An open question with no proposed test
 | O-14 | ~~**Pre-registered:** Marching Tetrahedra symmetric Hausdorff at 64³ ≈ **2.6e-3**, about **1.86×** Marching Cubes, i.e. slightly worse than Surface Nets~~ **Falsified at A-003/M-001 (M-55): measured 1.4386e-3, which is 1.043×.** Not slightly worse than Surface Nets — **better by 1.6×** (Surface Nets is 2.251e-3, 1.69× Marching Cubes) | *(closed)* | The prediction's stated counterintuitive part, *"more vertices **and** worse accuracy"*, is the half that is wrong. Marching Tetrahedra buys 3× the vertices for 4% worse accuracy on smooth fields and **better** accuracy on sharp ones |
 | O-15 | ~~Why does a plane cost `3.94×` and a sphere `3.00×` when both are locally flat at cell scale?~~ **Answered at A-003 (M-52): the normal's sign pattern, not its direction.** One octant gives `4.0` exactly, a sign change gives `2.0`, and the isotropic average is P-1's `2.992`. A plane has one normal and a sphere has all of them | *(closed)* | What remains is small and not worth a ticket: the mixed-sign measurement spreads `1.98–2.27` against a predicted flat `2.0`, so the continuum model gets the mechanism exactly and carries a discretisation term it does not describe |
 | O-16 | **Can the parallel dual-edge collapse (M-59) be removed without giving up the cycle partition?** The dual is a manifold complex; the index buffer is where it stops being a manifold mesh. A finer split — one vertex per *face-segment adjacency* rather than per cycle — would separate the endpoints, but it is not obviously topology-preserving and would cost vertices on every field rather than the two that need them | Enumerate, over all `(case, joined)` pairs on both sides of a shared face, the configurations where both cells put both of that face's segments in one cycle. That is a finite two-cell sweep of the same shape as ✗17's, and it would say whether the collapse is rare-and-coarse-only or merely unobserved on the seven fields | Bounded in practice: zero on all seven reference fields at every tested resolution, one edge on the ✗15 fixture at `h = 2/3`, gone by `h = 1/2`. So it is the same "coarse grid does not resolve the surface" regime as ✗15 and ✗17, and the same answer probably applies — refine, or accept it and pin the count |
+| O-19 | **Which direction does the λ-medial-axis filter run — Attali's keep-`r ≥ λ`, or the 3D Skeletons STAR's discard-circumradius-larger-than-λ?** The two surveys state it in opposite directions; one is inverted, or they describe dual constructions. R-030's instrument was insensitive to the discrepancy (M-325 measures `r`, not the filter), but any *build* on the identity picks a direction, and picking the wrong one keeps noise and discards signal. (O-17 and O-18 live in BACKLOG's deliberately-not-in-scope list; numbering is global.) | Obtain the primary source, Chazal & Lieutier `10.1016/j.gmod.2005.01.002` — acquisition #1 in the 2026-08-17 dossier — or derive the direction from the Attali survey's own constructions, which are in the corpus and READ | The Calibre/throat/handhold builds are gated on M-325's measured convergence *and* this definition; it is the last thing standing between the identity and a build ticket |
 
 ### Pre-registered predictions
 
@@ -1539,6 +1596,9 @@ Rules with no incident behind them get ignored. These all have one.
 
 | Rule | Earned from |
 |---|---|
+| **A parameter derived from the fixture must be pinned across the fixtures it compares** | P-36 — the heat time `t = h̄²` was recomputed per mesh, so an 86-vertex displacement shifted the mean edge length and *every* entry of the edited operator moved by the t-shift: the update path read a 2.5×10⁻⁵ residual for the fixture's reason, not its own. M-333's no-op identity check could never see it, because nothing moved there. Pinned, the residual returned to 2×10⁻¹⁶ |
+| **A percentile trim must be checked against the size of the mode it could eat** | P-29's C1 — the central-gap statistic dropped 1% tails from 8,128 edges (81 of them) while a winning wormhole path is at most ~63 edges (0.78%), so the detector trimmed away the exact mode it was registered to find, and the "unimodal" control scored a *higher* gap than the bimodal-expected arm. The winner-mode's minimum size was derivable from the lattice before any run — one input→output path — and never checked against the trim |
+| **A tolerance on a √-amplified quantity must be derived at the amplification's maximum, not at the population's comfortable middle** | P-28's C1 — a `1e-9·G` "float dust" tolerance held at `2.8e-17` in the band interior and lost 50–75% of rows at the band's `u → 1` edge, where `d r/d(radicand) = ρ/(2√(1−u²))` multiplies the same dust into `1e-9`. The amplification that killed the clause is the amplification C2 measures as signal; the tolerance was derived where the function is flat and applied where it is vertical |
 | **A precondition claim needs the sentence from the method's own paper, and "what it requires" is a different question from "what it guarantees"** | ✗20 — *"every ACD method assumes closed, watertight, 2-manifold, self-intersection-free, consistently oriented input"* was two conflations at once. A method that **preprocesses** bad input was read as one that **requires** clean input, when Andrews 2024 names preprocessing as an axis methods differ along; and VisACD's 35% intersecting-hull rate, which describes the hulls **CoACD emits**, was read as a condition on the mesh it is **given**. Two of the four methods audited require nothing at all, and CPD says so in one sentence |
 | **Verify a citation's *claims* and its *problem* separately. Three true claims do not make a method the right one** | ✗21 — A-026 chose CPD as the substrate a plane-cut fracture pipeline cuts, on three claims that all survived verification against the paper: input tolerance, *"guaranteed to enclose the input surface"*, under a third of the collider bytes. The architecture needed a fourth property nobody checked for — a **disjoint partition of the interior** — and CPD has none: Algorithm 1 merges the **face adjacency graph**, its §3.4 says *"the union of all primitives covers the mesh's surface"*, and §3.3 concedes the primitives overlap. **The abstract, which is where the three claims came from, never mentions any of this.** Worse, one of the verified claims was actively disqualifying: *enclosure* is the right guarantee for a collider and the wrong one for a substrate, because a proxy that strictly contains the solid cannot conserve its volume. **This is ✗20's rule one step out** — there it was "requires" vs "guarantees"; here it is "guarantees" vs "what you need" |
 | **Two gates that run the same command are not the same gate if they run different tools. Compare the tool, not the command** | M-304 — `preflight.sh --full` was green on every step and the 0.0.6 release still failed: CI's clippy was 0.1.97 and the local one 0.1.96, and `question_mark` exists in one and not the other. The publish step was skipped and nothing uploaded. The command was byte-identical in both places, which is exactly why nobody looked. `scripts/toolchain_drift.sh` now warns when local `stable` is behind the current release — a warning rather than a failure, because being a patch behind is normal and a gate that cries wolf gets disabled |
@@ -1558,6 +1618,7 @@ Rules with no incident behind them get ignored. These all have one.
 | **A generator that recognises one shape stops counting when the shape changes — and its staleness check cannot see that** | M-277 — `findings_index.sh` matched Part 2's table rows and Part 1's `✗` headings. Measurements became `###` sections at M-255 and **twenty-two of them fell out of the index while `--check` stayed green**, because a staleness check compares the file against the generator and the two agreed. The count read *"249 measured"* against 271 present. **Check a generator against its source's own vocabulary, not against its previous output** — one `grep -c '^### M-'` beside `grep -c '^| M-'` is the whole test, and it is the check that was never written |
 | **A file that records state drifts from the state unless something checks it. Write the check the second time, not the third** | E-113 — the demo shipped at `a0859e8`, the README referenced it, and its row sat in `BACKLOG.md` for four more commits; the header counts drifted from the row counts separately. Both were found by audit, both were caused by editing one file with several scripts in one turn where a later write clobbered an earlier one. The same defect was sitting in `FINDINGS.md` unnoticed: **O-1, O-2 and O-4 were still listed as open questions** after G-002, A-009 and G-003 had all landed and answered them. `scripts/backlog_gate.sh` is the check, and it is mutation-tested against all eight ways the two files can disagree — because a gate that has only ever passed is indistinguishable from one that cannot fail (M-44) |
 | **An instrument that cannot report the failure has not reported the success. Show it producing a non-zero before trusting its zero** | E-208 — the paint-drift readout measured "did the colour at this point change", and the scripted run sprayed one colour, so repainting red over red was numerically identical to paint that never moved. It printed **0.000000 at every step**, which is the answer the ticket wanted, and it would have printed the same on an implementation that smeared. Cycling the palette turned the same instrument sensitive — **27 of 40 sprays register drift, up to 0.886** — and only then does the **0.000000 across both carves** mean anything. This is M-75's rule in a different costume (*"a test that returns the same answer when you invert the thing it is testing is not measuring that thing"*), and the reason it earns its own row is that here the instrument was not inverted, it was **starved**: the input never varied in the dimension being measured |
+| **A wall-clock ratio is not a gate. Gate the count the ratio samples** | ✗24 — `empty_cell_rejection_is_measured_per_field` asserted `speedup > 1.0` on every field under a doc comment that said *"recorded rather than asserted"* and *"not a regression gate"*. It failed the 0.0.7 release on a macOS runner at `gyroid 0.98×`, having passed at `1.10×` here — the **same measurement**, with the sign set by the runner. The fix is not a looser threshold: what rejection can save is bounded by **how many cells it proves empty**, and that is an integer, identical everywhere, **16.8%** on `gyroid` against **80.6–95.1%** on every other field. Find the deterministic quantity the timing is a proxy for and assert *that*; print the timing. Related to M-281 (*a millisecond is a property of the binary*) and its sibling: a **ratio** survives the build, and still does not survive the machine when the true ratio is 1 |
 | A typed error at the call site is louder than an abort — make the invalid state unrepresentable where you can, report it where you can't, and never substitute a default | The no-panic rule, reconciled with "fail loudly": `ValidateConfig` has private fields and one checked constructor, so the validator needs no runtime guard at all |
 | Corpus presence is decided by `catalog_read`, never by `distill_search` | ✗4 — 342 documents readable but unsearchable |
 | **`for_each_reference_field!` looks like a closure and is not. A `return` in its body exits the whole test** | M-199 — the macro takes `\|name, field\|` and **inlines its body once per field as a plain block**, because each field is a different type and no single closure can take all seven. So `if name != "gyroid" { return; }` returned from the *test function* on `sphere`, and the test **passed while running neither control nor the assertion that both had run**. Use `if name == …` instead. The `continue`/`break` uses elsewhere in the tree are all inside genuine inner loops and are fine — a bare one would not compile, which is the only reason this trap is spelt `return` and nothing else. The macro's own doc now says so |
@@ -4348,3 +4409,2969 @@ against an oracle before being believed. The search that replaced them took minu
 making `u₁v₂` and `u₂v₁` unequal as reals even though the original points are collinear. That is
 reachable — it needs coordinates far enough apart that `a − c` is inexact — and would mean the
 false-nonzero mode exists too, at coordinate ranges this fixture does not reach.
+
+
+### ✗24 — "Empty-cell rejection benefits every field, however little"
+
+**Believed because:** the sentence sitting in `empty_cell_rejection_is_measured_per_field` as a code
+comment — *"a cell the surface does not reach exists in every one of them"* — which is **true** and
+does not imply what was inferred from it. Every field does have unreached cells. What decides whether
+rejection pays is not whether such cells exist but **what fraction of the grid they are**, and nobody
+counted.
+
+**Falsified by the 0.0.7 release, on a macOS runner, at `gyroid 0.98×`.** The assertion was
+`speedup > 1.0` per field, and the test's own doc comment said in the same breath *"recorded rather
+than asserted"* and *"not a regression gate"*. The prose was right and the code was the gate. The
+publish step was skipped and nothing uploaded — the second release in this repo stopped by a green
+local suite and a red CI one (M-304 was the first).
+
+**What's true instead, counted rather than timed (M-306).** The rejected-cell share at 17³ is
+**16.8%** on `gyroid` and **80.6–95.1%** on every other field that offers a constant. `gyroid` is
+triply periodic; its surface reaches nearly every cell in any finite box, so there is almost nothing
+to prove empty and the one extra evaluation per cell is close to pure overhead. A 1.10× ratio on the
+Ryzen and 0.98× on a contended runner are the *same measurement*, and which side of 1.0 it lands on is
+set by the runner rather than by the code.
+
+**So this was never a threshold problem.** Loosening `> 1.0` to `> 0.9` would have bought a release
+and kept a gate whose subject is the runner. The gate is now the **rejected count**, which is an
+integer, identical on every machine, and bounds the saving that the ratio can only sample. The ratio
+stays printed.
+
+**Would be shown wrong by:** a field with a low rejected share that nonetheless shows a large speedup,
+which would mean the saving is not bounded by the count and the mechanism is something else.
+
+**The residual, named rather than fixed.** `the_reject_agrees_with_brute_force_and_is_faster` in
+`construct/from_mesh` asserts `fast_ms < brute_ms` and is the last wall-clock gate in the suite. Its
+margin is **2.4×** on this machine in a debug build, against `gyroid`'s 1.10×, and the asymmetry it
+tests is algorithmic (`O(samples × triangles)` against a two-level box reject) rather than a per-cell
+constant. Left as-is with the margin on record; if it ever flakes, the same treatment applies —
+assert the rejected-triangle count, print the ratio.
+
+
+### M-306 — what empty-cell rejection can save is bounded by a count, and that count is a property of the field (✗24)
+
+**M.** `cargo test -p isomesh --lib empty_cell_rejection_is_measured_per_field -- --nocapture`, 17³
+(4,096 cells), `SubgridMarchingTetrahedra` at 16 samples per edge, Ryzen 9 5900X, debug build. The
+rejected count is `cell_is_provably_empty` over every cell — deterministic, and the same integer on
+any machine. The ratio is best-of-three each way in one process.
+
+| field | rejected / 4,096 | share | speedup |
+|---|---|---|---|
+| `thin_plate` | 3,896 | 95.1% | 7.2–7.7× |
+| `torus` | 3,768 | 92.0% | 3.8× |
+| `sphere` | 3,752 | 91.6% | 3.9× |
+| `box_exact` | 3,312 | 80.9% | 2.6× |
+| `csg_difference` | 3,300 | 80.6% | 2.7× |
+| **`gyroid`** | **688** | **16.8%** | **1.1×** |
+
+**The spread is 5.7× in the count and it is the whole story.** `gyroid` is the only field below a
+quarter and the only field whose ratio is near 1; every other field is above four fifths and every
+other ratio is comfortably above 2. F-005's claim — one evaluation deletes the 576-evaluation constant
+for every cell the surface does not reach — **holds exactly as stated and is silent about how many
+such cells there are**, which is the quantity that decides whether the technique is worth switching
+on.
+
+**Rejection moves no triangle on any field**, asserted rather than sampled, and that half is unchanged
+from the original test: it is the only property of rejection that has to hold, and it is the one a
+consumer is entitled to rely on.
+
+**Note the ratio is not monotone in the share at the top end** — `sphere` 91.6% / 3.9× against `torus`
+92.0% / 3.8×, and `box_exact` 80.9% / 2.6× against `csg_difference` 80.6% / 2.7×. Both pairs are
+within the run-to-run spread of each other, so the count separates the *regimes* and does not predict
+the ratio to a decimal. That is exactly why the count is the gate and the ratio is a print.
+
+
+### V-37 — the instrument R-024 needs is published and in this corpus; the question it asks is not
+
+**V.** R-024 is written as *"nobody has established this, and every paper treats the two as
+interchangeable."* Half of that needs narrowing, and the narrowing is worth more than the original
+sentence.
+
+**The instrument exists and has been shipping since 2010.** Wojtan, Thürey, Gross & Turk,
+*Physics-inspired topology changes for thin fluid features* (`10.1145/1778765.1778787`, in corpus as
+`eth-cgl-sim_anim-Woj10`) defines exactly the test R-024 needs, verbatim:
+
+> *"we determine the complexity of a cell edge by counting the number and orientation of its
+> intersections with triangles in the surface mesh and comparing the result with a single line segment
+> (0-sphere). If there are too many components, or if the surface is oriented the wrong way at any of
+> the intersection points, then the edge is complex."*
+
+They call it the **complex edge test**, run it over every edge of the signed-distance grid, and state
+its coverage precisely: it *"is guaranteed to identify any topological flaws that are well-resolved in
+at least two dimensions"*, with complex-face and complex-cell tests above it for thinner defects. The
+2024 multi-material surface-tracking paper (`sig2024_Multi-Material_Mesh-Based_Surface_Tracking…`)
+reuses the same hierarchy — complex edge, complex face, complex cell — so this is a standard
+instrument, not a one-off.
+
+**What they use it for is a different question, and that is the part that leaves R-024 standing.**
+Their mesh is *advected by a velocity field* and the SDF is rebuilt around it; disagreement between
+the two is **expected**, is the thing they are detecting, and is then repaired. Their sentence says so
+directly: *"We detect disagreements between the explicit surface mesh and the fluid grid."* Nobody in
+that line asks whether a mesh **freshly extracted from a field** agrees with the field that produced
+it, per extractor — because in their setting the mesh never was extracted from that field.
+
+**An independent search returned nothing for the question itself** — *does an extracted isosurface
+preserve the connected components of the sublevel set* — across arXiv, OpenAlex, Semantic Scholar and
+CrossRef. The nearest hits are persistent-homology reviews and volume-rendering work, neither of which
+is this.
+
+**So the claim R-024 may make is narrower and still unoccupied:** the *test* is borrowed prior art and
+must be cited as such; what is new is running it as a **correctness audit of extraction itself**,
+across a family of extractors on a shared fixture, and reporting which of them seal and which do not.
+Claiming the instrument would be the third instance of ✗21's family — reading a method's *purpose*
+off its *mechanism*.
+
+**Would be shown wrong by:** a paper that runs an edge-crossing or equivalent audit on a
+freshly-extracted isosurface and reports per-algorithm agreement with the field's own sign. That is
+the exact thing being claimed as absent, and finding it closes R-024's novelty rather than its result.
+
+
+### P-21 — registered for R-024, before the harness was written
+
+**What is being asked.** The crate validates a mesh against *itself* — manifoldness, orientation,
+Euler characteristic, self-intersection — and against the field's *geometry*, in `validate::accuracy`.
+It has never checked the mesh against the field's **partition of space**. Those are different claims:
+a mesh can be closed, manifold, correctly oriented and Hausdorff-close while sealing a passage the
+field leaves open, or opening one it seals.
+
+**The discrete form, and why the probe is a grid edge.** The extractor never sees the field anywhere
+but at the samples, so the air sublevel set *as the extractor could know it* is the 6-connected graph
+on samples with `!is_inside`. Probing along the grid edges keeps both sides on the same lattice and
+keeps the test **local**, which is what lets it run on `gyroid` and `fbm_terrain` — fields whose
+surface leaves the domain, where any global inside/outside test is undefined at the boundary. The
+instrument is Wojtan et al.'s complex-edge test and is cited as theirs (V-37).
+
+> **H.** For every 6-adjacent pair of grid samples, the mesh crosses the segment between them an
+> **odd** number of times when the two samples straddle the surface and an **even** number when they
+> do not — so the air sublevel set's components and the same samples' components under mesh-cut
+> adjacency agree in count and in partition. **Marching Cubes achieves this on all eight reference
+> fields**, because its vertex *is* the root of the interpolant along the very edge being probed. **At
+> least one dual method does not**, because it places its vertex by solve.
+
+**Falsified by** universal agreement — every extractor sealing every field at every resolution, which
+would be a stronger correctness statement than this crate currently makes and would be worth stating
+as one. **And separately, more interestingly, by Marching Cubes disagreeing**: the crossing on a
+sign-changing edge is on the interpolant by construction there, so a failure would locate the defect
+in *triangulation* rather than in *vertex placement*, and would invert the mechanism this hypothesis
+rests on.
+
+**Records** `field`, `extractor`, `samples_per_axis`, `field_air_components`, `mesh_air_components`,
+`unsealed_walls`, `spurious_walls`, `mixed_regions`.
+
+**The degeneracy this has to get right, stated before the numbers arrive.** A Marching Cubes vertex
+lies **exactly on** the probed segment and is shared by every triangle in its fan, so counting
+*triangle* hits would report 4 where the *surface* crosses once, and every sign-changing edge in the
+crate's flagship extractor would read even. Crossings are therefore counted as **distinct points**,
+deduplicated at the crate's own weld tolerance, and the number of raw hits that collapsed is reported
+so the mechanism is visible rather than assumed. A harness that got this wrong would falsify H in the
+loudest possible way while measuring nothing but its own convention — which is M-279's rule, applied
+before the fact for once.
+
+
+### M-307 / P-21 — HELD: the primal family seals every reference field, and all three duals leave the domain boundary open (R-024)
+
+**M.** `cargo bench --bench experiment_p21`, `docs/experiments/p-21.csv`. Eight reference fields ×
+seven extractors × `[17, 25, 33]` = **168 rows, 9,151,296 probes**. Ryzen 9 5900X. The instrument is
+`validate::sealing`; it is Wojtan et al.'s complex-edge test and is cited as theirs (V-37).
+
+**P-21 held in both clauses, and its stated falsifier — universal agreement — did not occur.**
+
+| extractor | sealed | where it fails |
+|---|---|---|
+| `marching_cubes` | **24 / 24** | — |
+| `marching_cubes+decider` | **24 / 24** | — |
+| `marching_tetrahedra` | **24 / 24** | — |
+| `surface_nets` | 21 / 24 | `fbm_terrain`, all three resolutions |
+| `dual_contouring` | 21 / 24 | `fbm_terrain`, all three resolutions |
+| `manifold_dual_contouring` | 21 / 24 | `fbm_terrain`, all three resolutions |
+| `subgrid_marching_tetrahedra` | 18 / 24 | `fbm_terrain` **and** `noise_cavity` |
+
+**The three duals report the identical count** — 92 at 17³, 138 at 25³, 190 at 33³ — and
+`unsealed_on_domain_face` equals `unsealed_walls` in **every one of those nine rows**. Three
+independent implementations agreeing to the unit, all of it on the boundary, is what says the
+mechanism is *one vertex per cell* rather than any particular solve or face rule.
+
+**The mechanism.** A dual emits one quad per sign-changing grid edge and that quad needs all **four**
+cells around the edge. On a face of the sampled domain only one or two exist, so no quad is emitted
+and the wall is left open. A primal method emits per *cell*, meshes every cell it has, and seals the
+same edge. `fbm_terrain` is the only reference field whose surface leaves through the sides, which is
+why it is the only field where this is reachable — `gyroid` is capped and the other six are closed in
+the domain.
+
+**For a chunked world the domain face is the chunk seam**, so this is the measured statement of why a
+dual chunk's collider is not watertight on its own. It is adjacent to M-4 (Surface Nets' pinned
+non-zero `boundary_edges`) and is a different claim: that one is about the mesh's own topology, this
+one is about whether the mesh separates what the field separates.
+
+**The split is not primal versus dual. It is whether the method puts its crossing *on the probed grid
+edge*.** `subgrid_marching_tetrahedra` is primal by family and is the **worst** performer here,
+because it samples along tet edges *inside* the cell and its crossings are nowhere near the grid
+edges. Its `fbm_terrain` failures are mostly **not** on the domain face — 1 of 4, 1 of 3, 0 of 4 — and
+its `noise_cavity` failures are **entirely** interior, 0 of 3, 0 of 3, 0 of 4.
+
+**That interior residue is recorded and is *not* attributed to subgrid MT as a defect.** This harness
+compares against the sign pattern **at the grid corners**, because that is all the other six
+extractors ever see. Subgrid MT deliberately looks between the corners, so where it disagrees it may
+be the more faithful of the two — a sub-cell feature the corner signs cannot represent is exactly what
+it exists to find. Deciding which is right needs a probe of the analytic field along the edge and is
+not this ticket.
+
+**The two degeneracies, and both had to be resolved before any number above means anything.**
+
+1. **A sample exactly on the surface.** `sphere` at 17³ passes through its six axis intercepts, and a
+   primal method places its vertex at `t = a/(a − b)` — so `a = 0` puts it **at the sample**, and its
+   fan then touches all five same-sign probes there. Before the exclusion, all four grid-edge primal
+   methods reported **exactly 30** spurious walls (6 samples × 5 edges) and every dual reported 0. The
+   first reading of this experiment was that Marching Cubes fails and the duals are clean — the exact
+   inverse of the truth, produced entirely by the instrument.
+2. **One rounding away from that, which the exact test misses.** `sphere` at 25³ carries a sample at
+   `−1.11e−16`: solid by `is_inside`, and the surface to within one ulp. `value == 0` does not catch
+   it; the crossing at `t = 1.0` does. **This is A-002i's lesson in a second place** — *"the exact test
+   undercounts the phenomenon"* — and the fix is to detect the degeneracy from the mesh side as well
+   as the field side.
+
+**159,816 of 9,151,296 probes (1.7%) are set aside as undecidable**, and the exclusion is symmetric:
+both graphs lose the same edges, so `field_air_components` and `mesh_air_components` are equal in all
+168 rows including every failing one. The component counts are R-024's own wording and they agree
+everywhere; **it is the edge-level columns that carry the result**, which is itself worth knowing —
+holes at a boundary do not always change a component count.
+
+**Would be shown wrong by:** a dual method that seals `fbm_terrain`'s domain face — which is buildable,
+by emitting a partial quad where the ring is incomplete, and would be a change to the extractors rather
+than to this finding.
+
+
+### M-308 — the family comparison's headline conclusion was overturned by optimising one member of the family, not by a better measurement (R-026)
+
+**M.** `docs/measurements/family.csv`, Ryzen 9 5900X, `f32`, `sphere`, one binary, one run. Read
+against `docs/research/2026-08-13-measured-comparison.md` §4 and against M-45, which that section
+quotes.
+
+**What §4 says, and it is this repo's own published conclusion:**
+
+> *"On Zen 3 there is no crossover at any resolution — Surface Nets is 2.46× behind even at 16³. **So
+> the crossover is a property of one machine's cache behaviour**, and the degradation is a property of
+> the algorithm."*
+
+**Both halves of the observation are now false on that same machine.**
+
+| samples per axis | marching cubes | surface nets | SN / MC |
+|---:|---:|---:|---:|
+| 16³ | 9.24 ns | **8.63** | **0.93×** |
+| 24³ | 8.68 | **8.32** | **0.96×** |
+| 32³ | 8.11 | **7.96** | **0.98×** |
+| 48³ | 7.86 | 8.10 | 1.03× |
+| 64³ | 7.64 | 8.41 | 1.10× |
+| 128³ | 7.56 | 8.78 | 1.16× |
+| 256³ | 7.60 | 9.80 | **1.29×** |
+
+**The crossover exists on Zen 3, at about 40³**, where §4 says it does not exist at any resolution. And
+`SN/MC` at 256³ has gone **5.43× (M-282) → 1.29×**, against the 3.72× M-45 recorded and the 2.65× it
+attributed to the M5.
+
+**Nothing about the machine changed.** A-023 made the dual mesher's loop axis a const-generic parameter
+and A-024 forced the row length odd; together **4.26× on the dual path with byte-identical output**
+(M-285, M-287). The comparison's most-quoted conclusion inverted because **one member of the family got
+optimised**, not because anything was measured better or measured elsewhere.
+
+**So the published claim was never about the algorithms.** *"Surface Nets is slower than Marching
+Cubes"* was a measurement of **one implementation of Surface Nets** at one moment, and it read as a
+statement about the method — including to us, who wrote it. ✗14 was folklore that measurement
+falsified; §4 is measurement that **our own optimisation** falsified, which is the same failure one
+level up.
+
+**What survives, and it is the part worth keeping.** Surface Nets' per-sample cost still *rises* with
+resolution — 7.96 ns at 32³ to 9.80 at 256³, a **23%** rise — while Marching Cubes' falls and then
+flattens, 9.24 → 7.60. That shape is unchanged by the 4.26× and is what M-21 and M-286 identify as a
+cache term. **The shape is the finding; the ratio never was.**
+
+**Scope, stated rather than implied.** `family.csv` is `sphere`, `f32`, one machine. §4's wording is
+*"on every field measured, on both machines"*, and neither half of that is currently re-derivable: the
+eight-field authority is `shootout.csv`, whose timing column the document itself disclaims as noisy,
+and the Apple half is stale and blocked on a quiet machine (M-005). **The honest current statement is
+one field, one scalar, one machine** — which is a weaker claim than the one being retired, and is the
+point.
+
+**Incidental, and it is a large number nobody has quoted.** `subgrid_marching_tetrahedra` runs at
+**1,553–1,704 ns/sample** across the same sweep — **200× Marching Cubes**, and roughly 100× classic
+Marching Tetrahedra. M-98 measured 70× against classic MT at a different sampling resolution; this is
+the same constant seen on the current binary.
+
+**Would be shown wrong by:** a re-run in which the crossover is absent again, which would mean 40³ is
+noise rather than a crossing — the two curves are within 4% of each other from 16³ to 48³, so the
+*location* is soft even though the inversion at 256³ is not.
+
+
+### ✗25 — "Marching Cubes is the only one of the family in the good corner of manifold × intersection-free"
+
+**Believed because:** M-53 measured it, and it is the headline of
+`docs/research/2026-08-13-measured-comparison.md` §1 — *"the algorithm the folklore treats as the crude
+baseline is alone in the good one."* It was a real measurement, faithfully transcribed, and it was
+already wrong when the document quoted it.
+
+**Falsified by the detector it was measured with (R-026).** `99415af`, 2026-08-14 — **one day after the
+document was written** — rewrote `validate::self_intersection`'s straddle test, and its own commit
+message says what that cost: *"A triangle merely **touching** another's plane was being counted as a
+transverse intersection, **which inflated a metric this repo quotes**."* `all_above`/`all_below` became
+one `straddles`, requiring vertices strictly on **both** sides of the other's plane, and the coplanar
+branch moved ahead of it.
+
+**Marching Tetrahedra's `3.405 per 1k` on `csg_difference` was that false positive, and it is the whole
+of M-53's case against MT.** The mechanism fits the method exactly: MT splits each cell into six
+tetrahedra that **share faces**, so tangential triangle-plane contact is not an edge case for it, it is
+the common case. Measured now, and also in the CSV committed at T-011 on 2026-08-15, Marching
+Tetrahedra has **zero** self-intersections on every field at every grid.
+
+**The good corner has three occupants, not one.** Eight fields × two grids, `docs/measurements/shootout.csv`:
+
+| algorithm | non-manifold edges | worst self-int / 1k |
+|---|---:|---:|
+| **marching cubes** | **0** | **0** |
+| **marching cubes + decider** | **0** | **0** |
+| **marching tetrahedra** | **0** | **0** |
+| surface nets | 747 | 0 |
+| dual contouring | 747 | 29.745 (`noise_cavity`) |
+| manifold dual contouring | 90 | 45.232 (`noise_cavity`) |
+| subgrid marching tetrahedra | 446 | 0 |
+
+**Two further things the eighth field changed, neither of which the document carries.** `noise_cavity`
+is the worst field in **every** column for **every** method — it was added at A-002e precisely because
+the other seven cannot reach an interior ambiguity (M-208). And `manifold_dual_contouring` is no longer
+the entry that takes the zero: **90 non-manifold edges**, all of them `noise_cavity`, which is ✗19.
+
+**Self-intersections appear only at 33³ and never at 65³** — all six non-zero rows are the coarse grid,
+for both duals. Refining removes them, which is M-15's mechanism (*any feature thinner than one cell
+forces two sheets through it*) seen in a third place after M-60's falling manifold-split rate.
+
+**The method failure is the retrievability one, and this repo has a rule for it.** The defect was found,
+fixed, and its consequence for a quoted metric was written down — **in a commit message**. M-53 was
+never amended and the research document went on saying it for two days. *"A result only in a commit
+message is not retrievable in six weeks"* is the definition-of-done clause that exists for exactly
+this, and it was applied to the *result* of a ticket and not to the *fallout* of a fix.
+
+**Would be shown wrong by:** a transverse self-intersection in Marching Tetrahedra output that the
+current straddle test misses — which would mean the fix over-corrected and the metric is now deflated
+rather than inflated. The tangential-contact exclusion is the module's stated contract, so that would
+be a contract question rather than a bug.
+
+
+### V-38 — the published AR>4 and sliver figures are not a baseline this crate can be measured against, and one of them is misattributed (T-026)
+
+**V.** Read directly from FlexiCubes (Shen et al., `10.48550/arXiv.2308.05371`), Fig. 15, against
+`docs/research/2026-08-10-meshing-algorithm-catalog-v2.md` §10 and against T-026 as this repo first
+wrote it.
+
+**The misattribution first.** The catalog's table has a row *"Aspect ratio >4 | **MC** 11.46%"* and
+*"Slivers <10° | **MC** 11.82%"*. In the paper those two numbers are on the row labelled **`MC + Reg.`**
+— Marching Cubes with the **equilateral-edge regularisation** loss applied. That is not plain Marching
+Cubes, and the paper's own Fig. 16 exists to show what the regulariser does: *"MC and DMTet lose details
+in the local geometry."*
+
+**The deeper problem, and it is the one that matters.** Every figure in that table comes from a
+**differentiable-rendering optimisation loop** — Source A is 79 Myles shapes under depth + silhouette +
+SDF loss for 1000 iterations; Source B is 75 ThreeDScan shapes under mask + depth + normal loss. The
+mesh is extracted from a **learned** signed distance field that the loop has been bending for a thousand
+steps. This crate meshes **analytic** fields on a uniform grid. A learned SDF's level set is far less
+regular than `sphere`'s, so the triangle-shape statistics are properties of *that field*, not of
+Marching Cubes.
+
+**So T-026's premise as first written is wrong and is corrected here before anything was built on it.**
+It said *"without these two columns this crate's comparison cannot be read beside any of those tables."*
+Matching the **definition** makes the column *readable*; it does not make the **values** comparable, and
+publishing this crate's `sphere` AR>4 next to FlexiCubes' 2.93% would be exactly the
+one-scene-number error this repo has now catalogued five times (M-56, M-60, M-136, ✗14, M-308).
+
+**What is still worth having, unchanged:** AR>4 and min-angle<10° are the two quantities that line of
+work reports, so emitting them in the same definition lets a reader *convert* rather than guess. **The
+comparison T-026 can honestly make is within this crate** — seven extractors on one fixture — which is
+the same shape as every other table in the head-to-head.
+
+**The definition is pinned to a tool rather than to a formula, and that is the lead to follow.**
+FlexiCubes' Fig. 15 names **PyVista** as the measurement tool, which wraps VTK's Verdict library, so the
+definition to match is Verdict's triangle aspect ratio rather than any of the three plausible textbook
+forms (longest edge ÷ inradius, circumradius ÷ inradius, longest edge ÷ shortest altitude). **Confirm it
+from Verdict before implementing** — rule 5, and the whole point of the ticket is that a differently
+computed ratio is an incomparable column.
+
+**Would be shown wrong by:** a plain-Marching-Cubes AR>4 figure in either paper, measured on a
+non-optimised field, which would restore the baseline this entry withdraws.
+
+
+### V-39 — the comparable triangle-quality baseline is Grosso & Zint's, not FlexiCubes', and it comes with a prediction (T-026)
+
+**V.** Read from Grosso & Zint, *A parallel dual marching cubes approach to quad only surface
+reconstruction* (`10.1007/s00371-021-02139-w`, in corpus), §5 and Table 7 — found while looking for the
+Verdict aspect-ratio definition V-38 said to pin.
+
+**The metric is one line and it is cited rather than invented.** *"Quality of triangles is computed
+using the mean ratio metric"*
+
+```
+q_tri = 4√3 · A / Σᵢ lᵢ²
+```
+
+*"where A is the area of the triangle, and lᵢ is the length of their incident edges [13, 33]."* It is
+**1 for equilateral and 0 for degenerate**, so it is a normalised distribution rather than a
+threshold count — no `> 4` cutoff to match, which is exactly the fragility V-38 flagged.
+
+**This baseline is comparable where FlexiCubes' is not**, and the difference is the whole point of
+V-38: Grosso & Zint mesh **uniform grids** of synthetic, CT and MRI volumes with no optimisation loop
+and no learned field, and they report **MC, TMC and DC by name** — three of this crate's seven
+extractors.
+
+| dataset | DMC | DMCS | DC | TMC | **MC** |
+|---|---:|---:|---:|---:|---:|
+| Skull | **0.83** | 0.82 | 0.82 | 0.69 | 0.69 |
+| Body | **0.81** | 0.78 | 0.80 | 0.67 | 0.67 |
+| Skeleton | **0.83** | 0.81 | 0.81 | 0.67 | 0.67 |
+| iWP | 0.84 | 0.82 | **0.86** | 0.65 | 0.65 |
+| gen2 (64³/128³/256³) | **0.87** | 0.82–0.83 | 0.84 | 0.71 | 0.71 |
+
+**The sharpest thing in the table is a column pair, and it is a prediction this crate can test
+directly.** `MC` and `TMC` are **identical to two decimals on every one of the seven rows** —
+0.69/0.69, 0.67/0.67, 0.67/0.67, 0.65/0.65, 0.71/0.71/0.71. The paper gives the mechanism in its own
+words: both *"place their vertices also on the trilinear interpolant but along the voxel edges not
+within the voxel cells."* **Topological correction does not move triangle shape**, because it changes
+which crossings are joined and not where they are. This crate has that exact pair — `marching_cubes`
+and `marching_cubes+decider` — and the shootout already shows them emitting identical vertex and
+triangle counts on most fields.
+
+**A second axis comes free and this crate has never measured it:** *irregular vertices*, valence ≠ 6 for
+a triangle mesh, reported as a percentage. MC sits at **44–60%** across their datasets and DMC at
+**24–54%**.
+
+**`gen2` is the row to compare against**, because it is synthetic rather than scanned and MC scores
+**0.71 at 64³, 128³ and 256³ alike** — a resolution-independent constant, which is what a comparison
+against this crate's analytic fields wants.
+
+**So T-026's metric is decided by evidence rather than taste, and it is not the one the ticket was
+written around.** Mean ratio, from a uniform-grid isosurfacing paper covering three of our extractors,
+beats AR>4 from a differentiable-rendering paper whose values V-38 already withdrew. The Verdict
+definition remains worth having only if someone wants to cross-read the neural line's tables, which
+V-38 says is a conversion aid and not a comparison.
+
+**Would be shown wrong by:** this crate's Marching Cubes measuring a mean ratio far outside 0.65–0.71
+on a smooth analytic field, which would mean the metric is not implementation-independent and the
+baseline is not usable after all — a real possibility, since their MC is somebody else's code and the
+field is not ours.
+
+
+### P-22 — registered for T-026, before the metric was implemented
+
+**What V-38 and V-39 leave.** The ticket was written around FlexiCubes' `AR > 4`, and that baseline is
+withdrawn: those figures come from a differentiable-rendering loop on **learned** fields, and the
+`11.46%` attributed to Marching Cubes in this repo's own catalog is the paper's `MC + Reg.` row (V-38).
+V-39 replaced it with Grosso & Zint's **mean ratio**, from a paper that meshes **uniform grids** and
+reports **MC, TMC and DC by name**:
+
+```
+q = 4√3 · A / Σᵢ lᵢ²        1 for equilateral, 0 for degenerate
+```
+
+**The prediction is theirs, not ours, and that is what makes it worth registering.** Their MC and TMC
+columns agree to two decimals on **all seven rows** — 0.69/0.69, 0.67/0.67, 0.67/0.67, 0.65/0.65, and
+0.71/0.71/0.71 — and they state the mechanism: both *"place their vertices also on the trilinear
+interpolant but along the voxel edges not within the voxel cells."* This crate has that exact pair.
+
+> **H, clause 1.** `marching_cubes` and `marching_cubes+decider` measure the **identical** mean ratio on
+> every reference field, because a face rule changes *which crossings are joined*, not *where they are*.
+>
+> **H, clause 2.** This crate's Marching Cubes lands inside **0.65–0.71** on a smooth analytic field —
+> the band their MC occupies, and their `gen2` figure is resolution-independent at 64³, 128³ and 256³.
+
+**Falsified by** the two Marching Cubes entries differing at all, which would mean the face rule moves
+geometry rather than only connectivity and would contradict the mechanism the paper states for its own
+two columns. **Or** a mean ratio outside 0.65–0.71 on a smooth analytic field, which would mean the
+metric is not implementation-independent and the published baseline cannot be compared against.
+
+**Clause 2 is the one expected to be interesting, and it is registered as a real risk rather than a
+formality.** Their MC is somebody else's code, measured on somebody else's fields — `gen2` is a
+synthetic volume this repo has never seen. **Every cross-source comparison this project has attempted
+has needed an amendment** (✗7, ✗8, M-45's withdrawn cross-machine figure, M-51, M-55). A band borrowed
+from another implementation is exactly that shape again, and registering it *as* the prediction is the
+only way the borrowing gets tested rather than assumed.
+
+**Records** `field`, `extractor`, `samples_per_axis`, `mean_ratio`, `irregular_vertices`,
+`referenced_vertices`, `triangles`.
+
+**Both metrics are recorded, never gated** — the standing `degenerate_triangles` already has, and for
+the same reason: Marching Cubes emits slivers wherever a grid corner sits near zero, and that is the
+algorithm rather than a defect.
+
+**One caveat carried in before the numbers.** *Irregular* means valence ≠ 6, which is their definition
+and is written for **closed** medical volumes. Every boundary vertex on an open field is irregular by
+construction, so `gyroid` and `fbm_terrain` will read high for a reason that has nothing to do with
+triangle quality. The count is reported raw to match their definition, and the caveat belongs on the
+column rather than in a correction later.
+
+
+### M-309 / P-22 — FALSIFIED on both clauses, and the first one fails for a reason sharper than the hypothesis (T-026)
+
+**M.** `cargo bench --bench experiment_p22`, `docs/experiments/p-22.csv`. Eight reference fields × seven
+extractors × `[17, 25, 33]`, Ryzen 9 5900X. Metric: Grosso & Zint's mean ratio
+`q = 4√3·A / Σᵢlᵢ²`, verified in `validate::tests` against closed forms — **exactly 1** for an
+equilateral triangle and **exactly √3/2** for a right isosceles one — before any mesh was measured.
+
+**Clause 1 — "the two Marching Cubes entries measure identically" — FALSIFIED, 9 of 24 pairs differ.
+The 9 are not scattered.**
+
+| field | MC vs MC+decider |
+|---|---|
+| `sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate` | **bit-identical**, all three resolutions |
+| `gyroid` | differs, max **0.0030** |
+| `fbm_terrain` | differs, max **0.0014** |
+| `noise_cavity` | differs, max **0.0292** |
+
+**The mechanism H proposed is right and its conclusion does not follow from it.** The asymptotic decider
+genuinely moves **no vertex** — both entries place the crossing at the root of the interpolant along a
+grid edge, and five of the eight fields come out *bit-identical*, which is that half of H confirmed
+exactly. **Note what bit-identity proves and what it does not**: it says the decider resolved every
+ambiguous face on those fields **the same way the default table does**, which is implied by having no
+ambiguous faces but does not require it. But the rule changes **which triangles
+exist**, and mean ratio is a property of *triangles*, not of *vertices*. Same points, different
+triangulation, different shape statistics. H conflated "does not move geometry" with "does not change
+the mesh", and the five identical fields are what make the distinction visible rather than arguable.
+
+**The published table is reconciled rather than contradicted, and the arithmetic is the reconciliation.**
+Grosso & Zint report MC and TMC agreeing **to two decimals** on all seven rows. `gyroid`'s 0.0030 and
+`fbm_terrain`'s 0.0014 **round away at two decimals**. Only `noise_cavity`'s **0.0292** would show at
+their precision — and that is the field A-002e added *because none of the others produces a cell with an
+interior ambiguity* (M-208). Their datasets are medical scans and a synthetic volume; nothing says any
+of them is as ambiguity-rich as `noise_cavity`. **Two-decimal agreement is evidence of a small
+difference, not of no difference**, and this is the second time in two days that a published agreement
+turned out to be a rounding window (after ✗25's inflated metric).
+
+**Clause 2 — "our Marching Cubes lands inside their 0.65–0.71" — FALSIFIED, 3 of 6 rows outside, all
+above.**
+
+| | 17³ | 25³ | 33³ |
+|---|---:|---:|---:|
+| `sphere` | **0.7785** | 0.6920 | **0.7131** |
+| `torus` | 0.7039 | **0.7510** | 0.6884 |
+
+**And the resolution-independence does not reproduce either.** Their `gen2` is flat at 0.71 across 64³,
+128³ and 256³; `sphere` here goes 0.7785 → 0.6920 → 0.7131, non-monotone. So the borrowed band fails in
+both of the ways P-22 registered as the risk, and this is the sixth cross-source comparison in this
+project to need an amendment.
+
+**What does transfer is the ordering, and only partly.** Their DC (0.82–0.86) beats their MC
+(0.65–0.71) on every dataset. Here, averaged over the three resolutions:
+
+| extractor | `sphere` | `torus` | `box_exact` | `thin_plate` | `gyroid` | `fbm_terrain` | `noise_cavity` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| marching cubes | 0.728 | 0.714 | 0.858 | 0.866 | 0.687 | 0.691 | 0.688 |
+| surface nets | **0.814** | **0.797** | **0.863** | 0.743 | **0.795** | **0.770** | **0.758** |
+| dual contouring | 0.815 | 0.736 | 0.845 | 0.743 | 0.727 | **0.600** | **0.621** |
+| marching tetrahedra | 0.674 | 0.675 | **0.250** | 0.499 | 0.652 | 0.652 | 0.637 |
+
+**Surface Nets beats Marching Cubes on all eight fields. Dual Contouring beats it on the smooth ones and
+*loses* on the rough ones** — 0.600 against 0.691 on `fbm_terrain`, 0.621 against 0.688 on
+`noise_cavity`. The QEF places a vertex to fit planes, and where the field has no feature to fit it
+places it badly; Surface Nets' centroid does not have that failure mode. **The published claim that the
+dual is better is a claim about smooth data.**
+
+**The largest number in the table is the one nobody was looking for.** Marching Tetrahedra measures
+**0.250 on `box_exact`** and 0.322 on `csg_difference` — against Marching Cubes' 0.858 and subgrid
+Marching Tetrahedra's 0.862 on the same field. A 6-tetrahedron decomposition of a cube cuts an
+axis-aligned flat face along tet diagonals, and the triangles that result are needles. **Its accuracy on
+that field is the best of the primal methods** (M-55, `box_exact` 5.103e-2 against Marching Cubes'
+7.217e-2), so this is a case where accuracy and triangle quality point in opposite directions by a
+factor of three.
+
+**Would be shown wrong by:** a field on which the decider changes the mean ratio while changing no
+triangle, which would mean the difference is arithmetic rather than combinatorial and would break the
+mechanism stated above. The five-versus-three split itself is not at risk — it is the measurement.
+
+
+### V-40 — Open SciVis Datasets is HTTP-only, and the publisher's own SHA-512 is what makes that fine (M-006)
+
+**V.** Measured, not assumed. `klacansky.com` resolves (`178.63.98.254`), answers on port 80 with `200`,
+and **refuses the connection on port 443** — `openssl s_client` reports `connect:errno=111`, a refusal
+rather than a timeout or a certificate error. Egress from this machine is not the cause: `github.com`
+and `google.com` both answer `200` over HTTPS in the same run.
+
+**So there is no HTTPS URL to prefer and nothing to fall back from**, which is the one-path rule
+satisfied by the world rather than by a decision.
+
+**The integrity guarantee comes from the data, not the transport, and it is stronger than a
+self-computed hash.** Each dataset page publishes a **SHA-512**. `scripts/fetch_volumes.sh` verifies
+against *those*, and both files matched on the first fetch:
+
+| file | bytes | published SHA-512 verified |
+|---|---:|---|
+| `fuel_64x64x64_uint8.raw` | 262,144 | yes |
+| `bonsai_256x256x256_uint8.raw` | 16,777,216 | yes |
+
+The distinction matters and the script says so: a hash computed from the file it had just downloaded
+would verify nothing at all.
+
+**Two format statements from the site, both load-bearing:** *"All datasets are in little-endian byte
+order"* and *"Dimensions are width x height x depth (e.g., `array[depth][height][width]` in C)"* — so
+**x is fastest**, which is exactly `SampledField`'s documented layout and `Shape3::linearize`'s
+definition. No transpose is needed and none is done.
+
+**No blanket licence exists.** The site asks *"Please, cite individual datasets to support authors"*, and
+each dataset carries its own acknowledgement. That is an attribution request, **not a redistribution
+grant**, which is the concrete reason the volumes are fetched rather than vendored.
+
+
+### M-310 — on real scanned volumes, Marching Cubes lands inside the published quality band that analytic fields put it outside of (M-006)
+
+**M.** `./scripts/fetch_volumes.sh && cargo bench --bench volumes`,
+`docs/measurements/volumes.csv`. Two Open SciVis `uint8` volumes, `fuel` 64³ and `bonsai` 256³, isovalue
+32, one world unit per voxel, Ryzen 9 5900X. Read through `construct::SampledField` as `f = iso − value`,
+since the datasets are densities and this crate's convention is negative inside.
+
+| volume | extractor | ms | triangles | non-manifold edges | mean ratio |
+|---|---|---:|---:|---:|---:|
+| `fuel` | marching cubes | 6.2 | 6,338 | **0** | 0.7006 |
+| `fuel` | surface nets | 6.4 | 6,352 | 8 | 0.7976 |
+| `fuel` | dual contouring | 10.9 | 6,352 | 8 | 0.7228 |
+| `fuel` | manifold dual contouring | 11.5 | 6,352 | **0** | 0.7233 |
+| `bonsai` | marching cubes | 506 | 1,061,042 | **0** | 0.6888 |
+| `bonsai` | marching cubes + decider | 601 | 1,061,438 | **0** | 0.6884 |
+| `bonsai` | marching tetrahedra | 903 | 3,271,492 | **0** | 0.6375 |
+| `bonsai` | surface nets | 608 | 1,057,710 | 1,776 | **0.7957** |
+| `bonsai` | dual contouring | 1,518 | 1,057,710 | 1,776 | 0.6649 |
+| `bonsai` | manifold dual contouring | 1,619 | 1,057,710 | **85** | 0.6650 |
+| `bonsai` | subgrid marching tetrahedra | — | refused | — | — |
+
+**This partially rescues P-22's clause 2, and locates why it failed.** M-309 recorded our Marching Cubes
+*outside* Grosso & Zint's 0.65–0.71 on analytic fields — 0.7785, 0.7131, 0.7510. On **real scanned
+volumes it is inside**: `bonsai` **0.6888** and `fuel` **0.7006**. Their band was measured on CT and
+simulation data, and it reproduces on CT and simulation data. **The band is a property of the input class,
+not of the implementation**, and M-309's falsification was measuring the wrong kind of field — which is
+this project's own recurring lesson (M-56, M-60, M-136, ✗14) arriving for the eighth time, now about a
+*borrowed* number rather than one of ours.
+
+**Their Dual Contouring does not reproduce, and the asymmetry is unexplained.** Grosso & Zint put DC at
+0.82–0.86 against their MC's 0.65–0.71; here DC measures **0.6649** on `bonsai`, *below* Marching Cubes.
+The entry that lands near their DC figure is **Surface Nets, at 0.7957**. This is M-309's finding on real
+data — the QEF places a vertex to fit planes and does badly where there is no feature to fit — and CT
+data is rough everywhere. Whether their "DC" is this DC is not established.
+
+**Marching Cubes emits zero non-manifold edges on a million-triangle CT surface**, as do the decider
+variant and Marching Tetrahedra. ✗25's three-occupant good corner holds on real data.
+
+**The manifold construction earns its keep here in a way the reference fields never showed.** Manifold
+Dual Contouring takes `bonsai` from **1,776 non-manifold edges to 85** — a 95% reduction — where on the
+analytic fields it was 0 extra vertices on five of seven (M-60). Real scanned data is the input that
+construction was designed for, and this is the first measurement in this repo on that input.
+
+**The decider fires on real CT data and not on `fuel`.** `bonsai` gives 533,221 vertices plain against
+533,270 with the decider, and 1,061,042 triangles against 1,061,438; `fuel` is identical on both. That is
+M-309's five-versus-three split in a third place: a face rule changes the mesh exactly where ambiguous
+faces occur, and quantised CT data has them.
+
+**⚠ NO LONGER TRUE — A-028 fixed it (M-317). `bonsai` meshes: 1,572,901 vertices, 3,138,925 triangles, 232 s, with 483 tetrahedra declined around 33 singular points and reported rather than fatal.** What follows is the original observation.
+
+**Subgrid Marching Tetrahedra refuses `bonsai`** — *"vertex 1 has no normal to derive: a zero gradient,
+or no incident area"* — while meshing `fuel` fine at 3.9 s. The error names two possible causes and this
+measurement does not separate them. **⚠ SEPARATED AND HALF-FIXED at A-028 (M-316): it is the
+zero-gradient branch, the cause is not the plateau guessed below but a *local extremum* — steep and
+exactly symmetric, because `u8` quantisation put both neighbours on the same integer — and
+`SampledField` now supplies an exact trilinear gradient instead of inheriting a central difference. The
+refusal moved to `vertex 3` on a second, one-sided mechanism. Two figures in the table below moved with
+it: Dual Contouring on `bonsai` is now 529,383 vertices / 1,770 non-manifold edges / 0.6443, and on
+`fuel` 0.6876. Manifold Dual Contouring's 85 and Marching Cubes' 0 are unchanged.** What is measured: **0.3% of `bonsai`'s voxels within 8 of the
+isovalue sit on a 6-neighbour plateau, against 0.0% of `fuel`'s**, which is consistent with the
+zero-gradient branch and does not establish it. Settling it needs the failing cell printed, which is a
+ticket rather than a line here. **The refusal is the crate behaving correctly** — one path, fail loudly —
+and it also means this extractor is unusable on the input class M-006 exists to test.
+
+**Would be shown wrong by:** a third real volume on which Marching Cubes lands outside 0.65–0.71, which
+would make the two agreements here a coincidence of two files rather than a property of scanned data.
+
+
+### V-41 — R-022's hypothesis is two problems with different costs, and a voxel lattice is the easy case for one of them (R-022)
+
+**V.** Read from Durfee, Dhulipala, Kulkarni, Peng, Sawlani & Sun, *Parallel Batch-Dynamic Graphs*
+(`10.48550/arXiv.1908.01956`, in corpus) §Connectivity, and Acar, Anderson, Blelloch, Dhulipala &
+Westrick, *Parallel Batch-dynamic Trees via Change Propagation* (`10.48550/arXiv.2002.05129`, the paper
+R-022 names).
+
+**The asymmetry is stated plainly by Durfee et al. and R-022 does not carry it:**
+
+> *"An **insert** can cause at most two trees in `F` to be joined to form a single tree."*
+>
+> *"A **delete** may split a tree into two, but if there exists another edge between these two resulting
+> trees, they should then be connected together to ensure that the forest is maximal."*
+
+An insertion is a union. A deletion needs a **replacement-edge search**, and that is what the whole
+sketching apparatus in that paper exists for — *"Handling a set of edge deletions, however, is more
+complex."*
+
+**Mapped onto what a game actually does, that split is the whole ticket:**
+
+| player action | air sublevel set | structure needed |
+|---|---|---|
+| **digging** — removing solid | air nodes and edges **appear** | insertion only; a union-find is enough |
+| **filling** — adding solid | air nodes and edges **vanish** | deletion; replacement search, the expensive half |
+
+R-022's H — *"batched dynamic connectivity sustains a brush-sized edit under 1 ms at 128³"* — does not
+say which, and the two are not the same measurement. **Digging is the common case and is the cheap one**;
+`validate::sealing` already builds exactly the union-find that answers it. Filling is where the
+polylogarithmic machinery is actually needed, and where the constant factors live.
+
+**And the lattice is a good fit for the structure, which is not obvious.** The 2025 follow-up
+(`10.48550/arXiv.2506.16477`) records the standing awkwardness of RC-trees: *"RC-trees, however, only
+directly support trees with constant vertex degree. Prior work has had to apply ad-hoc techniques to
+simulate trees with higher degree."* A 6-connected voxel air graph **is** bounded degree, so the
+restriction that forces ad-hoc work on social and web graphs costs nothing here — and it makes the
+bounds **deterministic** rather than randomized, per that paper's Theorem 1.1. **R-022's claim that
+nobody has run these structures on a voxel lattice is a claim about a case that suits them better than
+the ones they were benchmarked on.**
+
+**The bound to measure against, from the paper R-022 names:** a batch of `k` edge insertions or deletions
+in `O(k log(1 + n/k))` work and `O(log² n)` span. At `n = 128³ ≈ 2.1M` and a brush-sized `k ≈ 10³`, the
+`log(1 + n/k)` factor is about **11**, so the predicted work is ~`10⁴` units — which is what makes the
+1 ms target plausible and is the number the harness should be read against rather than a bare stopwatch.
+
+**Consequence for the ticket:** it needs splitting before measuring, and the pre-registration must name
+which half it predicts. Measuring digging and reporting it as "dynamic connectivity" would be the
+easy half wearing the hard half's name.
+
+
+### P-23 — registered for R-022a, before the harness was written
+
+**What V-41 leaves.** R-022 asked whether batched dynamic connectivity sustains a brush-sized edit under
+1 ms at 128³, and V-41 found that is two questions. Digging removes solid, so air samples **appear** —
+insertion only, and Durfee et al.'s *"an insert can cause at most two trees in `F` to be joined"* means a
+union-find is the entire structure. Filling makes them vanish, needs a replacement-edge search, and is
+R-022b.
+
+**This registers the easy half, and says so.** Measuring digging and reporting it as *dynamic
+connectivity* would be the easy half wearing the hard half's name.
+
+> **H.** At a fixed brush radius, the number of union operations an incremental insertion-only update
+> performs is **constant as the lattice grows** through 33³, 65³ and 129³ — so unions per newly-air
+> sample stays inside a narrow band and **never exceeds 6**, the degree of the lattice — while a full
+> rebuild's union count grows as `n³`.
+
+**Falsified by** the incremental union count growing with `n³` at fixed brush size. That is R-022's own
+stated falsifier, and it would close the whole direction rather than only this half. **And separately**
+by unions per dirty sample exceeding **6**, which would mean the harness is visiting something other than
+the six incident lattice edges and is measuring its own traversal rather than the repair.
+
+**The second falsifier is the one that earns its place**, and it is E-208's rule in a new costume: the
+first arm can only fail if the *world* is a certain way, while the second fails if the *instrument* is.
+A harness that walked a 26-neighbourhood, or re-visited each edge from both ends, would produce a
+beautifully flat curve against `n³` and would still be wrong — flat is the answer H wants, so a flat
+reading is exactly where a bug would hide.
+
+**Counted, not timed.** Union calls are integers and identical on every machine, so the gate is a count
+and the wall-clock is printed beside it — ✗24's rule applied *before* the fact for once, rather than
+after a release failed on it.
+
+**Records** `samples_per_axis`, `dirty_samples`, `incremental_unions`, `rebuild_unions`,
+`unions_per_dirty`.
+
+**The number to read the result against is the paper's, not a stopwatch.** Acar et al. bound a batch of
+`k` updates by `O(k log(1 + n/k))` work; at `n = 128³ ≈ 2.1M` and a brush-sized `k ≈ 10³` the logarithmic
+factor is about **11**. H is the stronger claim that for *insertions alone* the factor is a constant
+under 6 rather than logarithmic — which is what a union-find buys and what a general dynamic-trees
+structure has to pay for because it also supports the deletions R-022b needs.
+
+
+### M-311 / P-23 — HELD on both clauses that were about the world, and the clause about the *comparison* was wrong (R-022a)
+
+**M.** `cargo bench --bench experiment_p23`, `docs/experiments/p-23.csv`. A solid lattice at 33³, 65³
+and 129³; one spherical brush of radius 6, **identical at every resolution**; `isomesh::connectivity::Air`.
+Ryzen 9 5900X. Union calls are integers, so every count here is machine-independent.
+
+| n | samples scanned | dirty | incremental unions | rebuild unions | per dirty | incr ms | rebuild ms |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 33 | 35,937 | 925 | **4,872** | 2,436 | 5.27 | 0.028 | 0.2 |
+| 65 | 274,625 | 925 | **4,872** | 2,436 | 5.27 | 0.032 | 1.3 |
+| 129 | 2,146,689 | 925 | **4,872** | 2,436 | 5.27 | 0.051 | 5.3 |
+
+**Clause 1 held exactly.** The lattice grows **59.7×** and the incremental union count does not move by
+one: 4,872 three times. Repair after a dig is a function of the edit, and of nothing else.
+
+**Clause 2 held.** 5.27 unions per newly-air sample, under the lattice degree of 6 at every resolution.
+The instrument is visiting the six incident edges and not a wider neighbourhood, which is what that
+falsifier existed to check — and it is the arm that would have caught a bug hiding behind the flat
+curve clause 1 wants.
+
+**Clause 3 — mine, and false.** P-23 says *"while a full rebuild's union count grows as `n³`."* It does
+not. It is **flat at 2,436**, because a union-find build unions only **air-air** edges and the air volume
+*is* the brush, which is fixed. The comparison the hypothesis proposed does not exist, and one minute of
+arithmetic before registering would have found that.
+
+**What actually grows is the scan, and that is the real result.** A rebuild must visit **2,146,689
+samples to discover that 925 changed** — 2,321 samples touched per sample that mattered. The union work
+was never the `n³` term; the *search for what to union* is. In wall-clock: **0.051 ms against 5.3 ms at
+129³, a 104× advantage**, and the gap widens with the lattice while the incremental side stays flat.
+
+**The 2× between the columns is the two traversals, and it is not a defect.** `build` visits three
+forward edges per air sample so each lattice edge is seen once; `dig` visits all six, because a
+newly-air sample's backward neighbours are not in the dirty set and will never visit it. 4,872 = 2 ×
+2,436 exactly.
+
+**What this does and does not establish.** It establishes the **digging** half — R-022's *"most digging
+does not alter connectivity"* is now measured rather than asserted, and edit-proportional repair is
+real in the insertion direction. It establishes nothing about **filling**, which needs deletion and a
+replacement-edge search (V-41), and is R-022b. **A union-find has no deletion at any price**, so the
+structure that answers this half cannot be extended to the other one — R-022b is a different data
+structure, not a longer version of this.
+
+**Would be shown wrong by:** a brush that straddles two existing components at a scale where the
+union-find's path compression matters — the counts here are all from a single connected cavity in solid
+rock, and `merges` is therefore close to `unions`. A field with many small pre-existing cavities would
+exercise the find path harder without changing the union count, which is a different measurement rather
+than a contradiction.
+
+
+**AMENDED 2026-08-17 (R-022b, ✗26). The claim survives; the instrument does not.** Adding `fill` forced
+the union-find to go **flat** — every sample pointing directly at its component id — because a
+path-compressed forest cannot absorb deletion (✗26). Under flat labels there is no such thing as a
+"union call": the quantity this row reports **stops naming anything that exists**, and `Repair.unions`
+and `Repair.merges` become relabel counts.
+
+**The finding itself is unharmed.** This row's claim is that repair is proportional to the edit and not
+to the lattice, and its benchmark digs a brush into a **solid** lattice — one component growing, so the
+flat-label cost is one write per newly-air sample and the edit-proportionality is exactly as measured.
+What changed is the unit, from union calls to relabels.
+
+**What is genuinely new, and is not measured here.** Flat labels give `dig` a worst case this row never
+exercised: breaking through into a **large** cave relabels the smaller side. Union by size bounds that
+to `log₂ n` relabels per voxel amortised — but amortised is the wrong statistic for the frame the
+breakthrough lands on (M-124), which is why repair became budgeted rather than synchronous. **This row
+does not measure a breakthrough and should not be read as bounding one.**
+
+The row is kept rather than restated because the gap between what was measured and what the quantity
+turned out to be is itself the data. A silently vanished metric is the thing that gets rediscovered in
+four months.
+
+### V-42 — R-023's quantity does not exist as stated, and the one that does is a decision margin rather than a persistence (R-023)
+
+**V.** Read from this crate's own `marching_cubes::interior`, against Edelsbrunner, Letscher &
+Zomorodian (`10.1007/s00454-002-2885-2`, in corpus) and Kissi, Pont, Levine & Tierny
+(`10.48550/arXiv.2407.12399`, in corpus, the paper R-023 names). Done **before** registering, which is
+the P-23 lesson applied.
+
+**The good news first, and it is better than the ticket hoped.** `Interior::test()` is not a table
+lookup. It is a **sign test on a value**: `Joined` iff `saddle(t) > 0` for some `t` in the sweep. So a
+thresholded version is not a replacement for the decider — it is a **one-parameter family containing
+it**, with `ε = 0` recovering the published test *exactly*. R-023's H says a persistence threshold
+*"reproduces MC33's topology on the fields where MC33 is agreed correct"*; on this construction that
+clause is **true by construction rather than by measurement**.
+
+**The bad news, and it is the arithmetic the ticket did not do.** `saddle(t) = numerator(t) /
+denominator(t)`, and `pole()` exists precisely because the denominator **has a root in `(0, 1)`** on
+some configurations. So `max_t saddle(t)` is **unbounded** — `+∞` — on exactly the cells Custodio's
+correction is about, which are exactly the cells R-023 exists to resolve. **The naive margin does not
+exist where it is needed.** This crate's own doc comment says why: *"as the sweep approaches `pole` the
+saddle runs off to infinity and returns from the other side. A point that leaves `[0, 1]²` has left the
+face, which is why the value there can change sign without the numerator doing anything."*
+
+**What is bounded and meaningful is the body-saddle value of the trilinear interpolant.** `F(s)` at an
+interior body saddle is a genuine **critical value**, has the field's units, and is the value at which
+this cell's topology changes as the isovalue sweeps — which is the quantity a filtration is about.
+`BodySaddles::of` already locates `s` and reports which saddles are interior; only a trilinear evaluator
+is missing, and that is eight terms.
+
+**Now the honest scoping the ticket demanded, and it is a narrowing.** Persistence pairs a **creator**
+with a **destroyer**, both critical points, and reports the lifetime between them. `|F(s)|` pairs a
+critical value with the **isovalue**, which is not a critical point. It is therefore **not a persistence
+pair** and calling it persistence without qualification would overclaim — the third such overclaim this
+phase has caught before it shipped, after V-38 and V-39.
+
+**What it is instead:** the **decision margin** — how far the isovalue would have to move for the
+interior ambiguity to flip. It has the shape of a persistence (a function-value difference at a topology
+change) and inherits the reason persistence is worth having (stability under perturbation), and it is a
+distance-to-a-critical-value rather than a critical-pair lifetime. **That is exactly the claim to make,
+and R-023's own instruction was to claim exactly what is true**: *"This does not remove the modelling
+choice — it relocates it."* It relocates it into a margin, not into a persistence.
+
+**Consequence for the ticket, and it survives intact.** Everything R-023 wants — a computable scalar, a
+tunable threshold, a stability argument, retiring a disputed 730-entry table in favour of one knob — is
+available from `F(s)`. What changes is the name and one line of the pitch.
+
+**Would be shown wrong by:** a bounded reformulation of `max_t saddle(t)` that stays finite through the
+pole — restricting `t` to where `saddle_position(t)` lies inside `[0, 1]²` is the obvious candidate and
+was not pursued, because the body-saddle value is simpler and is already a critical value.
+
+
+### P-24 — registered for R-023, before the harness was written
+
+**What V-42 leaves.** R-023 proposed thresholding a tunnel's *persistence*. That quantity does not exist
+as stated — `max_t saddle(t)` is unbounded through the pole, on exactly the cells the ticket is about —
+and the quantity that does exist is the **body-saddle value** `F(s)`, a genuine critical value of the
+trilinear interpolant. It is a **decision margin**, not a persistence pair, and V-42 says why the
+distinction is worth keeping.
+
+**The claim is structural, and deliberately carries no tuned constant.** `Interior::test()` is
+`saddle(t) > 0` for some `t`. If `F(s)` is the quantity that test is a sign of, the two must agree
+wherever Chernyaev's construction is exact — and Custodio's whole correction is that it is **not** exact
+when the sweep's denominator has a root inside `(0, 1)`, because the tracked saddle has left the face.
+
+> **H.** `sign(F(s))` agrees with `Interior::test()` on **every** ambiguous cell whose sweep has **no
+> pole in `(0, 1)`**, and **every** disagreement between them has a pole inside the sweep.
+
+**Falsified by** a disagreement on a cell with **no** pole. Chernyaev's quadratic is exact there, so a
+difference would mean the body-saddle value is not what the interior test is a sign of, and the
+reframing collapses rather than needing a tolerance. **There is no percentage band to hide in**, which
+is the point: after M-309's clause-2 band failed for being pointed at the wrong input class, a
+structural claim is worth more than a tuned one.
+
+**And separately falsified by universal agreement**, including on the poled cells. That would mean
+Custodio's correction is unreachable on this crate's fields and the census cannot discriminate — a null
+that indicts the **fixture** rather than the hypothesis, and would send this to constructed cells the
+way A-021 and M-294 went. Registering that arm is E-208's rule: an instrument that cannot report the
+interesting case has not reported its absence either.
+
+**Records** `field`, `samples_per_axis`, `ambiguous_cells`, `agreements`, `disagreements`,
+`disagreements_with_pole`, `disagreements_without_pole`.
+
+**What holding buys, stated so it cannot inflate later.** Not "persistence resolves Marching Cubes
+ambiguity". It buys: **the interior decider is the `ε = 0` member of a one-parameter family**, the
+parameter is a margin in the field's own units, and a caller who wants tunnels below a size suppressed
+gets a knob instead of a fork. A-002b, A-002i and A-020b are *not* retired by that on its own — they are
+about which topology to emit, and this is about how confidently the cell was classified. **The ticket's
+"retires three tickets" is the thing most likely to be overclaimed here**, and it is not what H says.
+
+
+### M-312 / P-24 — FALSIFIED before it ran, on arithmetic; and the margin that replaces it is bounded by half the field's scale (R-023)
+
+**M.** Two measurements. `cargo test -p isomesh --lib -- the_interpolant_is_zero_at_every_body_saddle`
+and `cargo bench --bench interior_margin`, `docs/measurements/interior_margin.csv`. Ryzen 9 5900X, and
+every number here is a count or a ratio of field values, so none of it is machine-dependent.
+
+**P-24 is dead and it never reached a fixture.** It registered `sign(F(s))` at a body saddle as the
+decision margin for the interior ambiguity. **`F` is zero at every body saddle by construction** — 2.3e-15
+worst case over the interior saddles of 200,000 random cells — so the registered quantity is `sign(0)`.
+`BodySaddles` says so in its own doc comment (*"the zero level set is assumed"*) and
+`BodySaddles::coefficients` solves its quadratic *"at the zero level set"*: these are points where the
+**level set is singular**, not where `∇F = 0`. A critical point of `F` has a critical *value*; a singular
+point of `F = 0` has value zero.
+
+**This is the second clause in this phase registered without checking its arithmetic**, after P-23's
+clause 3, and the second time the check would have taken a minute. The rule earned at P-23 was stated and
+then not followed, which is worth more than the rule was: **a rule that has been written down once has
+not been applied once.** The invariant is now a committed test rather than a hazard, and the test's own
+doc says which registration it killed.
+
+**What replaces it is structural rather than hypothesised.** `SweptFaces::margin()` returns the largest
+saddle value the sweep reaches over the candidate points `test()` already walks, and **`test()` is now
+literally `margin() > 0`** — it calls it. So *"the interior decider is the `ε = 0` member of a
+one-parameter family"* is true by construction and cannot drift, which is the strongest form R-023's
+first clause could take and needs no census at all.
+
+**The open question was whether that parameter means anything, and it does.** `saddle(t)` is a ratio
+whose denominator vanishes at the pole, so the margin had no *a priori* bound — and a threshold on an
+unbounded quantity measures the pole rather than the tunnel. Measured over 400,000 random cells per
+population, corner values in `[-1, 1]`:
+
+| population | ambiguous cells | joined | poled | max \|margin\| | over scale | over **half** scale | \|margin\| < 1e-6 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| continuous | 6,348 | 5,608 | 3,150 | 0.4338 | **0** | **0** | 0 |
+| quantum 1/255 | 6,366 | 5,605 | 3,154 | 0.4333 | **0** | **0** | 1 |
+| quantum 1/16 | 6,377 | 5,432 | 3,184 | 0.4356 | **0** | **0** | 27 |
+| quantum 1/4 | 5,994 | 4,267 | 3,040 | 0.4355 | **0** | **0** | 371 |
+
+**Never above half the corner scale, in 25,085 ambiguous cells, and never infinite.** The mechanism is
+that ambiguity itself supplies the bound: on an ambiguous face one diagonal is strictly negative and the
+other is not, so the denominator's four terms **add rather than cancel**, and AM-GM on the numerator
+gives `|saddle| ≤ max|corner| / 2`. Observed maximum 0.436 against that 0.5. **The pole is not exotic** —
+it is present on **half** the ambiguous sweeps, 3,150 of 6,348 — and the margin stays bounded through it,
+which is the result that makes a threshold in the field's own units meaningful and portable.
+
+**Near-degenerate cells are a quantisation phenomenon, which is the third sighting of that pattern.**
+Margins under `1e-6` go **0 → 1 → 27 → 371** as the quantum coarsens from continuous to `1/4`. A
+threshold has almost nothing to act on in continuous data and something real to act on in quantised
+data, exactly as M-220 and M-232 found for singular faces, and exactly where M-310's real `u8` volumes
+live.
+
+**What this does not establish, stated because the ticket invites the overclaim.** Nothing here says a
+threshold reproduces MC33's topology, retires A-002b, A-002i or A-020b, or resolves any ambiguity. It
+says the decider is the sign of a bounded scalar, and that the scalar is bounded by half the field's
+scale on the configurations it is defined for. R-023's remaining half — what a non-zero `ε` does to the
+emitted topology, and whether the differences land only where published algorithms disagree — is
+unmeasured and is a hypothesis that can now be registered against a quantity known to exist.
+
+**Would be shown wrong by:** an ambiguous sweep whose margin exceeds half the corner scale, which would
+break the AM-GM reading and mean the bound is empirical rather than structural.
+
+
+### M-313 — R-023's hypothesis is falsified: a margin threshold acts *away* from where the published algorithms disagree (R-023)
+
+**M.** `cargo bench --bench interior_margin`, `docs/measurements/interior_margin.csv` and
+`docs/measurements/interior_margin_epsilon.csv`. 400,000 random cells per population; the disagreement
+set is `SweptFaces::test() != chernyaev_numerator_test()`, which **is** the set on which the corrected
+and uncorrected published constructions differ.
+
+**R-023's H, verbatim:** *"a persistence threshold reproduces MC33's topology on the fields where MC33
+is agreed correct, and differs only on cells where the published algorithms disagree with each other."*
+The second clause is **false**, and not marginally.
+
+| ε (relative to corner scale) | flipped by the threshold | disagreeing | **both** | expected if independent |
+|---:|---:|---:|---:|---:|
+| `1e-1` | 1,818 | 1,005 | **156** | 287.8 |
+| `1e-2` | 81 | 1,005 | **2** | 12.8 |
+| `1e-3` | 3 | 1,005 | **0** | 0.5 |
+| `1e-4` | 0 | 1,005 | 0 | 0.0 |
+
+**The overlap is smaller than chance at every ε** — 0.54×, 0.16×, 0 against independence. A threshold
+does not act *on* the disagreement set; it acts **away** from it. H predicted the two sets would
+coincide; they are anti-correlated.
+
+**The mechanism is geometric and makes the anti-correlation obvious in hindsight.** A **small margin** is
+a *near-tangency*: the swept saddle barely crosses zero, so the interior decision is nearly a coin
+toss. A **disagreement** is a *pole* phenomenon: the sweep's denominator vanishes, the saddle position
+leaves the face, and Chernyaev's numerator-only test reads a value at a point that is no longer on the
+surface. Those are different conditions — and a poled sweep's margin is set by the large excursion near
+the pole, which pushes it **away** from zero rather than toward it. Measured directly: the largest
+margin on a disagreeing sweep is **0.406**, against a maximum of 0.436 over all sweeps. **Disagreeing
+cells have among the largest margins there are.**
+
+**Disagreement is common, which is the other thing worth recording.** 1,005 of 6,348 ambiguous sweeps —
+**16%** — and 1,342 of 5,994 at quantum `1/4`, **22%**. Custodio reports the misread *"once in 10,000
+random 5×5×5 fields"*; that is a rate over **fields**, and this is the rate over the **configurations
+that can exhibit it at all**. The two differ by three orders of magnitude and must not be confused,
+which this crate's own `how_often_the_correction_changes_the_answer` already warned about and is now
+quantified over random cells rather than a magnitude grid.
+
+**So R-023 is closed by measurement rather than by effort, and the phase's own note applies:** *"Do not
+treat a null as a wasted ticket."* What survives is real and shipped — `SweptFaces::margin()`, the
+interior decider being the `ε = 0` member of a one-parameter family **by construction**, and the bound
+`|margin| ≤ max|corner|/2` (M-312). What dies is the reason the ticket gave for wanting it: thresholding
+this scalar is **not** a route to resolving the cells the published algorithms fight over, and cannot
+retire A-002b, A-002i or A-020b. Those cells are decided by the *pole*, and the margin is largest
+exactly there.
+
+**What the margin is still good for**, stated so the surviving claim is not inflated: suppressing
+tunnels whose interior decision is numerically marginal — a knob for a game that would rather have a
+closed cell than a coin toss. **371 of 5,994 cells at quantum `1/4` have a margin under `1e-6`**, against
+**0** in continuous data, so that knob has something to act on exactly where quantised input lives
+(M-220, M-232, M-310).
+
+**Would be shown wrong by:** a field-driven census — these are random corner tuples, and the eight
+reference fields might populate the joint distribution differently. The anti-correlation is strong
+enough at three ε that a reversal seems unlikely, and the mechanism does not depend on the population.
+
+
+### V-43 — R-020's "unobtainable" prior art has been in the corpus since the day before the ticket was written, and it narrows the novelty claim (R-020)
+
+**V.** R-020 flags its own biggest risk: *"the closest prior art — Acar's own Dynamic Well-Spaced Point
+Sets (`10.1145/1810959.1811011`) and Kinetic Mesh Refinement in 2D (`10.1145/1998196.1998254`) — is
+**unobtainable through the pipeline** and does output-sensitive incremental meshing. Read before
+claiming novelty."*
+
+**Both are obtainable and both are already read into the pipeline.** Downloaded **2026-08-13**,
+converted, and embedded **2026-08-15** with 25 and 23 chunks — the phase spec that calls them
+unobtainable is dated **2026-08-16**. A **third** copy is there too: `10.1016/j.comgeo.2012.11.007` is
+the 2013 *Computational Geometry* journal version of the first paper, independently in the corpus. This
+is V-29's incident in a second place — *"recorded as `PAYWALL` and in fact indexed in home-still since
+2026-08-10"* — and the rule it earned is unchanged: **check the corpus before recording a source as
+unavailable.**
+
+**What they actually prove, which is more than the ticket allowed for:**
+
+| | Dynamic Well-Spaced Point Sets | Kinetic Mesh Refinement in 2D |
+|---|---|---|
+| update cost | `O(log Δ)` per insert/delete | `O(log Δ)` per certificate failure **and** per insert/delete |
+| optimality | **proved time-optimal**, `Ω(log Δ)` lower bound; **size-optimal** output | events `O(n² log³ Δ)`, *"optimal up to a polylogarithmic factor"* |
+| self-adjusting | keyword | keyword, and stated: *"inspired by recent advances on self-adjusting computation"* |
+
+`Δ` is the **geometric spread** — diameter over closest-pair distance.
+
+**So "self-adjusting computation applied to meshing" is occupied territory, by the author R-020 proposes
+to build on.** The novelty claim cannot be *"the first incremental meshing bound"*. What is genuinely
+unoccupied is narrower and survives: **their input is a point set whose points move, appear or vanish,
+and their output is a quality mesh of the domain.** R-020's input is a **scalar field on a fixed
+lattice** whose *values* change, and its output is an **isosurface** — a codimension-one object whose
+combinatorics are decided by sign changes, not by Voronoi cells. Those are different problems and the
+transfer is not mechanical.
+
+**And their lower bound does not bind R-020, for a reason worth stating before anyone reconciles it
+wrongly.** `Ω(log Δ)` is proved by exhibiting inputs where an update *"require[s] `Ω(log Δ)` **Steiner
+points** to be inserted to the output"*. A fixed sampling lattice inserts **no Steiner points** — the
+sampling is given and does not adapt — so the mechanism that forces their lower bound is absent, and
+R-020's `O(|edit|)` with no logarithm is not in tension with it. **This crate already has one measured
+instance of exactly that**: M-311's connectivity repair is `O(|edit|)` on a lattice with no log factor,
+because a union-find is `α(n)` and the lattice never grows a vertex.
+
+**On a lattice `log Δ` is `log n`, not a constant** — diameter `≈ n√3·h` over closest pair `h` — so had
+the bound bound, it would cost a factor of about 11 at 128³. That is the arithmetic, done here rather
+than left as a reassurance.
+
+**What R-020 may claim after this**: the first incremental bound for **isosurface extraction from a
+scalar field**. What it may not: priority over self-adjusting computation in meshing, an unqualified
+"first proved incremental bound", or novelty for change propagation as a technique.
+
+**Would be shown wrong by:** a paper applying self-adjusting computation or change propagation to a
+*scalar-field* isosurface specifically, which is the exact gap this narrows to and which the ticket's own
+five-database sweep reports as empty.
+
+
+### M-314 — the computation after a local edit is edit-proportional; the *output buffer* throws that away, and the culprit is a counter (R-020)
+
+**M.** `cargo bench --bench edit_trace`, `docs/measurements/edit_trace.csv`. A sphere sampled at 33³,
+65³ and 129³; one spherical brush of radius 5 carved at its equator, **identical at every resolution**;
+Marching Cubes. Every column is a count.
+
+**No `P-` id, and that is deliberate.** This phase registered two clauses whose arithmetic died on
+contact (P-23 clause 3, P-24 entirely) and got one right by measuring first (M-313). This measured
+first. R-020's H — *"the recorded trace changes proportionally to the number of cells touched, not to
+grid size"* — was written in the phase spec before any of this ran, so it is a prediction in prose; it
+was never in `experiment.rs`, so it has no compile-time guarantee and should be read as the weaker
+thing it is.
+
+| n | cells | dirty cells | case changed | vertices | **buffer moved** | **geometric moved** | first moved |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 33 | 32,768 | **792** | 432 | 1,758 | 1,348 (77%) | **330** | 414 |
+| 65 | 262,144 | **792** | 412 | 6,918 | 4,257 (62%) | **322** | 2,609 |
+| 129 | 2,097,152 | **792** | 500 | 27,822 | 15,706 (56%) | **346** | 12,257 |
+
+**The computation side holds, and holds exactly.** The lattice grows **64×** — 32,768 cells to 2,097,152
+— and the dirty set does not move by one: **792 cells** at every resolution, from 515 changed samples.
+That is comfortably inside the `8k = 4,120` bound arithmetic gives, since each sample is a corner of at
+most eight cells. Cells whose **case index** actually changed stay at 412–500 throughout. **R-020's
+hypothesis is confirmed on this half.**
+
+**The output side is not edit-proportional and the gap grows with the grid.** Vertices that genuinely
+appeared or vanished — compared as a *set of positions*, not by index — are **330, 322, 346**: flat,
+edit-proportional, and about the size of the dirty set. Vertices whose **buffer slot** changed are
+**1,348, 4,257, 15,706**: growing, and **56–77% of the entire buffer**. The ratio between them goes
+**4.1× → 13.2× → 45.4×**, tracking the vertex count, which is `O(n²)` for a surface.
+
+**So more than half the output is rewritten for an edit that touches 0.038% of the cells**, and the
+cause is identified rather than inferred: `first moved` is **12,257** of 27,822 at 129³, and essentially
+everything from there on differs. **Vertices are appended in scan order and indices name buffer
+positions**, so a cell emitting a different *number* of triangles shifts every index after it. A
+sequential counter is the classic instability in Acar's sense, and the field's locality does not protect
+against it.
+
+**The control is what makes both numbers mean anything (E-208).** An index-wise diff cannot tell *the
+surface moved* from *the buffer was reshuffled*, and it reports the same large number either way. The
+set-difference column separates them, and it is the column that turns this from "re-meshing is
+expensive" into "**re-meshing is cheap and the encoding is expensive**".
+
+**What this says R-020 can claim, with V-43's narrowing already applied.** The dependency structure of
+Marching Cubes *is* stable under a local field edit — measured, at three grid sizes, with the dirty set
+constant. What is not stable is the crate's **output encoding**, and that is a fixable property of the
+implementation rather than of the algorithm: the crate already names vertices stably *internally* — the
+edge cache is keyed on `(lower sample, axis)` — and then discards that naming when packing the buffer.
+
+**Would be shown wrong by:** an edit that changes the case of cells far from the brush, which would
+break the 792 constant. The sphere is smooth and the brush is compact; a field with long-range structure
+through one cell — a thin sheet, `noise_cavity` — is the case that could differ, and was not run.
+
+
+### M-315 — R-025's 20% is above the ceiling on *any* vertex placement, measured before a placement rule was written (R-025)
+
+**M.** `cargo bench --bench placement_ceiling`, `docs/measurements/placement_ceiling.csv`. The two
+smooth reference fields that publish an exact distance — `sphere` and `torus` — at 17³/33³/65³/129³,
+Marching Cubes and Dual Contouring. Distances are **closed form** for both surfaces, so nothing here
+depends on a projection converging.
+
+**No `P-` id.** R-025 was not registered, and this is why: the run exists to check its arithmetic
+*first*. Third time this phase, after M-313 and M-314, and against two registrations that died on
+contact when the check was skipped.
+
+**The method.** The reported Hausdorff is the worst mesh sample, and the harness samples **vertices and
+triangle centroids**, so it is `max(vertex, centroid)`. Project every vertex exactly onto the true
+surface and the vertex term goes to zero, leaving the centroid term recomputed on perfect vertices.
+**That residue is the floor no placement rule can go below**, because a flat triangle inscribed in a
+curved surface deviates at its interior whatever its corners do.
+
+**The ceiling is 1.5% to 21.5% across 16 rows, median 12.3%, and exactly one row reaches 20%.**
+
+| | sphere 17³/33³/65³/129³ | torus 17³/33³/65³/129³ |
+|---|---|---|
+| dual contouring | 9.2, 17.4, 10.7, 12.3 % | 12.2, 16.8, **1.5**, 8.0 % |
+| marching cubes | **21.5**, 14.5, 13.8, 9.0 % | 16.0, 12.1, 12.3, 5.7 % |
+
+**R-025 predicts *">20% better Hausdorff on smooth fields"*. That is above the ceiling in 15 of 16
+measurements**, and the one exception is the coarsest grid of the pair. The hypothesis is falsified by
+arithmetic, before implementation — and **not** for the reason the ticket anticipated. It expected
+Aamari & Levrard's minimax bound to bite, i.e. curvature estimation too noisy at game resolutions.
+Something more basic is true: **there is not 20% of placement error to win.**
+
+**A structural fact fell out, and it is crisper than the ceiling.** Which term *is* the Hausdorff:
+
+- **Dual Contouring: the vertex term, in 8 of 8 rows.** Its accuracy is **placement-limited**.
+- **Marching Cubes: the centroid term, in 8 of 8 rows.** Its accuracy is **tessellation-limited**.
+
+So curvature-aware placement is aimed at Dual Contouring and cannot help Marching Cubes at all —
+which the ticket does not distinguish, and which halves the target before the ceiling is even applied.
+
+**And the QEF is already trading in the direction a placement rule would want to.** Dual Contouring's
+*centroid* error is **better than the floor** — better than it would be with vertices placed perfectly
+on the surface — at 7 of 8 rows, by **2.9–3.6×** on `sphere` and 1.2–1.5× on `torus`. The QEF does not
+try to put a vertex on the surface; it minimises distance to the tangent planes, and that produces
+**better-centred facets at the cost of worse-placed vertices**. Pushing vertices onto the surface would
+make the triangles fit *worse*.
+
+**One limit, stated rather than discovered later.** This measures the **mesh → field** direction only.
+It reproduces `docs/measurements/shootout.csv` exactly wherever that direction dominates — Dual
+Contouring on both fields, Marching Cubes on `sphere`, matching to every published digit — and comes out
+5% under on `torus` + Marching Cubes, where the symmetric metric's field → mesh half is larger.
+Placement is a mesh → field property, so the ceiling is unaffected; the absolute numbers for that one
+row are a slight underestimate.
+
+**Would be shown wrong by:** a smooth field where the vertex term dominates *and* exceeds the centroid
+term by more than 25%, which would leave room a placement rule could take. Neither of the two fields
+that publish an exact distance is such a field, and `gyroid` — the third R-025 names — publishes none,
+so this crate cannot currently produce that counterexample even if it exists.
+
+
+### V-44 — R-021's caveat is contradicted by the paper R-021 is built on, and the cheap half is already delivered (R-021)
+
+**V.** Read from Agarwal, Arge, Mølhave, Revsbæk & Yang, *Maintaining Contour Trees of Dynamic Terrains*
+(`10.48550/arXiv.1406.4005`, in corpus), §1.1–1.2, against R-021's own text.
+
+**What the ticket says:** *"Edelsbrunner's 3-manifold Reeb maintenance is `O(n)` per certificate failure,
+asymptotically no better than rebuilding"*, and *"the two 3D results the question hinges on — Tarasov &
+Vyalyi 1998 and Safa & Wang 2014 — are **both unobtainable**."*
+
+**What the paper says, in its related-work paragraph:**
+
+> *"…of time varying piecewise linear 2-manifolds. **This algorithm handles certificate failures in
+> `O(log(n))` time**, however, they need to process a much larger number of certificate failures since a
+> certificate fails each time any two vertices of `M` lie on the same contour. **Their algorithm also
+> works for simple 3-manifolds where the Reeb Graph is a contour tree.**"*
+
+**Both halves of the caveat are in trouble.** A prior algorithm is `O(log n)` per certificate failure,
+not `O(n)`; and it **already covers simple 3-manifolds**. Its weakness is not the per-event cost the
+ticket names — it is the **event count**, because certificates fail whenever any two vertices share a
+contour rather than only on adjacent-vertex swaps. **That is a different objection with a different
+remedy**, and it is the one the 2014 paper's contribution is aimed at.
+
+**One thing not resolved, and stated rather than glossed.** The quoted sentence is a related-work
+paragraph and does not name its subject inside the chunk read, so whether it describes the Edelsbrunner
+result the ticket attributes the `O(n)` to cannot be pinned from here. What is certain is that **the
+paper R-021 uses as its reframe asserts a prior `O(log n)`-per-failure algorithm that extends to
+3-manifolds**, and that is incompatible with *"asymptotically no better than rebuilding"* however the
+attribution resolves.
+
+**The 2-manifold restriction on the 2014 paper itself is confirmed**, which is the half of the caveat
+that holds: its abstract is explicit that `h : ℝ² → ℝ` and `M` is a triangulation of `ℝ²`.
+
+**Tarasov & Vyalyi is findable.** `10.1145/276884.276892`, *"Construction of contour trees in 3D in
+`O(n log n)` steps"*, 1998, 60 citations — via CrossRef, with no open download link, so *paywalled* is
+the accurate word rather than *unobtainable*. Note also what its title says: it is **construction**, not
+maintenance, so it is weaker support for a maintenance claim than the ticket implies.
+
+**And the scoping point that matters more than any of this.** R-022 called itself *"the cheap half of
+R-021"*, and **that half is delivered and measured**: M-311 has connectivity repair on a lattice at
+`O(|edit|)` with no logarithm, 792 dirty cells constant across a 64× lattice. R-022's own framing is
+that the questions a game asks — *is this sealed, did I break through, is this a chokepoint* — are
+**single-threshold**. A contour tree answers **all** thresholds, which is strictly more, and **nothing
+in this phase establishes a consumer that needs it.**
+
+**Together with M-314** — the extractor's dependency trace is *already* edit-proportional and the
+bottleneck is the output encoding (R-027) — the marginal value of contour-tree maintenance for this
+crate is unestablished rather than small. **R-021 is not blocked on evidence about the algorithm; it is
+blocked on a consumer**, and that is a different and more honest reason than the one it carries.
+
+**Would be shown wrong by:** a game mechanic in this project's own backlog that needs the topology of
+*more than one* threshold at once. None is written down.
+
+
+### M-316 — a central difference is identically zero at a local extremum, and quantised data manufactures them (A-028)
+
+**M.** `cargo bench --bench a028_diagnose` on `bonsai` (Open SciVis, `uint8`, 256³, iso 32), plus the
+full suite. The subgrid extractor's refusal of that volume (M-310) is diagnosed and **half of it is
+fixed**.
+
+**Which branch fired is decided by the call site, not by the message.** `Error::DegenerateNormal` reads
+*"a zero gradient, or no incident area"* and is raised from two places with different causes —
+`normals.rs`, where a vertex has no incident triangle area, and `subgrid/extract.rs:548`, where
+`vec3::length(sdf.gradient(p))` is not positive. Only the subgrid extractor refuses `bonsai`, so it is
+unambiguously **the zero-gradient branch**. The message obscured what the code already determined.
+
+**The cause is not a plateau, and that is the interesting part.** M-310 guessed plateaus, on 0.3% of
+near-isovalue voxels sitting on a 6-neighbour plateau. The three failing corners are **steep**:
+
+| corner | axis | neighbour / value / neighbour | slopes |
+|---|---|---|---|
+| `[24, 19, 35]` | x | 1.0 / **−1.0** / 1.0 | −2 / +2 |
+| | y | 18.0 / **−1.0** / 18.0 | **−19 / +19** |
+| | z | 0.0 / **−1.0** / 0.0 | −1 / +1 |
+
+Every failing corner is a **local extremum in all three axes**, and a central difference is identically
+zero at a local extremum *however steep the field is around it*. The field there is not flat — it is
+**symmetric**, and it is exactly symmetric because `u8` quantisation put both neighbours on the same
+integer. **Steep and symmetric is a sharper failure than flat**, and it is the one an eight-corner
+analytic form cannot have.
+
+**The fix is a bug fix rather than a workaround: `SampledField` had a closed-form gradient and did not
+provide one.** It implemented `sample` only, so it inherited `Sdf::gradient`'s central difference — the
+very substitution `sdf.rs`'s own doc comment warns about for `&S` forwarding, *"six times the cost,
+`O(h²)` instead of exact, and nothing anywhere would fail"*. It now returns the exact trilinear
+gradient, checked against a central difference **inside** cells to `1e-6` on a random field, and the
+`18 / −1 / 18` shape is a committed fixture.
+
+**Counted properly, against the denominator that matters.** The extractor evaluates a gradient at a
+corner only where the surface passes **exactly through** it, which `corners_on_surface` selects. On
+`bonsai`: **16,284 of 529,508 surface-cell corners have value exactly zero** — **3%**, because `u8` data
+with an integer isovalue lands *on* the isosurface constantly, and 16,284 is not an edge case. **33 of
+those 16,284 also have a zero gradient**, so the isosurface passes through a **critical point of the
+field** and the surface is singular there. Over all surface-cell corners, 1,071 of 529,508 have a zero
+gradient; the 33 are the subset the extractor actually asks about.
+
+**That reframes what is left.** At a point that is both on the surface and critical, **there is no
+normal** — not a missing one, an absent one. The extractor is right to refuse; what is in question is
+only whether **33 singular points should refuse a 16 MB volume**, which is a granularity decision rather
+than a correctness one.
+
+**It moved the failure and did not remove it: `vertex 1` → `vertex 3`.** A second mechanism, distinct
+and now characterised: **at a cell corner `frac = (0, 0, 0)`, so the analytic gradient reduces to the
+three *forward* differences alone** — `c₁₀₀ − c₀₀₀`, `c₀₁₀ − c₀₀₀`, `c₀₀₁ − c₀₀₀` — and is zero whenever
+those three neighbours match the corner. On quantised data that is common, and it is not a plateau
+either: the `+`-side cell is **not uniform** at all three residual failures. **The subgrid extractor asks
+for a gradient at a cell corner**, where the interpolant's gradient is one-sided by construction, and
+that is where A-028 now sits.
+
+**What changed downstream, recorded because M-310's numbers move.** Dual Contouring uses gradients in its
+QEF, so an exact gradient changes its output on real volumes: on `bonsai`, **529,488 → 529,383**
+vertices, **1,776 → 1,770** non-manifold edges, mean ratio **0.6649 → 0.6443**; on `fuel`, mean ratio
+**0.7228 → 0.6876**. **M-310's headline is unaffected** — Manifold Dual Contouring still takes `bonsai`
+from 1,770 to **85**, and Marching Cubes still emits **0** non-manifold edges on a million-triangle CT
+surface.
+
+**All 688 lib tests pass, golden hashes included**, which is the check that this touched nothing on the
+reference-field path: those fields carry their own analytic gradients and never used the default.
+
+**Would be shown wrong by:** a failing corner whose three forward neighbours differ from it, which would
+mean the residual zero has a third cause and the one-sided reading is incomplete.
+
+
+### M-317 — the volume meshes: 483 tetrahedra declined around 33 singular points, reported rather than fatal (A-028)
+
+**M.** `./scripts/fetch_volumes.sh && cargo bench --bench a028_diagnose`, plus `cargo bench --bench
+volumes`. Ryzen 9 5900X. A-028's acceptance, answered.
+
+**`bonsai` meshes.** 232.3 s, **1,572,901 vertices, 3,138,925 triangles**, 879 non-manifold edges, mean
+ratio 0.6770. It previously produced nothing at all.
+
+**What was declined, and the split is not decoration:**
+
+| | |
+|---|---|
+| tetrahedra skipped | **483** |
+| of those, `Degenerate` (gradient exactly zero) | **475** |
+| of those, `IllConditioned` (non-zero, below the floor) | **8** |
+| sites at a cell corner the surface passes exactly through | **475** of 483 |
+
+**The 8 would have been invisible inside a single count.** They are a *precision* problem — a normal
+exists and its direction is dominated by rounding — where the 475 are a *topology* one, where no normal
+exists at all. Different remedies, and folding them together would have let one hide inside the other.
+Note that 475 is also the on-surface-corner count; **this run did not cross-tabulate the two**, so their
+equality is a coincidence of totals until someone checks it.
+
+**483 tetrahedra is 33 places, not 483.** The scan finds **33 distinct corners** that are both on the
+surface and critical, and a grid corner is incident to at most 8 cells × 6 tetrahedra = 48; 483 / 33 =
+**14.6** tetrahedra per corner. So the mesh has **33 small clusters of holes**, not 483 scattered ones —
+which is what makes them repairable, and is visible only because the report carries positions.
+
+**The design, and the reason each part is there.** Sites carry **positions**: a count can stay at 483
+while the sites move, so a count alone is not a regression test, and a caller repairing the mesh needs
+to know where. The floor for `IllConditioned` is relative to the **tetrahedron's own slope** — its
+corner-value spread over the cell size — because an absolute floor on a gradient means a different thing
+at every field magnitude and grid spacing, the same reasoning `ValidateConfig`'s thresholds use.
+**Nothing is substituted**: a wider stencil returns the gradient of a *smoothed* field, which is a
+different field, and at a saddle there may be no correct normal at all.
+
+**The guidance that means most callers never reach any of this.** Integer samples against an **integer**
+isovalue land exactly on the surface constantly — 3% of `bonsai`'s surface-cell corners (M-316) — and a
+corner the surface passes through is where this extractor asks for a normal at a grid point. **Contour
+at a half-offset isovalue** (`127.5`, not `127`) and no sample can sit on the isosurface at all, because
+a half-integer is unattainable by integer data. It does not remove ill-conditioning and the critical
+points are still in the field; it removes the *exact* zero that fires. Standard practice in volume
+rendering, now in the extractor's docs with a test.
+
+**A regression the pinned counts caught, and it is the reason they are pinned.** Splitting emission into
+resolve-then-emit moved `shared.insert` into the second pass, so two tetrahedron edges meeting at an
+on-surface corner stopped collapsing to one vertex (A-014h). The zero-area sliver between them then
+stopped looking degenerate and **got emitted** — the index buffer M-185 says this crate's own validator
+calls invalid. It surfaced as the orphan count going **46 → 0**, and a falling defect count reads as an
+improvement. Without M-203's pinned 46 it would have shipped. Fixed by resolving the within-tetrahedron
+repeat before anything reaches the sink.
+
+**Two cross-checks that the instrument is measuring what it claims.** `fuel`'s output is **byte-identical
+to before** — 9,517 vertices, 18,946 triangles, 8 non-manifold edges, 0.6622 — so the change is a no-op
+on data that already worked. And 232.3 s against Marching Cubes' 0.49 s on the same volume is **471×**,
+against M-308's ~200× on `sphere`; the constant is larger on real data, which is worth knowing before
+anyone plans to use this extractor on a scan.
+
+**Would be shown wrong by:** a volume where the skipped tetrahedra are *not* clustered — many distinct
+singular corners rather than a few — which would make the holes scattered and much harder to repair, and
+would change the advice this entry gives.
+
+
+### M-318 — a grid-edge naming would close the whole edit-proportionality gap, and the obstacle is not the encoding (R-027)
+
+**M.** `cargo bench --bench edit_trace`, `docs/measurements/edit_trace.csv`. The counterfactual computed
+from the value arrays alone, with no API changed and no extractor involved — **measure the ceiling
+before pricing the break**, which is the order that closed R-025 and P-24 cheaply.
+
+**The counterfactual, and why it is not circular.** A Marching Cubes vertex lives on a grid edge, and
+`(lower sample, axis)` names that edge globally — the crate already keys its edge cache that way and
+discards the name when packing. Under such a naming an entry changes only when its edge's crossing
+**appears, vanishes, or moves**, and a crossing moves only when one of the edge's two samples does. So
+the column counts *edges*. It is deliberately **not** keyed on position: position-keying makes the
+answer equal `geometric_moved` by construction and would measure nothing.
+
+| n | dirty cells | vertices | buffer moved | geometric moved | **keyed** |
+|---:|---:|---:|---:|---:|---:|
+| 33 | 792 | 1,758 | 1,348 | 330 | **318** |
+| 65 | 792 | 6,918 | 4,257 | 322 | **310** |
+| 129 | 792 | 27,822 | 15,706 | 346 | **346** |
+
+**Flat, and equal to the true geometric change.** 318 / 310 / 346 against 330 / 322 / 346 — the small
+gap is a definitional one, since a vertex that *moves* counts twice in the set difference (vanished plus
+appeared) and once as an edge. At 129³ they are identical, so nothing merely moved there.
+
+**So the break would buy the whole gap: 15,706 → 346 at 129³, a 45× reduction, and flat in `n` where the
+packed buffer grows with the `O(n²)` vertex count.** M-314's split — computation edit-proportional,
+output not — has no residue once the naming changes. There is nothing else in the way.
+
+**But the encoding is not the hard part, and this is the thing to know before scoping.** Three shapes,
+and only the third works:
+
+- **Stable *order*** — emit in grid-edge order rather than cell-scan order. **Does not help.** A
+  crossing appearing still shifts every index after it; the churn is `O(n²)` again.
+- **Index *is* the edge id**, with holes. Stable, and **230× the memory**: 3·129³ ≈ 6.4 M slots for
+  27,822 vertices.
+- **A persistent edge → slot map**, allocating on first use, never reusing, compacted occasionally.
+  This is the one an incremental engine actually runs — and it is **state carried across extractions**,
+  which is a larger change than the index encoding. `extract_into` is currently a pure function of its
+  inputs, and this makes it not one.
+
+**So R-027 is an architecture question wearing an encoding question's clothes**, and X-005's 294 call
+sites are the *smaller* half of its cost. The measurement says the prize is real and undiminished; it
+does not say the shape is cheap.
+
+**Would be shown wrong by:** a field whose edits change crossings far from the dirty set — the keyed
+column is flat here because a brush is compact, and a field with long-range coupling through one cell
+would break that. `noise_cavity` is the candidate and was not run.
+
+
+### M-319 — filling disconnects the air region about one time in six, so R-022b's cheap escape does not exist (R-022b)
+
+**M.** `cargo bench --bench fill_disconnect`, `docs/measurements/fill_disconnect.csv`. `noise_cavity`
+sampled at 33³/49³/65³ — the reference field with real cave structure, which is why it exists (M-208) —
+then 200 spherical brush fills of radius 4 at random positions, with the air component count **rebuilt**
+after each rather than maintained. Rebuilding is the point: a maintained count cannot be used to judge
+whether maintenance is needed.
+
+**The question this was built to answer.** V-41 split R-022, and M-311 settled the digging half at
+`O(|edit|)`. Filling deletes, and a deletion may split a component and then needs a **replacement-edge
+search** — the expensive half. But that machinery is only earned if deletions **actually disconnect
+things**. R-022's own framing is that *"most digging does not alter connectivity"*; if filling were the
+same, the ticket would collapse from *implement dynamic connectivity* to *detect the rare split and
+recompute*, which is a much smaller thing.
+
+| n | air samples | fills | changed | split | emptied | changed | **air left** |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 33 | 30,120 | 200 | 82 | 49 | 33 | 41.0% | 29.3% |
+| 49 | 97,830 | 200 | 38 | 32 | 6 | 19.0% | 67.2% |
+| 65 | 227,567 | 200 | 32 | 27 | 5 | **16.0%** | **84.5%** |
+
+**Read the 65³ row and discount the others, for a reason the table makes visible rather than hides.**
+The fills accumulate, so a run that consumes most of the domain is measuring a vanishing field rather
+than a steady one: 33³ has **29.3%** of its air left at the end and its 41% is largely the domain being
+eaten. 65³ ends with **84.5%** and is the least confounded.
+
+**So about one fill in six changes connectivity, and the cheap escape does not exist.** A
+detect-and-recompute design would rebuild once every six edits at `O(n³)` — which is precisely the cost
+R-022 exists to avoid, and at 65³ that is 275,000 samples scanned to repair a brush of a few hundred.
+**This validates R-022b rather than closing it**, which is a different outcome from R-023 and R-025 and
+worth saying plainly: three exploratory measurements in this phase killed their tickets, and this one
+does not.
+
+**Two structures in the change, not one.** Splits outnumber emptyings 27:5 at 65³, but both happen: a
+fill can **sever** a component in two, or **consume** a small pocket entirely. A deletion structure has
+to handle both, and the second is the easy one — a component that vanishes needs no replacement edge.
+
+**The rate is a property of the brush-to-feature ratio, not a constant.** Radius 4 in a 65³ domain is a
+large brush — about 6% of the domain per axis — and a smaller one would sever less often. **16% is not
+universal**; what is established is that the rate is *tens of percent* rather than the fraction of a
+percent that would justify recomputing.
+
+**Would be shown wrong by:** a fill sequence on a field with fewer, larger caves, where a brush is small
+relative to a passage and severs almost nothing. `noise_cavity` is deliberately near its own feature
+size, which is the adversarial end; a game's caves are usually wider than its brush.
+
+### M-320 — the median split sheds **one voxel**, so the replacement search the literature is built around is answering a question this lattice does not ask (R-022b)
+
+**M.** `cargo bench --bench replacement_search`, `docs/measurements/replacement_search.csv`. Same field,
+same brush, same seed and same 200 fills as M-319, so the two tables are the same run seen two ways. The
+spanning forest is rebuilt by BFS **before** each fill and the component labelling rebuilt **after** it —
+M-319's discipline, for M-319's reason: a structure that maintained either could not be evidence about
+whether maintaining it is worthwhile.
+
+**Two clauses, and only the first had a prediction.** M-319 established that R-022b is real. It did not
+say which deletion structure the lattice needs, and two numbers from the literature decide that.
+
+| n | air | edges deleted | tree edges | **free** | splits | min side | **median side** | max side |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 33 | 30,120 | 64,327 | 24,980 | 61.2% | 72 | 1 | **1** | 19 |
+| 49 | 97,830 | 105,184 | 38,025 | 63.8% | 33 | 1 | **1** | 47 |
+| 65 | 227,567 | 119,179 | 41,966 | **64.8%** | 29 | 1 | **1** | 120 |
+
+**Clause 1 held, with the deviation explained by the same arithmetic that predicted it.** Deleting a
+*non-tree* edge cannot change connectivity, and HDT separates the cases in `O(1)` from a hash table —
+`10.48550/arXiv.2411.11781` names this as why HDT stays practical *"on dense graphs where most of the
+deletions target non-tree edges"*. For a 6-connected lattice `|E| = 3n²(n-1)` against a forest of about
+`|V| = n³`, predicting `1 - n/(3(n-1))` — 65.6%, 66.0%, 66.1%. Measured **61.2 → 63.8 → 64.8**: below,
+and **rising toward it**. The gap is the air region's own surface, where every voxel touching solid is
+missing that edge and so has degree below 6; as the lattice grows the region's surface-to-volume ratio
+falls and the measurement climbs toward the closed-form value. So about **two thirds of the deletion
+work is free**, and that is a constant factor of 3 rather than an asymptotic win.
+
+**Clause 2 was deliberately left unpredicted, and it is the one that resizes the ticket.** D-Tree finds a
+replacement edge by running BFS **on the smaller component of the split**, with *"no theoretical
+guarantees"* and good measured behaviour (`10.48550/arXiv.2509.14433`, describing [13]). Its cost is
+therefore exactly the size of the smaller side. **That size is 1 at the median, at every resolution.**
+The largest observed anywhere is 120 voxels against 227,567 air samples — **0.05% of the domain**.
+
+**The mechanism is the brush's shape, not the field's.** A sphere advancing into a cave mostly strands
+single fringe voxels — voxels whose only surviving neighbours were themselves inside the brush — rather
+than severing a passage cleanly in two. The split is real and the search is real; what is absent is the
+*large* smaller side that HDT's levelled scheme exists to amortise.
+
+**So the structure R-022b needs is not HDT.** The `O(log n)` levels, the pushing of non-replacement edges
+down a level, the whole amortisation argument, all exist to bound a search whose cost can otherwise be a
+constant fraction of the graph. On this lattice it is one voxel at the median. What that leaves is the
+much older technique HDT also uses: **alternating BFS outward from the two endpoints of the deleted tree
+edge, stopping when either side exhausts**, which costs `O(smaller side)` without needing to know in
+advance which side is smaller. No levels, no edge demotion, no amortisation scheme.
+
+**The split counts here and in M-319 differ, and that is a different denominator rather than a
+disagreement.** M-319 counted *fills whose component count changed*; this counts *split events* — pre-fill
+components that map to two or more post-fill components. One fill can split twice, and a split coinciding
+with a pocket vanishing leaves the net count unmoved. Hence 72 against 49 at 33³, where the air is most
+fragmented, and 29 against 27 at 65³, where it is barely different.
+
+**Do not read a growth law off the maxima.** 19 → 47 → 120 is an extreme-value statistic over 29–72
+samples and more fills would find larger ones. The **median** is the robust column and it is flat at 1.
+
+**Would be shown wrong by:** a field whose caves are wide relative to the brush, where a fill can sever a
+passage mid-span and shed half a component. `noise_cavity` at radius 4 is the adversarial end for
+*frequency* (M-319) and may well be the friendly end for *size* — a brush comparable to the passage width
+consumes a junction whole instead of cutting across it. Measuring one wide-cave field would settle it.
+
+### P-25 — registered for R-022b, before the structure was written
+
+**Pre-registration.** `crates/isomesh/src/experiment.rs`, id `P-25`. Recorded here and compiled into the
+crate **before** the harness exists, which is the only thing that makes the result falsifiable rather
+than narrated.
+
+**H.** Repairing the air sublevel set's connectivity after a brush **fill** costs work proportional to
+the **shed volume** — the air samples that leave their component — and not to the surviving component,
+nor to the lattice. At a fixed brush radius the voxels the replacement search visits stays **flat** as
+the lattice grows through 33³, 49³ and 65³, while a rebuild's visit count grows as `n³`.
+
+**Two mechanisms, and both are already measured rather than hoped for.**
+
+**A union-find can absorb deletion.** This module's own docs say it cannot — *"a union-find cannot do
+deletions at any price"* — and that is right about the general operation and wrong about the one needed
+here. A parent pointer only has to reach the correct **root**; a filled sample sitting mid-tree is never
+queried, because `connected` gates on `air` before it walks. So a fill does not have to rebuild a
+component: it has to **re-root the shed pieces** and leave the surviving side untouched. The pieces are
+what get re-rooted, and the pieces are small.
+
+**And M-320 measured how small.** The smaller side of a split is **1 voxel at the median** and 120 at the
+observed maximum, against 227,567 air samples. That is what makes the levelled HDT scheme — `O(log n)`
+levels, non-replacement edges demoted a level to amortise a failed search — unnecessary on this lattice.
+Lockstep search outward from every seed, stopping when all but one frontier exhausts, costs
+`O(shed)` and needs none of it.
+
+**Falsified by:** visited voxels growing as `n³` at a fixed brush size, which would mean the search is
+exploring the **surviving** component rather than the shed pieces — the lockstep stop condition wrong,
+and the structure walking exactly the thing it exists not to walk.
+
+**Separately and more seriously falsified by** any disagreement between the incrementally maintained
+components and a full rebuild over the same values: the component count, or any `connected` answer.
+That would mean the structure is **fast and wrong**, which is worse than slow and right, and it is the
+failure a measurement of cost alone cannot see. It gets its own assertion rather than its own benchmark.
+
+**Records:** `samples_per_axis`, `fills`, `dirty_samples`, `seeds`, `visited`, `splits`,
+`shed_components`, `vanished_components`, `rebuild_visited`.
+
+### M-323 — the chunk is the *bound*; the cost is the edited chunk's share of the severed component, and the two differ by 35× (R-028)
+
+**M.** `cd bevy_isomesh && cargo run --example sealed_cave --release`, and reproduced as a standalone
+check while writing it. Three chunks of 16 cells, two chambers in chunks 0 and 2, a tunnel through
+chunk 1, a plug filled at the world origin:
+
+```
+components before = 1        A<->B before = true
+plug: 179 samples, 83 dirty (96 already solid), 34 seeds, 138 visited, 1 split
+components after  = 2        A<->B after  = false
+one chunk = 4,913 samples
+```
+
+**138 visited is 0.028× a chunk.** M-322 measured the *same operation* — sever a passage by filling
+one plug — at **0.970× a chunk**. Same structure, same kind of edit, **35× apart**, and nothing about
+the structure changed between them.
+
+**The difference is where the severed component's mass lives.** M-322's fixture pinched a cavern that
+filled the edited chunk, so lockstep separated two large halves *within that chunk* and walked both.
+Here the chambers are in chunks 0 and 2 while the plug is in chunk 1, so the pieces the **local** search
+separates are two short tunnel stubs. The split between the two large components is then resolved by
+the **boundary graph**, whose nodes are components rather than samples, and which costs nothing
+proportional to the caverns at all.
+
+**So M-322's headline needs a distinction it did not draw.** *"Chunking bounds the search by the
+chunk"* is structural and stands. *"A bisect costs about a chunk rebuild"* is **not** a property of
+chunking — it is a property of M-322's fixture, which deliberately put both halves inside one chunk to
+be adversarial. The general statement is:
+
+> the search costs **the edited chunk's share of the severed component**, bounded above by the chunk.
+
+**This is the second time in this phase that a fixture's own shape was mistaken for a structural
+property** — M-320's one-voxel median was the first, and P-26 carried the correction by predicting
+separately per fixture. The pattern is now three-for-three with ✗14, M-51, M-56, M-60 and M-40, and it
+argues for the same remedy each time: run the adversarial fixture *and* a representative one, and never
+quote one number for both.
+
+**Found by building an example, not by benchmarking.** The example exists because `AirWorld` shipped
+with no consumer, and its first consumer immediately produced a number no fixture in the suite did.
+That is the argument for CLAUDE.md's *"prefer adding an example over adding prose"* being about
+correctness rather than presentation.
+
+**Would be shown wrong by:** a chunking where a component's mass concentrates in the chunk being
+edited — which is exactly M-322's fixture, so this is not a disagreement between the two rows but a
+statement of what varies between them.
+
+### M-322 — chunking makes the bisect **bounded** rather than cheap, and the advantage is exactly the chunk count (R-028)
+
+**M.** `cargo bench --bench chunked_bisect`, `docs/measurements/chunked_bisect.csv`. **Comparative, and
+deliberately without a `P-` id**: the bound is not a hypothesis. A lockstep search runs inside one `Air`
+and therefore cannot visit more samples than that `Air` holds — a property of the construction, asserted
+by `connectivity::world::tests::a_bisect_visits_no_more_than_one_chunk`. What was not settled by
+construction is the *size of the gap* against the unchunked structure, which is what this measures.
+
+The fixture is M-321's: one cavern spanning the world, **pinched to a single air voxel** at the
+midplane, and that voxel filled. 32 cells per chunk, so a chunk is 33³.
+
+| arm | chunks | world air | visited | its own rebuild | ratio | **× a chunk** |
+|---|---:|---:|---:|---:|---:|---:|
+| single | 2 | 69,696 | 69,696 | 70,785 | 0.985 | 1.94 |
+| single | 4 | 139,392 | 139,392 | 140,481 | 0.992 | 3.88 |
+| single | 8 | 278,784 | 278,784 | 279,873 | 0.996 | 7.76 |
+| single | 16 | 557,568 | **557,568** | 558,657 | 0.998 | **15.52** |
+| chunked | 2 | 69,696 | 34,848 | 35,937 | 0.970 | 0.97 |
+| chunked | 4 | 139,392 | 34,848 | 35,937 | 0.970 | 0.97 |
+| chunked | 8 | 278,784 | 34,848 | 35,937 | 0.970 | 0.97 |
+| chunked | 16 | 557,568 | **34,848** | 35,937 | 0.970 | **0.97** |
+
+**The single grid visits every air sample it has.** 69,696 visited against 69,696 air is not a
+coincidence: lockstep stops when all but one frontier exhausts, and when the two halves are the *same
+size* they exhaust together, so the walk covers both. That is why M-321 measured 1.1× a rebuild and why
+this arm sits at 0.985–0.998 — the incremental structure buys nothing on this edit, at any world size.
+
+**The chunked arm is flat at 34,848 while the world grows 8×.** The advantage over the single grid is
+**exactly the chunk count** — 16× at width 16 — and it grows linearly with the world, without bound,
+because one number is constant and the other is not.
+
+**What this does not do, stated plainly: it does not make a bisect cheap.** 34,848 is 0.970× a *chunk*
+rebuild. Inside the middle chunk the pinch still splits it into two equal halves and lockstep still
+walks both. **Chunking converts an unbounded cost into a bounded one**, and the bound is "rebuild one
+chunk" — which is a cost the mesher already pays per edit, so it is now proportional to something the
+engine has already budgeted for rather than to the size of the world.
+
+**So the remedy M-321 named was the right one, and for the reason it gave.** HDT's levels bound a
+replacement-edge *search*; on a genuine bisect there is no replacement edge, and no search strategy can
+avoid discovering which side is smaller. Decomposition does not make the discovery cheaper — it makes
+the thing being searched smaller.
+
+**Would be shown wrong by:** a component that spans many chunks *and* is pinched inside one of them,
+where the split has to propagate through the global graph to many chunks' labels. The graph handles that
+— its nodes are components, not samples — but this measurement does not stress it, because the fixture's
+pinch severs a component that only ever needed relabelling within one chunk.
+
+**AMENDED 2026-08-17 (M-323). One sentence here is about the fixture, not the structure.** *"Chunking
+converts an unbounded cost into a bounded one"* stands. *"34,848 is 0.970× a chunk rebuild"* is what
+**this fixture** costs, because it deliberately pinches a cavern that fills the edited chunk so both
+halves are walked. The `sealed_cave` example severs a passage between chambers in *other* chunks and
+the same operation costs **0.028×** a chunk — 35× less — because the local search separates two tunnel
+stubs and the boundary graph resolves the rest. The general form is *the edited chunk's share of the
+severed component, bounded above by the chunk*.
+
+### M-321 / P-26 — HELD on the measured distribution, and the adversarial fixture it demanded costs 1.1× a full rebuild (R-022b)
+
+**M.** `cargo bench --bench experiment_p26`, `docs/experiments/p-26.csv`. Two fixtures, because P-26
+predicted differently for each and a harness running only the first would have measured M-320's fixture
+rather than the structure.
+
+| fixture | n | dirty | seeds | visited | **per seed** | **vs 200 rebuilds** |
+|---|---:|---:|---:|---:|---:|---:|
+| distribution | 33 | 21,299 | 19,019 | 58,837 | **3.09** | 122× |
+| distribution | 49 | 32,123 | 32,428 | 96,950 | **2.99** | 243× |
+| distribution | 65 | 35,381 | 37,244 | 126,030 | **3.38** | **436×** |
+| bisect | 33 | 1 | 2 | 28,830 | 14,415 | 1.2× |
+| bisect | 49 | 1 | 2 | 101,614 | 50,807 | 1.2× |
+| bisect | 65 | 1 | 2 | 246,078 | **123,039** | **1.1×** |
+
+**HELD on the distribution — but the raw column is not the claim, and saying so is part of the result.**
+`visited` grew 2.14× across the sweep, which read alone looks like the first falsifier firing. It is not:
+the **edit itself grew**. The same radius-4 brush removes more air at 65³ than at 33³ because there is
+more air to remove, so `seeds` grew 1.96×. P-23 could legitimately say *"flat"* because its fixture held
+the edit constant; this one cannot, and P-26 inherited that phrasing without inheriting the fixture
+property that made it true. **The quantity the hypothesis is actually about — work per unit of edit — is
+`visited/seed`, and that is 3.09 → 2.99 → 3.38 while the lattice grows 7.6×.** Flat, and the advantage
+over rebuilding *widens* from 122× to **436×**.
+
+**The bisect fixture behaves exactly as P-26 predicted, and the number is worse than "grows".** Filling
+one voxel — the midpoint of a tunnel joining two equal caverns — visits 246,078 voxels at 65³ against a
+274,625-sample rebuild. **That is 1.1×.** Lockstep buys essentially nothing on this edit: both frontiers
+are half the component, so *"stop when all but one exhausts"* stops only after walking half of it. The
+`per seed` column makes the gap between the two regimes plain — **3.38 against 123,039**, four orders of
+magnitude, for the same structure on the same lattice.
+
+**So "the levelled HDT scheme is unnecessary here" is now conditioned by measurement rather than by
+caution.** It is unnecessary for the measured edit distribution and it is not the remedy for the bisect
+either — HDT's levels bound a *replacement-edge search*, and here there is no replacement edge to find:
+the component genuinely split, and the cost is the unavoidable one of discovering which side is smaller.
+**The remedy is decomposition, not a better search.** A per-chunk `Air` bounds any walk by the chunk,
+so bisecting a tunnel costs 33³ rather than the world — which is why `Air::label_of` ships now, as the
+one accessor a stitching layer needs (R-028).
+
+**One implementation defect, caught by the falsifier rather than by a test.** The first run reported
+887,123 visited at 33³ — 15× the corrected figure — and grew 5.44×. Cause: `search` **rederived** its
+seeds as *"any air sample adjacent to solid"*, which in a cave field is the entire cave surface, so it
+ran thousands of frontiers instead of a handful and lockstep explored nearly the whole component. The
+correct seed set is the air adjacent to *this fill's own removals*, which `fill` already computed and
+threw away. Two further `O(n³)` scans (`any_member`, and a member-collection pass) were removed with it.
+
+**Every one of the 15 unit tests passed both before and after that fix**, including the pairwise
+rebuild-agreement test — because the defect made the structure **slow, not wrong**. A correctness suite
+cannot see a cost defect, which is the argument for a pre-registered cost falsifier existing at all.
+
+**Would be shown wrong by:** a field whose caves are wide relative to the brush, where the distribution's
+own splits start shedding large pieces and `visited/seed` climbs. `noise_cavity` at radius 4 is the
+adversarial end for split *frequency* (M-319) and, per M-320, the friendly end for split *size*.
+
+### ✗26 — P-25's mechanism clause is false, and P-25's own falsifier is what named it (R-022b)
+
+**Falsified by analysis, before the harness ran.** P-25 claimed a union-find can absorb deletion:
+*"a parent pointer only has to reach the correct root, and a filled sample sitting mid-tree is never
+queried."* The first half is true. The second half is true **of the filled sample and of nothing hanging
+off it**, and that is the whole error.
+
+**Parent pointers encode union history, not spatial adjacency.** `Q → P → A` records that `Q` was merged
+in via `P` at some point in the past. It says nothing about whether `Q` touches `P` in the lattice. So a
+filled sample can be an articulation point **of the tree** while being nothing of the kind **in the
+graph**:
+
+```
+component {A, B, P, Q}, union-find tree: A root, B → A, P → A, Q → P
+a fill sheds {P} spatially, so P is re-rooted
+find(Q) now walks Q → P → P = P
+```
+
+`connected(Q, B)` returns **false** while `Q` and `B` are still genuinely connected — `Q` may even be
+adjacent to `A` directly. **The queries that break are the descendants', not the filled sample's own.**
+
+**What caught it is the thing worth recording.** P-25's *second* falsifier says: *"any disagreement
+between the incrementally maintained components and a full rebuild over the same values: component
+count, or any `connected()` answer."* That is exactly the failure above. **The mechanism clause and the
+falsifier clause contradicted each other inside a single pre-registration**, and writing both down is
+what made the contradiction visible before a line of the structure existed.
+
+This is the practice paying for itself, and it is the reason this row is kept in full rather than
+quietly replaced by its successor: the *reasoning* generalises where the fact does not. A registration
+that names a strong falsifier can refute its own mechanism at zero cost. One that only asserts a
+mechanism cannot.
+
+**What survives.** Only the mechanism dies. **P-25's cost prediction was never in doubt and is
+re-registered unchanged as P-26** — flat labels fix the *representation*, not the *search*. The lockstep
+replacement search was always required; the union-find was falsely promising it could be skipped.
+
+### P-26 — P-25 with one clause replaced, registered for R-022b
+
+**Pre-registration.** `crates/isomesh/src/experiment.rs`, id `P-26`. **This is P-25 minus its mechanism
+clause**, and it is registered as a new id rather than as an amendment because `experiment.rs`'s own
+docs require it: *"Amending a `Preregistration` after its experiment has run is a rewrite of the
+prediction, and the only honest way to do it is to register a new id and record why the first one was
+inadequate."* ✗26 is the why.
+
+**Unchanged from P-25 — the cost claim.** Repairing the air sublevel set after a brush **fill** costs
+work proportional to the **shed volume** and not to the surviving component nor to the lattice. At a
+fixed brush radius, visited voxels stay flat as the lattice grows through 33³, 49³ and 65³.
+
+**Replaced — the mechanism.** Not a union-find. A **flat** label array: every sample carries its
+component id directly, so re-rooting a shed piece is a write per member and no surviving sample can
+route through it (✗26). `connected` becomes `O(1)` and `&self` rather than `&mut self`. Union by size
+over a **dense `Vec` indexed by label with an explicit free list** — not a `HashMap`, whose iteration
+order is a determinism hazard and determinism is load-bearing (M-36).
+
+**Added — the adversarial clause, because the flat curve would otherwise measure the fixture.**
+Lockstep's stop condition bounds work by the **second-largest** piece, so M-320's *"1 at the median"* is
+a property of the **edit distribution**, not of the structure. Fill one voxel at the midpoint of a
+tunnel joining two equal caverns and both frontiers are huge: the search walks until one exhausts, which
+is `O(half the component)`, and `visited` grows with `n` at a fixed brush size. **That fires P-25's
+first falsifier for a reason that has nothing to do with the stop condition being wrong.**
+
+That edit is not exotic — sealing a passage between two spaces *is* the sealed-volume mechanic, which is
+the thing this layer exists to support. So the harness carries a deliberate **bisect-a-tunnel fixture**
+beside the measured distribution, and the prediction is stated separately for each: **flat on the
+distribution, growing on the bisect.** A structure that is flat on both would mean the bisect fixture is
+not adversarial and needs rebuilding.
+
+**Consequently "the levelled HDT scheme is unnecessary here" is conditioned, not asserted.** It is
+unnecessary *for the measured edit distribution*. The bisect case is where it would earn its keep, and
+the answer this crate reaches for instead is a **budgeted** repair rather than a bounded one — see below.
+
+**Deferring the repair fails safe in both directions, which is not obvious.** Before a `fill` repair
+completes the two pieces still share a label, so `connected` says yes and the caller reads *"not sealed
+yet"*. Before a `dig` repair completes the labels are still distinct, so the caller reads *"not connected
+yet"* and the breakthrough event fires late. Water leaking for three frames is recoverable; water **not**
+leaking out of a room the engine wrongly believes is sealed is a broken game rule. **The conservative
+answer is the cheap answer in both directions**, so repair takes the `spend: FnMut() -> bool` predicate
+shape `mesh_within_budget` already uses (M-78) rather than being synchronous — because amortised is the
+wrong statistic for the frame a breakthrough lands on (M-124: 20.62 ms unbudgeted against a 2.10 ms
+budgeted peak).
+
+**Falsified by:** visited voxels growing as `n³` **on the measured distribution** at a fixed brush size.
+Growth on the *bisect* fixture is predicted, not falsifying. And, as in P-25 and more seriously, by any
+disagreement between the maintained components and a full rebuild — component count or any `connected`
+answer.
+
+**Records:** `samples_per_axis`, `fixture`, `fills`, `dirty_samples`, `seeds`, `visited`, `splits`,
+`shed_components`, `vanished_components`, `rebuild_visited`.
+
+### V-45 — R-027's design does not merely change `extract_into`'s contract; it converts a shipped determinism check's failure condition into its intent (R-027)
+
+**V.** Verified in this repo's own source, `crates/isomesh/src/validate/determinism.rs:268–300`.
+
+M-318 measured R-027's ceiling and found the encoding was not the obstacle: of three shapes, stable
+*order* does not help, index-is-edge-id costs 230× memory, and only a **persistent edge→slot map** — state
+carried across extractions — delivers the 45×. The ticket weighed that as an API cost, with X-005's 294
+call sites as the headline. **That accounting missed the binding constraint.**
+
+`check_determinism` runs the extractor **three** times, and the third is the one that matters:
+
+```rust
+let mut reused = MeshBuffer::<R>::new();
+extract(&mut reused);
+reused.reset();
+extract(&mut reused);
+```
+
+under a doc comment that states the intent in as many words — *"one reused buffer to catch output that
+depends on the buffer's prior state… every algorithm in this crate is meant to be driven by resetting one
+buffer across thousands of chunks, and nothing else checks that it survives being driven that way."*
+
+**A persistent edge→slot map makes that dependence intentional.** The third run's whole purpose is to fail
+when output depends on prior state; R-027's only working shape is output that depends on prior state by
+design. So R-027 does not cost an API migration on top of a working design — **it invalidates the check
+that would otherwise police it**, and T-004 is a committed gate rather than a preference.
+
+**This is a stop rather than a preference**, and it splits the ticket: an S to locate where M-318's 45×
+actually goes, before any L touches `extract_into`'s contract. That measurement may dissolve the L, since
+M-318 already says the encoding is not the cost.
+
+**Would be shown wrong by:** a formulation where the persistent map is *derivable from the inputs* — a
+pure function of the grid and the field rather than of call history — which would keep the third run
+meaningful. Nothing in M-318's three shapes is that, but the ticket has not been asked the question in
+those terms.
+
+### P-27 — registered for R-029, before the harness was written
+
+**What M-172 is and is not.** M-172 measured `BrushStack::gradient` returning exactly `[0.0, 0.0, 0.0]`
+on a wall slab's mid-plane and the row reads as "the gradient is exactly zero on the medial axis". The
+dossier's correction (§4.1, from the Attali/Boissonnat/Edelsbrunner survey, READ): on the medial axis
+generally `‖∇ρ‖ = cos(θ/2)` where θ is the separation angle of the two nearest boundary points — an
+exact zero needs them antipodal, θ = π, which is a slab's mid-plane and nothing else a player digs. And
+even the slab case should die under a sub-voxel translation, because the zero is a cancellation the
+sampling lattice happens to sit on, not a property the field carries with it.
+
+> **H.** Offsetting the slab's mid-plane by half a voxel takes the count of lattice samples whose
+> default `Sdf::gradient` returns exactly `[0, 0, 0]` from one full lattice plane (65² = 4,225 at 65³)
+> to **zero**, while the count of sub-voxel probes with voxel-step central-difference `‖∇ρ‖ < 0.1`
+> changes by **< 5%**.
+
+**Two populations, because on one of them the second clause is vacuous.** Under voxel-step central
+differencing a slab's gradient magnitude at distance `d` from the mid-plane is exactly `d/h` for
+`|d| < h`, so the sub-threshold set is the band `|d| < 0.1h` — thickness `0.2h`, thinner than the
+lattice pitch. Counted on the voxel lattice itself, clause 2 collapses from one full plane to zero
+under *any* misalignment and would be false for the instrument's reason rather than the field's. The
+registered instrument is therefore split: clause 1 on the voxel lattice with the default gradient
+(M-172's actual instrument, `DIFF_STEP`-scaled), clause 2 on a fixed regular probe lattice of pitch
+`h/200` spanning `|y| ≤ 2h`, gradient by `normals::central_difference` at step `h` — the voxel regime a
+game actually has. Derived, not tuned: a width-`0.2h` window sliding over a pitch-`h/200` lattice holds
+40 ± 1 probes, so the worst count change any rigid offset can produce is **1/40 = 2.5%** — half the
+registered bound, and the margin between the two numbers is exactly the room left for the discrete band
+to misbehave.
+
+**Falsified by** exact zeros surviving the offset — the discrete gradient doing something the
+continuous identity does not describe, a question R-030 would inherit before anything else runs. Clause
+2 separately falsified by the band count moving more than 5%, which the 2.5% instrument bound says can
+only happen if the discrete band is not the rigid `0.2h` ramp the arithmetic assumes.
+
+**The fixture is exact on purpose.** `h = 2⁻⁴` over `[-2, 2]`, offset `2⁻⁵`, slab half-thickness `0.5`
+— every lattice coordinate and both plane positions representable, so an exact zero is a property of
+the field and not of a rounding accident, and `y = 0` lands on the lattice by construction. A generic
+`y₀` would manufacture clause 1's confirmation out of floating point.
+
+**Inversion, in the harness before the verdict is read:** a third probe pass at voxel pitch must show
+the ≈100% collapse — the > 5% branch demonstrated reachable, and the vacuity trap the registration
+routes around documented as a row rather than a footnote. And a full-voxel offset must bring the exact
+zeros back: the cancellation is the lattice's, and re-aligning the lattice must re-create it.
+
+**Corrected before the first run, same day — the full-voxel inversion above is arithmetically wrong,
+and the correction sharpens the claim.** Checked against the actual IEEE operations before the harness
+was written: a full-voxel offset does **not** cleanly restore the zeros, and cannot. The cancellation
+needs `fl(y₀ + h_cd) − y₀ == h_cd` exactly on both probe sides, which holds unconditionally only at
+`y₀ = 0.0`, where `0 + x` is exact. At `y₀ = h = 2⁻⁴` the probe additions round at `ulp(2⁻⁴) = 2⁻⁵⁶`
+and the `− t` subtractions rebucket at `ulp(0.5) = 2⁻⁵³`, so whether a plane point keeps its exact zero
+depends on its `DIFF_STEP·scale` — computed point-by-point with the crate's own literal
+(`6.055_454_452_393_343e-6`) over the fixture's scale classes: **3,136 of 4,225**. The full-voxel arm
+is therefore no longer an inversion but a third pre-stated prediction — **exactly 3,136** — and the
+sharper reading it carries: M-172's exact zero is not even a lattice-alignment artifact, it is a
+*coordinate-origin* artifact. Clause 1's two branches are instead demonstrated by the aligned arm
+(4,225) against the half-voxel arm (0), and the probe-pitch collapse pass stands as registered.
+
+**Records** `arm`, `offset_voxels`, `exact_zeros`, `band_count`, `probe_pitch_voxels`.
+
+### 💥 ✗27 — "an exactly-zero SDF gradient detects the medial axis"
+
+**Believed because:** M-172. `game_destruction` fired charges at a wall slab's mid-plane and
+`BrushStack::gradient` returned exactly `[0.0, 0.0, 0.0]` on consecutive shots — real, reproduced here
+(4,225 of 4,225 aligned lattice points), and read as a detector: the gradient is exactly zero on the
+medial axis, so the medial axis is free. The dossier's survey reading (Attali, Boissonnat &
+Edelsbrunner, `10.1007/b106657_6`, READ) already bounded the belief: on the axis `‖∇ρ‖ = cos(θ/2)`,
+zero only at θ = π — the two nearest boundary points antipodal, which is a slab's mid-plane and
+nothing a player digs. P-27 tested whether even the slab case survives the lattice moving.
+
+**Tested by:** `cargo bench --bench experiment_p27` (P-27, R-029), `docs/experiments/p-27.csv`.
+
+**Result:** it does not survive. Half a voxel of mid-plane offset: **4,225 → 0** exact zeros. A full
+voxel — the lattice perfectly re-aligned with the plane — restores only **3,136**, exactly as the
+pre-run IEEE enumeration predicted: the cancellation needs `fl(y₀ + h_cd) − y₀ == h_cd` on both probe
+sides, which holds unconditionally only at `y₀ = 0.0`. The exact zero is a *coordinate-origin*
+artifact riding on a lattice-alignment artifact. Meanwhile the field's medial band `‖∇ρ‖ < 0.1`
+moved **0.00%** under the same offset.
+
+**Consequence:** the detector is retired; the *score* survives. `‖∇ρ‖` magnitude reads medial
+stability continuously — small `‖∇ρ‖` with large `ρ` is medial and stable — and that is the quantity
+the identity `r = ρ·√(1 − ‖∇ρ‖²)` consumes, which R-030 now checks against a brute-force oracle.
+M-172 amended in place; quote this row, not its headline.
+
+**Would be shown wrong by:** exact `[0,0,0]` returns from the default gradient at points off the
+coordinate-origin cancellation set — zeros that belong to the field after all.
+
+### 🔬 M-324 / P-27 — HELD on both clauses, and the exact zero is a coordinate-origin artifact (R-029)
+
+> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉
+>
+> 🥇 **The exact-zero medial detector dies at half a voxel of offset, the `‖∇ρ‖ < 0.1` medial band
+> does not move at all, and the zero was never even a lattice-alignment artifact — a full-voxel
+> re-alignment restores only 3,136 of 4,225, the exact integer the pre-run IEEE derivation named.**
+>
+> 🧪 **Tested by:** `cargo bench --bench experiment_p27` (P-27), `docs/experiments/p-27.csv`
+> 🎯 **Result:** exact zeros **4,225 → 0** at half a voxel; band **43,560 → 43,560** (0.00% against
+> a registered 5% and a derived 2.5% bound); full-voxel restore partial at **exactly 3,136**
+> 📐 **Why it earns the banner:** 🪤 twice before the first measurement — the single-lattice reading
+> of clause 2 is vacuously false for the instrument's reason (the band is `0.2h` thick, thinner than
+> the lattice pitch), and the registration's own full-voxel inversion was arithmetically wrong,
+> corrected pre-run to a derivation the run then hit to the integer. And the held prediction
+> re-opens a line this project had closed around a boolean: what survives M-172's amendment is
+> `‖∇ρ‖` as a *continuous* stability score — the reading the identity `r = ρ√(1−‖∇ρ‖²)` needs, and
+> R-030 now gates.
+> 💣 **Would be shown wrong by:** exact `[0,0,0]` returns off the coordinate-origin cancellation
+> set, or the band moving under sub-voxel translation on a fixture this slab does not represent.
+
+**M.** `cargo bench --bench experiment_p27`, `docs/experiments/p-27.csv`.
+
+| arm | offset (voxels) | exact zeros | band count | probe pitch (voxels) |
+|---|---:|---:|---:|---:|
+| aligned | 0 | **4,225** | 43,560 | 0.005 |
+| offset_half | 0.5 | **0** | **43,560** | 0.005 |
+| offset_full | 1 | **3,136** | 43,560 | 0.005 |
+| naive_aligned | 0 | 4,225 | 1,089 | 1 |
+| naive_half | 0.5 | 0 | **0** | 1 |
+
+**Clause 1 held exactly as registered.** One full lattice plane of exact `[0, 0, 0]`s — the
+reachability arm, so the counter demonstrably fires — goes to zero under a half-voxel offset of the
+plane. The zero belongs to the sampling arithmetic, not to the field.
+
+**Clause 2 held at its predicted 0.00%.** The half-voxel offset is 100 probe pitches, so both arms
+share a probe phase and the band count is not merely inside the 5% registered and 2.5% derived
+bounds — it is identical: 40 per column on all 1,089 columns, both arms, per the registration's own
+40 ± 1 arithmetic. The field's medial neighbourhood does not care where the lattice sits; only the
+boolean does.
+
+**The corrected third prediction hit its integer.** 3,136 of 4,225 zeros return at a full-voxel
+offset — perfect lattice re-alignment — because `fl(y₀ + h_cd) − y₀ == h_cd` holds unconditionally
+only at `y₀ = 0.0`; which columns survive depends on how `DIFF_STEP·scale` rounds against
+`ulp(2⁻⁴)` and `ulp(0.5)`, and the pre-run enumeration of exactly that arithmetic named the count.
+M-172's zeros were measured at `z = 0` — the one plane in the world where the cancellation is
+unconditional.
+
+**The naive rows document the trap the registration routed around.** At voxel probe pitch the band
+holds one probe per column and collapses 1,089 → 0 under the same offset that moved the real band by
+nothing — the > 5% branch of clause 2 demonstrated reachable, and the single-lattice instrument shown
+to measure lattice phase rather than the field.
+
+**Consequence:** ✗27 retires the boolean reading and M-172 is amended in place. The medial line
+re-opens on `‖∇ρ‖` as a continuous stability score, and R-030's identity oracle is the next gate:
+Calibre, the throat metric and handholds now rest on it.
+
+**Would be shown wrong by:** a fixture producing exact `[0,0,0]` default-gradient returns at points
+off the coordinate-origin cancellation set; or a field whose `‖∇ρ‖ < 0.1` population shifts by more
+than the derived bound under a sub-voxel translation — which would mean the band is a lattice
+artifact too, and the continuous score inherits the boolean's disease.
+
+### 📖 V-46 — R-030's specified oracle cannot tell the identity from a wrong one; the inversion rule fails before the harness exists (R-030)
+
+**V.** Derived pre-build from the ticket's own specification, arithmetic checked numerically; the
+survey's printed two-point case (`r = ρ·sin(θ/2)`, `‖∇ρ‖ = cos(θ/2)`) is the one population the
+instrument does handle, and lattice samples land on it with probability zero. **P-28 is deliberately
+not registered** — registering a harness this analysis says cannot go red would be pre-registration
+theatre.
+
+**The ticket's shape:** compare `r_formula = ρ·√(1 − ‖∇ρ‖²)` (voxel-step central differences)
+against a brute-force minimal-enclosing-ball oracle over boundary samples within `ρ + tol`, on a 64³
+grid with ≥ 3 overlapping brushes; ≥ 99% agreement within 1 voxel, median residual O(h); falsified
+by an h-independent residual. The trouble is that `r(x)` in the continuum is **zero almost
+everywhere and O(ρ) on a measure-zero medial set** — a spike — and the two estimators mollify that
+spike at different scales, so the comparison has three regimes and no discriminating one:
+
+- **Generic samples (~95–99% of the population).** True `r = 0`; both the correct form and a
+  deliberately wrong one (`r = ρ·(1 − ‖∇ρ‖)`) output ≈ 0 — the correct form `ρ√(2δ)` with
+  `δ = O(h²)` gradient error, the wrong form `ρδ`. The oracle's own floor — cap radius
+  `√(2ρ·tol) ≈ 0.43` voxels at the derived `tol = 3h_c²/8ρ` — dominates both residuals. Every
+  registered clause passes for **both** forms here; the median-halves-with-h clause passes for both
+  too, because the oracle floor is itself O(h). What the clauses measure is the oracle.
+- **Medial shells, thickness ~h (the only place `r` is large).** The CD formula is a mollifier of
+  width h: half a voxel off a capsule's axis it still reads `≈ 0.87ρ` (11 voxels); the tight-tol
+  oracle has already collapsed to its 0.4-voxel cap floor at offsets beyond `tol/2 ≈ 0.004h`. They
+  disagree at **O(ρ), h-independently in shape** — for the *correct* form. The wrong form reads
+  *smaller* on the shell and therefore sits **closer** to the oracle: inverting the formula improves
+  the score where the score is largest. An inversion check cannot go red; it goes green.
+- **Exact medial hits.** On the sheet the CD formula reproduces the survey's own two-point relation
+  — that is the identity working — but on-sheet lattice hits are measure-zero, and R-029/M-324 is
+  the measured demonstration of what lattice-exact coincidences are worth.
+
+**The population arithmetic seals it.** The shells are exactly the samples the ≥ 99% clause has room
+to lose: a capsule's codim-2 axis shell is **1.5% of interior samples at 33³, 0.38% at 65³, 0.10% at
+129³** — the clause *flips between resolutions for geometry's reasons*, nothing about the identity —
+and the ticket's own ≥-3-brush union fixture has codim-1 medial *sheets* whose ~h shells are **~4–7%
+of the interior at 65³**, so the headline clause is predicted to fail on the specified fixture for
+the mollifier's reason, not the gradient's. A pass and a fail are both pre-computable from shell
+geometry; neither would say anything about `√(1 − ‖∇ρ‖²)`.
+
+**What is not in question:** the continuum identity (Attali/Boissonnat/Edelsbrunner Eq. 1 plus the
+enclosing-ball radius; Lieutier's `‖∇ρ‖² = 1 − r²/ρ²`) — a theorem, not a hypothesis. And the
+mollified reading M-324 established: `‖∇ρ‖` as a continuous stability score is stable under
+sub-voxel translation. What died is the proposed *empirical test*, which compares a width-h
+mollifier against a width-h_c²-tolerance spike-estimator and calls the difference evidence.
+Calibre, the throat metric and handholds do not die from this; their gate moves to whichever
+instrument replaces it — the candidate with teeth is a **matched-analytic oracle**: fixtures (wedge,
+capsule) where the CD-mollified truth is itself computable in closed form, with the MEB oracle
+demoted to a recorded column. Options and the decision are on the ticket's BLOCKED line.
+
+**Would be shown wrong by:** building the specified harness anyway and watching the wrong-form
+inversion go measurably red on any registered clause — if it does, this analysis is wrong, the
+instrument discriminates after all, and R-030 proceeds as written. (The wrong form's *global median*
+is predicted ~6× the right form's — 0.2 against 0.03 voxels — but both sit far beneath every
+registered threshold, which is rule 9's complaint stated as a number.)
+
+### P-28 — registered for R-030, before the harness was written; the matched-analytic instrument V-46 asked for
+
+**The shape change, in one line.** V-46 killed the MEB-oracle comparison because it compared two
+different mollifiers of a spike; this registration compares the measured `r_f = ρ·√(1 − ‖∇ρ‖²)`
+(voxel-step central differences through the crate's real code path) against **derived truths** —
+exact closed forms where the field is piecewise linear, an analytic zero where the true inscribed
+radius vanishes — so the residual isolates the discrete-gradient behaviour and a wrong closed form
+has somewhere to go red.
+
+> **H.** **C1 (form).** On air-slab, air-wedge and triangular-prism fixtures in generic position, the
+> measured `r_f` matches the derived voxel-step mollified truth `r̃` within `1e-9` of the gap on
+> **100%** of medial-band samples — the two-point (slab θ = π, wedge θ = π − 2γ) and three-point
+> (prism axis, `|Π| = 3`) cases both exercised. **C2 (curvature).** On a capsule at generic off-axis
+> band samples — true inscribed radius **zero** — the formula's own noise floor `r_f = ρ·√(2δ)`,
+> `δ = O(h²/s²)`, has world-unit median that **halves per resolution doubling**: 33³→129³ end-to-end
+> ratio ≤ **0.35**. **C3 (clearance).** For slab gaps `W ∈ {3h, 6h, 10h}` at 8 controlled sub-voxel
+> phases, the band-max `r_f` sits in the derived envelope **[√3/2 · (W − h/2), W]** on 24 of 24 rows.
+
+**The derivations, committed before the run.**
+
+- *Slab (normal `n̂`, half-gap `W`, signed offset `s` from the mid-plane):* per-axis voxel-step CD of
+  `ρ = W − |s|` is exactly `g_i = −sign(s)·n̂_i` where `|s| ≥ h·|n̂_i|` and `−(s/h)·sign(n̂_i)` where
+  `|s| < h·|n̂_i|`; `r̃ = (W − |s|)·√(max(0, 1 − ‖g‖²))`. Axis-aligned case: `r̃(e) = (W−|e|)·√(1 −
+  (e/h)²)` — the profile whose maximum over a phase-`φ` lattice is `(W − φh)·√(1 − φ²)`, bounded
+  below over `φ ∈ [0, ½]` by `√3/2·(W − h/2)`: C3's envelope.
+- *Wedge and prism:* `ρ = min` of two (three) linear distances; each probe evaluates the min of
+  shifted linears, so `r̃` is the same construction casewise. On the prism axis the three feet sit at
+  120° and the enclosing-ball radius equals `ρ` — the `|Π| = 3` case the original ticket demanded,
+  now with the analytic `Π` instead of a brute-force cloud (the "MEB oracle" reduced to its exact
+  value, recorded as `clearance_true_voxels`).
+- *Capsule floor:* at radius `s` from the axis, worst probe orientation gives `‖CD‖² ≈ 1 − O(h²/s²)`,
+  so `r_f ≈ ρ·h/s · c_or` with `c_or ∈ [0, ~1]` — first order in `h` at fixed world geometry, which
+  is the honest version of the dossier's "median residual halves": it is the **formula's own
+  curvature noise**, and whether it shrinks with resolution is exactly whether the score is usable at
+  a fixed world scale. Predicted 65³ band median **0.05–1.5 voxels**; orientation anisotropy
+  recorded.
+
+**Falsified by** C2's end-to-end ratio ≥ **0.7** — an h-independent noise floor, the one outcome that
+kills Calibre, the throat metric and handholds together, exactly the teeth the ticket's falsifier
+always meant. C1 failing is an implementation/transcription finding, not a verdict on the identity.
+C3 failing breaks the clearance-envelope derivation and the λ-test's accuracy claim with it. A ratio
+in (0.35, 0.7) is a loud UNDECIDED, reported as falsification-shaped rather than absorbed.
+
+**The inversion this instrument was rebuilt to have:** the wrong form `ρ·(1 − ‖∇ρ‖)` must fail C1 on
+≥ 30% of mid-band samples by more than `0.1·W` — the two forms agree at `u ∈ {0, 1}` and differ by up
+to `0.41·ρ` at `u ≈ 0.7`, which the wedge's mid-range band hits by construction. If the wrong form
+does not go red here, V-46 applies to this design too and the ticket stops again.
+
+**Recorded, unregistered:** the min-composition characterisation the original fixture conflated —
+three overlapping spheres, `ρ_field = |min(f₁,f₂,f₃)|` against the analytic true distance to the
+union boundary (swallowed-cap geometry computed exactly): gap fraction and magnitude, predicted
+h-independent. It is a statement about brush-composed *fields*, not about the identity, which is why
+it is out of the registration.
+
+**Records** `fixture`, `samples_per_axis`, `band_samples`, `within_tol_pct`,
+`band_median_residual_world`, `clearance_true_voxels`, `clearance_est_voxels`, `clamped`.
+
+### 🔬 M-325 / P-28 — the discrete medial score converges O(h) and the mechanics live; the clause that died was C1's own tolerance derivation (R-030)
+
+> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉
+>
+> 🥇 **The identity's discrete score has a curvature-noise floor that halves per resolution doubling
+> — end-to-end ratio 0.146 against a registered 0.35 bound and a 0.7 kill-line — so the gate opens
+> and Calibre, the throat metric and handholds live on a measured convergence rather than an
+> assumption. And the one clause that died, C1, was killed by the very amplification C2 measures as
+> signal: √(1−u²) turns 1e-16 representation dust into 1e-9 residuals at the band edge.**
+>
+> 🧪 **Tested by:** `cargo bench --bench experiment_p28` (P-28), `docs/experiments/p-28.csv`
+> 🎯 **Result:** C2 medians **7.81e-2 / 2.27e-2 / 1.14e-2** world across 33³/65³/129³ (ratio
+> **0.146**); C3 **24/24** rows inside the derived envelope, phase profile matching
+> `(W−φh)·√(1−φ²)` to four digits; C1 **1/9** rows at 100% — **falsified as registered**; the
+> wrong-form inversion red on **99.9%** of the mid-band.
+> 📐 **Why it earns the banner:** 💥 a pre-registered clause was falsified instructively — the
+> float-dust tolerance was derived where the function is flat and applied where it is vertical, and
+> that earned a new Part 5 rule — and 🔓 the dossier's #2-ranked open question moved: the identity
+> survives discretisation with an O(h) floor, measured against derived truths that a wrong closed
+> form demonstrably fails.
+> 💣 **Would be shown wrong by:** a finer-resolution run where the C2 ratio stops falling, or any
+> fixture on which the wrong form passes the mid-band inversion.
+
+**M.** `cargo bench --bench experiment_p28`, `docs/experiments/p-28.csv`.
+
+| clause | registered | measured | verdict |
+|---|---|---|---|
+| C2 — curvature floor halves per doubling | 33³→129³ world-median ratio ≤ 0.35, kill at ≥ 0.7 | 7.81e-2 → 2.27e-2 → 1.14e-2, ratio **0.146** | **HELD** |
+| C3 — clearance envelope | band-max `r_f` ∈ [√3/2·(W−h/2), W], 24/24 | **24/24**, and per-phase max equals the derived `(W−φh)√(1−φ²)` to 4 digits | **HELD** |
+| C1 — form at float dust | \|r_f − r̃\| ≤ 1e-9·G on 100% of band, 9 rows | **1/9** rows; failing medians 1.5–3.3e-9, i.e. 12 orders below the gap and ~4× above the tolerance | **FALSIFIED** |
+| inversion | wrong form fails ≥ 30% of mid-band by > 0.1·G | **99.9%** (12.9% over the whole band — the u→1 edges collapse both forms, which is why the registration said *mid-band*) | red demonstrated |
+
+**C2 is the row the mechanics live on.** On the capsule's exact-cylinder band every sample has a
+unique closest point and the true inscribed radius is zero, so `r_f` there is pure instrument: the
+O(h²/s²) central-difference error √-amplified to first order. It came out **O(h) and cleanly so** —
+successive ratios 0.29 and 0.50 — with the voxel-unit ceiling resolution-invariant at ≈ 1.6 voxels
+(the `ρ·h/s` prediction seen from the other side: in voxels, `ρ·c/s` does not depend on `h`). The
+registered falsifier — an h-independent floor, the one outcome that killed Calibre, the throat
+metric and handholds together — did not fire. What a build inherits: at fixed world geometry the
+score's noise floor is ~1.6 voxels at the band's inner edge and halves with every resolution
+doubling; a λ-test needs λ comfortably above that floor at the coarsest resolution it will run at.
+
+**C1 falsified its own tolerance, not the transcription.** The failing rows' medians sit at
+1.5–3.3e-9 — twelve orders below the gap — and every corroborating read says the form is wired
+right: the 33³ slab matched at **2.8e-17** (true dust, 100% of 2,178 samples), C3's phase profile
+reproduced the derived closed form to four digits, and the wrong form missed by five orders more.
+What the registration got wrong is now a Part 5 rule: `d r/d(radicand) = ρ/(2√(1−u²))` is unbounded
+at the band's `u → 1` edge, so a uniform dust tolerance derived in the interior must lose the edge —
+the `clamped` column (up to 39% of a band) is the same fact, measured: `‖CD‖` crosses 1 by dust and
+the radicand goes negative. A tolerance of `dust · ρ/(2√(1−u²))`, per sample, is what C1 should have
+registered.
+
+**The first run aborted itself, and that is part of the record.** The inversion gate fired at 12.9%
+because the check populated the whole band instead of the registered mid-band; no clause was printed
+and no CSV written before the abort, so the operationalisation (derived-truth `u ∈ [0.2, 0.95]`) was
+fixed blind to outcomes. The whole-band number stays printed beside the mid-band one because the gap
+between them — 12.9% against 99.9% — is V-46's collapse mechanism, seen once more from inside the
+working instrument.
+
+**Recorded beside the registration:** the min-composition characterisation (three-sphere union
+against analytic true distance) was descoped from this run's fixtures during the redesign — it is a
+statement about brush-composed fields, not about the identity — and remains open for the Calibre
+build ticket to demand.
+
+**Consequence:** R-030 closes with the gate open: the identity is buildable-on, pending only O-19
+(the λ-filter direction, the last definitional discrepancy). ✗27/M-324's continuous-score reading
+now has its convergence constant.
+
+**Would be shown wrong by:** a 257³ run where the capsule floor's median stops halving; a fixture
+where the mid-band inversion passes the wrong form; or a C1 rerun with the per-sample amplified
+tolerance still losing rows — which would mean the residual is not representation dust after all.
+
+### P-29 — registered for R-031, before the harness was written; the kinetics come from the source, not from tuning
+
+**The sourcing that had to happen first, and did.** The dossier recorded Dreybrodt & Gabrovšek
+(`10.5194/hess-23-1995-2019`) as *downloaded, conversion failed* — a rule-5 stop waiting to happen,
+since "linear dissolution kinetics" was the dossier's entire specification. The conversion has since
+succeeded on the corpus (20 pages, 2026-08-17), and the paper is now READ. Everything the simulator
+needs is in it, verbatim: the 2-D net of 1-D fractures (length `l = 200 cm`, width `b = 100 cm`,
+aperture `a₀ = 0.02 cm`); constant heads 15 m → 0 with **periodic** transverse boundaries (their
+cylinder topology, which makes evolution independent of border distance); cubic-law resistance
+`R = (12η/ρg)·∫dx/(a³b)`; linear kinetics `F(c) = k·(1 − c/c_eq)` with the composite constant
+`k = k₁·(1 + k₁a/6Dc_eq)⁻¹`, `k₁ = 4×10⁻¹¹ mol cm⁻² s⁻¹`, `c_eq = 10⁻⁶ mol cm⁻³`,
+`D = 10⁻⁵ cm² s⁻¹`; the closed-form transport `F(x) = F(0)·exp(−x/λ)`, `λ = Q·c_eq/(P·k)`; widening
+`da/dt = 2γF`; the seeding protocol (`Δa = 10⁻⁹·a₀` on the first ten downstream fractures); the
+lognormal heterogeneous net (`a` in `[0.015, 0.025]` cm about a 0.02 peak, σ = 0.2); and the
+interaction ranges (seeds 10 nodes apart fight, 50 apart ignore each other). One OCR ambiguity is
+carried rather than resolved silently: the composite `k` renders once cleanly as `6Dc_eq` and once
+garbled as `3-D·c_eq`; **6D is adopted from the clean occurrence**, and the alternative would shift
+late-stage rates ≤ 2× without touching any registered claim's mechanism. `γ` is the standard
+mol-to-retreat conversion via calcite's molar volume, `100.09 g mol⁻¹ / 2.71 g cm⁻³ = 36.93 cm³
+mol⁻¹` — derived from handbook constants, not fitted. The recharge-limited contrast is sourced too:
+Perne, Covington & Gabrovšek (`10.5194/hess-18-4617-2014`, READ in relevant part) run exactly the
+two post-breakthrough scenarios and state that with recharge capped at `Q_max` *"further expansion
+of the network is suppressed as the head along the growing existing pathways decreases in time."*
+
+> **H.** With the paper's constants on a 64×64 lattice (~8k edges, 8 segments per fracture):
+> **(C1)** under constant heads, the post-breakthrough aperture distribution is **bimodal** by the
+> central-gap statistic — max consecutive gap in sorted `ln a`, 1% tails dropped, threshold **0.2**
+> (the registered initial log-sd) — on both the 3-seed homogeneous net and the lognormal
+> heterogeneous net, while the fixed-flux recharge-limited arm stays **unimodal** at matched
+> cumulative dissolved volume; **(C2)** past breakthrough, **> 90%** of dissolution flux (mol/s per
+> edge) sits in **< 10%** of edges.
+
+**The statistic is derived, not tuned.** For N ≈ 8k draws from any unimodal bulk comparable to the
+initial lognormal, the maximum central spacing is O(σ·ln N/N) ≈ **2×10⁻⁴** — three orders under the
+0.2 threshold — while the published mechanism freezes losers near `a₀` and runs the winner to
+`~50–100·a₀`, a gap of `ln 50 ≈ 3.9`. (Ashman's D was rejected on its own null: a forced 2-means
+split of one Gaussian scores D ≈ 2.65 and passes.) Detector red/green run before any verdict: the
+t = 0 lognormal apertures must read unimodal, a synthetic half-shifted (+4σ) sample must read
+bimodal, and the recharge arm is the physics inversion — both-arms-bimodal indicts the statistic,
+both-unimodal the kinetics.
+
+**Flow is solved exactly, so bimodality cannot be solver noise.** Cubic-law contrast reaches
+`(a_max/a_min)³ ~ 10⁶` exactly when the dynamics get interesting, which is where a fixed-iteration
+Krylov solve quietly turns the pressure field into noise. The harness therefore does no iteration at
+all: one banded Cholesky factorisation per tick (y-major indexing, periodic wrap Δ = 63, bandwidth
+65; Dirichlet elimination keeps it SPD), ~9 MFLOP/tick. The time step is adaptive-deterministic — a
+pure function of state, `dt = 1%·min_s(a_s / ȧ_s)` clamped to [10⁻³, 1] yr — with a per-tick
+`max(da/a) ≤ 1.01%` assert; ~10³ ticks per arm by the log-growth arithmetic. The recharge arm's
+per-input flux is the constant-head arm's own computed t = 0 inflow, frozen — self-consistent rather
+than transcribed.
+
+**Falsified by** no bimodal split on either constant-head arm, or C2's concentration failing — the
+mechanic's positive-feedback premise dies with the kinetics. Instrument-falsified if the recharge
+arm goes bimodal while the detector also flags the t = 0 sample.
+
+**Corrected before the first run, same day — two defects found by arithmetic, not by data.**
+*First, the tick count.* The "~10³ ticks by the log-growth arithmetic" above assumed the entrance
+segment binds the 1% step cap; it does not — the **front** does. A freshly-reached segment always
+sits at `a ≈ a₀` with `F ≈ k`, so `ȧ/a ≈ 4.6 yr⁻¹` holds somewhere for the whole run and a 1% cap
+means `dt ≈ 2.2×10⁻³ yr` throughout: ~10⁶ ticks to a 1,890-year breakthrough. The corrected step
+policy: the aperture ODE is non-stiff and self-limiting (`k(a)` falls with `a`, saturation bounds
+`c`, growth is monotone), so the cap is re-derived at **10%** per tick (~10⁵ ticks), and the
+discretisation claim is *measured* rather than argued: a control arm reruns the heterogeneous case
+at a 5% cap and every registered verdict — both bimodal flags and C2's share within 2 points — must
+be unchanged, or the run fails loudly. *Second, the matched-volume target.* Matching the recharge
+arm to the head arm's *final* dissolved volume is unreachable by construction — the post-breakthrough
+surge dissolves at a rate a capped-recharge arm can never reach, which is the suppression itself,
+not a fair epoch. The registered target becomes the head arm's cumulative dissolved volume **at its
+breakthrough**: the same rock removed as the competitive arm had removed when its winner broke
+through. Both corrections precede any simulation output.
+
+**Records** `arm`, `ticks`, `years`, `breakthrough_years`, `max_gap_ln`, `bimodal`,
+`flux_top10_pct`, `gini_flow`, `max_da_over_a_pct`, `tick_ms_median`.
+
+### 💥 M-326 / P-29 — FALSIFIED on both clauses, while the recorded columns show the mechanism both registered instruments missed (R-031)
+
+> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉
+>
+> 🥇 **The pre-registered bimodality detector trimmed away the wormhole it was built to find — a 1%
+> tail cut on 8,128 edges eats an entire 63-edge winning path — and the pre-registered 90%
+> dissolution share is capped by the paper's own surface kinetics at a measured 78%, even as water
+> flux concentrated to a Gini of 0.976. Both clauses died; the competition, the winner, and the
+> recharge suppression are all visible in the recorded columns.**
+>
+> 🧪 **Tested by:** `cargo bench --bench experiment_p29` (P-29), `docs/experiments/p-29.csv`
+> 🎯 **Result:** C1 gaps 0.060 / 0.022 / 0.052 (hom / het / recharge) — all under the 0.2 threshold,
+> with the "unimodal" control *outscoring* the bimodal-expected arm; C2 dissolution share 16.1% /
+> 78.1% against a registered > 90%. Recorded: flow Gini **0.976** (het) vs **0.560**
+> (recharge-limited); the recharge arm dissolved the same at-breakthrough rock volume with **no
+> breakthrough at all**; het broke through before hom (23 vs 181 yr — the paper's ordering).
+> 📐 **Why it earns the banner:** 💥 two pre-registered clauses falsified instructively — one by an
+> instrument defect that was derivable before the run (the winner mode's minimum size is the
+> lattice's own input→output path length; a new Part 5 rule records it), one by a physical
+> correction to the dossier's number (surface kinetics rate-limits the winner while water flux
+> runs away). The detector's own red/green passed; what failed was never checked against the mode
+> size.
+> 💣 **Would be shown wrong by:** the trim-free, mode-guarded statistic (P-30) still reading no
+> gap on the constant-head arms — which would make the falsification the kinetics' after all.
+
+**M.** `cargo bench --bench experiment_p29`, `docs/experiments/p-29.csv`.
+
+| arm | ticks | years | breakthrough | max gap (trimmed) | flux top-10% | Gini(flow) |
+|---|---:|---:|---:|---:|---:|---:|
+| hom_seeded3 | 896 | 216.8 | 180.6 | 0.060 | 16.1% | 0.742 |
+| heterogeneous | 250 | 27.5 | 22.9 | 0.022 | 78.1% | **0.976** |
+| het_dt_control (5% cap) | 473 | 26.3 | 21.9 | 0.024 | 80.0% | 0.976 |
+| recharge_limited | 175 | 35.4 | **none** | 0.052 | 100.0% | **0.560** |
+
+**C1 falsified by the instrument, and the data says so from inside.** The registered statistic
+dropped 1% tails — 81 of 8,128 edges — while a winning wormhole path is at most one input→output
+chain, ~63 edges: the upper mode is smaller than the trim, so the detector returned the *bulk's*
+spacing on every arm and the ordering came out nonsensical (recharge 0.052 > het 0.022). Meanwhile
+the untrimmed columns carry the split: het's flow Gini 0.976 against recharge's 0.560, and the
+dt-control arm reproduced both readings at half the step, so discretisation is not the story.
+
+**C2 falsified by the physics, and that is the more interesting half.** Water flux concentrates as
+the paper says — but dissolution flux cannot follow it all the way, because the winner's edges are
+rate-limited at `k·P·l` by surface kinetics no matter how much undersaturated water passes, while
+small-flow edges each dissolve their entire inflow (`Q·c_eq`). Measured share at 1.2·T_B: **78%**,
+not the dossier's > 90%. The dossier's number was its own R-tier extrapolation; the corrected figure
+is now measured, and the "re-mesh cost decreases monotonically post-breakthrough" story it fed needs
+the 78% version.
+
+**The suppression is real and quantified.** With recharge capped at the head arm's own t = 0 inflow,
+the same cumulative rock volume that carried the competitive arm to breakthrough (5.54×10⁴ mol)
+produced no breakthrough, a flow Gini of 0.560, and dissolution parked at the input column — Perne,
+Covington & Gabrovšek's *"further expansion of the network is suppressed"*, as a number.
+
+**Recorded scale caveat:** breakthrough times are ~8–25× shorter than the paper's (a 63-fracture
+domain at ~3× the per-fracture gradient); the paper comparison was registered as an ordering, not a
+magnitude, and the ordering held.
+
+**Consequence:** the kinetics are *not* convicted — the registered detector was. P-30 re-registers
+C1 only, with the trim replaced by a mode-size guard derived from the lattice (a gap counts only
+with ≥ 8 edges on each side; the smallest possible winner mode is 63). C2 is answered and closed at
+78%.
+
+**Would be shown wrong by:** P-30's guarded statistic still finding no gap on the constant-head
+arms; or a finer-domain rerun showing the 78% share was an artifact of the 1.2·T_B evaluation epoch
+rather than of the kinetics cap.
+
+### P-30 — registered for R-031, before the corrected instrument ran; P-29's prediction with the trim replaced by a mode guard
+
+**The M-289 shape, deliberately.** P-29's bimodality clause was falsified by its own detector's trim
+(M-326); this registration re-asks the *same* question with the defect removed and nothing else
+changed — the same deterministic runs, seeds and constants, re-read. The correction is derivable
+without the data: a winning wormhole path is at least one input→output chain, **63 edges** on this
+lattice, so the guard requires **≥ 8 edges on each side** of a candidate gap (0.1% — eight-fold
+below the smallest possible winner mode, eight-fold above single-edge outliers) and drops the
+percentile trim entirely.
+
+> **H.** With the guarded statistic — max gap in sorted `ln a` over all 8,128 edges, qualifying only
+> with ≥ 8 edges on both sides, threshold 0.2 — the constant-head arms (3-seed homogeneous,
+> lognormal heterogeneous) read **bimodal** post-breakthrough and the recharge-limited arm reads
+> **unimodal** at the same at-breakthrough dissolved volume. Recorded beside it: the water-flux
+> top-10% share, next to the dissolution share M-326 closed at 78%.
+
+**Falsified by** no qualifying gap on either constant-head arm — which, with the guard in place,
+would mean the aperture histogram genuinely is not gapped-bimodal: the dossier's tier-R "bimodal"
+reading dies, and the competition claim stands on the concentration columns M-326 already measured
+(flow Gini 0.976 vs 0.560; suppression at matched rock volume). The positive-feedback premise itself
+is convicted only if those columns also regress, which M-326 shows they do not. The detector's
+red/green (synthetic +4σ half-shift, t = 0 lognormal) runs again before any verdict.
+
+**Records** the P-29 columns plus `guarded_gap_ln`, `guarded_bimodal`, `flux_water_top10_pct`.
+
+### 💥 M-327 / P-30 — FALSIFIED again, by the distribution this time: heterogeneous wormholing has no gapped aperture histogram, and the same run proves the detector could have seen one (R-031)
+
+> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉
+>
+> 🥇 **With the mode guard in place the homogeneous arm's split is found at 0.222 — the instrument
+> demonstrably sees a real gap — and the heterogeneous arm still reads 0.037: its aperture
+> histogram is a broad continuum, not two modes. The dossier's tier-R "goes bimodal" reading is
+> dead on the fixture the mechanic would actually run on, while the competition itself is
+> overwhelming in the water column: 99.8% of flow in the top decile of edges, against 35.7%
+> recharge-limited.**
+>
+> 🧪 **Tested by:** `cargo bench --bench experiment_p30` (P-30), `docs/experiments/p-30.csv` — the
+> same deterministic runs as M-326, re-read.
+> 🎯 **Result:** guarded gaps 0.222 / 0.037 / 0.063 (hom / het / recharge); water-flux top-10%
+> share 53.9% / **99.8%** / **35.7%**; dissolution share stands at M-326's 78%.
+> 📐 **Why it earns the banner:** 💥 a pre-registered prediction falsified for the *world's* reason
+> after M-326 falsified it for the instrument's — the pair is exactly what pre-registration exists
+> to separate. The literature claims wormhole *competition*; "bimodal aperture distribution" was
+> the dossier's gloss on it, and the gloss is what died.
+> 💣 **Would be shown wrong by:** a longer post-breakthrough run in which the heterogeneous
+> histogram opens a qualifying gap after all — the evaluation epoch is 1.2·T_B, registered.
+
+**M.** `cargo bench --bench experiment_p30`, `docs/experiments/p-30.csv`.
+
+| arm | trimmed gap (M-326) | guarded gap | water top-10% | dissolution top-10% | Gini(flow) |
+|---|---:|---:|---:|---:|---:|
+| hom_seeded3 | 0.060 | **0.222 — bimodal** | 53.9% | 16.1% | 0.742 |
+| heterogeneous | 0.022 | **0.037 — no gap** | **99.8%** | 78.1% | 0.976 |
+| het_dt_control (5% cap) | 0.024 | 0.038 | 99.8% | 80.0% | 0.976 |
+| recharge_limited | 0.052 | 0.063 — unimodal ✓ | **35.7%** | 100.0% | 0.560 |
+
+**The discrimination is inside the run.** The homogeneous arm's bulk is a point mass at `a₀` and its
+widened mode clears the guard: 0.222 found, bimodal called — so a real split does not hide from this
+instrument. On the lognormal net the winner's apertures connect to the bulk through the
+partially-widened front and laterals: a continuum, no qualifying gap at any split with 8 edges a
+side. That is a property of heterogeneous wormholing, not of the reader — and the heterogeneous net
+is the one the dossier itself says nature resembles (*"wormholes start to grow immediately, which is
+more likely expected in nature"*).
+
+**What R-031 actually established, across M-326 and M-327:** the paper's mechanism reproduces from
+its own constants — competition, a winner, breakthrough ordering (het before hom), and
+recharge-limited suppression at matched rock volume — and its game-facing observable is
+**flow concentration** (water top-10% share, Gini), not a histogram shape. The dissolution share is
+capped by surface kinetics at 78% even as water hits 99.8%, which is the number the "re-mesh cost
+falls post-breakthrough" story must use. The build ticket, when written, should emit brushes and
+budget re-meshing off the concentration columns.
+
+**Would be shown wrong by:** any of the three registered fixtures replayed with a different seed
+family reversing a verdict (the runs are deterministic; the seed is registered); or a
+post-breakthrough epoch at which the heterogeneous histogram genuinely separates.
+
+### P-31 — registered for R-032, before the harness was written
+
+**What the certificate needs, and why the dossier expects it missing.** The λ-medial axis's homotopy
+guarantee needs `λ < wfs`, the weak feature size — the smallest distance from a critical point of
+the air's distance function to the boundary. Destruction carves near-tangential intersections, and
+near-tangential geometry puts critical points close to the boundary; the dossier predicts the
+certificate essentially never holds at brush scale, and this registration is that prediction with
+its instrument pinned. M-325 opened the gate on the *stability* side; this decides what the build
+may *claim* — a homotopy guarantee, or Hausdorff stability (Chazal–Lieutier; Lieutier & Wintraecken
+`10.1145/3564246.3585113`) alone.
+
+> **H.** On **> 80%** of 20 seeded dug scenes — a solid block carved by 12 random overlapping
+> capsule brushes through the crate's own `BrushStack` composition — the measured `wfs` is
+> **< 2 voxels**. The control scene (one 20-voxel cavity in generic position) reports
+> `wfs ≥ 10 voxels`.
+
+**The instrument, derived where it can be.** Critical-point candidates are interior air samples
+whose voxel-step central-difference `‖∇ρ‖ < 0.5` — the dossier's own filter constant (`θ > 120°`,
+since on a two-sheet medial `‖∇ρ‖ = cos(θ/2)`), stated in §2.4 and reused rather than re-invented —
+non-maximum-suppressed over 26-neighbourhoods (a sample survives only when no neighbour reads a
+strictly smaller magnitude). `wfs` = min ρ over survivors, in voxels. The scan is restricted to
+`|xᵢ| ≤ 1.5`, inside the block, so the exterior shell (gradient ≡ 1, no critical points, boundary
+partially outside the sampled domain) cannot contribute.
+
+**Reachability and inversion in one control:** the single-cavity scene's centre is a genuine
+critical point at `ρ ≈ 20` voxels. An instrument that cannot report the certificate *available*
+there is not to be trusted reporting it *absent* on the dug scenes; its 10-voxel floor is asserted
+before any verdict is read, as is a non-empty critical set and a sane carved fraction (2–60% air) on
+every dug scene.
+
+**Falsified by** `wfs ≥ 2` voxels on half or more of the dug scenes — the certificate comfortably
+available, the stronger guarantee live, the Hausdorff fallback unnecessary. Either way the answer
+decides what §1.1's build may claim, and neither outcome halts the list.
+
+**Records** `scene`, `air_samples`, `critical_points`, `wfs_voxels`, `epsilon`, `samples_per_axis`.
+
+### 🔬 M-328 / P-31 — HELD at 20 of 20: the homotopy certificate is never available in a dug scene, and the instrument proved it could have said otherwise (R-032)
+
+**M.** `cargo bench --bench experiment_p31`, `docs/experiments/p-31.csv`.
+
+Across 20 seeded scenes carved by 12 overlapping `BrushStack` capsules each: **every scene's wfs is
+under 2 voxels** — and not marginally. The measured values sit at **0.00–0.15 voxels** on 19 scenes
+and 0.66 on the twentieth: the critical points of a dug scene's distance function live essentially
+*on* the boundary, which is the near-tangential-intersection mechanism the dossier predicted stated
+as a number. A homotopy certificate `λ < wfs` would need λ under a tenth of a voxel — no gameplay λ
+(a shoulder width is many voxels) can ever satisfy it. The control cavity reported the certificate
+**available at 19.5 voxels from exactly one critical point**, so the twenty absent-verdicts are
+readings of the scenes, not of a blind instrument.
+
+**Consequence, recorded so nobody re-derives the strong claim:** the λ-medial direction drops the
+homotopy guarantee permanently and rests on **Hausdorff stability** — Chazal–Lieutier, with Lieutier
+& Wintraecken's `d_H ≲ d_H^{1/2}` / `d_GH ≲ d_H^{1/4}` bounds (`10.1145/3564246.3585113`) — which is
+weaker, parameter-free beyond λ itself, and still far better than a tuned persistence constant. With
+M-325 (the score converges O(h)) and ✗27/M-324 (the score, not the boolean), the Calibre line's
+epistemic footing is now fully measured; only O-19's definition direction remains.
+
+**Would be shown wrong by:** a dug-scene generator whose carves are deliberately non-tangential
+(disjoint fat chambers with fat connectors) reporting comfortable wfs — which would mean the result
+is a property of *overlapping* brush edits specifically, and level designers who avoid overlaps
+could buy the certificate back.
+
+### P-32 — registered for R-033, before the harness was written; the kill-shot carries its own unit conversion
+
+**The factor of two that decides the verdict, registered up front.** The ~0.6% just-noticeable
+difference is a *pitch* threshold — it lives on frequency — and `f ∝ √λ`, so
+`audible ⟺ ½·|Δλ|/λ ≥ 0.6%`: the λ₁ threshold is **1.2%**. Applying 0.6% to λ directly would make
+the null twice as hard to hold, silently. (The JND constant itself is the ticket's, tier-F; the
+conversion is arithmetic.)
+
+> **H.** On a carved, mildly asymmetric, base-anchored pillar (~32³ occupancy): **(C1)** all 8
+> seeded strictly-interior one-voxel digs move λ₁ by **< 1.2%**; **(C2)** at least 1 of 4 digs
+> adjacent to the fixture's two-cell-thick web **exceeds** 1.2% — the ticket's "only edits near a
+> thin feature are audible", both sides of it; **(C3)** carving a 20%-volume cavity moves λ₁ by
+> **> 15%** — the null's reachability, so "inaudible" is a reading of the edit and not of a numb
+> instrument.
+
+**The instrument, and what makes fixed counts safe.** Trilinear hexahedral FEM assembled directly on
+the occupancy grid — the discretisation the sound literature itself uses, no tetrahedralisation —
+with one reference 24×24 element stiffness from 2×2×2 Gauss quadrature of `BᵀDB` (`E = 1`,
+`ν = 0.3`, `ρ = 1`; units cancel in `Δλ/λ`), lumped diagonal mass, base layer fixed. λ₁ by
+matrix-free inverse power iteration (48 outer) over Jacobi-preconditioned CG (256 inner,
+warm-started). The safety is not the counts but the **certificate**: with M diagonal,
+`ε = ‖Kx − λ_R·Mx‖_{M⁻¹} / ‖x‖_M` is a one-pass a-posteriori bound and there is an eigenvalue
+within ε of `λ_R`; every reported value must carry `ε ≤ 5·10⁻⁴·λ_R` — 24× under the decision
+threshold — or the run fails loudly. Two deterministic starts must agree within 2ε. The certificate
+is itself shown able to go red on a deliberately under-converged (2-outer) run before any verdict is
+read. Element validation: the free single element's spectrum must hold **exactly six** rigid modes
+(Jacobi eigensolver over the 24×24), symmetry to 1e-10, and translation/rotation null vectors.
+
+**Descoped, deliberately:** the k ∈ {8..128} mode-count timing sweep the dossier sketched. The
+registered hypothesis is λ₁-only; block deflation is several hundred lines that matter only if the
+kill-shot survives, and premise-falsifiers-first is this backlog's own ordering rule.
+
+**Falsified by** any interior dig at ≥ 1.2% (modal audio earns its ticket, pre-bounded at ≈40 modes
+in 5 ms by Picard's `O(m^2.8)`); C2 failing the other way closes the direction entirely; and
+instrument-falsified by the certificate, the two-start disagreement, the numb control, or a
+single-element spectrum with other than six rigid modes.
+
+**Records** `edit`, `cells`, `dof`, `lambda1_base`, `lambda1_edited`, `delta_pct`, `audible`,
+`certificate_rel`.
+
+### 💥 M-329 / P-32 — the modal kill-shot fired: no one-voxel edit is audible anywhere, including against the thin web, and the direction closes for a day's cost (R-033)
+
+> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉
+>
+> 🥇 **One voxel cannot move a carved body's fundamental audibly — the worst interior dig shifted
+> λ₁ by 0.11% against a 1.2% audibility threshold, and the digs against the two-cell-thick web did
+> even less (≤ 0.032%, forty-fold under audible). The ticket's own second clause — "edits near thin
+> features are audible" — is what died, and with it the whole per-edit modal direction, at the
+> price the dossier set: a day, not a sprint.**
+>
+> 🧪 **Tested by:** `cargo bench --bench experiment_p32` (P-32), `docs/experiments/p-32.csv`
+> 🎯 **Result:** C1 HELD (8/8 interior digs, worst 0.1126%); C2 **FALSIFIED the closing way** (best
+> near-web dig 0.0321%); C3 control: a 20%-volume cavity moved λ₁ **63.9%**, certificates at
+> 5.5×10⁻⁸ relative — four orders under their bound — and both starts agreed on every solve.
+> 📐 **Why it earns the banner:** 💥 a pre-registered clause falsified in the direction that kills
+> a candidate mechanic outright, before anything was built on it — the exact trade the premise-first
+> ordering exists to buy. And the numbers carry the mechanism: a one-voxel dig moves λ₁ by roughly
+> its share of modal strain energy, ~1/N — so the result is not marginal and no fixture tuning
+> rescues it.
+> 💣 **Would be shown wrong by:** a fixture whose fundamental *is* a thin-feature mode (a body that
+> is mostly web), or edits at a near-failure hinge where the mode concentrates — either would make
+> single-voxel audibility real for that body class.
+
+**M.** `cargo bench --bench experiment_p32`, `docs/experiments/p-32.csv`.
+
+| edit set | Δλ₁/λ₁ range | verdict at 1.2% |
+|---|---:|---|
+| 8 strictly-interior digs | 0.0020% – 0.1126% | inaudible, 8/8 (C1 HELD) |
+| 4 digs adjacent to the 2-cell web | 0.0065% – 0.0321% | inaudible, 4/4 (**C2 FALSIFIED**) |
+| 20%-volume cavity (886 cells, 4 orphan fragments fell away, printed) | **63.9%** | the null's reachability (C3 HELD) |
+
+**The mechanism, visible in the spread.** A single cell is ~0.025% of this 3,982-cell body, and the
+interior deltas bracket exactly that: first-order eigenvalue perturbation says `Δλ/λ` ≈ the removed
+cell's share of the mode's strain energy. The web digs move λ₁ *less* than interior digs because the
+fundamental is the pillar's sway and the web is a passenger in it — "near a thin feature" was never
+the right variable; **modal strain density** is. Audibility therefore needs either ~50+ cells
+removed at once (the cavity's regime, on this body) or an edit where the mode concentrates —
+a near-failure hinge — which is a different mechanic (pre-fracture creaking) with a different
+trigger, not per-edit modal audio.
+
+**The margin survives the constant's tier.** The 0.6% pitch JND is the ticket's tier-F constant;
+the conversion to 1.2% on λ is arithmetic. The measured worst case sits 11× under the threshold and
+the web case 37× under — a JND wrong by an order of magnitude would not flip the verdict.
+
+**Instrument record:** element validated before trust (symmetry, translation/rotation nulls,
+exactly 6 rigid modes from the free-element Jacobi spectrum); certificate shown red on a 2-outer
+run (2.3×10⁻¹ vs the 5×10⁻⁴ bound) before any verdict; every reported eigenvalue certified at
+≤ 5.6×10⁻⁸ relative; the control cavity's 4 orphaned fragment cells pruned as fallen debris, on the
+record.
+
+**Consequence:** the modal direction closes. Picard's ≈40-modes-in-5-ms budget is moot for per-edit
+audio; no build ticket is earned. What survives as a lead worth a *different* premise experiment
+someday: λ₁ tracking as a *structural* signal (the cavity's 63.9% says large-scale carving is very
+audible in principle), and mode-concentration at near-failure hinges as a creak trigger.
+
+**Would be shown wrong by:** the two fixture classes the banner names; or a certificate bug — the
+inversion demonstrated red, so that path is covered.
+
+### P-33 — registered for R-034a, before the harness was written; the only external ground truth in the batch
+
+**What this one is for.** Every other Phase 18 experiment checks a prediction against this repo's own
+constructions; R-034a checks a solver against numbers the world already knows. Whiting, Ochsendorf &
+Durand (`10.1145/1618452.1618458`, READ in full — including its appendix's equilibrium indexing)
+validated their rigid-block program on two closed-form results, and a reimplementation either hits
+them or is wrong: **Milankovitch 1907** — minimum thickness over *centerline* radius of a
+semicircular arch, **0.1075** (their solver: 0.10746, at a 100-block tessellation) — and
+**Ochsendorf 2002** — critical ground tilt **15.84°** at t/r = 0.20, which they matched exactly.
+
+> **H.** The pure-Rust program — per-vertex interface forces at the two ends of each radial cut,
+> equilibrium `A_eq·f = −w` (3 rows per block in 2-D: forces and torque), friction cone `|f_t| ≤
+> 0.7·f_n`, compression-only — reports the 100-block threshold at **0.1075 ± 0.0010** and the tilt
+> at **15.84° ± 0.05°**.
+
+**Two decisions with reasons committed in advance.**
+
+- *Weights at exact annular-sector centroids.* Sector area is `Δθ·R·t` and the centroid radius is
+  the closed-form `(2sin β/3β)·(R_o³−R_i³)/(R_o²−R_i²)` — because a centerline-lumped weight
+  reproduces **Heyman's 0.106**, not Milankovitch's 0.1075, and the third decimal is the whole
+  point of using this as a gate (the memo's highest-ranked trap for this ticket).
+- *The solver is alternating projection, and it replaced FISTA before the first run.* As first
+  registered, the solver was FISTA on `‖A_eq·f + w‖²` over the cones, 20,000 iterations — and the
+  convergence arithmetic kills that instrument before it runs: FISTA's residual tail is O(1/k), so
+  the registered budget lands near `3×10⁻³·W`, two orders above the 10⁻⁵ feasibility band, and the
+  band-abort would fire on every feasible probe. **Corrected before any run:** plain alternating
+  projection between the equilibrium affine set `{f : A_eq·f = −w}` — *exact* per iteration via one
+  prefactored dense Cholesky of `A·Aᵀ` (300×300) — and the per-vertex friction cones, whose
+  projection is closed-form. Feasible probes converge to the intersection; infeasible probes stall
+  at the minimal-distance pair, and the decision reads the **cone-side** iterate's equilibrium
+  residual per unit weight: **feasible < 10⁻⁵, infeasible > 10⁻⁴**, band asserted never hit; both
+  bisections stop at a width that keeps every probe a classification margin away from the
+  threshold (4×10⁻⁴ in t/r, 0.02° in tilt — both well inside the registered tolerances). The
+  thresholds are scale-invariant (gravity-doubling must move nothing, asserted) and are policed by
+  the golden values: a mis-set threshold cannot land on 0.1075 from both sides. Whiting's own
+  `Σ(f_n⁻)²` reading is reported beside it at spot values.
+
+**Recorded, not registered:** the threshold at N ∈ {25, 50, 100, 200} — the paper's own warning
+that coarser blocks *over-estimate* stability (a hidden gameplay parameter), so the coarse
+thresholds should sit below the fine ones; the direction is the claim, the magnitude is data.
+
+**Falsified by** missing either golden value. Instrument-aborts, before any verdict: a gravity-scale
+variance, or any bisection step in the undecided band. R-034b (split at registration, per the
+ticket's own note) carries the warm-start bimodality clause and the game-facing economics.
+
+**Records** `test`, `blocks`, `value`, `target`, `abs_error`, `within_tolerance`,
+`residual_feasible`, `residual_infeasible`.
+
+### 🔬 M-330 / P-33 — HELD on both golden values: the feasibility solver is now held to external truth, and the coarsening warning would not reproduce on an arch (R-034a)
+
+**M.** `cargo bench --bench experiment_p33`, `docs/experiments/p-33.csv`.
+
+| test | value | target | error | tolerance |
+|---|---:|---:|---:|---:|
+| Milankovitch minimum thickness, 100 blocks | **0.10734** | 0.1075 | 0.00016 | ± 0.0010 (Whiting: 0.10746) |
+| Ochsendorf critical tilt at t/r = 0.20 | **15.850°** | 15.84° | 0.0096° | ± 0.05° |
+
+**The instrument behaved exactly as corrected.** Feasible probes land *in* the intersection —
+cone-side equilibrium residuals of **10⁻¹⁶ of total weight** — while infeasible probes stall three
+orders above the 10⁻⁴ line, so the undecided band (asserted never hit) was never even approached;
+gravity-doubling moved no verdict; both bracket ends classified as registered before either
+bisection was trusted. The pre-run FISTA→alternating-projection correction is what made those
+readings possible at 20,000 fixed iterations.
+
+**The recorded coarsening sweep is a small falsification of an expectation that was never
+registered here, and worth keeping.** The paper warns that coarser blocks over-estimate stability,
+and the dossier's own sketch predicted a ≥ 5% unconservative shift under 2× coarsening. Measured on
+the arch: thr(25) = 0.10703, thr(50) = thr(100) = thr(200) = **0.10734** — a 0.3% shift at 25
+blocks and *flat* from 50 up, at a 4×10⁻⁴ bisection width. The brief's own caveat applies verbatim:
+a plain arch is too simple to discriminate the block-size effect; measuring it needs a compound
+structure (vaults, buttresses — where Whiting's own hinging-mechanism warning lives). R-034b's
+fixture should be built to discriminate it.
+
+**Consequence:** the solver is trusted — nothing structural was buildable on it until these two
+numbers hit, and they hit. R-034b (warm-start bimodality, the cheap-incremental question) is
+unblocked and next in the phase order.
+
+**Would be shown wrong by:** a tessellation sweep showing the 0.10734 drifting with N beyond the
+bisection width (the paper's own value moved in the fifth digit, ours in the fourth); or the tilt
+value failing to track μ once sliding governs (μ = 0.7 keeps hinging in charge here, tan 15.85° =
+0.28 ≪ 0.7).
+
+### P-34 — registered for R-034b, before the harness was written; the cheap-incremental question, counted
+
+**What the original R-034 registered and the split deferred.** Warm-started re-solve is bimodal —
+under 15% of cold cost for edits that do not sever a load path, under 2× speedup for those that do —
+or the cheap-incremental story dies and the admissibility gate is background-budget-only. M-330's
+solver is now trusted; this measures its economics.
+
+> **H.** On a running-bond masonry wall (8 courses, ~96 blocks, bed and head joints, μ = 0.7):
+> **(C1)** over 10 non-severing edits — single-block weight nudges, small gravity tilts — the median
+> warm/cold ratio of *iterations to the feasibility decision* is ≤ **0.15**; **(C2)** over 10
+> severing edits — an interior block removed, forces rerouted around the hole — the median ratio is
+> ≥ **0.5**; and the two class medians are separated by **> 3×**, which is the bimodality claim
+> stated as a number.
+
+**Fixture chosen for redundancy, on M-330's evidence.** A severing edit can only leave a *standing*
+structure if an alternate load path exists; the arch has none, and M-330 measured the arch too
+simple to discriminate block-structural effects at all. A running-bond wall reroutes around a hole
+by corbel action through its bond — the classic redundant masonry element.
+
+**Counted, not timed (✗24).** Cost is the alternating-projection iteration count until the
+cone-side residual per unit weight first crosses the 10⁻⁵ feasibility line — cold from zero, warm
+from the pre-edit solution carried across by interface identity (a removal drops its own
+interfaces; every other variable maps 1:1). Wall-clock is printed beside the counts and gates
+nothing.
+
+**Falsified by** a unimodal ratio distribution — class medians within 3× — which kills the
+cheap-incremental story. Instrument notes, registered: an edit that classifies infeasible at the
+20,000-iteration cap is recorded `collapsed` and excluded with its count printed (a corpus that
+mostly collapses is a fixture failure and aborts); every surviving edit must reach the decision
+line within the cap.
+
+**Records** `edit`, `class`, `iters_cold`, `iters_warm`, `ratio`, `feasible`.
+
+### 💥 M-331 / P-34 — FALSIFIED as registered, by an instrument floor the registration promised was fine, and by a corpus that mixed two edit species (R-034b)
+
+**M.** `cargo bench --bench experiment_p34`, `docs/experiments/p-34.csv`.
+
+C1 read a non-severing median ratio of **0.400** against the registered ≤ 0.15; C2 held (severing
+median **0.800** ≥ 0.5); the bimodality clause read **2.0×** separation against the registered
+> 3× — FALSIFIED. And the registration's own sentence — *"counts carry that granularity — recorded,
+and far finer than the 3× separation under test"* — is where the defect lives, in three parts:
+
+- **The probe floor sat above the registered bound.** Cold solves took 40–80 iterations on this
+  wall (the base stood in **50**), and the decision was probed every 10 — so the minimum
+  *measurable* ratio was 10/50 = **0.2**. All five weight-nudge edits pinned exactly there: an
+  instant warm solve could not have scored under 0.2, and C1's 0.15 was unreachable by construction.
+  The granularity promise was written against an estimated cold count of hundreds, never checked
+  against the fixture — the same failure shape as P-29's tick arithmetic, one experiment later.
+- **The fixture is too easy for the question.** A 92-block wall decides in 50 iterations from
+  zero; there is no dynamic range for incrementality to show in. The dossier's warm-start question
+  lives at ~1,000 blocks and 30–200 ms solves.
+- **Tilts are not local edits.** A 0.3–0.7° gravity rotation moves *every* interface force; the
+  measured 0.4–0.6 ratios are honest for what tilts are — a global re-load — and mixing them into
+  the "non-severing" class buried the local-edit signal.
+
+**The signal underneath, recorded not registered:** single-block weight nudges (floor-pinned
+≤ 0.2) against block removals (0.5–1.0, median 0.8) separate by **≥ 4×** — consistent with the
+bimodality the ticket wants, and undecidable at this instrument's floor. P-35 re-asks once, with
+the corrections derivable in advance: probe every iteration, a wall sized for three-digit cold
+counts, and tilt as its own recorded class.
+
+**Would be shown wrong by:** P-35 finding the weight-nudge class *still* above 0.15 with the floor
+removed — which would mean the 0.400 was never the instrument's and the cheap-incremental story
+dies on merit.
+
+### P-35 — registered for R-034b, before the corrected instrument ran; P-34 with its floor removed and its corpus unmixed
+
+**The M-289 shape, third use today.** M-331 falsified P-34's clauses through an instrument floor
+(probe granularity 10 over 50-iteration cold solves puts the minimum measurable ratio at 0.2, above
+the 0.15 bound) and a mixed corpus (tilts are global re-loads, not local edits). This re-asks the
+ticket's own prediction once, with every correction derivable in advance: the decision probed
+**every iteration** (floor = 1/cold); the wall grown to **20 courses × 24 blocks (~470 blocks)** so
+cold counts get three digits of dynamic range; tilts out of the registered corpus and recorded as
+their own class.
+
+> **H.** Over 10 single-block weight nudges the median warm/cold iteration ratio is ≤ **0.15**;
+> over 10 interior removals it is ≥ **0.5**; the class medians separate by **> 3×**. (M-331's
+> floor-pinned nudges and 0.8 removal median already point here at 4×, undecidably.)
+
+**Falsified by** the weight-nudge median still above 0.15 with the floor at 1/cold — then the 0.400
+was never the instrument's, and the cheap-incremental story dies on merit, demoting the
+admissibility gate to background-budget-only exactly as the original R-034 registered. Or medians
+within 3× — unimodal, same consequence. Collapsed removals excluded on the record as in P-34,
+aborting past three.
+
+**Records** `edit`, `class`, `iters_cold`, `iters_warm`, `ratio`, `feasible`.
+
+### 🔬 M-332 / P-35 — HELD on all three clauses: warm-starting the admissibility solve is bimodal by edit class, and the tilts confirm their own exile (R-034b)
+
+**M.** `cargo bench --bench experiment_p35`, `docs/experiments/p-35.csv`.
+
+| class | ratios (warm/cold iterations) | median | registered |
+|---|---|---:|---|
+| local (10 single-block weight nudges) | 0.036 – 0.179 | **0.143** | ≤ 0.15 — HELD |
+| severing (10 interior removals, all stood) | 0.536 – 0.971 | **0.679** | ≥ 0.5 — HELD |
+| separation | — | **4.8×** | > 3× — HELD |
+| tilt (recorded, exiled by M-331) | 0.607 – 0.774 | 0.72 | severing-grade, as diagnosed |
+
+**The floor is gone and the answer is the ticket's.** With the decision probed every iteration, the
+minimum measurable ratio fell to 1/28 and one nudge decided in a **single** warm iteration; the
+local-edit class landed at a 7× median advantage, structural edits at ~1.5×, and the class medians
+separate 4.8×. Warm-started re-solve of the M-330-validated program is **bimodal by edit class** —
+the cheap-incremental story the original R-034 registered survives, with two caveats on the row:
+C1's median clears its bar by a fifth of one iteration quantum (0.143 vs 0.15 at a 0.036 quantum),
+and at these sizes even the cold solve is trivial — the 470-block wall stood in **28 iterations**
+from zero, so the economics that matter at the dossier's 1,000-block, 30–200 ms scale are
+extrapolated from counts, not yet from big-structure walls.
+
+**The tilt class confirms M-331 from inside the data:** every tilt ratio sits in the severing band.
+"Does this edit re-load the whole structure" is the variable; adjacency was never it — the same
+lesson M-329 taught about modal strain density, in statics costume.
+
+**Consequence:** the admissibility gate may plan on warm starts for local edits and budget cold
+re-solves for structural ones; the block decomposition remains a pure function of the edit log per
+the paper's warning, and the big-structure timing scale stays open for the build ticket.
+
+**Would be shown wrong by:** a wall or compound structure whose cold count reaches the hundreds
+showing the local-edit advantage collapsing (the extrapolation failing exactly where it matters);
+or any corpus where removals reroute *nothing* (a wall with no bond) reading bimodal anyway — which
+would mean the classes measure the solver, not the structure.
+
+### 🔬 M-333 — the heat-operator substrate verifies against a dense reference, and its own numbers pre-shrink two of R-035b's expectations (R-035a)
+
+**M.** `cargo bench --bench r035a_substrate`, `docs/measurements/r035a-substrate.csv`. Comparative,
+deliberately without a `P-` id — correctness against a reference is not a hypothesis (the M-322
+precedent).
+
+On a 447-vertex Surface Nets mesh, the up-looking sparse LDLᵀ under the BFS-bisection
+nested-dissection ordering matches a dense LDLᵀ of the permuted heat operator entrywise at
+**3.1×10⁻¹⁶** and their solves agree at 1.4×10⁻¹⁴. On the 64³ chunk — **12,615 vertices** (the
+dossier extrapolated ~15k), 24,366 triangles, `h̄ = 0.0577`, `t = h̄²` — the factor holds
+`‖LDLᵀ − A‖_F/‖A‖_F = 2.0×10⁻¹⁶` against the derived 1.4×10⁻¹⁰ bound with `nnz(L) = 1,144,427`,
+and a partial refactor over an ancestor closure with **unchanged values reproduces the factor
+bit-for-bit** across 11,228 closure rows — the update path demonstrated to be a no-op exactly when
+nothing changed, which is the cheapest strong correctness check this machinery admits.
+
+**Two numbers that pre-shrink R-035b, recorded before it runs.** The full refactorisation costs
+**87.7 ms** — already under the ticket's "> 100 ms" absolute, which is why R-035b registered the
+*ratio* as its load-bearing clause. And 131 *scattered* seeds closed over **89% of all rows**: the
+elimination-tree paths are long even under nested dissection, so everything rests on whether a
+*clustered* brush halo closes small — which is precisely the question the experiment exists to
+answer rather than assume.
+
+**Would be shown wrong by:** any input on which the no-op partial refactor is not bit-identical, or
+a mesh whose heat operator fails the SPD pivot assert — both abort loudly rather than report.
+
+### P-36 — registered for R-035b, before the harness was written; the routing decision, on a verified substrate
+
+**What this decides.** The dossier's Law 2 disqualifies any prefactored surface operator for live
+carving unless its factorisation can be *updated* rather than rebuilt; if the update is not clearly
+cheaper, everything surface-intrinsic routes to the Closest Point Method (Dziuk & Elliott,
+`10.4171/ifb/182`, READ: the matrices *"depend only on the evaluation of the gradient of the level
+set function"* — a brush touching k voxels changes exactly k stencils). M-333 verified the
+substrate and pre-shrank two expectations: the full refactor already costs **87.7 ms** (under the
+ticket's > 100 ms absolute — the ratio is the registered clause), and *scattered* seeds close 89%
+of the elimination tree; whether a **clustered brush halo** closes small is exactly what this
+measures.
+
+> **H.** A radius-4-voxel surface perturbation changes ≤ **400** vertex slots (M-318's 346 of
+> 15,706, keyed by cell identity; the 1-ring operator-row halo counted beside it, expected 3–6×),
+> and a partial refactorization over the elimination-tree ancestor closure of the changed columns
+> re-establishes a valid factorisation ≥ **20×** cheaper than a full refactorisation by wall time,
+> with the **flop ratio ≥ 10** alongside — a large time ratio over a small flop ratio is an
+> implementation artifact, not a result.
+
+**Validity asserted, never assumed:** the updated factor must hold the same Frobenius bound a fresh
+one does; its solve must agree with the refactored solve within 10⁻⁸ relative (κ-derived with five
+orders of margin); and a deliberately skipped closure column must push the residual past its bound
+— the inversion seen red before any verdict. The fixture is a *value* update on a stable pattern:
+the slot **set** changing at all aborts the run, and says so. Timing interleaved both orders
+(ABAB/BABA), 11 repetitions, medians, flops counted beside wall (✗24, M-197 both honored).
+
+**Falsified by** the update under **10×** by wall or under the flop floor — the prefactored family
+is dead for live carving and the CPM takes the intrinsic lane; that routing decision is the
+ticket's whole point, and it gets recorded whichever way it lands. The slot count exceeding 400
+re-scopes M-318's extrapolation without deciding the routing by itself.
+
+**Records** `rep`, `order`, `update_ms`, `refactor_ms`, `update_flops`, `refactor_flops`,
+`changed_slots`, `changed_rows`, `closure_rows`.
+
+### 💥 M-334 / P-36 — FALSIFIED at 1.7× against a registered 20×: the separators eat the update, the prefactored family is dead for live carving, and the intrinsic lane routes to the Closest Point Method (R-035b)
+
+> 🎉🎊🔥✨🏆 **DISCOVERY** 🏆✨🔥🎊🎉
+>
+> 🥇 **An 86-vertex brush halo — four times under the registered slot budget — drags an
+> elimination-tree ancestor closure of 5,853 rows, 46.4% of the matrix, through exactly the
+> nested-dissection separator columns where the factorization's work lives: the "update" costs as
+> many flops as the full refactorization and saves only 1.7× of wall. The failure is structural,
+> not implementational — the halo was tiny and the validity was perfect — and it makes the routing
+> decision the ticket existed to make: everything surface-intrinsic goes to the Closest Point
+> Method.**
+>
+> 🧪 **Tested by:** `cargo bench --bench experiment_p36` (P-36), `docs/experiments/p-36.csv`
+> 🎯 **Result:** update **46.9 ms** vs refactor **81.8 ms** (medians, interleaved both orders) —
+> wall **1.7×** against the registered ≥ 20× and the ≥ 10× kill-line; update flop count ≥ the full
+> refactor's; slots 86 ≤ 400 (that clause HELD); validity: residual 2.0×10⁻¹⁶, solves **bitwise
+> identical**, skipped-column inversion red at 5.2×10⁻⁶.
+> 📐 **Why it earns the banner:** 💥 a pre-registered prediction falsified with a clean structural
+> mechanism — M-333's scattered-seed flag (89% closure) confirmed in clustered form, which is the
+> form that mattered — and the consequence is a routing decision, made on measurement rather than
+> on the dossier's hope. Two 🪤 rode along: field-level value edits *always* change the slot set
+> near the zero set (M-318's "appears, vanishes, or moves" is the common case, recorded from two
+> aborted fixtures), and a per-fixture-derived parameter leaked global change into a local-edit
+> experiment (the new Part 5 rule).
+> 💣 **Would be shown wrong by:** a supernodal or subtree-cached update (the Herholz line the
+> dossier lists as unobtained acquisitions) beating the closure barrier on this same fixture.
+
+**M.** `cargo bench --bench experiment_p36`, `docs/experiments/p-36.csv`.
+
+| quantity | value | registered |
+|---|---:|---|
+| changed slots (cell-keyed) | **86** | ≤ 400 — HELD (M-318 extrapolated 346) |
+| changed operator rows (1-ring) | 122 (1.4×) | recorded (memo guessed 3–6×; a contiguous ball's ring is mostly internal) |
+| ancestor closure | **5,853 / 12,615 rows (46.4%)** | the unknown M-333 flagged, now measured |
+| update vs refactor, wall | 46.9 ms vs 81.8 ms — **1.7×** | ≥ 20× (H), < 10× kills — **FALSIFIED** |
+| flop comparison | update ≥ refactor | the ≥ 10× floor, unreachable |
+| validity | 2.0×10⁻¹⁶ residual; solves bitwise equal; inversion red | all asserted before timing |
+
+**The mechanism, and why no tuning rescues it.** The halo is not the problem — 86 slots is *better*
+than M-318 promised. The problem is where the closure goes: every clustered edit's elimination-tree
+paths climb into the top separators, the separators on a surface mesh are O(√n) wide, and their
+columns are where the factorisation's arithmetic is concentrated. Recomputing 46% of the rows *is*
+recomputing most of the work. (The recorded update-flop counter additionally over-counts scan-past
+entries in partial mode; the wall ratio is the honest figure, and at 1.7× the over-count changes
+nothing — both readings sit an order under the kill-line.)
+
+**The routing, per the dossier's own three escapes:** chunk-scoped refactorisation survives as a
+background-budget option (81.8 ms per 64³ chunk, off the frame path); CHOLMOD-style updating is
+**dead here** on structure, not implementation; and live surface-intrinsic work routes to the
+**Closest Point Method** (Dziuk & Elliott, `10.4171/ifb/182`, READ: the matrices depend only on the
+level-set gradient — a brush touching k voxels changes exactly k stencils, no global factor to
+repair). The Herholz-line update papers remain unobtained; if acquired and their subtree machinery
+beats the closure barrier, this row is the fixture to re-run.
+
+**Two fixture lessons, kept as data:** field-level value edits at 0.3 *and* 0.08 voxel amplitudes
+both changed the slot set — near the zero set there are always samples under any amplitude, so a
+value-only factor update can never serve a whole real brush edit anyway; and the heat time `t`
+must be pinned across compared meshes (the new Part 5 rule), which the first validity run found at
+a cost of one morning's confusion and no data contamination.
+
+**Would be shown wrong by:** the banner's supernodal escape; or a chunk size at which the closure
+fraction drops enough to clear 10× (smaller chunks shrink the separators — but also the refactor
+they're racing).
+
+### P-37 — registered for R-036, before the harness was written; and the ticket's premise correction is the registration's first line
+
+**The premise, checked against the code (workflow step 1).** The ticket says the tracker *"already
+maintains the two accumulators a Sabine estimate needs (component volume, boundary surface area)"*.
+Half true: `Air::component_size` maintains volume; **no surface-area accumulator exists anywhere in
+the crate** — verified by read (`connectivity.rs` holds `size`, `free`, `live`, `pending` and
+scratch; nothing counts faces). The contradiction is the finding, and the measurement requires this
+batch's one public-API addition, plan-approved: `area: Vec<u32>` maintained beside `size`, exposed
+as `component_area(label)`.
+
+> **H.** With per-label air–solid face counts delta-maintained through `build`, `dig`'s blob
+> growth, `fill`'s retirement, merge transfer and split hand-off — domain-boundary faces counted
+> as solid (the sealed-box convention; a component touching the chunk edge is `AirWorld`'s problem,
+> deliberately out of scope) — **(C1)** a Sabine RT60 for the breach-frame component
+> (`0.161·V/(α·S)`, two accumulator reads and a divide) costs **< 0.1 ms**, structurally; **(C2)**
+> a Planeverb-style 2-D FDTD re-bake of a 64×64 slice (Rosen, Godin & Raghuvanshi,
+> `10.1111/cgf.14099`, public C++ reference; leapfrog pressure–velocity, 1,000 steps ≈ half a
+> second of audio at the CFL step — the length a decay measurement needs; damped edges, cost is
+> the claim and acoustic fidelity is not) completes in **< 30 ms** single-threaded. Falsified by
+> either figure exceeding its bound by 3× — the ticket's own falsifier.
+
+**The invariant, and its red demonstration.** After any synchronous op sequence, a full O(6n)
+recount must equal the maintained per-label counts, and a label-free global face total must equal
+their sum — asserted in the crate's own tests over build/dig/fill/split/merge sequences on the
+`noise_cavity` distribution fixture and the P-26 bisect fixture, with a deliberate one-count
+corruption shown to turn the checker red. Budget-truncated ops leave `area` conservatively stale
+exactly as labels already are — scoped and documented, not solved (the drained state is the
+contract, as it is for `label`).
+
+**Recorded, not registered:** dig/fill costs with the accumulator in place (the O(dirty·6) claim,
+read against M-321's baselines), and the split rate against M-319's one-in-six — a divergence
+*there* would be news; the clauses holding is not, and this row expects no banner.
+
+**Records** `quantity`, `value`, `unit`, `bound`, `held`.
+
+### 🔬 M-335 / P-37 — HELD on both clauses with orders to spare, and the premise correction is the part that mattered (R-036)
+
+**M.** `cargo bench --bench experiment_p37`, `docs/experiments/p-37.csv`.
+
+| quantity | value | bound | margin |
+|---|---:|---:|---|
+| RT60 read on the breach frame | **0.0015 µs** | 100 µs | ~66,000× — two counter reads and a divide, structural as registered |
+| 64×64 FDTD re-bake, 1,000 steps | **3.07 ms** | 30 ms | ~10× |
+| RT60 of the merged chamber | 0.70 s | recorded | a plausible cave-chamber reverb at 0.25 m voxels, α = 0.15 |
+| split rate over 200 fills | 0.050/fill | recorded | fixture-dependent — see below |
+| fill / dig medians with the accumulator | 0.004 / 0.0003 ms | recorded | the O(dirty·6) claim, held in practice |
+
+**The part that earned the ticket was never the timing.** The dossier called this "the one Tier 1
+row with no premise left to falsify" — and its premise was still half wrong: no surface-area
+accumulator existed. The work was `Air`'s one public-API addition (`component_area`,
+delta-maintained at every site `label` is, sealed-box boundary convention, drained-state contract),
+policed by a recount oracle that runs after every op in the crate's tests, survives a seeded 60-op
+merge/split/vanish sequence, and was shown to go red on a deliberate one-count corruption. Once the
+counters exist, the Sabine read is nanoseconds *by construction* — which is what "structurally so"
+in the registration meant.
+
+**The split-rate note, kept honest:** 0.050/fill here against M-319's ~0.167 is two *fixtures*, not
+a divergence of the tracker — M-319 measured a noise-cavity distribution, this run fills two big
+open chambers. The registered would-be-news condition was a divergence on comparable geometry; this
+is not that, and no banner is claimed.
+
+**What a build inherits:** the reverb domain is the connected air component; its Sabine estimate is
+free on the frame of any breach; the invalidation trigger (splits/merges) is already counted by
+`Repair`/`Fill`; and the 2-D re-bake fits comfortably inside two frames. `AirWorld` roll-up (seam
+faces) remains the stitching layer's problem, deliberately.
+
+**Would be shown wrong by:** the recount oracle diverging on any op sequence (it has its own red
+demonstration); or a real-geometry fixture where the accumulator's O(dirty·6) maintenance shows up
+against M-321's baselines — the recorded medians say it does not.

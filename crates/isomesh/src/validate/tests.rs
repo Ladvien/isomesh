@@ -832,6 +832,8 @@ fn clean_report() -> MeshReport {
         boundary_edges: 0,
         inconsistently_oriented_edges: 0,
         degenerate_triangles: 0,
+        mean_ratio: 1.0,
+        irregular_vertices: 0,
         repeated_index_triangles: 0,
         duplicate_vertices: 0,
         unreferenced_vertices: 0,
@@ -917,4 +919,86 @@ fn a_structurally_broken_mesh_satisfies_no_gate() {
             "{gate:?} must reject malformed input"
         );
     }
+}
+
+// ── T-026: mean ratio and irregular vertices ────────────────────────────────
+
+/// **The metric is pinned on shapes whose answer is known in closed form**, not
+/// on a mesh whose value nobody can check.
+///
+/// `q = 4√3·A / Σlᵢ²` is **1** for an equilateral triangle by construction, and
+/// for a right isosceles triangle with legs `1` it is
+/// `4√3 · ½ / (1 + 1 + 2) = √3/2 ≈ 0.8660`. Both are computed here rather than
+/// quoted, so the test states the formula twice in different forms and would
+/// catch a transcription error in either.
+#[test]
+fn mean_ratio_is_one_for_equilateral_and_known_for_a_right_isosceles() {
+    let cfg = ValidateConfig::from_cell_size(1.0).expect("valid cell size");
+
+    let h = 3.0_f64.sqrt() / 2.0;
+    let equilateral = [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.5, h, 0.0]];
+    let r = validate_indexed(&equilateral, &[0, 1, 2], &cfg);
+    assert!(
+        (r.mean_ratio - 1.0).abs() < 1e-12,
+        "equilateral should be exactly 1, got {}",
+        r.mean_ratio
+    );
+
+    let right = [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]];
+    let r = validate_indexed(&right, &[0, 1, 2], &cfg);
+    let expected = 3.0_f64.sqrt() / 2.0;
+    assert!(
+        (r.mean_ratio - expected).abs() < 1e-12,
+        "right isosceles should be √3/2 = {expected}, got {}",
+        r.mean_ratio
+    );
+}
+
+/// A sliver tends to zero, which is the other end of the scale and the end the
+/// metric exists to see.
+#[test]
+fn mean_ratio_falls_toward_zero_as_a_triangle_collapses() {
+    let cfg = ValidateConfig::from_cell_size(1.0).expect("valid cell size");
+    let mut last = 1.0;
+    for height in [1e-1, 1e-2, 1e-3, 1e-4] {
+        let tri = [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.5, height, 0.0]];
+        let q = validate_indexed(&tri, &[0, 1, 2], &cfg).mean_ratio;
+        assert!(q < last, "quality should fall as the triangle flattens");
+        assert!(q > 0.0, "and stay positive while the area is positive");
+        last = q;
+    }
+    assert!(
+        last < 1e-3,
+        "a 1e-4-tall sliver should be near zero, got {last}"
+    );
+}
+
+/// **Valence 6 is the regular interior value, and the fixture makes that
+/// visible**: a hexagonal fan has one interior vertex of valence 6 and six rim
+/// vertices of valence 3 or 4, so exactly the rim is irregular.
+///
+/// This is also the boundary caveat in miniature — every rim vertex here is
+/// irregular because the patch has a boundary, not because its triangles are
+/// poor. See the field's doc comment.
+#[test]
+fn only_the_boundary_of_a_hexagonal_fan_is_irregular() {
+    let cfg = ValidateConfig::from_cell_size(1.0).expect("valid cell size");
+    let mut positions = alloc::vec![[0.0_f64, 0.0, 0.0]];
+    for k in 0..6 {
+        let a = core::f64::consts::TAU * f64::from(k) / 6.0;
+        positions.push([a.cos(), a.sin(), 0.0]);
+    }
+    let mut indices = alloc::vec::Vec::new();
+    for k in 0..6u32 {
+        indices.extend_from_slice(&[0, 1 + k, 1 + (k + 1) % 6]);
+    }
+
+    let r = validate_indexed(&positions, &indices, &cfg);
+    assert_eq!(r.referenced_vertices, 7);
+    assert_eq!(
+        r.irregular_vertices, 6,
+        "the centre has valence 6 and the six rim vertices do not"
+    );
+    // Six equilateral triangles, so the quality is 1 to rounding.
+    assert!((r.mean_ratio - 1.0).abs() < 1e-9, "got {}", r.mean_ratio);
 }

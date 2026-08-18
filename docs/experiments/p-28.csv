@@ -1,0 +1,41 @@
+# experiment P-28 (R-030)
+# hypothesis: The matched-analytic re-instrumentation of the identity r = rho * sqrt(1 - |grad rho|^2), after V-46 showed the ticket's MEB-oracle shape cannot discriminate. Three clauses. C1, form: on slab, wedge and triangular-prism air fixtures in generic position -- piecewise-linear fields, so the voxel-step mollified truth is derivable exactly -- the measured r matches the derived closed form within 1e-9 of the gap on 100 percent of medial-band samples, exercising the two-point AND three-point closest-point cases. C2, curvature: on a capsule at generic off-axis samples, where the true inscribed radius is zero, the formula's own noise floor has a world-unit median that HALVES per resolution doubling -- 33-to-129 end-to-end ratio at most 0.35 -- the O(h) sqrt-amplification of the O(h squared) curvature error in the discrete gradient. C3, clearance: for slab gaps of 3, 6 and 10 voxels across 8 sub-voxel phases, the band-max r sits inside the derived envelope [sqrt(3)/2 * (W - h/2), W] on 24 of 24 rows.
+# falsified by: C2's end-to-end ratio at or above 0.7 -- an h-independent noise floor, meaning the discrete score cannot separate medial signal from curvature noise at any fixed world scale, and Calibre, the throat metric and handholds die together as the dossier said. C1 failing instead is an implementation or transcription finding, not a verdict on the identity. C3 failing means the clearance-envelope derivation is wrong and the lambda test loses its accuracy claim. And the wrong-form inversion -- rho times (1 - |grad rho|) -- must fail C1 on at least 30 percent of mid-band samples by more than a tenth of the gap, or this instrument has not been shown able to go red and V-46 applies to it too.
+# commit 06c75e8 on amd-ryzen-9-5900x-12-core at 2026-08-17T21:55:33Z
+fixture,samples_per_axis,band_samples,within_tol_pct,band_median_residual_world,clearance_true_voxels,clearance_est_voxels,clamped
+slab_tilted,33,2178,100.0000,2.775558e-17,3.1951,3.1951,0
+wedge30,33,2608,42.4080,1.916674e-9,8.1371,8.1371,453
+prism,33,446,96.4126,5.551115e-17,3.3777,3.3777,5
+slab_tilted,65,19880,49.3008,1.646506e-9,6.3995,6.3995,7130
+wedge30,65,26842,26.2983,3.225461e-9,16.5686,16.5686,7667
+prism,65,7658,56.0068,2.498002e-16,7.0379,7.0379,1581
+slab_tilted,129,245446,24.8156,2.108847e-9,12.7990,12.7990,95719
+wedge30,129,233169,31.1358,3.328937e-9,35.5532,35.5532,71085
+prism,129,74948,37.6608,1.551201e-9,14.1414,14.1414,27399
+capsule_floor,33,73,100.0000,7.807728e-2,0.0000,1.5287,0
+capsule_floor,65,1026,100.0000,2.268314e-2,0.0000,1.5876,0
+capsule_floor,129,8228,100.0000,1.142140e-2,0.0000,1.5945,0
+c3_w3_phi0of16,65,4225,100.0000,0.000000e0,3.0000,3.0000,0
+c3_w3_phi1of16,65,8450,100.0000,0.000000e0,3.0000,2.9318,0
+c3_w3_phi2of16,65,8450,100.0000,0.000000e0,3.0000,2.8525,0
+c3_w3_phi3of16,65,8450,100.0000,0.000000e0,3.0000,2.7626,0
+c3_w3_phi4of16,65,8450,100.0000,0.000000e0,3.0000,2.6627,0
+c3_w3_phi5of16,65,8450,100.0000,0.000000e0,3.0000,2.5529,0
+c3_w3_phi6of16,65,8450,100.0000,0.000000e0,3.0000,2.4334,0
+c3_w3_phi7of16,65,8450,100.0000,0.000000e0,3.0000,2.3042,0
+c3_w6_phi0of16,65,4225,100.0000,0.000000e0,6.0000,6.0000,0
+c3_w6_phi1of16,65,8450,100.0000,0.000000e0,6.0000,5.9259,0
+c3_w6_phi2of16,65,8450,100.0000,0.000000e0,6.0000,5.8289,0
+c3_w6_phi3of16,65,8450,100.0000,0.000000e0,6.0000,5.7094,0
+c3_w6_phi4of16,65,8450,100.0000,0.000000e0,6.0000,5.5674,0
+c3_w6_phi5of16,65,8450,100.0000,0.000000e0,6.0000,5.4027,0
+c3_w6_phi6of16,65,8450,100.0000,0.000000e0,6.0000,5.2145,0
+c3_w6_phi7of16,65,8450,100.0000,0.000000e0,6.0000,5.0019,0
+c3_w10_phi0of16,65,4225,100.0000,0.000000e0,10.0000,10.0000,0
+c3_w10_phi1of16,65,8450,100.0000,0.000000e0,10.0000,9.9181,0
+c3_w10_phi2of16,65,8450,100.0000,0.000000e0,10.0000,9.7975,0
+c3_w10_phi3of16,65,8450,100.0000,0.000000e0,10.0000,9.6385,0
+c3_w10_phi4of16,65,8450,100.0000,0.000000e0,10.0000,9.4404,0
+c3_w10_phi5of16,65,8450,100.0000,0.000000e0,10.0000,9.2023,0
+c3_w10_phi6of16,65,8450,100.0000,0.000000e0,10.0000,8.9226,0
+c3_w10_phi7of16,65,8450,100.0000,0.000000e0,10.0000,8.5988,0

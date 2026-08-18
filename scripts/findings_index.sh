@@ -82,10 +82,34 @@ for number, line in enumerate(lines, 1):
     # `M-275 / P-14` is one entry under two ids; the first is the one that
     # numbers it. `P-` headings are deliberately not indexed: `P-8 … P-13`
     # names six at once and would collide with each of their outcome headings.
-    heading = re.match(r"^### (✗\d+|M-\d+|V-\d+|O-\d+)(?: */ *\S+)? — (.*)$", line)
-    if heading and heading.group(1) not in seen:
-        rows.append((heading.group(1), number, claim(heading.group(2))))
-        seen.add(heading.group(1))
+    #
+    # Since 2026-08-17 an entry heading may open with its tier glyph (the
+    # discovery protocol): `### 🔬 M-324 — …`. The glyph precedes the id and is
+    # not part of it. The alternation below is the protocol's whole vocabulary;
+    # anything else in front of an id fails the guard beneath rather than
+    # silently dropping the row.
+    heading = re.match(
+        r"^### (?:(?:🔬|📖|📄|🗣️|💥|🧊|⚠️|⚠) )?"
+        r"(✗\d+|M-\d+|V-\d+|O-\d+)(?: */ *\S+)? — (.*)$",
+        line,
+    )
+    if heading:
+        if heading.group(1) not in seen:
+            rows.append((heading.group(1), number, claim(heading.group(2))))
+            seen.add(heading.group(1))
+        continue
+    # The M-277 guard, closing the silent-drop class the comment above records:
+    # a heading with an id-shaped token before its first em-dash that the strict
+    # match above did not recognise would be in the file and not in the index.
+    # Fail naming the line instead. `P-` ids are exempt by design.
+    if line.startswith("### ") and " — " in line:
+        for token in line[4:].split(" — ", 1)[0].split():
+            if re.fullmatch(r"(✗|M-|V-|O-|E×)\d+", token):
+                sys.exit(
+                    f"findings_index: line {number} looks like an entry heading "
+                    f"but does not match the generator's shape -- it would be "
+                    f"silently dropped from the index (the M-277 failure): {line!r}"
+                )
 
 if not rows:
     sys.exit("findings_index: no entries matched -- the file's shape changed")

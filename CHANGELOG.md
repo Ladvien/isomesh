@@ -10,6 +10,178 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 Nothing yet.
 
+## [0.0.9] — 2026-08-17
+
+**The air region's connectivity is now maintained in both directions, and across chunk seams.** 0.0.8
+shipped `connectivity::Air` as a dig-only structure with a note saying a `fill` could not exist. It can;
+the note was right about the union-find and wrong about the problem.
+
+**Breaking:** `Repair::unions` is now `Repair::relabels` and `Repair::unions_per_dirty` is
+`relabels_per_dirty`. There are no union calls any more, so the old names stopped denoting anything.
+`Air::connected` and `Air::components` now take `&self` rather than `&mut self`, which is a relaxation
+and breaks nothing.
+
+### Added
+
+- **`connectivity::Air` now fills as well as digs**, and `connected` is `O(1)` and takes `&self`.
+
+  `Air` was a union-find, and a union-find **cannot** absorb deletion — parent pointers encode union
+  *history*, not spatial adjacency, so re-rooting a shed piece severs its **descendants** from a
+  component they are still part of (✗26). The structure is now a flat label array, which is what makes
+  a fill one write per shed member. `components()` is `O(1)` maintained rather than an `O(n)` scan, and
+  `Repair::unions` became `Repair::relabels` because the old name stopped denoting anything.
+
+  **`fill` costs the shed volume, not the component** (M-321): **3.09 → 3.38 voxels visited per seed**
+  while the lattice grows 7.6×, and **436×** less work than rebuilding at 65³. The replacement search is
+  lockstep — every seed grows a frontier, frontiers that meet merge, and the walk stops when all but one
+  exhausts, so the surviving piece is never walked to completion.
+
+  **The tail is real and is documented rather than hidden.** Bisecting a tunnel between two equal
+  caverns costs **1.1× a full rebuild**: both frontiers are half the component, and there is no
+  replacement edge to find because the component genuinely split. HDT's levels are not the remedy — they
+  bound a *search*, and the remedy is decomposition, which is what `connectivity::AirWorld` below is.
+
+- **`connectivity::AirWorld` — many `Air` grids over one `ChunkLayout`, so `connected` answers across a
+  chunk seam.** Adjacent chunks share exactly one sample plane (`sample_shape` is `cells + 1`), so two
+  components are joined where that shared sample is air on both sides: nothing interpolated, nothing
+  matched by tolerance.
+
+  **This is what makes `fill` usable, not an optimisation on top of it.** Without it a consumer chooses
+  between one large `Air` — which has the bisect tail — and one `Air` per chunk, which cannot answer
+  across a seam at all. Every extractor here is driven per chunk, so the second is the natural shape and
+  it silently cannot answer the question the module exists for.
+
+  **Measured (M-322): the bisect becomes bounded rather than cheap.** A single grid visits every air
+  sample it has — 557,568 at 16 chunks wide, 0.998× its own rebuild — while the chunked world is **flat
+  at 34,848** as the world grows 8×. The advantage is exactly the chunk count and grows without bound.
+  But 34,848 is still 0.970× a *chunk* rebuild: chunking converts an unbounded cost into one bounded by
+  a unit the mesher already budgets per edit.
+
+  **A `sealed_cave` example demonstrates it** — two chambers in different chunks, a tunnel through the
+  chunk between them, `F` to plug it. It is also what produced M-323: the bound and the cost are
+  different claims. Chunking bounds the search by the chunk, but what it *costs* is the edited chunk's
+  share of the severed component — **0.03× a chunk** here, where the chambers live elsewhere and the
+  boundary graph resolves the global split, against **0.97×** when both halves sit inside the edited
+  chunk. Same operation, 35× apart, decided by geometry.
+
+  The global component graph is **rebuilt from scratch** on every restitch, which is the one thing a
+  union-find is safe to do after ✗26 — it only ever unions — and is affordable because its nodes are
+  components rather than samples. The `O(cells²)` seam scan is cached and recomputed only for seams
+  touching a chunk that changed.
+
+  **Repair is budgeted, not synchronous**, taking the same `spend: FnMut() -> bool` predicate
+  `mesh_within_budget` uses — because amortised is the wrong statistic for the frame a breakthrough
+  lands on. **Both directions of staleness are conservative:** an unfinished fill reads *"not sealed
+  yet"* and an unfinished dig reads *"not connected yet"*. Water leaking for three frames is
+  recoverable; water not leaking out of a room the engine wrongly believes is sealed is a broken game
+  rule.
+
+## [0.0.8] — 2026-08-17
+
+Phase 17's measured results, shipped. Two of them answer questions this crate had been asking without
+being able to check: **does the mesh separate what the field separates** (`validate::sealing`), and
+**what does the air region's connectivity cost to maintain rather than rebuild** (`connectivity::Air`).
+
+**One behaviour change, and it is not confined to the type it touches.** `construct::SampledField`
+now supplies the exact trilinear gradient, which moves **Dual Contouring's output on sampled fields**.
+Reference-field extraction is untouched and every golden hash is unchanged — those fields carry their
+own analytic gradients and never used the default — so this is visible only to callers who mesh a
+sampled volume. Numbers below.
+
+### Added
+
+- **`isomesh::connectivity::Air` — connected components of the air region, repaired as you dig.**
+  *Is this cave sealed? Did I just break through?* are questions about the connected components of the
+  air sublevel set, asked after every edit. Digging removes solid, so air samples only ever **appear**,
+  and an insert joins at most two trees with no replacement-edge search — so a union-find is the entire
+  structure.
+
+  Measured (M-311): one brush of fixed radius into lattices of 33³, 65³ and 129³ costs **4,872 union
+  operations at every one of them**, while the lattice grows 59.7×. A rebuild pays **2,146,689 samples
+  scanned to discover the 925 that changed**, which is a 104× wall-clock gap at 129³ that widens with
+  the lattice.
+
+  **There is deliberately no `fill`.** Removing air is a deletion, a union-find cannot do deletions at
+  any price, and an API that offered one and silently rebuilt would be a second execution path.
+
+- **`MeshReport::mean_ratio` and `MeshReport::irregular_vertices`** — triangle-shape quality, in the
+  definition the isosurfacing literature reports so the columns can be read beside it. Recorded, never
+  gated, the same standing `degenerate_triangles` has.
+
+- **`SweptFaces::margin`** — the value `Interior::test` is the sign of. `test()` now literally calls it
+  and compares with zero, so the interior ambiguity decider is the `ε = 0` member of a one-parameter
+  family **by construction**. Bounded by half the field's scale (M-312). Note it is a **decision
+  margin**, not a persistence, and thresholding it does **not** resolve the cells where the published
+  algorithms disagree — measured, and the overlap is *below chance* (M-313).
+
+- **`marching_cubes::interior::chernyaev_numerator_test` is public** and no longer test-only, so the
+  comparison between the corrected interior test and the construction it corrects is reproducible
+  outside this crate's own suite.
+
+- **`scripts/fetch_volumes.sh`** — fetches real scanned volumes from Open SciVis and verifies them
+  against the **publisher's own SHA-512**. The data is gitignored; `docs/measurements/volumes/PROVENANCE.md`
+  is committed. Benchmarks that read them skip cleanly when they are absent, so a clean clone with no
+  network still builds.
+
+- **`isomesh::validate::sealing` — does the mesh separate what the field separates?** Every other
+  validity metric in this crate judges a mesh against itself (manifoldness, orientation, Euler
+  characteristic) or against the field's geometry (`validate::accuracy`). None asked whether the mesh
+  partitions *space* the way the field's sign does, and neither claim implies the other: a mesh can be
+  closed, manifold, correctly wound and Hausdorff-close while sealing a passage the field leaves open.
+  `SealingReport` reports holes, membranes, the two air-component counts, and how many holes touch a
+  face of the sampled domain.
+
+  The measurement it produced (M-307, `docs/experiments/p-21.csv`): **Marching Cubes, Marching Cubes +
+  decider and Marching Tetrahedra seal all eight reference fields at all three resolutions.** All three
+  dual methods leave `fbm_terrain`'s domain boundary open, with identical counts, and **every one of
+  those holes is on a domain face** — a dual emits one quad per sign-changing grid edge and that quad
+  needs all four cells around it. **For a chunked world that face is the chunk seam.**
+
+  The test itself is Wojtan, Thürey, Gross & Turk's complex-edge test (`10.1145/1778765.1778787`) and
+  is cited as theirs; running it as a correctness audit of extraction is what is new.
+
+### Fixed
+
+- **Subgrid Marching Tetrahedra no longer refuses a whole volume for want of one normal.** Where the
+  field has a critical point *on* the isosurface, no normal exists — and if the isosurface passes
+  through it, the level set is genuinely singular rather than merely awkward. That tetrahedron is now
+  **skipped**, leaving a hole its size, and `SubgridMarchingTetrahedra::report()` returns a
+  `NormalReport` giving the count, the cause, and **the position of every one**.
+
+  **Positions, not just a count**: a count can stay the same while the sites move, so a count alone is
+  not a regression test, and a caller repairing the mesh needs to know where. The cause separates
+  `Degenerate` (gradient exactly zero — a critical point, no normal exists) from `IllConditioned`
+  (non-zero but below the conditioning floor — a normal exists and is not trustworthy), because those
+  have different remedies and folding them together would let a precision bug hide inside a topology
+  count.
+
+  **Nothing is substituted.** A wider stencil would return the gradient of a *smoothed* field, which is
+  a different field, and at a saddle there may be no correct normal at all.
+
+  **If your data is integer, contour at a half-offset isovalue** — `127.5` rather than `127`. Integer
+  samples cannot equal a half-integer, so no sample sits on the isosurface and the degeneracy never
+  arises. On `bonsai`, **3% of surface-cell corners sit exactly on the surface** against an integer
+  isovalue (M-316). Standard practice in volume rendering, for this reason.
+
+- **`construct::SampledField` now supplies the exact trilinear gradient** instead of inheriting
+  `Sdf::gradient`'s central difference. **A central difference is identically zero at a local extremum,
+  however steep the field is around it** — and quantised data manufactures those: on the `bonsai` CT
+  volume, corners with neighbour slopes of ∓19 came out exactly symmetric because `u8` quantisation put
+  both neighbours on the same integer. The subgrid extractor asks for a normal there and **refused the
+  whole volume** (A-028, M-316).
+
+  **This changes Dual Contouring's output on sampled fields**, since its QEF uses gradients: on `bonsai`,
+  529,488 → 529,383 vertices and 1,776 → 1,770 non-manifold edges. Reference-field extraction is
+  untouched — those fields carry their own analytic gradients and never used the default — and all
+  golden hashes are unchanged.
+
+- **A wall-clock assertion inside a unit test failed the 0.0.7 release on a macOS runner.**
+  `empty_cell_rejection_is_measured_per_field` asserted a speedup above 1.0 on every reference field,
+  under a doc comment that called itself "not a regression gate". `gyroid` is triply periodic, its
+  surface reaches nearly every cell, and empty-cell rejection has almost nothing to reject there — 16.8%
+  of cells against 80.6–95.1% on every other field. The gate is now that count, which is an integer and
+  the same on every machine; the ratio is printed.
+
 ## [0.0.7] — 2026-08-16
 
 ### Documentation

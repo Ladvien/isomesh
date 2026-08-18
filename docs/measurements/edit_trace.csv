@@ -1,0 +1,4 @@
+samples_per_axis,cells,dirty_samples,dirty_cells,case_changed,eight_k,vertices_before,vertices_after,buffer_moved,geometric_moved,keyed_moved,first_moved_index
+33,32768,515,792,432,4120,1758,1854,1348,330,318,414
+65,262144,515,792,412,4120,6918,7038,4257,322,310,2609
+129,2097152,515,792,500,4120,27822,27966,15706,346,346,12257

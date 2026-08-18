@@ -1,0 +1,7 @@
+samples_per_axis,fixture,fills,dirty_samples,seeds,visited,splits,shed_components,vanished_components,rebuild_visited
+33,distribution,200,21299,19019,58837,72,114,91,35937
+49,distribution,200,32123,32428,96950,33,63,11,117649
+65,distribution,200,35381,37244,126030,29,41,8,274625
+33,bisect,1,1,2,28830,1,1,0,35937
+49,bisect,1,1,2,101614,1,1,0,117649
+65,bisect,1,1,2,246078,1,1,0,274625

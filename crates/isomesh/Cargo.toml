@@ -190,6 +190,115 @@ harness = false
 test = false
 
 [[bench]]
+name = "fill_disconnect"
+harness = false
+
+[[bench]]
+name = "replacement_search"
+harness = false
+
+[[bench]]
+name = "chunked_bisect"
+harness = false
+
+[[bench]]
+name = "experiment_p26"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p27"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p28"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p29"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p30"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p31"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p32"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p33"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p34"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p35"
+harness = false
+test = false
+
+[[bench]]
+name = "r035a_substrate"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p36"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p37"
+harness = false
+test = false
+
+[[bench]]
+name = "a028_diagnose"
+harness = false
+
+[[bench]]
+name = "placement_ceiling"
+harness = false
+
+[[bench]]
+name = "edit_trace"
+harness = false
+
+[[bench]]
+name = "interior_margin"
+harness = false
+
+[[bench]]
+name = "experiment_p23"
+harness = false
+
+[[bench]]
+name = "volumes"
+harness = false
+
+[[bench]]
+name = "experiment_p22"
+harness = false
+
+[[bench]]
+name = "experiment_p21"
+harness = false
+
+[[bench]]
 name = "experiment_p14"
 harness = false
 test = false

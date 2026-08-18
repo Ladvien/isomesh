@@ -39,6 +39,7 @@ mod accuracy;
 mod determinism;
 mod field_bound;
 mod isotopy;
+mod sealing;
 mod self_intersection;
 mod tri_grid;
 
@@ -46,6 +47,7 @@ pub use accuracy::{AccuracyConfig, AccuracyReport, DistanceStats, accuracy};
 pub use determinism::{DeterminismReport, Divergence, RunPair, check_determinism};
 pub use field_bound::{EIKONAL_TOLERANCE, FieldBoundReport, field_bound_report};
 pub use isotopy::{IsotopyReport, cell_is_certified, isotopy_report};
+pub use sealing::{SealingReport, sealing};
 pub use self_intersection::{SelfIntersectionReport, self_intersections};
 
 /// Thresholds for the two metrics that have units.
@@ -223,6 +225,46 @@ pub struct MeshReport {
     /// genuinely emits slivers whenever a grid corner value sits near zero;
     /// that is the algorithm, not a defect.
     pub degenerate_triangles: u64,
+    /// Mean of the **mean-ratio** triangle quality over considered faces.
+    ///
+    /// ```text
+    /// q = 4√3 · A / Σᵢ lᵢ²
+    /// ```
+    ///
+    /// **1 for an equilateral triangle, 0 for a degenerate one**, and monotone
+    /// in between. `A` is the area and `lᵢ` the three edge lengths.
+    ///
+    /// Transcribed from Grosso & Zint, *A parallel dual marching cubes approach
+    /// to quad only surface reconstruction* (`10.1007/s00371-021-02139-w`) §5,
+    /// which is the source this crate's figures are meant to be readable beside:
+    /// it meshes **uniform grids** and reports Marching Cubes, topologically
+    /// correct Marching Cubes and Dual Contouring by name, where the
+    /// differentiable-isosurfacing line reports meshes extracted from *learned*
+    /// fields and is not comparable (V-38, V-39).
+    ///
+    /// A **normalised distribution** rather than a threshold count, deliberately:
+    /// an `AR > 4` style metric needs the reader to share your cutoff *and* your
+    /// aspect-ratio definition, and there are at least three of the latter in
+    /// common use.
+    ///
+    /// **Recorded, never gated** — the same standing as
+    /// [`degenerate_triangles`](Self::degenerate_triangles). `0.0` when no face
+    /// is considered.
+    pub mean_ratio: f64,
+    /// Referenced vertices whose valence is not 6.
+    ///
+    /// Valence is the number of distinct incident **edges**. Grosso & Zint's
+    /// definition, verbatim: *"vertices with a valence unequal to 6 … are
+    /// considered as irregular."*
+    ///
+    /// **Read this with the boundary in mind.** That definition is written for
+    /// **closed** volumes, where 6 is the regular interior valence. Every vertex
+    /// on an open mesh's boundary has a lower valence by construction, so
+    /// `gyroid` and `fbm_terrain` report high here for a reason that has nothing
+    /// to do with triangle quality. The count is raw rather than
+    /// boundary-corrected so that it matches the published definition; correct
+    /// for it at the point of comparison, not here.
+    pub irregular_vertices: u64,
     /// Triangles with two or three equal indices. Also counted in
     /// [`faces_skipped`](Self::faces_skipped).
     ///
@@ -626,6 +668,8 @@ pub fn validate_features<R: Real>(
         boundary_edges: 0,
         inconsistently_oriented_edges: 0,
         degenerate_triangles: 0,
+        mean_ratio: 0.0,
+        irregular_vertices: 0,
         repeated_index_triangles: 0,
         duplicate_vertices: 0,
         weld_buckets: 0,
@@ -698,6 +742,11 @@ pub fn validate_features<R: Real>(
     let mut face_dsu = Dsu::new(faces.len());
     let mut boundary_dsu = Dsu::new(vertex_count);
     let mut on_boundary = alloc::vec![false; vertex_count];
+    // Valence, in the sense Grosso & Zint use for `irregular vertices`: the
+    // number of distinct incident **edges**. Accumulated in the run scan below
+    // rather than in a pass of its own, because that scan already visits each
+    // distinct edge exactly once.
+    let mut valence = alloc::vec![0u32; vertex_count];
 
     let mut start = 0usize;
     while start < half_edges.len() {
@@ -708,6 +757,12 @@ pub fn validate_features<R: Real>(
         }
         let run = &half_edges[start..end];
         report.edges += 1;
+        if let Some(slot) = valence.get_mut(lo as usize) {
+            *slot += 1;
+        }
+        if let Some(slot) = valence.get_mut(hi as usize) {
+            *slot += 1;
+        }
 
         match run.len() {
             1 => {
@@ -737,6 +792,15 @@ pub fn validate_features<R: Real>(
 
         start = end;
     }
+
+    // ── irregular vertices ──────────────────────────────────────────────────
+    //
+    // Valence != 6, over referenced vertices only. A referenced vertex is in at
+    // least one triangle and therefore has at least two incident edges, so a
+    // zero here is exactly an unreferenced vertex and excluding it needs no
+    // second pass. See the field's doc comment for what the boundary does to
+    // this number on an open field.
+    report.irregular_vertices = valence.iter().filter(|v| **v != 0 && **v != 6).count() as u64;
 
     // ── components and boundary loops ───────────────────────────────────────
     {
@@ -831,10 +895,17 @@ pub fn validate_features<R: Real>(
     // Compared squared, so there is no square root and this works unchanged in
     // no_std. A NaN position makes the comparison false rather than true, which
     // is why `non_finite_positions` is counted separately.
+    //
+    // The mean ratio rides along in the same pass: `|cross|` is `2A`, so
+    // `q = 4√3·A / Σlᵢ² = 2√3·|cross| / Σlᵢ²`, and the only extra work is one
+    // square root per face. Validation is explicitly not on the re-meshing hot
+    // path, so that is not worth avoiding.
     {
         let two_area_limit =
             R::from_f64(2.0 * cfg.area_epsilon_rel * cfg.cell_size * cfg.cell_size);
         let limit_sq = two_area_limit * two_area_limit;
+        let two_root_three = R::from_f64(3.464_101_615_137_754_6);
+        let mut quality_sum = 0.0_f64;
         for f in &faces {
             let a = positions[f[0] as usize];
             let b = positions[f[1] as usize];
@@ -850,6 +921,22 @@ pub fn validate_features<R: Real>(
             if len_sq <= limit_sq {
                 report.degenerate_triangles += 1;
             }
+
+            // Σlᵢ² over the three edges: b−a, c−a, and c−b.
+            let w = [v[0] - u[0], v[1] - u[1], v[2] - u[2]];
+            let edge_sq = u[0] * u[0]
+                + u[1] * u[1]
+                + u[2] * u[2]
+                + (v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+                + (w[0] * w[0] + w[1] * w[1] + w[2] * w[2]);
+            // A degenerate face contributes 0 rather than a division by zero,
+            // which is the value the formula tends to anyway.
+            if edge_sq > R::ZERO {
+                quality_sum += (two_root_three * len_sq.sqrt() / edge_sq).as_f64();
+            }
+        }
+        if !faces.is_empty() {
+            report.mean_ratio = quality_sum / faces.len() as f64;
         }
     }
 

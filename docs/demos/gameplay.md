@@ -549,3 +549,39 @@ let trimesh = TriMesh::new(vertices, indices)?;
 ---
 
 [← back to the README](../../README.md)
+
+---
+
+## `sealed_cave` — is this cave still connected to that one?
+
+```bash
+cd bevy_isomesh && cargo run --example sealed_cave --release
+```
+
+`F` plugs the tunnel, `G` re-opens it, `C` outlines the chunks.
+
+**The mesh cannot answer this question.** `validate` will tell you a mesh is closed, manifold,
+correctly wound and Hausdorff-close to the field, and none of that says whether water in the left
+chamber can reach the right one. That is a question about the connected components of the **air
+region**, asked after every edit rather than once at build time — and the two chambers here are in
+different chunks, so no single chunk can answer it alone.
+
+| readout | what it means |
+|---|---|
+| `components` | air components across the world, seams included. `1 → 2` on the plug |
+| `A↔B` | `AirWorld::connected` between one sample in each chamber, in global sample coordinates |
+| `visited` | samples the replacement search touched — **compare to `chunk`, not `world`** |
+| `stitch` | the restitch, whose `nodes` are *components* rather than samples |
+
+**The number to watch is `visited`, and what sets it is not obvious.** Severing a passage is the shape
+that beats an unchunked structure: lockstep search stops when all but one frontier exhausts, so a fill
+splitting two pieces of similar size walks both — measured at **1.1× a full rebuild** on one large grid
+(M-321). Chunking bounds that walk by the chunk (M-322).
+
+But the bound is not the cost. This example reports about **0.03× a chunk**, because the chambers are
+in chunks 0 and 2 while the plug is in chunk 1 — so the local search separates two short tunnel stubs,
+and the split between the large components is resolved by the boundary graph. Put both halves inside
+one chunk and the same edit costs **0.97×** instead: 35× apart, decided entirely by geometry (M-323).
+
+**The plug drives the mesh and the connectivity from one flag**, so the picture and the answer cannot
+disagree. A real engine would route one edit to both; this keeps them in step by construction.

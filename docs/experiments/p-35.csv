@@ -1,0 +1,30 @@
+# experiment P-35 (R-034b)
+# hypothesis: P-34 with its instrument floor removed and its corpus unmixed; the falsification is M-331. Corrections, all derivable before running: the decision is probed every ITERATION (the floor becomes 1/cold instead of 10/cold); the wall grows to 20 courses of 24 blocks (~470 blocks) so the cold count has three digits of dynamic range; and tilts leave the registered corpus -- a gravity rotation moves every interface force and is recorded as its own class, not averaged into local edits. Unchanged prediction, the ticket's own: over 10 single-block weight nudges the median warm-to-cold ratio is at most 0.15; over 10 interior removals it is at least 0.5; the class medians separate by more than 3x. M-331's floor-pinned weight nudges and 0.8 removal median already point this way at 4x, undecidably.
+# falsified by: The weight-nudge median still above 0.15 with the floor at 1/cold -- then the 0.400 was never the instrument's, the cheap-incremental story dies on merit, and the admissibility gate is background-budget-only as the original R-034 registered. Or medians within 3x -- unimodal, same consequence. Collapsed removals excluded on the record as in P-34, aborting past three.
+# commit c13135b on amd-ryzen-9-5900x-12-core at 2026-08-17T23:11:00Z
+edit,class,iters_cold,iters_warm,ratio,feasible
+weight_0,local,28,1,0.0357,true
+weight_1,local,28,5,0.1786,true
+weight_2,local,28,5,0.1786,true
+weight_3,local,28,2,0.0714,true
+weight_4,local,28,2,0.0714,true
+weight_5,local,28,2,0.0714,true
+weight_6,local,28,5,0.1786,true
+weight_7,local,28,4,0.1429,true
+weight_8,local,28,4,0.1429,true
+weight_9,local,28,4,0.1429,true
+tilt_0,tilt_recorded,28,17,0.6071,true
+tilt_1,tilt_recorded,28,17,0.6071,true
+tilt_2,tilt_recorded,29,21,0.7241,true
+tilt_3,tilt_recorded,29,21,0.7241,true
+tilt_4,tilt_recorded,31,24,0.7742,true
+remove_0,severing,28,19,0.6786,true
+remove_1,severing,33,25,0.7576,true
+remove_2,severing,28,17,0.6071,true
+remove_3,severing,30,17,0.5667,true
+remove_4,severing,32,28,0.8750,true
+remove_5,severing,29,22,0.7586,true
+remove_6,severing,28,17,0.6071,true
+remove_7,severing,28,15,0.5357,true
+remove_8,severing,35,34,0.9714,true
+remove_9,severing,28,18,0.6429,true
