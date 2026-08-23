@@ -201,6 +201,26 @@ bounding box (M-33). Counting value changes overstates the re-mesh set by 2.8–
 cargo run --example game_dig --release          # WASD Q E move · click carve · right click fill · [ ] radius · C outlines
 ```
 
+### Sixty-four edits deep, and the mesher only looks at twenty-one
+
+![A 64-brush sculpting stroke where the pruned per-chunk cost climbs at a third of the full tape's rate](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/tape-pruning-the-tape-shrinks.gif)
+
+Every sample of every chunk evaluates every brush, so an edit history is a tax the mesher pays forever.
+Bound each brush over the chunk box — one sample per brush, `f(c) ± l·r` — and drop the ones that
+provably cannot win the `min`/`max` chain there.
+
+**Median 21 of 64 brushes survive; 6.46 ms per chunk against 15.84 ms; 2.45× on the world; 25× on the
+best chunk.** And the mesh does not move — IEEE `min`/`max` *select* an operand rather than computing
+one, so dropping a loser costs zero ULP, and the HUD checks all 64 chunks bit-exact every sweep (M-341).
+
+`P` turns pruning off so you can watch the cost jump while nothing else changes. The demo also refuses
+to oversell itself: a *uniform* tape keeps a constant surviving fraction, so the green line climbs too —
+2.5× shallower, not flat. The flat line belongs to a moving stroke.
+
+```bash
+cargo run --example tape_pruning --release   # P prune · H heat · C chunk boxes · X restart
+```
+
 ### The debris is the boolean
 
 ![A hollow shell being shot, cratering, with debris falling away](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/the-debris-is-the-boolean.gif)

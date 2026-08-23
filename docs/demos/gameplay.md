@@ -188,6 +188,43 @@ cd bevy_isomesh && cargo run --example game_lod_flyover --release
 
 ---
 
+## Sixty-four edits deep, and the mesher only looks at twenty-one
+
+![A sculpting stroke building a 64-brush tape while the pruned per-chunk cost climbs at a third of the rate](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/tape-pruning-the-tape-shrinks.gif)
+
+*`tape_pruning` — 4×4×4 chunks of 33 samples, a 64-brush stroke arriving one edit at a time. At the end:
+**median 21 of 64 brushes survive**, a chunk re-meshes in **6.46 ms pruned against 15.84 ms whole**, the
+world aggregate is **2.45×**, and the graph bottom-left is the whole argument — red is the cost against
+the full tape, green is the cost against the pruned one.*
+
+Every sample of every chunk evaluates every brush, so an edit history is a tax the mesher pays forever.
+It does not have to. Bound each brush's shape over the chunk's box — one field sample per brush, `f(c) ±
+l·r` for a Lipschitz constant `l` — and any brush that provably cannot win the `min`/`max` chain inside
+that chunk can be deleted before meshing starts. **The deletion is exact, not approximate**: IEEE `min`
+and `max` *select* an operand rather than computing a new value, so dropping a loser moves the result by
+zero ULP. The HUD's `mesh identical: YES — 64/64 chunks bit-exact` is that claim, checked live on
+positions, normals and indices every sweep.
+
+`P` turns pruning off and the red number becomes the cost. Nothing else on screen changes — that is the
+point.
+
+**One thing the demo refuses to overstate.** A uniformly scattered tape does *not* give a flat pruned
+cost: doubling the tape doubles the brushes overlapping any chunk, so a constant fraction survives and
+the green line still climbs — at **95.5 µs per brush against 241.6 µs**, a 2.5× shallower slope rather
+than a horizontal one. The flat line belongs to a *moving* stroke, where a chunk's survivor count
+saturates, and that is the kinder case. What the mechanism buys is the divisor, and the divisor is
+measured.
+
+The bound costs **0.99 µs per chunk — 1.5 × 10⁻⁴ of the meshing it enables** (M-341).
+
+```bash
+cd bevy_isomesh && cargo run --example tape_pruning --release
+```
+
+`P` pruning on/off · `H` survivor heat map · `C` chunk boxes · `X` restart the stroke.
+
+---
+
 ## 288 chunks re-meshed, without missing a frame
 
 ![An overloaded edit queue draining under a 2 ms frame budget](../screenshots/e206-budget.png)

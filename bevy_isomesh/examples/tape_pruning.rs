@@ -9,13 +9,20 @@
 //! overlay, `C` the chunk boxes, `X` restarts the stroke.
 //!
 //! The stroke paces itself off the capture length, so any window works and none
-//! of them records a still. The recipe that shows the whole staircase and then
-//! lets the numbers settle on it:
+//! of them records a still. The recipe that shows the whole staircase build and
+//! then lets the numbers settle on it, measured at **1.52 MB**:
 //!
 //! ```bash
 //! ISOMESH_CAPTURE_FRAMES=60 ISOMESH_CAPTURE_EVERY=8 ISOMESH_WINDOW=1280x720 \
 //!   FPS=12 ./scripts/record_gif.sh tape_pruning out.gif
 //! ```
+//!
+//! **Adding `ISOMESH_SPIN` needs the cheap dither and a narrower frame.** The
+//! camera is otherwise still, so the only thing moving is the plot and a GIF
+//! compresses that beautifully; spinning changes every pixel of every frame.
+//! Measured: the recipe above plus `ISOMESH_SPIN=0.004` comes back at **5.15 MB**,
+//! over the 4.8 MB the committed clips sit within, and drops to **4.04 MB** with
+//! `WIDTH=800 DITHER=bayer:bayer_scale=3`.
 //!
 //! Demonstrates **M-341 / P-39**. A sculpting stroke lays down 64 brushes over a
 //! solid ball split into 64 chunks. Every chunk is re-meshed continuously, and
