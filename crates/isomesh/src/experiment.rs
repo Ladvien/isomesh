@@ -1508,6 +1508,107 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "sphere_control_max_error",
         ],
     },
+    Preregistration {
+        id: "P-48",
+        ticket: "R-044",
+        hypothesis: "validate/isotopy.rs names its own gap in its own header: \
+                     'The general form needs interval arithmetic over an \
+                     arbitrary F, which this crate has no way to do -- an Sdf \
+                     hands back point values', so it settles for certifying the \
+                     TRILINEAR INTERPOLANT and says plainly that it does not \
+                     certify the analytic field against it. A compositional \
+                     inclusion function over the crate's own field types closes \
+                     that gap with no dependency and no interval library: (lo, \
+                     hi) pairs and six operations, widened by one ULP per \
+                     operation because core has no directed rounding, which \
+                     keeps the enclosure sound in the only direction that \
+                     matters. Clause one, SOUNDNESS, and it is fatal: over the \
+                     eight reference fields at 33 samples per axis, every cell \
+                     the certificate calls surface-free is surface-free under \
+                     4096-point dense sampling -- zero unsound certifications, \
+                     no tolerance. Clause two, NON-VACUITY: on the fields built \
+                     from exact distance primitives -- sphere, box_exact, torus \
+                     and csg_difference -- the certificate proves at least 90% \
+                     of the cells that dense sampling shows to be surface-free. \
+                     Clause three, REACH: the certified fraction is reported for \
+                     all eight fields and is strictly greater than zero on at \
+                     least six of them, so the mechanism is not confined to the \
+                     eikonal cases.",
+        falsified_by: "Any unsound certification whatever -- a cell called \
+                       surface-free that dense sampling shows is not. That is \
+                       fatal rather than a threshold miss: a certificate that \
+                       can be wrong is not a certificate, and the failure would \
+                       be in the one direction isotopy.rs says a predicate must \
+                       never err. Or the certified share falling under 90% on \
+                       the exact fields, which would mean the enclosure is too \
+                       loose to be worth evaluating; or fewer than six fields \
+                       above zero, which would confine it to the eikonal cases \
+                       and leave gyroid, noise_cavity and fbm_terrain -- the \
+                       three that actually go wrong -- outside its reach.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "cells",
+            "cells_surface_free_sampled",
+            "cells_certified_empty",
+            "certified_fraction",
+            "unsound_certifications",
+            "undecided_fraction",
+            "certified_vs_trilinear",
+        ],
+    },
+    Preregistration {
+        id: "P-49",
+        ticket: "R-045",
+        hypothesis: "The crate can say whether two places are connected and \
+                     cannot say how big a thing fits between them. R-022a's Air \
+                     tracker answers 'is this sealed'; a game asks 'can the \
+                     player get through', and that is a bottleneck value rather \
+                     than a boolean: for a pair of chunk faces, the maximum over \
+                     air paths of the minimum distance-to-solid along the path. \
+                     It is computable by a monotone union-find over air voxels \
+                     processed in DESCENDING (field value, grid index), which is \
+                     a total order and therefore deterministic with no PRNG, no \
+                     atomics and no HashMap -- the same discipline the crate \
+                     already applies to its weld. The output is a 6x6 symmetric \
+                     matrix of face-to-face apertures plus a reachability mask, \
+                     which is the composable boundary summary: neighbouring \
+                     chunks combine their matrices with no global solve. Clause \
+                     one, against exact ground truth: on a BoxExact slab with a \
+                     Capsule of radius r subtracted along x, for r of 2, 4 and 8 \
+                     cells, the reported -x/+x aperture equals r to within one \
+                     cell size, and every other face pair reports unreachable. \
+                     Clause two, on a real field: the capped gyroid at 65 \
+                     samples per axis reports all six faces mutually reachable \
+                     -- it is a bicontinuous triply periodic surface, so a \
+                     disconnected pair is a proven bug in the instrument, not a \
+                     property of the field -- with a positive aperture on all 15 \
+                     pairs. Clause three, cost: the whole 6x6 computation costs \
+                     under 2x a Marching Cubes extraction of the same grid.",
+        falsified_by: "An aperture off by more than one cell on the drilled \
+                       channel, where the answer is known exactly and the \
+                       instrument has nowhere to hide -- that would mean the \
+                       union-find is not computing the bottleneck it claims. Or \
+                       any face pair reported reachable on the slab that is not, \
+                       which is the unsound direction and is fatal for a \
+                       clearance claim a game would gate movement on. Or a \
+                       gyroid pair reported unreachable. Or cost at or above 2x, \
+                       which prices a per-chunk summary above the mesh it \
+                       summarises.",
+        records: &[
+            "fixture",
+            "samples_per_axis",
+            "channel_radius_cells",
+            "aperture_reported_cells",
+            "aperture_error_cells",
+            "reachable_pairs",
+            "expected_reachable_pairs",
+            "false_reachable_pairs",
+            "aperture_ns",
+            "extract_ns",
+            "cost_ratio",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

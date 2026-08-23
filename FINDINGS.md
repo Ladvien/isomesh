@@ -8258,3 +8258,58 @@ exact gradient 2.8× faster than the approximate one on composed fields, and the
 nothing on this evidence except at seams. `normals.rs` asks that a fourth variant arrive with a
 measurement attached; this is the measurement, and what it says is *"not for the reason you would
 expect."*
+
+### P-48 — registered for R-044, before the inclusion function exists: the gap `isotopy.rs` names in its own header
+
+`validate/isotopy.rs` states its own limit, verbatim: *"The general form needs interval arithmetic over
+an arbitrary `F`, which this crate has no way to do — an `Sdf` hands back point values. A sampled hull of
+the gradient would be a lower bound on its variation, so the predicate could pass where the truth fails,
+which is the one direction a certificate must never err in."* It therefore certifies the **trilinear
+interpolant** and says plainly that it does not certify the analytic field against it.
+
+A compositional inclusion function over the crate's own field types closes that with no dependency and no
+interval library: `(lo, hi)` pairs and six operations, widened by one ULP per operation because `core` has
+no directed rounding — which keeps the enclosure sound in the only direction that matters.
+
+> **H.** **(C1) Soundness, and it is fatal.** Over the eight reference fields at 33³, every cell the
+> certificate calls surface-free is surface-free under 4,096-point dense sampling: **zero** unsound
+> certifications, no tolerance. **(C2) Non-vacuity.** On the fields built from exact distance primitives —
+> `sphere`, `box_exact`, `torus`, `csg_difference` — the certificate proves at least **90%** of the cells
+> dense sampling shows to be surface-free. **(C3) Reach.** The certified fraction is reported for all
+> eight and is strictly positive on at least **six**. **Falsified by** any unsound certification at all —
+> a certificate that can be wrong is not a certificate, and the failure would be in exactly the direction
+> `isotopy.rs` forbids — or under 90% on the exact fields, or reach confined to the eikonal cases, which
+> would leave `gyroid`, `noise_cavity` and `fbm_terrain`, the three that actually go wrong, outside it.
+
+**Not the tabled Sharp & Jacobson row.** That one is coarse-cell *rejection*, an accelerator. This is a
+topology certificate and is scored on soundness; it must never be presented as a speedup.
+
+**Records** `field`, `samples_per_axis`, `cells`, `cells_surface_free_sampled`, `cells_certified_empty`,
+`certified_fraction`, `unsound_certifications`, `undecided_fraction`, `certified_vs_trilinear`.
+
+### P-49 — registered for R-045, before the harness: connectivity is a boolean and a game asks for a number
+
+R-022a's `Air` answers *is this sealed*. A game asks *can the player get through*, and that is a
+bottleneck value rather than a boolean: for a pair of chunk faces, the maximum over air paths of the
+minimum distance-to-solid along the path. A **monotone union-find over air voxels in descending
+`(field value, grid index)`** computes it — a total order, so no PRNG, no atomics and no `HashMap`, the
+same discipline the weld already uses. The output is a **6×6 symmetric aperture matrix plus a
+reachability mask**, which is the composable boundary summary: neighbouring chunks combine theirs with no
+global solve.
+
+> **H.** **(C1) Against exact ground truth.** On a `BoxExact` slab with a `Capsule` of radius `r`
+> subtracted along `x`, for `r` of 2, 4 and 8 cells, the reported `−x`/`+x` aperture equals `r` to within
+> one cell size and every other face pair reports unreachable. **(C2) On a real field.** The capped
+> gyroid at 65³ reports all six faces mutually reachable — it is bicontinuous, so a disconnected pair is a
+> proven bug in the instrument rather than a property of the field — with positive aperture on all 15
+> pairs. **(C3) Cost.** The whole 6×6 costs under **2×** a Marching Cubes extraction of the same grid.
+> **Falsified by** an aperture off by more than one cell where the answer is known exactly; any falsely
+> reachable pair, which is the unsound direction and fatal for something a game would gate movement on; a
+> gyroid pair reported unreachable; or cost at or above 2×.
+
+**Overlap, named:** the connectivity half is banked as union-find over the air sublevel set. The aperture
+**value** and the composable 6×6 are the delta, and the ticket stands or falls on those.
+
+**Records** `fixture`, `samples_per_axis`, `channel_radius_cells`, `aperture_reported_cells`,
+`aperture_error_cells`, `reachable_pairs`, `expected_reachable_pairs`, `false_reachable_pairs`,
+`aperture_ns`, `extract_ns`, `cost_ratio`.
