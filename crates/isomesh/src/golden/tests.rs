@@ -4,7 +4,7 @@ use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use super::{Entry, compute_all, field_of, fixture_path, hash_mesh, render};
+use super::{Entry, compute_all, field_of, fixture_path, mesh_hash, render};
 
 /// Read the committed fixture as `(key, hash)` pairs plus the counts, keyed on
 /// the combination so a reordering of the sweep is a diff rather than a
@@ -125,7 +125,7 @@ fn a_corrupted_case_table_changes_the_hash_and_names_the_combination() {
     let shape = RuntimeShape3::new([samples; 3]).expect("valid shape");
 
     let honest = march_with_table(&field, &shape, lo, cell_size, &CASES);
-    let honest_hash = hash_mesh(&honest);
+    let honest_hash = mesh_hash(&honest);
 
     // The double reproduces the real extractor, so this must equal the committed
     // `marching_cubes/sphere/17` hash. If it does not, the golden fixture and the mutation
@@ -150,7 +150,7 @@ fn a_corrupted_case_table_changes_the_hash_and_names_the_combination() {
     cases[victim].triangles[0].swap(1, 2);
 
     let corrupted = march_with_table(&field, &shape, lo, cell_size, &cases);
-    let corrupted_hash = hash_mesh(&corrupted);
+    let corrupted_hash = mesh_hash(&corrupted);
 
     assert_ne!(
         honest_hash, corrupted_hash,
@@ -184,8 +184,8 @@ fn the_hash_separates_signed_zero_and_notices_truncation() {
     let mut signed = base.clone();
     signed.positions[0][0] = -0.0;
     assert_ne!(
-        hash_mesh(&base),
-        hash_mesh(&signed),
+        mesh_hash(&base),
+        mesh_hash(&signed),
         "a sign flip on a zero coordinate must change the hash -- it is exactly what a \
          reordered summation produces"
     );
@@ -193,10 +193,10 @@ fn the_hash_separates_signed_zero_and_notices_truncation() {
     // A truncated index buffer must not hash as a prefix of the whole.
     let mut truncated = base.clone();
     truncated.indices.clear();
-    assert_ne!(hash_mesh(&base), hash_mesh(&truncated));
+    assert_ne!(mesh_hash(&base), mesh_hash(&truncated));
 
     // And an unchanged mesh hashes the same twice.
-    assert_eq!(hash_mesh(&base), hash_mesh(&base.clone()));
+    assert_eq!(mesh_hash(&base), mesh_hash(&base.clone()));
 }
 
 /// The fixture on disk must be exactly what `render` produces, so a hand edit

@@ -72,65 +72,14 @@ use crate::{MeshBuffer, RuntimeShape3, Sdf};
 /// that only fires on a case the coarse grid never reaches.
 const RESOLUTIONS: [u32; 3] = [17, 25, 33];
 
-/// FNV-1a, 64-bit. Specified rather than chosen: the constants are the published
-/// ones and the algorithm is four lines, so a reader can confirm it rather than
-/// trust it.
-struct Fnv(u64);
-
-impl Fnv {
-    const OFFSET_BASIS: u64 = 0xcbf2_9ce4_8422_2325;
-    const PRIME: u64 = 0x0000_0100_0000_01b3;
-
-    fn new() -> Self {
-        Self(Self::OFFSET_BASIS)
-    }
-
-    fn write(&mut self, bytes: &[u8]) {
-        for &b in bytes {
-            self.0 ^= u64::from(b);
-            self.0 = self.0.wrapping_mul(Self::PRIME);
-        }
-    }
-
-    fn write_u64(&mut self, v: u64) {
-        self.write(&v.to_le_bytes());
-    }
-
-    fn write_f64(&mut self, v: f64) {
-        // Bits, not the value: `+0.0 == -0.0` compares equal but hashes
-        // differently, which is the distinction T-004 cares about.
-        self.write_u64(v.to_bits());
-    }
-
-    fn finish(self) -> u64 {
-        self.0
-    }
-}
-
-/// Hash a mesh's exact contents.
+/// The hash lives in [`crate::validate::mesh_hash`], not here.
 ///
-/// Counts are hashed first, so two meshes cannot collide by one being a prefix
-/// of the other — a truncated index buffer is a defect this must catch.
-fn hash_mesh(mesh: &MeshBuffer<f64>) -> u64 {
-    let mut h = Fnv::new();
-    h.write_u64(mesh.positions.len() as u64);
-    h.write_u64(mesh.normals.len() as u64);
-    h.write_u64(mesh.indices.len() as u64);
-    for p in &mesh.positions {
-        for v in p {
-            h.write_f64(*v);
-        }
-    }
-    for n in &mesh.normals {
-        for v in n {
-            h.write_f64(*v);
-        }
-    }
-    for i in &mesh.indices {
-        h.write_u64(u64::from(*i));
-    }
-    h.finish()
-}
+/// It was written here first, and moved out when `benches/experiment_p38.rs`
+/// needed to answer the same question — *did a change to a private buffer's
+/// layout move any output?* — because two copies of a hash are two answers to
+/// one question. The rationale for FNV-1a, for hashing bit patterns rather than
+/// values, and for `f64` only, moved with it.
+use crate::validate::mesh_hash;
 
 /// The extractors, by name.
 ///
@@ -271,7 +220,7 @@ fn compute_all() -> Vec<Entry> {
                     samples,
                     vertices: mesh.vertex_count(),
                     triangles: mesh.triangle_count(),
-                    hash: hash_mesh(&mesh),
+                    hash: mesh_hash(&mesh),
                 });
             }
         }

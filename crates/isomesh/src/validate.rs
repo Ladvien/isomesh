@@ -39,6 +39,7 @@ mod accuracy;
 mod determinism;
 mod field_bound;
 mod isotopy;
+mod mesh_hash;
 mod sealing;
 mod self_intersection;
 mod tri_grid;
@@ -47,6 +48,7 @@ pub use accuracy::{AccuracyConfig, AccuracyReport, DistanceStats, accuracy};
 pub use determinism::{DeterminismReport, Divergence, RunPair, check_determinism};
 pub use field_bound::{EIKONAL_TOLERANCE, FieldBoundReport, field_bound_report};
 pub use isotopy::{IsotopyReport, cell_is_certified, isotopy_report};
+pub use mesh_hash::mesh_hash;
 pub use sealing::{SealingReport, sealing};
 pub use self_intersection::{SelfIntersectionReport, self_intersections};
 
