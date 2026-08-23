@@ -299,6 +299,27 @@ gyroid, 15 on `fbm_terrain` (M-4). It is a **resolution** effect, not a topology
 cargo run --example manifold_check --release    # A algorithm · 1-7 field · B boundary · [ ] resolution
 ```
 
+### Counting the defects before the mesh exists
+
+![noise_cavity at 65 cubed, cyan cages on critical cells with one yellow non-manifold vertex inside each](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/critical-cells-count-the-defects.gif)
+
+Cyan cages are **2D-critical** cells, magenta are **3D-critical**, yellow dots are the non-manifold
+vertices Dual Contouring produced. Look at the cluster: one dot per cage, no strays, no empty cages.
+
+That is M-338. A cell is critical when its eight corner signs host one of Latecki's two configurations,
+and on `noise_cavity` at 65³ the census reads **567 + 35 = 602** against **602** non-manifold vertices
+and **602** critical cells hosting one — 100% co-location, against a chance baseline near 1%. Cycle to
+`sphere` or `csg_difference` and every number is zero, from both directions.
+
+The census is a function of the sign bytes alone, so it is available **before** extraction: 13.5 ms
+against 63 ms to mesh the same grid. The 256-entry classification is enumerated from the definitions at
+startup — the example logs `120 2D-critical, 8 3D-critical, 0 in both` before it opens a window, so a
+transcription error could not survive the first line.
+
+```bash
+cargo run --example critical_cells --release   # 1-5 field · F fly to the cluster · H surface
+```
+
 ### An ambiguous face, and how rarely one turns up
 
 ![Cells with ambiguous faces boxed in amber and magenta, changing as resolution steps](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/ambiguous-faces-are-rare.gif)

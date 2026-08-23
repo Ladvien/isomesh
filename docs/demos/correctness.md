@@ -26,6 +26,33 @@ cd bevy_isomesh && cargo run --example manifold_check --release
 
 ---
 
+## Counting the defects before the mesh exists
+
+![noise_cavity at 65³ under Dual Contouring, cyan cages on critical cells with a yellow dot inside each](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/critical-cells-count-the-defects.gif)
+
+*`critical_cells` — `noise_cavity` at 65³. Cyan cages are 2D-critical cells, magenta are 3D-critical, yellow dots are the non-manifold vertices Dual Contouring actually produced. **567 + 35 = 602 critical cells, 602 non-manifold vertices, 602 critical cells hosting one, 100% co-location.** Cycle to `sphere` and every one of those numbers is zero.*
+
+The dots are not *near* the cages. There is exactly one dot per cage, and that is the finding (M-338): a
+cell is **critical** when its eight corner signs host one of Latecki's two configurations — a face whose
+inside corners are diagonal, or an inside set that is a single main-diagonal pair — and the census of
+those cells does not merely predict where a dual extractor will go non-manifold. It **counts** the
+defects. `critical cells == non-manifold vertices == critical cells hosting one`, exactly, on all three
+fields that have any.
+
+What makes that useful is *when* it is available. The census is a function of the sign bytes alone, so it
+can be taken **before** anything is extracted — 13.5 ms against 63 ms of extraction on the grid in the
+capture — and the answer is the exact count of non-manifold vertices the mesh has not been built yet to
+contain. The 256-entry classification is enumerated from the definitions at startup rather than
+transcribed, and the example logs `120 2D-critical, 8 3D-critical, 0 in both` before it opens a window;
+a transcribed table that disagreed would say so on the first line.
+
+```bash
+cd bevy_isomesh && cargo run --example critical_cells --release
+```
+
+`1`–`5` field · `F` fly to the densest cluster · `H` surface on/off.
+
+
 ---
 
 ## Splitting the vertex, and what it costs
