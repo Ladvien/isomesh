@@ -1301,6 +1301,108 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "extra_eval_fraction",
         ],
     },
+    Preregistration {
+        id: "P-44",
+        ticket: "R-042a",
+        hypothesis: "P-43's mechanism survived its own falsification and its \
+                     order statistic did not: the MAXIMUM normalised centre \
+                     residual is pinned at every resolution by a single C1 \
+                     crease cell, because a crease makes |f(centre) - \
+                     mean(corners)| an O(h) quantity and dividing by h leaves a \
+                     constant. The MEAN is not, and on P-43's own three fields \
+                     it correlated at r = 0.983, 0.984 and 0.9998 with the \
+                     symmetric Hausdorff, with log-log decay exponents agreeing \
+                     to within 0.05. That is a hypothesis read off the data that \
+                     killed its predecessor, so it is worthless until it is \
+                     tested somewhere it can fail. This registers it on the four \
+                     reference fields P-43 never touched -- sphere, torus, \
+                     box_exact and csg_difference -- at 17, 33, 65 and 129 \
+                     samples per axis. Clause one: the Pearson r between the \
+                     per-grid MEAN normalised centre residual and the symmetric \
+                     Hausdorff is at least 0.9 on each of the four. Clause two: \
+                     the log-log decay exponent of the mean residual matches \
+                     that of the symmetric Hausdorff to within 0.15 on each of \
+                     the four. Clause three, the cost clause P-43 got wrong and \
+                     which is restated with the right arithmetic: the witness \
+                     costs one extra field evaluation per CELL against one per \
+                     SAMPLE for the corners -- (n-1)^3/n^3, which rises toward 1 \
+                     and is nowhere near an eighth, because this crate prefills \
+                     one shared sample grid and every corner is evaluated once \
+                     -- so the claim is on wall clock instead: computing the \
+                     witness costs under 0.5x a Marching Cubes extraction of the \
+                     same grid.",
+        falsified_by: "r below 0.9 on any of the four fields, or an exponent gap \
+                       above 0.15 on any of them -- either of which would mean \
+                       the mean-residual agreement seen on P-43's three fields \
+                       is a property of those fields' shared crease structure \
+                       rather than of the witness, and the whole line dies with \
+                       a second null rather than limping on. Clause three fails \
+                       at 0.5x or worse, which would price the witness above the \
+                       extraction it is diagnosing.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "centre_residual_mean",
+            "symmetric_hausdorff",
+            "pearson_r_mean",
+            "decay_exponent_mean",
+            "decay_exponent_hausdorff",
+            "exponent_gap",
+            "witness_ns",
+            "extract_ns",
+            "witness_cost_ratio",
+        ],
+    },
+    Preregistration {
+        id: "P-45",
+        ticket: "R-041a",
+        hypothesis: "P-42 took B to be the whole closed surface, which made its \
+                     Gaussian clause an identity -- 3F = 2E, so the defect sum \
+                     is 2*pi*chi combinatorially and the residual was one f64 \
+                     epsilon per vertex with zero geometric content. The \
+                     property this crate actually wants was therefore never \
+                     tested: ADDITIVITY, N(A union B) = N(A) + N(B) - N(A \
+                     intersect B), which is what lets a per-chunk curvature \
+                     measure compose into a per-world one with no global pass. \
+                     Partition an extracted closed mesh into a 4x4x4 grid of \
+                     spatial chunks by triangle centroid, so every chunk is a \
+                     patch with a real boundary. With the geodesic-curvature \
+                     boundary term (pi minus the incident angle sum at a \
+                     boundary vertex) and edges on a chunk boundary weighted one \
+                     half: clause one, the sum over chunks of the Gaussian \
+                     measure equals the global 2*pi*chi to within 1e-9 absolute \
+                     on sphere and torus at 65 samples per axis; clause two, the \
+                     sum over chunks of the mean measure equals the global sum \
+                     of l*beta to within 1e-9 absolute on both; clause three, \
+                     each chunk's value recomputed IN ISOLATION from its own \
+                     triangles alone -- boundary detected from that set, nothing \
+                     read from a neighbour -- reproduces its in-context value \
+                     bit for bit, which is the difference between a measure that \
+                     is chunk-local and one that merely sums.",
+        falsified_by: "Any of the three exceeding its tolerance. A failure of \
+                       clause one or two means the boundary term as transcribed \
+                       is wrong; a failure of clause three means the measure \
+                       needs a one-ring halo, which would make it composable in \
+                       principle and not chunk-local in practice -- and this \
+                       crate meshes chunks independently, so that is the \
+                       difference between usable and not. Recorded beside them, \
+                       not registered: half the mean measure against the \
+                       analytic integral of H on box_exact, where the surface is \
+                       grid-aligned and the estimator may be exact rather than \
+                       convergent.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "chunks",
+            "gaussian_global",
+            "gaussian_chunk_sum",
+            "gaussian_gap",
+            "mean_global",
+            "mean_chunk_sum",
+            "mean_gap",
+            "isolated_chunks_bit_identical",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

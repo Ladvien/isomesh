@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**427 entries** — 28 falsified, 332 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**429 entries** — 30 falsified, 332 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -67,6 +67,8 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗26` | P-25's mechanism clause is false, and P-25's own falsifier is what named it (R-022b) |
 | `✗27` | "an exactly-zero SDF gradient detects the medial axis" |
 | `✗28` | FALSIFIED at 0.98 against a registered 1.5×: the 128³ penalty is a property of the access pattern, not of the stride, an… |
+| `✗29` | FALSIFIED on both clauses, and the mechanism survives both: the max is the wrong order statistic, and the cost clause wa… |
+| `✗30` | FALSIFIED: with B the whole closed surface, the registered residual is discrete Gauss–Bonnet in an approximation check's… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -7762,3 +7764,150 @@ all three numbers to zero together.
 **Would be shown wrong by:** a field where the census and the incident count come apart. The bijection is
 measured at one resolution on eight fields; it is a strong regularity, not a theorem, and the honest next
 move is a resolution sweep rather than a claim of necessity.
+
+### 💥 ✗29 / M-339 — FALSIFIED on both clauses, and the mechanism survives both: the max is the wrong order statistic, and the cost clause was wrong arithmetic (P-43, R-042)
+
+**M.** `cargo bench --bench experiment_p43`, `docs/experiments/p-43.csv`. Marching Cubes, `f64`,
+`noise_cavity` and `gyroid` (registered) plus `thin_plate` (the registered adversary), at 17³/33³/65³/129³.
+
+| clause | registered | measured | verdict |
+|---|---|---|---|
+| C1 Pearson r, max residual vs symmetric Hausdorff | ≥ 0.7 per registered field | `noise_cavity` **+0.881**, `gyroid` **−0.847**, pooled **+0.249** | **FALSIFIED** |
+| C2 extra evaluations | < 0.15 of corner evaluations | **0.834 → 0.977** across 17³ → 129³ | **FALSIFIED** |
+
+**C2 was wrong when it was written, and that is the more embarrassing half.** The registration says
+*"under 15% of the corner evaluations — the structural ⅛ plus slack"*. One eighth is the ratio under
+**per-cell** accounting, one centre against a cell's eight corners. This crate does not evaluate corners
+per cell: `MarchingCubes::extract` prefills one shared `n³` grid and every corner is evaluated **once**
+and shared by the up-to-eight cells that touch it. Against the denominator a caller actually pays, the
+ratio is `(n−1)³/n³`, which rises toward **1**, not toward ⅛. The harness records both readings —
+`extra_eval_fraction` and `extra_eval_fraction_unshared`, the latter exactly `0.125` on every row — so
+the row can be read either way, and neither reading rescues the clause as stated. **The true cost of the
+witness is about one extra field evaluation per cell, i.e. roughly a doubling of the sampling work**, and
+any future version of this idea has to be priced at that.
+
+**C1 failed for a mechanism the data names precisely.** The maximum normalised residual does not fall
+with resolution *at all*:
+
+| field | decay exponent, `centre_residual_max` | decay exponent, `symmetric_hausdorff` |
+|---|---:|---:|
+| `noise_cavity` | **+0.146** | +0.516 |
+| `gyroid` | **−0.029** | +0.936 |
+| `thin_plate` | **−0.015** | +0.937 |
+
+A `C¹` crease makes `|f(centre) − mean(corners)|` an `O(h)` quantity rather than `O(h²)`, so dividing by
+`h` — which the registration's *"normalised by cell size"* requires — leaves a constant that does not
+shrink. Every field in the sweep has a crease: `gyroid` is `Intersection{Gyroid, Sphere}`, a `max`, so a
+CSG seam; `thin_plate` is an exact box; `noise_cavity` has an unbounded gradient. **One crease cell out
+of 2.1 million pins the maximum at every resolution**, and an order statistic that one cell can pin is
+not a witness of a whole grid's adequacy.
+
+**The registered adversary did not fail in the registered way, and that is a second correction.** The
+falsifier predicted `thin_plate` would give *"a residual near zero while the reconstruction is badly
+wrong"*. The reconstruction is indeed badly wrong — `ThinPlate::canonical` is 0.4 cells thick at its
+reference and sub-voxel at all four resolutions here, with `hausdorff_forward_max` pinned at exactly
+`8.333e-3` on all four rows and the whole symmetric figure carried by the reverse direction. But the
+residual is **not** near zero: 0.265 → 0.282, the same order as `gyroid`'s. The witness fires on the
+adversary at every resolution. The plate uses the exact box distance, which is creased at its edges and
+ridged at its midplane, so the *"feature that passes through the cell centre without perturbing it"*
+does not exist for this field. `thin_plate` fails C1 for the same reason `gyroid` does — a max pinned by
+creases — and not for the reason the falsifier named.
+
+**What survives, stated as the post-hoc observation it is.** Swap the order statistic and the picture
+inverts:
+
+| field | r, **mean** residual vs Hausdorff | decay exponent, mean | decay exponent, Hausdorff |
+|---|---:|---:|---:|
+| `noise_cavity` | **+0.984** | +0.521 | +0.516 |
+| `gyroid` | **+0.983** | +0.900 | +0.936 |
+| `thin_plate` | **+0.9998** | +0.988 | +0.937 |
+
+Every field above the 0.7 floor, pooled **+0.763**, and the decay exponents agree with the Hausdorff's to
+within 0.05 on all three. **This is not evidence for a hypothesis — it is the hypothesis a falsified
+experiment suggested, read off the same data that falsified it**, which is precisely the thing
+`experiment.rs` refuses to let a registration be amended into. So it is recorded here as tier M
+observation and re-registered as **P-44** against the four fields this run never used, where it can fail.
+
+**And the one field that passed C1 passed by accident.** `noise_cavity`'s `+0.881` on the max comes from
+a sequence that moves over only a 34% band and is **non-monotone** — it rises from 65³ to 129³ — with a
+decay exponent of `+0.146`. Four points over a nearly flat, non-monotone sequence is a coin flip that
+landed heads. Its symmetric Hausdorff is non-monotone too, rising from `6.241e-1` at 17³ to `6.471e-1` at
+33³ before falling: the only field in the sweep where one refinement made accuracy worse, and worth its
+own look.
+
+**One thing the failure does not touch.** The witness's *one-sidedness* is independent of the
+correlation: cells whose residual exceeds ten times the grid median run 3.8–19.4% on every registered
+row and are never zero. Flagging *cells* still works; what failed is summarising a grid by their maximum.
+
+**Would be shown wrong by:** P-44, which is the honest re-test and is registered before it runs.
+
+### 💥 ✗30 / M-340 — FALSIFIED: with `B` the whole closed surface, the registered residual is discrete Gauss–Bonnet in an approximation check's costume, and what it measures is one f64 epsilon per vertex (P-42, R-041)
+
+**M.** `cargo bench --bench experiment_p42`, `docs/experiments/p-42.csv`. Marching Cubes, `f64`,
+`sphere` and `torus` at 33³/65³/129³.
+
+| clause | registered | measured | verdict |
+|---|---|---|---|
+| C1 residual inside the bound | at all three resolutions | residual `2.81e-13 → 4.95e-12`, bound `2.87 → 2.10` | **HELD, vacuously** — the bound exceeds the residual by 4.2 × 10¹¹ to 1.0 × 10¹³ |
+| C2 residual falls at least linearly | ratio ≤ ~0.5 per halving | **4.01×** then **4.39×** (sphere), **4.32×** then **4.46×** (torus) | **FALSIFIED** |
+| C3 torus defect sum zero within bound | yes | `−2.32e-13 → −4.46e-12` | **HELD**, and the sign check fires |
+
+**The registered Gaussian clause cannot fail, and the reason is a theorem.** For any closed manifold
+triangle mesh `3F = 2E`, so `Σ_v (2π − α_v) = 2π(V − E + F)` **identically**. Taking `B` to be the whole
+surface makes the residual a topology check, not an approximation check — `residual_topological` is
+exactly `0` on all six rows, `chi_from_defect`, `chi_from_report` and the combinatorial `V − F/2` all
+agree, and what is left over is pure accumulation error: `residual / vertices` is `2.42e-16`, `2.37e-16`,
+`2.57e-16` on the sphere and `2.06e-16`, `2.38e-16`, `2.56e-16` on the torus — **one f64 machine epsilon
+per vertex**, at `ε = 2.22e-16`. The vertex count grows ×4.11 then ×4.04, so the residual grows ×4. C2
+is falsified by the floating-point accumulator, which is exactly what a clause with no geometric content
+left in it must measure.
+
+**That is the registration's error and it belongs on the record.** Cohen-Steiner & Morvan's Theorem 6 is
+stated for `B` the relative interior of a *union of triangles* — a patch, with a boundary term. The
+registration wrote `|Σ defects − 4π|`, which is `B =` everything and `∂B = ∅`, and the harness duly
+records `bound_k_boundary_term = 0` on every row. The additivity that makes the measure interesting to a
+chunked mesher was never exercised. Re-registered as **P-45**, where `∂B` is not empty.
+
+**Theorem 6's bound does not converge on a marching-cubes mesh, and the mechanism is named.** `K` is flat
+at 16–19 across the sweep, as `Σ cr² ≈ O(area)` should be. But `ε = max circumradius` is `1.75e-1`,
+`9.96e-2`, `1.13e-1` against `h = 0.125`, `0.0625`, `0.03125` — **`ε/h` = 1.40, 1.59, 3.61**, not `O(h)`
+and not even monotone, while `mean_circumradius` halves cleanly (`8.14e-2 → 4.06e-2 → 2.06e-2`). It is
+the *maximum* that misbehaves, and the cause is measurable: Theorem 11's uniform-fatness hypothesis is
+violated by this mesh family, with `min_triangle_fatness` falling monotonically `4.16e-2 → 1.21e-2` on
+the sphere and `8.74e-3 → 2.62e-4` on the torus. Marching Cubes' needles get relatively worse with
+resolution, so a bound written in terms of the worst circumradius cannot shrink.
+
+**And the slivers responsible are not the ones the crate calls degenerate.** `degenerate_triangles` is 0
+on five rows and 16 on the 129³ torus, yet excluding them changes the bound in the seventh digit
+(`2.093583` either way). `ε ≈ 4h` is set by ordinary needles whose area clears the `1e-6·h²` floor. A
+fatness problem, not a degeneracy problem — and it is the second time this repo has found that
+*"degenerate triangles are a recorded metric, not a gate"* was the right call for the wrong reason.
+
+**The constant was not invented.** Sun & Morvan say only that `C_S` *"depends on the geometry of S"* — no
+value, no formula, nothing a mesh carries. The harness reports `bound = K·ε` with
+`bound_constant_c = "unstated_in_source"` in the artefact, and recovers falsifiable content anyway:
+`c_required = residual / (K·ε)` is the smallest constant that would make C1 true, and the theorem asserts
+**one** constant across the sequence, so an unbounded `c_required` would falsify its form. Measured
+`9.77e-14 → 6.68e-13 → 2.36e-12` — growing by four per step, which is C2's rounding growth, and still
+eleven orders below 1. The theorem's form is not threatened; the bound is simply enormous.
+
+**The half that earns its keep was not registered.** `½ Σ l(e) β(e)` is a genuine second-order estimator
+of `∫_S H da`:
+
+| field | 33³ | 65³ | 129³ | ratio |
+|---|---:|---:|---:|---|
+| sphere, relative error vs `4π` | 1.801e-3 | 4.487e-4 | **1.120e-4** | 0.249, 0.250 — `O(h²)` |
+| torus, relative error vs `2π²` | 2.676e-5 | 2.231e-5 | **6.154e-6** | — |
+
+The factor of two was settled against the source rather than chosen: for `[−1,1]³` the Steiner `ε²`
+coefficient is `6π` while `Σ l β` is `12π`, so `∫H da = ½ Σ l β`. Both forms are in the CSV, because the
+registration named the unhalved one.
+
+**Two smaller things worth keeping.** A marching-cubes sphere is **not edge-convex** — `Σ l|β|` exceeds
+`Σ l β` by about 1.0 at every resolution, so roughly 0.5 of length-weighted *concave* turning survives at
+129³; staircase artefacts that do not wash out. And Theorem 5(2)(a) as printed in the in-corpus source
+gives the polyhedral Gaussian measure as `Σ α_v`, where Definition 1(1) has just defined `α_v` as the
+*sum* of incident corner angles — a total near `2π|V|`, not near `∫G da`. The defect is what the theory
+means and what was used; the discrepancy is documented in the bench rather than silently corrected.
+
+**Would be shown wrong by:** P-45, which puts a boundary on `B` and is registered before it runs.
