@@ -11,6 +11,86 @@ finding — `FINDINGS.md` records which source to distrust and why.
 
 ---
 
+## Proving a cell empty when the Lipschitz ball cannot
+
+![A gyroid with amber cages marking cells only the affine bound rejects, vanishing when the field changes to a box](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/affine-rejects-where-lipschitz-cannot.gif)
+
+*`affine_rejection` — one slab of a 17³ grid at a time. **Slate blue** cages are cells both bounds reject;
+**amber** cages are the ones only the affine form rejects, and they are the finding: **1,959 of 4,096** on
+`gyroid`. Cycle to `box_exact` and every amber cage disappears.*
+
+A conservative empty-cell test asks whether the surface can possibly pass through a cell. Hart's Lipschitz
+bound answers with a **ball**: `|f(centre)| > l·r`. That throws away everything except one number.
+`gyroid` is `sin x cos y + sin y cos z + sin z cos x`, and **no two of those terms can peak at once** — a
+per-term bound cannot know that, so it declares `l = 2√3 ≈ 3.464` and M-267 measured the real gradient
+supremum converging to `1.731`. The bound is sound and loose by 2×, on the one field where rejection pays
+least.
+
+A **revised affine form** carries three noise symbols plus an error accumulator — **five `f64`, fixed
+size, never growing, no heap** — and bounds the whole expression over the cell's **box**. It keeps the
+correlation. Measured: `gyroid` **688 → 2,647** cells rejected, **3.85×**, with 1,959 gained and **zero
+lost**. On `gyroid_uncapped` Hart's test rejects **nothing at all**, 0 of 4,096, and the affine form
+rejects 1,098.
+
+**The demo's better half is where it fails.** On `box_exact` the ratio is exactly `1.000000` and the two
+rejected **sets are identical, cell for cell**. That field is built from `min`/`max`, for which no affine
+rule exists — the only sound treatment collapses the form to an interval and destroys every correlation
+it was carrying. On `csg_difference` it is actually *worse*, losing 17 cells, because it pays the collapse
+and gets nothing back. **A mechanism that wins everywhere is usually a measurement error; this one wins
+exactly where its story says it should.**
+
+The mesh is **byte-identical** on all 12 rows, checked two ways, and the harness re-runs every field with
+Hart's constant deliberately divided by 4 to prove the check can fail — it detects the sabotage on all
+six. Cost is recorded and gates nothing: roughly 12× the arithmetic per cell. **This is a capability, not
+a speedup** (M-354).
+
+```bash
+cd bevy_isomesh && cargo run --example affine_rejection --release
+```
+
+`1`–`3` field · `A` all cells vs one slab · `G` grid · `Space` pause.
+
+---
+
+## The spheres a mesh never touches
+
+![Wireframe spheres around SDF samples, most unlit because no vertex reaches them, flipping colour when the extractor changes](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/untouched-tangency-spheres.gif)
+
+*`untouched_spheres` — every SDF sample drawn as the sphere of radius `|d|` it actually asserts. Coloured
+by whether any mesh vertex reaches tangency with it. On `thin_plate` under Marching Cubes, **717 per
+1,000** are never touched; switch to Dual Contouring and the same shells go quiet — **44.83**, a measured
+**15.9984×**.*
+
+A signed distance sample says more than "the field is `d` here". It says the ball of radius `|d|` holds no
+surface, **and** that the surface touches that sphere somewhere. Every extractor in this crate reads `d`
+as a number to interpolate and discards both halves.
+
+**The first half turns out to be respected already**, which is a useful negative: Marching Cubes pierces
+**0 of 22,790** vertices and Dual Contouring **0 of 22,798**, searched exhaustively, two of the worst
+margins actually negative. The second half is wide open — **3.13% to 80.47%** of samples have a sphere no
+vertex ever comes near, on every field, for every extractor, with no search cutoff to blame.
+
+**The worst misses are exact geometric constants, not noise**, and the demo prints each witness:
+
+- `box_exact` under Marching Cubes misses by **exactly `√2` cells**. The sample is the box corner, `|d| = 0`
+  — a zero-radius sphere lying *on* the surface — and **MC places no vertex on a box edge or corner at
+  all**, because both endpoints of every spanning grid edge there have `f = 0` and there is no sign change.
+- Under Dual Contouring the same corner misses by **`1/√2`**, because DC's vertices live on the dual
+  lattice, half a cell off the sample lattice. (In `f64` it is `1/√2 + 1.77e-9`, and even *that* residual
+  is derivable: the cell clamp insets the vertex perpendicular to the miss, which enters a distance at
+  second order and is independent of resolution.)
+
+Untouched count needs no ground truth — only the field and the mesh — so it is a **reference-free
+detail-loss signal**, computable on a chunk a game has already meshed (M-355).
+
+```bash
+cd bevy_isomesh && cargo run --example untouched_spheres --release
+```
+
+`1`–`5` field · `M` extractor · `[` `]` sphere subsampling · `Space` pause.
+
+---
+
 ## Ninety-nine percent of a voxel grid is not surface
 
 ![A thin shell of active cells inside a full grid, the active fraction falling as resolution climbs](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/active-cells-ninety-nine-percent-skipped.gif)

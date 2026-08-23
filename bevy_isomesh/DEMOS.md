@@ -106,6 +106,71 @@ cargo run --example quickstart --release
 
 ## Algorithms, side by side
 
+### Proving a cell empty when the ball cannot (M-354)
+
+![A gyroid with amber cages on cells only the affine bound rejects](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/affine-rejects-where-lipschitz-cannot.gif)
+
+Hart's Lipschitz test answers "can the surface pass through this cell?" with a **ball**, and a ball throws
+away everything but one number. A **revised affine form** — five `f64`, fixed size, no heap — bounds the
+whole expression over the cell's **box** and keeps the correlation between terms.
+
+On `gyroid`, whose three trig terms cannot peak at once, that is **688 → 2,647** cells rejected, **3.85×**,
+with **zero** cells lost. On `gyroid_uncapped` the Lipschitz test rejects **nothing at all** and the affine
+form rejects 1,098.
+
+Then cycle to `box_exact` and every amber cage vanishes: the ratio is exactly `1.000000` and the two
+rejected **sets are identical, cell for cell**, because `min`/`max` collapses the form to an interval.
+**A mechanism that wins everywhere is usually a bug; this one wins exactly where its story says.**
+
+```bash
+cargo run --example affine_rejection --release
+```
+
+### The spheres a mesh never touches (M-355)
+
+![Wireframe spheres around SDF samples, most never reached by the mesh](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/untouched-tangency-spheres.gif)
+
+A distance sample asserts a sphere the surface must **touch**. Nothing in this crate checks that. Between
+**3.13% and 80.47%** of samples have a sphere no vertex ever reaches — and on `thin_plate` switching
+Marching Cubes to Dual Contouring drops it from 717 to 45 per 1,000, a measured **15.9984×**.
+
+The worst misses are exact constants: `box_exact` under Marching Cubes misses by **`√2` cells**, because
+MC places no vertex on a box edge at all. Needs no ground truth — a reference-free detail-loss signal.
+
+```bash
+cargo run --example untouched_spheres --release
+```
+
+### The repair that welds 520 things shut (M-352)
+
+![A bonsai CT scan covered in magenta pinch markers](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/pinch-repair-welds-520-components.gif)
+
+Integer CT data puts samples exactly on the isovalue, and **every** degenerate triangle in the mesh comes
+from one — 58,097 of 58,097 on `bonsai`. The repair removes all of them and **moves no geometry at all**.
+
+It is still only safe on one of the two volumes. On `bonsai` it welds **520 separate components**, because
+516 of 17,201 collapse groups join vertices that share no triangle. **Ship the precondition, not the
+repair** — one union-find decides it before anything changes.
+
+```bash
+cargo run --example pinch_repair --release
+```
+
+### An error bound that is reached, not merely respected (M-350)
+
+![Normal ray pairs fanning at a CSG crease, with a meter tracking the predicted bound](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/seam-normal-bound-is-attained.gif)
+
+A central difference across a CSG seam averages two gradients, so its error is at most **half the crease
+angle** — provable, because the difference returns `u − Λw` for a diagonal `Λ` with entries `≤ ½`.
+
+It is **attained**: median tightness **0.9748** over 24 rows. At 175° the worst error is 2.498° against a
+2.5° bound. Everywhere else normals are exact to `6.75e-10°`. The defect is a curve one cell wide, and it
+does not shrink with resolution.
+
+```bash
+cargo run --example seam_normal_bound --release
+```
+
 ### The corner, and the 101× (M-54)
 
 ![Surface Nets rounding a box corner beside Dual Contouring holding it, across a resolution sweep](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/dual-contouring-vs-surface-nets.gif)

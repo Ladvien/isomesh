@@ -46,6 +46,7 @@ contradict.
 | P-18 … P-21 | `crates/isomesh/src/experiment.rs` | 3 | 1 | — |
 | P-22 … P-37 | `crates/isomesh/src/experiment.rs` | *not tallied here — several split their verdict across clauses, and a column that rounds those to one word would be the kind of summary this page exists to distrust* | | |
 | P-38 … P-47 | `crates/isomesh/src/experiment.rs` | 3 | 7 | — |
+| P-48 … P-56 | `crates/isomesh/src/experiment.rs` | *split, and tallied honestly below: 4 experiments held every clause, 2 were falsified outright, and 3 split — the phase's most useful result is a clause that failed* | | |
 
 A page called "experiments that held" which quietly dropped the falsifications would be exactly the
 failure this machinery exists to prevent. They are all here.
@@ -84,7 +85,7 @@ strongest evidence on this page that the practice is doing something.
 | prediction | verdict | what it means if you depend on this crate |
 |---|---|---|
 | **P-39** — a brush that provably cannot win the min/max chain inside a chunk can be deleted from the tape, bit-exactly | **held**, all three clauses (M-341) | **Your edit history stops being a tax.** Median 21 of 64 brushes survive per chunk, a chunk meshes **3.4× faster**, and the mesh is byte-identical on 64 of 64 — because IEEE `min`/`max` *select* an operand rather than computing one. The bound costs 1.5 × 10⁻⁴ of what it saves. `SmoothAdd` is excluded from the losing-direction prune and that exclusion is load-bearing: prune it and 48 of 64 chunks change |
-| **P-40** — the active-cell test is one bit, so 64 cells decide at once | **held**, all three clauses (M-337) | Surface Nets is **1.25–1.38× faster on every grid measured**, output unchanged, and the win is largest where a voxel game lives: chunks that are mostly solid or mostly air. The traversal stage alone is **5.5×**. Dual Contouring gets only 1.18× and the reason is structural — its QEF solve is per-*active*-cell work the mechanism cannot touch |
+| **P-40** — the active-cell test is one bit, so 64 cells decide at once | **demoted, then re-earned as a count** (M-337 → M-348 → M-349) | Registered as a ≥1.25× wall clock and recorded at 1.336×; an external audit found the committed CSV said **1.1925×**, and three quiet-machine re-runs read 1.022× / 1.184× / 1.177×. The mechanism was never in doubt — what was wrong was gating it on a stopwatch, which ✗24 had already forbidden. Re-registered as P-50 and held as **three exact equalities on 15 of 15 rows**: gathers performed equals cells on the scalar path and active cells on the bitmap path, word groups equals `cells_x.div_ceil(64)·cells_y·cells_z`, and the two produce the same **ordered** active list. At 128³ it removes **99.07%** of gathers on `sphere` — an integer, identical on every machine |
 | **P-41** — the sign lattice is not well-composed, and that is where the duals go non-manifold | **held**, and the relation is a bijection (M-338) | **You can count the defects before the mesh exists.** `critical cells == non-manifold vertices`, exactly, on every affected field — 602, 141, 58 — and exactly zero on the five clean ones, from both directions. Co-location 2442/2442 against a ~1% chance baseline. The census is a function of the sign bytes alone, so it is available at 13.5 ms against 63 ms to mesh the same grid |
 | **P-46** — repairing the sign lattice drives the duals to zero non-manifold output | **falsified**, and the conditional it leaves is the product (M-344) | The repair is **free and total where critical cells are isolated** (58 → 0 in one sweep, 141 → 0 in five, Hausdorff ratio 1.000000) and **provably stuck where they are dense**: an exhaustive walk over all 4,096 face-adjacent sign patterns finds **36 where no corner leaves both cells clean**. Gate on maximum cluster size, not on count |
 | **P-47** — composed fields have a real gradient hole | **falsified** in the mean, held on speed (M-345) | The central difference is **7.6 × 10⁻⁵ degrees** off on a 64-brush stack — three orders under the bar, so your normals are fine. But it reaches **4.365°** exactly where a vertex's stencil straddles a CSG seam, and exact gradients are **2.8× cheaper** anyway. Justified by cost, not by accuracy, which is not the reason anyone expected |
@@ -101,6 +102,38 @@ into discrete Gauss–Bonnet. Neither error survived contact with a number, and 
 amending the prediction — both were re-registered under new ids (P-44, P-45) and both of *those* then
 failed too, honestly, on data they had not seen.
 
+
+---
+
+## Phase 20 — where three of six were wrong before anything ran
+
+Every registration in this phase was checked against the paper it cites **before** the harness was
+written. Three of six rested on a claim the source does not make. That is the cheapest error this project
+has ever caught, and it is worth more than any single verdict below.
+
+| what the registration cited | what the source actually says |
+|---|---|
+| *"edge Chamfer 0.0262 vs MC 0.417 — 13× on sharp features"* | **No such figure exists.** The tangency paper measures Hausdorff, Chamfer and its own energy, treats sharp features qualitatively, and its residual is a rank-3 point-to-point term, not the point-to-plane form that was registered |
+| Custódio's `=` label reduces degenerate triangles by *N* | The paper reports **no degenerate-triangle count on any dataset**, and its triangulator is a per-cube convex hull explicitly *"without the need of a look up table"* |
+| Affine arithmetic is *correlation-aware*, with a measured tightening | The paper contains **no correlation argument, no tightening figure, and no `min`/`max` rule at all** — and that last gap turned out to be the experiment |
+| A monotone-edge certificate for 3D meshes | **The theorem is real and it is two-dimensional.** Its pigeonhole step is *"a triangle has only three edges"*, and it does not apply to the trilinear interpolant |
+
+| prediction | verdict | what it means if you depend on this crate |
+|---|---|---|
+| **P-54** — a correlation-aware bound rejects empty cells a Lipschitz ball cannot | **held**, all three (M-354) | **A field whose global Lipschitz constant is worthless becomes cullable.** `gyroid` 688 → **2,647** of 4,096 cells rejected, **3.85×**, with 1,959 gained and **zero lost**. On `gyroid_uncapped` Hart's test rejects **nothing at all** and affine rejects 1,098. And where the field is built from `min`/`max` the gain is *exactly zero* — `box_exact`'s two rejected sets are identical cell for cell — because the collapse to an interval destroys the correlation. Mesh byte-identical on 12 of 12, with a deliberately sabotaged bound proving the gate can fail. Costs ~12× the arithmetic: a capability, not a speedup |
+| **P-56** — a central difference across a CSG seam is wrong by at most half the crease angle | **held** on C1 and C3 (M-350) | **The error has a closed form and it is attained.** `(180° − θ)/2`, with median tightness **0.9748** over 24 rows and 9 rows above 0.99. It is provable, not fitted: the difference returns `u − Λw` for a diagonal `Λ` with entries `≤ ½`. P-47's lone 4.365° outlier back-solves to a 171° seam against a 4.5° bound — explained, not excused. It does **not** shrink with resolution, because the stencil step does not |
+| **P-53** — a third corner label removes the degeneracy integer volumes create | **held**, **split**, **held** (M-352) | **Every** degenerate triangle traces to an exactly-equal corner — 164 of 164 on `fuel`, 58,097 of 58,097 on `bonsai` — and the repair moves **no geometry at all** (`max_snap_distance` is exactly 0). But it is only safe on one of the two volumes: on `bonsai` it welds **520 separate components**, because 516 of 17,201 collapse groups join vertices that share no triangle. **The shippable result is the precondition** — one union-find over the baseline mesh — not the repair |
+| **P-51** — this crate's extractors violate the empty ball a distance sample asserts | **held**, **falsified**, **held** (✗38 / M-355) | **They do not, and that closes four papers in one pass.** Marching Cubes pierces 0 of 22,790 vertices and Dual Contouring 0 of 22,798, exhaustively, two margins negative. The *other* half is wide open: **2.9%–80.5% of samples have a sphere no vertex ever touches**, with MC worse than DC on 5 of 5 fields and **16×** worse on `thin_plate`. The worst misses are exact constants — `√2` cells for MC on a box, because MC places no vertex on a box edge at all |
+| **P-52** — tangency placement beats the QEF on sharp features | **falsified** on three of four (✗37 / M-353) | **64.8× and 87.2× worse**, and the algebra says why in one line: the least-squares point is `(1 − λ)·mean(pᵢ) + λ·c`, and the mean of a cube's eight corners is the **cell centre**. Confined to a cell, the tangency energy stops being about the surface. This confirms the source's own ablation — globality is its mechanism, not an implementation detail |
+| **P-55** — monotone mesh edges certify the critical-point structure | **falsified** on all three (✗36 / M-351) | **The zero was unreachable by geometry, not by sampling.** A mesh edge is a *chord*: on a convex field `f` runs `0 → negative → 0`, so `g(0) = r(cos θ − 1) < 0` and `g(1) = r(1 − cos θ) > 0` for every pair of surface points. `sphere` flags **804 of 804** edges against a registered zero. 97.5% of flags were decided by the endpoints before any interior sample existed. The predicate belongs on the *ambient* complex |
+
+**What this phase says about the practice, which is not the same as what it says about meshing.** Four of
+the six registrations contained an error I put there: a bar copied from a figure that does not exist, a
+tolerance that scales by a quantity which is identically zero where it is applied, a curve fit where a
+scale-free equality was available, and a field list naming five members of a set with four. **Every one
+was caught by the artefact rather than by review** — and three of them were caught before the harness
+existed, by reading the paper. The registrations that needed no external claim, P-51 and P-56, were the
+two that could be written immediately and the two that needed no correction.
 
 ---
 

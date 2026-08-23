@@ -10,6 +10,78 @@ page. A physics engine forgives none of them.
 
 ---
 
+## The repair that fixes every triangle and welds 520 things shut
+
+![A bonsai CT scan under magenta pinch markers, switching to a fuel injection scan where none appear](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/pinch-repair-welds-520-components.gif)
+
+*`pinch_repair` — real `uint8` CT volumes at an integer isovalue. **Amber** marks a collapse group that is
+a fold being flattened; **magenta** marks a **pinch** — two sheets of surface that merely meet at one
+sample. `fuel` has **0 pinches of 50** groups. `bonsai` has **516 of 17,201**.*
+
+Quantised data puts samples *exactly* on the isovalue — M-316 measured **16,284 of 529,508** `bonsai`
+surface-cell corners doing it, 3%. When that happens the edge interpolation parameter `t = a/(a−b)` is
+exactly 0 or 1, so the crossing lands **on** the sample, every cut edge meeting there does the same, and
+the vertex cache is keyed on the grid edge rather than the point — so nothing is shared and the mesh
+carries triangles with coincident corners. **Every** degenerate triangle traces to this: 164 of 164 on
+`fuel`, **58,097 of 58,097** on `bonsai`, tagged by replaying the march rather than inferred.
+
+The repair is to give the equal corner its own label and let all its crossings share one vertex. It works
+perfectly — both volumes go to **zero** degenerate triangles — and `max_snap_distance` is **exactly 0**,
+so **no geometry moves at all**. It is a pure connectivity decision.
+
+**And that is exactly why it is dangerous.** On `bonsai` it changes χ from 517 to 585, creates 561
+non-manifold edges, and **welds 520 previously separate components**. On `fuel` nothing moves. The
+difference is decidable *before* the repair, by one union-find over the baseline mesh: two vertices
+snapping to the same corner that **already share a triangle** are a fold, and safe; two that share **no**
+triangle are different sheets, and identifying them is a topology change.
+
+**So the shippable result is the precondition, not the repair** — and a crate that shipped the repair
+unconditionally would silently weld a CT scan and pass every gate except the Euler characteristic
+(M-352).
+
+```bash
+cd bevy_isomesh && cargo run --example pinch_repair --release
+```
+
+`1`–`2` volume · `B` baseline vs repaired · `W` wireframe · `Space` pause.
+
+---
+
+## An error bound that is not just respected but reached
+
+![Two spheres cut apart, normal ray pairs fanning at the crease, a meter tracking the predicted bound as the angle sweeps](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/seam-normal-bound-is-attained.gif)
+
+*`seam_normal_bound` — a CSG `Difference` with the crease angle `θ` sweeping 30° → 175°. At each vertex
+whose six-sample stencil crosses the seam, the central-difference normal and the analytic normal are drawn
+as a pair. The meter tracks the measured worst error against the predicted `(180° − θ)/2`.*
+
+At a `min`/`max` seam the field is `C⁰` and not `C¹`. A central difference straddling it averages two
+different gradients, so the direction it returns lies in the cone the two branches span — and the error is
+at most **half the angle between them**. It does **not** shrink with resolution, because the stencil step
+scales with position, not with the grid.
+
+**The bound is provable and it is attained.** The difference returns `u − Λw` for a *diagonal* `Λ` whose
+entries are all `≤ ½`, which gives exactly `(180° − θ)/2`, with equality wherever a vertex lands on the
+seam — which is what a QEF does by construction. Measured median tightness is **0.9748** over 24 rows, 9
+of them above **0.99**: at 175° the worst error is **2.498°** against a 2.5° bound, at 120° **29.982**
+against 30, at 90° **44.823** against 45.
+
+Everywhere else the normals are effectively exact — non-straddling vertices average **6.75e-10 degrees**
+of error, 1,480× inside the threshold. **The defect is not diffuse; it is a curve one cell wide**, and the
+demo lets you watch the meter fill as the crease flattens (M-350).
+
+This also closes an older loose end: P-47 found a single vertex in 57,470 carrying 4.365° and could not
+explain it. It back-solves to a 171° seam against a 4.5° bound — a near-tight straddle, not an outlier.
+
+```bash
+cd bevy_isomesh && cargo run --example seam_normal_bound --release
+```
+
+`1`–`3` ledger rows · `N` normals · `W` wireframe · `Space` pause.
+
+---
+
+
 ## Where a mesh stops being a manifold
 
 ![Marching Cubes and Surface Nets on the capped gyroid, non-manifold features marked](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/manifold-check-resolution.gif)

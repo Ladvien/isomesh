@@ -9049,6 +9049,20 @@ would mean the interval collapse is not what costs, and the non-uniformity has a
 
 ### 💥 ✗38 / M-355 — C1 and C3 HELD, C2 falsified by a *measured absence*: nothing pierces the empty ball, and between 2.9% and 80.5% of spheres are never touched (P-51, R-046)
 
+> **⚠ CORRECTED 2026-08-23 by its own demo, before this entry was a day old. Two numbers in the prose
+> below are wrong and the artefact is right.** (1) The floor is **3.13%**, not 2.9% — the smallest
+> `untouched_per_1k` over the 15 committed rows is `31.2863` (`sphere` / `dual_contouring`); the ceiling
+> `804.7155 = 80.47%` reproduces. (2) `box_exact` / DC's worst miss is **not** exactly `1/√2`: in `f64` it
+> is `1/√2 + 1.767767e-9` cells, and the residual is derivable rather than noise — `Clamp::ToCell` insets
+> the QEF vertex by `CLAMP_EPSILON·h/2` perpendicular to the `h/√2` displacement, and a perpendicular
+> offset enters a distance at second order, `o²/2b`, which in cells is `CLAMP_EPSILON²·√2/8 = 1.767767e-9`
+> **independent of `h`**. Measured over predicted is `1.0000001`. The CSV is untouched and was always
+> right: `worst_untouched_cells = 0.707107` matches to the digit, and six decimals cannot show the
+> residual. By contrast `thin_plate`/MC's `1.000000` and `box_exact`/MC's `√2` *are* bit-exact, delta
+> exactly `0.000000e0`, because an MC vertex is an interpolation whose root lands on a lattice point.
+> **This is F-009's failure mode caught by an artefact rather than by review** — the demo parses
+> `p-51.csv` by column name and printed `DISAGREES` rather than quoting the prose it was given.
+
 **M.** `cargo bench --bench experiment_p51`, `docs/experiments/p-51.csv`, 15 rows — five fields × three
 extractors, 65³, `f64`, 274,625 samples per row. Four consecutive runs identical in every gated quantity.
 
