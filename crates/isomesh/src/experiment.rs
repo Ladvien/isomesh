@@ -1609,6 +1609,60 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "cost_ratio",
         ],
     },
+    Preregistration {
+        id: "P-50",
+        ticket: "R-039a",
+        hypothesis: "P-40's C2 was a wall-clock ratio registered as a threshold, \
+                     and it failed its own artefact: three quiet-machine runs \
+                     read 1.022x, 1.184x and 1.177x against a registered 1.25x \
+                     (M-348). Marching Cubes 24 already earned the rule -- gate \
+                     the COUNT the ratio samples -- and the count exists. The \
+                     bitmap prepass does not make an eight-corner gather faster; \
+                     it REMOVES gathers, and how many run is an integer that is \
+                     identical on every machine, under every governor, at every \
+                     load. Clause one, as an EQUALITY and not a ratio: the \
+                     scalar predicate performs exactly `cells` gathers and the \
+                     bitmap predicate exactly `active_cells`, on every field at \
+                     every resolution, with no tolerance. Clause two: the \
+                     bitmap's own cost is exactly `sample_count` comparisons \
+                     plus `cells_x.div_ceil(64) * cells_y * cells_z` fused word \
+                     groups -- note CELLS and not SAMPLES, which is the defect \
+                     E-307 found and which cost about 30% of the stage at 64k+1 \
+                     grids -- so the prepass is O(n^3/64) word groups against the \
+                     O(n^3) gathers it replaces, and the two counts predict the \
+                     crossover without a clock. Clause three: the active set the \
+                     two predicates name is the same ORDERED list, element for \
+                     element, on every field and resolution, which is what makes \
+                     the mesh identical rather than merely equal in count. \
+                     Timing is recorded beside all three and gates nothing.",
+        falsified_by: "Clause one failing as an exact equality. A gather \
+                       performed on an inactive cell means the mask admits a \
+                       cell it should not, and a mask wrong in the other \
+                       direction drops a cell and punches a hole -- so this is a \
+                       correctness gate wearing a performance gate's clothes, \
+                       and a mismatch of one is a failure. Clause three failing \
+                       would mean the set-bit walk does not reproduce \
+                       lexicographic order, which changes every vertex index \
+                       downstream of the first disagreement. Clause two failing \
+                       would mean the word-group count is not what reading the \
+                       loop says it is.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "cells",
+            "active_cells",
+            "gathers_scalar",
+            "gathers_bitmap",
+            "gathers_equal_cells",
+            "gathers_equal_active",
+            "bitmap_comparisons",
+            "bitmap_word_groups",
+            "word_groups_predicted",
+            "same_ordered_list",
+            "ns_per_cell_scalar",
+            "ns_per_cell_bitmap",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

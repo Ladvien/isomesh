@@ -8575,3 +8575,32 @@ mode against itself, which is the reason to trust the rest of it.
 quoted inside a `FINDINGS.md` entry against the CSV that entry names*. That check is mechanical for the
 subset that matters — an entry naming `docs/experiments/p-NN.csv` and printing a markdown table — and it
 would have failed on Phase 19 twice. Opened as **F-009**.
+
+### P-50 — registered for R-039a, before the harness: the count the ratio was sampling
+
+M-348 falsified P-40's C2 on its own artefact and then on three quiet-machine re-runs. ✗24 had already
+earned the rule — *"a wall-clock ratio is not a gate; gate the count the ratio samples"* — and the count
+was in the CSV the whole time. **The bitmap prepass does not make an eight-corner gather faster. It
+removes gathers**, and how many run is an integer that does not depend on a governor, a load average or
+a machine.
+
+> **H.** **(C1)** As an **equality**, not a ratio and not a tolerance: the scalar predicate performs
+> exactly `cells` gathers and the bitmap predicate exactly `active_cells`, on every field at every
+> resolution. **(C2)** The prepass's own cost is exactly `sample_count` comparisons plus
+> `cells_x.div_ceil(64) · cells_y · cells_z` fused word groups — **cells, not samples**, which is the
+> defect E-307 found and M-348 fixed, worth about 30% of the stage at every `64k+1` grid this crate
+> benchmarks. So the prepass is `O(n³/64)` word groups against the `O(n³)` gathers it replaces, and the
+> two counts locate the crossover with no clock in the room. **(C3)** The two predicates name the same
+> **ordered** active list, element for element — which is what makes the mesh identical rather than
+> merely equal in count. **Falsified by** C1 failing as an exact equality: a gather on an inactive cell
+> means the mask admits what it must not, and a mask wrong the other way drops a cell and punches a
+> hole, so this is a correctness gate wearing a performance gate's clothes and a mismatch of one is a
+> failure. C3 failing would mean the set-bit walk does not reproduce lexicographic order, which changes
+> every vertex index downstream of the first disagreement.
+
+**Timing is recorded beside all three and gates nothing.** That is the whole point of the
+re-registration.
+
+**Records** `field`, `samples_per_axis`, `cells`, `active_cells`, `gathers_scalar`, `gathers_bitmap`,
+`gathers_equal_cells`, `gathers_equal_active`, `bitmap_comparisons`, `bitmap_word_groups`,
+`word_groups_predicted`, `same_ordered_list`, `ns_per_cell_scalar`, `ns_per_cell_bitmap`.
