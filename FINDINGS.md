@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**436 entries** — 34 falsified, 335 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**437 entries** — 35 falsified, 335 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -73,6 +73,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗32` | the two measures split: the Gaussian one is chunk-local and does not sum, the mean one sums and is not chunk-local (P-45… |
 | `✗33` | the repair is free and total where the critical set is sparse, and catastrophic where it is dense (P-46, R-040a) |
 | `✗34` | the gradient hole is real, measurable, and three orders too small to matter; the speedup is real and holds (P-47, R-043) |
+| `✗35` | two Phase 19 entries quote runs that are not in the CSVs they cite, and one of them was a verdict: the bitmap's C2 fails… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -7529,8 +7530,13 @@ numbers.
 bounds its own error. Angle defect is textbook and is **not** the claim. Two things are: normal-cycle
 measures are **additive** — `N(A ∪ B) = N(A) + N(B) − N(A ∩ B)`, so a chunk's measure is the sum over its
 cells with the shared boundary subtracted once, and per-chunk numbers compose into per-world numbers with
-no global pass — and Cohen-Steiner & Morvan's Theorem 6 gives an **error bar** `C·K·ε` with
-`K = Σ cr(t)² + Σ_{t∩∂B≠∅} cr(t)` and `ε = max cr(t)`, every quantity computable from the mesh alone.
+no global pass — and **Sun & Morvan's Theorem 6** (`10.5802/acirm.50`) gives an **error bar** `C·K·ε`
+with `K = Σ cr(t)² + Σ_{t∩∂B≠∅} cr(t)` and `ε = max cr(t)`, every quantity computable from the mesh
+alone. *(Attribution corrected 2026-08-23 by external audit §B.1: `10.1145/777792.777839`, Cohen-Steiner
+& Morvan SoCG 2003, has exactly one numbered theorem — Theorem 1 — plus Proposition 3 and Lemmas 2 and
+4–9. The numbered Theorem 6 is Sun & Morvan's, which this registration already cited as the in-corpus
+companion carrying the transcribable formulas. The substance is untouched; the theorem number belongs to
+the other paper of the two.)*
 `validate::accuracy` measures distance and `validate::isotopy` certifies topology; neither states a bound
 it derived rather than sampled.
 
@@ -7580,6 +7586,10 @@ indexed** — for the version that tolerates non-smooth shapes, which is what `c
 `symmetric_hausdorff`, `pearson_r`, `extra_eval_fraction`.
 
 ### 💥 ✗28 / M-336 — FALSIFIED at 0.98 against a registered 1.5×: the 128³ penalty is a property of the access pattern, not of the stride, and Marching Cubes does not have one (P-38, R-037)
+
+> **⚠ CORRECTED at ✗35 / M-348 — the table below is not the run in `p-38.csv`.** The verdict is
+> untouched: every reading in either run sits between 0.93 and 1.01 against a registered 1.5×. The
+> numbers are what moved.
 
 **M.** `cargo bench --bench experiment_p38`, `docs/experiments/p-38.csv`. Sphere, `f64`, one thread,
 median of five timed runs after an untimed warm-up, each reported per sample of its own grid.
@@ -7637,6 +7647,10 @@ stamps which. Re-running the same bench elsewhere is the check, and it costs thi
 
 
 ### 🔬 M-337 — HELD on all three clauses: the active-cell test is one bit, the stage is 5.5× and not one triangle moved (P-40, R-039)
+
+> **⚠ CORRECTED at ✗35 / M-348 — C2's verdict does not survive its own artefact, and the table below is
+> not the run in `p-40.csv`.** Read the correction before citing any number here. C1 and C3 stand; C2
+> does not.
 
 **M.** `cargo bench --bench experiment_p40`, `docs/experiments/p-40.csv`, `f64`, one thread, median of
 five timed runs after a warm-up. The extractor arm reads its "before" from
@@ -7843,7 +7857,7 @@ landed heads. Its symmetric Hausdorff is non-monotone too, rising from `6.241e-1
 own look.
 
 **One thing the failure does not touch.** The witness's *one-sidedness* is independent of the
-correlation: cells whose residual exceeds ten times the grid median run 3.8–19.4% on every registered
+correlation: cells whose residual exceeds ten times the grid median run 2.93–19.4% on every registered
 row and are never zero. Flagging *cells* still works; what failed is summarising a grid by their maximum.
 
 **Would be shown wrong by:** P-44, which is the honest re-test and is registered before it runs.
@@ -8038,9 +8052,19 @@ now it has a falsifiable form: drive the census to zero and the defect count mus
 
 **The repair is of the sign lattice, not the mesh, and by minimal value perturbation rather than an
 arbitrary sign flip.** For each critical cell, move the corner of smallest `|value|` across zero by the
-smallest representable step. That is Boutry, Géraud & Najman's self-dual repair (`10.1007/s10851-017-0769-6`)
-applied to the grey-level function rather than to the binary set, and choosing the *cheapest* corner is
-what bounds the geometric cost — an arbitrary flip can move the surface by a whole cell.
+smallest representable step. It was registered as *"Boutry, Géraud & Najman's self-dual repair
+(`10.1007/s10851-017-0769-6`)"* applied to the grey-level function rather than to the binary set, and
+choosing the *cheapest* corner is what bounds the geometric cost — an arbitrary flip can move the
+surface by a whole cell.
+
+> **⚠ CITATION CORRECTED 2026-08-23 by external audit §B.1, and it is material rather than tidy.**
+> `10.1007/s10851-017-0769-6` is *A Tutorial on Well-Composedness* — a **survey**. The self-dual repair
+> is `10.1007/978-3-319-18720-4_47`, *How to Make nD Functions Digitally Well-Composed in a Self-dual
+> Way* (ISMM 2015, same three authors). Same family, different paper, and **the method cited is not the
+> method that was implemented.** So M-344's *"the repair is provably stuck"* is a statement about **this
+> rule** — move the cheapest corner, sweep — and not about Boutry's. The 36-of-4,096 exhaustive result
+> stands as written for the rule it tests; whether the published method escapes those 36 is **open**,
+> and reading it is the precondition for R-040b rather than an optional tidy.
 
 > **H.** On `noise_cavity`, `gyroid` and `fbm_terrain` at 65³, for `DualContouring` and `SurfaceNets`:
 > **(C1)** exactly **0** non-manifold edges and **0** non-manifold vertices after the repair, where
@@ -8475,3 +8499,79 @@ than no surface **where anyone looked**. It is not a speedup and must never be p
 **Would be shown wrong by:** a single unsound certification, which dense sampling can only ever find by
 luck; the honest strengthening is a second, independent enclosure to cross-check against, not more
 samples.
+
+### 💥 ✗35 / M-348 — two Phase 19 entries quote runs that are not in the CSVs they cite, and one of them was a verdict: the bitmap's C2 fails (P-38, P-40, R-037, R-039)
+
+**Found by external audit** (`docs/research/2026-08-23-findings-audit-and-phase-20-registrations.md`,
+§A.2), which checked entries against the artefacts they name rather than against their own prose. Both
+hits are mine and both are the same mistake.
+
+**The mechanism, which the audit could not see and I can.** Both entries were written from a run I
+watched, and then **the bench was re-run inside the commit command** — `cargo bench … && git add … &&
+git commit` — so the committed CSV is run *N+1* while the entry quotes run *N*. The rule earns itself:
+**never fold a re-run into the commit that publishes its numbers.**
+
+**✗28 / M-336 — the numbers moved, the verdict did not.**
+
+| row | entry | committed `p-38.csv` |
+|---|---|---|
+| MC 128³ ratio | 0.977 | **0.9986** |
+| MC 256³ ratio | 0.996 | **1.0056** |
+| SN 128³ ratio | 0.968 | **0.9867** |
+| SN 256³ ratio | 0.938 | **0.9320** |
+| `pad_z` ratio, MC 128³ | 1.0075 | **1.0038** |
+| scaffold, MC 128³ | 8.116 / ratio 1.009 | **8.1792 / 1.0138** |
+
+Every reading in either run sits between **0.93 and 1.01** against a registered **1.5×**. ✗28 stands:
+Marching Cubes does not alias at 128³, and the access pattern is why.
+
+**M-337 — the verdict does not survive, and it is worse than the audit could measure.** The audit read
+the committed CSV at **1.1925×** for Surface Nets at 128³ against a registered ≥ 1.25×. Re-run three
+times on a **quiet** machine (`loadavg` 0.67, where the committed run was taken with four sibling
+benches on the box):
+
+| run | SN 128³ extract ratio | stage ratio |
+|---|---:|---:|
+| entry as written | 1.336 | 5.49 |
+| committed CSV at audit time | 1.1925 | 5.15 |
+| fresh run 1 | **1.022** | 4.91 |
+| fresh run 2 | **1.184** | 5.54 |
+| fresh run 3 | **1.177** | 5.09 |
+
+**C2 is FALSIFIED.** Not one quiet-machine run clears 1.25×, and the recorded 1.336 was the outlier.
+
+**The structural fault is worse than the clerical one.** P-40's `before` column is a **committed
+fixture** — blessed at the parent commit and never re-timed — while `after` is timed **live**. The two
+arms were therefore never measured under the same conditions, and *all* the ratio's variance sits in one
+of them. The stage ratio, where both arms are timed back to back in one process, is stable at
+**4.91–5.54** across every run and every version of this entry. That is the difference between a
+comparison and a stopwatch reading.
+
+**✗24 already earned this rule and Phase 19 did not apply it:** *"A wall-clock ratio is not a gate. Gate
+the count the ratio samples."* P-38's whole table, P-40's C2 and P-47's C2 are all wall-clock ratios
+registered as pass/fail thresholds, on a machine whose governor M-280 caught swinging 1.8×.
+
+**What survives, and it is most of the mechanism.** C1 holds on every run — the packed predicate is
+~5× the scalar one, and that ratio is stable because both arms are in-process. C3 holds outright and
+deterministically: **12 of 12** mesh hashes identical, which no amount of machine noise can perturb.
+The bitmap prepass removes work and provably does not change the output. What it does **not** have is a
+defensible whole-extractor speedup on this evidence.
+
+**The fix is registered as P-50** — the audit's P-54, renumbered — and it is the right shape: the
+quantity the prepass actually changes is **how many eight-corner gathers run**, which is `cells` under
+the scalar path and `active_cells` under the bitmap path. Two integers, already in the CSV, identical on
+every machine. Gated as an **equality**, a gather on an inactive cell means the mask is wrong, and wrong
+the other way is a hole — so it is a correctness gate wearing a performance gate's clothes.
+
+**Two smaller corrections from the same audit, recorded here rather than by editing their entries.**
+✗29 says the inadequate-cell fraction runs *"3.8–19.4% on every registered row"*; measured from
+`p-43.csv` the low end is **2.93%** (`gyroid` at 17³). The claim it supports — never zero — is
+unaffected. And **the audit's §A.3 and §A.4 are stale rather than wrong**: it reports P-45/P-46/P-47 as
+having no ledger entries and `doc_facts.sh` red, both of which were true at its snapshot `61c6201` and
+fixed thirty minutes later at `5d0d758` and `ceda7c6`. The audit opens by confessing the same failure
+mode against itself, which is the reason to trust the rest of it.
+
+**And a process item the audit is right about.** `doc_facts.sh` gates counts; nothing gates *numbers
+quoted inside a `FINDINGS.md` entry against the CSV that entry names*. That check is mechanical for the
+subset that matters — an entry naming `docs/experiments/p-NN.csv` and printing a markdown table — and it
+would have failed on Phase 19 twice. Opened as **F-009**.

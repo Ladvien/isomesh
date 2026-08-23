@@ -42,19 +42,38 @@ been invisible to a title-based reader.
 
 ---
 
-## The six registered experiments
+## The six registered experiments, and the four the results earned
 
-Ordered as they will be run. The first is a defect audit that has to run before any of the speed
-measurements, because it contaminates them.
+**Outcomes added 2026-08-23, after the fact and marked as such.** Everything below the table was written
+before any of it ran; this table is the only part that knows how it came out.
 
-| P- | Ticket | Bar | One-line claim |
-|---|---|---|---|
-| **P-38** | R-037 | speed | Marching Cubes never received A-024's odd-stride fix, and pays the same 128³ aliasing penalty the dual path was cured of |
-| **P-39** | R-038 | speed | A brush that provably cannot win the min/max chain inside a chunk can be deleted from the tape, bit-exactly, before the chunk is meshed |
-| **P-40** | R-039 | speed | The active-cell test is one bit per sample, so 64 cells decide at once in four fused word operations, with the same cells visited in the same order |
-| **P-41** | R-040 | capability | The sign lattice this crate meshes is not well-composed, and that is where its dual extractors go non-manifold |
-| **P-42** | R-041 | capability | Curvature as a normal-cycle *measure* is additive over chunks and carries a computable error bound, so the crate can state an error bar on a differential quantity for the first time |
-| **P-43** | R-042 | capability | One evaluation at the cell centre is a witness that a chunk's resolution is inadequate for the field it is being asked to carry |
+| P- | Ticket | Bar | One-line claim | Outcome |
+|---|---|---|---|---|
+| **P-38** | R-037 | speed | Marching Cubes never received A-024's odd-stride fix, and pays the same 128³ aliasing penalty the dual path was cured of | **✗28 / M-336 — FALSIFIED** at 0.98 against 1.5. The stride is not the defect; the *walk* is |
+| **P-39** | R-038 | speed | A brush that provably cannot win the min/max chain inside a chunk can be deleted from the tape, bit-exactly, before the chunk is meshed | **M-341 — HELD**, all three. 3.36× median, 64/64 bit-exact |
+| **P-40** | R-039 | speed | The active-cell test is one bit per sample, so 64 cells decide at once in four fused word operations, with the same cells visited in the same order | **M-337 — HELD**, all three. Stage 5.5×, Surface Nets 1.34×, 12/12 bit-identical |
+| **P-41** | R-040 | capability | The sign lattice this crate meshes is not well-composed, and that is where its dual extractors go non-manifold | **M-338 — HELD**, and the relation is a *bijection* |
+| **P-42** | R-041 | capability | Curvature as a normal-cycle *measure* is additive over chunks and carries a computable error bound | **✗30 / M-340 — FALSIFIED.** With `B` the whole surface the clause was discrete Gauss–Bonnet, i.e. a tautology |
+| **P-43** | R-042 | capability | One evaluation at the cell centre is a witness that a chunk's resolution is inadequate | **✗29 / M-339 — FALSIFIED**, both clauses, one of them by the registration's own arithmetic |
+| **P-44** | R-042a | capability | …the *mean* residual instead, tested on the four fields P-43 never touched | **✗31 / M-342 — FALSIFIED.** Correlation reproduced; the exponent gap *is* the normalisation. Line closed |
+| **P-45** | R-041a | capability | …additivity instead, with a real boundary on `B` | **✗32 / M-343 — FALSIFIED.** The two measures have opposite defects |
+| **P-46** | R-040a | capability | …repair the sign lattice, now that the bijection gives it a target | **✗33 / M-344 — FALSIFIED.** Free and total when sparse, *provably* stuck when dense |
+| **P-47** | R-043 | capability | Composed fields fall back to a six-sample central difference, and nobody has priced it | **✗34 / M-345 — FALSIFIED** in the mean by three orders; the 2.8× speedup held |
+| **P-48** | R-044 | capability | Close the gap `isotopy.rs` names in its own header: certify the *analytic* field | **M-347 — HELD**, all three. Zero unsound over 1.07 × 10⁹ evaluations |
+| **P-49** | R-045 | capability | Connectivity is a boolean; a game asks for a clearance | **M-346 — HELD**, all three. Exactly zero error where the answer is known |
+
+**Five held, seven falsified.** The two reserve candidates that were promoted late — P-48 and P-49 — both
+held, and neither was in the original six. The two that were *re-registrations of falsified experiments*
+— P-44 and P-45 — both failed again, on data they had not seen, which is what a re-registration is for.
+And two of the seven failures were errors in the registration rather than in the world: P-43's cost
+clause was wrong arithmetic and P-42's Gaussian clause was unfalsifiable by construction. Neither was
+repaired by amending the prediction.
+
+**The lens that paid was not the one that looked most promising.** Staged computation produced the
+flagship (P-39), digital topology produced the bijection (P-41), and bit-level kernels produced the
+speedup (P-40) — but bit-level kernels' *own* rank-1 candidate, the aliasing fix, was the phase's first
+null. The lenses that produced nothing usable were lattices and formal verification; their value was the
+foreclosed list.
 
 ---
 

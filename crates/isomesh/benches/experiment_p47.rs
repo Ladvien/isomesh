@@ -246,11 +246,7 @@ impl Add for Dual {
     fn add(self, o: Self) -> Self {
         Self {
             v: self.v + o.v,
-            d: [
-                self.d[0] + o.d[0],
-                self.d[1] + o.d[1],
-                self.d[2] + o.d[2],
-            ],
+            d: [self.d[0] + o.d[0], self.d[1] + o.d[1], self.d[2] + o.d[2]],
         }
     }
 }
@@ -260,11 +256,7 @@ impl Sub for Dual {
     fn sub(self, o: Self) -> Self {
         Self {
             v: self.v - o.v,
-            d: [
-                self.d[0] - o.d[0],
-                self.d[1] - o.d[1],
-                self.d[2] - o.d[2],
-            ],
+            d: [self.d[0] - o.d[0], self.d[1] - o.d[1], self.d[2] - o.d[2]],
         }
     }
 }
@@ -357,11 +349,7 @@ impl DualSdf for Capsule<f64> {
         } else {
             Dual::constant(0.0)
         };
-        let q = [
-            ap[0] - ab[0] * t,
-            ap[1] - ab[1] * t,
-            ap[2] - ab[2] * t,
-        ];
+        let q = [ap[0] - ab[0] * t, ap[1] - ab[1] * t, ap[2] - ab[2] * t];
         Ok(length(q)? - Dual::constant(self.radius))
     }
 }
@@ -954,8 +942,10 @@ fn row_of(r: &Row, control: f64, load: &str) -> Vec<(&'static str, String)> {
         ("worst_seam_reach", format!("{:.3e}", r.seam_reach())),
         (
             "worst_gap_over_reach",
-            r.worst_seam_gap
-                .map_or_else(|| String::from("n/a"), |g| format!("{:.3e}", g / r.seam_reach())),
+            r.worst_seam_gap.map_or_else(
+                || String::from("n/a"),
+                |g| format!("{:.3e}", g / r.seam_reach()),
+            ),
         ),
         (
             "worst_stencil_straddles_seam",

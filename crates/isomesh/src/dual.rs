@@ -485,10 +485,24 @@ impl<R: Real> DualMesher<R> {
         let size = shape.size();
         self.build_inside_bits(size);
         let cells_x = cells[0] as usize;
+        // Words that carry a **cell**, which is not the same as words that carry
+        // a **sample**. `bit_row` is `size[0].div_ceil(64)` because the bitmap is
+        // indexed by sample; the cell row is one shorter, so at `size[0] = 64k+1`
+        // — 65, 129, every grid this crate benchmarks at — the sample row needs
+        // one more word than the cell row does, and iterating `bit_row` fuses a
+        // whole `u64` that `cell_mask` then discards in its entirety.
+        //
+        // Measured by E-307 before this line existed: packed cost went 0.451–0.470
+        // ns/cell at 128 samples to 0.599–0.637 at 129, non-overlapping ranges on a
+        // field whose active fraction moved by 0.08 of a percentage point, taking
+        // the stage ratio from 5.66–5.76× down to 4.13–4.56×. About 30% of the
+        // stage, for a word that could not contain a cell.
+        let cell_words = cells_x.div_ceil(64);
+        debug_assert!(cell_words <= self.bit_row);
 
         for z in 0..cells[2] as usize {
             for y in 0..cells[1] as usize {
-                for w in 0..self.bit_row {
+                for w in 0..cell_words {
                     let mut active = self.active_word(w, y, z, size) & Self::cell_mask(w, cells_x);
                     // `w &= w - 1` clears the lowest set bit, so this visits the
                     // active cells of the row in ascending `x` — the same order
