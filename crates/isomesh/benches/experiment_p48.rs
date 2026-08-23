@@ -257,8 +257,16 @@ impl Iv {
     /// radicand here is a sum of squares, so its true lower bound is never
     /// negative, and only the one-ULP widening can push the endpoint under.
     fn sqrt(self) -> Self {
-        let lo = if self.lo > 0.0 { libm::sqrt(self.lo) } else { 0.0 };
-        let hi = if self.hi > 0.0 { libm::sqrt(self.hi) } else { 0.0 };
+        let lo = if self.lo > 0.0 {
+            libm::sqrt(self.lo)
+        } else {
+            0.0
+        };
+        let hi = if self.hi > 0.0 {
+            libm::sqrt(self.hi)
+        } else {
+            0.0
+        };
         Self { lo, hi }.widen()
     }
 
@@ -662,7 +670,14 @@ fn perlin_point(p: [f64; 3], seed: u32) -> f64 {
 }
 
 /// `fbm`'s value, reimplemented for the same reason.
-fn fbm_point(p: [f64; 3], seed: u32, octaves: u32, lacunarity: f64, gain: f64, frequency: f64) -> f64 {
+fn fbm_point(
+    p: [f64; 3],
+    seed: u32,
+    octaves: u32,
+    lacunarity: f64,
+    gain: f64,
+    frequency: f64,
+) -> f64 {
     let mut value = 0.0_f64;
     let mut freq = frequency;
     let mut amp = 1.0_f64;
@@ -808,7 +823,11 @@ fn verify_noise_transcription() -> (u64, u64, f64) {
                         lo + f64::from(iz) * step,
                     ];
                     let (theirs, mine) = if which == 0 {
-                        let q = [p[0] * nv.frequency, p[1] * nv.frequency, p[2] * nv.frequency];
+                        let q = [
+                            p[0] * nv.frequency,
+                            p[1] * nv.frequency,
+                            p[2] * nv.frequency,
+                        ];
                         (nv.sample(p), perlin_point(q, nv.seed) - nv.iso)
                     } else {
                         let n = fbm_point(
@@ -866,11 +885,7 @@ fn dense_min_max<F: Sdf<Scalar = f64>>(field: &F, origin: [f64; 3], h: f64) -> (
             let ty = f64::from(iy) / last;
             for ix in 0..DENSE {
                 let tx = f64::from(ix) / last;
-                let v = field.sample([
-                    origin[0] + tx * h,
-                    origin[1] + ty * h,
-                    origin[2] + tz * h,
-                ]);
+                let v = field.sample([origin[0] + tx * h, origin[1] + ty * h, origin[2] + tz * h]);
                 lo = lo.min(v);
                 hi = hi.max(v);
             }
@@ -1019,10 +1034,7 @@ where
         ("field", name.to_string()),
         ("samples_per_axis", SAMPLES.to_string()),
         ("cells", t.cells.to_string()),
-        (
-            "cells_surface_free_sampled",
-            t.dense_free.to_string(),
-        ),
+        ("cells_surface_free_sampled", t.dense_free.to_string()),
         ("cells_certified_empty", t.certified.to_string()),
         ("certified_fraction", format!("{certified_fraction:.9}")),
         ("unsound_certifications", t.unsound.to_string()),
@@ -1032,19 +1044,13 @@ where
             format!("{:.9}", tri.certified_fraction()),
         ),
         // ── clause two's actual quantity ────────────────────────────────────
-        (
-            "certified_of_sampled_free",
-            format!("{of_sampled_free:.9}"),
-        ),
+        ("certified_of_sampled_free", format!("{of_sampled_free:.9}")),
         (
             "certified_and_sampled_free",
             t.dense_free_and_certified.to_string(),
         ),
         // ── the three-way verdict, and the other reading of "undecided" ─────
-        (
-            "cells_definitely_active",
-            t.definitely_active.to_string(),
-        ),
+        ("cells_definitely_active", t.definitely_active.to_string()),
         ("cells_undecided", t.undecided.to_string()),
         (
             "undecided_fraction_naive",
@@ -1074,10 +1080,7 @@ where
         ),
         ("cell_size", format!("{h:.9}")),
         ("domain_half_extent", format!("{:.6}", hi[0])),
-        (
-            "dense_points_per_cell",
-            (DENSE * DENSE * DENSE).to_string(),
-        ),
+        ("dense_points_per_cell", (DENSE * DENSE * DENSE).to_string()),
         (
             "first_unsound_cell",
             match t.first_unsound {
@@ -1090,10 +1093,7 @@ where
             "noise_transcription_verified",
             (prov.matches == prov.points).to_string(),
         ),
-        (
-            "noise_transcription_points",
-            prov.points.to_string(),
-        ),
+        ("noise_transcription_points", prov.points.to_string()),
         (
             "noise_transcription_max_abs_diff",
             format!("{:.3e}", prov.worst),
@@ -1105,9 +1105,7 @@ fn main() {
     let prereg = isomesh::experiment!("P-48");
 
     let (points, matches, worst) = verify_noise_transcription();
-    println!(
-        "noise transcription: {matches}/{points} bit-identical, max |Δ| = {worst:.3e}\n"
-    );
+    println!("noise transcription: {matches}/{points} bit-identical, max |Δ| = {worst:.3e}\n");
     let prov = Provenance {
         points,
         matches,

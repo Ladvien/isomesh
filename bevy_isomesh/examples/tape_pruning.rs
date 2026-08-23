@@ -604,7 +604,10 @@ fn measure_chunk(
         .ok()?;
     let ms_pruned = started.elapsed().as_secs_f64() * 1e3;
 
-    let full_field = BrushStack { base, brushes: tape };
+    let full_field = BrushStack {
+        base,
+        brushes: tape,
+    };
     let started = Instant::now();
     rig.full.reset();
     rig.mc
@@ -1135,11 +1138,7 @@ fn advance_stroke(
 /// extracted. Sixty-four empty chunks at startup is a wall of red that says
 /// nothing about this demo. `Mesh3d::default()` names no asset and draws
 /// nothing, which is what an empty chunk actually wants.
-fn sweep(
-    mut demo: Option<ResMut<Demo>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut commands: Commands,
-) {
+fn sweep(mut demo: Option<ResMut<Demo>>, mut meshes: ResMut<Assets<Mesh>>, mut commands: Commands) {
     let Some(demo) = demo.as_deref_mut() else {
         return;
     };
@@ -1290,13 +1289,14 @@ fn update_plot(
     }
 
     for (bar, mut node) in &mut bars {
-        let height = demo.plot.get(bar.column).and_then(|slot| *slot).map_or(
-            0.0,
-            |(full_ms, pruned_ms)| {
-                let ms = if bar.full { full_ms } else { pruned_ms };
-                ((ms / PLOT_MAX_MS) as f32).clamp(0.0, 1.0) * PLOT_H
-            },
-        );
+        let height =
+            demo.plot
+                .get(bar.column)
+                .and_then(|slot| *slot)
+                .map_or(0.0, |(full_ms, pruned_ms)| {
+                    let ms = if bar.full { full_ms } else { pruned_ms };
+                    ((ms / PLOT_MAX_MS) as f32).clamp(0.0, 1.0) * PLOT_H
+                });
         node.height = Val::Px(height);
     }
 }
@@ -1338,7 +1338,10 @@ fn report(demo: Option<Res<Demo>>, mut stats: ResMut<DemoStats>) {
         0.0
     };
     let agreed = demo.records.iter().filter(|r| r.identical).count();
-    let cursor_id = demo.ids.get(demo.last_visited).map_or([0, 0, 0], |c| c.coords);
+    let cursor_id = demo
+        .ids
+        .get(demo.last_visited)
+        .map_or([0, 0, 0], |c| c.coords);
     let cursor_survivors = demo
         .records
         .get(demo.last_visited)
@@ -1354,9 +1357,8 @@ fn report(demo: Option<Res<Demo>>, mut stats: ResMut<DemoStats>) {
         _ => (0.0, 0.0),
     };
 
-    stats.title = format!(
-        "E-305 Lipschitz tape pruning - {chunks} chunks of 33 samples, cell {CELL_SIZE}"
-    );
+    stats.title =
+        format!("E-305 Lipschitz tape pruning - {chunks} chunks of 33 samples, cell {CELL_SIZE}");
     stats.vertices = demo.records.iter().map(|r| r.vertices).sum();
     stats.triangles = demo.records.iter().map(|r| r.triangles).sum();
     stats.extract_ms = demo
@@ -1385,8 +1387,12 @@ fn report(demo: Option<Res<Demo>>, mut stats: ResMut<DemoStats>) {
             "bound cost   {bound_us:>7.2} us per chunk = {bound_share:.2e} of the meshing it enables"
         ),
         String::new(),
-        format!("pruned       {mean_pruned:>7.3} ms per chunk re-mesh   ({world_pruned:.1} ms for the world)"),
-        format!("whole tape   {mean_full:>7.3} ms per chunk re-mesh   ({world_full:.1} ms for the world)"),
+        format!(
+            "pruned       {mean_pruned:>7.3} ms per chunk re-mesh   ({world_pruned:.1} ms for the world)"
+        ),
+        format!(
+            "whole tape   {mean_full:>7.3} ms per chunk re-mesh   ({world_full:.1} ms for the world)"
+        ),
         format!(
             "speedup      {aggregate:>7.3}x world aggregate   per-chunk median {:.3}x   range {:.3}x - {:.2}x",
             median(&speedups),
@@ -1419,7 +1425,8 @@ fn report(demo: Option<Res<Demo>>, mut stats: ResMut<DemoStats>) {
         },
         String::new(),
         "SmoothAdd is never pruned in the losing direction: at h == 1 smooth_min".to_string(),
-        "returns b + (a - b), which is not bit-identical to a. This tape is Add/Subtract.".to_string(),
+        "returns b + (a - b), which is not bit-identical to a. This tape is Add/Subtract."
+            .to_string(),
         String::new(),
         format!(
             "[P] prune {}   [H] heat {} (green 0 - yellow 0.5 - red 1.0 survivor fraction)",
