@@ -1663,6 +1663,356 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "ns_per_cell_bitmap",
         ],
     },
+    Preregistration {
+        id: "P-51",
+        ticket: "R-046",
+        hypothesis: "Sellan, Batty & Stein (10.1145/3610548.3618196) state the \
+            full constraint a signed distance sample carries, and it has TWO \
+            halves: the surface 'must be tangent to every sphere at least once \
+            while strictly containing every sphere with negative value and \
+            excluding every positive value one'. Every extractor in this crate \
+            reads d as a number to interpolate and discards both halves. \
+            Measured as integer counts over the output, at 65 samples per axis, \
+            on the five fields declaring FieldBound::Exact -- sphere, torus, \
+            box_exact, thin_plate, csg_difference. PIERCING, the exclusion half: \
+            violation(v) = max over samples p within one cell of v of \
+            (|d(p)| - ||v - p||) normalised by cell size, counting vertices \
+            above 0.05 cells. (C1) marching_cubes pierces on fewer than 1 vertex \
+            per 1,000, because an MC vertex is the root of the interpolant on a \
+            grid edge and cannot lie deeply inside a neighbour's ball. \
+            (C2) dual_contouring's rate is at least 20 TIMES marching_cubes' -- a \
+            RATIO, so the clause cannot be cleared by a bar set below the ~150 \
+            per 1,000 M-27 already measured (152 of 1,016 box_exact vertices \
+            moving 0.35-0.57 cells). TOUCHING, the tangency half, which no \
+            extractor here even attempts: (C3) the number of samples whose \
+            sphere is never touched -- min over mesh vertices of \
+            | ||v - p|| - |d(p)| | exceeding 0.05 cells -- is NON-ZERO for every \
+            extractor on every field, and is strictly larger for marching_cubes \
+            than for dual_contouring, because MC's vertices are confined to grid \
+            edges and cannot reach a tangent point in a cell's interior. The \
+            0.05-cell floor is derived, not chosen: M-12 measured h^2 \
+            convergence and sphere at 65^3 has mean error 6.5e-4 against \
+            h = 0.0635, i.e. 1.0% of a cell, so the gate sits five times above \
+            the honest discretisation floor and far below M-27's 0.35 cells.",
+        falsified_by: "C2's ratio under 20x, which says the exclusion half is \
+            already respected by construction; or C1 exceeding C2's absolute \
+            rate, which inverts the mechanism; or C3 finding ZERO untouched \
+            spheres, which would say this crate's extractors already saturate \
+            the tangency half and the four 2025-2026 papers built on recovering \
+            it have nothing to offer here -- the most valuable of the three \
+            outcomes to get wrong. The control that must pass first: on \
+            box_exact, whose surface is planar and axis-aligned and where M-27 \
+            measured every Dual Contouring vertex on a planar patch landing \
+            exactly on the centroid, ALL THREE extractors must report zero \
+            PIERCING. An instrument that finds piercing there is measuring its \
+            own tolerance. Scope: the constraint needs the field to BE a \
+            distance, and F-004/M-247 measured a voxel game's field degrading \
+            from 0.577 to 0.004 over 256 strokes -- so gyroid, fbm_terrain and \
+            noise_cavity are excluded by construction and a violation there \
+            would not be a defect. Source honesty: the paper credits the \
+            tangent-sphere interpretation to Batty 2011 and Kobbelt 2001 and \
+            contributes the energy and flow; nothing here reuses its Table 1, \
+            which measures a global remeshing gradient flow this crate does not \
+            run.",
+        records: &[
+            "field",
+            "extractor",
+            "samples_per_axis",
+            "vertices",
+            "samples",
+            "pierced",
+            "pierced_per_1k",
+            "worst_piercing_cells",
+            "dc_over_mc_ratio",
+            "untouched",
+            "untouched_per_1k",
+            "worst_untouched_cells",
+            "samples_probed_per_vertex",
+            "control_box_exact_zero",
+            "threshold_cells",
+        ],
+    },
+    Preregistration {
+        id: "P-52",
+        ticket: "R-047",
+        hypothesis: "A third VertexRule that moves each dual vertex toward the \
+            tangent points its cell's samples imply, using only Eq. (8) of \
+            Sellan, Batty & Stein -- t_i = p_i + sigma_i |s_i| (c_i - p_i) / \
+            ||c_i - p_i||, one normalize and one fma per sample, allocation-free \
+            and Real-generic -- iterated TWICE and clamped to the cell, against \
+            Qef through the identical classification and quad walk X-002 built. \
+            THIS IS NOT THEIR ALGORITHM, which is a global sparse solve with \
+            per-iteration remeshing over hundreds of iterations, and whose Fig. \
+            17 ablation measures clamping away far spheres as progressive detail \
+            loss; none of their reported accuracy is claimed here and the \
+            baseline is this crate's own. (C1) On box_exact and thin_plate at \
+            65^3 the symmetric Hausdorff improves by at least 1.25x over Qef. \
+            (C2) On sphere and torus it is within +/-10% of Qef. (C3) Vertex, \
+            triangle and non-manifold-edge counts are IDENTICAL to Qef on every \
+            field, which is what says the rule changed placement and nothing \
+            else -- M-237 established that property for the Qef/Centroid swap, \
+            with byte-identical index buffers and all 680 positions different. \
+            (C4) The mechanism M-315 predicts is visible: the vertex term of the \
+            Hausdorff improves while the CENTROID term worsens, on at least 3 of \
+            the 4 fields. M-315 measured that Dual Contouring's Hausdorff is \
+            vertex-dominated on 8 of 8 rows AND that its centroid error is \
+            already BETTER than the perfect-placement floor by 2.9-3.6x on \
+            sphere, because the QEF minimises distance to tangent planes and \
+            buys better-centred facets at the cost of worse-placed vertices. A \
+            rule that pulls vertices onto spheres spends exactly that trade in \
+            reverse.",
+        falsified_by: "C1 under 1.25x, which says the tangency geometry does not \
+            survive being clamped to its cell and iterated twice -- the honest \
+            reading then being that this is offline CAD and not a chunk budget, \
+            recorded as a null with a number. Or C3 failing, which means the arm \
+            is not controlled and no number in it means anything. C4 is the \
+            clause that can teach something whatever C1 does: if the vertex term \
+            improves and the centroid term does NOT worsen, then M-315's \
+            tangent-plane trade is not what the QEF is doing and a placement \
+            rule is not zero-sum. The 1.25x bar is this crate's own: M-315 \
+            measured the ceiling on ANY placement rule at 1.5-21.5% for SMOOTH \
+            fields, which is why C1 is asked only of the two SHARP fields, where \
+            no ceiling has been measured and where M-66 recorded box_exact's \
+            worst normal error at 35.796 degrees identically at every \
+            resolution -- a corner does not soften with h, so a placement rule \
+            is the only thing that can move it.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "rule",
+            "iterations",
+            "symmetric_hausdorff",
+            "hausdorff_ratio_vs_qef",
+            "vertex_term",
+            "vertex_term_ratio_vs_qef",
+            "centroid_term",
+            "centroid_term_ratio_vs_qef",
+            "self_intersections_per_1k",
+            "vertices",
+            "triangles",
+            "non_manifold_edges",
+            "counts_identical_to_qef",
+            "ns_per_sample",
+        ],
+    },
+    Preregistration {
+        id: "P-53",
+        ticket: "R-048",
+        hypothesis: "Custodio, Pesco & Silva (10.1186/s13173-019-0086-6) observe \
+            that MC33 classifies a corner whose value EQUALS the isovalue as \
+            inside, which marks all three incident edges cut and emits triangles \
+            with coincident vertices. Their remedy is a third corner label. The \
+            label assignment is a PURE PRE-PASS over the eight-corner sign \
+            classification -- one strict comparison per corner instead of one \
+            non-strict -- which is the half a bench can reproduce exactly; their \
+            triangulator is a per-cube convex hull with cross-cell face dedup \
+            and is NOT reproduced here and NOT claimed. On fuel (64^3) and \
+            bonsai (256^3) at an INTEGER isovalue of 32: (C1) degenerate \
+            triangles under marching_cubes are non-zero and at least 80% of them \
+            are attributable to cells having a corner exactly equal to the \
+            isovalue, measured by TAGGING each degenerate triangle with its \
+            cell's equal-corner count, not inferred from a correlation. \
+            (C2) with the ternary label and coincident-vertex collapse, \
+            degenerate triangles fall by at least 10x while euler_characteristic, \
+            non_manifold_edges and boundary_edges are UNCHANGED. (C3) at a \
+            HALF-OFFSET isovalue of 32.5, where an integer sample cannot equal \
+            the isosurface, the two paths produce BYTE-IDENTICAL meshes. \
+            M-316 measured 16,284 of 529,508 bonsai surface-cell corners exactly \
+            on the isosurface -- 3% -- and M-232 measured 20 singular faces per \
+            400,000 cells at u8 density against 0 in continuous data, so this is \
+            aimed at a defect already measured on this crate's real CT input.",
+        falsified_by: "C1 under 80%, which would mean the degenerate count is \
+            dominated by ordinary near-tangency slivers -- the thing CLAUDE.md \
+            refuses to gate on -- and the paper solves a problem this crate does \
+            not have. Or C2 changing the Euler characteristic, which would mean \
+            the label is not topology-preserving as implemented here and rule 5 \
+            applies. C3 is the control and is not decoration: M-317's own \
+            guidance is to contour at a half-integer precisely because it is \
+            unattainable by integer data, so if the two paths differ THERE, the \
+            label is doing something beyond the exact-equality case and every \
+            number in the row is suspect. Source honesty: the paper reports NO \
+            count of degenerate triangles removed on any dataset -- only \
+            radii-ratio histograms, Betti numbers and blocked-cube percentages -- \
+            so C2's 10x is this crate's own bar and is not a reproduction of any \
+            published figure.",
+        records: &[
+            "volume",
+            "isovalue",
+            "label_rule",
+            "cells",
+            "surface_cell_corners",
+            "equal_corners",
+            "degenerate_triangles",
+            "degenerate_from_equal_corners",
+            "degenerate_attributable_fraction",
+            "degenerate_ratio",
+            "triangles",
+            "euler_characteristic",
+            "non_manifold_edges",
+            "boundary_edges",
+            "mesh_hash",
+            "half_offset_identical",
+        ],
+    },
+    Preregistration {
+        id: "P-54",
+        ticket: "R-049",
+        hypothesis: "M-248 measured empty-cell rejection by Hart's Lipschitz \
+            bound at 16.8% of cells on gyroid against 80.6-95.1% on every other \
+            field, and M-306 identified the cause: gyroid declares Lipschitz \
+            l = 2*sqrt(3) = 3.464, derived correctly at M-244, while M-267 \
+            measured its actual gradient supremum converging to 1.731. A revised \
+            affine form (Fryazinov, Pasko & Comninos, 10.1016/j.cag.2010.07.003) \
+            carries three noise symbols plus one accumulator -- FIVE stored \
+            reals, fixed size, never growing, no heap -- and bounds an \
+            expression over a BOX rather than a ball. The mechanism is \
+            correlation: sin(x)cos(y) + sin(y)cos(z) + sin(z)cos(x) cannot have \
+            all three terms extremal at once, and a per-term interval bound \
+            throws that away. The prediction is therefore NOT uniform, and this \
+            is the point: (C1) on gyroid at 17^3 the rejected-cell COUNT rises \
+            from 688 of 4,096 by at least 1.5x, because gyroid is built only \
+            from smooth trig with shared arguments and is exactly where \
+            correlation lives. (C2) on box_exact and csg_difference the rejected \
+            count rises by LESS THAN 5%, because both are built from min/max, \
+            for which the source paper gives no affine rule at all and the only \
+            sound treatment collapses the form to an interval and destroys every \
+            correlation. (C3) the mesh is BYTE-IDENTICAL on every field, the one \
+            property a rejection test must have, since a wrong rejection makes a \
+            hole and a hole is invisible to every validity gate this crate has.",
+        falsified_by: "C1 under 1.5x, which says the correlation slack is not \
+            where the looseness lives and M-267's 2x gap is genuinely attainable \
+            by the gradient rather than an artefact of the ball. C2 failing \
+            UPWARD is the more interesting outcome and must be reported as such: \
+            a tighter bound on a field whose constant is already tight would mean \
+            the BALL geometry, not the constant, is what costs -- and that \
+            generalises to every field. COUNTED, NOT TIMED: rejected cells are \
+            integers, identical on every machine; evaluation cost is printed \
+            beside them and gates nothing. Two things this registration owns \
+            rather than cites: the source paper contains NO correlation argument \
+            and NO quantified tightening figure -- only end-to-end wall-clock \
+            tables -- so the 1.5x is derived here from M-267's measured \
+            supremum, not reproduced; and the paper gives no min/max or abs rule, \
+            so C2's mechanism is this crate's own reasoning about what the \
+            absence of such a rule forces.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "bound",
+            "cells",
+            "rejected_cells",
+            "rejected_fraction",
+            "rejected_ratio_vs_lipschitz",
+            "has_min_max",
+            "mesh_identical",
+            "mesh_hash",
+            "bound_evals",
+            "bound_ns_per_cell",
+        ],
+    },
+    Preregistration {
+        id: "P-55",
+        ticket: "R-050",
+        hypothesis: "validate checks manifoldness, orientation, Euler \
+            characteristic, self-intersection, isotopy and Hausdorff accuracy. \
+            NOTHING checks that the mesh's critical-point structure matches the \
+            field's, and on gyroid and fbm_terrain the crate cannot even assert \
+            chi, so those two fields have no topological gate beyond \
+            manifoldness. Finken, Li, Wang, Guo & Levine (arXiv:2608.12142) \
+            prove Theorem 1: a PL function monotonic with respect to a Morse f \
+            has no spurious critical points. Their theorem is 2D and its \
+            pigeonhole step -- 'since a triangle has only three edges' -- has no \
+            hexahedral analogue, so what is tested here is a 3D PORT and is \
+            labelled as such. Sampling k = max(2, ceil(||e||/w) + 1) points along \
+            each mesh edge and calling it non-monotone when two directional \
+            derivatives disagree in sign: (C1) marching_cubes on sphere, torus \
+            and box_exact at 65^3 has ZERO non-monotone edges. (C2) gyroid and \
+            fbm_terrain have a NON-ZERO count that FALLS monotonically across \
+            17^3/33^3/65^3/129^3, making it a resolution witness rather than a \
+            defect. (C3) noise_cavity has the highest per-1k count of the eight \
+            fields, because it is the field with interior ambiguity (M-208).",
+        falsified_by: "C1 non-zero, which would mean the gate is measuring the \
+            sampling of the edge rather than the mesh and k is the problem; or \
+            C2 flat or rising in resolution, which would make it a property of \
+            the field rather than of the grid and useless as a witness. TWO \
+            THINGS THIS CRATE OWNS, NOT THE PAPER: the paper gives a bare \
+            sign-disagreement predicate with NO epsilon, NO relative tolerance \
+            and NO flat-region guard, so the rule used here -- discard steps \
+            under 1e-12 * (|f(a)| + |f(b)|), fixed in this registration before \
+            the harness exists, and recorded at 1e-14 and 1e-10 beside it so the \
+            answer's sensitivity is visible -- is isomesh's invention and must \
+            not be attributed to Finken et al.; and the paper obtains gradients \
+            by autodiff on a neural field while this uses the crate's central \
+            difference, which changes the noise story in a way the paper never \
+            analyses. The theorem is also inapplicable to the trilinear \
+            interpolant, under which interior critical points genuinely exist -- \
+            that is the origin of the ambiguous-face problem -- so a HELD C1 is \
+            evidence about this crate's meshes, never a proof transported to 3D.",
+        records: &[
+            "field",
+            "extractor",
+            "samples_per_axis",
+            "edges",
+            "non_monotone_edges",
+            "non_monotone_per_1k",
+            "k_samples",
+            "tolerance",
+            "non_monotone_at_1e14",
+            "non_monotone_at_1e10",
+            "worst_reversal",
+            "falls_with_resolution",
+        ],
+    },
+    Preregistration {
+        id: "P-56",
+        ticket: "R-051",
+        hypothesis: "P-47's accuracy clause died by three orders of magnitude -- \
+            mean 7.6e-5 degrees against a registered 0.1 -- and its own artefact \
+            says why: bulk_mean_angular_error_deg is 1.9e-8 while one vertex in \
+            57,470 carries 4.365 degrees, vertices_over_1deg is 1, and \
+            worst_stencil_straddles_seam is true from 32 brushes upward. The \
+            surviving hypothesis is narrower and mechanical. At a min/max CSG \
+            seam the field is C0 and not C1, so a central difference whose \
+            six-sample stencil straddles the seam averages two different \
+            gradients and the returned direction lies in the cone the two \
+            branches span. The error is therefore at most HALF the angle between \
+            them -- M-283's (180 - theta)/2 in a second setting -- and it does \
+            NOT shrink with h, because the stencil step is DIFF_STEP * |p|, \
+            independent of the grid. Over a swept family of two-sphere Subtract \
+            fixtures with seam dihedral theta controlled from 30 to 175 degrees: \
+            (C1) every vertex whose stencil straddles the seam has angular error \
+            against the analytic gradient bounded by (180 - theta)/2, on every \
+            fixture, with no exceptions. (C2) the count of such vertices scales \
+            like the seam's length in cells, so it is O(n) on an n^3 grid rather \
+            than O(n^2), which is why one vertex in 57,470 is the expected order \
+            and not a fluke -- measured as a fitted exponent against n, required \
+            to be under 1.5. (C3) vertices whose stencil does NOT straddle the \
+            seam have mean error under 1e-6 degrees, the control that says the \
+            effect is the seam and not the tape.",
+        falsified_by: "C1 exceeding the bound on any fixture, which would mean \
+            the error is not the two-branch average and M-283's mechanism does \
+            not transfer; or C2's fitted exponent reaching 1.5 or above, which \
+            would make it a surface-wide effect rather than a seam effect and \
+            change what a consumer should do about it. The measured 4.365 \
+            degrees predicts a seam dihedral near 171 degrees, so a fixture swept \
+            down to 30 degrees must show the bound widening proportionally -- a \
+            bound that holds only because it is loose everywhere is not evidence, \
+            which is why tightness is recorded per fixture as \
+            worst_over_bound_ratio and a median under 0.1 across the sweep would \
+            be reported as a vacuous pass.",
+        records: &[
+            "dihedral_deg",
+            "samples_per_axis",
+            "seam_cells",
+            "vertices",
+            "straddling_vertices",
+            "straddling_max_error_deg",
+            "predicted_bound_deg",
+            "worst_over_bound_ratio",
+            "within_bound",
+            "non_straddling_mean_error_deg",
+            "scaling_exponent",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**225 tickets archived, 16 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**225 tickets archived, 22 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -47,6 +47,74 @@ attached — read that before re-litigating a decision this project already made
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
 
 ---
+
+## Phase 20 — the audit's registrations, with four citations corrected before a harness existed
+
+**Added 2026-08-23, above Phase 19 for the reason every phase goes on top: rule 1 reads top-down.**
+Phase 19 is closed. Nothing here supersedes Phase 17's or Phase 18's open rows.
+
+**Source: `docs/research/2026-08-23-findings-audit-and-phase-20-registrations.md`** — an external audit
+of the ledger against its own committed artefacts, plus
+`docs/research/2026-08-23-phase-20-source-corrections.md`, which records what four parallel reads of the
+primary literature found before any of this ran. The audit proposed eight registrations; one shipped
+already as P-50/M-349, one is deferred, and **three of the remaining six rested on a claim the source
+does not make**. Those corrections are the cheapest findings in the phase because they cost nothing to
+make now and would have cost a harness each to discover later.
+
+**Phase 15's protocol applies in full**, and all six `P-` entries are registered in
+`crates/isomesh/src/experiment.rs` **before** any harness commit. Experiments are **bench-local**:
+`crates/isomesh/src/**` is read-only apart from registrations, exactly as P-48 reimplemented interval
+arithmetic and P-49 its union-find. A held result is evidence that a feature is worth landing; landing
+it is a later ticket.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-046** | M | |
+| ☐ | **R-047** | M | |
+| ☐ | **R-048** | M | |
+| ☐ | **R-049** | L | |
+| ☐ | **R-050** | M | |
+| ☐ | **R-051** | M | |
+
+**R-046 — Does either half of the tangent-sphere constraint survive this crate's extractors? (P-51)**
+Sellán, Batty & Stein state both halves: the surface excludes every positive sphere and is *tangent to
+every sphere at least once*. Count piercing vertices and untouched spheres as integers over the five
+`FieldBound::Exact` fields. C2 is a **ratio** (DC ≥ 20× MC), not a per-1k bar, because M-27 already
+measured ~150 per 1,000 and a bar of 20 could not fail. The untouched count is the half nobody has
+measured and is a reference-free detail-loss signal if it is non-zero.
+
+**R-047 — A tangency vertex rule, on this crate's own baseline. (P-52)**
+Eq. (8) alone — one normalize and one fma per sample — as a third `VertexRule`, two iterations, clamped.
+**Not their algorithm**: theirs is a global sparse solve with per-iteration remeshing over hundreds of
+iterations, and its own Fig. 17 ablation measures clamping as detail loss. C4 is the clause that pays
+either way: M-315 measured the QEF's centroid error *better than the perfect-placement floor* by 2.9–3.6×,
+so a rule that pulls vertices onto spheres should spend that trade in reverse — and if it does not, the
+QEF is not doing what M-315 says.
+
+**R-048 — Custódio's third corner label, on the CT data that actually hits it. (P-53)**
+The label is a **pure pre-pass** over the eight-corner classification; the paper's convex-hull
+triangulator is not reproduced and not claimed. M-316 measured 3% of `bonsai` surface-cell corners
+exactly on the isovalue. C3's half-offset isovalue is the control that says the label touches only the
+equal-corner case.
+
+**R-049 — Affine arithmetic where correlation actually lives. (P-54)**
+Five stored reals, fixed size, no heap. The prediction is deliberately **non-uniform**: ≥1.5× more cells
+rejected on `gyroid`, whose three trig terms cannot be extremal at once, and **<5%** on `box_exact` and
+`csg_difference`, built from min/max for which the source gives no affine rule at all. Counted, not
+timed.
+
+**R-050 — A monotone-edge certificate for the two fields with no topological gate. (P-55)**
+Finken et al.'s Theorem 1 is **proved in 2D** and its pigeonhole step has no hexahedral analogue, so this
+is a labelled 3D port, not a transported proof. The tolerance is this crate's invention, fixed in the
+registration and reported at two neighbouring values so its sensitivity is visible.
+
+**R-051 — The one vertex in 57,470, and whether it is a seam. (P-56)**
+P-47's dead accuracy clause, re-asked as a bound: `(180° − θ)/2` where the six-sample stencil straddles a
+CSG seam, and nowhere else. Tightness is recorded per fixture, because a bound that holds only by being
+loose everywhere is not evidence.
+
+---
+
 
 ## Phase 19 — six lenses nobody had pointed at a mesher
 

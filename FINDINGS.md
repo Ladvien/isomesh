@@ -8655,3 +8655,100 @@ wrong the other way drops a cell and punches a hole.
 **Would be shown wrong by:** a grid where `cells_x` is a multiple of 64 *and* the sample row is not, or
 any future change to the walk order — both of which C2 and C3 would catch as an integer mismatch rather
 than as a slow afternoon.
+
+## Phase 20 — six registrations from the audit, four citations corrected before any harness
+
+Source: `docs/research/2026-08-23-findings-audit-and-phase-20-registrations.md`, an external audit of
+this ledger against its own committed artefacts, and
+`docs/research/2026-08-23-phase-20-source-corrections.md`, which records what four parallel reads of the
+primary literature found. All six are registered in `crates/isomesh/src/experiment.rs` **before** their
+harnesses exist. Experiments are bench-local; `crates/isomesh/src/**` is read-only apart from the
+registrations themselves.
+
+**Three of the six rested on a claim the source does not make, and that was found by reading the source
+rather than by running anything.** The corrections are recorded here because a registration built on a
+figure that does not exist is the failure ✗21 already catalogues — *a property lifted from a summary, not
+from the thing itself* — and this is the cheapest possible moment to catch it.
+
+### P-51 — registered for R-046, before the harness: both halves of the tangent-sphere constraint
+
+Sellán, Batty & Stein `10.1145/3610548.3618196` state it in one sentence: the surface *"must be tangent
+to every sphere at least once while strictly containing every sphere with negative value and excluding
+every positive value one"*. Piercing is counted as vertices whose `|d(p)| − ‖v − p‖` exceeds `0.05` cells;
+untouched is counted as samples no vertex comes within `0.05` cells of tangency to. C2 is a **ratio**,
+DC ≥ 20× MC, because M-27 already measured ~150 per 1,000 and an absolute bar of 20 could not fail.
+
+**Records** `field`, `extractor`, `samples_per_axis`, `vertices`, `samples`, `pierced`, `pierced_per_1k`,
+`worst_piercing_cells`, `dc_over_mc_ratio`, `untouched`, `untouched_per_1k`, `worst_untouched_cells`,
+`samples_probed_per_vertex`, `control_box_exact_zero`, `threshold_cells`.
+
+### P-52 — registered for R-047, before the harness: tangency as a placement rule, on our own baseline
+
+**⚠ CITATION CORRECTED BEFORE THE RUN.** The audit cited `arXiv:2604.00157` for *"edge Chamfer 0.0262
+against MC 0.417 and DC 0.350 — 13× on sharp features"*. A full read of the tangency literature in corpus
+finds **no edge-Chamfer metric, no sharp-feature metric and no 13× figure anywhere**; the actual paper
+measures Hausdorff, Chamfer and its own energy, and treats sharp features purely qualitatively. The
+clause is therefore rebuilt on **this crate's own** measurements — M-315's placement ceiling and M-66's
+`35.796°` corner error that does not soften with `h`. Only Eq. (8) is borrowed. C4 predicts the trade
+M-315 implies: vertex term improves, centroid term worsens.
+
+**Records** `field`, `samples_per_axis`, `rule`, `iterations`, `symmetric_hausdorff`,
+`hausdorff_ratio_vs_qef`, `vertex_term`, `vertex_term_ratio_vs_qef`, `centroid_term`,
+`centroid_term_ratio_vs_qef`, `self_intersections_per_1k`, `vertices`, `triangles`, `non_manifold_edges`,
+`counts_identical_to_qef`, `ns_per_sample`.
+
+### P-53 — registered for R-048, before the harness: the third corner label on CT data
+
+**⚠ SCOPE CORRECTED BEFORE THE RUN.** Custódio, Pesco & Silva `10.1186/s13173-019-0086-6` report **no
+count of degenerate triangles removed** on any dataset — only radii-ratio histograms, Betti numbers and
+blocked-cube percentages — so C2's 10× is this crate's own bar, not a reproduction. Their triangulator is
+also a per-cube convex hull, explicitly *"without the need of a look up table"*, with cross-cell face
+dedup; that half is **not** reproduced. The label assignment itself is a pure pre-pass over the
+eight-corner classification, which is exactly what a bench can do.
+
+**Records** `volume`, `isovalue`, `label_rule`, `cells`, `surface_cell_corners`, `equal_corners`,
+`degenerate_triangles`, `degenerate_from_equal_corners`, `degenerate_attributable_fraction`,
+`degenerate_ratio`, `triangles`, `euler_characteristic`, `non_manifold_edges`, `boundary_edges`,
+`mesh_hash`, `half_offset_identical`.
+
+### P-54 — registered for R-049, before the harness: affine arithmetic where correlation lives
+
+**⚠ DERIVATION CORRECTED BEFORE THE RUN.** Fryazinov, Pasko & Comninos `10.1016/j.cag.2010.07.003`
+contains **no correlation argument and no quantified tightening figure** — its evidence is end-to-end
+wall-clock tables — and gives **no min/max or abs rule** at all. Both gaps are load-bearing: the 1.5× is
+derived here from M-267's measured supremum, and the absence of a min/max rule is precisely why C2
+predicts **under 5%** on the two fields built from `min`/`max`. A non-uniform prediction is the whole
+point; a uniform one would not distinguish the mechanism from a better constant.
+
+**Records** `field`, `samples_per_axis`, `bound`, `cells`, `rejected_cells`, `rejected_fraction`,
+`rejected_ratio_vs_lipschitz`, `has_min_max`, `mesh_identical`, `mesh_hash`, `bound_evals`,
+`bound_ns_per_cell`.
+
+### P-55 — registered for R-050, before the harness: a monotone-edge certificate, labelled as a 3D port
+
+**⚠ STATUS CORRECTED BEFORE THE RUN.** `arXiv:2608.12142` resolves exactly as cited — Finken, Li, Wang,
+Guo & Levine, IEEE VIS 2026 short paper — and its Theorem 1 **is** proved, not merely observed. But the
+proof is **2D**, its pigeonhole step is *"since a triangle has only three edges"*, and the paper's own
+Discussion names the restriction to 2D as a limitation. The theorem also does not apply to the trilinear
+interpolant, under which interior critical points genuinely exist — that is the origin of the
+ambiguous-face problem. So a held C1 is evidence about this crate's meshes and **never** a proof
+transported to 3D. The tolerance is isomesh's invention: the paper gives a bare sign-disagreement
+predicate with no epsilon and no flat-region guard.
+
+**Records** `field`, `extractor`, `samples_per_axis`, `edges`, `non_monotone_edges`,
+`non_monotone_per_1k`, `k_samples`, `tolerance`, `non_monotone_at_1e14`, `non_monotone_at_1e10`,
+`worst_reversal`, `falls_with_resolution`.
+
+### P-56 — registered for R-051, before the harness: the seam bound P-47 left behind
+
+P-47's accuracy clause died by three orders of magnitude and its artefact says why: the bulk mean is
+`1.9e-8°` and one vertex in 57,470 carries `4.365°`, with `worst_stencil_straddles_seam` true from 32
+brushes upward. The surviving claim is mechanical — at a `min`/`max` seam the field is `C⁰`, a central
+difference averages two gradients, and the error is at most half the angle between them, M-283's
+`(180° − θ)/2` in a second setting. It does **not** shrink with `h`, because `DIFF_STEP` scales with
+`|p|`. Tightness is recorded per fixture so a bound that holds only by being loose everywhere is visible
+as the vacuous pass it would be.
+
+**Records** `dihedral_deg`, `samples_per_axis`, `seam_cells`, `vertices`, `straddling_vertices`,
+`straddling_max_error_deg`, `predicted_bound_deg`, `worst_over_bound_ratio`, `within_bound`,
+`non_straddling_mean_error_deg`, `scaling_exponent`.
