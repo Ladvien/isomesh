@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**212 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**213 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -70,7 +70,6 @@ obligation in the same commit as the result.
 
 | Order | Ticket | Why here |
 |---|---|---|
-| 1 | **R-037** | It contaminates the other two speed measurements. A 128³ comparison run while Marching Cubes sits in an unfixed aliasing hole measures the hole (✗14's lesson) |
 | 2 | **R-038** | The largest prize on the list and the only one whose payoff grows with how long the player has been playing. Bit-exact by a selection argument, not an approximation one |
 | 3 | **R-039** | Same engine as R-037's fix, disjoint code; the bitmap is the substrate a later packed cell table would also need |
 | 4 | **R-040** | Detector only, and the census either indicts the sign lattice or exonerates it in one run |
@@ -79,7 +78,6 @@ obligation in the same commit as the result.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-037** | **Marching Cubes never received A-024's odd-stride fix.** `dual.rs` has `row_stride(size) = size[0] \| 1` and the comment recording the 3.37× it bought at 128³; `MarchingCubes` indexes `values` through `shape.linearize` (`marching_cubes/mod.rs:687`), so its row stride is 512 B and its plane stride exactly 65,536 at 128 samples per axis, and `edge_vertices` — `3 · sample_count` u32, the buffer with the scattered access — has a plane stride of three times that. **H:** P-38. Measure the 127/128/129 triple first, then apply the same `\| 1` to both private buffers. **Falsified by:** the before-ratio under 1.5×, which would make A-024's remedy specific to the dual path. **FINDINGS:** `M-`, and a `✗` against "A-024 fixed the aliasing" if the fix lands. Golden hashes must not move. | S | — |
 | ☐ | **R-038** | **Lipschitz tape pruning of the brush stack.** Bound each brush's shape over the chunk AABB (`f(c) ± l·r`, one sample per brush per chunk) and delete the brushes that provably cannot win the min/max chain there. Barbier et al. `10.1111/cgf.70057` name polygonization as future work; Keeter `10.1145/3386569.3392429` measures the reduction at two orders of magnitude; Tilove `10.1145/358105.358195` (in corpus) is the 1984 set-theoretic statement. **Not** the tabled Sharp & Jacobson row, which rejects empty cells rather than shortening the expression. **H:** P-39, including the bit-exactness lemma — hard `min`/`max` select an operand so pruning is zero-ULP, while `smooth_min` at `h == 1` returns `b + (a − b)` and is prunable only in the dominant direction. **Falsified by:** survivor fraction ≈ 1.0, or any byte difference on a hard-op-only stack. **FINDINGS:** `M-`. Per-vertex edit provenance rides this ticket or nothing. | M | — |
 | ☐ | **R-039** | **Word-parallel active-cell bitmap.** One bit per sample, 64 cells decided at once by `any = OR(w \| w>>1)`, `all = AND(w & w>>1)`, `active = any & !all` over the four bounding rows, replacing `DualMesher::place_vertices`' eight-corner gather on the ~97% of cells that emit nothing. Safe stable `core` only — `trailing_zeros`, `count_ones`, shifts; PEXT/PDEP is out (unsafe, x86-only, target-feature-gated) and the set-bit walk is the substitute. Source: Museth's VDB `10.1145/2487228.2487235`, in corpus. **H:** P-40, with the sign-bit trap registered: `-0.0` has the bit set and `-0.0 < 0.0` is false, and `box_exact` is exactly zero across its boundary. **Falsified by:** stage ratio under 2× on a surface-free field, or whole-extractor under 1.25× on `sphere` at 128³. **FINDINGS:** `M-`. | M | R-037 |
 | ☐ | **R-040** | **Is the sign lattice well-composed, and is that where the duals go non-manifold?** Census the two Latecki critical configurations over the eight reference fields, then cross-tabulate against the non-manifold incidents `MeshReport` already reports for `DualContouring` and `SurfaceNets`. **This ticket is the detector; the repair is deliberately unwritten** — repairing the sign pattern moves the surface by up to a cell and breaks every golden hash, so it is worth designing only if the co-location holds. **H:** P-41. **Falsified by:** a zero census on all eight fields, or co-location below 90%. Sources `10.1006/cviu.1995.1006`, `10.1006/gmip.1997.0422`, `10.1007/s10851-017-0769-6` — none in corpus, all DOI-verified; `paper_download` them before writing any repair. **FINDINGS:** `M-`, or a `✗` against "the sign lattice is where the duals fail". | M | — |

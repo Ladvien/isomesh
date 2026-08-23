@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**424 entries** — 27 falsified, 330 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**425 entries** — 28 falsified, 330 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -66,6 +66,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗25` | "Marching Cubes is the only one of the family in the good corner of manifold × intersection-free" |
 | `✗26` | P-25's mechanism clause is false, and P-25's own falsifier is what named it (R-022b) |
 | `✗27` | "an exactly-zero SDF gradient detects the medial axis" |
+| `✗28` | FALSIFIED at 0.98 against a registered 1.5×: the 128³ penalty is a property of the access pattern, not of the stride, an… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -7566,3 +7567,59 @@ indexed** — for the version that tolerates non-smooth shapes, which is what `c
 
 **Records** `field`, `samples_per_axis`, `centre_residual_max`, `centre_residual_mean`,
 `symmetric_hausdorff`, `pearson_r`, `extra_eval_fraction`.
+
+### 💥 ✗28 / M-336 — FALSIFIED at 0.98 against a registered 1.5×: the 128³ penalty is a property of the access pattern, not of the stride, and Marching Cubes does not have one (P-38, R-037)
+
+**M.** `cargo bench --bench experiment_p38`, `docs/experiments/p-38.csv`. Sphere, `f64`, one thread,
+median of five timed runs after an untimed warm-up, each reported per sample of its own grid.
+
+| extractor | n | `[n,n,n]` | neighbour mean of `[n±1]³` | ratio | `[n\|1,n,n]` | `[n,n,n\|1]` control |
+|---|---:|---:|---:|---:|---:|---:|
+| marching_cubes | 128 | **8.643** | 8.850 | **0.977** | 8.899 | 8.916 |
+| marching_cubes | 256 | **8.570** | 8.603 | **0.996** | 8.574 | 8.590 |
+| surface_nets *(control, already fixed)* | 128 | 11.493 | 11.879 | 0.968 | 11.311 | 11.726 |
+| surface_nets *(control, already fixed)* | 256 | 12.047 | 12.842 | 0.938 | 12.007 | 12.001 |
+
+**Clause one is dead on arrival, and it takes clause two with it.** The registered threshold was
+`> 1.5×` at 128³ and the measurement is **0.977** — 128³ is *marginally faster* than the mean of its
+neighbours. On the surface-free field, where A-024's 3.37× was originally found and where nothing but
+scaffolding is being timed, Marching Cubes reads **8.116** against a neighbour mean of **8.046**, a
+ratio of 1.009. There is no penalty to remove, so no stride change was made: adding a pad that buys a
+measured nothing would be a layout nobody can justify from a number.
+
+**✗28 — "the 65,536-byte plane stride is the defect, so any buffer with it pays".** That is the belief
+this row kills, and it was mine: the inference from `dual.rs`'s doc comment to *"`MarchingCubes` has the
+same latent defect"* is exactly the shape of reasoning A-024's own note warns about, and it was made
+from the buffer's *dimensions* without looking at how it is *walked*. The two engines touch `values`
+completely differently. Marching Cubes reads eight corners of the current cell and then steps `x`, so
+consecutive cells share four corners and the whole traversal streams: two rows and two planes are live,
+the prefetcher sees a linear pattern, and the set-aliasing period is never exercised because the working
+set never spans enough distinct lines mapping to one set. The dual mesher's `emit_quads` walks **every
+grid edge on all three axes** — M-284's 82%-of-cycles stage — loading both endpoints of edges that are a
+row and a plane apart, which is precisely the pattern that turns a 64 KiB plane stride into a conflict
+miss on every access.
+
+**The `pad_z` control is what makes this a measurement rather than an absence.** `[128,128,129]` adds
+the same 0.8% of work as `[129,128,128]` and touches neither stride, and it comes in at 1.0075 of the
+neighbour mean against the padded row's 1.0054. Both are noise. In A-024's run that control **kept the
+entire 3.35× penalty**, which is what identified the stride as the cause there. Here there is no
+penalty for it to keep.
+
+**So A-024's remedy is correctly scoped, and now that is measured rather than assumed.** `size[0] | 1`
+belongs to `DualMesher` because the defect belongs to `DualMesher`'s access pattern. A future extractor
+inherits the pad only if it inherits the walk.
+
+**Two things recorded beside the registered clauses.** Clause three held vacuously and is still worth
+having: the harness recomputes every `marching_cubes` row of the committed fixture through
+`validate::mesh_hash` and reports **24 of 24 matching**, which is the golden gate running inside the
+bench rather than beside it. And `surface_nets` at 256³ reads **0.938** of its neighbour mean — its
+odd-sized neighbours 255³ and 257³ are *slower* than the padded 256³, by about 6%. That is the fix
+working from the other side and is not claimed as more than an observation; nothing here isolates it.
+
+**Provenance note.** Every CSV produced in this phase carries `(WORKING TREE DIRTY)` in its header. The
+tree holds untracked research documents from an earlier session that are not this phase's to commit; the
+measuring commit is named in the same header and the harness is committed before the run.
+
+**Would be shown wrong by:** a machine whose L1 associativity or line count makes the streaming pattern
+alias after all — the claim here is about an access pattern on this machine, and `scripts/machine.sh`
+stamps which. Re-running the same bench elsewhere is the check, and it costs thirty seconds.

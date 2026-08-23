@@ -67,48 +67,52 @@ impl Which {
     }
 }
 
-/// One extraction into a reused buffer, so allocation is not in the timing.
-fn extract_once(
-    which: Which,
-    mc: &mut MarchingCubes<f64>,
-    sn: &mut SurfaceNets<f64>,
-    field: &Sphere<f64>,
-    shape: &RuntimeShape3,
-    origin: [f64; 3],
-    cell: f64,
-    out: &mut MeshBuffer<f64>,
-) {
-    out.reset();
-    match which {
-        Which::MarchingCubes => mc
-            .extract(field, shape, origin, cell, out)
-            .expect("extraction"),
-        Which::SurfaceNets => sn
-            .extract(field, shape, origin, cell, out)
-            .expect("extraction"),
+/// The two meshers and the sink they share, allocated once so allocation is
+/// never inside a timed region.
+struct Rig {
+    mc: MarchingCubes<f64>,
+    sn: SurfaceNets<f64>,
+    out: MeshBuffer<f64>,
+}
+
+impl Rig {
+    fn new() -> Self {
+        Self {
+            mc: MarchingCubes::new(),
+            sn: SurfaceNets::new(),
+            out: MeshBuffer::new(),
+        }
+    }
+
+    fn extract_once(&mut self, which: Which, shape: &RuntimeShape3, origin: [f64; 3], cell: f64) {
+        let field = Sphere::<f64>::canonical();
+        self.out.reset();
+        match which {
+            Which::MarchingCubes => self
+                .mc
+                .extract(&field, shape, origin, cell, &mut self.out)
+                .expect("extraction"),
+            Which::SurfaceNets => self
+                .sn
+                .extract(&field, shape, origin, cell, &mut self.out)
+                .expect("extraction"),
+        }
     }
 }
 
 /// Median nanoseconds per sample of *this* grid.
 fn ns_per_sample(which: Which, size: [u32; 3], origin: [f64; 3], cell: f64) -> f64 {
-    let field = Sphere::<f64>::canonical();
     let shape = RuntimeShape3::new(size).expect("valid shape");
     let samples = f64::from(size[0]) * f64::from(size[1]) * f64::from(size[2]);
-    let mut mc = MarchingCubes::<f64>::new();
-    let mut sn = SurfaceNets::<f64>::new();
-    let mut out = MeshBuffer::<f64>::new();
+    let mut rig = Rig::new();
 
     // One untimed run so every buffer is allocated and every page is resident.
-    extract_once(
-        which, &mut mc, &mut sn, &field, &shape, origin, cell, &mut out,
-    );
+    rig.extract_once(which, &shape, origin, cell);
 
     let mut runs = Vec::with_capacity(REPS);
     for _ in 0..REPS {
         let t = Instant::now();
-        extract_once(
-            which, &mut mc, &mut sn, &field, &shape, origin, cell, &mut out,
-        );
+        rig.extract_once(which, &shape, origin, cell);
         runs.push(t.elapsed().as_secs_f64() * 1e9 / samples);
     }
     runs.sort_by(f64::total_cmp);
