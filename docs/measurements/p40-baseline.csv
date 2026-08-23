@@ -1,0 +1,18 @@
+# P-40 baseline: the extractor arm as it stood before the bitmap prepass.
+# Produced by `ISOMESH_BLESS=1 cargo bench --bench experiment_p40`, committed,
+# and required by the ordinary run -- a speedup with no baseline is not a
+# measurement. Regenerating it after the mechanism has landed destroys the
+# comparison, which is why it is a committed fixture and not a cache.
+field,samples_per_axis,extractor,ns_per_sample,mesh_hash
+sphere_surface_free,64,surface_nets,8.8519,9354609568656401157
+sphere_surface_free,64,dual_contouring,8.7572,9354609568656401157
+sphere_surface_free,128,surface_nets,9.9395,9354609568656401157
+sphere_surface_free,128,dual_contouring,10.0828,9354609568656401157
+sphere_surface_free,256,surface_nets,10.2536,9354609568656401157
+sphere_surface_free,256,dual_contouring,10.2410,9354609568656401157
+sphere,64,surface_nets,9.9168,9014635945110052459
+sphere,64,dual_contouring,24.3483,1953288031191804586
+sphere,128,surface_nets,10.6336,1988674195370851945
+sphere,128,dual_contouring,17.1894,5303837977826328632
+sphere,256,surface_nets,10.9077,3134356901084599560
+sphere,256,dual_contouring,14.0343,6579336946151019404

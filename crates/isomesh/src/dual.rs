@@ -192,6 +192,26 @@ pub(crate) struct DualMesher<R: Real> {
     /// Samples per row in [`values`](Self::values), which is `size[0] | 1` and
     /// therefore **not** `size[0]` whenever the caller's grid is even.
     row: usize,
+    /// One bit per sample, packed 64-to-a-word along `x`: is that sample inside?
+    ///
+    /// R-039. The active-cell test is *"are these eight corner signs not all
+    /// equal"*, which is a question about eight bits, and the scalar form asked
+    /// it with eight loads and eight comparisons for **every** cell while
+    /// roughly 97% of them produce nothing. Packed, the same question is
+    /// answered for sixty-four cells at once — see [`active_word`].
+    ///
+    /// The bit is `is_inside(value)`, the same comparison the scalar path made,
+    /// and **not** the IEEE sign bit: `-0.0` has the sign bit set while
+    /// `-0.0 < 0.0` is false, and `box_exact` is exactly zero across its whole
+    /// boundary, so a sign-bit shortcut would change the mesh on a reference
+    /// field.
+    inside: Vec<u64>,
+    /// Words per bitmap row, `size[0].div_ceil(64)`.
+    ///
+    /// Independent of [`row`](Self::row): that pads `values` to break A-024's
+    /// stride aliasing, and this packs bits, so the two have no reason to agree
+    /// and pretending they do would be a bug waiting for an even grid.
+    bit_row: usize,
     /// Per cell: the index of its first vertex, or [`u32::MAX`] when the surface
     /// misses it. This doubles as the active flag.
     cell_first: Vec<u32>,
@@ -218,6 +238,8 @@ impl<R: Real> DualMesher<R> {
         Self {
             values: Vec::new(),
             row: 0,
+            inside: Vec::new(),
+            bit_row: 0,
             cell_first: Vec::new(),
             cell_edge_slot: Vec::new(),
             slot_position: Vec::new(),
@@ -344,6 +366,108 @@ impl<R: Real> DualMesher<R> {
         }
     }
 
+    /// Pack `is_inside` into [`inside`](Self::inside), one bit per sample.
+    ///
+    /// R-039. One pass of `n³` comparisons, which buys the removal of `8n³`
+    /// loads-and-comparisons in [`place_vertices`](Self::place_vertices) on
+    /// every cell that produces nothing — and on a sphere at 128³ that is about
+    /// 97% of them.
+    fn build_inside_bits(&mut self, size: [u32; 3]) {
+        let sx = size[0] as usize;
+        let rows = size[1] as usize * size[2] as usize;
+        self.bit_row = sx.div_ceil(64);
+        self.inside.clear();
+        self.inside.resize(self.bit_row * rows, 0);
+
+        for row in 0..rows {
+            let src = self.row * row;
+            let dst = self.bit_row * row;
+            for w in 0..self.bit_row {
+                let base = w * 64;
+                let n = (sx - base).min(64);
+                let mut word = 0u64;
+                for k in 0..n {
+                    // Branchless on purpose: the whole point of the bitmap is
+                    // that the sign test stops being a branch per corner.
+                    word |= u64::from(is_inside(self.values[src + base + k])) << k;
+                }
+                self.inside[dst + w] = word;
+            }
+        }
+    }
+
+    /// Bit `k` of the returned word is `is_inside(sample[64w + k, y, z])`.
+    #[inline]
+    fn inside_word(&self, w: usize, y: usize, z: usize, size: [u32; 3]) -> u64 {
+        self.inside[self.bit_row * (y + size[1] as usize * z) + w]
+    }
+
+    /// Bit `k` of the returned word is `is_inside(sample[64w + k + 1, y, z])`.
+    ///
+    /// The high bit has to come from the next word or the cell straddling a
+    /// word boundary reads its `+x` corner as outside — which is a hole every
+    /// 64 cells, invisible on a small grid and catastrophic on a large one.
+    #[inline]
+    fn inside_word_shifted(&self, w: usize, y: usize, z: usize, size: [u32; 3]) -> u64 {
+        let lo = self.inside_word(w, y, z, size);
+        let hi = if w + 1 < self.bit_row {
+            self.inside_word(w + 1, y, z, size)
+        } else {
+            0
+        };
+        (lo >> 1) | (hi << 63)
+    }
+
+    /// Sixty-four active-cell answers, in four fused word operations per row.
+    ///
+    /// A cell is active exactly when its eight corner signs are **not all
+    /// equal**. Reading `a` as "is `x` inside" and `b` as "is `x+1` inside" for
+    /// each of the four rows `(y,z)`, `(y+1,z)`, `(y,z+1)`, `(y+1,z+1)`:
+    ///
+    /// ```text
+    /// any    = OR  over the four rows of (a | b)      any corner inside
+    /// all    = AND over the four rows of (a & b)      every corner inside
+    /// active = any & !all                             mixed, i.e. crossed
+    /// ```
+    ///
+    /// Source for the mechanism: Museth, *VDB*, `10.1145/2487228.2487235`, whose
+    /// topology layer is per-node bitmasks under word-level boolean ops. The
+    /// transfer is to the active-cell predicate of a CPU isosurface extractor,
+    /// with the mesh held bit-identical because the bit is the same comparison
+    /// and the set-bit walk below visits cells in the same lexicographic order
+    /// the scalar loop did.
+    #[inline]
+    fn active_word(&self, w: usize, y: usize, z: usize, size: [u32; 3]) -> u64 {
+        let mut any = 0u64;
+        let mut all = !0u64;
+        for dz in 0..2usize {
+            for dy in 0..2usize {
+                let a = self.inside_word(w, y + dy, z + dz, size);
+                let b = self.inside_word_shifted(w, y + dy, z + dz, size);
+                any |= a | b;
+                all &= a & b;
+            }
+        }
+        any & !all
+    }
+
+    /// Which bits of word `w` are cells that exist.
+    ///
+    /// The last word of a row runs past the final cell whenever `cells` is not a
+    /// multiple of 64, and those bits are answers about samples that are not
+    /// cells. `1u64 << 64` is undefined, so the full-word case is named rather
+    /// than computed.
+    #[inline]
+    fn cell_mask(w: usize, cells_x: usize) -> u64 {
+        let base = w * 64;
+        let remaining = cells_x.saturating_sub(base);
+        if remaining >= 64 {
+            !0
+        } else {
+            (1u64 << remaining) - 1
+        }
+    }
+
     /// A vertex per surface component of every cell the surface passes through,
     /// wherever `rule` says.
     fn place_vertices<S, V>(
@@ -358,53 +482,68 @@ impl<R: Real> DualMesher<R> {
         S: Sdf<Scalar = R>,
         V: VertexRule<R>,
     {
-        for z in 0..cells[2] {
-            for y in 0..cells[1] {
-                for x in 0..cells[0] {
-                    let base = [x, y, z];
-                    let mut corner = [R::ZERO; 8];
-                    let mut inside_count = 0u32;
-                    for (c, slot) in corner.iter_mut().enumerate() {
-                        let o = crate::cube::corner_offset(c as u8);
-                        let s = self.index(
-                            [base[0] + o[0], base[1] + o[1], base[2] + o[2]],
-                            shape.size(),
-                        );
-                        *slot = self.values[s];
-                        if is_inside(*slot) {
-                            inside_count += 1;
-                        }
-                    }
-                    if inside_count == 0 || inside_count == 8 {
-                        continue;
-                    }
+        let size = shape.size();
+        self.build_inside_bits(size);
+        let cells_x = cells[0] as usize;
 
-                    self.scratch.clear();
-                    rule.place(sdf, &corner, base, origin, cell_size, &mut self.scratch);
-                    if self.scratch.count() == 0 {
-                        continue;
-                    }
-                    // Every cut edge must have an owning vertex, or the quad walk
-                    // would have no corner to use for it.
-                    #[cfg(debug_assertions)]
-                    {
-                        for (edge, [lo, hi]) in crate::cube::EDGE_CORNERS.into_iter().enumerate() {
-                            if is_inside(corner[lo as usize]) != is_inside(corner[hi as usize]) {
-                                assert_ne!(
-                                    self.scratch.slot_of_edge[edge], NO_SLOT,
-                                    "cut edge {edge} has no owning vertex"
-                                );
+        for z in 0..cells[2] as usize {
+            for y in 0..cells[1] as usize {
+                for w in 0..self.bit_row {
+                    let mut active = self.active_word(w, y, z, size) & Self::cell_mask(w, cells_x);
+                    // `w &= w - 1` clears the lowest set bit, so this visits the
+                    // active cells of the row in ascending `x` — the same order
+                    // the scalar loop did, which is what keeps vertex creation
+                    // order and therefore every index unchanged.
+                    while active != 0 {
+                        let x = (w * 64 + active.trailing_zeros() as usize) as u32;
+                        active &= active - 1;
+
+                        let base = [x, y as u32, z as u32];
+                        let mut corner = [R::ZERO; 8];
+                        for (c, slot) in corner.iter_mut().enumerate() {
+                            let o = crate::cube::corner_offset(c as u8);
+                            let s =
+                                self.index([base[0] + o[0], base[1] + o[1], base[2] + o[2]], size);
+                            *slot = self.values[s];
+                        }
+                        debug_assert!(
+                            {
+                                let n = corner.iter().filter(|v| is_inside(**v)).count();
+                                n != 0 && n != 8
+                            },
+                            "the bitmap named an inactive cell at {base:?}"
+                        );
+
+                        self.scratch.clear();
+                        rule.place(sdf, &corner, base, origin, cell_size, &mut self.scratch);
+                        if self.scratch.count() == 0 {
+                            continue;
+                        }
+                        // Every cut edge must have an owning vertex, or the quad
+                        // walk would have no corner to use for it.
+                        #[cfg(debug_assertions)]
+                        {
+                            for (edge, [lo, hi]) in
+                                crate::cube::EDGE_CORNERS.into_iter().enumerate()
+                            {
+                                if is_inside(corner[lo as usize]) != is_inside(corner[hi as usize])
+                                {
+                                    assert_ne!(
+                                        self.scratch.slot_of_edge[edge], NO_SLOT,
+                                        "cut edge {edge} has no owning vertex"
+                                    );
+                                }
                             }
                         }
-                    }
 
-                    let index = cell_index(cells, base);
-                    // Truncation is impossible for any grid that fits in memory:
-                    // the sink's own index space runs out first.
-                    self.cell_first[index] = self.slot_position.len() as u32;
-                    self.cell_edge_slot[index] = self.scratch.slot_of_edge;
-                    self.slot_position
-                        .extend_from_slice(&self.scratch.position[..self.scratch.count()]);
+                        let index = cell_index(cells, base);
+                        // Truncation is impossible for any grid that fits in
+                        // memory: the sink's own index space runs out first.
+                        self.cell_first[index] = self.slot_position.len() as u32;
+                        self.cell_edge_slot[index] = self.scratch.slot_of_edge;
+                        self.slot_position
+                            .extend_from_slice(&self.scratch.position[..self.scratch.count()]);
+                    }
                 }
             }
         }

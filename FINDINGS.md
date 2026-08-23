@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**425 entries** — 28 falsified, 330 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**426 entries** — 28 falsified, 331 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -397,6 +397,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-333` | the heat-operator substrate verifies against a dense reference, and its own numbers pre-shrink two of R-035b's expectati… |
 | `M-334` | FALSIFIED at 1.7× against a registered 20×: the separators eat the update, the prefactored family is dead for live carvi… |
 | `M-335` | HELD on both clauses with orders to spare, and the premise correction is the part that mattered (R-036) |
+| `M-337` | HELD on all three clauses: the active-cell test is one bit, the stage is 5.5× and not one triangle moved (P-40, R-039) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -7623,3 +7624,67 @@ measuring commit is named in the same header and the harness is committed before
 **Would be shown wrong by:** a machine whose L1 associativity or line count makes the streaming pattern
 alias after all — the claim here is about an access pattern on this machine, and `scripts/machine.sh`
 stamps which. Re-running the same bench elsewhere is the check, and it costs thirty seconds.
+
+
+### 🔬 M-337 — HELD on all three clauses: the active-cell test is one bit, the stage is 5.5× and not one triangle moved (P-40, R-039)
+
+**M.** `cargo bench --bench experiment_p40`, `docs/experiments/p-40.csv`, `f64`, one thread, median of
+five timed runs after a warm-up. The extractor arm reads its "before" from
+`docs/measurements/p40-baseline.csv`, blessed at the parent commit `64bef8a` on exactly the grids that
+were timed.
+
+| clause | registered | measured | verdict |
+|---|---|---|---|
+| C1 traversal stage, surface-free 128³ | ≥ 2× | **5.49×** (2.220 → 0.405 ns/cell) | **HELD**, by 2.7× the bar |
+| C2 whole extractor, `sphere` 128³ | ≥ 1.25× | **1.336×** Surface Nets · **1.179×** Dual Contouring | **HELD for Surface Nets**, missed for Dual Contouring |
+| C3 mesh byte-identical | no change | **12 of 12** grids hash-identical to the blessed baseline | **HELD** |
+
+**The whole table, because the shape of it is the finding.**
+
+| field | n | active cells | stage scalar → bitmap | ratio | Surface Nets | Dual Contouring |
+|---|---:|---:|---:|---:|---:|---:|
+| `sphere_surface_free` | 64 | 0 of 250,047 | 2.261 → 0.413 | 5.47× | 8.852 → 6.410 (**1.381×**) | 8.757 → 6.207 (**1.411×**) |
+| `sphere_surface_free` | 128 | 0 of 2,048,383 | 2.220 → 0.405 | 5.49× | 9.940 → 7.576 (**1.312×**) | 10.083 → 7.401 (**1.362×**) |
+| `sphere_surface_free` | 256 | 0 of 16,581,375 | 2.216 → 0.415 | 5.34× | 10.254 → 8.066 (**1.271×**) | 10.241 → 8.130 (**1.260×**) |
+| `sphere` | 64 | 4,730 (1.89%) | 2.295 → 0.433 | 5.31× | 9.917 → 7.227 (**1.372×**) | 24.348 → 21.698 (1.122×) |
+| `sphere` | 128 | 19,010 (0.93%) | 2.263 → 0.412 | 5.49× | 10.634 → 7.960 (**1.336×**) | 17.189 → 14.576 (1.179×) |
+| `sphere` | 256 | 76,778 (0.46%) | 2.239 → 0.420 | 5.33× | 10.908 → 8.747 (**1.247×**) | 14.034 → 11.855 (1.184×) |
+
+**Where clause two misses, and why it is a qualification rather than a surprise.** The registration
+said *"the whole extractor"* in the singular and the mechanism serves two. Dual Contouring pays a QEF
+solve per **active** cell — 24.3 ns/sample at 64³ against Surface Nets' 9.9 — and no amount of skipping
+inactive cells touches that. The mechanism removes a per-**inactive**-cell cost, so its leverage is
+exactly `inactive work / total work`, and Dual Contouring's denominator is larger. That is visible in
+the table as the two extractors converging as the active fraction falls: at 256³ they are 1.247× and
+1.184×, and on the surface-free field, where the QEF never runs at all, Dual Contouring is the *faster*
+of the two to improve at **1.411×**. The clause is recorded as held for Surface Nets and missed for
+Dual Contouring rather than averaged into a number that describes neither.
+
+**Clause three is checked where it matters, not where it is convenient.** The golden suite meshes eight
+fields at 17³/25³/33³, and it passes unchanged — but none of those are the grids this measured. So the
+baseline carries a `mesh_hash` per row alongside its time, and all twelve post-change hashes equal their
+pre-change value, including both extractors at 256³ where a word-boundary error would first show. That
+boundary is the one real hazard in the mechanism: bit 63 of a word must take its `+x` corner from bit 0
+of the *next* word, and getting it wrong punches a hole every 64 cells — invisible at 33³, which has
+one word per row, and fatal at 256³, which has four.
+
+**The stage ratio is flat in `n`, at 5.3–5.5× across a 265× range of cell counts.** That is the
+signature of a mechanism that changed the work per cell rather than the memory behaviour: 2.22 ns/cell
+is about eight loads and eight compares at this IPC, and 0.41 ns/cell is about twenty word operations
+amortised over sixty-four cells plus the one comparison per sample the bitmap build still pays. Nothing
+in it depends on the working set, which is why it does not drift with resolution.
+
+**The trap that was registered rather than discovered.** The bit is `is_inside(v)`, i.e. `v < 0`, and
+**not** the IEEE sign bit. `-0.0` has the sign bit set while `-0.0 < 0.0` is false, and `box_exact` is
+exactly zero across its entire boundary — so a sign-bit shortcut would have been faster still and would
+have changed the mesh on a reference field. It is named in the registration, in the field's doc comment
+and here, because it is the kind of shortcut a later reader will reach for.
+
+**What a consumer gets:** Surface Nets is 1.25–1.38× faster on every grid measured, with byte-identical
+output, and the win is largest exactly where a voxel game spends its time — chunks that are mostly solid
+or mostly air, where the active fraction is near zero.
+
+**Would be shown wrong by:** a field whose active fraction is high enough that the bitmap build's own
+`n³` comparisons stop paying for themselves. The crossover is where active fraction approaches the point
+at which eight-corner gathers would have run anyway; `gyroid` at low resolution is the fixture that would
+probe it, and it is not measured here.

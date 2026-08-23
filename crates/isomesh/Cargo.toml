@@ -362,3 +362,18 @@ test = false
 name = "stage_breakdown"
 harness = false
 test = false
+
+[[bench]]
+name = "experiment_p43"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p41"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p40"
+harness = false
+test = false

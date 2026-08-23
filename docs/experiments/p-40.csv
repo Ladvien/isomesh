@@ -1,0 +1,17 @@
+# experiment P-40 (R-039)
+# hypothesis: The active-cell test is one bit per sample, so 64 cells decide at once. Packing `value < 0` into a u64 bitmap along x and fusing the four rows that bound a cell row -- any = OR of (w | w>>1), all = AND of (w & w>>1), active = any & !all -- replaces DualMesher::place_vertices' eight-corner gather on the ~97% of cells that produce nothing. Clause one: on a surface-free 128-cubed field, where the active path never runs, the traversal stage is at least 2x faster. Clause two: on sphere at 128-cubed the WHOLE extractor is at least 1.25x faster. Clause three: the mesh is byte-identical, because the bit is the same comparison and the set-bit walk visits cells in the same lexicographic order, so vertex creation order is unchanged. The sign bit is deliberately NOT used as the inside bit: -0.0 has it set while -0.0 < 0.0 is false, and box_exact is exactly zero across its whole boundary, so signed zeros are reachable in this crate's own fixtures.
+# falsified by: The stage ratio under 2x on the surface-free field, which would mean the scalar gather was not the cost. Or the whole-extractor ratio under 1.25x on sphere at 128, which puts the mechanism under the Amdahl floor that M-296's field-evaluation dominance sets and makes the bitmap not worth its own bookkeeping. Any mesh difference falsifies the ordering argument outright.
+# commit 64bef8a (WORKING TREE DIRTY) on amd-ryzen-9-5900x-12-core at 2026-08-23T17:56:19Z
+field,samples_per_axis,active_fraction,stage_ns_scalar,stage_ns_bitmap,stage_ratio,extract_ns_scalar,extract_ns_bitmap,extract_ratio,mesh_identical,active_cells,cells,extractor,mesh_hash
+sphere_surface_free,64,0.000000,2.2695,0.4246,5.3455,8.8519,6.1769,1.4331,true,0,250047,surface_nets,9354609568656401157
+sphere_surface_free,64,0.000000,2.2695,0.4246,5.3455,8.7572,6.2146,1.4091,true,0,250047,dual_contouring,9354609568656401157
+sphere_surface_free,128,0.000000,2.2185,0.4135,5.3655,9.9395,8.0594,1.2333,true,0,2048383,surface_nets,9354609568656401157
+sphere_surface_free,128,0.000000,2.2185,0.4135,5.3655,10.0828,7.7023,1.3091,true,0,2048383,dual_contouring,9354609568656401157
+sphere_surface_free,256,0.000000,2.2152,0.4222,5.2468,10.2536,8.1341,1.2606,true,0,16581375,surface_nets,9354609568656401157
+sphere_surface_free,256,0.000000,2.2152,0.4222,5.2468,10.2410,8.1364,1.2587,true,0,16581375,dual_contouring,9354609568656401157
+sphere,64,0.018916,2.2912,0.4669,4.9076,9.9168,7.2148,1.3745,true,4730,250047,surface_nets,9014635945110052459
+sphere,64,0.018916,2.2912,0.4669,4.9076,24.3483,21.7488,1.1195,true,4730,250047,dual_contouring,1953288031191804586
+sphere,128,0.009280,2.2716,0.4408,5.1535,10.6336,8.9173,1.1925,true,19010,2048383,surface_nets,1988674195370851945
+sphere,128,0.009280,2.2716,0.4408,5.1535,17.1894,14.6225,1.1755,true,19010,2048383,dual_contouring,5303837977826328632
+sphere,256,0.004630,2.2407,0.4301,5.2102,10.9077,8.9700,1.2160,true,76778,16581375,surface_nets,3134356901084599560
+sphere,256,0.004630,2.2407,0.4301,5.2102,14.0343,12.0548,1.1642,true,76778,16581375,dual_contouring,6579336946151019404
