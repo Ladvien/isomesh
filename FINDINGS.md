@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**426 entries** — 28 falsified, 331 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**427 entries** — 28 falsified, 332 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -398,6 +398,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-334` | FALSIFIED at 1.7× against a registered 20×: the separators eat the update, the prefactored family is dead for live carvi… |
 | `M-335` | HELD on both clauses with orders to spare, and the premise correction is the part that mattered (R-036) |
 | `M-337` | HELD on all three clauses: the active-cell test is one bit, the stage is 5.5× and not one triangle moved (P-40, R-039) |
+| `M-338` | HELD, and the relation is a bijection rather than a correlation: the critical-configuration census does not predict the… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -7688,3 +7689,76 @@ or mostly air, where the active fraction is near zero.
 `n³` comparisons stop paying for themselves. The crossover is where active fraction approaches the point
 at which eight-corner gathers would have run anyway; `gyroid` at low resolution is the fixture that would
 probe it, and it is not measured here.
+
+### 🔬 M-338 — HELD, and the relation is a bijection rather than a correlation: the critical-configuration census does not predict the duals' non-manifold vertices, it counts them (P-41, R-040)
+
+**M.** `cargo bench --bench experiment_p41`, `docs/experiments/p-41.csv`. Eight reference fields at 65
+samples per axis, `f64`, `DualContouring` and `SurfaceNets`, 16 rows.
+
+| field | 2D-critical | 3D-critical | non-manifold edges | non-manifold vertices | co-location |
+|---|---:|---:|---:|---:|---:|
+| `noise_cavity` | 567 | 35 | 322 | **602** | **1.000000** |
+| `gyroid` | 132 | 9 | 69 | **141** | **1.000000** |
+| `fbm_terrain` | 58 | 0 | 29 | **58** | **1.000000** |
+| `sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate` | 0 | 0 | 0 | 0 | — |
+
+**C1 held** — the census is 602 on `noise_cavity`, and non-zero on three of the eight fields rather than
+the one the clause named. **C2 held at 1.000000 against a 0.90 bar**: 2,442 of 2,442 incidents pooled
+over both extractors, and 1.000000 again under the stricter both-endpoints rule for edges, so the
+union-versus-both reading of "which cell owns an edge" was not load-bearing.
+
+**The bar was not cleared by arithmetic, and the null control is what says so.** The share of
+*vertex-hosting* cells that are critical — the chance baseline a random incident would hit — is
+**0.66%** on `gyroid`, **0.69%** on `fbm_terrain` and **2.1%** on `noise_cavity`. Against that, 100%.
+
+**The unregistered half is stronger than the registered one.** On every affected field,
+
+```text
+critical cells  ==  non-manifold vertices  ==  critical cells hosting one
+   141          ==          141            ==          141        (gyroid)
+    58          ==           58            ==           58        (fbm_terrain)
+   602          ==          602            ==          602        (noise_cavity)
+```
+
+One critical cell, one non-manifold vertex, no exceptions and no extras. The clause asked whether the
+census *predicts where* the defects are. What it does is **count them**. And the implication runs both
+ways: the five fields with a zero census produce zero non-manifold output from both extractors, so this
+is not a one-sided detector that happens to fire near trouble — it is an exact characterisation of the
+dual extractors' non-manifold vertex set at this resolution.
+
+**The rival suspect the falsifier named is measured and cleared.** *"The QEF vertex escaping its cell"*
+was the other candidate cause. `DualContouring`'s `Clamp::ToCell` insets by `(1 − ε)` and **not one
+vertex escapes on any field**. (`SurfaceNets` is different and it is worth recording: its centroid rule
+places 5,400 of 5,768 vertices *exactly on* a cell boundary on `box_exact` — with `smoothing_passes` at
+its default zero nothing clamps the average of twelve edge crossings, so on a field that is exactly zero
+across its boundary the centroid lands on the cell's upper face and `floor()` names the neighbour. It
+changed no attribution here — `nm_vertices_on_cell_boundary` is 0 on all 16 rows — but it is a real
+behavioural difference between the two placement rules and it is written down rather than left to be
+rediscovered.)
+
+**The table was computed, not transcribed** (rule 5). Enumerating all 256 sign bytes from the
+definitions gives **120 2D-critical, 8 3D-critical, disjoint** — the 8 being four main diagonals × two
+complements — and a second classifier written from a different formulation (2×2 face parity rather than
+corner-index XOR) reproduces all three numbers. The 2D-critical class covers 47% of sign *bytes* and
+0.02–0.23% of real *cells*, which is why the census is cheap to state and rare to trigger.
+
+**The instrument checked itself.** The harness recomputes the non-manifold edge and vertex sets from
+`positions`/`indices` independently, and the crate already exposes the locations through
+`validate::validate_features` — so the row carries a **list-versus-list** agreement, element for element,
+not merely a count-versus-count one. `counts_agree` and `locations_agree` are true on all 16 rows.
+
+**Rows with no incidents record `n/a`, not `1.0`.** An empty numerator over an empty denominator would
+let the five clean fields outvote the three dirty ones in any later average — manufacturing agreement
+out of silence is the failure the whole pre-registration mechanism exists to prevent.
+
+**What this buys, and what it does not.** The crate can now state a number it could not: how far its
+input sign lattice is from well-composed, per chunk, from the sign bytes alone and before any extraction.
+Because the relation is a bijection, that number is also the exact count of non-manifold vertices the
+dual path will produce. What it does **not** buy is the repair: flipping a sign moves the surface by up
+to a cell and breaks every golden hash, and the registration deliberately withheld it pending exactly
+this result. The repair now has a target it can be measured against — a well-composed lattice must drive
+all three numbers to zero together.
+
+**Would be shown wrong by:** a field where the census and the incident count come apart. The bijection is
+measured at one resolution on eight fields; it is a strong regularity, not a theorem, and the honest next
+move is a resolution sweep rather than a claim of necessity.

@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**214 tickets archived, 18 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**215 tickets archived, 17 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -71,14 +71,12 @@ obligation in the same commit as the result.
 | Order | Ticket | Why here |
 |---|---|---|
 | 2 | **R-038** | The largest prize on the list and the only one whose payoff grows with how long the player has been playing. Bit-exact by a selection argument, not an approximation one |
-| 4 | **R-040** | Detector only, and the census either indicts the sign lattice or exonerates it in one run |
 | 5 | **R-041** | The first error bar this crate would state on a differential quantity, and the only candidate whose falsifier is aimed at the instrument rather than the mechanism |
 | 6 | **R-042** | Cheapest of the six: one extra evaluation per cell, correlated against a number `validate::accuracy` already produces |
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
 | ☐ | **R-038** | **Lipschitz tape pruning of the brush stack.** Bound each brush's shape over the chunk AABB (`f(c) ± l·r`, one sample per brush per chunk) and delete the brushes that provably cannot win the min/max chain there. Barbier et al. `10.1111/cgf.70057` name polygonization as future work; Keeter `10.1145/3386569.3392429` measures the reduction at two orders of magnitude; Tilove `10.1145/358105.358195` (in corpus) is the 1984 set-theoretic statement. **Not** the tabled Sharp & Jacobson row, which rejects empty cells rather than shortening the expression. **H:** P-39, including the bit-exactness lemma — hard `min`/`max` select an operand so pruning is zero-ULP, while `smooth_min` at `h == 1` returns `b + (a − b)` and is prunable only in the dominant direction. **Falsified by:** survivor fraction ≈ 1.0, or any byte difference on a hard-op-only stack. **FINDINGS:** `M-`. Per-vertex edit provenance rides this ticket or nothing. | M | — |
-| ☐ | **R-040** | **Is the sign lattice well-composed, and is that where the duals go non-manifold?** Census the two Latecki critical configurations over the eight reference fields, then cross-tabulate against the non-manifold incidents `MeshReport` already reports for `DualContouring` and `SurfaceNets`. **This ticket is the detector; the repair is deliberately unwritten** — repairing the sign pattern moves the surface by up to a cell and breaks every golden hash, so it is worth designing only if the co-location holds. **H:** P-41. **Falsified by:** a zero census on all eight fields, or co-location below 90%. Sources `10.1006/cviu.1995.1006`, `10.1006/gmip.1997.0422`, `10.1007/s10851-017-0769-6` — none in corpus, all DOI-verified; `paper_download` them before writing any repair. **FINDINGS:** `M-`, or a `✗` against "the sign lattice is where the duals fail". | M | — |
 | ☐ | **R-041** | **Curvature as a normal-cycle measure, with the bound it computes for itself.** Gaussian as vertex angle defect, mean as edge length times signed dihedral, accumulated in face-index order. The claim is not the estimator — angle defect is textbook — it is *additivity* (`N(A ∪ B) = N(A) + N(B) − N(A ∩ B)`, so per-chunk composes to per-world with no global pass) and *a stated error bar* (`C·K·ε` from triangle circumradii, Cohen-Steiner & Morvan Theorem 6). Formulas transcribable from the in-corpus Sun & Morvan `10.5802/acirm.50`; the primary `10.1145/777792.777839` is not in corpus. **H:** P-42. **Falsified by:** the residual escaping its own bound, which would say the closely-inscribed hypothesis fails for a marching-cubes mesh — the more interesting outcome. Boundary vertices need the geodesic term or every open field reads as broken. **FINDINGS:** `M-`. | M | — |
 | ☐ | **R-042** | **A per-cell witness that the chunk is under-sampled.** One field evaluation at each cell centre against the trilinear interpolant of the eight corners, normalised by cell size — one-sided in the safe direction, so it can prove a chunk inadequate and never prove it adequate, which is `validate/field_bound.rs`'s discipline pointed the other way. **H:** P-43, correlated against the symmetric Hausdorff `validate::accuracy` already reports. **Falsified by:** Pearson r below 0.7; the expected mechanism of failure is a feature passing through the cell centre without perturbing it, so `thin_plate` is measured beside the registered fields as the adversary. Sources `10.1016/s0019-9958(62)90633-2` and the in-corpus `10.1007/s00454-009-9144-8`. **FINDINGS:** `M-`. | S | — |
 
