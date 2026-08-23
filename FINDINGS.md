@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**429 entries** — 30 falsified, 332 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**430 entries** — 30 falsified, 333 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -401,6 +401,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-335` | HELD on both clauses with orders to spare, and the premise correction is the part that mattered (R-036) |
 | `M-337` | HELD on all three clauses: the active-cell test is one bit, the stage is 5.5× and not one triangle moved (P-40, R-039) |
 | `M-338` | HELD, and the relation is a bijection rather than a correlation: the critical-configuration census does not predict the… |
+| `M-341` | HELD on all three clauses: a brush that provably cannot win is deleted for free, and the mesh does not move by one ULP (… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -7911,3 +7912,66 @@ gives the polyhedral Gaussian measure as `Σ α_v`, where Definition 1(1) has ju
 means and what was used; the discrepancy is documented in the bench rather than silently corrected.
 
 **Would be shown wrong by:** P-45, which puts a boundary on `B` and is registered before it runs.
+
+### 🔬 M-341 — HELD on all three clauses: a brush that provably cannot win is deleted for free, and the mesh does not move by one ULP (P-39, R-038)
+
+**M.** `cargo bench --bench experiment_p39`, `docs/experiments/p-39.csv`. 4×4×4 chunks of 33³ samples
+over `[−8, 8]³`, base `Sphere{r = 6}`, a tape of **64** brushes — 34 `Add`, 30 `Subtract`, spheres and
+capsules — placed by one fixed-seed LCG. 64 rows, one per chunk.
+
+| clause | registered | measured | verdict |
+|---|---|---|---|
+| C1 median survivor fraction | < 0.5 | **0.2969** (19 of 64 brushes) | **HELD** |
+| C2 speedup, pruned vs full | ≥ 1.25× | **3.365× median**, 2.473× world aggregate | **HELD** |
+| C3 mesh byte-identical | every chunk | **64 of 64**, by `to_bits()` comparison *and* by `mesh_hash` | **HELD** |
+
+**The distribution is the result, not the median.** Speedup runs from **0.992×** to **22.47×**, and it
+is monotone in what it should be monotone in: the three chunks where nothing prunes are the three
+straddling the world centre, where every brush is inside the chunk's circumradius, and the chunks that
+prune to a single surviving brush are corners. **56 of 64 chunks clear 1.25×, and the 8 that do not are
+exactly the 8 with the highest survivor fractions.** The worst row, 0.992×, is a chunk where all 64
+brushes survive — the pruned tape *is* the full tape and the 0.8% is timing noise, which is the right
+failure mode for a mechanism that can only ever remove work.
+
+**C3's instrument is proven sensitive rather than assumed to be.** A comparator that cannot see a
+difference reports agreement, which is a failure this repo has had before. So the same pruning geometry
+was run against a `SmoothAdd` stack, pruned in the losing direction — precisely the `h == 1` region
+where `smooth_min` returns `b + (a − b)` — and **48 of 64 chunks come back different**. The 16 that
+match are the chunks where only `Subtract`s were pruned. The comparator and the hash both detect 1-ULP
+shifts; the 64/64 on the hard-op stack is a real result.
+
+**That is also the registered asymmetry, demonstrated rather than argued.** The registration carved
+`SmoothAdd` out of the losing-direction prune *before* the run, on the algebra alone. Had it not, this
+experiment would have produced a 48-chunk mesh difference and it would have read as a determinism
+regression rather than as the expected behaviour of a non-selecting operator.
+
+**The bound is free, and by three orders of magnitude.** Deciding the whole 64-brush tape for a chunk
+costs **540–1450 ns** — 65 field samples, one per brush plus the base. `bound_cost_fraction` runs
+**4.4e-5 to 1.3e-3** of the meshing it enables. Even on the chunk that prunes hardest, from 64 brushes to
+1, the bound costs 0.13%.
+
+**One negative worth having before anyone builds on this.** `dominant_adds` is **0 on all 64 chunks**:
+not one `Add` ever provably *wins* the whole chain over a chunk. A dominant `Add` would make the base
+field and the entire tape prefix dead, which is a much larger prize than pruning losers — but
+`BrushStack` has no way to express *"start from this brush"* without replacing the base, and on this
+fixture the opportunity does not exist anyway: the base sphere's own enclosure is ±3.46 wide over a
+chunk, so no brush of radius ~1 can clear it. The prefix cut is a different mechanism with a different
+precondition, and it is not free.
+
+**A consistency check fell out of the fixture and is worth recording as method.** Nineteen chunks share
+a triangle count of 3,227; seventeen share 173; seven are empty. That is not a bug — the world, the chunk
+lattice and the base sphere are all symmetric under the octahedral group, so chunks in the same symmetry
+class have identical base-only meshes, and those are exactly the chunks where every surviving brush
+contributed no geometry. **A chunk meshing the wrong region could not land on its symmetry partner's
+triangle count**, so the coincidence is free evidence that the grid origins are right.
+
+**What a consumer gets.** The mechanism's leverage is `1 − survivor fraction`, and survivor fraction
+falls as the edit history grows and spreads — which is the direction a destructible world runs in. At 64
+brushes a chunk meshes **3.4× faster** with byte-identical output, and the cost of deciding is a rounding
+error against the saving. Sources: Barbier et al. `10.1111/cgf.70057`, whose own future work names
+polygonization; Keeter `10.1145/3386569.3392429`; and Tilove's `10.1145/358105.358195`, in corpus, which
+is the same argument as set theory forty years earlier.
+
+**Would be shown wrong by:** an edit pattern that is not spatially scattered — one enormous brush
+covering the world drives the survivor fraction to 1 and the mechanism to nothing. The three all-survive
+chunks here are that case in miniature, and they cost 0.8%.

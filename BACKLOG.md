@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**217 tickets archived, 17 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**218 tickets archived, 16 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -70,13 +70,11 @@ obligation in the same commit as the result.
 
 | Order | Ticket | Why here |
 |---|---|---|
-| 2 | **R-038** | The largest prize on the list and the only one whose payoff grows with how long the player has been playing. Bit-exact by a selection argument, not an approximation one |
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
 | ☐ | **R-041a** | **Additivity, which is the half P-42 could not test.** `N(A ∪ B) = N(A) + N(B) − N(A ∩ B)` is the property that lets a per-chunk curvature measure compose into a per-world one with no global pass, and it is the only reason this crate wants normal-cycle measures at all. P-42 took `B` to be the whole closed surface, which made its Gaussian clause the identity `3F = 2E` and left ∂B empty on every row, so the boundary term was never exercised. **H:** P-45 — partition an extracted mesh into a 4×4×4 grid of spatial chunks by triangle centroid, apply the geodesic-curvature boundary term, and require the chunk sums to reproduce the global measures to 1e-9 *and* each chunk recomputed in isolation to reproduce its in-context value bit for bit. **Falsified by:** a gap above tolerance (the boundary term is wrong), or isolation failing (the measure needs a one-ring halo, which makes it composable but not chunk-local — and this crate meshes chunks independently). **FINDINGS:** `M-`. Recorded beside it: `½ Σ l β` against the analytic `∫H da` on `box_exact`, the one field where it may be exact rather than convergent. | S | — |
 | ☐ | **R-042a** | **The mean, tested where it can fail.** P-43's mechanism survived its own falsification and its order statistic did not: the max is pinned by a single C¹ crease cell at every resolution, while the mean correlated at r = 0.983–0.9998 with the symmetric Hausdorff on the same three fields. That is a hypothesis read off the data that killed its predecessor and is worth nothing until it is tested out of sample. **H:** P-44 — `sphere`, `torus`, `box_exact` and `csg_difference`, the four fields P-43 never touched, at 17³/33³/65³/129³; r ≥ 0.9 per field, decay exponent within 0.15 of the Hausdorff's per field, and the witness costing under 0.5× an extraction. **Falsified by:** either threshold missed on any of the four — the agreement would then be a property of P-43's fields' shared crease structure rather than of the witness, and the line dies with a second null. **FINDINGS:** `M-`, or a second `✗`. | S | — |
-| ☐ | **R-038** | **Lipschitz tape pruning of the brush stack.** Bound each brush's shape over the chunk AABB (`f(c) ± l·r`, one sample per brush per chunk) and delete the brushes that provably cannot win the min/max chain there. Barbier et al. `10.1111/cgf.70057` name polygonization as future work; Keeter `10.1145/3386569.3392429` measures the reduction at two orders of magnitude; Tilove `10.1145/358105.358195` (in corpus) is the 1984 set-theoretic statement. **Not** the tabled Sharp & Jacobson row, which rejects empty cells rather than shortening the expression. **H:** P-39, including the bit-exactness lemma — hard `min`/`max` select an operand so pruning is zero-ULP, while `smooth_min` at `h == 1` returns `b + (a − b)` and is prunable only in the dominant direction. **Falsified by:** survivor fraction ≈ 1.0, or any byte difference on a hard-op-only stack. **FINDINGS:** `M-`. Per-vertex edit provenance rides this ticket or nothing. | M | — |
 
 ---
 
