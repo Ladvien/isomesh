@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**227 tickets archived, 21 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**229 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -70,9 +70,8 @@ it is a later ticket.
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
 | ☐ | **R-052** | M | |
+| ☐ | **R-053** | S | |
 | ☐ | **R-046** | M | |
-| ☐ | **R-047** | M | |
-| ☐ | **R-048** | M | |
 | ☐ | **R-049** | L | |
 
 **R-046 — Does either half of the tangent-sphere constraint survive this crate's extractors? (P-51)**
@@ -106,6 +105,16 @@ timed.
 Finken et al.'s Theorem 1 is **proved in 2D** and its pigeonhole step has no hexahedral analogue, so this
 is a labelled 3D port, not a transported proof. The tolerance is this crate's invention, fixed in the
 registration and reported at two neighbouring values so its sensitivity is visible.
+
+**R-053 — Ship the pinch test, not the label. (successor to R-048)**
+M-352 measured the `=`-corner repair removing every degenerate triangle on both CT volumes and changing
+the topology of one: 516 of 17,201 collapse groups on `bonsai` are pinches, welding 520 components,
+against 0 of 50 on `fuel`. The decision is a graph property computable **before** the repair — a
+union-find over the baseline triangles, asking whether two vertices snapping to the same corner already
+share a triangle. Expose that as a `validate` report so a caller can ask whether the repair is safe on
+its data, rather than shipping a repair that is safe on some data. The repair itself moves no geometry
+(`max_snap_distance` is exactly 0), so this is a pure connectivity decision and belongs beside
+`validate::sealing`.
 
 **R-052 — The monotone-edge condition, on the complex it is actually about. (successor to R-050)**
 ✗36 proved P-55's zero unreachable: a mesh edge is a chord of the zero set, so the predicate is saturated

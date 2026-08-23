@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**440 entries** — 36 falsified, 337 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**442 entries** — 37 falsified, 338 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -75,6 +75,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗34` | the gradient hole is real, measurable, and three orders too small to matter; the speedup is real and holds (P-47, R-043) |
 | `✗35` | two Phase 19 entries quote runs that are not in the CSVs they cite, and one of them was a verdict: the bitmap's C2 fails… |
 | `✗36` | FALSIFIED on all three clauses, and the zero was unreachable by geometry rather than by sampling: a mesh edge is a chord… |
+| `✗37` | FALSIFIED on three of four clauses, and the algebra says why: Eq. (8) confined to a cell is a contraction toward the cel… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -412,6 +413,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-347` | HELD on all three clauses, and the by-product is sharper than the claim: there are 24 cells on the unit sphere where the… |
 | `M-349` | HELD as three exact equalities on 15 of 15 rows: the bitmap's claim was always a count, and a count does not have a gove… |
 | `M-350` | HELD, and the bound turned out to be provable: a central difference across a CSG seam is wrong by at most half the creas… |
+| `M-352` | HELD, FALSIFIED, HELD: every degenerate triangle comes from an exactly-equal corner, the repair moves no geometry at all… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -8870,3 +8872,120 @@ flagged as unanalysed never arises.
 shared by exactly two triangles *and* the vertex a shared grid edge produces is bit-identical from both
 incident cells. The three deviations are the documented ones: `fbm_terrain` is open, `gyroid` carries +10
 at every resolution, `noise_cavity` +132 to +200.
+
+### 🔬 M-352 — HELD, FALSIFIED, HELD: every degenerate triangle comes from an exactly-equal corner, the repair moves no geometry at all, and it is safe on one CT volume and changes the topology of the other (P-53, R-048)
+
+**M.** `cargo bench --bench experiment_p53`, `docs/experiments/p-53.csv`, 8 rows — `fuel` 64³ and
+`bonsai` 256³ × isovalue 32 and 32.5 × binary and ternary labelling. Real `uint8` CT data, `f64`
+extraction. 8.8 s; nothing downscaled.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 ≥80% of degenerates attributable to equal corners | ≥ 0.80 | **HELD — 1.000000 on both volumes** |
+| C2 ≥10× fewer degenerates, χ / nm-edges / boundary unchanged | both halves | **HELD on `fuel`, FALSIFIED on `bonsai`** |
+| C3 byte-identical at a half-offset isovalue | identical | **HELD on both** |
+
+**C1 is not 80%, it is everything.** `degenerate_from_equal_corners` equals `degenerate_triangles`
+exactly — **164 of 164** on `fuel`, **58,097 of 58,097** on `bonsai`. Tagged, not correlated: every
+triangle carries the base sample of the cell that emitted it, recovered by replaying the march, and
+`replay_matches_crate` is true on all 8 rows — the replay's index buffer equals the crate's element for
+element. The harness exits non-zero if that comparison fails, so the attribution is licensed rather than
+assumed.
+
+**The premise was inverted and it did not matter, which is the sharpest thing here.** The registration
+says MC33 classifies an equal corner as *inside* and proposes a strict comparison. `isomesh::cube::is_inside`
+is **already strict** — `value < 0` — so an equal corner is *outside* here. The degenerates appear anyway,
+and the real mechanism is downstream of the sign: on a cut edge with an exactly-zero endpoint the
+interpolation parameter `t = a/(a−b)` is **exactly 0 or exactly 1**, so the crossing lands *on* the
+sample, every cut edge meeting there does the same, and the vertex cache is keyed on the **grid edge**
+rather than on the point — so nothing is shared. Proof that it is coincidence and not sliver area:
+`degenerate_repeated_index = 0` and `degenerate_zero_area_only = 0` on every row, while
+`degenerate_coincident_position` is 164 and 58,097. **What the crate needs from Custódio is the third
+label's *consequence* — one shared vertex at the corner — not its comparison.**
+
+**`max_snap_distance` is exactly `0`.** The vertex is already at the corner, so the repair moves no
+geometry whatsoever; it only merges indices. That makes the whole thing **purely combinatorial**, and it
+is why the topology question below is a decision rather than an approximation.
+
+**C2 splits, and the split is the finding.** Both volumes lose every degenerate triangle. Only one keeps
+its topology:
+
+| | degenerate | χ | non-manifold edges | boundary edges | pinch groups |
+|---|---:|---:|---:|---:|---:|
+| `fuel` 64³ | 164 → **0** | 19 → **19** | 0 → **0** | 24 → **24** | **0** of 50 |
+| `bonsai` 256³ | 58,097 → **0** | 517 → **585** | 0 → **561** | 4,366 → **3,716** | **516** of 17,201 |
+
+**The deciding diagnostic separates the two cases exactly, and it is a graph property, not a threshold.**
+Run a disjoint-set over the *baseline* mesh's own triangles. Two vertices snapped to the same `=` corner
+that **already share a triangle** are a fold being flattened — that triangle is one of the degenerates,
+and no edge, boundary or component can move. Two that **share no triangle** lie on different sheets of
+the surface that merely meet at that sample, and identifying them welds the sheets:
+`pinch_excess_components` counts **520** previously separate pieces joined on `bonsai`, against **0** on
+`fuel`.
+
+**So the repair is safe exactly when the equal-corner set is pinch-free, and that is a property of the
+data, not of the algorithm.** `fuel` is; `bonsai` is not, at 3.0% of its collapse groups. A crate that
+shipped this unconditionally would silently weld 520 components of a CT scan and pass every gate except
+`euler_characteristic`. **The precondition is cheap to test — one union-find over the baseline
+triangles — and that is the shippable result here, not the label.** Opened as **R-053**.
+
+**C3 is the control and it did its job.** At isovalue 32.5 an integer sample cannot equal the isosurface:
+`equal_corners = 0`, `snapped_vertices = 0`, and the two arms hash identically on both volumes —
+`1307533111487838477` on `fuel`, `14069567395604099995` on `bonsai`. At isovalue 32 the same comparison is
+false and is recorded as such, so the control distinguishes the two cases rather than passing everywhere.
+
+**Source honesty, restated because the registration already carried it:** the paper reports **no**
+degenerate-triangle count on any dataset, so the 10× bar is this crate's own, and the convex-hull
+triangulator was out of scope and was not reproduced.
+
+### 💥 ✗37 / M-353 — FALSIFIED on three of four clauses, and the algebra says why: Eq. (8) confined to a cell is a contraction toward the cell *centre*, not toward the surface (P-52, R-047)
+
+**M.** `cargo bench --bench experiment_p52`, `docs/experiments/p-52.csv`, 12 rows — `sphere`, `torus`,
+`box_exact`, `thin_plate` × `Qef` / `Centroid` / `Tangency`, 65³, `f64`. Two consecutive runs produce
+byte-identical CSVs in every column.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 sharp fields ≥1.25× better Hausdorff | ≥ 1.25× | **FALSIFIED — 64.8× and 87.2× WORSE** |
+| C2 smooth fields within ±10% | ±10% | **FALSIFIED — 13.25× and 6.32× worse** |
+| C3 counts identical to `Qef` | identical | **HELD — 0 of 12 rows differ** |
+| C4 vertex term improves, centroid term worsens | ≥3 of 4 fields | **FALSIFIED — 0 of 4** |
+
+**The mechanism is derived, not guessed, and it is one line of algebra.** Per cell,
+`t_i = p_i + λ_i(c − p_i)` with `λ_i = σ_i|s_i| / ‖c − p_i‖`. With comparable `λ` the least-squares
+minimiser of `Σ‖v − t_i‖²` is `(1 − λ)·mean(pᵢ) + λ·c` — **and the mean of the eight corners of a cube is
+the cell centre.** So the rule does not pull the vertex toward the surface; it pulls it toward the middle
+of its own cell.
+
+**Measured, in a column added for the purpose.** `offset_from_cell_centre_in_cells`, tangency against
+`Qef`: `sphere` **0.2691 vs 0.3923** (−31.4%), `torus` 0.2533 vs 0.3734 (−32.2%), `box_exact` 0.3832 vs
+0.5132 (−25.3%), `thin_plate` 0.2673 vs 0.3348 (−20.1%). Tangency is the closest rule to the cell centre
+on **4 of 4 fields** — closer even than `Centroid` on three of them.
+
+**C4 is the informative failure, and it is the opposite of the one the registration anticipated.** M-315
+predicted a *trade*: pull vertices onto the surface and the vertex term improves while the centroid term
+worsens, because the QEF buys better-centred facets at the cost of worse-placed vertices. The centroid
+half held on **4 of 4** — it worsens by 6.0× to 96.6×. The vertex half failed on **4 of 4** — it worsens
+too, by 6.3× to 121.0×. **A uniformly worse arm does not test a trade**, so M-315's tangent-plane
+explanation is untouched by this result rather than confirmed or refuted by it. The registration named
+the informative outcome as "vertex improves and centroid does *not* worsen"; what happened was neither
+arm improving, which is a third case it did not enumerate.
+
+**C3 passing is what makes the rest attributable.** Vertices `4760 / 4208 / 5768 / 2048` and triangles
+`9516 / 8416 / 11532 / 4092` are identical across all three rules on every field, with zero non-manifold
+edges and zero self-intersections on all 12 rows — identical *by construction*, since all three rules
+emit one whole-cell vertex per active cell through the same mesher, so the index buffer cannot move.
+Without that, none of the ratios above would mean anything.
+
+**This confirms the source's own ablation rather than contradicting it, which is the honest reading.**
+The scout read of `10.1145/3610548.3618196` warned before the harness was written that globality is the
+*claimed mechanism* and not an implementation detail: their `c_i` is a closest point on the whole
+evolving mesh found by an AABB tree, their solve is global and sparse with a mass matrix, and their Fig.
+17 measures clamping away far spheres as progressive detail loss. **Confined to a cell, `c_i` degenerates
+to the current vertex and the spheres degenerate to eight corners whose mean is the centre** — so the
+energy stops being about the surface at all. The paper is not wrong; the reduction is, and now there is a
+number and an identity for it instead of an intuition.
+
+**Would be shown wrong by:** a neighbourhood wider than one cell restoring the vertex term, which is the
+cheap next probe and is exactly the ablation axis Fig. 17 sweeps — but it costs the per-cell parallelism
+that makes this crate's extractors chunkable, so it is a different design, not a tuning.
