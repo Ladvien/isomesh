@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**438 entries** — 35 falsified, 336 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**440 entries** — 36 falsified, 337 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -74,6 +74,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗33` | the repair is free and total where the critical set is sparse, and catastrophic where it is dense (P-46, R-040a) |
 | `✗34` | the gradient hole is real, measurable, and three orders too small to matter; the speedup is real and holds (P-47, R-043) |
 | `✗35` | two Phase 19 entries quote runs that are not in the CSVs they cite, and one of them was a verdict: the bitmap's C2 fails… |
+| `✗36` | FALSIFIED on all three clauses, and the zero was unreachable by geometry rather than by sampling: a mesh edge is a chord… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -410,6 +411,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-346` | HELD on all three clauses, with exactly zero error where the answer is known: the crate can state a clearance, not just… |
 | `M-347` | HELD on all three clauses, and the by-product is sharper than the claim: there are 24 cells on the unit sphere where the… |
 | `M-349` | HELD as three exact equalities on 15 of 15 rows: the bitmap's claim was always a count, and a count does not have a gove… |
+| `M-350` | HELD, and the bound turned out to be provable: a central difference across a CSG seam is wrong by at most half the creas… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -8752,3 +8754,119 @@ as the vacuous pass it would be.
 **Records** `dihedral_deg`, `samples_per_axis`, `seam_cells`, `vertices`, `straddling_vertices`,
 `straddling_max_error_deg`, `predicted_bound_deg`, `worst_over_bound_ratio`, `within_bound`,
 `non_straddling_mean_error_deg`, `scaling_exponent`.
+
+### 🔬 M-350 — HELD, and the bound turned out to be provable: a central difference across a CSG seam is wrong by at most half the crease angle, and it essentially attains that (P-56, R-051)
+
+**M.** `cargo bench --bench experiment_p56`, `docs/experiments/p-56.csv`, 28 rows, `f64`, `dual_contouring`.
+Seven dihedrals from 30° to 175° × four resolutions. Two spheres composed by the crate's `Difference`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 straddling error ≤ `(180° − θ)/2` | every vertex, every fixture | **HELD — 0 breaches on the 24 rows with a straddling population** |
+| C2 straddling count scales `O(n)` | fitted exponent < 1.5 | **FALSIFIED — worst 2.0922** |
+| C3 non-straddling mean error | < 1e-6° | **HELD — worst 6.754e-10°, 1,480× inside** |
+
+**C1 is not a threshold that happened to hold; the bound is attained.** Median tightness
+`worst_error / bound` is **0.9748**, 9 of 24 rows exceed **0.99**, 16 exceed 0.90, and the registration's
+own vacuity trap — median under 0.1 — is missed by a factor of **9.7**. At 129³ the worst measured error
+tracks the prediction across the whole sweep: **2.498 against 2.5** at 175°, 7.422 against 7.5, 14.423
+against 15, 29.982 against 30, 44.823 against 45.
+
+**And the mechanism is a proof, not a fit.** With `u = n₁`, `v = −n₂` the two branch gradients and
+`w = u − v`, the central difference across the seam returns `g = u − Λw` for a **diagonal** `Λ` whose
+entries are all `≤ ½` while branch A is active. Then `|Λw| ≤ |w|/2 = sin(α/2)`, and the largest angle
+between `u` and `u − z` over `|z| ≤ R` is `asin(R)` — which is exactly `(180° − θ)/2`. Equality occurs at
+`s(p) = 0` with every `λᵢ = ½`, where `g = (u + v)/2`. That is why the ratios sit at 0.99 and not at some
+arbitrary value below 1: **the worst case is reached wherever a vertex lands on the seam**, and a dual
+vertex on a crease is what a QEF produces by construction.
+
+**P-47's lone outlier is explained exactly.** One vertex in 57,470 at **4.365°** back-solves to a seam
+near **171°**, and `(180 − 171)/2 = 4.5`. It was a near-tight straddle, not a fluke — which is what turns
+a dead accuracy clause into a mechanism.
+
+**C2 failed, and the interesting part is that my instrument was wrong rather than the claim.** The
+sentence "the count scales like seam length, not area" is *true*: `straddling_vertices / seam_cells` is at
+most **1.015 on 28 of 28 rows**, and the straddling share of all vertices halves on every doubling —
+`1.995e-2 → 9.92e-3 → 5.01e-3 → 2.52e-3` at θ=120°, ratios 2.01/1.98/1.99, an `O(n)` population on an
+`O(n²)` surface. What fails is the **fitted exponent**, because a fit over a range containing the
+saturation crossover measures where the grid sits relative to `√(2rh)/sin θ`, not the seam's
+dimensionality. The extra column `seam_offset_stencils` shows it directly: `0.74 → 0.08` at θ=120°
+(saturated at every resolution, exponent 1.0253) but `75 → 3.3` at θ=30° (never saturated, so the fit
+reads the climb). **A scale-free equality was available and I registered a curve fit instead** — the same
+family of error as ✗24, one level up: not a clock this time, but a statistic whose value depends on the
+sampling window.
+
+**One correction to my own registration.** It says the stencil step is `DIFF_STEP · |p|`. `sdf.rs` uses
+`DIFF_STEP · max(|pₓ|, |p_y|, |p_z|, 1)` — max-norm, floored at 1. No effect here (every seam point lies on
+the unit sphere, so both give `DIFF_STEP`), but the sentence misstates the crate. The conclusion drawn
+from it survives and is confirmed: `seam_offset_stencils` falls with the grid while the stencil does not,
+so `worst_over_bound_ratio` **rises** toward 1 with resolution rather than falling.
+
+**Would be shown wrong by:** a seam whose two branches are not both `1`-Lipschitz at the crossing, where
+`Λ`'s entries could exceed ½; or an extractor that never places a vertex on the crease, which is why
+`surface_nets` is excluded by construction — its centroid rule puts the vertex where no crease is, and it
+would report zero straddles at every resolution and look like a pass.
+
+### 💥 ✗36 / M-351 — FALSIFIED on all three clauses, and the zero was unreachable by geometry rather than by sampling: a mesh edge is a *chord*, so the monotone predicate ports to the wrong complex (P-55, R-050)
+
+**M.** `cargo bench --bench experiment_p55`, `docs/experiments/p-55.csv`, 32 rows — eight fields ×
+17³/33³/65³/129³ — `marching_cubes`, `f64`. Three independent runs; every gated integer, ratio and
+boolean bit-identical.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 zero non-monotone edges on `sphere`, `torus`, `box_exact` at 65³ | 0 | **917.6 / 893.7 / 42.3 per 1k** |
+| C2 `gyroid`, `fbm_terrain` non-zero and **falling** with resolution | falling | **rising ×4 per refinement** |
+| C3 `noise_cavity` highest of the eight | highest | **5th of 8; `sphere` is highest at every resolution** |
+
+**C1's zero is not attainable at any `k`, any `w`, or any tolerance, and there is a closed form.** A mesh
+edge joins two vertices that both lie on the extracted zero set, so it is a **chord**. For a strictly
+convex surface the chord's interior is strictly inside the solid, so `f` runs `0 → negative → 0` and the
+directional derivative *must* change sign. On a sphere of radius `r` with central angle `θ`:
+
+> `g(0) = (a·b − r²)/r = r(cos θ − 1) < 0` and `g(1) = r(1 − cos θ) > 0`, for **every** distinct pair of
+> surface points.
+
+The measurement agrees to the digit: `sphere` at 17³ scores **1000.000 per 1k — 804 of 804 edges** — and
+`worst_reversal` falls as `h²` (7.092e-2 / 1.997e-2 / 5.420e-3 / 1.408e-3, ratios 3.552 / 3.684 / 3.851
+converging on 4), which is the chord sagitta `rθ²/2` and nothing else.
+
+**`k` is not the cause, which kills the registration's own falsification reading.** The registered
+falsifier says a non-zero C1 "would mean the gate is measuring the sampling of the edge and `k` is the
+problem". It is not: **97.5%** of the sweep's 901,583 flags — all but 22,573 — were decided by `g(0)` and
+`g(1)` alone, before any interior sample existed, and `all_flags_from_endpoints` is true on 17 of 32 rows
+including `sphere` and `box_exact` at 65³.
+
+**The tolerance I invented is structurally inert, and scaled by the wrong quantity.** The guard scales by
+`|f(a)| + |f(b)|` — the residual at two vertices that are *on the zero set*. `max_abs_tolerance` is
+**exactly 0.0** on `box_exact` at all four resolutions and never exceeds **7.63e-13** anywhere, against a
+minimum deciding reversal of **1.408e-3**, nine orders of magnitude above. Counts are identical at 1e-14,
+1e-12 and 1e-10 on **31 of 32 rows**. Registering a tolerance is not the same as registering a *useful*
+one, and the sensitivity columns are what made that visible.
+
+**The inversion is the most interesting row.** The one field whose rate genuinely halves per refinement is
+**`box_exact`** — 178.1 / 86.1 / 42.3 / 21.0 per 1k — the resolution-witness behaviour C2 predicted for
+`gyroid` and `fbm_terrain`, on the field C1 predicted **zero** for. The mechanism is exact: box faces are
+planar, the analytic gradient there is an axis-aligned unit vector, the chord's component along it is an
+exact `f64` zero (38,520 such samples at 65³), so no guard is needed. What remains is the **corner**
+population — an edge straddling a convex box edge picks up one face normal at each end, with
+`worst_reversal_over_w` exactly **1.000000** at all four resolutions — and box edges are `O(n)` against
+`O(n²)` surface cells, hence the halving.
+
+**Where the non-vacuous port lives, named rather than measured.** Finken et al.'s PL function lives on the
+**ambient complex**, and monotonicity is a condition on *that* complex's edges — whose endpoints are not
+on the zero set and for which `|f(a)| + |f(b)|` is a real scale. Porting it to the extracted surface mesh
+is what makes both the predicate and its tolerance vacuous. **Opened as R-052**; this harness measured
+what was registered, and naming the alternative is a finding, not a substitution.
+
+**One more correction to my own registration.** It says the substitute for the paper's autodiff is "the
+crate's central difference". It is not — all eight reference fields reach an **analytic** `Sdf::gradient`,
+and `fields/mod.rs` says so in its opening lines: *"The central-difference default is never used by a
+reference field."* All 3,437,646 gradient evaluations here are exact, so the noise story the registration
+flagged as unanalysed never arises.
+
+**A free manifoldness confirmation fell out.** Exact-bit edge deduplication gives
+`edge_instances == 2 × edges` **exactly** on all 20 rows of the five closed fields, so every mesh edge is
+shared by exactly two triangles *and* the vertex a shared grid edge produces is bit-identical from both
+incident cells. The three deviations are the documented ones: `fbm_terrain` is open, `gyroid` carries +10
+at every resolution, `noise_cavity` +132 to +200.

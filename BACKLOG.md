@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**225 tickets archived, 22 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**227 tickets archived, 21 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -69,12 +69,11 @@ it is a later ticket.
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+| ☐ | **R-052** | M | |
 | ☐ | **R-046** | M | |
 | ☐ | **R-047** | M | |
 | ☐ | **R-048** | M | |
 | ☐ | **R-049** | L | |
-| ☐ | **R-050** | M | |
-| ☐ | **R-051** | M | |
 
 **R-046 — Does either half of the tangent-sphere constraint survive this crate's extractors? (P-51)**
 Sellán, Batty & Stein state both halves: the surface excludes every positive sphere and is *tangent to
@@ -107,6 +106,16 @@ timed.
 Finken et al.'s Theorem 1 is **proved in 2D** and its pigeonhole step has no hexahedral analogue, so this
 is a labelled 3D port, not a transported proof. The tolerance is this crate's invention, fixed in the
 registration and reported at two neighbouring values so its sensitivity is visible.
+
+**R-052 — The monotone-edge condition, on the complex it is actually about. (successor to R-050)**
+✗36 proved P-55's zero unreachable: a mesh edge is a chord of the zero set, so the predicate is saturated
+by geometry before it measures anything. Finken et al.'s PL function lives on the **ambient** complex.
+Port it there — a fixed simplicial subdivision of the grid, monotonicity over tet edges including
+diagonals, with the tolerance scaled by a quantity that is not identically zero at the endpoints. The
+falsifier `box_exact` already handed over: its corner population is `O(n)` and halves per refinement,
+which is what a resolution witness should look like. Gate on the contrapositive of Theorem 1 part 2b —
+all-edges-monotone implies zero or ≥2 interior critical points — as an integer, where one failing cell
+suffices.
 
 **R-051 — The one vertex in 57,470, and whether it is a seam. (P-56)**
 P-47's dead accuracy clause, re-asked as a bound: `(180° − θ)/2` where the six-sample stencil straddles a

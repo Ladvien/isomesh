@@ -422,3 +422,33 @@ test = false
 name = "experiment_p50"
 harness = false
 test = false
+
+[[bench]]
+name = "experiment_p52"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p54"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p55"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p56"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p51"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p53"
+harness = false
+test = false
