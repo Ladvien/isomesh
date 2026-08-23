@@ -1057,6 +1057,250 @@ pub const PREREGISTERED: &[Preregistration] = &[
                        rather than solved.",
         records: &["quantity", "value", "unit", "bound", "held"],
     },
+    Preregistration {
+        id: "P-38",
+        ticket: "R-037",
+        hypothesis: "A-024's odd-row-stride remedy reached DualMesher and \
+                     never reached Marching Cubes, and the defect is still \
+                     there: MarchingCubes indexes its private `values` buffer \
+                     through `shape.linearize`, so at 128 samples per axis the \
+                     row stride is 512 bytes and the plane stride exactly \
+                     65,536, and its `edge_vertices` cache -- 3 u32 per sample, \
+                     the buffer with the scattered access -- has a plane \
+                     stride of three times that. Clause one: measured on a \
+                     sphere, Marching Cubes at 128 costs more than 1.5x the \
+                     mean of its 127 and 129 neighbours per sample, where the \
+                     dual path (already fixed) does not. Clause two: giving \
+                     both private buffers the same `size[0] | 1` stride takes \
+                     that ratio under 1.1 and is worth at least 1.25x at 128 \
+                     alone. Clause three: every one of the 216 golden hashes \
+                     is bit-identical afterwards, structurally -- the change \
+                     permutes where floats are stored, not which floats are \
+                     computed, nor the order cells are visited, nor the order \
+                     vertices are created.",
+        falsified_by: "The 128 ratio coming in under 1.5x before the change, \
+                       which would mean Marching Cubes' access pattern does \
+                       not alias and A-024's remedy is specific to the dual \
+                       path -- a narrower result than the repo currently \
+                       believes, and the more interesting one. A moved golden \
+                       hash falsifies clause three outright and makes this a \
+                       behaviour change rather than a layout change.",
+        records: &[
+            "extractor",
+            "samples_per_axis",
+            "ns_per_sample_before",
+            "ns_per_sample_after",
+            "neighbour_ratio_before",
+            "neighbour_ratio_after",
+            "golden_unchanged",
+        ],
+    },
+    Preregistration {
+        id: "P-39",
+        ticket: "R-038",
+        hypothesis: "A brush that provably cannot win the min/max chain inside \
+                     a chunk can be deleted from the tape before the chunk is \
+                     meshed, and deleted BIT-EXACTLY. The bound is one sample \
+                     per brush per chunk: a shape with declared Lipschitz \
+                     constant l varies by at most l*r over a box of \
+                     circumradius r, so f(centre) +/- l*r encloses it. The \
+                     exactness is a selection argument, not an approximation \
+                     one -- `apply(Add)` is IEEE min and `apply(Subtract)` is \
+                     IEEE max, both of which SELECT an operand rather than \
+                     computing a new value, and negation is exact, so dropping \
+                     a provably-losing Add or Subtract moves the result by \
+                     zero ULP. The asymmetry is registered rather than \
+                     discovered: smooth_min is exactly dominant at h == 0 and \
+                     is NOT bit-exactly prunable in the losing direction, \
+                     because at h == 1 it returns b + (a - b), which is not \
+                     bit-identical to a. Clause one: on a 64-brush stack of \
+                     Add and Subtract spheres and capsules scattered over a \
+                     4x4x4 chunk world, the median surviving-brush fraction \
+                     per chunk is under 0.5. Clause two: meshing a chunk \
+                     against the pruned tape is at least 1.25x meshing it \
+                     against the full one. Clause three: every chunk's mesh is \
+                     byte-identical between the two.",
+        falsified_by: "A survivor fraction at or near 1.0, meaning there is \
+                       nothing to prune on a scattered stack and the mechanism \
+                       has no purchase on this workload whatever the paper \
+                       reports. Or -- the result that would matter far more -- \
+                       any byte difference between pruned and full output on \
+                       an Add/Subtract-only stack, which would refute the IEEE \
+                       selection lemma the whole mechanism rests on.",
+        records: &[
+            "brushes",
+            "chunks",
+            "survivor_fraction_median",
+            "survivor_fraction_max",
+            "ns_per_sample_full",
+            "ns_per_sample_pruned",
+            "speedup",
+            "mesh_identical",
+        ],
+    },
+    Preregistration {
+        id: "P-40",
+        ticket: "R-039",
+        hypothesis: "The active-cell test is one bit per sample, so 64 cells \
+                     decide at once. Packing `value < 0` into a u64 bitmap \
+                     along x and fusing the four rows that bound a cell row -- \
+                     any = OR of (w | w>>1), all = AND of (w & w>>1), active = \
+                     any & !all -- replaces DualMesher::place_vertices' \
+                     eight-corner gather on the ~97% of cells that produce \
+                     nothing. Clause one: on a surface-free 128-cubed field, \
+                     where the active path never runs, the traversal stage is \
+                     at least 2x faster. Clause two: on sphere at 128-cubed the \
+                     WHOLE extractor is at least 1.25x faster. Clause three: \
+                     the mesh is byte-identical, because the bit is the same \
+                     comparison and the set-bit walk visits cells in the same \
+                     lexicographic order, so vertex creation order is \
+                     unchanged. The sign bit is deliberately NOT used as the \
+                     inside bit: -0.0 has it set while -0.0 < 0.0 is false, and \
+                     box_exact is exactly zero across its whole boundary, so \
+                     signed zeros are reachable in this crate's own fixtures.",
+        falsified_by: "The stage ratio under 2x on the surface-free field, \
+                       which would mean the scalar gather was not the cost. Or \
+                       the whole-extractor ratio under 1.25x on sphere at 128, \
+                       which puts the mechanism under the Amdahl floor that \
+                       M-296's field-evaluation dominance sets and makes the \
+                       bitmap not worth its own bookkeeping. Any mesh \
+                       difference falsifies the ordering argument outright.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "active_fraction",
+            "stage_ns_scalar",
+            "stage_ns_bitmap",
+            "stage_ratio",
+            "extract_ns_scalar",
+            "extract_ns_bitmap",
+            "extract_ratio",
+            "mesh_identical",
+        ],
+    },
+    Preregistration {
+        id: "P-41",
+        ticket: "R-040",
+        hypothesis: "The sign lattices this crate meshes are not \
+                     well-composed, and that is where its dual extractors go \
+                     non-manifold. A digital set is well-composed exactly when \
+                     its boundary is a 2-manifold, which Latecki characterises \
+                     by the absence of two critical configurations: a diagonal \
+                     pair sharing only an edge (2D-critical) and a diagonal \
+                     pair sharing only a vertex (3D-critical). Clause one: \
+                     over the eight reference fields at 65 samples per axis, \
+                     the count of cells whose 2x2x2 sign neighbourhood hosts a \
+                     critical configuration is non-zero on at least \
+                     noise_cavity. Clause two: at least 90% of the \
+                     non-manifold edge and vertex incidents that \
+                     validate::MeshReport already reports for DualContouring \
+                     and SurfaceNets occur in cells the census flagged \
+                     critical. This registers the DETECTOR only. The repair is \
+                     deliberately not registered: it moves the surface by up \
+                     to a cell and breaks every golden hash, so it is only \
+                     worth designing if clause two holds.",
+        falsified_by: "A critical-configuration count of zero on all eight \
+                       fields, meaning the lattice is already well-composed \
+                       and the non-manifold output comes from somewhere else \
+                       entirely -- the QEF vertex escaping its cell being the \
+                       obvious other suspect. Or co-location below 90%, \
+                       meaning the sign lattice is not the cause and a repair \
+                       would be treating the wrong object.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "cells",
+            "critical_2d_cells",
+            "critical_3d_cells",
+            "extractor",
+            "non_manifold_edges",
+            "non_manifold_vertices",
+            "incidents_in_critical_cells",
+            "colocation_fraction",
+        ],
+    },
+    Preregistration {
+        id: "P-42",
+        ticket: "R-041",
+        hypothesis: "Curvature computed as a normal-cycle MEASURE is additive \
+                     over chunks and carries an error bound the crate can \
+                     compute from its own output, which is a class of claim it \
+                     has never made -- validate::accuracy measures distance and \
+                     validate::isotopy certifies topology, and neither states a \
+                     bound it derived rather than sampled. On a triangle mesh \
+                     the Gaussian measure is the vertex angle defect and the \
+                     mean measure is edge length times signed dihedral angle; \
+                     Cohen-Steiner and Morvan's Theorem 6 bounds the deviation \
+                     from the smooth surface by C*K*eps with K a sum of \
+                     triangle circumradii and eps their maximum. Clause one: on \
+                     sphere at 33, 65 and 129 samples per axis, the residual \
+                     |sum of angle defects - 4*pi| falls inside the computed \
+                     bound at all three. Clause two: that residual falls at \
+                     least linearly as h halves. Clause three: on torus the \
+                     defect sum is zero to within the same bound, which an \
+                     accumulator that lost the sign would fail loudly. \
+                     Recorded beside them, not registered: the mean-curvature \
+                     total, and the chi recovered from the defect sum against \
+                     the chi MeshReport computes independently.",
+        falsified_by: "The residual exceeding its own computed bound at any of \
+                       the three resolutions, or failing to fall as h halves. \
+                       Either means Theorem 6's closely-inscribed hypothesis \
+                       does not hold for a marching-cubes mesh -- whose \
+                       vertices lie on the trilinear interpolant's zero set \
+                       rather than on the field's -- and that is a better \
+                       result than the bound holding, because it says the \
+                       bound must be stated against the interpolant, which is \
+                       the move isotopy.rs already makes.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "gaussian_total",
+            "gaussian_expected",
+            "residual",
+            "bound",
+            "within_bound",
+            "mean_curvature_total",
+            "chi_from_defect",
+            "chi_from_report",
+        ],
+    },
+    Preregistration {
+        id: "P-43",
+        ticket: "R-042",
+        hypothesis: "One field evaluation at the cell centre, compared against \
+                     the trilinear interpolant of the eight corners and \
+                     normalised by cell size, is a usable witness that a chunk \
+                     is under-sampled -- a statement the crate cannot make \
+                     today, since validate::field_bound samples the gradient \
+                     and is explicit that a sampled maximum is only a lower \
+                     bound on a supremum. The witness is one-sided in the safe \
+                     direction: it can prove a chunk inadequate and can never \
+                     prove it adequate. Clause one: across noise_cavity and \
+                     gyroid at 17, 33, 65 and 129 samples per axis, the \
+                     per-grid maximum normalised centre residual correlates \
+                     with the symmetric Hausdorff distance validate::accuracy \
+                     already reports, at Pearson r of at least 0.7. Clause \
+                     two: the extra evaluations are under 15% of the corner \
+                     evaluations, which is the structural 1/8 plus slack.",
+        falsified_by: "Pearson r below 0.7, meaning the centre residual does \
+                       not witness the error it is supposed to predict. The \
+                       failure mode is named in advance rather than \
+                       rationalised afterwards: a feature that passes cleanly \
+                       through the cell centre without perturbing it gives a \
+                       residual near zero while the reconstruction is badly \
+                       wrong, and thin_plate is constructed to be exactly \
+                       that, so it is measured beside the two registered \
+                       fields as the adversary.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "centre_residual_max",
+            "centre_residual_mean",
+            "symmetric_hausdorff",
+            "pearson_r",
+            "extra_eval_fraction",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

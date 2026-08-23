@@ -7375,3 +7375,194 @@ faces) remains the stitching layer's problem, deliberately.
 **Would be shown wrong by:** the recount oracle diverging on any op sequence (it has its own red
 demonstration); or a real-geometry fixture where the accumulator's O(dirty·6) maintenance shows up
 against M-321's baselines — the recorded medians say it does not.
+
+---
+
+## Phase 19 — six registrations from the 2026-08-23 dossier, all before their harnesses
+
+Source: `docs/research/2026-08-23-discovery-dossier.md` — eight parallel corpus sweeps over lenses the
+two previous rounds never used. All six are registered here in the commit *before* the commit that
+measures any of them, per Phase 15's protocol. Tier at registration is **F**; each becomes **M** or **✗**
+with its result.
+
+**One instrument finding is worth banking before any of them run**, because it changes how the next
+sweep should be run: `abstract_search` returned **zero** relevant hits on every graphics or geometry
+query across all eight agents, while `distill_search` returned rank-1 hits on the same subjects. The
+graphics corpus carries no abstract text, so the abstract index degrades to title-or-nothing and the
+known 37.3% null-title rate becomes effectively total for this region. `openalex_search` was down for
+the entire session — 30-second SSE timeouts on roughly 25 calls — so the third-channel novelty check was
+done with `paper_get`, `paper_search` and `paper_citations` instead, and each candidate records which.
+And `paper_download` is **not** a presence oracle: it reported *"No open-access PDF found"* for Museth's
+VDB, which `catalog_read` then showed is present, converted and embedded with 45 chunks.
+
+### P-38 — registered for R-037: A-024's remedy reached one of the two engines
+
+**The contradiction, found by reading both engines side by side.** `dual.rs` carries
+`row_stride(size) = size[0] | 1` and the doc comment recording what it bought — *"Surface Nets measured
+3.37× the cost of 127³ or 129³ there … 256³ pays 1.39×"* (A-024, M-287). `MarchingCubes` has no such
+thing: it indexes its private `values` buffer through `shape.linearize` (`marching_cubes/mod.rs:687`),
+so at 128 samples per axis the row stride is 512 bytes and the plane stride exactly 65,536 — both
+aliasing periods, unmitigated. Its `edge_vertices` cache is worse: `3 · sample_count` `u32`, a plane
+stride of `3 × 65,536`, and it is the buffer with the scattered access pattern.
+
+> **H.** **(C1)** On `sphere`, Marching Cubes at 128³ costs **more than 1.5×** the mean of its 127³ and
+> 129³ neighbours per sample. **(C2)** Giving both private buffers the `size[0] | 1` stride takes that
+> ratio **under 1.1** and is worth at least **1.25×** at 128³. **(C3)** All 216 golden hashes are
+> bit-identical afterwards — structurally, since the change permutes where floats are stored and not
+> which floats are computed, nor the order cells are visited, nor the order vertices are created.
+> **Falsified by** the 128³ ratio coming in under 1.5× *before* the change, which would mean Marching
+> Cubes' access pattern does not alias and A-024's remedy is specific to the dual path. A moved golden
+> hash falsifies C3 outright and makes this a behaviour change rather than a layout change.
+
+**It runs first for a reason.** P-40 measures a traversal-stage ratio at 128³. If Marching Cubes is
+sitting in a 3× aliasing hole at exactly that size, a 128³ comparison measures the hole — the ✗14 lesson
+in new clothes: a null measured under a dominant confound is a statement about the confound.
+
+**Records** `extractor`, `samples_per_axis`, `ns_per_sample_before`, `ns_per_sample_after`,
+`neighbour_ratio_before`, `neighbour_ratio_after`, `golden_unchanged`.
+
+### P-39 — registered for R-038: a brush that cannot win can be deleted, bit-exactly
+
+**The workload.** `BrushStack::sample` is a linear fold over every brush, and `MarchingCubes::extract`
+prefills the whole sample grid before any cell work, so a 33³ chunk evaluates the entire edit history
+35,937 times. In a destructible world the tape only grows, and nothing in the crate attacks it.
+
+**The mechanism.** Bound each brush's shape over the chunk AABB — with declared Lipschitz constant `l`
+the bound over a box of circumradius `r` about `c` is `f(c) ± l·r`, so it is **one sample per brush per
+chunk** — and delete every brush that provably cannot affect the result inside. Keeter measures the
+reduction at *"two orders of magnitude"*; Barbier et al. generalise it to the Lipschitz property and
+name this use case as future work: *"could also lead to significant improvement for SDF discretization
+or polygonization."* **This is not the tabled Sharp & Jacobson row** — that rejects cells with no
+surface; this shortens the expression the surviving cells evaluate.
+
+**The lemma is ours, derived from this repo's source.** No paper in that literature discusses IEEE
+bit-identity of pruning, because none of them has a 216-hash gate — they prune to preserve a rendered
+image, which tolerates ULP drift. `apply(Add) = min` and `apply(Subtract) = max` **select** an operand
+rather than computing a new value, and negation is exact, so dropping a provably-losing hard brush moves
+the result by **zero ULP**. `smooth_min` is exactly dominant at `h == 0` and **not** bit-exactly prunable
+in the losing direction: at `h == 1` it returns `b + (a − b)`, which is not bit-identical to `a`.
+
+> **H.** On a 64-brush stack of `Add`/`Subtract` spheres and capsules scattered over a 4×4×4 chunk
+> world: **(C1)** the median surviving-brush fraction per chunk is **under 0.5**; **(C2)** meshing
+> against the pruned tape is at least **1.25×** meshing against the full one; **(C3)** every chunk's mesh
+> is **byte-identical** between the two. **Falsified by** a survivor fraction at or near 1.0 — nothing to
+> prune, whatever the papers report — or, far more interestingly, any byte difference on a hard-op-only
+> stack, which would refute the selection lemma the mechanism rests on.
+
+**Sources.** Barbier et al., *Lipschitz Pruning*, `10.1111/cgf.70057` — **not in corpus**, DOI verified.
+Keeter, `10.1145/3386569.3392429` — **not in corpus**, double-checked by `catalog_read` and
+`distill_exists`. Tilove, *A null-object detection algorithm for CSG*, CACM 1984,
+`10.1145/358105.358195` — **in corpus and indexed**, and it is the same argument as set theory forty
+years early. It ranked third on its query with `title: null`, which is the 37.3% hazard firing live.
+
+**Records** `brushes`, `chunks`, `survivor_fraction_median`, `survivor_fraction_max`,
+`ns_per_sample_full`, `ns_per_sample_pruned`, `speedup`, `mesh_identical`.
+
+### P-40 — registered for R-039: the active-cell test is one bit, so 64 cells decide at once
+
+`DualMesher::place_vertices` gathers eight corners and counts insides for **every** cell and skips ~97%
+of them. Pack `value < 0` into a `u64` along `x` and fuse the four rows bounding a cell row:
+`any = OR(w | w>>1)`, `all = AND(w & w>>1)`, `active = any & !all` — about twenty word operations for
+sixty-four cells. Walk the set bits with `while w != 0 { let b = w.trailing_zeros(); w &= w - 1; }`,
+which is safe stable `core`, `no_std`, and lowers to `tzcnt`/`popcnt` and `rbit`+`clz` with no
+target-feature gate and no `unsafe`. Mechanism source: Museth, *VDB*, `10.1145/2487228.2487235` — **in
+corpus**, whose whole topology layer is per-node bitmasks under word-level boolean ops.
+
+> **H.** **(C1)** On a surface-free 128³ field, where the active path never runs, the traversal stage is
+> at least **2×** faster. **(C2)** On `sphere` at 128³ the **whole extractor** is at least **1.25×**
+> faster. **(C3)** The mesh is byte-identical: the bit is the same comparison and the set-bit walk visits
+> cells in the same lexicographic order, so vertex creation order is unchanged. **Falsified by** the
+> stage ratio under 2× — the scalar gather was not the cost — or the whole-extractor ratio under 1.25×,
+> which puts the mechanism under the Amdahl floor M-296's field-evaluation dominance sets.
+
+**One trap, registered rather than discovered.** The IEEE sign bit is **not** the inside bit: `-0.0` has
+it set while `-0.0 < 0.0` is false, and `box_exact` is exactly zero across its whole boundary, so signed
+zeros are reachable in this crate's own fixtures. The comparison stays.
+
+**Records** `field`, `samples_per_axis`, `active_fraction`, `stage_ns_scalar`, `stage_ns_bitmap`,
+`stage_ratio`, `extract_ns_scalar`, `extract_ns_bitmap`, `extract_ratio`, `mesh_identical`.
+
+### P-41 — registered for R-040: is the sign lattice well-composed, and is that where the duals fail?
+
+A digital set is **well-composed** exactly when its boundary is a 2-manifold, which Latecki
+characterises by the absence of two critical configurations — a diagonal pair sharing only an edge, and
+a diagonal pair sharing only a vertex. In a well-composed set 6-, 18- and 26-connectivity coincide, so
+*"is this cave sealed"* stops depending on which connectivity was picked. The move would be to repair the
+**sign pattern** upstream, before the case table is indexed, rather than to repair the mesh.
+
+> **H.** **(C1)** Over the eight reference fields at 65³, the count of cells whose 2×2×2 sign
+> neighbourhood hosts a critical configuration is **non-zero on at least `noise_cavity`**. **(C2)** At
+> least **90%** of the non-manifold edge and vertex incidents `MeshReport` already reports for
+> `DualContouring` and `SurfaceNets` occur in cells the census flagged. **Falsified by** a zero census on
+> all eight fields — the lattice is already well-composed and the non-manifold output comes from
+> somewhere else, the QEF vertex escaping its cell being the obvious other suspect — or co-location
+> below 90%, meaning a repair would be treating the wrong object.
+
+**This registers the detector only, and that is deliberate.** The repair moves the surface by up to a
+cell and breaks every golden hash, so it is worth designing only if C2 holds. **Overlap, named:** this is
+not the banked union-find safety gate, which gates a vertex *reposition* after extraction on the mesh.
+
+**Sources.** Latecki, Eckhardt & Rosenfeld, `10.1006/cviu.1995.1006`; Latecki, `10.1006/gmip.1997.0422`;
+Boutry, Géraud & Najman, `10.1007/s10851-017-0769-6` — all DOI-verified, **none in corpus**. Two
+near-miss DOIs caught during verification and recorded so nobody re-derives them:
+`10.1006/cviu.1995.1013` is Brechbühler's SPHARM paper, and `10.1016/j.dam.2015.01.006` is about Turán
+numbers.
+
+**Records** `field`, `samples_per_axis`, `cells`, `critical_2d_cells`, `critical_3d_cells`, `extractor`,
+`non_manifold_edges`, `non_manifold_vertices`, `incidents_in_critical_cells`, `colocation_fraction`.
+
+### P-42 — registered for R-041: curvature as a measure, with a bound the crate computes itself
+
+`MeshReport` carries `mean_ratio` and `euler_characteristic` and nothing that measures curvature or
+bounds its own error. Angle defect is textbook and is **not** the claim. Two things are: normal-cycle
+measures are **additive** — `N(A ∪ B) = N(A) + N(B) − N(A ∩ B)`, so a chunk's measure is the sum over its
+cells with the shared boundary subtracted once, and per-chunk numbers compose into per-world numbers with
+no global pass — and Cohen-Steiner & Morvan's Theorem 6 gives an **error bar** `C·K·ε` with
+`K = Σ cr(t)² + Σ_{t∩∂B≠∅} cr(t)` and `ε = max cr(t)`, every quantity computable from the mesh alone.
+`validate::accuracy` measures distance and `validate::isotopy` certifies topology; neither states a bound
+it derived rather than sampled.
+
+> **H.** **(C1)** On `sphere` at 33³/65³/129³, the residual `|Σ α_v − 4π|` falls **inside** the computed
+> bound at all three. **(C2)** That residual falls **at least linearly** as `h` halves. **(C3)** On
+> `torus` the defect sum is zero to within the same bound — which an accumulator that lost the sign
+> would fail loudly. Recorded beside them, not registered: the mean-curvature total, and the `χ`
+> recovered from the defect sum against the `χ` `MeshReport` computes independently. **Falsified by** the
+> residual exceeding its own bound at any resolution, or failing to fall as `h` halves.
+
+**The falsifier is aimed at the interesting failure.** Theorem 6 needs the polyhedron closely inscribed
+with the projection a bijection, and marching-cubes vertices lie on the *trilinear interpolant's* zero
+set, not the field's. If the residual escapes its bound, that hypothesis has failed — and the remedy is
+to state the bound against the interpolant, which is the move `isotopy.rs` already makes.
+
+**Sources.** Cohen-Steiner & Morvan, SoCG 2003, `10.1145/777792.777839` — DOI-verified, **not in
+corpus**; Sun & Morvan, `10.5802/acirm.50` — **in corpus**, and it carries the formulas, the additivity
+law and Theorem 6's constants, so rule 5 is satisfiable without the primary.
+
+**Records** `field`, `samples_per_axis`, `gaussian_total`, `gaussian_expected`, `residual`, `bound`,
+`within_bound`, `mean_curvature_total`, `chi_from_defect`, `chi_from_report`.
+
+### P-43 — registered for R-042: one evaluation at the cell centre as an under-sampling witness
+
+The crate cannot tell a caller that a chunk's resolution is inadequate for the field it carries, so an
+edit that carves a feature thinner than a voxel produces wrong geometry with no diagnostic.
+`validate::field_bound` samples the gradient and is explicit that a sampled maximum is only a lower bound
+on a supremum: it can disprove a declared bound and cannot certify sampling adequacy. Evaluate the field
+once at each cell centre, compare against the trilinear interpolant of the eight corners, normalise by
+cell size. The witness is one-sided in the safe direction — it can prove a chunk inadequate and can never
+prove it adequate, which is `field_bound.rs`'s own discipline pointed the other way.
+
+> **H.** **(C1)** Across `noise_cavity` and `gyroid` at 17³/33³/65³/129³, the per-grid maximum normalised
+> centre residual correlates with the symmetric Hausdorff `validate::accuracy` already reports at
+> **Pearson r ≥ 0.7**. **(C2)** The extra evaluations are **under 15%** of the corner evaluations — the
+> structural ⅛ plus slack. **Falsified by** `r` below 0.7. The failure mode is named in advance rather
+> than rationalised afterwards: a feature passing cleanly through the cell centre without perturbing it
+> gives a residual near zero while the reconstruction is badly wrong, and `thin_plate` is constructed to
+> be exactly that, so it is measured beside the two registered fields as the adversary.
+
+**Sources.** Petersen & Middleton, `10.1016/s0019-9958(62)90633-2`, DOI-verified, for the
+sampling-theoretic root; Chazal, Cohen-Steiner & Lieutier, `10.1007/s00454-009-9144-8` — **in corpus and
+indexed** — for the version that tolerates non-smooth shapes, which is what `csg_difference` and
+`box_exact` need.
+
+**Records** `field`, `samples_per_axis`, `centre_residual_max`, `centre_residual_mean`,
+`symmetric_hausdorff`, `pearson_r`, `extra_eval_fraction`.

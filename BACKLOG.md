@@ -1,12 +1,12 @@
 # isomesh — BACKLOG
 
-**Updated:** 2026-08-16
+**Updated:** 2026-08-23
 **Companions:** `CLAUDE.md` (rules), `FINDINGS.md` (what we know and how well),
 `BACKLOG_ARCHIVE.md` (completed tickets + why they changed),
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**212 tickets archived, 14 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**212 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -45,6 +45,46 @@ attached — read that before re-litigating a decision this project already made
   is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
+
+---
+
+## Phase 19 — six lenses nobody had pointed at a mesher
+
+**Added 2026-08-23, above Phase 18 for the reason every phase goes on top: rule 1 reads top-down and this
+is the current work front.** Phase 18 is closed. Nothing here supersedes Phase 17's open rows.
+
+**Source: `docs/research/2026-08-23-discovery-dossier.md`** — eight parallel corpus sweeps aimed at
+lenses the 2026-08-18 novelty table never used: non-cubic sampling lattices, certified root isolation,
+bit-level and data-layout kernels, machine-checked combinatorial verification, discrete differential
+geometry and digital topology, staged computation, kinetic geometry, and player-visible by-products.
+**The whole dossier is tier R** except where it cites an M row, in which case the M row wins. Its
+foreclosed list is as load-bearing as its candidates — eleven attractive directions are killed there with
+the specific reason, and re-proposing one costs a sprint.
+
+**Phase 15's protocol applies in full**, and all six `P-` entries are already registered — P-38 … P-43 in
+`crates/isomesh/src/experiment.rs`, in the commit before any of them is measured. Committed harness behind
+one documented command, named records to `docs/experiments/p-NN.csv`, explicit falsifier, FINDINGS
+obligation in the same commit as the result.
+
+**Ordering within this phase — this table governs rule 1.**
+
+| Order | Ticket | Why here |
+|---|---|---|
+| 1 | **R-037** | It contaminates the other two speed measurements. A 128³ comparison run while Marching Cubes sits in an unfixed aliasing hole measures the hole (✗14's lesson) |
+| 2 | **R-038** | The largest prize on the list and the only one whose payoff grows with how long the player has been playing. Bit-exact by a selection argument, not an approximation one |
+| 3 | **R-039** | Same engine as R-037's fix, disjoint code; the bitmap is the substrate a later packed cell table would also need |
+| 4 | **R-040** | Detector only, and the census either indicts the sign lattice or exonerates it in one run |
+| 5 | **R-041** | The first error bar this crate would state on a differential quantity, and the only candidate whose falsifier is aimed at the instrument rather than the mechanism |
+| 6 | **R-042** | Cheapest of the six: one extra evaluation per cell, correlated against a number `validate::accuracy` already produces |
+
+| | ID | Ticket | Size | Blocked by |
+|---|---|---|---|---|
+| ☐ | **R-037** | **Marching Cubes never received A-024's odd-stride fix.** `dual.rs` has `row_stride(size) = size[0] \| 1` and the comment recording the 3.37× it bought at 128³; `MarchingCubes` indexes `values` through `shape.linearize` (`marching_cubes/mod.rs:687`), so its row stride is 512 B and its plane stride exactly 65,536 at 128 samples per axis, and `edge_vertices` — `3 · sample_count` u32, the buffer with the scattered access — has a plane stride of three times that. **H:** P-38. Measure the 127/128/129 triple first, then apply the same `\| 1` to both private buffers. **Falsified by:** the before-ratio under 1.5×, which would make A-024's remedy specific to the dual path. **FINDINGS:** `M-`, and a `✗` against "A-024 fixed the aliasing" if the fix lands. Golden hashes must not move. | S | — |
+| ☐ | **R-038** | **Lipschitz tape pruning of the brush stack.** Bound each brush's shape over the chunk AABB (`f(c) ± l·r`, one sample per brush per chunk) and delete the brushes that provably cannot win the min/max chain there. Barbier et al. `10.1111/cgf.70057` name polygonization as future work; Keeter `10.1145/3386569.3392429` measures the reduction at two orders of magnitude; Tilove `10.1145/358105.358195` (in corpus) is the 1984 set-theoretic statement. **Not** the tabled Sharp & Jacobson row, which rejects empty cells rather than shortening the expression. **H:** P-39, including the bit-exactness lemma — hard `min`/`max` select an operand so pruning is zero-ULP, while `smooth_min` at `h == 1` returns `b + (a − b)` and is prunable only in the dominant direction. **Falsified by:** survivor fraction ≈ 1.0, or any byte difference on a hard-op-only stack. **FINDINGS:** `M-`. Per-vertex edit provenance rides this ticket or nothing. | M | — |
+| ☐ | **R-039** | **Word-parallel active-cell bitmap.** One bit per sample, 64 cells decided at once by `any = OR(w \| w>>1)`, `all = AND(w & w>>1)`, `active = any & !all` over the four bounding rows, replacing `DualMesher::place_vertices`' eight-corner gather on the ~97% of cells that emit nothing. Safe stable `core` only — `trailing_zeros`, `count_ones`, shifts; PEXT/PDEP is out (unsafe, x86-only, target-feature-gated) and the set-bit walk is the substitute. Source: Museth's VDB `10.1145/2487228.2487235`, in corpus. **H:** P-40, with the sign-bit trap registered: `-0.0` has the bit set and `-0.0 < 0.0` is false, and `box_exact` is exactly zero across its boundary. **Falsified by:** stage ratio under 2× on a surface-free field, or whole-extractor under 1.25× on `sphere` at 128³. **FINDINGS:** `M-`. | M | R-037 |
+| ☐ | **R-040** | **Is the sign lattice well-composed, and is that where the duals go non-manifold?** Census the two Latecki critical configurations over the eight reference fields, then cross-tabulate against the non-manifold incidents `MeshReport` already reports for `DualContouring` and `SurfaceNets`. **This ticket is the detector; the repair is deliberately unwritten** — repairing the sign pattern moves the surface by up to a cell and breaks every golden hash, so it is worth designing only if the co-location holds. **H:** P-41. **Falsified by:** a zero census on all eight fields, or co-location below 90%. Sources `10.1006/cviu.1995.1006`, `10.1006/gmip.1997.0422`, `10.1007/s10851-017-0769-6` — none in corpus, all DOI-verified; `paper_download` them before writing any repair. **FINDINGS:** `M-`, or a `✗` against "the sign lattice is where the duals fail". | M | — |
+| ☐ | **R-041** | **Curvature as a normal-cycle measure, with the bound it computes for itself.** Gaussian as vertex angle defect, mean as edge length times signed dihedral, accumulated in face-index order. The claim is not the estimator — angle defect is textbook — it is *additivity* (`N(A ∪ B) = N(A) + N(B) − N(A ∩ B)`, so per-chunk composes to per-world with no global pass) and *a stated error bar* (`C·K·ε` from triangle circumradii, Cohen-Steiner & Morvan Theorem 6). Formulas transcribable from the in-corpus Sun & Morvan `10.5802/acirm.50`; the primary `10.1145/777792.777839` is not in corpus. **H:** P-42. **Falsified by:** the residual escaping its own bound, which would say the closely-inscribed hypothesis fails for a marching-cubes mesh — the more interesting outcome. Boundary vertices need the geodesic term or every open field reads as broken. **FINDINGS:** `M-`. | M | — |
+| ☐ | **R-042** | **A per-cell witness that the chunk is under-sampled.** One field evaluation at each cell centre against the trilinear interpolant of the eight corners, normalised by cell size — one-sided in the safe direction, so it can prove a chunk inadequate and never prove it adequate, which is `validate/field_bound.rs`'s discipline pointed the other way. **H:** P-43, correlated against the symmetric Hausdorff `validate::accuracy` already reports. **Falsified by:** Pearson r below 0.7; the expected mechanism of failure is a feature passing through the cell centre without perturbing it, so `thin_plate` is measured beside the registered fields as the adversary. Sources `10.1016/s0019-9958(62)90633-2` and the in-corpus `10.1007/s00454-009-9144-8`. **FINDINGS:** `M-`. | S | — |
 
 ---
 
