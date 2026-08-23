@@ -786,7 +786,9 @@ impl Replay {
         let mismatched = (0..6usize)
             .flat_map(|i| (0..6usize).map(move |j| (i, j)))
             .filter(|(i, j)| i != j)
-            .filter(|(i, j)| pair_index(*i, *j).is_none_or(|bit| pairs[bit] != (i.min(j).to_owned(), *i.max(j))))
+            .filter(|(i, j)| {
+                pair_index(*i, *j).is_none_or(|bit| pairs[bit] != (i.min(j).to_owned(), *i.max(j)))
+            })
             .count();
         if mismatched > 0 {
             error!(
@@ -1006,7 +1008,14 @@ fn main() {
         // rather than the next one.
         .add_systems(
             PreUpdate,
-            (advance, rebuild, place_body, draw_gate, paint_matrix, report)
+            (
+                advance,
+                rebuild,
+                place_body,
+                draw_gate,
+                paint_matrix,
+                report,
+            )
                 .chain()
                 .after(bevy::input::InputSystems),
         )
@@ -1211,7 +1220,13 @@ fn rebuild(
             let grid = Grid::over(&BoxExact::<f64>::canonical(), samples);
             let cells = stage.channel_cells.unwrap_or(0.0);
             let m = with_slab(&grid, cells, |field| {
-                measure(&mut demo.engine, &mut demo.mc, &mut demo.buffer, field, &grid)
+                measure(
+                    &mut demo.engine,
+                    &mut demo.mc,
+                    &mut demo.buffer,
+                    field,
+                    &grid,
+                )
             });
             (grid, m)
         }
@@ -1306,9 +1321,7 @@ fn rebuild(
             }
             None => {
                 let handle = meshes.add(mesh);
-                commands
-                    .entity(demo.surface)
-                    .insert(Mesh3d(handle.clone()));
+                commands.entity(demo.surface).insert(Mesh3d(handle.clone()));
                 demo.mesh = Some(handle);
             }
         }

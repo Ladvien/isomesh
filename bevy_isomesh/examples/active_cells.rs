@@ -1186,7 +1186,9 @@ fn rebuild(
     cloud_material: Res<CloudMaterial>,
     mut last: Local<Option<(usize, u32)>>,
 ) {
-    let samples = pinned.0.unwrap_or_else(|| LADDER[rung.0.min(LADDER.len() - 1)]);
+    let samples = pinned
+        .0
+        .unwrap_or_else(|| LADDER[rung.0.min(LADDER.len() - 1)]);
     let key = (field.0, samples);
     if *last == Some(key) && !flags.remesh_requested {
         return;
@@ -1306,9 +1308,8 @@ where
     build_bits(&values, &grid, &mut inside, is_inside);
     packed_active_cells(&inside, &grid, &mut packed_cells);
 
-    let per_cell = |elapsed: std::time::Duration| {
-        elapsed.as_secs_f64() * 1.0e9 / total_cells as f64
-    };
+    let per_cell =
+        |elapsed: std::time::Duration| elapsed.as_secs_f64() * 1.0e9 / total_cells as f64;
     let mut scalar_ns = Vec::with_capacity(REPS);
     let mut packed_ns = Vec::with_capacity(REPS);
     for _ in 0..REPS {
@@ -1385,13 +1386,9 @@ where
     };
     let mut buffer = MeshBuffer::<f64>::new();
     let started = Instant::now();
-    if let Err(error) = SurfaceNets::<f64>::new().extract(
-        field,
-        &shape,
-        grid.origin,
-        grid.cell_size,
-        &mut buffer,
-    ) {
+    if let Err(error) =
+        SurfaceNets::<f64>::new().extract(field, &shape, grid.origin, grid.cell_size, &mut buffer)
+    {
         error!("surface nets failed at {samples}^3 on {}: {error}", F::NAME);
         return None;
     }
@@ -1603,7 +1600,11 @@ fn advance_cursor(
 /// The offset is applied in the camera's own basis, from the same yaw and pitch
 /// the harness builds its transform from, so it is one screen-space nudge
 /// however far `ISOMESH_SPIN` has turned.
-fn frame_camera(report: Res<Report>, mut camera: Query<&mut OrbitCamera>, domain: Query<&DemoDomain>) {
+fn frame_camera(
+    report: Res<Report>,
+    mut camera: Query<&mut OrbitCamera>,
+    domain: Query<&DemoDomain>,
+) {
     let Some(d) = domain.iter().next() else {
         return;
     };
@@ -1859,15 +1860,12 @@ fn draw_row(
     };
     let h = report.cell_size;
     let base = word.w as usize * WORD_BITS;
-    let span = (report.cells as usize)
-        .saturating_sub(base)
-        .min(WORD_BITS);
+    let span = (report.cells as usize).saturating_sub(base).min(WORD_BITS);
     if span == 0 || h <= 0.0 {
         return;
     }
 
-    let row_lo = report.origin
-        + Vec3::new(base as f32, word.y as f32, word.z as f32) * h;
+    let row_lo = report.origin + Vec3::new(base as f32, word.y as f32, word.z as f32) * h;
     box_edges(
         &mut gizmos,
         row_lo,
@@ -1879,8 +1877,7 @@ fn draw_row(
     while bits != 0 {
         let k = bits.trailing_zeros() as usize;
         bits &= bits - 1;
-        let lo = report.origin
-            + Vec3::new((base + k) as f32, word.y as f32, word.z as f32) * h;
+        let lo = report.origin + Vec3::new((base + k) as f32, word.y as f32, word.z as f32) * h;
         box_edges(&mut gizmos, lo, lo + Vec3::splat(h), BIT_ACTIVE);
     }
 }
