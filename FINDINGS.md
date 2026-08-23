@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**442 entries** — 37 falsified, 338 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**444 entries** — 38 falsified, 339 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -76,6 +76,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗35` | two Phase 19 entries quote runs that are not in the CSVs they cite, and one of them was a verdict: the bitmap's C2 fails… |
 | `✗36` | FALSIFIED on all three clauses, and the zero was unreachable by geometry rather than by sampling: a mesh edge is a chord… |
 | `✗37` | FALSIFIED on three of four clauses, and the algebra says why: Eq. (8) confined to a cell is a contraction toward the cel… |
+| `✗38` | C1 and C3 HELD, C2 falsified by a measured absence: nothing pierces the empty ball, and between 2.9% and 80.5% of sphere… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -414,6 +415,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-349` | HELD as three exact equalities on 15 of 15 rows: the bitmap's claim was always a count, and a count does not have a gove… |
 | `M-350` | HELD, and the bound turned out to be provable: a central difference across a CSG seam is wrong by at most half the creas… |
 | `M-352` | HELD, FALSIFIED, HELD: every degenerate triangle comes from an exactly-equal corner, the repair moves no geometry at all… |
+| `M-354` | HELD on all three, and the prediction's shape is what held: affine arithmetic rejects 3.85× more cells on gyroid and exa… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -8989,3 +8991,122 @@ number and an identity for it instead of an intuition.
 **Would be shown wrong by:** a neighbourhood wider than one cell restoring the vertex term, which is the
 cheap next probe and is exactly the ablation axis Fig. 17 sweeps — but it costs the per-cell parallelism
 that makes this crate's extractors chunkable, so it is a different design, not a tuning.
+
+### 🔬 M-354 — HELD on all three, and the prediction's *shape* is what held: affine arithmetic rejects 3.85× more cells on `gyroid` and exactly zero more where `min`/`max` destroys the correlation (P-54, R-049)
+
+**M.** `cargo bench --bench experiment_p54`, `docs/experiments/p-54.csv`, 12 rows — six fields × two
+bounds, 17³ (4,096 cells), `f64`. Revised affine form: **five stored reals**, fixed size, no heap.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 `gyroid` rejects ≥1.5× more cells | ≥ 1.5× | **HELD — 3.847384×** |
+| C2 the `min`/`max` fields rise <5% | < 5% | **HELD — +0.000% and −0.515%** |
+| C3 mesh byte-identical | identical | **HELD — 12 of 12 rows** |
+
+**Soundness was verified before any verdict, because an unsound bound would make C1 meaningless and C3
+fail.** Two checks, **0 violations** in both: a per-noise-symbol substitution sweep over `sin`, `cos`,
+`sqrt` — 12,442,589 samples, minimum margin `+5.66e-14` — and an end-to-end dense probe against the
+crate's own `Sdf::sample`, 2,985,984 points per field, **17,915,904 total**. The exact fields' margins sit
+at `2.5e-13`–`4.8e-13`, which is the declared per-operation slack `256·EPS·max(1,|v|)` doing its job:
+`256 × 2.22e-16 × 3.46 ≈ 1.97e-13` against a measured `2.54e-13`. Tightness, not fragility.
+
+**C1, and the row that makes the mechanism unmistakable.**
+
+| field | Lipschitz | affine | ratio | only-affine | only-Lipschitz |
+|---|---:|---:|---:|---:|---:|
+| `gyroid` | 688 / 4,096 | **2,647** | **3.847×** | 1,959 | 0 |
+| **`gyroid_uncapped`** | **0** / 4,096 | **1,098** | **∞** | 1,098 | 0 |
+| `box_exact` | 3,312 | 3,312 | 1.000000 | **0** | **0** |
+| `csg_difference` | 3,300 | 3,283 | 0.994848 | 0 | 17 |
+
+`gyroid_uncapped` is the cleanest result in the phase: **Hart's test rejects nothing at all** — 0 of 4,096
+— and the affine form rejects 1,098. A triply periodic field has no useful global Lipschitz ball, and
+correlation does not care.
+
+**C2 came in finer than the clause asked, and the extra precision is the confirmation.** It is not that
+the min/max fields merely fail to gain. On `box_exact` the two rejected **sets are identical** — 0 gained
+*and* 0 lost, the same 3,312 cells, not merely the same count. On `csg_difference` the affine set is a
+strict **subset**: 0 gained, **17 lost**. Where the source paper gives no affine rule and the only sound
+treatment collapses the form to an interval, correlation-aware arithmetic is not neutral — it is slightly
+*worse*, because it pays the collapse and gets nothing back. **That is a mechanism confirming itself, not
+a threshold being cleared.**
+
+**C3 has a negative control, so it is a gate rather than a tautology.** `mesh_identical` true on 12 of 12
+by two independent checks — zero baseline vertices inside any rejected cell, and equal mesh hashes — and
+then every field is re-gated with Hart's constant **divided by 4**, M-244's incident made deliberate.
+`control_detected` is **true on all six**: the sabotaged bound leaves 338 to 4,121 baseline vertices
+inside rejected cells and changes the hash every time. An instrument that cannot report a hole is not
+reporting their absence either.
+
+**Cost, recorded and gating nothing:** 42.0 → 505.4 ns/cell on `gyroid`, 2.1 → 36.3 on `sphere`. The
+affine bound is roughly 12× the arithmetic for 3.85× the cells rejected, so **this is not a speedup and
+is not registered as one** — it is a *capability*: the ability to reject a cell of a field whose global
+Lipschitz constant is worthless. Whether it pays depends on the cost of the work being skipped, which is
+a different measurement.
+
+**Would be shown wrong by:** a field built from `min`/`max` whose affine set is a strict superset — that
+would mean the interval collapse is not what costs, and the non-uniformity has another cause.
+
+### 💥 ✗38 / M-355 — C1 and C3 HELD, C2 falsified by a *measured absence*: nothing pierces the empty ball, and between 2.9% and 80.5% of spheres are never touched (P-51, R-046)
+
+**M.** `cargo bench --bench experiment_p51`, `docs/experiments/p-51.csv`, 15 rows — five fields × three
+extractors, 65³, `f64`, 274,625 samples per row. Four consecutive runs identical in every gated quantity.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 `marching_cubes` pierces < 1 per 1k | < 1 | **HELD — 0.0000, 0 of 22,790 vertices** |
+| C2 `dual_contouring` ≥ 20× `marching_cubes` | ≥ 20× | **FALSIFIED — 0/0, undefined** |
+| C3 untouched non-zero, MC > DC | both | **HELD — 5 of 5 fields** |
+
+**C2's falsification is the registered outcome that "closes four 2025–2026 papers for this crate in one
+pass", and it is exactly what happened.** Dual Contouring pierces **0 of 22,798** vertices on every field.
+Exhaustively — no neighbourhood cutoff, max over all 274,625 samples — its worst violations are `-0.0066`
+(`box_exact`), `0.0174` (`sphere`), `0.0394` (`torus`), `-0.0013` (`thin_plate`), `0.0232`
+(`csg_difference`) cells, **two of them negative**, all under a `0.05` gate. The QEF's cell clamp is
+apparently sufficient: the exclusion half of the tangent-sphere constraint is **already respected by
+construction**, and the four papers built on recovering it have nothing to offer these extractors.
+
+**The control failed as registered, and the registration's inference is what is false.** It says *"an
+instrument that finds violations there is measuring its own tolerance"*. On `box_exact`, Marching Cubes
+reports exactly **0** and Dual Contouring **0 with a negative margin**, while Surface Nets reports **368
+of 5,768** at a worst of `0.422650` cells — **8.5× the gate**. A tolerance artefact hits all three. This
+separates them, and the magnitude is an exact closed form, checkable by hand:
+
+> SN vertex `(-0.958333)³`, sample `(-0.9375)³`, `|d| = h` exactly, distance `= h/√3`, violation
+> `= h(1 − 1/√3) = 0.4226497 h`.
+
+It is derivable, not incidental: `box_exact`'s faces lie exactly on sample planes, so the corner cell has
+one inside corner at `f = −h` and seven at `f = 0`, every crossing edge roots at `t = 1`, and the mean of
+the three crossings is that vertex. It is **Surface Nets' documented corner rounding** — `fields/mod.rs`
+says *"surface nets rounds these corners, dual contouring holds them"* — and the identical magnitude and
+witness recur on `csg_difference`. The control fails; the instrument is fine.
+
+**C3 is the half nobody had measured, and the worst cases are exact geometric constants.**
+
+| field | MC untouched /1k | DC untouched /1k | MC/DC |
+|---|---:|---:|---:|
+| `thin_plate` | **717.18** | 44.83 | **16.00×** |
+| `box_exact` | 515.63 | 179.99 | 2.86× |
+| `csg_difference` | 572.68 | 265.79 | 2.15× |
+| `torus` | 48.09 | 32.76 | 1.47× |
+| `sphere` | 35.25 | 31.29 | 1.13× |
+
+**Between 2.9% and 80.5% of all samples never have their sphere touched by any vertex** — and there is no
+cutoff to blame, the touching search is exhaustive on all 15 rows. The extremes are exact:
+
+- `box_exact` / MC: **√2 cells exactly**. Sample `(-1,-1,-1)` is the box corner with `|d| = 0`, and
+  Marching Cubes puts **no vertex on a box edge or corner** — both endpoints of every spanning grid edge
+  there have `f = 0`, so there is no sign change. A zero-radius sphere lying *on* the surface is missed by
+  `√2` cells. That also sizes the count: 48.8% of the grid sits outside the box in two or more axes.
+- `box_exact` / DC: **1/√2 exactly** — DC's vertices live on the dual lattice, half a cell off the sample
+  lattice, so a sample lying exactly on the surface can never be touched.
+- `thin_plate` / MC: **1.000000 exactly**.
+
+**Two defects in shipped metadata fell out, and the second is real.** The registration calls
+`csg_difference` one of "the five fields declaring `FieldBound::Exact`". **Only four do** —
+`fields/mod.rs:965` declares `Underestimate { q: 0.5 }`, because `max` of two exact distances is not one.
+And **that declared `q = 0.5` is optimistic by roughly 5×**: at sample `(1.0625)³`, `|f| = 0.108253` —
+exactly `h√3`, the distance to the box corner `(1,1,1)` — but that corner is *carved away* by the
+subtracted sphere, and the true distance is `0.96`–`1.06` as three independent extractors agree to within
+7%. So `|f|/d ≈ 0.11` against a declared `0.5`. **Conservative rejection trusts declared bounds**, which
+makes this worth its own ticket: opened as **R-054**.

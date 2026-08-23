@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**229 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**231 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -69,10 +69,9 @@ it is a later ticket.
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+| ☐ | **R-054** | S | |
 | ☐ | **R-052** | M | |
 | ☐ | **R-053** | S | |
-| ☐ | **R-046** | M | |
-| ☐ | **R-049** | L | |
 
 **R-046 — Does either half of the tangent-sphere constraint survive this crate's extractors? (P-51)**
 Sellán, Batty & Stein state both halves: the surface excludes every positive sphere and is *tangent to
@@ -115,6 +114,14 @@ share a triangle. Expose that as a `validate` report so a caller can ask whether
 its data, rather than shipping a repair that is safe on some data. The repair itself moves no geometry
 (`max_snap_distance` is exactly 0), so this is a pure connectivity decision and belongs beside
 `validate::sealing`.
+
+**R-054 — `csg_difference` declares an underestimate ratio it does not meet. (from M-355)**
+`fields/mod.rs:965` declares `Underestimate { q: 0.5 }`. P-51 measured ≈**0.11** at sample `(1.0625)³`,
+where `|f| = h√3` points at a box corner the subtracted sphere has carved away, and three independent
+extractors agree on the true distance to within 7%. Conservative rejection trusts declared bounds, so a
+`q` that is optimistic by 5× is a correctness hazard and not a documentation nit. Either derive the
+honest `q` for `max(box, −sphere)` or stop declaring one. Sweep the other composite fields for the same
+defect while the harness exists.
 
 **R-052 — The monotone-edge condition, on the complex it is actually about. (successor to R-050)**
 ✗36 proved P-55's zero unreachable: a mesh edge is a chord of the zero set, so the predicate is saturated
