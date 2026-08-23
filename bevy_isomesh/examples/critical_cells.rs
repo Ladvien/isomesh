@@ -455,7 +455,10 @@ fn main() {
         .init_resource::<Framing>()
         .init_resource::<Zoomed>()
         .add_systems(Startup, setup)
-        .add_systems(Update, (controls, rebuild, frame_camera, draw_overlay).chain())
+        .add_systems(
+            Update,
+            (controls, rebuild, frame_camera, draw_overlay).chain(),
+        )
         .run();
 }
 
@@ -704,9 +707,13 @@ where
     };
     let mut buffer = MeshBuffer::<f64>::new();
     let extract_started = Instant::now();
-    if let Err(error) =
-        DualContouring::<f64>::new().extract(field, &shape, grid.origin, grid.cell_size, &mut buffer)
-    {
+    if let Err(error) = DualContouring::<f64>::new().extract(
+        field,
+        &shape,
+        grid.origin,
+        grid.cell_size,
+        &mut buffer,
+    ) {
         error!("dual contouring failed at {samples}^3: {error}");
         return None;
     }
@@ -715,7 +722,10 @@ where
     let cfg = match ValidateConfig::from_cell_size(grid.cell_size) {
         Ok(cfg) => cfg,
         Err(error) => {
-            error!("cell size {} is not a usable spacing: {error}", grid.cell_size);
+            error!(
+                "cell size {} is not a usable spacing: {error}",
+                grid.cell_size
+            );
             return None;
         }
     };
@@ -813,7 +823,10 @@ where
         ),
         String::new(),
         format!("{:>9} 2D-critical cells      (cyan cages)", two_d.len()),
-        format!("{:>9} 3D-critical cells      (magenta cages)", three_d.len()),
+        format!(
+            "{:>9} 3D-critical cells      (magenta cages)",
+            three_d.len()
+        ),
         format!("{critical_count:>9} critical cells         total"),
         String::new(),
         format!(
@@ -1010,8 +1023,8 @@ fn frame_camera(
         let right = forward.cross(Vec3::Y).normalize_or_zero();
         let up = right.cross(forward).normalize_or_zero();
 
-        orbit.focus = target - right * (SUBJECT_OFFSET.x * radius)
-            + up * (SUBJECT_OFFSET.y * radius);
+        orbit.focus =
+            target - right * (SUBJECT_OFFSET.x * radius) + up * (SUBJECT_OFFSET.y * radius);
         orbit.radius = radius;
     }
 }
