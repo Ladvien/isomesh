@@ -1,0 +1,891 @@
+From 0ff4a3e933d0531d02629191fd8af349a790e11f Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 18 Aug 2026 08:45:22 +0000
+Subject: [PATCH] =?UTF-8?q?docs/research:=20the=202026-08-18=20sweep=20?=
+ =?UTF-8?q?=E2=80=94=20and=20the=20corpus=20premise=20was=20false?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Five documents from eight parallel corpus sweeps plus two repo audits, all
+fact-checked against FINDINGS.md by an adversarial pass (six errors found and
+corrected before commit).
+
+The headline is a contradiction, so it is the finding. The commissioning
+directive asked why SDF papers were missing from the corpus. They are not
+missing, and neither are Lorensen & Cline, van Gelder & Wilhelms, or Kobbelt
+et al. — all three were reported ABSENT by sweep agents and all three are
+downloaded, converted and embedded. Each ranks #1 on a targeted query and
+returns with title, authors, doi and year all null. 37.3% of search hits are
+unidentifiable this way; 100% of non-DOI stems are. Years are actively wrong
+in 7 of 10 spot checks. The loss is in the catalog rather than in Qdrant:
+broken rows carry only conversion and embedding blocks, no provenance at all.
+Papers ingested through paper_download are intact; papers that arrived any
+other way are invisible to search.
+
+That bears directly on rule 5. "Look it up rather than guess" currently
+fails about one time in three, which is how three foundational case-table
+sources came to be believed absent.
+
+Three corrections owed to documents already in this tree:
+
+- Dual Contouring of Hermite Data is present at 10.1145/566570.566586. Three
+  independent sweeps reported it absent citing 10.1145/566654.566586, which
+  does not resolve. Any ticket carrying the second DOI has a bad citation.
+- TetWild is a phantom catalog row (catalog_no_source), not an absent paper.
+- The seam answer this corpus actually supports is transition cells. Ju 2002's
+  "requires no crack patching" is now checkable — the paper is here — but has
+  not been read against that question, so the DC-is-crack-free claim stays R.
+
+Also recorded, because a null belongs in the log: DEMOS.md's example count was
+expected to have drifted and has not. 36 claimed, 36 present.
+
+Two results worth carrying forward. All 14 open tickets are blocked and four
+of the blocks are the crate owner's decision, so the queue is currently a
+queue of one — R-027a, an S, unblocked, and capable of dissolving R-027's L.
+And a sweep over 9,425 documents plus a live provider search found no prior
+art for stable identity of isosurface output elements without carrying state
+across calls, which puts R-027a in unoccupied territory of the same shape as
+V-43 and deserving the same care in the record.
+
+Every claim in these documents is tiered. The coverage tables are M against
+the live corpus; the novelty rows are R and none of them is a claim about
+this crate's behaviour.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_019uzkvL9sovnb88idHHNKdm
+---
+ .../2026-08-18-backlog-and-harness-audit.md   | 152 ++++++++++++
+ ...2026-08-18-corpus-audit-and-procurement.md | 198 ++++++++++++++++
+ .../2026-08-18-eli10-what-we-found.md         | 220 ++++++++++++++++++
+ .../2026-08-18-four-blocked-decisions.md      | 138 +++++++++++
+ docs/research/2026-08-18-novelty-table.md     |  81 +++++++
+ 5 files changed, 789 insertions(+)
+ create mode 100644 docs/research/2026-08-18-backlog-and-harness-audit.md
+ create mode 100644 docs/research/2026-08-18-corpus-audit-and-procurement.md
+ create mode 100644 docs/research/2026-08-18-eli10-what-we-found.md
+ create mode 100644 docs/research/2026-08-18-four-blocked-decisions.md
+ create mode 100644 docs/research/2026-08-18-novelty-table.md
+
+diff --git a/docs/research/2026-08-18-backlog-and-harness-audit.md b/docs/research/2026-08-18-backlog-and-harness-audit.md
+new file mode 100644
+index 0000000..b1c6634
+--- /dev/null
++++ b/docs/research/2026-08-18-backlog-and-harness-audit.md
+@@ -0,0 +1,152 @@
++# Backlog and harness audit — the three axes
++
++**Date:** 2026-08-18
++**Against:** `origin/main` at `db87e56` (Phase 18 closed, M-335/P-37 HELD), 212 tickets archived, 14 open.
++**Tier:** structural claims are **M** — read from the tree this session, with file paths. Judgements about what *would* help are **R**.
++
++---
++
++## 0. The finding that reframes the other three
++
++**Every one of the 14 open tickets is blocked, and 4 of the blocks are decisions only you can make.**
++
++| Ticket | Blocked on |
++|---|---|
++| A-026 | **Your decision** — how far the CoACD pipeline goes in-crate |
++| A-027, T-022b, B-013 | A-026 |
++| T-022a | Nothing, but its architecture is downstream of A-026 |
++| A-025 | **Your decision** — the `FaceAmbiguity` default and its hash re-baseline |
++| X-005 | **Your decision** — take the API break or write the contract down |
++| R-027 | Stopped on V-45; **blocked on R-027a** |
++| R-027a | Nothing. **`S`. The only genuinely unblocked ticket in the file.** |
++| R-021 | R-020, and re-blocked on V-44 |
++| R-026 | Nothing structural — a writeup |
++| A-002i, A-020b | Architecture, on measurements already in |
++| M-005 | The M5 being quiet |
++
++Rule 1 says take the topmost unblocked unchecked ticket. Applied honestly to this file today, that is **R-027a** — an `S`, no new field, no new extractor, instrument the existing `edit_trace` bench. Everything above it in the file is waiting on you.
++
++The companion memo (`2026-08-18-four-blocked-decisions.md`) works the four decisions with the evidence for each. **Nothing else in this audit matters as much as unblocking those**, because the queue is currently a queue of one.
++
++---
++
++## Axis 1 — Preparedness for novel experimentation
++
++### What is genuinely strong, and rare
++
++The pre-registration machinery is real, not aspirational. `crates/isomesh/src/experiment.rs` holds **30 `Preregistration` entries (P-8 … P-37)** and `experiment!("P-n")` is a **compile-time** assertion that `n` is in `PREREGISTERED` (experiment.rs:1128-1140). A harness cannot be written for an unregistered hypothesis; the build refuses. Naming is 1:1 — `P-n` → `benches/experiment_pN.rs` → `docs/experiments/p-N.csv` — and `benches/common/experiment.rs`'s `Run::record` **panics if a column the registration promised is not written**. That is a promise enforced by the machine rather than by discipline.
++
++`scripts/backlog_gate.sh` checks that every `P-` in `experiment.rs` is mentioned in `FINDINGS.md`, that no ticket sits in both BACKLOG and ARCHIVE, that header counts match row counts, and that no "Blocked by" names a ticket that does not exist.
++
++**The mutation check is the best thing in the repo and nobody would notice it.** `property/extraction.rs:1-30` re-implements Marching Cubes reading the real case table, proves it byte-identical to the production marcher, then runs it against a *corrupted* table to demonstrate that the manifoldness property test can actually go red. **That is a negative control on a test.** Almost no crate has one.
++
++### The gaps, in order of how much they cost
++
++**1. There is essentially one true oracle in the entire suite.** `dual_contouring/solve/tests.rs:43` checks the QEF solve against an independently derived closed form for a perfect orthogonal corner. Everything else is either mesh-versus-itself (manifoldness, orientation, χ, determinism, self-intersection) or mesh-versus-the-same-field-that-generated-it (`accuracy.rs` Hausdorff against `|f(p)|`, `sealing.rs` against the field's sign).
++
++The second class has a blind spot with a name: **a bug shared between a field's `sample`/`gradient` and whatever trusts it is invisible.** That is not hypothetical — **M-289 is exactly that bug**, and it survived because the reference gradient and the thing it checked were the same code's assumptions. The repo earned the rule *"a reference implementation needs the same scrutiny as the thing it checks"* and then did not add an instrument that would enforce it.
++
++**The cheapest genuine second oracle is the divergence theorem.** The signed volume of a closed mesh is `Σ (1/6)·(a · (b × c))` over its triangles. For `sphere`, `torus` and `box_exact` the true volume is a closed form. That is a dozen lines, no dependency, and it catches a *systematic* bias — every vertex offset slightly the same way — which Hausdorff-with-a-tolerance hides by construction. It is independent of the field's gradient, which is precisely the axis M-289 failed on.
++
++**2. `regress.sh` never runs for real.** It exists, it does exact comparison on structural columns and tolerance comparison on timing columns, and it compares against a per-machine-slugged baseline. **CI runs only `--self-test`** — proving the checker still works — because no runner matches `amd-ryzen-9-5900x-12-core`. So regression checking depends entirely on one person running it by hand on one machine. Given **M-280** (the committed sweep was 1.45× stale and nobody knew) and **M-281** (adding an unrelated function moved a timing 152.5 → 130.8 ms), this is the single largest hole in the harness.
++
++**3. 26 of 29 measurement CSVs have no baseline at all.** Only `ablation`, `field_quality` and `shootout` have `docs/measurements/baseline/*-amd-ryzen-9-5900x-12-core.csv` counterparts. The other 26 are regenerated every run with nothing diffing them. They can rot silently, and **M-295 already recorded a count rotting twice.**
++
++**4. `docs/experiments.md` is stale by 16 entries.** Its scorecard stops at P-21; P-22 … P-37 are registered and resolved. `backlog_gate.sh` checks `FINDINGS.md` but not this page, and `doc_facts.sh` does not derive its count. This is precisely the class of drift `doc_facts.sh` was built for, applied everywhere except here.
++
++**5. Adding a new algorithm touches 6–7 files by hand with no single seam.** Walked from the code: implement `Extractor` (extractor.rs:71) → add to `for_each_extractor!` → hand-edit `extract.rs`, `resolution_sweep.rs`, `stage_breakdown.rs` (bench files construct extractors by name, not through the macro — X-001's own header concedes this) → add to `golden.rs` and regenerate hashes with `ISOMESH_BLESS=1`, reading the diff by eye → mirror the six `check_<algo>` functions in `property/extraction.rs` and choose a `SurfaceGate` → decide a CSV and a baseline → add a Bevy example by convention.
++
++Compare against `P-` (one list) and `ReferenceField` (one macro). The extractor path is the least-served registry in a repo that is otherwise good at registries — and it is the path a *novel algorithm* takes.
++
++**6. The harness assumes triangle soup on a uniform grid, and this is already binding.** `MeshSink::vertex(position, normal) -> u32` / `triangle(a,b,c)` (mesh.rs:44-48) has no room for per-vertex UV, material or colour. `Extractor::extract_into(field, shape, origin, cell_size, out)` (extractor.rs:80) has no way to express an adaptive or multi-resolution extraction.
++
++The evidence that this is a real constraint and not a hypothetical: **`Transvoxel` needed a non-`Extractor` path and is absent from the registry, the property suite and the golden sweep entirely.** `GreedyQuads` triangulates before handing off, so there is no native quad path anywhere in validate, golden or property — despite Grosso & Zint's parallel dual marching cubes (in corpus) being a quad-only method, and despite quad output being on the near horizon.
++
++**7. Four registered experiments have no bench file.** P-10, P-18, P-24, P-25. P-10 is marked "never ran"; the others' status is invisible without reading `FINDINGS.md`.
++
++**8. `subgrid_marching_tetrahedra` is registered but skipped by the property suite** — so the algorithm with the most unusual internals (it samples *inside* cells, and **M-307 measured it worst at 18/24 with interior sealing failures**) gets the least random-input coverage of anything shipped.
++
++### Ranked additions — all zero-dependency
++
++| # | Addition | What it catches that nothing catches | Effort |
++|---|---|---|---|
++| 1 | **Run `regress.sh` for real in CI**, skipping cleanly when no baseline matches the runner | Perf and metric regressions shipping silently. The script already exists — this is a CI-yaml change | XS |
++| 2 | **Divergence-theorem volume oracle** against closed-form volumes for `sphere`, `torus`, `box_exact` | Systematic vertex bias; a second *independent* oracle on the axis M-289 failed | S |
++| 3 | **Extend `doc_facts.sh` to derive `docs/experiments.md`'s count from `PREREGISTERED`** | The 16-entry drift that already exists | XS |
++| 4 | **Baseline-coverage assertion**: every `docs/measurements/*.csv` either has a baseline or is explicitly listed as record-only | 27 CSVs that can rot unnoticed | S |
++| 5 | **Mutation check for Surface Nets and Dual Contouring**, mirroring `march_with_table` | A corrupted SN/DC adjacency table currently passes everything; only MC has a demonstrated-failing negative control | M |
++| 6 | **Put `subgrid_marching_tetrahedra` into the property sweep**; wire `Transvoxel` and `GreedyQuads` into `for_each_extractor!` even in a degenerate configuration | Three shipped algorithms outside the shared machinery | M |
++| 7 | **A second closed-form QEF oracle case** (a planar two-crossing cell has a known least-squares answer) | The only true oracle exercises exactly one geometric configuration | S |
++| 8 | **A `register_extractor!` seam** that drives benches, golden and property from one list | The 6–7-file hand-edit that every new algorithm pays | M |
++
++---
++
++## Axis 2 — Usability in the Bevy ecosystem
++
++### Better than I expected, and better than the alternatives
++
++`bevy_isomesh/src/plugin.rs` is a real plugin, not a bag of functions: `IsomeshPlugin: Plugin`, components `VoxelVolume` / `VoxelChunk` / `NeedsRemesh` / `ChunkMesh(Handle<Mesh>)`, resources `MeshBudget` / `MeshStats`, two chained `Update` systems (`spawn_meshing_tasks` → `apply_finished_meshes`) using `AsyncComputeTaskPool` correctly so extraction never runs on a system thread. It depends on **leaf crates** (`bevy_app`, `bevy_ecs`, `bevy_asset`, `bevy_mesh`, `bevy_tasks`) rather than the `bevy` umbrella, and is deliberately silent on `bevy_render` so headless and server users do not compile a renderer. `mesh.rs`'s `MeshBuilder` is a `MeshSink` writing straight into Bevy's own `Vec` layout — zero-copy into `Mesh`.
++
++Against what a Bevy user would otherwise reach for (`fast-surface-nets`, `block-mesh`): generic over `f32` **and** `f64` where both competitors are `f32`-only; seven extractors with a *measured* decision table instead of one; sharp-feature dual contouring, which neither has; the validity and manifold harness shipped as **public API** rather than test-only; and an async, frame-budgeted plugin, where neither competitor ships a Bevy plugin at all. The core README's "In 60 seconds" is five lines and is compiled as a doctest, so it cannot rot.
++
++### The barriers, bluntest first
++
++**1. Rule 1's own promise is unimplemented.** `CLAUDE.md` says *"Offer `From`/`Into` behind optional features, never in the core API."* Grepping the tree for `From<Vec3>` / `Into<Vec3>` under `crates/` and `bevy_isomesh/src` returns **nothing**. Every position, origin and layout argument a Bevy user touches must be destructured and rebuilt by hand against `Vec3` and `Transform`. In the examples this shows up as ad-hoc `[t.translation.x, t.translation.y, t.translation.z]` scattered per-example.
++
++This is the single biggest adoption barrier, and it is a **half-day fix that violates no constraint** — the feature belongs in `bevy_isomesh`, not `crates/isomesh`, so rule 1 and rule 2 both stay intact.
++
++**2. Every consumer rewrites the same two systems.** Nothing generates the chunk grid or attaches `Mesh3d`/`MeshMaterial3d`. The documented Bevy path is: add the plugin → build a `ChunkLayout` → **hand-write a nested `for z/y/x` loop** spawning `VoxelChunk` + `NeedsRemesh` per index → **hand-write an `attach` system**. That is boilerplate a plugin normally absorbs.
++
++**3. Streaming policy is example-only.** `ChunkLayout` gives the coordinate maths (`chunk_of`, `world_of_sample`, `sample_origin`, `at_lod`) and the plugin gives budgeted async meshing — genuinely more than the competitors. But deciding which chunks to load and unload as the player moves lives in `examples/common/mod.rs` (715 lines) and in `game_terrain_stream.rs`, which a real integrator must copy wholesale. `examples/common/` is undocumented, unpublished glue.
++
++**4. No `SystemSet`.** Consumers cannot order their own render or physics work against meshing without guessing.
++
++**5. `isomesh-gpu` has no `[features]` section at all**, so a consumer compiles every shader path whether or not they use it.
++
++**6. Example balance.** 36 examples, roughly 25 demonstrating an algorithm or property against 11 showing a user how to build something. Reasonable for a research crate; thin for "dig a hole in terrain and render it." (The counts in `README.md` and `DEMOS.md` are **correct** at 36 — I expected drift here and did not find any.)
++
++### Ranked additions
++
++| # | Addition | Effort |
++|---|---|---|
++| 1 | **`glam` / `bevy_math` `From`/`Into`, feature-gated in `bevy_isomesh`** | S |
++| 2 | **`spawn_chunk_grid` helper** replacing the hand-written nested loop | S |
++| 3 | **A `SystemSet`** for the plugin's two systems | S |
++| 4 | **Distance-based load/unload built on `ChunkLayout`**, promoting `game_terrain_stream`'s logic into the plugin | M |
++| 5 | **Feature flags for `isomesh-gpu`** (mesh-shader separate from compute-MC) | S |
++| 6 | **Extend `doc_facts.sh` over `bevy_isomesh/DEMOS.md`** so its example count stays derived rather than hand-maintained — it is right today | XS |
++
++---
++
++## Axis 3 — Harnesses that make future experimentation iterative
++
++### The note-taking and gating discipline is the crate's real asset
++
++Three mechanisms carry it, and each was paid for by a specific incident:
++
++- **`FINDINGS.md` is append-only and falsified entries are never deleted.** It records which *sources* to distrust, which outlives the individual fact. 7,377 lines.
++- **Golden hashes** — 216 committed FNV-1a hashes over every position, normal and index bit pattern, across 7 fields × 3 resolutions × N algorithms, gated bit-for-bit and **verified identical across macOS/arm64 and Linux/x86-64** (M-31). This is the only check that catches a regression that is geometrically and topologically invisible, and it is what makes an optimisation like A-023 provable rather than plausible: *3.09× faster, byte-identical output.*
++- **`preflight.sh`** — 13 steps, about three seconds warm, including `doc_facts.sh`, which derives rottable counts mechanically rather than trusting prose. Added after **M-293**, where an example broke and 58 commits passed with every local gate green.
++
++### What is missing for the *next* class of experiment
++
++**1. Nothing measures the cost of a *sequence* of edits.** Every bench measures a single extraction or a single edit. The consumer's real workload is thousands of chunks re-meshed under a stream of edits with a frame budget. `edit_trace` is the closest thing and it is one trace. **M-124's rule — amortised is the wrong statistic for the frame a breakthrough lands on — has no harness that enforces it.** A "worst single frame over a scripted edit sequence" bench would be the first instrument that measures what the game actually experiences, and it is the natural home for candidate 15 in the novelty table.
++
++**2. There is no cross-implementation check.** Nothing compares against VTK, CGAL or PyMCubes on the same input. This is the strongest available oracle class and it costs nothing at runtime — generate the reference once, commit the hash. Worth weighing against the honest objection that a second implementation may share the first's assumptions.
++
++**3. The self-intersection detector rewrote itself once and the consequence was recorded only in a commit message** (✗25). Detectors that change meaning need the same golden-fixture treatment as the algorithms they judge: a committed fixture with a known self-intersection count, gated.
++
++**4. `FieldBound` is good and under-used.** `Exact` / `Lipschitz{l}` / `Underestimate{q}` / `Unbounded` replaced a `bool` that had been silently wrong for months. It currently gates only whether `accuracy.rs` may compare `|sample|` to a true distance. It could equally gate empty-cell rejection, octree traversal certificates, and sphere-tracing step sizes — several novelty-table rows want exactly this information and would otherwise re-derive it.
++
++**5. No harness expresses "the same field at two resolutions must agree at the seam."** Transvoxel exists and is outside the property machinery entirely. Given that transition cells are the answer the corpus actually supports for seams, the LOD-seam property is untested by anything except an example.
++
++---
++
++## Summary — the six things I would do, in order
++
++1. **Answer the four blocked decisions.** The queue is a queue of one until you do. (Memo: `2026-08-18-four-blocked-decisions.md`.)
++2. **Take R-027a** — an `S`, unblocked, and it may dissolve R-027's `L` entirely.
++3. **Run `regress.sh` for real in CI.** Largest hole, smallest fix.
++4. **Add the divergence-theorem volume oracle.** A dozen lines for the repo's second independent ground truth, on the exact axis M-289 failed.
++5. **Ship the `glam` conversions in `bevy_isomesh`.** Half a day, removes the biggest adoption barrier, breaks no rule.
++6. **Repair the corpus metadata.** 37.3% of search hits are unidentifiable, which makes rule 5 — never guess algorithm details, look it up — unreliable in practice. See the companion audit.
+diff --git a/docs/research/2026-08-18-corpus-audit-and-procurement.md b/docs/research/2026-08-18-corpus-audit-and-procurement.md
+new file mode 100644
+index 0000000..107200c
+--- /dev/null
++++ b/docs/research/2026-08-18-corpus-audit-and-procurement.md
+@@ -0,0 +1,198 @@
++# Corpus audit and procurement list
++
++**Date:** 2026-08-18
++**Method:** eight parallel domain sweeps over the home-still corpus (9,425 documents, 285,227 embedded chunks), then direct verification of every contradiction the sweeps produced against `catalog_read`, `paper_get` and `paper_download`.
++**Tier:** the coverage tables are **M** — measured against the live corpus this session. The gap list is **V** where a DOI was resolved and **R** where it rests on a sweep agent's reading.
++
++---
++
++## 1. The directive's premise is false, and the true defect is worse
++
++The directive opens: *"Audit why SDF papers are missing from home-still."*
++
++They are not missing. Nor are the meshing papers. The corpus already holds the Jones/Bærentzen/Šrámek distance-field survey, Bærentzen's angle-weighted pseudonormal, DeepSDF, *CSG on Neural Signed Distance Fields*, *Reach For the Spheres*, *Interactive Editing of Voxel-Based SDFs*, *1-Lipschitz Neural Distance Fields*, Sethian & Vladimirsky on the eikonal equation, and *Power Diagram Enhanced Adaptive Isosurface Extraction from SDFs*.
++
++**The contradiction is the finding, and it generalises.** Eight independent agents swept the corpus. Between them they reported roughly a dozen foundational papers ABSENT. Three of those reports were checkable in seconds, and all three were wrong:
++
++| Paper | Reported | Actual |
++|---|---|---|
++| Lorensen & Cline, *Marching Cubes*, 1987 | ABSENT | On disk, converted, **15 chunks embedded** |
++| van Gelder & Wilhelms, *Topological Considerations in Isosurface Generation*, 1994 | ABSENT | On disk, converted, **32 chunks embedded** |
++| Kobbelt et al., *Feature Sensitive Surface Extraction*, 2001 | ABSENT | On disk, converted, **31 chunks embedded** — and indexed **twice**, also as `paper_p57-kobbelt` |
++
++Each of the three ranks **#1** on a targeted query. The agents' searches *did* return them. Here is what a search hit for the Marching Cubes paper actually looks like:
++
++```json
++{ "doc_id": "10.1145_37401.37422", "title": null, "authors": [], "year": null,
++  "doi": null, "score": 0.704, "pdf_path": "papers/10/10.1145_37401.37422.pdf" }
++```
++
++An agent cannot identify that, so it discards it and reports the paper missing.
++
++**The corpus is not short of papers. It is short of the metadata that makes them recognisable.**
++
++### 1.1 Quantified
++
++Twelve diverse queries, `limit=40`, 475 raw hits:
++
++| Metric | Count | Rate |
++|---|---|---|
++| Hits with `title: null` | 177 | **37.3%** |
++| Hits with `doi: null` | ~166 | 34.9% |
++| Hits with empty `authors` | ~177 | 37.3% |
++
++Per-domain the rate ranges from 2% (contour trees) to **88%** (GPU compute shaders) — it tracks stem shape, not topic:
++
++| Stem type | Hits | null title | Rate |
++|---|---|---|---|
++| Non-DOI stems (`s2010-advances-*`, `eth-cgl-*`, `paper_p57-kobbelt`, `scanpaper_final`) | 105 | 105 | **100%** |
++| DOI-shaped stems (`10.xxxx_...`) | 370 | 72 | 19.5% |
++
++### 1.2 Where the loss is
++
++`catalog_read` on twelve broken stems versus two known-good controls settles it. Every broken row carries **only** `conversion` and `embedding` blocks. The whole download-provenance block — `title`, `authors`, `doi`, `downloaded_at`, `sha256`, `file_size_bytes`, `source`, `pdf_path` — is absent. The controls carry all of it.
++
++**So the metadata never existed in the catalog; it is not stale in Qdrant.** These PDFs entered by a path that skips the provider fan-in `paper_download` performs — a manual drop, an inbox sweep, or a lookup that failed silently — and were then converted and embedded anyway. `distill_search` is reporting nulls honestly.
++
++This also explains why `catalog_backfill_title` reports only **2** candidates: it selects rows that have a DOI and lack a title, and these rows have no DOI field at all.
++
++### 1.3 The years are not merely missing, they are wrong
++
++Ten hits carrying a non-null year were spot-checked. **Seven to eight are wrong**, several impossibly so:
++
++| Stem | Reported | Actual |
++|---|---|---|
++| `10.1016_j.cag.2006.07.021` (Newman & Yi survey) | 1987 | 2006 |
++| `10.1145_195826.195828` (van Gelder & Wilhelms) | 1980 | 1994 |
++| `10.1145_1281500.1281668` | 1942 | ACM did not exist |
++| `s2007-advances-course-notes-1-6-mb` | 1942 | 2007, per its own stem |
++| `Bounded-Biharmonic-Weights-...` | 1968 | 2011 |
++| `labelle_shewchuk_isosurface_stuffing_2007` | 1976 | 2007, per its own filename |
++| `eth-cgl-sim_anim-Pfa12` | 1931 | ~2012 |
++
++Pre-1950 dates on SIGGRAPH papers mean something other than a publication year is being written into that field. A year filter (`distill_search`'s `year: ">2020"`) applied to this corpus silently discards correct papers.
++
++### 1.4 Pipeline health, from `catalog_repair` and `system_status`
++
++| Condition | Count | Meaning |
++|---|---|---|
++| `pipeline_drift` | **79** | threshold is **3** |
++| `stuck_convert` | **393** (256 pdf + 137 html) | downloaded, never converted, therefore invisible to search |
++| `embedding_skipped` | 515 | converted, never embedded |
++| `corrupted_pdfs` | 60 | |
++| `flag_drift` | 6,672 | |
++| `md_path_drift` | 188 | |
++| `catalog_no_source` | 24 | phantom rows — **includes `10.1145_3197517.3201353`, TetWild**, which a sweep listed as a gap and is really a row that lost its file |
++| `catalog_no_markdown` | 1 | |
++
++Also observed: arXiv doc_ids are **case-split** — `10.48550_arXiv.2308.05371` and `10.48550_arxiv.2308.05371` are two Qdrant entries for one paper, with inconsistent metadata between them. Confirmed for FlexiCubes, the approximate-convex-decomposition paper, and the hex-mesh survey.
++
++### 1.5 The fix, in order
++
++1. **Backfill catalog metadata for rows that have only `conversion`+`embedding`.** For DOI-shaped stems the stem *is* the DOI — a provider lookup keyed off it fills everything. `catalog_backfill_title` cannot currently see these rows because it filters on a DOI field they lack; it needs to fall back to parsing the stem. This is the highest-value repair and it is mechanical.
++2. **For non-DOI stems (100% broken), extract the title from the first page of the markdown and fuzzy-match against OpenAlex.** Roughly 60–100 unique documents.
++3. **Clear the 393 stuck conversions.** These are papers you have already paid to acquire and cannot currently find.
++4. **Normalise arXiv doc_id casing before re-indexing**, or the backfill runs twice per paper.
++5. **Re-index after backfill** so payloads carry the repaired metadata.
++
++Until (1) and (2) are done, **any literature review over this corpus — by a person or an agent — will produce false negatives at roughly a one-in-three rate.** That is the pipeline gap the directive asked for. It is not about SDFs.
++
++---
++
++## 2. Coverage by area
++
++Verified present unless marked. Nothing in this table rests on an agent's ABSENT claim alone.
++
++### Primal extraction — strong
++
++Lorensen & Cline 1987 (`10.1145/37401.37422`) · van Gelder & Wilhelms 1994 (`10.1145/195826.195828`) · Nielson, *On Marching Cubes* 2003 (`10.1109/tvcg.2003.1207437`) · Montani/Scateni/Scopigno MC33 lookup table 1994 (`10.1007/bf01900830`) · Lewiner et al. 2003 (`10.1080/10867651.2003.10487582`) · Custodio et al. 2013 (`10.1016/j.cag.2013.04.004`) and 2019 (`10.1186/s13173-019-0086-6`) · Natarajan 1994 (`10.1007/bf01900699`) · Newman & Yi survey 2006 (`10.1016/j.cag.2006.07.021`) · Grosso 2016 (`10.1111/cgf.12975`) and 2017 (`10.1145/3095140.3095179`) · Kirby et al., verifiable visualization 2009 (`10.1109/tvcg.2009.194`) · Dietrich et al., edge transformations 2008 (`10.1109/tvcg.2008.60`) · Shu et al., adaptive MC 1995 (`10.1109/2945.485620`).
++
++**Thin:** classical marching-tetrahedra decomposition-bias literature. **Genuinely absent and pre-DOI:** Nielson & Hamann's *The Asymptotic Decider* (Vis '91), Chernyaev's MC33 CERN report (1995), Doi & Koide (IEICE 1991).
++
++### Dual extraction — strong
++
++Ju/Losasso/Schaefer/Warren, *Dual Contouring of Hermite Data* 2002 — **present at `10.1145/566570.566586`**. Three sweeps reported it absent using the DOI `10.1145/566654.566586`, which does not resolve; that DOI is wrong, not the corpus. Also: Schaefer & Warren, *The Secret Sauce* · Schaefer/Ju/Warren, *Manifold Dual Contouring* 2007 (`10.1109/tvcg.2007.1012`, indexed twice) · Nielson, *Dual Marching Cubes* 2004 (`10.1109/VISUAL.2004.28`) · Schaefer & Warren, *Primal Contouring of Dual Grids* 2004 · Gibson, *Constrained Elastic Surface Nets* 1998 (`10.1007/bfb0056277`) · Ho et al., *Cubical Marching Squares* 2005 (`10.1111/j.1467-8659.2005.00879.x`) · Manson & Schaefer 2010 (`10.1111/j.1467-8659.2009.01607.x`) · Ju, *Robust Repair of Polygonal Models* 2004 · Kobbelt et al. 2001 (`10.1145/383259.383265`).
++
++**Absent:** Ju's *Intersection-Free Contouring on an Octree Grid* (2006), Zhang/Hong/Kaufman (2004), Kazhdan et al. *Unconstrained Isosurface Extraction on Arbitrary Octrees* (2007), Varadhan et al. (2003).
++
++### Adaptive, LOD, chunking, seams — deep on transitions, absent on chunk mechanics
++
++Lengyel's Transvoxel journal paper (`10.1080/2151237X.2011.563682`) **and his full dissertation**, 13 indexed passages · Frisken et al., ADF 2000 · Hoppe progressive meshes (`10.1145/237170.237216`), view-dependent refinement, terrain LOD (`10.1109/visual.1998.745282`) · Livnat/Shen/Johnson NOISE (`10.1109/2945.489388`) · Cignoni et al. interval trees (`10.1109/2945.597798`) · Museth VDB (`10.1145/2487228.2487235`).
++
++**Absent:** chunked/ghost-cell voxel-world literature entirely; out-of-core isosurface extraction; temporal coherence across frames; spatial-hash grids; van Kreveld et al. seed sets (**now acquired**, §3); geometry clipmaps.
++
++**The seam answer the corpus actually supports is transition cells** (Lengyel), not dual-grid crack-avoidance. Ju 2002's "requires no crack patching" claim is now checkable — the paper is present — but has not been read against this question. Until it is, the DC-is-crack-free-by-construction claim is **R at best, not V**.
++
++### Vertex placement and quality — strong on metrics, was thin on primary sources
++
++Knupp et al., Verdict library (`10.2172/901967`) · Grosso & Zint (`10.1007/s00371-021-02139-w`) · Jiao & Zha (`10.1145/1364901.1364924`) · Garland & Zhou (`10.1145/1061347.1061350`) · Lindström & Turk (`10.1145/353981.353995`) · Plantinga & Vegter (`10.1145/1057432.1057465`) · Boissonnat/Cohen-Steiner/Vegter (`10.1007/s00454-007-9011-4`) · Blu/Thévenaz/Unser (`10.1109/tip.2004.826093`) · FlexiCubes, NMC, NDC, TetWeave, MeshSDF.
++
++**Absent, now sourced (§3):** Garland & Heckbert 1997 · Cignoni et al. *Metro* 1998 · Witkin & Heckbert 1994 · Du/Faber/Gunzburger CVT 1999.
++
++### GPU and parallel — the weakest area in the corpus
++
++Present: Dyken et al. HistoPyramids (`10.1111/j.1467-8659.2008.01182.x`) · Schmitz et al. (`10.1111/j.1467-8659.2010.01825.x`) · Cirne & Pedrini (`10.1007/s13173-012-0097-z`) · Newman et al. SIMD MC (`10.1016/j.cag.2003.12.008`) · Crassin GigaVoxels · Aokana · Laine & Karras software rasterisation.
++
++**Absent:** mesh/task shaders entirely · wave and subgroup intrinsics entirely · roofline and arithmetic-intensity analysis entirely · occupancy/divergence in case-table kernels entirely · cache blocking and NUMA · deterministic parallel reduction.
++
++**Consequence for the repo:** the corpus **cannot** answer whether GPU isosurfacing is bandwidth-, latency- or compute-bound, at any grid size. This project's own banked figures (0.22 ms fixed cost, ~33³ break-even, field evaluation dominating) are currently the only measurements with that specificity anywhere in reach, and **must not be attributed to the literature**.
++
++### Incremental and dynamic — strong theory, one genuine void
++
++Acar's self-adjusting computation line is fully indexed (five papers) · Agarwal et al., *Maintaining Contour Trees of Dynamic Terrains* (`10.48550/arXiv.1406.4005`) · Acar/Cotter/Hudson/Turkoglu dynamic well-spaced point sets and kinetic mesh refinement · Driscoll/Sarnak/Sleator/Tarjan persistence (`10.1016/0022-0000(89)90034-2`) · Nielsen & Museth dynamic tubular grid · six modern dynamic-connectivity papers.
++
++**The void, and it is worth naming precisely.** Neither `distill_search` over 9,425 documents nor a live provider search found **any** published scheme for giving isosurface output elements identities that survive a local edit without carrying mutable state across calls. The persistence literature solves cheap access to *old versions* and is stateful by construction. The dynamic-connectivity literature maintains *aggregates*, not output-buffer slots. **R-027a is operating in genuinely unoccupied territory** — which is the same shape of finding as V-43, and it should be recorded with the same care.
++
++### Learned and frontier — well covered
++
++FlexiCubes · DMTet · Neural Marching Cubes · Neural Dual Contouring · MeshSDF · nvdiffrec · VolSDF · TetWeave · fTetWild · TetGen · Labelle & Shewchuk isosurface stuffing · Ruppert · Boissonnat & Oudot · restricted power diagrams on GPU (`10.1111/cgf.142610`) · Power-diagram adaptive extraction (`10.48550/arXiv.2506.09579`) · 3DGS/2DGS/SuGaR/MILo · Subgrid Marching Tetrahedra (Baktash/Gillespie/Crane, arXiv 2606.00454 — **the paper this crate implements, present**).
++
++---
++
++## 3. Procurement list
++
++### 3.1 Acquired this session
++
++| Paper | DOI | Status |
++|---|---|---|
++| van Kreveld et al., *Contour Trees and Small Seed Sets for Isosurface Traversal* | `10.1145/262839.269238` | downloaded + converted |
++| Lévy, *A Numerical Algorithm for L2 Semi-Discrete Optimal Transport in 3D* | `10.1051/m2an/2015055` | downloaded, conversion running |
++| Aila & Laine, *Understanding the Efficiency of Ray Traversal on GPUs* | `10.1145/1572769.1572792` | downloaded, conversion running |
++
++### 3.2 Paywalled by DOI, free copy located — needs a URL-based ingest
++
++`paper_download` resolves DOIs only, so these six need `hs paper add <url>` or an inbox drop. Every URL below was fetched and content-verified.
++
++| Paper | Free copy | Source |
++|---|---|---|
++| Garland & Heckbert, *Surface Simplification Using Quadric Error Metrics*, 1997 | `https://www.cs.cmu.edu/~garland/Papers/quadrics.pdf` | author page (CMU) |
++| Treece/Prager/Gee, *Regularised Marching Tetrahedra*, 1999 | `http://mi.eng.cam.ac.uk/reports/svr-ftp/treece_tr333.pdf` | Cambridge CUED TR333 |
++| Holm/de Lichtenberg/Thorup, JACM 2001 | `https://di.ku.dk/.../97-17.pdf` (Part I) and `.../97-26.pdf` (Part II) | author's institutional repo |
++| Acar et al., *Parallel Batch-Dynamic Trees via Change Propagation*, ESA 2020 | `https://arxiv.org/pdf/2002.05129` | arXiv |
++| Williams/Waterman/Patterson, *Roofline*, 2009 | `https://www2.eecs.berkeley.edu/Pubs/TechRpts/2008/EECS-2008-134.pdf` | Berkeley TR UCB/EECS-2008-134 |
++| Hu et al., *Tetrahedral Meshing in the Wild*, 2018 | `https://www.cs.toronto.edu/~jacobson/images/tetrahedral-meshing-in-the-wild-siggraph-2018-compressed-hu-et-al.pdf` | author page (Jacobson) |
++
++Two caveats carried honestly. The HDT JACM merged version is not posted anywhere free; the two DIKU technical reports are the same authors and jointly cover all four problems in the JACM title, so they are the legitimate equivalent, not the identical artefact. The Roofline TR is titled *"...for Floating-Point Programs and Multicore Architectures"* against the CACM's *"...for Multicore Architectures"* — same authors, same content.
++
++This section is the working instance of **M-290's rule**: a paywalled DOI is not a missing paper. Six for six.
++
++### 3.3 Not yet sought, ranked by leverage
++
++1. **Ju, *Intersection-Free Contouring on an Octree Grid*, PG 2006.** A-025's open defect sits exactly in the gap between IFC (intersection-free, still non-manifold) and MDC (manifold, still self-intersecting). The corpus has one half of that pair.
++2. **Kazhdan/Klein/Dalal/Hoppe, *Unconstrained Isosurface Extraction on Arbitrary Octrees*, SGP 2007.** Drops the restricted-octree assumption Ju 2002 carries.
++3. **A mesh-shader primary source.** Nothing in the corpus covers the pipeline `isomesh-gpu` has already probed for.
++4. **Zhang/Hong/Kaufman, DC with topology-preserving simplification, Vis 2004.** The named alternative to MDC's clustering rule.
++5. **Tzeng/Patney/Owens, *Task Management for Irregular-Parallel Workloads on the GPU*, HPG 2010.** No resolvable DOI; OpenAlex W2016706026.
++6. **Varadhan et al., *Feature-Sensitive Subdivision and Isosurface Reconstruction*, Vis 2003.** Thin features — the CAD consumer's case.
++7. **Losasso/Fedkiw/Osher, spatially adaptive level sets, 2006** (`10.1016/j.compfluid.2005.01.006`). The nearest thing to temporal coherence for a dynamically changing field.
++
++### 3.4 Pre-DOI, likely needs a human
++
++Nielson & Hamann, *The Asymptotic Decider* (Vis '91) · Chernyaev, *Marching Cubes 33* (CERN CN/95-17) · Doi & Koide (IEICE Trans. E74-D, 1991). All three are primary sources for case tables this crate implements. Rule 5 says do not guess a case table; at present three of them are known only through others' paraphrase.
++
++---
++
++## 4. Two corrections owed to this repo's own documents
++
++1. **`docs/research/` claims Ju 2002 is uncited/absent in places.** It is present at `10.1145/566570.566586`. Any ticket text carrying `10.1145/566654.566586` has a bad DOI.
++2. **TetWild is a phantom catalog row**, not an absent paper — `catalog_no_source` lists `10.1145_3197517.3201353`. The file was lost after the row was written. A free copy is in §3.2.
+diff --git a/docs/research/2026-08-18-eli10-what-we-found.md b/docs/research/2026-08-18-eli10-what-we-found.md
+new file mode 100644
+index 0000000..77efb3d
+--- /dev/null
++++ b/docs/research/2026-08-18-eli10-what-we-found.md
+@@ -0,0 +1,220 @@
++# What we found, explained like you're ten
++
++This is every big discovery the `isomesh` project has made so far, written so a ten-year-old can follow it — and always answering the question that actually matters: **what does this mean when you're playing the game?**
++
++The game is one where the whole world is made of stuff you can dig through. Not blocks — actual smooth rock, with caves and tunnels and overhangs. You can dig anywhere, and the ground has to redraw itself instantly.
++
++---
++
++## First, the one idea everything else sits on
++
++The computer does not store the shape of the world. That would be enormous.
++
++Instead it stores a **number at every point in space**, and the number answers one question: *how far are you from the nearest rock, and are you inside it or outside it?* Negative means you're inside the rock. Positive means you're in the air. Zero means you're standing exactly on the surface.
++
++So the world is a giant invisible field of numbers, and **the surface of the world is just "everywhere the number is exactly zero."**
++
++The job of `isomesh` is to look at that cloud of numbers and draw the triangles that sit where the zeros are. That's it. Numbers in, triangles out. Everything below is what we learned trying to do that fast, correctly, and in ways that make the game more fun.
++
++---
++
++## Discovery 1 — The slow part wasn't the hard part. It was two silly things.
++
++We had two families of algorithms. One of them, the "dual" family, was famous for being slow. Everyone knows this. It's in books.
++
++We measured it, and the slowness came from two things that have nothing to do with the algorithm at all.
++
++**Silly thing one.** Deep inside the code there was a loop that had to keep asking "am I working on the X direction, the Y direction, or the Z direction?" — *every single time around*, millions of times. We changed it so the computer is told which direction ahead of time and makes three separate copies of the loop, one per direction. Nothing else changed. **It got about three times faster, and produced byte-for-byte the exact same triangles.**
++
++**Silly thing two.** Computers keep a small fast pocket of memory near the processor. Our rows of world data were spaced *exactly* the wrong distance apart — every row landed in the same slot in that pocket, so each one kicked the last one out. It's like a class where all thirty kids are assigned the same locker. The fix was to make each row one number longer, so they stop colliding. **That gave us another big chunk of speed, and cost less than one percent of memory.**
++
++Put together: the "slow" algorithm went from **694 milliseconds to 163 milliseconds** on a big chunk of world. It went from five and a half times slower than its rival to only about a quarter slower — and below a certain size, it's now the *faster* one.
++
++**What it means when you're playing:** the world can be bigger, the chunks can rebuild faster after you dig, and the smoother-looking mesher stopped being a luxury you couldn't afford. "Dual contouring is slow" turned out to be a statement about one piece of code on one afternoon, not about the algorithm.
++
++---
++
++## Discovery 2 — Our ruler was broken, and it made two true things look false.
++
++We wanted to check whether our triangles pointed the right way along a sharp edge. So we built a test shape — a wedge, like a doorstop — where we could *calculate* the correct answer by hand and compare.
++
++Twice in a row, the test said our mesher was wrong.
++
++It wasn't. **The thing we were comparing against was broken.** The code that computed the "true" direction had a spot where two nearly-equal numbers got subtracted, leaving basically nothing but rounding dust — and then it confidently pointed in whatever random direction that dust happened to face. For about half the points near a flat face, our "ground truth" was noise.
++
++When we fixed the ruler, the count of bad vertices dropped from **6,959 to 472**, and both hypotheses that had looked dead turned out to be **exactly right**.
++
++There's an earlier version of the same lesson. We built a test wedge lined up neatly with the grid, and it agreed with our prediction to four decimal places. That felt great. It was a trap — the shape was *too* well behaved. When we rotated it by 17 degrees, it fell apart immediately.
++
++**The rule we wrote down:** if a measurement seems impossible, suspect the measuring stick before you suspect the world. And if a test agrees *perfectly*, be suspicious — perfect agreement usually means the test isn't testing anything.
++
++**What it means when you're playing:** nothing directly — and that's the point. This is the discovery that stopped us shipping a "fix" for a bug that didn't exist, which would have made the actual sharp edges in the game worse.
++
++---
++
++## Discovery 3 — Digging is cheap. Writing down the answer is expensive.
++
++When you dig a small hole, only a tiny bit of the world actually changes. We measured it: an edit that touches **0.038%** of the world changes about 792 little cells — and that number stays *exactly the same* whether the world is small or 64 times bigger. That's great news. The work is proportional to the digging, not to the world.
++
++But then we looked at the list of triangle corners the mesher hands to the graphics card, and **56 to 77 percent of the entries had moved.**
++
++Why? Because the corners are numbered 1, 2, 3, 4... in the order they're found. If one cell suddenly produces one extra corner, **every single number after it shifts by one.** Nothing about that geometry changed. Only its place in the queue did.
++
++We worked out the ceiling: if we named each corner after *where it lives in the world* instead of *when it was found*, the churn would drop from **15,706 to 346** — about 45 times better, and it would stay flat no matter how big the world gets.
++
++Then we hit a wall, and the wall is interesting. The only version of that idea that actually works requires the mesher to *remember things between calls* — and we have a test, written on purpose, that exists specifically to catch a mesher whose answer depends on what it did last time. So the fix would turn a safety test's failure condition into its intended behaviour. We stopped rather than paper over it.
++
++**What it means when you're playing:** right now, digging a small hole makes the game send far more data to the graphics card than it needs to. Fixing it means bigger destructible worlds at the same frame rate. We know exactly how much is on the table, and we know exactly what's blocking it.
++
++---
++
++## Discovery 4 — Digging breaks caves in two more often than you'd think
++
++We asked: when you fill in a bit of a cave, how often does that split the cave into two separate caves?
++
++**About one time in six.** And splits outnumber "you sealed off a tiny pocket entirely" by 27 to 5.
++
++That matters because a lot of interesting game logic depends on knowing which spaces connect to which. Can the water flow from here to there? Can the monsters path from their nest to your base? Did you just seal yourself in?
++
++Checking this the dumb way — recompute everything — would be far too slow to do every time you dig. We built the smart version instead, and it does about **436 times less work** than recomputing.
++
++But then we built the *nastiest possible* test: an edit that slices a cave exactly down the middle into two equal halves. That's the worst case, because you have to explore both halves before you can be sure they're really separate. It cost about **1.1 times a full recompute** — slightly worse than just starting over.
++
++The fix wasn't a cleverer algorithm. It was **chopping the world into chunks**, so any search is trapped inside one chunk and can't run away across the whole world.
++
++And one more honest note: that 1.1× number is the *adversarial* case, deliberately built to be awful. In a realistic scene — severing a passage between two chambers — the same measurement came out at **0.028×**, which is 35 times cheaper. We nearly wrote down the nasty number as if it were the normal one. We now have a rule about that: run the adversarial fixture *and* a realistic one, and never quote one number for both.
++
++**What it means when you're playing:** the game can know, on the exact frame it happens, that you just cut a tunnel in half — or that you just broke through into a chamber nobody has entered. Instantly, every time, without a hitch in the frame rate.
++
++---
++
++## Discovery 5 — The echo is free
++
++Once the game knows which pocket of air you're standing in, it also knows two things it was already tracking anyway: how big that pocket is, and how much wall surface it has.
++
++There's a very old, very simple formula in acoustics — Sabine's formula — that turns exactly those two numbers into **how long an echo lasts in a room**.
++
++So we measured how expensive it is to compute the reverb on the frame you smash through into a new cavern.
++
++**0.0015 microseconds.** That is two numbers read out of memory and one division. The budget we'd allowed was 100 microseconds. We came in about sixty thousand times under it.
++
++And the answer it gives is sensible: two chambers merging produced a **0.70 second** reverb tail, which is a believable big-cave sound.
++
++**What it means when you're playing:** the moment your pickaxe punches through the last bit of rock into a huge chamber, the sound of your own footsteps changes — instantly, correctly, calculated from the actual shape of the actual hole you actually just made. Not a trigger volume an artist placed. Not a preset. The real room. Dig a side passage and the echo shortens. Seal it up and it changes back.
++
++---
++
++## Discovery 6 — You cannot hear someone digging inside a pillar, and we were wrong about why
++
++Here was a lovely idea: if the world can be "played" like an instrument, a stone pillar has a note it rings at. Dig material out of it and the note should change. So you could *hear* structural damage.
++
++We tested it. Digging inside a pillar changed its note by **0.11%**, and a human ear can only notice about **0.6%**. So: inaudible. Fine, that half we expected.
++
++The half we *didn't* expect: we were sure that digging near a thin bit — the narrow web connecting two thick parts — would be dramatic, because thin bits look fragile. It changed the note by **0.032%**. Even less. The prediction that died was the one we were confident about.
++
++The reason is genuinely surprising. What decides whether removing a chunk changes the note is not *whether the chunk is in a skinny place*. It's **how much of the object's bending energy is stored right there**. The thin web isn't doing the bending — it's just going along for the ride while the thick pillar sways. Taking material out of a passenger doesn't change the ride.
++
++And we checked our instrument wasn't just numb: carving out a full 20% cavity moved the note **63.9%**. It can absolutely detect a change. There just wasn't one.
++
++**What it means when you're playing:** "hollow it out and hear it groan" doesn't work, and we found that out in a day instead of a month. What survives is more interesting: the note *is* a real measure of structural health, and the places where bending energy concentrates are exactly the hinges where a structure will actually fail. That's a creak that means something.
++
++---
++
++## Discovery 7 — We can tell you when the arch falls, and we checked it against real books
++
++If you're going to let players build stone arches and bridges, you need to know when one collapses. Not "it looks wobbly" — actually collapses.
++
++There's real engineering literature on this, going back centuries. We built the solver and checked it against two published numbers.
++
++- The thinnest an arch can be before it falls: books say **0.1075**. We got **0.10734**.
++- How far you can tilt an arch before it collapses: books say **15.84 degrees**. We got **15.850 degrees**.
++
++We also learned something in the *middle* of building it: our first solver used a fashionable fast method that gets close to the answer quickly and then crawls. Crawling wasn't good enough here — we needed to land precisely on the line between "stands" and "falls." We swapped it for a simpler, older method that actually converges. Good thing we noticed before trusting the numbers.
++
++**What it means when you're playing:** you dig out the base of a stone bridge. The game *knows* — using the same maths a real engineer would use — whether it still stands. Take one more block and it comes down. Not scripted. Not a hit-point bar. Actual statics.
++
++---
++
++## Discovery 8 — The shape that passed every test and was still broken
++
++We have a whole battery of tests for whether a mesh is a proper solid object: is it closed, do the triangles agree on which way is out, does its Euler characteristic come out right, does every edge have exactly two faces.
++
++We built a shape called a **bowtie** — two pyramids touching at a single sharp point, tip to tip. Forty-eight numbers, that's all.
++
++It passed **every single test**. And it is not a valid solid, because that shared tip is a place where the surface pinches to nothing — you can't say what's "inside" there.
++
++The tell was hiding in plain sight: its Euler characteristic came out as **3**. That number must be *even* for any closed solid. It was odd. The maths was screaming and nothing was listening, because no test checked that particular thing.
++
++The fix was one line: pass a number that was already being computed, and require it to be zero.
++
++**What it means when you're playing:** physics engines take meshes and decide what's solid. Hand one a bowtie and you get a player who falls through the floor, or a bullet that passes through a wall, in a way nobody can reproduce. This is the bug class that eats a week. Now it can't get out of the building.
++
++---
++
++## Discovery 9 — The documentation said the GPU was slower. Its own data said 37 times faster.
++
++Our README answered the question "is doing this on the graphics card faster?" with **no**.
++
++The project's own committed measurement file, sitting right there in the same repository, said the graphics card was **37.6 times faster** at a decent grid size.
++
++The README was right *once*, before two improvements landed, and nobody re-read it. Worse, that wrong sentence got copied out to the public documentation page the same day.
++
++There's a related one. A result got fixed, the fix changed what a whole comparison meant, and the explanation was written **only in a commit message**. Six weeks later nobody could find it. The rule now: **a result that exists only in a commit message is not retrievable.** It goes in the findings file or it didn't happen.
++
++**What it means when you're playing:** nothing directly, but it's why this project keeps a findings file at all. Documentation rots quietly, and the version that rots is always the one that used to be true.
++
++---
++
++## Discovery 10 — We tested on a real bonsai tree
++
++Most graphics papers test on maths shapes — spheres, donuts, mathematical squiggles. Nice and clean. Suspiciously clean.
++
++So we went and got real scientific CT scan data: a scanned **bonsai tree** and a scanned **jet of fuel**. Real, messy, noisy, quantised measurements.
++
++Two things came out of it.
++
++First, a published claim about triangle quality landed **inside** the range the literature reports — which told us that range is a property of *the kind of data*, not of anyone's clever implementation. An earlier test had seemed to contradict it; the earlier test had just used the wrong kind of shape.
++
++Second, on a surface with **over a million triangles**, plain old Marching Cubes produced **zero** bad edges. And the fancier "guaranteed-manifold" algorithm proved it earns its keep on real data specifically: it took bad edges from **1,776 down to 85**, a 95% cut — which the clean maths shapes had never shown, because they never had the problem.
++
++We also found that a third algorithm flatly **refused** to mesh the bonsai. Chasing that down turned up something worth knowing: the scan stores values as whole numbers, and at a sharp peak the neighbours on both sides are *equal*, so the usual way of computing a slope gives exactly zero — and you can't point "outward" when there's no outward. **16,284 sample points sat exactly on the surface.** The workaround is charmingly simple: cut the surface at 127.5 instead of 127, so no sample can land exactly on it.
++
++**What it means when you're playing:** the game can eat real-world scan data, not just procedurally generated shapes. And we know which algorithm to reach for when the data is ugly, because we tried it on ugly data.
++
++---
++
++## Discovery 11 — Two things we proved were impossible, and were glad to
++
++Not every result is "we made it work." Some are "we saved ourselves months."
++
++**The medial axis detector.** There's an elegant idea: the "spine" running down the middle of a shape is where a certain quantity goes exactly to zero, so just look for the zeros. We found **4,225** of them, exactly where the spine should be. Beautiful.
++
++Then we shifted the grid by half a step. **All 4,225 vanished.** We shifted by a full step and got exactly **3,136** back — which was the precise number our own maths had predicted beforehand for that alignment. The detector wasn't finding the shape's spine. It was finding **where the grid happened to be sitting relative to the origin**. It was measuring itself.
++
++**Better vertex placement.** A proposal claimed that placing triangle corners more cleverly would improve accuracy by more than 20%. We killed it with arithmetic, before writing a line of code: even if you place *every single corner perfectly* on the true surface, a flat triangle still sags away from a curved surface in its middle. That sag is a floor you cannot get under. The proposed 20% was **above the ceiling of any placement rule whatsoever**.
++
++And a sharper version of the same fact fell out: one family of algorithms is limited by *where its corners are* (so better placement helps), and the other is limited by *how it cuts the surface into triangles* (so better placement can't help at all).
++
++**What it means when you're playing:** nothing — which is exactly the return on investment. Both of these would have been weeks of work producing something that could not have worked, and both died in under a day.
++
++---
++
++## The habits, and why they're the real result
++
++Reading all of the above back, the pattern is that **most of the value came from being wrong efficiently.**
++
++So here are the rules the project earned the hard way, each one paid for by a specific mistake:
++
++- **Write down what you expect *before* you measure it**, including the exact result that would prove you wrong. Otherwise you'll find a way to feel right afterwards.
++- **Never edit a prediction after seeing the answer.** That's not a rule about honesty, it's a rule about usefulness — an edited prediction can't teach you anything.
++- **Count things instead of timing them where you can.** Counts are exact and mean the same thing on every machine. A committed timing file turned out to be **1.45× stale** without anyone noticing — and separately, *adding one unrelated function* moved a measurement from **152.5 ms to 130.8 ms**, purely by shifting the code around in memory. Neither of those is the algorithm changing.
++- **Check the ruler as hard as the thing you're measuring.**
++- **A paywalled paper is not a missing paper.** Check the author's own page — we found one sitting there under the exact filename we already knew.
++- **A rule written down once has not been applied once.** We wrote a rule, then broke it on the very next experiment. Now the rules are tests.
++- **Never delete a result that turned out to be wrong.** It records which sources to distrust, which is worth more than the fact was.
++
++That last one is why the findings file only grows. It's not a log of successes. It's a map of every place the ground turned out to be soft.
++
++---
++
++*Companion documents: the corpus audit, the novelty table, the backlog and harness audit, and the memo on the four blocked decisions. All dated 2026-08-18.*
+diff --git a/docs/research/2026-08-18-four-blocked-decisions.md b/docs/research/2026-08-18-four-blocked-decisions.md
+new file mode 100644
+index 0000000..3e64acf
+--- /dev/null
++++ b/docs/research/2026-08-18-four-blocked-decisions.md
+@@ -0,0 +1,138 @@
++# The four blocked decisions
++
++**Date:** 2026-08-18
++**Why this document exists:** all 14 open tickets are blocked, and four of the blocks are yours. Three are genuine design decisions the ticket text explicitly refuses to make without you (`CLAUDE.md`: *"Do NOT assume design decisions on my behalf"*). The fourth is a sequencing call.
++
++Each section gives the question, what is already measured, the options with their real costs, a recommendation, and — importantly — **what would change my mind**. The measurements are yours; the recommendations are mine and are argued, not asserted.
++
++---
++
++## Decision 1 — A-026: how far does the CoACD pipeline go in-crate?
++
++### The question
++
++Rule 3 forbids a new dependency without written justification, so every piece of a convex decomposer lands in `crates/isomesh` or does not exist. That makes "how much of it" a real choice rather than an implementation detail.
++
++### What is already settled, and it is a lot
++
++- **Route (a) is decided** — a decomposer that genuinely *partitions* the interior. ✗21 killed Convex Primitive Decomposition as a substrate: it covers the **surface**, its primitives **overlap by design** (30× cost), and *"guarantees enclosure"* is exactly what disqualifies it, because a wrapper is by definition bigger than what it wraps, so cutting it yields fat pieces.
++- **CoACD over V-HACD, with merging OFF (V-36).** CoACD's §6.2 gives flat boundaries between components and intersection-free hulls without voxelisation. Its §6.5 merge post-process breaks that guarantee — a merged pair's hull can reach into a third neighbour — and **merging is on by default**. The merge exists only *"to further reduce the number of components,"* so switching it off costs component count, not correctness.
++- **M-297: nothing published runs at interactive rates.** VisACD 16.97 s; CoACD 36.31 s and 194–253 s per model against a 16.67 ms frame. Every "real-time" method precomputes and says so. **This is not a per-frame feature under any option.**
++- **CoACD assumes 2-manifold solid input** and says so — *"pre-processing with an off-the-shelf manifold conversion algorithm."* So for **this** method the repair pass ✗20 called a quality lever is a **prerequisite**.
++
++### What each option actually costs
++
++**(i) The whole pipeline.** 3D convex hull · surface *and* interior point sampling · Hausdorff between point sets · solid-mesh plane cut · MCTS over candidate planes · plus manifold repair. The ticket's own words: *"several tickets and the crate's largest single addition."* The convex hull alone is a ticket.
++
++**(ii) A narrower first cut.** Convex hull plus a greedy plane split. No MCTS, no collision-aware concavity. Lower-quality cells that still partition, at a fraction of the work.
++
++### Recommendation: **(ii), and split it before starting.**
++
++Three reasons, in order of weight.
++
++**A-027 is what actually needs unblocking, and it does not care.** The decomposer's interface is *mesh in, convex cells out* under either option. A-027 — where `plane ∩ convex polyhedron = convex polygon` makes the centroid fan **provably** correct, which is why the cuboid scores 8/8 and it is not luck — is owed regardless and is currently blocked behind a ticket whose scope is undecided. Option (ii) unblocks it in a fraction of the time.
++
++**MCTS buys quality, and quality is not what is being tested.** A-026's own hypothesis is that fragments come out closed, manifold, χ=2 and volume-conserved to 1e-3. **Those are properties of partitioning, not of partition quality.** A greedy split that partitions satisfies the hypothesis; MCTS makes the cells prettier. Building the expensive half first is the "building the wrong thing carefully" failure that A-020b already paid for.
++
++**It keeps the falsifier reachable.** The falsifier is *any proxy fragment reporting open cut edges*, which locates the defect in plane-cell intersection. That is testable the moment cells exist. Under option (i) it is testable after several tickets.
++
++**Suggested split:** `A-026a` 3D convex hull (self-contained, generally useful, needed by both options) · `A-026b` greedy plane split producing partitioning cells · `A-026c` manifold-repair prerequisite, **scoped by measurement first** — check how many of your actual shells are already 2-manifold before building a repair pass for a problem you may not have · `A-026d` MCTS plane selection, **deferred until A-027 has measured whether cell quality is even the binding constraint**.
++
++**What would change my mind:** if A-027's centroid-fan correctness turns out to be sensitive to cell *shape* and not just cell *convexity*, then greedy cells are not a valid substrate for the experiment and MCTS moves onto the critical path. That is checkable early — plane-cut a deliberately ugly greedy cell and check the cap.
++
++**Keep on the desk, as the ticket says:** Diazzi & Attene's VolumeMesher (`10.1145/3478513.3480564`) reaches classified convex cells **without** tidying the input. Unusable as a dependency (C++, rule 3), but it is the measuring stick for what CoACD's mandatory repair pass costs in fidelity — otherwise invisible.
++
++---
++
++## Decision 2 — A-025: the `FaceAmbiguity` default
++
++### The question
++
++`ManifoldDualContouring` defaults to `FaceAmbiguity::Separate`. The paper's construction is the decider-modified table, which is **20% better on `noise_cavity`** (143 → 114 non-manifold edges) and, per the module docs, **worse on `gyroid` at 25³**. Changing it re-baselines every golden hash.
++
++### What is already settled
++
++- **The paper's claim is falsified** (✗19, M-290). §3 says the uniform-grid dual *"is always a manifold."* Over eight fields at three resolutions MC measures **0** non-manifold edges under both face rules; MDC measures **143** / **114**. The premise holds; *"the dual preserves the topology"* does not.
++- **P-17 is falsified (M-291).** The residue is *not* the interior ambiguity. `Interior::Joined` is reported by **100%** of ambiguous-face pairs on `noise_cavity` — offenders and control alike — so the any-axis test has no discriminating power. Restricted to the shared face it discriminates and points the **wrong way**.
++- **M-292: no two-cell sign configuration forces the defect.** All 4,096 two-cell sign patterns × 16,384 joined-bit assignments: 512 share an ambiguous face, 18 offend under mask 0, 476 under some mask, **0 under every mask**. But a rule reading only the shared face cannot fix it — the decider leaves 25–49.
++- **M-294: the minimal fixture exists.** 48 samples, a 2×2×3 column whose middle plane is the face saddle. MC: 0 defects. DC and MDC: 1. Walking the saddle across zero takes the defect 1 → 0 with the triangle count never moving — **pure connectivity**.
++- **M-310: MDC earns its keep on real data.** On the bonsai CT volume it takes non-manifold edges **1,776 → 85**, a 95% cut. The synthetic fields never showed this because they never had the problem.
++
++### Recommendation: **leave the default at `Separate`, write the reason down, and close the ticket's part (2).**
++
++**The 20% is on one field, and that field is the outlier.** `noise_cavity` was added specifically because none of the others produces an interior ambiguity (M-208). Re-baselining 216 golden hashes to win 29 edges on the one deliberately pathological field, while losing on `gyroid`, is a bad trade — and the loss is on a *triply periodic* field, which is the shape closest to real cave systems.
++
++**The mechanism is not understood, and a default should not move ahead of one.** P-17 is falsified and M-292 says no shared-face rule can fix it. Changing the default now would be changing a knob whose effect you cannot yet explain — and M-292's own conclusion is that the fix needs **strictly more context than the face**, which neither table provides.
++
++**The golden-hash re-baseline is not free in a way that is easy to underrate.** Regenerating 216 hashes with `ISOMESH_BLESS=1` means reading the diff by eye. Doing that for a change you cannot explain spends the crate's single best regression instrument on a coin flip.
++
++**What to write down instead** — this is the deliverable, and the ticket already accepts it: *the default is `Separate`; the decider table is 20% better on `noise_cavity` and worse on `gyroid`; the residue is a known defect of 85–143 edges concentrated on fields with interior ambiguities; M-292 proves no shared-face rule removes it; the candidate that could is Grosso's three-quadratic tunnel test adapted to dual cells* (novelty-table row 1).
++
++**What would change my mind:** if the tunnel test lands and removes the residue under *both* tables, then the default choice becomes free and should follow whichever is better on `gyroid`. Also, if a consumer is feeding MDC real CT-like data rather than synthetic fields, M-310's 95% argues the decider table's real-data behaviour should be measured before deciding — **and it never has been.** That is a cheap missing measurement and arguably should precede this decision.
++
++---
++
++## Decision 3 — X-005: take the API break, or write the contract down?
++
++### The question
++
++`extract_into` takes `origin: [R; 3]`; every implementation computes `origin + cell_size · local`. A chunk at a non-zero base reaches its far sample plane as `(o + h·base) + h·local`, its neighbour as `o + h·(base + local)`. **Those are equal by algebra and not by IEEE.**
++
++### What is already settled (M-278)
++
++- Canonical reconstruction gives **0** unmatched seam-plane boundary edges at **every** spacing tried.
++- What the crate offers today gives 0 only at a **power-of-two** spacing, and **63–348** at `0.1`, `1/12`, `1/14` — plus a hole **1.05–2.08 cells wide** in 2 of 12 rows where an ulp flipped a sign.
++- **The crate's own weld hides all of it (✗18).** An unwelded consumer — M-69's collider — gets it in full.
++- The working shape is *one path, not two*: replace `[R; 3]` with `(grid origin, integer base)` and compute `o + h·(base + local)`, degenerating to today's behaviour at base zero. **`TransitionCell::sample` already took this route at A-011b** — the precedent is in the tree.
++- **Blast radius, counted not estimated:** 7 inherent `extract` methods behind one `forward_extractor!` macro, 39 `origin: [R; 3]` parameters under `crates/`, **294 call sites across 101 files** — 188 in 45 files under `crates/`, 106 in 56 files under `bevy_isomesh/`, a separate workspace with its own lockfile and CI.
++
++### Recommendation: **take the break (a), now.**
++
++**The version number will never be lower.** The crate is at 0.0.9. `X-001` exists to *stabilise* the `Extractor` trait; changing its signature after that is a different conversation entirely. Doing this at 0.0.x costs a changelog line. Doing it at 1.x costs a major version and everyone's afternoon.
++
++**Option (b) writes down a contract the crate cannot enforce.** "Use a power-of-two cell size for a chunked world" is not checkable by any gate in the repo — nothing rejects `cell_size = 0.1`. Contracts a compiler cannot see are found by users, in the field, as a 2-cell hole in a collider. And the crate serves a **CAD** consumer, where `0.1` mm is not an exotic cell size, it is the obvious one.
++
++**The weld argument cuts the wrong way.** ✗18 says the weld hides every hairline — so nothing a *welded* consumer sees changes either way. That is an argument that the break is **low-risk**, not an argument that the bug is unimportant. The population that gets hurt is the unwelded one, which is the collider path, which is where "the player falls through the floor" lives.
++
++**294 call sites is a big number that is mostly mechanical.** 188 are behind one macro plus 39 parameters; 106 are Bevy examples that a compiler error walks you to one at a time. This is an afternoon of tedium, not a design problem — and the design is already validated by A-011b.
++
++**Do not ship both paths.** The ticket says so and it is right. An added `extract_based` alongside `extract` is two behaviours for one question, and every future bug report starts with finding out which one the reporter called.
++
++**What would change my mind:** if a real downstream consumer is already pinned to `isomesh` and would be broken by this, the calculus changes — the break is still right, but it wants coordination and a deprecation cycle rather than a single commit. **You know whether that consumer exists and I do not.** Also, if `bevy_isomesh`'s 106 sites turn out to be mostly in `examples/common/`, the real cost is far lower than the count suggests and this becomes an easy yes.
++
++---
++
++## Decision 4 — R-027 / R-027a: sequencing
++
++### The question
++
++Not really a design decision — a sequencing one. R-027 is stopped, and the ticket that would unstop it is sitting unstarted.
++
++### What is already settled
++
++- **M-314:** computation after an edit is edit-proportional (792 dirty cells, constant across a 64× lattice). The **output buffer** is not — **56–77%** of vertex slots change for an edit touching **0.038%** of cells, growing `O(n²)`. **The cause is a counter.**
++- **M-318:** a grid-edge naming takes churn **15,706 → 346** at 129³ — **45×, flat in n**. Three shapes; only the third works. Stable *order* does not help. Index-is-edge-id costs **230× memory**. A persistent edge→slot map is what an incremental engine runs — and it is state across calls.
++- **V-45 is a stop, not a preference.** `validate::determinism.rs:268` runs `check_determinism` **three** times, the third into a **reused** buffer, under a doc comment saying why in as many words: *"to catch output that depends on the buffer's prior state."* R-027's only working shape **is** that. It does not cost a migration on top of a working design; **it converts a shipped gate's failure condition into its intent.**
++
++### Recommendation: **take R-027a immediately. It is the only unblocked ticket in the file, it is an `S`, and it may dissolve an `L`.**
++
++R-027a decomposes the churn into three terms — vertices that genuinely moved, slots shifted by a predecessor cell's triangle count, and order alone. Its hypothesis is that the **order-only term dominates**, in which case a **canonical reorder at emission** recovers most of the 45× while needing no persistent state, leaving T-004 intact.
++
++It needs no new field and no new extractor — just instrumenting the existing `edit_trace` bench. **Both outcomes are worth having:** if the geometric and predecessor terms dominate instead, then only the persistent map can help and R-027 is genuinely stopped rather than merely blocked, which is a real result and closes an `L` honestly.
++
++**One thing to add to the ticket, and it is worth adding.** A sweep over 9,425 documents plus a live provider search found **no published scheme** for stable identity of isosurface output elements without carrying mutable state across calls. The persistence literature solves cheap access to *old versions* and is stateful by construction; dynamic connectivity maintains *aggregates*, not buffer slots. **This is unoccupied territory** — the same shape of finding as V-43, and it deserves the same care in the record. If the canonical-reorder shape works, it is novel, and the novelty is worth stating precisely rather than by implication.
++
++**Do not reopen R-027 on a softened version of the persistent map.** V-45's reasoning holds: the only reopening condition is a formulation where the map is **derivable from the inputs** — a pure function of grid and field rather than of call history. Nothing in M-318's three shapes is that. A cache keyed on inputs and *rebuilt* rather than *carried* might be; that is a real question and it is downstream of R-027a's numbers, not upstream.
++
++---
++
++## Summary
++
++| Decision | Recommendation | Confidence | Cost of being wrong |
++|---|---|---|---|
++| **A-026** scope | **(ii) narrow first cut**, split into a-d, MCTS deferred | High | Low — if greedy cells prove inadequate, A-026d is still there and A-027 has been measured meanwhile |
++| **A-025** default | **Leave `Separate`**, write the reason down, close part (2) | Medium-high | Low — reversible; the hashes are only re-baselined if you change it |
++| **X-005** API | **Take the break now**, at 0.0.x, one path only | High **unless** a pinned downstream consumer exists — which you know and I do not | Moderate — 294 sites is real tedium, but the design is pre-validated by A-011b |
++| **R-027a** | **Start it today.** Only unblocked ticket, `S`, may dissolve an `L` | High | None — both outcomes are results |
++
++**One cheap measurement is missing and would sharpen A-025:** MDC's decider table has never been measured on real CT data, only on synthetic fields. M-310 showed the synthetic fields systematically understate what MDC is for. That is a bench run, not a ticket.
+diff --git a/docs/research/2026-08-18-novelty-table.md b/docs/research/2026-08-18-novelty-table.md
+new file mode 100644
+index 0000000..f8ff2c6
+--- /dev/null
++++ b/docs/research/2026-08-18-novelty-table.md
+@@ -0,0 +1,81 @@
++# The novelty table — opportunities, their literature, and what they look like in the game
++
++**Date:** 2026-08-18
++**Source:** eight parallel corpus sweeps (primal extraction, dual extraction, adaptive/LOD/seams, vertex placement and error metrics, GPU and parallel, incremental and dynamic, learned and frontier, adjacent-math transfer).
++**Tier:** every row is **R** — reported from literature, read by a sweep agent, not measured here. Where a row touches an existing **M** row in `FINDINGS.md`, the M row wins. Nothing below is a claim about this crate's behaviour.
++
++**Excluded by design** — already banked, do not re-propose: Sabine reverberation on the breach frame, modal analysis of dug structures, masonry statics by alternating projection, the heat-method / Closest Point Method routing decision, medial axis and weak-feature-size certificates, contour-tree maintenance, persistence-thresholded ambiguity resolution, union-find connectivity over the air sublevel set.
++
++---
++
++## Ranked candidates
++
++Ranked by *(measured defect it addresses) × (cheapness of the falsifier)*. A candidate with a cheap falsifier beats a grand one without.
++
++| # | Opportunity | Source literature | Axis | What it looks like in the game | Cheapest falsifier |
++|---|---|---|---|---|---|
++| 1 | **Adapt Grosso's three-quadratic tunnel test to dual cells.** Solve one quadratic per pair of *opposite* faces and check whether the hyperbola intersections form an inner hexagon; where they do, split the cell's dual vertex along the tunnel axis instead of clustering to one. This is a body-saddle test that needs all three face-pairs jointly, so it sees exactly what a face decider cannot. | Grosso, `10.1111/cgf.12975` (2016); `10.1145/3095140.3095179` (2017). Both in corpus. Manson & Schaefer (`10.1111/j.1467-8659.2009.01607.x`) state plainly that MDC and IFC each fix one symptom and neither touches the underlying cell-level ambiguity. | case table + vertex placement | Nothing visible — which is the point. It is the difference between a cave wall the physics engine understands and one where a bullet occasionally passes through. | Run the test on the 26 known offending cell-pairs in `noise_cavity`. If it does not partition them from the non-offenders, the mechanism is wrong and it cost an afternoon. **M-292 already proved no two-cell sign configuration forces the defect, so a rule with strictly more context than the shared face is the only kind that can work — this is the only such rule in the corpus.** |
++| 2 | **Union-find topological safety gate on any vertex reposition.** A cheap connectivity check that vetoes a proposed vertex move if it would change the surface's topology. | Manson & Schaefer §4. | error metric | Lets the mesher snap vertices onto the true surface for sharper silhouettes *without* the risk that snapping welds two sheets together. | Apply it to an existing snapping pass and count vetoes. If zero on all eight reference fields, it is inert here and costs nothing to drop. |
++| 3 | **Randomised per-cell tetrahedral split.** Alternate the tet diagonal by a hash of the cell's integer coordinates, cancelling the directional bias a fixed 5-tet or 6-tet decomposition bakes into every mesh. | Treece, Prager & Gee, *Regularised Marching Tetrahedra*, 1999. **Not in corpus; free copy located** (Cambridge CUED TR333) — see the procurement list. | case table | Kills the faint diagonal grain that marching tetrahedra leaves across flat walls. **M-309 measured MT at 0.250 mean ratio on `box_exact` against MC's 0.858** — tet diagonals cut an axis-aligned face into needles. This is the literature's named remedy for exactly that number. | Re-run `field_quality` on `box_exact` with the hash-alternated split. If mean ratio does not move off 0.250, the diagnosis is wrong. Deterministic by construction — the hash is a pure function of grid coordinates, so golden hashes stay reproducible. |
++| 4 | **Content-addressed vertex naming: name a vertex by its grid edge `(lower sample, axis)`, not by emission order.** | **No prior art exists.** A sweep over 9,425 documents plus a live provider search found no published scheme for stable identity of isosurface output elements without carrying mutable state. The persistence literature (Driscoll et al.) solves access to old versions and is stateful by construction; dynamic connectivity maintains aggregates, not buffer slots. | memory layout + edit locality | Digging sends 45× less data to the GPU per edit. Bigger destructible worlds at the same frame rate. | **R-027a is this ticket and it is an `S`.** Decompose the churn into geometric / predecessor-shift / order-only terms on the existing `edit_trace` bench. If the order-only term does not dominate, only the persistent map helps and R-027 stays stopped. |
++| 5 | **HistoPyramid compaction as a deterministic reduction tree.** Build an explicit sum-reduction pyramid over per-cell output counts, then walk it to place each vertex — no racing atomic counter anywhere. | Dyken, Ziegler, Theobalt, Seidel, `10.1111/j.1467-8659.2008.01182.x`. In corpus. | parallelisation + memory layout | GPU meshing that produces **byte-identical output to the CPU path**, so golden hashes survive the GPU. | Compare GPU and CPU output hashes on one reference field. Either they match or they do not; there is no ambiguity and no timing involved. |
++| 6 | **Exact predicates only where the sign can be wrong.** Evaluate the corner-vs-isovalue sign exactly via indirect predicates, applied selectively rather than everywhere. | Attene, `10.1016/j.cad.2020.102856`; Cherchi et al., `10.48550/arXiv.2205.14151`. In corpus. The crate already has exact `orient2d` and `incircle` from T-024a/b. | correctness | Digging a wall exactly on a voxel boundary stops producing a crack or a sliver. **M-317 measured 16,284 corners sitting at exactly zero on the bonsai volume** — this is not a hypothetical configuration, it is 3% of a real dataset. | Author a field with corner values set exactly to the isovalue (trivial), and count manifold failures before and after. |
++| 7 | **Bounded per-vertex grid deformation, set analytically.** Nudge each grid corner toward the surface by one Newton step along the gradient, bounded to a fraction of the cell diagonal, before applying the case table. | FlexiCubes, `10.48550/arXiv.2308.05371`. In corpus. **The deformation is analytic; only the split-weight is load-bearing on the optimiser** — take the first, leave the second. | vertex placement | Sharper edges on CSG cuts and machined shapes without changing algorithm or resolution. | **M-315 is the gate, and it may kill this outright**: MC is tessellation-limited on 8/8 rows, so moving *grid corners* is not the same lever as moving *surface vertices* and may still be under the ceiling. Measure Hausdorff on `box_exact` and `csg_difference` first. If it does not beat the placement ceiling, stop. |
++| 8 | **Discrete Morse decimation for topology-safe LOD.** Pair simplices into a discrete gradient vector field and collapse along it; every collapse is a combinatorial homotopy equivalence, so it cannot change χ or introduce a non-manifold edge. No floating-point decision anywhere. | Edelsbrunner/Harer/Natarajan/Pascucci, `10.1145/777792.777846`; Benedetti & Lutz, arXiv:1303.6422. In corpus. | error metric + LOD | Distant chunks simplify hard with **no pop-in artefacts, no flipped normals, no bowties** — the exact failure class M-301's bowtie fixture exists to catch. | Run quadric-error collapse against Morse collapse on the eight golden fixtures at ten decimation levels; count χ deviations and non-manifold-vertex link failures. Reuses the existing validity harness wholesale. |
++| 9 | **Directional / multi-normal distance samples for sub-voxel thin sheets.** Store several normal-oriented distance values per voxel instead of one scalar, so two nearby opposite-facing surfaces stop cancelling into one number. | Splietker & Behnke, arXiv:1908.05146. In corpus. | field representation | Thin destructible walls, ramparts and plate geometry stop being eaten by the mesher. Directly serves the CAD consumer, where thin walls are the common case. | Build a sub-cell-thickness wall field; mesh with scalar sampling versus directional sampling; count holes and collapsed triangles. No GPU needed. |
++| 10 | **Range analysis over the field for guaranteed coarse-cell traversal.** Interval arithmetic gives a certificate that a coarse cell provably contains no surface, instead of a heuristic sample-the-corners test. | Sharp & Jacobson, `10.1145/3528223.3530155`. In corpus. | traversal order | An octree or empty-cell rejection pass that **cannot** miss a thin sheet. `gyroid` is the adversary: **M-306 measured its rejected share at 16.8% against `thin_plate`'s 95.1%**, a 5.7× spread, and a coarse cell straddling a gyroid sheet is exactly where corner sampling lies. | Count cells where corner-sampling rejects and interval arithmetic does not, on `gyroid` and `thin_plate`. If zero, corner sampling was already safe on these fields and the certificate buys nothing. |
++| 11 | **Per-cell stored error tolerance driving LOD selection.** Each octree cell records its own reconstruction error, so level choice reads off the tree instead of a fixed depth rule. | Frisken, Perry, Rockwood & Jones, ADF, SIGGRAPH 2000. In corpus. | error metric + traversal | LOD that spends triangles where the rock is complicated and saves them on flat walls, instead of spending by distance alone. | Compare triangle count at fixed visual error against distance-based LOD on `fbm_terrain`. |
++| 12 | **Fracture modes as precomputed candidate cut fields.** Solve a generalised eigenproblem on a compliance operator once per chunk; the eigenvectors *are* plausible break surfaces, with no per-impact FEM solve. | Sellán et al., *Breaking Good*, `10.1145/3549540`. In corpus. | edit locality | Destruction that responds to *where and how hard* you hit, with material-plausible shapes, inside the frame budget — instead of a uniform Voronoi shatter that looks identical every time. | Compare shard-boundary triangle quality and count against plain Voronoi shatter. Falsified if eigen-setup exceeds the per-edit budget it exists to protect. **Note the tension with M-297**: no published convex decomposition runs at interactive rates, so the precompute must genuinely be per-chunk and offline. |
++| 13 | **Meshlet packing with conservative bounds for edited chunks.** | Unterguggenberger et al., `10.1111/cgf.14401`. Not in corpus. | traversal order | Cheap frustum and backface culling per edited chunk without recomputing global bounds. Determinism-neutral — it happens after mesh generation. | Count triangles submitted with and without, on a terrain flyover. |
++| 14 | **Morse-Smale basin labelling inside one connected component.** Decompose the field into ascending and descending manifolds around critical points, giving a persistence-ordered hierarchy of basins rather than a flat connected/not-connected answer. | Edelsbrunner, Harer, Zomorodian, `10.1007/s00454-003-2926-5`. In corpus. | error metric (semantic) | The game can tell "one big cavern with three side-pockets" from "four separate caves" — for minimap labelling, quest placement, and monster territory. The banked union-find cannot produce this. | Compare basin count against connected-component count on the same fixtures. **If they are always equal, the complex adds nothing over what is already shipped** — falsified in an afternoon. |
++| 15 | **Worst-case-bounded dynamic forest (top trees / RC-trees) for the adversarial edit.** Maintain a balanced hierarchical clustering so recomputation is confined to O(log n) clusters, with a **worst-case** rather than amortised bound. | Alstrup et al., `10.1145/1103963.1103966`; Acar et al., ESA 2020 (free copy located). Neither in corpus. | edit locality | Removes the one remaining spike: **M-322's adversarial bisect costs 1.1× a full rebuild**, and per-chunk decomposition bounds it rather than removing it. | The bound is the claim. Measure worst single-frame cost on the bisect fixture, not the mean. **The tension is explicit: HDT's bound is amortised, which M-124 already flags as the wrong statistic for the frame a breakthrough lands on.** Only the worst-case variants qualify. |
++
++---
++
++## What each one costs, on the five axes that matter
++
++| # | Frame budget | Editability | Memory | Determinism | Feature scale |
++|---|---|---|---|---|---|
++| 1 Tunnel test in dual cells | One extra quadratic solve per *ambiguous* cell only. **M-282 measured the face decider at 2.4%**; this is a similar order. | Neutral | Neutral | Safe — closed-form, no iteration, no hashing | Fixes a correctness defect; enables nothing new by itself |
++| 2 Union-find safety gate | Near-zero; runs only where a reposition is proposed | Neutral | One scratch forest per cell | Safe | Unlocks aggressive snapping |
++| 3 Randomised tet split | Zero — same work, different diagonal | Neutral | Zero | **Safe if the hash is of grid coordinates.** A PRNG would destroy golden hashes; a coordinate hash is a pure function | Better triangles on flat faces |
++| 4 Content-addressed naming | Large win: 45× less buffer churn per edit | **This is the editability axis** | Sparser buffer; index-is-edge-id costs 230× memory and is ruled out — the map form is the only affordable one | **This is the whole difficulty.** The working shape carries state across calls, which turns T-004's third run from a gate into a contradiction | Bigger destructible worlds at fixed bandwidth |
++| 5 HistoPyramid compaction | GPU-side; the fixed cost is already measured at ~0.22 ms | Neutral | One pyramid per dispatch | **Chosen precisely because it is deterministic** — reduction tree, no atomics | GPU-resident meshing without losing the hash gate |
++| 6 Selective exact predicates | Only on cells that trip the near-zero test — a small fraction | Neutral | Zero | Improves it — removes an epsilon | Correct behaviour on quantised and CT data |
++| 7 Bounded grid deformation | One gradient evaluation and one Newton step per grid corner | Neutral | Zero | Safe — deterministic arithmetic | Sharper CSG edges, **if it clears M-315's ceiling** |
++| 8 Morse decimation | Offline / background per chunk, not per frame | Neutral | The gradient vector field per LOD level | Safe if the pairing order is canonical | Aggressive LOD with a topology guarantee |
++| 9 Directional samples | More samples per voxel to evaluate — the field-evaluation cost, **which M-296 says is already the dominant term** | Neutral | Multiplies field storage by the number of directions. **The real cost.** | Safe | Sub-voxel walls |
++| 10 Range analysis | More expensive per cell, but rejects whole subtrees | Neutral | Zero | Safe — interval arithmetic is deterministic | Octree traversal that cannot miss a sheet |
++| 11 Per-cell error tolerance | Cheap at selection time; the error must be computed once | Recompute on edit within the dirty region | One scalar per cell | Safe | Error-driven rather than distance-driven LOD |
++| 12 Fracture modes | Eigen-solve is **precompute**, per chunk, offline | Invalidated by edits — the open question | Eigenvectors per chunk | Eigen-solvers are the classic determinism hazard; needs a fixed-iteration deterministic solver | Destruction that responds to the hit |
++| 13 Meshlet bounds | Saves submission cost | Neutral | Per-meshlet bounds | Safe — post-generation | Large-scene culling |
++| 14 Morse-Smale basins | Per-edit within the dirty region | The whole point | The complex per chunk | Safe if critical-point ordering is canonical | Semantic queries on cave structure |
++| 15 Worst-case dynamic forest | Bounds the spike rather than the mean | The whole point | Tree per chunk | Safe | Removes the last connectivity spike |
++
++---
++
++## Rejected, with the reason
++
++This section carries as much weight as the table above. Each of these looks transferable and is not.
++
++- **Persistent-thread GPU kernels** (Aila & Laine; Gupta/Stuart/Owens). Persistent threads pay off when work units vary in traversal *depth*. An 8-corner case table is bounded, uniform work. Gupta et al.'s own caveat — PT "can also result in performance loss in many cases" — applies squarely. Wrong workload shape.
++- **Task-donation queues for GPU load balancing** (Tzeng/Patney/Owens). The mechanism is real and the win is large, but queue order is nondeterministic *by construction*. Recovering byte-identical output needs a deterministic sort afterwards, which is not free and is not counted in the paper's numbers. Determinism is a hard constraint here, not a preference.
++- **Span-space and interval-tree acceleration** (Livnat et al.; Cignoni et al.). Built for varying the isovalue on a *static* field. Here the field changes and the isovalue does not — the index would need rebuilding on every edit, which is precisely the cost it exists to avoid. Rejected direction, worth recording as such.
++- **Progressive meshes as the LOD unit** (Hoppe). Construction is a one-time global optimisation over a static mesh. Mismatched to re-meshing thousands of destructible chunks per edit.
++- **Convex Primitive Decomposition as a cutting substrate.** Already falsified at ✗21 — it covers the *surface*, its primitives *overlap by design*, and enclosure is the wrong guarantee for a substrate. Recorded here so it is not re-proposed a third time.
++- **Learned per-cell topology** (Neural MC / Neural DC). The one genuinely network-bound mechanism in the learned literature. Strip the network and the nearest analytic substitute is Hermite normal clustering, which classical dual contouring already does. Nothing unique remains to extract.
++- **CVT / Lloyd relaxation for placement.** Needs an iteration loop to converge. Amortised cost is fine offline and wrong for a 16.67 ms budget with thousands of chunks.
++- **Restricted power diagrams with a global weight solve** (Lévy; Wang et al.). The weight solve is genuinely analytic — no network anywhere in the lineage, which makes it the most tempting row in the whole sweep. It is rejected for the hot path only because the Newton solve wants a *global* relaxation, and this crate meshes chunks independently. **Keep it live for the CAD consumer**, which is offline and where it may be the strongest option available.
++- **Material point method, peridynamics, lattice Boltzmann.** All require owning a stateful timestep loop and material history, which breaks the "field in, triangles out" contract outright.
++- **Wavelet and compressed-sensing volume compression.** Solves a storage problem the *consumer* owns, not one this crate has, and would cost a dependency for no meshing benefit.
++- **Hierarchical matrices, randomised sketching, Krylov recycling.** The solve here is a dense 3×3 per vertex. These amortise cost over large sparse systems that do not exist in this architecture. Wrong cost class.
++
++---
++
++## Three notes on method
++
++**The sweeps disagreed with each other, and the disagreements were the useful part.** Three of eight independently reported *Dual Contouring of Hermite Data* absent, citing DOI `10.1145/566654.566586`. That DOI does not resolve; the paper is present at `10.1145/566570.566586`. Any ticket carrying the first DOI has a bad citation.
++
++**Every ABSENT claim in this session that was checked turned out to be wrong.** Three for three — Lorensen & Cline, van Gelder & Wilhelms, Kobbelt. The cause is the corpus metadata defect documented in the companion audit: 37.3% of search hits return `title: null`, so a paper can rank first and still be invisible. **No row above should be started on the belief that a paper is missing without checking `paper_download` first** — it answers "File already exists" in under a second.
++
++**Read the paper before the row, not after.** Rows 3 and 15 rest on papers not yet in the corpus. Rows 1, 8 and 10 rest on papers that are in the corpus but have been read only in snippet form by a sweep agent. Rule 5 applies: a case table or a sign convention taken from a summary is exactly how a mesh comes out subtly non-manifold and looks fine.
+-- 
+2.43.0
+
