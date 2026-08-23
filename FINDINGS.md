@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**435 entries** — 34 falsified, 334 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**436 entries** — 34 falsified, 335 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -407,6 +407,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-338` | HELD, and the relation is a bijection rather than a correlation: the critical-configuration census does not predict the… |
 | `M-341` | HELD on all three clauses: a brush that provably cannot win is deleted for free, and the mesh does not move by one ULP (… |
 | `M-346` | HELD on all three clauses, with exactly zero error where the answer is known: the crate can state a clearance, not just… |
+| `M-347` | HELD on all three clauses, and the by-product is sharper than the claim: there are 24 cells on the unit sphere where the… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -8377,3 +8378,100 @@ the clauses were written on.
 **Would be shown wrong by:** a fixture where the bottleneck path is not monotone in the field value — the
 union-find assumes the first connection is the widest, which is true for a sublevel-set filtration and
 would stop being true if the traversal order were anything but a total order on the value.
+
+### 🔬 M-347 — HELD on all three clauses, and the by-product is sharper than the claim: there are 24 cells on the unit sphere where the surface passes through and all eight corners agree (P-48, R-044)
+
+**M.** `cargo bench --bench experiment_p48`, `docs/experiments/p-48.csv`. Eight reference fields at 33³,
+`f64`, a compositional inclusion function with one-ULP outward widening per rounding operation. Two runs
+byte-identical.
+
+| field | certified of all cells | certified of sampled-free | unsound | mean enclosure width / `h` |
+|---|---:|---:|---:|---:|
+| `sphere` | 0.9639 | **1.000000** | **0** | 1.547 |
+| `torus` | 0.9656 | **1.000000** | **0** | 1.449 |
+| `box_exact` | 0.9058 | **1.000000** | **0** | 1.180 |
+| `csg_difference` | 0.9078 | 0.998255 | **0** | 1.200 |
+| `thin_plate` | 0.9802 | — | **0** | 1.260 |
+| `gyroid` | 0.8201 | — | **0** | 1.866 |
+| `fbm_terrain` | 0.7368 | — | **0** | 8.439 |
+| `noise_cavity` | 0.7420 | — | **0** | 8.000 |
+
+**C1 held clean: zero unsound certifications over 262,144 cells and 1.07 billion dense field
+evaluations** (8 fields × 32,768 cells × 4,096 points), `first_unsound_cell = none` on every row. The
+caveat belongs on the record: **dense sampling is one-sided.** It can falsify soundness and cannot prove
+it. This is strong evidence, not a proof.
+
+**C2 held on both readings and the two differ, which is worth knowing.** The registered wording is *"at
+least 90% of the cells dense sampling shows to be surface-free"* — 1.000, 1.000, 1.000 and 0.998 on the
+four exact-distance fields. Read instead against *all* cells it is 0.9639, 0.9656, 0.9058 and 0.9078: the
+same verdict, but `box_exact` clears by 0.58 points and `csg_difference` by 0.78, which is thin.
+
+**C3 held at 8 of 8 against a bar of 6**, and the three fields the falsifier singled out as likely to
+fall outside reach are all well clear: `gyroid` 0.82, `fbm_terrain` 0.74, `noise_cavity` 0.74.
+
+**The by-product is the result.** Decomposing the undecided cells into *"the interpolant hides a surface
+here"* (corners agree, dense sampling finds the analytic surface anyway) versus *"my enclosure is merely
+too loose"*:
+
+| field | hidden | loose | undecided |
+|---|---:|---:|---:|
+| `sphere` | **24** | **0** | 24 |
+| `torus` | 0 | **0** | 0 |
+| `box_exact` | **1,736** | **0** | 1,736 |
+| `thin_plate` | 136 | **0** | 136 |
+| `csg_difference` | 1,582 | 52 | 1,634 |
+| `gyroid` | 97 | 558 | 655 |
+| `fbm_terrain` | 94 | 6,571 | 6,665 |
+| `noise_cavity` | 394 | 1,885 | 2,279 |
+
+**On the four exact-distance fields the loose term is exactly zero.** The inclusion function decides
+every cell 4,096-point sampling can decide, and every cell it refuses is one where the analytic surface
+genuinely passes through *while all eight corners agree in sign*. **4,063 such cells across the eight,
+1.55% of the grid** — and they are cells `validate::isotopy` counts as trivially certified by its first
+clause and never even admits to `active_cells`.
+
+**Twenty-four of them are on the unit sphere at 33³.** Not a noise field, not an adversarial fixture —
+the simplest field in the suite, and 1,736 on `box_exact`. That is the gap `isotopy.rs`'s header
+describes in prose, measured for the first time: *"what this does not certify is the analytic field
+against its trilinear interpolant."*
+
+**Do not read `certified_vs_trilinear` against `certified_fraction`** — different denominators, different
+questions. `IsotopyReport::certified_fraction()` is a share of *active* cells; the apples-to-apples
+partner is `trilinear_inactive_fraction`, the share of *all* cells whose corners agree, which is exactly
+`isotopy.rs`'s first clause. Certified is always a subset of inactive, and `trust_gap_fraction` is the
+difference: the cells the interpolant passes over in silence and this certificate refuses.
+
+**Tightness says the enclosures are near-optimal where it matters.** For a unit-Lipschitz field the true
+range over a cell is at most `√3·h = 1.732h`; the exact-distance enclosures sit at 1.18–1.55, within
+about 11% of the best any inclusion function could do. `fbm_terrain` at **8.44h** is the loose one and the
+reason is structural: four octaves enclosed independently, so no cancellation between them is tracked.
+
+**Nothing came out undecidable, including the two fields expected to.** `perlin` is `Σ_c w_c(t)·(g_c·d_c)`
+with `w_c ≥ 0` summing to 1; the quintic fade has derivative `30t²(t−1)² ≥ 0` for every real `t`, so it is
+monotone and its endpoints give its range exactly, and every `GRAD12` entry has two `±1` components and
+one zero so `g·d` is sign flips and two adds. Evaluating that sum **term by term** rather than through
+the one-line convex-combination bound is what makes it sharp — the bound admits a far corner's `g·d ≈ −2`
+whose actual weight is under a thousandth. Derived from the crate's own construction, not from a
+Lipschitz constant, which would have been a guess: `NoiseVolume` declares `Unbounded` and no constant is
+derived anywhere.
+
+**`Gyroid` got a real monotonic-branch analysis** rather than an endpoint approximation: on an interval
+narrower than `2π` the endpoints give the range unless a critical point is inside, containment decided by
+a guard that errs toward including the extremum so it can only widen; endpoints widened three times
+because `libm`'s `sin`/`cos` are not correctly rounded and an interior point can exceed an endpoint by up
+to two ULPs on a monotone branch.
+
+**One liability, stated rather than discovered later.** `hash3`, `GRAD12` and `OCTAVE_OFFSET` are private
+to `fields/noise.rs`, so the noise enclosure **transcribes** them and a change to any would silently
+invalidate it. It is guarded, not trusted: a reimplemented `perlin`/`fbm` is compared bit-for-bit against
+`NoiseVolume::sample` and `FbmTerrain::sample` at **137,842 points, max |Δ| = 0**, before any certificate
+is issued, and `noise_transcription_verified` is on every row. The guard catches drift today and nothing
+prevents it tomorrow; crate-side visibility is the clean fix and this ticket did not authorise it.
+
+**Framing, deliberately:** this is strictly *more* work than sampling — a proof obligation discharged per
+cell — and the only thing it buys is that a cell it calls surface-free has no surface **in it** rather
+than no surface **where anyone looked**. It is not a speedup and must never be presented as one.
+
+**Would be shown wrong by:** a single unsound certification, which dense sampling can only ever find by
+luck; the honest strengthening is a second, independent enclosure to cross-check against, not more
+samples.

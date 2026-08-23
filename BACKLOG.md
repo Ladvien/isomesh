@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**223 tickets archived, 15 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**224 tickets archived, 15 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -70,11 +70,10 @@ obligation in the same commit as the result.
 
 | Order | Ticket | Why here |
 |---|---|---|
-| 1 | **R-044** | Closes a gap the crate's own source names, and a soundness clause cannot be argued into holding |
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-044** | **Close the gap `isotopy.rs` names in its own header.** That module says it verbatim: *"The general form needs interval arithmetic over an arbitrary `F`, which this crate has no way to do — an `Sdf` hands back point values"*, so it certifies the **trilinear interpolant** and states plainly that it does not certify the analytic field against it. A compositional inclusion function over the crate's own field types closes it with **no dependency and no interval library** — `(lo, hi)` pairs, six operations, one-ULP widening per operation because `core` has no directed rounding, which keeps the enclosure sound in the only direction a certificate may not err. **H:** P-48 — zero unsound certifications over eight fields at 33³ against 4,096-point dense sampling; at least 90% of surface-free cells certified on the four exact-distance fields; strictly positive reach on at least six of the eight. **Falsified by:** any unsound certification (fatal — a certificate that can be wrong is not one), under 90% on the exact fields, or reach confined to the eikonal cases, which would leave `gyroid`, `noise_cavity` and `fbm_terrain` — the three that actually go wrong — outside it. **Not the tabled Sharp & Jacobson row**, which is coarse-cell *rejection*; this is a topology certificate and is scored on soundness, never on speed. **FINDINGS:** `M-`. | M | — |
+| ☐ | **F-008** | **The noise constants are private, and a certificate outside the crate has to transcribe them.** M-347's inclusion function for `NoiseVolume` and `FbmTerrain` re-implements `hash3`, `GRAD12` and `OCTAVE_OFFSET` because `fields/noise.rs` keeps them private, and it is guarded rather than trusted — a bit-exact comparison against `sample` at 137,842 points, max `|Δ| = 0`, runs before any certificate is issued. **The guard catches drift today and nothing prevents it tomorrow.** Two shapes: expose the three items (smallest change, but they are implementation detail and rule 3's spirit is against widening the surface for one consumer), or give `Sdf` an optional `enclose(lo, hi) -> (R, R)` with a default that returns `(-inf, +inf)` and let each field answer for itself — which is what P-48 wanted all along and is the shape `isotopy.rs`'s header implies. **Decide before anything else builds on M-347**, because both consumers of a transcribed constant are silent when it moves. | S | — |
 
 ---
 
