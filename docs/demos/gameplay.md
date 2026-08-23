@@ -188,6 +188,40 @@ cd bevy_isomesh && cargo run --example game_lod_flyover --release
 
 ---
 
+## Connected is not the same as passable
+
+![A bore widening through rock while a body-sized ball waits outside, the aperture readout counting up and flipping green](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/aperture-can-the-player-fit.gif)
+
+*`aperture_gate` — a capsule bored through a slab at 65³, radius sweeping up. At the frame shown the
+**aperture is 3.50 cells and the body is 4.00**: the faces are connected, the ball does not fit, and the
+matrix cell is **amber**. A boolean connectivity query cannot tell amber from green.*
+
+`Air` can already answer *is this sealed*. What a game asks is *can I get through*, and that is not a
+boolean — it is the **bottleneck**: the largest sphere that survives the tightest point of the best
+path. Computed by a union-find over air voxels visited in descending `(field value, grid index)`, which
+is a total order, so the answer is deterministic with no PRNG, no atomics and no hash map. The output is
+a 6×6 matrix over the chunk's faces plus a reachability mask, and it **composes** — neighbouring chunks
+combine theirs with no global solve.
+
+The three-colour matrix bottom-right is the whole argument: dark is no air path, **amber is connected
+but too tight**, green is the body fits. Only one of those three is a connectivity question.
+
+**The demo checks itself against the measurement.** On startup it replays P-49's registered fixture and
+prints `r2 0.000000  r4 0.000000  r8 0.000000 cells of error` — the aperture of a drilled channel comes
+back as **exactly** its radius, and the air census matches the closed form (585 / 2,925 / 12,545
+samples). It also verifies determinism by solving twice and comparing entry by entry, and verifies the
+early exit by re-solving without it. The early exit is sound rather than heuristic — each aperture is
+fixed at the first and therefore highest value that connected its pair — and on the gyroid it fires
+after 5% of air samples (M-346).
+
+```bash
+cd bevy_isomesh && cargo run --example aperture_gate --release
+```
+
+`1`–`3` slab / uncapped gyroid / capped gyroid · `X` restart the sweep.
+
+---
+
 ## Sixty-four edits deep, and the mesher only looks at twenty-one
 
 ![A sculpting stroke building a 64-brush tape while the pruned per-chunk cost climbs at a third of the rate](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/tape-pruning-the-tape-shrinks.gif)

@@ -11,6 +11,41 @@ finding — `FINDINGS.md` records which source to distrust and why.
 
 ---
 
+## Ninety-nine percent of a voxel grid is not surface
+
+![A thin shell of active cells inside a full grid, the active fraction falling as resolution climbs](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/active-cells-ninety-nine-percent-skipped.gif)
+
+*`active_cells` — the cells a dual mesher must actually look at, drawn against the grid it must not. On
+`sphere` the active fraction falls **3.54% → 1.89% → 0.93%** as the grid goes 33 → 64 → 128, while the
+absolute count rises. That ratio falling is the entire justification for the mechanism.*
+
+A dual mesher used to gather eight corners and count insides for **every** cell, then throw away 97% of
+that work. The active-cell test is really one bit per sample: pack `value < 0` into a `u64` along `x`,
+and one fused expression over the four rows bounding a cell row decides sixty-four cells at once —
+`any = OR(w | w>>1)`, `all = AND(w & w>>1)`, `active = any & !all`. The strip in the HUD shows a real
+row's word and its three fused results, so you can watch sixty-four cells being decided in one
+operation.
+
+**The honest number is a count, not a stopwatch.** M-348 falsified the original wall-clock claim — the
+ratio read 1.336×, 1.192× or 1.022× depending on who else was using the machine. What the mechanism
+actually does is *remove gathers*, and that is an integer: at 128³ it removes **99.07%** of them on
+`sphere`, 98.35% on `fbm_terrain`, 95.85% on `gyroid`, identically on every machine (M-349). The demo
+times both predicates live and shows the ratio, and also asserts the two produce the **same ordered
+list** — an order difference would change every vertex index downstream.
+
+**One line on screen exists to stop a future shortcut.** The bit is `value < 0`, not the IEEE sign bit.
+`-0.0` has the sign bit set while `-0.0 < 0.0` is false, so a sign-bit build would be faster, would pass
+every timing clause, and would change a reference field's mesh. `box_exact` is selectable so the caution
+is not abstract.
+
+```bash
+cd bevy_isomesh && cargo run --example active_cells --release
+```
+
+`3`/`5` field · `[` `]` resolution · `.` step the cursor row · `H` surface on/off · `Space` pause.
+
+---
+
 ## Marching Cubes, resolution sweeping
 
 ![Marching Cubes on a sphere, sweeping resolution](../gifs/marching-cubes-sphere-resolution-sweep.gif)
