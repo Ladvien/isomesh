@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**434 entries** — 34 falsified, 333 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**435 entries** — 34 falsified, 334 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -406,6 +406,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-337` | HELD on all three clauses: the active-cell test is one bit, the stage is 5.5× and not one triangle moved (P-40, R-039) |
 | `M-338` | HELD, and the relation is a bijection rather than a correlation: the critical-configuration census does not predict the… |
 | `M-341` | HELD on all three clauses: a brush that provably cannot win is deleted for free, and the mesh does not move by one ULP (… |
+| `M-346` | HELD on all three clauses, with exactly zero error where the answer is known: the crate can state a clearance, not just… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -8313,3 +8314,66 @@ global solve.
 **Records** `fixture`, `samples_per_axis`, `channel_radius_cells`, `aperture_reported_cells`,
 `aperture_error_cells`, `reachable_pairs`, `expected_reachable_pairs`, `false_reachable_pairs`,
 `aperture_ns`, `extract_ns`, `cost_ratio`.
+
+### 🔬 M-346 — HELD on all three clauses, with exactly zero error where the answer is known: the crate can state a clearance, not just a connection (P-49, R-045)
+
+**M.** `cargo bench --bench experiment_p49`, `docs/experiments/p-49.csv`. Monotone union-find over air
+voxels in descending `(field value, grid index)`, 65 samples per axis, `f64`.
+
+| fixture | channel radius | aperture reported | error | reachable pairs | false | cost ratio |
+|---|---:|---:|---:|---:|---:|---:|
+| slab, `r = 2` cells | 2 | **2.000000** | **0.000000** | 1 of 1 | **0** | 0.444 |
+| slab, `r = 4` cells | 4 | **4.000000** | **0.000000** | 1 of 1 | **0** | 0.555 |
+| slab, `r = 8` cells | 8 | **8.000000** | **0.000000** | 1 of 1 | **0** | 0.588 |
+| capped gyroid | — | 17.83 min / 28.00 max | — | 15 of 15 | **0** | 1.108 |
+| uncapped gyroid *(extra)* | — | 6.39 min / 6.84 max | — | 15 of 15 | **0** | 0.829 |
+
+**C1 held, and not marginally.** The registration allowed one cell of slack and the error is **exactly
+zero** at all three radii. The fixture is why: subtraction is `max(box, −capsule)`, so inside the channel
+the box term is deeply negative and the value *is* `−capsule`, exactly `r − ρ` at radius `ρ` from the
+axis; 65 samples over `[−2, 2]` puts a sample at `0.0` on every axis, so the axis line is sampled and the
+value `r` is actually attained. **The instrument had nowhere to hide and it did not need anywhere.** All
+fourteen other face pairs report unreachable on every slab, and `false_reachable_pairs` and
+`missed_reachable_pairs` are both **0 on every row** — no error in either direction, so there is nothing
+to say about which way it runs.
+
+**C2 held, and the harness proved the fixture wrong before the run rather than after.** The clause's
+reasoning invokes the gyroid's bicontinuous channel network, but `capped_gyroid` is
+`max(gyroid, sphere(6))` over `[−7, 7]³`, so **everything outside radius 6 is air** — including all six
+domain faces — and the pairs connect through the shell around the cap before a channel is consulted.
+That is confirmed to six figures: the twelve *adjacent*-face pairs all report exactly **27.9971** cells,
+and `(7√3 − 6)/h = 27.997054` — the shared corner sample `(7,7,7)`, which lies on `+x`, `+y` and `+z` at
+once, at clearance `|p| − 6`. The three *opposite*-face pairs read 17.83 because they have no shared
+sample and must route around. **On the capped fixture the aperture matrix has two values and is measuring
+the shell.** So an `uncapped gyroid` row was added on the identical grid, where no shell exists: 15 of 15
+again, with the fifteen values spread over **6.39–6.84** rather than collapsing to two. The registered
+clause stands as written; the extra row is what makes it mean something.
+
+**C3 held with room.** Worst `cost_ratio` is **1.108** against a 2× bar, and that is the *expensive*
+reading — "the whole 6×6" taken to include sampling the grid, like for like against Marching Cubes,
+which also samples. With the early exit disabled, the number to budget for, the worst is **1.486**, still
+under. Given samples a mesher already has, the marginal cost is **0.023× to 0.391×**.
+
+**The early exit is where the speed is, and it is sound rather than heuristic.** Each aperture is fixed
+at the first — and therefore highest — value that connected its pair, so no later sample can revise one,
+and the walk can stop when all fifteen are decided. On the gyroid it fires after **12,101 of 231,421**
+air samples: 5%. A caller wanting the matrix for only some pairs keeps most of that.
+
+**Three instrument checks, because a clearance a game gates movement on has to be checked at the input
+too.** The air census agrees with closed form **exactly** on all three slabs — 585, 2,925 and 12,545
+samples, which is 65 planes times the lattice points with `j² + k² < r²` (9, 45, 193); an aperture of
+exactly `r` read off the wrong air set would still be wrong. Determinism is **verified, not inferred**
+from the absence of a PRNG: two solves from identical values agree on all fifteen apertures and on the
+air and visited counts, on all five rows. And the ratios are stable across two runs at different machine
+load (`gyroid_capped` 1.097 then 1.108) because both arms are timed interleaved in one process —
+`loadavg` was 6.5 at the start, a sibling bench.
+
+**What this buys.** `Air` answers *is this sealed*; this answers *can a body of radius `r` get through*,
+per pair of chunk faces, as a 6×6 symmetric matrix plus a reachability mask — and that matrix is the
+**composable** boundary summary, so neighbouring chunks combine theirs with no global solve. The
+connectivity half was already banked; the value and the composability are the delta, and they are what
+the clauses were written on.
+
+**Would be shown wrong by:** a fixture where the bottleneck path is not monotone in the field value — the
+union-find assumes the first connection is the widest, which is true for a sublevel-set filtration and
+would stop being true if the traversal order were anything but a total order on the value.

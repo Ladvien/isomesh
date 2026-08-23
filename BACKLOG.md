@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**222 tickets archived, 16 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**223 tickets archived, 15 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -71,12 +71,10 @@ obligation in the same commit as the result.
 | Order | Ticket | Why here |
 |---|---|---|
 | 1 | **R-044** | Closes a gap the crate's own source names, and a soundness clause cannot be argued into holding |
-| 2 | **R-045** | The composable 6×6 is the delta over banked connectivity, and a drilled channel is exact ground truth |
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
 | ☐ | **R-044** | **Close the gap `isotopy.rs` names in its own header.** That module says it verbatim: *"The general form needs interval arithmetic over an arbitrary `F`, which this crate has no way to do — an `Sdf` hands back point values"*, so it certifies the **trilinear interpolant** and states plainly that it does not certify the analytic field against it. A compositional inclusion function over the crate's own field types closes it with **no dependency and no interval library** — `(lo, hi)` pairs, six operations, one-ULP widening per operation because `core` has no directed rounding, which keeps the enclosure sound in the only direction a certificate may not err. **H:** P-48 — zero unsound certifications over eight fields at 33³ against 4,096-point dense sampling; at least 90% of surface-free cells certified on the four exact-distance fields; strictly positive reach on at least six of the eight. **Falsified by:** any unsound certification (fatal — a certificate that can be wrong is not one), under 90% on the exact fields, or reach confined to the eikonal cases, which would leave `gyroid`, `noise_cavity` and `fbm_terrain` — the three that actually go wrong — outside it. **Not the tabled Sharp & Jacobson row**, which is coarse-cell *rejection*; this is a topology certificate and is scored on soundness, never on speed. **FINDINGS:** `M-`. | M | — |
-| ☐ | **R-045** | **The crate can say whether two places are connected and not how big a thing fits between them.** R-022a's `Air` answers *is this sealed*; a game asks *can the player get through*, which is a bottleneck value rather than a boolean — for a pair of chunk faces, the maximum over air paths of the minimum distance-to-solid along the path. A monotone union-find over air voxels in **descending `(field value, grid index)`** computes it; that is a total order, so no PRNG, no atomics, no `HashMap`, the same discipline the weld already uses. The output is a **6×6 symmetric aperture matrix plus a reachability mask** — the composable boundary summary, so neighbouring chunks combine with no global solve. **H:** P-49 — a drilled channel of radius 2, 4 and 8 cells read back to within one cell with every other face pair unreachable; the capped gyroid reporting all six faces mutually reachable with positive aperture on all 15 pairs; under 2× the cost of extracting the same grid. **Falsified by:** an aperture off by more than one cell where the answer is known exactly, any falsely-reachable pair (the unsound direction, and fatal for something a game would gate movement on), a gyroid pair reported unreachable (bicontinuity is a property of the surface, so that is an instrument bug), or cost at or above 2×. **Overlap named:** the connectivity half is banked; the aperture *value* and the composable 6×6 are the delta. **FINDINGS:** `M-`. | M | — |
 
 ---
 
