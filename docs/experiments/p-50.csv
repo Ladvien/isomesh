@@ -1,0 +1,20 @@
+# experiment P-50 (R-039a)
+# hypothesis: P-40's C2 was a wall-clock ratio registered as a threshold, and it failed its own artefact: three quiet-machine runs read 1.022x, 1.184x and 1.177x against a registered 1.25x (M-348). Marching Cubes 24 already earned the rule -- gate the COUNT the ratio samples -- and the count exists. The bitmap prepass does not make an eight-corner gather faster; it REMOVES gathers, and how many run is an integer that is identical on every machine, under every governor, at every load. Clause one, as an EQUALITY and not a ratio: the scalar predicate performs exactly `cells` gathers and the bitmap predicate exactly `active_cells`, on every field at every resolution, with no tolerance. Clause two: the bitmap's own cost is exactly `sample_count` comparisons plus `cells_x.div_ceil(64) * cells_y * cells_z` fused word groups -- note CELLS and not SAMPLES, which is the defect E-307 found and which cost about 30% of the stage at 64k+1 grids -- so the prepass is O(n^3/64) word groups against the O(n^3) gathers it replaces, and the two counts predict the crossover without a clock. Clause three: the active set the two predicates name is the same ORDERED list, element for element, on every field and resolution, which is what makes the mesh identical rather than merely equal in count. Timing is recorded beside all three and gates nothing.
+# falsified by: Clause one failing as an exact equality. A gather performed on an inactive cell means the mask admits a cell it should not, and a mask wrong in the other direction drops a cell and punches a hole -- so this is a correctness gate wearing a performance gate's clothes, and a mismatch of one is a failure. Clause three failing would mean the set-bit walk does not reproduce lexicographic order, which changes every vertex index downstream of the first disagreement. Clause two failing would mean the word-group count is not what reading the loop says it is.
+# commit 8b0e846 (WORKING TREE DIRTY) on amd-ryzen-9-5900x-12-core at 2026-08-23T20:02:23Z
+field,samples_per_axis,cells,active_cells,gathers_scalar,gathers_bitmap,gathers_equal_cells,gathers_equal_active,bitmap_comparisons,bitmap_word_groups,word_groups_predicted,same_ordered_list,ns_per_cell_scalar,ns_per_cell_bitmap,gathers_removed_fraction,word_groups_match
+sphere,33,32768,1160,32768,1160,true,true,35937,1024,1024,true,2.4530,0.5875,0.964600,true
+sphere,64,250047,4730,250047,4730,true,true,262144,3969,3969,true,2.5460,0.4553,0.981084,true
+sphere,65,262144,4760,262144,4760,true,true,274625,4096,4096,true,2.5559,0.5174,0.981842,true
+sphere,128,2048383,19010,2048383,19010,true,true,2097152,32258,32258,true,2.5040,0.4329,0.990720,true
+sphere,129,2097152,19232,2097152,19232,true,true,2146689,32768,32768,true,2.4552,0.4542,0.990829,true
+gyroid,33,32768,5240,32768,5240,true,true,35937,1024,1024,true,2.7832,0.7352,0.840088,true
+gyroid,64,250047,20994,250047,20994,true,true,262144,3969,3969,true,2.8480,0.5224,0.916040,true
+gyroid,65,262144,21432,262144,21432,true,true,274625,4096,4096,true,2.8506,0.5739,0.918243,true
+gyroid,128,2048383,85077,2048383,85077,true,true,2097152,32258,32258,true,2.5841,0.4712,0.958466,true
+gyroid,129,2097152,86580,2097152,86580,true,true,2146689,32768,32768,true,2.5892,0.5005,0.958715,true
+fbm_terrain,33,32768,1958,32768,1958,true,true,35937,1024,1024,true,2.3786,0.5923,0.940247,true
+fbm_terrain,64,250047,8166,250047,8166,true,true,262144,3969,3969,true,2.4966,0.4571,0.967342,true
+fbm_terrain,65,262144,8413,262144,8413,true,true,274625,4096,4096,true,2.4928,0.5116,0.967907,true
+fbm_terrain,128,2048383,33817,2048383,33817,true,true,2097152,32258,32258,true,2.4394,0.4284,0.983491,true
+fbm_terrain,129,2097152,34540,2097152,34540,true,true,2146689,32768,32768,true,2.4389,0.4563,0.983530,true

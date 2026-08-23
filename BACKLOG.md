@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**224 tickets archived, 17 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**225 tickets archived, 16 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -73,7 +73,6 @@ obligation in the same commit as the result.
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-039a** | **Gate the bitmap on a count, not a stopwatch.** M-348 falsified P-40's C2 — three quiet-machine runs read 1.022×, 1.184×, 1.177× against a registered 1.25×, and the recorded 1.336× was the outlier. ✗24 already earned the rule and cost a release doing it. **The count exists and is already in the CSV**: the prepass does not make a gather faster, it removes gathers, and how many run is `cells` under the scalar path and `active_cells` under the bitmap path — integers, identical on every machine. **H:** P-50 — the two gather counts as *equalities*, the bitmap's own cost as `sample_count` comparisons plus `cells_x.div_ceil(64)·cells_y·cells_z` word groups, and the same *ordered* active list element for element. **Falsified by:** any inequality. A gather on an inactive cell means the mask admits what it should not; wrong the other way drops a cell and punches a hole — a correctness gate in a performance gate's clothes. Timing recorded beside it, gating nothing. **FINDINGS:** `M-`. | S | — |
 | ☐ | **F-009** | **Nothing gates a `FINDINGS.md` table against the CSV it names.** `doc_facts.sh` gates counts, `findings_index.sh` gates the index, `backlog_gate.sh` gates rows and `P-` reachability. The one systematic error Phase 19 produced — twice — is an entry quoting numbers from a run that is not the committed artefact (M-348), and no gate sees it. The check is mechanical for the subset that matters: an entry naming `docs/experiments/p-NN.csv` and printing a markdown table can have those numbers matched against that file's columns. **It would have failed on Phase 19 twice.** Scope it to tables whose header names registered record columns, so prose and derived quantities do not raise false positives. | M | — |
 | ☐ | **F-008** | **The noise constants are private, and a certificate outside the crate has to transcribe them.** M-347's inclusion function for `NoiseVolume` and `FbmTerrain` re-implements `hash3`, `GRAD12` and `OCTAVE_OFFSET` because `fields/noise.rs` keeps them private, and it is guarded rather than trusted — a bit-exact comparison against `sample` at 137,842 points, max `|Δ| = 0`, runs before any certificate is issued. **The guard catches drift today and nothing prevents it tomorrow.** Two shapes: expose the three items (smallest change, but they are implementation detail and rule 3's spirit is against widening the surface for one consumer), or give `Sdf` an optional `enclose(lo, hi) -> (R, R)` with a default that returns `(-inf, +inf)` and let each field answer for itself — which is what P-48 wanted all along and is the shape `isotopy.rs`'s header implies. **Decide before anything else builds on M-347**, because both consumers of a transcribed constant are silent when it moves. | S | — |
 

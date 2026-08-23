@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**437 entries** — 35 falsified, 335 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**438 entries** — 35 falsified, 336 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -409,6 +409,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-341` | HELD on all three clauses: a brush that provably cannot win is deleted for free, and the mesh does not move by one ULP (… |
 | `M-346` | HELD on all three clauses, with exactly zero error where the answer is known: the crate can state a clearance, not just… |
 | `M-347` | HELD on all three clauses, and the by-product is sharper than the claim: there are 24 cells on the unit sphere where the… |
+| `M-349` | HELD as three exact equalities on 15 of 15 rows: the bitmap's claim was always a count, and a count does not have a gove… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -8604,3 +8605,53 @@ re-registration.
 **Records** `field`, `samples_per_axis`, `cells`, `active_cells`, `gathers_scalar`, `gathers_bitmap`,
 `gathers_equal_cells`, `gathers_equal_active`, `bitmap_comparisons`, `bitmap_word_groups`,
 `word_groups_predicted`, `same_ordered_list`, `ns_per_cell_scalar`, `ns_per_cell_bitmap`.
+
+### 🔬 M-349 — HELD as three exact equalities on 15 of 15 rows: the bitmap's claim was always a count, and a count does not have a governor (P-50, R-039a)
+
+**M.** `cargo bench --bench experiment_p50`, `docs/experiments/p-50.csv`. Three fields × five grids
+chosen to straddle a word boundary — 33, 64, **65**, 128, **129** — `f64`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1a `gathers_scalar == cells` | equality | **true on 15 of 15** |
+| C1b `gathers_bitmap == active_cells` | equality | **true on 15 of 15** |
+| C2 `word_groups == cells_x.div_ceil(64)·cells_y·cells_z` | equality | **true on 15 of 15** |
+| C3 same **ordered** active list | element for element | **true on 15 of 15** |
+
+**This is what P-40's C2 should have been.** The mechanism removes gathers, and how many it removes is
+an integer:
+
+| field | 128³ | gathers scalar → bitmap | removed |
+|---|---:|---|---:|
+| `sphere` | 2,048,383 cells | 2,048,383 → **19,010** | **99.07%** |
+| `fbm_terrain` | 2,048,383 cells | 2,048,383 → **33,817** | **98.35%** |
+| `gyroid` | 2,048,383 cells | 2,048,383 → **85,077** | **95.85%** |
+
+Those numbers are identical on every machine, under every governor, at every load. The wall clock is in
+the CSV beside them — 2.39 → 0.42 ns/cell on `sphere`, 2.58 → 0.47 on `gyroid` — and **gates nothing**,
+which is the entire point of the re-registration.
+
+**C2 is where E-307's defect would have shown up, and it is why 65 and 129 are in the fixture.** The
+prediction is over **cells**, `cells_x.div_ceil(64)`, and the code M-348 fixed iterated over **samples**,
+`size_x.div_ceil(64)`. At 65 samples those are 1 and 2; at 129, 2 and 3. Had the fix not landed, C2
+would read 8,192 against a predicted 4,096 on the `sphere` 65³ row and the equality would have failed by
+exactly a factor the grid explains. It reads **4,096 = 4,096**. A count clause catches a wasted word; the
+ratio clause it replaces measured that same waste as noise and could not name it.
+
+**C3 is the one that matters for correctness and it is the cheapest to state.** The two predicates agree
+on the active list *as an ordered sequence*, not merely as a set or a count — which is what makes vertex
+creation order, and therefore every index and every golden hash, unchanged. A set-equal but
+order-different result would pass a count gate and corrupt every downstream index from the first
+disagreement.
+
+**What the phase learns from this, beyond the mechanism.** ✗24 said *gate the count the ratio samples*
+and Phase 19 registered three wall-clock thresholds anyway (P-38's table, P-40's C2, P-47's C2). Two of
+the three failed on re-measurement and the third (P-47's 2.8×) is the one nobody has re-run on a quiet
+machine. **The countable form is not a weaker claim — it is a stronger one**: an equality on 15 rows
+admits no tolerance, no median-of-five, and no argument about load, and it turns a performance assertion
+into a correctness gate. A gather on an inactive cell means the mask admits what it must not; a mask
+wrong the other way drops a cell and punches a hole.
+
+**Would be shown wrong by:** a grid where `cells_x` is a multiple of 64 *and* the sample row is not, or
+any future change to the walk order — both of which C2 and C3 would catch as an integer mismatch rather
+than as a slow afternoon.
