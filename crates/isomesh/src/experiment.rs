@@ -1403,6 +1403,111 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "isolated_chunks_bit_identical",
         ],
     },
+    Preregistration {
+        id: "P-46",
+        ticket: "R-040a",
+        hypothesis: "P-41 measured a bijection -- critical cells == \
+                     non-manifold vertices == critical cells hosting one, \
+                     exactly, on every affected field -- which gives the repair \
+                     a target it did not have when R-040 deliberately withheld \
+                     it. Repair the SIGN LATTICE rather than the mesh, and do it \
+                     by minimal value perturbation rather than by flipping a \
+                     sign arbitrarily: for each critical cell, move the corner \
+                     of smallest |value| across zero by the smallest \
+                     representable step, which is Boutry's self-dual repair \
+                     applied to the grey-level function rather than to the \
+                     binary set. Clause one: on the three fields with a non-zero \
+                     census -- noise_cavity, gyroid, fbm_terrain at 65 samples \
+                     per axis -- DualContouring and SurfaceNets emit exactly 0 \
+                     non-manifold edges and exactly 0 non-manifold vertices \
+                     after the repair, where before they emitted 322/602, \
+                     69/141 and 29/58. Clause two: the repair reaches a fixpoint \
+                     in at most TWO sweeps over the chunk, because a \
+                     perturbation can create a critical configuration in a \
+                     neighbour and an unbounded cascade would rule the mechanism \
+                     out of a frame budget outright; the residual critical count \
+                     after two sweeps is recorded either way. Clause three, the \
+                     price: the symmetric Hausdorff distance of the repaired \
+                     mesh against the unrepaired field rises by less than 10% on \
+                     each of the three fields -- the repair moves geometry, and a \
+                     manifold mesh of the wrong surface is not a bargain.",
+        falsified_by: "Any non-manifold output surviving the repair, which would \
+                       mean well-composedness of the sign lattice is not \
+                       sufficient for a manifold dual mesh even though P-41 \
+                       measured it to be necessary -- and that gap is the more \
+                       interesting result, because ManifoldDualContouring \
+                       already pays extra vertices for the same guarantee. Or a \
+                       residual critical count above zero after two sweeps, \
+                       which prices the cascade out. Or Hausdorff rising 10% or \
+                       more, which says the manifoldness was bought with \
+                       geometry the caller did not agree to sell.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "extractor",
+            "critical_before",
+            "critical_after",
+            "sweeps",
+            "non_manifold_edges_before",
+            "non_manifold_edges_after",
+            "non_manifold_vertices_before",
+            "non_manifold_vertices_after",
+            "hausdorff_before",
+            "hausdorff_after",
+            "hausdorff_ratio",
+        ],
+    },
+    Preregistration {
+        id: "P-47",
+        ticket: "R-043",
+        hypothesis: "Every one of the eight reference fields overrides \
+                     Sdf::gradient analytically, and the crate's docs say the \
+                     central-difference default is never used by one. But \
+                     BrushStack does not override gradient and neither does \
+                     Capsule -- so the moment a caller composes anything, which \
+                     is the entire point of a sculpting tool, every vertex \
+                     normal silently falls back to the six-sample central \
+                     difference at O(h^2), costing six evaluations of the WHOLE \
+                     TAPE per normal. Carrying a forward-mode dual number \
+                     (value, [dx, dy, dz]) through the fold fixes both halves in \
+                     one traversal: min and max propagate the selected branch's \
+                     derivative, smooth_min propagates the analytic derivative \
+                     of its polynomial, and the tie at a CSG seam is broken \
+                     deterministically by taking the lower index so the result \
+                     stays a pure function of the inputs. Clause one, the \
+                     accuracy hole, which the crate cannot currently state at \
+                     all: on a 64-brush BrushStack the mean angular error of the \
+                     central-difference normal against the exact dual-number \
+                     normal exceeds 0.1 degrees and the maximum exceeds 5 \
+                     degrees. Clause two, the speed: computing normals for a \
+                     meshed chunk through the dual-number tape is at least 2x \
+                     faster than through the six-sample central difference, \
+                     since it is one traversal against six. Clause three, the \
+                     control: on a bare Sphere, where the analytic gradient is \
+                     already exact and known, the dual-number normal agrees with \
+                     p/|p| to within 1e-12 -- an instrument that cannot \
+                     reproduce a closed form has no business measuring a tape.",
+        falsified_by: "A mean angular error at or under 0.1 degrees, which would \
+                       mean the central difference is already good enough on \
+                       composed fields and the hole is theoretical -- a real \
+                       possibility, since DIFF_STEP is scaled by |p| and these \
+                       shapes are smooth away from their seams. Or a speedup \
+                       under 2x, which would mean the tape traversal is not the \
+                       cost and the six evaluations were being amortised by \
+                       something. Clause three failing means the dual arithmetic \
+                       is wrong and nothing else in the row can be believed.",
+        records: &[
+            "fixture",
+            "brushes",
+            "vertices",
+            "mean_angular_error_deg",
+            "max_angular_error_deg",
+            "central_ns_per_normal",
+            "dual_ns_per_normal",
+            "speedup",
+            "sphere_control_max_error",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

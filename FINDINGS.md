@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**430 entries** — 30 falsified, 333 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**431 entries** — 31 falsified, 333 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -69,6 +69,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗28` | FALSIFIED at 0.98 against a registered 1.5×: the 128³ penalty is a property of the access pattern, not of the stride, an… |
 | `✗29` | FALSIFIED on both clauses, and the mechanism survives both: the max is the wrong order statistic, and the cost clause wa… |
 | `✗30` | FALSIFIED: with B the whole closed surface, the registered residual is discrete Gauss–Bonnet in an approximation check's… |
+| `✗31` | the correlation reproduced out of sample and the line dies anyway: the exponent gap is the normalisation, and a mean's c… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -7975,3 +7976,112 @@ is the same argument as set theory forty years earlier.
 **Would be shown wrong by:** an edit pattern that is not spatially scattered — one enormous brush
 covering the world drives the survivor fraction to 1 and the mechanism to nothing. The three all-survive
 chunks here are that case in miniature, and they cost 0.8%.
+
+### 💥 ✗31 / M-342 — the correlation reproduced out of sample and the line dies anyway: the exponent gap *is* the normalisation, and a mean's convergence order cannot track a supremum's (P-44, R-042a)
+
+**M.** `cargo bench --bench experiment_p44`, `docs/experiments/p-44.csv`. The four reference fields P-43
+never touched — `sphere`, `torus`, `box_exact`, `csg_difference` — at 17³/33³/65³/129³, Marching Cubes,
+`f64`.
+
+| clause | registered | measured | verdict |
+|---|---|---|---|
+| C1 Pearson r, **mean** residual vs Hausdorff | ≥ 0.9 per field | **0.980** sphere, **0.982** torus, **0.99994** box_exact, **0.997** csg_difference | **HELD**, out of sample, on all four |
+| C2 decay-exponent gap | ≤ 0.15 per field | **1.008** sphere, **0.888** torus, 0.019 box_exact, 0.127 csg_difference | **FALSIFIED** |
+| C3 witness cost | < 0.5× an extraction | best row **0.563**, worst **1.262** | **FALSIFIED** |
+
+**C2 fails on exactly the two smooth fields and passes on exactly the two creased ones**, which is
+verbatim what P-44's own `falsified_by` predicted: the agreement P-43 saw was a property of its three
+fields' shared crease structure, not of the witness. And the mechanism is closed-form rather than
+statistical. **The gap is the `/h` normalisation, exactly one order.** The witness's exponent is
+*field-independent* — `+0.968` to `+0.999` on all four — because a **mean** is set by the smooth bulk of
+the domain. The Hausdorff's is *field-dependent* — `2.007` and `1.871` on the smooth pair, `1.000` and
+`0.841` on the creased pair — because a **supremum** is set by the worst local feature. A quantity whose
+order does not vary with the field cannot track one whose order does, and no fixed power of `h` repairs
+that: un-normalised it mirrors the failure instead of curing it.
+
+**C1 held and it does not rescue anything, which is the methodological point.** An `r` of 0.98 between
+two quantities that both shrink monotonically over four points is close to uninformative — the same
+harness reports `r = 0.976–0.979` against a mean-type metric it was not pointed at. **A correlation that
+high against almost anything is a statement about monotonicity, not about prediction.** C2 is the clause
+with discriminating power, and it is the one that failed.
+
+**And P-43's max statistic is dead on any SDF, not merely on creased ones.** `decay_exponent_max` is
+≈ 0 on all four fields *including* the smooth pair, and on `sphere` the maximum is **bit-identical at
+every resolution**: `2.558110331e-1`, at 17³, 33³, 65³ and 129³ alike. That is not a coincidence and not
+a floor — it is the medial-axis cell, where the analytic value
+`|√3/2 − (3 + 3√2 + √3)/8| = 0.2558110330515817` is **independent of `h` and of the radius**, verified to
+seven digits against the measurement. A witness whose maximum is an `h`-independent constant on the
+simplest field in the suite is not a witness of resolution adequacy.
+
+**So the direction is closed, on the second null, rather than re-registered a third time.** Finding one
+says no exponent choice can work; finding two says the max was never viable. What survives from the
+whole line is the one-sided *cell* flag recorded at ✗29 — cells above ten times the grid median, 3.8–19.4%
+and never zero — which does not depend on any correlation and was never the thing that failed.
+
+**Load caveat, on the artefact.** `loadavg` was 12.96 during these runs (sibling benches on the same
+machine), so the absolute `witness_ns` and `extract_ns` columns are contaminated by up to ~40%. The
+*ratio* is not: both timings are taken back to back, so a uniform slowdown cancels, and C3's verdict held
+across three separate runs and under both cost readings — standalone (minimum ever observed 0.509 over
+48 row-measurements) and incremental with the corner grid already resident (worst 0.950, and only the
+four `sphere` rows under 0.5). No interpretive choice rescues it.
+
+### P-46 — registered for R-040a, before the repair exists: the bijection gave it a target
+
+M-338 measured that critical cells, non-manifold vertices and critical-cells-hosting-one are the **same
+number** on every affected field. R-040 deliberately withheld the repair pending exactly that result, and
+now it has a falsifiable form: drive the census to zero and the defect count must follow.
+
+**The repair is of the sign lattice, not the mesh, and by minimal value perturbation rather than an
+arbitrary sign flip.** For each critical cell, move the corner of smallest `|value|` across zero by the
+smallest representable step. That is Boutry, Géraud & Najman's self-dual repair (`10.1007/s10851-017-0769-6`)
+applied to the grey-level function rather than to the binary set, and choosing the *cheapest* corner is
+what bounds the geometric cost — an arbitrary flip can move the surface by a whole cell.
+
+> **H.** On `noise_cavity`, `gyroid` and `fbm_terrain` at 65³, for `DualContouring` and `SurfaceNets`:
+> **(C1)** exactly **0** non-manifold edges and **0** non-manifold vertices after the repair, where
+> before they were 322/602, 69/141 and 29/58. **(C2)** a fixpoint in at most **two sweeps** — a
+> perturbation can create a critical configuration in a neighbour, and an unbounded cascade rules the
+> mechanism out of a frame budget outright; the residual is recorded either way. **(C3)** the symmetric
+> Hausdorff against the *unrepaired* field rises by **less than 10%** on each field. **Falsified by** any
+> surviving non-manifold output — which would make well-composedness necessary but not sufficient, the
+> more interesting result, since `ManifoldDualContouring` already buys the same guarantee with extra
+> vertices — or a residual census after two sweeps, or Hausdorff up 10% or more, which would mean the
+> manifoldness was bought with geometry the caller never agreed to sell.
+
+**This changes the mesh**, so it is a capability claim only and needs its own golden set. It can never
+clear the speed bar and must not be presented as if it could.
+
+**Records** `field`, `samples_per_axis`, `extractor`, `critical_before`, `critical_after`, `sweeps`,
+`non_manifold_edges_before`, `non_manifold_edges_after`, `non_manifold_vertices_before`,
+`non_manifold_vertices_after`, `hausdorff_before`, `hausdorff_after`, `hausdorff_ratio`.
+
+### P-47 — registered for R-043, before the harness: the gradient hole a composed field falls into
+
+**The premise, checked against the code.** All eight reference fields override `Sdf::gradient`
+analytically and `fields/mod.rs` says the central-difference default *"is never used by a reference
+field"*. True, and it stops being true the moment anything is composed: **`BrushStack` does not override
+`gradient`, and neither does `Capsule`** — verified by read. So a sculpting tool's every vertex normal
+takes the six-sample central difference at `O(h²)`, and each of those six samples evaluates the **whole
+tape**. M-341 measured a 64-brush tape at 309–553 ns/sample unpruned; six of those per normal is the
+hidden cost, and the crate has never stated the error it buys.
+
+A forward-mode dual number `(value, [dx, dy, dz])` carried through the fold fixes both halves in one
+traversal. `min` and `max` propagate the selected branch's derivative — the same selection that makes
+P-39's pruning bit-exact — `smooth_min` propagates the analytic derivative of its polynomial, and the tie
+at a CSG seam is broken by lowest index so the result stays a pure function of its inputs.
+
+> **H.** **(C1)** On a 64-brush `BrushStack`, the mean angular error of the central-difference normal
+> against the exact dual-number normal exceeds **0.1°** and the maximum exceeds **5°**. **(C2)** Normals
+> for a meshed chunk compute at least **2×** faster through the tape than through six central-difference
+> samples. **(C3)** The control: on a bare `Sphere` the dual-number normal reproduces `p/|p|` to within
+> **1e-12**. **Falsified by** a mean error at or under 0.1°, which would mean the hole is theoretical —
+> a real possibility, since `DIFF_STEP` scales with `|p|` and these shapes are smooth away from their
+> seams — or a speedup under 2×. C3 failing means the dual arithmetic is wrong and nothing else in the
+> row can be believed.
+
+**This is a fourth `NormalStrategy` measured against the third, never a replacement.** Switching the
+default would move `mesh.normals` and break all 216 golden hashes, and `normals.rs`'s own docs already
+require that a fourth variant arrive *"with a measurement attached"*. This is that measurement.
+
+**Records** `fixture`, `brushes`, `vertices`, `mean_angular_error_deg`, `max_angular_error_deg`,
+`central_ns_per_normal`, `dual_ns_per_normal`, `speedup`, `sphere_control_max_error`.
