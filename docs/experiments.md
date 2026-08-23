@@ -44,9 +44,17 @@ contradict.
 | P-1 … P-7 | prose in `FINDINGS.md` | 5 | 2 | — |
 | P-8 … P-17 | `crates/isomesh/src/experiment.rs` | 5 | 4 | 1 |
 | P-18 … P-21 | `crates/isomesh/src/experiment.rs` | 3 | 1 | — |
+| P-22 … P-37 | `crates/isomesh/src/experiment.rs` | *not tallied here — several split their verdict across clauses, and a column that rounds those to one word would be the kind of summary this page exists to distrust* | | |
+| P-38 … P-47 | `crates/isomesh/src/experiment.rs` | 3 | 7 | — |
 
-A page called "experiments that held" which quietly dropped the four falsifications would be exactly
-the failure this machinery exists to prevent. They are all here.
+A page called "experiments that held" which quietly dropped the falsifications would be exactly the
+failure this machinery exists to prevent. They are all here.
+
+**Phase 19 is the worst era on this page and the most useful one.** Seven of ten falsified, and four of
+those seven were falsified by their *own* registered falsifier naming the mechanism in advance. Two were
+falsified by an error in the registration itself — P-43's cost clause was wrong arithmetic and P-42's
+Gaussian clause was a tautology — which is the machinery catching the person operating it, and is the
+strongest evidence on this page that the practice is doing something.
 
 ---
 
@@ -68,6 +76,31 @@ the failure this machinery exists to prevent. They are all here.
 | **P-20** — a weld key moves no topology metric beyond the splits it names | **held on both falsifiers, wording amended** (M-305) | A constant key moves nothing on **0 of 51** configurations, and non-manifold vertices never rise by more than the split count — so E×4's manufactured bowties do not come back. But boundary edges go **0 → 24** on a creased cube, which H said would not happen. That is not a defect: it **is** the split, seen from the edge column. The exact mirror of E×4, where a *pairwise* refusal did its damage in the vertex column |
 | **P-21** — a freshly extracted mesh separates exactly the sample pairs the field's own sign separates | **held**, both clauses (M-307) | **Marching Cubes, MC+decider and Marching Tetrahedra seal 24 of 24** — eight fields × three resolutions, 9.15 M probes, zero holes and zero membranes. **All three duals fail `fbm_terrain` with the identical count** (92 / 138 / 190) and **every one of those holes is on a face of the sampled domain**: a dual's quad needs all four cells around a sign-changing grid edge and at the domain face only one or two exist. **For a chunked world that face is the chunk seam**, so a dual chunk's collider is not watertight on its own. The property that splits the family is not primal-versus-dual but *does the method put its crossing on the probed grid edge* — subgrid Marching Tetrahedra is primal and scores worst, 18 of 24 |
 | **P-18** — every convex-decomposition precondition is already reported by `ColliderReadiness` | **falsified**, and not where predicted (M-300) | Registered *expecting* to die on self-intersection-freedom. It died on **non-manifold vertices** instead, and self-intersection-freedom turned out not to be an input precondition of anything (✗20). The audit was the product either way |
+
+---
+
+## Phase 19 — three that held, seven that did not, and two the registration itself got wrong
+
+| prediction | verdict | what it means if you depend on this crate |
+|---|---|---|
+| **P-39** — a brush that provably cannot win the min/max chain inside a chunk can be deleted from the tape, bit-exactly | **held**, all three clauses (M-341) | **Your edit history stops being a tax.** Median 21 of 64 brushes survive per chunk, a chunk meshes **3.4× faster**, and the mesh is byte-identical on 64 of 64 — because IEEE `min`/`max` *select* an operand rather than computing one. The bound costs 1.5 × 10⁻⁴ of what it saves. `SmoothAdd` is excluded from the losing-direction prune and that exclusion is load-bearing: prune it and 48 of 64 chunks change |
+| **P-40** — the active-cell test is one bit, so 64 cells decide at once | **held**, all three clauses (M-337) | Surface Nets is **1.25–1.38× faster on every grid measured**, output unchanged, and the win is largest where a voxel game lives: chunks that are mostly solid or mostly air. The traversal stage alone is **5.5×**. Dual Contouring gets only 1.18× and the reason is structural — its QEF solve is per-*active*-cell work the mechanism cannot touch |
+| **P-41** — the sign lattice is not well-composed, and that is where the duals go non-manifold | **held**, and the relation is a bijection (M-338) | **You can count the defects before the mesh exists.** `critical cells == non-manifold vertices`, exactly, on every affected field — 602, 141, 58 — and exactly zero on the five clean ones, from both directions. Co-location 2442/2442 against a ~1% chance baseline. The census is a function of the sign bytes alone, so it is available at 13.5 ms against 63 ms to mesh the same grid |
+| **P-46** — repairing the sign lattice drives the duals to zero non-manifold output | **falsified**, and the conditional it leaves is the product (M-344) | The repair is **free and total where critical cells are isolated** (58 → 0 in one sweep, 141 → 0 in five, Hausdorff ratio 1.000000) and **provably stuck where they are dense**: an exhaustive walk over all 4,096 face-adjacent sign patterns finds **36 where no corner leaves both cells clean**. Gate on maximum cluster size, not on count |
+| **P-47** — composed fields have a real gradient hole | **falsified** in the mean, held on speed (M-345) | The central difference is **7.6 × 10⁻⁵ degrees** off on a 64-brush stack — three orders under the bar, so your normals are fine. But it reaches **4.365°** exactly where a vertex's stencil straddles a CSG seam, and exact gradients are **2.8× cheaper** anyway. Justified by cost, not by accuracy, which is not the reason anyone expected |
+| **P-45** — normal-cycle curvature measures are additive, so a per-chunk number composes | **falsified** on two of three clauses (M-343) | The two measures have **opposite** defects. The Gaussian one is chunk-local and does not sum — it overshoots by exactly `π × excess chunk incidence`, the missing `−N(A∩B)` term, because a partition of faces is not a partition of space. The mean one sums to 3 × 10⁻¹³ and needs a one-ring to compute |
+| **P-42** — the curvature residual falls inside a bound computed from the mesh | **falsified** on convergence; the clause was a tautology (M-340) | With `B` the whole closed surface, `Σ(2π − α_v) = 2πχ` **identically**, so the residual is one f64 epsilon per vertex and grows ×4 per halving because the vertex count does. Theorem 6's bound does not converge here either: `max circumradius` is not `O(h)` because Marching Cubes' needles get relatively worse with resolution |
+| **P-43** — the max cell-centre residual witnesses under-sampling | **falsified**, and the cost clause was wrong arithmetic (M-339) | One `C¹` crease cell in 2.1 million pins the maximum at every resolution, so it does not fall at all while the Hausdorff does. And *"the structural ⅛"* was per-cell corner accounting; this crate prefills one shared grid, so the real cost is `(n−1)³/n³` — a doubling of the sampling work, not an eighth |
+| **P-44** — the *mean* residual witnesses it instead | **falsified out of sample** (M-342) | The correlation reproduced on all four untouched fields at `r ≥ 0.98` and the line still dies: the exponent gap **is** the `/h` normalisation. A mean's convergence order is field-independent because it is set by the smooth bulk; a supremum's is field-dependent because it is set by the worst feature. No power of `h` reconciles them, and an `r` of 0.98 over four monotone points is a statement about monotonicity |
+| **P-38** — Marching Cubes carries the same 128³ aliasing defect the dual path was cured of | **falsified** at 0.98 against 1.5 (M-336) | **A-024's `size[0] \| 1` is correctly scoped and now that is measured.** The 64 KiB plane stride is not the defect; the *walk* is. Marching Cubes streams eight corners and steps `x`; `emit_quads` walks every grid edge on three axes with endpoints a row and a plane apart. A future extractor inherits the pad only if it inherits the walk |
+
+**Two of these were falsified by the registration rather than by the world**, and that is the part worth
+keeping. P-43's cost clause was arithmetically wrong when it was written; P-42's Gaussian clause was
+unfalsifiable by construction, because taking `B` to be the whole closed surface turns the measurement
+into discrete Gauss–Bonnet. Neither error survived contact with a number, and neither was repaired by
+amending the prediction — both were re-registered under new ids (P-44, P-45) and both of *those* then
+failed too, honestly, on data they had not seen.
+
 
 ---
 
@@ -258,7 +291,7 @@ is what generalises.
 | | |
 |---|---|
 | the registrations | [`crates/isomesh/src/experiment.rs`](../crates/isomesh/src/experiment.rs) |
-| the full ledger, 383 entries | [`FINDINGS.md`](../FINDINGS.md) |
+| the full ledger, 434 entries | [`FINDINGS.md`](../FINDINGS.md) |
 | per-experiment result data | [`docs/experiments/`](experiments/) — each CSV carries its `# hypothesis:` and `# falsified by:` header |
 | timing and quality measurements | [`docs/measurements/`](measurements/) |
 | what falsified beliefs cost | `FINDINGS.md` Part 1 — 24 entries, each recording where the wrong belief came from, because provenance predicts the next error |
