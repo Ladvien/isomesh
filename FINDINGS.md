@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**431 entries** — 31 falsified, 333 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**434 entries** — 34 falsified, 333 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -70,6 +70,9 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗29` | FALSIFIED on both clauses, and the mechanism survives both: the max is the wrong order statistic, and the cost clause wa… |
 | `✗30` | FALSIFIED: with B the whole closed surface, the registered residual is discrete Gauss–Bonnet in an approximation check's… |
 | `✗31` | the correlation reproduced out of sample and the line dies anyway: the exponent gap is the normalisation, and a mean's c… |
+| `✗32` | the two measures split: the Gaussian one is chunk-local and does not sum, the mean one sums and is not chunk-local (P-45… |
+| `✗33` | the repair is free and total where the critical set is sparse, and catastrophic where it is dense (P-46, R-040a) |
+| `✗34` | the gradient hole is real, measurable, and three orders too small to matter; the speedup is real and holds (P-47, R-043) |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -8085,3 +8088,173 @@ require that a fourth variant arrive *"with a measurement attached"*. This is th
 
 **Records** `fixture`, `brushes`, `vertices`, `mean_angular_error_deg`, `max_angular_error_deg`,
 `central_ns_per_normal`, `dual_ns_per_normal`, `speedup`, `sphere_control_max_error`.
+
+### 💥 ✗32 / M-343 — the two measures split: the Gaussian one is chunk-local and does not sum, the mean one sums and is not chunk-local (P-45, R-041a)
+
+**M.** `cargo bench --bench experiment_p45`, `docs/experiments/p-45.csv`. `sphere` and `torus` at 65³,
+partitioned into a 4×4×4 grid of spatial chunks by triangle centroid.
+
+| clause | registered | measured | verdict |
+|---|---|---|---|
+| C1 Gaussian chunk sum = global | gap < 1e-9 | **339.29** (sphere), **647.17** (torus) | **FALSIFIED** by eleven orders |
+| C2 mean chunk sum = global | gap < 1e-9 | **2.98e-13**, **1.71e-13** | **HELD**, ~3500× inside tolerance |
+| C3 isolated chunk reproduces its value | bit for bit | Gaussian **0 of 56/64/56** mismatched; mean **56/56 and 64/64** mismatched | **SPLIT — and the split is the result** |
+
+**C1's gap is exactly quantised, which is what turns a bug into a mechanism.** `gaussian_gap_over_pi`
+reads **108.000000000** and **206.000000000** — integers — and `gaussian_gap_matches_excess` is `true` on
+every row, where `excess_chunk_incidence = Σ_v max(k(v) − 2, 0)` is 108 and 206 for the same meshes. So
+the chunk sum is `π(2χ + excess)` **exactly**. The cause: **a vertex shared by `k` chunks is a boundary
+vertex of all `k`, and is charged `kπ` where `2π` is owed.** On the sphere it localises in closed form —
+the 4×4×4 grid has 27 interior grid lines, each crossing a convex closed surface twice, giving 54
+four-chunk vertices and `54 × 2 = 108`. On the torus, 142 three-chunk plus 32 four-chunk vertices give
+`142 + 64 = 206`.
+
+**That is not a transcription slip, it is the construction missing a term.** Sun & Morvan's additivity is
+`N(A ∪ B) = N(A) + N(B) − N(A ∩ B)`, and the harness implemented the first two terms. **A partition of
+faces is not a partition of space**: the chunks share their boundary curves, and the shared part has to
+be subtracted once. The registration said "additive with a boundary term" and specified the boundary
+term; it did not specify the intersection term, and the measurement found the omission by producing an
+integer.
+
+**C2 held to 3500× inside tolerance, and the half-weight seam rule is why.** An edge on a chunk boundary
+belongs to two chunks and is weighted one half in each, which is the intersection term for a
+one-dimensional overlap — so the mean measure got the correction the Gaussian one did not, because edges
+are shared by exactly two chunks and vertices are shared by up to eight.
+
+**C3 is the clause that decides whether any of this is usable, and it answers in two directions.** The
+**Gaussian** measure computed from a chunk's own triangles alone — boundary detected from that set,
+nothing read from a neighbour — reproduces its in-context value on **every** chunk of every field,
+verified by a routine that never builds a patch at all. The **mean** measure fails in **every** chunk, by
+12.3% and 12.0%, and what it needed from outside itself is exactly **the opposite triangle's normal on
+each seam edge**: 2,040 seam edges on the sphere (14.3% of its edges), 3,264 on the torus (25.9%). One
+triangle of halo per seam edge — a one-ring.
+
+So the two measures have opposite defects. **The Gaussian measure is chunk-local and needs an
+inclusion–exclusion correction to compose; the mean measure composes and needs a halo to compute.**
+Either is fixable and neither is fixed here, because fixing a registered construction after seeing its
+number is the move this machinery exists to prevent.
+
+**`box_exact` is not exact, and the reason is the extractor.** `½ Σ l β` reads **18.324** against `6π =
+18.850`, 2.79% low — sixty times worse than the same estimator on the smooth fields (4.49e-4 and 2.23e-5
+at 65³). The edge-class decomposition settles it: **`right_angle_edges = 0`** — not one mesh edge carries
+`|β| = π/2`. The 16,548 flat edges contribute exactly zero and all 36.649 of the turning comes from 744
+`other_edges`, which is `12 × 62`: two intermediate-dihedral edges per cell along each of the twelve cube
+edges. **Marching Cubes bevels the right angle**, and `l·β` is a product, so splitting one turn across
+two longer diagonal edges does not preserve it. A finding about the extractor, not the estimator. And
+`box_exact` passes C3 spuriously — all 2,232 of its seam `β` are exactly zero — which makes it the
+control proving the mean measure's failure is about seam dihedrals alone.
+
+**Scope note on the artefact:** the 4×4×4 grid spans the *mesh's bounding box*, not the field's domain,
+so on `sphere` the surface occupies 56 of 64 boxes; `chunks` and `chunk_boxes` are both recorded.
+
+### 💥 ✗33 / M-344 — the repair is free and total where the critical set is sparse, and catastrophic where it is dense (P-46, R-040a)
+
+**M.** `cargo bench --bench experiment_p46`, `docs/experiments/p-46.csv`. Minimal value perturbation —
+move the corner of smallest `|value|` across zero — at 65³, both duals.
+
+| field | critical before → after | sweeps | non-manifold vertices after | Hausdorff ratio | corners moved |
+|---|---|---:|---:|---:|---:|
+| `fbm_terrain` | 58 → **0** | **1** | **0** | **1.000000** | 28 (0.010%) |
+| `gyroid` | 141 → **0** | 5 | **0** | **1.000000** | 143 (0.052%) |
+| `noise_cavity` | 602 → **118** | 64 (cap) | **118** | **4.45×** (DC), 1.69× (SN) | 5,190 (1.89%) |
+
+**C1 FALSIFIED**, on `noise_cavity` alone. **C2 FALSIFIED** — the two-sweep bound is missed on two of
+three fields (5 sweeps on `gyroid`; `critical_after_two_sweeps` is 8 there and 103 on `noise_cavity`).
+**C3 FALSIFIED** on `noise_cavity` at 4.45×, and held perfectly elsewhere: the repair on `gyroid` and
+`fbm_terrain` costs **exactly nothing** — `hausdorff_ratio = 1.000000` to six decimals, because moving a
+corner whose value is already the smallest in its cell moves the interpolated crossing by less than the
+measurement's own resolution.
+
+**So the honest statement is a conditional, and the condition is density.** Where critical cells are
+isolated the repair is total, converges in one to five sweeps, touches 0.01–0.05% of samples and costs no
+accuracy. Where they are dense it does not converge at all: 64 sweeps, **6,307 cells stuck**, 5,190
+corners moved, 1.9% of the sample grid perturbed, and the mesh 13% larger (57,764 → 65,272 triangles)
+while being 4.45× further from the field it was supposed to describe. **A manifold mesh of the wrong
+surface is not a bargain**, which is exactly what C3 was registered to catch, and it caught it.
+
+**The stall is structural, and it is settled exhaustively rather than argued.** Walking **all 4,096
+face-adjacent sign patterns**: 820 have cell `A` critical and cell `B` clean; in 64 of those, some corner
+choice fixes `A` and breaks `B`; and in **36 of them, no corner leaves both clean**. Witness:
+`A = 0x5a`, `B = 0x05`. The survey lets the rule pick *any* of the eight corners freely, so this is not
+an artefact of refusing to move a corner twice — on those 36 the rule is genuinely stuck. The dynamics
+agree: `noise_cavity`'s flips-per-sweep reaches **exactly 0 at sweep 41** and stays there for the last 24
+sweeps while the count sits flat at 118. **Not slow. Stopped.** This is the same finite-space move that
+settled the four-triangles-on-one-edge question at A-015, and it is why the residual can be reported as a
+property of the rule rather than of the budget.
+
+**The predictor is cluster size, and it is monotone across the three fields.** Maximum 26-connected
+critical component before repair: `fbm_terrain` **4** → clears in one sweep; `gyroid` **10** → clears in
+five; `noise_cavity` **27** → never. And the survivors are more clustered than the population they came
+from: mean 26-connected component size goes **3.09 → 4.54** (6-connected 2.41 → 3.37) and 195 components
+collapse to 26. An isolated critical cell has eight corners of its own to spend; a clump of 27 competes
+for shared ones.
+
+**Even the successful case is non-monotone**, which is the missing convergence property visible where
+the rule still wins: `gyroid` runs **141 → 11 → 8 → 18 → 8 → 0** — it *rises* at sweep three.
+`noise_cavity` peaks at **336** on sweep eight, higher than after sweep one. Any future version of this
+rule needs a potential function, and this one has none.
+
+**M-338's bijection survives the repair, and that is the strongest corroboration it could get.**
+`residual_nm_vertices_in_critical = 118 = critical_after = non_manifold_vertices_after`, for both
+extractors, after 64 sweeps of scribbling on the sign lattice. The *set* identity — 118 distinct cells,
+one vertex each — holds exactly for `DualContouring`. For `SurfaceNets` the 118 vertices land in 103
+distinct cells, which is not a new phenomenon but M-338's unclamped-centroid mapping artefact firing
+again: 15 of its vertices sit exactly on a cell boundary on this field, so `floor()` names a neighbour.
+`DualContouring` is the clean witness, as it was there.
+
+**Clause three failed on exactly the field clause one failed on**, and held at `1.000000` on both fields
+where the repair completed. No field bought manifoldness with geometry — the one field that lost
+geometry did not get manifoldness either.
+
+**What this rules out and what it leaves.** Sign-lattice repair is not a general answer to dual
+non-manifoldness, so `ManifoldDualContouring` keeps its job. It *is* a free and complete answer where the
+critical set is sparse, which is two of the three affected fields and — on the evidence of the five with
+a zero census — most fields a game meshes. Anyone building on it must gate on maximum cluster size, not
+on count, and must measure Hausdorff, because the failure mode is silent geometry loss rather than an
+error.
+
+### 💥 ✗34 / M-345 — the gradient hole is real, measurable, and three orders too small to matter; the speedup is real and holds (P-47, R-043)
+
+**M.** `cargo bench --bench experiment_p47`, `docs/experiments/p-47.csv`. Forward-mode dual numbers
+carried through `BrushStack`'s fold, against the six-sample central difference `Sdf::gradient` falls back
+to on any composed field.
+
+| clause | registered | measured | verdict |
+|---|---|---|---|
+| C1 mean angular error > 0.1°, max > 5° | on a 64-brush stack | mean **7.6e-5°**, max **4.365°** | **FALSIFIED** |
+| C2 normals ≥ 2× faster | one traversal against six | **2.84×** at 64 brushes | **HELD** |
+| C3 sphere control within 1e-12 | `p/\|p\|` | **2.83e-16** | **HELD** |
+
+| brushes | 1 | 8 | 16 | 32 | 64 | 64 smooth |
+|---|---:|---:|---:|---:|---:|---:|
+| mean angular error, ° | 6.4e-10 | 1.8e-8 | 1.9e-8 | 8.3e-5 | **7.6e-5** | 7.7e-5 |
+| max angular error, ° | 6.3e-9 | 8.1e-4 | 8.1e-4 | **4.365** | **4.365** | 4.365 |
+| ns per normal, central → dual | 39.4 → 17.0 | 296 → 105 | 544 → 190 | 1000 → 353 | 1883 → **663** | 2729 → 1096 |
+| speedup | 2.31× | 2.82× | 2.86× | 2.83× | **2.84×** | 2.49× |
+
+**C1 is falsified in the mean by three to seven orders of magnitude, and its own `falsified_by` named the
+reason in advance**: `DIFF_STEP` scales with `|p|` and these shapes are smooth away from their seams, so
+the central difference is very nearly exact almost everywhere. `central_matches_mesh_normals` is `true`
+throughout — the crate's shipped normals *are* the central-difference ones and they are not visibly
+wrong.
+
+**What the max column says is worth more than the verdict.** The error is not uniformly negligible: it is
+negligible on 99.99% of vertices and reaches **4.365°** on a few, and the jump appears between 16 and 32
+brushes — which is when the stack becomes dense enough that a vertex's six-point stencil **straddles a
+CSG seam**. That is the one place a central difference cannot work: it averages across a gradient
+discontinuity and returns a direction the surface does not have. 4.365° missed the registered 5° bar, and
+missing it is the right outcome for a threshold picked without data, but the mechanism is real and the
+harness names the worst vertex and its seam gap.
+
+**C2 held flat at 2.8× from 8 brushes up**, which is the shape a one-traversal-against-six mechanism
+should have: the ratio is 6 minus the dual's arithmetic overhead, and it stops improving once the tape
+dominates. **And it inverts where there is nothing to amortise** — on a bare `Sphere` and a bare
+`Capsule` the dual is **0.86×** and **0.88×**, i.e. *slower*, because carrying three derivative
+components through one cheap primitive costs more than evaluating it six times. That is the honest
+boundary of the mechanism and it is in the table rather than in a caveat.
+
+**So the fourth `NormalStrategy` is not justified by accuracy and might be by cost.** It computes an
+exact gradient 2.8× faster than the approximate one on composed fields, and the accuracy it buys is worth
+nothing on this evidence except at seams. `normals.rs` asks that a fourth variant arrive with a
+measurement attached; this is the measurement, and what it says is *"not for the reason you would
+expect."*

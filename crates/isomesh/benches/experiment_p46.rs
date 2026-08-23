@@ -568,6 +568,12 @@ struct Repair {
     flips: u64,
     /// Cells the rule could not touch.
     stuck: u64,
+    /// Critical count before any sweep, then after each one. The shape of the
+    /// stall: a plateau says the rule has run out of moves, a slow decline says
+    /// it is merely slow.
+    trajectory: Vec<u64>,
+    /// Corners moved per sweep, parallel to `trajectory[1..]`.
+    flips_per_sweep: Vec<u64>,
 }
 
 fn repair(lattice: &mut Lattice, grid: &Grid, table: &Critical) -> Repair {
@@ -576,12 +582,16 @@ fn repair(lattice: &mut Lattice, grid: &Grid, table: &Critical) -> Repair {
     let mut stuck = 0u64;
     let mut residual = count_critical(lattice, grid, table).either;
     let mut residual_after_two = residual;
+    let mut trajectory = alloc_trajectory(residual);
+    let mut flips_per_sweep = Vec::new();
     while residual > 0 && sweeps < MAX_SWEEPS {
         let done = sweep(lattice, grid, table);
         flips += done.flips;
         stuck += done.stuck;
         sweeps += 1;
         residual = count_critical(lattice, grid, table).either;
+        trajectory.push(residual);
+        flips_per_sweep.push(done.flips);
         if sweeps <= 2 {
             // A sweep over a clean lattice moves nothing, so once the census is
             // zero this is also the count "after two sweeps".
@@ -594,7 +604,259 @@ fn repair(lattice: &mut Lattice, grid: &Grid, table: &Critical) -> Repair {
         residual_after_two,
         flips,
         stuck,
+        trajectory,
+        flips_per_sweep,
     }
+}
+
+/// The trajectory's first entry is the count before any sweep.
+fn alloc_trajectory(before: u64) -> Vec<u64> {
+    let mut v = Vec::with_capacity(MAX_SWEEPS as usize + 1);
+    v.push(before);
+    v
+}
+
+// ─── cluster analysis ───────────────────────────────────────────────────────
+
+/// Which cells count as adjacent when clustering the critical set.
+#[derive(Clone, Copy)]
+enum Adjacency {
+    /// Share a face: exactly one coordinate differs, by one.
+    Face6,
+    /// Share a face or an edge: one or two coordinates differ.
+    Edge18,
+    /// Share a face, an edge, or a corner: any of the 26.
+    Vertex26,
+}
+
+impl Adjacency {
+    const fn name(self) -> &'static str {
+        match self {
+            Self::Face6 => "6 (face)",
+            Self::Edge18 => "18 (face+edge)",
+            Self::Vertex26 => "26 (face+edge+vertex)",
+        }
+    }
+
+    /// Whether an offset with `nonzero` differing coordinates is adjacent.
+    const fn admits(self, nonzero: u32) -> bool {
+        match self {
+            Self::Face6 => nonzero == 1,
+            Self::Edge18 => nonzero <= 2,
+            Self::Vertex26 => true,
+        }
+    }
+}
+
+/// Union-find over cells, for clustering.
+#[derive(Default)]
+struct Dsu {
+    parent: Vec<u32>,
+}
+
+impl Dsu {
+    fn seeded(n: usize) -> Self {
+        Self {
+            parent: (0..n as u32).collect(),
+        }
+    }
+
+    fn find(&mut self, mut x: u32) -> u32 {
+        while self.parent[x as usize] != x {
+            let grand = self.parent[self.parent[x as usize] as usize];
+            self.parent[x as usize] = grand;
+            x = grand;
+        }
+        x
+    }
+
+    fn union(&mut self, a: u32, b: u32) {
+        let (ra, rb) = (self.find(a), self.find(b));
+        if ra != rb {
+            self.parent[rb as usize] = ra;
+        }
+    }
+}
+
+/// Connected-component sizes of the critical-cell set, descending.
+///
+/// Answers whether the survivors are a cluster effect: an isolated critical cell
+/// has eight corners of its own to spend, while a clump of them competes for the
+/// same shared corners, and a corner spent by one is a corner the next cannot
+/// have.
+fn cluster_sizes(critical: &[bool], grid: &Grid, adjacency: Adjacency) -> Vec<u64> {
+    let c = grid.cells as i64;
+    let mut dsu = Dsu::seeded(critical.len());
+    for cz in 0..c {
+        for cy in 0..c {
+            for cx in 0..c {
+                let here = grid.cell_index([cx as usize, cy as usize, cz as usize]);
+                if !critical[here] {
+                    continue;
+                }
+                // Only the lexicographically greater half of the offsets, so
+                // each adjacent pair is visited once.
+                for dz in 0..2i64 {
+                    for dy in -1..2i64 {
+                        for dx in -1..2i64 {
+                            if (dz, dy, dx) <= (0, 0, 0) {
+                                continue;
+                            }
+                            let nonzero =
+                                u32::from(dx != 0) + u32::from(dy != 0) + u32::from(dz != 0);
+                            if !adjacency.admits(nonzero) {
+                                continue;
+                            }
+                            let (nx, ny, nz) = (cx + dx, cy + dy, cz + dz);
+                            if nx < 0 || ny < 0 || nz < 0 || nx >= c || ny >= c || nz >= c {
+                                continue;
+                            }
+                            let there = grid.cell_index([nx as usize, ny as usize, nz as usize]);
+                            if critical[there] {
+                                dsu.union(here as u32, there as u32);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut tally: Vec<(u32, u64)> = Vec::new();
+    for (index, flag) in critical.iter().enumerate() {
+        if *flag {
+            let root = dsu.find(index as u32);
+            tally.push((root, 1));
+        }
+    }
+    tally.sort_unstable();
+    let mut sizes = Vec::new();
+    let mut start = 0usize;
+    while start < tally.len() {
+        let root = tally[start].0;
+        let mut end = start + 1;
+        while end < tally.len() && tally[end].0 == root {
+            end += 1;
+        }
+        sizes.push((end - start) as u64);
+        start = end;
+    }
+    sizes.sort_unstable_by(|a, b| b.cmp(a));
+    sizes
+}
+
+/// `size×count` histogram of a component-size list, descending by size.
+fn histogram(sizes: &[u64]) -> String {
+    let mut distinct: Vec<u64> = sizes.to_vec();
+    distinct.sort_unstable_by(|a, b| b.cmp(a));
+    distinct.dedup();
+    distinct
+        .iter()
+        .map(|s| format!("{s}x{}", sizes.iter().filter(|v| *v == s).count()))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Mean of a component-size list, or zero when empty.
+fn mean(sizes: &[u64]) -> f64 {
+    if sizes.is_empty() {
+        0.0
+    } else {
+        sizes.iter().sum::<u64>() as f64 / sizes.len() as f64
+    }
+}
+
+// ─── is the stall structural? ───────────────────────────────────────────────
+
+/// What an exhaustive walk over face-adjacent cell pairs found.
+///
+/// The question the trajectory cannot answer: when the rule moves a corner, can
+/// that move *provably* create a critical configuration in a neighbour, and is
+/// there a configuration where **every** available corner does?
+///
+/// The block is `3×2×2` samples — two cells sharing a `2×2` face — so all
+/// `2¹² = 4096` sign assignments are enumerated. Values are free reals, so any
+/// of a critical cell's eight corners can be the cheapest one; the walk
+/// therefore asks *exists a corner* and *for all corners*, which bracket
+/// whatever the magnitudes happen to select.
+///
+/// Only the four shared corners can affect the neighbour, so the other four are
+/// the rule's escape routes. Whether it has one is the whole question.
+struct Cascade {
+    /// Patterns where A is critical and B is not.
+    repairable_pairs: u64,
+    /// ...of those, patterns where some corner choice fixes A and breaks B.
+    can_break_neighbour: u64,
+    /// ...of those, patterns where **no** corner choice leaves both cells clean.
+    no_clean_choice: u64,
+    /// A witness for `no_clean_choice`, as `(byte_a, byte_b)`.
+    witness: Option<(u32, u32)>,
+}
+
+/// Sample offsets of cell A's eight corners inside the `3×2×2` block.
+fn block_corner_a(corner: usize) -> usize {
+    (corner & 1) + 3 * ((corner >> 1) & 1) + 6 * ((corner >> 2) & 1)
+}
+
+/// Sample offsets of cell B's eight corners: the same, shifted one along `x`.
+fn block_corner_b(corner: usize) -> usize {
+    1 + (corner & 1) + 3 * ((corner >> 1) & 1) + 6 * ((corner >> 2) & 1)
+}
+
+/// The sign byte a cell reads out of a 12-bit block pattern.
+fn block_byte(pattern: u32, which: fn(usize) -> usize) -> u32 {
+    let mut byte = 0u32;
+    for corner in 0..8usize {
+        if (pattern >> which(corner)) & 1 == 1 {
+            byte |= 1 << corner;
+        }
+    }
+    byte
+}
+
+/// Enumerate every face-adjacent pair of cells and every corner the rule could
+/// spend on the critical one.
+fn cascade_survey(table: &Critical) -> Cascade {
+    let mut out = Cascade {
+        repairable_pairs: 0,
+        can_break_neighbour: 0,
+        no_clean_choice: 0,
+        witness: None,
+    };
+    for pattern in 0..(1u32 << 12) {
+        let byte_a = block_byte(pattern, block_corner_a);
+        let byte_b = block_byte(pattern, block_corner_b);
+        if !table.hosts(byte_a) || table.hosts(byte_b) {
+            continue;
+        }
+        out.repairable_pairs += 1;
+
+        let mut broke_neighbour = false;
+        let mut any_clean = false;
+        for corner in 0..8usize {
+            let moved = pattern ^ (1 << block_corner_a(corner));
+            let after_a = block_byte(moved, block_corner_a);
+            let after_b = block_byte(moved, block_corner_b);
+            let a_clean = !table.hosts(after_a);
+            let b_clean = !table.hosts(after_b);
+            if a_clean && b_clean {
+                any_clean = true;
+            }
+            if a_clean && !b_clean {
+                broke_neighbour = true;
+            }
+        }
+        if broke_neighbour {
+            out.can_break_neighbour += 1;
+        }
+        if !any_clean {
+            out.no_clean_choice += 1;
+            if out.witness.is_none() {
+                out.witness = Some((byte_a, byte_b));
+            }
+        }
+    }
+    out
 }
 
 // ─── measuring one arm ──────────────────────────────────────────────────────
@@ -718,6 +980,18 @@ struct Arm {
     /// residual non-manifoldness is fully accounted for by the residual census —
     /// which is a very different claim from "well-composedness is insufficient".
     residual_colocated: u64,
+    /// Distinct surviving critical cells that host at least one surviving
+    /// non-manifold vertex. Equal to both `critical_after` and `after.vertices`
+    /// means the bijection is a bijection and not merely a matching count.
+    residual_cells_with_nm_vertex: u64,
+    /// Cluster-component sizes of the critical set before and after, one list
+    /// per adjacency, descending.
+    clusters_before: Vec<(&'static str, Vec<u64>)>,
+    clusters_after: Vec<(&'static str, Vec<u64>)>,
+    /// Critical count before any sweep, then after each sweep.
+    trajectory: Vec<u64>,
+    /// Corners moved per sweep.
+    flips_per_sweep: Vec<u64>,
 }
 
 impl Arm {
@@ -743,6 +1017,14 @@ where
     // ── before ──────────────────────────────────────────────────────────────
     let mut lattice = Lattice::sampled(field, &grid);
     let census_before = count_critical(&lattice, &grid, table);
+    // The before-flags, for the cluster comparison. `residual` describes
+    // whatever lattice it is handed, repaired or not.
+    let before_flags = residual(&lattice, &grid, table);
+    let adjacencies = [Adjacency::Face6, Adjacency::Edge18, Adjacency::Vertex26];
+    let clusters_before: Vec<(&'static str, Vec<u64>)> = adjacencies
+        .iter()
+        .map(|a| (a.name(), cluster_sizes(&before_flags.critical, &grid, *a)))
+        .collect();
 
     let mut mesh = MeshBuffer::<f64>::new();
     extract(which, field, &shape, &grid, &mut mesh);
@@ -784,6 +1066,18 @@ where
         .iter()
         .filter(|v| survivors.critical[grid.cell_of(mesh.positions[**v as usize])])
         .count() as u64;
+    let mut nm_cells: Vec<usize> = after
+        .nm_vertex_ids
+        .iter()
+        .map(|v| grid.cell_of(mesh.positions[*v as usize]))
+        .filter(|c| survivors.critical[*c])
+        .collect();
+    nm_cells.sort_unstable();
+    nm_cells.dedup();
+    let clusters_after: Vec<(&'static str, Vec<u64>)> = adjacencies
+        .iter()
+        .map(|a| (a.name(), cluster_sizes(&survivors.critical, &grid, *a)))
+        .collect();
 
     let moved_samples = lattice.moved.iter().filter(|m| **m).count() as u64;
     Arm {
@@ -807,6 +1101,11 @@ where
         residual_2d: survivors.two_d,
         residual_3d: survivors.three_d,
         residual_colocated,
+        residual_cells_with_nm_vertex: nm_cells.len() as u64,
+        clusters_before,
+        clusters_after,
+        trajectory: repaired.trajectory,
+        flips_per_sweep: repaired.flips_per_sweep,
     }
 }
 
@@ -832,6 +1131,23 @@ fn main() {
             }
         });
 
+        // (d) Is the stall structural? One exhaustive combinatorial walk, not
+        // per field: it is a statement about the rule and the case table, not
+        // about any particular sample grid.
+        let cascade = cascade_survey(&table);
+        println!(
+            "cascade survey over all 4096 face-adjacent sign patterns:\n  \
+             {} pairs with A critical and B clean; {} where some corner fixes A \
+             and breaks B; {} where NO corner leaves both clean{}\n",
+            cascade.repairable_pairs,
+            cascade.can_break_neighbour,
+            cascade.no_clean_choice,
+            match cascade.witness {
+                Some((a, b)) => format!(" (witness A={a:#04x} B={b:#04x})"),
+                None => String::new(),
+            },
+        );
+
         for arm in &arms {
             println!(
                 "{:>13} {:>16}  critical {:>4} → {:<4} in {} sweep(s), {} flips  \
@@ -849,6 +1165,59 @@ fn main() {
                 arm.before.hausdorff,
                 arm.after.hausdorff,
                 arm.hausdorff_ratio(),
+            );
+            // (a) Cluster effect. An isolated critical cell has eight corners of
+            // its own; a clump competes for shared ones, and a corner spent by
+            // one neighbour is a corner the next cannot have.
+            for ((name, before), (_, after)) in
+                arm.clusters_before.iter().zip(arm.clusters_after.iter())
+            {
+                println!(
+                    "{:>31}  clusters@{name:<22} before {:>4} comps, max {:>3}, \
+                     mean {:.2}  [{}]  →  after {:>4} comps, max {:>3}, mean {:.2}  [{}]",
+                    "",
+                    before.len(),
+                    before.first().copied().unwrap_or(0),
+                    mean(before),
+                    histogram(before),
+                    after.len(),
+                    after.first().copied().unwrap_or(0),
+                    mean(after),
+                    histogram(after),
+                );
+            }
+            // The shape of the stall.
+            println!(
+                "{:>31}  trajectory {}\n{:>31}  flips/sweep {}",
+                "",
+                arm.trajectory
+                    .iter()
+                    .map(u64::to_string)
+                    .collect::<Vec<_>>()
+                    .join(" → "),
+                "",
+                arm.flips_per_sweep
+                    .iter()
+                    .map(u64::to_string)
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            );
+            // (b) Is the bijection a bijection?
+            println!(
+                "{:>31}  bijection: critical_after {} == nm_vertices_after {} == \
+                 distinct cells hosting one {}  → {}",
+                "",
+                arm.critical_after,
+                arm.after.vertices,
+                arm.residual_cells_with_nm_vertex,
+                if arm.critical_after == arm.after.vertices
+                    && arm.after.vertices == arm.residual_cells_with_nm_vertex
+                    && arm.residual_colocated == arm.after.vertices
+                {
+                    "SAME CELLS, one vertex each"
+                } else {
+                    "NOT a bijection"
+                },
             );
             if !arm.survivors.is_empty() {
                 // Every surviving byte, with the class it belongs to and how
@@ -956,6 +1325,93 @@ fn main() {
                 (
                     "residual_nm_vertices_in_critical",
                     arm.residual_colocated.to_string(),
+                ),
+                (
+                    "residual_cells_with_nm_vertex",
+                    arm.residual_cells_with_nm_vertex.to_string(),
+                ),
+                (
+                    "bijection_holds",
+                    (arm.critical_after == arm.after.vertices
+                        && arm.after.vertices == arm.residual_cells_with_nm_vertex
+                        && arm.residual_colocated == arm.after.vertices)
+                        .to_string(),
+                ),
+                (
+                    "critical_trajectory",
+                    arm.trajectory
+                        .iter()
+                        .map(u64::to_string)
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                ),
+                (
+                    "flips_per_sweep",
+                    arm.flips_per_sweep
+                        .iter()
+                        .map(u64::to_string)
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                ),
+                (
+                    "cluster_components_before_face6",
+                    arm.clusters_before[0].1.len().to_string(),
+                ),
+                (
+                    "cluster_max_before_face6",
+                    arm.clusters_before[0]
+                        .1
+                        .first()
+                        .copied()
+                        .unwrap_or(0)
+                        .to_string(),
+                ),
+                (
+                    "cluster_components_after_face6",
+                    arm.clusters_after[0].1.len().to_string(),
+                ),
+                (
+                    "cluster_max_after_face6",
+                    arm.clusters_after[0]
+                        .1
+                        .first()
+                        .copied()
+                        .unwrap_or(0)
+                        .to_string(),
+                ),
+                (
+                    "cluster_components_before_vertex26",
+                    arm.clusters_before[2].1.len().to_string(),
+                ),
+                (
+                    "cluster_max_before_vertex26",
+                    arm.clusters_before[2]
+                        .1
+                        .first()
+                        .copied()
+                        .unwrap_or(0)
+                        .to_string(),
+                ),
+                (
+                    "cluster_components_after_vertex26",
+                    arm.clusters_after[2].1.len().to_string(),
+                ),
+                (
+                    "cluster_max_after_vertex26",
+                    arm.clusters_after[2]
+                        .1
+                        .first()
+                        .copied()
+                        .unwrap_or(0)
+                        .to_string(),
+                ),
+                (
+                    "cluster_hist_before_vertex26",
+                    histogram(&arm.clusters_before[2].1),
+                ),
+                (
+                    "cluster_hist_after_vertex26",
+                    histogram(&arm.clusters_after[2].1),
                 ),
                 ("samples_moved", arm.moved_samples.to_string()),
                 ("samples_total", arm.total_samples.to_string()),
