@@ -1,12 +1,12 @@
 # isomesh — BACKLOG
 
-**Updated:** 2026-08-23
+**Updated:** 2026-08-24
 **Companions:** `CLAUDE.md` (rules), `FINDINGS.md` (what we know and how well),
 `BACKLOG_ARCHIVE.md` (completed tickets + why they changed),
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**231 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**231 tickets archived, 23 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -47,6 +47,72 @@ attached — read that before re-litigating a decision this project already made
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
 
 ---
+
+## Phase 21 — four registrations from the H1–H5 review and the corpus sweep
+
+**Added 2026-08-24, above Phase 20 for the reason every phase goes on top: rule 1 reads top-down.**
+Phase 20 is closed. Nothing here supersedes Phase 17's or Phase 18's open rows.
+
+**Source: a critique of five hypotheses (H1–H5) plus a corpus sweep** that found two discrete-Morse and
+shifted-linear papers sitting in the library uncited. Verification against the ledger and the source
+**killed three of the five outright**: H1's tropical/min-plus framing is what `BrushStack`'s fold already
+is and P-39 already exploits; H2's Clarke hull describes a computation `box_gradient` does not perform —
+it returns *"the tied axis of lowest index"* (`fields/mod.rs:494-501`) — and M-66's constant already
+carries an R-006 amendment saying it is not a property of the corner angle; H3's Krawczyk/interval-Newton
+certificate is **foreclosed by name** at `docs/research/2026-08-23-discovery-dossier.md:294-298`, and
+reopening named foreclosed ground is an owner's decision, not something to smuggle into a plan.
+
+**Three of the review's own load-bearing claims were also wrong**, and the corrections cost nothing now
+and a harness each later: M-24's 72/72 is 24 rotations × **3 hand-written Hermite crossing sets**
+(`dual_contouring/solve/tests.rs:176-195`), not fields, and its own doc records that it is **structurally
+blind to accumulation order**; the `20.1°–128.0°` figure is the span over 17³ *and* 37³ and M-283's
+verdict is formally **reversed** by M-289; M-311's "792 dirty cells" is **925** by the entry's own table.
+A certified cell-*emptiness* experiment also already exists as M-354, so nothing here re-derives it.
+
+**Phase 15's protocol applies in full**, and all four `P-` entries are registered in
+`crates/isomesh/src/experiment.rs` **before** any harness commit. Experiments are **bench-local**:
+`crates/isomesh/src/**` is read-only apart from registrations, exactly as P-48 reimplemented interval
+arithmetic and P-54 the affine form. A held result is evidence that a feature is worth landing; landing
+it is a later ticket.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-055** | M | |
+| ☐ | **R-056** | M | |
+| ☐ | **R-057** | S | |
+| ☐ | **R-058** | S | |
+
+**R-055 — Is a mesh bit-exactly equivariant under the octahedral group? (P-57)**
+All 48 elements, not the 24 the existing generator at `dual_contouring/solve/tests.rs:130-165` filters to:
+a signed coordinate permutation is exact in `f64`, so `mesh(g·f)` and `g·mesh(f)` are comparable
+bit-for-bit. Compared as **sorted vertex-position multisets**, because the dossier already considered this
+relation at `docs/research/2026-08-23-discovery-dossier.md:267` and held it — `table.rs` picks `safe_apex`
+by **lowest edge index**, which is not invariant under axis relabelling, so a triangle-level statement
+*"manufactures 2,688 false positives"*. C3 quantifies that warning instead of repeating it. M-178's
+vacuous-fixture trap is the reason `fixture_can_fail` is a column and not an assumption.
+
+**R-056 — Robins' `ProcessLowerStars`, with a chunk-local tie-break this crate has to invent. (P-58)**
+Robins, Wood & Sheppard `10.1109/tpami.2011.95` is in the corpus, converted, embedded and **cited in zero
+repo files**. Stage 1 is per-voxel local over a ≤27-cell lower star; stage 2 (`ExtractMorseComplex`) is
+not local and is out of scope. **Theorem 11 is not transcribable** — the corpus markdown terminates
+mid-§4 before its statement — so this rests on Theorem 6 and Propositions 4–5, which are fully present.
+The paper's tie-break is a **global ramp depending on `I, J, K`**, which is chunk-dependent and
+hash-breaking; this crate's fields tie *exactly*, so a chunk-local exact order is **registered, not
+discovered**.
+
+**R-057 — How many of P-39's 19 survivors are necessary? (P-59)**
+M-341 measured a median **19 of 64** survivors with the mesh byte-identical on 64 of 64 chunks, and
+**nothing measures the minimal correct survivor set** — no ablation, no per-brush necessity test.
+Leave-one-out decides it. C1 is a soundness control reported first: if removing all non-survivors moves a
+hash, the bound is unsound and every other number is void.
+
+**R-058 — Does a shifted-linear reconstruction move a root, on one grid line? (P-60)**
+Blu, Thévenaz & Unser `10.1109/tip.2004.826093` is in the corpus, named once in an inventory line
+(`docs/research/2026-08-18-corpus-audit-and-procurement.md:128`) and never used. At `τ = 1/5` the causal
+one-pole prefilter `c_n = −2⁻²·c_{n−1} + (1 + 2⁻²)·f_n` is **multiplication-free**. Scoped to a single
+grid line and no extractor, because the prefilter is global with `(1/4)^k` decay — slab-local, not
+chunk-local. C2 is a **pre-registered failure**: the paper states a Gibbs phenomenon on a step, and a
+sharp CSG boundary is one.
 
 ## Phase 20 — the audit's registrations, with four citations corrected before a harness existed
 

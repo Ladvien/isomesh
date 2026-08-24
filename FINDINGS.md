@@ -9124,3 +9124,75 @@ exactly `h√3`, the distance to the box corner `(1,1,1)` — but that corner is
 subtracted sphere, and the true distance is `0.96`–`1.06` as three independent extractors agree to within
 7%. So `|f|/d ≈ 0.11` against a declared `0.5`. **Conservative rejection trusts declared bounds**, which
 makes this worth its own ticket: opened as **R-054**.
+
+### P-57 — registered for R-055, before the harness: is a mesh bit-exactly equivariant under the octahedral group?
+
+**⚠ THE RELATION IS SCOPED BEFORE THE RUN, AND SCOPED DOWN.**
+`docs/research/2026-08-23-discovery-dossier.md:267` already considered an octahedral metamorphic relation
+and held it, because `table.rs` picks `safe_apex` by **lowest edge index**, which is not invariant under
+axis relabelling: stated at triangle level the relation *"manufactures 2,688 false positives"*. So the
+registered comparison is **sorted vertex-position multisets**, and the triangle-level count is recorded as
+C3 to quantify that warning rather than repeat it. All **48** elements are tested, not the 24 the existing
+generator at `dual_contouring/solve/tests.rs:130-165` filters to — a reflection is exact in `f64` too, and
+it is where the ordering question actually lives. M-177's exemption is the load-bearing prior: a lattice
+rotation can negate a component, so a sum of positions is not bit-exactly equivariant by that route,
+*where the three-term dot product is*. M-178's vacuous-fixture trap is why `fixture_can_fail` is a column
+and not an assumption — `box_exact` and `thin_plate` are exactly representable at 17³ and 33³ and **did
+move at 25³**.
+
+**Records** `field`, `extractor`, `family`, `samples_per_axis`, `vertices`, `elements_tested`,
+`elements_vertex_exact`, `elements_triangle_exact`, `first_failing_element`, `first_failing_det`,
+`worst_component_ulp`, `fixture_can_fail`.
+
+### P-58 — registered for R-056, before the harness: Robins' lower-star census, with a tie-break this crate has to invent
+
+**⚠ TWO SOURCE LIMITS RECORDED BEFORE THE RUN.** Robins, Wood & Sheppard `10.1109/tpami.2011.95` is in
+the corpus, converted, embedded and **cited in zero repo files**. First limit: the corpus markdown
+**terminates mid-§4 before Theorem 11**, the paper's flagship guarantee, so it is cited by number and
+**not transcribed** — rule 5 forbids reconstructing it. Theorem 6 and Propositions 4–5 are fully present
+and are what this rests on. Second limit: the paper requires **distinct values** and perturbs ties with a
+**global ramp depending on the image dimensions `I, J, K`** — chunk-dependent, hash-breaking, and liable
+to underflow. This crate's fields tie *exactly* (`box_exact` is exactly zero across its boundary), so the
+chunk-local exact tie-break `(value, linear_index)` under `f64::total_cmp` is **registered, not
+discovered**, and C1 is the test of whether the paper's ordering-independence survives it. Stage 2
+(`ExtractMorseComplex`) is not local and is `O(N²)` worst case: **out of scope**. C2 is stated as
+**containment, not set equality**, because a Morse census can be non-empty where no MC ambiguity exists
+and equality would indict the instrument.
+
+**Records** `field`, `samples_per_axis`, `voxels`, `critical_0`, `critical_1`, `critical_2`, `critical_3`,
+`critical_total`, `max_lower_star_cells`, `census_matches_reverse_order`, `ambiguous_cells`,
+`ambiguous_with_critical`, `ambiguous_containment_holds`, `critical_cells_outside_ambiguous`,
+`ns_per_voxel`.
+
+### P-59 — registered for R-057, before the harness: how many of P-39's 19 survivors are necessary?
+
+M-341 measured the median survivor count at **19 of 64** (`0.2969`), 3.365× median speedup, 64/64
+byte-identical. **No measurement of the minimal correct survivor set exists anywhere in this repo** — no
+ablation, no per-brush necessity test — so the tightness of that bound is unknown rather than good.
+Leave-one-out decides it, on P-39's fixture reproduced brush-for-brush so the numbers are comparable to
+M-341's. **C1 is a soundness control and is reported first**: if removing all non-survivors moves any
+chunk's hash, the bound is unsound and every other number in the CSV is void. C2 pays either way — a
+median `necessary / survivors` above 0.75 closes the direction with a distribution rather than a hunch.
+
+**Records** `chunk`, `brushes`, `survivors`, `necessary`, `necessary_fraction`, `non_survivors_removed`,
+`control_hash_unchanged`, `unnecessary_far_from_surface`, `unnecessary_far_fraction`, `mesh_hash`,
+`remeshes`, `ns_per_remesh`.
+
+### P-60 — registered for R-058, before the harness: a shifted-linear root, on one grid line
+
+**⚠ SCOPE FIXED BEFORE THE RUN.** Blu, Thévenaz & Unser `10.1109/tip.2004.826093` is in the corpus,
+converted, embedded, and named once in an inventory line
+(`docs/research/2026-08-18-corpus-audit-and-procurement.md:128`) and never used. The transcribable numbers
+are the optimal shift `τ_opt = ½(1 − √3/3) ≈ 0.21`, the practical `τ = 1/5`, a gain of *"about 8 dB
+asymptotically"*, and the range of validity *"for ω < 3π/4"*. At `τ = 1/5` the causal one-pole prefilter
+`c_n = −τ/(1−τ)·c_{n−1} + 1/(1−τ)·f_n` becomes `c_n = −2⁻²·c_{n−1} + (1 + 2⁻²)·f_n`, which is
+**multiplication-free**. It is also **global with `(1/4)^k` decay per sample** — slab-local, not
+chunk-local — which is why C3 measures the guard band rather than assuming one, and why this experiment is
+**scoped to a single grid line and touches no extractor**: the reconstruction change would re-derive the
+whole A-002 apparatus. **C2 is a pre-registered failure**, not a hedge: the paper states a Gibbs
+phenomenon on a step, a sharp CSG boundary is one, and finding the shifted method *better* on `box_exact`
+would be the surprise. **No golden hash can move** — nothing here calls an extractor.
+
+**Records** `field`, `samples`, `tau`, `root_error_standard`, `root_error_shifted`, `error_ratio`,
+`median_error_ratio`, `is_step_like`, `gibbs_overshoot`, `guard_band_k`, `guard_band_delta_cells`,
+`guard_band_converged`.

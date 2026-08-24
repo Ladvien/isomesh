@@ -2013,6 +2013,194 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "scaling_exponent",
         ],
     },
+    Preregistration {
+        id: "P-57",
+        ticket: "R-055",
+        hypothesis: "Every element of the 48-element octahedral group is a \
+            signed coordinate permutation and therefore exact in f64, so \
+            mesh(g*f) and g*mesh(f) are comparable bit-for-bit. Compared as \
+            SORTED VERTEX-POSITION MULTISETS, not as index buffers: table.rs \
+            picks safe_apex by lowest edge index, which is not invariant under \
+            axis relabelling, so a triangle-level relation is known-false in \
+            advance. (C1) the four primal extractors (marching_cubes, \
+            marching_cubes+decider, marching_tetrahedra, \
+            subgrid_marching_tetrahedra) are bit-exactly equivariant on ALL 48 \
+            elements, on all eight reference fields, because a primal vertex is \
+            a/(a-b) on one grid edge -- two values, no accumulation. (C2) the \
+            three dual extractors (surface_nets, dual_contouring, \
+            manifold_dual_contouring) are bit-exact on STRICTLY FEWER than 48, \
+            because M-177 established that a sum of position components is not \
+            bit-exactly equivariant by ordering alone; the count and identity \
+            of failing elements is the new number. (C3) a triangle-level \
+            relation fails where the vertex-level one holds, on at least one \
+            extractor, and the count of triangle-level mismatches is reported \
+            so the dossier's \"2,688 false positives\" warning is quantified \
+            rather than repeated.",
+        falsified_by: "A primal failure -- which is an axis-dependent bug and \
+            the thing this exists to catch; or all 48 holding on the dual path, \
+            which would contradict M-177 and be the more interesting result; or \
+            C3 finding zero triangle-level mismatches, which would mean \
+            safe_apex is invariant after all.",
+        records: &[
+            "field",
+            "extractor",
+            "family",
+            "samples_per_axis",
+            "vertices",
+            "elements_tested",
+            "elements_vertex_exact",
+            "elements_triangle_exact",
+            "first_failing_element",
+            "first_failing_det",
+            "worst_component_ulp",
+            "fixture_can_fail",
+        ],
+    },
+    Preregistration {
+        id: "P-58",
+        ticket: "R-056",
+        hypothesis: "Robins, Wood & Sheppard's ProcessLowerStars \
+            (10.1109/tpami.2011.95) builds a discrete Morse function from a \
+            sampled grid by pairing cells within each voxel's LOWER STAR -- at \
+            most 27 cells in 3D -- which is per-voxel local and, by the paper's \
+            own claim, produces a critical-cell census independent of the \
+            processing order. The paper requires distinct values and perturbs \
+            ties with a GLOBAL ramp that depends on the image dimensions I, J, \
+            K; this crate's fields tie exactly, so this registration fixes a \
+            CHUNK-LOCAL EXACT TIE-BREAK instead: order by (value, \
+            linear_index) lexicographically, comparing values by \
+            f64::total_cmp, which is a total order, deterministic, \
+            allocation-free, and perturbs no sample. (C1) the census by \
+            dimension (critical_0 .. critical_3) is IDENTICAL under the \
+            registered tie-break and under its reverse (value, \
+            Reverse(linear_index)), on all eight fields -- the paper's \
+            ordering-independence claim tested on data it has never seen. (C2) \
+            every cell the asymptotic decider flags ambiguous CONTAINS AT LEAST \
+            ONE CRITICAL CELL -- stated as containment, not set equality, \
+            because a Morse census can be non-empty where no MC ambiguity \
+            exists and equality would indict the instrument; the excess \
+            critical_cells_outside_ambiguous is reported per field either way. \
+            (C3) the census is resolution-stable on simple topology and grows \
+            on complex: critical_total on sphere and torus changes by less than \
+            2x across 17^3/33^3/65^3 while on noise_cavity it grows by more \
+            than 4x.",
+        falsified_by: "C1 differing, which would mean the paper's \
+            ordering-independence does not survive exact ties and the tie-break \
+            is doing work it must not; or C2 finding an ambiguous cell with no \
+            critical cell, which would break the containment the whole framing \
+            rests on; or C3's sphere census growing like the grid, which would \
+            make it an artefact count rather than a topological signature. THE \
+            PAPER'S FLAGSHIP THEOREM 11 IS NOT CITED -- the corpus copy \
+            terminates before its statement, and rule 5 forbids reconstructing \
+            it; Theorem 6 and Propositions 4-5 are transcribable and are what \
+            this rests on.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "voxels",
+            "critical_0",
+            "critical_1",
+            "critical_2",
+            "critical_3",
+            "critical_total",
+            "max_lower_star_cells",
+            "census_matches_reverse_order",
+            "ambiguous_cells",
+            "ambiguous_with_critical",
+            "ambiguous_containment_holds",
+            "critical_cells_outside_ambiguous",
+            "ns_per_voxel",
+        ],
+    },
+    Preregistration {
+        id: "P-59",
+        ticket: "R-057",
+        hypothesis: "M-341 measured that a Lipschitz interval bound prunes a \
+            64-brush tape to a median of 19 survivors per chunk with the mesh \
+            byte-identical on 64 of 64 chunks. Nothing measures how many \
+            survivors are NECESSARY. Leave-one-out ablation decides it: for \
+            each chunk, for each surviving brush, remove that one brush, \
+            re-mesh, and compare mesh_hash. (C1) SOUNDNESS CONTROL, REPORTED \
+            FIRST -- removing ALL non-survivors together changes no chunk's \
+            mesh_hash, 64 of 64, re-confirming M-341's C3 on this harness; if \
+            it fails, the bound is unsound and every other number here is void. \
+            (C2) the bound OVER-KEEPS: the median over chunks of necessary / \
+            survivors is AT MOST 0.75, i.e. at least a quarter of surviving \
+            brushes can be dropped individually with the mesh bit-identical. \
+            (C3) the over-keep has a nameable cause rather than being noise: of \
+            the brushes that survive but prove unnecessary, at least 90% have \
+            an interval over the chunk whose distance from zero exceeds one \
+            cell size -- they win the min/max chain only where the field is far \
+            from the surface.",
+        falsified_by: "C2's median exceeding 0.75, which says the interval \
+            bound is already close to tight and closes the direction with a \
+            distribution rather than a hunch -- a null worth having; or C3 \
+            under 90%, which means the over-keep is not explained by \
+            distance-from-surface and the mechanism is unnamed.",
+        records: &[
+            "chunk",
+            "brushes",
+            "survivors",
+            "necessary",
+            "necessary_fraction",
+            "non_survivors_removed",
+            "control_hash_unchanged",
+            "unnecessary_far_from_surface",
+            "unnecessary_far_fraction",
+            "mesh_hash",
+            "remeshes",
+            "ns_per_remesh",
+        ],
+    },
+    Preregistration {
+        id: "P-60",
+        ticket: "R-058",
+        hypothesis: "Every Marching Cubes vertex is a linear interpolation \
+            between two corner samples. Blu, Thevenaz & Unser \
+            (10.1109/tip.2004.826093) show that shifting the sampling knots by \
+            a fixed, signal-independent tau_opt = (1 - sqrt(3)/3)/2 ~= 0.21 and \
+            enforcing the interpolation property recovers \"about 8 dB \
+            asymptotically\" over standard linear reconstruction, for \
+            w < 3*pi/4. SCOPED TO A SINGLE GRID LINE, TOUCHING NO EXTRACTOR, \
+            because the prefilter is a causal one-pole IIR and the \
+            reconstruction change would re-derive the whole A-002 apparatus. \
+            Along an axis-aligned line through each reference field, sampled at \
+            65 points, with the exact root known from the field's analytic \
+            distance: (C1) on the four smooth fields (sphere, torus, gyroid, \
+            fbm_terrain) the shifted reconstruction's median root error is at \
+            least 30% lower than standard linear at matched sample count, using \
+            tau = 1/5, at which the recursion c_n = -2^-2 * c_{n-1} + (1 + \
+            2^-2) * f_n is multiplication-free. (C2) THE PRE-REGISTERED \
+            FAILURE -- on the two fields with a step-like restriction \
+            (box_exact, csg_difference) the shifted method is WORSE OR EQUAL, \
+            because the paper states a Gibbs phenomenon on a step and a sharp \
+            CSG boundary is one; this is expected, and finding it absent would \
+            be the surprise. (C3) the prefilter's non-locality is bounded: \
+            computing it over a truncated window of k preceding samples instead \
+            of the whole line changes the recovered root by less than 1e-6 \
+            cells for k >= 10, consistent with the (tau/(1-tau))^k = (1/4)^k \
+            decay.",
+        falsified_by: "C1 under 30%, which says the reconstruction gain does \
+            not transfer to root position and the direction closes for a \
+            mesher; or C3 failing at k = 10, which would mean a chunked mesher \
+            cannot have this at any affordable guard band. NO GOLDEN HASH MOVES \
+            -- this experiment reads a 1-D sample line and never calls an \
+            extractor.",
+        records: &[
+            "field",
+            "samples",
+            "tau",
+            "root_error_standard",
+            "root_error_shifted",
+            "error_ratio",
+            "median_error_ratio",
+            "is_step_like",
+            "gibbs_overshoot",
+            "guard_band_k",
+            "guard_band_delta_cells",
+            "guard_band_converged",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
