@@ -308,7 +308,7 @@ jobs:
     name: pages site (docs + wasm demos)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # The same packages the `bevy` job installs. Nothing in the wasm graph
       # needs them -- winit's x11/wayland deps and `cpal` are target-gated away
       # -- but host build scripts of shared dependencies still run, and this is
@@ -331,14 +331,14 @@ jobs:
           cargo install wasm-bindgen-cli --version "$WANT" --locked
       # `setup-python` rather than the runner's system interpreter: Ubuntu marks
       # that one externally managed (PEP 668) and pip refuses to install into it.
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: markdown renderer
         run: python3 -m pip install 'markdown>=3.7,<4' 'pymdown-extensions>=10,<11'
       - name: build
         run: ./scripts/build_web.sh
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: web/dist
 
@@ -355,4 +355,4 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
