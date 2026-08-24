@@ -126,6 +126,30 @@ rejected **sets are identical, cell for cell**, because `min`/`max` collapses th
 cargo run --example affine_rejection --release
 ```
 
+### Where the root falls decides the whole gain (M-359)
+
+![A grid line with standard and shifted reconstructions, the error ratio tracing a closed-form curve as the crossing slides](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/where-the-root-falls-decides-the-gain.gif)
+
+Blu, Thévenaz & Unser get *"about 8 dB asymptotically"* out of standard linear interpolation by shifting
+the sampling knots by a fixed `τ` and enforcing the interpolation property. At `τ = 1/5` the prefilter is
+`cₙ = −2⁻²·cₙ₋₁ + (1 + 2⁻²)·fₙ` — **multiplication-free**. So does it move the *root* a mesher uses?
+
+**It does, by exactly `|σ − 2τ| / σ`.** Slide the crossing across the cell and watch the measured ratio
+trace the closed form: exactly **1** when the root lands on a knot, exactly **0** at `σ = 2τ = 0.4`, never
+worse than the standard rule in the quadratic regime, clearing a 30% bar on **82%** of positions. A mesher
+cannot choose `σ`, so the pre-registered *"at least 30% lower"* is **falsified at a median of 1.486** and
+the honest number is the 82%, not the 8 dB.
+
+What *does* ship is the guard band: the prefilter is causal with `(1/4)^k` decay, and **10 preceding
+samples** buys a root within `1e-6` cells of the whole-line answer on 8 of 8 fields, where 5 samples
+fails. Two controls are on screen — a synthetic quadratic whose predicted ratio is exactly `1/5` and
+measures `0.1984`, and a sabotage run that applies the shift *without* the prefilter and comes back **39×
+worse**, biased by exactly `τ`.
+
+```bash
+cargo run --example shifted_linear_root --release
+```
+
 ### The spheres a mesh never touches (M-355)
 
 ![Wireframe spheres around SDF samples, most never reached by the mesh](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/untouched-tangency-spheres.gif)
@@ -283,6 +307,46 @@ the worst rung.
 
 ```bash
 cargo run --example game_lod_oracle --release
+```
+
+### The tape you keep is twenty times too big (M-358)
+
+![A chunked destructible world, brush gizmos emptying from the frame while the rock does not move](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/the-tape-you-keep-is-twenty-times-too-big.gif)
+
+A destructible world is a **tape** of brush edits folded over a base field. A Lipschitz interval bound
+deletes the brushes that provably cannot win in a chunk, taking a 64-brush tape to a median of **19**
+survivors with the mesh byte-identical (M-341). This asks how many of the 19 are *needed*.
+
+**1,434 of 1,507 surviving brushes — 95.16% — can be dropped and the mesh does not move by one bit.** Not
+one at a time, either: re-mesh each chunk from its necessary brushes *alone* and the hash is identical on
+**64 of 64** chunks, so the world's tape cuts from 1,507 to **73**. A further **20.6×** on top of the
+bound. Four hashes on screen, three tapes, one rock that never changes shape.
+
+The cost is on screen too, because it has to be: deciding necessity took **1,571 re-meshes**. This is
+headroom, not a shippable pruner.
+
+```bash
+cargo run --example game_edit_tape_trim --release
+```
+
+### Mirroring an asset breaks mesh-hash dedup; rotating it does not (M-356)
+
+![The same carved chunk rotated and mirrored, the mirrored copy speckled with markers on every moved vertex](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/mirrored-is-not-the-same-mesh.gif)
+
+Of the **48** ways to reorient a chunk on the cubic lattice, exactly **six** give a bit-identical mesh —
+and they are precisely the six that never negate a coordinate. Negate any axis and the mesh moves, because
+every grid edge is oriented along *increasing* index: a sign flip makes the extractor compute `b/(b−a)`
+where it computed `a/(a−b)`. Same point, different bits.
+
+So mirroring an asset to reuse it — the oldest trick in level art — silently misses on anything keyed to a
+content hash: instancing, collision-mesh caching, chunk mesh caches, network deltas. Rotating it hits.
+**And the count is predicted from the field before any extractor runs**: cut edges whose crossing differs
+when computed from the far endpoint — 72 on `sphere`, 643 on `noise_cavity` — equals the number of moved
+vertices *exactly*. `box_exact` is the control at **0 of 1,350**, and it is the one field where mirroring
+is bit-exact.
+
+```bash
+cargo run --example game_mirror_dedup --release
 ```
 
 ### Digging, the way a game does it

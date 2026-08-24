@@ -9480,10 +9480,16 @@ unnecessary; it is not necessary, and the second route is domination rather than
 **Half of C3's predicate cannot fire on this fixture, structurally, and the CSV shows it rather than
 hiding it.** The registered predicate reads symmetrically — *"an interval over the chunk whose distance
 from zero exceeds one cell size"*, implemented as `lo > cell_size || hi < −cell_size` — and
-`unnecessary_far_by_hi` is **0 on all 64 rows, 0 of 1,434**. It cannot fire: every brush in P-39's tape has
-radius ≤ 1.1, so `f(centre) ≥ −1.1`, while the enclosure's Lipschitz reach is ≈ 3.464 and `hi < −0.125`
-would need `f(centre) < −3.589`. So "distance from zero" here only ever means "entirely more than a cell
-*above* zero".
+`unnecessary_far_by_hi` is **0 on all 64 rows, 0 of 1,434**. It cannot fire. The tape's draw range caps a
+brush radius at 1.1, so `f(centre) ≥ −1.1` and the arm is already dead at that bound — and E-315's demo
+recomputed the *measured* maximum from the same seed, **0.706948** for the largest sphere and 0.538635 for
+the largest capsule, which widens the gap from 3× to 5×: against an enclosure Lipschitz reach of ≈ 3.464,
+`hi < −0.125` would need `f(centre) < −3.589`. So "distance from zero" here only ever means "entirely
+more than a cell *above* zero". **1.1 is a bound and not a measurement**, and the two are separated here
+because a reader would otherwise take it for one. (E-315 also records the near-miss that makes this worth
+writing down: a capsule's field minimum is `−radius`, not `−(radius + half_length)` — the segment is a
+zero-distance *set*, not a point — and the wrong version printed `−1.1100`, which would have looked like
+agreement with the bound.)
 
 **What this licenses and what it does not.** A tighter bound has **20× of headroom** on this fixture and
 the direction is open, not closed — that is the opposite of what C2's wording suggests. What it does not

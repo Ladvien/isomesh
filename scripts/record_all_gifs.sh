@@ -117,6 +117,16 @@ CLIPS=(
     "surface-nets-vs-marching-cubes-box|surface_nets_vs_marching_cubes|ISOMESH_FIELD=1 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
     "surface-nets-vs-marching-cubes-gyroid|surface_nets_vs_marching_cubes|ISOMESH_FIELD=4 ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
     "marching-cubes-sphere-resolution-sweep|marching_cubes_sphere|ISOMESH_VIEW=nohud ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+
+    # -- Phase 21 -------------------------------------------------------------
+    # `game_edit_tape_trim` runs the whole 1,571-re-mesh ablation before the
+    # window opens, so the settle is spent on a splash rather than on the scene;
+    # 150 frames at stride 2 covers the fifteen-segment tour, and the tour CUTS
+    # between chunks rather than panning, which is why 150 frames costs the same
+    # 0.92 MB that 120 did.
+    "the-tape-you-keep-is-twenty-times-too-big|game_edit_tape_trim|ISOMESH_CAPTURE_FRAMES=150 ISOMESH_CAPTURE_EVERY=2 FPS=10"
+    "mirrored-is-not-the-same-mesh|game_mirror_dedup|ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+    "where-the-root-falls-decides-the-gain|shifted_linear_root|ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
 )
 
 # The filters are this script's own arguments, captured once. `want` used to

@@ -146,7 +146,7 @@ Every Bevy example in the project also lives here, and CI builds them all on eve
 
 ## Examples
 
-**[→ The demo page](DEMOS.md)** — all 46 examples, each with an animated capture, what it proves, and the exact command.
+**[→ The demo page](DEMOS.md)** — all 49 examples, each with an animated capture, what it proves, and the exact command.
 
 34 of them. **Start with `quickstart`** — it is the only one that is not a measured experiment, and the only one whose
 job is to show you the shape of a working app rather than to prove something about the library. The rest each carry a

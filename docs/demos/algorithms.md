@@ -11,6 +11,92 @@ finding — `FINDINGS.md` records which source to distrust and why.
 
 ---
 
+## Where the root falls decides the whole gain, and the curve is closed-form
+
+![A grid line through a field, the standard piecewise-linear reconstruction against the shifted one with its knots visibly offset, the measured error ratio riding a closed-form curve down to exactly zero and back up to exactly one as the crossing slides, with the guard-band panel showing k = 5 above the bar and k = 10 below it](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/where-the-root-falls-decides-the-gain.gif)
+
+*`shifted_linear_root` — one grid line, 65 samples, no extractor called anywhere. The samples are fixed
+markers; the **field slides along the line** so the crossing sweeps its cell, which is what a mesher
+actually experiences. Behind the measured point sits the closed-form curve, and the two agree to a median
+of **0.8%**.*
+
+Every Marching Cubes vertex is `t = a/(a−b)` between two corner samples — linear interpolation, the oldest
+reconstruction there is. Blu, Thévenaz & Unser show that you can do materially better for the same cost by
+**shifting the sampling knots** by a fixed, signal-independent `τ` and enforcing the interpolation
+property with a prefilter: *"about 8 dB asymptotically"*, and *"for ω < 3π/4 the optimally shifted method
+outperforms the nonshifted one"*. The optimum is `τ_opt = ½(1 − √3/3) ≈ 0.21`, and at the practical
+`τ = 1/5` the prefilter
+
+> `cₙ = −2⁻²·cₙ₋₁ + (1 + 2⁻²)·fₙ`
+
+is **multiplication-free** — two shifts and two adds per sample, with the paper's own `c₀ = f₀`.
+
+That is a claim about the **reconstruction**. A mesher does not consume the reconstruction; it consumes one
+number out of it, the **root position**. Does the 8 dB transfer?
+
+**It transfers exactly, and the answer is a ratio rather than a constant.** For a locally quadratic signal
+the shifted reconstruction's error over a cell is `(g″/2)·[τ² − τ + s(1−s)]`, so for a root at fraction `σ`
+of the cell the two root errors stand in the ratio
+
+> `|σ − 2τ| / σ` above `σ = τ`,  and `(σ + 3/5)/(1 − σ)` below it
+
+which at `τ = 1/5`:
+
+| where the root lands | ratio | meaning |
+|---|---:|---|
+| `σ = 2τ = 0.4` | **exactly 0** | the shifted rule is exact |
+| `σ = τ = 0.2` | **exactly 1** | the root is on a knot; no gain at all |
+| anywhere in the quadratic regime | **≤ 1** | never worse than standard |
+| 82% of uniform `σ` | **≤ 0.70** | clears a 30% bar |
+
+Slide the crossing in the demo and the measured ratio rides that curve: nose-diving to zero at `0.4`,
+coming back to `0.992` at `0.2` against a predicted `1`, never exceeding `1.02` anywhere over 199 sampled
+positions. **So the pre-registered clause — "at least 30% lower on the smooth fields" — is falsified, at a
+median ratio of 1.486**, and it deserved to be: a median over four arbitrary crossing positions was a
+lottery over `σ`. The honest number for a mesher, which cannot choose `σ`, is the **82%**, not the 8 dB.
+
+**Half of that median was arithmetic rather than measurement, and the demo says so.** On six of the eight
+reference fields the domain-centre axis is a **symmetry axis**: `sphere` restricts to `|x| − 1` along it and
+`torus` to `‖x| − 1| − 0.3`, both piecewise linear through the first crossing. With `g″ = 0` both
+reconstructions are exact, `root_error_standard` is the bisection floor `7.1e-15`, and the ratio is the
+quotient of two numbers at `f64` resolution. Only two fields carry a real measurement, and they **split** —
+`fbm_terrain` is **4.9× better**, `gyroid` is **2× worse** because its crossing sits at `x = −π` exactly, an
+inflection point of `sin` where the second derivative vanishes and the error is cubic-dominated, outside
+the closed form's regime.
+
+**Two controls are on screen, and they are why the rest is trustworthy.** The **positive** control is a
+synthetic exactly-quadratic line whose predicted ratio is exactly `1/5`; it measures **0.1984**, which pins
+the pole sign, the filter gain, the knot offset and the two-piece segment choice all at once. The
+**negative** control feeds the identical code path the raw samples instead of the prefiltered `c` — the
+shift applied *without* the prefilter that makes it interpolate, which is the most natural way to get this
+wrong — and returns **39× worse** than the standard rule, with the root biased by `0.195` cells, i.e. `τ`.
+A positive control that passes while a negative control also passes is telling you nothing.
+
+**What ships out of this is the guard band.** The prefilter is *causal and global*: `cₙ` depends on every
+earlier sample, with weight `(τ/(1−τ))^k = (1/4)^k`. A chunked mesher cannot see every earlier sample, so
+the question is how much overlap it needs.
+
+| | `k = 2` | `k = 5` | `k = 10` |
+|---|---:|---:|---:|
+| `torus` | 3.999995e-2 | 7.805355e-4 | **7.152528e-7** |
+| `gyroid` | 2.178023e-2 | 1.657553e-4 | **1.927142e-7** |
+
+**Ten samples**, and the recovered root is within `1e-6` cells of the whole-line answer on 8 of 8 fields.
+Five samples fails on both fields that carry a non-zero delta, so 10 is the real threshold rather than a
+loose one, and the two steps track `(1/4)³` and `(1/4)⁵` to within a few percent.
+
+**Nothing in the shipped extractor changed.** `edge_position` still computes `a/(a−b)`; this is a 1-D
+instrument, it calls no extractor, and no golden hash can move.
+
+```bash
+cargo run --example shifted_linear_root --release    # 1-8 pick the field, arrows slide the crossing
+```
+
+Twelve quantities reproduced live from `docs/experiments/p-60.csv`, all agreeing (M-359 / ✗42, P-60,
+R-058).
+
+---
+
 ## Proving a cell empty when the Lipschitz ball cannot
 
 ![A gyroid with amber cages marking cells only the affine bound rejects, vanishing when the field changes to a box](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/affine-rejects-where-lipschitz-cannot.gif)

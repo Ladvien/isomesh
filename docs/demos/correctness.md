@@ -10,6 +10,80 @@ page. A physics engine forgives none of them.
 
 ---
 
+## Mirroring an asset breaks mesh-hash dedup, and rotating it does not
+
+![The same carved chunk shown three times — original, rotated, mirrored — with the mirrored copy speckled with markers on every vertex that moved, then the field switched to box_exact where the speckles vanish](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/mirrored-is-not-the-same-mesh.gif)
+
+*`game_mirror_dedup` — one chunk, `marching_cubes`, 33³ on the field's own symmetric domain. The scene
+steps through all **48** signed coordinate permutations of the cubic lattice and, for each, re-meshes the
+reoriented field and compares it bit-for-bit against the reference mesh mapped through the same element.
+A marker is drawn on every vertex that moved.*
+
+There are 48 ways to reorient a chunk on the cubic lattice: six axis permutations times eight sign
+patterns. Every one of them is a *signed coordinate permutation*, which is exact in `f64` — it permutes
+components and flips signs and does no arithmetic at all. So the natural expectation is that a mesher
+commutes with all 48, bit-for-bit.
+
+**Exactly six of the 48 do, and they are precisely the six that never negate a coordinate.**
+
+| field | cut edges | order-sensitive | vertices moved | exact of 48 |
+|---|---:|---:|---:|---:|
+| `sphere` | 1,158 | 72 | **72** | 6 |
+| `torus` | 1,128 | 152 | **152** | 6 |
+| `csg_difference` | 1,386 | 50 | **50** | 6 |
+| `thin_plate` | 510 | 450 | **450** | 24 |
+| `gyroid` | 5,292 | 532 | **532** | 6 |
+| `fbm_terrain` | 2,069 | 291 | **291** | 6 |
+| `noise_cavity` | 6,522 | 643 | **643** | 6 |
+| `box_exact` | 1,350 | **0** | **0** | **48** |
+
+**The mechanism is closed rather than guessed, and the middle two columns are why.** "Order-sensitive
+edges" is computed from the sample grid *before any extractor runs*: it counts cut edges where the crossing
+computed from the far endpoint differs from the crossing computed from the near one, by a single bit. On
+`marching_cubes` it equals the number of vertices that move **exactly**, on every field.
+
+The reason is one line of the extractor. `EDGE_CORNERS` orients every grid edge along **increasing grid
+index**, so `edge_position` always computes `t = a/(a−b)` from the lower-index corner and anchors the lerp
+there. Negate an axis and the index order along it reverses: the extractor now computes `b/(b−a)` and
+anchors at the other corner. Those two are `1 − t` and `t` in exact arithmetic and land on the same point
+geometrically — and they are **not bit-reciprocal**, because two different divisions of the same two `f64`
+round differently.
+
+**So this is not a story about accumulation.** A primal vertex involves two values and no summation at
+all, which is exactly why it *looks* safe. What matters is not how many values are combined but in which
+order the two of them arrive.
+
+**What a studio meets.** Mirroring an asset to reuse it is the oldest trick in level art, and it silently
+defeats anything keyed on a content hash — GPU instancing, collision-mesh caching, a chunk mesh cache, a
+network delta that ships "same as that one". Rotating the same asset by an axis permutation hits the cache
+every time. Both copies look identical on screen, so nothing anywhere reports a problem; you simply pay
+for two meshes and two collision bakes where you budgeted for one.
+
+**`box_exact` is the control and it is the interesting row.** All 1,350 of its cut edges are
+order-insensitive, because its zero set lies on coordinate planes that any dyadic grid hits exactly, so
+`a/(a−b)` and `b/(b−a)` both land on an exactly representable coordinate. Mirroring it *is* bit-exact, on
+all 48 elements. That is the shape of a fixture that cannot fail — and it is why the demo offers several
+fields rather than one, since a demo that only ever showed `box_exact` would prove the opposite of the
+truth.
+
+`thin_plate` sits in between at 24 of 48: its surface lies on one coordinate plane and not the other two,
+so flips of a single axis survive and the rest do not.
+
+**The fix, named and not taken here.** Anchor the interpolation at a canonically ordered endpoint rather
+than at the lower grid index and the primal case becomes equivariant on all 48. That is a change inside
+`crates/isomesh/src` and it moves golden hashes, so it is a ticket rather than a demo.
+
+```bash
+cargo run --example game_mirror_dedup --release      # 1-8 pick the field, arrows step the element
+```
+
+Numbers reproduced live from `docs/experiments/p-57.csv` — eight fields × nine columns, all agreeing
+(M-356 / ✗39, P-57, R-055). The full sweep is 112 rows over seven extractors, where the two tetrahedral
+extractors fail even on `box_exact`: their six-tetrahedron cell decomposition is not octahedrally
+invariant, which is a second mechanism entirely.
+
+---
+
 ## The repair that fixes every triangle and welds 520 things shut
 
 ![A bonsai CT scan under magenta pinch markers, switching to a fuel injection scan where none appear](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/pinch-repair-welds-520-components.gif)

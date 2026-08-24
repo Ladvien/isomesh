@@ -10,6 +10,77 @@ Every figure here came from a command you can run, and the command is under each
 
 ---
 
+## The edit tape you keep is twenty times bigger than the one you need
+
+![A chunked destructible world; brush gizmos empty out of the frame as the tape steps from 64 to survivors to necessary, while the rock itself never changes and four hashes on the HUD stay equal](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/the-tape-you-keep-is-twenty-times-too-big.gif)
+
+*`game_edit_tape_trim` — P-39's fixture, brush for brush: a 64-brush tape of spheres, capsules and smooth
+adds folded over a base sphere, meshed in 64 chunks. **Cyan** brushes are necessary; **amber** survive the
+bound but are droppable because they are far from the surface; **magenta** survive and are droppable
+because another brush dominates them; **grey** are pruned. Four `mesh_hash` values sit on the HUD so
+"bit-identical" is four integers rather than an adjective.*
+
+A destructible world is a **tape**: a base field with a list of brush edits folded over it. Meshing a
+chunk means evaluating that whole fold at every sample, so the tape's length is the cost of every
+re-mesh, and the tape only grows as the player plays.
+
+The standard answer is a conservative bound. Take a Lipschitz interval enclosure of each brush over the
+chunk's box, and any brush that provably cannot change the `min`/`max` fold anywhere in the chunk is
+deleted. That works, and it was measured: a 64-brush tape prunes to a **median of 19 survivors** with the
+mesh **byte-identical on 64 of 64 chunks** (M-341). The question nobody had asked is how many of the 19
+are actually needed.
+
+**Ninety-five percent of them are not.**
+
+| tape | brushes, world total | median per chunk | mesh |
+|---|---:|---:|---|
+| full | 4,096 | 64 | reference |
+| survivors, after the bound | **1,507** | 19 | **bit-identical, 64/64** |
+| necessary, by leave-one-out | **73** | **0** | **bit-identical, 64/64** |
+
+Read the last row twice. It is not "each of these can be dropped on its own" — that is the weaker claim,
+and it is also true: 1,434 of 1,507 survivors can be removed individually with the hash unchanged. The last
+row is the **joint** claim. Re-mesh each chunk from its necessary brushes *alone*, every
+individually-unnecessary survivor removed at the same time, order preserved, and the hash is still
+identical on all 64 chunks. The world's tape goes from 1,507 to **73**, a further **20.6×** beyond what the
+bound already achieved.
+
+The demo shows it as three tapes on one rock. Step `FULL → SURVIVORS → NECESSARY` and the brush gizmos
+drain out of the frame while the geometry does not move a pixel. On the busiest chunk the tape goes 64 → 15
+and 29 of the survivors are magenta. On one chunk the necessary tape has length **zero** and the mesh —
+3,227 triangles of it — is unchanged.
+
+**The cost is on screen next to the win, because it has to be.** Deciding necessity took **1,571
+re-meshes** across the world, roughly `survivors + 1` per chunk, and the demo runs the whole ablation at
+startup and reports the wall time it took. This is a measurement of **headroom**, not a shippable pruner.
+What it says is that the direction is open: a bound with 20× of slack in it is a bound worth improving,
+and before this nobody knew whether there was any slack at all.
+
+**The second mechanism, and why the pre-registered explanation failed.** The prediction was that at least
+90% of the droppable survivors would be droppable *because they are far from the surface* — they win the
+`min`/`max` chain only where the field is nowhere near zero. That is real and dominant, and it is not
+enough: **1,218 of 1,434, or 84.94%**, against a registered 90%. The other 216 straddle the surface band
+and are droppable anyway, because another brush **dominates** them there. They concentrate exactly where
+you would least like them to — the highest-triangle chunks, 29 in the busiest, 24 in the second. A cheap
+replacement for leave-one-out has to be conservative, and those 216 are what make that hard.
+
+**Half of the registered predicate turns out to be structurally dead**, which the demo also prints: the
+rule reads symmetrically, `lo > cell_size || hi < −cell_size`, and the second arm never fires once in
+1,434 opportunities. The tape's brush radii cap at 1.1 by construction and the largest the seed actually
+draws is **0.706948**, so the field's minimum over a chunk cannot reach the −3.589 that arm would need
+against a Lipschitz reach of 3.464. "Distance from zero" here only ever means *above* zero.
+
+```bash
+cargo run --example game_edit_tape_trim --release    # [ ] step chunks, T cycles the tape, X resumes the tour
+```
+
+Every figure above is reproduced live from `docs/experiments/p-59.csv` — thirteen quantities including all
+64 committed per-chunk hashes (M-358 / ✗41, P-59, R-057). The demo runs in `f64` throughout, because
+`mesh_hash` is defined on `MeshBuffer<f64>` and an `f32` copy of this same fixture measures a survivor
+fraction of 0.3281 against the committed 0.2969 — it could not have reproduced a single hash.
+
+---
+
 ## The rim of your own tunnel is lit wrong, and a finer mesh will not fix it
 
 ![A shaft bored into a rock face, its rim glowing red with normal error, triangles climbing while the error refuses to fall, then the rim fixed at the cheapest resolution](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/carve-seam-lit-wrong.gif)
