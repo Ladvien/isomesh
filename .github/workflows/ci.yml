@@ -12,6 +12,15 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
 
+# Declared here rather than per job, because the default for a workflow with no
+# block at all is the repository's default token scope -- and `deploy-pages`
+# needs `pages: write` plus the OIDC `id-token: write` it exchanges for the
+# deployment. `contents: read` is everything the other jobs want.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   lint:
     name: fmt, clippy, docs, dependency gates
@@ -331,3 +340,60 @@ jobs:
         # Checking it here made every push to a green main red -- see M-198 and
         # publish.sh's own header.
         run: ./scripts/publish.sh
+
+  # The site is built on every push *and* every pull request, so a change that
+  # breaks the wasm build or leaves a dangling markdown link is caught before it
+  # reaches main. `build_site.py` fails on any relative link that resolves to
+  # nothing, which makes this job the repository's link checker as well.
+  site:
+    name: pages site (docs + wasm demos)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # The same packages the `bevy` job installs. Nothing in the wasm graph
+      # needs them -- winit's x11/wayland deps and `cpal` are target-gated away
+      # -- but host build scripts of shared dependencies still run, and this is
+      # the cheapest way to not care which.
+      - name: system deps for bevy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+      - name: wasm target
+        run: rustup target add wasm32-unknown-unknown
+      # The version comes out of the lockfile, never a literal here: a
+      # wasm-bindgen CLI that disagrees with the crate emits glue for a
+      # different ABI and the module fails to instantiate in the browser.
+      - name: wasm-bindgen-cli
+        run: |
+          set -euo pipefail
+          WANT=$(awk '/^name = "wasm-bindgen"$/{getline; gsub(/[^0-9.]/,""); print; exit}' \
+            bevy_isomesh/Cargo.lock)
+          cargo install wasm-bindgen-cli --version "$WANT" --locked
+      # `setup-python` rather than the runner's system interpreter: Ubuntu marks
+      # that one externally managed (PEP 668) and pip refuses to install into it.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: markdown renderer
+        run: python3 -m pip install 'markdown>=3.7,<4' 'pymdown-extensions>=10,<11'
+      - name: build
+        run: ./scripts/build_web.sh
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: web/dist
+
+  # Deploys main only. The Pages source has to be set to "GitHub Actions" once by
+  # hand under Settings -> Pages; until that is done this step fails with
+  # `Not Found` and no workflow can set it.
+  pages:
+    name: deploy to github pages
+    needs: site
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v5

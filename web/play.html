@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>isomesh — play</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav><a href="index.html">← isomesh</a></nav>
+
+<div class="play">
+<h1 id="demo-title">loading</h1>
+
+<div class="stage">
+  <canvas id="isomesh-canvas" width="1280" height="720"></canvas>
+  <div id="loading">loading … 36 MB, about 8.4 MB on the wire, first load only</div>
+</div>
+
+<p class="keys">
+  <kbd>left-drag</kbd> orbit · <kbd>scroll</kbd> zoom · <kbd>W</kbd> wireframe ·
+  <kbd>N</kbd> normals · <kbd>G</kbd> grid and domain box · <kbd>Space</kbd> pause ·
+  <kbd>1</kbd>–<kbd>7</kbd> reference field · <kbd>R</kbd> re-mesh ·
+  <kbd>F12</kbd> screenshot (downloads a PNG)
+</p>
+
+<!-- Static blocks, one per demo, and the script only unhides one. Nothing on
+     this page is built from the query string, so there is nothing to inject
+     into. -->
+<div class="keys" id="notes-game_mirror_dedup" hidden>
+  <p><kbd>→</kbd> <kbd>←</kbd> step through the 48 reorientations ·
+     <kbd>A</kbd> auto · <kbd>H</kbd> markers on the moved vertices</p>
+  <p>The console carries this run's cross-check against the committed
+     <a href="experiments/p-57.csv"><code>docs/experiments/p-57.csv</code></a>: every field, every column, measured
+     here rather than replayed.</p>
+</div>
+
+<div class="keys" id="notes-game_edit_tape_trim" hidden>
+  <p><kbd>T</kbd> tape length · <kbd>[</kbd> <kbd>]</kbd> step chunks ·
+     <kbd>B</kbd> brush gizmos · <kbd>K</kbd> chunk boxes ·
+     <kbd>X</kbd> hand control back to the tour</p>
+  <p>The first sixty-four frames are the ablation itself — one chunk per frame,
+     1,571 re-meshes — and the count on the canvas is how far it has got. Nothing
+     else is on screen until it finishes.</p>
+  <p>The console then carries this run's cross-check against the committed
+     <a href="experiments/p-59.csv"><code>docs/experiments/p-59.csv</code></a>, thirteen comparisons including all
+     sixty-four per-chunk mesh hashes.</p>
+</div>
+
+<div class="keys" id="notes-shifted_linear_root" hidden>
+  <p><kbd>←</kbd> <kbd>→</kbd> slide sigma by hand ·
+     <kbd>↑</kbd> <kbd>↓</kbd> or <kbd>1</kbd>–<kbd>9</kbd> which signal ·
+     <kbd>R</kbd> back to the loop</p>
+  <p>The console carries this run's cross-check against the committed
+     <a href="experiments/p-60.csv"><code>docs/experiments/p-60.csv</code></a>: the closed-form sweep is recomputed
+     in your browser and held against every number the CSV publishes.</p>
+</div>
+
+</div>
+
+<script type="module">
+  // An allow-list, not the raw query string: `import(userInput)` on a page
+  // anyone can link to is an arbitrary-module import.
+  const DEMOS = {
+    game_mirror_dedup: "E-314 — mirrored is not the same mesh",
+    game_edit_tape_trim: "E-315 — the tape you keep is twenty times too big",
+    shifted_linear_root: "E-316 — where the root falls decides the gain",
+  };
+  const name = new URLSearchParams(location.search).get("demo");
+  const overlay = document.getElementById("loading");
+  const heading = document.getElementById("demo-title");
+  if (!Object.hasOwn(DEMOS, name)) {
+    heading.textContent = "isomesh — play";
+    overlay.textContent = `unknown demo: ${name}`;
+  } else {
+    document.title = DEMOS[name];
+    heading.textContent = DEMOS[name];
+    document.getElementById(`notes-${name}`).hidden = false;
+    try {
+      const init = (await import(`./play/pkg/${name}/${name}.js`)).default;
+      // `bevy_winit` calls `event_loop.spawn_app` on wasm, so this resolves and
+      // the app keeps running on the browser's event loop. There is no
+      // control-flow exception to swallow; a rejection here is a real failure.
+      await init();
+      overlay.remove();
+    } catch (e) {
+      overlay.textContent = `failed to start: ${e}`;
+      throw e;
+    }
+  }
+</script>
+</body>
+</html>

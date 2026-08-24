@@ -146,10 +146,10 @@
 mod common;
 
 use std::collections::BTreeMap;
-use std::time::Instant;
 
 use bevy::asset::RenderAssetUsages;
 use bevy::mesh::{Indices, PrimitiveTopology};
+use bevy::platform::time::Instant;
 use bevy::prelude::*;
 use common::{Capture, CommonPlugin, DemoDomain, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
 use isomesh::brush::{Brush, BrushOp, BrushStack, Capsule};
@@ -909,46 +909,84 @@ fn measure_chunk(
     )
 }
 
-/// How many worker threads the ablation gets.
-fn worker_count(chunks: usize) -> usize {
-    std::thread::available_parallelism()
-        .map_or(1, std::num::NonZeroUsize::get)
-        .clamp(1, chunks.max(1))
+/// Whether the ablation has finished. Every interactive system waits on it.
+///
+/// The ablation is 1,571 re-meshes and it runs on the app's own thread. Doing it
+/// all inside `Startup` freezes the frame for twenty seconds, and fanning it
+/// across `std::thread::scope` — which is what this demo used to do — is not
+/// available at all on the web build, where thread spawn panics and
+/// `SharedArrayBuffer` needs COOP/COEP headers a static host cannot send. So it
+/// runs one chunk per frame, and nothing that reads the result exists until it is
+/// done.
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+enum Phase {
+    /// Sweeping chunks. Only [`measure_next_chunk`] and the progress line run.
+    #[default]
+    Measuring,
+    /// Measured, cross-checked, and the scene built.
+    Ready,
 }
 
-/// Run the ablation over every chunk, across every core.
+/// The one line on screen while the ablation sweeps.
+#[derive(Component)]
+struct Progress;
+
+/// The ablation, one chunk per frame.
 ///
-/// **Threaded because the honest cost of this measurement is the thing the demo
-/// is warning about, not because it is being hidden.** 1,571 re-meshes is twenty
-/// seconds on one core; the HUD still says 1,571 and the startup report still
-/// says how long it took and on how many threads. Each chunk is independent — its
-/// own extractor, its own buffers, its own tape slice — so the split changes no
-/// result, only the wall clock.
-fn measure_world(
-    fixture: &Fixture,
-    layout: &ChunkLayout<f64>,
-    ids: &[ChunkId],
-) -> Vec<(Ablation, MeshData)> {
-    let stride = ids.len().div_ceil(worker_count(ids.len()));
-    let mut out: Vec<(Ablation, MeshData)> = Vec::with_capacity(ids.len());
-    std::thread::scope(|scope| {
-        let handles: Vec<_> = ids
-            .chunks(stride)
-            .map(|slice| {
-                scope.spawn(move || {
-                    let mut rig = Rig::new();
-                    slice
-                        .iter()
-                        .map(|&id| measure_chunk(&mut rig, fixture, layout, id))
-                        .collect::<Vec<_>>()
-                })
-            })
-            .collect();
-        for handle in handles {
-            out.extend(handle.join().expect("ablation worker"));
+/// **A count budget rather than a wall-clock one**, because a count is identical
+/// on every machine and a stopwatch is not -- M-348's rule. It is also why the
+/// progress line quotes chunks and re-meshes rather than a rate.
+#[derive(Resource)]
+struct Ablating {
+    /// Chunk lattice.
+    layout: ChunkLayout<f64>,
+    /// The base sphere and the 64 brushes.
+    fixture: Fixture,
+    /// Sweep order, parallel to [`Ablating::rows`] as far as it has got.
+    ids: Vec<ChunkId>,
+    /// Next index into [`Ablating::ids`], and so the count already measured.
+    next: usize,
+    /// The extractor and buffers every chunk reuses.
+    rig: Rig,
+    /// What the ablation has found so far.
+    rows: Vec<Ablation>,
+    /// The survivors-only geometry, parallel to [`Ablating::rows`].
+    geometry: Vec<MeshData>,
+    /// Measured seconds, summed over the chunks rather than taken from the wall
+    /// clock, so `World::seconds` still reports the cost of the *measurement*
+    /// rather than the 64 frames it was spread over.
+    elapsed: f64,
+}
+
+impl Ablating {
+    /// A sweep over `ids` that has measured nothing yet.
+    fn new(layout: ChunkLayout<f64>, fixture: Fixture, ids: Vec<ChunkId>) -> Self {
+        let chunks = ids.len();
+        Self {
+            layout,
+            fixture,
+            ids,
+            next: 0,
+            rig: Rig::new(),
+            rows: Vec::with_capacity(chunks),
+            geometry: Vec::with_capacity(chunks),
+            elapsed: 0.0,
         }
-    });
-    out
+    }
+
+    /// The progress line, quoting the *committed* re-mesh count.
+    ///
+    /// From the ledger rather than a literal: the figure on screen before
+    /// anything is measured can only honestly be the one P-59 published, and the
+    /// measured one is what the cross-check holds it against afterwards.
+    fn line(&self, ledger: &Ledger) -> String {
+        format!(
+            "measuring chunk {} of {} -- {} re-meshes, the cost this finding charges for",
+            self.next,
+            self.ids.len(),
+            commas(ledger.total_remeshes)
+        )
+    }
 }
 
 /// The largest Lipschitz reach any chunk of this world has.
@@ -1002,8 +1040,6 @@ struct World {
     chunks_needing_none: usize,
     /// Seconds the ablation took.
     seconds: f64,
-    /// Threads it ran on.
-    threads: usize,
     /// The worst chunk circumradius in the world, which is the Lipschitz reach.
     reach: f64,
     /// How far below zero the deepest brush in the tape reaches.
@@ -1013,7 +1049,7 @@ struct World {
 impl World {
     /// Fold the per-chunk results into the numbers the HUD and the cross-check
     /// read.
-    fn of(rows: &[Ablation], fixture: &Fixture, seconds: f64, threads: usize) -> Self {
+    fn of(rows: &[Ablation], fixture: &Fixture, seconds: f64) -> Self {
         // The upper median, `sorted[len / 2]`, which is what `experiment_p59.rs`
         // and `experiment_p39.rs` both use. Copying the convention rather than
         // re-deriving it is what keeps this comparable with M-341.
@@ -1033,7 +1069,6 @@ impl World {
             empty_chunks: rows.iter().filter(|r| r.triangles == 0).count(),
             chunks_needing_none: rows.iter().filter(|r| r.necessary == 0).count(),
             seconds,
-            threads,
             reach: worst_reach(),
             deepest_brush: fixture.deepest(),
         }
@@ -1490,17 +1525,12 @@ impl Demo {
 
     /// Index of a chunk by its coordinates.
     fn index_of(&self, coords: [i32; 3]) -> usize {
-        self.ids
-            .iter()
-            .position(|id| id.coords == coords)
-            .unwrap_or_else(|| panic!("chunk {coords:?} is not in a 4^3 world"))
+        index_of(&self.ids, coords)
     }
 
     /// Centre of a chunk, in world units.
     fn centre(&self, index: usize) -> Vec3 {
-        let origin = self.layout.sample_origin(self.ids[index]);
-        let half = 0.5 * f64::from(self.layout.cells()) * self.layout.cell_size();
-        place([origin[0] + half, origin[1] + half, origin[2] + half])
+        chunk_centre(&self.layout, self.ids[index])
     }
 
     /// Build the tape a shot asks for into the rig's slice.
@@ -1524,6 +1554,12 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "isomesh - E-315 edit tape trim".into(),
+                // Web only, inert on native: bind to the 1280x720 canvas the
+                // page supplies rather than letting Bevy append its own. The HUD
+                // panels are laid out in pixels for that size, so the canvas is
+                // fixed and CSS scales it -- `fit_canvas_to_parent` stays at its
+                // `false` default for the same reason.
+                canvas: Some("#isomesh-canvas".into()),
                 ..default()
             }),
             ..default()
@@ -1539,7 +1575,12 @@ fn main() {
         })
         .init_resource::<Tour>()
         .init_gizmo_group::<TapeGizmos>()
+        .init_state::<Phase>()
         .add_systems(Startup, setup)
+        .add_systems(
+            Update,
+            measure_next_chunk.run_if(in_state(Phase::Measuring)),
+        )
         // `PreUpdate`, not `Update`, for the reason `game_carve_seams` records:
         // the harness's `update_hud` lives in `Update` and system order within a
         // schedule is unspecified, so a caption written in `Update` disagreed
@@ -1547,9 +1588,11 @@ fn main() {
         // is worse than either being late.
         .add_systems(
             PreUpdate,
-            (controls, advance, rebuild, frame_camera, report).chain(),
+            (controls, advance, rebuild, frame_camera, report)
+                .chain()
+                .run_if(in_state(Phase::Ready)),
         )
-        .add_systems(Update, draw_tape)
+        .add_systems(Update, draw_tape.run_if(in_state(Phase::Ready)))
         .run();
 }
 
@@ -1567,11 +1610,51 @@ fn aim_at(subject: Vec3, yaw: f32, radius: f32) -> Vec3 {
     subject - Vec3::new(sin, 0.0, -cos) * (radius * FRAME_SHIFT_RATIO)
 }
 
-/// Measure the world, check it against the ledger, then build the scene.
+/// Index of a chunk by its coordinates, in a sweep-ordered id list.
+fn index_of(ids: &[ChunkId], coords: [i32; 3]) -> usize {
+    ids.iter()
+        .position(|id| id.coords == coords)
+        .unwrap_or_else(|| panic!("chunk {coords:?} is not in a 4^3 world"))
+}
+
+/// Centre of a chunk, in world units.
+fn chunk_centre(layout: &ChunkLayout<f64>, id: ChunkId) -> Vec3 {
+    let origin = layout.sample_origin(id);
+    let half = 0.5 * f64::from(layout.cells()) * layout.cell_size();
+    place([origin[0] + half, origin[1] + half, origin[2] + half])
+}
+
+/// Every chunk of the world, the tour's five stops first.
+///
+/// **Order matters now that the sweep is incremental.** The five [`STOPS`] are
+/// measured first, in tour order, so the chunks the captions talk about are the
+/// ones a viewer sees appear; the remaining 59 keep the `z, y, x` order they were
+/// built in. [`Demo::rows`] stays parallel to [`Demo::ids`], which every consumer
+/// already assumes, so nothing downstream sees the reorder.
+fn sweep_order() -> Vec<ChunkId> {
+    let mut ids = Vec::with_capacity(CHUNKS_PER_AXIS.pow(3) as usize);
+    ids.extend(STOPS.map(ChunkId::new));
+    for z in 0..CHUNKS_PER_AXIS {
+        for y in 0..CHUNKS_PER_AXIS {
+            for x in 0..CHUNKS_PER_AXIS {
+                let coords = [x, y, z];
+                if !STOPS.contains(&coords) {
+                    ids.push(ChunkId::new(coords));
+                }
+            }
+        }
+    }
+    ids
+}
+
+/// Build the fixture and the sweep order, then hand the ablation to
+/// [`measure_next_chunk`].
+///
+/// It inserts no [`Demo`]: there is nothing to draw until the sweep ends, and a
+/// half-measured world on screen would be a picture of a claim nobody has checked
+/// yet.
 fn setup(
     mut commands: Commands,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut config: ResMut<GizmoConfigStore>,
     mut camera: Query<&mut OrbitCamera>,
     mut ambient: ResMut<GlobalAmbientLight>,
@@ -1585,30 +1668,129 @@ fn setup(
         },
         hard: tape(),
     };
+    let ids = sweep_order();
+    let ledger = Ledger::load();
 
-    let mut ids = Vec::with_capacity((CHUNKS_PER_AXIS.pow(3)) as usize);
-    for z in 0..CHUNKS_PER_AXIS {
-        for y in 0..CHUNKS_PER_AXIS {
-            for x in 0..CHUNKS_PER_AXIS {
-                ids.push(ChunkId::new([x, y, z]));
-            }
-        }
+    info!(
+        "E-315 -- running P-59's leave-one-out ablation over {} chunks, one chunk per frame; \
+         this is the {} re-meshes the finding charges for",
+        ids.len(),
+        commas(ledger.total_remeshes)
+    );
+
+    let extent = CELL_SIZE * f64::from(CELLS_PER_CHUNK) * f64::from(CHUNKS_PER_AXIS);
+    commands.spawn(DemoDomain {
+        min: Vec3::splat(WORLD_ORIGIN as f32),
+        max: Vec3::splat((WORLD_ORIGIN + extent) as f32),
+    });
+
+    let (tape_gizmos, _) = config.config_mut::<TapeGizmos>();
+    tape_gizmos.line.width = 1.6;
+    // Always in front. The tape is an overlay on the world, not part of it: most
+    // of these sixty-four brushes are buried inside a solid ball six units
+    // across, and depth-tested wireframes would show the handful that happen to
+    // poke out. An X-ray of the edit history is the picture this demo is for.
+    tape_gizmos.depth_bias = -1.0;
+    ambient.brightness = AMBIENT_BRIGHTNESS;
+
+    let first = index_of(&ids, STOPS[0]);
+    let centre = chunk_centre(&layout, ids[first]);
+    let (yaw, pitch) = view_of(centre);
+    for mut orbit in &mut camera {
+        orbit.radius = CAMERA_RADIUS;
+        orbit.yaw = yaw;
+        orbit.pitch = pitch;
+        orbit.focus = aim_at(centre, yaw, CAMERA_RADIUS);
     }
 
-    let threads = worker_count(ids.len());
-    info!(
-        "E-315 -- running P-59's leave-one-out ablation over {} chunks on {threads} threads; \
-         this is the 1,571 re-meshes the finding charges for",
-        ids.len()
-    );
+    spawn_hud_panel(&mut commands);
+    spawn_caption(&mut commands);
+
+    let ablating = Ablating::new(layout, fixture, ids);
+    spawn_progress(&mut commands, &ablating, &ledger);
+
+    commands.insert_resource(Shot {
+        chunk: first,
+        tape: Tape::Full,
+    });
+    commands.insert_resource(ledger);
+    commands.insert_resource(ablating);
+}
+
+/// The line on screen while the ablation sweeps.
+///
+/// The only thing on screen: there is no world to look at until the sweep ends,
+/// and a blank window for sixty-four frames reads as a hung app.
+fn spawn_progress(commands: &mut Commands, ablating: &Ablating, ledger: &Ledger) {
+    commands.spawn((
+        Text::new(ablating.line(ledger)),
+        TextFont {
+            font_size: FontSize::Px(20.0),
+            ..default()
+        },
+        TextColor(Color::srgb(0.97, 0.95, 0.91)),
+        Node {
+            position_type: PositionType::Absolute,
+            left: Val::Px(18.0),
+            bottom: Val::Px(18.0),
+            padding: UiRect::axes(Val::Px(14.0), Val::Px(8.0)),
+            ..default()
+        },
+        BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.84)),
+        GlobalZIndex(4),
+        Progress,
+    ));
+}
+
+/// Measure one chunk, and on the last one build everything the demo reads.
+///
+/// One **chunk** per frame rather than one leave-one-out re-mesh: a chunk is
+/// about twenty re-meshes, so the sweep finishes in sixty-four frames — long
+/// enough for a viewer to watch the count run, short enough that no browser calls
+/// the tab unresponsive. [`measure_chunk`] is untouched and each chunk is
+/// independent — its own tape slice, its own buffers — so the numbers are the
+/// same ones the threaded sweep produced, and the cross-check is what says so.
+fn measure_next_chunk(
+    mut commands: Commands,
+    mut ablating: ResMut<Ablating>,
+    ledger: Res<Ledger>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut progress: Query<(Entity, &mut Text), With<Progress>>,
+    mut next_phase: ResMut<NextState<Phase>>,
+) {
+    let ablating = ablating.as_mut();
+    let id = ablating.ids[ablating.next];
     let started = Instant::now();
-    let measured = measure_world(&fixture, &layout, &ids);
-    let seconds = started.elapsed().as_secs_f64();
+    let (row, geometry) = measure_chunk(&mut ablating.rig, &ablating.fixture, &ablating.layout, id);
+    ablating.elapsed += started.elapsed().as_secs_f64();
+    ablating.rows.push(row);
+    ablating.geometry.push(geometry);
+    ablating.next += 1;
 
-    let (rows, geometry): (Vec<Ablation>, Vec<MeshData>) = measured.into_iter().unzip();
-    let world = World::of(&rows, &fixture, seconds, threads);
+    let line = ablating.line(&ledger);
+    for (_, mut text) in &mut progress {
+        text.0.clone_from(&line);
+    }
+    if ablating.next < ablating.ids.len() {
+        return;
+    }
 
-    let ledger = Ledger::load();
+    // Moved out field by field rather than by taking the resource whole, because
+    // a system cannot take a resource by value. `Ablating` is removed below and
+    // the run condition stops this system on the next frame, so nothing can
+    // observe the emptied vectors.
+    let layout = ablating.layout;
+    let fixture = Fixture {
+        base: ablating.fixture.base,
+        hard: core::mem::take(&mut ablating.fixture.hard),
+    };
+    let ids = core::mem::take(&mut ablating.ids);
+    let rows = core::mem::take(&mut ablating.rows);
+    let geometry = core::mem::take(&mut ablating.geometry);
+    let world = World::of(&rows, &fixture, ablating.elapsed);
+    commands.remove_resource::<Ablating>();
+
     let hash_matches = rows
         .iter()
         .filter(|r| ledger.hash_by_chunk.get(&r.label()) == Some(&r.hash_survivors))
@@ -1649,22 +1831,11 @@ fn setup(
         chunk_meshes.push(handle);
     }
 
-    let extent = CELL_SIZE * f64::from(CELLS_PER_CHUNK) * f64::from(CHUNKS_PER_AXIS);
-    commands.spawn(DemoDomain {
-        min: Vec3::splat(WORLD_ORIGIN as f32),
-        max: Vec3::splat((WORLD_ORIGIN + extent) as f32),
-    });
+    for (entity, _) in &progress {
+        commands.entity(entity).despawn();
+    }
 
-    let (tape_gizmos, _) = config.config_mut::<TapeGizmos>();
-    tape_gizmos.line.width = 1.6;
-    // Always in front. The tape is an overlay on the world, not part of it: most
-    // of these sixty-four brushes are buried inside a solid ball six units
-    // across, and depth-tested wireframes would show the handful that happen to
-    // poke out. An X-ray of the edit history is the picture this demo is for.
-    tape_gizmos.depth_bias = -1.0;
-    ambient.brightness = AMBIENT_BRIGHTNESS;
-
-    let demo = Demo {
+    commands.insert_resource(Demo {
         layout,
         fixture,
         ids,
@@ -1682,53 +1853,36 @@ fn setup(
         live_brushes: 0,
         live_ms: 0.0,
         rig: Rig::new(),
-    };
-    let first = demo.index_of(STOPS[0]);
-    let centre = demo.centre(first);
-    let (yaw, pitch) = view_of(centre);
-    for mut orbit in &mut camera {
-        orbit.radius = CAMERA_RADIUS;
-        orbit.yaw = yaw;
-        orbit.pitch = pitch;
-        orbit.focus = aim_at(centre, yaw, CAMERA_RADIUS);
-    }
-
-    spawn_hud_panel(&mut commands);
-    spawn_caption(&mut commands);
-
-    commands.insert_resource(Shot {
-        chunk: first,
-        tape: Tape::Full,
     });
-    commands.insert_resource(demo);
-    commands.insert_resource(ledger);
     commands.insert_resource(cross);
+    next_phase.set(Phase::Ready);
 }
 
-/// The startup report: the fixture, the cross-check, the win and the cost.
+/// The report: the fixture, the cross-check, the win and the cost.
 ///
-/// Printed before the window opens because it is the evidence, and a reader who
-/// only ever sees the GIF should still be able to run the example and read every
-/// comparison in a terminal.
+/// `info!` rather than `println!`, and not only for consistency with the other
+/// two demos: on wasm `println!` goes to an unsupported stdout and is discarded,
+/// while Bevy's `LogPlugin` routes `tracing` to `console.log`. This is the
+/// evidence, and a reader who only ever sees the GIF should still be able to run
+/// the example -- native or in a browser -- and read every comparison.
 fn report_to_console(fixture: &Fixture, ledger: &Ledger, world: &World, cross: &CrossCheck) {
     let adds = fixture.hard.iter().filter(|b| b.op == BrushOp::Add).count();
-    println!("\nE-315 game_edit_tape_trim -- M-358 / P-59 (R-057)");
-    println!(
+    info!("\nE-315 game_edit_tape_trim -- M-358 / P-59 (R-057)");
+    info!(
         "fixture:  {BRUSHES} brushes ({adds} Add, {} Subtract) over a sphere of radius \
          {BASE_RADIUS}; {CHUNKS_PER_AXIS}^3 chunks of {CELLS_PER_CHUNK} cells at {CELL_SIZE}",
         BRUSHES - adds
     );
-    println!(
-        "ablation: {} re-meshes over {} chunks in {:.2} s on {} threads",
+    info!(
+        "ablation: {} re-meshes over {} chunks in {:.2} s, one chunk per frame",
         commas(world.total_remeshes),
         world.chunks,
-        world.seconds,
-        world.threads
+        world.seconds
     );
 
-    println!("\ncross-check against docs/experiments/p-59.csv");
+    info!("\ncross-check against docs/experiments/p-59.csv");
     for check in &cross.0 {
-        println!(
+        info!(
             "  {:<20} expected (p-59.csv) = {:<10} measured = {:<10} {}",
             check.name,
             check.expected,
@@ -1737,23 +1891,23 @@ fn report_to_console(fixture: &Fixture, ledger: &Ledger, world: &World, cross: &
         );
     }
     if cross.all_hold() {
-        println!("  all {} reproduce", cross.0.len());
+        info!("  all {} reproduce", cross.0.len());
     } else {
-        println!(
+        info!(
             "  CROSS-CHECK FAILED: {} of {} reproduce -- this is not P-59's fixture",
             cross.held(),
             cross.0.len()
         );
     }
 
-    println!(
+    info!(
         "\nthe win:  {} survivors -> {} necessary brushes world-wide, bit-exact on {}/{} chunks",
         commas(world.total_survivors),
         commas(world.total_necessary),
         world.necessary_only_unchanged,
         world.chunks
     );
-    println!(
+    info!(
         "          {:.1}x on top of P-39's {BRUSHES} -> {} (M-341). {} of {} chunks need no brush \
          at all, {} of those mesh empty.",
         world.trim(),
@@ -1762,37 +1916,37 @@ fn report_to_console(fixture: &Fixture, ledger: &Ledger, world: &World, cross: &
         world.chunks,
         world.empty_chunks
     );
-    println!(
+    info!(
         "the cost: {} re-meshes to decide it. Headroom, NOT a shippable pruner.",
         commas(world.total_remeshes)
     );
-    println!(
+    info!(
         "C3:       {} far of {} = {:.6} against the registered {:.2} -- FALSIFIED",
         commas(world.total_droppable_far),
         commas(world.total_droppable),
         world.far_fraction(),
         ledger.c3_bound
     );
-    println!(
+    info!(
         "          the other {} droppable survivors straddle the surface band and are dominated",
         commas(world.total_droppable - world.total_droppable_far)
     );
-    println!("          in the min/max chain, which is the cause the registration did not name.");
-    println!(
+    info!("          in the min/max chain, which is the cause the registration did not name.");
+    info!(
         "          unnecessary_far_by_hi is {} of {} and cannot fire: no brush's field ever",
         world.total_far_by_hi,
         commas(world.total_droppable)
     );
-    println!(
+    info!(
         "          goes below {:.4}, while `hi < -{CELL_SIZE}` needs f(chunk centre) < {:.4}",
         -world.deepest_brush,
         world.hi_branch_threshold()
     );
-    println!(
+    info!(
         "          at a Lipschitz reach of {:.4}. Half the registered predicate is dead.",
         world.reach
     );
-    println!();
+    info!("");
 }
 
 /// The dark panel the HUD is read against.
@@ -2304,8 +2458,8 @@ fn report(
             world.chunks_needing_none
         ),
         format!(
-            "           {} dominant Adds here; ablation {:.2} s on {} threads, {} chunks empty",
-            row.dominant_adds, world.seconds, world.threads, world.empty_chunks
+            "           {} dominant Adds here; ablation {:.2} s, one chunk/frame, {} empty chunks",
+            row.dominant_adds, world.seconds, world.empty_chunks
         ),
         String::new(),
         String::from("p-59.csv   expected -> measured"),

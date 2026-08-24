@@ -8,7 +8,51 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
-Nothing yet.
+**The project has a site, and three of the demos are playable in it.**
+[isomesh.ladvien.com](https://isomesh.ladvien.com/) renders this repository's own markdown, serves every
+GIF and screenshot from itself rather than hotlinking `raw.githubusercontent.com`, and carries the three
+Phase 21 demos as real WebAssembly builds. Each still prints its cross-check against its committed CSV to
+the browser console, so a hosted build cannot drift away from the artefact it illustrates.
+
+### Added
+
+- **`scripts/build_web.sh`** — the one command that builds the site: three
+  `--profile wasm-release --target wasm32-unknown-unknown` examples through `wasm-bindgen`, then the prose.
+  It reads the required `wasm-bindgen` CLI version out of `bevy_isomesh/Cargo.lock` and refuses to build
+  with any other, because a CLI that disagrees with the crate emits glue for a different ABI and the module
+  fails to instantiate in the browser naming neither tool.
+- **`scripts/build_site.py`** — renders seven markdown sources plus a hand-written front door into
+  `web/dist`, copies `docs/gifs`, `docs/screenshots` and `docs/experiments` beside them, and marks every
+  `<img>` `loading="lazy"` (`DEMOS.md` alone references 34 GIFs, which is tens of MB on one scroll-free
+  load). **It is also the link checker**: all 69 relative targets are resolved against the repository and
+  anything that resolves to nothing fails the build naming its source, which is what makes rendering only
+  part of the repository safe — links into `BACKLOG.md`, `docs/research/` and `crates/` are rewritten to
+  github.com blob URLs instead.
+- **A `site` CI job on every push and pull request**, and a `pages` job that deploys `main`. The `site`
+  job is what turns the link checker and the wasm build into gates.
+
+### Changed
+
+- **`game_edit_tape_trim` measures one chunk per frame instead of fanning across `std::thread::scope`.**
+  Thread spawn panics on wasm and a static host cannot send the COOP/COEP headers `SharedArrayBuffer`
+  needs, so the threaded sweep could not exist there; doing all 1,571 re-meshes inside `Startup` would
+  freeze the frame for twenty seconds instead. `measure_chunk` is untouched and each chunk is independent,
+  and the cross-check is what says the result is the same: **all 13 comparisons reproduce, including all
+  64 per-chunk mesh hashes**, native and in a browser. The startup report drops the thread count and its
+  17 `println!` calls became `info!`, because `println!` writes to an unsupported stdout on wasm and is
+  discarded while Bevy's `LogPlugin` routes `tracing` to `console.log`.
+- **`Instant` in `game_mirror_dedup` and `game_edit_tape_trim` is `bevy::platform::time::Instant`**, which
+  is `std::time::Instant` natively and `web_time::Instant` on wasm. `std::time::Instant::now()` panics
+  there, and Bevy's `web` feature — now enabled for `cfg(target_arch = "wasm32")` only — is what makes the
+  re-export resolve to the working one.
+- **The examples' shared `F12` screenshot names files from a counter, not `std::process::id()`**, which
+  compiles on wasm and then panics with "no pids on this platform" — and
+  `Window::prevent_default_event_handling` defaults to `true`, so `F12` in a browser reaches the app rather
+  than devtools. Repeated presses now write `screenshot-1.png`, `screenshot-2.png`, … instead of one name
+  per process.
+- **`avian3d`, `parry3d`, `wgpu` and `isomesh-gpu` are native-only dev-dependencies.** None is reachable
+  from the three examples that get a web build, and `isomesh-gpu` asks wgpu for `dx12`, `metal` and
+  `vulkan` and for no web backend at all. Dev-dependencies are not propagated, so consumers see no change.
 
 ## [0.0.9] — 2026-08-17
 

@@ -484,6 +484,12 @@ fn handle_keys(
     mut flags: ResMut<ViewFlags>,
     mut commands: Commands,
     mut exit: MessageWriter<AppExit>,
+    // Names F12 screenshots. A counter rather than `std::process::id()`, which
+    // compiles on wasm and then panics with "no pids on this platform" -- and
+    // `Window::prevent_default_event_handling` defaults to `true`, so F12 in a
+    // browser reaches the app instead of devtools. `Local<u32>` is the same idiom
+    // `size_window` uses for its frame counter.
+    mut taken: Local<u32>,
 ) {
     flags.remesh_requested = keys.just_pressed(KeyCode::KeyR);
 
@@ -518,7 +524,8 @@ fn handle_keys(
     }
 
     if keys.just_pressed(KeyCode::F12) {
-        let path = format!("screenshot-{}.png", std::process::id());
+        *taken += 1;
+        let path = format!("screenshot-{}.png", *taken);
         commands
             .spawn(Screenshot::primary_window())
             .observe(save_to_disk(path.clone()));

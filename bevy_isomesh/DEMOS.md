@@ -3,7 +3,12 @@
 Thirty-four runnable examples. This page shows what each one looks like, what it proves, and the exact
 line to run it.
 
-**[The hosted version of this page](https://claude.ai/code/artifact/cc28fc70-8d82-4655-afee-582ea00f5513)** carries the same clips in one link, if you would rather send someone a URL than a repository.
+**[The hosted version of this page](https://isomesh.ladvien.com/demos.html)** carries the same clips in one
+link, if you would rather send someone a URL than a repository. Three of the demos on it — the Phase 21
+ones — are **playable in the browser** as WebAssembly builds, and each still prints its cross-check against
+its committed CSV to the console: [`game_mirror_dedup`](https://isomesh.ladvien.com/play.html?demo=game_mirror_dedup),
+[`game_edit_tape_trim`](https://isomesh.ladvien.com/play.html?demo=game_edit_tape_trim),
+[`shifted_linear_root`](https://isomesh.ladvien.com/play.html?demo=shifted_linear_root).
 
 Everything here is `cargo run --example <name> --release` from this directory. **Use `--release`** —
 debug meshing is 37–62× slower and you will think something is broken.
