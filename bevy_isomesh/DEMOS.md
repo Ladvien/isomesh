@@ -252,6 +252,39 @@ cargo run --example subgrid_features --release        # - = thickness · [ ] res
 
 ## Game-shaped
 
+### The rim of your own tunnel is lit wrong (M-350)
+
+![A shaft bored into rock, its rim glowing red with normal error](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/carve-seam-lit-wrong.gif)
+
+Dig a tunnel and the rim is a CSG crease. A central difference across it averages two gradients, so the
+normal can be **44.3° wrong** at a right-angled rim — a bright arc exactly where the player just dug.
+
+Then the punchline: **30.2× the triangles and the rim got 0.66° worse.** Refining narrows the wrong band
+without making it less wrong, because the stencil step scales with position and not with the cell. The fix
+is the analytic gradient on **38 of 1,374 vertices** — 2.8%, since straddling vertices lie on a curve — and
+that takes the rim from 44.28° to **0.0012°** at the *cheapest* resolution.
+
+```bash
+cargo run --example game_carve_seams --release
+```
+
+### The chunk knows it is losing detail (M-355)
+
+![Terrain of spires and boulders under a chunk heat map, cycling LOD strategies](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/detail-oracle-half-the-triangles.gif)
+
+Camera distance does not know what is *in* a chunk. At 10 px/cell it spends 33³ on plain rolling ground and
+drops the chunks holding thin spires to 17³ — **24,076 triangles and 9 of 16 chunks still losing detail**,
+worse on the metric than uniform 9³ at 8.8× the cost.
+
+Counting the tangency spheres the mesh never touches answers the question from the field alone, no ground
+truth. Each chunk climbs its own ladder to a 15% gate: **81,276 triangles, 0 chunks losing detail**, against
+**147,504** for the range policy tuned to the same bar — **1.81× fewer**. A bake, not a frame: 875 ms on
+the worst rung.
+
+```bash
+cargo run --example game_lod_oracle --release
+```
+
 ### Digging, the way a game does it
 
 ![A first-person camera carving tunnels through chunked terrain](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/digging-a-tunnel.gif)

@@ -10,6 +10,95 @@ Every figure here came from a command you can run, and the command is under each
 
 ---
 
+## The rim of your own tunnel is lit wrong, and a finer mesh will not fix it
+
+![A shaft bored into a rock face, its rim glowing red with normal error, triangles climbing while the error refuses to fall, then the rim fixed at the cheapest resolution](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/carve-seam-lit-wrong.gif)
+
+*`game_carve_seams` — a capsule brush bores a shaft into a rock face. The rim is a **90° crease**, and its
+normals are **44.3° wrong**. The red tint is the per-vertex angular error. Then the resolution ladder runs,
+and the red band gets **thinner but never less red**.*
+
+You dig a tunnel. The rock face and the bore meet at a crease, and a crease in a CSG field is a `min`/`max`
+seam where the field is `C⁰` and not `C¹`. A central difference straddling that seam averages **two
+different gradients**, so the normal it returns can be off by up to half the crease angle — at a right
+angle, **45°**. That is a bright or dark rim arc at exactly the place the player just dug, and it is on the
+shipped path: `BrushStack` does not override `Sdf::gradient`, so these are the normals the mesher actually
+writes.
+
+**Here is the part that costs a studio real money.** The obvious response to a bad shaded edge is to mesh
+finer. Watch the ladder:
+
+| chunk | triangles | rim error | vertices straddling |
+|---|---:|---:|---:|
+| 25³ | 2,588 | **44.28°** | 2.77% |
+| 41³ | 7,492 | 42.99° | 1.60% |
+| 65³ | 19,146 | 44.16° | 1.21% |
+| 97³ | 43,516 | 44.73° | 0.92% |
+| 129³ | **78,100** | **44.94°** | 0.73% |
+
+**30.2× the triangles, and the rim got 0.66° *worse*.** It cannot improve: the stencil step scales with
+position, not with the cell, so refining the grid narrows the wrong band without making it less wrong.
+
+**The fix is 2.8% of the vertices, at the cheapest resolution.** Straddling vertices sit on a curve, not a
+surface — `O(n)` against `O(n²)` — so at 25³ there are **38 of 1,374**. Give those the analytic gradient of
+the active branch and the rim error drops from **44.28° to 0.0012°**, on the same 2,588-triangle mesh. And
+P-47 already measured exact gradients as **2.84× cheaper** than the six-sample difference on composed
+tapes, so the correct path is also the faster one.
+
+Away from the rim the normals were never in doubt: **0.0012°** over the other 1,336 vertices, which is the
+`f32` round-off floor. **The defect is a curve one cell wide, and nothing in the crate's validity suite
+looks at it** — this mesh passes manifoldness, Euler and Hausdorff (M-350).
+
+```bash
+cd bevy_isomesh && cargo run --example game_carve_seams --release
+```
+
+---
+
+## The chunk knows it is losing detail, so stop guessing from camera distance
+
+![A terrain of spires and boulders under a chunk heat map, cycling uniform, range-based and oracle-driven LOD with a triangle scoreboard](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/detail-oracle-half-the-triangles.gif)
+
+*`game_lod_oracle` — 16 chunks, four resolution rungs. The heat map is each chunk's own answer to *am I
+losing detail?* Same visual quality, **1.81× fewer triangles** than distance-based LOD.*
+
+Every LOD scheme in shipping games picks resolution from **camera distance**, because that is the only
+signal available. Distance does not know what is *in* a chunk. Watch it fail: at 10 px/cell it spends
+**33³** on the nearest chunks, which are plain rolling ground, and drops the chunks holding thin spires to
+17³ because they are further away. Result — **24,076 triangles and 9 of 16 chunks still losing detail**,
+which is *worse on the metric than uniform 9³* while costing 8.8× more.
+
+**The field can answer the question directly.** Every sample asserts a sphere of radius `|d|` that the
+surface should touch. Count the ones your mesh never reaches and you have a detail-loss number computed
+from **the field and the mesh you already have** — no reference model, no artist judgement, no offline
+comparison against a ground truth that does not exist for procedural content.
+
+| strategy | triangles | chunks losing detail |
+|---|---:|---:|
+| uniform 9³ | 2,738 | 8 of 16 |
+| range LOD, 10 px/cell | 24,076 | **9 of 16** |
+| range LOD, tuned to 4.1 px/cell until it clears | **147,504** | 0 |
+| **oracle LOD** | **81,276** | 0 |
+
+Each chunk climbs its own ladder until its untouched fraction drops under a 15% gate: eight chunks stay at
+9³, three go to 33³, five to 65³. To reach the *same* detail bar, the range policy has to be tuned all the
+way down to 4.1 px/cell — and then it spends **1.81×** the triangles, because it has to over-resolve
+everything to satisfy the worst thing.
+
+**Stated honestly: this is a bake, not a frame.** The exhaustive scan costs 875 ms on the worst rung. It
+belongs in a content pipeline or a chunk's first-touch, not in an every-frame LOD selector — and the
+predicate reproduces P-51's committed row exactly, 717.1816 per 1,000 live against 717.1816 in the CSV
+(M-355).
+
+```bash
+cd bevy_isomesh && cargo run --example game_lod_oracle --release
+```
+
+`1` uniform · `2` range · `3` range matched · `4` oracle · `5` cycle the beats.
+
+---
+
+
 ## A world with a roof over your head
 
 ![Flying through caves and arches](../screenshots/e210-showcase-hero.png)

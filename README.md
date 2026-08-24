@@ -260,7 +260,7 @@ The math-library pin is the load-bearing one. Bevy 0.19 wants glam 0.32, `parry3
 
 ## Demos
 
-**[→ The demo page](bevy_isomesh/DEMOS.md)** — all 44 examples, each with an animated capture, the
+**[→ The demo page](bevy_isomesh/DEMOS.md)** — all 46 examples, each with an animated capture, the
 exact command, its controls, and the finding it demonstrates. There is a **[hosted version](https://claude.ai/code/artifact/cc28fc70-8d82-4655-afee-582ea00f5513)** too, if a link is easier to send than a clone.
 
 The longer write-ups live on three further pages, so this one stays short. Every figure on them came
