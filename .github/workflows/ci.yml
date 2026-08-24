@@ -17,7 +17,7 @@ jobs:
     name: fmt, clippy, docs, dependency gates
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: rustfmt
         run: cargo fmt --all --check
@@ -119,7 +119,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: test
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then
@@ -139,7 +139,7 @@ jobs:
     name: bevy_isomesh (separate workspace)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Bevy 0.19 enables Wayland by default on Linux, so `wayland-sys`'s build
       # script needs the dev packages even though CI only type-checks and never
       # opens a window. None of these exist on macOS, which is why a local
@@ -191,7 +191,7 @@ jobs:
     name: msrv (rust-version in Cargo.toml)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # `rust-version` is a claim the manifest makes to consumers. Nothing
       # else checks it, and it is the kind of thing that quietly stops being
       # true -- the original 1.85 did exactly that the day isomesh-gpu landed,
@@ -251,7 +251,7 @@ jobs:
     name: package (dry run)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: dry run
         run: ./scripts/publish.sh --dry-run
 
@@ -281,7 +281,7 @@ jobs:
       cancel-in-progress: false
     environment: crates-io
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
