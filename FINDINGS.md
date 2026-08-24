@@ -9146,18 +9146,28 @@ move at 25³**.
 
 ### P-58 — registered for R-056, before the harness: Robins' lower-star census, with a tie-break this crate has to invent
 
-**⚠ TWO SOURCE LIMITS RECORDED BEFORE THE RUN.** Robins, Wood & Sheppard `10.1109/tpami.2011.95` is in
-the corpus, converted, embedded and **cited in zero repo files**. First limit: the corpus markdown
-**terminates mid-§4 before Theorem 11**, the paper's flagship guarantee, so it is cited by number and
-**not transcribed** — rule 5 forbids reconstructing it. Theorem 6 and Propositions 4–5 are fully present
-and are what this rests on. Second limit: the paper requires **distinct values** and perturbs ties with a
-**global ramp depending on the image dimensions `I, J, K`** — chunk-dependent, hash-breaking, and liable
-to underflow. This crate's fields tie *exactly* (`box_exact` is exactly zero across its boundary), so the
-chunk-local exact tie-break `(value, linear_index)` under `f64::total_cmp` is **registered, not
-discovered**, and C1 is the test of whether the paper's ordering-independence survives it. Stage 2
-(`ExtractMorseComplex`) is not local and is `O(N²)` worst case: **out of scope**. C2 is stated as
-**containment, not set equality**, because a Morse census can be non-empty where no MC ambiguity exists
-and equality would indict the instrument.
+**⚠ THE REVIEW'S PROVENANCE CLAIM WAS FALSE, AND IT WAS CHECKED BEFORE THE HARNESS EXISTED.** Robins,
+Wood & Sheppard `10.1109/tpami.2011.95` is in the corpus, converted, embedded and **cited in zero repo
+files**. The review that proposed this registration asserted the corpus markdown *"terminates mid-§4
+before Theorem 11"* and that the paper's flagship guarantee is therefore not transcribable. **It does
+not.** §4 is complete through Lemmas 7–10, **Theorem 11 is stated in full with both of its arms**, and so
+are Theorem 3, Theorem 6, Propositions 4–5, Lemma 12 and the pseudocode of Algorithms 1, 2 and 3. Nothing
+here needs reconstructing and rule 5 is not engaged. **The clause C1 tests is the paper's own sentence:**
+*"the results in Section 4 show that for 2D and 3D complexes the number and type of critical cells found
+by ProcessLowerStars are independent of this ordering — a property of our algorithm that arises from the
+homotopic growth of each lower star."*
+
+**The real limit is the one the review buried.** Eq. (8) perturbs ties with a **global ramp**
+`g'(i,j,k) = g(i,j,k) + η(i + Ij + IJk)/(3IJK)`, which depends on the whole image dimensions `I, J, K` —
+chunk-dependent, hash-breaking, and liable to underflow — and the ordering-independence result is proved
+*with ties assumed away*. This crate's fields tie **exactly** (`box_exact` is exactly zero across its
+boundary), so the chunk-local exact tie-break `(value, linear_index)` under `f64::total_cmp` is
+**registered, not discovered**, and C1 asks the question the paper never had to: does the independence
+survive exact ties? Stage 2 (`ExtractMorseComplex`) is not local and is `O(N²)` worst case: **out of
+scope**. C2 is stated as **containment, not set equality**, because a Morse census can be non-empty where
+no MC ambiguity exists and equality would indict the instrument. The paper's own `≤ 27` is quoted
+directly — *"the maximum number of cells in the lower star of a voxel in a 3D lattice is 27"* — which is
+why `max_lower_star_cells` above 27 means the enumeration is wrong, not the paper.
 
 **Records** `field`, `samples_per_axis`, `voxels`, `critical_0`, `critical_1`, `critical_2`, `critical_3`,
 `critical_total`, `max_lower_star_cells`, `census_matches_reverse_order`, `ambiguous_cells`,

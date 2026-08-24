@@ -2089,11 +2089,20 @@ pub const PREREGISTERED: &[Preregistration] = &[
             is doing work it must not; or C2 finding an ambiguous cell with no \
             critical cell, which would break the containment the whole framing \
             rests on; or C3's sphere census growing like the grid, which would \
-            make it an artefact count rather than a topological signature. THE \
-            PAPER'S FLAGSHIP THEOREM 11 IS NOT CITED -- the corpus copy \
-            terminates before its statement, and rule 5 forbids reconstructing \
-            it; Theorem 6 and Propositions 4-5 are transcribable and are what \
-            this rests on.",
+            make it an artefact count rather than a topological signature. \
+            PROVENANCE CORRECTED BEFORE THE HARNESS EXISTED: the review that \
+            proposed this registration asserted the corpus markdown terminates \
+            mid-section-4 before Theorem 11 and that Theorem 11 is therefore \
+            not transcribable. THAT IS FALSE, checked line by line -- section 4 \
+            is complete (Lemmas 7-10), Theorem 11 is stated in full with both \
+            of its arms, and so are Theorem 3, Theorem 6, Propositions 4-5, \
+            Lemma 12 and the pseudocode of Algorithms 1, 2 and 3. The \
+            ordering-independence C1 tests is therefore the paper's own \
+            sentence, quoted: 'the results in Section 4 show that for 2D and 3D \
+            complexes the number and type of critical cells found by \
+            ProcessLowerStars are independent of this ordering'. What the paper \
+            does NOT have is any test of that claim against exact ties, because \
+            Eq. (8) assumes them away.",
         records: &[
             "field",
             "samples_per_axis",

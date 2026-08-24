@@ -62,7 +62,7 @@ carries an R-006 amendment saying it is not a property of the corner angle; H3's
 certificate is **foreclosed by name** at `docs/research/2026-08-23-discovery-dossier.md:294-298`, and
 reopening named foreclosed ground is an owner's decision, not something to smuggle into a plan.
 
-**Three of the review's own load-bearing claims were also wrong**, and the corrections cost nothing now
+**Four of the review's own load-bearing claims were also wrong**, and the corrections cost nothing now
 and a harness each later: M-24's 72/72 is 24 rotations × **3 hand-written Hermite crossing sets**
 (`dual_contouring/solve/tests.rs:176-195`), not fields, and its own doc records that it is **structurally
 blind to accumulation order**; the `20.1°–128.0°` figure is the span over 17³ *and* 37³ and M-283's
@@ -94,11 +94,14 @@ vacuous-fixture trap is the reason `fixture_can_fail` is a column and not an ass
 **R-056 — Robins' `ProcessLowerStars`, with a chunk-local tie-break this crate has to invent. (P-58)**
 Robins, Wood & Sheppard `10.1109/tpami.2011.95` is in the corpus, converted, embedded and **cited in zero
 repo files**. Stage 1 is per-voxel local over a ≤27-cell lower star; stage 2 (`ExtractMorseComplex`) is
-not local and is out of scope. **Theorem 11 is not transcribable** — the corpus markdown terminates
-mid-§4 before its statement — so this rests on Theorem 6 and Propositions 4–5, which are fully present.
-The paper's tie-break is a **global ramp depending on `I, J, K`**, which is chunk-dependent and
-hash-breaking; this crate's fields tie *exactly*, so a chunk-local exact order is **registered, not
-discovered**.
+not local and is out of scope. **A fourth review claim was wrong and was checked before the harness
+existed:** the review said the corpus markdown *"terminates mid-§4 before Theorem 11"*. It does not —
+§4 is complete, Theorem 11 is stated in full, and so are Theorem 3, Theorem 6, Propositions 4–5, Lemma 12
+and Algorithms 1–3. The clause C1 tests is the paper's own sentence, that the critical-cell census is
+*"independent of this ordering"*. What the paper does not have is any test of that against **exact
+ties**: Eq. (8) perturbs them away with a **global ramp depending on `I, J, K`**, which is
+chunk-dependent and hash-breaking. This crate's fields tie *exactly*, so a chunk-local exact order is
+**registered, not discovered**.
 
 **R-057 — How many of P-39's 19 survivors are necessary? (P-59)**
 M-341 measured a median **19 of 64** survivors with the mesh byte-identical on 64 of 64 chunks, and
