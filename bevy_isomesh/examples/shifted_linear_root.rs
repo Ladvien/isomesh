@@ -548,7 +548,9 @@ impl FieldLine {
     /// for bit.
     fn line(&self, slide: f64) -> Option<Line> {
         let x_at = |i: f64| self.x0 + self.cell * (i - slide);
-        let f: Vec<f64> = (0..SAMPLES).map(|i| (self.sample)(x_at(i as f64))).collect();
+        let f: Vec<f64> = (0..SAMPLES)
+            .map(|i| (self.sample)(x_at(i as f64)))
+            .collect();
         let n = first_crossing(&f)?;
         if n < 2 {
             return None;
@@ -833,10 +835,7 @@ fn measure_baseline(signals: &Signals, ledger: &Ledger) -> Baseline {
         .map(|(_, l)| l.ratio)
         .collect();
     let median_smooth = median(&smooth);
-    let exact_count = fields
-        .iter()
-        .filter(|(_, l)| l.standard_is_exact())
-        .count();
+    let exact_count = fields.iter().filter(|(_, l)| l.standard_is_exact()).count();
 
     let expect = |field: &str, k: usize, column: &'static str| {
         ledger
@@ -1556,7 +1555,11 @@ fn measure(shot: Res<Shot>, signals: Res<Signals>, mut live: ResMut<Live>) {
     let point = Vec2::new(sigma as f32, line.ratio as f32);
     // One sample per frame would draw the same point sixty times while the
     // story holds. Only a moved `sigma` earns a mark.
-    if live.trail.last().is_none_or(|p| (p.x - point.x).abs() > 1e-4) {
+    if live
+        .trail
+        .last()
+        .is_none_or(|p| (p.x - point.x).abs() > 1e-4)
+    {
         live.trail.push(point);
     }
 }
@@ -1612,7 +1615,13 @@ fn draw(
         });
         return;
     };
-    draw_line(line, signals.name(shot.probe), &mut chart, &mut frames, &mut labels);
+    draw_line(
+        line,
+        signals.name(shot.probe),
+        &mut chart,
+        &mut frames,
+        &mut labels,
+    );
     draw_inset(line, &mut chart, &mut frames, &mut labels);
 }
 
@@ -1798,11 +1807,7 @@ fn draw_inset(
     labels: &mut LabelSpecs,
 ) {
     let rect = PANEL_INSET;
-    let half = (line
-        .error_standard
-        .max(line.error_shifted)
-        .max(INSET_FLOOR)
-        * INSET_MARGIN)
+    let half = (line.error_standard.max(line.error_shifted).max(INSET_FLOOR) * INSET_MARGIN)
         .max(INSET_FLOOR);
     let u_lo = line.u_exact - half;
     let u_hi = line.u_exact + half;
@@ -1833,10 +1838,8 @@ fn draw_inset(
         Vec3::new(x_of(u_hi), y_of(chord(u_hi)), 0.0),
         STANDARD,
     );
-    if let (Some(v_lo), Some(v_hi)) = (
-        reconstruct(&line.c, 0, u_lo),
-        reconstruct(&line.c, 0, u_hi),
-    ) {
+    if let (Some(v_lo), Some(v_hi)) = (reconstruct(&line.c, 0, u_lo), reconstruct(&line.c, 0, u_hi))
+    {
         chart.line(
             Vec3::new(x_of(u_lo), y_of(v_lo), 0.0),
             Vec3::new(x_of(u_hi), y_of(v_hi), 0.0),
@@ -1914,7 +1917,8 @@ fn draw_ratio(
     let rect = PANEL_RATIO;
     let top = 1.25f64;
     let x_of = |sigma: f64| rect[0] + rect[2] * (0.10 + 0.86 * sigma) as f32;
-    let y_of = |ratio: f64| rect[1] + rect[3] * (0.13 + 0.76 * (ratio / top).clamp(0.0, 1.2)) as f32;
+    let y_of =
+        |ratio: f64| rect[1] + rect[3] * (0.13 + 0.76 * (ratio / top).clamp(0.0, 1.2)) as f32;
     let p = |sigma: f64, ratio: f64| Vec3::new(x_of(sigma), y_of(ratio), 0.0);
 
     frames.line(p(0.0, 0.0), p(1.0, 0.0), AXIS);
@@ -1969,10 +1973,7 @@ fn draw_ratio(
         chart.circle(Isometry3d::from_translation(point), 0.125, MEASURED);
         labels.0.push(LabelSpec {
             at: point + Vec3::new(0.0, 0.16, 0.0),
-            text: format!(
-                "measured {:.6}   closed form {:.6}",
-                line.ratio, predicted
-            ),
+            text: format!("measured {:.6}   closed form {:.6}", line.ratio, predicted),
             colour: MEASURED,
             justify: JustifyContent::Center,
             align: AlignItems::FlexEnd,
@@ -2250,8 +2251,7 @@ fn report(
     mut stats: ResMut<DemoStats>,
     mut caption: Query<&mut Text, With<Caption>>,
 ) {
-    stats.title =
-        String::from("E-316 shifted linear root -- M-359 / x42 (P-60, R-058), tau = 1/5");
+    stats.title = String::from("E-316 shifted linear root -- M-359 / x42 (P-60, R-058), tau = 1/5");
     // No extractor is called anywhere in P-60, so these three are zero by
     // construction rather than by omission, and the first HUD line says so.
     stats.vertices = 0;
@@ -2275,10 +2275,7 @@ fn report(
             line.n,
             line.segment
         ));
-        extra.push(format!(
-            "  exact    bisected    {:>15.9}",
-            line.u_exact
-        ));
+        extra.push(format!("  exact    bisected    {:>15.9}", line.u_exact));
         extra.push(format!(
             "  standard a/(a-b)     {:>15.9}   error {}",
             line.u_standard,
