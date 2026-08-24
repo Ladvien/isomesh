@@ -899,30 +899,54 @@ impl<R: Real> BodySaddles<R> {
     }
 }
 
-/// The code a triangle uses to name the cell's one interior vertex, as opposed
-/// to one of the twelve cut edges.
+/// The first code a triangle uses to name a **cell-local** interior vertex, as
+/// opposed to one of the twelve cut edges.
+///
+/// A base rather than a single code: the tunnel path names the inner hexagon's
+/// six vertices as `INTERIOR + 0..6`, and the disk path names ring `r`'s apex as
+/// `INTERIOR + r` (✗43). `INTERIOR` alone therefore means *ring zero's apex* or
+/// *the first hexagon vertex* depending on which path emitted the triangle, and
+/// never "the cell's one interior vertex".
 ///
 /// Deliberately the same value as [`super::table::CENTROID_BASE`]: both name a
 /// **cell-local** vertex that no other cell can reach, which is exactly why
 /// neither is cached and why A-015's index-space budget already accounts for the
-/// slot. What differs is where the position comes from — a centroid averages its
-/// cycle's edge vertices, this one is a saddle of the interpolant
-/// ([`BodySaddles::interior_vertex`]).
+/// slots. What differs is where the position comes from — a centroid averages its
+/// cycle's edge vertices, a disk apex is a saddle of the interpolant
+/// ([`BodySaddles::interior_vertex`]) when one ring is fanned and that ring's own
+/// centroid when several are.
 pub const INTERIOR: u8 = EDGE_COUNT as u8;
 
 impl Contours {
-    /// Fan every ring into triangles, naming cut edges by index and the cell's
-    /// interior vertex by [`INTERIOR`].
+    /// Fan every ring into triangles, naming cut edges by index and each fanned
+    /// ring's own apex by [`INTERIOR`] plus that ring's index.
     ///
     /// `interior` says whether [`BodySaddles::interior_vertex`] produced one. When
-    /// it did, rings of more than three vertices fan from it — `k` triangles for a
-    /// ring of `k` — because a ring that crosses an ambiguous face twice cannot be
-    /// closed manifoldly from one of its own vertices without laying a third edge
-    /// in that face. A ring of exactly three is a triangle either way and takes
-    /// the direct emission, as the reference implementation does.
+    /// it did, rings of more than three vertices fan from an apex — `k` triangles
+    /// for a ring of `k` — because a ring that crosses an ambiguous face twice
+    /// cannot be closed manifoldly from one of its own vertices without laying a
+    /// third edge in that face. A ring of exactly three is a triangle either way
+    /// and takes the direct emission, as the reference implementation does.
     ///
-    /// When there is none, every ring fans from its own first vertex: `k − 2`
-    /// triangles, and no interior vertex is created at all.
+    /// # One apex per fanned ring, not one per cell (✗43)
+    ///
+    /// Each fanned ring gets its **own** code, `INTERIOR + r` for ring `r`, so two
+    /// fanned rings in the same cell cannot resolve to the same vertex. Sharing
+    /// one apex glues their two cones at a point — a bowtie, and one **no edge
+    /// counter can see**: every edge still carries exactly two faces, the
+    /// boundary is still empty, the orientation is still consistent. Only the
+    /// vertex-link walk and the χ parity report it. Measured (✗43): a cell with
+    /// two four-edge rings at `h = 0.8` gave two closed sheets sharing one vertex,
+    /// `χ = 2 + 2 − 1 = 3`, `non_manifold_vertices 1` with
+    /// `non_manifold_edges 0`.
+    ///
+    /// The code carries the **raw** ring index rather than a compacted counter, so
+    /// this and [`super::MarchingCubes`]'s slot filling cannot disagree about which
+    /// slot a ring owns. A ring of exactly three owns no slot, so the slots are
+    /// sparse by construction.
+    ///
+    /// When there is no interior vertex, every ring fans from its own first
+    /// vertex: `k − 2` triangles, and no apex is created at all.
     ///
     /// Winding follows the ring order, which [`super::table::segment_links`]
     /// already orients — so this inherits A-001's counter-clockwise-from-outside
@@ -933,8 +957,9 @@ impl Contours {
             if ring.len() == 3 {
                 emit([ring[0], ring[1], ring[2]]);
             } else if interior {
+                let apex = INTERIOR + r as u8;
                 for k in 0..ring.len() {
-                    emit([ring[k], ring[(k + 1) % ring.len()], INTERIOR]);
+                    emit([ring[k], ring[(k + 1) % ring.len()], apex]);
                 }
             } else {
                 for k in 1..ring.len() - 1 {
@@ -965,7 +990,10 @@ impl Contours {
 /// Most cell-local interior vertices any one cell can need.
 ///
 /// Six, and only a tunnel or a twelve-vertex contour reaches it: those name every
-/// vertex of the inner hexagon. A fanned disk uses one, [`INTERIOR`] itself.
+/// vertex of the inner hexagon. A disk cell uses **one per fanned ring** (✗43),
+/// `INTERIOR + r` for ring `r`, which is at most three: a fourth ring only exists
+/// when all four are triangles, and a triangle is not fanned. So the disk path
+/// stays inside this bound without it having to move.
 ///
 /// # Six rather than three, on the authors' own later advice
 ///

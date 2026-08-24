@@ -209,6 +209,13 @@ impl<R: Real> MarchingCubes<R> {
         // budgeted per cell rather than per edge. A-015's cycle centroids need
         // three; A-002h's tunnel names all six vertices of the inner hexagon, so
         // the larger of the two is what has to be covered (M-218).
+        //
+        // ✗43's per-ring disk apex does **not** move this, and the reason is
+        // worth writing down rather than re-deriving: a cell holds at most
+        // `trilinear::MAX_CONTOURS = 4` rings, and a fourth ring only exists when
+        // all twelve cut edges are split three ways four times over — so all four
+        // are triangles and none is fanned. Three apexes is therefore the disk
+        // path's ceiling, under the six the tunnel already reserves.
         let per_cell = if table::MAX_CENTROIDS > trilinear::MAX_INTERIOR_VERTICES {
             table::MAX_CENTROIDS
         } else {
@@ -447,8 +454,55 @@ impl<R: Real> MarchingCubes<R> {
                 "interior vertex outside the cell: {local:?} mask {:#08b}",
                 saddles.inside_mask()
             );
-            let position = to_world(local);
-            interior[0] = out.vertex(position, unit_gradient(sdf, position));
+            // **One apex per fanned ring, and none for a ring that is not
+            // fanned** (✗43). `Contours::fan` names ring `r`'s apex
+            // `INTERIOR + r`, so slots are filled by the same *raw* ring index
+            // and stay sparse wherever a ring is a triangle — a triangle is
+            // emitted directly and owns no apex. Filling slot 0 unconditionally,
+            // as this used to, put a vertex nothing referenced into the output
+            // whenever no ring was long enough to fan.
+            let fanned = (0..contours.count())
+                .filter(|&r| contours.ring(r).len() > 3)
+                .count();
+            for (r, slot) in interior.iter_mut().enumerate().take(contours.count()) {
+                let ring = contours.ring(r);
+                if ring.len() <= 3 {
+                    continue;
+                }
+                // The body saddle serves **one** ring: it lies inside at most one
+                // of them, so fanning a second ring to it is wrong geometrically
+                // as well as topologically, and sharing it glues the two cones at
+                // a point — the bowtie ✗43 measured, invisible to every edge
+                // counter. Where two or more rings fan, each takes its own
+                // centroid: A-015's construction for exactly this problem on the
+                // table path, pinned there by the exhaustive 4,096-pattern
+                // two-cell sweep. The arithmetic mirrors that loop, and uses the
+                // free `edge_position` rather than `vertex_on_edge` so no shared
+                // edge vertex is created or cached to average positions.
+                let position = if fanned == 1 {
+                    to_world(local)
+                } else {
+                    let mut sum = [R::ZERO; 3];
+                    let mut n = 0u32;
+                    for &edge in ring {
+                        let p = edge_position(
+                            sdf,
+                            base,
+                            edge,
+                            corner_value,
+                            origin,
+                            cell_size,
+                            self.crossing_refinement,
+                        );
+                        sum = [sum[0] + p[0], sum[1] + p[1], sum[2] + p[2]];
+                        n += 1;
+                    }
+                    debug_assert!(n >= 4, "only a ring of four or more is fanned");
+                    let scale = R::from_f64(f64::from(n)).recip();
+                    [sum[0] * scale, sum[1] * scale, sum[2] * scale]
+                };
+                *slot = out.vertex(position, unit_gradient(sdf, position));
+            }
         }
 
         // `fan`/`fan_tunnel` hand back codes; resolve them here so the two paths

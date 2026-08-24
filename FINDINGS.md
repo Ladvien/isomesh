@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**448 entries** — 42 falsified, 339 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**449 entries** — 43 falsified, 339 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -81,6 +81,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗40` | FALSIFIED on all three clauses, and two of the three failures are the clause's fault rather than the paper's: reversing… |
 | `✗41` | C1 and C2 HELD, C3 FALSIFIED: P-39's bound over-keeps by 20×, the 1,507 surviving brushes cut to 73 bit-exactly, and the… |
 | `✗42` | C1 FALSIFIED and C3 HELD, and C2 passes for a reason that is not its own: the paper's 8 dB reconstruction gain maps to a… |
+| `✗43` | "one interior vertex per cell is enough": the interior rule fans every contour of a cell from the same apex, and two con… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -1325,7 +1326,7 @@ Each has the test that would settle it. **An open question with no proposed test
 | O-9 | How much does T-003's gradient-flow chord **over**-estimate distance at a concave seam? | A comparison against nearest-point search over a dense surface point cloud, or E-104 once Dual Contouring lands | The chord follows `∇f` to the zero set, which near `csg_difference`'s seam can land further away than the true nearest point. The bias direction is known and safe for a "below X" gate; the *magnitude* is not measured, and M-001's shootout column would inherit it. `csg_difference` measured forward `0.0833` at 33³ — how much of that is seam bias is unknown |
 | O-10 | ~~What is Surface Nets' non-manifold **rate** as a function of feature thickness over `h`?~~ **First curve measured at A-010 (M-60)**, as the multi-sheet-cell rate: `gyroid` 3.13% → 2.05% → 0.53% and `fbm_terrain` 1.70% → 0.84% → 0.77% at 17³/25³/33³, and exactly zero on the other five fields at every resolution. Still open only as the *slab* sweep, which would give thickness-over-`h` directly rather than resolution-at-fixed-field | A-010 drove it to zero, which was the ticket's job; a sweep over a slab of shrinking thickness would give the parametrised form | M-15 established it is a resolution effect rather than a topology one, and M-4 has counts at two resolutions on two fields. It decides whether Surface Nets is usable at game resolutions or needs A-010 first |
 | O-11 | *(**ANSWERED at R-007, M-284**: the dual carries a fourth stage Marching Cubes has not — `emit_quads`, which walks every grid edge on all three axes and loads both endpoints **before** the sign test that would let it skip. It is `O(n³)` where the surface is `O(n²)`, runs at **IPC 0.72** against the rest of the mesher's 3.8–6.5, and is **82% of the cycles**. Every other candidate was excluded by measurement first — see M-279. The remedy is **A-023**, and it is not a vertex rule.)* **Why does the dual topology go superlinear in `n³` while Marching Cubes does not?** *(Half-answered at M-45: it is not one machine's cache hierarchy. Surface Nets degrades on Zen 3 too — 37.4 → 49.1 ns/sample — and the `Surface Nets/Marching Cubes` ratio is worse there than on the M5. What remains open is the mechanism, not whether the effect is real.)* | A profile or cache-miss counter at 192³ vs 256³. The cross-machine experiment is **done**; a second one would not add anything | The working-set hypothesis survives and is strengthened: Surface Nets gathers the four cells around each crossed edge with one stride `n²` cells apart, and that stride is architecture-independent, which is exactly the kind of cost that would reproduce across microarchitectures. Note both machines show a per-sample **spike at 128³** (M5 Surface Nets 9.35, Zen 3 Surface Nets 53.84 against 45.6 at 96³ and 47.3 at 192³) — a working-set effect at one specific grid size on two unrelated cache hierarchies, which is itself a clue nobody has followed. **Narrowed at R-005 (M-279), and the working-set hypothesis in this cell is wrong.** The counters are in: the gather is `O(n²)` and the cost is `O(n³)`, and a field with **no surface at all** costs the same to within 0.9%, so it is not the gather. Nor branches (they fall), nor allocation (0 page faults), nor the TLB. What is left is a 16% IPC decline on an instruction stream that is flat per sample — and at 16.7 M samples a **2.4× swing in misses moves the cycles by 0.4%**, so the miss column is not the driver either. The 128³ spike **is** resolved: 127³ and 129³ are normal and only 128 has a 64 KiB plane stride, so it is conflict aliasing, and it survives on the empty field. Residue is **R-007** |
-| O-12 | **Is Marching Cubes unconditionally manifold now?** ✗15's only counterexample was the fan chord and A-015 removed it; the strict gate passes 8,000 generated cases where it used to fail on the first seed. But nothing proves a second mechanism does not exist | An exhaustive search over configurations spanning more than two cells — the two-cell sweep is exhaustive and the vertex-link case is not covered by it at all. Or a proof that a cell-local cycle triangulation plus shared face segments cannot produce a non-manifold **vertex** | The strict gate is now asserted, so if a second mechanism exists CI will find it on some future seed. That is the intended outcome: a failure there is a finding, not a regression, and the failing case would be the first example of whatever the mechanism is |
+| O-12 | **Is Marching Cubes unconditionally manifold now?** ✗15's only counterexample was the fan chord and A-015 removed it; the strict gate passes 8,000 generated cases where it used to fail on the first seed. But nothing proves a second mechanism does not exist | An exhaustive search over configurations spanning more than two cells — the two-cell sweep is exhaustive and the vertex-link case is not covered by it at all. Or a proof that a cell-local cycle triangulation plus shared face segments cannot produce a non-manifold **vertex** | The strict gate is now asserted, so if a second mechanism exists CI will find it on some future seed. That is the intended outcome: a failure there is a finding, not a regression, and the failing case would be the first example of whatever the mechanism is. **First example found at ✗43 (M-360), and it is inside one cell.** The interior rule's `Contours::fan` fanned every ring of a cell from one shared `INTERIOR` apex, so two rings longer than three glued into a bowtie: a non-manifold **vertex** with every edge counter reading clean, which is exactly the vertex-link case this row says the two-cell sweep cannot reach — and a two-cell sweep never could have, because both face groups live in the same cell. Found by `the_interior_rule_meshes_convex_bodies` on a fresh seed, fixed by a per-ring apex, pinned as a fixture and a committed seed. **Still open:** one mechanism found is not a proof that no third exists, and a vertex whose two face groups sit in *different* cells would be one |
 | O-13 | ~~**Pre-registered:** Marching Tetrahedra vertex count = **3.0× Marching Cubes**, converging from above~~ **Confirmed at A-003/M-001, exactly and including the convergence.** Measured on `sphere`: 33³ **3.036**, 49³ **3.026**, 65³ **3.003** — from above, onto 3.0 | *(closed)* | And M-52 supplies the mechanism the prediction did not need but turns out to have: the ratio is `4.0` in one octant and `2.0` across a sign change, so `2.992` is an average hiding a factor-of-two spread. That is why the shootout CSV carries every field |
 | O-14 | ~~**Pre-registered:** Marching Tetrahedra symmetric Hausdorff at 64³ ≈ **2.6e-3**, about **1.86×** Marching Cubes, i.e. slightly worse than Surface Nets~~ **Falsified at A-003/M-001 (M-55): measured 1.4386e-3, which is 1.043×.** Not slightly worse than Surface Nets — **better by 1.6×** (Surface Nets is 2.251e-3, 1.69× Marching Cubes) | *(closed)* | The prediction's stated counterintuitive part, *"more vertices **and** worse accuracy"*, is the half that is wrong. Marching Tetrahedra buys 3× the vertices for 4% worse accuracy on smooth fields and **better** accuracy on sharp ones |
 | O-15 | ~~Why does a plane cost `3.94×` and a sphere `3.00×` when both are locally flat at cell scale?~~ **Answered at A-003 (M-52): the normal's sign pattern, not its direction.** One octant gives `4.0` exactly, a sign change gives `2.0`, and the isotropic average is P-1's `2.992`. A plane has one normal and a sphere has all of them | *(closed)* | What remains is small and not worth a ticket: the mixed-sign measurement spreads `1.98–2.27` against a predicted flat `2.0`, so the continuum model gets the mechanism exactly and carries a discretisation term it does not describe |
@@ -9582,3 +9583,78 @@ open. The accuracy arm is closed as registered and replaced by something better 
 expected benefit is the 82% figure and not the 8 dB one. **A successor registration is not needed**: the
 closed form answers the question the clause was reaching for, and it was confirmed against a control to
 0.8%.
+
+### 💥 ✗43 / M-360 — "one interior vertex per cell is enough": the interior rule fans every contour of a cell from the same apex, and two contours glue into a bowtie (T-005b, O-12)
+
+**Believed because:** three places in the same module said one, and none of them asked what a cell with
+two long contours does. `trilinear.rs`'s `INTERIOR` was documented as *"the code a triangle uses to name
+the cell's **one** interior vertex"*; `Contours::fan`'s doc said *"rings of more than three vertices fan
+from **it**"* — singular, over a loop that runs on every ring in the cell; `MAX_INTERIOR_VERTICES`
+recorded *"a fanned disk uses one, `INTERIOR` itself."* And the geometry behind it is a real
+construction: Grosso's disk rule adds *an* interior vertex — the body saddle — to a cell whose contour
+crosses an ambiguous face twice, and one body saddle is what `BodySaddles::interior_vertex` returns.
+
+**Falsified by:** `property::extraction::the_interior_rule_meshes_convex_bodies` on a fresh proptest
+seed — precisely the event `check_trilinear`'s own doc comment pre-declared (*"if this ever fails it is a
+finding and not a regression: it would mean a second mechanism exists"*). Reduced out-of-tree to a single
+half-space against the generator's own radius-1.5 bound: `f(p) = max(|p| − 1.5, n·p − offset)`,
+`n = [0.23765582945243893, 0.9693452841978661, 0.06236526862470124]`,
+`offset = -0.6030279510789542`, grid `[6,6,6]`, origin `[-2,-2,-2]`, `h = 2·2.0/(6−1) = 0.8`,
+`FaceAmbiguity::AsymptoticDecider` + `InteriorAmbiguity::Trilinear`. That field is a **convex genus-0
+body**, so there is no honest geometry here for a pinch to come from.
+
+**Result:** at 6³, `vertices 27, edges 72, faces 48, χ 3, components 2, non-manifold vertices 1,
+non-manifold edges 0, boundary edges 0, inconsistently oriented 0, degenerate triangles 1` →
+`is_closed()` **false**. The pinch vertex is at
+`[-0.7326381707309315, -1.1999999999999973, -0.08000000000000007]`, cell `[1,1,2]`, with **1 of 3**
+coordinates on the sample lattice — an edge vertex has 2 of 3, so this is the cell-local interior vertex
+— and it carries **8 incident faces in 2 edge-connected groups**: two rings of length 4, each fanned to
+the same apex. Clean at every other size: 7³–18³ all closed with `non_manifold_vertices 0`, and
+refinements 9³, 13³, 17³, 25³, 33³, 49³, 65³ all closed.
+
+**This is the first example for O-12's vertex-link clause, and it has M-301's signature exactly.** Every
+edge counter reads clean because two cones glued at a point still give **every edge exactly two faces**
+— nothing about the edge census is wrong, so `non_manifold_edges`, `boundary_edges` and
+`inconsistently_oriented_edges` are all zero. Only the vertex-link walk sees it, and χ sees the
+consequence rather than the cause: two closed sheets sharing one vertex give `2 + 2 − 1 = 3`, an odd χ
+for a closed orientable surface. O-12 named this gap in as many words — *"the two-cell sweep is
+exhaustive and the vertex-link case is not covered by it at all"* — and a two-cell sweep could never have
+found it, because the defect is entirely **inside one cell**.
+
+**Prevalence, so this is a rate and not an anecdote.** A deterministic sweep of 1,152 single-plane caps
+(16 θ × 8 cos φ × 9 offsets, over the generator's own `-0.8..=0.8`) at each of 6³–12³ gives **2 of 8,064
+not closed, both at 6³** — the coarsest grid `extraction_resolution()` can produce. Rare, and reachable
+from a plane and a sphere.
+
+**Consequence:** `Contours::fan` names ring `r`'s apex `INTERIOR + r` instead of one cell-wide
+`INTERIOR`, and `emit_trilinear` fills one slot per **fanned** ring — the body saddle when exactly one
+ring is fanned, so no currently-passing measurement moves, and each ring's **own centroid** when two or
+more are. One saddle cannot serve two rings: it lies inside at most one of them, so fanning the other to
+it is wrong geometrically as well as topologically. The centroid is A-015's construction for exactly this
+problem on the table path. After the fix the same 6³ cell reads `vertices 28, edges 72, faces 48, χ 4,
+components 2, non-manifold vertices 0, degenerate triangles 0`, `is_closed()` **true** — one vertex added
+and no edges, because the spokes were already distinct `(apex, ring vertex)` pairs — and the sweep is
+**0 of 8,064**. Two components at `h = 0.8` is honest under-resolution, which `SurfaceGate::Closed`
+permits; a shared apex is not. The index budget does not move: a cell holds at most `MAX_CONTOURS = 4`
+rings and a fourth ring only exists when all four are triangles, so three apexes is the disk path's
+ceiling under the six the tunnel already reserves.
+
+**Two smaller things fell out, both now stated in code rather than left to be rediscovered.** An apex used
+to be created whenever `interior_vertex()` was `Some`, even when no ring was long enough to fan it — an
+unreferenced vertex in the output. And the one degenerate triangle at 6³ went to zero, because the apex
+moved from the saddle to a ring centroid; recorded, not gated, per this repo's rule that slivers are the
+algorithm.
+
+**Pinned three ways, and all three fail on the mutation.** Reverting `fan` to the single shared apex
+fails `the_cell_that_fanned_two_contours_from_one_apex_is_now_manifold` (`left: 27, right: 28`),
+`the_interior_rule_meshes_convex_bodies` on its committed seed
+`563fd2ba…` (on case 0, before any fresh case), and
+`the_fan_covers_each_ring_once_and_repeats_no_index`, which now asserts each fanned ring's apex is named
+exactly as many times as that ring is long over all 16,384 `(case, mask)` pairs — the in-cell version of
+the same statement, and the cheap one.
+
+**Would be shown wrong by:** that field at 6³ coming back with `non_manifold_vertices != 0`, or the
+8,064-case sweep returning anything but zero, or any cell where a per-ring apex is *worse* than the
+shared one. It would be **extended** by a non-manifold vertex whose two face groups sit in different
+cells — that is a third mechanism, and O-12 stays open for it: one mechanism found is not a proof that no
+other exists.

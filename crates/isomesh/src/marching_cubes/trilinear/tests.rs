@@ -1060,12 +1060,21 @@ fn the_disk_path_never_sees_five_or_six_lines() {
     std::println!("measured: {checked} disk cells, none with five or six lines");
 }
 
-/// The fan uses every ring edge exactly twice and never repeats an index.
+/// The fan uses every ring edge exactly twice and never repeats an index, and
+/// **each fanned ring's apex belongs to that ring alone**.
 ///
 /// Twice is the manifold condition inside one cell: each ring edge is shared by
 /// the two triangles either side of it, except that a fan from a ring vertex
 /// leaves the ring's own boundary once. Checked over all 16,384 combinations,
 /// both with and without an interior vertex.
+///
+/// The apex clause is ✗43's in-cell gate. A ring of `k > 3` fanned from an apex
+/// names it exactly `k` times and no other ring may name it; a ring of three is
+/// emitted directly and its slot stays untouched. The defect this pins was one
+/// shared `INTERIOR` for the whole cell, which reads here as one slot used
+/// `k₀ + k₁` times and the next slot never — while every edge counter in
+/// `validate` stayed clean, because two cones glued at a point still give every
+/// edge exactly two faces.
 #[test]
 fn the_fan_covers_each_ring_once_and_repeats_no_index() {
     for case in 0..=255u8 {
@@ -1073,7 +1082,7 @@ fn the_fan_covers_each_ring_once_and_repeats_no_index() {
             let contours = Contours::of(case, mask);
             for interior in [false, true] {
                 let mut count = 0usize;
-                let mut used = [0u32; 13];
+                let mut used = [0u32; INTERIOR as usize + MAX_CONTOURS];
                 contours.fan(interior, |t| {
                     assert!(
                         t[0] != t[1] && t[1] != t[2] && t[0] != t[2],
@@ -1089,17 +1098,33 @@ fn the_fan_covers_each_ring_once_and_repeats_no_index() {
                     contours.triangle_count(interior),
                     "case {case:#010b} mask {mask:#08b}: triangle_count disagrees with fan"
                 );
-                // Every cut edge the rings carry appears at least once, and the
-                // interior vertex appears only when one was asked for.
+                // Every cut edge the rings carry appears at least once, and each
+                // ring's apex is used exactly as many times as that ring is long
+                // — or never, if the ring was not fanned.
                 for r in 0..contours.count() {
-                    for &e in contours.ring(r) {
+                    let ring = contours.ring(r);
+                    for &e in ring {
                         assert!(used[e as usize] > 0, "edge {e} was never emitted");
                     }
-                }
-                if !interior {
+                    let expected = if interior && ring.len() > 3 {
+                        ring.len()
+                    } else {
+                        0
+                    };
                     assert_eq!(
-                        used[INTERIOR as usize], 0,
-                        "an interior vertex was used without one"
+                        used[INTERIOR as usize + r] as usize,
+                        expected,
+                        "case {case:#010b} mask {mask:#08b}: ring {r} of {} used apex \
+                         {} times, expected {expected}",
+                        ring.len(),
+                        used[INTERIOR as usize + r]
+                    );
+                }
+                for slot in contours.count()..MAX_CONTOURS {
+                    assert_eq!(
+                        used[INTERIOR as usize + slot],
+                        0,
+                        "an apex was used for a ring that does not exist"
                     );
                 }
             }

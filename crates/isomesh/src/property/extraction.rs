@@ -793,3 +793,93 @@ fn the_fixture_that_falsified_unconditional_manifoldness_is_now_manifold() {
         assert!(r.is_closed(), "n={n}\n{r}");
     }
 }
+
+/// The interior rule fanned **every** contour of a cell from the same apex, and
+/// two contours glued into a bowtie. This is that cell.
+///
+/// Found by `marching_cubes_meshes_convex_bodies` on a fresh proptest seed —
+/// which is what [`check_trilinear`]'s own doc comment predicted would happen if
+/// a second non-manifoldness mechanism existed (O-12's vertex-link clause, ✗43).
+/// Reduced to one half-space against the generator's radius-1.5 bound: a convex
+/// genus-0 body, so there is no honest geometry here for a pinch to come from.
+///
+/// The cell is `[1, 1, 2]` at `h = 0.8`, and its two four-edge rings were both
+/// fanned to the single `INTERIOR` vertex, leaving one vertex with **8 incident
+/// faces in 2 edge-connected groups**. What makes it worth pinning is the
+/// signature (M-301): every edge counter reads clean — `non_manifold_edges 0`,
+/// `boundary_edges 0`, `inconsistently_oriented_edges 0` — because two cones
+/// glued at a point still give every edge exactly two faces. Only the vertex-link
+/// walk sees it, and χ sees the consequence: two closed sheets sharing one vertex
+/// give `2 + 2 − 1 = 3`, an odd χ for a closed orientable surface.
+///
+/// Pinned as exact counts at the failing spacing and zeros at every refinement,
+/// following the ✗15 fixture above. Splitting the apex adds exactly one vertex
+/// and no edges — the spokes were already distinct `(apex, ring vertex)` pairs —
+/// so `V 27 → 28`, `E 72`, `F 48`, `χ 3 → 4`, which is the same shape 8³ already
+/// produced. Two components at this spacing is honest under-resolution and
+/// [`SurfaceGate::Closed`] permits it; a shared apex is not.
+///
+/// Also pinned as a committed proptest seed, in
+/// `proptest-regressions/property/extraction.txt`. Both, not either: the seed
+/// replays the generator's own path, and this survives any future change to the
+/// strategies or to proptest's RNG.
+#[test]
+fn the_cell_that_fanned_two_contours_from_one_apex_is_now_manifold() {
+    use crate::fields::Sphere;
+    use crate::marching_cubes::InteriorAmbiguity;
+
+    // The generator's own construction, not a second hand-rolled SDF: a second
+    // definition of the same field is a second thing to drift.
+    let field = super::ConvexBody {
+        planes: alloc::vec![super::HalfSpace {
+            normal: [
+                0.237_655_829_452_438_93,
+                0.969_345_284_197_866_1,
+                0.062_365_268_624_701_24
+            ],
+            offset: -0.603_027_951_078_954_2,
+        }],
+        bound: Sphere {
+            center: [0.0; 3],
+            radius: 1.5,
+        },
+    };
+
+    // `check_trilinear`'s configuration exactly, which is the one that failed.
+    let report_at = |n: u32| {
+        let (shape, origin, h) = grid_for([n; 3]);
+        let mut mc = MarchingCubes::<f64>::new();
+        mc.set_face_ambiguity(FaceAmbiguity::AsymptoticDecider);
+        mc.set_interior_ambiguity(InteriorAmbiguity::Trilinear);
+        let mut out = MeshBuffer::<f64>::new();
+        mc.extract(&field, &shape, origin, h, &mut out)
+            .expect("extraction");
+        validate_indexed(
+            &out.positions,
+            &out.indices,
+            &ValidateConfig::from_cell_size(h).expect("valid cell size"),
+        )
+    };
+
+    // 6³ is the coarsest grid `extraction_resolution` can produce, and the only
+    // size at which this field ever failed. Exact, so the fixture fails if the
+    // defect returns *and* if the numbers silently move.
+    let coarse = report_at(6);
+    assert_eq!(coarse.referenced_vertices, 28, "{coarse}");
+    assert_eq!(coarse.edges, 72, "{coarse}");
+    assert_eq!(coarse.faces, 48, "{coarse}");
+    assert_eq!(coarse.euler_characteristic, 4, "{coarse}");
+    assert_eq!(coarse.components, 2, "{coarse}");
+    assert_eq!(coarse.non_manifold_vertices, 0, "{coarse}");
+    assert_eq!(coarse.non_manifold_edges, 0, "{coarse}");
+    assert_eq!(coarse.boundary_edges, 0, "{coarse}");
+    assert_eq!(coarse.inconsistently_oriented_edges, 0, "{coarse}");
+    assert!(coarse.is_closed(), "{coarse}");
+
+    for n in [9u32, 13, 17, 25, 33] {
+        let r = report_at(n);
+        assert_eq!(r.non_manifold_vertices, 0, "n={n}\n{r}");
+        assert_eq!(r.non_manifold_edges, 0, "n={n}\n{r}");
+        assert!(r.is_closed(), "n={n}\n{r}");
+    }
+}
