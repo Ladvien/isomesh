@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**231 tickets archived, 23 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**235 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -75,12 +75,11 @@ A certified cell-*emptiness* experiment also already exists as M-354, so nothing
 arithmetic and P-54 the affine form. A held result is evidence that a feature is worth landing; landing
 it is a later ticket.
 
+**All four are closed.** The rows are in `BACKLOG_ARCHIVE.md` with their verdicts; the prose below stays
+here because it is what was predicted, and the archive annotations are what happened.
+
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
-| ☐ | **R-055** | M | |
-| ☐ | **R-056** | M | |
-| ☐ | **R-057** | S | |
-| ☐ | **R-058** | S | |
 
 **R-055 — Is a mesh bit-exactly equivariant under the octahedral group? (P-57)**
 All 48 elements, not the 24 the existing generator at `dual_contouring/solve/tests.rs:130-165` filters to:

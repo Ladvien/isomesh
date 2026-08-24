@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**444 entries** — 38 falsified, 339 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**448 entries** — 42 falsified, 339 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -77,6 +77,10 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗36` | FALSIFIED on all three clauses, and the zero was unreachable by geometry rather than by sampling: a mesh edge is a chord… |
 | `✗37` | FALSIFIED on three of four clauses, and the algebra says why: Eq. (8) confined to a cell is a contraction toward the cel… |
 | `✗38` | C1 and C3 HELD, C2 falsified by a measured absence: nothing pierces the empty ball, and between 2.9% and 80.5% of sphere… |
+| `✗39` | C1 and C2 FALSIFIED, C3 HELD: a mesh is bit-exactly equivariant under axis relabelling and not under reflection, because… |
+| `✗40` | FALSIFIED on all three clauses, and two of the three failures are the clause's fault rather than the paper's: reversing… |
+| `✗41` | C1 and C2 HELD, C3 FALSIFIED: P-39's bound over-keeps by 20×, the 1,507 surviving brushes cut to 73 bit-exactly, and the… |
+| `✗42` | C1 FALSIFIED and C3 HELD, and C2 passes for a reason that is not its own: the paper's 8 dB reconstruction gain maps to a… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -9206,3 +9210,369 @@ would be the surprise. **No golden hash can move** — nothing here calls an ext
 **Records** `field`, `samples`, `tau`, `root_error_standard`, `root_error_shifted`, `error_ratio`,
 `median_error_ratio`, `is_step_like`, `gibbs_overshoot`, `guard_band_k`, `guard_band_delta_cells`,
 `guard_band_converged`.
+
+### 💥 ✗39 / M-356 — C1 and C2 FALSIFIED, C3 HELD: a mesh is bit-exactly equivariant under axis *relabelling* and not under *reflection*, because `a/(a−b)` and `b/(b−a)` are two different divisions of the same two values (P-57, R-055)
+
+**M.** `cargo bench --bench experiment_p57`, `docs/experiments/p-57.csv`, 112 rows — eight fields × seven
+extractors × 33³ and 25³, `f64`, **5,488 extractions**, 9m38s. All 48 signed coordinate permutations on
+every row: 24 with `det = +1`, 24 with `det = −1`, asserted pairwise distinct with an exact `inverse`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 all 48 exact on the four primal extractors | 48/48 on 64 rows | **FALSIFIED — 60 of 64 rows below 48; minimum 1 of 48. Under the literal bit-pattern reading, 64 of 64** |
+| C2 dual extractors exact on strictly fewer than 48 | < 48 on 48 rows | **FALSIFIED as stated — 4 of 48 dual rows reach 48. HELD on all 42 dual rows whose fixture can fail** |
+| C3 triangle-level fails where vertex-level holds | non-zero | **HELD — 799 element-instances across 103 of 112 rows; `elements_triangle_exact` never exceeds 6 anywhere** |
+
+**The fixture had to be repaired before the experiment could be about the extractor at all, and that is
+the first finding.** The relation `mesh(g·f)` vs `g·mesh(f)` is a statement about an extractor only if the
+sample grid is *exactly* closed under `g`. A grid `origin + i·h` mirrors bit-exactly only when `h` is a
+binary fraction, which holds at 17/33/65 samples over `[−L, L]` and **fails at the crate's own 25³**:
+`2L/24` is not dyadic and `pos[i] != -pos[n−1−i]` on **16 of 25 coordinates per axis**. Running there
+would have falsified the hypothesis on the fixture. So 33³ is the crate's own domain at `h = L/16`, and
+25³ uses `h = 3L/32` with `origin = −1.125L` — dyadic, so the grid mirrors exactly, and *not* of the form
+`L/2^k`, so crossings stay generically non-representable. `grid_symmetric` is asserted `true` on all 112
+rows.
+
+**M-178's trap is escaped on seven fields of eight and `box_exact` defeats both fixtures.**
+`order_sensitive_edges` — cut edges where the crossing computed from the far endpoint differs by a bit —
+is measured per fixture *before any extractor runs*:
+
+| field | 33³ | 25³ | | field | 33³ | 25³ |
+|---|---:|---:|---|---|---:|---:|
+| `sphere` | 72 | 24 | | `thin_plate` | 450 | 242 |
+| `torus` | 152 | 32 | | `gyroid` | 532 | 320 |
+| `box_exact` | **0** | **0** | | `fbm_terrain` | 291 | 249 |
+| `csg_difference` | 50 | 31 | | `noise_cavity` | 643 | 360 |
+
+`box_exact` has **1,350 cut edges and 0 order-sensitive ones** at 33³: its zero set lies on planes any
+dyadic grid hits exactly. **All eight of the file's `elements_vertex_exact = 48` rows are `box_exact`
+rows**, and every one of them has `order_sensitive_edges = 0`. There is not a single row in the file where
+a fixture that *can* fail produced 48 of 48. Breaking `box_exact` needs a non-dyadic offset, which is
+exactly what breaks grid symmetry — the two requirements are in direct conflict for that one field and
+this harness did not resolve it.
+
+**C1's mechanism is closed, not inferred.** On all 16 `marching_cubes` rows,
+`worst_differing_vertices == order_sensitive_edges` **exactly** — 72/72, 24/24, 152/152, 32/32, 0/0, 0/0,
+50/50, 31/31, 450/450, 242/242, 532/532, 320/320, 291/291, 249/249, 643/643, 360/360. A quantity computed
+from the grid with no extractor in sight predicts, to the unit, how many vertices move. And the split is
+by *element type*: `pure_permutation_exact` is **6 of 6 on every `marching_cubes` row** while
+`pure_sign_flip_exact` runs 1, 4 or 8 of 8.
+
+**So the registration's stated reason is true and does not imply its conclusion.** C1 predicts primal
+exactness *"because a primal vertex is `a/(a−b)` on one grid edge — two values, no accumulation"*. The
+premise holds. But `EDGE_CORNERS` always orients an edge along *increasing grid index*, so a sign flip
+swaps which endpoint is `lo`: the extractor computes `b/(b−a)` where it computed `a/(a−b)`, and anchors
+the lerp at the other corner. Those are mathematically `1 − t` and geometrically identical and **not
+bit-reciprocal**. Absence of accumulation was never sufficient; the *order of the two values* is the whole
+issue.
+
+**The two tetrahedral extractors fail by a second mechanism the registration did not anticipate.**
+`marching_tetrahedra` and `subgrid_marching_tetrahedra` never exceed **12 of 48** (range 6–12) and fail
+even on `box_exact`, where `order_sensitive_edges = 0` and the interpolation argument has nothing to bite
+on. `pure_permutation_exact` is 6 of 6, `pure_sign_flip_exact` only 1–2, and `worst_differing_vertices`
+reaches **22,146 of 22,247 vertices** — a *different vertex set*, not a perturbed one. Their
+six-tetrahedron decomposition of a cell is not octahedrally invariant: the diagonals cut different edges
+after a relabelling. That is why `worst_component_ulp` (0–2,432) is a "different mesh" flag on those rows
+rather than a rounding measurement, and why `worst_differing_vertices` sits beside it.
+
+**C2 is falsified by being stated too strongly, and its own fixture caught it.** *"Strictly fewer than
+48"* is false for `dual_contouring` and `manifold_dual_contouring` on `box_exact` at both resolutions —
+raw bit-pattern counts included, so the signed-zero normalisation is not responsible. M-177's ordering
+argument needs a sum that actually loses bits; on `box_exact` the crossings are exactly representable and
+the dual solve is exact too. Restricted to the 42 dual rows whose fixture can fail, the clause holds 42 of
+42, and the *identity* of the surviving subgroup is the new number:
+
+| extractor | exact elements | who survives |
+|---|---:|---|
+| `surface_nets` | 1 of 48, 7 rows | identity only |
+| `surface_nets` | 12 of 48, 1 row | six permutations × two sign patterns each |
+| `dual_contouring` / `manifold_dual_contouring` | 2 of 48, 22 rows | identity and the `x↔y` swap |
+| `dual_contouring` / `manifold_dual_contouring` | 4 of 48, 2 rows | four pure permutations |
+| `dual_contouring` / `manifold_dual_contouring` | 24 of 48, 4 rows (`thin_plate`) | an order-24 subgroup |
+
+**A QEF loses even pure permutations**, which M-177 predicts and no prior entry had counted:
+`pure_permutation_exact` is 2, 4 or 6 on the DC rows against a flat 6 for `marching_cubes`. Axis
+relabelling reorders the accumulation into `AᵀA`, and that is enough.
+
+**C3 quantifies the dossier's warning instead of repeating it.**
+`docs/research/2026-08-23-discovery-dossier.md:267` held this relation because `table.rs` picks
+`safe_apex` by lowest edge index and a triangle-level statement *"manufactures 2,688 false positives"*.
+Measured: **799 element-instances** across **103 of 112** rows are vertex-exact and triangle-different,
+and `elements_triangle_exact` never reaches 48 on any row — its maximum anywhere is **6**. The nine rows
+with zero triangle-only failures all have `elements_vertex_exact = 1`, i.e. no headroom, so they are a
+degenerate denominator and not evidence that `safe_apex` is invariant.
+
+**One incidental result, in neither clause: the asymptotic decider adds its own axis dependence.**
+`marching_cubes+decider` drops to **1 of 48** on `noise_cavity` where plain `marching_cubes` gives 6 on
+the same grid, and its `pure_permutation_exact` falls from 6 to 1. The face test does not merely inherit
+MC's edge asymmetry; it contributes.
+
+**Signed zero is normalised, and the literal reading is kept beside it.** Both fixtures are centred with
+an odd sample count, so `0.0` is a grid coordinate and `−(0.0)` is `−0.0`: left raw, every sign-flipping
+element fails on a disagreement about which *encoding* of zero was written rather than about any position,
+which is the kind of false positive this experiment exists not to manufacture. `−0.0` is folded to `0.0`
+in the comparison key, identically on both sides, and nothing else is touched — a one-ULP gap anywhere
+else is still a failure. `elements_vertex_exact_raw` and `elements_triangle_exact_raw` carry the literal
+bit-pattern reading; they differ on 10 and 6 of 112 rows respectively, all on `box_exact` or `thin_plate`,
+and **every clause verdict is identical under both**.
+
+**A harness defect was found and its run discarded before any number was kept.** The first draft computed
+`worst_component_ulp` by walking the two sorted vertex lists positionally, so one inserted vertex shifted
+every later entry against its neighbour and it reported `9.2e18` — the gap between `+2` and `−2` — for
+meshes differing by one bit on 72 edges. Replaced by a sorted-merge multiset difference that cancels the
+agreeing vertices first. **The identity element is a control** and is asserted vertex-exact and
+triangle-exact on all 112 rows; a failure there would mean the extractor is not deterministic and would
+void the row rather than falsify anything.
+
+**What a consumer should take from this.** Bit-exact octahedral equivariance is available from this crate
+for the **six pure axis permutations on `marching_cubes`** and for nothing else. Under any reflection,
+expect vertex positions to move by up to `worst_component_ulp`; under any element at all, expect the
+*index buffer* to differ. The fix for the primal case is small and named: anchor `edge_position`'s lerp at
+a canonically ordered endpoint rather than at the lower grid index. That is a `src/` change and a golden
+hash move, so it is a ticket and not this experiment.
+
+### 💥 ✗40 / M-357 — FALSIFIED on all three clauses, and two of the three failures are the clause's fault rather than the paper's: reversing a tie-break re-partitions the complex, and a critical-cell count is not a topological signature for a field with a degenerate critical set (P-58, R-056)
+
+**M.** `cargo bench --bench experiment_p58`, `docs/experiments/p-58.csv`, 24 rows — eight fields ×
+17³/33³/65³, `f64`. Algorithm 1 of Robins, Wood & Sheppard `10.1109/tpami.2011.95` transcribed from the
+corpus text with its `G`-ordering, both priority queues and `num_unpaired_faces` as written, running on
+integer ranks so every comparison is exact. **Each census computed twice**, forward and reverse
+tie-break — 48 censuses in all.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 census identical under the reversed tie-break | all 24 rows | **FALSIFIED — 5 rows differ; worst `csg_difference` 65³, 117 against 873** |
+| C2 every ambiguous cell contains a critical cell | containment on all 24 | **FALSIFIED — fails on all 9 substantive rows; `fbm_terrain` 65³ is 58 ambiguous cells and 0 containing one** |
+| C3 `sphere`/`torus` under 2×, `noise_cavity` over 4× | both | **FALSIFIED — `torus` 17 → 41 → 73, i.e. 2.412× at the first step** |
+
+**Twelve controls, none of which fired — which is what makes three falsifications readable.** Three are
+worth naming. Proposition 4 in aggregate: `2·pairs + critical_total == (2n−1)³`, on all 48 censuses.
+Lemma 10, both arms: `critical_3` equals the count of voxels whose reduced lower star is the whole
+octahedron, on all 48. And an **independent global check the transcription never uses**: Theorem 3 with
+Theorem 6 says the Morse complex computes `H_*(K)`; `K` is the cubical complex of a box and therefore
+contractible; so `χ = c₀ − c₁ + c₂ − c₃` must be **1**. It is 1 on all 48 censuses, forward and reverse.
+Nothing in the code arranges that. `max_lower_star_cells` takes only the values **8, 18 and 27** — exactly
+the corner, face and interior truncations a box admits — against the paper's own bound of 27, and 27
+occurs on precisely the three fields with `critical_3 > 0`.
+
+Two more results fall out as free confirmations. `sphere` gives `critical_total = 1` at **every**
+resolution: its sublevel sets are ball ∩ box, convex and contractible throughout the filtration, so
+exactly one topology change, and the census reproduces that exactly. `torus` gives `c₀ = c₁` at every
+resolution — 8/8, 20/20, 36/36 — with `c₂ = 1` always.
+
+**C1 differs, and the honest reading is that C1 does not test the sentence it cites.** The registration's
+committed provenance correction quotes §3.1: *"the number and type of critical cells found by
+ProcessLowerStars are independent of this ordering"*. In context *"this ordering"* is the `G`-ordering
+**within** a lower star — the paragraph's subject is *"Any ordering based primarily on the maximal `g`
+value of the vertices of the cell and in which a cell is ranked after its faces will suffice."* Reversing
+the voxel-index tie-break does not change `G`'s rule. It changes `g′` itself, and therefore changes **which
+voxel owns a tied cell** — the lower-star *partition* of `K`, not the traversal order inside a part. So the
+measured sensitivity is to the choice of perturbation, which the paper never claims invariance under. It
+is real and large and worth having, and it is **not** a counterexample to §4.
+
+| field | n | forward `(c₀,c₁,c₂,c₃)` | reversed | total |
+|---|---:|---|---|---|
+| `csg_difference` | 17³ | 5, 6, 3, 1 | 20, 33, 15, 1 | 15 → **69** |
+| `csg_difference` | 33³ | 11, 18, 9, 1 | 47, 108, 63, 1 | 39 → **219** |
+| `csg_difference` | 65³ | 35, 57, 24, 1 | 221, 435, 216, 1 | 117 → **873**, 7.462× |
+| `noise_cavity` | 33³ | 294, 853, 738, 178 | 296, 855, 738, 178 | 2,063 → 2,067 |
+| `noise_cavity` | 65³ | 762, 2025, 1600, 336 | 763, 2026, 1600, 336 | 4,723 → 4,725 |
+
+**That 7.462× is the finding, and it is a warning about chunked meshing.** `csg_difference` is
+`max(box, −sphere)`, so vast plateaus of its grid tie *exactly*; which voxel is declared the owner of a
+tied cell decides whether a pair is available, and the answer cascades. `tied_voxels` sizes it —
+`box_exact` at 65³ has **274,145 of 274,625 voxels tied**. Any tie-break that depends on chunk-global
+quantities, which the paper's Eq. (8) ramp `g′ = g + η(i + Ij + IJk)/(3IJK)` does by construction, will
+therefore produce a *different census per chunk decomposition* on this crate's fields. The registered
+chunk-local `(value, linear_index)` order is not a convenience; it is the only kind that can be stable.
+
+**`fbm_terrain`'s C1 pass is vacuous and the CSV says so rather than making a reader infer it.**
+`tied_voxels = 0` at all three resolutions — `distinct_values == voxels` — so the reversed ordering *is*
+the forward ordering there, and `census_matches_reverse_order = true` is an identity, not evidence.
+
+**C2's containment fails in the direction the clause declared fatal, and there was never a theorem behind
+it.** The Morse census is a property of the **entire** lower-level-cut filtration, over every threshold.
+Marching Cubes ambiguity is a property of **one** level set, the zero set. Nothing links them. The clause
+hedged one direction — *"a Morse census can be non-empty where no MC ambiguity exists"* — and the measured
+failure is the other: ambiguity where there is no criticality.
+
+| field | n | ambiguous | containing a critical cell |
+|---|---:|---:|---:|
+| `gyroid` | 17³ / 33³ / 65³ | 52 / 27 / 132 | 34 / 15 / **18** |
+| `fbm_terrain` | 17³ / 33³ / 65³ | 16 / 30 / 58 | **0 / 0 / 0** |
+| `noise_cavity` | 17³ / 33³ / 65³ | 193 / 502 / 567 | 177 / 308 / 226 |
+
+`sphere`, `torus`, `box_exact`, `csg_difference` and `thin_plate` produce **zero** ambiguous cells at all
+three resolutions, so `ambiguous_containment_holds` is trivially true on 15 of 24 rows and the clause is
+only substantive on the other nine — where it fails on all nine. And the excess is not an excess: on **18
+of 24 rows `critical_cells_outside_ambiguous / critical_total` is exactly 1.0000**. The two sets are
+essentially disjoint.
+
+**C3 fails on `torus`, and the substantive result is a null about the metric.** `torus`'s *topology* is
+resolution-stable exactly as the clause expected — `c₂ = 1` and `c₀ − c₁ = 0` at 17³, 33³ and 65³. What
+grows is the count of critical cells along the torus SDF's **circle of minima**: `c₀` runs 8 → 20 → 36 with
+`c₁` identically, roughly linear in `n`. So `critical_total` is not a topological signature for a field
+with a degenerate (positive-dimensional) critical set; the 2× bound was measuring sampling density along a
+circle. C3 fails under both readings of *"across 17³/33³/65³"* — consecutive ratios 2.412 and 1.780, and
+end-to-end 4.294 — so it is not rescued by picking the kinder one. `noise_cavity` misses too, for the
+mirror-image reason: its consecutive ratios are 3.758 and 2.289, neither above 4, while end-to-end it is
+8.603.
+
+**One adjective in the registration is narrower than it reads.** *"allocation-free"* describes the
+**tie-break**, and only that. Ranking is a sort into a dense `Vec<u32>` per grid and allocates once;
+`ProcessLowerStar` itself is allocation-free — fixed 64-slot arrays indexed by star code — and that is the
+part which runs 274,625 times per ordering.
+
+**What survives for this crate.** The transcription is correct — `χ = 1` on 48 censuses says so
+independently — and it is a working per-voxel, order-independent critical-cell census over an SDF grid,
+which nothing here had. What it is *not* is a predictor of Marching Cubes ambiguity, and
+`critical_total` is not a topology metric on fields with degenerate critical sets. Both directions are
+closed by measurement rather than by opinion.
+
+### 💥 ✗41 / M-358 — C1 and C2 HELD, C3 FALSIFIED: P-39's bound over-keeps by 20×, the 1,507 surviving brushes cut to 73 bit-exactly, and the over-keep has two causes where the registration named one (P-59, R-057)
+
+**M.** `cargo bench --bench experiment_p59`, `docs/experiments/p-59.csv`, 64 rows — one per chunk,
+**1,571 re-meshes**, 19.6 s, `f64`, `marching_cubes`. P-39's fixture reproduced brush-for-brush by copying
+rather than importing: `BRUSHES = 64`, the same `Interval`, `pad`, `enclose` and `prune_into` under
+`Policy::Sound` only. `assert_comparable` refuses to proceed unless the fixture reproduces M-341
+exactly — 64 chunks, median **19** survivors, median fraction **0.2969** — and all three matched.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 removing all non-survivors changes no hash | 64/64 | **HELD — 64 of 64, median 45 of 64 brushes removed** |
+| C2 median `necessary / survivors` ≤ 0.75 | ≤ 0.75 | **HELD — median 0.000000, max 0.250000** |
+| C3 ≥ 90% of unnecessary survivors far from the surface | ≥ 0.90 | **FALSIFIED — 1,218 / 1,434 = 0.849372** |
+
+**C1 is the soundness control and it is reported first because everything else depends on it.** Removing
+every non-survivor at once leaves `mesh_hash` bit-identical on all 64 chunks, which re-confirms M-341's C3
+on an independent harness. The instrument's ability to report the *other* answer is not argued but
+demonstrated from inside the same run: **73 leave-one-out removals did change the hash**, decided by the
+same `hash_of` and the same `==`.
+
+**C2 held, and the honest caveat is that 0.75 could not have failed on this fixture.** The median is
+**0.000000** and the single worst chunk in the file is `0.250000` — 16 necessary of 64 survivors — so even
+the extreme sits exactly at *"three quarters droppable"*. Overall **1,434 of 1,507 survivors (95.16%) are
+individually droppable**. The clause is satisfied by a factor nobody would have registered on purpose, and
+a HELD verdict on it therefore carries much less information than its wording implies. 51 of 64 chunks
+have `necessary == 0`; seven of those mesh to zero triangles and are a confound, and dividing them out
+changes nothing material — 44 of the 57 non-empty chunks still have `necessary == 0` and the non-empty
+median is still 0.000000, which is why `triangles`, `empty_chunks` and the `_nonempty` aggregates are
+columns rather than an argument.
+
+**The number that matters is not in any clause, and it is a factor of 20.** Leave-one-out measures
+*individual* droppability, which does not license the registration's framing sentence *"the bound
+over-keeps"* — two brushes can each be redundant while the other is present and jointly decisive, which is
+ordinary `min`/`max` behaviour. So the joint claim was measured rather than inferred:
+`necessary_only_hash_unchanged` re-meshes each chunk from its `necessary` brushes **alone**, every
+individually-unnecessary survivor removed at once, order preserved. It is **bit-identical on 64 of 64
+chunks**. The tape cuts from **1,507 survivors to 73 brushes world-wide, bit-exactly** — a **20.6×**
+further reduction on top of P-39's 64 → 19. Without that column an entry citing C2 could have upgraded
+"individually" to "jointly" unearned; with it, the upgrade is a measurement.
+
+**C3 fails at 0.849372 because the over-keep has two causes and the registration named one.** The named
+mechanism is real and dominant — 1,218 of 1,434 unnecessary survivors are more than a cell size clear of
+zero over the chunk — but the remaining **216 near-surface unnecessary survivors are concentrated exactly
+in the chunks with the most surface**: 29 in the 7,439-triangle chunk, 24 in the 6,177, 17 in the 4,149, 15
+in the 1,527. Those are brushes whose enclosure genuinely straddles the surface band and which are
+*dominated there by another brush in the min/max chain*. Being far from the surface is sufficient to be
+unnecessary; it is not necessary, and the second route is domination rather than distance.
+
+**Half of C3's predicate cannot fire on this fixture, structurally, and the CSV shows it rather than
+hiding it.** The registered predicate reads symmetrically — *"an interval over the chunk whose distance
+from zero exceeds one cell size"*, implemented as `lo > cell_size || hi < −cell_size` — and
+`unnecessary_far_by_hi` is **0 on all 64 rows, 0 of 1,434**. It cannot fire: every brush in P-39's tape has
+radius ≤ 1.1, so `f(centre) ≥ −1.1`, while the enclosure's Lipschitz reach is ≈ 3.464 and `hi < −0.125`
+would need `f(centre) < −3.589`. So "distance from zero" here only ever means "entirely more than a cell
+*above* zero".
+
+**What this licenses and what it does not.** A tighter bound has **20× of headroom** on this fixture and
+the direction is open, not closed — that is the opposite of what C2's wording suggests. What it does not
+license is a per-brush necessity *test*: deciding necessity here cost 1,571 re-meshes, and any cheap
+replacement has to be a conservative bound, which is what the 216 domination cases make hard.
+
+### 💥 ✗42 / M-359 — C1 FALSIFIED and C3 HELD, and C2 passes for a reason that is not its own: the paper's 8 dB reconstruction gain maps to a root-position gain that is exactly `|σ − 2τ| / σ` and therefore a lottery over where the root falls (P-60, R-058)
+
+**M.** `cargo bench --bench experiment_p60`, `docs/experiments/p-60.csv`, 32 rows — eight fields × four
+guard-band widths, 65 samples along the domain-centre `x` axis, `f64`. **No extractor is called and no
+golden hash is reachable.** The prefilter is Blu, Thévenaz & Unser's causal one-pole with their own
+`c₀ = f₀` initialisation, at `τ = 1/5` where it is `cₙ = −2⁻²·cₙ₋₁ + (1 + 2⁻²)·fₙ` and multiplication-free;
+the reconstruction's knots sit at `(n + τ)T`, so the segment carrying the crossing comes from the shifted
+knot grid.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 shifted root error ≥ 30% lower on the four smooth fields | ratio ≤ 0.70 | **FALSIFIED — median 1.486067** |
+| C2 shifted worse or equal on the two step-like fields | ≤ 1 | **NUMBER HELD at exactly 1.000000; MECHANISM FALSIFIED** |
+| C3 truncating to `k` preceding samples moves the root < 1e-6 cells at `k ≥ 10` | `true` | **HELD — 8 of 8 fields, worst 7.152528e-7** |
+
+**Two controls decide whether any field number means anything, and both behave.** The **positive** control
+is a synthetic exactly-quadratic line whose closed-form root-error ratio is exactly `1/5` at its crossing:
+measured **1.984127e-1**, which pins the pole sign, the gain, the knot offset and the two-piece segment
+choice all at once. The **negative** control feeds the identical code path the raw samples in place of `c`
+— the shift applied without the prefilter that makes it interpolate, which is the most likely way to get
+this wrong — and returns **39× worse** than the standard rule, a root biased by 0.195 cells, i.e. `τ`. The
+interpolation identity `τ·cₙ₋₁ + (1 − τ)·cₙ == fₙ` holds to **2.220446e-16** on all eight fields.
+
+**C1 fails, and the reason is a closed form rather than a null.** For a locally quadratic signal the
+shifted reconstruction's error is `(g″/2)·[τ² − τ + s(1 − s)]`, so the two **root** errors stand in the
+ratio `|σ(σ−1) + τ(1−τ)| / (σ(1−σ))` for a root at fraction `σ` of the cell — which at `τ = 1/5` is
+`|σ − 2/5| / σ` above `σ = 1/5` and `(σ + 3/5)/(1 − σ)` below it. It equals **exactly 1 when the root
+lands on a knot**, **exactly 0 at `σ = 2τ`**, never exceeds 1 in the quadratic regime, and clears the 30%
+bar on **82% of uniformly distributed crossing positions**. The control confirms it to 0.8%. So the
+paper's asymptotic 8 dB *reconstruction* gain does transfer, but as a **strongly position-dependent**
+root-position gain — and registering a median over four arbitrary crossing positions was registering a
+lottery over `σ`.
+
+**Half of C1's population is degenerate, and the registration could not have known it.** The
+domain-centre axis is a **symmetry axis** of six of the eight fields, along which the field restricts to a
+piecewise-linear ramp through the first crossing:
+
+| field | `root_error_standard` | `root_error_shifted` | ratio |
+|---|---:|---:|---:|
+| `sphere` | 7.105427e-15 | 7.105427e-15 | 1.000000 |
+| `torus` | 3.552714e-15 | 4.768370e-8 | 1.342177e7 |
+| `gyroid` | 5.103006e-4 | 1.006381e-3 | **1.972134** |
+| `fbm_terrain` | 4.600501e-2 | 9.416940e-3 | **2.046938e-1** |
+
+`sphere` restricts to `|x| − 1` and `torus` to `||x| − 1| − 0.3`; `chord_deviation_cells` is exactly zero
+on both, `standard_is_exact` is `true`, and their errors are the **bisection floor**. With `g″ = 0` both
+reconstructions are exact and there is nothing to compare — `torus`'s 1.34e7 is entirely the causal
+startup transient, its shifted error `4.768370e-8` being `¼·τ·(1/4)¹⁰` to the digit. So the clause rests on
+two real measurements, and they **split**: `fbm_terrain` is 4.9× better and clears the bar with room, while
+`gyroid` is 2× **worse** because its crossing sits at `x = −π` exactly, an inflection point of `sin` where
+the local second derivative vanishes and the error is cubic-dominated, outside the quadratic closed form.
+
+**C2's number holds and its stated cause is absent, so per this project's own rule it is not a finding.**
+`is_step_like` measures **`false` on both `box_exact` and `csg_difference`** — on the centre axis both
+restrict to `|x| − 1`, whose second difference is exactly 0 in the whole window, so the 10× test is a
+comparison against nothing — and `gibbs_overshoot` is **2.909629e-12**, six orders below the cell size and
+plainly machine noise rather than an overshoot. The tie at exactly `1.000000` is two rules returning the
+identical `−1.0` because the root sits exactly on sample 16, with both errors at the same bisection floor
+`7.105427e-15`. The one field `is_step_like` does flag is **`thin_plate`**, whose plate kink at
+`|x| = 0.9875` puts a `5.0e-2` second difference three samples from the crossing against a zero median.
+**The "step-like restriction" the registration imagined is what a line *tangential* to a box face would
+see; a line through the centre sees a ramp.** There is no Gibbs phenomenon on this fixture to find.
+
+**C3 held, and `k = 10` is the real threshold rather than a loose one.**
+
+| field | `k = 2` | `k = 5` | `k = 10` |
+|---|---:|---:|---:|
+| `torus` | 3.999995e-2 | 7.805355e-4 | **7.152528e-7** |
+| `gyroid` | 2.178023e-2 | 1.657553e-4 | **1.927142e-7** |
+
+`k = 5` **fails** the 1e-6 bar on both fields that carry a non-zero delta and `k = 10` passes it. The
+`(τ/(1−τ))^k = (1/4)^k` decay is clean: `torus` gives 1.951e-2 and 9.164e-4 for the two steps against
+`(1/4)³ = 1.5625e-2` and `(1/4)⁵ = 9.766e-4`. On the other six fields the delta is **exactly** zero at
+every `k`, and that is a real zero with a named cause rather than an untested one — on an exactly linear
+signal the startup transient cancels out of the left-piece root, because those crossings land at
+`s = 1 − τ = 0.8` exactly. `guard_band_truncated` distinguishes the two kinds of zero per row, and it also
+records that **`k = 20` tests nothing**: the largest crossing index on this line is 18, so all eight
+`k = 20` windows are the whole line.
+
+**What this closes and what it opens.** For a mesher, the guard band is affordable — **10 samples** of
+slab overlap buys a root indistinguishable from the whole-line answer — so C3's arm of the direction is
+open. The accuracy arm is closed as registered and replaced by something better than a null: the gain is
+`|σ − 2τ| / σ`, exact, bounded by 1, zero at `σ = 2τ` and 1 at `σ = τ`. A mesher cannot choose `σ`, so the
+expected benefit is the 82% figure and not the 8 dB one. **A successor registration is not needed**: the
+closed form answers the question the clause was reaching for, and it was confirmed against a control to
+0.8%.
