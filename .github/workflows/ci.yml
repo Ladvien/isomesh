@@ -183,9 +183,28 @@ jobs:
         run: cargo doc --no-deps
         working-directory: bevy_isomesh
 
-      - name: test
+      # `--lib` and `--doc`, not a bare `cargo test`, because `cargo test` also
+      # codegens and links **every example** -- the exact cost the
+      # `check --all-targets` step above exists to avoid, and its own comment
+      # forbids. It does not fit. `[profile.dev]` is `opt-level = 1` over
+      # `[profile.dev.package."*"] opt-level = 3`, and the dev profile defaults to
+      # `debug = 2`, so each example is a fully optimised Bevy binary carrying
+      # full debuginfo: **measured at 2.0 GB each**, so 49 of them is ~98 GB
+      # against a runner's ~14 GB. The job died on it with `ld terminated with
+      # signal 7 [Bus error]` and `No space left on device (os error 28)`, which
+      # reads as a linker bug and is a full disk.
+      #
+      # Coverage is unchanged, which is the only reason this is the fix rather
+      # than a bigger runner: this crate has no `tests/` directory, so its 30
+      # unit tests and 9 doctests are every test it has, and the examples stay
+      # type-checked by `check --all-targets` and linted by clippy above. Two
+      # steps because cargo refuses `--lib --doc` in one invocation.
+      - name: test (lib)
         working-directory: bevy_isomesh
-        run: cargo test
+        run: cargo test --lib
+      - name: doc tests
+        working-directory: bevy_isomesh
+        run: cargo test --doc
 
   msrv:
     name: msrv (rust-version in Cargo.toml)

@@ -87,7 +87,13 @@ step "isomesh depends on libm and nothing else" bash -c \
 if [ "$FULL" = 1 ]; then
     step "root: test" cargo test -p isomesh
     step "gpu: test" cargo test -p isomesh-gpu
-    step "bevy: test" in_bevy cargo test
+    # `--lib` and `--doc` rather than a bare `cargo test`, matching the `bevy` CI
+    # job for the reason that job's comment gives: `cargo test` also links all 49
+    # examples at ~2.0 GB each, which is ~98 GB of writes here and does not fit on
+    # a CI runner at all. Coverage is identical -- this crate has no `tests/`
+    # directory. Two invocations because cargo refuses `--lib --doc` together.
+    step "bevy: test" in_bevy cargo test --lib
+    step "bevy: doc tests" in_bevy cargo test --doc
     step "msrv 1.89" cargo +1.89 check --workspace --all-targets
 fi
 
