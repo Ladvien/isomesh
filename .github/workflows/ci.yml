@@ -17,7 +17,7 @@ jobs:
     name: fmt, clippy, docs, dependency gates
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: rustfmt
         run: cargo fmt --all --check
@@ -119,13 +119,35 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      # `--lib --tests`, not `--all-targets`, because `--all-targets` pulls in the
+      # benches and 3 of the 74 read an Open SciVis volume that is deliberately
+      # not in the repository: `.gitignore` excludes
+      # `docs/measurements/volumes/*.raw` per M-006, since those are fetched by
+      # `scripts/fetch_volumes.sh` and verified against the publisher's SHA-512
+      # rather than committed. CI never fetched them, so both legs died on
+      # `fuel_64x64x64_uint8.raw: No such file or directory` out of
+      # `--bench experiment_p53`.
+      #
+      # Fetching them here was the alternative and was rejected: it would make
+      # every build depend on `klacansky.com` answering over plain HTTP, so an
+      # academic host's outage would turn this red for a reason that has nothing
+      # to do with the code. Making the bench skip a missing volume was rejected
+      # outright -- a silent degraded path is what CLAUDE.md forbids.
+      #
+      # Nothing stops being compiled: the `lint` job's
+      # `cargo clippy --workspace --all-targets` still type-checks all 74 benches
+      # and `isomesh-gpu`'s examples, which is what catches API rot. What is given
+      # up is running the benches in test mode, and that is the cost of this
+      # choice rather than a thing being hidden. Neither crate has a `tests/`
+      # directory today, so `--tests` selects nothing extra and is here so that
+      # adding one is picked up.
       - name: test
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then
-            cargo test --workspace --all-targets
+            cargo test --workspace --lib --tests
           else
-            cargo test -p isomesh --all-targets
+            cargo test -p isomesh --lib --tests
           fi
       - name: doc tests
         run: cargo test --workspace --doc
@@ -133,13 +155,13 @@ jobs:
       # else. Its tests only compile with the feature on, so without this step
       # they would sit there looking like coverage and never run.
       - name: experimental feature
-        run: cargo test -p isomesh --features experimental --all-targets
+        run: cargo test -p isomesh --features experimental --lib --tests
 
   bevy:
     name: bevy_isomesh (separate workspace)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # Bevy 0.19 enables Wayland by default on Linux, so `wayland-sys`'s build
       # script needs the dev packages even though CI only type-checks and never
       # opens a window. None of these exist on macOS, which is why a local
@@ -191,7 +213,7 @@ jobs:
     name: msrv (rust-version in Cargo.toml)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # `rust-version` is a claim the manifest makes to consumers. Nothing
       # else checks it, and it is the kind of thing that quietly stops being
       # true -- the original 1.85 did exactly that the day isomesh-gpu landed,
@@ -251,7 +273,7 @@ jobs:
     name: package (dry run)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: dry run
         run: ./scripts/publish.sh --dry-run
 
@@ -281,7 +303,7 @@ jobs:
       cancel-in-progress: false
     environment: crates-io
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
