@@ -65,7 +65,6 @@ tracing = { version = "0.1", default-features = false }
 # Note the absence of "x11": that is a Linux windowing backend and this project
 # targets macOS/Metal, where `bevy_winit` needs no extra feature flag.
 [dev-dependencies]
-avian3d = "0.7.0"
 bevy = "0.19"
 
 # B-012's tests and doctest only. `Cuboid` is the fixture the ticket's
@@ -76,10 +75,31 @@ bevy = "0.19"
 # nothing to the resolved graph.
 bevy_math = "0.19"
 
+# `bevy_platform`'s web cfg is `all(target_arch = "wasm32", feature = "web")`,
+# and Cargo unifies this with the unconditional `bevy` above -- so the feature is
+# on for wasm and off for native. Without it `bevy::platform::time::Instant`
+# resolves to `std::time::Instant`, whose `now()` panics on wasm, which makes
+# this line the thing that lets the three web-built examples keep time at all.
+#
+# Default features stay on: `default_platform` already carries `webgl2`,
+# `multi_threaded` is compiled out on wasm by `bevy_tasks`, and winit, `sysinfo`
+# and `gilrs-core` all gate or back their platform pieces on that target.
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+bevy = { version = "0.19", features = ["web"] }
+
+# Native-only, all four for the same reason: none is reachable from the three
+# examples that get a web build, and the examples that do use them are simply not
+# built for wasm. Dev-dependencies are not propagated, so consumers see no change.
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+avian3d = "0.7.0"
+
 # GPU-005's example only, and a dev-dependency for the same reason `avian3d` is
 # one: this crate's whole point is that a CPU-only consumer never compiles the
 # renderer, and `isomesh-gpu` carries `wgpu`. Dev-dependencies are not
-# propagated, so nobody depending on `bevy_isomesh` inherits it.
+# propagated, so nobody depending on `bevy_isomesh` inherits it. It is also the
+# clearest case for the `cfg` above: it asks wgpu for `dx12`, `metal` and
+# `vulkan` and for no web backend at all, so on wasm it is dead weight in the
+# graph at best.
 #
 # The wgpu pin is what makes this safe. `isomesh-gpu` asks for 29.0.3 and Bevy
 # 0.19 asks for 29.0.3, so Cargo unifies them onto one copy -- verified below
@@ -120,3 +140,14 @@ opt-level = 3
 
 [profile.dev]
 opt-level = 1
+
+# Bevy's wasm binary is size-bound, not arithmetic-bound, so `s` beats `3` and
+# `thin` beats `fat`: fat LTO on a 30 MB module costs minutes per example and CI
+# builds three. `strip = "debuginfo"` rather than `true` because the name section
+# is dropped by `wasm-bindgen`, the tool that knows what it may drop.
+[profile.wasm-release]
+inherits = "release"
+opt-level = "s"
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"

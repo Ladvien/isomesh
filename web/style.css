@@ -1,0 +1,158 @@
+/* Shared by the rendered pages and by play.html.
+ *
+ * The page background is the demos' own clear colour -- Color::srgb(0.09, 0.11,
+ * 0.15) -- so a canvas dropped into the middle of the site has no seam around
+ * it. No syntax highlighting: `fenced_code` emits <pre><code class="language-…">
+ * and a monospace block on a darker panel is enough. */
+
+:root {
+  --bg: #171c26;
+  --panel: #10141c;
+  --ink: #dfe3ea;
+  --dim: #949bab;
+  --line: #2c3444;
+  --link: #7fd4ff;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+a { color: var(--link); }
+
+nav, footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  padding: 0.9rem 1.5rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+footer {
+  border-bottom: 0;
+  border-top: 1px solid var(--line);
+  margin-top: 3rem;
+  color: var(--dim);
+}
+
+nav a, footer a { text-decoration: none; }
+nav a:hover, footer a:hover { text-decoration: underline; }
+
+main {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 4rem;
+}
+
+h1, h2, h3, h4 { line-height: 1.25; }
+h1 { font-size: 1.9rem; margin: 1.2rem 0 0.6rem; }
+h2 { font-size: 1.45rem; margin-top: 2.6rem; border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
+h3 { font-size: 1.15rem; margin-top: 2rem; }
+
+hr { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
+
+/* Images are the point of most of these pages, and there are 38 GIFs of them.
+ * `loading="lazy"` is put on every one by build_site.py; this only stops them
+ * overflowing a phone. */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+  border-radius: 3px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.2rem 0;
+  font-size: 0.94rem;
+  display: block;
+  overflow-x: auto;
+}
+th, td {
+  border: 1px solid var(--line);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--panel); }
+
+code {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.05rem 0.3rem;
+  font-size: 0.9em;
+}
+
+pre {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+}
+pre > code { background: none; border: 0; padding: 0; font-size: 0.88rem; }
+
+blockquote {
+  margin: 1.2rem 0;
+  padding: 0.2rem 0 0.2rem 1rem;
+  border-left: 3px solid var(--line);
+  color: var(--dim);
+}
+
+/* `~~FALSIFIED~~` in FINDINGS.md is prose, not decoration: a claim that was
+ * retracted. It has to read as struck through rather than merely faded. */
+del { text-decoration: line-through; color: var(--dim); }
+
+/* play.html. The canvas is fixed at 1280x720 because the demos lay their HUD
+ * panels out in pixels for that size; CSS scales it down, never the other way,
+ * and `fit_canvas_to_parent` stays off for the same reason. */
+.play {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3rem;
+}
+
+.stage { position: relative; }
+
+#isomesh-canvas {
+  display: block;
+  width: 100%;
+  max-width: 1280px;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+#loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+  background: rgba(16, 20, 28, 0.92);
+  color: var(--ink);
+}
+
+.keys { color: var(--dim); font-size: 0.94rem; }
+.keys kbd {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.05rem 0.35rem;
+  font-family: inherit;
+  color: var(--ink);
+}

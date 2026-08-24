@@ -261,7 +261,11 @@ The math-library pin is the load-bearing one. Bevy 0.19 wants glam 0.32, `parry3
 ## Demos
 
 **[→ The demo page](bevy_isomesh/DEMOS.md)** — all 49 examples, each with an animated capture, the
-exact command, its controls, and the finding it demonstrates. There is a **[hosted version](https://claude.ai/code/artifact/cc28fc70-8d82-4655-afee-582ea00f5513)** too, if a link is easier to send than a clone.
+exact command, its controls, and the finding it demonstrates.
+
+**[→ isomesh.ladvien.com](https://isomesh.ladvien.com/)** is the same prose as a site, with every clip
+served from it rather than hotlinked — and the three Phase 21 demos are **playable in the browser** there
+as WebAssembly builds, each still printing its cross-check against its committed CSV to the console.
 
 The longer write-ups live on three further pages, so this one stays short. Every figure on them came
 from a command you can run, and every number is measured on one of the two machines in
