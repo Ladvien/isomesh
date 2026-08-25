@@ -88,20 +88,41 @@ set it for you.
 
 ## Verifying it is live — the artefact, not the page
 
-**Use `http://`, never `https://`.** The custom domain has no certificate:
-`gh api repos/Ladvien/isomesh/pages` reports `https_certificate` **absent** and
-`status: null`, so `https://isomesh.ladvien.com` fails the TLS handshake outright
-while `http://` answers 200. Check before assuming it is fixed:
+**Use `http://`, never `https://`.** The custom domain has no certificate, so
+`https://isomesh.ladvien.com` fails the TLS handshake outright while `http://`
+answers 200. Check both, and check the reason, before assuming either:
 
 ```bash
 gh api repos/Ladvien/isomesh/pages \
   --jq '{status, https_enforced, cert: (.https_certificate.state // "absent")}'
+gh api repos/Ladvien/isomesh/pages/health \
+  --jq '.domain | {is_valid, is_https_eligible, caa_error, https_error, is_proxied, is_served_by_pages}'
 ```
 
-Once that cert appears, one command finishes the job —
+**`pages/health` is the authoritative diagnostic** — it is GitHub telling you
+whether the fault is yours. As of 2026-08-25, 26 hours after the first successful
+deploy, it reported `is_valid: true`, `is_https_eligible: true`,
+`caa_error: null`, `is_proxied: false`, `is_served_by_pages: true` and
+`https_error: "peer_failed_verification"` — GitHub agreeing the certificate should
+exist while `https_certificate` stayed **absent**. DNS was verified independently:
+`isomesh.ladvien.com` CNAMEs to `ladvien.github.io`, which resolves to GitHub's
+four Pages IPs, on Route 53 nameservers with no proxy, and `github.io`'s CAA set
+permits `letsencrypt.org`. So provisioning is stalled **on GitHub's side** and
+there is nothing in DNS to fix.
+
+The one thing this repository controlled and was missing: the artifact did not
+name its own domain. `build_web.sh` now writes `web/dist/CNAME` right after the
+clean. `build_site.py` only ever creates and overwrites, so the file survives it —
+verified rather than assumed. That is the documented shape of a custom-domain
+Pages artifact, not a proven fix; do not record it as one.
+
+Once the cert appears, one command finishes the job —
 `gh api -X PUT repos/Ladvien/isomesh/pages -F https_enforced=true` — and it must
 not be run before, because enforcing https without a certificate takes the site
-down rather than securing it.
+down rather than securing it. If it is still absent, the remaining lever is
+removing and re-adding the custom domain in Settings → Pages, which briefly takes
+the hostname offline; re-*saving* the same domain through the API was already
+tried and changed nothing.
 
 ### 1. The rendered page
 

@@ -57,6 +57,29 @@ DEMOS=(
 OUT=web/dist
 PYTHON="${PYTHON:-python3}"
 
+# The custom domain, written into the artifact on every build.
+#
+# The `pages` job deploys through `actions/deploy-pages`, and GitHub stores the
+# custom domain in the repository's Pages settings -- so the site *serves* at
+# this host with no `CNAME` file at all, which is how it has been serving. What
+# it has never done is get a TLS certificate: 26 hours after the first
+# successful deploy `gh api repos/Ladvien/isomesh/pages` still reported
+# `https_certificate` absent while `pages/health` reported
+# `is_https_eligible: true`, `is_valid: true`, `caa_error: null` and
+# `https_error: peer_failed_verification` -- GitHub agreeing the certificate
+# should exist and no certificate existing.
+#
+# An artifact that does not name its own domain is the one thing on this side
+# that was missing, so it is no longer missing. This is not a proven fix and is
+# not written as one: it is the documented shape of a custom-domain Pages
+# artifact, it costs one file of 21 bytes, and it removes the only variable the
+# repository controls.
+#
+# It must equal the domain in Settings -> Pages exactly. A `CNAME` file that
+# disagrees *changes* the custom domain on deploy rather than being ignored,
+# which would point the site at a host with no DNS.
+DOMAIN=isomesh.ladvien.com
+
 WANT=$(awk '/^name = "wasm-bindgen"$/{getline; gsub(/[^0-9.]/,""); print; exit}' \
     bevy_isomesh/Cargo.lock)
 if [ -z "$WANT" ]; then
@@ -90,6 +113,9 @@ rustup target add wasm32-unknown-unknown
 
 rm -rf "$OUT"
 mkdir -p "$OUT/play/pkg"
+# Immediately after the clean, so it exists even if a later step fails and a
+# partial artifact is inspected.
+printf '%s\n' "$DOMAIN" > "$OUT/CNAME"
 
 echo "==> isomesh_web (the front page's module)"
 (cd isomesh_web && cargo build --release --target wasm32-unknown-unknown)
