@@ -326,5 +326,171 @@ pub fn read_bytes_many(
     Ok(out)
 }
 
+/// A read-back in flight, with no wait in it.
+///
+/// [`read_bytes_many`] waits on an mpsc channel, which is correct on a native
+/// thread and fatal on the browser's: under WebGPU `Device::poll` is a
+/// documented no-op and `map_async` completes only when control returns to the
+/// event loop, so a thread that blocks on `recv()` is the thread that would have
+/// run the event loop and the tab deadlocks. This is the same staging copy with
+/// the wait taken out -- submit, then ask again next frame.
+///
+/// One frame of latency at best, more under load, and that is the honest shape
+/// of a GPU read-back. [`read_bytes_many`] stays as it is: a native test wants
+/// the answer on the next line, and this is its deferred sibling rather than a
+/// replacement.
+#[derive(Debug)]
+pub struct Readback {
+    /// `None` for an empty request list. A zero-size `wgpu::Buffer` is invalid,
+    /// so the empty case is represented by having no buffer at all rather than
+    /// by a buffer that validation would reject.
+    staging: Option<wgpu::Buffer>,
+    /// 0 pending, 1 mapped, 2 refused. Written once by the `map_async` callback,
+    /// which wgpu may run on any thread, and read by [`Readback::ready`] and
+    /// [`Readback::take`] -- hence the atomic rather than a `Cell`.
+    state: std::sync::Arc<std::sync::atomic::AtomicU8>,
+    /// Byte length per request, in request order, so [`Readback::take`] can
+    /// split the single mapped range back into the buffers that were asked for.
+    spans: Vec<usize>,
+}
+
+/// Copy `requests` into one staging buffer and start mapping it.
+///
+/// The staging allocation, the alignment guard and the copy loop are
+/// [`read_bytes_many`]'s; what is missing is its `poll(Wait)` and its
+/// `recv()`. The caller asks [`Readback::ready`] once a frame and calls
+/// [`Readback::take`] when it says yes.
+///
+/// # Errors
+///
+/// [`Error::UnalignedReadback`] if any `bytes` is not a multiple of 4. Nothing
+/// else can fail here: a map that is refused is reported by
+/// [`Readback::take`], because that is where the caller is asking for the bytes.
+pub fn read_bytes_many_deferred(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    requests: &[(&wgpu::Buffer, u64)],
+) -> Result<Readback> {
+    for (_, bytes) in requests {
+        if !bytes.is_multiple_of(4) {
+            return Err(Error::UnalignedReadback {
+                bytes: *bytes,
+                stride: 4,
+            });
+        }
+    }
+
+    let state = std::sync::Arc::new(std::sync::atomic::AtomicU8::new(0));
+    if requests.is_empty() {
+        // Nothing to map, so nothing to wait for: mark it done here and the
+        // caller's `ready` loop terminates on its first look, matching
+        // `read_bytes_many`'s empty-input `Ok(Vec::new())`.
+        state.store(1, std::sync::atomic::Ordering::Release);
+        return Ok(Readback {
+            staging: None,
+            state,
+            spans: Vec::new(),
+        });
+    }
+
+    let mut spans = Vec::with_capacity(requests.len());
+    for (_, bytes) in requests {
+        spans.push(usize::try_from(*bytes).map_err(|_| Error::DeviceLost)?);
+    }
+
+    // One staging buffer for the batch, for the reason `read_bytes_many` gives:
+    // peak residency is the same either way and this is one device allocation
+    // and one map instead of `n` of each.
+    let total: u64 = requests.iter().map(|(_, bytes)| *bytes).sum();
+    let staging = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("isomesh deferred readback"),
+        size: total,
+        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+        label: Some("isomesh deferred readback copy"),
+    });
+    let mut at = 0u64;
+    for (source, bytes) in requests {
+        // Every size is a multiple of 4, checked above, so each offset satisfies
+        // `COPY_BUFFER_ALIGNMENT` by construction rather than by rounding.
+        encoder.copy_buffer_to_buffer(source, 0, &staging, at, *bytes);
+        at += *bytes;
+    }
+    queue.submit(Some(encoder.finish()));
+
+    let signal = std::sync::Arc::clone(&state);
+    staging
+        .slice(..)
+        .map_async(wgpu::MapMode::Read, move |result| {
+            // `Release` so that a thread which loads 1 or 2 with `Acquire` also
+            // sees the mapped memory the driver wrote before calling this.
+            let code = if result.is_ok() { 1 } else { 2 };
+            signal.store(code, std::sync::atomic::Ordering::Release);
+        });
+
+    Ok(Readback {
+        staging: Some(staging),
+        state,
+        spans,
+    })
+}
+
+impl Readback {
+    /// Whether the mapping has completed. Call once a frame.
+    ///
+    /// Polls with [`wgpu::PollType::Poll`], which is one call site for both
+    /// targets and no `cfg`: on a native backend it is the pump that lets the
+    /// `map_async` callback fire, and under WebGPU it is a documented no-op
+    /// returning `PollStatus::QueueEmpty` because the browser polls for us and
+    /// the callback arrives from the event loop.
+    ///
+    /// The poll result is dropped deliberately. A device that failed to poll
+    /// shows up here as a read-back that never becomes ready, and
+    /// [`Readback::take`] is the one place that reports an error, because it is
+    /// the one place a caller is asking for bytes.
+    #[must_use]
+    pub fn ready(&self, device: &wgpu::Device) -> bool {
+        let _ = device.poll(wgpu::PollType::Poll);
+        self.state.load(std::sync::atomic::Ordering::Acquire) != 0
+    }
+
+    /// The bytes, one `Vec` per request, in request order. Unmaps the staging
+    /// buffer.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::MapFailed`] if the map was refused, [`Error::DeviceLost`] if the
+    /// mapping has not completed -- calling this before [`Readback::ready`]
+    /// returns `true` is the caller's bug, and returning half a buffer would
+    /// hide it.
+    pub fn take(self) -> Result<Vec<Vec<u8>>> {
+        match self.state.load(std::sync::atomic::Ordering::Acquire) {
+            1 => {}
+            2 => return Err(Error::MapFailed),
+            _ => return Err(Error::DeviceLost),
+        }
+        let Some(staging) = self.staging else {
+            // The empty request list, which never had a buffer to map.
+            return Ok(Vec::new());
+        };
+
+        let view = staging.slice(..).get_mapped_range();
+        let mut out = Vec::with_capacity(self.spans.len());
+        let mut at = 0usize;
+        for len in &self.spans {
+            let end = at.checked_add(*len).ok_or(Error::DeviceLost)?;
+            let slice = view.get(at..end).ok_or(Error::DeviceLost)?;
+            out.push(slice.to_vec());
+            at = end;
+        }
+        drop(view);
+        staging.unmap();
+        Ok(out)
+    }
+}
+
 #[cfg(test)]
 mod tests;

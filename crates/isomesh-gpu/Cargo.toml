@@ -33,12 +33,33 @@ isomesh = { path = "../isomesh", version = "0.0.9" }
 #
 # Backend features follow `bevy_hanabi`, which solves this same problem the same
 # way. `webgl` is deliberately absent: compute shaders do not exist there.
+#
+# The list is unconditional and still resolves to exactly one live backend per
+# target, which is the shape wgpu's own `default` feature uses. `webgpu`
+# (`wgpu-29.0.4/Cargo.toml`) activates only dependencies declared under
+# `[target.'cfg(all(target_arch = "wasm32", not(target_os = "emscripten")))'.dependencies]`,
+# and wgpu's `build.rs` gates every backend by target, so naming all four costs
+# nothing off the target each one belongs to.
+#
+# `webgpu` has to be here rather than behind a wasm-only table, because omitting
+# it does not fail the build: on `wasm32-unknown-unknown` `build.rs` simply
+# leaves `wgpu-core` unlinked, the crate compiles with **zero** backends, and
+# the first `request_adapter` at run time returns nothing with no compile-time
+# hint of why.
 wgpu = { version = "29.0.3", default-features = false, features = [
   "wgsl",
   "dx12",
   "metal",
   "vulkan",
+  "webgpu",
 ] }
+
+# `std::time::Instant::now()` compiles for `wasm32-unknown-unknown` and then
+# panics at run time; `bevy_isomesh/Cargo.toml` already records this crate's
+# timing calls being the reason it was kept off the web graph. `web-time`
+# re-exports `std::time::*` verbatim off-wasm, so this is one clock rather than
+# two and native behaviour is bit-identical.
+web-time = "1.1"
 
 [dev-dependencies]
 # GPU-003's validation sweep. Same version as the naga wgpu carries, for the

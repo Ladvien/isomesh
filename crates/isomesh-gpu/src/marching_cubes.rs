@@ -41,6 +41,16 @@
 //! not ported here.
 
 use isomesh::marching_cubes::table::{self, MAX_TRIANGLES};
+// The standard library's `Instant::now()` compiles for
+// `wasm32-unknown-unknown` and then **panics at run time** -- the bug
+// `bevy_isomesh/Cargo.toml` already records being bitten by, and part of the
+// reason this crate was kept out of the web graph. `web-time-1.1.0/src/lib.rs`
+// re-exports the standard library's `time` module verbatim off-wasm, so this is
+// a pure textual swap with bit-identical native behaviour: one clock, not two,
+// and no `cfg` fork through the timing code below. Grepping this crate for the
+// std path is the gate that keeps a second clock from creeping back in, which
+// is why the path is not spelled out here.
+use web_time::Instant;
 
 use crate::{Composer, Error, FieldBuffer, GridParams, PrefixScan, Result, read_bytes_many};
 
@@ -436,7 +446,7 @@ impl MarchingCubesGpu {
 
         let mut timings = geometry.timings;
         let bytes = u64::from(geometry.triangles) * 9 * 4;
-        let started = std::time::Instant::now();
+        let started = Instant::now();
         // **One submission, one device wait, for both.** Positions and normals
         // are independent and nothing between them consumes a result, so reading
         // them separately bought two full `poll(Wait)` queue drains where one
@@ -518,7 +528,7 @@ impl MarchingCubesGpu {
         } = Self::prologue(device, queue, field)?;
 
         let mut timings = ExtractTimings::default();
-        let started = std::time::Instant::now();
+        let started = Instant::now();
         self.dispatch(
             device,
             queue,
@@ -532,7 +542,7 @@ impl MarchingCubesGpu {
         );
         timings.count_ms = started.elapsed().as_secs_f64() * 1000.0;
 
-        let started = std::time::Instant::now();
+        let started = Instant::now();
         let scanned = self
             .scan
             .scan_deferred(device, queue, &counts, cell_words)?;
@@ -555,7 +565,7 @@ impl MarchingCubesGpu {
         let positions = geometry("isomesh positions (budgeted)");
         let normals = geometry("isomesh normals (budgeted)");
 
-        let started = std::time::Instant::now();
+        let started = Instant::now();
         self.dispatch(
             device,
             queue,
@@ -638,7 +648,7 @@ impl MarchingCubesGpu {
 
         let mut timings = ExtractTimings::default();
 
-        let started = std::time::Instant::now();
+        let started = Instant::now();
         self.dispatch(
             device,
             queue,
@@ -656,7 +666,7 @@ impl MarchingCubesGpu {
         // home -- 8 MB at 129^3 -- and added them up on the CPU, which M-149
         // measured at 35% of the whole path. What comes back now is the total,
         // four bytes, needed to size the geometry buffers.
-        let started = std::time::Instant::now();
+        let started = Instant::now();
         let scanned = self.scan.scan(device, queue, &counts, cell_words)?;
         let triangles = scanned.total;
         timings.scan_ms = started.elapsed().as_secs_f64() * 1000.0;
@@ -703,7 +713,7 @@ impl MarchingCubesGpu {
         let positions = geometry("isomesh positions");
         let normals = geometry("isomesh normals");
 
-        let started = std::time::Instant::now();
+        let started = Instant::now();
         self.dispatch(
             device,
             queue,

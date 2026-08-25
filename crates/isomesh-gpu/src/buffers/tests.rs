@@ -12,7 +12,7 @@
 use isomesh::fields::Sphere;
 use isomesh::{Real, Sdf};
 
-use super::{FieldBuffer, read_buffer};
+use super::{FieldBuffer, read_buffer, read_bytes_many_deferred};
 use crate::headless::Gpu;
 use crate::{Error, GridParams};
 
@@ -150,4 +150,90 @@ fn f32_is_what_crosses_the_boundary() {
     for (a, b) in samples.iter().zip(&back) {
         assert_eq!(a.to_bits(), b.to_bits());
     }
+}
+
+/// The deferred read-back has to return exactly what the blocking one would,
+/// **and** it has to split a batch back into the buffers that were asked for.
+///
+/// Two requests of different lengths, because one request cannot tell a correct
+/// span split from a `to_vec()` of the whole mapping.
+#[test]
+fn a_deferred_readback_returns_the_bytes_it_was_asked_for() {
+    let gpu = gpu();
+
+    // Distinguishable patterns rather than counters from the same sequence: a
+    // swapped pair of requests would still pass against `0, 1, 2, ...`.
+    let first: Vec<u32> = (0..16u32).map(|i| 0xa000_0000 | i).collect();
+    let second: Vec<u32> = (0..4u32).map(|i| 0x5b00_0000 | i).collect();
+
+    let upload = |words: &[u32]| {
+        let bytes: Vec<u8> = words.iter().flat_map(|w| w.to_le_bytes()).collect();
+        let buffer = gpu.device().create_buffer(&wgpu::BufferDescriptor {
+            label: Some("deferred readback source"),
+            size: bytes.len() as u64,
+            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        gpu.queue().write_buffer(&buffer, 0, &bytes);
+        (buffer, bytes)
+    };
+    let (buffer_a, expected_a) = upload(&first);
+    let (buffer_b, expected_b) = upload(&second);
+
+    let readback = read_bytes_many_deferred(
+        gpu.device(),
+        gpu.queue(),
+        &[
+            (&buffer_a, expected_a.len() as u64),
+            (&buffer_b, expected_b.len() as u64),
+        ],
+    )
+    .expect("start the deferred readback");
+
+    // The polling loop a frame-driven caller runs, bounded so a mapping that
+    // never completes fails the test instead of hanging the suite.
+    let mut spins = 0;
+    while !readback.ready(gpu.device()) {
+        spins += 1;
+        assert!(spins < 5_000, "the mapping never completed");
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+
+    let out = readback.take().expect("take the mapped bytes");
+    assert_eq!(out.len(), 2, "one Vec per request, in request order");
+    assert_eq!(out[0], expected_a);
+    assert_eq!(out[1], expected_b);
+}
+
+/// Nothing requested is not an error, and it is not a zero-size buffer either --
+/// wgpu rejects those, so the empty case must be represented without one.
+#[test]
+fn a_deferred_readback_of_nothing_is_ready_at_once() {
+    let gpu = gpu();
+
+    let readback =
+        read_bytes_many_deferred(gpu.device(), gpu.queue(), &[]).expect("an empty request list");
+
+    assert!(
+        readback.ready(gpu.device()),
+        "an empty readback has nothing to wait for"
+    );
+    assert!(readback.take().expect("take nothing").is_empty());
+}
+
+/// The same door check as the blocking sibling, refused before a buffer is
+/// allocated rather than rounded up to an aligned size.
+#[test]
+fn an_unaligned_deferred_readback_is_refused() {
+    let gpu = gpu();
+    let grid = GridParams::new([4, 4, 4], [0.0; 3], 1.0).expect("valid grid");
+    let field = FieldBuffer::new(gpu.device(), grid);
+
+    assert_eq!(
+        read_bytes_many_deferred(gpu.device(), gpu.queue(), &[(field.buffer(), 6)]).err(),
+        Some(Error::UnalignedReadback {
+            bytes: 6,
+            stride: 4
+        })
+    );
 }

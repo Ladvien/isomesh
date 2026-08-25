@@ -120,7 +120,10 @@ mod shader;
 pub mod headless;
 pub mod jump_flood;
 
-pub use buffers::{FieldBuffer, read_buffer, read_buffer_u32, read_bytes, read_bytes_many};
+pub use buffers::{
+    FieldBuffer, Readback, read_buffer, read_buffer_u32, read_bytes, read_bytes_many,
+    read_bytes_many_deferred,
+};
 pub use error::{Error, Result};
 pub use field_sampler::{FieldSampler, GpuBrush, GpuField, GpuOp, GpuShape};
 pub use grid::GridParams;
