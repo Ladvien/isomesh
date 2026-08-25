@@ -17,8 +17,8 @@ lockfile version and builds nine Bevy wasm demos; the last measured run was
 
 ## Before you push
 
-Run these from the repo root. All three are the same commands CI runs, which is
-the point — a local green is evidence, not a rehearsal.
+Run these from the repo root. Both are commands CI runs too, which is the point —
+a local green is evidence, not a rehearsal.
 
 ```bash
 ./scripts/backlog_gate.sh                                    # counts vs rows, both files
@@ -50,9 +50,10 @@ exist in 1.97, so a green 1.97 run is not evidence (M-304).
 
 `CLAUDE.md` rule 2: **one ticket, one commit, message starts with the ticket ID.**
 Move the row from `BACKLOG.md` to `BACKLOG_ARCHIVE.md` in that same commit and fix
-all three counts — the archive's `N tickets.`, and `BACKLOG.md`'s
-`**N tickets archived, M open.**`. `backlog_gate.sh` checks them against the rows
-and fails loudly on drift.
+the counts with it: **three numbers across two files** — the archive's
+`N tickets.` above its index, and both halves of `BACKLOG.md`'s
+`**N tickets archived, M open.**`. `backlog_gate.sh` checks all three against the
+rows and fails loudly on drift.
 
 If the commit or the archive row quotes a measured number, **re-read it from the
 committed tree**. A figure carried over from a build you have since changed
@@ -112,16 +113,22 @@ grep -c "<the new prose you added>" /tmp/live.html
 
 ### 2. The compiled module — this is the check that matters
 
-A page-prose check passes happily while the wasm behind it is stale, because the
-markdown and the module are built by the same job but from different inputs. Grep
-the deployed binary for a string only the new code contains **and** for the
-absence of the string it replaced. Both directions, or it proves nothing:
+The page prose and the demo behaviour have **different authors**: a human writes
+`web/play.html`, the compiler writes the module. So a prose grep confirms only
+that someone described the change — it passes just as happily over a module that
+does not do it, and over a partial or cached deploy. Grep the deployed binary for
+a string only the new code contains **and** for the absence of the string it
+replaced. Both directions, or it proves nothing:
 
 ```bash
 curl -sS -o /tmp/m.wasm http://isomesh.ladvien.com/play/pkg/game_dig/game_dig_bg.wasm
 strings -a /tmp/m.wasm | grep -c '<new format-string fragment>'   # expect >= 1
 strings -a /tmp/m.wasm | grep -c '<old format-string fragment>'   # expect 0
 ```
+
+`grep -c` **exits 1 when the count is zero**, so the second command "fails" on
+success. Under `set -e` that aborts the script; read the number, not the exit
+status.
 
 Rust splits a format literal around its `{}` holes, so grep the **fragments**
 (`" (cached)"`, `"KB of samples uploaded since start"`), never the whole
