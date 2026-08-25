@@ -515,7 +515,7 @@ fn triangle_keys(
         std::array::from_fn(|k| key(q[k], normalise))
     };
     let mut out: Vec<[[u64; 3]; 3]> = Vec::with_capacity(indices.len() / 3);
-    for tri in indices.chunks_exact(3) {
+    for tri in indices.as_chunks::<3>().0 {
         let c = [mapped(tri[0]), mapped(tri[1]), mapped(tri[2])];
         let rotations = [[c[0], c[1], c[2]], [c[1], c[2], c[0]], [c[2], c[0], c[1]]];
         let best = rotations

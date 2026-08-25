@@ -92,7 +92,7 @@ fn main() {
     recompute(&mut mesh, &field, NormalStrategy::AreaWeightedFaces).expect("normals");
 
     let mut incident: Vec<Vec<u32>> = vec![Vec::new(); mesh.vertex_count()];
-    for (t, tri) in mesh.indices.chunks_exact(3).enumerate() {
+    for (t, tri) in mesh.indices.as_chunks::<3>().0.iter().enumerate() {
         for &v in tri {
             incident[v as usize].push(t as u32);
         }

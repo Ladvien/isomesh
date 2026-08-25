@@ -143,7 +143,7 @@ fn the_seam_stays_closed_at_a_real_width() {
             if patch.triangle_count() == 0 {
                 continue;
             }
-            for tri in patch.indices.chunks_exact(3) {
+            for tri in patch.indices.as_chunks::<3>().0 {
                 let a = patch.positions[tri[0] as usize];
                 let b = patch.positions[tri[1] as usize];
                 let c = patch.positions[tri[2] as usize];

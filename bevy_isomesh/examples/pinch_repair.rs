@@ -539,7 +539,7 @@ fn cell_has_equal_corner(shape: &RuntimeShape3, raw: &[u8], cell: u32) -> bool {
 /// tag is read off that cell rather than inferred from a correlation.
 fn census(mesh: &MeshBuffer<f64>, cell: &[u32], raw: &[u8], shape: &RuntimeShape3) -> Degeneracy {
     let mut d = Degeneracy::default();
-    for (t, tri) in mesh.indices.chunks_exact(3).enumerate() {
+    for (t, tri) in mesh.indices.as_chunks::<3>().0.iter().enumerate() {
         let idx = [tri[0], tri[1], tri[2]];
         let p = triangle_positions(mesh, idx);
         let repeated = idx[0] == idx[1] || idx[1] == idx[2] || idx[2] == idx[0];
@@ -573,7 +573,7 @@ fn census(mesh: &MeshBuffer<f64>, cell: &[u32], raw: &[u8], shape: &RuntimeShape
 /// corners coincide and are therefore in a group, and this is the third one.
 fn mark_degenerate_vertices(mesh: &MeshBuffer<f64>, class: &mut [u8]) -> u64 {
     let mut unreached = 0;
-    for tri in mesh.indices.chunks_exact(3) {
+    for tri in mesh.indices.as_chunks::<3>().0 {
         let idx = [tri[0], tri[1], tri[2]];
         if !is_degenerate(idx, triangle_positions(mesh, idx)) {
             continue;
@@ -765,7 +765,7 @@ fn ternary(
 
     let mut cell = Vec::new();
     let mut triangles_dropped = 0u64;
-    for (t, tri) in base.indices.chunks_exact(3).enumerate() {
+    for (t, tri) in base.indices.as_chunks::<3>().0.iter().enumerate() {
         let a = new_index[remap[tri[0] as usize] as usize];
         let b = new_index[remap[tri[1] as usize] as usize];
         let c = new_index[remap[tri[2] as usize] as usize];
@@ -815,7 +815,7 @@ fn ternary(
     // topology holding and the topology moving, so it is counted rather than
     // argued.
     let mut dsu = Dsu::new(n);
-    for tri in base.indices.chunks_exact(3) {
+    for tri in base.indices.as_chunks::<3>().0 {
         for (a, b) in [(0, 1), (1, 2), (2, 0)] {
             let (u, w) = (tri[a], tri[b]);
             if u != w && remap[u as usize] == remap[w as usize] {
@@ -1407,7 +1407,7 @@ fn to_mesh(buffer: &MeshBuffer<f64>, class: &[u8]) -> Mesh {
     let colours = builder.colors_mut();
     colours.reserve(class.len());
     colours.extend(class.iter().copied().map(class_colour));
-    for t in buffer.indices.chunks_exact(3) {
+    for t in buffer.indices.as_chunks::<3>().0 {
         let (Some(a), Some(b), Some(c)) = (t.first(), t.get(1), t.get(2)) else {
             continue;
         };

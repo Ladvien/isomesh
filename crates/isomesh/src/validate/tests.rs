@@ -69,7 +69,7 @@ fn torus_grid(m: u32, n: u32) -> (Vec<[f64; 3]>, Vec<u32>) {
 #[test]
 fn outward_winding_is_verified() {
     let (p, idx) = tetrahedron();
-    for tri in idx.chunks_exact(3) {
+    for tri in idx.as_chunks::<3>().0 {
         let (a, b, c) = (p[tri[0] as usize], p[tri[1] as usize], p[tri[2] as usize]);
         let u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
         let v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
@@ -331,7 +331,7 @@ fn enclosed_cavity_has_two_components() {
         p.push([v[0] * 0.3, v[1] * 0.3, v[2] * 0.3]);
     }
     // The inner shell is wound inward, as the boundary of a void must be.
-    for tri in outer_idx.chunks_exact(3) {
+    for tri in outer_idx.as_chunks::<3>().0 {
         idx.extend_from_slice(&[tri[0] + 4, tri[2] + 4, tri[1] + 4]);
     }
     let r = validate_indexed(&p, &idx, &cfg());

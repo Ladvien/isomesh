@@ -290,7 +290,7 @@ fn a_zero_width_patch_is_edge_on_to_the_surface_and_cannot_be_wound() {
                 );
             }
 
-            for tri in patch.indices.chunks_exact(3) {
+            for tri in patch.indices.as_chunks::<3>().0 {
                 let a = patch.positions[tri[0] as usize];
                 let b = patch.positions[tri[1] as usize];
                 let c = patch.positions[tri[2] as usize];
@@ -460,7 +460,7 @@ fn a_patch_with_width_is_wound_away_from_the_solid() {
                 continue;
             }
 
-            for tri in patch.indices.chunks_exact(3) {
+            for tri in patch.indices.as_chunks::<3>().0 {
                 let a = patch.positions[tri[0] as usize];
                 let b = patch.positions[tri[1] as usize];
                 let c = patch.positions[tri[2] as usize];
@@ -674,7 +674,7 @@ fn a_mirrored_patch_is_wound_away_from_the_solid() {
                     TransitionCell::sample(&field, lo, fine_h, [16, 2 * ia, 2 * ib], u, v, width);
                 let mut patch = MeshBuffer::<f64>::new();
                 cell.emit(&field, 0, &mut patch);
-                for tri in patch.indices.chunks_exact(3) {
+                for tri in patch.indices.as_chunks::<3>().0 {
                     let a = patch.positions[tri[0] as usize];
                     let b = patch.positions[tri[1] as usize];
                     let c = patch.positions[tri[2] as usize];

@@ -397,7 +397,7 @@ fn a_meshed_torus_has_genus_one() {
 fn meshed_sphere_has_positive_signed_volume() {
     let (mesh, _) = mesh_mdc(&Sphere::<f64>::canonical(), 33);
     let mut volume = 0.0f64;
-    for tri in mesh.indices.chunks_exact(3) {
+    for tri in mesh.indices.as_chunks::<3>().0 {
         let a = mesh.positions[tri[0] as usize];
         let b = mesh.positions[tri[1] as usize];
         let c = mesh.positions[tri[2] as usize];
@@ -664,7 +664,7 @@ fn the_manifold_dual_contouring_defect_is_four_distinct_faces_on_one_edge() {
 
         let mut faces: BTreeMap<(u32, u32), usize> = BTreeMap::new();
         let mut distinct: BTreeMap<(u32, u32), BTreeSet<[u32; 3]>> = BTreeMap::new();
-        for t in mesh.indices.chunks_exact(3) {
+        for t in mesh.indices.as_chunks::<3>().0 {
             let mut key = [t[0], t[1], t[2]];
             key.sort_unstable();
             for k in 0..3 {
@@ -984,7 +984,7 @@ fn offending_edges(
     );
     let bad: BTreeSet<(u32, u32)> = features.edges.iter().map(|e| (e[0], e[1])).collect();
     let mut distinct: BTreeMap<(u32, u32), BTreeSet<[u32; 3]>> = BTreeMap::new();
-    for t in mesh.indices.chunks_exact(3) {
+    for t in mesh.indices.as_chunks::<3>().0 {
         let mut key = [t[0], t[1], t[2]];
         key.sort_unstable();
         for k in 0..3 {

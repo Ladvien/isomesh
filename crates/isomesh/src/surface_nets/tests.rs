@@ -56,7 +56,7 @@ fn mesh_with_mc<F: Sdf<Scalar = f64> + ReferenceField>(
 
 fn signed_volume(mesh: &MeshBuffer<f64>) -> f64 {
     let mut total = 0.0;
-    for t in mesh.indices.chunks_exact(3) {
+    for t in mesh.indices.as_chunks::<3>().0 {
         let a = mesh.positions[t[0] as usize];
         let b = mesh.positions[t[1] as usize];
         let c = mesh.positions[t[2] as usize];
@@ -233,7 +233,7 @@ fn triangle_counts_track_marching_cubes_up_to_two_chi() {
 fn vertex_degree_is_recorded() {
     fn max_degree(mesh: &MeshBuffer<f64>) -> u32 {
         let mut degree = alloc::vec![0u32; mesh.vertex_count()];
-        for t in mesh.indices.chunks_exact(3) {
+        for t in mesh.indices.as_chunks::<3>().0 {
             for &i in t {
                 degree[i as usize] += 1;
             }

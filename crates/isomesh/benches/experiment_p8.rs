@@ -72,7 +72,7 @@ const ORIGIN: f64 = -(2.0 * CELLS as f64) * CELL_SIZE / 2.0;
 /// sets are what the test needs and the cycles are not.
 fn adjacency(indices: &[u32], n: usize) -> Vec<BTreeSet<u32>> {
     let mut adj = vec![BTreeSet::new(); n];
-    for t in indices.chunks_exact(3) {
+    for t in indices.as_chunks::<3>().0 {
         for (a, b) in [(t[0], t[1]), (t[1], t[2]), (t[2], t[0])] {
             if a != b {
                 adj[a as usize].insert(b);
@@ -183,7 +183,7 @@ fn gated(mesh: &MeshBuffer<f64>, remap: &[u32], cfg: &ValidateConfig) -> (Arm, u
             at
         });
     }
-    for t in mesh.indices.chunks_exact(3) {
+    for t in mesh.indices.as_chunks::<3>().0 {
         let a = out_of[&class[t[0] as usize]];
         let b = out_of[&class[t[1] as usize]];
         let c = out_of[&class[t[2] as usize]];

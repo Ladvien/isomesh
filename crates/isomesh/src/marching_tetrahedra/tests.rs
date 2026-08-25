@@ -271,7 +271,7 @@ fn a_meshed_sphere_is_closed() {
 fn a_meshed_sphere_has_positive_signed_volume() {
     let (out, _) = mesh(&Sphere::<f64>::canonical(), 33);
     let mut total = 0.0;
-    for t in out.indices.chunks_exact(3) {
+    for t in out.indices.as_chunks::<3>().0 {
         let a = out.positions[t[0] as usize];
         let b = out.positions[t[1] as usize];
         let c = out.positions[t[2] as usize];

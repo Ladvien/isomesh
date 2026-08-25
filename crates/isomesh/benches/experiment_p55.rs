@@ -260,7 +260,7 @@ impl Segment {
 /// The mesh's distinct segments, and how many triangle sides each carries.
 fn segments(mesh: &MeshBuffer<f64>) -> (Vec<Segment>, Vec<u32>) {
     let mut all = Vec::with_capacity(mesh.indices.len());
-    for tri in mesh.indices.chunks_exact(3) {
+    for tri in mesh.indices.as_chunks::<3>().0 {
         let p0 = mesh.positions[tri[0] as usize];
         let p1 = mesh.positions[tri[1] as usize];
         let p2 = mesh.positions[tri[2] as usize];

@@ -168,7 +168,7 @@ impl GridParams {
             self.origin[2].to_le_bytes(),
             self.cell_size.to_le_bytes(),
         ];
-        for (slot, word) in out.chunks_exact_mut(4).zip(words) {
+        for (slot, word) in out.as_chunks_mut::<4>().0.iter_mut().zip(words) {
             slot.copy_from_slice(&word);
         }
         out

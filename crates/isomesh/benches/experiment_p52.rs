@@ -535,7 +535,7 @@ fn bit_identical(a: &MeshBuffer<f64>, b: &MeshBuffer<f64>) -> bool {
 /// `placement_ceiling.rs` applies, so the two are comparable.
 fn centroids(positions: &[[f64; 3]], indices: &[u32]) -> Vec<[f64; 3]> {
     let mut out = Vec::with_capacity(indices.len() / 3);
-    for t in indices.chunks_exact(3) {
+    for t in indices.as_chunks::<3>().0 {
         let (Some(a), Some(b), Some(c)) = (
             positions.get(t[0] as usize),
             positions.get(t[1] as usize),

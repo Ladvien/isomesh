@@ -1575,9 +1575,15 @@ fn gpu_mesh(parts: &[Vec<u8>]) -> Option<(u32, Option<Mesh>)> {
         return Some((total, None));
     }
     let vertices = triangles * 3;
+    // Three `f32` per vertex, so twelve bytes each. `as_chunks` drops a trailing
+    // partial vertex the same way `chunks_exact` did; `take` bounds it to the
+    // triangles the total actually claims, because the buffer is sized to the
+    // budget and the rest of it is uninitialised.
     let floats = |bytes: &[u8]| -> Vec<[f32; 3]> {
         bytes
-            .chunks_exact(12)
+            .as_chunks::<12>()
+            .0
+            .iter()
             .take(vertices)
             .map(|v| {
                 let f = |at: usize| f32::from_le_bytes([v[at], v[at + 1], v[at + 2], v[at + 3]]);

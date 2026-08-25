@@ -393,7 +393,7 @@ struct Recomputed {
 fn usable_faces(vertex_count: usize, indices: &[u32]) -> Vec<[u32; 3]> {
     let whole = indices.len() - indices.len() % 3;
     let mut faces = Vec::with_capacity(whole / 3);
-    for tri in indices[..whole].chunks_exact(3) {
+    for tri in indices[..whole].as_chunks::<3>().0 {
         let out_of_range = tri.iter().any(|&i| i as usize >= vertex_count);
         let repeated = tri[0] == tri[1] || tri[1] == tri[2] || tri[0] == tri[2];
         if out_of_range || repeated {

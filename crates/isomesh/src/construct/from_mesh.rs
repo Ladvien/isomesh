@@ -250,7 +250,7 @@ impl<R: Real> Pseudonormals<R> {
         let mut edge: BTreeMap<(u32, u32), [R; 3]> = BTreeMap::new();
         let mut vertex = vec![[R::ZERO; 3]; positions.len()];
 
-        for tri in indices.chunks_exact(3) {
+        for tri in indices.as_chunks::<3>().0 {
             let (ia, ib, ic) = (tri[0] as usize, tri[1] as usize, tri[2] as usize);
             let (a, b, c) = (positions[ia], positions[ib], positions[ic]);
             let n = cross(sub(b, a), sub(c, a));

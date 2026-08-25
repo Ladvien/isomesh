@@ -62,10 +62,9 @@ use crate::{MeshBuffer, Real};
 /// rather than rounding it up into a triangle nobody asked for.
 #[must_use]
 pub fn triangle_indices<R: Real>(mesh: &MeshBuffer<R>) -> Vec<[u32; 3]> {
-    mesh.indices
-        .chunks_exact(3)
-        .map(|t| [t[0], t[1], t[2]])
-        .collect()
+    // `as_chunks` already produces `[u32; 3]`, so this is a copy of the whole
+    // slice rather than a per-triangle rebuild.
+    mesh.indices.as_chunks::<3>().0.to_vec()
 }
 
 /// What a physics engine would make of this mesh.

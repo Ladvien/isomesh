@@ -319,7 +319,7 @@ fn draw(show: Res<Show>, mut gizmos: Gizmos) {
         }
 
         let mesh = mesh_with(values, interior);
-        for t in mesh.indices.chunks_exact(3) {
+        for t in mesh.indices.as_chunks::<3>().0 {
             let v = |i: u32| to_vec3(mesh.positions[i as usize], shift);
             let (a, b, c) = (v(t[0]), v(t[1]), v(t[2]));
             gizmos.line(a, b, tint);

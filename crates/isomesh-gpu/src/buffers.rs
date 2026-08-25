@@ -171,7 +171,9 @@ pub fn read_buffer(
 ) -> Result<Vec<f32>> {
     let raw = read_bytes(device, queue, source, bytes)?;
     Ok(raw
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .map(|w| f32::from_le_bytes([w[0], w[1], w[2], w[3]]))
         .collect())
 }
@@ -193,7 +195,9 @@ pub fn read_buffer_u32(
 ) -> Result<Vec<u32>> {
     let raw = read_bytes(device, queue, source, bytes)?;
     Ok(raw
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .map(|w| u32::from_le_bytes([w[0], w[1], w[2], w[3]]))
         .collect())
 }

@@ -1307,7 +1307,7 @@ fn to_mesh(analysis: &Analysis) -> Mesh {
             [n[0] as f32, n[1] as f32, n[2] as f32],
         );
     }
-    for t in buffer.indices.chunks_exact(3) {
+    for t in buffer.indices.as_chunks::<3>().0 {
         let (Some(a), Some(b), Some(c)) = (t.first(), t.get(1), t.get(2)) else {
             continue;
         };

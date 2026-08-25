@@ -43,7 +43,7 @@ fn quad_with_one_reversed() -> MeshBuffer<f64> {
 fn same_direction_edges(mesh: &MeshBuffer<f64>) -> usize {
     use alloc::collections::BTreeMap;
     let mut seen: BTreeMap<(u32, u32), i32> = BTreeMap::new();
-    for tri in mesh.indices.chunks_exact(3) {
+    for tri in mesh.indices.as_chunks::<3>().0 {
         for k in 0..3 {
             let (a, b) = (tri[k], tri[(k + 1) % 3]);
             let key = if a <= b { (a, b) } else { (b, a) };
@@ -97,7 +97,7 @@ fn an_already_coherent_mesh_is_left_alone() {
 fn a_wholly_inverted_mesh_is_turned_back_outward() {
     let mut mesh = quad();
     // Reverse both triangles: internally coherent, globally inside out.
-    for tri in mesh.indices.chunks_exact_mut(3) {
+    for tri in mesh.indices.as_chunks_mut::<3>().0 {
         tri.swap(1, 2);
     }
     assert_eq!(same_direction_edges(&mesh), 0, "already self-consistent");
@@ -136,7 +136,7 @@ fn two_disjoint_patches_are_two_components() {
 #[test]
 fn the_seed_is_the_most_confident_triangle_not_the_first() {
     let mut mesh = quad();
-    for tri in mesh.indices.chunks_exact_mut(3) {
+    for tri in mesh.indices.as_chunks_mut::<3>().0 {
         tri.swap(1, 2);
     }
     // Vertex 0 is used only by triangle 0, so this blunts that triangle's vote

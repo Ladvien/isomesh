@@ -769,7 +769,7 @@ fn draw_wireframe(
         let Some(Indices::U32(indices)) = mesh.indices() else {
             continue;
         };
-        for tri in indices.chunks_exact(3) {
+        for tri in indices.as_chunks::<3>().0 {
             let p: [Vec3; 3] = [
                 transform.transform_point(Vec3::from(positions[tri[0] as usize])),
                 transform.transform_point(Vec3::from(positions[tri[1] as usize])),

@@ -190,7 +190,7 @@ fn every_index_is_in_range_and_no_triangle_is_degenerate_by_index() {
         .expect("extract");
 
     let n = out.vertex_count() as u32;
-    for tri in out.indices.chunks_exact(3) {
+    for tri in out.indices.as_chunks::<3>().0 {
         assert!(tri.iter().all(|i| *i < n), "index past {n}: {tri:?}");
         assert!(
             tri[0] != tri[1] && tri[1] != tri[2] && tri[0] != tri[2],

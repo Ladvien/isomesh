@@ -349,11 +349,7 @@ fn brute_force(q: [f64; 3], positions: &[[f64; 3]], tris: &[[u32; 3]]) -> f64 {
 fn the_grid_agrees_with_brute_force() {
     let field = Sphere::<f64>::canonical();
     let (mesh, _, _, _) = mc_mesh(&field, 17);
-    let tris: Vec<[u32; 3]> = mesh
-        .indices
-        .chunks_exact(3)
-        .map(|t| [t[0], t[1], t[2]])
-        .collect();
+    let tris: Vec<[u32; 3]> = mesh.indices.as_chunks::<3>().0.to_vec();
     assert!(tris.len() > 100, "fixture should be non-trivial");
 
     for spacing in [0.05, 0.25, 4.0] {

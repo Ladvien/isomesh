@@ -402,7 +402,7 @@ where
     report.faces_skipped = u64::from(!indices.len().is_multiple_of(3));
     let mut tris: Vec<[u32; 3]> = Vec::with_capacity(whole / 3);
     let mut referenced = alloc::vec![false; positions.len()];
-    for face in indices[..whole].chunks_exact(3) {
+    for face in indices[..whole].as_chunks::<3>().0 {
         let in_range = face.iter().all(|&i| (i as usize) < positions.len());
         let distinct = face[0] != face[1] && face[1] != face[2] && face[0] != face[2];
         if !in_range || !distinct {

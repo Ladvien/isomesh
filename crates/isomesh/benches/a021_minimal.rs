@@ -86,7 +86,7 @@ fn probe_plane(h: f64) {
     }
     let out = mesh_values(&values, &shape, h);
     let mut faces: BTreeMap<[u32; 2], u32> = BTreeMap::new();
-    for t in out.indices.chunks_exact(3) {
+    for t in out.indices.as_chunks::<3>().0 {
         for (a, b) in [(t[0], t[1]), (t[1], t[2]), (t[2], t[0])] {
             let key = if a < b { [a, b] } else { [b, a] };
             *faces.entry(key).or_insert(0) += 1;
@@ -194,7 +194,7 @@ fn main() {
     // means something. An instrument that only ever sees the defect cannot say
     // the defect is unusual.
     let mut all_faces: BTreeMap<[u32; 2], u32> = BTreeMap::new();
-    for t in out.indices.chunks_exact(3) {
+    for t in out.indices.as_chunks::<3>().0 {
         for (x, y) in [(t[0], t[1]), (t[1], t[2]), (t[2], t[0])] {
             let key = if x < y { [x, y] } else { [y, x] };
             *all_faces.entry(key).or_insert(0) += 1;

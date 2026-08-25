@@ -134,7 +134,7 @@ fn the_winding_number_survives_holes_that_defeat_the_pseudonormal() {
     let mut first = true;
     for cut in [0.6_f64, 0.3, 0.0, -0.5] {
         let mut indices = std::vec::Vec::new();
-        for tri in whole.indices.chunks_exact(3) {
+        for tri in whole.indices.as_chunks::<3>().0 {
             let cx = (whole.positions[tri[0] as usize][0]
                 + whole.positions[tri[1] as usize][0]
                 + whole.positions[tri[2] as usize][0])

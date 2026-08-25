@@ -137,7 +137,7 @@ fn solid_angle<R: Real>(q: [R; 3], a: [R; 3], b: [R; 3], c: [R; 3]) -> R {
 /// "is it a boundary edge" would either drop it or double it.
 fn boundary_edges(indices: &[u32]) -> Vec<([u32; 2], i32)> {
     let mut net: BTreeMap<(u32, u32), i32> = BTreeMap::new();
-    for tri in indices.chunks_exact(3) {
+    for tri in indices.as_chunks::<3>().0 {
         for (u, v) in [(tri[0], tri[1]), (tri[1], tri[2]), (tri[2], tri[0])] {
             if u == v {
                 continue;

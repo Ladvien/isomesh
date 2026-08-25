@@ -130,7 +130,9 @@ fn fixture(samples: u32, drop_every: Option<usize>) -> (Vec<[f64; 3]>, Vec<u32>)
         // boundary edges.
         Some(step) => out
             .indices
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .enumerate()
             .filter(|(i, _)| !i.is_multiple_of(step))
             .flat_map(|(_, t)| t.iter().copied())
@@ -143,7 +145,7 @@ fn fixture(samples: u32, drop_every: Option<usize>) -> (Vec<[f64; 3]>, Vec<u32>)
 fn boundary_edge_count(indices: &[u32]) -> usize {
     use std::collections::BTreeMap;
     let mut net: BTreeMap<(u32, u32), i32> = BTreeMap::new();
-    for tri in indices.chunks_exact(3) {
+    for tri in indices.as_chunks::<3>().0 {
         for (u, v) in [(tri[0], tri[1]), (tri[1], tri[2]), (tri[2], tri[0])] {
             if u == v {
                 continue;

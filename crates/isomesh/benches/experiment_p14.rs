@@ -216,7 +216,7 @@ fn main() {
 fn link_components(indices: &[u32], v: u32) -> usize {
     // The link is the set of opposite edges; components are its connected parts.
     let mut edges: Vec<[u32; 2]> = Vec::new();
-    for t in indices.chunks_exact(3) {
+    for t in indices.as_chunks::<3>().0 {
         if let Some(i) = t.iter().position(|&x| x == v) {
             let a = t[(i + 1) % 3];
             let b = t[(i + 2) % 3];
@@ -260,7 +260,7 @@ fn link_components(indices: &[u32], v: u32) -> usize {
 /// so [`link_components`] reads one and misses it entirely.
 fn worst_link_degree(indices: &[u32], v: u32) -> usize {
     let mut degree: BTreeMap<u32, usize> = BTreeMap::new();
-    for t in indices.chunks_exact(3) {
+    for t in indices.as_chunks::<3>().0 {
         if let Some(i) = t.iter().position(|&x| x == v) {
             *degree.entry(t[(i + 1) % 3]).or_insert(0) += 1;
             *degree.entry(t[(i + 2) % 3]).or_insert(0) += 1;

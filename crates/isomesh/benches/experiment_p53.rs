@@ -420,7 +420,7 @@ fn census(
     shape: &RuntimeShape3,
 ) -> Degeneracy {
     let mut d = Degeneracy::default();
-    for (t, tri) in mesh.indices.chunks_exact(3).enumerate() {
+    for (t, tri) in mesh.indices.as_chunks::<3>().0.iter().enumerate() {
         let idx = [tri[0], tri[1], tri[2]];
         let p = [
             mesh.positions[idx[0] as usize],
@@ -619,7 +619,7 @@ fn ternary(
 
     let mut cell = Vec::new();
     let mut triangles_dropped = 0u64;
-    for (t, tri) in base.indices.chunks_exact(3).enumerate() {
+    for (t, tri) in base.indices.as_chunks::<3>().0.iter().enumerate() {
         let a = new_index[remap[tri[0] as usize] as usize];
         let b = new_index[remap[tri[1] as usize] as usize];
         let c = new_index[remap[tri[2] as usize] as usize];
@@ -668,7 +668,7 @@ fn ternary(
     // identifying their point is a pinch. Counted rather than argued, because
     // this is the difference between C2 holding and C2 failing.
     let mut dsu = Dsu::new(n);
-    for tri in base.indices.chunks_exact(3) {
+    for tri in base.indices.as_chunks::<3>().0 {
         for (a, b) in [(0, 1), (1, 2), (2, 0)] {
             let (u, w) = (tri[a], tri[b]);
             if u != w && remap[u as usize] == remap[w as usize] {

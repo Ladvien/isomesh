@@ -181,7 +181,7 @@ fn main() {
         for &i in &changed {
             in_rows[i] = true;
         }
-        for tri in edit_mesh.indices.chunks_exact(3) {
+        for tri in edit_mesh.indices.as_chunks::<3>().0 {
             let touches = tri
                 .iter()
                 .any(|&v| changed.binary_search(&(v as usize)).is_ok());

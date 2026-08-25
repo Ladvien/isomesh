@@ -233,7 +233,7 @@ fn faces_of(mesh: &MeshBuffer<f64>, cfg: &ValidateConfig) -> (Vec<Face>, u64, u6
     let mut skipped = 0u64;
     let mut zero_sides = 0u64;
 
-    for tri in mesh.indices.chunks_exact(3) {
+    for tri in mesh.indices.as_chunks::<3>().0 {
         let (a, b, c) = (tri[0], tri[1], tri[2]);
         let in_range = (a as usize) < nv && (b as usize) < nv && (c as usize) < nv;
         if !in_range || a == b || b == c || c == a {

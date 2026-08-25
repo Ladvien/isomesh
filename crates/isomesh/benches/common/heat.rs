@@ -67,7 +67,7 @@ pub(crate) fn heat_operator(mesh: &MeshBuffer<f64>, t_fixed: Option<f64>) -> (Sy
             a[0] * b[1] - a[1] * b[0],
         ]
     };
-    for tri in mesh.indices.chunks_exact(3) {
+    for tri in mesh.indices.as_chunks::<3>().0 {
         let (a, b, c) = (tri[0] as usize, tri[1] as usize, tri[2] as usize);
         let (pa, pb, pc) = (pos(a), pos(b), pos(c));
         let area2 = {

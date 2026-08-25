@@ -668,9 +668,7 @@ fn main() {
         for &sy in &SEEDS {
             for x in 0..10 {
                 let ei = x * N + sy; // horizontal edges are laid out x-major
-                for a in &mut hom[ei].a {
-                    *a = A0 * (1.0 + 1e-9);
-                }
+                hom[ei].a.fill(A0 * (1.0 + 1e-9));
             }
         }
         let hom_result = run_arm(

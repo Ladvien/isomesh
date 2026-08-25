@@ -326,7 +326,7 @@ fn remesh(
         ),
         format!("{:<18} {:>10}", "samples/axis", demo.samples),
         String::new(),
-        format!("{verdict}"),
+        verdict.to_string(),
         String::new(),
         "lambda is the Tikhonov regularizer in the vertex solve, and the whole".into(),
         "sharpness trade in one number. the two failures need two numbers: |f|/h".into(),

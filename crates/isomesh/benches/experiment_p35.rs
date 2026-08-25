@@ -309,7 +309,7 @@ impl AffineProjector {
 }
 
 fn project_cone(f: &mut [f64]) {
-    for pair in f.chunks_exact_mut(2) {
+    for pair in f.as_chunks_mut::<2>().0 {
         let n = pair[0];
         let t = pair[1];
         if t.abs() <= MU * n {

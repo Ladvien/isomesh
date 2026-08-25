@@ -460,7 +460,9 @@ impl MarchingCubesGpu {
         timings.geometry_readback_ms = started.elapsed().as_secs_f64() * 1000.0;
 
         let triple = |raw: &[u8]| -> Vec<[f32; 3]> {
-            raw.chunks_exact(12)
+            raw.as_chunks::<12>()
+                .0
+                .iter()
                 .map(|c| {
                     let at = |k: usize| f32::from_le_bytes([c[k], c[k + 1], c[k + 2], c[k + 3]]);
                     [at(0), at(4), at(8)]

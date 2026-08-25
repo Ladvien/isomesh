@@ -696,7 +696,7 @@ pub fn validate_features<R: Real>(
     // the edge count. Both are skipped and counted; nothing short-circuits.
     let whole = indices.len() - indices.len() % 3;
     let mut faces: Vec<[u32; 3]> = Vec::with_capacity(whole / 3);
-    for tri in indices[..whole].chunks_exact(3) {
+    for tri in indices[..whole].as_chunks::<3>().0 {
         let mut out_of_range = 0u64;
         for &i in tri {
             if i as usize >= vertex_count {

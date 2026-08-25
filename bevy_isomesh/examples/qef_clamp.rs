@@ -359,7 +359,7 @@ fn red_triangles(
 ) -> Result<(Vec<[Vec3; 3]>, usize), String> {
     let whole = indices.len() - indices.len() % 3;
     let mut tris: Vec<[u32; 3]> = Vec::with_capacity(whole / 3);
-    for tri in indices[..whole].chunks_exact(3) {
+    for tri in indices[..whole].as_chunks::<3>().0 {
         let in_range = tri.iter().all(|&i| (i as usize) < positions.len());
         let distinct = tri[0] != tri[1] && tri[1] != tri[2] && tri[0] != tri[2];
         if in_range && distinct {
@@ -686,10 +686,10 @@ where
         "rates,{},{},{},{},{},{}",
         F::NAME,
         demo.samples,
-        rate(Algorithm::DualContouring, false).map_or(f64::NAN, |r| r),
-        rate(Algorithm::DualContouring, true).map_or(f64::NAN, |r| r),
-        rate(Algorithm::ManifoldDualContouring, false).map_or(f64::NAN, |r| r),
-        rate(Algorithm::ManifoldDualContouring, true).map_or(f64::NAN, |r| r),
+        rate(Algorithm::DualContouring, false).unwrap_or(f64::NAN),
+        rate(Algorithm::DualContouring, true).unwrap_or(f64::NAN),
+        rate(Algorithm::ManifoldDualContouring, false).unwrap_or(f64::NAN),
+        rate(Algorithm::ManifoldDualContouring, true).unwrap_or(f64::NAN),
     );
 
     // Taken only now. Everything above reads all four runs uniformly through

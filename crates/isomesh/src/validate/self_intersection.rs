@@ -163,7 +163,7 @@ pub fn self_intersections<R: Real>(
     // dereferenced and a repeated index has no plane.
     let whole = indices.len() - indices.len() % 3;
     let mut tris: Vec<[u32; 3]> = Vec::with_capacity(whole / 3);
-    for tri in indices[..whole].chunks_exact(3) {
+    for tri in indices[..whole].as_chunks::<3>().0 {
         let in_range = tri.iter().all(|&i| (i as usize) < positions.len());
         let distinct = tri[0] != tri[1] && tri[1] != tri[2] && tri[0] != tri[2];
         if in_range && distinct {

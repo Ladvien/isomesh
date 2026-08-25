@@ -195,7 +195,7 @@ fn faces_from(positions: &[[f64; 3]], indices: &[u32], area_floor: f64) -> (Vec<
     let nv = positions.len();
     let mut faces = Vec::with_capacity(indices.len() / 3);
     let mut skipped = 0u64;
-    for tri in indices.chunks_exact(3) {
+    for tri in indices.as_chunks::<3>().0 {
         let (a, b, c) = (tri[0], tri[1], tri[2]);
         let in_range = (a as usize) < nv && (b as usize) < nv && (c as usize) < nv;
         if !in_range || a == b || b == c || c == a {

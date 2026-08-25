@@ -140,7 +140,7 @@ fn clip_to_block(mesh: &MeshBuffer<f64>, lo: [f64; 3], ambiguous: &mut usize) ->
     let mut out = MeshBuffer::<f64>::new();
     let mut remap = alloc_remap(mesh.positions.len());
 
-    for tri in mesh.indices.chunks_exact(3) {
+    for tri in mesh.indices.as_chunks::<3>().0 {
         let p = [
             mesh.positions[tri[0] as usize],
             mesh.positions[tri[1] as usize],
@@ -374,7 +374,7 @@ fn merge_exact(mesh: &mut MeshBuffer<f64>) -> Vec<u32> {
     mesh.positions = positions;
     mesh.normals = normals;
     let mut indices = Vec::with_capacity(mesh.indices.len());
-    for tri in mesh.indices.chunks_exact(3) {
+    for tri in mesh.indices.as_chunks::<3>().0 {
         let t = [
             remap[tri[0] as usize],
             remap[tri[1] as usize],

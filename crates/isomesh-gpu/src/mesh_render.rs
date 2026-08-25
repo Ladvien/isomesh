@@ -275,8 +275,8 @@ impl MeshShaderRenderer {
     #[must_use]
     pub fn camera_bytes(view_proj: [[f32; 4]; 4]) -> [u8; 64] {
         let mut out = [0u8; 64];
-        for (column, chunk) in view_proj.iter().zip(out.chunks_exact_mut(16)) {
-            for (value, slot) in column.iter().zip(chunk.chunks_exact_mut(4)) {
+        for (column, chunk) in view_proj.iter().zip(out.as_chunks_mut::<16>().0) {
+            for (value, slot) in column.iter().zip(chunk.as_chunks_mut::<4>().0) {
                 slot.copy_from_slice(&value.to_le_bytes());
             }
         }

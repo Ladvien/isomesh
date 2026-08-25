@@ -259,7 +259,7 @@ fn mesh<F: Sdf<Scalar = f64> + ReferenceField>(field: &F, samples: u32) -> (Mesh
 /// inversion — which every manifold and Euler test passes happily.
 fn signed_volume(mesh: &MeshBuffer<f64>) -> f64 {
     let mut total = 0.0;
-    for t in mesh.indices.chunks_exact(3) {
+    for t in mesh.indices.as_chunks::<3>().0 {
         let a = mesh.positions[t[0] as usize];
         let b = mesh.positions[t[1] as usize];
         let c = mesh.positions[t[2] as usize];

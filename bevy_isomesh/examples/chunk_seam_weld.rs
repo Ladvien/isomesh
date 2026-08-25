@@ -334,7 +334,7 @@ fn remesh(
     for i in 0..joined.vertex_count() {
         builder.vertex(joined.positions[i], joined.normals[i]);
     }
-    for t in joined.indices.chunks_exact(3) {
+    for t in joined.indices.as_chunks::<3>().0 {
         builder.triangle(t[0], t[1], t[2]);
     }
     let handle = meshes.add(builder.into_mesh());

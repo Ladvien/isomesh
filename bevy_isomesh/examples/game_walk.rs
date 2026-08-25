@@ -305,7 +305,7 @@ fn to_trimesh(mesh: &Mesh) -> Option<TriMesh> {
         .collect();
     let mut faces: Vec<[u32; 3]> = Vec::with_capacity(indices.len() / 3);
     let flat: Vec<u32> = indices.iter().map(|i| i as u32).collect();
-    for tri in flat.chunks_exact(3) {
+    for tri in flat.as_chunks::<3>().0 {
         faces.push([tri[0], tri[1], tri[2]]);
     }
     if vertices.is_empty() || faces.is_empty() {

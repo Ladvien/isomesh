@@ -162,11 +162,9 @@ where
 }
 
 fn area_weighted<R: Real>(mesh: &mut MeshBuffer<R>) -> Result<()> {
-    for normal in &mut mesh.normals {
-        *normal = [R::ZERO; 3];
-    }
+    mesh.normals.fill([R::ZERO; 3]);
 
-    for tri in mesh.indices.chunks_exact(3) {
+    for tri in mesh.indices.as_chunks::<3>().0 {
         let (i, j, k) = (tri[0] as usize, tri[1] as usize, tri[2] as usize);
         // A triangle naming a vertex that does not exist is the validator's
         // finding, not this pass's; skipping it here keeps the two from
