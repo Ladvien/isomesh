@@ -356,7 +356,10 @@ def main() -> None:
         total += size
         print(f"  {dest + '/':<24} {size / 1024 / 1024:>8.1f} MiB  from {source_dir}")
 
-    for name in ("style.css", "play.html"):
+    # `lite.js` is the front page's renderer. It is copied rather than rendered
+    # for the same reason `play.html` is: it is hand-written, and the markdown
+    # pipeline has nothing to do to it.
+    for name in ("style.css", "play.html", "lite.js"):
         shutil.copy2(ROOT / "web" / name, OUT / name)
         size = (OUT / name).stat().st_size
         total += size

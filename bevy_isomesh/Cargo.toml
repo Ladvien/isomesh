@@ -54,10 +54,25 @@ bevy_app = "0.19"
 bevy_ecs = "0.19"
 bevy_tasks = "0.19"
 
+# The clock. `std::time::Instant::now()` compiles on wasm32-unknown-unknown and
+# then panics, which made `IsomeshPlugin` -- this crate's whole surface -- unusable
+# in a browser, and the frame-budget system is where it fired (`apply_finished_meshes`).
+# `bevy_platform::time::Instant` is `std`'s on native and `web_time`'s on the web,
+# and it is Bevy's own re-export rather than a second clock crate of our choosing.
+bevy_platform = "0.19"
+
 # The one loud channel for a failed extraction. Already in the tree
 # transitively -- `bevy_asset` logs through it -- and Bevy's `LogPlugin` is
 # the subscriber that surfaces it.
 tracing = { version = "0.1", default-features = false }
+
+# `bevy_platform`'s web cfg is `all(target_arch = "wasm32", feature = "web")`, and
+# the feature is additive, so this is the same dependency with one more feature on
+# one target rather than a second path. This is a real dependency rather than one
+# of the dev-dependency tables further down: the panic it removes is in the
+# library, so a consumer's own wasm build needs the feature too.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+bevy_platform = { version = "0.19", features = ["web"] }
 
 # Examples only. Dev-dependencies are not propagated to consumers, so nothing
 # here reaches anyone depending on this crate.

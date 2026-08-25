@@ -6,7 +6,14 @@ members = ["crates/*"]
 # `bevy_isomesh` is its own workspace. In a shared one, Cargo's feature
 # unification leaks Bevy's features into this lockfile and `cargo test` stops
 # testing what consumers actually get. See CLAUDE.md.
-exclude = ["bevy_isomesh"]
+#
+# `isomesh_web` is excluded for the same reason and one more: it exists to
+# measure what `isomesh` alone costs on the wire, which a shared lockfile would
+# make depend on whatever every other member happens to enable. It is listed
+# rather than merely unmatched by `members`, so that a reader of this file knows
+# it is there -- and so `cargo clippy --workspace` never silently skips it, which
+# is E-111's lesson and why `preflight.sh` runs its gates separately.
+exclude = ["bevy_isomesh", "isomesh_web"]
 
 [workspace.package]
 version = "0.0.9"

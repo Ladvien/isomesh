@@ -58,6 +58,7 @@ step() {
 # `cargo` in a subdirectory needs the directory, and `step` takes a command, so
 # the two-workspace steps go through this.
 in_bevy() { (cd bevy_isomesh && "$@"); }
+in_web() { (cd isomesh_web && "$@"); }
 
 # ── the fast set ──────────────────────────────────────────────────────────────
 # Ordered cheapest-first, so a formatting slip fails in a second rather than
@@ -69,6 +70,25 @@ step "findings index" ./scripts/findings_index.sh --check
 step "doc facts" ./scripts/doc_facts.sh
 step "readme sync" ./scripts/readme_sync.sh
 step "toolchain drift" ./scripts/toolchain_drift.sh
+# `isomesh_web` is its own workspace too, so `cargo clippy --workspace` above
+# cannot see it -- E-111's lesson, and the reason these three are spelled out
+# rather than assumed. It is the front page's module; a break here is a blank
+# canvas on the site's first screen.
+step "isomesh_web: fmt" in_web cargo fmt --all --check
+step "isomesh_web: clippy" in_web cargo clippy --all-targets -- -D warnings
+step "isomesh_web: test" in_web cargo test
+# `build_site.py` is the repository's link checker: every relative `](target)` in
+# nine markdown sources is resolved against the real filesystem, and a miss exits
+# non-zero naming source and target. It also holds each rendered page's heading
+# count against its source's, which is the only check that can see markdown being
+# swallowed. Until now it ran only in CI, so the gate most likely to break on a
+# docs edit was the one a local run could not see.
+#
+# It needs two pip packages and hard-fails at import without them, on purpose:
+#   python3 -m venv ~/.venvs/isomesh
+#   ~/.venvs/isomesh/bin/pip install 'markdown>=3.7,<4' 'pymdown-extensions>=10,<11'
+#   export PYTHON=~/.venvs/isomesh/bin/python
+step "site: prose and links" "${PYTHON:-python3}" scripts/build_site.py
 step "root: clippy" cargo clippy --workspace --all-targets -- -D warnings
 # **The step whose absence is M-293.** A type-check of every target in the other
 # workspace, which is exactly what CI's `bevy` job runs and what nothing local

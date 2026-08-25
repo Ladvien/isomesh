@@ -4,11 +4,22 @@ Thirty-four runnable examples. This page shows what each one looks like, what it
 line to run it.
 
 **[The hosted version of this page](https://isomesh.ladvien.com/demos.html)** carries the same clips in one
-link, if you would rather send someone a URL than a repository. Three of the demos on it — the Phase 21
-ones — are **playable in the browser** as WebAssembly builds, and each still prints its cross-check against
-its committed CSV to the console: [`game_mirror_dedup`](https://isomesh.ladvien.com/play.html?demo=game_mirror_dedup),
+link, if you would rather send someone a URL than a repository. Nine of the demos are playable in your
+browser there as WebAssembly builds, and the three Phase 21 ones each still print their cross-check against
+their committed CSV to the console:
+[`quickstart`](https://isomesh.ladvien.com/play.html?demo=quickstart),
+[`marching_cubes_tunnel`](https://isomesh.ladvien.com/play.html?demo=marching_cubes_tunnel),
+[`dual_contouring_cube`](https://isomesh.ladvien.com/play.html?demo=dual_contouring_cube),
+[`surface_nets_vs_marching_cubes`](https://isomesh.ladvien.com/play.html?demo=surface_nets_vs_marching_cubes),
+[`game_dig`](https://isomesh.ladvien.com/play.html?demo=game_dig),
+[`game_showcase`](https://isomesh.ladvien.com/play.html?demo=game_showcase),
+[`game_mirror_dedup`](https://isomesh.ladvien.com/play.html?demo=game_mirror_dedup),
 [`game_edit_tape_trim`](https://isomesh.ladvien.com/play.html?demo=game_edit_tape_trim),
 [`shifted_linear_root`](https://isomesh.ladvien.com/play.html?demo=shifted_linear_root).
+
+The front page carries a tenth that is not a Bevy build at all: `isomesh` itself compiled to WebAssembly
+with a hand-written WebGL2 renderer, **130 KB against these modules' 36 MB**, with the validity report
+recomputed live. That is the size the library costs on its own.
 
 Everything here is `cargo run --example <name> --release` from this directory. **Use `--release`** —
 debug meshing is 37–62× slower and you will think something is broken.

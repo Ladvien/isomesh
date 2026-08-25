@@ -300,6 +300,26 @@ cargo test -p isomesh-gpu
 # bevy side — separate workspace, run from its directory
 cd bevy_isomesh && cargo run --example marching_cubes_sphere --release
 cd bevy_isomesh && cargo build --examples
+
+# the site: nine playable wasm demos, the front page's own 130 KB module, and
+# eight rendered pages. `build_web.sh` is the single entry point and owns the
+# clean; `build_site.py` renders the prose alone and is also the repository's
+# link checker, which is why `preflight.sh` runs it.
+#
+# Two pip packages are needed and this hard-fails without them, deliberately --
+# a skipped gate is worse than a slow one. On a PEP 668 distribution pip will
+# not install into the system interpreter, so use a venv and point PYTHON at it.
+python3 -m venv ~/.venvs/isomesh
+~/.venvs/isomesh/bin/pip install 'markdown>=3.7,<4' 'pymdown-extensions>=10,<11'
+export PYTHON=~/.venvs/isomesh/bin/python
+
+PYTHON=~/.venvs/isomesh/bin/python ./scripts/build_web.sh   # ~430 MB into web/dist
+"$PYTHON" scripts/build_site.py                             # prose only, seconds
+
+# isomesh_web is a third workspace, so `--workspace` above cannot see it and
+# `preflight.sh` runs these three separately. E-111's lesson.
+cd isomesh_web && cargo test
+cd isomesh_web && cargo clippy --all-targets -- -D warnings
 ```
 
 **Always `--release` for examples.** Debug-build meshing is 20–50× slower and will make you think

@@ -264,8 +264,11 @@ The math-library pin is the load-bearing one. Bevy 0.19 wants glam 0.32, `parry3
 exact command, its controls, and the finding it demonstrates.
 
 **[→ isomesh.ladvien.com](https://isomesh.ladvien.com/)** is the same prose as a site, with every clip
-served from it rather than hotlinked — and the three Phase 21 demos are **playable in the browser** there
-as WebAssembly builds, each still printing its cross-check against its committed CSV to the console.
+served from it rather than hotlinked. Nine of the demos are **playable in the browser** there as
+WebAssembly builds, and the three Phase 21 ones each still print their cross-check against their committed
+CSV to the console. The front page carries a tenth module that is not a Bevy build: `isomesh` itself, with
+a hand-written WebGL2 renderer and the validity report recomputed live, at **133 KB against the Bevy
+modules' 36 MB**.
 
 The longer write-ups live on three further pages, so this one stays short. Every figure on them came
 from a command you can run, and every number is measured on one of the two machines in

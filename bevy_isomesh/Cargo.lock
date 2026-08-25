@@ -1095,6 +1095,7 @@ dependencies = [
  "bevy_ecs",
  "bevy_math",
  "bevy_mesh",
+ "bevy_platform",
  "bevy_tasks",
  "isomesh",
  "isomesh-gpu",
