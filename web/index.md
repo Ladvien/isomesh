@@ -81,15 +81,15 @@ the demo at the top of this page is the same library without it, at 130 KB.
 ![A first-person camera carving tunnels through chunked terrain](docs/gifs/digging-a-tunnel.gif)
 
 A 16×8×16-unit sandbox of cracked concrete, 256 chunks, and the mesh is rebuilt **while you are holding the
-mouse down**. You start **walking** on it — <kbd>WASD</kbd> moves, the mouse looks, <kbd>V</kbd> jumps, and
-gravity, ground contact and the rock face you cannot walk through are all sampled straight out of the field
-under two spheres, because a collision mesh built from this terrain is stale the moment you carve.
-<kbd>F</kbd> switches to the fly mode the demo used to open in, where <kbd>Q</kbd> and <kbd>E</kbd> go up and
-down.
+mouse down**. You start **walking** on it — <kbd>WASD</kbd> moves, the mouse looks, <kbd>Space</kbd> jumps a
+full chunk, and gravity, ground contact and the rock face you cannot walk through are all sampled straight
+out of the field under two spheres, because a collision mesh built from this terrain is stale the moment you
+carve. <kbd>F</kbd> switches to the fly mode the demo used to open in, where <kbd>Q</kbd> and <kbd>E</kbd> go
+up and down.
 
 The translucent sphere on the rock under the crosshair is the brush a click would push, traced against the
 field itself rather than against a collider, so it sits on the surface and not at a fixed distance in front
-of your eye — hold the button and it carves a continuous tunnel along the sweep, at a fixed 20 edits a
+of your eye — hold the button and it carves a continuous tunnel along the sweep, at a fixed 12.5 edits a
 second, with the chunks that fall out of it re-meshed nearest-first under a 4 ms/frame budget so the frame
 time stays flat instead of collapsing as the edit log grows. <kbd>1</kbd>–<kbd>8</kbd> re-mesh all 256 chunks
 with a different mesher and print what that cost: the seven CPU extractors, then <kbd>8</kbd> for Marching
@@ -105,7 +105,8 @@ parameterisation: three world-plane projections, interpolated by the normal, so 
 continuous with the ground across the chunk boundary the brush straddled.
 
 `M-33` · `G-002` · `E-202` · <kbd>C</kbd> outlines exactly the chunks the last edit re-meshed ·
-<kbd>H</kbd> hides the HUD and leaves a one-line `[H] HUD` hint
+**the numbers panel starts hidden** behind a coloured headline naming the mesher, and <kbd>H</kbd> brings it
+back
 
 ### [▶ Play `game_showcase`](site:play.html?demo=game_showcase)
 

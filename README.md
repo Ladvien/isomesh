@@ -404,8 +404,9 @@ ISOMESH_ALGORITHM=sn ISOMESH_FIELD=5 ISOMESH_SAMPLES=19 \
 ```
 
 `ISOMESH_SCREENSHOT` takes one shot and exits. `ISOMESH_FIELD`, `ISOMESH_SAMPLES`, `ISOMESH_VIEW`
-(`wire`, `normals`, `nogrid`, `nohud`), `ISOMESH_ALGORITHM`, `ISOMESH_CLAMP`, `ISOMESH_OFFSET` and `ISOMESH_WELD`
-set what it is a shot *of*.
+(`wire`, `normals`, `nogrid`, `nohud`, `hud`), `ISOMESH_ALGORITHM`, `ISOMESH_CLAMP`, `ISOMESH_OFFSET` and `ISOMESH_WELD`
+set what it is a shot *of*. `hud` is the positive form and exists for one demo: `game_dig` opens with the
+panel hidden because it is a game first, so its still is taken with `ISOMESH_VIEW=hud`.
 
 ---
 

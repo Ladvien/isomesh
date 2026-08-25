@@ -96,17 +96,23 @@
 </div>
 
 <div class="keys" id="notes-game_dig" hidden>
-  <p><kbd>WASD</kbd> walk · mouse to look · <kbd>V</kbd> jump ·
-     <kbd>Shift</kbd> fast · <kbd>F</kbd> fly · <kbd>H</kbd> HUD ·
+  <p><kbd>WASD</kbd> walk · mouse to look · <kbd>Space</kbd> jump ·
+     <kbd>Shift</kbd> fast · <kbd>F</kbd> fly · <kbd>H</kbd> numbers ·
      <kbd>Tab</kbd> releases the cursor</p>
   <p>You start <strong>walking</strong> on the rock: gravity pulls you down, the
      ground holds you up, and a stone face stops you dead. All three come from
      sampling the field under two spheres rather than from a collision mesh,
      because a collider built from this terrain is stale the moment you carve —
-     which is every frame you hold the button. <kbd>V</kbd> jumps about a unit,
-     enough to climb out of a brush. <kbd>F</kbd> switches back to the fly mode
-     this demo used to open in, where gravity is off and <kbd>Q</kbd> and
-     <kbd>E</kbd> go straight up and down.</p>
+     which is every frame you hold the button. <kbd>Space</kbd> jumps a full
+     chunk, 2 units, which clears the lip of a pit dug at the large end of the
+     wheel. <kbd>F</kbd> switches back to the fly mode this demo used to open in,
+     where gravity is off and <kbd>Q</kbd> and <kbd>E</kbd> go straight up and
+     down.</p>
+  <p><strong>The numbers panel starts hidden</strong>, because this is a game
+     first and the panel sits on top of the rock you are digging. What stays is a
+     coloured headline naming the mesher — a different colour for each of the
+     eight, in key order — and one line of keys under it. <kbd>H</kbd> brings the
+     numbers back.</p>
   <p><strong>Hold the left button to carve</strong>, the right to fill. The
      translucent sphere on the rock under the crosshair is the brush that a click
      would push — orange to carve, cyan to fill — so what you see is what you
@@ -114,14 +120,14 @@
      The wheel or <kbd>[</kbd> <kbd>]</kbd> resizes it, <kbd>Z</kbd> undoes one
      brush, <kbd>X</kbd> clears the log, <kbd>C</kbd> outlines the chunks the last
      edit re-meshed.</p>
-  <p>Holding a button carves at a fixed <strong>20 edits a second</strong> rather
-     than one per frame, and the chunks that fall out of it are re-meshed under a
-     <strong>4 ms per frame</strong> budget — nearest to the camera first, with
-     whatever does not fit carried into the next frame. That is the difference
-     between a long stroke that holds its frame time and one that collapses:
-     every sample of every chunk still evaluates every brush in the log, so the
-     only two things that can save you are growing the log more slowly and
-     refusing to pay for all of it at once.</p>
+  <p>Holding a button carves at a fixed <strong>12.5 edits a second</strong>
+     rather than one per frame, and the chunks that fall out of it are re-meshed
+     under a <strong>4 ms per frame</strong> budget — nearest to the camera first,
+     with whatever does not fit carried into the next frame. That is the
+     difference between a long stroke that holds its frame time and one that
+     collapses: every sample of every chunk still evaluates every brush in the
+     log, so the only two things that can save you are growing the log more
+     slowly and refusing to pay for all of it at once.</p>
   <p><kbd>1</kbd>–<kbd>8</kbd> swap the mesher and re-mesh all 256 chunks with it
      — Marching Cubes, the same with the asymptotic decider, Marching
      Tetrahedra, Surface Nets, Dual Contouring, Manifold Dual Contouring, Greedy
@@ -130,11 +136,13 @@
      always on the GPU; what moves on <kbd>8</kbd> is the <em>extraction</em> —
      the field is uploaded, the cells are counted and prefix-scanned and the
      triangles emitted on the device, and the vertices come back a frame later
-     rather than in the call that asked for them. The HUD prints what each choice
-     cost, which is the only honest way to show that Marching Tetrahedra is three
-     times the triangles. A dimmed <em>"Loading… please wait."</em> panel covers
-     the screen while a switch's 256-chunk backlog drains, because that backlog
-     now drains across frames instead of blocking one.</p>
+     rather than in the call that asked for them. The headline at the top names
+     whichever is running, in that mesher's own colour, and the numbers panel
+     prints what the switch cost — which is the only honest way to show that
+     Marching Tetrahedra is three times the triangles. A dimmed
+     <em>"Loading… please wait."</em> panel covers the screen while a switch's
+     256-chunk backlog drains, because that backlog now drains across frames
+     instead of blocking one.</p>
   <p>The mesh is rebuilt while you hold the mouse down, and the two numbers on
      screen are the ones that matter under load: chunks touched per edit, and
      <strong>E1</strong> — the fraction of the brush's own bounding box that

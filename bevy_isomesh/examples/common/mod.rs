@@ -102,6 +102,18 @@ pub struct ViewFlags {
     /// nine demos that way. A reader who presses `H` gets the hint, because a
     /// panel that vanishes with no way back is a bug that looks like a crash.
     pub hud_hint: bool,
+    /// Whether `ISOMESH_VIEW` asked for the HUD *positively*.
+    ///
+    /// `nohud` turns it off; this is the other direction, and it exists because
+    /// a demo may reasonably open with the panel hidden -- `game_dig` does, it
+    /// is a game first and the panel covers the rock. Such a demo clears
+    /// [`Self::hud`] in its own `setup` **unless** this is set, which is what
+    /// keeps `ISOMESH_SCREENSHOT` able to capture the numbers: the committed
+    /// still is taken with `ISOMESH_VIEW=hud`.
+    // Only `game_dig` reads this, and each example compiles its own copy of this
+    // module -- the same reason the free functions here carry the attribute.
+    #[allow(dead_code)]
+    pub hud_requested: bool,
 }
 
 impl ViewFlags {
@@ -122,6 +134,7 @@ impl ViewFlags {
             field,
             hud: !has("nohud"),
             hud_hint: !has("nohud"),
+            hud_requested: has("hud"),
         }
     }
 }
@@ -173,11 +186,30 @@ pub struct DemoStats {
     pub extract_ms: f64,
     /// Extra lines, one per entry.
     pub extra: Vec<String>,
+    /// A headline above the panel, in its own colour and a larger size.
+    ///
+    /// One line, and it exists because the thing a reader most wants to see is
+    /// usually not a number -- in `game_dig` it is *which mesher is running*,
+    /// and that was eight lines down a monochrome panel. `None` leaves the row
+    /// empty and the panel where it has always been, so a demo that sets nothing
+    /// looks exactly as it did.
+    ///
+    /// A second `Text` entity rather than a coloured span inside the panel:
+    /// `update_hud` assembles one string, and turning that into spans would
+    /// rewrite the text path every demo shares for the benefit of one line.
+    pub banner: Option<(String, Color)>,
+    /// The one line left on screen when the HUD is hidden.
+    ///
+    /// `None` prints `[H] HUD`, which is the minimum a reader needs to undo a
+    /// keypress. A demo that opens *with* the panel hidden wants more than that
+    /// -- its whole key list is otherwise invisible -- so it replaces this.
+    /// Suppressed entirely by `ISOMESH_VIEW=nohud`, which wants an empty frame.
+    pub hint: Option<String>,
     /// The key list, when an example's bindings are not the harness's.
     ///
     /// `None` prints the shared footer below. `Some` replaces it outright rather
     /// than appending, because the point is that the shared line is *wrong* for
-    /// that example -- `game_dig` flies on `WASD`, so a footer offering `[W]
+    /// that example -- `game_dig` walks on `WASD`, so a footer offering `[W]
     /// wire` documents a key that walks forward.
     pub keys: Option<String>,
 }
@@ -436,8 +468,13 @@ impl Default for Spin {
     }
 }
 
+/// The panel: title, numbers, extra lines, keys.
 #[derive(Component)]
 struct HudText;
+
+/// [`DemoStats::banner`]'s own line, above the panel and in its own colour.
+#[derive(Component)]
+struct HudBanner;
 
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((Camera3d::default(), OrbitCamera::default()));
@@ -460,7 +497,30 @@ fn spawn_light(mut commands: Commands) {
     });
 }
 
+/// Two entities, because the banner carries its own colour and size.
+///
+/// The panel keeps `top: 10` when there is no banner, so every demo that sets
+/// none is pixel-identical to before; `update_hud` pushes it down to 32 only
+/// when a banner is present.
 fn spawn_hud(mut commands: Commands) {
+    commands.spawn((
+        Text::new(""),
+        TextFont {
+            // Larger than the panel, which is what "headline" means when the
+            // only font available is the default one -- there is no bold face to
+            // ask for, so size and colour do the work.
+            font_size: FontSize::Px(19.0),
+            ..default()
+        },
+        TextColor(Color::WHITE),
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(8.0),
+            left: Val::Px(12.0),
+            ..default()
+        },
+        HudBanner,
+    ));
     commands.spawn((
         Text::new(""),
         TextFont {
@@ -585,22 +645,49 @@ fn median(values: &VecDeque<f64>) -> f64 {
     sorted[sorted.len() / 2]
 }
 
+#[allow(clippy::type_complexity)]
 fn update_hud(
     stats: Res<DemoStats>,
     flags: Res<ViewFlags>,
     times: Res<FrameTimes>,
-    mut query: Query<&mut Text, With<HudText>>,
+    mut query: Query<(&mut Text, &mut Node), With<HudText>>,
+    mut banner: Query<(&mut Text, &mut TextColor), (With<HudBanner>, Without<HudText>)>,
 ) {
-    if !flags.hud {
+    // The banner outlives a hidden panel: in `game_dig` it names the mesher, and
+    // that is exactly the thing worth seeing with the numbers switched off. It
+    // goes with `nohud` though, which wants an empty frame.
+    let (headline, tint) = match (&stats.banner, flags.hud_hint) {
+        (Some((line, colour)), true) => (line.as_str(), *colour),
+        _ => ("", Color::WHITE),
+    };
+    for (mut text, mut colour) in &mut banner {
         // Written only when it differs, the same change-driven-write rule
         // `active_cells.rs` states for its `BackgroundColor`s: an unconditional
-        // `String` write marks the text changed every frame, and Bevy's UI
-        // extraction is change-driven, so a hidden HUD would cost more than a
-        // shown one.
-        let hint = if flags.hud_hint { "[H] HUD" } else { "" };
-        for mut hud in &mut query {
+        // write marks the text changed every frame, and Bevy's UI extraction is
+        // change-driven, so a static line would become per-frame work.
+        if text.0 != headline {
+            text.0 = headline.to_string();
+        }
+        if colour.0 != tint {
+            colour.0 = tint;
+        }
+    }
+    // 32 clears the 19 px headline plus its 8 px inset; 10 is where the panel has
+    // always sat, and a demo that sets no banner keeps it.
+    let top = Val::Px(if headline.is_empty() { 10.0 } else { 32.0 });
+
+    if !flags.hud {
+        let hint = match (&stats.hint, flags.hud_hint) {
+            (_, false) => "",
+            (Some(line), true) => line.as_str(),
+            (None, true) => "[H] HUD",
+        };
+        for (mut hud, mut node) in &mut query {
             if hud.0 != hint {
                 hud.0 = hint.to_string();
+            }
+            if node.top != top {
+                node.top = top;
             }
         }
         return;
@@ -641,8 +728,13 @@ fn update_hud(
         )),
     }
 
-    for mut target in &mut query {
-        target.0.clone_from(&text);
+    for (mut target, mut node) in &mut query {
+        if target.0 != text {
+            target.0.clone_from(&text);
+        }
+        if node.top != top {
+            node.top = top;
+        }
     }
 }
 
@@ -794,5 +886,22 @@ mod tests {
         let mixed = ViewFlags::parse("wire, nohud", 0);
         assert!(mixed.wireframe);
         assert!(!mixed.hud && !mixed.hud_hint);
+    }
+
+    /// `hud` is the positive request, and only `hud` sets it.
+    ///
+    /// `game_dig` opens with the panel hidden and clears `hud` in its own
+    /// `setup` *unless* this is set, so this flag is the only thing that lets
+    /// `ISOMESH_SCREENSHOT` still capture the numbers. A default that answered
+    /// `true` here would make that demo's committed still un-retakeable.
+    #[test]
+    fn hud_is_the_positive_request() {
+        assert!(ViewFlags::parse("hud", 0).hud_requested);
+        assert!(ViewFlags::parse("wire, hud", 0).hud_requested);
+        assert!(!ViewFlags::parse("", 0).hud_requested);
+        assert!(!ViewFlags::parse("nohud", 0).hud_requested);
+        // Not a prefix match: `nohud` contains `hud` as a substring and must not
+        // be read as asking for it.
+        assert!(!ViewFlags::parse("nogrid,nohud", 0).hud_requested);
     }
 }

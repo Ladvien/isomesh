@@ -4,18 +4,24 @@
 //! cd bevy_isomesh && cargo run --example game_dig --release
 //! ```
 //!
-//! You start **walking** on the rock: `WASD` moves, the mouse looks, `V` jumps,
-//! gravity holds you down and the field stops you walking through stone. `F`
-//! switches to the old fly mode, where `Q`/`E` go up and down and nothing falls.
+//! You start **walking** on the rock: `WASD` moves, the mouse looks, `Space`
+//! jumps, gravity holds you down and the field stops you walking through stone.
+//! `F` switches to the old fly mode, where `Q`/`E` go up and down and nothing
+//! falls.
+//!
+//! **The numbers panel starts hidden**, because this is a game first and the
+//! panel sits on top of the rock you are digging. A coloured headline names the
+//! mesher — a different colour for each of the eight — and one line of keys sits
+//! under it; `H` brings the numbers back, and `ISOMESH_VIEW=hud` opens with them
+//! for a capture.
 //!
 //! A translucent sphere on the rock under the crosshair is the brush that a click
 //! would push — orange to carve, cyan to fill. **Hold** the left button to keep
-//! carving along the sweep, the right to keep filling; edits are paced at 20 a
-//! second, which is below the rate a hand can tell apart and well below the rate
-//! that used to bury the frame. The wheel or `[`/`]` resizes the brush, `1`–`7`
-//! swap the extractor, `Z` undoes one brush, `X` clears the log, `C` outlines the
-//! chunks the last edit re-meshed, `H` hides the HUD and `Tab` releases the
-//! cursor.
+//! carving along the sweep, the right to keep filling; edits are paced at
+//! **12.5 a second**, which is below the rate a hand can tell apart and well
+//! below the rate that used to bury the frame. The wheel or `[`/`]` resizes the
+//! brush, `1`–`8` swap the mesher, `Z` undoes one brush, `X` clears the log, `C`
+//! outlines the chunks the last edit re-meshed, and `Tab` releases the cursor.
 //!
 //! # The rock is textured by the shader, not by the mesh
 //!
@@ -94,7 +100,7 @@ use bevy::render::renderer::{RenderDevice, RenderQueue};
 use bevy::shader::{Shader, ShaderRef};
 use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
 use bevy_isomesh::MeshBuilder;
-use common::{Capture, CommonPlugin, DemoStats, OrbitCamera};
+use common::{Capture, CommonPlugin, DemoStats, OrbitCamera, ViewFlags};
 use isomesh::brush::{Brush, BrushOp, BrushStack};
 use isomesh::chunk::dirty::{DirtySet, EditReport, mark_edit};
 use isomesh::chunk::{ChunkId, ChunkLayout};
@@ -252,9 +258,10 @@ const BODY_OFFSETS: [f32; 2] = [0.4, 1.2];
 /// Downward acceleration. Roughly twice Earth's, which is the usual game figure:
 /// real gravity over a 1.6-unit body reads as floating.
 const GRAVITY: f32 = 18.0;
-/// Launch speed. `6^2 / (2 * 18)` is a one-unit apex -- half a chunk, and enough
-/// to climb out of a pit dug with a brush of the default radius.
-const JUMP_SPEED: f32 = 6.0;
+/// Launch speed. `8.5^2 / (2 * 18)` is a **2.0-unit apex**, which is a whole
+/// chunk: high enough to jump onto the lip of a pit dug with a brush at the
+/// large end of the wheel's range, rather than the 1.0 the first version had.
+const JUMP_SPEED: f32 = 8.5;
 /// Resolution passes per frame. Two, because a body wedged in a corner is pushed
 /// out of one sphere into the other and needs a second look.
 const RESOLVE_PASSES: u32 = 2;
@@ -275,16 +282,18 @@ struct Aim {
 
 /// Seconds between edits while a button is held.
 ///
-/// 20 edits a second. Film is 24 and the threshold at which a hand reads its own
-/// action as instantaneous is around 100 ms, so this is comfortably below
-/// perception while cutting the log's growth rate by a factor of three at 60 Hz
-/// and by more on a faster display -- and the log's length is the `(L + 1)`
-/// factor on *every* field sample this demo takes.
+/// **12.5 edits a second.** Was 20 (`0.05`), and this is the plan's own next
+/// step for the case a hold still costs too much: every brush is a term in the
+/// `(L + 1)` factor on every field sample the demo takes afterwards, so the
+/// cheapest way to make a long stroke cheap is to lay down fewer of them. 80 ms
+/// is still under the ~100 ms at which a hand reads its own action as
+/// instantaneous, and a sweep still cuts one continuous tunnel because the
+/// spheres overlap at half a radius.
 ///
 /// The distance gate stays: it is what stops a stationary brush pushing an
 /// idempotent duplicate, and this bounds the case the distance gate cannot -- a
 /// fast sweep, where the aim point clears half a radius every frame.
-const EDIT_PERIOD: f32 = 0.05;
+const EDIT_PERIOD: f32 = 0.08;
 
 /// Marker for the translucent brush preview.
 #[derive(Component)]
@@ -572,9 +581,20 @@ fn setup(
     mut config: ResMut<GizmoConfigStore>,
     camera: Query<Entity, With<OrbitCamera>>,
     auto: Res<AutoCarve>,
+    mut flags: ResMut<ViewFlags>,
     device: Res<RenderDevice>,
     queue: Res<RenderQueue>,
 ) {
+    // **This demo opens with the panel hidden.** It is a game first: the numbers
+    // are the point of a *screenshot*, and on a screen they sit on top of the
+    // rock you are trying to dig. `H` brings them back and the hint line under
+    // the headline says so, so nothing is hidden without a way back.
+    //
+    // `ISOMESH_VIEW=hud` overrides it, which is what the committed still is
+    // taken with; `nohud` still produces an empty frame for the GIFs.
+    if !flags.hud_requested {
+        flags.hud = false;
+    }
     // The shared harness spawns an orbit camera. Take its `OrbitCamera` off
     // rather than despawning the entity: the orbit system then skips it, this
     // example drives the same camera directly, and everything else in the
@@ -1116,6 +1136,42 @@ impl Algorithm {
             Self::GreedyQuads => "greedy_quads",
             Self::MarchingCubesGpu => "marching_cubes (gpu)",
         }
+    }
+
+    /// The HUD headline's colour for this mesher.
+    ///
+    /// Eight hues, evenly spaced around the wheel and all light enough to read
+    /// on dark rock, so which mesher is running is answerable from the corner of
+    /// an eye rather than by reading a word. Assigned in **key order** -- `1` is
+    /// amber and `8` is pink -- so the mapping is the same thing the key row
+    /// already teaches.
+    ///
+    /// Saturated rather than pastel on purpose: the panel below is a near-white
+    /// grey, and a headline that shares its colour is not a headline.
+    fn colour(self) -> Color {
+        match self {
+            Self::MarchingCubes => Color::srgb(1.00, 0.62, 0.16),
+            Self::MarchingCubesDecider => Color::srgb(0.96, 0.90, 0.25),
+            Self::MarchingTetrahedra => Color::srgb(0.60, 0.95, 0.30),
+            Self::SurfaceNets => Color::srgb(0.25, 0.92, 0.55),
+            Self::DualContouring => Color::srgb(0.25, 0.88, 0.95),
+            Self::ManifoldDualContouring => Color::srgb(0.45, 0.62, 1.00),
+            Self::GreedyQuads => Color::srgb(0.80, 0.50, 1.00),
+            Self::MarchingCubesGpu => Color::srgb(1.00, 0.40, 0.70),
+        }
+    }
+
+    /// The digit that selects this mesher, `1`-`8`.
+    ///
+    /// Read out of [`Self::ALL`] rather than written a second time, because
+    /// `switch_algorithm`'s `DIGITS` already indexes that array: two hand-kept
+    /// lists would let the HUD advertise a key that selects something else.
+    fn key(self) -> usize {
+        Self::ALL
+            .iter()
+            .position(|a| *a == self)
+            .expect("every variant is in ALL")
+            + 1
     }
 
     /// `ISOMESH_ALGORITHM=<name>`, so a capture needs no keyboard -- the same
@@ -1660,8 +1716,8 @@ fn grab(
 /// motion in this demo is direct rather than integrated, so `velocity` carries
 /// only the fall, and a body on the ground has none to carry.
 ///
-/// The `<= 0.0` guard is what keeps a jump: `V` writes `+JUMP_SPEED` on a frame
-/// where `grounded` is still true, and this must not erase it.
+/// The `<= 0.0` guard is what keeps a jump: `Space` writes `+JUMP_SPEED` on a
+/// frame where `grounded` is still true, and this must not erase it.
 ///
 /// Gravity resumes the moment the ground probe stops answering, which is what
 /// walking off a ledge is.
@@ -1806,7 +1862,11 @@ fn move_camera(
     }
 
     gravity_step(world.grounded, &mut world.velocity, dt);
-    if world.grounded && keys.just_pressed(KeyCode::KeyV) {
+    // `Space`, which is what a hand reaches for. The shared harness also reads
+    // it into `ViewFlags::paused`, and that is harmless here: `paused` is read
+    // only by `orbit_camera`, and `setup` takes `OrbitCamera` off this camera so
+    // that system's query is empty in this demo.
+    if world.grounded && keys.just_pressed(KeyCode::Space) {
         world.velocity.y = JUMP_SPEED;
     }
     transform.translation += (direction * speed + Vec3::Y * world.velocity.y) * dt;
@@ -2200,11 +2260,8 @@ fn report(
         },
         String::new(),
         format!(
-            "mesher     {}   (rendering is always GPU: triplanar ExtendedMaterial)",
-            world.algorithm.name()
-        ),
-        format!(
-            "           last switch: {} chunks in {:.0} ms across frames",
+            "mesher     last switch {} chunks in {:.0} ms across frames   \
+             (rendering is always GPU: triplanar ExtendedMaterial)",
             world.switch_chunks, world.switch_ms
         ),
         match world.gpu_cost {
@@ -2254,7 +2311,7 @@ fn report(
             if !world.walking {
                 "[F] walk".to_string()
             } else if world.grounded {
-                "on ground   [V] jump   [F] fly".to_string()
+                "on ground   [Space] jump   [F] fly".to_string()
             } else {
                 format!("airborne {:+.1} u/s   [F] fly", world.velocity.y)
             }
@@ -2263,6 +2320,21 @@ fn report(
         String::new(),
         "every field sample walks the log: measured 3.7x ms/chunk for 7x the log".to_string(),
     ];
+    // The headline, above everything and in this mesher's own colour. It is here
+    // rather than eight lines down the panel because "which mesher am I looking
+    // at" is the question this demo exists to let a reader ask, and it survives
+    // the panel being hidden -- which is how the demo opens.
+    stats.banner = Some((
+        format!("[{}] {}", world.algorithm.key(), world.algorithm.name()),
+        world.algorithm.colour(),
+    ));
+    // What is left on screen with the panel off. The full key list, not just
+    // `[H] HUD`: this demo starts hidden, so a reader who never presses `H`
+    // would otherwise have no way to learn that `Space` jumps.
+    stats.hint = Some(
+        "[H] numbers   [LMB] carve   [RMB] fill   [WASD] walk   [Space] jump   [F] fly   [1-8] mesher   [Tab] cursor"
+            .to_string(),
+    );
     // The harness's shared footer advertises `[W] wire`, `[N] normals`,
     // `[G] grid` and `[R] re-mesh`. Every one of those is a lie here: `W` walks
     // forward, and the chunk entities carry `Chunk(ChunkId)` rather than
@@ -2271,7 +2343,7 @@ fn report(
     // because replacing it is what `DemoStats::keys` does, and a key that hides
     // the panel it is printed on must be findable on that panel.
     stats.keys = Some(
-        "[LMB] hold to carve   [RMB] hold to fill   [WASD] move   [V] jump   [F] walk/fly   [Shift] fast\n\
+        "[LMB] hold to carve   [RMB] hold to fill   [WASD] move   [Space] jump   [F] walk/fly   [Shift] fast\n\
          [wheel] or [ ] brush   [1-8] mesher   [Z] undo   [X] clear log   [C] chunks   [H] HUD   [Tab] cursor   [F12] shot"
             .to_string(),
     );
@@ -2610,10 +2682,11 @@ mod tests {
     /// A held button edits at [`EDIT_PERIOD`], not once a frame.
     ///
     /// The arithmetic is exact and that is the point: the clock starts due, so an
-    /// edit lands on frame 1 and then every fourth frame at a 16 ms frame and a
-    /// 50 ms period. Ten edits in forty frames. Before this the answer was forty,
-    /// and every one of those brushes is a term in the `(L + 1)` factor on every
-    /// field sample the demo takes afterwards.
+    /// edit lands on frame 1 and then every **fifth** frame at a 16 ms frame and
+    /// an 80 ms period -- frames 1, 6, 11, 16, 21, 26, 31, 36. **Eight edits in
+    /// forty frames.** Before any of this the answer was forty, and every one of
+    /// those brushes is a term in the `(L + 1)` factor on every field sample the
+    /// demo takes afterwards.
     #[test]
     fn a_held_button_edits_at_the_paced_rate() {
         let mut app = harness(false);
@@ -2642,15 +2715,15 @@ mod tests {
         }
         let edits = app.world().resource::<World>().brushes.len();
         assert_eq!(
-            edits, 10,
-            "forty 16 ms frames at a 50 ms period is ten edits, not {edits}"
+            edits, 8,
+            "forty 16 ms frames at an 80 ms period is eight edits, not {edits}"
         );
         // And the modal never appeared: a dig's chunks clear inside one frame's
         // budget, so a reader carving does not get a "Loading" panel.
         assert_eq!(modal(&mut app), Visibility::Hidden);
     }
 
-    /// `V` jumps only from the ground, and `F` swaps the mode.
+    /// `Space` jumps only from the ground, and `F` swaps the mode.
     ///
     /// The physics is asserted directly further up; this is the wiring -- that
     /// the keys reach it and that fly mode really stops gravity.
@@ -2675,22 +2748,24 @@ mod tests {
 
         app.world_mut()
             .resource_mut::<ButtonInput<KeyCode>>()
-            .press(KeyCode::KeyV);
+            .press(KeyCode::Space);
         step(&mut app);
         assert!(
             app.world().resource::<World>().velocity.y > 0.0,
-            "V did not launch the body"
+            "Space did not launch the body"
         );
         let mut peak = standing.y;
         for _ in 0..40 {
             step(&mut app);
             peak = peak.max(eye(&mut app).y);
         }
-        // `6^2 / (2 * 18)` is a one-unit apex, and a 16 ms frame samples it
-        // coarsely, so this asserts the shape rather than the number.
+        // `8.5^2 / (2 * 18)` is a 2.0-unit apex -- a whole chunk -- and a 16 ms
+        // frame samples it coarsely, so this asserts most of the number rather
+        // than all of it. At the old `JUMP_SPEED` of 6.0 the apex was 1.0 and
+        // this would fail, which is what makes it a gate on the change.
         assert!(
-            peak > standing.y + 0.5,
-            "the jump reached {peak} from {}",
+            peak > standing.y + 1.6,
+            "the jump reached {peak} from {}, so it is not a chunk high",
             standing.y
         );
         for _ in 0..120 {
