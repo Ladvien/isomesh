@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**235 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**236 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -45,6 +45,42 @@ attached — read that before re-litigating a decision this project already made
   is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
+
+---
+
+## Phase 22 — the project has a site, and it is played in
+
+**Added 2026-08-24, above Phase 21 for the reason every phase goes on top: rule 1 reads top-down.**
+Phase 21 is closed. Nothing here supersedes Phase 17's or Phase 18's open rows.
+
+**Source: a question — "is it possible to create actual WASM demos for these, and host them through
+GitHub?"** It was, and half of it was already built and unmerged. What the other half cost is the part
+worth recording: the roster went from three demos to nine, and the flagship could not run at all until a
+defect in the *published* `bevy_isomesh` was found and fixed. `IsomeshPlugin` — the crate's entire public
+reason to exist from Bevy — called `std::time::Instant::now()` in its frame-budget system, which compiles
+on `wasm32-unknown-unknown` and then **panics on the first frame a chunk lands**. Nothing in the crate's
+README or in the plugin's own documentation said "native only", so every browser game built on it broke
+the moment it worked. That is `✗44`, and it was found by trying to put `game_showcase` on a web page
+rather than by any test in the repository.
+
+**The tenth demo is not a Bevy build**, and it exists because the nine make an argument the nine cannot
+settle. Each Bevy module is 36 MB — about 8.8 MB gzipped on the wire — and essentially all of it is the
+engine. `isomesh_web` is the same library with a 300-line hand-written WebGL2 renderer instead: **133,115
+bytes**, eight fields, five extractors, and `isomesh::validate`'s report recomputed in the reader's
+browser on every re-mesh. It is the front page, and it is the size claim made checkable.
+
+**The gates are the deliverable as much as the demos are.** A demo built but not allow-listed is a 36 MB
+module nothing can reach; one allow-listed but not built is a link to a 404; and the `site` CI job is
+green either way. `doc_facts.sh` now derives the playable count from `build_web.sh`'s array and holds
+three prose sites, `play.html`'s allow-list and every `#notes-` block against it — and each of those four
+clauses was demonstrated failing before being left passing, because a gate never seen failing is
+decoration.
+
+**D-012 is closed.** The row is in `BACKLOG_ARCHIVE.md` with what it cost; the prose above stays here
+because it is what the work was for.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
 
 ---
 

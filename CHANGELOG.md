@@ -8,28 +8,79 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
-**The project has a site, and three of the demos are playable in it.**
+**The project has a site, nine of the demos are playable in it, and the front page runs `isomesh` itself.**
 [isomesh.ladvien.com](https://isomesh.ladvien.com/) renders this repository's own markdown, serves every
-GIF and screenshot from itself rather than hotlinking `raw.githubusercontent.com`, and carries the three
-Phase 21 demos as real WebAssembly builds. Each still prints its cross-check against its committed CSV to
-the browser console, so a hosted build cannot drift away from the artefact it illustrates.
+GIF and screenshot from itself rather than hotlinking `raw.githubusercontent.com`, and carries nine of the
+examples as real WebAssembly builds. The three Phase 21 demos each still print their cross-check against
+their committed CSV to the browser console, so a hosted build cannot drift away from the artefact it
+illustrates. The front page carries a tenth module that is not a Bevy build at all — the core crate with a
+hand-written WebGL2 renderer, **133,115 bytes against the Bevy modules' 36 MB** — which is the size claim
+made checkable rather than asserted.
+
+**One of those nine could not run at all before this**, and the reason was a defect in the published
+crate rather than in the demo: `IsomeshPlugin`'s frame budget called `std::time::Instant::now()`, which
+compiles on `wasm32-unknown-unknown` and then panics, so every browser game built on the plugin broke on
+the first frame a chunk landed (`✗44`).
 
 ### Added
 
-- **`scripts/build_web.sh`** — the one command that builds the site: three
-  `--profile wasm-release --target wasm32-unknown-unknown` examples through `wasm-bindgen`, then the prose.
+- **`scripts/build_web.sh`** — the one command that builds the site: nine
+  `--profile wasm-release --target wasm32-unknown-unknown` examples through `wasm-bindgen`, then
+  `isomesh_web`, then the prose. The `DEMOS=(…)` array is the single place that decides what is reachable,
+  and `doc_facts.sh` holds `play.html`'s allow-list, its `#notes-` blocks and three prose sites against it.
   It reads the required `wasm-bindgen` CLI version out of `bevy_isomesh/Cargo.lock` and refuses to build
   with any other, because a CLI that disagrees with the crate emits glue for a different ABI and the module
   fails to instantiate in the browser naming neither tool.
 - **`scripts/build_site.py`** — renders seven markdown sources plus a hand-written front door into
   `web/dist`, copies `docs/gifs`, `docs/screenshots` and `docs/experiments` beside them, and marks every
   `<img>` `loading="lazy"` (`DEMOS.md` alone references 34 GIFs, which is tens of MB on one scroll-free
-  load). **It is also the link checker**: all 69 relative targets are resolved against the repository and
+  load). **It is also the link checker**: all 91 relative targets are resolved against the repository and
   anything that resolves to nothing fails the build naming its source, which is what makes rendering only
   part of the repository safe — links into `BACKLOG.md`, `docs/research/` and `crates/` are rewritten to
   github.com blob URLs instead.
 - **A `site` CI job on every push and pull request**, and a `pages` job that deploys `main`. The `site`
   job is what turns the link checker and the wasm build into gates.
+- **`isomesh_web`** — a third workspace whose only product is the front page's wasm module. `extern "C"`
+  over linear memory with no `wasm-bindgen`, because `MeshBuffer`'s fields are `pub` precisely so a
+  consumer can read them without a copy; sixteen exports, **zero wasm imports**, eight fields, five
+  extractors, and `isomesh::validate`'s report recomputed per re-mesh. `#[unsafe(no_mangle)]` is the only
+  `unsafe` token it may contain and `build_web.sh` refuses to build if an `unsafe` block, `fn`, `impl` or
+  `trait` appears in `isomesh_web/src` — a checkable rule where the `unsafe_code` lint cannot draw one,
+  since edition 2024 has no way to emit a wasm export without that attribute.
+- **`web/lite.js`** — 300 lines of hand-written WebGL2 driving that module: one program, an orbit camera,
+  a wireframe pass over a line index buffer built from the triangles, and a HUD of the validity counters.
+  `UNSIGNED_INT` indices are why it is WebGL2 and there is deliberately no WebGL1 path. Every typed-array
+  view is re-created after every `iso_mesh` call, because memory growth detaches `memory.buffer` and a view
+  captured earlier reads a dead buffer as zeros.
+- **Six more playable demos** — `quickstart`, `marching_cubes_tunnel`, `dual_contouring_cube`,
+  `surface_nets_vs_marching_cubes`, `game_dig` and `game_showcase`, each with its controls and its claim on
+  `play.html`. `game_dig` and `game_showcase` read `ISOMESH_*` environment variables natively and a browser
+  has no environment, so both run at their own documented defaults; the page says so rather than pretending
+  otherwise.
+- **Four gates in `scripts/doc_facts.sh`**, all four demonstrated failing before being left passing: the
+  playable-demo count against three prose sites, `play.html`'s allow-list against `build_web.sh`'s array,
+  a `#notes-<name>` block per allow-listed demo, and the front page's "seven extractors sit behind one
+  trait" claim, which was ungated until now.
+- **`scripts/preflight.sh` runs the site build and `isomesh_web`'s own three gates.** `build_site.py` is
+  the repository's link checker and ran only in CI, so the gate most likely to break on a docs edit was the
+  one a local run could not see. `isomesh_web` is its own workspace, so `cargo clippy --workspace` cannot
+  reach it — E-111's lesson, applied to a third workspace.
+
+### Fixed
+
+- **`IsomeshPlugin` no longer panics in a browser (`✗44`).** `bevy_isomesh/src/plugin.rs` called
+  `std::time::Instant::now()` in `apply_finished_meshes`, the system that spends the per-frame mesh budget
+  — so the plugin died on the first frame a chunk landed, taking `quickstart`, `game_showcase`,
+  `game_terrain_stream`, `game_walk` and `game_capsule_walk` with it. `bevy_platform = "0.19"` is now a
+  direct dependency with its `web` feature enabled for `cfg(target_arch = "wasm32")` only, and `Instant`
+  comes from `bevy_platform::time`. `Duration` stays on `std`; it carries no clock. Verified in the
+  resolved graph rather than by inspection: `web-time v1.1.0` is in the **normal** wasm dependency tree
+  under `bevy_isomesh` and absent from the native one, and `bevy_platform` appears exactly once in the
+  lockfile. **This is a fix to the published crate**, not to a demo — nothing in its README or in the
+  plugin's own documentation said "native only".
+- **The wire-size figure on the site was wrong.** `web/index.md` and `web/play.html` both said "about
+  8.4 MB on the wire"; the modules gzip to 8.79/8.76/8.76 MB and the live origin transfers **8,844,921
+  bytes** for one of them. Both strings now say 8.8 MB.
 
 ### Changed
 
@@ -41,18 +92,21 @@ the browser console, so a hosted build cannot drift away from the artefact it il
   64 per-chunk mesh hashes**, native and in a browser. The startup report drops the thread count and its
   17 `println!` calls became `info!`, because `println!` writes to an unsupported stdout on wasm and is
   discarded while Bevy's `LogPlugin` routes `tracing` to `console.log`.
-- **`Instant` in `game_mirror_dedup` and `game_edit_tape_trim` is `bevy::platform::time::Instant`**, which
-  is `std::time::Instant` natively and `web_time::Instant` on wasm. `std::time::Instant::now()` panics
-  there, and Bevy's `web` feature — now enabled for `cfg(target_arch = "wasm32")` only — is what makes the
-  re-export resolve to the working one.
+- **`Instant` in every web-built example is `bevy::platform::time::Instant`**, which is
+  `std::time::Instant` natively and `web_time::Instant` on wasm. `std::time::Instant::now()` panics there,
+  and Bevy's `web` feature — now enabled for `cfg(target_arch = "wasm32")` only — is what makes the
+  re-export resolve to the working one. `Duration` stays on `std` everywhere: it is arithmetic, not a clock.
 - **The examples' shared `F12` screenshot names files from a counter, not `std::process::id()`**, which
   compiles on wasm and then panics with "no pids on this platform" — and
   `Window::prevent_default_event_handling` defaults to `true`, so `F12` in a browser reaches the app rather
   than devtools. Repeated presses now write `screenshot-1.png`, `screenshot-2.png`, … instead of one name
   per process.
 - **`avian3d`, `parry3d`, `wgpu` and `isomesh-gpu` are native-only dev-dependencies.** None is reachable
-  from the three examples that get a web build, and `isomesh-gpu` asks wgpu for `dx12`, `metal` and
+  from the nine examples that get a web build, and `isomesh-gpu` asks wgpu for `dx12`, `metal` and
   `vulkan` and for no web backend at all. Dev-dependencies are not propagated, so consumers see no change.
+- **`quickstart` binds the page's canvas**, which is the one web-specific line in the one example with no
+  `WindowPlugin` — it had none because its whole point is being the shortest path, and it stays the
+  shortest path with six lines added and nothing removed.
 
 ## [0.0.9] — 2026-08-17
 

@@ -48,12 +48,13 @@
 //! that, and the examples show it.
 
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use bevy_app::{App, Plugin, Update};
 use bevy_asset::{Assets, Handle};
 use bevy_ecs::prelude::*;
 use bevy_mesh::Mesh;
+use bevy_platform::time::Instant;
 use bevy_tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future};
 use tracing::error;
 

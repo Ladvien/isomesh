@@ -18,9 +18,17 @@
 # written here, and a mismatch is a hard stop with the exact `cargo install` line
 # to fix it.
 #
-# **The demo list is an array**, so a fourth playable demo is one line here plus
-# one entry in `web/play.html`'s allow-list. Only these three are built for the
-# web; the other examples are untouched and stay native-only.
+# **The demo list is an array**, so a tenth playable demo is one line here plus
+# one entry in `web/play.html`'s allow-list -- and `scripts/doc_facts.sh` checks
+# those two against each other, because a module built but not allow-listed is
+# 36 MB nothing can reach and one allow-listed but not built is a link to a 404.
+# Only these nine are built for the web; the other examples are untouched and
+# stay native-only.
+#
+# **`isomesh_web` is not one of them.** It is the front page's own module -- the
+# core crate with a hand-written WebGL2 renderer instead of Bevy, ~130 KB
+# instead of 36 MB -- and it is built here because this is the entry point, not
+# because it is a Bevy example.
 #
 # `PYTHON` exists because the renderer needs two pip packages and a PEP 668
 # distribution will not install them into the system interpreter. Point it at a
@@ -29,7 +37,20 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-DEMOS=(game_mirror_dedup game_edit_tape_trim shifted_linear_root)
+# Cheap and visual first, deliberately: a break in the wasm build then surfaces
+# on a two-minute module rather than after twenty minutes of Bevy. The three
+# Phase 21 demos are last because they are the ones with a cross-check to run.
+DEMOS=(
+    quickstart
+    marching_cubes_tunnel
+    dual_contouring_cube
+    surface_nets_vs_marching_cubes
+    game_dig
+    game_showcase
+    game_mirror_dedup
+    game_edit_tape_trim
+    shifted_linear_root
+)
 OUT=web/dist
 PYTHON="${PYTHON:-python3}"
 
@@ -47,10 +68,38 @@ if ! command -v wasm-bindgen >/dev/null 2>&1 ||
     exit 1
 fi
 
+# `#[unsafe(no_mangle)]` is the only `unsafe` token `isomesh_web` is allowed, and
+# this is what enforces it. The crate carries `unsafe_code = "allow"` because
+# edition 2024 has no way to emit a wasm export without that attribute, so the
+# lint cannot draw the line and this does: an `unsafe` block, `fn`, `impl` or
+# `trait` in that crate stops the build here rather than shipping.
+#
+# It sits with the other refusals, above `rm -rf "$OUT"`, and deliberately: a
+# gate that fires *after* the clean has already destroyed the previous build, so
+# a local iteration loop pays 432 MB and eight minutes for a typo. Every check
+# that can fail without compiling anything belongs on this side of that line.
+if grep -rEn 'unsafe *(\{|fn |impl |trait )' isomesh_web/src; then
+    echo "isomesh_web may use #[unsafe(no_mangle)] and nothing else -- see its [lints.rust]" >&2
+    exit 1
+fi
+
 rustup target add wasm32-unknown-unknown
 
 rm -rf "$OUT"
 mkdir -p "$OUT/play/pkg"
+
+echo "==> isomesh_web (the front page's module)"
+(cd isomesh_web && cargo build --release --target wasm32-unknown-unknown)
+# Copied rather than piped through `wasm-opt`, and that is a measurement rather
+# than an omission. At M-362 `-Oz` took this module from 133,115 to 112,642 bytes
+# raw and from 49,837 to **50,493** gzipped: 15.4% smaller on disk and 1.3%
+# *bigger* on the wire, which is the number a front page actually pays. The Bevy
+# loop below was measured the same way and is worse -- 37,409,471 to 29,094,422
+# raw, 8,729,859 to **9,314,752** gzipped, 6.7% the wrong way, at 23 s per
+# module -- so there is no `wasm-opt` anywhere in this script and no `binaryen`
+# in CI. Each crate's own `[profile.release]` is doing this work already.
+cp isomesh_web/target/wasm32-unknown-unknown/release/isomesh_web.wasm \
+    "$OUT/isomesh_web.wasm"
 
 for demo in "${DEMOS[@]}"; do
     echo "==> $demo"
@@ -71,5 +120,6 @@ echo "wasm modules:"
 for demo in "${DEMOS[@]}"; do
     du -h "$OUT/play/pkg/$demo/${demo}_bg.wasm" | sed 's/^/  /'
 done
+du -h "$OUT/isomesh_web.wasm" | sed 's/^/  /'
 echo "site total:"
 du -sh "$OUT" | sed 's/^/  /'

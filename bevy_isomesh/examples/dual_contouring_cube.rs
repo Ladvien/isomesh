@@ -41,8 +41,7 @@
 
 mod common;
 
-use std::time::Instant;
-
+use bevy::platform::time::Instant;
 use bevy::prelude::*;
 use bevy_isomesh::MeshBuilder;
 use common::{Capture, CommonPlugin, DemoDomain, DemoMesh, DemoStats, OrbitCamera, ViewFlags};
@@ -110,6 +109,12 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "isomesh — E-104 dual contouring".into(),
+                // Web only, inert on native: bind to the 1280x720 canvas the
+                // page supplies rather than letting Bevy append its own. The HUD
+                // panels are laid out in pixels for that size, so the canvas is
+                // fixed and CSS scales it -- `fit_canvas_to_parent` stays at its
+                // `false` default for the same reason.
+                canvas: Some("#isomesh-canvas".into()),
                 ..default()
             }),
             ..default()

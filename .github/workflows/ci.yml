@@ -377,6 +377,19 @@ jobs:
           python-version: '3.12'
       - name: markdown renderer
         run: python3 -m pip install 'markdown>=3.7,<4' 'pymdown-extensions>=10,<11'
+      # `isomesh_web`'s own workspace, so the `lint` job's
+      # `cargo clippy --workspace` never sees it -- the same shape the `bevy` job
+      # has, for the same reason. These run before `build` so a lint or test
+      # failure in a 130 KB module is not reported after twenty minutes of Bevy.
+      - name: isomesh_web fmt
+        run: cargo fmt --all --check
+        working-directory: isomesh_web
+      - name: isomesh_web clippy
+        run: cargo clippy --all-targets -- -D warnings
+        working-directory: isomesh_web
+      - name: isomesh_web test
+        run: cargo test
+        working-directory: isomesh_web
       - name: build
         run: ./scripts/build_web.sh
       - uses: actions/upload-pages-artifact@v5

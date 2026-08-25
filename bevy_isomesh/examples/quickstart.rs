@@ -34,7 +34,17 @@ use isomesh::fields::Sphere;
 
 fn main() -> Result<(), isomesh::Error> {
     let mut app = App::new();
-    app.add_plugins(DefaultPlugins).add_plugins(IsomeshPlugin);
+    // The `canvas` selector is the only web-specific line in this example, and it
+    // is inert on native; `examples/common/mod.rs` explains why the canvas is
+    // fixed rather than fitted.
+    app.add_plugins(DefaultPlugins.set(WindowPlugin {
+        primary_window: Some(Window {
+            canvas: Some("#isomesh-canvas".into()),
+            ..default()
+        }),
+        ..default()
+    }))
+    .add_plugins(IsomeshPlugin);
 
     // 16 *cells* per chunk axis at 1/16 of a world unit each, so one chunk spans
     // exactly 1.0 and the eight below tile the cube from -1 to 1. `Sphere` is

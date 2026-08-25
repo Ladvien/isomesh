@@ -14,10 +14,10 @@
 
 <div class="stage">
   <canvas id="isomesh-canvas" width="1280" height="720"></canvas>
-  <div id="loading">loading … 36 MB, about 8.4 MB on the wire, first load only</div>
+  <div id="loading">loading … 36 MB, about 8.8 MB on the wire, first load only</div>
 </div>
 
-<p class="keys">
+<p class="keys" id="harness-keys">
   <kbd>left-drag</kbd> orbit · <kbd>scroll</kbd> zoom · <kbd>W</kbd> wireframe ·
   <kbd>N</kbd> normals · <kbd>G</kbd> grid and domain box · <kbd>Space</kbd> pause ·
   <kbd>1</kbd>–<kbd>7</kbd> reference field · <kbd>R</kbd> re-mesh ·
@@ -56,16 +56,102 @@
      in your browser and held against every number the CSV publishes.</p>
 </div>
 
+<div class="keys" id="notes-quickstart" hidden>
+  <p>No keys and no HUD: a sphere meshed as eight chunks, on screen, and nothing
+     else. It is the one example that does not share the demo harness, which is
+     why the controls above are not listed for it — everything it does is in
+     <a href="https://github.com/ladvien/isomesh/blob/main/bevy_isomesh/examples/quickstart.rs"><code>examples/quickstart.rs</code></a>,
+     and the file is the point rather than the picture.</p>
+  <p>What it proves here is the same thing it proves natively: eight chunks
+     meshed independently, and the result is still watertight.</p>
+</div>
+
+<div class="keys" id="notes-marching_cubes_tunnel" hidden>
+  <p><kbd>1</kbd> <kbd>2</kbd> configuration · <kbd>H</kbd> the inner hexagon ·
+     <kbd>C</kbd> the contours · <kbd>W</kbd> wireframe only</p>
+  <p>One cell, meshed twice. Left is the face rule alone — two separate discs.
+     Right adds the interior rule and gets one cylinder, which is what the
+     trilinear interpolant actually does there. The gold ring is the six body
+     saddles Grosso's construction is built out of.</p>
+</div>
+
+<div class="keys" id="notes-dual_contouring_cube" hidden>
+  <p><kbd>1</kbd> <kbd>2</kbd> field · <kbd>[</kbd> <kbd>]</kbd> resolution ·
+     <kbd>C</kbd> the cell clamp · <kbd>W</kbd> wireframe</p>
+  <p>Surface Nets on the left, Dual Contouring on the right, on the same field,
+     the same grid and the same crossings. The only difference between the two
+     meshes is where a cell's vertex goes, and the HUD measures each side's
+     distance to the true corner every re-mesh: <strong>0.58 cells against
+     0.01</strong> at 27³. That gap is the entire case for dual contouring.</p>
+</div>
+
+<div class="keys" id="notes-surface_nets_vs_marching_cubes" hidden>
+  <p><kbd>1</kbd>–<kbd>5</kbd> field · <kbd>[</kbd> <kbd>]</kbd> resolution ·
+     <kbd>S</kbd> smoothing passes · <kbd>W</kbd> wireframe</p>
+  <p>The catalog once billed this as "triangle counts differ". They do not, and
+     the HUD recomputes why on every re-mesh: <code>F_sn − F_mc = 2χ</code>
+     exactly, on every closed field, because both are pinned to the number of
+     crossed grid edges. Watch it hold as the field and the resolution change.</p>
+</div>
+
+<div class="keys" id="notes-game_dig" hidden>
+  <p><kbd>WASD</kbd> move · mouse to look · <strong>left click to carve</strong> ·
+     right click to fill · <kbd>Tab</kbd> releases the cursor ·
+     <kbd>[</kbd> <kbd>]</kbd> brush radius · <kbd>X</kbd> clears the edit log ·
+     <kbd>C</kbd> outlines the chunks the last edit re-meshed</p>
+  <p>The mesh is rebuilt while you hold the mouse down, and the two numbers on
+     screen are the ones that matter under load: chunks touched per edit, and
+     <strong>E1</strong> — the fraction of the brush's own bounding box that
+     actually changed. M-33 measured 15–36% offline; this is it live.</p>
+</div>
+
+<div class="keys" id="notes-game_showcase" hidden>
+  <p><kbd>Space</kbd> pause · <kbd>[</kbd> <kbd>]</kbd> fly speed ·
+     <kbd>1</kbd>–<kbd>3</kbd> how much of the world is cave</p>
+  <p>fBm terrain intersected with a thickened gyroid, so the camera flies
+     <em>through</em> the rock — under arches, into tunnels, out the far side of a
+     wall — which a heightfield cannot represent at all. This is the demo that
+     needs <code>IsomeshPlugin</code>'s streaming, and until ✗44 that plugin
+     panicked on its first chunk in any browser.</p>
+  <p>It runs at its committed defaults here. The example reads
+     <code>ISOMESH_*</code> environment variables to override the stream radius
+     and the frame budget, and a browser has no environment — so every one of
+     them takes the documented default rather than something a URL chose.</p>
+  <p>One thing to expect if you open the console on this one: streaming churns
+     meshes continuously, and Bevy 0.19's <code>bevy_render</code> slab allocator
+     logs <em>"Use-after-free: attempted to copy element data for an unallocated
+     key"</em> once per affected mesh under the WebGL2 backend — 3,186 times in a
+     45-second measured run. The demo streams and renders correctly through all
+     of it (411 chunks resident, 229,580 triangles). It is upstream of this
+     repository and it is not suppressed here, because a filter that hides a
+     renderer's errors would also hide the next real one.</p>
+</div>
+
 </div>
 
 <script type="module">
   // An allow-list, not the raw query string: `import(userInput)` on a page
   // anyone can link to is an arbitrary-module import.
+  //
+  // `scripts/doc_facts.sh` counts the entries here and holds them against the
+  // `DEMOS` array in `scripts/build_web.sh`, because the two failure modes are
+  // both invisible in a green CI run: a module built and not listed here is 36 MB
+  // nothing can reach, and one listed here and not built is a link to a 404.
   const DEMOS = {
+    quickstart: "The shortest path from a field to a mesh on screen",
+    marching_cubes_tunnel: "E-213 — the tunnel, meshed as a tunnel",
+    dual_contouring_cube: "E-104 — the corner, side by side",
+    surface_nets_vs_marching_cubes: "E-103 — Surface Nets beside Marching Cubes",
+    game_dig: "E-202 — carving tunnels, the way a game does it",
+    game_showcase: "E-210 — a world with a roof over your head",
     game_mirror_dedup: "E-314 — mirrored is not the same mesh",
     game_edit_tape_trim: "E-315 — the tape you keep is twenty times too big",
     shifted_linear_root: "E-316 — where the root falls decides the gain",
   };
+  // `quickstart` is the one example that does not use the demo harness, so the
+  // shared key list above is not true for it. Data rather than a branch, so a
+  // second such example is one name here.
+  const NO_HARNESS = new Set(["quickstart"]);
   const name = new URLSearchParams(location.search).get("demo");
   const overlay = document.getElementById("loading");
   const heading = document.getElementById("demo-title");
@@ -76,6 +162,7 @@
     document.title = DEMOS[name];
     heading.textContent = DEMOS[name];
     document.getElementById(`notes-${name}`).hidden = false;
+    document.getElementById("harness-keys").hidden = NO_HARNESS.has(name);
     try {
       const init = (await import(`./play/pkg/${name}/${name}.js`)).default;
       // `bevy_winit` calls `event_loop.spawn_app` on wasm, so this resolves and

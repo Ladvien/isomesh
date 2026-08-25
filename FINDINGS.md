@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**449 entries** — 43 falsified, 339 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**451 entries** — 44 falsified, 340 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -82,6 +82,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗41` | C1 and C2 HELD, C3 FALSIFIED: P-39's bound over-keeps by 20×, the 1,507 surviving brushes cut to 73 bit-exactly, and the… |
 | `✗42` | C1 FALSIFIED and C3 HELD, and C2 passes for a reason that is not its own: the paper's 8 dB reconstruction gain maps to a… |
 | `✗43` | "one interior vertex per cell is enough": the interior rule fans every contour of a cell from the same apex, and two con… |
+| `✗44` | "IsomeshPlugin is engine-agnostic and platform-agnostic": its frame budget calls std::time::Instant::now(), which compil… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -421,6 +422,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-350` | HELD, and the bound turned out to be provable: a central difference across a CSG seam is wrong by at most half the creas… |
 | `M-352` | HELD, FALSIFIED, HELD: every degenerate triangle comes from an exactly-equal corner, the repair moves no geometry at all… |
 | `M-354` | HELD on all three, and the prediction's shape is what held: affine arithmetic rejects 3.85× more cells on gyroid and exa… |
+| `M-362` | wasm-opt -Oz shrinks both site modules on disk and makes both bigger gzipped, so it is rejected on all ten (D-012) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -9658,3 +9660,85 @@ the same statement, and the cheap one.
 shared one. It would be **extended** by a non-manifold vertex whose two face groups sit in different
 cells — that is a third mechanism, and O-12 stays open for it: one mechanism found is not a proof that no
 other exists.
+
+### 💥 ✗44 / M-361 — "`IsomeshPlugin` is engine-agnostic and platform-agnostic": its frame budget calls `std::time::Instant::now()`, which compiles on wasm and then panics (D-012)
+
+**Believed because:** nothing said otherwise, anywhere, and the crate's own documentation reads as a
+platform-neutral promise. `bevy_isomesh`'s README presents `IsomeshPlugin` as the way to use `isomesh`
+from Bevy; the plugin's own doc comment describes streaming, budgets and chunk lifetimes without a word
+about targets; and `Instant` is in `std`, which `wasm32-unknown-unknown` has. The type resolves, the
+call type-checks, and `cargo check --target wasm32-unknown-unknown` was green on the whole crate before
+this was found. There is no compile error to notice.
+
+**Falsified by:** putting `game_showcase` on a web page. `plugin.rs:51` was
+`use std::time::{Duration, Instant};` and `:395` was `let started = Instant::now();` inside
+`apply_finished_meshes` — the system that spends the per-frame mesh budget, which is to say the one system
+every streaming consumer runs on the first frame a chunk lands. On `wasm32-unknown-unknown`
+`std::time::Instant::now()` panics with *"time not implemented on this platform"*, so the plugin took down
+`quickstart`, `game_showcase`, `game_terrain_stream`, `game_walk` and `game_capsule_walk` — the crate's
+entire browser story — at the moment it started working rather than at the moment it started.
+
+**Result:** `bevy_platform = "0.19"` in `[dependencies]`, with `features = ["web"]` under
+`[target.'cfg(target_arch = "wasm32")'.dependencies]`, and `use bevy_platform::time::Instant;` in place of
+`std`'s. `Duration` stayed on `std`, because it carries no clock. **Verified in the resolved graph rather
+than by inspection**, which matters here because the failure mode is a feature silently not reaching the
+library: `cargo tree --target wasm32-unknown-unknown -e normal -i web-time` prints
+`web-time v1.1.0 <- bevy_platform v0.19.0 <- bevy_isomesh`, so `Instant` is `web_time::Instant` in the
+**normal** (non-dev) wasm graph; the same command without `--target` prints *"nothing to print"*, so
+native carries no `web-time` and no behaviour changed there. `bevy_platform` unified onto the single copy
+Bevy already pulled in transitively — `grep -c 'name = "bevy_platform"' bevy_isomesh/Cargo.lock` is `1`,
+so there is no second clock in the graph.
+
+**The generalisable part is the shape of the hole, not the call.** A platform claim that no test states is
+not a claim, it is an assumption, and `cargo check --target wasm32-unknown-unknown` cannot see this class
+of defect at all — `std` on that target is *present and partly unimplemented*, so the panics are runtime.
+Three of the five affected examples were already in this repository and none of them ran anywhere that
+would have noticed. The demos on the site are now what notices.
+
+**Would be shown wrong by:** a browser run of any `IsomeshPlugin` demo panicking in
+`apply_finished_meshes` again, or `web-time` leaving the wasm normal graph, or `bevy_platform` appearing
+twice in the lockfile.
+
+### 🧊 M-362 — `wasm-opt -Oz` shrinks both site modules on disk and makes both *bigger* gzipped, so it is rejected on all ten (D-012)
+
+Registered as a rejected optimisation with numbers, which is worth more than an untried one: `isomesh_web`
+is the module behind `isomesh.ladvien.com`'s front-page demo, and the wire is what a front page pays.
+
+| `isomesh_web` | bytes | vs. raw |
+|---|---|---|
+| `cargo build --release --target wasm32-unknown-unknown` | 133,115 | — |
+| the same, `wasm-opt -Oz` | 112,642 | **−15.4%** |
+| raw, `gzip -6` | 49,837 | — |
+| `-Oz`, `gzip -6` | **50,493** | **+1.3%** |
+
+| `marching_cubes_tunnel_bg.wasm` (a Bevy module, post-`wasm-bindgen`) | bytes | vs. raw |
+|---|---|---|
+| `--profile wasm-release`, `wasm-bindgen --remove-name-section --remove-producers-section` | 37,409,471 | — |
+| the same, `wasm-opt -Oz` | 29,094,422 | **−22.2%** |
+| raw, `gzip -6` | 8,729,859 | — |
+| `-Oz`, `gzip -6` | **9,314,752** | **+6.7%** |
+
+`wasm-opt` 132, binaryen `version_132`, one run each, on the 5900X. The optimiser's own passes are not the
+question — it does remove a sixth of the small module and a fifth of the large one — it is that `gzip` was
+already finding that redundancy, and `-Oz`'s output compresses *worse* than the input it shrank. For
+`isomesh_web` the `[profile.release]` block does the work instead:
+`opt-level = "z"`, fat LTO, one codegen unit, `panic = "abort"` (every export returns a sentinel, so there
+is nothing to unwind and the landing pads are dead weight) and `strip = true`.
+
+**Two flags are needed to run it at all**, recorded because the failure is 60 screens of validator output
+that names neither cause: rustc emits `bulk-memory`, `multivalue`, `mutable-globals`,
+`nontrapping-fptoint`, `reference-types` and `sign-ext` by default on `wasm32-unknown-unknown` — check
+with `rustc --print cfg --target wasm32-unknown-unknown | grep target_feature` — and binaryen 132 accepts
+none of them unless each is passed as `--enable-…`. Without them `wasm-opt` exits 1 on
+`memory.copy operations require bulk memory operations`.
+
+**The direction is the same on both and the magnitude is worse on the big one**, which is the part that
+decided it. The rule was set before either measurement — adopt only at a **≥15% gzipped** saving — and
+`-Oz` is not merely short of that bar, it is on the wrong side of zero on a 133 KB module and 6.7% on the
+wrong side on a 37 MB one. The Bevy pass also costs **23 s wall** per module, so nine of them would add
+about three and a half minutes to every `site` job to ship 585 KB more over the wire. `binaryen` is
+therefore in neither `build_web.sh` nor CI, and the site has exactly one build path per module.
+
+**Would be shown wrong by:** a binaryen release whose `-Oz` output gzips smaller than the input's, or a
+host that serves these modules uncompressed — on which the disk figure would be the wire figure and the
+decision would invert.

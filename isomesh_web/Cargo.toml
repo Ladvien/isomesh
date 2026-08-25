@@ -1,0 +1,53 @@
+[package]
+name = "isomesh_web"
+description = "The wasm module behind isomesh.ladvien.com's front-page demo. Not published."
+version = "0.0.9"
+edition = "2024"
+rust-version = "1.89"
+license = "MIT OR Apache-2.0"
+# A site artefact, not a library. `publish.sh` discovers members via `cargo
+# metadata` from the root workspace, which excludes this one, and unlike
+# `bevy_isomesh` it gets no explicit stanza there -- so this is belt and braces.
+publish = false
+
+# Its own workspace, for the reason the root manifest gives for `bevy_isomesh`:
+# a member's features unify into the root lockfile, and this crate exists to
+# prove what `isomesh` alone costs on the wire. Sharing a lockfile would make
+# that measurement depend on what every other member happens to enable.
+[workspace]
+
+[lib]
+# `cdylib` is what emits a wasm module; `rlib` is what lets `cargo test` run the
+# name-agreement tests below on the host.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+isomesh = { path = "../crates/isomesh" }
+
+[lints.rust]
+missing_docs = "warn"
+missing_debug_implementations = "warn"
+unreachable_pub = "warn"
+# The one deliberate deviation from the workspace's `unsafe_code = "forbid"`, and
+# the reason is mechanical rather than a preference: a wasm export needs
+# `#[unsafe(no_mangle)]` under edition 2024, and there is no way to emit one
+# without tripping this lint -- `wasm-bindgen`'s macro has the same problem,
+# which is why it is not used here either. What is enforced instead is stronger
+# and checkable: `build_web.sh` refuses to build if this crate contains an
+# `unsafe` block, `fn`, `impl` or `trait`. Only the attribute is permitted.
+unsafe_code = "allow"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+# Nothing here is meant to unwind: every export returns a sentinel instead. Abort
+# halves the module and removes the landing pads.
+panic = "abort"
+strip = true

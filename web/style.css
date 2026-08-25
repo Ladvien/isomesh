@@ -156,3 +156,70 @@ del { text-decoration: line-through; color: var(--dim); }
   font-family: inherit;
   color: var(--ink);
 }
+
+/* index.md's front-page demo, which is not a Bevy build and so has none of the
+ * fixed-canvas constraint above: `lite.js` sizes its backing store from
+ * `clientWidth` on every draw, so this one really does fit its parent. */
+#isomesh-lite {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  /* The canvas is the drag surface for the orbit camera. Without this, a drag
+   * that leaves the element selects the prose behind it. */
+  touch-action: none;
+  user-select: none;
+}
+
+.lite-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 1.1rem;
+  margin: 0.8rem 0 0.4rem;
+  font-size: 0.94rem;
+  color: var(--dim);
+}
+
+.lite-controls select,
+.lite-controls input[type="range"] {
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0.15rem 0.3rem;
+  font: inherit;
+}
+
+.lite-controls label { display: flex; align-items: center; gap: 0.4rem; }
+
+/* The report, and it is the point of the demo rather than decoration: these are
+ * the same counters `isomesh::validate` puts in front of every test in the
+ * repository, recomputed in the reader's browser. */
+.lite-hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.4rem;
+  margin: 0.2rem 0 0;
+  padding: 0.55rem 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: var(--dim);
+}
+
+.lite-hud b { color: var(--ink); font-weight: 600; }
+
+/* Hidden until something actually fails, and then it is the only thing on the
+ * page that matters -- there is no degraded renderer behind it to fall back to. */
+#lite-error {
+  margin: 0.8rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid #7a3b3b;
+  border-radius: 4px;
+  background: #2a1a1c;
+  color: #ffd9d9;
+}

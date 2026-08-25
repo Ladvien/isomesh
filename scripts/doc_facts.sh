@@ -66,6 +66,7 @@ DOCS=(
     docs/demos/gameplay.md
     docs/experiments.md
     docs/measurements/README.md
+    web/index.md
 )
 
 WORDS='zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve'
@@ -111,8 +112,14 @@ SHOOTOUT_ALGS=$(tail -n +2 docs/measurements/shootout.csv 2>/dev/null |
 # Bevy examples on disk. `common/` is a shared module, not an example.
 EXAMPLES=$(find bevy_isomesh/examples -maxdepth 1 -name '*.rs' | grep -c . || true)
 
+# Playable web demos: the array `scripts/build_web.sh` iterates is the one place
+# that decides what is built for the browser, so it is the source and the three
+# prose sites follow it. One name per line, no comments inside the array, which
+# is what makes this a `grep -c` rather than a parser.
+PLAYABLE=$(sed -n '/^DEMOS=($/,/^)$/p' scripts/build_web.sh | grep -cE '^ +[a-z_]+$' || true)
+
 for pair in "FIELDS:$FIELDS" "EXTRACTORS:$EXTRACTORS" "HASHES:$HASHES" \
-    "SHOOTOUT_ALGS:$SHOOTOUT_ALGS" "EXAMPLES:$EXAMPLES"; do
+    "SHOOTOUT_ALGS:$SHOOTOUT_ALGS" "EXAMPLES:$EXAMPLES" "PLAYABLE:$PLAYABLE"; do
     if [ "${pair#*:}" -lt 1 ]; then
         problem "cannot derive ${pair%%:*} — the source moved and this gate is blind"
     fi
@@ -129,6 +136,10 @@ done
 check "$FIELDS" "reference fields" '[a-z]* ?reference fields'
 check "$EXTRACTORS" "extractors" 'extractors, side by side'
 check "$EXTRACTORS" "extractors" 'isosurface extractors'
+# `web/index.md`'s lead paragraph, which was ungated until that file joined
+# `DOCS` -- and neither phrase above matches it, so adding the file was not
+# enough on its own.
+check "$EXTRACTORS" "extractors" 'extractors sit behind one trait'
 check "$HASHES" "golden hashes" 'golden hashes'
 check "$SHOOTOUT_ALGS" "algorithms in the shootout" '[-]?algorithm shootout'
 
@@ -143,6 +154,31 @@ check "$SHOOTOUT_ALGS" "algorithms in the shootout" '[-]?algorithm shootout'
 # warning ("adding a loose one costs everybody who runs this") landing on its
 # author.
 check "$EXAMPLES" "examples" 'examples, each with an animated capture'
+
+# The site's own claim, in three files: `web/index.md`, `bevy_isomesh/DEMOS.md`
+# and -- once it says so -- `README.md`. It went from three to nine in one
+# afternoon, which is exactly the kind of number this script exists for.
+check "$PLAYABLE" "playable demos" 'of the demos are playable'
+
+# A structural check the prose helper cannot express, because it compares two
+# files rather than a file against a count. Both failure modes are invisible in a
+# green CI run: a demo built and not allow-listed is a 36 MB module nothing can
+# reach, and one allow-listed and not built is a link to a 404. The `site` job
+# passes either way.
+ALLOWLIST=$(sed -n '/const DEMOS = {/,/};/p' web/play.html | grep -cE '^ +[a-z_]+:' || true)
+if [ "$ALLOWLIST" -ne "$PLAYABLE" ]; then
+    problem "web/play.html allow-lists $ALLOWLIST demos, scripts/build_web.sh builds $PLAYABLE"
+fi
+
+# And one per demo in the other direction: every allow-listed demo needs the
+# `#notes-<name>` block `play.html`'s script unhides, or the page throws on a
+# null `hidden` assignment before the module ever loads.
+while read -r demo; do
+    [ -n "$demo" ] || continue
+    grep -qF "id=\"notes-$demo\"" web/play.html ||
+        problem "web/play.html allow-lists $demo with no #notes-$demo block"
+done < <(sed -n '/^DEMOS=($/,/^)$/p' scripts/build_web.sh | grep -oE '^ +[a-z_]+$' |
+    tr -d ' ' || true)
 
 # --- media referenced but absent ----------------------------------------------
 #
@@ -160,7 +196,17 @@ for doc in "${DOCS[@]}"; do
             ;;
         http*) continue ;;
         /*) path=$ref ;;
-        *) path="$(dirname "$doc")/$ref" ;;
+        # `web/index.md` is rendered as the site *root*, so its relative targets
+        # resolve against the repository root rather than against `web/` -- the
+        # same `link_base` column `scripts/build_site.py` carries, and the one
+        # thing about that file an implementer is most likely to assume away.
+        # Every other document here resolves against its own directory.
+        *)
+            case "$doc" in
+            web/*) path=$ref ;;
+            *) path="$(dirname "$doc")/$ref" ;;
+            esac
+            ;;
         esac
         [ -e "$path" ] || problem "$doc references media that is not on disk" "$ref → $path"
     done < <(grep -ohE '\]\([^) ]*\.(gif|png|jpg|jpeg|webp|svg)\)' "$doc" 2>/dev/null |
@@ -173,5 +219,5 @@ if [ "$fail" -ne 0 ]; then
     exit 1
 fi
 
-printf 'doc facts: %s fields, %s extractors, %s golden hashes, %s shootout algorithms, %s examples — no drift\n' \
-    "$FIELDS" "$EXTRACTORS" "$HASHES" "$SHOOTOUT_ALGS" "$EXAMPLES"
+printf 'doc facts: %s fields, %s extractors, %s golden hashes, %s shootout algorithms, %s examples, %s playable demos — no drift\n' \
+    "$FIELDS" "$EXTRACTORS" "$HASHES" "$SHOOTOUT_ALGS" "$EXAMPLES" "$PLAYABLE"
