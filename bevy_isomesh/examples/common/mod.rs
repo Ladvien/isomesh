@@ -150,6 +150,13 @@ pub struct DemoStats {
     pub extract_ms: f64,
     /// Extra lines, one per entry.
     pub extra: Vec<String>,
+    /// The key list, when an example's bindings are not the harness's.
+    ///
+    /// `None` prints the shared footer below. `Some` replaces it outright rather
+    /// than appending, because the point is that the shared line is *wrong* for
+    /// that example -- `game_dig` flies on `WASD`, so a footer offering `[W]
+    /// wire` documents a key that walks forward.
+    pub keys: Option<String>,
 }
 
 /// A rolling window of frame times.
@@ -586,13 +593,19 @@ fn update_hud(
         text.push('\n');
         text.push_str(line);
     }
-    text.push_str(&format!(
-        "\n\n[W] wire {}   [N] normals {}   [G] grid {}\n[Space] {}   [R] re-mesh   [F12] shot   [Esc] quit",
-        on_off(flags.wireframe),
-        on_off(flags.normals),
-        on_off(flags.grid),
-        if flags.paused { "resume" } else { "pause" },
-    ));
+    match &stats.keys {
+        Some(keys) => {
+            text.push_str("\n\n");
+            text.push_str(keys);
+        }
+        None => text.push_str(&format!(
+            "\n\n[W] wire {}   [N] normals {}   [G] grid {}\n[Space] {}   [R] re-mesh   [F12] shot   [Esc] quit",
+            on_off(flags.wireframe),
+            on_off(flags.normals),
+            on_off(flags.grid),
+            if flags.paused { "resume" } else { "pause" },
+        )),
+    }
 
     for mut target in &mut query {
         target.0.clone_from(&text);

@@ -114,21 +114,60 @@ blockquote {
  * retracted. It has to read as struck through rather than merely faded. */
 del { text-decoration: line-through; color: var(--dim); }
 
-/* play.html. The canvas is fixed at 1280x720 because the demos lay their HUD
- * panels out in pixels for that size; CSS scales it down, never the other way,
- * and `fit_canvas_to_parent` stays off for the same reason. */
+/* play.html. `play.html` gives the canvas `width="1280" height="720"`, and this
+ * caps the box it is drawn in. What actually happens when it does is worth
+ * writing down, because it is not what the `1280x720` attributes suggest:
+ * `bevy_winit` observes the element and reports its CSS box as the window size,
+ * so the render resolution *follows* this rule -- measured 993x558 in a
+ * 1400x900 window. That is the better half of the deal, not a cost: HUD text
+ * declared at `FontSize::Px(13.0)` lands on 13 real device pixels instead of
+ * being drawn at 13 and scaled down to 10, and SwiftShader rasterises 39% fewer
+ * of them. The pixel-laid-out HUD still fits, which is the thing to re-check if
+ * this cap ever gets tighter.
+ *
+ * The side padding is load-bearing rather than decorative. Bevy's
+ * `Window::prevent_default_event_handling` defaults to `true` and no demo
+ * overrides it, so a wheel event over the canvas is consumed by the app and the
+ * page does not scroll -- correctly, because that wheel is the camera's zoom.
+ * The gutter is what the reader puts the pointer in to scroll past the demo, so
+ * it has to survive every viewport: `clamp` keeps it from eating a phone screen
+ * and from growing past a thumb's width on a monitor.
+ *
+ * The height cap goes on `.stage` as a max-WIDTH derived from it, not as a
+ * max-height: `aspect-ratio` plus `width: 100%` plus `max-height` would honour
+ * the height and keep the width, which is a stretched picture rather than a
+ * smaller one. */
 .play {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 1rem 1rem 3rem;
+  padding: 1rem clamp(1rem, 7vw, 7rem) 3rem;
 }
 
-.stage { position: relative; }
+/* Sized here rather than on the canvas so `#loading`'s `inset: 0` still covers
+ * exactly the canvas and not the gutter beside it. */
+.stage {
+  position: relative;
+  width: 100%;
+  max-width: min(1280px, calc(74vh * 16 / 9));
+  margin-inline: auto;
+}
 
+/* `!important` on the two size properties, and it is the only `!important` in
+ * this file. `bevy_winit` writes the canvas's CSS size *inline* from the backing
+ * store -- the served element carries
+ * `style="width: 1282px; height: 722px; min-width: 182px; min-height: 122px"` --
+ * and an inline declaration beats a stylesheet rule that is not important. The
+ * plain `width: 100%` this file used to carry therefore never applied at all,
+ * which is exactly why the canvas was 1282 px wide on every viewport and the
+ * page could not be scrolled past it.
+ *
+ * The canvas keeps `aspect-ratio` rather than winit's inline `height`, so the
+ * box stays 16:9 whatever the cap resolves to. `min-width`/`min-height` are left
+ * alone -- winit's 182x122 floor is below anything this produces. */
 #isomesh-canvas {
   display: block;
-  width: 100%;
-  max-width: 1280px;
+  width: 100% !important;
+  height: auto !important;
   aspect-ratio: 16 / 9;
   background: #000;
   border: 1px solid var(--line);
@@ -163,6 +202,11 @@ del { text-decoration: line-through; color: var(--dim); }
 #isomesh-lite {
   display: block;
   width: 100%;
+  /* Same height cap as the play page, same reason: on a short window the demo
+   * must not fill the viewport, or there is nowhere to scroll from. `lite.js`
+   * re-reads `clientWidth` every draw, so the backing store follows. */
+  max-width: min(100%, calc(68vh * 16 / 9));
+  margin-inline: auto;
   aspect-ratio: 16 / 9;
   background: var(--panel);
   border: 1px solid var(--line);

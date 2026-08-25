@@ -37,15 +37,18 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# Cheap and visual first, deliberately: a break in the wasm build then surfaces
-# on a two-minute module rather than after twenty minutes of Bevy. The three
-# Phase 21 demos are last because they are the ones with a cross-check to run.
+# `game_dig` first because it is the flagship: it is the demo the front page and
+# both prose sites lead with, so a break in it is the break that matters most and
+# should surface before twenty minutes of the rest. Then cheap and visual, so a
+# break in the wasm build in general still surfaces on a two-minute module rather
+# than at the end. The three Phase 21 demos are last because they are the ones
+# with a cross-check to run.
 DEMOS=(
+    game_dig
     quickstart
     marching_cubes_tunnel
     dual_contouring_cube
     surface_nets_vs_marching_cubes
-    game_dig
     game_showcase
     game_mirror_dedup
     game_edit_tape_trim

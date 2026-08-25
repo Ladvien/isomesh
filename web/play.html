@@ -95,14 +95,29 @@
 </div>
 
 <div class="keys" id="notes-game_dig" hidden>
-  <p><kbd>WASD</kbd> move · mouse to look · <strong>left click to carve</strong> ·
-     right click to fill · <kbd>Tab</kbd> releases the cursor ·
-     <kbd>[</kbd> <kbd>]</kbd> brush radius · <kbd>X</kbd> clears the edit log ·
-     <kbd>C</kbd> outlines the chunks the last edit re-meshed</p>
+  <p><kbd>WASD</kbd> <kbd>Q</kbd> <kbd>E</kbd> fly · mouse to look ·
+     <kbd>Shift</kbd> fast · <kbd>Tab</kbd> releases the cursor</p>
+  <p><strong>Hold the left button to carve</strong>, the right to fill. The
+     translucent sphere on the rock under the crosshair is the brush that a click
+     would push — orange to carve, cyan to fill — so what you see is what you
+     get, at the surface rather than at a fixed distance in front of your eye.
+     The wheel or <kbd>[</kbd> <kbd>]</kbd> resizes it, <kbd>Z</kbd> undoes one
+     brush, <kbd>X</kbd> clears the log, <kbd>C</kbd> outlines the chunks the last
+     edit re-meshed.</p>
+  <p><kbd>1</kbd>–<kbd>7</kbd> swap the extractor — Marching Cubes, the same with
+     the asymptotic decider, Marching Tetrahedra, Surface Nets, Dual Contouring,
+     Manifold Dual Contouring, Greedy Quads — and re-mesh all 256 chunks with it.
+     The HUD prints what that cost, which is the only honest way to show that
+     Marching Tetrahedra is three times the triangles.</p>
   <p>The mesh is rebuilt while you hold the mouse down, and the two numbers on
      screen are the ones that matter under load: chunks touched per edit, and
      <strong>E1</strong> — the fraction of the brush's own bounding box that
      actually changed. M-33 measured 15–36% offline; this is it live.</p>
+  <p>The rock is cracked concrete, textured by the fragment shader rather than by
+     the mesh: an isosurface has no natural parameterisation, so the material
+     samples all three world planes and interpolates between them by the normal.
+     Carve a fresh hole and the new interior surface is textured continuously with
+     the ground around it, across the chunk boundary the brush straddled.</p>
 </div>
 
 <div class="keys" id="notes-game_showcase" hidden>
@@ -138,20 +153,23 @@
   // both invisible in a green CI run: a module built and not listed here is 36 MB
   // nothing can reach, and one listed here and not built is a link to a 404.
   const DEMOS = {
+    game_dig: "E-202 — carving tunnels, the way a game does it",
     quickstart: "The shortest path from a field to a mesh on screen",
     marching_cubes_tunnel: "E-213 — the tunnel, meshed as a tunnel",
     dual_contouring_cube: "E-104 — the corner, side by side",
     surface_nets_vs_marching_cubes: "E-103 — Surface Nets beside Marching Cubes",
-    game_dig: "E-202 — carving tunnels, the way a game does it",
     game_showcase: "E-210 — a world with a roof over your head",
     game_mirror_dedup: "E-314 — mirrored is not the same mesh",
     game_edit_tape_trim: "E-315 — the tape you keep is twenty times too big",
     shifted_linear_root: "E-316 — where the root falls decides the gain",
   };
-  // `quickstart` is the one example that does not use the demo harness, so the
-  // shared key list above is not true for it. Data rather than a branch, so a
-  // second such example is one name here.
-  const NO_HARNESS = new Set(["quickstart"]);
+  // Demos the shared key list above does not describe. `quickstart` does not use
+  // the demo harness at all; `game_dig` uses it but rebinds every key on that
+  // line — it flies on `WASD`, has no orbit camera, and spends the wheel on the
+  // brush radius — so advertising `W` as wireframe there documents a key that
+  // walks you forward. Data rather than a branch, so a third such example is one
+  // name here.
+  const HIDE_SHARED_KEYS = new Set(["quickstart", "game_dig"]);
   const name = new URLSearchParams(location.search).get("demo");
   const overlay = document.getElementById("loading");
   const heading = document.getElementById("demo-title");
@@ -162,7 +180,7 @@
     document.title = DEMOS[name];
     heading.textContent = DEMOS[name];
     document.getElementById(`notes-${name}`).hidden = false;
-    document.getElementById("harness-keys").hidden = NO_HARNESS.has(name);
+    document.getElementById("harness-keys").hidden = HIDE_SHARED_KEYS.has(name);
     try {
       const init = (await import(`./play/pkg/${name}/${name}.js`)).default;
       // `bevy_winit` calls `event_loop.spawn_app` on wasm, so this resolves and

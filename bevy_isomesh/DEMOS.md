@@ -7,11 +7,11 @@ line to run it.
 link, if you would rather send someone a URL than a repository. Nine of the demos are playable in your
 browser there as WebAssembly builds, and the three Phase 21 ones each still print their cross-check against
 their committed CSV to the console:
+[`game_dig`](https://isomesh.ladvien.com/play.html?demo=game_dig),
 [`quickstart`](https://isomesh.ladvien.com/play.html?demo=quickstart),
 [`marching_cubes_tunnel`](https://isomesh.ladvien.com/play.html?demo=marching_cubes_tunnel),
 [`dual_contouring_cube`](https://isomesh.ladvien.com/play.html?demo=dual_contouring_cube),
 [`surface_nets_vs_marching_cubes`](https://isomesh.ladvien.com/play.html?demo=surface_nets_vs_marching_cubes),
-[`game_dig`](https://isomesh.ladvien.com/play.html?demo=game_dig),
 [`game_showcase`](https://isomesh.ladvien.com/play.html?demo=game_showcase),
 [`game_mirror_dedup`](https://isomesh.ladvien.com/play.html?demo=game_mirror_dedup),
 [`game_edit_tape_trim`](https://isomesh.ladvien.com/play.html?demo=game_edit_tape_trim),
@@ -369,14 +369,22 @@ cargo run --example game_mirror_dedup --release
 
 ![A first-person camera carving tunnels through chunked terrain](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/digging-a-tunnel.gif)
 
-`WASD` to move, mouse to look, left click to carve, right click to fill. `C` outlines exactly the
-chunks the last edit re-meshed.
+`WASD`/`QE` fly, mouse looks, **hold** left to carve and right to fill. The translucent sphere on the rock
+under the crosshair is the brush a click would push — sphere-traced against the field itself, so it tracks
+the surface and cannot go stale when the surface moves. `1`–`7` re-mesh all 256 chunks of the 16×8×16-unit
+sandbox with a different extractor and print what that cost; `Z` undoes one brush by re-folding the log;
+`C` outlines exactly the chunks the last edit re-meshed.
 
 The number this example exists for is **E1**: a brush changes **15–36%** of the cells inside its own
 bounding box (M-33). Counting value changes overstates the re-mesh set by 2.8–3.7× (M-34).
 
+The rock is textured by an `ExtendedMaterial` whose fragment shader samples three world planes and
+interpolates between them by the normal, because an isosurface has no natural parameterisation and
+`MeshBuilder`'s dominant-axis UVs seam where the axis flips. Shader and textures are compiled in, since
+nothing copies an `assets/` tree into the published site.
+
 ```bash
-cargo run --example game_dig --release          # WASD Q E move · click carve · right click fill · [ ] radius · C outlines
+cargo run --example game_dig --release          # hold LMB carve · RMB fill · wheel radius · 1-7 extractor · Z undo
 ```
 
 ### Sixty-four edits deep, and the mesher only looks at twenty-one

@@ -71,6 +71,25 @@ Each module is 36 MB, about 8.8 MB on the wire once the host has gzipped it, and
 first visit. Each also carries its own copy of the Bevy runtime, which is where almost all of that goes —
 the demo at the top of this page is the same library without it, at 130 KB.
 
+### [▶ Play `game_dig`](site:play.html?demo=game_dig)
+
+![A first-person camera carving tunnels through chunked terrain](docs/gifs/digging-a-tunnel.gif)
+
+A 16×8×16-unit sandbox of cracked concrete, 256 chunks, and the mesh is rebuilt **while you are holding the
+mouse down**. The translucent sphere on the rock under the crosshair is the brush a click would push, traced
+against the field itself rather than against a collider, so it sits on the surface and not at a fixed
+distance in front of your eye — hold the button and it carves a continuous tunnel along the sweep.
+<kbd>1</kbd>–<kbd>7</kbd> re-mesh all 256 chunks with a different extractor and print what that cost.
+
+A brush changes an SDF everywhere, because an SDF is global; what it changes *visibly* is a shell, and the
+number the whole incremental story rests on is how thin that shell is. **E1 — the fraction of the brush's
+own bounding box that actually moved — was measured at 15–36% offline; here it is on screen, per edit.**
+The rock is textured by the fragment shader rather than by the mesh, because an isosurface has no natural
+parameterisation: three world-plane projections, interpolated by the normal, so a freshly carved wall is
+continuous with the ground across the chunk boundary the brush straddled.
+
+`M-33` · `G-002` · `E-202` · <kbd>C</kbd> outlines exactly the chunks the last edit re-meshed
+
 ### [▶ Play `game_showcase`](site:play.html?demo=game_showcase)
 
 ![Flying through a landscape riddled with caves, arches and tunnels](docs/gifs/flying-through-the-rock.gif)
@@ -116,17 +135,6 @@ a handle and a handle costs exactly two of χ, so the claim is arithmetic: **χ 
 nothing else**.
 
 `M-222` · `E-213` · the gold ring is the six body saddles Grosso's construction is built out of
-
-### [▶ Play `game_dig`](site:play.html?demo=game_dig)
-
-![A first-person camera carving tunnels through chunked terrain](docs/gifs/digging-a-tunnel.gif)
-
-The first demo where the mesh is rebuilt **while you are holding the mouse down**. A brush changes an SDF
-everywhere, because an SDF is global; what it changes *visibly* is a shell, and the number the whole
-incremental story rests on is how thin that shell is. **E1 — the fraction of the brush's own bounding box
-that actually moved — was measured at 15–36% offline; here it is on screen, per edit.**
-
-`M-33` · `G-002` · `E-202` · <kbd>C</kbd> outlines exactly the chunks the last edit re-meshed
 
 ### [▶ Play `quickstart`](site:play.html?demo=quickstart)
 
