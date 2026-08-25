@@ -17,6 +17,10 @@ their committed CSV to the console:
 [`game_edit_tape_trim`](https://isomesh.ladvien.com/play.html?demo=game_edit_tape_trim),
 [`shifted_linear_root`](https://isomesh.ladvien.com/play.html?demo=shifted_linear_root).
 
+Those nine need **WebGPU**, not WebGL2. `game_dig` offers Marching Cubes on the GPU as one of its eight
+mesher options, Cargo features are per-package, and `bevy_render` gives its `webgpu` feature precedence over
+`webgl2` on `wasm32` — so there is no per-example choice to make and all nine moved backend together.
+
 The front page carries a tenth that is not a Bevy build at all: `isomesh` itself compiled to WebAssembly
 with a hand-written WebGL2 renderer, **130 KB against these modules' 36 MB**, with the validity report
 recomputed live. That is the size the library costs on its own.
@@ -369,11 +373,22 @@ cargo run --example game_mirror_dedup --release
 
 ![A first-person camera carving tunnels through chunked terrain](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/digging-a-tunnel.gif)
 
-`WASD`/`QE` fly, mouse looks, **hold** left to carve and right to fill. The translucent sphere on the rock
-under the crosshair is the brush a click would push — sphere-traced against the field itself, so it tracks
-the surface and cannot go stale when the surface moves. `1`–`7` re-mesh all 256 chunks of the 16×8×16-unit
-sandbox with a different extractor and print what that cost; `Z` undoes one brush by re-folding the log;
-`C` outlines exactly the chunks the last edit re-meshed.
+`WASD` walks, mouse looks, `V` jumps, `Shift` runs and `F` switches to the fly mode this demo used to open
+in, where gravity is off and `Q`/`E` go straight up and down. Walking is gravity, ground contact and
+collision sampled from the field under two spheres rather than from a collision mesh, because a collider
+built from this terrain is stale the moment you carve — which is every frame you hold the button.
+
+**Hold** left to carve and right to fill. The translucent sphere on the rock under the crosshair is the
+brush a click would push — sphere-traced against the field itself, so it tracks the surface and cannot go
+stale when the surface moves. A held button carves at a fixed 20 edits a second and the chunks that fall out
+of it are re-meshed nearest-first under a 4 ms/frame budget, so a long stroke holds its frame time instead of
+collapsing as the edit log grows. `1`–`8` re-mesh all 256 chunks of the 16×8×16-unit sandbox with a
+different mesher and print what that cost — the seven CPU extractors, then `8` for Marching Cubes on the
+GPU, a compute shader through `isomesh-gpu`; the rendering was always on the GPU, what moves on `8` is the
+*extraction*. A dimmed "Loading… please wait." panel covers the screen while that 256-chunk backlog drains,
+because it drains across frames now rather than blocking one. `Z` undoes one brush by re-folding the log;
+`C` outlines exactly the chunks the last edit re-meshed; `H` hides the HUD and leaves a one-line `[H] HUD`
+hint behind.
 
 The number this example exists for is **E1**: a brush changes **15–36%** of the cells inside its own
 bounding box (M-33). Counting value changes overstates the re-mesh set by 2.8–3.7× (M-34).
@@ -384,7 +399,7 @@ interpolates between them by the normal, because an isosurface has no natural pa
 nothing copies an `assets/` tree into the published site.
 
 ```bash
-cargo run --example game_dig --release          # hold LMB carve · RMB fill · wheel radius · 1-7 extractor · Z undo
+cargo run --example game_dig --release          # WASD walk · V jump · F fly · hold LMB carve · 1-8 mesher · Z undo
 ```
 
 ### Sixty-four edits deep, and the mesher only looks at twenty-one

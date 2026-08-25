@@ -20,6 +20,7 @@
 <p class="keys" id="harness-keys">
   <kbd>left-drag</kbd> orbit · <kbd>scroll</kbd> zoom · <kbd>W</kbd> wireframe ·
   <kbd>N</kbd> normals · <kbd>G</kbd> grid and domain box · <kbd>Space</kbd> pause ·
+  <kbd>H</kbd> hides the HUD, leaving a <code>[H] HUD</code> line ·
   <kbd>1</kbd>–<kbd>7</kbd> reference field · <kbd>R</kbd> re-mesh ·
   <kbd>F12</kbd> screenshot (downloads a PNG)
 </p>
@@ -95,8 +96,17 @@
 </div>
 
 <div class="keys" id="notes-game_dig" hidden>
-  <p><kbd>WASD</kbd> <kbd>Q</kbd> <kbd>E</kbd> fly · mouse to look ·
-     <kbd>Shift</kbd> fast · <kbd>Tab</kbd> releases the cursor</p>
+  <p><kbd>WASD</kbd> walk · mouse to look · <kbd>V</kbd> jump ·
+     <kbd>Shift</kbd> fast · <kbd>F</kbd> fly · <kbd>H</kbd> HUD ·
+     <kbd>Tab</kbd> releases the cursor</p>
+  <p>You start <strong>walking</strong> on the rock: gravity pulls you down, the
+     ground holds you up, and a stone face stops you dead. All three come from
+     sampling the field under two spheres rather than from a collision mesh,
+     because a collider built from this terrain is stale the moment you carve —
+     which is every frame you hold the button. <kbd>V</kbd> jumps about a unit,
+     enough to climb out of a brush. <kbd>F</kbd> switches back to the fly mode
+     this demo used to open in, where gravity is off and <kbd>Q</kbd> and
+     <kbd>E</kbd> go straight up and down.</p>
   <p><strong>Hold the left button to carve</strong>, the right to fill. The
      translucent sphere on the rock under the crosshair is the brush that a click
      would push — orange to carve, cyan to fill — so what you see is what you
@@ -104,15 +114,34 @@
      The wheel or <kbd>[</kbd> <kbd>]</kbd> resizes it, <kbd>Z</kbd> undoes one
      brush, <kbd>X</kbd> clears the log, <kbd>C</kbd> outlines the chunks the last
      edit re-meshed.</p>
-  <p><kbd>1</kbd>–<kbd>7</kbd> swap the extractor — Marching Cubes, the same with
-     the asymptotic decider, Marching Tetrahedra, Surface Nets, Dual Contouring,
-     Manifold Dual Contouring, Greedy Quads — and re-mesh all 256 chunks with it.
-     The HUD prints what that cost, which is the only honest way to show that
-     Marching Tetrahedra is three times the triangles.</p>
+  <p>Holding a button carves at a fixed <strong>20 edits a second</strong> rather
+     than one per frame, and the chunks that fall out of it are re-meshed under a
+     <strong>4 ms per frame</strong> budget — nearest to the camera first, with
+     whatever does not fit carried into the next frame. That is the difference
+     between a long stroke that holds its frame time and one that collapses:
+     every sample of every chunk still evaluates every brush in the log, so the
+     only two things that can save you are growing the log more slowly and
+     refusing to pay for all of it at once.</p>
+  <p><kbd>1</kbd>–<kbd>8</kbd> swap the mesher and re-mesh all 256 chunks with it
+     — Marching Cubes, the same with the asymptotic decider, Marching
+     Tetrahedra, Surface Nets, Dual Contouring, Manifold Dual Contouring, Greedy
+     Quads, and on <kbd>8</kbd> Marching Cubes again but on the <strong>GPU</strong>,
+     as a compute shader through <code>isomesh-gpu</code>. The rendering was
+     always on the GPU; what moves on <kbd>8</kbd> is the <em>extraction</em> —
+     the field is uploaded, the cells are counted and prefix-scanned and the
+     triangles emitted on the device, and the vertices come back a frame later
+     rather than in the call that asked for them. The HUD prints what each choice
+     cost, which is the only honest way to show that Marching Tetrahedra is three
+     times the triangles. A dimmed <em>"Loading… please wait."</em> panel covers
+     the screen while a switch's 256-chunk backlog drains, because that backlog
+     now drains across frames instead of blocking one.</p>
   <p>The mesh is rebuilt while you hold the mouse down, and the two numbers on
      screen are the ones that matter under load: chunks touched per edit, and
      <strong>E1</strong> — the fraction of the brush's own bounding box that
      actually changed. M-33 measured 15–36% offline; this is it live.</p>
+  <p><kbd>H</kbd> hides the whole panel and leaves a single <code>[H] HUD</code>
+     line behind, so you can look at the rock without reading numbers over it and
+     still find your way back.</p>
   <p>The rock is cracked concrete, textured by the fragment shader rather than by
      the mesh: an isosurface has no natural parameterisation, so the material
      samples all three world planes and interpolates between them by the normal.
@@ -135,8 +164,10 @@
   <p>One thing to expect if you open the console on this one: streaming churns
      meshes continuously, and Bevy 0.19's <code>bevy_render</code> slab allocator
      logs <em>"Use-after-free: attempted to copy element data for an unallocated
-     key"</em> once per affected mesh under the WebGL2 backend — 3,186 times in a
-     45-second measured run. The demo streams and renders correctly through all
+     key"</em> once per affected mesh — 3,186 times in a 45-second run, measured
+     on the WebGL2 backend this page served before the nine demos moved to
+     WebGPU, so read the count as the shape of the thing and not as today's
+     figure. The demo streams and renders correctly through all
      of it (411 chunks resident, 229,580 triangles). It is upstream of this
      repository and it is not suppressed here, because a filter that hides a
      renderer's errors would also hide the next real one.</p>
@@ -165,23 +196,39 @@
   };
   // Demos the shared key list above does not describe. `quickstart` does not use
   // the demo harness at all; `game_dig` uses it but rebinds every key on that
-  // line — it flies on `WASD`, has no orbit camera, and spends the wheel on the
-  // brush radius — so advertising `W` as wireframe there documents a key that
-  // walks you forward. Data rather than a branch, so a third such example is one
-  // name here.
+  // line — it walks and flies on `WASD`, has no orbit camera, and spends the
+  // wheel on the brush radius — so advertising `W` as wireframe there documents
+  // a key that walks you forward. Data rather than a branch, so a third such
+  // example is one name here.
   const HIDE_SHARED_KEYS = new Set(["quickstart", "game_dig"]);
+  // Every module on this page needs WebGPU, and that is not a choice made per
+  // demo. Cargo features are per-package, so `bevy`'s `webgpu` feature is on for
+  // the whole wasm target as soon as one example needs it, and `game_dig` does —
+  // it offers Marching Cubes on the GPU as its eighth mesher. `webgpu` and
+  // `webgl2` are not mutually exclusive in `bevy`, but
+  // `bevy_render-0.19.0/src/settings.rs` gives `webgpu` precedence on `wasm32`
+  // and selects `Backends::BROWSER_WEBGPU`, so there is no WebGL2 build of these
+  // nine and nothing to fall back to. Data rather than a branch, like the set
+  // above, and derived from `DEMOS` rather than written out a second time so the
+  // two cannot drift apart.
+  const NEEDS_WEBGPU = new Set(Object.keys(DEMOS));
   const name = new URLSearchParams(location.search).get("demo");
   const overlay = document.getElementById("loading");
   const heading = document.getElementById("demo-title");
-  if (!Object.hasOwn(DEMOS, name)) {
-    heading.textContent = "isomesh — play";
-    overlay.textContent = `unknown demo: ${name}`;
-  } else {
-    document.title = DEMOS[name];
-    heading.textContent = DEMOS[name];
-    document.getElementById(`notes-${name}`).hidden = false;
-    document.getElementById("harness-keys").hidden = HIDE_SHARED_KEYS.has(name);
+  // The adapter check and the module load are a function rather than more
+  // statements at the top level because a precondition wants a guard clause, and
+  // `return` outside a function is a `SyntaxError` in an ES module — the page
+  // would fail to parse at all, which is a worse outcome than the missing adapter
+  // it was meant to report. `name` and `overlay` are closed over.
+  async function start() {
     try {
+      if (NEEDS_WEBGPU.has(name) && !navigator.gpu) {
+        // The message stays on screen: `overlay.remove()` below is the only
+        // thing that clears the overlay, and it runs only once the app is up.
+        overlay.textContent =
+          "This demo needs WebGPU, which this browser has not enabled.";
+        return;
+      }
       const init = (await import(`./play/pkg/${name}/${name}.js`)).default;
       // `bevy_winit` calls `event_loop.spawn_app` on wasm, so this resolves and
       // the app keeps running on the browser's event loop. There is no
@@ -192,6 +239,16 @@
       overlay.textContent = `failed to start: ${e}`;
       throw e;
     }
+  }
+  if (!Object.hasOwn(DEMOS, name)) {
+    heading.textContent = "isomesh — play";
+    overlay.textContent = `unknown demo: ${name}`;
+  } else {
+    document.title = DEMOS[name];
+    heading.textContent = DEMOS[name];
+    document.getElementById(`notes-${name}`).hidden = false;
+    document.getElementById("harness-keys").hidden = HIDE_SHARED_KEYS.has(name);
+    await start();
   }
 </script>
 </body>

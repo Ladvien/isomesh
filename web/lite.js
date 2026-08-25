@@ -137,8 +137,9 @@ if (!canvas) {
 const gl = canvas.getContext("webgl2", { antialias: true, depth: true });
 if (!gl) {
     fail(
-        "This demo needs WebGL2, which this browser has not enabled. The nine " +
-        "playable demos need it too.",
+        "This demo needs WebGL2, which this browser has not enabled. This page's " +
+        "demo is hand-written GL, so WebGL2 is what it asks for; the nine " +
+        "playable demos are Bevy builds and need WebGPU instead.",
     );
 }
 

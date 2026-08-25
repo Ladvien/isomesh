@@ -10,6 +10,7 @@
 //! | `W` | wireframe |
 //! | `N` | normals |
 //! | `G` | grid / domain box |
+//! | `H` | HUD |
 //! | `Space` | pause |
 //! | `R` | re-mesh |
 //! | `F12` | screenshot |
@@ -94,6 +95,35 @@ pub struct ViewFlags {
     /// sitting on top of the geometry, and a reader who wants the numbers can
     /// open the still.
     pub hud: bool,
+    /// Whether hiding the HUD leaves a line saying how to bring it back.
+    ///
+    /// `ISOMESH_VIEW=nohud` clears this as well as [`Self::hud`], because a
+    /// media capture wants an empty frame -- `scripts/record_all_gifs.sh` records
+    /// nine demos that way. A reader who presses `H` gets the hint, because a
+    /// panel that vanishes with no way back is a bug that looks like a crash.
+    pub hud_hint: bool,
+}
+
+impl ViewFlags {
+    /// The flags an `ISOMESH_VIEW` list and an `ISOMESH_FIELD` index ask for.
+    ///
+    /// Split out of [`Default`] so it can be tested. `std::env::set_var` is
+    /// `unsafe` and this crate's `[lints.rust]` says `unsafe_code = "forbid"`,
+    /// so a test cannot set the variable -- and a test that could would race
+    /// every other test in the process, because the environment is global.
+    fn parse(view: &str, field: usize) -> Self {
+        let has = |name: &str| view.split(',').any(|part| part.trim() == name);
+        Self {
+            wireframe: has("wire"),
+            normals: has("normals"),
+            grid: !has("nogrid"),
+            paused: false,
+            remesh_requested: false,
+            field,
+            hud: !has("nohud"),
+            hud_hint: !has("nohud"),
+        }
+    }
 }
 
 impl Default for ViewFlags {
@@ -104,20 +134,13 @@ impl Default for ViewFlags {
     /// a human pressing a key, which is what makes the visual acceptance tests
     /// in the examples catalog reproducible rather than anecdotal.
     fn default() -> Self {
-        let requested = std::env::var("ISOMESH_VIEW").unwrap_or_default();
-        let has = |name: &str| requested.split(',').any(|part| part.trim() == name);
-        Self {
-            wireframe: has("wire"),
-            normals: has("normals"),
-            grid: !has("nogrid"),
-            paused: false,
-            remesh_requested: false,
-            field: std::env::var("ISOMESH_FIELD")
+        Self::parse(
+            &std::env::var("ISOMESH_VIEW").unwrap_or_default(),
+            std::env::var("ISOMESH_FIELD")
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(0),
-            hud: !has("nohud"),
-        }
+        )
     }
 }
 
@@ -509,6 +532,9 @@ fn handle_keys(
     if keys.just_pressed(KeyCode::KeyG) {
         flags.grid = !flags.grid;
     }
+    if keys.just_pressed(KeyCode::KeyH) {
+        flags.hud = !flags.hud;
+    }
     if keys.just_pressed(KeyCode::Space) {
         flags.paused = !flags.paused;
     }
@@ -566,8 +592,16 @@ fn update_hud(
     mut query: Query<&mut Text, With<HudText>>,
 ) {
     if !flags.hud {
+        // Written only when it differs, the same change-driven-write rule
+        // `active_cells.rs` states for its `BackgroundColor`s: an unconditional
+        // `String` write marks the text changed every frame, and Bevy's UI
+        // extraction is change-driven, so a hidden HUD would cost more than a
+        // shown one.
+        let hint = if flags.hud_hint { "[H] HUD" } else { "" };
         for mut hud in &mut query {
-            hud.0.clear();
+            if hud.0 != hint {
+                hud.0 = hint.to_string();
+            }
         }
         return;
     }
@@ -599,7 +633,7 @@ fn update_hud(
             text.push_str(keys);
         }
         None => text.push_str(&format!(
-            "\n\n[W] wire {}   [N] normals {}   [G] grid {}\n[Space] {}   [R] re-mesh   [F12] shot   [Esc] quit",
+            "\n\n[W] wire {}   [N] normals {}   [G] grid {}\n[Space] {}   [R] re-mesh   [H] HUD   [F12] shot   [Esc] quit",
             on_off(flags.wireframe),
             on_off(flags.normals),
             on_off(flags.grid),
@@ -732,4 +766,33 @@ pub fn surface_material(materials: &mut Assets<StandardMaterial>) -> Handle<Stan
         metallic: 0.05,
         ..default()
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ViewFlags;
+
+    /// `nohud` clears the hint as well as the HUD, and an empty list leaves both
+    /// on.
+    ///
+    /// This is the gate on the nine GIFs `scripts/record_all_gifs.sh` records
+    /// with `ISOMESH_VIEW=nohud`: they must be *empty* frames, so the reader's
+    /// `[H] HUD` hint must not appear in them. A browser has no environment, so
+    /// this half of the flag cannot be checked from a screenshot.
+    #[test]
+    fn nohud_hides_the_hint_too() {
+        let media = ViewFlags::parse("nohud", 0);
+        assert!(!media.hud, "nohud must hide the HUD");
+        assert!(!media.hud_hint, "nohud must hide the hint as well");
+
+        let reader = ViewFlags::parse("", 0);
+        assert!(reader.hud, "the HUD is on by default");
+        assert!(reader.hud_hint, "pressing H must leave a way back");
+
+        // `nohud` in a longer list, which is how `record_all_gifs.sh` writes it
+        // for the demos that also want a wireframe.
+        let mixed = ViewFlags::parse("wire, nohud", 0);
+        assert!(mixed.wireframe);
+        assert!(!mixed.hud && !mixed.hud_hint);
+    }
 }

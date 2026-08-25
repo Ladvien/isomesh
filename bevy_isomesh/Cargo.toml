@@ -82,6 +82,31 @@ bevy_platform = { version = "0.19", features = ["web"] }
 [dev-dependencies]
 bevy = "0.19"
 
+# `game_dig` offers Marching Cubes on the GPU as its eighth mesher key, and
+# `game_dig` is the first entry in `scripts/build_web.sh`'s `DEMOS` array -- so
+# both of these are reachable from a web build now and neither can sit behind the
+# `cfg(not(target_arch = "wasm32"))` table below any more. Dev-dependencies are
+# not propagated, so nobody depending on `bevy_isomesh` inherits either.
+#
+# `isomesh-gpu` asks wgpu for `["wgsl", "dx12", "metal", "vulkan", "webgpu"]`:
+# one unconditional list, and wgpu's own `build.rs` gates every backend by
+# target, so exactly one of them is live per target. Omitting `webgpu` is the
+# trap -- wasm32 then links *zero* backends and there is no compile error,
+# because `build.rs` simply leaves `wgpu-core` out.
+#
+# The wgpu pin is what makes this safe. `isomesh-gpu` asks for 29.0.3 and Bevy
+# 0.19 asks for 29.0.3, so Cargo unifies them onto one copy -- the failure mode
+# is two silently coexisting majors and a type error about `TextureFormat` not
+# matching itself. Version alongside the path: cargo strips path-only
+# dev-dependencies from the published manifest, which would leave the packaged
+# GPU examples uncompilable from the tarball. With the version they resolve
+# against crates.io.
+isomesh-gpu = { path = "../crates/isomesh-gpu", version = "0.0.9" }
+
+# E-303's example talks to wgpu directly -- a render pass, buffer descriptors --
+# because that is what `isomesh-gpu`'s API takes.
+wgpu = { version = "29.0.3", default-features = false }
+
 # B-012's tests and doctest only. `Cuboid` is the fixture the ticket's
 # acceptance names -- 24 vertices, not 8 -- and it lives in `bevy_math`. Named
 # as a leaf rather than reached through the `bevy` umbrella above, for the same
@@ -90,45 +115,43 @@ bevy = "0.19"
 # nothing to the resolved graph.
 bevy_math = "0.19"
 
-# `bevy_platform`'s web cfg is `all(target_arch = "wasm32", feature = "web")`,
-# and Cargo unifies this with the unconditional `bevy` above -- so the feature is
-# on for wasm and off for native. Without it `bevy::platform::time::Instant`
-# resolves to `std::time::Instant`, whose `now()` panics on wasm, which makes
-# this line the thing that lets the three web-built examples keep time at all.
+# Two features, both additive, and Cargo unifies this with the unconditional
+# `bevy` above -- so both are on for wasm and off for native.
 #
-# Default features stay on: `default_platform` already carries `webgl2`,
-# `multi_threaded` is compiled out on wasm by `bevy_tasks`, and winit, `sysinfo`
-# and `gilrs-core` all gate or back their platform pieces on that target.
+# `web`: `bevy_platform`'s web cfg is `all(target_arch = "wasm32", feature =
+# "web")`. Without it `bevy::platform::time::Instant` resolves to
+# `std::time::Instant`, whose `now()` panics on wasm, which makes this the line
+# that lets the web-built examples keep time at all.
+#
+# `webgpu`: `game_dig`'s eighth mesher runs a compute shader, and compute is not
+# in WebGL2 at all. `bevy_render-0.19.0/src/settings.rs` picks
+# `Backends::BROWSER_WEBGPU` whenever `webgpu` is on for `wasm32` and only falls
+# to `Backends::GL` when it is off, and the same `not(feature = "webgpu")` guard
+# gates the downlevel limits, the WebGL2 uniform padding, the 4 KiB uniform clamp
+# and the `NO_ARRAY_TEXTURES_SUPPORT` shader defs. So this is one backend, not
+# two paths.
+#
+# `webgl2` cannot be switched off to make that tidier: `bevy`'s `default` is
+# `["2d", "3d", "ui", "audio"]`, each of `2d`/`3d`/`ui` pulls `default_platform`,
+# and `default_platform` contains `webgl2`. Additive is the only move available,
+# and `webgpu` taking precedence is what makes it correct rather than ambiguous.
+#
+# **The consequence, stated rather than discovered:** Cargo features are
+# per-package and there is no per-example selection, so this moves **all nine**
+# demos in `scripts/build_web.sh`'s `DEMOS` array to WebGPU, not just `game_dig`.
+# `web/play.html` checks `navigator.gpu` for every one of them because of this
+# line.
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
-bevy = { version = "0.19", features = ["web"] }
+bevy = { version = "0.19", features = ["web", "webgpu"] }
 
-# Native-only, all four for the same reason: none is reachable from the three
-# examples that get a web build, and the examples that do use them are simply not
-# built for wasm. Dev-dependencies are not propagated, so consumers see no change.
+# Native-only, both for the same reason: neither is reachable from any example
+# that gets a web build, and the examples that use them are simply not built for
+# wasm. Dev-dependencies are not propagated, so consumers see no change.
+#
+# `isomesh-gpu` and `wgpu` used to live here too and no longer can -- see the
+# plain `[dev-dependencies]` table above.
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 avian3d = "0.7.0"
-
-# GPU-005's example only, and a dev-dependency for the same reason `avian3d` is
-# one: this crate's whole point is that a CPU-only consumer never compiles the
-# renderer, and `isomesh-gpu` carries `wgpu`. Dev-dependencies are not
-# propagated, so nobody depending on `bevy_isomesh` inherits it. It is also the
-# clearest case for the `cfg` above: it asks wgpu for `dx12`, `metal` and
-# `vulkan` and for no web backend at all, so on wasm it is dead weight in the
-# graph at best.
-#
-# The wgpu pin is what makes this safe. `isomesh-gpu` asks for 29.0.3 and Bevy
-# 0.19 asks for 29.0.3, so Cargo unifies them onto one copy -- verified below
-# rather than assumed, because the failure mode is two silently coexisting
-# majors and a type error about `TextureFormat` not matching itself.
-# Version alongside the path: cargo strips path-only dev-dependencies from the
-# published manifest, which would leave the packaged GPU examples uncompilable
-# from the tarball. With the version they resolve against crates.io.
-isomesh-gpu = { path = "../crates/isomesh-gpu", version = "0.0.9" }
-
-# E-303's example talks to wgpu directly -- a render pass, buffer descriptors --
-# because that is what `isomesh-gpu`'s API takes. Same pin as everywhere, and
-# dev-only, so no consumer inherits it. The lockfile still resolves one wgpu.
-wgpu = { version = "29.0.3", default-features = false }
 
 # E-203 only. The acid test is "walk every chunk seam and never fall through",
 # and answering that needs a ray cast against the meshed triangles -- not a

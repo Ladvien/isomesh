@@ -67,6 +67,11 @@ in your browser** and then print a cross-check against the CSV they were registe
 developer console and you can read the comparison, line by line, on your own hardware. A demo whose numbers
 stopped agreeing with its committed artefact would say so on screen.
 
+They need **WebGPU**. `game_dig` offers Marching Cubes on the GPU as one of its eight meshers, Cargo
+features are per-package, and `bevy_render` gives its `webgpu` feature precedence over `webgl2` on `wasm32` —
+so there is no per-example choice to make and all nine moved backend at once. The demo at the top of this
+page is unaffected, because it is hand-written WebGL2 rather than a Bevy build.
+
 Each module is 36 MB, about 8.8 MB on the wire once the host has gzipped it, and it is cached after the
 first visit. Each also carries its own copy of the Bevy runtime, which is where almost all of that goes —
 the demo at the top of this page is the same library without it, at 130 KB.
@@ -76,10 +81,21 @@ the demo at the top of this page is the same library without it, at 130 KB.
 ![A first-person camera carving tunnels through chunked terrain](docs/gifs/digging-a-tunnel.gif)
 
 A 16×8×16-unit sandbox of cracked concrete, 256 chunks, and the mesh is rebuilt **while you are holding the
-mouse down**. The translucent sphere on the rock under the crosshair is the brush a click would push, traced
-against the field itself rather than against a collider, so it sits on the surface and not at a fixed
-distance in front of your eye — hold the button and it carves a continuous tunnel along the sweep.
-<kbd>1</kbd>–<kbd>7</kbd> re-mesh all 256 chunks with a different extractor and print what that cost.
+mouse down**. You start **walking** on it — <kbd>WASD</kbd> moves, the mouse looks, <kbd>V</kbd> jumps, and
+gravity, ground contact and the rock face you cannot walk through are all sampled straight out of the field
+under two spheres, because a collision mesh built from this terrain is stale the moment you carve.
+<kbd>F</kbd> switches to the fly mode the demo used to open in, where <kbd>Q</kbd> and <kbd>E</kbd> go up and
+down.
+
+The translucent sphere on the rock under the crosshair is the brush a click would push, traced against the
+field itself rather than against a collider, so it sits on the surface and not at a fixed distance in front
+of your eye — hold the button and it carves a continuous tunnel along the sweep, at a fixed 20 edits a
+second, with the chunks that fall out of it re-meshed nearest-first under a 4 ms/frame budget so the frame
+time stays flat instead of collapsing as the edit log grows. <kbd>1</kbd>–<kbd>8</kbd> re-mesh all 256 chunks
+with a different mesher and print what that cost: the seven CPU extractors, then <kbd>8</kbd> for Marching
+Cubes on the **GPU**, a compute shader through `isomesh-gpu` — the rendering was always on the GPU, what
+moves on <kbd>8</kbd> is the *extraction*. A dimmed "Loading… please wait." panel covers the screen while
+that 256-chunk backlog drains, because it drains across frames now rather than blocking one.
 
 A brush changes an SDF everywhere, because an SDF is global; what it changes *visibly* is a shell, and the
 number the whole incremental story rests on is how thin that shell is. **E1 — the fraction of the brush's
@@ -88,7 +104,8 @@ The rock is textured by the fragment shader rather than by the mesh, because an 
 parameterisation: three world-plane projections, interpolated by the normal, so a freshly carved wall is
 continuous with the ground across the chunk boundary the brush straddled.
 
-`M-33` · `G-002` · `E-202` · <kbd>C</kbd> outlines exactly the chunks the last edit re-meshed
+`M-33` · `G-002` · `E-202` · <kbd>C</kbd> outlines exactly the chunks the last edit re-meshed ·
+<kbd>H</kbd> hides the HUD and leaves a one-line `[H] HUD` hint
 
 ### [▶ Play `game_showcase`](site:play.html?demo=game_showcase)
 
