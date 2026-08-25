@@ -49,15 +49,26 @@
 //!
 //! **What it costs, stated plainly:** the log is bounded by the primitives the
 //! shader knows — sphere, box, capsule, and the three brush ops. A consumer
-//! with an arbitrary analytic SDF is **not** served, and that is the CAD half
-//! of this crate's audience. Composing consumer WGSL remains the right answer
-//! for them and is additive rather than contradictory: a second *feature*, not
-//! a second path to this one.
+//! whose *base* is an arbitrary analytic SDF is served by
+//! [`fold_into`](FieldSampler::fold_into), which takes that base from a buffer
+//! the caller filled: one upload per grid instead of none, and none per edit.
+//! A consumer whose *brushes* are arbitrary is **not** served, and that is the
+//! CAD half of this crate's audience. Composing consumer WGSL remains the right
+//! answer for them and is additive rather than contradictory: a second
+//! *feature*, not a second path to this one.
 
 use crate::{Composer, FieldBuffer, GridParams, Result};
 
 /// Threads per workgroup, matching `@workgroup_size(64)` in `field.wgsl`.
 const WORKGROUP: u32 = 64;
+
+/// The `select.id` value meaning "the base is in the `base` binding".
+///
+/// Deliberately not a [`GpuField`] variant: that enum's contract is *a
+/// reference field this crate can evaluate*, and `name()` and `sample_on_cpu()`
+/// have no honest answer for a buffer the caller filled. One id past
+/// `GpuField::ALL`, matching `FIELD_SAMPLED` in `field.wgsl`.
+const SAMPLED_BASE_ID: u32 = 4;
 
 /// A reference field this crate can evaluate on the GPU.
 ///
@@ -289,6 +300,19 @@ impl GpuBrush {
 pub struct FieldSampler {
     pipeline: wgpu::ComputePipeline,
     layout: wgpu::BindGroupLayout,
+    /// Four bytes, bound at binding 4 by every path that does not read it.
+    ///
+    /// One kernel has one bind-group layout, so binding 4 must be filled even
+    /// when `select.id` is a [`GpuField`] and the shader never touches it. The
+    /// obvious filler — the path's own output buffer — is a **validation
+    /// error**, not a free alias: `STORAGE_READ_WRITE` is in
+    /// `wgpu_types::BufferUses::EXCLUSIVE`, and wgpu-core's
+    /// `invalid_resource_state` rejects an exclusive state with more than one
+    /// bit set, so a buffer bound `read_write` at 2 and `read_only` at 4 in the
+    /// same bind group fails `merge_bind_group`. This is the alternative to
+    /// splitting the layout in two, which would mean two pipelines for one
+    /// shader.
+    unused_base: wgpu::Buffer,
 }
 
 impl FieldSampler {
@@ -322,6 +346,7 @@ impl FieldSampler {
                 entry(1, wgpu::BufferBindingType::Uniform),
                 entry(2, wgpu::BufferBindingType::Storage { read_only: false }),
                 entry(3, wgpu::BufferBindingType::Storage { read_only: true }),
+                entry(4, wgpu::BufferBindingType::Storage { read_only: true }),
             ],
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -340,6 +365,14 @@ impl FieldSampler {
                 cache: None,
             }),
             layout,
+            unused_base: device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("isomesh field sampler unused base"),
+                // One `f32`: the shader binds `array<f32>`, whose late-bound
+                // minimum is one stride, and nothing ever reads it.
+                size: 4,
+                usage: wgpu::BufferUsages::STORAGE,
+                mapped_at_creation: false,
+            }),
         })
     }
 
@@ -388,6 +421,76 @@ impl FieldSampler {
         field: GpuField,
         brushes: &[GpuBrush],
     ) -> Result<FieldBuffer> {
+        let out = FieldBuffer::new(device, params);
+        self.run(device, queue, field.id(), brushes, &out, &self.unused_base)?;
+        Ok(out)
+    }
+
+    /// Fold an edit log over samples the caller already put in `base`, writing
+    /// `out`.
+    ///
+    /// [`sample_stack`](Self::sample_stack) with the base field taken out of the
+    /// shader's vocabulary: the log, the fold order and the arithmetic are the
+    /// same kernel, and what changes is only where the first value comes from.
+    /// This is the case this module's own doc calls out — a consumer whose base
+    /// is an arbitrary analytic SDF — and the cost of serving it is that the
+    /// base is uploaded once instead of never.
+    ///
+    /// The base and the output are two buffers rather than one folded in place,
+    /// because the caller re-derives the output from a pristine base on every
+    /// call — that is what makes a cached base impossible to leave stale — and
+    /// an in-place fold would consume it.
+    ///
+    /// `out` is taken by shared reference because nothing on this side mutates
+    /// it: the write is a queue submission, exactly as it is for the buffer
+    /// `sample_stack` allocates and returns.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::SampleCountMismatch`](crate::Error::SampleCountMismatch) if
+    /// `base` and `out` do not describe the same number of samples — a fold
+    /// between two grids would read the wrong positions and produce a buffer
+    /// that still looks meshable.
+    /// [`Error::GridTooLarge`](crate::Error::GridTooLarge) if the sample count
+    /// needs more workgroups than the adapter will dispatch.
+    pub fn fold_into(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        base: &FieldBuffer,
+        out: &FieldBuffer,
+        brushes: &[GpuBrush],
+    ) -> Result<()> {
+        let expected = base.params().sample_count();
+        let got = out.params().sample_count();
+        if expected != got {
+            return Err(crate::Error::SampleCountMismatch { expected, got });
+        }
+        self.run(device, queue, SAMPLED_BASE_ID, brushes, out, base.buffer())
+    }
+
+    /// One dispatch of `sample_field`, which is the whole of both public entry
+    /// points.
+    ///
+    /// Two public entry points over one private dispatch, because two
+    /// transcriptions of a bind group are two places for a binding index to
+    /// drift.
+    ///
+    /// The grid is `out.params()` rather than an argument: a caller that could
+    /// pass a grid disagreeing with the buffer it writes would get a buffer that
+    /// still looks meshable. `base` is bound at 4 on every path, and is
+    /// [`Self::unused_base`] when `field_id` names a [`GpuField`] the shader
+    /// evaluates itself.
+    fn run(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        field_id: u32,
+        brushes: &[GpuBrush],
+        out: &FieldBuffer,
+        base: &wgpu::Buffer,
+    ) -> Result<()> {
+        let params = out.params();
         let samples = params.sample_count();
         let groups = samples.div_ceil(u64::from(WORKGROUP));
         if groups > u64::from(device.limits().max_compute_workgroups_per_dimension) {
@@ -411,7 +514,7 @@ impl FieldSampler {
             mapped_at_creation: false,
         });
         let mut bytes = [0u8; 16];
-        bytes[..4].copy_from_slice(&field.id().to_le_bytes());
+        bytes[..4].copy_from_slice(&field_id.to_le_bytes());
         let count = u32::try_from(brushes.len()).map_err(|_| crate::Error::GridTooLarge {
             samples: params.samples(),
         })?;
@@ -434,8 +537,6 @@ impl FieldSampler {
             queue.write_buffer(&log, 0, &packed);
         }
 
-        let out = FieldBuffer::new(device, params);
-
         fn entry(binding: u32, buffer: &wgpu::Buffer) -> wgpu::BindGroupEntry<'_> {
             wgpu::BindGroupEntry {
                 binding,
@@ -450,6 +551,7 @@ impl FieldSampler {
                 entry(1, &select),
                 entry(2, out.buffer()),
                 entry(3, &log),
+                entry(4, base),
             ],
         });
 
@@ -468,7 +570,7 @@ impl FieldSampler {
         }
         queue.submit(Some(encoder.finish()));
 
-        Ok(out)
+        Ok(())
     }
 }
 

@@ -27,6 +27,11 @@ const FIELD_SPHERE: u32 = 0u;
 const FIELD_TORUS: u32 = 1u;
 const FIELD_BOX_EXACT: u32 = 2u;
 const FIELD_GYROID: u32 = 3u;
+// The base is already in `base`, put there by the caller. GPU-011b's log
+// interpreter with the base field taken out of the shader's vocabulary and
+// handed over as data -- which is how `FieldSampler::fold_into` serves a
+// consumer whose base is an arbitrary analytic SDF the four above cannot spell.
+const FIELD_SAMPLED: u32 = 4u;
 
 struct FieldSelect {
     // Which reference field is the base.
@@ -66,6 +71,9 @@ const OP_SMOOTH_ADD: u32 = 2u;
 @group(0) @binding(1) var<uniform> select: FieldSelect;
 @group(0) @binding(2) var<storage, read_write> samples: array<f32>;
 @group(0) @binding(3) var<storage, read> brushes: array<Brush>;
+// Read-only base samples, for `FIELD_SAMPLED`. Bound on every path because one
+// kernel has one layout; the other four ids never read it.
+@group(0) @binding(4) var<storage, read> base: array<f32>;
 
 // isomesh's `vec3::length`: `dot` then `sqrt`, in that order.
 fn iso_length(v: vec3<f32>) -> f32 {
@@ -181,7 +189,16 @@ fn sample_field(@builtin(global_invocation_id) gid: vec3<u32>) {
     // `BrushStack::sample` walks, which is load-bearing because a mixed
     // add/subtract log does not commute and a smooth one is not even
     // associative (M-36..M-38).
-    var value = evaluate(select.id, p);
+    // `FIELD_SAMPLED` reads the base the caller uploaded. Each invocation owns
+    // index `flat` and reads only `base[flat]`, so there is no
+    // cross-invocation dependency and no barrier. An `if` rather than WGSL's
+    // `select` builtin, because the uniform above is already named `select`.
+    var value = 0.0;
+    if (select.id == FIELD_SAMPLED) {
+        value = base[flat];
+    } else {
+        value = evaluate(select.id, p);
+    }
     for (var i = 0u; i < select.brush_count; i = i + 1u) {
         let brush = brushes[i];
         value = apply_op(brush.header.y, value, brush_shape(brush, p), brush.join.x);

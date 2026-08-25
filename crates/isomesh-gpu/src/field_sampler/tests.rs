@@ -578,3 +578,189 @@ fn a_gpu_folded_log_extracts_the_same_mesh() {
         from_gpu.triangles, from_cpu.triangles
     );
 }
+
+// -- GPU-014: a fold over a base the shader cannot evaluate -------------------
+
+use crate::FieldBuffer;
+
+/// A base `field.wgsl` has no name for: `game_dig`'s own terrain.
+///
+/// Deliberately not one of [`GpuField::ALL`] — the whole claim of
+/// [`FieldSampler::fold_into`] is that the base never enters the shader's
+/// vocabulary, so a fixture the shader could evaluate would prove nothing.
+struct WavyGround;
+
+impl isomesh::Sdf for WavyGround {
+    type Scalar = f32;
+
+    fn sample(&self, p: [f32; 3]) -> f32 {
+        let height = 0.35 * (p[0] * 0.9).sin() * (p[2] * 0.7).cos() + 0.15 * (p[0] * 2.1).sin();
+        p[1] - height
+    }
+}
+
+/// The grid the fold tests share: `h = 0.125` from `-2.0`, both powers of two,
+/// so `origin + h·i` is exact and the sample positions are bit-identical on the
+/// two sides.
+fn fold_grid() -> GridParams {
+    GridParams::new([25; 3], [-2.0; 3], 0.125).expect("grid")
+}
+
+/// [`WavyGround`] on the CPU, in the buffer's own `x`-fastest order.
+fn ground_samples(grid: GridParams) -> Vec<f32> {
+    use isomesh::Sdf;
+
+    let [sx, sy, sz] = grid.samples();
+    let mut out = Vec::with_capacity(grid.sample_count() as usize);
+    for z in 0..sz {
+        for y in 0..sy {
+            for x in 0..sx {
+                out.push(WavyGround.sample(grid.sample_position([x, y, z])));
+            }
+        }
+    }
+    out
+}
+
+/// The device fold over an uploaded base equals `BrushStack` over the same one.
+///
+/// **The base is bit-identical on the two sides here**, because the CPU produced
+/// it and the upload copies it — so unlike every test above, what this measures
+/// is the log fold alone, with none of `GpuField`'s own evaluation drift in it.
+///
+/// `1e-6` rather than bit-exactness: M-154 measures the drift as a property of
+/// the *expression* rather than the platform — a GPU may contract a
+/// sum-of-products into fused multiply-adds — and M-157 records edit-log
+/// agreement at 8.4e-7.
+#[test]
+fn a_fold_over_an_uploaded_base_matches_the_cpu() {
+    use isomesh::Sdf;
+    use isomesh::brush::{Brush, BrushStack};
+
+    let gpu = gpu();
+    let sampler = FieldSampler::new(gpu.device()).expect("pipeline");
+    let grid = fold_grid();
+    let base = FieldBuffer::uploaded(gpu.device(), gpu.queue(), grid, &ground_samples(grid))
+        .expect("base upload");
+    let out = FieldBuffer::new(gpu.device(), grid);
+
+    // One add and one subtract at least: the two do not commute, so a fold that
+    // reordered them would pass a single-op fixture and fail this.
+    let log = [
+        GpuBrush {
+            shape: GpuShape::Sphere {
+                center: [0.3, -0.1, 0.2],
+                radius: 0.6,
+            },
+            op: GpuOp::Add,
+        },
+        GpuBrush {
+            shape: GpuShape::BoxExact {
+                center: [-0.4, 0.2, 0.1],
+                half_extents: [0.5, 0.3, 0.4],
+            },
+            op: GpuOp::Subtract,
+        },
+        GpuBrush {
+            shape: GpuShape::Capsule {
+                a: [-0.5, 0.1, -0.2],
+                b: [0.5, 0.3, 0.2],
+                radius: 0.18,
+            },
+            op: GpuOp::SmoothAdd { k: 0.2 },
+        },
+    ];
+    sampler
+        .fold_into(gpu.device(), gpu.queue(), &base, &out, &log)
+        .expect("fold");
+
+    let got = read_buffer(
+        gpu.device(),
+        gpu.queue(),
+        out.buffer(),
+        grid.field_buffer_size(),
+    )
+    .expect("read back");
+
+    let ops: Vec<Brush<GpuShape>> = log.iter().map(|b| b.to_cpu()).collect();
+    let stack = BrushStack {
+        base: WavyGround,
+        brushes: &ops,
+    };
+    let [sx, sy, sz] = grid.samples();
+    let mut worst = 0.0f32;
+    let mut i = 0usize;
+    for z in 0..sz {
+        for y in 0..sy {
+            for x in 0..sx {
+                worst = worst.max((got[i] - stack.sample(grid.sample_position([x, y, z]))).abs());
+                i += 1;
+            }
+        }
+    }
+    assert!(
+        worst <= 1e-6,
+        "worst deviation {worst:e} from BrushStack over an uploaded base -- \
+         too large to be rounding"
+    );
+    println!("fold over an uploaded base                   worst {worst:e}");
+}
+
+/// An empty log copies the base **bit for bit**.
+///
+/// The only thing `fold_into` changes about the kernel is where the first value
+/// comes from, so with nothing to fold the output must be the base itself rather
+/// than the base to within rounding. Any arithmetic on the way through -- a
+/// gathered neighbour, a position recomputed and re-evaluated -- shows here and
+/// nowhere else.
+#[test]
+fn an_empty_fold_copies_the_base_bit_for_bit() {
+    let gpu = gpu();
+    let sampler = FieldSampler::new(gpu.device()).expect("pipeline");
+    let grid = fold_grid();
+    let samples = ground_samples(grid);
+    let base =
+        FieldBuffer::uploaded(gpu.device(), gpu.queue(), grid, &samples).expect("base upload");
+    let out = FieldBuffer::new(gpu.device(), grid);
+    sampler
+        .fold_into(gpu.device(), gpu.queue(), &base, &out, &[])
+        .expect("fold");
+
+    let got = read_buffer(
+        gpu.device(),
+        gpu.queue(),
+        out.buffer(),
+        grid.field_buffer_size(),
+    )
+    .expect("read back");
+    assert_eq!(
+        got.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+        samples.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+        "an empty fold changed the base it was handed"
+    );
+}
+
+/// A base and an output describing different sample counts are refused.
+///
+/// The kernel indexes both by the same flat id, so a fold across two grids reads
+/// the wrong position for every sample past the first row and writes a buffer
+/// that still looks meshable. That is the failure that cannot be allowed to be
+/// silent, and it is the caller's grid rather than the kernel's to get right.
+#[test]
+fn a_base_of_a_different_size_is_refused() {
+    let gpu = gpu();
+    let sampler = FieldSampler::new(gpu.device()).expect("pipeline");
+    let small = GridParams::new([9; 3], [-2.0; 3], 0.125).expect("grid");
+    let large = GridParams::new([17; 3], [-2.0; 3], 0.125).expect("grid");
+    let base = FieldBuffer::new(gpu.device(), small);
+    let out = FieldBuffer::new(gpu.device(), large);
+
+    assert_eq!(
+        sampler.fold_into(gpu.device(), gpu.queue(), &base, &out, &[]),
+        Err(crate::Error::SampleCountMismatch {
+            expected: small.sample_count(),
+            got: large.sample_count(),
+        }),
+        "a fold across two grids was accepted"
+    );
+}

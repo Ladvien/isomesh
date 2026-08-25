@@ -133,16 +133,30 @@
      Tetrahedra, Surface Nets, Dual Contouring, Manifold Dual Contouring, Greedy
      Quads, and on <kbd>8</kbd> Marching Cubes again but on the <strong>GPU</strong>,
      as a compute shader through <code>isomesh-gpu</code>. The rendering was
-     always on the GPU; what moves on <kbd>8</kbd> is the <em>extraction</em> —
-     the field is uploaded, the cells are counted and prefix-scanned and the
-     triangles emitted on the device, and the vertices come back a frame later
-     rather than in the call that asked for them. The headline at the top names
-     whichever is running, in that mesher's own colour, and the numbers panel
-     prints what the switch cost — which is the only honest way to show that
-     Marching Tetrahedra is three times the triangles. A dimmed
-     <em>"Loading… please wait."</em> panel covers the screen while a switch's
-     256-chunk backlog drains, because that backlog now drains across frames
-     instead of blocking one.</p>
+     always on the GPU; what moves on <kbd>8</kbd> is the <em>extraction</em> and,
+     since GPU-014, the <em>field</em> — the cells are counted and prefix-scanned
+     and the triangles emitted on the device, and the vertices come back a frame
+     later rather than in the call that asked for them. The terrain is not one of
+     the four fields the shader knows how to evaluate, so a chunk's base samples
+     are uploaded <strong>once</strong> and every carve after that ships only the
+     brush log — 64 bytes a brush — to be folded over them on the device. The
+     numbers panel shows it: <code>base</code> goes to <code>(cached)</code> and
+     stays there, and the running total of uploaded samples stops growing.</p>
+  <p><strong>And the honest verdict, because a GPU option invites the assumption
+     that GPU means faster: at this chunk size the CPU wins.</strong> A chunk here
+     is 17³ samples, and on an RTX 3090 over Vulkan that row reads
+     <strong>CPU 0.06 ms against GPU 0.22</strong> — a fixed ~0.22 ms of
+     per-dispatch setup cannot be amortised over 4,913 samples. The GPU takes the
+     lead at 33³ (0.34 against 0.23), is 9× ahead at 65³ and <strong>37× ahead at
+     129³</strong>, because that GPU column is nearly <em>flat</em> across a 420×
+     rise in cell count. Key <kbd>8</kbd> is here to show you that shape, not to
+     be the fast one on this grid.</p>
+  <p>The headline at the top names whichever mesher is running, in its own
+     colour, and the numbers panel prints what the switch cost — which is the only
+     honest way to show that Marching Tetrahedra is three times the triangles. A
+     dimmed <em>"Loading… please wait."</em> panel covers the screen while a
+     switch's 256-chunk backlog drains, because that backlog now drains across
+     frames instead of blocking one.</p>
   <p>The mesh is rebuilt while you hold the mouse down, and the two numbers on
      screen are the ones that matter under load: chunks touched per edit, and
      <strong>E1</strong> — the fraction of the brush's own bounding box that

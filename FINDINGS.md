@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**451 entries** — 44 falsified, 340 measured, 46 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**452 entries** — 44 falsified, 340 measured, 47 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -469,6 +469,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-44` | R-021's caveat is contradicted by the paper R-021 is built on, and the cheap half is already delivered (R-021) |
 | `V-45` | R-027's design does not merely change extract_into's contract; it converts a shipped determinism check's failure conditi… |
 | `V-46` | R-030's specified oracle cannot tell the identity from a wrong one; the inversion rule fails before the harness exists (… |
+| `V-47` | a wgpu storage buffer bound read_write and read_only in one bind group is a validation error, not a free alias (GPU-014) |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -9742,3 +9743,32 @@ therefore in neither `build_web.sh` nor CI, and the site has exactly one build p
 **Would be shown wrong by:** a binaryen release whose `-Oz` output gzips smaller than the input's, or a
 host that serves these modules uncompressed — on which the disk figure would be the wire figure and the
 decision would invert.
+
+### 📖 V-47 — a `wgpu` storage buffer bound `read_write` and `read_only` in one bind group is a **validation error**, not a free alias (GPU-014)
+
+GPU-014's kernel gained a fifth binding, a read-only base the caller fills, and one bind-group layout has
+to be filled on every path — including the four `GpuField` ids that never read it. The plan's primary
+scheme was to bind the dispatch's own **output** buffer there, on the reasoning that a binding the shader
+never reads costs nothing. It is not free, and this is where that is written down before someone tries it
+again.
+
+**Believed because:** the shader provably never reads `base` when `select.id` names a `GpuField`, so the
+aliasing looked like a naming detail rather than a state conflict.
+**Tested by:** reading `wgpu 29.0.4`'s own source rather than the docs —
+`wgpu-types-29.0.4/src/buffer.rs:146` and `wgpu-core-29.0.4/src/track/mod.rs:331`, plus
+`track/mod.rs:500` and `track/buffer.rs:25`.
+**Result:** `BufferUses::EXCLUSIVE` contains `STORAGE_READ_WRITE`, and
+`invalid_resource_state(state)` is `state.any_exclusive() && !state.bits().is_power_of_two()`. A buffer
+bound `read_write` at one binding and `read_only` at another merges to
+`STORAGE_READ_WRITE | STORAGE_READ_ONLY` — two bits, one of them exclusive — so
+`UsageScope::merge_bind_group` returns `ResourceUsageCompatibilityError`, whose `webgpu_error_type` is
+`Validation`. **The check is in wgpu-core, so it is backend-independent**: a native Vulkan run does not
+get away with what WebGPU would reject.
+**Consequence:** `FieldSampler` holds a 4-byte `unused_base` created once in `new`, bound at 4 by every
+path that does not read it. The layout stays single — one kernel, one pipeline, two public entry points
+over one private `run` — which was the point the aliasing was meant to serve. Verified by the thirteen
+`field_sampler` tests: **ten reach `sample_stack`** and so dispatch with `unused_base` bound at 4, and the
+three new `fold_into` ones bind a real base there.
+**Would be shown wrong by:** a wgpu release moving `STORAGE_READ_WRITE` out of `EXCLUSIVE`, or narrowing
+the usage scope from the bind group to the individual binding — at which point the alias becomes legal and
+the four bytes can go.

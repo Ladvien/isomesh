@@ -79,6 +79,14 @@
 //! [`GpuBrush`] — and the upload stops existing, because the samples are
 //! produced where they are read.
 //!
+//! A base the shader has no name for — an arbitrary analytic SDF, which is half
+//! this crate's audience — takes the third option:
+//! [`FieldSampler::fold_into`] reads that base from a buffer the caller filled
+//! and folds the edit log over it on the device. **One upload per grid instead
+//! of none, and none per edit**, which is what makes it the right shape for an
+//! editor: `bevy_isomesh`'s `game_dig` samples its terrain once per chunk and
+//! thereafter moves 64 bytes per surviving brush and no samples at all.
+//!
 //! Three tickets took this path from 15.01 ms to 0.54 ms at 129³ and **none of
 //! them made the extractor faster.** Every gain was data movement removed: a GPU
 //! prefix scan so 8.4 MB of per-cell counts never come home (M-150), then

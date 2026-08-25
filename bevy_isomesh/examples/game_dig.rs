@@ -84,6 +84,7 @@
 mod common;
 
 use std::cell::Cell;
+use std::collections::HashMap;
 use std::time::Duration;
 
 use bevy::asset::{RenderAssetUsages, load_internal_asset, uuid_handle};
@@ -113,7 +114,8 @@ use isomesh::marching_tetrahedra::MarchingTetrahedra;
 use isomesh::surface_nets::SurfaceNets;
 use isomesh::{Real, RuntimeShape3, Sdf};
 use isomesh_gpu::{
-    ExtractTimings, FieldBuffer, GridParams, MarchingCubesGpu, Readback, read_bytes_many_deferred,
+    ExtractTimings, FieldBuffer, FieldSampler, GpuBrush, GpuOp, GpuShape, GridParams,
+    MarchingCubesGpu, Readback, read_bytes_many_deferred,
 };
 
 /// Chunk edge, in cells.
@@ -140,6 +142,12 @@ struct ChunkGizmos;
 /// Hand-rolled rather than `FbmTerrain`, because this needs a floor a player can
 /// stand on and a ceiling to dig into, and it must be cheap — it is sampled
 /// inside the edit loop.
+///
+/// **A pure function of position, and that is load-bearing.** [`GpuFields`]
+/// samples this once per chunk and folds every later edit over the cached
+/// buffer on the device, so the cache has no invalidation because nothing can
+/// invalidate it. Give this state -- an animation clock, a seed that is edited,
+/// a dependence on the camera -- and the GPU path goes silently stale.
 #[derive(Clone, Copy)]
 struct Ground;
 
@@ -395,6 +403,31 @@ struct GpuMesher {
     mc: MarchingCubesGpu,
 }
 
+/// Per-chunk base field samples, and the sampler that folds edits over them.
+///
+/// [`Ground`] is a pure function of position, so a chunk's base samples are
+/// correct for the life of the process no matter how much is carved -- only the
+/// *log* changes. Sampling it once per chunk and folding the log on the device
+/// is the whole of M-155 applied here: after the first mesh of a chunk, a
+/// re-mesh moves 64 bytes per surviving brush across the bus and no samples at
+/// all.
+///
+/// Bounded at [`EXTENT`]'s 256 chunks by construction, so there is no eviction
+/// policy: 256 x 17^3 x 4 bytes is 5.0 MB.
+#[derive(Resource)]
+struct GpuFields {
+    sampler: FieldSampler,
+    bases: HashMap<ChunkId, FieldBuffer>,
+    /// The pruned survivors in the shader's own form, rebuilt per dispatch and
+    /// **reused across every chunk of every frame** -- the same reason
+    /// `World::survivors` is a field rather than a local, and it stops
+    /// reallocating after the first few chunks.
+    log: Vec<GpuBrush>,
+    /// Bytes of *samples* uploaded since startup. On the HUD because the claim
+    /// this change makes is that it stops growing.
+    sample_bytes: u64,
+}
+
 /// Chunks whose geometry is on its way back from the GPU.
 #[derive(Resource, Default)]
 struct GpuPending {
@@ -410,9 +443,13 @@ struct GpuJob {
 /// Where one GPU chunk's time went.
 #[derive(Clone, Copy)]
 struct GpuCost {
-    /// CPU field evaluation plus the upload, measured around
-    /// `FieldBuffer::sampled`.
-    upload_ms: f64,
+    /// CPU field evaluation plus the upload of this chunk's [`Ground`] base,
+    /// measured around `FieldBuffer::sampled`. **Zero on every mesh after the
+    /// first**, which is the claim: the base is cached and only the log moves.
+    base_ms: f64,
+    /// Uploading the pruned brush log and folding it over the base on the
+    /// device, measured around `FieldSampler::fold_into`.
+    fold_ms: f64,
     /// The three dispatches, as `isomesh-gpu` measures them.
     timings: ExtractTimings,
 }
@@ -797,6 +834,16 @@ fn setup(
         mc: MarchingCubesGpu::new(device.wgpu_device(), &queue)
             .expect("the compute pipeline for key 8; WebGPU or a native backend is required"),
     });
+    // The same device and the same `expect` shape: without this pipeline key `8`
+    // could still extract, but only by uploading 19.6 KB of samples per chunk
+    // per edit -- the configuration `isomesh-gpu`'s own docs call the wrong one.
+    commands.insert_resource(GpuFields {
+        sampler: FieldSampler::new(device.wgpu_device())
+            .expect("the field-fold pipeline for key 8; WebGPU or a native backend is required"),
+        bases: HashMap::new(),
+        log: Vec::new(),
+        sample_bytes: 0,
+    });
 
     commands.insert_resource(SurfaceMaterial(material));
     commands.insert_resource(world);
@@ -1080,9 +1127,10 @@ fn ghost(
 ///
 /// The eighth is the point of having eight. The rendering was always on the GPU
 /// -- this is a triplanar `ExtendedMaterial` -- and what key `8` moves there is
-/// the **extraction**: a compute shader classifies every cell, a prefix scan
-/// allocates, and a second dispatch writes the triangles, with the only CPU work
-/// being the field sample and the upload. Same algorithm as key `1`, so the
+/// the **extraction and the field**: a compute shader folds the pruned brush log
+/// over a base sampled once per chunk, classifies every cell, prefix-scans, and
+/// writes the triangles. After a chunk's first mesh the only CPU work is 64 bytes
+/// per surviving brush -- see [`gpu_dispatch`]. Same algorithm as key `1`, so the
 /// triangle counts are comparable and the HUD prints where the time went.
 ///
 /// `subgrid_marching_tetrahedra` is **not** offered: it is ~196x Marching Cubes,
@@ -1300,6 +1348,7 @@ impl Algorithm {
 fn drain_dirty(
     mut world: ResMut<World>,
     mut pending: ResMut<GpuPending>,
+    mut fields: ResMut<GpuFields>,
     gpu: Res<GpuMesher>,
     device: Res<RenderDevice>,
     queue: Res<RenderQueue>,
@@ -1334,6 +1383,9 @@ fn drain_dirty(
     // budget predicate reads the count. They cannot both hold `&mut`, and the
     // count is the backpressure -- see `GPU_JOBS_MAX`.
     let in_flight = Cell::new(pending.jobs.len());
+    // One mutable borrow for the closure: the base cache is read on every GPU
+    // chunk and written on the first mesh of each.
+    let fields = &mut *fields;
     // Disjoint field borrows: the closure reads `brushes` and writes `survivors`
     // while `dirty` is borrowed mutably. Destructuring is what makes that legal.
     let World {
@@ -1351,22 +1403,22 @@ fn drain_dirty(
             // a dropped brush provably cannot change the fold anywhere in the
             // box, so this is speed with no change to the geometry.
             //
-            // Both paths pay it, which is what makes the eight keys comparable:
-            // the field cost is the same and what differs is the extraction.
+            // Both paths prune against the same box and are handed the same
+            // survivors; what each does with them is where the keys part
+            // company. The CPU walks them once per sample, the GPU uploads 64
+            // bytes per brush and folds them on the device -- see
+            // [`gpu_dispatch`].
             let span = layout.cell_size() * layout.cells() as f32;
             let box_ = ChunkBox::new(origin, span);
             prune_into(brushes, &Ground, box_, survivors);
-            let field = BrushStack {
-                base: Ground,
-                brushes: survivors,
-            };
             if algorithm == Algorithm::MarchingCubesGpu {
                 if let Some((job, cost)) = gpu_dispatch(
                     &gpu.mc,
+                    fields,
                     device.wgpu_device(),
                     &queue,
                     &layout,
-                    &field,
+                    survivors,
                     id,
                     origin,
                 ) {
@@ -1376,6 +1428,10 @@ fn drain_dirty(
                 }
                 return;
             }
+            let field = BrushStack {
+                base: Ground,
+                brushes: survivors,
+            };
             built.push((id, algorithm.mesh(&layout, &field, origin)));
         },
         // The predicate the crate asks for: a `no_std` crate cannot read a
@@ -1439,16 +1495,31 @@ fn reconcile(
     }
 }
 
-/// Sample the chunk's field on the CPU, upload it, extract on the GPU, and start
-/// the readback.
+/// Fold the pruned brush log over this chunk's cached base **on the device**,
+/// extract on the GPU, and start the readback.
 ///
-/// `FieldBuffer::sampled`, not a device-side field: `field.wgsl`'s base is a
-/// `switch` over four hard-coded reference fields and this demo's base is a
-/// custom terrain plus an edit tape the shader cannot evaluate. Sampling on the
-/// CPU is also what makes this a fair comparison -- all eight keys pay the same
-/// field cost against the same pruned tape, and what differs is the extraction.
-/// The HUD prints the upload share, so the crate's own "the upload dominates"
-/// finding is on screen rather than in a docstring.
+/// # The field is evaluated on the device, and that is the point of key `8`
+///
+/// `isomesh-gpu`'s headline finding is that where the field is evaluated decides
+/// everything else: sample on the CPU and hand over a `FieldBuffer` and the
+/// **upload is 87% of the path**, which does not take field evaluation off the
+/// CPU's budget -- it adds a copy to it. So the eight keys deliberately do
+/// **not** pay the same field cost any more. Seven of them walk the survivors
+/// once per sample on the CPU; this one uploads 64 bytes per surviving brush and
+/// folds them in a compute shader.
+///
+/// `FieldBuffer::sampled` still appears here exactly once per chunk, because
+/// [`Ground`] is not one of `field.wgsl`'s four base fields: the base is sampled
+/// on the CPU and uploaded the first time a chunk is meshed, and every later
+/// re-mesh of that chunk is `FieldSampler::fold_into` over the cached buffer.
+/// [`Ground`] is a pure function of position, so that buffer can never be stale.
+/// The HUD prints `base` and `fold` separately and marks the base `(cached)`,
+/// which is how a reader sees the per-edit sample upload reach zero.
+///
+/// The output is a fresh `FieldBuffer` per dispatch rather than one reused
+/// scratch buffer: `fold_into` reads sample *positions* from `out.params()`, so
+/// the output must carry this chunk's own origin. That is a 19.6 KB allocation
+/// and correctness beats saving it.
 ///
 /// `extract_indirect`, not `extract` or `extract_buffers`: it is the **only**
 /// entry point that reads nothing back. The others end in
@@ -1456,21 +1527,67 @@ fn reconcile(
 /// `mpsc::recv()`, and on WebGPU `Device::poll` is a documented no-op while
 /// `map_async` completes only from the browser's event loop -- so that wait
 /// wedges the tab rather than blocking a thread.
+#[allow(clippy::too_many_arguments)]
 fn gpu_dispatch(
     mc: &MarchingCubesGpu,
+    fields: &mut GpuFields,
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     layout: &ChunkLayout<f32>,
-    field: &impl Sdf<Scalar = f32>,
+    survivors: &[Brush<Sphere<f32>>],
     id: ChunkId,
     origin: [f32; 3],
 ) -> Option<(GpuJob, GpuCost)> {
     // No halo: `halo_cells` is zero for Marching Cubes, which marches every cell
     // and puts vertices on grid edges both chunks compute identically.
     let params = GridParams::new([layout.cells() + 1; 3], origin, layout.cell_size()).ok()?;
+
+    // The bare terrain, with **no tape**: the log is what the device folds, so
+    // baking it into the base would be the stale cache this design does not have.
     let started = Instant::now();
-    let buffer = FieldBuffer::sampled(device, queue, params, field).ok()?;
-    let upload_ms = started.elapsed().as_secs_f64() * 1000.0;
+    let mut uploaded = 0u64;
+    let base = match fields.bases.entry(id) {
+        std::collections::hash_map::Entry::Occupied(slot) => slot.into_mut(),
+        std::collections::hash_map::Entry::Vacant(slot) => {
+            let sampled = FieldBuffer::sampled(device, queue, params, &Ground).ok()?;
+            uploaded = params.field_buffer_size();
+            slot.insert(sampled)
+        }
+    };
+    fields.sample_bytes += uploaded;
+    // Zero on a hit, and the HUD says `(cached)` when it is.
+    let base_ms = if uploaded == 0 {
+        0.0
+    } else {
+        started.elapsed().as_secs_f64() * 1000.0
+    };
+
+    // The pruned survivors as the shader's 64-byte records, into the reused
+    // scratch. The `SmoothAdd` arm is unreachable here -- this demo pushes only
+    // `Brush::add` and `Brush::subtract` -- and is spelled out for `BrushOp`'s
+    // exhaustiveness rather than swallowed by a wildcard that would silently
+    // mistranslate a brush kind added later.
+    fields.log.clear();
+    fields.log.extend(survivors.iter().map(|b| GpuBrush {
+        shape: GpuShape::Sphere {
+            center: b.shape.center,
+            radius: b.shape.radius,
+        },
+        op: match b.op {
+            BrushOp::Add => GpuOp::Add,
+            BrushOp::Subtract => GpuOp::Subtract,
+            BrushOp::SmoothAdd { k } => GpuOp::SmoothAdd { k: k as f32 },
+        },
+    }));
+
+    let started = Instant::now();
+    let buffer = FieldBuffer::new(device, params);
+    fields
+        .sampler
+        .fold_into(device, queue, base, &buffer, &fields.log)
+        .ok()?;
+    let fold_ms = started.elapsed().as_secs_f64() * 1000.0;
+
     let geometry = mc
         .extract_indirect(device, queue, &buffer, GPU_TRIANGLE_BUDGET)
         .ok()?;
@@ -1491,7 +1608,8 @@ fn gpu_dispatch(
     Some((
         GpuJob { id, readback },
         GpuCost {
-            upload_ms,
+            base_ms,
+            fold_ms,
             timings: geometry.timings,
         },
     ))
@@ -2209,6 +2327,7 @@ fn dig(
 
 fn report(
     world: Res<World>,
+    fields: Res<GpuFields>,
     mut stats: ResMut<DemoStats>,
     meshes: Res<Assets<Mesh>>,
     chunks: Query<(&Chunk, &Mesh3d)>,
@@ -2271,13 +2390,15 @@ fn report(
             world.switch_chunks, world.switch_ms
         ),
         match world.gpu_cost {
-            // Upload first, because it is the biggest of the four and that is
-            // the crate's own committed finding rather than a surprise: the
-            // field is sampled on the CPU and shipped, and the three dispatches
-            // are cheap beside it.
+            // `base` first, because it is the term this demo exists to show
+            // going away: it is the CPU field evaluation plus the upload, and
+            // after a chunk's first mesh it is zero and says `(cached)`. What is
+            // left is a fold on the device and three dispatches.
             Some(cost) => format!(
-                "           upload {:.2} ms   count {:.2}   scan {:.2}   emit {:.2}   peak {} tris/chunk of {}{}",
-                cost.upload_ms,
+                "           base {:.2} ms{}   fold {:.2}   count {:.2}   scan {:.2}   emit {:.2}   peak {} tris/chunk of {}{}",
+                cost.base_ms,
+                if cost.base_ms > 0.0 { "" } else { " (cached)" },
+                cost.fold_ms,
                 cost.timings.count_ms,
                 cost.timings.scan_ms,
                 cost.timings.emit_ms,
@@ -2291,6 +2412,15 @@ fn report(
             ),
             None => "           (press 8 to extract on the GPU instead)".to_string(),
         },
+        // The verdict, because a demo that offers a GPU option and says nothing
+        // invites the assumption that GPU means faster. The `0.06`/`0.22` pair is
+        // `docs/measurements/gpu_vs_cpu.csv`'s 17^3 row -- the CPU column and the
+        // device-field GPU column -- and a chunk here is exactly 17^3. It is a
+        // citation rather than a live measurement, which is why it names M-296.
+        format!(
+            "           {} KB of samples uploaded since start; measured 17^3: CPU 0.06 ms, GPU 0.22 (M-296)",
+            fields.sample_bytes / 1024
+        ),
         format!(
             "backlog    {:>4} chunks queued, {:.1} ms/frame budget{}",
             world.backlog,
@@ -2385,6 +2515,7 @@ mod tests {
     use std::sync::Arc;
 
     use bevy::asset::AssetApp;
+    use bevy::ecs::system::RunSystemOnce;
     use bevy::mesh::VertexAttributeValues;
     use bevy::render::renderer::WgpuWrapper;
     use bevy::time::TimeUpdateStrategy;
@@ -2440,6 +2571,12 @@ mod tests {
     fn harness(walking: bool) -> App {
         let (device, queue) = wgpu_pair();
         let mc = MarchingCubesGpu::new(&device, &queue).expect("the compute pipeline");
+        let fields = GpuFields {
+            sampler: FieldSampler::new(&device).expect("the field-fold pipeline"),
+            bases: HashMap::new(),
+            log: Vec::new(),
+            sample_bytes: 0,
+        };
         let layout = test_layout();
         let mut world = World {
             layout,
@@ -2493,6 +2630,7 @@ mod tests {
             .insert_resource(RenderDevice::from(device))
             .insert_resource(RenderQueue(Arc::new(WgpuWrapper::new(queue))))
             .insert_resource(GpuMesher { mc })
+            .insert_resource(fields)
             .insert_resource(world)
             .add_systems(
                 Update,
@@ -2615,6 +2753,19 @@ mod tests {
     /// end state a reader would see: **the same number of chunks on screen as key
     /// `1` produced**, no refused readbacks, and the timing line populated.
     ///
+    /// # And then the count gate on GPU-014: the per-edit sample upload is zero
+    ///
+    /// Every chunk's [`Ground`] base is uploaded exactly once, so after the
+    /// switch has drained `GpuFields::sample_bytes` is `EXTENT`'s 256 chunks x
+    /// 17^3 samples x 4 bytes = **5,030,912**, and a carve that re-meshes chunks
+    /// already meshed adds **nothing** to it: what crosses the bus per edit is
+    /// the 64-byte-per-brush log.
+    ///
+    /// A byte-count equality rather than a timing ratio, deliberately. A
+    /// wall-clock assertion on a machine with a CPU governor swings by tens of
+    /// percent run to run and cannot gate anything (M-304's sibling lesson);
+    /// bytes are exact, machine-independent, and name the mechanism directly.
+    ///
     /// Needs a GPU adapter, as [`wgpu_pair`] says.
     #[test]
     fn key_eight_meshes_the_sandbox_on_the_gpu() {
@@ -2662,7 +2813,10 @@ mod tests {
             world.gpu_failures
         );
         let cost = world.gpu_cost.expect("a GPU chunk was measured");
-        assert!(cost.upload_ms > 0.0, "the upload was not measured");
+        assert!(
+            cost.fold_ms > 0.0,
+            "the device fold was not measured, so nothing was dispatched"
+        );
         assert!(
             cost.timings.count_ms > 0.0 && cost.timings.emit_ms > 0.0,
             "the dispatches were not measured: {:?}",
@@ -2682,7 +2836,173 @@ mod tests {
             gpu_resident, cpu_resident,
             "the GPU left {gpu_resident} chunks on screen where the CPU left {cpu_resident}"
         );
+        // Every dispatch in the switch drain was a chunk's first, so this split
+        // is the cache-*miss* cost -- the one the cache exists to stop paying.
+        println!(
+            "cache-miss split: base {:.3} ms   fold {:.3}   count {:.3}   scan {:.3}   emit {:.3}",
+            cost.base_ms,
+            cost.fold_ms,
+            cost.timings.count_ms,
+            cost.timings.scan_ms,
+            cost.timings.emit_ms
+        );
+
+        // The count gate. One base per chunk, uploaded once.
+        let per_chunk = u64::from(CHUNK_CELLS + 1).pow(3) * 4;
+        let sandbox_chunks = (EXTENT[0] * EXTENT[1] * EXTENT[2]) as u64;
+        let after_switch = app.world().resource::<GpuFields>().sample_bytes;
+        assert_eq!(
+            after_switch,
+            sandbox_chunks * per_chunk,
+            "every chunk should have uploaded its base exactly once: \
+             {sandbox_chunks} chunks x {per_chunk} bytes"
+        );
+        assert_eq!(
+            app.world().resource::<GpuFields>().bases.len(),
+            sandbox_chunks as usize,
+            "the base cache holds a buffer per chunk and nothing else"
+        );
+
+        // Now carve, through the same path `a_held_button_edits_at_the_paced_rate`
+        // drives, and drain the chunks it dirtied.
+        //
+        // **On the surface, not at a fixed height.** `Ground`'s top sits near
+        // `y = -0.34` at this `x`/`z`, so a brush at `y = 0.3` subtracts air:
+        // `mark_edit` correctly reports zero dirty chunks and the assertion below
+        // would pass a test that re-meshed nothing. `Ground.sample([x, 0, z])` is
+        // `-height`, so this places the brush centre exactly on the crossing.
+        let before = app.world().resource::<World>().brushes.len();
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .press(MouseButton::Left);
+        let mut carve_frames = 0;
+        while app.world().resource::<World>().brushes.len() == before {
+            let x = -1.0 + carve_frames as f32 * 0.2;
+            let z = 1.0;
+            let mut target = app.world_mut().resource_mut::<Aim>();
+            target.hit = true;
+            target.point = Vec3::new(x, -Ground.sample([x, 0.0, z]), z);
+            drop(target);
+            app.update();
+            carve_frames += 1;
+            assert!(carve_frames < 60, "the carve never landed");
+        }
+        app.world_mut()
+            .resource_mut::<ButtonInput<MouseButton>>()
+            .release(MouseButton::Left);
+        for _ in 0..600 {
+            step(&mut app);
+            let world = app.world().resource::<World>();
+            let pending = app.world().resource::<GpuPending>().jobs.len();
+            if world.backlog == 0 && pending == 0 {
+                break;
+            }
+        }
+        let world = app.world().resource::<World>();
+        assert!(
+            world.last_chunks > 0,
+            "the carve re-meshed no chunks, so it proved nothing about the upload"
+        );
+        assert_eq!(
+            app.world().resource::<GpuFields>().sample_bytes,
+            after_switch,
+            "an edit uploaded samples: the base cache was missed on {} re-meshed chunks",
+            world.last_chunks
+        );
+        println!(
+            "{after_switch} bytes of samples uploaded for {sandbox_chunks} chunks, \
+             and {} re-meshed chunks added none",
+            world.last_chunks
+        );
+        // Reported, never asserted: this host's per-dispatch setup cost is not
+        // the RTX 3090 Vulkan figure in `docs/measurements/gpu_vs_cpu.csv`, and a
+        // bound invented from one machine's wall clock is a gate that cries
+        // wolf. The split is what the HUD shows for a cache hit.
+        let hit = world.gpu_cost.expect("the carve dispatched a chunk");
+        println!(
+            "cache-hit split: base {:.3} ms   fold {:.3}   count {:.3}   scan {:.3}   emit {:.3}",
+            hit.base_ms,
+            hit.fold_ms,
+            hit.timings.count_ms,
+            hit.timings.scan_ms,
+            hit.timings.emit_ms
+        );
         println!("the GPU switch drained in {frames} frames, {gpu_resident} chunks resident");
+    }
+
+    /// The HUD says what the new field path did, and marks the cached base.
+    ///
+    /// **This is the only way to see this demo's screen on a machine with no
+    /// display**, and the two lines it checks are the deliverable of the HUD half
+    /// of GPU-014: `base … (cached)` is how a reader watches the per-edit sample
+    /// upload reach zero, and the verdict line is what stops a GPU key from
+    /// implying that GPU means faster at this grid size. Both are strings a
+    /// reader is meant to read, so a test that only checked `GpuCost`'s fields
+    /// would pass with either of them missing.
+    ///
+    /// `report` is left out of [`harness`] because it wants a `DemoStats`; this
+    /// runs it as a one-shot system with one inserted, which is the same system
+    /// the demo runs every frame.
+    #[test]
+    fn the_hud_reports_the_cached_base_and_the_measured_verdict() {
+        let mut app = harness(false);
+        app.init_resource::<DemoStats>();
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Digit8);
+        for _ in 0..900 {
+            step(&mut app);
+            let world = app.world().resource::<World>();
+            if !world.switching
+                && world.backlog == 0
+                && app.world().resource::<GpuPending>().jobs.is_empty()
+            {
+                break;
+            }
+        }
+        // A second pass over an already-meshed chunk, so `base_ms` is a hit.
+        let cached = app
+            .world()
+            .resource::<GpuFields>()
+            .bases
+            .keys()
+            .copied()
+            .next()
+            .expect("a cached chunk");
+        app.world_mut().resource_mut::<World>().dirty.insert(cached);
+        step(&mut app);
+        app.world_mut()
+            .run_system_once(report)
+            .expect("the HUD system");
+
+        let lines = app.world().resource::<DemoStats>().extra.clone();
+        for line in &lines {
+            println!("{line}");
+        }
+        let gpu = lines
+            .iter()
+            .find(|l| l.contains("base "))
+            .expect("the GPU timing line");
+        assert!(
+            gpu.contains("(cached)"),
+            "a re-meshed chunk did not report a cached base: {gpu}"
+        );
+        assert!(
+            gpu.contains("fold "),
+            "the HUD dropped the device fold term: {gpu}"
+        );
+        let verdict = lines
+            .iter()
+            .find(|l| l.contains("M-296"))
+            .expect("the measured-verdict line");
+        assert!(
+            verdict.contains("CPU 0.06 ms") && verdict.contains("GPU 0.22"),
+            "the verdict line stopped citing the 17^3 row: {verdict}"
+        );
+        assert!(
+            verdict.contains(&format!("{} KB", 256 * 4913 * 4 / 1024)),
+            "the uploaded-sample total is not the 256-chunk figure: {verdict}"
+        );
     }
 
     /// A held button edits at [`EDIT_PERIOD`], not once a frame.
@@ -3332,10 +3652,13 @@ mod tests {
 
     /// The GPU mesher must produce the same surface as key `1`.
     ///
-    /// Marching Cubes is Marching Cubes: the device-side extraction reads the
-    /// same samples `FieldBuffer::sampled` uploaded, so the triangle count has to
-    /// agree with the CPU extractor's to within float ordering at a crossing.
-    /// This is the check a screenshot of key `8` can only suggest.
+    /// Marching Cubes is Marching Cubes, and after GPU-014 this is the stronger
+    /// claim of the two: the CPU walks `BrushStack` per sample while the GPU
+    /// folds the *same* log over an uploaded [`Ground`] base in a compute
+    /// shader, so the triangle count agreeing means the two field paths agree
+    /// too. `isomesh-gpu`'s own `a_fold_over_an_uploaded_base_matches_the_cpu`
+    /// measures that fold sample-for-sample; this one asks whether it moved a
+    /// crossing. The check a screenshot of key `8` can only suggest.
     ///
     /// **Needs a GPU adapter**, and fails rather than skips without one -- the
     /// same policy `isomesh-gpu`'s own tests hold, and for the reason its
@@ -3346,6 +3669,12 @@ mod tests {
         let gpu = isomesh_gpu::headless::Gpu::new()
             .expect("a GPU adapter; there is no software fallback, by design");
         let mc = MarchingCubesGpu::new(gpu.device(), gpu.queue()).expect("the compute pipeline");
+        let mut fields = GpuFields {
+            sampler: FieldSampler::new(gpu.device()).expect("the field-fold pipeline"),
+            bases: HashMap::new(),
+            log: Vec::new(),
+            sample_bytes: 0,
+        };
         let layout = test_layout();
         let log = tape(8);
         let field = BrushStack {
@@ -3359,9 +3688,17 @@ mod tests {
             let cpu = Algorithm::MarchingCubes
                 .mesh(&layout, &field, origin)
                 .map_or(0, |mesh| mesh.indices().map_or(0, |i| i.len() / 3));
-            let (job, _) =
-                gpu_dispatch(&mc, gpu.device(), gpu.queue(), &layout, &field, id, origin)
-                    .expect("the dispatch");
+            let (job, _) = gpu_dispatch(
+                &mc,
+                &mut fields,
+                gpu.device(),
+                gpu.queue(),
+                &layout,
+                &log,
+                id,
+                origin,
+            )
+            .expect("the dispatch");
             // The same poll `gpu_collect` does, with a bound so a device that
             // never completes fails the test rather than hanging the suite.
             let mut spins = 0;

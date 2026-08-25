@@ -385,9 +385,16 @@ out of it are re-meshed nearest-first under a 4 ms/frame budget, so a long strok
 instead of collapsing as the edit log grows. `1`–`8` re-mesh all 256 chunks of the 16×8×16-unit sandbox with
 a different mesher and print what that cost — the seven CPU extractors, then `8` for Marching Cubes on the
 GPU, a compute shader through `isomesh-gpu`; the rendering was always on the GPU, what moves on `8` is the
-*extraction*. A dimmed "Loading… please wait." panel covers the screen while that 256-chunk backlog drains,
-because it drains across frames now rather than blocking one. `Z` undoes one brush by re-folding the log and
-`C` outlines exactly the chunks the last edit re-meshed.
+*extraction* and the *field*. The terrain is not one of the four fields the shader can evaluate, so a
+chunk's base samples are uploaded **once** and every carve after that ships only the pruned brush log — 64
+bytes a brush — to be folded over them on the device: the panel's `base` term goes to `(cached)` and the
+running total of uploaded samples stops growing. **At this chunk size the CPU still wins**, and the demo
+says so rather than implying otherwise: a chunk is 17³ samples, where the measured pair is CPU 0.06 ms
+against GPU 0.22 (M-296) because a fixed ~0.22 ms of setup cannot amortise over 4,913 samples. The GPU
+takes the lead at 33³ and is 37× ahead at 129³ — the shape of that table, not this row, is what key `8`
+is here to show. A dimmed "Loading… please wait." panel covers the screen while that 256-chunk backlog
+drains, because it drains across frames now rather than blocking one. `Z` undoes one brush by re-folding
+the log and `C` outlines exactly the chunks the last edit re-meshed.
 
 **The numbers panel starts hidden**, because this is a game first and the panel sits on top of the rock. What
 stays is a headline naming the mesher in that mesher's own colour — eight hues in key order — and one line of

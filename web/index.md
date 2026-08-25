@@ -94,8 +94,15 @@ second, with the chunks that fall out of it re-meshed nearest-first under a 4 ms
 time stays flat instead of collapsing as the edit log grows. <kbd>1</kbd>–<kbd>8</kbd> re-mesh all 256 chunks
 with a different mesher and print what that cost: the seven CPU extractors, then <kbd>8</kbd> for Marching
 Cubes on the **GPU**, a compute shader through `isomesh-gpu` — the rendering was always on the GPU, what
-moves on <kbd>8</kbd> is the *extraction*. A dimmed "Loading… please wait." panel covers the screen while
-that 256-chunk backlog drains, because it drains across frames now rather than blocking one.
+moves on <kbd>8</kbd> is the *extraction* and the *field*. The terrain is not one of the four fields that
+shader knows, so a chunk's base samples are uploaded **once** and every carve after that ships only the
+pruned brush log — 64 bytes a brush — to be folded over them on the device; the panel's `base` term goes to
+`(cached)` and the running total of uploaded samples stops growing. **At this chunk size the CPU still
+wins, and the demo says so**: a chunk is 17³ samples, measured at CPU 0.06 ms against GPU 0.22, because a
+fixed ~0.22 ms of setup cannot amortise over 4,913 of them. The GPU takes the lead at 33³ and is **37×
+ahead at 129³** — that shape, not this row, is what the eighth key is here to show. A dimmed
+"Loading… please wait." panel covers the screen while that 256-chunk backlog drains, because it drains
+across frames now rather than blocking one.
 
 A brush changes an SDF everywhere, because an SDF is global; what it changes *visibly* is a shell, and the
 number the whole incremental story rests on is how thin that shell is. **E1 — the fraction of the brush's
