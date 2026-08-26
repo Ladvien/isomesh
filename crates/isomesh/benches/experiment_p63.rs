@@ -135,14 +135,29 @@ struct Lattice {
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Magnitudes {
     Unit,
-    Generic,
+    /// Magnitudes from a seeded stream. **The seed is a parameter and there is
+    /// more than one arm**, because the sweep is exhaustive over *signs* and the
+    /// magnitude space is continuous: the ring structure a cell produces depends
+    /// on where its body saddles fall, so one draw per pattern is one sample of
+    /// that. Four seeds is still a sample and it is four times the sample, and
+    /// the run reports each separately rather than pooling them — a defect on
+    /// one seed and not another is a finding about the magnitude space, not
+    /// noise to average away.
+    Generic(u64),
 }
+
+/// The seeds C1 is measured over. Arbitrary and fixed, so the numbers are the
+/// same on every machine.
+const SEEDS: [u64; 4] = [0x0000_2026, 0x0005_EED1, 0x00C0_FFEE, 0xDEAD_BEEF];
 
 impl Magnitudes {
     fn label(self) -> &'static str {
         match self {
             Self::Unit => "unit",
-            Self::Generic => "generic",
+            Self::Generic(s) if s == SEEDS[0] => "generic/s0",
+            Self::Generic(s) if s == SEEDS[1] => "generic/s1",
+            Self::Generic(s) if s == SEEDS[2] => "generic/s2",
+            Self::Generic(_) => "generic/s3",
         }
     }
 }
@@ -150,8 +165,9 @@ impl Magnitudes {
 /// SplitMix64, so a magnitude is a pure function of `(pattern, corner)` and the
 /// sweep is byte-identical on every machine and every run.
 #[inline]
-fn magnitude(pattern: u32, corner: usize) -> f64 {
-    let mut z = u64::from(pattern)
+fn magnitude(seed: u64, pattern: u32, corner: usize) -> f64 {
+    let mut z = seed
+        .wrapping_add(u64::from(pattern))
         .wrapping_mul(0x9E37_79B9_7F4A_7C15)
         .wrapping_add(corner as u64 + 1)
         .wrapping_mul(0xBF58_476D_1CE4_E5B9);
@@ -170,7 +186,7 @@ impl Lattice {
             let sign = if pattern >> bit & 1 == 1 { -1.0 } else { 1.0 };
             *slot = match magnitudes {
                 Magnitudes::Unit => sign,
-                Magnitudes::Generic => sign * magnitude(pattern, bit),
+                Magnitudes::Generic(seed) => sign * magnitude(seed, pattern, bit),
             };
         }
         Self { value }
@@ -694,31 +710,61 @@ fn main() {
             magnitudes,
         };
         let arms = [
-            // Signs exhaustive at the most symmetric magnitude there is. The
-            // pure combinatorial statement, and the arm that shows whether the
-            // interior rule can fire at all here.
+            // Signs exhaustive at the most symmetric magnitude there is. Kept
+            // because the result is a finding about the interior rule, and read
+            // with the caveat the entry states: at +/-1 every crossing lands on
+            // a half-integer, so a cycle centroid can land on the lattice and
+            // the three-way vertex classification stops being reliable.
             mc_arm("mc/off/unit", "ignore", false, Magnitudes::Unit),
             mc_arm("mc/on/unit", "trilinear", false, Magnitudes::Unit),
-            // Signs exhaustive with magnitudes in general position, which is
-            // what reaches the interior rule and therefore C2.
-            mc_arm("mc/off/generic", "ignore", false, Magnitudes::Generic),
-            mc_arm("mc/on/generic", "trilinear", false, Magnitudes::Generic),
+            // C1's real arms: signs exhaustive, magnitudes in general position,
+            // four independent seeds reported separately rather than pooled.
             mc_arm(
-                "mc/pre_fix_apex/generic",
+                "mc/on/s0",
+                "trilinear",
+                false,
+                Magnitudes::Generic(SEEDS[0]),
+            ),
+            mc_arm(
+                "mc/on/s1",
+                "trilinear",
+                false,
+                Magnitudes::Generic(SEEDS[1]),
+            ),
+            mc_arm(
+                "mc/on/s2",
+                "trilinear",
+                false,
+                Magnitudes::Generic(SEEDS[2]),
+            ),
+            mc_arm(
+                "mc/on/s3",
+                "trilinear",
+                false,
+                Magnitudes::Generic(SEEDS[3]),
+            ),
+            mc_arm("mc/off/s0", "ignore", false, Magnitudes::Generic(SEEDS[0])),
+            // C2's control arm.
+            mc_arm(
+                "mc/pre_fix_apex/s0",
                 "trilinear",
                 true,
-                Magnitudes::Generic,
+                Magnitudes::Generic(SEEDS[0]),
             ),
-            dual_arm("surface_nets/generic", "surface_nets", Magnitudes::Generic),
             dual_arm(
-                "dual_contouring/generic",
+                "surface_nets/s0",
+                "surface_nets",
+                Magnitudes::Generic(SEEDS[0]),
+            ),
+            dual_arm(
+                "dual_contouring/s0",
                 "dual_contouring",
-                Magnitudes::Generic,
+                Magnitudes::Generic(SEEDS[0]),
             ),
             dual_arm(
-                "manifold_dual_contouring/generic",
+                "manifold_dual_contouring/s0",
                 "manifold_dual_contouring",
-                Magnitudes::Generic,
+                Magnitudes::Generic(SEEDS[0]),
             ),
         ];
 
@@ -739,14 +785,14 @@ fn main() {
         // **C1's population, asserted.** Half the patterns cut the shared edge,
         // and the shared-edge vertex must exist on every one of them or the
         // sweep is not walking the link it claims to.
-        let cut = num("mc/on/generic", "patterns_shared_edge_cut");
+        let cut = num("mc/on/s0", "patterns_shared_edge_cut");
         assert_eq!(
             cut,
             u64::from(PATTERNS) / 2,
             "the shared edge should be cut on exactly half the patterns"
         );
         assert_eq!(
-            num("mc/on/generic", "shared_edge_vertices"),
+            num("mc/on/s0", "shared_edge_vertices"),
             cut,
             "every pattern that cuts the shared edge must put a vertex on it"
         );
@@ -756,9 +802,9 @@ fn main() {
         // "with the interior rule on" means anything, and C2 has to be shown
         // able to return non-zero before C1's zero means anything (M-44).
         let interior_unit = num("mc/on/unit", "interior_vertices");
-        let interior_generic = num("mc/on/generic", "interior_vertices");
-        let fan = num("mc/pre_fix_apex/generic", "fan_patterns");
-        let fan_defects = num("mc/pre_fix_apex/generic", "link_defective_total");
+        let interior_generic = num("mc/on/s0", "interior_vertices");
+        let fan = num("mc/pre_fix_apex/s0", "fan_patterns");
+        let fan_defects = num("mc/pre_fix_apex/s0", "link_defective_total");
         println!("\ninterior vertices: unit {interior_unit}, generic {interior_generic}");
         println!(
             "C1 shared-edge link defects, off/on, unit:    {} / {}",
@@ -767,23 +813,23 @@ fn main() {
         );
         println!(
             "C1 shared-edge link defects, off/on, generic: {} / {}",
-            num("mc/off/generic", "link_defective_shared_edge"),
-            num("mc/on/generic", "link_defective_shared_edge")
+            num("mc/off/s0", "link_defective_shared_edge"),
+            num("mc/on/s0", "link_defective_shared_edge")
         );
         println!(
             "   interior-apex link defects, off/on, generic: {} / {}",
-            num("mc/off/generic", "link_defective_interior"),
-            num("mc/on/generic", "link_defective_interior")
+            num("mc/off/s0", "link_defective_interior"),
+            num("mc/on/s0", "link_defective_interior")
         );
         println!("C2 pre-fix arm: {fan} patterns fanned, {fan_defects} link defects");
         println!(
             "C3 critical cells {} vs dual link defects sn {} / dc {} / mdc {}; max \
              incident faces on any dual vertex {}",
-            num("surface_nets/generic", "critical_cells"),
-            num("surface_nets/generic", "link_defective_total"),
-            num("dual_contouring/generic", "link_defective_total"),
-            num("manifold_dual_contouring/generic", "link_defective_total"),
-            num("dual_contouring/generic", "max_incident_faces")
+            num("surface_nets/s0", "critical_cells"),
+            num("surface_nets/s0", "link_defective_total"),
+            num("dual_contouring/s0", "link_defective_total"),
+            num("manifold_dual_contouring/s0", "link_defective_total"),
+            num("dual_contouring/s0", "max_incident_faces")
         );
         assert!(
             interior_generic > 0,
@@ -796,6 +842,32 @@ fn main() {
             "VOID: the pre-fix arm merged no apexes on any of {PATTERNS} \
              patterns, so C2 cannot fire and C1's zero proves nothing"
         );
+
+        // **C1's verdict, over every seed rather than the first one.** Reported
+        // per seed above; here it is required to be the same answer on all four,
+        // because a defect on one magnitude draw and not another is a finding
+        // about the magnitude space and must not be averaged into a pass.
+        let per_seed: Vec<(u64, u64, u64)> = ["mc/on/s0", "mc/on/s1", "mc/on/s2", "mc/on/s3"]
+            .iter()
+            .map(|a| {
+                (
+                    num(a, "link_defective_shared_edge"),
+                    num(a, "link_defective_interior"),
+                    num(a, "interior_vertices"),
+                )
+            })
+            .collect();
+        for (i, (shared, interior, apexes)) in per_seed.iter().enumerate() {
+            println!(
+                "   seed {i}: shared-edge defects {shared}, interior-apex defects \
+                 {interior}, apexes {apexes}"
+            );
+            assert!(
+                *apexes > 0,
+                "seed {i} produced no interior apex, so its C1 arm is the \
+                 interior-rule-off arm wearing a different name"
+            );
+        }
 
         for (_, row) in rows {
             run.record(&row);
