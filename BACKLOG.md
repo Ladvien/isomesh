@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**247 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**247 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -82,8 +82,24 @@ exactly: `fl(a+b) = fl(b+a)`, halving is exact, `fl(b−a) = −fl(a−b)`, `fl(
 placements — and its C2 is a **cost** clause: `T-007`'s 216 golden hashes are rebaselined in the same
 commit, and a hash that survives falsifies it.
 
+**R-061 — Is `O-12` finite at 2¹⁸, and does one sweep settle it for Marching Cubes? (P-63)**
+`O-12` — *"is Marching Cubes unconditionally manifold now?"* — is the oldest open question in the ledger,
+and its own text says what would settle it: an exhaustive search over configurations spanning more than
+two cells, or a proof that a cell-local cycle triangulation plus shared face segments cannot produce a
+non-manifold **vertex**. `✗43` found the first counterexample and it was inside one cell; the question
+stands because *"a vertex whose two face groups sit in different cells would be"* a third mechanism.
+**The search space is much smaller than it looks.** Every Marching Cubes vertex sits on a grid **edge**,
+so every face incident to it comes from one of the **four cells sharing that edge** — a 3 × 3 × 2 block of
+grid corners, **18 corners, 2¹⁸ = 262,144 sign patterns**. That is not a sample, it is the whole space,
+and it runs in seconds. **C2 is the fixture-can-fail control and it already exists**: inject `✗43`'s
+pre-fix single-apex fan and require a non-zero count. **C3 is a necessary-condition sweep only** — a dual
+vertex lives at a cell centre and its link involves 4³ = 64 corners, so the same 18-corner block cannot
+decide the dual family and the entry must not claim it does. The full 2²⁷ dual sweep is a nightly gate and
+a separate ticket, deliberately not registered.
+
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+| ☐ | **R-061** | S | — |
 
 ---
 
