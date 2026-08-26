@@ -21,7 +21,7 @@ mod tests;
 
 use alloc::vec::Vec;
 
-use crate::cube::corner_offset;
+use crate::cube::{corner_offset, edge_offset, place};
 use crate::vec3;
 use crate::{MeshSink, Real, Sdf, Shape3};
 
@@ -641,17 +641,20 @@ where
     let b = corner_value[hi_corner as usize];
     // On a cut edge exactly one endpoint is strictly negative and the other is
     // >= 0, so `a - b` is never zero and no epsilon guard is needed. An epsilon
-    // here would snap resolvable crossings to the midpoint.
+    // here would snap resolvable crossings to the midpoint. The offset is
+    // centred on the edge midpoint rather than measured from the lower corner,
+    // which is what makes a mirrored grid produce a mirrored vertex bit for bit
+    // (R-059, `cube::edge_offset`).
     debug_assert!(is_inside(a) != is_inside(b));
-    let t = a / (a - b);
+    let d = edge_offset(a, b);
 
     let lo_pos = corner_position(base, lo_corner, origin, cell_size);
     let hi_pos = corner_position(base, hi_corner, origin, cell_size);
-    let t = refine_crossing(sdf, lo_pos, hi_pos, a, t, refinement);
+    let d = refine_crossing(sdf, lo_pos, hi_pos, a, d, refinement);
     [
-        lo_pos[0] + (hi_pos[0] - lo_pos[0]) * t,
-        lo_pos[1] + (hi_pos[1] - lo_pos[1]) * t,
-        lo_pos[2] + (hi_pos[2] - lo_pos[2]) * t,
+        place(lo_pos[0], hi_pos[0], d),
+        place(lo_pos[1], hi_pos[1], d),
+        place(lo_pos[2], hi_pos[2], d),
     ]
 }
 
@@ -662,7 +665,7 @@ where
 ///
 /// # What linear interpolation assumes, and where CSG breaks it
 ///
-/// `t = a / (a − b)` is exact when `f` is linear along the edge, and every
+/// `d = ((a + b)/2)/(a − b)` is exact when `f` is linear along the edge, and every
 /// analytic primitive here is close enough to linear over one cell that it does
 /// not matter. **A CSG field is not.** `min`/`max` select an operand pointwise,
 /// so along an edge that crosses a seam the field is a *kinked* piecewise
@@ -684,34 +687,41 @@ where
 /// which converges on the true root whatever shape the field has between the
 /// endpoints, at the cost of `steps` extra evaluations per cut edge.
 ///
-/// Returns the parameter in `[0, 1]` along the edge.
-fn refine_crossing<S, R>(sdf: &S, lo: [R; 3], hi: [R; 3], a: R, t0: R, steps: u32) -> R
+/// Returns the signed offset from the edge midpoint, in `[-1/2, +1/2]`.
+///
+/// The bisection runs in the **centred** frame rather than in `[0, 1]`, for
+/// R-059's reason: the bracket `[-1/2, +1/2]` is symmetric about zero and its
+/// endpoints are exact negations, so under the simultaneous endpoint-and-sign
+/// swap `a_inside` flips, `low` and `high` swap roles, and the refined offset
+/// negates exactly — the same property the unrefined offset has. A bracket of
+/// `[0, 1]` would reintroduce the affine `0 <-> 1` map this whole change removes.
+fn refine_crossing<S, R>(sdf: &S, lo: [R; 3], hi: [R; 3], a: R, d0: R, steps: u32) -> R
 where
     S: Sdf<Scalar = R>,
     R: Real,
 {
     if steps == 0 {
-        return t0;
+        return d0;
     }
     // The bracket is the whole edge: the endpoints differ in sign by
     // construction, which is what makes bisection safe here without a guard.
-    let (mut low, mut high) = (R::ZERO, R::ONE);
+    let (mut low, mut high) = (-R::HALF, R::HALF);
     let a_inside = is_inside(a);
-    let mut t = t0;
+    let mut d = d0;
     for _ in 0..steps {
         let p = [
-            lo[0] + (hi[0] - lo[0]) * t,
-            lo[1] + (hi[1] - lo[1]) * t,
-            lo[2] + (hi[2] - lo[2]) * t,
+            place(lo[0], hi[0], d),
+            place(lo[1], hi[1], d),
+            place(lo[2], hi[2], d),
         ];
         if is_inside(sdf.sample(p)) == a_inside {
-            low = t;
+            low = d;
         } else {
-            high = t;
+            high = d;
         }
-        t = (low + high) * R::HALF;
+        d = (low + high) * R::HALF;
     }
-    t
+    d
 }
 
 /// The field's own gradient at a point, normalised — this crate's normal rule,

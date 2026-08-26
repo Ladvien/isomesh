@@ -31,7 +31,7 @@
 //! sum minus a non-negative one, or the reverse: **it can never be zero**, and
 //! its sign is known from the signs alone. The implementation brief's "guard the
 //! denominator near zero" is unnecessary here, for the same reason
-//! `crate::cube::edge_crossing` needs no epsilon.
+//! `crate::cube::edge_offset` needs no epsilon.
 //!
 //! Only `sign(S)` is wanted, and with the denominator's sign already known that
 //! reduces to comparing the two diagonal products. Writing `d_in` for the

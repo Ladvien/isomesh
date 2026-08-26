@@ -19,7 +19,7 @@
 //!
 //! So the corrupted table runs through [`march_with_table`], a marcher local to
 //! this module. Every geometric primitive it uses is the crate's own —
-//! `EDGE_CORNERS`, `EDGE_AXIS`, `corner_offset`, `is_inside`, `edge_crossing`,
+//! `EDGE_CORNERS`, `EDGE_AXIS`, `corner_offset`, `is_inside`, `edge_offset`,
 //! the same gradient normalisation — so the *only* thing that can differ from
 //! [`MarchingCubes::extract`] is which table it reads.
 //!
@@ -34,7 +34,7 @@ use alloc::vec;
 use proptest::prelude::*;
 
 use super::{DOMAIN, SurfaceGate, assert_extracted_mesh_is_valid, convex_body, sphere_union};
-use crate::cube::{corner_offset, edge_crossing};
+use crate::cube::{corner_offset, edge_offset, place};
 use crate::dual_contouring::DualContouring;
 use crate::manifold_dual_contouring::ManifoldDualContouring;
 use crate::marching_cubes::table::{
@@ -460,15 +460,15 @@ pub(crate) fn march_with_table<S: Sdf<Scalar = f64>>(
 
                         let a = corner_value[lo_corner as usize];
                         let b = corner_value[hi_corner as usize];
-                        let t = edge_crossing(a, b);
+                        let d = edge_offset(a, b);
                         let lo_pos =
                             corner_world(base, corner_offset(lo_corner), origin, cell_size);
                         let hi_pos =
                             corner_world(base, corner_offset(hi_corner), origin, cell_size);
                         let position = [
-                            lo_pos[0] + (hi_pos[0] - lo_pos[0]) * t,
-                            lo_pos[1] + (hi_pos[1] - lo_pos[1]) * t,
-                            lo_pos[2] + (hi_pos[2] - lo_pos[2]) * t,
+                            place(lo_pos[0], hi_pos[0], d),
+                            place(lo_pos[1], hi_pos[1], d),
+                            place(lo_pos[2], hi_pos[2], d),
                         ];
 
                         let g = sdf.gradient(position);
@@ -651,7 +651,7 @@ fn a_missing_triangle_in_the_case_table_is_caught() {
 ///
 /// The "still-cut" part is the whole difficulty, and it is worth stating because
 /// the naive version of this test does not test what it looks like. Pointing at
-/// an *uncut* edge trips `edge_crossing`'s own precondition
+/// an *uncut* edge trips `edge_offset`'s own precondition
 /// (`is_inside(a) != is_inside(b)`) and panics inside the crate before a mesh
 /// exists — which is a real and welcome defence, but it means the assertion
 /// bundle was never reached and the test would have proved nothing about it.

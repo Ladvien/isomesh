@@ -47,7 +47,7 @@
 //! crate measures for it is therefore a reference rather than a comparison, and
 //! should be reported with its hardware and grid attached.
 
-use crate::cube::{EDGE_CORNERS, corner_offset, edge_crossing, is_inside};
+use crate::cube::{EDGE_CORNERS, corner_offset, edge_offset, is_inside, place};
 use crate::dual::{CellVertices, DualMesher, VertexRule};
 use crate::{MeshSink, Real, Sdf, Shape3};
 
@@ -116,12 +116,12 @@ impl<R: Real> VertexRule<R> for Centroid {
             if is_inside(a) == is_inside(b) {
                 continue;
             }
-            let t = edge_crossing(a, b);
+            let d = edge_offset(a, b);
             let (lo_o, hi_o) = (corner_offset(lo), corner_offset(hi));
             for axis in 0..3 {
                 let from = R::from_f64(f64::from(lo_o[axis]));
                 let to = R::from_f64(f64::from(hi_o[axis]));
-                sum[axis] += from + (to - from) * t;
+                sum[axis] += place(from, to, d);
             }
             crossings += 1;
         }

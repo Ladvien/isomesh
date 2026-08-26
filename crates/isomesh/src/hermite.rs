@@ -18,7 +18,7 @@
 //! # Why the position comes from the same interpolation as everywhere else
 //!
 //! The crossing is placed by the same linear interpolation the crate's shared
-//! `cube::edge_crossing` gives Marching Cubes and Surface Nets, rather than by a
+//! `cube::edge_offset` gives Marching Cubes and Surface Nets, rather than by a
 //! bisection or Newton refinement. That is deliberate and it is
 //! about measurement, not cost: if dual contouring used *better* crossings than
 //! Surface Nets, then E-104's side-by-side would be comparing two changes at
@@ -29,7 +29,7 @@
 //! A refined root is a legitimate accuracy improvement later, but it belongs to
 //! every extractor at once or to none.
 
-use crate::cube::{EDGE_CORNERS, EDGE_COUNT, corner_offset, edge_crossing, is_inside};
+use crate::cube::{EDGE_CORNERS, EDGE_COUNT, corner_offset, edge_offset, is_inside, place};
 use crate::equivariant::sum_equivariant;
 use crate::vec3;
 use crate::{Real, Sdf};
@@ -90,13 +90,13 @@ impl<R: Real> HermiteCell<R> {
                 continue;
             }
 
-            let t = edge_crossing(a, b);
+            let d = edge_offset(a, b);
             let (lo_offset, hi_offset) = (corner_offset(lo), corner_offset(hi));
             let mut position = [R::ZERO; 3];
             for (axis, slot) in position.iter_mut().enumerate() {
                 let from = R::from_f64(f64::from(lo_offset[axis]));
                 let to = R::from_f64(f64::from(hi_offset[axis]));
-                *slot = cell_origin[axis] + cell_size * (from + (to - from) * t);
+                *slot = cell_origin[axis] + cell_size * place(from, to, d);
             }
 
             let gradient = sdf.gradient(position);

@@ -38,7 +38,7 @@
 //!   places. `the_half_resolution_crossings_are_the_coarse_neighbours_vertices`
 //!   is what keeps them equal.
 
-use crate::cube::{edge_crossing, is_inside};
+use crate::cube::{edge_offset, is_inside, place};
 use crate::marching_cubes::table::NO_EDGE;
 use crate::vec3;
 use crate::{MeshSink, Real, Sdf};
@@ -199,11 +199,12 @@ impl<R: Real> TransitionCell<R> {
 
     /// Where the surface crosses `edge`, or `None` if it does not.
     ///
-    /// `lo + (hi − lo)·t` with `t = a/(a − b)`, which is Marching Cubes' own
-    /// placement. On a cut edge exactly one endpoint is strictly negative and the
-    /// other is `>= 0`, so `a − b` is never zero and no epsilon guard is needed —
-    /// and an epsilon here would snap resolvable crossings to the midpoint, which
-    /// is precisely the sub-voxel detail A-014 exists to keep.
+    /// `mid + (hi − lo)·d` with `d = ((a + b)/2)/(a − b)`, which is Marching
+    /// Cubes' own placement (`cube::edge_offset`, R-059). On a cut edge exactly
+    /// one endpoint is strictly negative and the other is `>= 0`, so `a − b` is
+    /// never zero and no epsilon guard is needed — and an epsilon here would snap
+    /// resolvable crossings to the midpoint, which is precisely the sub-voxel
+    /// detail A-014 exists to keep.
     #[must_use]
     pub fn crossing(&self, edge: u8) -> Option<[R; 3]> {
         if !self.is_cut(edge) {
@@ -211,12 +212,12 @@ impl<R: Real> TransitionCell<R> {
         }
         let [lo, hi] = EDGE_SAMPLES[edge as usize];
         let (a, b) = (self.value[lo as usize], self.value[hi as usize]);
-        let t = edge_crossing(a, b);
+        let d = edge_offset(a, b);
         let (lo_pos, hi_pos) = (self.endpoint(edge, lo), self.endpoint(edge, hi));
         Some([
-            lo_pos[0] + (hi_pos[0] - lo_pos[0]) * t,
-            lo_pos[1] + (hi_pos[1] - lo_pos[1]) * t,
-            lo_pos[2] + (hi_pos[2] - lo_pos[2]) * t,
+            place(lo_pos[0], hi_pos[0], d),
+            place(lo_pos[1], hi_pos[1], d),
+            place(lo_pos[2], hi_pos[2], d),
         ])
     }
 

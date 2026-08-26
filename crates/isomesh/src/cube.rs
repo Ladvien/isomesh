@@ -172,20 +172,58 @@ pub fn is_inside<R: Real>(value: R) -> bool {
     value < R::ZERO
 }
 
-/// Where the surface crosses an edge, as a fraction from `a` to `b`.
+/// Where the surface crosses an edge, as a **signed offset from the edge
+/// midpoint** in units of the edge, in `[-1/2, +1/2]`.
 ///
-/// Linear interpolation of the field along the edge: `t = a / (a - b)`. Both
-/// extractors place their vertices from this, so they agree about where the
-/// surface is and differ only in what they do with the crossings.
+/// `d = ((a + b) / 2) / (a - b)`, and the vertex goes at
+/// `edge_midpoint + edge_vector * d`. Every extractor places its vertices from
+/// this, so they agree about where the surface is and differ only in what they
+/// do with the crossings.
+///
+/// # Why the midpoint and not the lower corner (R-059, P-61)
+///
+/// The obvious form is a parameter `t = a / (a - b)` from the lower corner, and
+/// this crate shipped it until `✗39` measured what it costs. Under a reflection
+/// of the grid, which corner is "lower" swaps, so the correctly reflected
+/// parameter is `1 - t` — and `1 - t` is **not** what `b / (b - a)` computes.
+/// Reflection acts on `[0, 1]` as `0 <-> 1`, an *affine* map, and IEEE 754
+/// respects sign flips exactly and affine maps only approximately.
+///
+/// In the centred frame reflection is a **sign flip**, and antisymmetry is four
+/// guarantees rather than four observations:
+///
+/// - `fl(a + b) = fl(b + a)`, because addition is commutative;
+/// - halving is exact, because 2 is a power of two;
+/// - `fl(b - a) = -fl(a - b)`, because round-to-nearest is an odd function;
+/// - `fl(S / -D) = -fl(S / D)`, for the same reason.
+///
+/// So the simultaneous endpoint-and-sign swap negates `d` **exactly**, and a
+/// mirrored grid produces a mirrored vertex bit for bit. `M-356`'s note that the
+/// subtraction is the culprit is the half of the story that is wrong: the two
+/// denominators are already exact negations.
+///
+/// The tail cost is a wash and was measured before the change: over 300,000
+/// random world positions against exact rational arithmetic, the lower-corner
+/// form is mean 0.086 ulp / worst 422 ulp and this one mean 0.052 / worst 757.
 ///
 /// # Panics
 ///
 /// In debug builds, if the endpoints are not on opposite sides — in which case
 /// there is no crossing to find and the caller has a bug.
 #[inline]
-pub(crate) fn edge_crossing<R: Real>(a: R, b: R) -> R {
+pub(crate) fn edge_offset<R: Real>(a: R, b: R) -> R {
     debug_assert!(is_inside(a) != is_inside(b));
-    a / (a - b)
+    ((a + b) * R::HALF) / (a - b)
+}
+
+/// Place a crossing on the segment `lo`..`hi`, given `d` from [`edge_offset`].
+///
+/// One line, and it exists so the centred frame has exactly one spelling: a
+/// second `(lo + hi) * HALF + (hi - lo) * d` written out by hand is a second
+/// place for the frame to drift.
+#[inline]
+pub(crate) fn place<R: Real>(lo: R, hi: R, d: R) -> R {
+    (lo + hi) * R::HALF + (hi - lo) * d
 }
 
 #[cfg(test)]
@@ -283,16 +321,68 @@ mod tests {
         assert!(!is_inside(-0.0f64));
     }
 
-    /// The property that makes the interpolation division safe without any
-    /// epsilon guard: a cut edge always has a strictly negative endpoint and a
-    /// non-negative one.
+    /// The property that makes the division safe without any epsilon guard: a cut
+    /// edge always has a strictly negative endpoint and a non-negative one.
     #[test]
-    fn edge_crossing_lands_between_the_endpoints() {
+    fn edge_offset_lands_within_half_an_edge_of_the_midpoint() {
         for (a, b) in [(-1.0f64, 1.0), (-0.25, 3.0), (-2.0, 0.0), (5.0, -0.5)] {
-            let t = edge_crossing(a, b);
-            assert!((0.0..=1.0).contains(&t), "a={a} b={b} t={t}");
+            let d = edge_offset(a, b);
+            assert!((-0.5..=0.5).contains(&d), "a={a} b={b} d={d}");
+            assert!((0.0..=1.0).contains(&place(0.0, 1.0, d)), "a={a} b={b}");
         }
         // Exactly at the negative endpoint when the other is zero.
-        assert_eq!(edge_crossing(-2.0f64, 0.0), 1.0);
+        assert_eq!(edge_offset(-2.0f64, 0.0), 0.5);
+        assert_eq!(place(0.0f64, 1.0, edge_offset(-2.0, 0.0)), 1.0);
+    }
+
+    /// R-059's whole point, asserted rather than argued: the simultaneous
+    /// endpoint-and-sign swap negates the offset **exactly**.
+    ///
+    /// The control is the second half and it is **searched rather than chosen**,
+    /// because the first version of this test picked `(−0.1, 0.7)` by hand to
+    /// show the parameter form failing and those values are one of the many
+    /// where `t + t' == 1` exactly — M-32's rule, on the day it was written.
+    /// The loop below asserts that at least one pair in a deterministic sweep
+    /// separates the two forms, so the test cannot pass by both forms being
+    /// exact on everything it happens to try.
+    #[test]
+    fn the_offset_is_exactly_antisymmetric_under_the_endpoint_swap() {
+        let mut separated = 0usize;
+        let mut state = 0x2026_u64;
+        for _ in 0..4096 {
+            // SplitMix64, so the sweep is the same on every machine.
+            state = state.wrapping_add(0x9E37_79B9_7F4A_7C15);
+            let mut z = state;
+            z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+            z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+            z ^= z >> 31;
+            let unit = |bits: u64| (bits >> 11) as f64 * (1.0 / 9_007_199_254_740_992.0);
+            let a = -unit(z).max(f64::MIN_POSITIVE);
+            let b = unit(z.rotate_left(32)).max(f64::MIN_POSITIVE);
+
+            // The centred form, always exact.
+            assert_eq!(edge_offset(b, a), -edge_offset(a, b), "a={a} b={b}");
+            // The parameter form, whose two anchors are `t` and `1 - t`.
+            if a / (a - b) + b / (b - a) != 1.0 {
+                separated += 1;
+            }
+        }
+        assert!(
+            separated > 0,
+            "the control found no pair where the lower-corner parameter form \
+             fails, so this test cannot tell the two forms apart"
+        );
+
+        // Hand-picked extremes, kept because they are the interesting shapes:
+        // a tiny straddle, a zero endpoint, and an asymmetric magnitude.
+        for (a, b) in [
+            (-1.0f64, 3.0),
+            (-1e-300, 1e-300),
+            (-1.0 / 3.0, 7.0 / 11.0),
+            (0.25, -1e-17),
+            (-2.0, 0.0),
+        ] {
+            assert_eq!(edge_offset(b, a), -edge_offset(a, b), "a={a} b={b}");
+        }
     }
 }

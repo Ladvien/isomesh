@@ -54,7 +54,7 @@ mod tests;
 
 use alloc::vec::Vec;
 
-use crate::cube::{corner_offset, is_inside};
+use crate::cube::{corner_offset, edge_offset, is_inside, place};
 use crate::vec3;
 use crate::{MeshSink, Real, Sdf, Shape3};
 
@@ -251,16 +251,18 @@ impl<R: Real> MarchingTetrahedra<R> {
         let b = corner_value[hi_corner as usize];
         // As in Marching Cubes: on a cut edge one endpoint is strictly negative
         // and the other is >= 0, so `a - b` is never zero and no epsilon guard
-        // is wanted.
+        // is wanted. Centred on the edge midpoint, not measured from the lower
+        // corner (R-059) -- one frame for every extractor, or two extractors
+        // disagree about where the same crossing is.
         debug_assert!(is_inside(a) != is_inside(b));
-        let t = a / (a - b);
+        let d = edge_offset(a, b);
 
         let lo_pos = corner_position(base, lo_corner, origin, cell_size);
         let hi_pos = corner_position(base, hi_corner, origin, cell_size);
         let position = [
-            lo_pos[0] + (hi_pos[0] - lo_pos[0]) * t,
-            lo_pos[1] + (hi_pos[1] - lo_pos[1]) * t,
-            lo_pos[2] + (hi_pos[2] - lo_pos[2]) * t,
+            place(lo_pos[0], hi_pos[0], d),
+            place(lo_pos[1], hi_pos[1], d),
+            place(lo_pos[2], hi_pos[2], d),
         ];
 
         let g = sdf.gradient(position);

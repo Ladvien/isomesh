@@ -107,17 +107,22 @@ fn case_triangle(case_index: u32, t: u32) -> vec3<u32> {
     return vec3<u32>(word & 0xffu, (word >> 8u) & 0xffu, (word >> 16u) & 0xffu);
 }
 
-// Where the surface crosses an edge: t = a / (a - b), the same expression
-// cube::edge_crossing uses. Positions are the grid origin plus a multiple of the
-// cell size, never an accumulated cursor -- see grid_position.
+// Where the surface crosses an edge: a signed offset from the edge MIDPOINT,
+// d = ((a + b) * 0.5) / (a - b), the same expression cube::edge_offset uses.
+// The centred frame is R-059's: reflection acts on it as a sign flip, which IEEE
+// respects exactly, where it acts on [0, 1] as the affine map 0 <-> 1, which it
+// does not. Changing this expression without changing the CPU's breaks M-142's
+// GPU/CPU agreement, which is what the_gpu_agrees_with_the_cpu asserts.
+// Positions are the grid origin plus a multiple of the cell size, never an
+// accumulated cursor -- see grid_position.
 fn edge_position(cell: Cell, base: vec3<u32>, edge: u32) -> vec3<f32> {
     let ends = EDGE_CORNERS[edge];
     let a = cell.value[ends.x];
     let b = cell.value[ends.y];
-    let t = a / (a - b);
+    let d = ((a + b) * 0.5) / (a - b);
     let pa = grid_position(params, base + corner_offset(ends.x));
     let pb = grid_position(params, base + corner_offset(ends.y));
-    return pa + (pb - pa) * t;
+    return (pa + pb) * 0.5 + (pb - pa) * d;
 }
 
 // Trilinear read of the sample grid at a world position.

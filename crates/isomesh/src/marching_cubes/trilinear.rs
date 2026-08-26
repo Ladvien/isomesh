@@ -119,9 +119,7 @@
 #[cfg(test)]
 mod tests;
 
-use crate::cube::{
-    EDGE_AXIS, EDGE_CORNERS, EDGE_COUNT, corner_offset, edge_crossing, face_corners,
-};
+use crate::cube::{EDGE_AXIS, EDGE_CORNERS, EDGE_COUNT, corner_offset, edge_offset, face_corners};
 use crate::real::Real;
 
 use super::table::{NO_EDGE, face_bit, segment_links};
@@ -1021,7 +1019,14 @@ pub fn local_crossing<R: Real>(edge: u8, corner: &[R; 8]) -> [R; 3] {
         R::from_f64(f64::from(o[1])),
         R::from_f64(f64::from(o[2])),
     ];
-    p[axis] = edge_crossing(corner[lo as usize], corner[hi as usize]);
+    // The edge runs from `lo` to `hi` along `axis`, and `EDGE_CORNERS` is
+    // lower-corner-first, so the two local coordinates are 0 and 1 and the
+    // midpoint is exactly 1/2 (R-059).
+    p[axis] = crate::cube::place(
+        R::ZERO,
+        R::ONE,
+        edge_offset(corner[lo as usize], corner[hi as usize]),
+    );
     p
 }
 
