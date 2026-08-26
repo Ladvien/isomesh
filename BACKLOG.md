@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**249 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**249 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -97,8 +97,25 @@ vertex lives at a cell centre and its link involves 4³ = 64 corners, so the sam
 decide the dual family and the entry must not claim it does. The full 2²⁷ dual sweep is a nightly gate and
 a separate ticket, deliberately not registered.
 
+**R-067 — Does restructuring the sample loop autovectorise, with bit-identity as the gate? (P-69)**
+`core::simd` is nightly and staying nightly, so the lever is **autovectorisation**, and the measured prior
+says that is enough: Wilcox's AArch64 study on 100k `f32` samples measured scalar 77.67 µs, hand-written
+intrinsics 25.78 µs and **autovectorised safe Rust 25.54 µs** — safe code matched intrinsics. The patterns
+that decide it are shape rather than machinery: struct-of-fields rather than index arithmetic, pre-slicing
+once outside the loop so LLVM can prove the bound, and `chunks_exact`/`zip` iterators. `dual.rs`'s
+`sample` currently `push`es into a `Vec` inside a triple loop, so the bound is re-proved on every element.
+**C2 is the gate and it is the opposite of P-61's:** all 216 golden hashes **unchanged**, because IEEE
+elementwise operations are exact per lane and a hash movement means LLVM reassociated something — so a
+movement is a **defect** and the change is rejected, not rebaselined. Two facts established before the
+harness: `libm::sqrtf` selects a hardware instruction under `target_feature = "sse2"`, so `sphere` can
+vectorise, while `libm::sinf`/`cosf` have **no** arch selection at all — pure software with
+argument-reduction branches — so `gyroid` cannot, at any loop shape, while `libm` is the transcendental
+path. And the M5 that C1's threshold comes from is **contended**, which is `M-005`'s block, so the ratio
+is measured here within one binary and one run (`M-281`) against this repo's own committed Zen 3 baseline.
+
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+| ☐ | **R-067** | S | — |
 
 ---
 
