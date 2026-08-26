@@ -617,10 +617,19 @@ fn main() {
             }
         };
         let c3_ratio = f64_over_f32("sphere");
-        let c3 = matches!(
-            c3_ratio.partial_cmp(&0.5),
-            Some(core::cmp::Ordering::Less | core::cmp::Ordering::Equal)
-        );
+        // **C3 presupposes an f32 gain, and C1 says there is none.** "The f64
+        // gain is at most half the f32 gain" divides by `f32_gain - 1`, so with
+        // the f32 gain at or below 1 the clause has no denominator and therefore
+        // no population. Reporting that as FALSIFIED would be a claim the run
+        // cannot support, and reporting it as HELD would be worse; it is
+        // **vacuous**, and the column says so in as many letters. This is the
+        // audit's central finding one level up: a clause can be unfirable
+        // because another clause failed.
+        let c3 = if c3_ratio.is_finite() {
+            if c3_ratio <= 0.5 { "true" } else { "false" }
+        } else {
+            "vacuous"
+        };
 
         println!(
             "\nC1 f32 loop gain: sphere {c1_sphere:.4}, gyroid {c1_gyroid:.4}, \
@@ -633,7 +642,11 @@ fn main() {
         );
         println!(
             "C3 f64 gain over f32 gain on sphere: {c3_ratio:.4} -> {}",
-            if c3 { "HELD" } else { "FALSIFIED" }
+            match c3 {
+                "true" => "HELD",
+                "false" => "FALSIFIED",
+                _ => "VACUOUS -- C1 left no f32 gain to halve",
+            }
         );
 
         let aggregates: Row = vec![
