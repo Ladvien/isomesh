@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**246 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**246 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -69,8 +69,22 @@ Four Phase-21 clauses could not have discriminated anything — P-58's C1 and C2
 and every one was catchable before its harness existed. So each clause below names the rows on which
 it *can* fire, and that set is shown non-empty from the CSV rather than assumed.
 
+**R-059 — Is the crossing bit-exactly antisymmetric if it is stored as an offset from the edge midpoint? (P-61)**
+`✗39` found bit-exact octahedral equivariance available for the **six pure axis permutations on plain
+`marching_cubes`** and attributed the reflection failure to `a/(a−b)` and `b/(b−a)` being two divisions of
+the same two values. That attribution is right and incomplete: `fl(b−a) = −fl(a−b)` exactly, so the
+subtraction is innocent, and what breaks is the **anchor** — `cube.rs`'s parameter is measured from the
+*lower* corner and a reflection swaps which corner is lower, so the correct reflected parameter is `1 − t`,
+which is not `b/(b−a)`. Storing `d = ((a + b)/2)/(a − b)` as a signed offset from the edge *midpoint* makes
+reflection a **sign flip** rather than the affine map `0 ↔ 1`, and floating point respects sign flips
+exactly: `fl(a+b) = fl(b+a)`, halving is exact, `fl(b−a) = −fl(a−b)`, `fl(S/−D) = −fl(S/D)`.
+**This one is a `src/` change and says so at registration** — `cube::edge_crossing` and its five
+placements — and its C2 is a **cost** clause: `T-007`'s 216 golden hashes are rebaselined in the same
+commit, and a hash that survives falsifies it.
+
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+| ☐ | **R-059** | S | — |
 
 ---
 
