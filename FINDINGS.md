@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**465 entries** — 48 falsified, 345 measured, 50 verified, 18 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**467 entries** — 49 falsified, 345 measured, 50 verified, 18 open, 5 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -87,6 +87,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗46` | "headless Chrome on this host exposes no navigator.gpu": it exposes the object and no adapter, which is the one failure… |
 | `✗47` | "GPU_JOBS_MAX bounds the queue": the cap was checked after the push, so it bounded nothing at all (D-014) |
 | `✗48` | "the field already stops the descent, and the floor slab is scenery": dig out the bottom and the player leaves the world… |
+| `✗49` | plain Marching Cubes is now bit-exactly equivariant under all 48 octahedral elements |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -504,6 +505,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `E×2` | A separate probabilistic-quadric solver |
 | `E×3` | Crossing-count-scaled regularizer |
 | `E×4` | Weld gated on the pairwise link condition, rejected pairs left split |
+| `E×5` | The crossing stored as a signed offset from the edge midpoint |
 
 <!-- END GENERATED INDEX -->
 
@@ -1628,6 +1630,7 @@ point; the numbers are what make it re-checkable.
 | E×1 | **Surface Nets' centroid as Dual Contouring's vertex rule** | The QEF is worth its cost on sharp fields and not on smooth ones, and pays for it in self-intersection | Hausdorff at 65³, QEF ÷ centroid: sphere **0.486**, torus **0.457**, csg_difference **0.255**, box_exact **0.010**, thin_plate **0.010**. Self-intersections per 1k at 33³: QEF **3.118 / 13.837 / 29.745** on gyroid, fbm_terrain, noise_cavity against centroid's **0.000** | **KEPT as an ablation, not as a default.** Both arms are real answers to different questions and neither dominates — 100× accuracy on sharp features against zero self-intersections. The seam stays so the comparison can be re-run; `Qef` stays the default because sharp-feature recovery is what A-007 exists for | X-002, `benches/ablation.rs`, M-237 |
 | E×2 | **A separate probabilistic-quadric solver** (Trettner & Kobbelt, `10.1111/cgf.13933`) | It supersedes the Tikhonov regularizer and is more robust on near-singular cells | Never measured as a separate solver, because it was shown identical first: a direct assembly of the paper's equations agrees with `solve_with` at `λ = Nσ²` to **1.110e-16 over 296 cells** | **REVERTED before it was written.** In this crate's centroid-relative coordinates the paper's extra term is `σ²Σrᵢ`, and `Σrᵢ ≡ 0` because the centroid *is* the mean of the crossings. A second solver would have been a second execution path computing identical numbers. **Do not re-attempt for isotropic noise**; the open door is anisotropic `Σₙ`, which needs a noise model analytic fields do not have | X-004, `the_probabilistic_quadric_is_the_existing_solve`, M-238 |
 | E×3 | **Crossing-count-scaled regularizer** (`λ = Nσ²`, the part of E×2 that *is* different) | Scaling λ with the number of planes beats one fixed λ per cell | Hausdorff at 65³, scaled ÷ fixed: sphere **1.0000**, torus **0.9957**, csg_difference **0.9992**, box_exact **0.7519**, thin_plate **0.7519**. Self-intersections at 33³ fall on all three noisy fields: **3.118→2.551, 13.837→13.571, 29.745→28.749** | **KEPT behind `experimental`, not made default.** Never worse and 25% better on both sharp fields, which is a real improvement — but the default carries T-007's committed golden hashes and 112 baseline rows, and moving those for a 25% gain on two of eight fields is a decision with evidence attached, not a tidy-up. Promoting it is its own ticket | X-004, `crates/isomesh/src/experimental.rs`, M-238 |
+| E×5 | **The crossing stored as a signed offset from the edge midpoint** | H (P-61): `d = ((a + b)/2)/(a − b)` is exactly antisymmetric under the simultaneous endpoint-and-sign swap by four IEEE 754 guarantees, so a mirrored grid produces a mirrored vertex bit for bit, where a parameter from the lower corner cannot | **0 mismatches on 9.2 M straddling pairs** across `f32` and `f64` against 1,035,808 / 2,000,000 for the lower-corner form. `marching_cubes` **6 → 48 of 48** on all 16 equivariance rows, `worst_component_ulp` 0. 135 of 216 golden hashes moved, 0 counts changed, 2,285 of 28,124 cut edges displaced at ≤ 268 ULP. Hausdorff and self-intersections identical to 12 digits | **KEPT, and it is the default** — there is no second path: `cube::edge_crossing` is gone, all six placements and the WGSL shader are in the centred frame, and the 216 golden hashes are rebaselined. The cost is exactly the registered one (C2 is a cost clause) and the geometric price measured zero. **Do not re-attempt the lower-corner form**; its `1 − t` anchor is an affine map and floating point does not respect those | R-059, `benches/experiment_p61.rs`, `docs/experiments/p-61.csv`, ✗49 / M-372 |
 | E×4 | **Weld gated on the pairwise link condition, rejected pairs left split** | H (P-8): exactly 0 non-manifold edges and vertices on all eight fields × all extractors, where the unconditional weld yields N > 0 | 56 configurations on a centred 2×2×2 block. Ungated is **0/0 in 47 of them**. Across all 56 the gate removes **at most 4** non-manifold edges and adds **up to 791** non-manifold vertices — `noise_cavity` + subgrid goes 301 → **1,092**, and `sphere` + Marching Cubes goes 0 → 96 | **REVERTED, and it was never merged.** Strictly worse: it fixes almost nothing where there was something to fix and manufactures non-manifoldness where there was none. A `k`-way coincidence is manifold only if all `k` merge; refusing one leaves the representative a bowtie, which is why the damage is in the vertex column and the edge column barely moves | R-001, `benches/experiment_p8.rs`, `docs/experiments/p-8.csv`, P-8 |
 
 ---
@@ -10501,3 +10504,158 @@ harness in `Real` for both scalars** rather than quoted.
 `pairs`, `mismatches_lower_corner`, `mismatches_centred`, `out_of_cell_centred`, `c1_population`,
 `c1_rows_at_48`, `c1_holds`, `c2_fixtures_with_moved_edges`, `c2_holds`, `c3_worst_hausdorff_ratio`,
 `c3_worst_self_intersection_ratio`, `c3_holds`, `c4_seam_mismatch_delta`, `p57_fixture_columns_match`.
+
+### 💥 ✗49 / M-372 — C1 and C2 FALSIFIED, C3 and C4 HELD: **plain Marching Cubes is now bit-exactly equivariant under all 48 octahedral elements**, and the two clauses that failed did so for reasons that were named at registration (P-61, R-059)
+
+**M.** `cargo bench --bench experiment_p61`, `docs/experiments/p-61.csv`, **155 rows**, 9m33s, `f64`
+(the pre-measurement block also in `f32`). Five blocks: 8 pre-measurement rows, 112 equivariance rows —
+eight fields × seven extractors × 33³ and 25³, **5,488 extractions** — 16 edge rows, 16 geometry rows and
+3 seam rows. First CSV in this repository whose provenance line reads `# commit 1cf4265` with **no
+`(WORKING TREE DIRTY)`** beside it.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 `elements_vertex_exact = 48` on every `fixture_can_fail` row | 98 of 98 | **FALSIFIED — 28 of 98. And `marching_cubes` is 48 of 48 on all 16 of its rows, from 6** |
+| C2 no reference field's golden hash is unchanged | 216 of 216 move | **FALSIFIED — 135 of 216 moved, 81 unchanged, with three named causes; 14 of 16 fixtures have moved edges** |
+| C3 Hausdorff and self-intersections within 1% | both | **HELD — 0.000000 on both, and the clause could not have failed** |
+| C4 the seam sweep, registered as measurement | a null | **NULL, and provably non-vacuous — 205 = 205** |
+
+**The pre-measurement is the proof of the mechanism and it is exact, in both scalars.** The appendix's
+off-repo script, re-run in `Real`:
+
+| frame | `h` | pairs | lower-corner mismatches | centred | outside the cell |
+|---|---:|---:|---:|---:|---:|
+| cell-local, `f64` | 1 | 2,000,000 | 1,035,808 (51.8%) | **0** | 0 |
+| cell-local, `f32` | 1 | 2,000,000 | 1,184,666 (59.2%) | **0** | 0 |
+| world, `f64` | 0.125 | 300,000 | 26,051 (8.68%) | **0** | 0 |
+| world, `f32` | 0.125 | 300,000 | 28,618 (9.54%) | **0** | 0 |
+| world, `f64` | 0.1 | 300,000 | 28,521 (9.51%) | **0** | 0 |
+| world, `f64` | 3/32 | 300,000 | 27,678 (9.23%) | **0** | 0 |
+
+**Zero on 9.2 million straddling pairs across both scalars**, and the lower-corner form mismatching a
+million of them is the control: the instrument can report the other answer, and does, in the same loop.
+
+> **One of the doc's pre-measured figures does not reproduce, and the disagreement is the doc's script
+> rather than this harness.** The appendix reports `h = 0.1` at **75.0%** for the lower-corner form
+> against 8.52% at `h = 0.125`; measured here it is **9.51%** against 8.68% — no step at all. The cause is
+> one term: the appendix computes the mirrored position as `(-U) + h*t2`, multiplying by the **literal**
+> `h`, while an extractor interpolates between two *computed* corner positions and therefore multiplies by
+> `hi - lo`, which at non-dyadic `h` is not `h`. This harness does the latter because that is what
+> `place` does. The exactness argument does not depend on either figure — it is four IEEE guarantees — and
+> the centred form is 0 under both spellings.
+
+**C1's headline is inside its own falsification, and it is the result this experiment was for.**
+
+| extractor | `p-57.csv` | now | at 48 of 48 |
+|---|---|---|---:|
+| `marching_cubes` | 6, 24, 48 | **48 only** | **16 of 16** |
+| `marching_cubes+decider` | 1, 6, 24, 48 | 1 or 48 | 14 of 16 |
+| `marching_tetrahedra` | 6, 12 | **12 only** | 0 |
+| `subgrid_marching_tetrahedra` | 6, 12 | 6, 12 | 0 |
+| `surface_nets` | 1, 6, 12 | 1, 6, 12 | 0 |
+| `dual_contouring` / `manifold_dual_contouring` | 2, 4, 24, 48 | 2, 4, 24, 48 | 3 each |
+
+**`marching_cubes` reaches all 48 elements on every field**, `gyroid`, `fbm_terrain` and `noise_cavity`
+included, with `worst_component_ulp` **0** on all 16 rows — not a small residue, no residue. `✗39`'s
+consumer note said equivariance was available *"for the six pure axis permutations"*; it is now available
+for the whole octahedral group, which is what turns the group into a **48-relation metamorphic oracle per
+fixture** rather than an interesting negative result.
+
+`marching_cubes+decider` follows it everywhere except `noise_cavity` at both resolutions, where it stays
+at **1 of 48**. That is `✗39`'s incidental result — the asymptotic decider contributes its own axis
+dependence rather than inheriting MC's — and this change cannot touch it, correctly: the decider compares
+face values, not crossings. `dual_contouring` and `manifold_dual_contouring` gain `thin_plate` at 33³
+(24 → 48) and are otherwise unmoved.
+
+**Both C1 failure modes were named in the registration, which is the point of naming them.**
+`marching_tetrahedra` improves from {6, 12} to a flat **12 of 48** and stops: a six-tetrahedron
+decomposition of a cell is not octahedrally invariant, so its diagonals cut different edges after a
+relabelling, and no placement rule reaches that. The duals accumulate crossings into `AᵀA` (or a centroid
+sum) in an order that axis relabelling permutes, which is `M-177`. So C1 as registered was falsifiable and
+was falsified; the clause's *reach* was over-stated and its mechanism analysis was not.
+
+**And one extractor is unmoved for a reason nobody had written down.**
+`subgrid_marching_tetrahedra` is identical to `p-57.csv` on all 16 rows, because **it does not use the
+linear crossing at all** — `subgrid::roots::all_roots` bisects the real field, so its vertex positions are
+independent of this change in both directions. That was found by C2, not by reading: all 24 of its golden
+hashes came back unchanged.
+
+**C2 is falsified, 135 of 216 hashes moved, and the 81 survivors have three causes rather than one.**
+
+| cause | rows | why it is correct behaviour |
+|---|---:|---|
+| `greedy_quads` | 24 | a blocky mesher: cells are classified solid or empty and the vertices sit on the lattice. There is no interpolation to re-anchor |
+| `subgrid_marching_tetrahedra` | 24 | positions come from a root finder on the real field, not from a linear crossing |
+| exactly-representable crossings | 33 | 27 are `box_exact`, whose zero set lies on dyadic planes — the same reason `✗39` found its only `48 of 48` rows there. The rest are `csg_difference` at 17³ and `surface_nets` rows where the centroid sum coincides |
+
+**Zero of 216 vertex or triangle counts changed**, which is the design confirming itself: a placement
+change cannot touch the sign classification, so the topology is bit-identical and only coordinates move.
+Per fixture, `2,285 of 28,124` cut edges moved — 7.3% of them — at `worst_move_ulp` **0 to 268**, and the
+two fixtures with `edges_moved = 0` are `box_exact` at both resolutions. `thin_plate` is the outlier at
+**44.1%** of its cut edges moving.
+
+**C3 held and could not have failed, and that is stated rather than banked.** Symmetric Hausdorff and
+self-intersections-per-1,000 are identical to twelve significant digits on all 16 fixtures — every
+`hausdorff_ratio` is `1.000000000`. The clause's threshold is `1e-2` **relative**; a vertex moving by one
+ULP at these magnitudes is ~`1e-16` world units against a Hausdorff distance of ~`5e-3`. That is eleven
+orders of magnitude of headroom, so a HELD verdict here carries much less information than its wording
+implies — the same caveat `✗41`'s C2 earned, now earned by a clause registered in this phase. **The
+informative number is `worst_move_ulp`**, which is per-fixture, non-zero, and bounded at 268.
+
+**C4's null is real, and the first version of the fixture could not have found that out.** The registered
+expectation was that the crossing form does not participate in a chunk seam, because `M-32` names
+`world_of_sample`. Measured at a chunk base of 16, over all three axes:
+
+| `h` | cut edges | arms disagree about a coordinate | mismatches, lower-corner | mismatches, centred |
+|---:|---:|---:|---:|---:|
+| 0.125 | 183 | **0** | 0 | 0 |
+| **0.1** | 252 | **246** | **205** | **205** |
+| 3/32 | 429 | **0** | 0 | 0 |
+
+At the two dyadic spacings the two arithmetics agree bit-for-bit and there is nothing to measure; at
+`h = 0.1` they disagree about 246 of 252 endpoint coordinates and the crossing mismatch count is
+**identical under both placements**. So the seam is `world_of_sample`'s, exactly as `M-32` says, and the
+centred form neither helps nor hurts it. `seam_worst_ulp` is `4.37e18` under both arms, which is a
+coordinate straddling zero rather than a large displacement — and it is the *same* number under both,
+which is the clause's whole content.
+
+> **The first fixture found 0 cut edges and printed a clean zero (M-44, seventh instance).** It put two
+> chunks side by side along `x` and compared the shared plane's `y`-edges — where both chunks have the
+> same `y` base, so both reconstruct `o + h·y` identically and there is nothing to disagree about. The
+> `seam_coordinate_mismatches` column is now the control and the run asserts on it: a seam census whose
+> two arms never disagree about a coordinate is not measuring the seam.
+
+**The audit's list of three placements is six, and C2 is what found the sixth.** The doc named
+`cube.rs:186`, `surface_nets.rs:119` and `trilinear.rs:1024`. Also placing from the crossing:
+`marching_cubes/mod.rs`'s `edge_position` (which computed `a/(a−b)` **inline**, not through `cube`),
+`hermite.rs`, `transvoxel/cell.rs`, the property suite's test double — and **`marching_tetrahedra.rs`**,
+which had its own copy of the expression and was found only because all 24 of its golden hashes survived
+the first blessing. The GPU shader had it by hand too (`marching_cubes.wgsl`), and leaving that would have
+broken `M-142`'s CPU/GPU agreement; `the_gpu_mesher_agrees_with_the_cpu_one` is green and `game_dig` is
+26/26.
+
+**`refine_crossing` moved frames with it, and the reason is the same three lines.** Its bisection bracket
+is now `[−1/2, +1/2]` rather than `[0, 1]`: symmetric about zero, endpoints exact negations, so under the
+simultaneous endpoint-and-sign swap `a_inside` flips, `low` and `high` swap roles, and the *refined*
+offset negates exactly too. A `[0, 1]` bracket would have reintroduced the affine `0 ↔ 1` map the whole
+change exists to remove, on the one path that iterates.
+
+**The instrument is P-57's, and that is checked rather than asserted.** `cut_edges`,
+`order_sensitive_edges`, `grid_symmetric` and `fixture_can_fail` are compared against
+`docs/experiments/p-57.csv` **row for row** before any new number is reported — four columns that are
+properties of the grid and the field values alone, so a placement change cannot move them.
+`p57_fixture_columns_match` is `true` on all 155 rows. The identity element is asserted vertex-exact and
+triangle-exact on every one of the 112 equivariance rows.
+
+**What a consumer should take from this, replacing `✗39`'s note.** Bit-exact octahedral equivariance is
+available from this crate for **all 48 elements on `marching_cubes`** and on `marching_cubes+decider`
+except where an interior ambiguity is reached; for **`dual_contouring`/`manifold_dual_contouring` on
+`thin_plate` at 33³**; and for the six pure axis permutations elsewhere as before. The *index buffer* still
+differs under every non-identity element — `elements_triangle_exact` on the MC rows is 1 or 2 of 48,
+because `table.rs` picks `safe_apex` by lowest edge index, which is `✗39`'s C3 unchanged and unaffected.
+
+**Would be shown wrong by:** an `f32` or `f64` straddling pair where `edge_offset(b, a) != -edge_offset(a, b)`
+— which `the_offset_is_exactly_antisymmetric_under_the_endpoint_swap` sweeps 4,096 of, with a **searched**
+control that at least one pair separates the two forms; a `marching_cubes` row below 48 of 48 on a
+symmetric grid; or a golden hash moving on `greedy_quads`, which would mean a blocky mesher had acquired
+an interpolation.
