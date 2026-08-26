@@ -146,18 +146,15 @@ impl<R: Real> MarchingTetrahedra<R> {
 
         self.values.clear();
         self.values.reserve(sample_count);
-        for z in 0..size[2] {
-            for y in 0..size[1] {
-                for x in 0..size[0] {
-                    let p = [
-                        origin[0] + cell_size * R::from_f64(f64::from(x)),
-                        origin[1] + cell_size * R::from_f64(f64::from(y)),
-                        origin[2] + cell_size * R::from_f64(f64::from(z)),
-                    ];
-                    self.values.push(sdf.sample(p));
-                }
-            }
-        }
+        // One definition, shared with Marching Cubes and the dual path (R-067).
+        crate::sdf::sample_grid(
+            sdf,
+            size,
+            origin,
+            cell_size,
+            size[0] as usize,
+            &mut self.values,
+        );
 
         self.edge_vertices.clear();
         self.edge_vertices.resize(sample_count * STEPS, u32::MAX);

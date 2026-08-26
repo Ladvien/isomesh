@@ -227,20 +227,16 @@ impl<R: Real> MarchingCubes<R> {
         }
 
         // ── sample once per grid point ──────────────────────────────────────
-        self.values.clear();
-        self.values.reserve(sample_count);
-        for z in 0..size[2] {
-            for y in 0..size[1] {
-                for x in 0..size[0] {
-                    let p = [
-                        origin[0] + cell_size * R::from_f64(f64::from(x)),
-                        origin[1] + cell_size * R::from_f64(f64::from(y)),
-                        origin[2] + cell_size * R::from_f64(f64::from(z)),
-                    ];
-                    self.values.push(sdf.sample(p));
-                }
-            }
-        }
+        // One definition, shared with the dual and tetrahedral paths (R-067).
+        // No row padding here, so the stride is the row itself.
+        crate::sdf::sample_grid(
+            sdf,
+            size,
+            origin,
+            cell_size,
+            size[0] as usize,
+            &mut self.values,
+        );
         debug_assert_eq!(self.values.len(), sample_count);
 
         self.edge_vertices.clear();

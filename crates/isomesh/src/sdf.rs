@@ -130,6 +130,74 @@ impl<S: Sdf + ?Sized> Sdf for Box<S> {
     }
 }
 
+/// Sample a field on a grid, one **pre-sliced contiguous write per row**.
+///
+/// Ticket: R-067 (P-69). The single definition of "evaluate this field at every
+/// grid point", and it exists because there were **three** — `marching_cubes`,
+/// `marching_tetrahedra` and the dual path each had their own triple loop
+/// pushing into a `Vec`, differing only in whether rows carry padding.
+///
+/// # Why the shape, and not just the sharing
+///
+/// The three copies all had the same defect. `Vec::push` in the innermost loop
+/// re-proves the capacity bound on **every element**, so the store is not a
+/// contiguous write LLVM can widen, and the `y`/`z` coordinates were recomputed
+/// per element inside it. Here the buffer is sized once, each row is sliced once
+/// so its bound is proved once, the two outer coordinates are hoisted, and the
+/// inner loop is an `iter_mut().enumerate()` over a slice of known length —
+/// which is the shape the autovectorisation literature names (`chunks_exact` and
+/// `zip`, pre-slicing outside the loop, struct-of-fields over index arithmetic).
+///
+/// **Whether it actually vectorises is a property of the field, not of this
+/// loop**, and it is decided by `libm`: `sqrtf` carries a `select_implementation`
+/// on `target_feature = "sse2"` and on `aarch64`+`neon`, so a field built from
+/// `sqrt` reduces to hardware instructions, while `sinf` and `cosf` carry no arch
+/// selection at all and are software with argument-reduction branches. A loop
+/// containing one cannot be widened at any shape.
+///
+/// # Bit-identity
+///
+/// Every value is the same expression it was: `origin[k] + cell_size · k`, with
+/// the `y` and `z` terms hoisted rather than re-associated. Hoisting a loop
+/// invariant does not change a rounding, so the output is bit-identical to the
+/// three loops it replaces — which is `T-007`'s 216 golden hashes, and P-69's C2
+/// registers that as a **veto**: a moved hash means LLVM reassociated something
+/// and the change is rejected rather than rebaselined.
+///
+/// `row_stride` is the distance between row starts and must be at least
+/// `size[0]`; the excess slots are left at [`Real::ZERO`], which the dual path
+/// relies on for its odd-stride padding. `out` is cleared first, so a shorter
+/// grid cannot leave a longer one's values behind.
+pub(crate) fn sample_grid<R: Real, S: Sdf<Scalar = R> + ?Sized>(
+    sdf: &S,
+    size: [u32; 3],
+    origin: [R; 3],
+    cell_size: R,
+    row_stride: usize,
+    out: &mut alloc::vec::Vec<R>,
+) {
+    let nx = size[0] as usize;
+    debug_assert!(row_stride >= nx, "a row cannot be shorter than the grid");
+    let rows = size[1] as usize * size[2] as usize;
+    out.clear();
+    // Sized once. The pad slots are zero from here and are never written again,
+    // which is what lets the inner loop be exactly `nx` wide.
+    out.resize(row_stride * rows, R::ZERO);
+
+    for z in 0..size[2] {
+        let pz = origin[2] + cell_size * R::from_f64(f64::from(z));
+        for y in 0..size[1] {
+            let py = origin[1] + cell_size * R::from_f64(f64::from(y));
+            let start = row_stride * (y as usize + size[1] as usize * z as usize);
+            // One slice, one bound check, `nx` stores.
+            let row = &mut out[start..start + nx];
+            for (x, slot) in row.iter_mut().enumerate() {
+                *slot = sdf.sample([origin[0] + cell_size * R::from_f64(x as f64), py, pz]);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     // The gradient assertions here compare exact values because the fields

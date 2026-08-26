@@ -343,27 +343,11 @@ impl<R: Real> DualMesher<R> {
     ) {
         let size = shape.size();
         self.row = Self::row_stride(size);
-        // One slot per row is padding and is never read; it is filled rather
-        // than skipped so the buffer has no uninitialised gaps and `push` stays
-        // a single sequential write.
-        let pad = self.row - size[0] as usize;
-        self.values.clear();
-        self.values
-            .reserve(self.row * size[1] as usize * size[2] as usize);
-        for z in 0..size[2] {
-            for y in 0..size[1] {
-                for x in 0..size[0] {
-                    self.values.push(sdf.sample([
-                        origin[0] + cell_size * R::from_f64(f64::from(x)),
-                        origin[1] + cell_size * R::from_f64(f64::from(y)),
-                        origin[2] + cell_size * R::from_f64(f64::from(z)),
-                    ]));
-                }
-                for _ in 0..pad {
-                    self.values.push(R::ZERO);
-                }
-            }
-        }
+        // One definition, shared with Marching Cubes and the tetrahedral path
+        // (R-067). The odd row stride's excess slots are padding and are never
+        // read; `sample_grid` leaves them at zero rather than filling them with a
+        // second push loop, so the buffer still has no uninitialised gaps.
+        crate::sdf::sample_grid(sdf, size, origin, cell_size, self.row, &mut self.values);
     }
 
     /// Pack `is_inside` into [`inside`](Self::inside), one bit per sample.
