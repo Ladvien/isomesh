@@ -10418,3 +10418,86 @@ transcription of a summary is what `✗21` catalogues.
 **Would be shown wrong by:** a `catalog_read` whose `markdown_path` points at real paper text while
 `chunks_indexed` is 1, which would make the discriminator above a false positive; or either paper becoming
 open-access, which unblocks its experiment with no other change.
+
+### P-61 — registered for R-059, before the harness: is the crossing bit-exactly antisymmetric if it is anchored at the edge midpoint rather than at the lower corner?
+
+**The hook is `✗39`.** `M-356` found a mesh bit-exactly equivariant under axis *relabelling* and not under
+*reflection*, and attributed it to `a/(a−b)` and `b/(b−a)` being two different divisions of the same two
+values. **That attribution is right and incomplete, and completing it produces a fix.**
+
+The subtraction is not the culprit. IEEE round-to-nearest is sign-symmetric, so `fl(b−a) = −fl(a−b)`
+**exactly** and the two denominators are exact negations. The asymmetry enters in two other places: the
+division rounding — `fl(a/d)` and `−fl(b/d)` are independent roundings that do not sum to 1 — and the
+**anchor**. `cube::edge_crossing` returns a parameter measured *from the lower corner*, and the placements
+put the vertex at `lower + t`. A reflection swaps which corner is "lower", so the correct reflected
+parameter is `1 − t`, and `1 − t` is not representable as `b/(b−a)`.
+
+**The construction.** Store the crossing as a signed offset from the edge *midpoint*:
+
+```
+d = ((a + b) / 2) / (a − b)          # in [−1/2, +1/2]
+position = edge_midpoint + h · d
+```
+
+Exactly antisymmetric under the simultaneous endpoint-and-sign swap, and the proof is four IEEE 754
+guarantees rather than four observations: `fl(a+b) = fl(b+a)` because addition is commutative; halving is
+exact because 2 is a power of two; `fl(b−a) = −fl(a−b)` because round-to-nearest is odd; and
+`fl(S/−D) = −fl(S/D)` for the same reason. **The `[0,1]` parameter frame cannot host this**, because
+reflection acts there as `0 ↔ 1` — an *affine* map — and floating point respects sign flips exactly and
+affine maps only approximately.
+
+**This is a `src/` change and it is registered as one.** `cube::edge_crossing` becomes
+`cube::edge_offset`, and all five placements move to the centred frame: `marching_cubes/mod.rs`'s
+`edge_position` (which computes `a/(a−b)` inline rather than through `cube`), `trilinear.rs`'s
+`local_crossing`, `surface_nets.rs`, `hermite.rs` and `transvoxel/cell.rs`. The audit's own list named
+three; there are five.
+
+**Each clause's population, counted from the committed artefact before this harness was written** — which
+is the audit's central finding turned into a step:
+
+| clause | fires on | currently |
+|---|---|---|
+| C1 | **98 of 112** `p-57.csv` rows have `fixture_can_fail = true` — 56 primal, 42 dual | **0 of 98** reach 48 |
+| C2 | 16 of 16 fixtures (8 fields × 33³/65³); `box_exact` alone has 1,350 cut edges at 33³ | every fixture has cut edges |
+| C3 | 16 of 16 fixtures, `marching_cubes` | baseline computed in the same run |
+| C4 | 3 spacings × 2 arms; `h = 0.1` is where the off-repo measurement moves 75.0% → 0% | — |
+
+`box_exact`'s 14 rows are excluded by `fixture_can_fail` because its zero set lies on dyadic planes: all
+eight of `p-57.csv`'s `48 of 48` rows are its rows, and every one has `order_sensitive_edges = 0`. A
+clause that counted them would be measuring the fixture.
+
+**C1 is registered knowing two mechanisms it cannot reach, and a falsification on them is the expected
+outcome rather than a surprise.** The two tetrahedral extractors fail because a six-tetrahedron
+decomposition of a cell is **not octahedrally invariant** — the diagonals cut different edges after a
+relabelling — which `M-356` measured at 6–12 of 48 *even on `box_exact`*, where `order_sensitive_edges` is
+0 and the interpolation argument has nothing to bite on. And a QEF accumulates into `AᵀA` in an order that
+axis relabelling permutes, which is `M-177`. The clause is registered as the doc states it, because
+softening a clause to what is likely is how a registration stops being a prediction.
+
+**C2 is a cost clause, not a benefit clause.** The vertex positions genuinely move, `T-007`'s 216 golden
+hashes are rebaselined **in the same commit as the source change**, and a hash that survives falsifies it.
+
+**C3 is scoped to `marching_cubes`, and the doc's clause leaves that unstated.** A placement change cannot
+touch the sign classification, so the topology and the index buffer are bit-identical and the two arms are
+*the same mesh with substituted positions* — an exact comparison rather than two runs. A dual vertex is a
+QEF solve over the crossings and its lower-corner counterpart is not recoverable by substitution, so it is
+not claimed.
+
+**C4 is registered as measurement with a stated risk of a null**, and the null is the expectation: `M-32`'s
+named mechanism is `world_of_sample`, not the crossing.
+
+**The instrument is held against the old one where they overlap.** The harness asserts `cut_edges`,
+`order_sensitive_edges`, `grid_symmetric` and `fixture_can_fail` against `docs/experiments/p-57.csv` row
+for row before it reports anything, so a drift in the re-implemented octahedral group or in either fixture
+is a failure rather than a new number. The appendix's off-repo pre-measurement is **re-run inside the
+harness in `Real` for both scalars** rather than quoted.
+
+**Records** `block`, `field`, `extractor`, `samples_per_axis`, `scalar`, `cell_size`,
+`elements_vertex_exact`, `elements_vertex_exact_p57`, `elements_triangle_exact`,
+`pure_permutation_exact`, `pure_sign_flip_exact`, `fixture_can_fail`, `cut_edges`, `edges_moved`,
+`worst_move_ulp`, `hausdorff_lower_corner`, `hausdorff_centred`, `hausdorff_ratio`,
+`self_intersections_per_1k_lower_corner`, `self_intersections_per_1k_centred`,
+`self_intersections_ratio`, `seam_vertices`, `seam_mismatches_lower_corner`, `seam_mismatches_centred`,
+`pairs`, `mismatches_lower_corner`, `mismatches_centred`, `out_of_cell_centred`, `c1_population`,
+`c1_rows_at_48`, `c1_holds`, `c2_fixtures_with_moved_edges`, `c2_holds`, `c3_worst_hausdorff_ratio`,
+`c3_worst_self_intersection_ratio`, `c3_holds`, `c4_seam_mismatch_delta`, `p57_fixture_columns_match`.

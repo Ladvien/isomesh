@@ -2210,6 +2210,139 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "guard_band_converged",
         ],
     },
+    Preregistration {
+        id: "P-61",
+        ticket: "R-059",
+        hypothesis: "M-356 found a mesh bit-exactly equivariant under axis \
+            RELABELLING and not under REFLECTION, and attributed it to a/(a-b) \
+            and b/(b-a) being two divisions of the same two values. That is \
+            right and incomplete. The subtraction is innocent: IEEE \
+            round-to-nearest is sign-symmetric, so fl(b-a) = -fl(a-b) EXACTLY. \
+            What breaks is the ANCHOR -- cube::edge_crossing returns a \
+            parameter measured from the LOWER corner and the placements put the \
+            vertex at lower + t, so a reflection swaps which corner is lower \
+            and the correct reflected parameter is 1 - t, which is not \
+            representable as b/(b-a). Store the crossing instead as a signed \
+            offset from the edge MIDPOINT: d = ((a + b) / 2) / (a - b) in \
+            [-1/2, +1/2], position = edge_midpoint + h * d. This is exactly \
+            antisymmetric under the simultaneous endpoint-and-sign swap by four \
+            IEEE 754 guarantees rather than by observation: fl(a+b) = fl(b+a) \
+            because addition is commutative; halving is exact because 2 is a \
+            power of two; fl(b-a) = -fl(a-b) because round-to-nearest is odd; \
+            and fl(S / -D) = -fl(S / D) for the same reason. The [0,1] \
+            parameter frame cannot host this because reflection acts there as \
+            0 <-> 1, an AFFINE map, and floating point respects sign flips \
+            exactly and affine maps only approximately. THIS IS A src/ CHANGE, \
+            registered as one: cube::edge_crossing becomes cube::edge_offset \
+            and all five placements move to the centred frame -- \
+            marching_cubes/mod.rs edge_position (which computes a/(a-b) \
+            inline), marching_cubes/trilinear.rs local_crossing, \
+            surface_nets.rs, hermite.rs and transvoxel/cell.rs. (C1) The \
+            octahedral relation is re-measured with P-57's own fixtures and \
+            group, and elements_vertex_exact reads 48 on EVERY row that \
+            fixture_can_fail marks true, in both the primal and the dual \
+            family, at both 33 and 25 samples per axis. POPULATION, counted \
+            from docs/experiments/p-57.csv before this harness was written: 98 \
+            of 112 rows have fixture_can_fail = true -- 56 primal and 42 dual \
+            -- and ZERO of those 98 currently reach 48, so the clause has 98 \
+            rows on which it can fire and all 98 currently fail. The 14 \
+            box_exact rows are excluded by fixture_can_fail because that \
+            field's zero set lies on dyadic planes and its 8 rows at 48 of 48 \
+            are the fixture rather than the extractor. The harness asserts the \
+            fixture columns cut_edges, order_sensitive_edges, grid_symmetric \
+            and fixture_can_fail against p-57.csv row for row before reporting \
+            anything, so a drift in the re-implemented group or fixture is a \
+            failure rather than a new number. (C2) A COST CLAUSE, NOT A BENEFIT \
+            CLAUSE -- no reference field's golden hash is unchanged. The vertex \
+            positions genuinely move, T-007's 216 golden hashes are rebaselined \
+            in the same commit as the source change, and a claim that they do \
+            not move would mean the centred form is not on the path that \
+            produces vertices. Measured per fixture as edges_moved: the number \
+            of cut grid edges whose centred world position differs in bits from \
+            the lower-corner one, over all eight fields at 33 and 65 samples \
+            per axis. POPULATION: every field has cut edges at both \
+            resolutions, p-57.csv reading 1350 for box_exact alone at 33, so \
+            the clause fires on 16 of 16 rows. (C3) Symmetric Hausdorff changes \
+            by less than 1 percent in either direction on all eight reference \
+            fields at 33 and 65 samples per axis, and the \
+            self-intersections-per-1000 count changes by less than 1 percent. \
+            SCOPED TO marching_cubes, which the doc's clause leaves unstated: \
+            the sign classification is untouched by a placement change, so the \
+            topology and the index buffer are bit-identical and the two arms \
+            are the same mesh with substituted positions, which is an exact \
+            comparison. A dual vertex is a QEF solve over the crossings and its \
+            lower-corner counterpart is not recoverable by substitution, so it \
+            is not claimed. (C4) REGISTERED AS MEASUREMENT WITH A STATED RISK \
+            OF A NULL. M-32 says chunk seams are bit-exact only when the cell \
+            size is a power of two, and the mechanism it names is \
+            world_of_sample rather than the crossing, so the honest prediction \
+            is that C4 changes nothing. But the off-repo pre-measurement moves \
+            from 75.0 percent mismatches to 0 at h = 0.1, so the seam sweep is \
+            re-run at h = 0.1 and h = 3/32 as well as h = 0.125 and the answer \
+            recorded either way. The appendix pre-measurement is re-run inside \
+            this harness in Real for BOTH scalars rather than quoted: 2000000 \
+            random straddling pairs per row, cell-local and world frames, both \
+            forms.",
+        falsified_by: "C1: any row below 48 that fixture_can_fail marks true. \
+            Two mechanisms are already known that this change cannot reach and \
+            a falsification on them is expected rather than surprising -- the \
+            two tetrahedral extractors fail because a six-tetrahedron \
+            decomposition of a cell is not octahedrally invariant, which M-356 \
+            measured at 6 to 12 of 48 even on box_exact where \
+            order_sensitive_edges is 0, and the duals accumulate into A^T A in \
+            an order that axis relabelling permutes. C2: any field whose golden \
+            hash survives, or any fixture with edges_moved = 0, either of which \
+            would mean the centred form is not on the path that produces \
+            vertices. C3: any field moving more than 1 percent on either \
+            metric -- in which case the roughly 3-ulp worst-case tail the \
+            off-repo measurement recorded is buying a real geometric cost and \
+            the trade is a decision rather than a fix, to be raised and not \
+            merged. C4: NOTHING. That clause is registered as measurement and a \
+            null is the expected outcome; it is reported either way. And the \
+            pre-measurement itself is falsified by any non-zero mismatch count \
+            for the centred form in either scalar, which would mean the \
+            three-line IEEE argument is wrong.",
+        records: &[
+            "block",
+            "field",
+            "extractor",
+            "samples_per_axis",
+            "scalar",
+            "cell_size",
+            "elements_vertex_exact",
+            "elements_vertex_exact_p57",
+            "elements_triangle_exact",
+            "pure_permutation_exact",
+            "pure_sign_flip_exact",
+            "fixture_can_fail",
+            "cut_edges",
+            "edges_moved",
+            "worst_move_ulp",
+            "hausdorff_lower_corner",
+            "hausdorff_centred",
+            "hausdorff_ratio",
+            "self_intersections_per_1k_lower_corner",
+            "self_intersections_per_1k_centred",
+            "self_intersections_ratio",
+            "seam_vertices",
+            "seam_mismatches_lower_corner",
+            "seam_mismatches_centred",
+            "pairs",
+            "mismatches_lower_corner",
+            "mismatches_centred",
+            "out_of_cell_centred",
+            "c1_population",
+            "c1_rows_at_48",
+            "c1_holds",
+            "c2_fixtures_with_moved_edges",
+            "c2_holds",
+            "c3_worst_hausdorff_ratio",
+            "c3_worst_self_intersection_ratio",
+            "c3_holds",
+            "c4_seam_mismatch_delta",
+            "p57_fixture_columns_match",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
