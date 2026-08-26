@@ -1,9 +1,9 @@
 ---
 name: isomesh-site-deploy
-description: Ship an isomesh change to isomesh.ladvien.com and prove it landed — the pre-push gates, the push-to-main deploy, and the artefact-level verification that catches a stale wasm module behind fresh page prose. Use whenever a commit has to become live, or when asked "is it live yet".
+description: Ship an isomesh change to ladvien.github.io/isomesh and prove it landed — the pre-push gates, the push-to-main deploy, and the artefact-level verification that catches a stale wasm module behind fresh page prose. Use whenever a commit has to become live, or when asked "is it live yet".
 ---
 
-# Getting an isomesh change live on isomesh.ladvien.com
+# Getting an isomesh change live on ladvien.github.io/isomesh
 
 There is **one** deploy path and it is a push to `main`. No manual upload, no
 `gh workflow run`, no branch deploy. `.github/workflows/ci.yml`'s `pages` job is
@@ -88,47 +88,61 @@ set it for you.
 
 ## Verifying it is live — the artefact, not the page
 
-**Use `http://`, never `https://`.** The custom domain has no certificate, so
-`https://isomesh.ladvien.com` fails the TLS handshake outright while `http://`
-answers 200. Check both, and check the reason, before assuming either:
+**Use `https://ladvien.github.io/isomesh/`. There is no custom domain, and that
+is deliberate.** `isomesh.ladvien.com` was the custom domain and GitHub never
+issued its certificate: `pages/health` reported `is_valid: true`,
+`is_https_eligible: true`, `caa_error: null`, `is_proxied: false` and
+`https_error: "peer_failed_verification"` while `https_certificate` stayed
+**absent**, for over a day. DNS was verified independently and was clean — CNAME
+to `ladvien.github.io`, GitHub's four Pages IPs, Route 53, no proxy, and
+`github.io`'s CAA permits `letsencrypt.org` — so provisioning was stalled on
+GitHub's side with nothing to fix locally.
+
+That was not cosmetic. **WebGPU is secure-context-only**, every demo on the site
+needs it, and `https://ladvien.github.io/isomesh/` 301-redirected to the
+`http://` custom domain — so `navigator.gpu` was `undefined` and `play.html`'s
+gate fired in *every* browser, desktop Chrome included. The pretty URL cost the
+whole site.
+
+**A second, non-obvious blocker, and the one that actually took the site down.**
+Dropping isomesh's own custom domain was not enough: `Ladvien/ladvien.github.io`
+— an archived 2022 fork — still carried Pages custom domain `ladvien.com`, and an
+**account-level** custom domain makes GitHub 301 every *project* page
+(`ladvien.github.io/<repo>/` → `ladvien.com/<repo>/`). `ladvien.com` is served by
+AWS S3 + CloudFront (`server: AmazonS3`), never by GitHub Pages, so those
+redirects landed on a 404. `gh api -X PUT` on an archived repo returns **409
+"Repository is archived."**, so clearing it took three calls:
 
 ```bash
-gh api repos/Ladvien/isomesh/pages \
-  --jq '{status, https_enforced, cert: (.https_certificate.state // "absent")}'
-gh api repos/Ladvien/isomesh/pages/health \
-  --jq '.domain | {is_valid, is_https_eligible, caa_error, https_error, is_proxied, is_served_by_pages}'
+gh api -X PATCH repos/Ladvien/ladvien.github.io -F archived=false
+printf '%s' '{"cname": null}' | gh api -X PUT repos/Ladvien/ladvien.github.io/pages --input -
+gh api -X PATCH repos/Ladvien/ladvien.github.io -F archived=true
 ```
 
-**`pages/health` is the authoritative diagnostic** — it is GitHub telling you
-whether the fault is yours. As of 2026-08-25, 26 hours after the first successful
-deploy, it reported `is_valid: true`, `is_https_eligible: true`,
-`caa_error: null`, `is_proxied: false`, `is_served_by_pages: true` and
-`https_error: "peer_failed_verification"` — GitHub agreeing the certificate should
-exist while `https_certificate` stayed **absent**. DNS was verified independently:
-`isomesh.ladvien.com` CNAMEs to `ladvien.github.io`, which resolves to GitHub's
-four Pages IPs, on Route 53 nameservers with no proxy, and `github.io`'s CAA set
-permits `letsencrypt.org`. So provisioning is stalled **on GitHub's side** and
-there is nothing in DNS to fix.
+`ladvien.com` was unaffected, because CloudFront serves it. If a project page
+ever 301s somewhere unexpected again, check the *user* site's `cname` first — the
+repo you are deploying is not where the redirect comes from.
 
-The one thing this repository controlled and was missing: the artifact did not
-name its own domain. `build_web.sh` now writes `web/dist/CNAME` right after the
-clean. `build_site.py` only ever creates and overwrites, so the file survives it —
-verified rather than assumed. That is the documented shape of a custom-domain
-Pages artifact, not a proven fix; do not record it as one.
+The site now serves under GitHub's own `*.github.io` certificate, which is valid,
+and `https_enforced` is `true`. Confirm both, and that no domain has crept back:
 
-Once the cert appears, one command finishes the job —
-`gh api -X PUT repos/Ladvien/isomesh/pages -F https_enforced=true` — and it must
-not be run before, because enforcing https without a certificate takes the site
-down rather than securing it. If it is still absent, the remaining lever is
-removing and re-adding the custom domain in Settings → Pages, which briefly takes
-the hostname offline; re-*saving* the same domain through the API was already
-tried and changed nothing.
+```bash
+gh api repos/Ladvien/isomesh/pages --jq '{cname, html_url, https_enforced, status}'
+curl -sS -o /dev/null -w '%{http_code} %{url_effective}\n' \
+  https://ladvien.github.io/isomesh/play.html
+```
+
+`cname` must be `null` and the curl must print `200` and that same URL. **A `301`
+means a custom domain is back** — most likely because someone re-added the
+`CNAME` write to `scripts/build_web.sh`. A `CNAME` file in the artifact *re-sets*
+the custom domain on every deploy, which is why that line is gone and must stay
+gone.
 
 ### 1. The rendered page
 
 ```bash
 curl -sS -H 'Cache-Control: no-cache' -o /tmp/live.html \
-  "http://isomesh.ladvien.com/play.html?cb=$(date +%s)"
+  "https://ladvien.github.io/isomesh/play.html?cb=$(date +%s)"
 grep -c "<the new prose you added>" /tmp/live.html
 ```
 
@@ -142,7 +156,7 @@ a string only the new code contains **and** for the absence of the string it
 replaced. Both directions, or it proves nothing:
 
 ```bash
-curl -sS -o /tmp/m.wasm http://isomesh.ladvien.com/play/pkg/game_dig/game_dig_bg.wasm
+curl -sS -o /tmp/m.wasm https://ladvien.github.io/isomesh/play/pkg/game_dig/game_dig_bg.wasm
 strings -a /tmp/m.wasm | grep -c '<new format-string fragment>'   # expect >= 1
 strings -a /tmp/m.wasm | grep -c '<old format-string fragment>'   # expect 0
 ```
@@ -163,9 +177,10 @@ deployed URL mirrors that path.
 and headless Chrome here exposes **no `navigator.gpu`** — `--enable-unsafe-webgpu`
 with SwiftShader through ANGLE does not change that. Every playable demo needs
 WebGPU, so the live canvas cannot be driven from this machine. What you get is the
-page's own honest gate: *"This demo needs WebGPU, which this browser has not
-enabled."* Seeing that text is a real result — it proves the guard ships — but it
-is not the demo running.
+page's own honest gate — *"This demo needs WebGPU. Safari needs 26 or newer…"* if
+`navigator.gpu` is missing, or *"This browser has WebGPU but no usable GPU
+adapter"* if `requestAdapter()` returns null. Seeing either text is a real result
+— it proves the guard ships — but it is not the demo running.
 
 So verify demo *behaviour* natively, against real hardware, and say plainly that
 the live canvas was not driven. A HUD string is testable without a window: run
@@ -174,22 +189,22 @@ the live canvas was not driven. A HUD string is testable without a window: run
 pattern — it prints the whole panel and asserts the lines a reader is meant to
 read).
 
-If you do drive Chrome here, two flags are mandatory or the navigation looks
-blocked when it is really the certificate:
+If you do drive Chrome here, disable the cache before reloading or a stylesheet
+or page change silently measures the old bytes: send `Network.setCacheDisabled`
+with `true` on the CDP session first.
 
 ```bash
 chrome --headless=new --no-sandbox \
-  --ignore-certificate-errors \
-  --disable-features=HttpsUpgrades,HttpsFirstBalancedModeAutoEnable,HttpsFirstModeV2 \
   --remote-debugging-port=45123 --user-data-dir=/tmp/cdp
 ```
 
-Without them Chrome silently upgrades `http://` to `https://`, the handshake fails
-(`net_error -200`), and the tab reports **`ERR_BLOCKED_BY_CLIENT`** — which reads
-like an extension or a policy block and is neither. Spawn Chrome yourself with an
-explicit `--headless=new` and `--remote-debugging-port`, then attach the browser
-tool by `cdp_url`: letting the tool spawn its own browser times out waiting for a
-CDP endpoint on a display-less host.
+Spawn Chrome yourself with an explicit `--headless=new` and
+`--remote-debugging-port`, then attach the browser tool by `cdp_url`: letting the
+tool spawn its own browser times out waiting for a CDP endpoint on a display-less
+host. The `--ignore-certificate-errors` and `--disable-features=HttpsUpgrades,…`
+flags this section used to demand are **no longer needed** — they existed only
+because the site was `http://` and Chrome kept upgrading it to a hostname with no
+certificate, which surfaced as a misleading `ERR_BLOCKED_BY_CLIENT`.
 
 ## Known-benign findings
 

@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**452 entries** — 44 falsified, 340 measured, 47 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**456 entries** — 46 falsified, 342 measured, 47 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -83,6 +83,8 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗42` | C1 FALSIFIED and C3 HELD, and C2 passes for a reason that is not its own: the paper's 8 dB reconstruction gain maps to a… |
 | `✗43` | "one interior vertex per cell is enough": the interior rule fans every contour of a cell from the same apex, and two con… |
 | `✗44` | "IsomeshPlugin is engine-agnostic and platform-agnostic": its frame budget calls std::time::Instant::now(), which compil… |
+| `✗45` | "five samples in a cross under the foot beat one": at a fixed depth the cross reaches into terrain above the foot, and t… |
+| `✗46` | "headless Chrome on this host exposes no navigator.gpu": it exposes the object and no adapter, which is the one failure… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -423,6 +425,8 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-352` | HELD, FALSIFIED, HELD: every degenerate triangle comes from an exactly-equal corner, the repair moves no geometry at all… |
 | `M-354` | HELD on all three, and the prediction's shape is what held: affine arithmetic rejects 3.85× more cells on gyroid and exa… |
 | `M-362` | wasm-opt -Oz shrinks both site modules on disk and makes both bigger gzipped, so it is rejected on all ten (D-012) |
+| `M-365` | one wgpu::Instance per test deadlocks game_dig's suite at default parallelism, and a shared device halves its runtime (D… |
+| `M-366` | a GitHub Pages project page is redirected by the user site's custom domain, and an archived repo cannot be fixed through… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1647,6 +1651,8 @@ Rules with no incident behind them get ignored. These all have one.
 | **A file that records state drifts from the state unless something checks it. Write the check the second time, not the third** | E-113 — the demo shipped at `a0859e8`, the README referenced it, and its row sat in `BACKLOG.md` for four more commits; the header counts drifted from the row counts separately. Both were found by audit, both were caused by editing one file with several scripts in one turn where a later write clobbered an earlier one. The same defect was sitting in `FINDINGS.md` unnoticed: **O-1, O-2 and O-4 were still listed as open questions** after G-002, A-009 and G-003 had all landed and answered them. `scripts/backlog_gate.sh` is the check, and it is mutation-tested against all eight ways the two files can disagree — because a gate that has only ever passed is indistinguishable from one that cannot fail (M-44) |
 | **An instrument that cannot report the failure has not reported the success. Show it producing a non-zero before trusting its zero** | E-208 — the paint-drift readout measured "did the colour at this point change", and the scripted run sprayed one colour, so repainting red over red was numerically identical to paint that never moved. It printed **0.000000 at every step**, which is the answer the ticket wanted, and it would have printed the same on an implementation that smeared. Cycling the palette turned the same instrument sensitive — **27 of 40 sprays register drift, up to 0.886** — and only then does the **0.000000 across both carves** mean anything. This is M-75's rule in a different costume (*"a test that returns the same answer when you invert the thing it is testing is not measuring that thing"*), and the reason it earns its own row is that here the instrument was not inverted, it was **starved**: the input never varied in the dimension being measured |
 | **A wall-clock ratio is not a gate. Gate the count the ratio samples** | ✗24 — `empty_cell_rejection_is_measured_per_field` asserted `speedup > 1.0` on every field under a doc comment that said *"recorded rather than asserted"* and *"not a regression gate"*. It failed the 0.0.7 release on a macOS runner at `gyroid 0.98×`, having passed at `1.10×` here — the **same measurement**, with the sign set by the runner. The fix is not a looser threshold: what rejection can save is bounded by **how many cells it proves empty**, and that is an integer, identical everywhere, **16.8%** on `gyroid` against **80.6–95.1%** on every other field. Find the deterministic quantity the timing is a proxy for and assert *that*; print the timing. Related to M-281 (*a millisecond is a property of the binary*) and its sibling: a **ratio** survives the build, and still does not survive the machine when the true ratio is 1 |
+| **An area probe must sample the surface of the shape it is testing. A plane at fixed depth asks a different question, and the difference is the slope** | ✗45 / M-363 — `resolve_body`'s single-point ground probe was genuinely wrong, and the specified fix — five samples in a flat cross at that same depth — was wrong the other way: the lateral samples reach into terrain *higher* than the terrain under the foot, so `gravity_step` cuts gravity and the body hangs **12.5 cm** in the air on a 0.63 gradient. Same failure at 45° on a sphere of radius `R + GROUND_PROBE`: 7.8 cm, because that shape still trades vertical reach for lateral. Only the chord — offset `r` sampled `sqrt(R² − r²)` below the centre, with the tolerance in `−Y` alone — has nothing to trade. **When widening a point query to an area query, put the samples on the collider, and check the widened one against the *unchanged* fixtures first**: the pre-existing settle test caught this on its first run |
+| **A test fixture that opens a driver handle must share it. N handles is N races, and the count that tips it is not the count you tested at** | M-365 — `wgpu_pair()` built a `wgpu::Instance` per call, which was five instances at sixteen tests and passed. Four added tests made it twenty-three and the suite **deadlocked** — at `--test-threads` 12 and 24, clean at 8 and 16, so a race and not a threshold, and the first sighting cost 1800 s against a `timeout`. Neither the six device-opening tests run alone (1.35 s) nor the fifteen others alone (1.33 s) reproduce it; only the whole set does, which is why no single new test looked guilty. `wgpu::Device` and `wgpu::Queue` are `Arc` handles, so one `LazyLock` cloned per test is both the fix and what an application does — **23/23 green and 1.5 s → 0.6 s.** Related to M-293 (*a gate that cannot see the branch*): here the gate saw it and the harness was the hazard |
 | A typed error at the call site is louder than an abort — make the invalid state unrepresentable where you can, report it where you can't, and never substitute a default | The no-panic rule, reconciled with "fail loudly": `ValidateConfig` has private fields and one checked constructor, so the validator needs no runtime guard at all |
 | Corpus presence is decided by `catalog_read`, never by `distill_search` | ✗4 — 342 documents readable but unsearchable |
 | **`for_each_reference_field!` looks like a closure and is not. A `return` in its body exits the whole test** | M-199 — the macro takes `\|name, field\|` and **inlines its body once per field as a plain block**, because each field is a different type and no single closure can take all seven. So `if name != "gyroid" { return; }` returned from the *test function* on `sphere`, and the test **passed while running neither control nor the assertion that both had run**. Use `if name == …` instead. The `continue`/`break` uses elsewhere in the tree are all inside genuine inner loops and are fine — a bare one would not compile, which is the only reason this trap is spelt `return` and nothing else. The macro's own doc now says so |
@@ -9772,3 +9778,141 @@ three new `fold_into` ones bind a real base there.
 **Would be shown wrong by:** a wgpu release moving `STORAGE_READ_WRITE` out of `EXCLUSIVE`, or narrowing
 the usage scope from the bind group to the individual binding — at which point the alias becomes legal and
 the four bytes can go.
+
+### 💥 ✗45 / M-363 — "five samples in a cross under the foot beat one": at a fixed depth the cross reaches into terrain *above* the foot, and the body hangs 12.5 cm in the air (D-013)
+
+**The claim, and it was in a plan that had been approved.** `game_dig`'s `resolve_body` probed one point
+for ground, `foot − Y·(BODY_RADIUS + GROUND_PROBE)`, and that is genuinely wrong: a body wedged with its
+centre over a void and part of its foot on rock reads air, `grounded` goes false, and
+`move_camera`'s `world.grounded && Space` refuses the jump — the hole the player dug is a trap. The fix
+specified was five samples at that same depth, offset laterally by `0.7 · BODY_RADIUS`.
+
+**Falsified by the first run of the settle test.** The body came to rest at **1.8249992** against a true
+**1.70** on flat ground at the origin, and the existing
+`a_dropped_body_lands_on_the_terrain_and_stands_still` failed with it. The excess is not noise and not a
+tuning problem — it is the terrain rise over the lateral offset, arithmetic:
+
+| quantity | value |
+|---|---|
+| `Ground` height gradient at the origin, `∂h/∂x = 0.35·0.9 + 0.15·2.1` | 0.630 |
+| lateral offset, `0.7 · 0.25` | 0.175 |
+| `height(0.175, 0) = 0.35·sin(0.1575) + 0.15·sin(0.3675)` | 0.1088 |
+| probe depth below the foot centre, `R + GROUND_PROBE` | 0.310 |
+| foot centre at eye `1.825` | 0.375 |
+| straight-down sample, `0.375 − 0.310` | 0.065 — **air** |
+| lateral sample at the same depth, against a surface at 0.1088 | 0.065 − 0.1088 = −0.044 — **solid** |
+| measured hover, `1.8249992 − 1.70` | **0.125** |
+
+The falling body was at `y = 1.825` on frame 29 of a 4.0-unit drop (`4.0 − 0.0025·n(n+1)`), the cross
+found ground it was not touching, `gravity_step` zeroed the velocity, and it stayed there. **The lateral
+samples were asking a different question from the centre one** — "is there solid somewhere below me"
+rather than "is there solid under my foot" — and on any slope those differ by the slope.
+
+**What replaced it, and why that shape.** The lateral samples sit on the foot sphere's own lower
+boundary: at offset `r` the sample is `sqrt(R² − r²)` below the centre and only *then* drops by
+`GROUND_PROBE`, so the tolerance is purely vertical, which is what `GROUND_PROBE`'s doc comment always
+said it was. Scanned over 108 pit fixtures (subtract-sphere radius `0.25 … 1.2` × three depths × six
+horizontal offsets): **34** where the single point reads airborne and the chord cross reads grounded, so
+the trap is real and the fix reaches it. Hover on bare terrain over five columns: `0.0000130`, `0.000939`,
+`0.00455`, `0.0326`, `0.0419` — every one **inside `GROUND_PROBE = 0.06`**, which is the bound the design
+admits rather than a number chosen to pass.
+
+**An intermediate that was also wrong, recorded because it is the tempting one.** Sampling the sphere
+radially — `foot + (R + GROUND_PROBE)·dir` for five unit directions at 45° — keeps the samples on a
+sphere but on a sphere of radius `R + GROUND_PROBE`, so the diagonal reaches `0.219` sideways while
+descending `0.219`, and against a 0.59 local slope it still finds uphill material: measured **0.078** of
+hover at `r = 0.35`, `offset = 0.1`. Only the chord form, which puts `GROUND_PROBE` in `−Y` alone, has no
+lateral reach to trade.
+
+**Would be shown wrong by:** a fixture where the chord cross reports grounded with the foot sphere more
+than `GROUND_PROBE` above every solid point beneath it, which is what
+`the_body_is_a_capsule_that_never_hangs_above_the_terrain` asserts on five columns.
+
+### 💥 ✗46 / M-364 — "headless Chrome on this host exposes no `navigator.gpu`": it exposes the object and no adapter, which is the one failure the old gate could not see (D-013)
+
+**The claim was this repository's own**, in `.omp/skills/isomesh-site-deploy/SKILL.md`: *"headless Chrome
+here exposes **no `navigator.gpu`** — `--enable-unsafe-webgpu` with SwiftShader through ANGLE does not
+change that"*, and in D-012's archive note, which reports every demo reading the same 250 ms/frame on a
+software rasteriser. Both were true of the Chrome that was measured. Neither is true of the Chromium on
+this host now.
+
+Playwright Chromium **1228**, `--headless=new --no-sandbox`, driven over CDP against the live site:
+
+| probe | value |
+|---|---|
+| `location.protocol` | `https:` |
+| `window.isSecureContext` | `true` |
+| `typeof navigator.gpu` | **`object`** |
+| `await navigator.gpu.requestAdapter()` | **`null`** |
+| `#loading` after load | **removed** |
+| canvas pixels | **all black** |
+
+**The two halves of that table are the finding.** `navigator.gpu` present and `requestAdapter()` null is
+a real browser state — a blocklisted driver, a VM, a headless run — and `web/play.html`'s gate tested only
+the object. So the gate passed, `overlay.remove()` ran, `await init()` resolved because `bevy_winit` calls
+`event_loop.spawn_app` on wasm and that returns immediately, Bevy then failed asynchronously *inside* the
+event loop where nothing was watching, and the page was a black canvas with no text on it. **The deployed
+site was in exactly this state when it was checked**, which is how the mechanism was found rather than
+reasoned about: the gate's own honest message never appeared because the gate never fired.
+
+`requestAdapter()` in the gate turns it into
+*"This browser has WebGPU but no usable GPU adapter, so there is nothing to render with."* — verified by
+serving the patched `web/dist` locally and reading `#loading` back, on the same browser that produced the
+black canvas.
+
+**Consequence for the deploy skill:** *"seeing the gate's text is a real result"* now has two texts and
+they discriminate. **Would be shown wrong by:** a Chromium build here that returns an adapter, at which
+point the live canvas becomes drivable from this machine and the section saying it is not becomes stale.
+
+### 🧊 M-365 — one `wgpu::Instance` per test deadlocks `game_dig`'s suite at default parallelism, and a shared device halves its runtime (D-013)
+
+`wgpu_pair()` built a fresh `wgpu::Instance`, requested an adapter and requested a full-limits device on
+**every call**, and `harness()` calls it once per test. At sixteen tests that was five instances and it
+passed. At twenty-three it hangs.
+
+| `--test-threads` | outcome |
+|---|---|
+| 8 | pass, 1.50 s |
+| 12 | **hang** — the same five `harness` tests never report |
+| 16 | pass, 1.54 s |
+| 24 (default here) | **hang** — same five |
+
+Clean at 8 and 16 and hung at 12 and 24 is **a race, not a threshold**, and the first observation of it
+cost 1800 s of wall clock against a `timeout`. The five that hang are exactly the ones that open a device
+after other devices are already open; the six device-opening tests run *alone* in one filtered invocation
+pass in 1.35 s, so no single test and no single count is the trigger.
+
+`wgpu::Device` and `wgpu::Queue` are `#[derive(Debug, Clone)]` `Arc` handles (wgpu 29.0.4,
+`src/api/device.rs:19`, `src/api/queue.rs:13`), so one instance behind a `LazyLock`, cloned per test, is
+both correct and what an application does — an engine does not open a device per system. **23/23 pass, and
+the suite went 1.5 s → 0.6 s** across five consecutive default-parallelism runs.
+
+**Registered as a fixture defect, not a wgpu defect**: nothing here shows wgpu is wrong to serialise, only
+that a test harness which opens N drivers has N chances to lose.
+
+### 🧊 M-366 — a GitHub Pages *project* page is redirected by the **user** site's custom domain, and an archived repo cannot be fixed through the API (D-013)
+
+`https://ladvien.github.io/isomesh/` 301'd to `https://ladvien.com/isomesh/` → **404**, and it kept doing
+it after `isomesh`'s own custom domain was cleared (`cname: null` confirmed by
+`gh api repos/Ladvien/isomesh/pages`). The redirect is not the deployed repository's:
+
+| observation | value |
+|---|---|
+| `repos/Ladvien/ladvien.github.io/pages` `cname` | `ladvien.com` |
+| that entry's `https_certificate` | absent |
+| `dig +short ladvien.com` | `52.84.217.{59,81,93,120}` — CloudFront, **not** GitHub's `185.199.x` |
+| `curl -sSI https://ladvien.com/` | `server: AmazonS3`, `x-cache: Hit from cloudfront` |
+| `repos/Ladvien/ladvien.github.io` `archived` | `true`, `pushed_at 2022-06-06`, a fork |
+| `gh api -X PUT …/pages` on it | **409 `Repository is archived.`** |
+
+So an **account-level** custom domain rewrites every project page on the account, and this one pointed at
+a host GitHub provably does not serve. Clearing it needs three calls — PATCH `archived=false`, PUT
+`{"cname": null}`, PATCH `archived=true` — after which `https://ladvien.github.io/isomesh/play.html`
+returns **200** with `num_redirects=0` and `https_enforced: true`, and `ladvien.com` is unchanged because
+CloudFront serves it.
+
+**Why it was load-bearing rather than cosmetic:** WebGPU is secure-context-only, so the `http://` page the
+redirect chain ended on had `navigator.gpu` `undefined` and all nine demos refused to start in every
+browser, desktop Chrome included. **The diagnostic order that would have saved the time:** when a project
+page redirects somewhere unexpected, read the *user* site's `cname` before anything in the repository
+being deployed.

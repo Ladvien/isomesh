@@ -17,6 +17,15 @@
   <div id="loading">loading … 36 MB, about 8.8 MB on the wire, first load only</div>
 </div>
 
+<!-- Shown when there is no `?demo=` in the URL, and beside the message when
+     there is one nobody recognises. Populated from the `DEMOS` allow-list at the
+     bottom of this file, so the roster is still stated exactly once and
+     `scripts/doc_facts.sh` still governs it. -->
+<div class="play-index" id="demo-index" hidden>
+  <p id="demo-index-lead"></p>
+  <ul id="demo-index-list"></ul>
+</div>
+
 <p class="keys" id="harness-keys">
   <kbd>left-drag</kbd> orbit · <kbd>scroll</kbd> zoom · <kbd>W</kbd> wireframe ·
   <kbd>N</kbd> normals · <kbd>G</kbd> grid and domain box · <kbd>Space</kbd> pause ·
@@ -244,12 +253,32 @@
   // it was meant to report. `name` and `overlay` are closed over.
   async function start() {
     try {
-      if (NEEDS_WEBGPU.has(name) && !navigator.gpu) {
-        // The message stays on screen: `overlay.remove()` below is the only
-        // thing that clears the overlay, and it runs only once the app is up.
-        overlay.textContent =
-          "This demo needs WebGPU, which this browser has not enabled.";
-        return;
+      // Two checks, not one, because they fail differently and the second used
+      // to fail silently. `navigator.gpu` missing is a browser without WebGPU;
+      // `requestAdapter()` returning null is a browser *with* WebGPU and no
+      // usable adapter -- a blocklisted driver, a headless run, a VM. That case
+      // passed the old object test, `overlay.remove()` ran, Bevy failed
+      // asynchronously inside `spawn_app`, and the page was a blank canvas with
+      // nothing on it to read.
+      //
+      // `start()` is already `async`, so the `await` costs no signature change.
+      if (NEEDS_WEBGPU.has(name)) {
+        if (!navigator.gpu) {
+          // The message stays on screen: `overlay.remove()` below is the only
+          // thing that clears the overlay, and it runs only once the app is up.
+          overlay.textContent =
+            "This demo needs WebGPU. Safari needs 26 or newer; on iOS 25 and " +
+            "older enable Settings \u2192 Safari \u2192 Advanced \u2192 " +
+            "Experimental Features \u2192 WebGPU. WebGPU is also a " +
+            "secure-context API, so an http:// page never has it.";
+          return;
+        }
+        if (!(await navigator.gpu.requestAdapter())) {
+          overlay.textContent =
+            "This browser has WebGPU but no usable GPU adapter, so there is " +
+            "nothing to render with.";
+          return;
+        }
       }
       const init = (await import(`./play/pkg/${name}/${name}.js`)).default;
       // `bevy_winit` calls `event_loop.spawn_app` on wasm, so this resolves and
@@ -262,9 +291,47 @@
       throw e;
     }
   }
-  if (!Object.hasOwn(DEMOS, name)) {
+  // Three states, not two. `URLSearchParams.get` returns **`null`** when the key
+  // is absent, so folding "no demo asked for" into "demo not recognised" printed
+  // `unknown demo: null` — a null nobody typed, on a black canvas, with no way
+  // to reach any demo from there. Landing on `play.html` with no query is what
+  // happens when a URL is shared without its query string, or typed, or reached
+  // from a bookmark; it is a normal arrival, not an error.
+  //
+  // The list is built from `DEMOS` with `createElement` and `textContent`, never
+  // from the query string and never through `innerHTML`, so the comment above
+  // the notes blocks stays literally true: nothing on this page is built from
+  // user input.
+  function showIndex(lead) {
+    const index = document.getElementById("demo-index");
+    const list = document.getElementById("demo-index-list");
+    document.getElementById("demo-index-lead").textContent = lead;
+    for (const [demo, title] of Object.entries(DEMOS)) {
+      const item = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = `play.html?demo=${demo}`;
+      link.textContent = demo;
+      item.append(link, document.createTextNode(` — ${title}`));
+      list.append(item);
+    }
+    index.hidden = false;
+    // There is nothing to render and no keys that apply, so neither belongs on
+    // screen. The canvas goes too: a black 16:9 box above a list reads as a
+    // demo that failed rather than as a menu.
+    document.querySelector(".stage").hidden = true;
+    document.getElementById("harness-keys").hidden = true;
+  }
+  if (name === null) {
     heading.textContent = "isomesh — play";
-    overlay.textContent = `unknown demo: ${name}`;
+    showIndex(`Pick one of the ${Object.keys(DEMOS).length} playable examples:`);
+  } else if (!Object.hasOwn(DEMOS, name)) {
+    heading.textContent = "isomesh — play";
+    // `textContent`, so a crafted `?demo=` renders as the text it is rather
+    // than as markup.
+    showIndex(
+      `There is no demo called “${name}”. ` +
+        `Pick one of the ${Object.keys(DEMOS).length} there are:`,
+    );
   } else {
     document.title = DEMOS[name];
     heading.textContent = DEMOS[name];

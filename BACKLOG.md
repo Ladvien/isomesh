@@ -1,12 +1,12 @@
 # isomesh — BACKLOG
 
-**Updated:** 2026-08-25
+**Updated:** 2026-08-26
 **Companions:** `CLAUDE.md` (rules), `FINDINGS.md` (what we know and how well),
 `BACKLOG_ARCHIVE.md` (completed tickets + why they changed),
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**238 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**239 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---

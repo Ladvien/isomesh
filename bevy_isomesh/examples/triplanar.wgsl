@@ -28,7 +28,10 @@
 #endif
 
 struct Triplanar {
-    // x: world units per texture tile. y: blend sharpness. z and w are unused.
+    // x: world units per texture tile. y: blend sharpness. z: the forced array
+    // layer -- negative blends the terrain layers by slope and depth, and `>= 0`
+    // samples that one layer and nothing else, which is what the sandbox walls
+    // are. w is unused.
     //
     // One `vec4` rather than two `f32`s, and that is not laziness: WebGL2
     // requires a uniform struct to be 16-byte aligned, and a `vec4` is 16 bytes
@@ -47,9 +50,9 @@ struct Triplanar {
 // extension entry whose number collides -- the base wins the filter, and the
 // symptom is a pipeline that compiles and samples nothing.
 @group(#{MATERIAL_BIND_GROUP}) @binding(100) var<uniform> triplanar: Triplanar;
-@group(#{MATERIAL_BIND_GROUP}) @binding(101) var albedo_roughness_texture: texture_2d<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(101) var albedo_roughness_texture: texture_2d_array<f32>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(102) var albedo_roughness_sampler: sampler;
-@group(#{MATERIAL_BIND_GROUP}) @binding(103) var normal_ao_texture: texture_2d<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(103) var normal_ao_texture: texture_2d_array<f32>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(104) var normal_ao_sampler: sampler;
 
 // The interpolation. `abs(n)` because a plane does not care which way through it
@@ -59,6 +62,42 @@ struct Triplanar {
 fn plane_weights(n: vec3<f32>, sharpness: f32) -> vec3<f32> {
     let w = pow(abs(n), vec3(sharpness));
     return w / max(w.x + w.y + w.z, 1e-5);
+}
+
+// Layer order, matching the stack in `textures/PROVENANCE.md`. These *are* the
+// array slice indices, so this list and that document's table are one fact
+// written twice: stack the image bottom-up instead and the walls come out
+// grassy with nothing to report it.
+const LAYER_GRASS: i32 = 0;
+const LAYER_DIRT_SURFACE: i32 = 1;
+const LAYER_DIRT_DEEP: i32 = 2;
+// Grass only where the surface faces up: `n.y` is the cosine off vertical, so
+// this is grass on anything shallower than ~35 degrees, none steeper than ~57.
+const GRASS_SLOPE_LO: f32 = 0.55;
+const GRASS_SLOPE_HI: f32 = 0.82;
+// `Ground`'s top lives in y = [-0.5, 0.5], so an undisturbed surface reads ~0.98
+// shallow and a tunnel two units down reads pure deep dirt. Absolute world
+// height rather than a re-transcription of `Ground`'s height formula into WGSL:
+// two statements of one field drift apart, and the symptom of forgetting to move
+// these when the amplitude changes is grass appearing inside a tunnel.
+const SHALLOW_Y_LO: f32 = -1.6;
+const SHALLOW_Y_HI: f32 = -0.4;
+
+// One layer's triplanar albedo/roughness. Called from uniform control flow only.
+fn layer_ar(l: i32, uv_x: vec2<f32>, uv_y: vec2<f32>, uv_z: vec2<f32>, w: vec3<f32>) -> vec4<f32> {
+    return textureSample(albedo_roughness_texture, albedo_roughness_sampler, uv_x, l) * w.x
+         + textureSample(albedo_roughness_texture, albedo_roughness_sampler, uv_y, l) * w.y
+         + textureSample(albedo_roughness_texture, albedo_roughness_sampler, uv_z, l) * w.z;
+}
+
+// One plane's normal/AO, blended across the three terrain layers. Per plane
+// rather than per fragment, because the whiteout blend below swizzles each plane
+// individually: a normal blended across planes has already lost which plane it
+// came from and cannot be swizzled back.
+fn layers_na(uv: vec2<f32>, lw: vec3<f32>) -> vec4<f32> {
+    return textureSample(normal_ao_texture, normal_ao_sampler, uv, LAYER_GRASS) * lw.x
+         + textureSample(normal_ao_texture, normal_ao_sampler, uv, LAYER_DIRT_SURFACE) * lw.y
+         + textureSample(normal_ao_texture, normal_ao_sampler, uv, LAYER_DIRT_DEEP) * lw.z;
 }
 
 @fragment
@@ -77,14 +116,36 @@ fn fragment(
     let uv_y = p.xz;
     let uv_z = p.xy;
 
-    let ar_x = textureSample(albedo_roughness_texture, albedo_roughness_sampler, uv_x);
-    let ar_y = textureSample(albedo_roughness_texture, albedo_roughness_sampler, uv_y);
-    let ar_z = textureSample(albedo_roughness_texture, albedo_roughness_sampler, uv_z);
-    let ar = ar_x * w.x + ar_y * w.y + ar_z * w.z;
-
-    let na_x = textureSample(normal_ao_texture, normal_ao_sampler, uv_x);
-    let na_y = textureSample(normal_ao_texture, normal_ao_sampler, uv_y);
-    let na_z = textureSample(normal_ao_texture, normal_ao_sampler, uv_z);
+    // Layer weights. `lw` needs no renormalising: `up*s + (1-up)*s + (1-s) == 1`
+    // identically, for every `up` and every `s`.
+    var lw = vec3(0.0, 0.0, 1.0);
+    if (triplanar.settings.z < 0.0) {
+        let up = smoothstep(GRASS_SLOPE_LO, GRASS_SLOPE_HI, n.y);
+        let shallow = smoothstep(SHALLOW_Y_LO, SHALLOW_Y_HI, in.world_position.y);
+        lw = vec3(up * shallow, (1.0 - up) * shallow, 1.0 - shallow);
+    }
+    var ar: vec4<f32>;
+    var na_x: vec4<f32>;
+    var na_y: vec4<f32>;
+    var na_z: vec4<f32>;
+    // The branch is on a **uniform**, so both arms are uniform control flow and
+    // `textureSample`'s implicit derivatives stay legal. A per-fragment branch
+    // around a sample is a WGSL validation error, which is why the blend always
+    // pays for all three layers rather than skipping one whose weight is small.
+    if (triplanar.settings.z >= 0.0) {
+        let l = i32(triplanar.settings.z);
+        ar = layer_ar(l, uv_x, uv_y, uv_z, w);
+        na_x = textureSample(normal_ao_texture, normal_ao_sampler, uv_x, l);
+        na_y = textureSample(normal_ao_texture, normal_ao_sampler, uv_y, l);
+        na_z = textureSample(normal_ao_texture, normal_ao_sampler, uv_z, l);
+    } else {
+        ar = layer_ar(LAYER_GRASS, uv_x, uv_y, uv_z, w) * lw.x
+           + layer_ar(LAYER_DIRT_SURFACE, uv_x, uv_y, uv_z, w) * lw.y
+           + layer_ar(LAYER_DIRT_DEEP, uv_x, uv_y, uv_z, w) * lw.z;
+        na_x = layers_na(uv_x, lw);
+        na_y = layers_na(uv_y, lw);
+        na_z = layers_na(uv_z, lw);
+    }
 
     pbr_input.material.base_color = vec4(
         pbr_input.material.base_color.rgb * ar.rgb,

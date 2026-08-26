@@ -57,29 +57,26 @@ DEMOS=(
 OUT=web/dist
 PYTHON="${PYTHON:-python3}"
 
-# The custom domain, written into the artifact on every build.
+# There is deliberately no `CNAME` file and no custom domain.
 #
-# The `pages` job deploys through `actions/deploy-pages`, and GitHub stores the
-# custom domain in the repository's Pages settings -- so the site *serves* at
-# this host with no `CNAME` file at all, which is how it has been serving. What
-# it has never done is get a TLS certificate: 26 hours after the first
-# successful deploy `gh api repos/Ladvien/isomesh/pages` still reported
-# `https_certificate` absent while `pages/health` reported
-# `is_https_eligible: true`, `is_valid: true`, `caa_error: null` and
-# `https_error: peer_failed_verification` -- GitHub agreeing the certificate
-# should exist and no certificate existing.
+# `isomesh.ladvien.com` was the custom domain for a while and never got a TLS
+# certificate: `gh api repos/Ladvien/isomesh/pages` reported `https_certificate`
+# absent while `pages/health` reported `is_https_eligible: true`, `is_valid:
+# true`, `caa_error: null` and `https_error: peer_failed_verification` -- GitHub
+# agreeing the certificate should exist and no certificate existing. DNS was
+# clean and independently verified: a CNAME to `ladvien.github.io`, unproxied, on
+# Route 53, with `github.io`'s CAA permitting `letsencrypt.org`.
 #
-# An artifact that does not name its own domain is the one thing on this side
-# that was missing, so it is no longer missing. This is not a proven fix and is
-# not written as one: it is the documented shape of a custom-domain Pages
-# artifact, it costs one file of 21 bytes, and it removes the only variable the
-# repository controls.
+# The consequence was not cosmetic. **WebGPU is a secure-context-only API**, and
+# `https://ladvien.github.io/isomesh/` 301-redirected to
+# `http://isomesh.ladvien.com/`, so `navigator.gpu` was `undefined` and
+# `web/play.html`'s gate fired in every browser -- Chrome on a desktop included.
+# Every demo on this site needs WebGPU, so the pretty URL cost the whole site.
 #
-# It must equal the domain in Settings -> Pages exactly. A `CNAME` file that
-# disagrees *changes* the custom domain on deploy rather than being ignored,
-# which would point the site at a host with no DNS.
-DOMAIN=isomesh.ladvien.com
-
+# The site now serves at `https://ladvien.github.io/isomesh/` under GitHub's own
+# `*.github.io` certificate, which is valid. Do not re-add the domain here: a
+# `CNAME` file in the artifact *re-sets* the custom domain on every deploy, so a
+# line here silently undoes the removal on the next push.
 WANT=$(awk '/^name = "wasm-bindgen"$/{getline; gsub(/[^0-9.]/,""); print; exit}' \
     bevy_isomesh/Cargo.lock)
 if [ -z "$WANT" ]; then
@@ -113,9 +110,6 @@ rustup target add wasm32-unknown-unknown
 
 rm -rf "$OUT"
 mkdir -p "$OUT/play/pkg"
-# Immediately after the clean, so it exists even if a later step fails and a
-# partial artifact is inspected.
-printf '%s\n' "$DOMAIN" > "$OUT/CNAME"
 
 echo "==> isomesh_web (the front page's module)"
 (cd isomesh_web && cargo build --release --target wasm32-unknown-unknown)

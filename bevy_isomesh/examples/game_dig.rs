@@ -30,10 +30,13 @@
 //! its own doc comment says so. This example never reads them: the terrain is an
 //! `ExtendedMaterial` whose fragment shader samples all three planes and
 //! interpolates by the normal, which is a function of world position alone and so
-//! cannot see a chunk boundary. The shader and both packed 1k textures are
-//! **compiled in** (`include_bytes!`, `load_internal_asset!`), because nothing
-//! copies an `assets/` tree into `web/dist` and a run-time load path would work
-//! natively and 404 in the browser.
+//! cannot see a chunk boundary. It samples a **four-layer texture array** and
+//! blends grass, leafy surface dirt and deep dirt by slope and world height, so
+//! a fresh tunnel reads as its own depth; the fourth layer is concrete and the
+//! five slabs lining the sandbox force it. The shader and both `512x2048` packed
+//! arrays are **compiled in** (`include_bytes!`, `load_internal_asset!`),
+//! because nothing copies an `assets/` tree into `web/dist` and a run-time load
+//! path would work natively and 404 in the browser.
 //!
 //! # What this is actually testing
 //!
@@ -132,6 +135,17 @@ const CELL_SIZE: f32 = 0.125;
 /// `rebuild` skips a chunk with no crossing rather than spawning an empty draw
 /// call over it.
 const EXTENT: [i32; 3] = [8, 4, 8];
+
+/// Thickness of the five cuboids that line the sandbox.
+///
+/// Each slab occupies exactly the thickness immediately *outside* one face, so
+/// its inner surface is the boundary plane the walk clamp enforces and no part
+/// of it is inside the box. Outside rather than coplanar because `Ground` is
+/// solid right up to the wall, and a slab sharing a plane with terrain z-fights
+/// it along the whole seam. It also puts the geometry where `aim` refuses to
+/// carve -- outside `sandbox` -- which is why the walls can never be dug
+/// through.
+const WALL_THICKNESS: f32 = 0.5;
 
 /// Gizmos for the re-meshed-chunk outline.
 #[derive(Default, Reflect, GizmoConfigGroup)]
@@ -254,25 +268,37 @@ const GPU_JOBS_MAX: usize = 16;
 // only option that works on both targets, and `crates/isomesh` offers no
 // raycast, sphere cast or closest-point query to build on.
 
-/// Radius of each of the two spheres the body is made of.
-const BODY_RADIUS: f32 = 0.4;
+/// Radius of each of the four spheres the body is made of, so the body is
+/// `0.50` wide.
+///
+/// Was `0.4`, which made a body `0.8` wide -- human height and 2.7 times human
+/// width, and wider than the `0.50` cavity the default brush (radius `0.25`)
+/// carves, so the player could not follow their own tunnel.
+const BODY_RADIUS: f32 = 0.25;
 /// Sphere centres below the eye.
 ///
-/// The eye sits at the top of the upper sphere and the lower one rests on the
-/// ground, so standing on flat terrain puts the eye at `1.2 + 0.4 = 1.6` --
-/// exactly where `setup` already places the camera, so walk mode opens on the
-/// viewpoint this demo has always had.
-const BODY_OFFSETS: [f32; 2] = [0.4, 1.2];
+/// Four spheres at `0.40` spacing against a `0.50` diameter, so consecutive
+/// spheres **overlap** and the body is a continuous capsule. The old pair sat
+/// exactly `2 * BODY_RADIUS` apart and touched at a single point, which is a
+/// pinched waist -- a lip of rock could pass between them and the resolver
+/// would see nothing to push out of.
+///
+/// The eye sits at the top of the topmost sphere and the lowest one rests on the
+/// ground, so standing on flat terrain puts the eye at `1.45 + 0.25 = 1.70`:
+/// a person, and where `setup` places the camera.
+const BODY_OFFSETS: [f32; 4] = [0.25, 0.65, 1.05, 1.45];
 /// Downward acceleration. Roughly twice Earth's, which is the usual game figure:
-/// real gravity over a 1.6-unit body reads as floating.
+/// real gravity over a 1.7-unit body reads as floating.
 const GRAVITY: f32 = 18.0;
 /// Launch speed. `8.5^2 / (2 * 18)` is a **2.0-unit apex**, which is a whole
 /// chunk: high enough to jump onto the lip of a pit dug with a brush at the
 /// large end of the wheel's range, rather than the 1.0 the first version had.
 const JUMP_SPEED: f32 = 8.5;
-/// Resolution passes per frame. Two, because a body wedged in a corner is pushed
-/// out of one sphere into the other and needs a second look.
-const RESOLVE_PASSES: u32 = 2;
+/// Resolution passes per frame. Three, because a body wedged in a corner is
+/// pushed out of one sphere into the next and needs another look for each -- and
+/// the body went from two spheres to four. Twelve sample-and-gradient pairs a
+/// frame, against the eight the two-sphere pair cost at two passes.
+const RESOLVE_PASSES: u32 = 3;
 /// How far below the lowest sphere to look for ground.
 const GROUND_PROBE: f32 = 0.06;
 /// Below this, the gradient carries no direction. See [`resolve_body`].
@@ -460,6 +486,63 @@ struct Look {
     pitch: f32,
 }
 
+/// Touch intent for one frame, summed into the same movement and edit paths the
+/// keyboard and mouse drive.
+///
+/// A phone has no pointer lock -- iOS Safari does not implement it -- and it has
+/// no keys, so without this the demo is watchable on a phone and not playable.
+/// It is intent rather than a second control scheme: [`touch_input`] reduces
+/// gestures to the same numbers `WASD` and the mouse produce, and
+/// [`move_camera`] and [`dig`] read them beside the keys rather than instead of
+/// them.
+#[derive(Resource, Default)]
+struct TouchIntent {
+    /// Screen-space look delta this frame, in pixels.
+    look: Vec2,
+    /// Walk axes, `x` strafe, `y` forward, each in `-1.0..=1.0`.
+    move_axis: Vec2,
+    dig: bool,
+    fill: bool,
+    jump: bool,
+    /// Set once any touch has been seen, and never cleared: it reveals the
+    /// on-screen buttons and suppresses the pointer-lock request.
+    ///
+    /// Sticky rather than per-frame because both consumers are about the
+    /// *device*, not the gesture: buttons that appeared and vanished between
+    /// taps would be unusable, and `grab` asking a phone for pointer lock logs a
+    /// console error every frame a finger is up.
+    seen: bool,
+}
+
+/// Which on-screen button an entity is, so one query serves all three.
+#[derive(Component)]
+enum TouchButton {
+    Jump,
+    Dig,
+    Fill,
+}
+
+/// Virtual-stick displacement, as a testable free function.
+///
+/// Dead zone first, so a resting thumb does not creep; then scaled by the
+/// travel that remains, so the stick reaches full speed at [`STICK_RADIUS`]
+/// rather than at one pixel past the dead zone; then clamped to the unit
+/// **disc**, so a corner drag is not `sqrt(2)` times faster than a straight one;
+/// then `y` is negated, because screen `y` grows downward and forward is up.
+fn touch_axes(start: Vec2, current: Vec2) -> Vec2 {
+    /// Thumb jitter, in pixels. Below this the stick is centred.
+    const DEAD_ZONE: f32 = 8.0;
+    /// Drag length that reads as full deflection, in pixels.
+    const STICK_RADIUS: f32 = 90.0;
+    let d = current - start;
+    if d.length() <= DEAD_ZONE {
+        return Vec2::ZERO;
+    }
+    let v = (d - d.normalize() * DEAD_ZONE) / (STICK_RADIUS - DEAD_ZONE);
+    let v = v.clamp_length_max(1.0);
+    Vec2::new(v.x, -v.y)
+}
+
 /// The terrain's material. Aliased because the full name appears in four places
 /// -- the resource, the asset collection, the plugin and the spawn -- and a
 /// mismatch between any two of them is a type error a hundred lines from its
@@ -472,20 +555,37 @@ type TerrainMaterial = ExtendedMaterial<StandardMaterial, TriplanarExtension>;
 /// mechanism Bevy uses for its own built-in shaders.
 const TRIPLANAR_SHADER: Handle<Shader> = uuid_handle!("6f1c9a5e-4f2b-4c7a-9d3e-2b8c5a71f0d4");
 
-/// The triplanar half of the terrain material: two packed textures and the two
-/// numbers that place them.
+/// Layers in the stacked terrain array: grass, surface dirt, deep dirt, concrete.
+///
+/// The order is the array slice order and `textures/PROVENANCE.md` tables it.
+/// `reinterpret_stacked_2d_as_array` slices a stacked PNG top-down, so a stack
+/// built the other way up compiles, renders, and paints the walls with grass.
+const TERRAIN_LAYERS: u32 = 4;
+/// `settings.z` for the terrain: blend the first three layers by slope and depth.
+const LAYER_BLEND: f32 = -1.0;
+/// `settings.z` for the walls: array layer 3, the concrete, and nothing else.
+const LAYER_CONCRETE: f32 = 3.0;
+
+/// The triplanar half of the terrain material: two packed texture **arrays** and
+/// the three numbers that place them.
 #[derive(Asset, AsBindGroup, Reflect, Debug, Clone)]
 struct TriplanarExtension {
-    /// `x` world units per texture tile, `y` blend sharpness. See the WGSL for
-    /// why this is one `vec4` and not two `f32`s.
+    /// `x` world units per texture tile, `y` blend sharpness, `z` the forced
+    /// array layer ([`LAYER_BLEND`] or [`LAYER_CONCRETE`]). See the WGSL for why
+    /// this is one `vec4` and not three `f32`s.
     #[uniform(100)]
     settings: Vec4,
-    /// RGB colour, A roughness.
-    #[texture(101)]
+    /// RGB colour, A roughness, one layer per terrain material.
+    ///
+    /// `dimension = "2d_array"` is not cosmetic: the bind group layout it
+    /// declares has to match `texture_2d_array<f32>` in the WGSL, and a
+    /// mismatch is a pipeline creation failure at the first draw rather than a
+    /// compile error here.
+    #[texture(101, dimension = "2d_array")]
     #[sampler(102)]
     albedo_roughness: Handle<Image>,
-    /// RGB OpenGL-convention normal, A ambient occlusion.
-    #[texture(103)]
+    /// RGB OpenGL-convention normal, A ambient occlusion, same layers.
+    #[texture(103, dimension = "2d_array")]
     #[sampler(104)]
     normal_ao: Handle<Image>,
 }
@@ -500,8 +600,20 @@ impl MaterialExtension for TriplanarExtension {
     // there is no `DeferredPrepass` on its camera.
 }
 
+/// The terrain's material, handed to every chunk `rebuild` spawns.
+///
+/// The walls get a *second* `TerrainMaterial` instance rather than a second
+/// material type -- the forced layer is a uniform, so the two share one
+/// pipeline and one pair of texture arrays and differ only in 16 bytes of
+/// `settings`. That handle is not a resource: the five `MeshMaterial3d`
+/// components hold it, nothing spawns a wall after `setup`, and a resource
+/// nothing reads is a field `dead_code` is right about.
 #[derive(Resource)]
 struct SurfaceMaterial(Handle<TerrainMaterial>);
+
+/// One of the five cuboids that line the sandbox, so the count is assertable.
+#[derive(Component)]
+struct Wall;
 
 /// A scripted sequence of carves, one per frame, driven by `ISOMESH_AUTOCARVE`.
 ///
@@ -570,6 +682,7 @@ fn main() {
     .init_gizmo_group::<GhostGizmos>()
     .init_resource::<Aim>()
     .init_resource::<GpuPending>()
+    .init_resource::<TouchIntent>()
     .insert_resource(Look {
         yaw: 0.0,
         pitch: -0.15,
@@ -579,7 +692,9 @@ fn main() {
     .add_systems(
         Update,
         // Chained, because the order is load-bearing and a tuple does not
-        // impose one: `switch_algorithm` marks the sandbox before the frame's
+        // impose one: `touch_input` reduces the frame's touches to the same
+        // numbers the keys produce and must run before anything reads them,
+        // `switch_algorithm` marks the sandbox before the frame's
         // aim and edit rather than racing them, `move_camera` moves the camera
         // and resolves the body against the field, `aim` traces from where it now
         // is, `dig` marks at that point, `drain_dirty` meshes what the frame's
@@ -589,6 +704,7 @@ fn main() {
         // one frame stale -- which it did before this, invisibly.
         // `loading_modal` is last so it reads the post-drain backlog.
         (
+            touch_input,
             grab,
             switch_algorithm,
             move_camera,
@@ -606,6 +722,106 @@ fn main() {
     // After `DefaultPlugins`, which is what inserts `Assets<Shader>`.
     load_internal_asset!(app, TRIPLANAR_SHADER, "triplanar.wgsl", Shader::from_wgsl);
     app.run();
+}
+
+/// RGB colour, A roughness: four 512-square layers stacked top-down.
+///
+/// One `include_bytes!` per pack, at module scope, so `setup` and the test that
+/// gates the stack read the same bytes rather than two paths that can diverge.
+const TERRAIN_ALBEDO_ROUGHNESS: &[u8] =
+    include_bytes!("textures/terrain_albedo_roughness_array.png");
+/// RGB OpenGL-convention normal, A ambient occlusion, same four layers.
+const TERRAIN_NORMAL_AO: &[u8] = include_bytes!("textures/terrain_normal_ao_array.png");
+
+/// Decode one compiled-in PNG.
+///
+/// Compiled in rather than loaded, for the reason the module docs give: nothing
+/// copies an `assets/` tree into `web/dist`, so an `AssetServer::load` path would
+/// work natively and 404 in the browser. `Image::from_buffer` decodes on the
+/// calling thread, which for these two is 512x2048 of PNG twice.
+fn embedded_texture(bytes: &[u8], is_srgb: bool) -> Image {
+    Image::from_buffer(
+        bytes,
+        ImageType::Extension("png"),
+        // No compressed formats: these are plain 8-bit PNGs, and WebGL2's
+        // downlevel limits offer no transcoding target worth the dependency.
+        CompressedImageFormats::NONE,
+        is_srgb,
+        // The default is `ClampToEdge`, which on a tiling triplanar texture
+        // smears one row of pixels across the whole world.
+        ImageSampler::Descriptor(ImageSamplerDescriptor {
+            address_mode_u: ImageAddressMode::Repeat,
+            address_mode_v: ImageAddressMode::Repeat,
+            address_mode_w: ImageAddressMode::Repeat,
+            ..ImageSamplerDescriptor::linear()
+        }),
+        RenderAssetUsages::RENDER_WORLD,
+    )
+    .expect("the packed terrain arrays are committed beside this example")
+}
+
+/// The same PNG, relabelled as a [`TERRAIN_LAYERS`]-layer 2D array.
+///
+/// Reinterpreted, not resized: the file is one 512x2048 image and this declares
+/// its four stacked 512-squares to be four array layers, which is why
+/// [`embedded_texture`] hands back an owned `Image` rather than a handle. The
+/// `expect` is the only mis-pack this call can catch -- a height that does not
+/// divide by four. A stack built bottom-up divides perfectly and paints the
+/// walls with grass, which is why
+/// `the_terrain_array_is_four_square_layers_stacked_top_down` asserts the
+/// resulting extent on the committed bytes.
+fn terrain_array(bytes: &[u8], is_srgb: bool) -> Image {
+    let mut image = embedded_texture(bytes, is_srgb);
+    image
+        .reinterpret_stacked_2d_as_array(TERRAIN_LAYERS)
+        .expect("the packed terrain arrays are four 512x512 layers stacked vertically");
+    image
+}
+
+/// The five slabs that line the sandbox, as `(centre, size)` in world units.
+///
+/// A free function rather than five literals in `setup`, so the boxes can be
+/// asserted without a renderer and so `EXTENT` moves the walls with the chunks.
+/// Every number comes from [`sandbox`] and [`WALL_THICKNESS`].
+///
+/// The side walls overhang by one thickness in the other horizontal axis, so the
+/// four vertical corners close rather than showing a `WALL_THICKNESS`-square gap
+/// of sky, and the floor spans the overhung footprint for the same reason.
+///
+/// **No ceiling**, and the floor is not decoration. Fly mode exists to leave the
+/// box and look down into it, so a lid would defeat it; but `Ground` is solid to
+/// `-inf` while the chunks stop at `y = -5.4`, so a shaft dug to the bottom
+/// reaches a depth where the mesh ends and collision does not. The floor slab is
+/// what the player sees there instead of a hole into nothing.
+fn walls(layout: &ChunkLayout<f32>) -> [(Vec3, Vec3); 5] {
+    let (lo, hi) = sandbox(layout);
+    let half = WALL_THICKNESS * 0.5;
+    let mid = (lo + hi) * 0.5;
+    let height = hi.y - lo.y;
+    let span_x = hi.x - lo.x + 2.0 * WALL_THICKNESS;
+    let span_z = hi.z - lo.z + 2.0 * WALL_THICKNESS;
+    [
+        (
+            Vec3::new(lo.x - half, mid.y, mid.z),
+            Vec3::new(WALL_THICKNESS, height, span_z),
+        ),
+        (
+            Vec3::new(hi.x + half, mid.y, mid.z),
+            Vec3::new(WALL_THICKNESS, height, span_z),
+        ),
+        (
+            Vec3::new(mid.x, mid.y, lo.z - half),
+            Vec3::new(span_x, height, WALL_THICKNESS),
+        ),
+        (
+            Vec3::new(mid.x, mid.y, hi.z + half),
+            Vec3::new(span_x, height, WALL_THICKNESS),
+        ),
+        (
+            Vec3::new(mid.x, lo.y - half, mid.z),
+            Vec3::new(span_x, WALL_THICKNESS, span_z),
+        ),
+    ]
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -640,7 +856,7 @@ fn setup(
         commands
             .entity(entity)
             .remove::<OrbitCamera>()
-            .insert(Transform::from_xyz(0.0, 1.6, 6.0));
+            .insert(Transform::from_xyz(0.0, 1.70, 6.0));
     }
     let (chunk_gizmos, _) = config.config_mut::<ChunkGizmos>();
     chunk_gizmos.line.width = 2.0;
@@ -664,58 +880,48 @@ fn setup(
     )
     .expect("valid layout");
 
-    // Compiled in rather than loaded, for the reason the module docs give:
-    // nothing copies an `assets/` tree into `web/dist`, so an
-    // `AssetServer::load` path would work natively and 404 in the browser.
-    // `Image::from_buffer` decodes here on the main thread once, which is
-    // 1024x1024 of PNG twice.
-    fn embedded_texture(bytes: &[u8], is_srgb: bool) -> Image {
-        Image::from_buffer(
-            bytes,
-            ImageType::Extension("png"),
-            // No compressed formats: these are plain 8-bit PNGs, and WebGL2's
-            // downlevel limits offer no transcoding target worth the dependency.
-            CompressedImageFormats::NONE,
-            is_srgb,
-            // The default is `ClampToEdge`, which on a tiling triplanar texture
-            // smears one row of pixels across the whole world.
-            ImageSampler::Descriptor(ImageSamplerDescriptor {
-                address_mode_u: ImageAddressMode::Repeat,
-                address_mode_v: ImageAddressMode::Repeat,
-                address_mode_w: ImageAddressMode::Repeat,
-                ..ImageSamplerDescriptor::linear()
-            }),
-            RenderAssetUsages::RENDER_WORLD,
-        )
-        .expect("the packed ground textures are committed beside this example")
-    }
+    let albedo_roughness = images.add(terrain_array(TERRAIN_ALBEDO_ROUGHNESS, true));
+    let normal_ao = images.add(terrain_array(TERRAIN_NORMAL_AO, false));
+    // One closure, two instances: the terrain blends layers 0-2 and the walls
+    // force layer 3. Everything else about them -- the pipeline, the two
+    // textures, the tiling and the sharpness -- is the same, so a difference
+    // anywhere else here would be a difference nothing asked for.
+    let mut terrain_skin = |layer: f32| {
+        terrain_materials.add(TerrainMaterial {
+            base: StandardMaterial {
+                // White, not the old 0.62/0.58/0.52 tint: the shader multiplies
+                // the sampled colour by this, so a tint here would darken the
+                // texture. The field stays as the knob it is, set to neutral.
+                base_color: Color::WHITE,
+                perceptual_roughness: 0.85,
+                ..default()
+            },
+            extension: TriplanarExtension {
+                // 1.5 world units per tile against a 2.0-unit chunk, so a tile
+                // is a little smaller than a chunk and the cracks read at the
+                // scale a brush of radius 0.25 cuts at. `y` is the blend
+                // sharpness, `z` the forced layer.
+                settings: Vec4::new(1.5, 4.0, layer, 0.0),
+                albedo_roughness: albedo_roughness.clone(),
+                normal_ao: normal_ao.clone(),
+            },
+        })
+    };
+    let material = terrain_skin(LAYER_BLEND);
+    let wall_material = terrain_skin(LAYER_CONCRETE);
 
-    let albedo_roughness = images.add(embedded_texture(
-        include_bytes!("textures/ground_0046_albedo_roughness.png"),
-        true,
-    ));
-    let normal_ao = images.add(embedded_texture(
-        include_bytes!("textures/ground_0046_normal_ao.png"),
-        false,
-    ));
-    let material = terrain_materials.add(TerrainMaterial {
-        base: StandardMaterial {
-            // White, not the old 0.62/0.58/0.52 tint: the shader multiplies the
-            // sampled colour by this, so a tint here would darken the texture.
-            // The field stays as the knob it is, set to neutral.
-            base_color: Color::WHITE,
-            perceptual_roughness: 0.85,
-            ..default()
-        },
-        extension: TriplanarExtension {
-            // 1.5 world units per tile against a 2.0-unit chunk, so a tile is a
-            // little smaller than a chunk and the cracks read at the scale a
-            // brush of radius 0.25 cuts at. `y` is the blend sharpness.
-            settings: Vec4::new(1.5, 4.0, 0.0, 0.0),
-            albedo_roughness,
-            normal_ao,
-        },
-    });
+    // The sandbox, made visible. `sandbox` is the box the 256 chunks cover and
+    // until now only `aim` and `trace` consumed it -- so the boundary existed,
+    // stopped the ghost, and nothing on screen said where it was. [`walls`]
+    // derives the five boxes; this only spawns them.
+    for (centre, size) in walls(&layout) {
+        commands.spawn((
+            Mesh3d(meshes.add(Cuboid::new(size.x, size.y, size.z))),
+            MeshMaterial3d(wall_material.clone()),
+            Transform::from_translation(centre),
+            Wall,
+        ));
+    }
 
     // `bevy::math::primitives::Sphere` in full: `Sphere` in this file is
     // `isomesh::fields::Sphere`, the SDF. `ico(3)` is 1,280 triangles; the
@@ -819,6 +1025,56 @@ fn setup(
             },
             TextColor(Color::srgb(0.92, 0.94, 0.98)),
         ));
+
+    // The touch controls, spawned hidden. `touch_input` flips them to
+    // `Display::Flex` the first time a finger lands, so a desktop run looks
+    // exactly as it did and a phone is not asked to guess that the left third of
+    // the screen walks.
+    //
+    // `Interaction` is the hit test: `bevy_ui`'s focus system already reads
+    // `Touches`, so a tap on one of these is reported without this file doing
+    // any rectangle arithmetic. These are the first `Button`s anywhere under
+    // `examples/`; the HUD palette is reused so they read as part of it.
+    //
+    // `GlobalZIndex(5)` is above the tree's `4` banner layer and below the
+    // loading modal's `10`, which is right: a control you cannot see the effect
+    // of is worse than a hidden one.
+    //
+    // `JUMP` sits 120 px up on the left, clear of the stick's own resting zone;
+    // `DIG` and `FILL` are bottom-right under the thumb that is already looking.
+    for (button, label, left, right, bottom) in [
+        (TouchButton::Jump, "JUMP", Some(24.0), None, 120.0),
+        (TouchButton::Dig, "DIG", None, Some(112.0), 24.0),
+        (TouchButton::Fill, "FILL", None, Some(24.0), 24.0),
+    ] {
+        commands
+            .spawn((
+                Button,
+                Node {
+                    display: Display::None,
+                    position_type: PositionType::Absolute,
+                    left: left.map_or(Val::Auto, Val::Px),
+                    right: right.map_or(Val::Auto, Val::Px),
+                    bottom: Val::Px(bottom),
+                    width: Val::Px(72.0),
+                    height: Val::Px(72.0),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                BackgroundColor(Color::srgba(0.02, 0.03, 0.05, 0.72)),
+                GlobalZIndex(5),
+                button,
+            ))
+            .with_child((
+                Text::new(label),
+                TextFont {
+                    font_size: FontSize::Px(16.0),
+                    ..default()
+                },
+                TextColor(Color::srgb(0.92, 0.94, 0.98)),
+            ));
+    }
 
     // Bevy's own device, handed to a crate that has never heard of Bevy --
     // `RenderDevice` and `RenderQueue` are inserted into the *main* world by
@@ -1804,6 +2060,81 @@ fn switch_algorithm(keys: Res<ButtonInput<KeyCode>>, mut world: ResMut<World>) {
     world.gpu_peak_triangles = 0;
 }
 
+/// Reduce this frame's touches to the same numbers the keyboard and mouse
+/// produce, and reveal the on-screen buttons the first time a finger appears.
+///
+/// Ordered before [`move_camera`] and [`dig`], which are where those numbers are
+/// consumed. **Each touch is classified by where it started**, never by where it
+/// is now, so a gesture keeps its role for its whole life: a look sweep that
+/// wandered into the left third would otherwise start walking mid-drag.
+fn touch_input(
+    touches: Res<Touches>,
+    windows: Query<&Window, With<PrimaryWindow>>,
+    presses: Query<(Ref<Interaction>, &TouchButton)>,
+    mut nodes: Query<&mut Node, With<TouchButton>>,
+    mut touch: ResMut<TouchIntent>,
+    mut world: ResMut<World>,
+) {
+    let Ok(window) = windows.single() else {
+        return;
+    };
+    // Cleared every frame, so a lifted finger stops the body rather than leaving
+    // it walking into a wall for ever.
+    touch.look = Vec2::ZERO;
+    touch.move_axis = Vec2::ZERO;
+    touch.dig = false;
+    touch.fill = false;
+    touch.jump = false;
+
+    /// Fraction of the screen width that is the movement stick.
+    ///
+    /// The left 40%: a thumb's whole arc on a phone held in two hands, and it
+    /// leaves the majority of the screen -- the part actually being looked at --
+    /// to the look drag.
+    const STICK_ZONE: f32 = 0.4;
+    let split = window.width() * STICK_ZONE;
+    for t in touches.iter() {
+        if t.start_position().x < split {
+            touch.move_axis += touch_axes(t.start_position(), t.position());
+        } else {
+            // `delta`, this frame's movement, not `distance` from the start:
+            // this stands in for a mouse, whose motion is also per-frame. It is
+            // also what keeps a thumb parked on `DIG` from spinning the camera --
+            // a stationary finger has a delta of zero, so the buttons need no
+            // exclusion rectangle.
+            touch.look += t.delta();
+        }
+    }
+    for (interaction, button) in &presses {
+        if *interaction != Interaction::Pressed {
+            continue;
+        }
+        match button {
+            // Level-triggered, exactly like a held mouse button: `dig`'s own
+            // pacing decides the rate.
+            TouchButton::Dig => touch.dig = true,
+            TouchButton::Fill => touch.fill = true,
+            // Edge-triggered. `bevy_ui`'s focus system assigns `Pressed` only on
+            // the transition into it, so `Ref::is_changed` is the press edge --
+            // and without it a thumb left on the button bunny-hops, which
+            // `Space` held does not do.
+            TouchButton::Jump => touch.jump |= interaction.is_changed(),
+        }
+    }
+    if touches.any_just_pressed() && !touch.seen {
+        touch.seen = true;
+        // `dig`'s edit gate requires `grabbed`, which on a desktop is what the
+        // first left click sets. A phone has no pointer to lock, so the first
+        // touch is the same event.
+        world.grabbed = true;
+        // Flipped once, not every frame: `Node` is change-detected and
+        // re-writing it would re-lay-out the UI on every frame of the demo.
+        for mut node in &mut nodes {
+            node.display = Display::Flex;
+        }
+    }
+}
+
 fn grab(
     keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,
@@ -1811,6 +2142,7 @@ fn grab(
     // not a field of `Window`.
     mut cursor: Query<&mut CursorOptions, With<PrimaryWindow>>,
     mut world: ResMut<World>,
+    touch: Res<TouchIntent>,
 ) {
     let Ok(mut cursor) = cursor.single_mut() else {
         return;
@@ -1821,7 +2153,11 @@ fn grab(
     if keys.just_pressed(KeyCode::Tab) {
         world.grabbed = !world.grabbed;
     }
-    let (mode, visible) = if world.grabbed {
+    // A touch device gets no pointer lock: iOS Safari does not implement the
+    // API, and asking for it produces a console error and nothing else. `dig`
+    // still needs `world.grabbed`, which `touch_input` sets on the first touch,
+    // so the gate here is only about the cursor.
+    let (mode, visible) = if world.grabbed && !touch.seen {
         (CursorGrabMode::Locked, false)
     } else {
         (CursorGrabMode::None, true)
@@ -1855,7 +2191,7 @@ fn gravity_step(grounded: bool, velocity: &mut Vec3, dt: f32) {
 
 /// Push the body out of the rock, and report whether it is standing on it.
 ///
-/// Two spheres against the field, [`RESOLVE_PASSES`] times. `f` is not an exact
+/// Four spheres against the field, [`RESOLVE_PASSES`] times. `f` is not an exact
 /// distance -- `Ground` has `|grad f|` between 1 and 1.207 -- and it errs the
 /// safe way for a height field: `f >= d`, so the test triggers only on a real
 /// overlap and at worst lets the body sink 18% of a radius into the steepest
@@ -1877,7 +2213,13 @@ fn gravity_step(grounded: bool, velocity: &mut Vec3, dt: f32) {
 /// A free function rather than a closure inside the system, so the field is
 /// built once and so this can be tested without an `App`.
 fn resolve_body(field: &impl Sdf<Scalar = f32>, eye: &mut Vec3, velocity: &mut Vec3) -> bool {
-    let mut contact = None;
+    // The **deepest** overlap, not the last one looked at. This was
+    // `contact = Some(n)` inside the loop, so the velocity cancellation below
+    // used whichever sphere happened to come last in `BODY_OFFSETS` -- a body
+    // wedged with its head in a lip and its feet on the floor cancelled against
+    // the head. Deeper is more of the reason the body is stuck, so it is the
+    // direction worth cancelling along.
+    let mut contact: Option<(f32, Vec3)> = None;
     for _ in 0..RESOLVE_PASSES {
         for offset in BODY_OFFSETS {
             let c = *eye - Vec3::Y * offset;
@@ -1891,14 +2233,17 @@ fn resolve_body(field: &impl Sdf<Scalar = f32>, eye: &mut Vec3, velocity: &mut V
             } else {
                 Vec3::Y
             };
-            *eye += n * (BODY_RADIUS - f);
-            contact = Some(n);
+            let depth = BODY_RADIUS - f;
+            *eye += n * depth;
+            if contact.is_none_or(|(deepest, _)| depth > deepest) {
+                contact = Some((depth, n));
+            }
         }
     }
     // Otherwise gravity accumulates against the floor and the first step off a
     // ledge is a plummet. Only the component *into* the surface goes: sliding
     // along it is movement the player asked for.
-    if let Some(n) = contact {
+    if let Some((_, n)) = contact {
         let into = velocity.dot(n);
         if into < 0.0 {
             *velocity -= n * into;
@@ -1908,9 +2253,44 @@ fn resolve_body(field: &impl Sdf<Scalar = f32>, eye: &mut Vec3, velocity: &mut V
     // a wall is in contact and is not standing on anything. The lowest sphere is
     // the one with the largest offset, found rather than indexed so the
     // contingency of adding another offset cannot silently probe the wrong one.
+    //
+    // **A cross across the foot sphere's own lower surface**, and each of the
+    // three geometries this could be is a different bug:
+    //
+    // * *One point* straight down reads air whenever the body is wedged with its
+    //   centre over a void and part of its foot resting on rock to one side --
+    //   `move_camera`'s `world.grounded && Space` then refuses the jump, and the
+    //   hole the player dug is a trap. That was the shipped behaviour.
+    // * A *flat* cross, five samples at one depth, reads solid whenever the
+    //   terrain beside the foot is higher than the terrain under it -- which on
+    //   any slope is ground the body is not touching. `gravity_step` cuts gravity
+    //   and the body hangs in mid-air. Measured on this field at the origin,
+    //   where the height rises 0.63 per unit: **12.5 cm of hover**.
+    // * This one: the lateral samples sit at the sphere's own boundary for their
+    //   offset, `sqrt(R² - r²)` below the centre, and only then drop by
+    //   [`GROUND_PROBE`]. So the tolerance is purely vertical, which is what its
+    //   doc comment says it is, and every sample asks the same question -- "is
+    //   there rock just under my foot, here?" -- at a point the foot really does
+    //   hang over.
+    //
+    // `0.7` of the radius laterally, so the four outer samples cover most of the
+    // footprint while staying `0.71 R` below the centre rather than degenerating
+    // to the sphere's equator, where "below" stops being the question.
+    const FOOTPRINT: f32 = 0.7;
     let lowest = BODY_OFFSETS.into_iter().fold(f32::MIN, f32::max);
     let foot = *eye - Vec3::Y * lowest;
-    field.sample([foot.x, foot.y - (BODY_RADIUS + GROUND_PROBE), foot.z]) <= 0.0
+    let r = BODY_RADIUS * FOOTPRINT;
+    let edge = BODY_RADIUS * (1.0 - FOOTPRINT * FOOTPRINT).sqrt() + GROUND_PROBE;
+    let centre = BODY_RADIUS + GROUND_PROBE;
+    [
+        [0.0, -centre, 0.0],
+        [r, -edge, 0.0],
+        [-r, -edge, 0.0],
+        [0.0, -edge, r],
+        [0.0, -edge, -r],
+    ]
+    .into_iter()
+    .any(|[dx, dy, dz]| field.sample([foot.x + dx, foot.y + dy, foot.z + dz]) <= 0.0)
 }
 
 /// Move the camera. Flying is a direct write; walking integrates gravity and is
@@ -1926,6 +2306,7 @@ fn move_camera(
     mut world: ResMut<World>,
     mut look: ResMut<Look>,
     mut camera: Query<&mut Transform, With<Camera3d>>,
+    touch: Res<TouchIntent>,
 ) {
     let Ok(mut transform) = camera.single_mut() else {
         return;
@@ -1940,6 +2321,15 @@ fn move_camera(
         let sensitivity = 0.0022;
         look.yaw -= motion.delta.x * sensitivity;
         look.pitch = (look.pitch - motion.delta.y * sensitivity).clamp(-1.5, 1.5);
+    }
+    // Touch look is applied unconditionally, outside the `grabbed` gate above:
+    // `grabbed` means the pointer is locked, and there is no pointer to lock on
+    // a phone. Its own sensitivity, and higher, because a thumb drag across a
+    // handset is a fraction of a mouse sweep.
+    if touch.look != Vec2::ZERO {
+        let sensitivity = 0.0035;
+        look.yaw -= touch.look.x * sensitivity;
+        look.pitch = (look.pitch - touch.look.y * sensitivity).clamp(-1.5, 1.5);
     }
     transform.rotation = Quat::from_euler(EulerRot::YXZ, look.yaw, look.pitch, 0.0);
 
@@ -1956,6 +2346,10 @@ fn move_camera(
             direction += delta;
         }
     }
+    // The virtual stick, in the same basis the keys use, so the flatten and the
+    // renormalise below apply to it too and a phone walks at exactly the speed a
+    // keyboard does.
+    direction += right * touch.move_axis.x + forward * touch.move_axis.y;
     if world.walking {
         // Flattened and renormalised, so looking at your feet does not slow you
         // down. `Vec3::normalize_or_zero` covers looking straight up, where the
@@ -1986,11 +2380,12 @@ fn move_camera(
     }
 
     gravity_step(world.grounded, &mut world.velocity, dt);
-    // `Space`, which is what a hand reaches for. The shared harness also reads
-    // it into `ViewFlags::paused`, and that is harmless here: `paused` is read
-    // only by `orbit_camera`, and `setup` takes `OrbitCamera` off this camera so
-    // that system's query is empty in this demo.
-    if world.grounded && keys.just_pressed(KeyCode::Space) {
+    // `Space`, which is what a hand reaches for, and the on-screen `JUMP` beside
+    // it -- `touch_input` has already reduced that to one edge per tap. The
+    // shared harness also reads `Space` into `ViewFlags::paused`, and that is
+    // harmless here: `paused` is read only by `orbit_camera`, and `setup` takes
+    // `OrbitCamera` off this camera so that system's query is empty in this demo.
+    if world.grounded && (keys.just_pressed(KeyCode::Space) || touch.jump) {
         world.velocity.y = JUMP_SPEED;
     }
     transform.translation += (direction * speed + Vec3::Y * world.velocity.y) * dt;
@@ -2009,6 +2404,23 @@ fn move_camera(
         brushes,
     };
     *grounded = resolve_body(&field, &mut transform.translation, velocity);
+    // The walls are the boundary and this is what makes them one. `Ground` has a
+    // height at every `x` and `z`, so without this a walk past `x = 8` stands on
+    // invisible ground outside the box, in front of the wall the player just
+    // walked through.
+    //
+    // Walk mode only: fly mode is how the sandbox is inspected from outside, and
+    // `aim` already refuses to carve past `sandbox`. No `y` clamp either -- the
+    // field stops the descent and the floor slab is scenery.
+    let (lo, hi) = sandbox(&world.layout);
+    transform.translation.x = transform
+        .translation
+        .x
+        .clamp(lo.x + BODY_RADIUS, hi.x - BODY_RADIUS);
+    transform.translation.z = transform
+        .translation
+        .z
+        .clamp(lo.z + BODY_RADIUS, hi.z - BODY_RADIUS);
 }
 
 /// The loop this example exists for: one brush, one incremental re-mesh, for as
@@ -2023,6 +2435,7 @@ fn dig(
     target: Res<Aim>,
     mut auto: ResMut<AutoCarve>,
     capture: Res<Capture>,
+    touch: Res<TouchIntent>,
 ) {
     // Multiplicative, because radius is a scale: a fixed 0.1 step is a third of
     // the smallest brush and a twentieth of the largest. The wheel is free in
@@ -2081,8 +2494,11 @@ fn dig(
     let clear = keys.just_pressed(KeyCode::KeyX) && !world.brushes.is_empty();
     let undo = keys.just_pressed(KeyCode::KeyZ) && !world.brushes.is_empty();
     let shrink = clear || undo;
-    let left = buttons.pressed(MouseButton::Left);
-    let right = buttons.pressed(MouseButton::Right);
+    // The on-screen buttons feed the same two booleans the mouse does, so a
+    // phone carves through the identical pacing, distance gate and edit path --
+    // there is no second edit route to keep in step with this one.
+    let left = buttons.pressed(MouseButton::Left) || touch.dig;
+    let right = buttons.pressed(MouseButton::Right) || touch.fill;
     if !left && !right {
         world.stroke_last = None;
     }
@@ -2452,7 +2868,10 @@ fn report(
                 format!("airborne {:+.1} u/s   [F] fly", world.velocity.y)
             }
         ),
-        "ground     ground_0046 triplanar, 1.5 u/tile, sharpness 4".to_string(),
+        "ground     grass/dirt/deep-dirt array triplanar, 1.5 u/tile, sharpness 4; walls concrete"
+            .to_string(),
+        "touch      left third drags to walk, right drags to look, [JUMP] [DIG] [FILL] on screen"
+            .to_string(),
         String::new(),
         "every field sample walks the log: measured 3.7x ms/chunk for 7x the log".to_string(),
     ];
@@ -2512,7 +2931,7 @@ fn outline_chunks(world: Res<World>, mut gizmos: Gizmos<ChunkGizmos>) {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use std::sync::{Arc, LazyLock};
 
     use bevy::asset::AssetApp;
     use bevy::ecs::system::RunSystemOnce;
@@ -2527,32 +2946,51 @@ mod tests {
     /// which is what makes an edit count assertable.
     const FRAME: Duration = Duration::from_millis(16);
 
-    /// A device and queue of this test binary's own.
+    /// **One** device and queue for this whole test binary, cloned per test.
     ///
     /// `isomesh_gpu::headless::Gpu` lends its device and `RenderDevice` needs to
     /// own one, so this opens a second. No software fallback, the same policy
     /// that module states: a test that quietly ran on a CPU reference driver
     /// would report a GPU comparison that is not one.
+    ///
+    /// **A `LazyLock`, and it is a fix rather than a tidy-up.** This used to
+    /// build a fresh `wgpu::Instance` per call, so every `harness` test opened
+    /// its own Vulkan instance and its own full-limits device. Under
+    /// `cargo test`'s default parallelism -- 21 tests, 24 threads -- several
+    /// `request_adapter`/`request_device` calls were in flight at once and the
+    /// run **deadlocked**: reproduced at `--test-threads` 12 and 24 with the
+    /// same five `harness` tests never reporting, and clean at 8 and 16, which is
+    /// a race rather than a threshold. `wgpu::Device` and `wgpu::Queue` are
+    /// `Arc`-backed handles, so one instance shared and cloned is both correct
+    /// and what a real application does -- an engine does not open a device per
+    /// system.
+    ///
+    /// The static holds the instance for the process's life, which is exactly the
+    /// lifetime the device needs and no longer.
     fn wgpu_pair() -> (wgpu::Device, wgpu::Queue) {
-        let instance =
-            wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle_from_env());
-        let adapter =
-            bevy::tasks::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::HighPerformance,
-                force_fallback_adapter: false,
-                compatible_surface: None,
+        static SHARED: LazyLock<(wgpu::Device, wgpu::Queue)> = LazyLock::new(|| {
+            let instance = wgpu::Instance::new(
+                wgpu::InstanceDescriptor::new_without_display_handle_from_env(),
+            );
+            let adapter =
+                bevy::tasks::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+                    power_preference: wgpu::PowerPreference::HighPerformance,
+                    force_fallback_adapter: false,
+                    compatible_surface: None,
+                }))
+                .expect("a GPU adapter; there is no software fallback, by design");
+            let limits = adapter.limits();
+            bevy::tasks::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+                label: Some("game_dig test"),
+                required_features: wgpu::Features::empty(),
+                required_limits: limits,
+                memory_hints: wgpu::MemoryHints::Performance,
+                experimental_features: wgpu::ExperimentalFeatures::disabled(),
+                trace: wgpu::Trace::Off,
             }))
-            .expect("a GPU adapter; there is no software fallback, by design");
-        let limits = adapter.limits();
-        bevy::tasks::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-            label: Some("game_dig test"),
-            required_features: wgpu::Features::empty(),
-            required_limits: limits,
-            memory_hints: wgpu::MemoryHints::Performance,
-            experimental_features: wgpu::ExperimentalFeatures::disabled(),
-            trace: wgpu::Trace::Off,
-        }))
-        .expect("a device on that adapter")
+            .expect("a device on that adapter")
+        });
+        (*SHARED).clone()
     }
 
     /// The demo's own systems, in an `App` with no window and no renderer.
@@ -2620,6 +3058,7 @@ mod tests {
             .init_resource::<AccumulatedMouseScroll>()
             .init_resource::<Aim>()
             .init_resource::<GpuPending>()
+            .init_resource::<TouchIntent>()
             .insert_resource(AutoCarve::default())
             .insert_resource(Capture::default())
             .insert_resource(Look {
@@ -2645,7 +3084,7 @@ mod tests {
                     .chain(),
             );
         app.world_mut()
-            .spawn((Camera3d::default(), Transform::from_xyz(0.0, 1.6, 6.0)));
+            .spawn((Camera3d::default(), Transform::from_xyz(0.0, 1.70, 6.0)));
         app.world_mut().spawn((Visibility::Hidden, LoadingModal));
         app
     }
@@ -3488,8 +3927,8 @@ mod tests {
     /// `resolve_body` and [`gravity_step`] are the whole of ask 6's physics that
     /// is not a keypress, so this drives them directly, in the order
     /// `move_camera` does: gravity, integrate, resolve. The eye must settle at
-    /// `1.6` above the surface -- the height the two spheres put it, which is
-    /// exactly where `setup` has always placed the camera.
+    /// `1.70` above the surface -- the height the four overlapping spheres put
+    /// it, which is exactly where `setup` places the camera.
     ///
     /// **And then not move.** The drift assertion is the one that matters: the
     /// push is along the surface normal, which on a slope has a horizontal
@@ -3556,7 +3995,7 @@ mod tests {
     /// fixture: `resolve_body` has no slope limit by design, so a small sphere is
     /// a dome the body walks straight over -- which it did, on the first version
     /// of this test. At radius 40 the face is vertical to within
-    /// `1.2² / 80 = 18 mm` over the body's height, which is a wall.
+    /// `1.70² / 80 = 36 mm` over the body's height, which is a wall.
     #[test]
     fn rock_stops_the_body_and_a_hole_does_not() {
         let solid = [Brush::add(Sphere {
@@ -3567,7 +4006,7 @@ mod tests {
             base: Ground,
             brushes: &solid,
         };
-        let mut eye = Vec3::new(0.0, 1.6, 0.0);
+        let mut eye = Vec3::new(0.0, 1.70, 0.0);
         let mut velocity = Vec3::ZERO;
         let dt = 1.0 / 60.0;
         let mut grounded = false;
@@ -3578,12 +4017,17 @@ mod tests {
             eye += Vec3::new(0.0, velocity.y, -2.5) * dt;
             grounded = resolve_body(&field, &mut eye, &mut velocity);
         }
-        // The wall's face is at z = -0.8 and the body is a sphere of
-        // `BODY_RADIUS`, so its centre cannot pass -0.4 by more than the field's
-        // own slack.
+        // The wall's face is at `z = -0.8` and every one of the body's spheres
+        // has radius `BODY_RADIUS`, so no centre -- and the eye shares their `z`
+        // -- can pass `-0.8 + BODY_RADIUS` by more than the field's own slack.
+        // Derived rather than written as a literal: the body got narrower, and a
+        // hardcoded bound would have had to be loosened by hand, which is how a
+        // geometry test stops testing geometry.
+        let closest = -0.8 + BODY_RADIUS;
         assert!(
-            eye.z > -0.5,
-            "the body walked into the rock: z {} (a free walk reaches -2.25)",
+            eye.z > closest - 0.05,
+            "the body walked into the rock: z {} (a free walk reaches -2.25; \
+             the wall allows {closest})",
             eye.z
         );
 
@@ -3595,7 +4039,7 @@ mod tests {
             base: Ground,
             brushes: &carved,
         };
-        let mut eye = Vec3::new(0.0, 1.6, -2.0);
+        let mut eye = Vec3::new(0.0, 1.70, -2.0);
         let mut velocity = Vec3::ZERO;
         let mut grounded = false;
         for _ in 0..240 {
@@ -3604,7 +4048,7 @@ mod tests {
             grounded = resolve_body(&pit, &mut eye, &mut velocity);
         }
         // The pit's floor is the bottom of the subtracted sphere, y = -1.2, so
-        // the eye lands well below the 1.6 it stands at on the surface.
+        // the eye lands well below the 1.70 it stands at on the surface.
         assert!(
             eye.y < 1.0,
             "the body did not fall into the carved pit: eye y {}",
@@ -3733,6 +4177,503 @@ mod tests {
         assert!(
             compared >= 2,
             "only {compared} chunks had a surface, so this proved almost nothing"
+        );
+    }
+
+    /// The committed PNGs really are four square layers, stacked.
+    ///
+    /// **The one silent failure in the pack.** The layer index in
+    /// `triplanar.wgsl` is an array slice index, so a stack of three or five
+    /// layers, a non-square layer, or a stack assembled bottom-up all compile,
+    /// render, and put the wrong material on the surface -- bottom-up puts grass
+    /// on the concrete walls. `reinterpret_stacked_2d_as_array` can only catch a
+    /// height that does not divide, so the shape is asserted here, on the same
+    /// bytes `setup` decodes.
+    ///
+    /// No GPU: this is a PNG decode and an extent.
+    #[test]
+    fn the_terrain_array_is_four_square_layers_stacked_top_down() {
+        for (name, bytes, is_srgb) in [
+            ("albedo/roughness", TERRAIN_ALBEDO_ROUGHNESS, true),
+            ("normal/AO", TERRAIN_NORMAL_AO, false),
+        ] {
+            let flat = embedded_texture(bytes, is_srgb);
+            assert_eq!(flat.width(), 512, "{name}: layer edge");
+            assert_eq!(
+                flat.height(),
+                TERRAIN_LAYERS * flat.width(),
+                "{name}: not {TERRAIN_LAYERS} square layers stacked"
+            );
+            assert_eq!(
+                flat.texture_descriptor.size.depth_or_array_layers, 1,
+                "{name}: the file is meant to be a flat stack before reinterpretation"
+            );
+
+            let array = terrain_array(bytes, is_srgb);
+            assert_eq!(
+                array.texture_descriptor.size.depth_or_array_layers, TERRAIN_LAYERS,
+                "{name}: reinterpretation did not produce {TERRAIN_LAYERS} layers"
+            );
+            assert_eq!(array.width(), 512, "{name}: layer width after reinterpret");
+            assert_eq!(
+                array.height(),
+                512,
+                "{name}: layer height after reinterpret"
+            );
+            // The shader indexes layer 3 for the walls, so the top index has to
+            // exist. Stated as the constant rather than as `3` so the two cannot
+            // drift.
+            assert!(
+                LAYER_CONCRETE >= 0.0 && (LAYER_CONCRETE as u32) < TERRAIN_LAYERS,
+                "the wall layer {LAYER_CONCRETE} is outside the array"
+            );
+            assert!(
+                LAYER_BLEND < 0.0,
+                "the terrain's sentinel {LAYER_BLEND} must be negative or it selects a layer"
+            );
+        }
+    }
+
+    /// The WGSL and this file agree about the array, or nothing renders right.
+    ///
+    /// The layer indices and the two bindings are stated in both places and
+    /// **cannot be checked by running the demo on this host** -- there is no
+    /// display here, and both failure modes are quiet where it counts:
+    ///
+    /// * a `texture_2d<f32>` in the WGSL against `dimension = "2d_array"` in the
+    ///   `AsBindGroup` derive is a *pipeline creation* failure at the first draw,
+    ///   a long way from either declaration;
+    /// * a layer index that disagrees -- concrete listed as a terrain layer, or
+    ///   `LAYER_CONCRETE` pointing at the dirt -- compiles, renders, and paints
+    ///   the wrong material on the walls.
+    ///
+    /// So the shader source is read and cross-checked. `include_str!` of the same
+    /// path `load_internal_asset!` compiles in, so there is one file and no copy.
+    #[test]
+    fn the_shader_and_this_file_agree_about_the_texture_array() {
+        const WGSL: &str = include_str!("triplanar.wgsl");
+        for binding in [101, 103] {
+            let line = WGSL
+                .lines()
+                .find(|l| l.contains(&format!("@binding({binding})")))
+                .unwrap_or_else(|| panic!("binding {binding} is not declared in triplanar.wgsl"));
+            assert!(
+                line.contains("texture_2d_array<f32>"),
+                "binding {binding} is `{}`, which cannot match `dimension = \"2d_array\"`",
+                line.trim()
+            );
+        }
+        // The three the fragment shader blends, in the order `PROVENANCE.md`
+        // stacked them.
+        for (name, want) in [
+            ("LAYER_GRASS", 0),
+            ("LAYER_DIRT_SURFACE", 1),
+            ("LAYER_DIRT_DEEP", 2),
+        ] {
+            let decl = format!("const {name}: i32 = {want};");
+            assert!(
+                WGSL.contains(&decl),
+                "triplanar.wgsl does not declare `{decl}`, so the blend is sampling \
+                 a layer this file did not pack there"
+            );
+            assert_ne!(
+                want, LAYER_CONCRETE as i32,
+                "{name} and LAYER_CONCRETE are the same slice, so the walls and the \
+                 terrain share a material"
+            );
+        }
+        // Every index in range, and the sentinel out of it.
+        assert!(
+            LAYER_CONCRETE >= 0.0 && (LAYER_CONCRETE as u32) < TERRAIN_LAYERS,
+            "the wall layer {LAYER_CONCRETE} is outside a {TERRAIN_LAYERS}-layer array"
+        );
+        assert!(
+            LAYER_BLEND < 0.0,
+            "the terrain's sentinel {LAYER_BLEND} must be negative, or `settings.z` \
+             selects it as a layer and the blend never runs"
+        );
+        // `settings.z` is the switch, so the shader has to branch on it. A shader
+        // that ignored it would render the blend on the walls and look almost
+        // right.
+        assert!(
+            WGSL.contains("triplanar.settings.z"),
+            "triplanar.wgsl never reads `settings.z`, so the forced wall layer does \
+             nothing"
+        );
+    }
+
+    /// The body is a 1.70 x 0.50 capsule, and it hangs above nothing.
+    ///
+    /// Three claims. The **shape** is an identity on the constants, not an
+    /// outcome of a fall, so it is asserted as one: `1.70` tall, `0.50` wide, and
+    /// consecutive spheres overlapping rather than touching at a point, which is
+    /// the difference between a capsule and the old pinched pair.
+    ///
+    /// The **settle** is bounded by [`GROUND_PROBE`] rather than by a hand-picked
+    /// epsilon: `gravity_step` cuts gravity the moment the probe answers, so a
+    /// body may come to rest up to one probe above the terrain and no further.
+    /// That bound is what the *flat* footprint violated -- it read solid on
+    /// terrain beside the foot that was higher than the terrain under it, and
+    /// left the body hanging **12.5 cm** up at the origin.
+    #[test]
+    fn the_body_is_a_capsule_that_never_hangs_above_the_terrain() {
+        let lowest = BODY_OFFSETS.into_iter().fold(f32::MIN, f32::max);
+        assert!(
+            ((lowest + BODY_RADIUS) - 1.70).abs() < 1e-6,
+            "the body is {} tall, not 1.70",
+            lowest + BODY_RADIUS
+        );
+        assert!(
+            (2.0 * BODY_RADIUS - 0.50).abs() < 1e-6,
+            "the body is {} wide, not 0.50",
+            2.0 * BODY_RADIUS
+        );
+        for pair in BODY_OFFSETS.windows(2) {
+            assert!(
+                pair[1] - pair[0] < 2.0 * BODY_RADIUS,
+                "spheres {} and {} are {} apart against a {} diameter, so the body \
+                 has a pinched waist a lip of rock can pass through",
+                pair[0],
+                pair[1],
+                pair[1] - pair[0],
+                2.0 * BODY_RADIUS
+            );
+        }
+
+        let empty: [Brush<Sphere<f32>>; 0] = [];
+        let bare = BrushStack {
+            base: Ground,
+            brushes: &empty,
+        };
+        let dt = 1.0 / 60.0;
+        // Five columns across the height field, including the origin where its
+        // gradient is steepest (`0.63` per unit in `x`) -- that is the column the
+        // flat footprint hovered over.
+        for (x, z) in [
+            (0.0f32, 0.0f32),
+            (1.3, -2.1),
+            (0.6, 0.9),
+            (-2.4, 1.1),
+            (3.1, -0.4),
+        ] {
+            let mut eye = Vec3::new(x, 4.0, z);
+            let mut velocity = Vec3::ZERO;
+            let mut grounded = false;
+            for _ in 0..300 {
+                gravity_step(grounded, &mut velocity, dt);
+                eye.y += velocity.y * dt;
+                grounded = resolve_body(&bare, &mut eye, &mut velocity);
+            }
+            assert!(grounded, "the body never landed at ({x}, {z}): {eye:?}");
+            // `Ground` is `y - height`, so a sample at `y = 0` is `-height`. Taken
+            // at the *settled* column: the push is along the surface normal, which
+            // on a slope has a horizontal component, so the body does not land on
+            // the column it was dropped down.
+            let want = -bare.sample([eye.x, 0.0, eye.z]) + lowest + BODY_RADIUS;
+            assert!(
+                eye.y - want <= GROUND_PROBE,
+                "the body is hanging {} above the terrain at ({x}, {z}), which is \
+                 more than the {GROUND_PROBE} probe that stopped its fall",
+                eye.y - want
+            );
+        }
+    }
+
+    /// A pit dug with the demo's own brush is not a trap.
+    ///
+    /// **The bug this fixes.** A body perched on the rim of a hole it dug has
+    /// rock under the *outside* of its foot sphere and open air under the
+    /// centre. `resolve_body` probed the centre and nothing else, so `grounded`
+    /// went false, `move_camera`'s `world.grounded && Space` refused the jump,
+    /// and the hole was inescapable.
+    ///
+    /// The fixture is asserted to *be* that case rather than assumed to be: the
+    /// point the old probe sampled is checked to be air while the body is
+    /// standing. Without that first assertion this test would pass on a body
+    /// resting on flat ground and prove nothing.
+    #[test]
+    fn a_body_on_the_rim_of_its_own_pit_is_still_grounded() {
+        let lowest = BODY_OFFSETS.into_iter().fold(f32::MIN, f32::max);
+        let dt = 1.0 / 60.0;
+        // A bowl half a unit across at the surface -- two passes of the default
+        // brush -- and the body walking onto its edge rather than its middle.
+        let carved = [Brush::subtract(Sphere {
+            center: [0.0, 0.0, 0.0],
+            radius: 0.5,
+        })];
+        let pit = BrushStack {
+            base: Ground,
+            brushes: &carved,
+        };
+        let mut eye = Vec3::new(0.3, 3.0, 0.0);
+        let mut velocity = Vec3::ZERO;
+        let mut grounded = false;
+        for _ in 0..400 {
+            gravity_step(grounded, &mut velocity, dt);
+            eye.y += velocity.y * dt;
+            grounded = resolve_body(&pit, &mut eye, &mut velocity);
+        }
+        let foot = eye - Vec3::Y * lowest;
+        assert!(
+            pit.sample([foot.x, foot.y - BODY_RADIUS - GROUND_PROBE, foot.z]) > 0.0,
+            "the fixture is not the interesting case: there is rock directly under \
+             the foot's centre, so one sample would already have found it"
+        );
+        assert!(
+            grounded,
+            "the body on the rim of its own pit read as falling, so the jump is \
+             refused and the hole is a trap: {eye:?}"
+        );
+    }
+
+    /// The five slabs line the sandbox, outside it, with the corners closed.
+    ///
+    /// Geometry rather than an entity count, because the count is the part that
+    /// cannot be wrong by a little: a slab one thickness off still spawns five
+    /// entities and leaves a gap of sky at every corner. Each assertion is a
+    /// property of the box against [`sandbox`], so an `EXTENT` change moves both
+    /// sides of it.
+    #[test]
+    fn five_slabs_line_the_sandbox_from_outside_with_the_corners_closed() {
+        let layout = test_layout();
+        let (lo, hi) = sandbox(&layout);
+        let boxes = walls(&layout);
+        assert_eq!(boxes.len(), 5, "four sides and a floor, and no ceiling");
+        for (centre, size) in boxes {
+            let slab_lo = centre - size * 0.5;
+            let slab_hi = centre + size * 0.5;
+            // Exactly one axis is a thickness, and it is the axis the slab
+            // faces along.
+            let thin = [size.x, size.y, size.z]
+                .into_iter()
+                .filter(|s| *s == WALL_THICKNESS)
+                .count();
+            assert_eq!(thin, 1, "a slab must be thin in exactly one axis: {size:?}");
+            // Outside, not overlapping: the slab and the sandbox interior are
+            // disjoint, so nothing z-fights the terrain and `aim` -- which
+            // refuses to carve outside `sandbox` -- can never dig it.
+            let disjoint = slab_hi.x <= lo.x
+                || slab_lo.x >= hi.x
+                || slab_hi.y <= lo.y
+                || slab_lo.y >= hi.y
+                || slab_hi.z <= lo.z
+                || slab_lo.z >= hi.z;
+            assert!(
+                disjoint,
+                "the slab at {centre:?} of {size:?} reaches inside the sandbox"
+            );
+            // Flush: the inner face is the boundary plane, so there is no gap
+            // between the terrain's edge and the wall the player is stopped by.
+            let flush = slab_hi.x == lo.x
+                || slab_lo.x == hi.x
+                || slab_hi.y == lo.y
+                || slab_lo.y == hi.y
+                || slab_hi.z == lo.z
+                || slab_lo.z == hi.z;
+            assert!(
+                flush,
+                "the slab at {centre:?} of {size:?} does not touch the boundary"
+            );
+        }
+        // The corners close: every vertical slab spans the full height, and the
+        // two facing each axis overhang far enough in the other to meet their
+        // neighbours' outer faces.
+        for (centre, size) in &boxes[..4] {
+            assert_eq!(
+                (centre.y - size.y * 0.5, centre.y + size.y * 0.5),
+                (lo.y, hi.y),
+                "a side wall does not span the sandbox's full height"
+            );
+            let (span, half) = if size.x == WALL_THICKNESS {
+                (size.z, hi.z - lo.z)
+            } else {
+                (size.x, hi.x - lo.x)
+            };
+            assert_eq!(
+                span,
+                half + 2.0 * WALL_THICKNESS,
+                "a side wall does not overhang, so its corners show sky"
+            );
+        }
+        let (floor_centre, floor_size) = boxes[4];
+        assert_eq!(
+            floor_centre.y + floor_size.y * 0.5,
+            lo.y,
+            "the floor's top is not the sandbox's bottom"
+        );
+    }
+
+    /// `setup` really spawns the five slabs, and paints them with **concrete**.
+    ///
+    /// [`walls`] proves the boxes are right; this proves they reach the screen
+    /// wearing the other material. Both handles in `setup` are a
+    /// `Handle<TerrainMaterial>` and their names differ by one word, so handing
+    /// the walls `material` instead of `wall_material` compiles, spawns five
+    /// entities, and renders the grass-and-dirt blend on the boundary. Nothing
+    /// but reading the asset back catches that, and there is no display on this
+    /// host to look at it with.
+    ///
+    /// `setup` runs in full here rather than being partly re-implemented, which
+    /// is why the app registers the four asset collections and the two gizmo
+    /// groups: `init_gizmo_group` only touches resources, so it needs no
+    /// `GizmoPlugin` and no renderer.
+    #[test]
+    fn setup_dresses_the_five_walls_in_the_concrete_layer() {
+        let (device, queue) = wgpu_pair();
+        let mut app = App::new();
+        app.add_plugins(MinimalPlugins)
+            .add_plugins(bevy::asset::AssetPlugin::default())
+            .init_asset::<Mesh>()
+            .init_asset::<Image>()
+            .init_asset::<StandardMaterial>()
+            .init_asset::<TerrainMaterial>()
+            .init_gizmo_group::<ChunkGizmos>()
+            .init_gizmo_group::<GhostGizmos>()
+            .init_resource::<ViewFlags>()
+            .insert_resource(AutoCarve::default())
+            .insert_resource(RenderDevice::from(device))
+            .insert_resource(RenderQueue(Arc::new(WgpuWrapper::new(queue))));
+        app.world_mut()
+            .run_system_once(setup)
+            .expect("setup runs with no window and no renderer");
+
+        let mut slabs = app
+            .world_mut()
+            .query_filtered::<(&MeshMaterial3d<TerrainMaterial>, &Transform), With<Wall>>();
+        let spawned: Vec<_> = slabs
+            .iter(app.world())
+            .map(|(m, t)| (m.0.clone(), t.translation))
+            .collect();
+        assert_eq!(
+            spawned.len(),
+            5,
+            "four sides and a floor, and no ceiling; got {}",
+            spawned.len()
+        );
+
+        let terrain = app.world().resource::<SurfaceMaterial>().0.clone();
+        let materials = app.world().resource::<Assets<TerrainMaterial>>();
+        assert_eq!(
+            materials
+                .get(&terrain)
+                .expect("the terrain material")
+                .extension
+                .settings
+                .z,
+            LAYER_BLEND,
+            "the terrain is not blending its layers"
+        );
+        for (handle, centre) in &spawned {
+            assert_ne!(
+                *handle, terrain,
+                "the wall at {centre:?} wears the terrain material, so the boundary \
+                 is grass and dirt instead of concrete"
+            );
+            assert_eq!(
+                materials
+                    .get(handle)
+                    .expect("the wall material")
+                    .extension
+                    .settings
+                    .z,
+                LAYER_CONCRETE,
+                "the wall at {centre:?} is not forced to the concrete layer"
+            );
+        }
+        // The same five centres [`walls`] computes, so the spawn cannot drift
+        // from the geometry the other test gates.
+        let layout = app.world().resource::<World>().layout;
+        let mut want: Vec<Vec3> = walls(&layout).into_iter().map(|(c, _)| c).collect();
+        let mut got: Vec<Vec3> = spawned.into_iter().map(|(_, c)| c).collect();
+        let key = |v: &Vec3| (v.x.to_bits(), v.y.to_bits(), v.z.to_bits());
+        want.sort_unstable_by_key(key);
+        got.sort_unstable_by_key(key);
+        assert_eq!(
+            got, want,
+            "the spawned walls are not the boxes `walls` names"
+        );
+    }
+
+    /// Walking hard at the `+x` wall stops at it.
+    ///
+    /// `Ground` has a height at every `x` and `z`, so before the clamp this walk
+    /// carried on over invisible ground outside the box -- past the wall the
+    /// player had just watched themselves walk through. `Shift` and 300 frames
+    /// is 43 units of intent against an 8-unit box, so a body that is not
+    /// clamped ends up nowhere near the assertion.
+    #[test]
+    fn walking_into_the_wall_stops_at_the_sandbox() {
+        let mut app = harness(true);
+        for _ in 0..600 {
+            step(&mut app);
+            if app.world().resource::<World>().backlog == 0
+                && app.world().resource::<World>().grounded
+            {
+                break;
+            }
+        }
+        // Yaw and pitch are zero in the harness, so `right` is `+x` and `D` is a
+        // walk straight at the wall.
+        {
+            let mut keys = app.world_mut().resource_mut::<ButtonInput<KeyCode>>();
+            keys.press(KeyCode::KeyD);
+            keys.press(KeyCode::ShiftLeft);
+        }
+        for _ in 0..300 {
+            app.update();
+        }
+        let layout = app.world().resource::<World>().layout;
+        let (_, hi) = sandbox(&layout);
+        let eye = eye(&mut app);
+        assert!(
+            eye.x <= hi.x - BODY_RADIUS + 1e-4,
+            "the body walked out of the sandbox: x {} against a wall at {}",
+            eye.x,
+            hi.x
+        );
+        // And it really did reach the wall, so this is a clamp rather than a
+        // body that never moved.
+        assert!(
+            eye.x > hi.x - BODY_RADIUS - 0.05,
+            "the body never reached the wall: x {}",
+            eye.x
+        );
+    }
+
+    /// The virtual stick's shape, without a phone.
+    ///
+    /// Four properties, each a bug someone ships: creep from a resting thumb, a
+    /// stick that never reaches full speed, inverted forward, and a corner drag
+    /// that is `sqrt(2)` times faster than a straight one.
+    #[test]
+    fn the_virtual_stick_has_a_dead_zone_a_unit_disc_and_screen_y_flipped() {
+        let origin = Vec2::new(100.0, 400.0);
+        assert_eq!(
+            touch_axes(origin, origin + Vec2::new(4.0, 0.0)),
+            Vec2::ZERO,
+            "a 4 px twitch moved the body"
+        );
+        assert_eq!(
+            touch_axes(origin, origin),
+            Vec2::ZERO,
+            "a stationary thumb is not centred"
+        );
+        let far = touch_axes(origin, origin + Vec2::new(200.0, 0.0));
+        assert!(
+            (far.length() - 1.0).abs() < 1e-6,
+            "a 200 px drag gave {far:?}, not full deflection"
+        );
+        // Screen `y` grows downward, so dragging the thumb *down* must walk
+        // backwards.
+        let down = touch_axes(origin, origin + Vec2::new(0.0, 200.0));
+        assert!(down.y < 0.0, "dragging down walked forwards: {down:?}");
+        let up = touch_axes(origin, origin + Vec2::new(0.0, -200.0));
+        assert!(up.y > 0.0, "dragging up walked backwards: {up:?}");
+        let corner = touch_axes(origin, origin + Vec2::new(200.0, 200.0));
+        assert!(
+            (corner.length() - 1.0).abs() < 1e-6,
+            "a corner drag gave {} rather than 1.0, so diagonals are faster",
+            corner.length()
         );
     }
 }

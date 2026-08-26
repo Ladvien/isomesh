@@ -3,23 +3,29 @@
 Thirty-four runnable examples. This page shows what each one looks like, what it proves, and the exact
 line to run it.
 
-**[The hosted version of this page](https://isomesh.ladvien.com/demos.html)** carries the same clips in one
-link, if you would rather send someone a URL than a repository. Nine of the demos are playable in your
-browser there as WebAssembly builds, and the three Phase 21 ones each still print their cross-check against
-their committed CSV to the console:
-[`game_dig`](https://isomesh.ladvien.com/play.html?demo=game_dig),
-[`quickstart`](https://isomesh.ladvien.com/play.html?demo=quickstart),
-[`marching_cubes_tunnel`](https://isomesh.ladvien.com/play.html?demo=marching_cubes_tunnel),
-[`dual_contouring_cube`](https://isomesh.ladvien.com/play.html?demo=dual_contouring_cube),
-[`surface_nets_vs_marching_cubes`](https://isomesh.ladvien.com/play.html?demo=surface_nets_vs_marching_cubes),
-[`game_showcase`](https://isomesh.ladvien.com/play.html?demo=game_showcase),
-[`game_mirror_dedup`](https://isomesh.ladvien.com/play.html?demo=game_mirror_dedup),
-[`game_edit_tape_trim`](https://isomesh.ladvien.com/play.html?demo=game_edit_tape_trim),
-[`shifted_linear_root`](https://isomesh.ladvien.com/play.html?demo=shifted_linear_root).
+**[The hosted version of this page](https://ladvien.github.io/isomesh/demos.html)** carries the same clips
+in one link, if you would rather send someone a URL than a repository. Nine of the demos are playable in
+your browser there as WebAssembly builds, and the three Phase 21 ones each still print their cross-check
+against their committed CSV to the console:
+[`game_dig`](https://ladvien.github.io/isomesh/play.html?demo=game_dig),
+[`quickstart`](https://ladvien.github.io/isomesh/play.html?demo=quickstart),
+[`marching_cubes_tunnel`](https://ladvien.github.io/isomesh/play.html?demo=marching_cubes_tunnel),
+[`dual_contouring_cube`](https://ladvien.github.io/isomesh/play.html?demo=dual_contouring_cube),
+[`surface_nets_vs_marching_cubes`](https://ladvien.github.io/isomesh/play.html?demo=surface_nets_vs_marching_cubes),
+[`game_showcase`](https://ladvien.github.io/isomesh/play.html?demo=game_showcase),
+[`game_mirror_dedup`](https://ladvien.github.io/isomesh/play.html?demo=game_mirror_dedup),
+[`game_edit_tape_trim`](https://ladvien.github.io/isomesh/play.html?demo=game_edit_tape_trim),
+[`shifted_linear_root`](https://ladvien.github.io/isomesh/play.html?demo=shifted_linear_root).
 
 Those nine need **WebGPU**, not WebGL2. `game_dig` offers Marching Cubes on the GPU as one of its eight
 mesher options, Cargo features are per-package, and `bevy_render` gives its `webgpu` feature precedence over
 `webgl2` on `wasm32` — so there is no per-example choice to make and all nine moved backend together.
+
+**WebGPU is also secure-context-only**, which is why those links are `https://` and why the site has no
+custom domain: `isomesh.ladvien.com` never got a certificate, so the `http://` page it served left
+`navigator.gpu` `undefined` and all nine refused to start in every browser. On iOS 25 and older, WebGPU
+is behind Settings → Safari → Advanced → Experimental Features; iOS 26 has it on by default, and every
+iOS browser is WebKit, so Chrome on an iPhone behaves identically to Safari there.
 
 The front page carries a tenth that is not a Bevy build at all: `isomesh` itself compiled to WebAssembly
 with a hand-written WebGL2 renderer, **130 KB against these modules' 36 MB**, with the validity report

@@ -172,6 +172,12 @@ del { text-decoration: line-through; color: var(--dim); }
   background: #000;
   border: 1px solid var(--line);
   border-radius: 4px;
+  /* Without this the browser claims the touch stream for scroll and pinch, and
+   * `game_dig`'s virtual stick receives a single `touchstart` and nothing after
+   * it. A plain declaration is enough: `bevy_winit` writes only `width` and
+   * `height` inline, which is why those two above need `!important` and nothing
+   * else here does. */
+  touch-action: none;
 }
 
 #loading {
@@ -195,6 +201,25 @@ del { text-decoration: line-through; color: var(--dim); }
   font-family: inherit;
   color: var(--ink);
 }
+
+/* `play.html`'s landing state: reached by opening the page with no `?demo=`, or
+ * with one that is not on the allow-list. It replaces the canvas rather than
+ * sitting under it -- a black 16:9 box above a list reads as a demo that broke.
+ * `.keys`'s dim colour is deliberately not reused: this is the page's content
+ * when it is showing, not a footnote to something else. */
+.play-index { margin: 0.5rem 0 0; }
+.play-index ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.9rem 0 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.play-index a {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--ink);
+}
+.play-index li { color: var(--dim); }
 
 /* index.md's front-page demo, which is not a Bevy build and so has none of the
  * fixed-canvas constraint above: `lite.js` sizes its backing store from

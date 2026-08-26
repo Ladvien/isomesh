@@ -9,18 +9,32 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 ## [Unreleased]
 
 **The project has a site, nine of the demos are playable in it, and the front page runs `isomesh` itself.**
-[isomesh.ladvien.com](https://isomesh.ladvien.com/) renders this repository's own markdown, serves every
-GIF and screenshot from itself rather than hotlinking `raw.githubusercontent.com`, and carries nine of the
-examples as real WebAssembly builds. The three Phase 21 demos each still print their cross-check against
-their committed CSV to the browser console, so a hosted build cannot drift away from the artefact it
-illustrates. The front page carries a tenth module that is not a Bevy build at all — the core crate with a
-hand-written WebGL2 renderer, **133,115 bytes against the Bevy modules' 36 MB** — which is the size claim
-made checkable rather than asserted.
+[ladvien.github.io/isomesh](https://ladvien.github.io/isomesh/) renders this repository's own markdown,
+serves every GIF and screenshot from itself rather than hotlinking `raw.githubusercontent.com`, and
+carries nine of the examples as real WebAssembly builds. The three Phase 21 demos each still print their
+cross-check against their committed CSV to the browser console, so a hosted build cannot drift away from
+the artefact it illustrates. The front page carries a tenth module that is not a Bevy build at all — the
+core crate with a hand-written WebGL2 renderer, **133,115 bytes against the Bevy modules' 36 MB** — which
+is the size claim made checkable rather than asserted.
+
+**It serves over HTTPS, and that is load-bearing rather than hygiene.** WebGPU is a
+secure-context-only API, so while the site was reachable only over `http://` — the custom domain
+`isomesh.ladvien.com` never got a certificate, and the `github.io` URL redirected to it — `navigator.gpu`
+was `undefined` and all nine modules refused to start in *every* browser, desktop Chrome included. The
+custom domain is gone and there is deliberately no `CNAME` in the artifact (`✗46`, `M-366`).
 
 **One of those nine could not run at all before this**, and the reason was a defect in the published
 crate rather than in the demo: `IsomeshPlugin`'s frame budget called `std::time::Instant::now()`, which
 compiles on `wasm32-unknown-unknown` and then panics, so every browser game built on the plugin broke on
 the first frame a chunk landed (`✗44`).
+
+**`game_dig` is a game you can play on a phone.** Its terrain is a four-layer texture array blended by
+slope and depth — grass on the up-facing surface, leafy dirt on the slopes, deep dirt inside a fresh
+tunnel — the sandbox is visibly walled in concrete and the walls stop the player, the body is a
+human-proportioned `1.70 × 0.50` capsule instead of two spheres `0.8` wide with a pinched waist, and a
+hole you dig is escapable: the ground probe was a single point that read air whenever the body was wedged
+with its foot on a ledge, which refused the jump (`✗45`, `M-363`). Touch controls feed the same movement
+and edit paths the keyboard and mouse drive.
 
 ### Added
 
@@ -81,6 +95,21 @@ the first frame a chunk landed (`✗44`).
 - **The wire-size figure on the site was wrong.** `web/index.md` and `web/play.html` both said "about
   8.4 MB on the wire"; the modules gzip to 8.79/8.76/8.76 MB and the live origin transfers **8,844,921
   bytes** for one of them. Both strings now say 8.8 MB.
+- **`web/play.html` opened with no `?demo=` printed `unknown demo: null`.** `URLSearchParams.get` returns
+  `null` when the key is absent and that was folded into the unknown-demo branch, so a bare visit — a URL
+  shared without its query string, a bookmark, or the verification URL this repository's own docs quote —
+  landed on a null nobody typed, over a black canvas, with no link to any demo. It is a landing page now:
+  absent renders an index of the nine, an unrecognised name renders an accurate message *and* the index.
+  Built from the allow-list with `createElement`/`textContent`, never from the query string.
+- **The WebGPU gate passed on a browser with no GPU adapter and left a black canvas.** It tested only that
+  the `navigator.gpu` object exists; `requestAdapter()` returning `null` — a blocklisted driver, a VM, a
+  headless run — passed it, `await init()` resolved because `spawn_app` returns immediately on wasm, and
+  Bevy then failed asynchronously with nothing on screen to read. Reproduced on the live site and fixed by
+  awaiting the adapter (`✗46`).
+- **`game_dig`'s dug holes were inescapable.** The ground probe sampled one point below the foot, which
+  reads air whenever the body is wedged with its centre over a void and part of its foot on rock — so
+  `grounded` went false and `Space` was refused. It now samples the foot sphere's own lower surface
+  (`✗45`).
 
 ### Changed
 
@@ -107,6 +136,16 @@ the first frame a chunk landed (`✗44`).
 - **`quickstart` binds the page's canvas**, which is the one web-specific line in the one example with no
   `WindowPlugin` — it had none because its whole point is being the shortest path, and it stays the
   shortest path with six lines added and nothing removed.
+- **`game_dig`'s terrain is a four-layer texture array, and its player is a person.** `triplanar.wgsl`
+  samples `texture_2d_array<f32>` and blends grass, leafy surface dirt and deep dirt by slope and world
+  height, with `Triplanar.settings.z` — previously unused — selecting one layer outright for the five
+  concrete slabs that now line the sandbox and stop the player at its boundary. The body went from two
+  `0.4` spheres touching at a point (1.6 tall, **0.8 wide**, with a pinched waist) to four `0.25` spheres
+  that overlap: **1.70 × 0.50**, and narrower than the cavity its own default brush carves.
+- **`game_dig` is playable by touch.** The left third of the screen is a virtual stick, the rest drags to
+  look, and three on-screen buttons carve, fill and jump — all feeding the same movement and edit paths
+  the keyboard and mouse drive, with no second edit route to keep in step. The buttons stay hidden until a
+  touch is seen, so a desktop run is visually unchanged.
 
 ## [0.0.9] — 2026-08-17
 
