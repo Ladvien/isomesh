@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**250 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**250 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -113,8 +113,23 @@ argument-reduction branches — so `gyroid` cannot, at any loop shape, while `li
 path. And the M5 that C1's threshold comes from is **contended**, which is `M-005`'s block, so the ratio
 is measured here within one binary and one run (`M-281`) against this repo's own committed Zen 3 baseline.
 
+**R-069 — Is the 83% a blocking round-trip, and can both targets avoid it? (P-71)**
+`M-167` is the largest single number this project owns about its own GPU path: synchronisation was **83%**
+of an extraction. `M-159` localised it — the last four bytes cost 0.033 ms to move and **0.375 ms to wait
+for**, because `poll(Wait)` drains every dispatch queued before it — and `M-160` showed what removing it
+buys: CPU time flat at ~0.17 ms from 33³ to 129³. **Two mechanisms already exist in the tree and this is
+partly a measurement of them rather than a build:** `extract_buffers` waits once for the four-byte count,
+and `extract_indirect` waits **not at all**, sizing from a budget and turning the total into indirect draw
+arguments on the device. C2 is therefore the difference between two shipped entry points.
+**Probed before registering, on this host's RTX 3090 / Vulkan:** `TIMESTAMP_QUERY`,
+`TIMESTAMP_QUERY_INSIDE_PASSES` and `TIMESTAMP_QUERY_INSIDE_ENCODERS` are all **available**, so C1's
+instrument exists — the crate currently requests `Features::empty()` and that is why `ExtractTimings`'
+own doc says timestamp attribution "needs a device feature this crate does not request". C3's staging ring
+is the only genuinely new capability, and its latency question is **the owner's**, not the harness's.
+
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+| ☐ | **R-069** | M | — |
 
 ---
 
