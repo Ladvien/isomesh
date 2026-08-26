@@ -102,9 +102,30 @@ for crate in "${ORDER[@]}"; do
   # must not be read as "not published", because that would republish under a
   # version that already exists and fail confusingly, or worse, succeed against
   # the wrong registry.
+  #
+  # **Retried, and the retry is not laziness about flakes.** This is an
+  # idempotent `GET`, so repeating it cannot change what the answer means -- and
+  # the un-retried version failed a whole run at D-015 on
+  # `curl (35) Recv failure: Connection reset by peer`, on the third crate, two
+  # crates after two clean probes in the same second, for a commit that touched
+  # four markdown files. `set -euo pipefail` is on, so curl's own non-zero exit
+  # killed the script *before* the `case` below could refuse to guess: the
+  # careful arm was unreachable and the run died on a bare exit code with no
+  # message. A gate that reddens on a stranger's TCP reset is a gate people learn
+  # to re-run without reading.
+  #
+  # `|| status=$?` rather than `if !`: inside an `if ! cmd` branch `$?` is the
+  # negation's status, not curl's, and the whole point here is to report which
+  # failure it was.
+  status=0
   code=$(curl -sS -o /dev/null -w '%{http_code}' \
+    --retry 3 --retry-all-errors --retry-delay 2 --max-time 30 \
     -H 'User-Agent: isomesh-publish (github actions)' \
-    "https://crates.io/api/v1/crates/$crate/$version")
+    "https://crates.io/api/v1/crates/$crate/$version") || status=$?
+  if [ "$status" -ne 0 ]; then
+    echo "::error::crates.io was unreachable for $crate $version after 3 retries (curl exit $status)"
+    exit 1
+  fi
 
   case "$code" in
     200)

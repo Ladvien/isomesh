@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-241 tickets. Line numbers are stable until something above them is edited — grep the ID if
+242 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1760,3 +1760,14 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***The redirect was considered and rejected on cost.*** An S3 redirect bucket or CloudFront distribution with an ACM cert would make the old URL work over HTTPS, and it is four resources plus a certificate maintained permanently to serve a two-day-old bookmark. The tempting variant — CloudFront in front of `ladvien.github.io/isomesh/` so the pretty domain serves the site *directly* with a valid ACM cert, bypassing GitHub's custom-domain machinery entirely — is rejected for a sharper reason: it puts a second cache in front of the artefact, and *"fresh page prose over a stale wasm module"* is the exact failure this skill exists to catch. Every deploy would grow an invalidation step and every verification would have to see through two CDNs. Recorded here so it is not re-litigated as an obvious win.
 >
 > ***Verification.*** No answer from `1.1.1.1`, `8.8.8.8` or `9.9.9.9`; the authoritative nameserver returns the zone SOA for the name. The apex is untouched — `ladvien.com` still resolves to its four CloudFront addresses and still serves `200` — which was the one real risk in editing that zone. `https://ladvien.github.io/isomesh/`, `/index.html` and `/play.html` all `200` with `redirects=0`. The skill gained the `dig` pair as a standing check, including the apex line, because "did I delete only the one row" is worth one command.
+
+| ☑ | **D-016** | S | — |
+> **DONE 2026-08-26 — a stranger's TCP reset no longer reddens a docs-only push.** `publish.sh`'s crates.io version probe was an un-retried `curl`, and at D-015 it failed a whole CI run on `curl (35) Recv failure: Connection reset by peer` — on the **third** crate, two crates after two clean probes in the same second, for a commit that touched four markdown files. The site had already deployed successfully in the same run; only `package (dry run)` was red, and `publish to crates.io` was skipped behind it.
+>
+> ***The interesting part is that the script's careful arm was unreachable.*** Its `case` has a `*)` branch whose comment states the exact hazard — *"Anything else — including a network failure — must not be read as 'not published'"* — and that reasoning is right. But `set -euo pipefail` is on at `:28`, so `code=$(curl …)` exiting 35 killed the script **before** the `case` ran: the run died on a bare exit code with no message, and the branch written to handle precisely this could never fire. **A guard downstream of an aborting command is not a guard.**
+>
+> The probe is an idempotent `GET`, so `--retry 3 --retry-all-errors --retry-delay 2 --max-time 30` cannot change what an answer means — the only thing retried is the question. Curl's exit status is captured with `|| status=$?` rather than `if ! curl`, because inside an `if !` branch `$?` is the negation's status and the whole point is to report *which* failure it was; a persistent outage now exits 1 naming the crate, the version and the curl code.
+>
+> ***Both directions demonstrated, because a retry that hides a real outage would be worse than the flake.*** The hardened script's real dry run probes all three crates clean and exits 0. The failure path was exercised against a closed port: four attempts (one plus three retries), `status` captured as curl's genuine **7** rather than 0, the `::error::` line printed with crate and version, script exit 1. `a gate that cries wolf is a gate somebody disables` — the same value M-304's row records — with the sibling clause that a gate which cannot say why is one nobody reads.
+>
+> ***Not a version bump and not a release.*** `publish.sh` uploads only when a manifest version is absent from crates.io, so this changes what an ordinary push *reports*, never what it publishes.
