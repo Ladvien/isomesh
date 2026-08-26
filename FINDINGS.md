@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**469 entries** — 50 falsified, 346 measured, 50 verified, 18 open, 5 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**471 entries** — 51 falsified, 346 measured, 50 verified, 18 open, 6 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -89,6 +89,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗48` | "the field already stops the descent, and the floor slab is scenery": dig out the bottom and the player leaves the world… |
 | `✗49` | plain Marching Cubes is now bit-exactly equivariant under all 48 octahedral elements |
 | `✗50` | "MAX_PATCH_TRIANGLES = 24 bounds the trilinear patch": it was a sampled maximum plus two, fan_tunnel's own buffer was al… |
+| `✗51` | C1 FALSIFIED, C2 HELD, C3 VACUOUS: the prescribed loop shape is a 3–7% regression, %ymm is zero in every monomorphisatio… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -508,6 +509,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `E×3` | Crossing-count-scaled regularizer |
 | `E×4` | Weld gated on the pairwise link condition, rejected pairs left split |
 | `E×5` | The crossing stored as a signed offset from the edge midpoint |
+| `E×6` | The sample loop restructured for autovectorisation |
 
 <!-- END GENERATED INDEX -->
 
@@ -1632,6 +1634,7 @@ point; the numbers are what make it re-checkable.
 | E×1 | **Surface Nets' centroid as Dual Contouring's vertex rule** | The QEF is worth its cost on sharp fields and not on smooth ones, and pays for it in self-intersection | Hausdorff at 65³, QEF ÷ centroid: sphere **0.486**, torus **0.457**, csg_difference **0.255**, box_exact **0.010**, thin_plate **0.010**. Self-intersections per 1k at 33³: QEF **3.118 / 13.837 / 29.745** on gyroid, fbm_terrain, noise_cavity against centroid's **0.000** | **KEPT as an ablation, not as a default.** Both arms are real answers to different questions and neither dominates — 100× accuracy on sharp features against zero self-intersections. The seam stays so the comparison can be re-run; `Qef` stays the default because sharp-feature recovery is what A-007 exists for | X-002, `benches/ablation.rs`, M-237 |
 | E×2 | **A separate probabilistic-quadric solver** (Trettner & Kobbelt, `10.1111/cgf.13933`) | It supersedes the Tikhonov regularizer and is more robust on near-singular cells | Never measured as a separate solver, because it was shown identical first: a direct assembly of the paper's equations agrees with `solve_with` at `λ = Nσ²` to **1.110e-16 over 296 cells** | **REVERTED before it was written.** In this crate's centroid-relative coordinates the paper's extra term is `σ²Σrᵢ`, and `Σrᵢ ≡ 0` because the centroid *is* the mean of the crossings. A second solver would have been a second execution path computing identical numbers. **Do not re-attempt for isotropic noise**; the open door is anisotropic `Σₙ`, which needs a noise model analytic fields do not have | X-004, `the_probabilistic_quadric_is_the_existing_solve`, M-238 |
 | E×3 | **Crossing-count-scaled regularizer** (`λ = Nσ²`, the part of E×2 that *is* different) | Scaling λ with the number of planes beats one fixed λ per cell | Hausdorff at 65³, scaled ÷ fixed: sphere **1.0000**, torus **0.9957**, csg_difference **0.9992**, box_exact **0.7519**, thin_plate **0.7519**. Self-intersections at 33³ fall on all three noisy fields: **3.118→2.551, 13.837→13.571, 29.745→28.749** | **KEPT behind `experimental`, not made default.** Never worse and 25% better on both sharp fields, which is a real improvement — but the default carries T-007's committed golden hashes and 112 baseline rows, and moving those for a 25% gain on two of eight fields is a decision with evidence attached, not a tidy-up. Promoting it is its own ticket | X-004, `crates/isomesh/src/experimental.rs`, M-238 |
+| E×6 | **The sample loop restructured for autovectorisation** | H (P-69): a pre-sliced contiguous write with the bound hoisted gives at least 2x on the marginal `f32` cost, and all 216 golden hashes stay unchanged | Marginal ns/sample, push ÷ row: `sphere` f32 **1.231 / 1.323 = 0.9305**, `gyroid` f32 **17.793 / 18.278 = 0.9735**, `box_exact` f32 **2.681 / 2.845 = 0.9425**; `f64` 0.977 / 0.983 / 0.899. **`total %ymm` across all eleven monomorphisations = 0.** 0 of 168 golden rows moved | **REVERTED in shape, KEPT in sharing.** The shape costs 3–7% and widens nothing, so it goes back; the *merge* stays, because there were **three** copies of this loop (`marching_cubes/mod.rs:240`, `dual.rs:356`, `marching_tetrahedra.rs:157`) and three copies is a one-path defect whatever the shape. **Do not re-attempt on this target without changing the field**: the loop is 11.6% of the marginal extraction cost, so its ceiling is 1.06x, and `libm`'s `sinf`/`cosf` have no arch selection at all | R-067, `benches/experiment_p69.rs`, `scripts/p69_asm.sh`, `docs/experiments/p-69.csv`, ✗51 / M-375 |
 | E×5 | **The crossing stored as a signed offset from the edge midpoint** | H (P-61): `d = ((a + b)/2)/(a − b)` is exactly antisymmetric under the simultaneous endpoint-and-sign swap by four IEEE 754 guarantees, so a mirrored grid produces a mirrored vertex bit for bit, where a parameter from the lower corner cannot | **0 mismatches on 9.2 M straddling pairs** across `f32` and `f64` against 1,035,808 / 2,000,000 for the lower-corner form. `marching_cubes` **6 → 48 of 48** on all 16 equivariance rows, `worst_component_ulp` 0. 135 of 216 golden hashes moved, 0 counts changed, 2,285 of 28,124 cut edges displaced at ≤ 268 ULP. Hausdorff and self-intersections identical to 12 digits | **KEPT, and it is the default** — there is no second path: `cube::edge_crossing` is gone, all six placements and the WGSL shader are in the centred frame, and the 216 golden hashes are rebaselined. The cost is exactly the registered one (C2 is a cost clause) and the geometric price measured zero. **Do not re-attempt the lower-corner form**; its `1 − t` anchor is an affine map and floating point does not respect those | R-059, `benches/experiment_p61.rs`, `docs/experiments/p-61.csv`, ✗49 / M-372 |
 | E×4 | **Weld gated on the pairwise link condition, rejected pairs left split** | H (P-8): exactly 0 non-manifold edges and vertices on all eight fields × all extractors, where the unconditional weld yields N > 0 | 56 configurations on a centred 2×2×2 block. Ungated is **0/0 in 47 of them**. Across all 56 the gate removes **at most 4** non-manifold edges and adds **up to 791** non-manifold vertices — `noise_cavity` + subgrid goes 301 → **1,092**, and `sphere` + Marching Cubes goes 0 → 96 | **REVERTED, and it was never merged.** Strictly worse: it fixes almost nothing where there was something to fix and manufactures non-manifoldness where there was none. A `k`-way coincidence is manifold only if all `k` merge; refusing one leaves the representative a bowtie, which is why the damage is in the vertex column and the edge column barely moves | R-001, `benches/experiment_p8.rs`, `docs/experiments/p-8.csv`, P-8 |
 
@@ -1643,6 +1646,7 @@ Rules with no incident behind them get ignored. These all have one.
 
 | Rule | Earned from |
 |---|---|
+| **A clause stated as a ratio of a total must name the share of that total it can move. A non-empty population is not enough when the clause is a fraction** | `✗51` — P-69's C1 asked for **2x on the marginal extraction cost** from restructuring the *sample loop*. The loop measures **1.23 ns/sample** against an extraction marginal of **10.68**: 11.6% of the quantity the clause is denominated in, so its ceiling is `1/(1 − 0.116/2) = ` **1.06x** and the clause was unreachable however well the loop vectorised. Amdahl refuted it, not LLVM. The registration named the field population correctly (`libm`'s `sqrtf` has an arch selection and `sinf` does not, established from source in advance) and named the machine correctly, and still missed this — because *"which rows can this fire on" is the wrong question for a ratio. **Compute the share before registering, from the stage breakdown and one timing** |
 | **A clause whose population is empty on the fixtures it will run against is not a clause. Enumerate the rows before writing the harness** | Four Phase-21 clauses could not have discriminated anything, and every one was catchable a priori. `P-58`'s C1 tested a tie-break this crate invented rather than the paper's ordering claim; its C2 had no theorem behind it, which the verdict concedes. `P-59`'s C2 asked for a median `necessary/survivors` **≤ 0.75** on a fixture whose worst chunk is `0.250000`, so 0.75 could not have failed. `P-60`'s C2 predicted a Gibbs phenomenon on `box_exact` and `csg_difference`, whose restriction to the domain-centre axis is `|x| − 1` — second difference exactly 0, `is_step_like` false on both. Each is one input→output pass over the fixture, before any code: **count the rows on which the clause can fire, and if the count is zero, change the fixture or drop the clause.** A HELD verdict on a clause that could not fail reads exactly like a HELD verdict on one that could |
 | **A ratio that chains a median onto a total is not a ratio. State both statistics or neither** | `✗41`'s headline read *"a **20.6×** further reduction on top of P-39's 64 → 19"* — and `1,507 → 73` is a sum over 64 chunks while `64 → 19` is the median chunk. There is no clean median counterpart because the median `necessary` is **0**: the fixture's base sphere leaves 51 of 64 chunks needing no brush at all, 44 of them meshing non-empty from an empty list. The like-for-like figure is **9.45×** over the 13 chunks where any brush matters; the world-wide total is **20.64×**; the product of a median and a total is neither. **Two populations, two numbers, and say which population each one is over** |
 | **An entry that says an instrument was fixed must show the fixed instrument's values, not the old ones** | `✗39` records that its first `worst_component_ulp` walked two sorted vertex lists positionally, reported `9.2e18`, and was replaced by a sorted-merge multiset difference — and then attaches the range *"(0–2,432)"* to the tetrahedral rows, where the committed CSV reads ≈9.2e18 on **all 32** of them. `0–2,432` is the `marching_cubes` span. So the number quoted as evidence that the artefact was gone was the artefact, on 55 of 112 rows, and the consumer advice built on it (*"expect vertex positions to move by up to `worst_component_ulp`"*) was meaningless on half the file. **After repairing an instrument, re-read the column from the artefact and quote it — a remembered range survives the repair that invalidated it** |
@@ -10928,3 +10932,91 @@ a speedup**, because then the speedup is the loop's bookkeeping rather than its 
 `baseline_marginal_ns_per_sample`, `bit_identical_to_push`, `golden_hashes_unchanged`,
 `vectorisable_body`, `c1_speedup_f32`, `c1_holds`, `c2_holds`, `c3_f64_over_f32_gain`, `c3_holds`,
 `machine`, `wall_ms`.
+
+### 💥 ✗51 / M-375 — C1 FALSIFIED, C2 HELD, C3 VACUOUS: the prescribed loop shape is a **3–7% regression**, `%ymm` is **zero** in every monomorphisation, and C1's 2× was arithmetically unreachable from a term that is **11.6%** of the cost it was stated in (P-69, R-067)
+
+**M.** `cargo bench --bench experiment_p69`, `docs/experiments/p-69.csv`, **58 rows** — 48 loop rows (three
+fields × two scalars × four resolutions × two loop shapes), 6 fitted marginals, 4 extraction rows — plus
+`scripts/p69_asm.sh` over the bench's own codegen unit. Both loop shapes compiled into one binary per
+`M-281`; `cycles_per_sample` and `ghz` on every row per `M-280`, with the run asserting the kernel did not
+multiplex a counter.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 ≥ 2× on the marginal `f32` cost | ≥ 2.0 | **FALSIFIED — 0.9305 `sphere`, 0.9735 `gyroid`, 0.9425 `box_exact`. A regression on all three** |
+| C2 all 216 golden hashes unchanged | 0 moved | **HELD — 0 of 168 checked in the harness, and `golden_hashes_are_unchanged` green on all 216** |
+| C3 the `f64` gain is at most half the `f32` gain | ≤ 0.5 | **VACUOUS — its denominator is the `f32` gain and C1 left none** |
+
+**The mechanism is read from the machine code, not inferred from a stopwatch — which is what the
+registration required and the reason it required it.** `total %ymm` across **all eleven** monomorphisations
+of both loops is **0**:
+
+| field | shape | scalar | lines | `%ymm` | packed | scalar ops |
+|---|---|---|---:|---:|---:|---:|
+| `sphere` | push | f32 | 204 | **0** | 4 | 25 |
+| `sphere` | row | f32 | 314 | **0** | 6 | 27 |
+| `box_exact` | push | f32 | 201 | **0** | 10 | 25 |
+| `box_exact` | row | f32 | 277 | **0** | 9 | 27 |
+| `gyroid` | push | f64 | 209 | **0** | 4 | 28 |
+| `gyroid` | row | f64 | 299 | **0** | 4 | 27 |
+
+**Not one 256-bit register, at either shape, on any field.** The `packed` column is not evidence of the
+opposite: `xorps` and `andps` are the ordinary way to manipulate a sign bit on a single scalar, which is
+why the script's discriminator is `%ymm` and not the packed count. So the loop shape the
+autovectorisation literature prescribes — buffer sized once, one slice per row, bound hoisted,
+`iter_mut().enumerate()` — **did not cause LLVM to widen anything here**, and the small regression is the
+`resize`'s zeroing pass being paid for a bound check that was already free.
+
+**And the field prediction held exactly, which is the one part of this that went to plan.** It was
+registered from `libm` 0.2.16's source before the harness existed: `sqrtf` carries a
+`select_implementation` on `target_feature = "sse2"`, `sinf` and `cosf` carry none. Measured per-sample
+cost, `f32`: `sphere` **1.23 ns**, `box_exact` **2.68 ns**, `gyroid` **17.79 ns**. A **14.5× spread from
+the field body alone**, and the `vectorisable_body` column is an input to the experiment rather than an
+outcome of it.
+
+**The number that should have killed C1 at registration, and it was available.** C1 is stated in the
+*marginal extraction* cost — `M-20`'s 4.75 ns/sample falling below 2.4. Measured here, the sample loop is
+**1.23 ns/sample** against an extraction marginal of **10.68 ns/sample**: the loop is **11.6%** of the
+quantity the clause is denominated in. Halving it gives
+
+```
+1 / (1 − 0.116/2)  =  1.061×
+```
+
+**1.06×, not 2×.** So C1 was arithmetically unreachable however well the loop vectorised, and Amdahl —
+not LLVM — is what refuted it. I registered the *field* population and the *machine* correctly and did
+not compute the *share*, which is the audit's own central finding missed a second time in the phase that
+exists to apply it. The share was measurable in advance from `stage_breakdown.csv` and one timing.
+
+> **Part 5 earns a row from this** and it is not the one the phase already added: *a clause stated as a
+> ratio of a total must name the share of that total it can move.* Naming the rows a clause can fire on is
+> not sufficient when the clause is a fraction — the population was non-empty and the clause was still
+> impossible.
+
+**C2 held and its instrument is proven, not assumed.** 0 of 168 rows moved in the harness and all 216 in
+`golden_hashes_are_unchanged`. The hoisting is bit-identical by construction — a loop invariant moved out
+is the same rounding — and the gate's ability to report the other answer is on record four commits back:
+`P-61` moved **135 of these same 216**. So this zero is a zero from a gate that has been seen to fire.
+
+**C3 is vacuous rather than false, and the harness says so in as many letters.** *"The `f64` gain is at
+most half the `f32` gain"* divides by `f32_gain − 1`; with the `f32` gain at 0.93 there is no denominator.
+Reporting `NaN ≤ 0.5` as FALSIFIED would be a claim the run cannot support, so `c3_holds` is a three-state
+column and reads `vacuous`. **This is a clause made unfirable by another clause's failure**, which is not
+knowable at registration and is a different shape from an empty population.
+
+**The decision, and it is a decision rather than a result (E×6).** The loop shape is **reverted** — it
+costs 3–7% and buys nothing measurable. The **sharing is kept**: there were *three* copies of this loop,
+`marching_cubes/mod.rs:240`, `dual.rs:356` and `marching_tetrahedra.rs:157`, differing only in whether
+rows carry padding, and three copies of a loop is a one-path defect whatever the loop's shape. `sdf::sample_grid`
+is now the single definition with the original arithmetic, so the 216 hashes are unchanged either way.
+Finding the three copies is the durable half of this experiment and it was not in any clause.
+
+**One number deliberately not claimed.** The extraction marginal measures **10.68 ns/sample** against the
+committed `resolution_sweep-ryzen9-5900x.csv` fit of **13.1892**. That is a different binary, a different
+run and a narrower size range (33³–129³ against 16³–256³), and `M-281` says a millisecond is a property of
+the binary. It is reported as a column and is **not** a 1.24× improvement.
+
+**Would be shown wrong by:** a `%ymm` appearing in a monomorphised sample loop on this target, which would
+mean the widening is available and something else blocked it; a `gyroid` speedup at or above 2×, which
+would be a finding about `libm` rather than about this loop; or a golden hash moving, which under C2 is a
+veto and not a measurement.

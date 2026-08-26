@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-249 tickets. Line numbers are stable until something above them is edited — grep the ID if
+250 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1868,3 +1868,22 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***It found a crash on the way (✗50 / M-373, D-021).*** The second run panicked inside `marching_cubes` with an index out of bounds in release on an ordinary trilinear cell: `MAX_PATCH_TRIANGLES` was a sampled 24 while `fan_tunnel`'s own buffer was the derived 40. Fixed under its own ticket before any number here was committed.
 >
 > ***Verification.*** `preflight --full` all green at 710 lib tests. The block's geometry is asserted rather than trusted — 18 corners, 2^18 patterns, all four cells containing the shared edge, no cell naming a corner twice — and P-41's 128-of-256 critical classification is reproduced from its definitions rather than imported. Three reachability controls are assertions, not prints: every pattern that cuts the shared edge must put a vertex on it (131,072 of 131,072), the interior rule must produce an apex on every seed arm, and the pre-fix arm must merge something.
+
+| ☑ | **R-067** | S | — |
+> **DONE 2026-08-26 — ✗51 / M-375 / P-69: C1 FALSIFIED, C2 HELD, C3 VACUOUS. The prescribed loop shape is a 3–7% regression, `%ymm` is zero in every monomorphisation, and C1's 2x was arithmetically unreachable.**
+>
+> ***The mechanism is read from machine code rather than from a stopwatch, which is what the registration required.*** `scripts/p69_asm.sh` classifies every monomorphisation of both loops in the bench's own codegen unit: **total `%ymm` = 0**, at either shape, on all three fields, in both scalars. Not one 256-bit register. The `packed` column is not evidence of the opposite — `xorps` and `andps` are how you flip a sign bit on one scalar — which is why the discriminator is `%ymm`. So the shape the literature prescribes did not make LLVM widen anything here, and the small regression is the `resize`'s zeroing pass paid for a bound check that was already free.
+>
+> ***The field prediction held exactly and it was registered from `libm`'s source before the harness existed.*** `sqrtf` carries a `select_implementation` on `sse2`; `sinf` and `cosf` carry none. Measured `f32` per-sample: `sphere` **1.23 ns**, `box_exact` **2.68**, `gyroid` **17.79** — a **14.5x spread from the field body alone**, with `vectorisable_body` an input to the experiment rather than an outcome.
+>
+> ***The number that should have killed C1 at registration, and it was available.*** C1 is denominated in the **marginal extraction** cost. The sample loop is **1.23 ns/sample** against an extraction marginal of **10.68** — **11.6%** — so halving it gives `1/(1 − 0.116/2) = ` **1.06x**, not 2x. Amdahl refuted the clause, not LLVM. The registration named the field population and the machine correctly and did not compute the **share**, which is the audit's own central finding missed a second time inside the phase that exists to apply it. Part 5 gains the row: *a clause stated as a ratio of a total must name the share of that total it can move.*
+>
+> ***C2 held and its gate is proven rather than assumed.*** 0 of 168 rows moved in the harness, all 216 green in `golden_hashes_are_unchanged`, and the gate's ability to report the other answer is on record four commits back — **P-61 moved 135 of these same 216**.
+>
+> ***C3 is vacuous rather than false.*** *"The `f64` gain is at most half the `f32` gain"* divides by `f32_gain − 1`, and C1 left 0.93. Reporting `NaN <= 0.5` as FALSIFIED would be a claim the run cannot support, so `c3_holds` is three-state and reads `vacuous`. A clause made unfirable **by another clause's failure** is a different shape from an empty population and is not knowable at registration.
+>
+> ***The decision, and it is a decision (E×6).*** The **shape is reverted** — 3–7% for nothing. The **sharing is kept**: there were **three** copies of this loop, `marching_cubes/mod.rs:240`, `dual.rs:356` and `marching_tetrahedra.rs:157`, differing only in whether rows carry padding, and three copies is a one-path defect whatever the shape. `sdf::sample_grid` is the single definition with the original arithmetic, so the 216 hashes are unchanged either way. **Finding the three copies is the durable half of this experiment and it was in no clause.**
+>
+> ***One number deliberately not claimed.*** The extraction marginal measures **10.68 ns/sample** against the committed `resolution_sweep-ryzen9-5900x.csv` fit of **13.1892**. Different binary, different run, narrower size range — `M-281` — so it is a column and **not** a 1.24x improvement.
+>
+> ***And the M5 arm is owed, not skipped.*** C1's original threshold is an M5 figure. `mac_air` is reachable and carries Spotlight, WindowServer, Messages and loginwindow at ~76% of a core with load 1.65–1.87 over 13 days, which is exactly `M-005`'s block. The Zen 3 arm is what ran; the M5 arm joins `M-005` in waiting for a quiet machine, and the share arithmetic above says it would not change the verdict.
