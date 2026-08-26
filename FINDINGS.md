@@ -10659,3 +10659,62 @@ because `table.rs` picks `safe_apex` by lowest edge index, which is `✗39`'s C3
 control that at least one pair separates the two forms; a `marching_cubes` row below 48 of 48 on a
 symmetric grid; or a golden hash moving on `greedy_quads`, which would mean a blocky mesher had acquired
 an interpolation.
+
+### P-63 — registered for R-061, before the harness: is `O-12` finite at 2¹⁸, and does one sweep settle it for Marching Cubes?
+
+**`O-12` is the oldest open question in the ledger** — *"is Marching Cubes unconditionally manifold
+now?"* — and its own text says what would settle it: *"an exhaustive search over configurations spanning
+more than two cells … or a proof that a cell-local cycle triangulation plus shared face segments cannot
+produce a non-manifold **vertex**."* `✗43` found the first counterexample and it was inside one cell. The
+question stands because *"a vertex whose two face groups sit in different cells would be"* a third
+mechanism.
+
+**The search space is much smaller than it looks, and that is the whole idea.** In this crate every
+Marching Cubes vertex sits on a grid **edge** — `EDGE_CORNERS` is lower-corner-first and the interior
+vertex is cell-local after `✗43`'s per-ring apex. Every face incident to an edge vertex therefore comes
+from one of the **four cells sharing that grid edge**, and those four cells span a 3 × 3 × 2 block of grid
+corners: **18 corners, 2¹⁸ = 262,144 sign patterns**. Not a sample. The whole space, in seconds.
+
+This is a **proof by exhaustion of the vertex-link case for Marching Cubes**, and it is the case Chernikov
+& Xu's Coq work does not cover: their 2013 IMR proof (`10.1007/978-3-319-02335-9_28`, *"A Computer-Assisted
+Proof of Correctness of a Marching Cubes Algorithm"*, title confirmed at D-020 and the PDF paywalled)
+enumerates all 2⁸ single-cube sign configurations *"disregarding any perceived symmetry"* and proves
+cohesion and water-tightness, then composes to a grid via **face-local consistency** — which is exactly the
+argument that does not reach a vertex link.
+
+**Each clause's population, derived before the harness:**
+
+| clause | fires on | derivation |
+|---|---|---|
+| C1 | **131,072 patterns per interior rule**, 262,144 link walks | the shared edge is the block's central `z`-edge, cut exactly when its two endpoint corners differ in sign — half of 2¹⁸ |
+| C2 | patterns where some cell fans ≥2 rings, reported as `fan_patterns` | a zero **voids** C2 rather than passing it |
+| C3 | **128 of 256** cell sign bytes are critical — 120 by a checkerboard 2 × 2 face, 8 by a main-diagonal inside pair or its complement | so a critical cell is reachable on the great majority of patterns and the clause cannot be vacuous |
+
+**Which vertices are soundly testable, because the block has a boundary.** The shared-edge vertex is the
+only *edge* vertex in the block whose link is **complete** — every other one has cells missing outside the
+block, so a defect there could be an artefact of the truncation, and those are reported as
+`link_defective_truncated` rather than counted against C1. A cell's **interior** vertex is complete too,
+because all of its faces come from that one cell, so it is counted.
+
+**C2 is the fixture-can-fail control and it reproduces the defect known to exist**, bench-locally and
+without editing `src/`: merging all of one cell's interior apexes into a single vertex **is** the pre-fix
+topology — the same triangles with one shared apex — which is precisely what `✗43`'s per-ring apex fix
+undid. A vertex identification, which is the operation the fix reversed.
+
+**C3 is a necessary-condition sweep and the entry must not exceed that.** A dual vertex lives at a cell
+*centre* and its link involves the cell's 26 neighbours — 4³ = 64 corners, out of reach of an 18-corner
+block. The full dual sweep at 2²⁷ over a 3 × 3 × 3 block (134,217,728 patterns, an estimated 4–45 minutes
+single-threaded) is a **nightly** gate and a separate ticket, deliberately not registered here.
+
+**One id note, because the research doc will mislead a reader.** The doc's C1 text names `✗49` for this
+clause's falsification, written before Phase 23 ran. `✗49` is `P-61`'s falsification (`M-372`); ids are
+assigned when used and never reused, so a C1 failure here takes the next free number.
+
+**No golden hash can move** — this experiment builds its own 3 × 3 × 2 sign lattice and never touches a
+reference field or a `src/` path.
+
+**Records** `arm`, `extractor`, `interior_rule`, `patterns`, `patterns_shared_edge_cut`,
+`shared_edge_vertices`, `link_defective_shared_edge`, `link_defective_interior`,
+`link_defective_truncated`, `worst_link_components`, `first_defective_pattern`, `fan_patterns`,
+`critical_cells`, `critical_patterns`, `defective_equals_critical`, `c1_holds`, `c2_holds`, `c3_holds`,
+`wall_ms`.

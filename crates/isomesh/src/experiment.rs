@@ -2343,6 +2343,102 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "p57_fixture_columns_match",
         ],
     },
+    Preregistration {
+        id: "P-63",
+        ticket: "R-061",
+        hypothesis: "O-12 is the oldest open question in the ledger -- 'is \
+            Marching Cubes unconditionally manifold now?' -- and its own text \
+            says what would settle it: an exhaustive search over \
+            configurations spanning more than two cells, or a proof that a \
+            cell-local cycle triangulation plus shared face segments cannot \
+            produce a non-manifold VERTEX. The search space is much smaller \
+            than it looks. In this crate every Marching Cubes vertex sits on a \
+            grid EDGE, so every face incident to an edge vertex comes from one \
+            of the FOUR cells sharing that grid edge. Those four cells span a \
+            3 x 3 x 2 block of grid corners -- 18 corners, 2^18 = 262144 sign \
+            patterns. That is not a sample, it is the whole space, and it runs \
+            in seconds. This is a proof by exhaustion of the vertex-link case \
+            for Marching Cubes, and it is the case Chernikov & Xu's Coq work \
+            does not cover: their 2013 IMR proof enumerates all 2^8 \
+            single-cube configurations and proves cohesion and water-tightness, \
+            then composes to a grid via FACE-local consistency, which is \
+            exactly the argument that does not reach a vertex link. (C1) Over \
+            all 262144 patterns, meshing the four cells, welding, and walking \
+            the connected components of the incident-face link of the shared \
+            edge vertex yields ZERO non-manifold vertices, with the \
+            interior-ambiguity rule both off and on. POPULATION, derived before \
+            the harness: the shared edge is the block's central z-edge and is \
+            cut exactly when its two endpoint corners differ in sign, which is \
+            HALF the patterns -- 131072 per interior rule, 262144 link walks in \
+            total, and the clause can fire on every one of them. The \
+            shared-edge vertex is ALSO the only vertex in the block whose link \
+            is COMPLETE: every other edge vertex has cells missing outside the \
+            block, so a defect there could be an artefact of the truncation and \
+            is reported separately rather than counted. A cell's INTERIOR \
+            vertex is complete too, because all of its faces come from that one \
+            cell, so it is counted. (C2) THE FIXTURE CAN FAIL, and the defect \
+            is the one known to exist: injecting the pre-fix single-apex fan \
+            into the same sweep produces a NON-ZERO count. Reproduced \
+            bench-locally as a vertex identification rather than by editing \
+            src/ -- merging all of one cell's interior apexes into a single \
+            vertex IS the pre-fix topology, same triangles and one shared apex, \
+            which is precisely what the per-ring apex fix undid. POPULATION: \
+            patterns in which some cell fans two or more rings, measured and \
+            reported as fan_patterns; a zero there voids C2 rather than \
+            passing it. (C3) THE DUAL FAMILY IS WHERE IT IS INTERESTING. The \
+            same sweep over surface_nets, dual_contouring and \
+            manifold_dual_contouring produces a non-zero count, and that count \
+            is a FUNCTION of the well-composedness census in the sense of \
+            M-338's bijection: the number of link-defective dual vertices \
+            equals the number of critical sign configurations in the block. \
+            POPULATION: 128 of the 256 possible cell sign bytes are critical -- \
+            120 by a checkerboard 2x2 face and 8 by a main-diagonal inside pair \
+            or its complement -- so a critical cell is reachable on the great \
+            majority of the 262144 patterns and the clause cannot be vacuous. \
+            SCOPE NOTE, WHICH THE ENTRY MUST NOT EXCEED: C1 and C2 are \
+            COMPLETE for Marching Cubes. For the dual family a vertex lives at \
+            a cell CENTRE and its link involves the cell's 26 neighbours, which \
+            is 4^3 = 64 corners and out of reach of this block, so C3 is a \
+            NECESSARY-CONDITION sweep on the same 18 corners and nothing more. \
+            The full dual sweep at 2^27 over a 3 x 3 x 3 corner block -- \
+            134217728 patterns, an estimated 4 to 45 minutes single-threaded -- \
+            is a nightly gate and a separate ticket, deliberately not \
+            registered here.",
+        falsified_by: "C1: one pattern whose shared-edge vertex link has more \
+            than one component, which is the THIRD MECHANISM O-12 asks about \
+            and takes the next free falsified id. (The research doc's own text \
+            names '49' for this outcome, written before Phase 23 ran; that id \
+            went to P-61's falsification, and ids are assigned when used and \
+            never reused.) C2: ZERO -- which would mean the link walk cannot \
+            see the one defect known to exist and the sweep proves nothing, \
+            voiding C1 rather than confirming it. C3: a count that is non-zero \
+            and NOT equal to the critical-configuration census, which is the \
+            more interesting outcome and would mean M-338's bijection is \
+            cell-local and does not extend to a block. NO GOLDEN HASH MOVES: \
+            this experiment builds its own 3 x 3 x 2 sign lattice and never \
+            touches a reference field or a src/ path.",
+        records: &[
+            "arm",
+            "extractor",
+            "interior_rule",
+            "patterns",
+            "patterns_shared_edge_cut",
+            "shared_edge_vertices",
+            "link_defective_shared_edge",
+            "link_defective_interior",
+            "link_defective_truncated",
+            "worst_link_components",
+            "first_defective_pattern",
+            "fan_patterns",
+            "critical_cells",
+            "critical_patterns",
+            "defective_equals_critical",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+            "wall_ms",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
