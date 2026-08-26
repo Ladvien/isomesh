@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-248 tickets. Line numbers are stable until something above them is edited — grep the ID if
+249 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1851,3 +1851,20 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***The existing test was never wrong; it was answering a different question.*** `the_worst_case_tunnel_triangle_count_is_pinned` still reads 22 over its 400,000 random cells and still passes. It pins what a **sample** reaches. Nothing pinned what the **construction** can reach, which is what a buffer has to be sized by. The counterexample is pinned as its own fixture with the eight corner values verbatim and unrounded, because the count depends on where the body saddles fall.
 >
 > ***Verification.*** `preflight --full` all green at **710** lib tests, one more than before — the new fixture. **No golden hash moves and none should**: the constant sizes a stack array and does not change an emitted triangle, so all 216 are unchanged.
+
+| ☑ | **R-061** | S | — |
+> **DONE 2026-08-26 — M-374 / P-63: C1 and C2 HELD, and `O-12`'s vertex-link case is settled for Marching Cubes by exhaustion. C3 is vacuous, by my own registration's error.** 11 arms x 262,144 sign patterns over a 3 x 3 x 2 block, 21.5 s, `docs/experiments/p-63.csv`.
+>
+> ***C1 is a proof by exhaustion rather than a sample.*** Over the whole 18-corner sign space, on both interior-ambiguity settings and at four independent magnitude seeds, **not one pattern** produces a shared-edge vertex or an interior apex with a split link, and `worst_link_components` is **1** on every non-control arm — 1,048,576 meshings with no vertex anywhere carrying two link components. `O-12`'s third mechanism — *"a vertex whose two face groups sit in different cells"* — **does not exist for Marching Cubes**, because every face incident to an edge vertex comes from one of the four cells sharing that edge and those four cells are 18 corners.
+>
+> ***Exhaustive over signs, sampled over magnitudes, and the entry says which.*** The ring structure depends on where the body saddles fall, so magnitudes are a sample: four seeds, 282,084 to 283,694 interior apexes each, reported per seed and never pooled, because a defect on one draw and not another is a finding about the magnitude space. What bounds the residue is that the ring structure is a function of `(case, joined_mask, hexagon)` and `the_fan_covers_each_ring_once_and_repeats_no_index` already sweeps all 16,384 pairs.
+>
+> ***C2 fires hard, which is what makes C1's zero mean anything.*** Merging a cell's interior apexes back into one is `✗43`'s pre-fix topology — a vertex identification is the operation the per-ring apex fix reversed — and it yields **5,302 link-defective vertices on 5,863 patterns** at `worst_link_components = 2`, which is `M-301`'s signature to the number. The same walk that returns zero for the shipped extractor returns 5,302 for the defect known to have existed.
+>
+> ***The fixture had to be fixed twice and both corrections are findings.*** `±1` corner values are **degenerate for the interior rule**: the saddles are symmetric too, `has_inner_hexagon`'s strict test rejects, and `interior_vertices` is **0** on both unit arms against 282,084 generic — so *"interior rule on"* was the same arm as *"off"* and the `M-44` control correctly refused to report the first run. And at `±1` every crossing lands on a half-integer, so a cycle centroid can land on the lattice and the integral-coordinate vertex classification mis-files it, which is `✗43`'s own face-vertex correction biting the instrument.
+>
+> ***C3 is vacuous and it is the audit's central finding landing on a clause I registered.*** It asked for a non-zero dual link-defect count equal to the critical census; measured **0** against 524,288 critical cells. The scope note said in advance that a dual vertex needs 4^3 = 64 corners — and the registration then derived C3's population from the **critical** census instead of from the population of dual vertices with a *complete* link, which in this block is **empty**. `max_incident_faces` is **2** on all three dual arms, so the configuration is unreachable by construction. Recorded as vacuous rather than softened, per `experiment.rs`'s rule that a registration is not amended after its run; a valid version needs the 2^27 nightly ticket.
+>
+> ***It found a crash on the way (✗50 / M-373, D-021).*** The second run panicked inside `marching_cubes` with an index out of bounds in release on an ordinary trilinear cell: `MAX_PATCH_TRIANGLES` was a sampled 24 while `fan_tunnel`'s own buffer was the derived 40. Fixed under its own ticket before any number here was committed.
+>
+> ***Verification.*** `preflight --full` all green at 710 lib tests. The block's geometry is asserted rather than trusted — 18 corners, 2^18 patterns, all four cells containing the shared edge, no cell naming a corner twice — and P-41's 128-of-256 critical classification is reproduced from its definitions rather than imported. Three reachability controls are assertions, not prints: every pattern that cuts the shared edge must put a vertex on it (131,072 of 131,072), the interior rule must produce an apex on every seed arm, and the pre-fix arm must merge something.

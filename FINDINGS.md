@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**468 entries** — 50 falsified, 345 measured, 50 verified, 18 open, 5 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**469 entries** — 50 falsified, 346 measured, 50 verified, 18 open, 5 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -434,6 +434,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-368` | the backpressure was measured against a stale queue: drain_dirty ran before gpu_collect (D-014) |
 | `M-370` | an existence check passes on a commit that left the branch: git cat-file -e is a property of the checkout, merge-base --… |
 | `M-371` | MCPro is in the corpus as a 383-character landing page that read "converted, embedded": catalog_read is not a presence o… |
+| `M-374` | settled for Marching Cubes by exhaustion at 2¹⁸ |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1345,7 +1346,7 @@ Each has the test that would settle it. **An open question with no proposed test
 | O-9 | How much does T-003's gradient-flow chord **over**-estimate distance at a concave seam? | A comparison against nearest-point search over a dense surface point cloud, or E-104 once Dual Contouring lands | The chord follows `∇f` to the zero set, which near `csg_difference`'s seam can land further away than the true nearest point. The bias direction is known and safe for a "below X" gate; the *magnitude* is not measured, and M-001's shootout column would inherit it. `csg_difference` measured forward `0.0833` at 33³ — how much of that is seam bias is unknown |
 | O-10 | ~~What is Surface Nets' non-manifold **rate** as a function of feature thickness over `h`?~~ **First curve measured at A-010 (M-60)**, as the multi-sheet-cell rate: `gyroid` 3.13% → 2.05% → 0.53% and `fbm_terrain` 1.70% → 0.84% → 0.77% at 17³/25³/33³, and exactly zero on the other five fields at every resolution. Still open only as the *slab* sweep, which would give thickness-over-`h` directly rather than resolution-at-fixed-field | A-010 drove it to zero, which was the ticket's job; a sweep over a slab of shrinking thickness would give the parametrised form | M-15 established it is a resolution effect rather than a topology one, and M-4 has counts at two resolutions on two fields. It decides whether Surface Nets is usable at game resolutions or needs A-010 first |
 | O-11 | *(**ANSWERED at R-007, M-284**: the dual carries a fourth stage Marching Cubes has not — `emit_quads`, which walks every grid edge on all three axes and loads both endpoints **before** the sign test that would let it skip. It is `O(n³)` where the surface is `O(n²)`, runs at **IPC 0.72** against the rest of the mesher's 3.8–6.5, and is **82% of the cycles**. Every other candidate was excluded by measurement first — see M-279. The remedy is **A-023**, and it is not a vertex rule.)* **Why does the dual topology go superlinear in `n³` while Marching Cubes does not?** *(Half-answered at M-45: it is not one machine's cache hierarchy. Surface Nets degrades on Zen 3 too — 37.4 → 49.1 ns/sample — and the `Surface Nets/Marching Cubes` ratio is worse there than on the M5. What remains open is the mechanism, not whether the effect is real.)* | A profile or cache-miss counter at 192³ vs 256³. The cross-machine experiment is **done**; a second one would not add anything | The working-set hypothesis survives and is strengthened: Surface Nets gathers the four cells around each crossed edge with one stride `n²` cells apart, and that stride is architecture-independent, which is exactly the kind of cost that would reproduce across microarchitectures. Note both machines show a per-sample **spike at 128³** (M5 Surface Nets 9.35, Zen 3 Surface Nets 53.84 against 45.6 at 96³ and 47.3 at 192³) — a working-set effect at one specific grid size on two unrelated cache hierarchies, which is itself a clue nobody has followed. **Narrowed at R-005 (M-279), and the working-set hypothesis in this cell is wrong.** The counters are in: the gather is `O(n²)` and the cost is `O(n³)`, and a field with **no surface at all** costs the same to within 0.9%, so it is not the gather. Nor branches (they fall), nor allocation (0 page faults), nor the TLB. What is left is a 16% IPC decline on an instruction stream that is flat per sample — and at 16.7 M samples a **2.4× swing in misses moves the cycles by 0.4%**, so the miss column is not the driver either. The 128³ spike **is** resolved: 127³ and 129³ are normal and only 128 has a 64 KiB plane stride, so it is conflict aliasing, and it survives on the empty field. Residue is **R-007** |
-| O-12 | **Is Marching Cubes unconditionally manifold now?** ✗15's only counterexample was the fan chord and A-015 removed it; the strict gate passes 8,000 generated cases where it used to fail on the first seed. But nothing proves a second mechanism does not exist | An exhaustive search over configurations spanning more than two cells — the two-cell sweep is exhaustive and the vertex-link case is not covered by it at all. Or a proof that a cell-local cycle triangulation plus shared face segments cannot produce a non-manifold **vertex** | The strict gate is now asserted, so if a second mechanism exists CI will find it on some future seed. That is the intended outcome: a failure there is a finding, not a regression, and the failing case would be the first example of whatever the mechanism is. **First example found at ✗43 (M-360), and it is inside one cell.** The interior rule's `Contours::fan` fanned every ring of a cell from one shared `INTERIOR` apex, so two rings longer than three glued into a bowtie: a non-manifold **vertex** with every edge counter reading clean, which is exactly the vertex-link case this row says the two-cell sweep cannot reach — and a two-cell sweep never could have, because both face groups live in the same cell. Found by `the_interior_rule_meshes_convex_bodies` on a fresh seed, fixed by a per-ring apex, pinned as a fixture and a committed seed. **Still open:** one mechanism found is not a proof that no third exists, and a vertex whose two face groups sit in *different* cells would be one |
+| O-12 | **Is Marching Cubes unconditionally manifold now?** ✗15's only counterexample was the fan chord and A-015 removed it; the strict gate passes 8,000 generated cases where it used to fail on the first seed. But nothing proves a second mechanism does not exist | An exhaustive search over configurations spanning more than two cells — the two-cell sweep is exhaustive and the vertex-link case is not covered by it at all. Or a proof that a cell-local cycle triangulation plus shared face segments cannot produce a non-manifold **vertex** | The strict gate is now asserted, so if a second mechanism exists CI will find it on some future seed. That is the intended outcome: a failure there is a finding, not a regression, and the failing case would be the first example of whatever the mechanism is. **First example found at ✗43 (M-360), and it is inside one cell.** The interior rule's `Contours::fan` fanned every ring of a cell from one shared `INTERIOR` apex, so two rings longer than three glued into a bowtie: a non-manifold **vertex** with every edge counter reading clean, which is exactly the vertex-link case this row says the two-cell sweep cannot reach — and a two-cell sweep never could have, because both face groups live in the same cell. Found by `the_interior_rule_meshes_convex_bodies` on a fresh seed, fixed by a per-ring apex, pinned as a fixture and a committed seed. **The third mechanism does not exist for Marching Cubes, and that half is now closed by exhaustion (M-374, P-63).** Every face incident to an edge vertex comes from one of the four cells sharing that edge; those four cells are a 3 x 3 x 2 block of **18 corners**, so the space is **2^18 = 262,144 sign patterns** and it runs in 21 seconds. Meshed, welded and link-walked on all of them, with the interior rule off and on and at four independent magnitude draws: **zero** vertices with a split link, `worst_link_components` 1 throughout. The control is not argued either — merging a cell's interior apexes back into one reproduces `✗43`'s pre-fix topology and yields **5,302 link-defective vertices** on 5,863 patterns in the same walk. **Exhaustive over signs and sampled over magnitudes**, four seeds, reported per seed; the residue is bounded by the ring structure being a function of `(case, joined_mask, hexagon)`, which `the_fan_covers_each_ring_once_and_repeats_no_index` sweeps over all 16,384 pairs. **Still open, and only this:** the **dual** family. P-63's C3 tried the same block and is vacuous — a dual vertex lives at a cell centre and its link needs the cell's 26 neighbours, 4^3 = 64 corners, so the 18-corner block gives every dual vertex at most **2** incident faces and cannot host the configuration. That needs the 3 x 3 x 3 block at 2^27 = 134,217,728 patterns, which is a nightly gate and its own ticket |
 | O-13 | ~~**Pre-registered:** Marching Tetrahedra vertex count = **3.0× Marching Cubes**, converging from above~~ **Confirmed at A-003/M-001, exactly and including the convergence.** Measured on `sphere`: 33³ **3.036**, 49³ **3.026**, 65³ **3.003** — from above, onto 3.0 | *(closed)* | And M-52 supplies the mechanism the prediction did not need but turns out to have: the ratio is `4.0` in one octant and `2.0` across a sign change, so `2.992` is an average hiding a factor-of-two spread. That is why the shootout CSV carries every field |
 | O-14 | ~~**Pre-registered:** Marching Tetrahedra symmetric Hausdorff at 64³ ≈ **2.6e-3**, about **1.86×** Marching Cubes, i.e. slightly worse than Surface Nets~~ **Falsified at A-003/M-001 (M-55): measured 1.4386e-3, which is 1.043×.** Not slightly worse than Surface Nets — **better by 1.6×** (Surface Nets is 2.251e-3, 1.69× Marching Cubes) | *(closed)* | The prediction's stated counterintuitive part, *"more vertices **and** worse accuracy"*, is the half that is wrong. Marching Tetrahedra buys 3× the vertices for 4% worse accuracy on smooth fields and **better** accuracy on sharp ones |
 | O-15 | ~~Why does a plane cost `3.94×` and a sphere `3.00×` when both are locally flat at cell scale?~~ **Answered at A-003 (M-52): the normal's sign pattern, not its direction.** One octant gives `4.0` exactly, a sign change gives `2.0`, and the isotropic average is P-1's `2.992`. A plane has one normal and a sphere has all of them | *(closed)* | What remains is small and not worth a ticket: the mixed-sign measurement spreads `1.98–2.27` against a predicted flat `2.0`, so the continuum model gets the mechanism exactly and carries a discretisation term it does not describe |
@@ -10771,3 +10772,102 @@ the derivation already existed, eleven lines away, in the function the caller ca
 **Would be shown wrong by:** a trilinear cell whose patch exceeds 40 triangles, which would mean the ring
 lengths can sum past 12 and the derivation is wrong rather than the constant; or the pinned fixture
 emitting a number other than 26, which is a change in the emission logic and a finding in its own right.
+
+### 🔬 M-374 — C1 and C2 HELD: `O-12`'s vertex-link case is **settled for Marching Cubes by exhaustion at 2¹⁸**, on four independent magnitude draws, with the pre-fix defect reproduced 5,302 times in the same walk; C3 is falsified by its own block, which cannot host a dual link defect (P-63, R-061)
+
+**M.** `cargo bench --bench experiment_p63`, `docs/experiments/p-63.csv`, **11 rows**, 21.5 s total, `f64`.
+Eleven arms over the same 3 × 3 × 2 block: 18 corners, **2¹⁸ = 262,144 sign patterns per arm**, four cells
+sharing the block's central `z`-edge — asserted to contain it rather than assumed — meshed, welded, and the
+incident-face link of every vertex walked for connected components.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 zero non-manifold vertices over all 262,144 patterns, interior rule off and on | 0 | **HELD — 0 on every arm, on four independent magnitude seeds, with 282,084–283,694 interior apexes each** |
+| C2 the pre-fix single-apex fan produces a **non-zero** count | > 0 | **HELD — 5,863 patterns fanned, 5,302 link defects, `worst_link_components` 2** |
+| C3 the dual family produces a non-zero count equal to the critical census | > 0 and equal | **FALSIFIED, and vacuously — 0 defects against 524,288 critical cells, because a dual vertex in this block carries at most 2 faces** |
+
+**C1 is the result, and it is a proof by exhaustion rather than a sample.** Over the whole 18-corner sign
+space, on both interior-ambiguity settings and at four independent magnitude draws, **not one pattern
+produces a shared-edge vertex whose link has more than one component**, and not one produces a defective
+interior apex either. `worst_link_components` is **1** on every non-control arm — not "no defects found",
+but "no vertex anywhere in 1,048,576 meshings had a split link".
+
+`O-12` asked for *"an exhaustive search over configurations spanning more than two cells … or a proof that
+a cell-local cycle triangulation plus shared face segments cannot produce a non-manifold vertex."* This is
+the first: **the third mechanism `O-12` names — a vertex whose two face groups sit in different cells —
+does not exist for Marching Cubes.** Every face incident to an edge vertex comes from one of the four cells
+sharing that edge, those four cells are 18 corners, and 18 corners is 262,144 patterns.
+
+**What the sweep is and is not exhaustive over, stated because it is the whole force of the claim.**
+Exhaustive over **signs**. The magnitude space is continuous and the ring structure a cell produces depends
+on where its body saddles fall, so magnitudes are **sampled** — one draw per pattern, from four seeds,
+reported per seed and never pooled:
+
+| seed | interior apexes | shared-edge defects | interior-apex defects |
+|---|---:|---:|---:|
+| `0x00002026` | 282,084 | **0** | **0** |
+| `0x0005EED1` | 283,694 | **0** | **0** |
+| `0x00C0FFEE` | 282,670 | **0** | **0** |
+| `0xDEADBEEF` | 283,339 | **0** | **0** |
+
+Four draws agreeing is four draws, not a proof over magnitudes. What bounds the residue is that the ring
+structure is a function of `(case, joined_mask, inner-hexagon presence)` — a finite set —
+and `the_fan_covers_each_ring_once_and_repeats_no_index` already sweeps all **16,384** `(case, mask)` pairs
+combinatorially. The two together are much stronger than either; neither alone is the full statement.
+
+**C2 is the control that makes C1's zero mean anything, and it fires hard.** `✗43`'s defect was
+`Contours::fan` naming one shared `INTERIOR` apex for every ring of a cell. Merging all of one cell's
+interior apexes back into a single vertex **is** that topology — same triangles, one shared apex — because a
+vertex identification is exactly the operation the per-ring-apex fix reversed. Run over the same sweep:
+**5,863 of 262,144 patterns have a cell that fans two or more rings, and 5,302 of them produce a
+link-defective vertex**, at `worst_link_components = 2`. Two components is `M-301`'s signature and `✗43`'s
+measured shape, to the number.
+
+So the walk **can** return non-zero, on the one defect known to have existed, 5,302 times, in the same code
+path that returns zero for the shipped extractor. `M-44`'s rule is satisfied by demonstration rather than
+by argument.
+
+**The `±1` arm is a finding about the interior rule, and it is why this harness has two fixtures.** With
+every corner at `±1` the trilinear's saddles are symmetric too, `has_inner_hexagon`'s strict `0 < x < 1`
+test rejects, and **the interior-ambiguity rule never fires at all**: `interior_vertices` is **0** on both
+unit arms against 282,084 on the generic one. So *"with the interior rule on"* at `±1` is the same arm as
+*"off"* wearing a different name, `✗43`'s pre-fix fan has no apex to merge, and C2 cannot fire. The first
+version of this harness used `±1` and its `M-44` control **refused to report** — correctly.
+
+> **A second reason `±1` is a bad fixture, and it is a classification artefact rather than a null.** At
+> `±1` every crossing lands on a half-integer, so a cycle centroid can land exactly on the sample lattice
+> and the three-way vertex classification — by how many coordinates are integral — mis-files it. That is
+> `✗43`'s own correction (a face vertex has one integral coordinate, an edge vertex two) biting the
+> *instrument*. C1's verdict is therefore taken from the generic arms, where magnitudes are in general
+> position and the classification is unambiguous; the unit arms are corroboration with this caveat
+> attached. `max_incident_faces` differing between them — 10 and 14 at `±1` against 13 and 20 generic —
+> is the same degeneracy visible from another angle.
+
+**C3 is falsified and the falsification is my own registration's fault, which is the audit's central
+finding landing in this phase.** The clause asked for a non-zero dual link-defect count equal to the
+critical-configuration census. Measured: **0** on `surface_nets`, `dual_contouring` and
+`manifold_dual_contouring`, against **524,288 critical cells** across 229,492 patterns that carry at least
+one. The reason is structural and the scope note said it in advance — a dual vertex lives at a cell *centre*
+and its link involves the cell's 26 neighbours, 4³ = 64 corners — but the registration then derived C3's
+population from the **critical** census rather than from the population of dual vertices with a *complete*
+link, which in this block is **empty**. The measurement that says so is `max_incident_faces`: **2** on all
+three dual arms. Two faces sharing a vertex cannot be split into two edge-disconnected components while
+also being the whole link, so the configuration is unreachable here by construction.
+
+**So C3 is vacuous as registered, not merely false**, and softening it is not available: `experiment.rs`
+forbids amending a registration after its run. The honest statement is that the 18-corner block settles the
+primal case and **cannot address the dual family at all**, and a valid version of C3 needs the 3 × 3 × 3
+block — 2²⁷ = 134,217,728 patterns, the nightly ticket the registration already declined to register. That
+is the `P-43` → `P-44` precedent: record the vacuity, and let a new id carry a fixture that can fail.
+
+**Two incidental measurements worth keeping.** The table path's **cycle centroids** are cell-interior
+vertices too — `interior_vertices` is 29,557 with the interior rule *off*, where the trilinear rule
+contributes nothing — so the apex-merge control exercises `A-015`'s construction as well as `✗43`'s, and
+neither produces a split link. And `link_defective_truncated` is **0** on every arm: even the vertices whose
+links are cut off by the block boundary never split, which is not a claim this experiment makes but is a
+number a future 3 × 3 × 3 sweep will want to compare against.
+
+**Would be shown wrong by:** a sign pattern, at any magnitude draw, whose shared-edge or interior vertex
+link has two components — which is the third mechanism `O-12` asks about and takes the next free `✗` id; or
+a magnitude seed on which the interior rule stops firing, which would make that arm's zero vacuous and is
+asserted against per seed rather than assumed.
