@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**242 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**243 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -45,6 +45,32 @@ attached — read that before re-litigating a decision this project already made
   is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
+
+---
+
+## Phase 23 — twelve registrations from the 2026-08-26 audit, and the corrections it earned
+
+**Added 2026-08-26, above Phase 22 for the reason every phase goes on top: rule 1 reads top-down.**
+Phase 22 is closed. Nothing here supersedes Phase 17's or Phase 18's open rows.
+
+**Source: `docs/research/2026-08-26-audit-and-phase-23-registrations.md`** — a skeptical audit of the
+four Phase 21 experiments and the ✗43 entry, followed by twelve new pre-registrations drawn from
+mathematics, formal logic and systems results the 2026-08-23 sweeps did not reach. The audit's own
+framing is the reason the chores come first: five of the defects it found are the `✗35` failure mode
+recurring, and one of them means several Phase 21 datasets correspond to no commit in this branch.
+
+**Phase 15's protocol applies in full**, and all twelve `P-` entries are registered in
+`crates/isomesh/src/experiment.rs` **before** any harness commit. Experiments are **bench-local**:
+`crates/isomesh/src/**` is read-only apart from the registrations themselves, except where an
+experiment *is* a source change and says so at registration (P-61, P-68's feature, P-69).
+
+**The audit's central finding is a rule rather than a defect, and it changes how these are written.**
+Four Phase-21 clauses could not have discriminated anything — P-58's C1 and C2, P-59's C2, P-60's C2 —
+and every one was catchable before its harness existed. So each clause below names the rows on which
+it *can* fire, and that set is shown non-empty from the CSV rather than assumed.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
 
 ---
 

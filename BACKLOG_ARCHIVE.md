@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-242 tickets. Line numbers are stable until something above them is edited — grep the ID if
+243 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1771,3 +1771,12 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***Both directions demonstrated, because a retry that hides a real outage would be worse than the flake.*** The hardened script's real dry run probes all three crates clean and exits 0. The failure path was exercised against a closed port: four attempts (one plus three retries), `status` captured as curl's genuine **7** rather than 0, the `::error::` line printed with crate and version, script exit 1. `a gate that cries wolf is a gate somebody disables` — the same value M-304's row records — with the sibling clause that a gate which cannot say why is one nobody reads.
 >
 > ***Not a version bump and not a release.*** `publish.sh` uploads only when a manifest version is absent from crates.io, so this changes what an ordinary push *reports*, never what it publishes.
+
+| ☑ | **D-017** | S | — |
+> **DONE 2026-08-26 — an experiment CSV's `# commit` header is now read back, and the audit's count of three is five.** `docs/experiments/*.csv` carries a provenance line so a dataset can be traced to the code that produced it, and until now nothing ever read one. The 2026-08-26 audit found `p-57.csv`, `p-58.csv` and `p-60.csv` all stamped `# commit 0d81ae6`, a SHA a rebase rewrote away. Counting the whole directory rather than the phase found **two more the audit missed** — `p-41.csv` and `p-42.csv` at `cceb112` — plus 34 of 50 runs made against a dirty tree and one file, `p-26.csv`, written before the header existed at all.
+>
+> ***The plan's stated check would have passed on all five, and that is the finding (M-370).*** `git cat-file -e 0d81ae6^{commit}` **succeeds** in this clone: the object is still on disk, referenced by a reflog, unreferenced by any branch and one `gc` from gone. So an existence check is green here and red in a fresh clone of the same repository — a property of the checkout rather than of the artefact, which is not a gate. `scripts/csv_provenance.sh` asks `git merge-base --is-ancestor <sha> HEAD` instead, which is the question the header is for: *can a reader check this out.*
+>
+> ***The inherited debt is pinned by name and the pins must shrink.*** Three lists — five ancestry violations, 34 dirty runs, one missing header — asserted **exactly**, not as a subset. A new violation fails, and a file re-run clean also fails until its name comes off the list. An allow-list checked with `⊆` rots into a list of files that no longer violate anything; this is M-4's rule (pin a known defect as an assertion, never as an exclusion) in a second place. Headers are **not** rewritten: those runs really were dirty, and the stamp is honest.
+>
+> ***Verification: four failure modes demonstrated red, then green.*** A scratch CSV stamped with a 40-hex SHA that does not resolve → *"names commit deadbeef… which is not in HEAD's history"*, exit 1. The same file stamped `(WORKING TREE DIRTY)` → exit 1. The same file with no header → exit 1. And the stale-pin arm, which is the one nobody would think to test: clearing `p-59.csv`'s dirty flag makes the gate fail naming `p-59.csv` as a pin that no longer violates anything. `unknown` passes, per `ask()`'s own documentation — it is honest and visible and claims nothing. Wired into `preflight.sh`'s fast set beside `doc_facts.sh`.

@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**459 entries** — 48 falsified, 343 measured, 47 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**460 entries** — 48 falsified, 344 measured, 47 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -430,6 +430,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-365` | one wgpu::Instance per test deadlocks game_dig's suite at default parallelism, and a shared device halves its runtime (D… |
 | `M-366` | a GitHub Pages project page is redirected by the user site's custom domain, and an archived repo cannot be fixed through… |
 | `M-368` | the backpressure was measured against a stale queue: drain_dirty ran before gpu_collect (D-014) |
+| `M-370` | an existence check passes on a commit that left the branch: git cat-file -e is a property of the checkout, merge-base --… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -10004,3 +10005,43 @@ floor, or a boundary face whose zero is not the drawn slab's inner face — asse
 `the_collision_boundary_is_solid_exactly_where_the_slabs_are`, with the wiring gated separately by
 `walking_into_the_wall_stops_at_the_sandbox` (removing the boundary from `move_camera` walks the body to
 `x = 42.1`).
+
+### 🧊 M-370 — an existence check passes on a commit that left the branch: `git cat-file -e` is a property of the checkout, `merge-base --is-ancestor` is a property of the artefact (D-017)
+
+**M.** `scripts/csv_provenance.sh` over all 50 files in `docs/experiments/`, three clauses per file.
+
+The 2026-08-26 audit's A-1 reports that `p-57.csv`, `p-58.csv` and `p-60.csv` name `0d81ae6`, which a
+rebase rewrote away, and prescribes a gate built on `git cat-file -e <sha>^{commit}`. **That command
+succeeds on all three.** The object is on disk, held by a reflog, referenced by no branch, and one
+`git gc` from unreadable — so the prescribed check is green in this clone and red in a fresh one of the
+same repository. A gate whose verdict depends on which copy of the repo it runs in is not a gate.
+`git merge-base --is-ancestor <sha> HEAD` asks the question the header exists to answer, and answers it
+identically everywhere.
+
+**Counting the directory rather than the phase found two more, and the audit's three is five:**
+
+| clause | violations | which |
+|---|---:|---|
+| SHA not in HEAD's history | **5** | `p-41`, `p-42` (`cceb112`); `p-57`, `p-58`, `p-60` (`0d81ae6`) |
+| `WORKING TREE DIRTY` | **34** of 50 | eight of Phase 19's, all six of Phase 20's, all four of Phase 21's, and 16 older |
+| no `# commit` header at all | **1** | `p-26.csv`, written before `common::experiment` stamped anything |
+
+`p-59.csv`'s `f55416c` **is** an ancestor, so the audit's "three of the four" is right about Phase 21
+and understates the tree by two rows in Phase 20. A-2's *"four of four dirty"* understates it by thirty.
+
+**The pins are asserted exactly, not as a subset, and that is the load-bearing choice.** Each of the
+three lists above is a literal in the script, and the observed violation set must **equal** it: a new
+violation fails, and a file re-run clean fails too until its name is removed. An allow-list checked
+with `⊆` decays into a list of files that no longer violate anything, and nothing ever notices — M-4's
+rule (pin a known defect as an assertion, never as an exclusion) in a second place. The headers are not
+rewritten; those runs really were dirty and the stamp is the honest part of this whole mechanism.
+
+**The instrument can report the other answer, demonstrated four ways rather than argued.** A scratch
+CSV stamped with a non-resolving 40-hex SHA fails naming the file; the same file marked dirty fails; the
+same file with no header fails; and clearing `p-59.csv`'s dirty flag fails the **stale-pin** clause,
+naming `p-59.csv`. All four then revert to green. `unknown` passes, because `ask()`'s own documentation
+says it is what an absent `git` writes and it claims nothing.
+
+**Would be shown wrong by:** a CSV committed with a header naming a commit outside `HEAD`'s history
+that this gate reports green, or a pinned name that stops violating its clause without the gate saying
+so.

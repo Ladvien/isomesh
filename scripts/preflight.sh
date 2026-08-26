@@ -68,6 +68,12 @@ step "bevy: fmt" in_bevy cargo fmt --all --check
 step "backlog gate" ./scripts/backlog_gate.sh
 step "findings index" ./scripts/findings_index.sh --check
 step "doc facts" ./scripts/doc_facts.sh
+# **The gate whose absence is A-1.** Five committed datasets name a commit that
+# left this branch's history, and the header that says so was never read back.
+# It is here rather than in `doc_facts.sh` because that script derives counts
+# from sources; this one asks `git` whether an artefact's claim about the
+# repository is still true.
+step "csv provenance" ./scripts/csv_provenance.sh
 step "readme sync" ./scripts/readme_sync.sh
 step "toolchain drift" ./scripts/toolchain_drift.sh
 # `isomesh_web` is its own workspace too, so `cargo clippy --workspace` above
