@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-247 tickets. Line numbers are stable until something above them is edited — grep the ID if
+248 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1840,3 +1840,14 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***Verification.*** `preflight --full` all green (709 lib tests), `cargo test --example game_dig` **26/26** including `the_gpu_mesher_agrees_with_the_cpu_one`, which is what gates the WGSL half. The golden fixture was shown **red before and green after** the rebaseline. The harness asserts `cut_edges`, `order_sensitive_edges`, `grid_symmetric` and `fixture_can_fail` against `p-57.csv` row for row — `p57_fixture_columns_match` true on all 155 rows — so a drift in the re-implemented octahedral group is a failure rather than a new number. `cube.rs` gained two tests, and the antisymmetry one's control is **searched rather than chosen**: the first version picked `(-0.1, 0.7)` by hand to show the parameter form failing and that pair is one where `t + t' == 1` exactly, so it failed on its own first run — M-32's rule, on the day it was written.
 >
 > ***One id note, because the research doc will mislead a reader.*** `P-63`'s registered text names `✗49` for its own C1 falsification, written before Phase 23 ran. `✗49` is this entry; ids are assigned when used and never reused, so if P-63's C1 falsifies it takes the next free number.
+
+| ☑ | **D-021** | S | R-061 |
+> **DONE 2026-08-26 — an index-out-of-bounds panic in `marching_cubes`, in release, on an ordinary trilinear cell (✗50 / M-373).** Found by R-061's harness before P-63 measured anything: an exhaustive sweep over all 2^18 sign patterns of a 3 x 3 x 2 block with magnitudes in general position reached `mod.rs:514` with `count == 24` on a `[[u8; 3]; MAX_PATCH_TRIANGLES]`. Not an `Error` and not a hole — a panic.
+>
+> ***Two bounds for one quantity, and the derived one was on the inside.*** `fan_tunnel` buffers its own output in `[[u8; 3]; 40]` and its body says where 40 comes from, so the function could never overflow itself. The **caller's** array was sized by `MAX_PATCH_TRIANGLES = 24` — a sampled maximum of 22 over 400,000 random cells, plus two for margin — and the caller receives every triangle the function emits. The reproducer is pattern `0x06b4a` cell 0, sign byte `0x96`: inside corners 1, 2, 4, 7, which is Marching Cubes **case 13**, and it emits **26**. Two over. The margin was the whole safety argument and it was two triangles wide.
+>
+> ***The fix is the derivation, written once, and the second literal deleted.*** `MAX_PATCH_TRIANGLES` is `40` and now carries `12 x 3 + 4` rather than a number: at most 3 triangles per ring edge, ring lengths summing to at most 12 because a cell has 12 cut edges, plus a 4-triangle closure when a single twelve-vertex ring leaves the hexagon open. **`fan_tunnel`'s buffer uses the same constant**, because raising 24 to 40 while leaving a second literal in place rebuilds the same defect one release later. B-006/B-007's rule in a third place, and the aggravating detail is that the derivation already existed eleven lines from the array that was too small.
+>
+> ***The existing test was never wrong; it was answering a different question.*** `the_worst_case_tunnel_triangle_count_is_pinned` still reads 22 over its 400,000 random cells and still passes. It pins what a **sample** reaches. Nothing pinned what the **construction** can reach, which is what a buffer has to be sized by. The counterexample is pinned as its own fixture with the eight corner values verbatim and unrounded, because the count depends on where the body saddles fall.
+>
+> ***Verification.*** `preflight --full` all green at **710** lib tests, one more than before — the new fixture. **No golden hash moves and none should**: the constant sizes a stack array and does not change an emitted triangle, so all 216 are unchanged.

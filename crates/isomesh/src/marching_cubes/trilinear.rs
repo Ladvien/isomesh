@@ -1129,10 +1129,11 @@ impl Contours {
         // Buffered rather than streamed, because the closing fan's winding is not
         // known until the ring walk has been done: a twelve-vertex contour can
         // circle the hexagon either way, and the closure has to go the other way.
-        // Twelve ring edges at three triangles each plus a four-triangle closure
-        // is the bound, and `the_worst_case_tunnel_triangle_count_is_pinned`
-        // measures what is actually reached.
-        let mut buffer = [[0u8; 3]; 40];
+        // The bound is [`MAX_PATCH_TRIANGLES`] and its derivation lives there —
+        // this buffer and the caller's array use the **same** constant, because
+        // a second literal here is how the caller's came to be smaller than the
+        // quantity it bounds (✗50).
+        let mut buffer = [[0u8; 3]; MAX_PATCH_TRIANGLES];
         let mut n = 0usize;
         let detached = self.detached_ring(saddles, corner);
         let mut unresolved = 0usize;
@@ -1260,10 +1261,27 @@ impl Contours {
 
 /// Most triangles one cell's patch can carry on the trilinear path.
 ///
-/// Twenty-two, reached by a tunnel; a fanned disk tops out at twelve. Measured
-/// exhaustively for the disk path and over 400,000 random cells for the tunnel —
-/// `the_worst_case_triangle_count_is_pinned` and
-/// `the_worst_case_tunnel_triangle_count_is_pinned` both pin it in both
-/// directions. Larger than [`super::table::MAX_TRIANGLES`], which sizes the
-/// 256-case table's own array and is untouched by this path.
-pub const MAX_PATCH_TRIANGLES: usize = 24;
+/// **Derived from the construction, not measured — and it was measured once and
+/// that was the defect (`✗50`, R-061).** The previous value was `24`: the largest
+/// count seen over 400,000 random cells, plus two for luck. `fan_tunnel`'s own
+/// buffer was sized `40` from the derivation in its body, so the same quantity
+/// had two bounds, the derived one on the inside and the sampled one on the
+/// caller's array — and P-63's exhaustive 2^18 sign sweep found a case-13 cell
+/// that needs more than 24. The caller's array was the one that indexes, so it
+/// was an out-of-bounds **panic in release** on an ordinary trilinear cell.
+///
+/// The derivation, which is the whole content of this constant:
+///
+/// - `fan_tunnel` fans each **ring edge** to the inner hexagon and emits at most
+///   **3** triangles per ring edge (the `ring_distance == 2` branch is the widest).
+/// - A cell's contours run along its cut **cell edges**, of which there are 12,
+///   so the ring lengths sum to at most **12** however the rings are split.
+/// - A single twelve-vertex ring is a *disk* rather than an annulus and leaves
+///   the hexagon open, so it takes a further **4**-triangle closure (§5.2).
+///
+/// `12 × 3 + 4 = 40`, and `fan_tunnel` uses this same constant for its buffer so
+/// there is exactly one bound rather than two that can disagree. The fanned disk
+/// path tops out at twelve, measured exhaustively, so this covers it.
+/// Larger than [`super::table::MAX_TRIANGLES`], which sizes the 256-case table's
+/// own array and is untouched by this path.
+pub const MAX_PATCH_TRIANGLES: usize = 40;

@@ -117,11 +117,61 @@ struct Lattice {
     value: [f64; CORNERS],
 }
 
+/// How a sign pattern becomes corner *values*.
+///
+/// **This is the fixture decision, and the first version of this harness got it
+/// wrong in a way `M-44` caught.** `Unit` gives every corner `±1`, which is the
+/// most symmetric magnitude assignment there is — and the trilinear's saddles
+/// are then symmetric too, so `has_inner_hexagon`'s strict `0 < x < 1` test
+/// rejects and **the interior-ambiguity rule never fires at all**. The "interior
+/// rule on" arm was therefore identical to "off", `✗43`'s pre-fix fan had no
+/// apex to merge, and C2's control could not fire. Measured, not assumed:
+/// `interior_vertices` is a column.
+///
+/// `Generic` draws a magnitude per corner from SplitMix64 seeded on
+/// `(pattern, corner)`, so the sweep stays **exhaustive over signs** — which is
+/// what C1 is about — while the magnitudes are in general position. Both arms
+/// run, because the `Unit` result is itself a finding about the interior rule.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Magnitudes {
+    Unit,
+    Generic,
+}
+
+impl Magnitudes {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Unit => "unit",
+            Self::Generic => "generic",
+        }
+    }
+}
+
+/// SplitMix64, so a magnitude is a pure function of `(pattern, corner)` and the
+/// sweep is byte-identical on every machine and every run.
+#[inline]
+fn magnitude(pattern: u32, corner: usize) -> f64 {
+    let mut z = u64::from(pattern)
+        .wrapping_mul(0x9E37_79B9_7F4A_7C15)
+        .wrapping_add(corner as u64 + 1)
+        .wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    z ^= z >> 31;
+    // In [1/4, 5/4): bounded away from zero, so no corner sits on the surface
+    // and the sign pattern the sweep enumerates is the sign pattern meshed.
+    0.25 + (z >> 11) as f64 * (1.0 / 9_007_199_254_740_992.0)
+}
+
 impl Lattice {
-    fn new(pattern: u32) -> Self {
+    fn new(pattern: u32, magnitudes: Magnitudes) -> Self {
         let mut value = [0.0f64; CORNERS];
         for (bit, slot) in value.iter_mut().enumerate() {
-            *slot = if pattern >> bit & 1 == 1 { -1.0 } else { 1.0 };
+            let sign = if pattern >> bit & 1 == 1 { -1.0 } else { 1.0 };
+            *slot = match magnitudes {
+                Magnitudes::Unit => sign,
+                Magnitudes::Generic => sign * magnitude(pattern, bit),
+            };
         }
         Self { value }
     }
@@ -280,6 +330,11 @@ fn link_components(vertex: u32, incident: &[[u32; 3]]) -> usize {
 /// What one welded 4-cell mesh says about its vertex links.
 #[derive(Default)]
 struct LinkCensus {
+    /// Vertices with 0 integral coordinates: a Marching Cubes interior apex, or
+    /// a dual vertex. The reachability counter for the interior rule.
+    interior_vertices: usize,
+    /// The most incident faces any single vertex carried.
+    max_incident_faces: usize,
     /// The shared-edge vertex exists and its link has one component.
     shared_edge_present: bool,
     /// The shared-edge vertex's link has more than one component. **C1.**
@@ -309,6 +364,7 @@ fn census(positions: &[[f64; 3]], indices: &[u32]) -> LinkCensus {
         }
         let components = link_components(v as u32, faces);
         out.worst_components = out.worst_components.max(components);
+        out.max_incident_faces = out.max_incident_faces.max(faces.len());
         let p = positions[v];
         let split = components > 1;
         if on_shared_edge(p) {
@@ -317,6 +373,7 @@ fn census(positions: &[[f64; 3]], indices: &[u32]) -> LinkCensus {
                 out.shared_edge_defective = true;
             }
         } else if integral_coordinates(p) == 0 {
+            out.interior_vertices += 1;
             out.interior_defective += usize::from(split);
         } else {
             out.truncated_defective += usize::from(split);
@@ -428,6 +485,7 @@ struct Arm {
     extractor: &'static str,
     interior_rule: &'static str,
     merge_apexes: bool,
+    magnitudes: Magnitudes,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -462,9 +520,11 @@ fn run_arm(
     let mut fan_patterns = 0u64;
     let mut critical_cells = 0u64;
     let mut critical_patterns = 0u64;
+    let mut interior_vertices = 0u64;
+    let mut max_incident_faces = 0usize;
 
     for pattern in 0..PATTERNS {
-        let field = Lattice::new(pattern);
+        let field = Lattice::new(pattern, arm.magnitudes);
 
         let cut = (pattern >> SHARED_LO & 1) != (pattern >> SHARED_HI & 1);
         if cut {
@@ -505,6 +565,8 @@ fn run_arm(
             shared_edge_vertices += 1;
         }
         worst_components = worst_components.max(c.worst_components);
+        max_incident_faces = max_incident_faces.max(c.max_incident_faces);
+        interior_vertices += c.interior_vertices as u64;
         defective_interior += c.interior_defective as u64;
         defective_truncated += c.truncated_defective as u64;
         if c.shared_edge_defective {
@@ -526,11 +588,12 @@ fn run_arm(
     let c3 = is_dual && defective_total > 0 && defective_total == critical_cells;
 
     println!(
-        "{:<34} {:<10} {:>9} {:>8} {:>8} {:>8} {:>8} {:>4} {:>8}",
+        "{:<30} {:<8} {:<9} {:>8} {:>9} {:>8} {:>8} {:>8} {:>4} {:>7}",
         arm.name,
+        arm.magnitudes.label(),
         arm.interior_rule,
-        patterns_cut,
         shared_edge_vertices,
+        interior_vertices,
         defective_shared,
         defective_interior,
         defective_truncated,
@@ -542,6 +605,9 @@ fn run_arm(
         ("arm", arm.name.to_string()),
         ("extractor", arm.extractor.to_string()),
         ("interior_rule", arm.interior_rule.to_string()),
+        ("magnitudes", arm.magnitudes.label().to_string()),
+        ("interior_vertices", interior_vertices.to_string()),
+        ("max_incident_faces", max_incident_faces.to_string()),
         ("patterns", PATTERNS.to_string()),
         ("patterns_shared_edge_cut", patterns_cut.to_string()),
         ("shared_edge_vertices", shared_edge_vertices.to_string()),
@@ -599,47 +665,61 @@ fn main() {
              cell sign bytes critical\n"
         );
         println!(
-            "{:<34} {:<10} {:>9} {:>8} {:>8} {:>8} {:>8} {:>4} {:>8}",
-            "arm", "interior", "cut", "sharedV", "defShare", "defInt", "defTrunc", "cmp", "ms"
+            "{:<30} {:<8} {:<9} {:>8} {:>9} {:>8} {:>8} {:>8} {:>4} {:>7}",
+            "arm",
+            "mags",
+            "interior",
+            "sharedV",
+            "interiorV",
+            "defShare",
+            "defInt",
+            "defTrunc",
+            "cmp",
+            "ms"
         );
 
+        let mc_arm =
+            |name: &'static str, interior_rule: &'static str, merge_apexes: bool, magnitudes| Arm {
+                name,
+                extractor: "marching_cubes",
+                interior_rule,
+                merge_apexes,
+                magnitudes,
+            };
+        let dual_arm = |name: &'static str, extractor: &'static str, magnitudes| Arm {
+            name,
+            extractor,
+            interior_rule: "n/a",
+            merge_apexes: false,
+            magnitudes,
+        };
         let arms = [
-            Arm {
-                name: "marching_cubes/interior_off",
-                extractor: "marching_cubes",
-                interior_rule: "ignore",
-                merge_apexes: false,
-            },
-            Arm {
-                name: "marching_cubes/interior_on",
-                extractor: "marching_cubes",
-                interior_rule: "trilinear",
-                merge_apexes: false,
-            },
-            Arm {
-                name: "marching_cubes/pre_fix_single_apex",
-                extractor: "marching_cubes",
-                interior_rule: "trilinear",
-                merge_apexes: true,
-            },
-            Arm {
-                name: "surface_nets",
-                extractor: "surface_nets",
-                interior_rule: "n/a",
-                merge_apexes: false,
-            },
-            Arm {
-                name: "dual_contouring",
-                extractor: "dual_contouring",
-                interior_rule: "n/a",
-                merge_apexes: false,
-            },
-            Arm {
-                name: "manifold_dual_contouring",
-                extractor: "manifold_dual_contouring",
-                interior_rule: "n/a",
-                merge_apexes: false,
-            },
+            // Signs exhaustive at the most symmetric magnitude there is. The
+            // pure combinatorial statement, and the arm that shows whether the
+            // interior rule can fire at all here.
+            mc_arm("mc/off/unit", "ignore", false, Magnitudes::Unit),
+            mc_arm("mc/on/unit", "trilinear", false, Magnitudes::Unit),
+            // Signs exhaustive with magnitudes in general position, which is
+            // what reaches the interior rule and therefore C2.
+            mc_arm("mc/off/generic", "ignore", false, Magnitudes::Generic),
+            mc_arm("mc/on/generic", "trilinear", false, Magnitudes::Generic),
+            mc_arm(
+                "mc/pre_fix_apex/generic",
+                "trilinear",
+                true,
+                Magnitudes::Generic,
+            ),
+            dual_arm("surface_nets/generic", "surface_nets", Magnitudes::Generic),
+            dual_arm(
+                "dual_contouring/generic",
+                "dual_contouring",
+                Magnitudes::Generic,
+            ),
+            dual_arm(
+                "manifold_dual_contouring/generic",
+                "manifold_dual_contouring",
+                Magnitudes::Generic,
+            ),
         ];
 
         let mut rows = Vec::new();
@@ -656,42 +736,65 @@ fn main() {
         };
         let num = |name: &str, key: &str| -> u64 { value(name, key).parse().unwrap_or(0) };
 
-        // **C2's control, asserted.** A sweep whose fan arm merged nothing has
-        // not reproduced the defect known to exist, and C1's zero would then
-        // rest on a walk never shown able to return non-zero (M-44).
-        let fan = num("marching_cubes/pre_fix_single_apex", "fan_patterns");
-        assert!(
-            fan > 0,
-            "VOID: the pre-fix arm merged no apexes on any of {PATTERNS} \
-             patterns, so C2 cannot fire and C1's zero proves nothing"
-        );
-        let fan_defects = num("marching_cubes/pre_fix_single_apex", "link_defective_total");
-
-        // **C1's population, asserted.** Half the patterns cut the shared edge.
-        let cut = num("marching_cubes/interior_on", "patterns_shared_edge_cut");
+        // **C1's population, asserted.** Half the patterns cut the shared edge,
+        // and the shared-edge vertex must exist on every one of them or the
+        // sweep is not walking the link it claims to.
+        let cut = num("mc/on/generic", "patterns_shared_edge_cut");
         assert_eq!(
             cut,
             u64::from(PATTERNS) / 2,
             "the shared edge should be cut on exactly half the patterns"
         );
+        assert_eq!(
+            num("mc/on/generic", "shared_edge_vertices"),
+            cut,
+            "every pattern that cuts the shared edge must put a vertex on it"
+        );
 
+        // **The reachability control, and it is why this harness has two
+        // magnitude arms.** The interior rule has to be shown firing before
+        // "with the interior rule on" means anything, and C2 has to be shown
+        // able to return non-zero before C1's zero means anything (M-44).
+        let interior_unit = num("mc/on/unit", "interior_vertices");
+        let interior_generic = num("mc/on/generic", "interior_vertices");
+        let fan = num("mc/pre_fix_apex/generic", "fan_patterns");
+        let fan_defects = num("mc/pre_fix_apex/generic", "link_defective_total");
+        println!("\ninterior vertices: unit {interior_unit}, generic {interior_generic}");
         println!(
-            "\nC1 shared-edge link defects, interior off / on: {} / {}",
-            num("marching_cubes/interior_off", "link_defective_shared_edge"),
-            num("marching_cubes/interior_on", "link_defective_shared_edge")
+            "C1 shared-edge link defects, off/on, unit:    {} / {}",
+            num("mc/off/unit", "link_defective_shared_edge"),
+            num("mc/on/unit", "link_defective_shared_edge")
         );
         println!(
-            "   interior-apex link defects, off / on: {} / {}",
-            num("marching_cubes/interior_off", "link_defective_interior"),
-            num("marching_cubes/interior_on", "link_defective_interior")
+            "C1 shared-edge link defects, off/on, generic: {} / {}",
+            num("mc/off/generic", "link_defective_shared_edge"),
+            num("mc/on/generic", "link_defective_shared_edge")
+        );
+        println!(
+            "   interior-apex link defects, off/on, generic: {} / {}",
+            num("mc/off/generic", "link_defective_interior"),
+            num("mc/on/generic", "link_defective_interior")
         );
         println!("C2 pre-fix arm: {fan} patterns fanned, {fan_defects} link defects");
         println!(
-            "C3 critical cells {} vs dual link defects sn {} / dc {} / mdc {}",
-            num("surface_nets", "critical_cells"),
-            num("surface_nets", "link_defective_total"),
-            num("dual_contouring", "link_defective_total"),
-            num("manifold_dual_contouring", "link_defective_total")
+            "C3 critical cells {} vs dual link defects sn {} / dc {} / mdc {}; max \
+             incident faces on any dual vertex {}",
+            num("surface_nets/generic", "critical_cells"),
+            num("surface_nets/generic", "link_defective_total"),
+            num("dual_contouring/generic", "link_defective_total"),
+            num("manifold_dual_contouring/generic", "link_defective_total"),
+            num("dual_contouring/generic", "max_incident_faces")
+        );
+        assert!(
+            interior_generic > 0,
+            "VOID: the interior rule produced no apex on any of {PATTERNS} \
+             generic-magnitude patterns, so 'with the interior rule on' is the \
+             same arm as 'off' and neither C1 nor C2 means anything"
+        );
+        assert!(
+            fan > 0,
+            "VOID: the pre-fix arm merged no apexes on any of {PATTERNS} \
+             patterns, so C2 cannot fire and C1's zero proves nothing"
         );
 
         for (_, row) in rows {

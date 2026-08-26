@@ -2210,3 +2210,63 @@ fn the_interpolant_is_zero_at_every_body_saddle() {
          set and P-24's premise would be recoverable after all"
     );
 }
+
+/// The cell that overflowed the caller's patch array (`✗50`, R-061).
+///
+/// Found by P-63's exhaustive 2¹⁸ sign sweep with magnitudes in general
+/// position: a case-13 cell — inside corners 1, 2, 4, 7, byte `0x96` — whose
+/// tunnel patch needs **more** triangles than the sampled `24` the caller's
+/// array was sized with, while `fan_tunnel`'s own buffer was already `40` from
+/// the derivation in its body. Two bounds for one quantity, and the smaller one
+/// was the one that indexed, so it was an out-of-bounds **panic in release** on
+/// an ordinary trilinear cell.
+///
+/// Pinned exactly rather than as an inequality: `MAX_PATCH_TRIANGLES` is now
+/// derived (`12 × 3 + 4`), and if the emission logic ever changes what this cell
+/// produces, that is a finding and not a regression to absorb.
+#[test]
+fn the_case_13_cell_that_overflowed_the_patch_array_is_pinned() {
+    // The eight corner values verbatim from the sweep, cell 0 of pattern
+    // 0x06b4a. Not rounded: the count depends on where the saddles fall.
+    let f = [
+        0.519_630_416_140_653_5,
+        -0.323_561_278_230_897_53,
+        -0.392_376_979_817_058_44,
+        0.397_562_315_679_148_46,
+        -1.235_061_219_941_051_6,
+        0.851_518_039_009_829_8,
+        1.191_076_954_409_544_5,
+        -1.212_636_051_833_211_8,
+    ];
+    let mut case = 0u8;
+    for (c, &v) in f.iter().enumerate() {
+        if crate::cube::is_inside(v) {
+            case |= 1 << c;
+        }
+    }
+    assert_eq!(
+        case, 0x96,
+        "the fixture is the case-13 configuration it names"
+    );
+
+    let (tris, unresolved) = tunnel_patch(&f).expect("this cell has an inner hexagon");
+    assert_eq!(unresolved, 0, "the patch resolves");
+    assert!(
+        tris.len() > 24,
+        "the fixture no longer exceeds the old sampled bound of 24, so it no \
+         longer pins anything: it emitted {}",
+        tris.len()
+    );
+    // **26**, against a caller array sized 24. Two over, which is exactly the
+    // margin somebody added to a sampled maximum of 22 — the margin was the
+    // whole safety argument and it was two triangles wide.
+    assert_eq!(
+        tris.len(),
+        26,
+        "the overflow fixture's triangle count moved"
+    );
+    assert!(
+        tris.len() <= super::MAX_PATCH_TRIANGLES,
+        "the derived bound must cover the case that broke the sampled one"
+    );
+}

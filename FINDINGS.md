@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**467 entries** — 49 falsified, 345 measured, 50 verified, 18 open, 5 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**468 entries** — 50 falsified, 345 measured, 50 verified, 18 open, 5 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -88,6 +88,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗47` | "GPU_JOBS_MAX bounds the queue": the cap was checked after the push, so it bounded nothing at all (D-014) |
 | `✗48` | "the field already stops the descent, and the floor slab is scenery": dig out the bottom and the player leaves the world… |
 | `✗49` | plain Marching Cubes is now bit-exactly equivariant under all 48 octahedral elements |
+| `✗50` | "MAX_PATCH_TRIANGLES = 24 bounds the trilinear patch": it was a sampled maximum plus two, fan_tunnel's own buffer was al… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -10718,3 +10719,55 @@ reference field or a `src/` path.
 `link_defective_truncated`, `worst_link_components`, `first_defective_pattern`, `fan_patterns`,
 `critical_cells`, `critical_patterns`, `defective_equals_critical`, `c1_holds`, `c2_holds`, `c3_holds`,
 `wall_ms`.
+
+### 💥 ✗50 / M-373 — "`MAX_PATCH_TRIANGLES = 24` bounds the trilinear patch": it was a **sampled** maximum plus two, `fan_tunnel`'s own buffer was already the derived `40`, and the smaller one was the one that indexed (D-021, found by R-061's harness)
+
+**Believed because:** it was measured, and the measurement was pinned by a committed test. The constant's
+own doc comment said so: *"Twenty-two, reached by a tunnel; a fanned disk tops out at twelve. Measured
+exhaustively for the disk path and **over 400,000 random cells** for the tunnel."*
+`the_worst_case_tunnel_triangle_count_is_pinned` asserts `worst_tris == 22` over those 400,000 cells and
+has passed since it was written. `24` is that 22 with two added for margin.
+
+**Falsified by:** P-63's harness, on its second run, before P-63 measured anything. An exhaustive sweep
+over all 2¹⁸ sign patterns of a 3 × 3 × 2 block with magnitudes in general position reached
+`marching_cubes/mod.rs:514` — `triangles[count] = t` into `[[u8; 3]; MAX_PATCH_TRIANGLES]` — with
+`count == 24`. **Index out of bounds, in release, on an ordinary trilinear cell.** Not an `Error`, not a
+hole: a panic.
+
+**The mechanism is two bounds for one quantity, and the derived one was on the inside.** `fan_tunnel`
+buffers its own output in `[[u8; 3]; 40]`, and its body states where 40 comes from — *"twelve ring edges at
+three triangles each plus a four-triangle closure"*. So the function could never overflow itself. The
+**caller's** array in `mod.rs` was sized by `MAX_PATCH_TRIANGLES = 24`, the sampled figure, and the caller
+is what receives every triangle `fan_tunnel` emits. The two numbers describe the same count and disagreed
+by 16.
+
+**The reproducer, pinned as a fixture.** Pattern `0x06b4a`, cell 0, sign byte **`0x96`** — inside corners
+1, 2, 4, 7, which is Marching Cubes **case 13**, the classic ambiguous one and exactly the case the tunnel
+path exists for. Its eight corner values are committed verbatim in
+`the_case_13_cell_that_overflowed_the_patch_array_is_pinned`, unrounded, because the count depends on where
+the body saddles fall. It emits **26** triangles.
+
+> **Two over. The margin was the entire safety argument and it was two triangles wide.**
+
+**The fix is the derivation, written down once.** `MAX_PATCH_TRIANGLES` is now `40` and carries the
+derivation instead of the measurement: `fan_tunnel` emits at most **3** triangles per ring edge (its
+`ring_distance == 2` branch is the widest), a cell's contours run along its 12 cut cell edges so the ring
+lengths sum to at most **12** however the rings are split, and a single twelve-vertex ring is a disk rather
+than an annulus and takes a further **4**-triangle closure. `12 × 3 + 4 = 40`. **`fan_tunnel`'s buffer now
+uses the same constant**, so there is one bound rather than two that can disagree — which is the actual
+repair, because raising 24 to 40 while leaving a second literal in place would rebuild the same defect one
+release later.
+
+**No golden hash moves and none should.** The constant sizes a stack array; it does not change a single
+emitted triangle. 710 lib tests green, `216` hashes unchanged,
+`the_worst_case_tunnel_triangle_count_is_pinned` still reads 22 over its 400,000 random cells — which is
+the point: **that test was never wrong, it was answering a different question.** It pins what a sample
+reaches. Nothing pinned what the construction can reach.
+
+**This is B-006/B-007's rule in a third place** — *"derive a measurement's bounds from the thing being
+measured; a hand-written bound is wrong twice before anyone notices"* — and the aggravating detail is that
+the derivation already existed, eleven lines away, in the function the caller calls.
+
+**Would be shown wrong by:** a trilinear cell whose patch exceeds 40 triangles, which would mean the ring
+lengths can sum past 12 and the derivation is wrong rather than the constant; or the pinned fixture
+emitting a number other than 26, which is a change in the emission logic and a finding in its own right.
