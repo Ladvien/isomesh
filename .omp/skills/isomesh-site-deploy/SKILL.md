@@ -123,6 +123,30 @@ gh api -X PATCH repos/Ladvien/ladvien.github.io -F archived=true
 ever 301s somewhere unexpected again, check the *user* site's `cname` first — the
 repo you are deploying is not where the redirect comes from.
 
+**`isomesh.ladvien.com` is gone from DNS too, and that was a second step.**
+Clearing the Pages setting left the Route 53 `CNAME` pointing at
+`ladvien.github.io`, which is the worst of the three possible states: the name
+still resolved, so `https://` failed the TLS handshake (`curl` exit 60, no
+certificate for that hostname) and `http://` returned GitHub's own 404 for a
+`Host` it no longer maps. **That reads exactly like an outage**, and it cost a
+reader a puzzled minute — the fix for which is not documentation but deleting the
+record. Done in the Route 53 console, because it is a one-off deletion of one
+record and the console shows you the row before you commit it; the CLI route
+needs a valid key, and the one on `big` has been invalid since April.
+
+So the expected state of the old hostname is **`NXDOMAIN`**, and that is the
+check:
+
+```bash
+dig +short isomesh.ladvien.com @1.1.1.1     # expect no output
+dig +short ladvien.com          @1.1.1.1     # expect CloudFront, untouched
+```
+
+An answer from the first means the record is back and the *next* deploy could
+re-provision the custom domain. Note the second line: the record lived in the
+`ladvien.com` zone beside the apex that serves the personal site, so "did I
+delete only the one row" is worth one command.
+
 The site now serves under GitHub's own `*.github.io` certificate, which is valid,
 and `https_enforced` is `true`. Confirm both, and that no domain has crept back:
 
