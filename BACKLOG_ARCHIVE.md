@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-245 tickets. Line numbers are stable until something above them is edited — grep the ID if
+246 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1808,3 +1808,16 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***Two new ones the audit did not make.*** `✗39`'s heading claimed *"a mesh is bit-exactly equivariant under axis relabelling"* — true of plain `marching_cubes` only: `marching_cubes+decider` drops to `pure_permutation_exact = 1` on `noise_cavity` at both resolutions and the duals run 2 (11 rows), 4 (1), 6 (4). Heading narrowed to match the body. And `✗39`'s named fix — a value-canonical lerp anchor — has an unstated degenerate case: it needs a tie-break when endpoint values are **equal**, and `box_exact` at 65³ ties on **274,145 of 274,625** voxels by P-58's own census. **`P-61`'s midpoint form has no such case**, which is why it is the fix and this is not.
 >
 > ***Part 5 gains three rows, each earned above.*** *A clause whose population is empty on the fixtures it will run against is not a clause — enumerate the rows before writing the harness.* *A ratio that chains a median onto a total is not a ratio — state both statistics or neither.* *An entry that says an instrument was fixed must show the fixed instrument's values, not the old ones.*
+
+| ☑ | **D-020** | S | D-019 |
+> **DONE 2026-08-26 — six acquisitions attempted, one already present, one present as a landing page, four with no open-access PDF; P-65 and P-67 are blocked and say so (M-371).** `catalog_read` on every candidate stem before any download, per `✗4`, and `paper_download` only on the misses. home-still preflight clean: 9,518 documents, 290,612 chunks, CUDA distill, both scribe instances idle.
+>
+> ***One acquisition was unnecessary and that is the good news.*** Finken, Li, Wang, Guo & Levine `10.48550/arXiv.2608.12142` has been in the corpus since 2026-08-23 — 3.65 MB PDF, 37,165 characters of markdown by `olmocr`, 12 chunks. **P-66's edge test is unblocked without spending anything.**
+>
+> ***The MCPro entry is a 383-character SciTePress landing page that read "converted, embedded".*** `catalog_read` reported `markdown_path` set, `conversion.server = "html-parser"`, `total_pages: 1` and `embedding.chunks_indexed: 1` — the shape of a present paper — over a 279,882-byte HTML page whose markdown is a title, a topic list and a page range. `pdf_path` ends in `.html`, which is the tell nobody reads. **`✗4`'s rule extends: `catalog_read` is not a presence oracle either**, and the two cheap discriminators are the markdown length (383 against Finken's 37,165) and `chunks_indexed` (1 against 12). Re-running `paper_download` returns the same page with a *different* sha256 and resets the entry's conversion/embedding blocks, so it now honestly reads *downloaded, not converted* — left that way, because that is the true state of the paper text.
+>
+> ***Four have no open-access PDF, and all four resolve as metadata.*** Knoll CGF 28(1) `10.1111/j.1467-8659.2008.01189.x`, Smith/Levien/Owens SPAA '25 `10.1145/3694906.3743326`, Chernikov & Xu `10.1007/978-3-319-02335-9_28` (title confirmed: *"A Computer-Assisted Proof of Correctness of a Marching Cubes Algorithm"*) and Ahrens/Demmel/Nguyen `10.1145/3389360`. So the identifiers are right and the PDFs are paywalled; `paper_download` takes a DOI and nothing else, and the bridge policy forbids ingesting round the MCP, so there is no in-policy author-copy route.
+>
+> ***What that costs, exactly two experiments.*** **P-65 is registered and not run** — `R-063` carries a `> BLOCKED:` line; everything known about MCPro's construction comes from its abstract, and `CLAUDE.md` rule 5 forbids inventing what an abstract omits. **P-67 is registered and not run** — its C3 exists to reproduce Knoll's measured 1.5–2× / 3–4× band *and* his superquadric inversion, and reproducing a band from a summary is `✗21`. The other four misses block nothing: P-70's prior is already transcribed with its numbers, and Chernikov & Xu and Ahrens are prior art and a reopening condition.
+>
+> ***The corpus was searched before acquiring, per the bridge policy, and it has no substitute.*** `distill_search` over reduced affine arithmetic returns Fryazinov `10.1016/j.cag.2010.07.003` — which is P-54's source and which the Phase 20 corrections already record as containing *no* correlation argument and *no* min/max rule — plus Sharp & Jacobson's *Spelunking the Deep*. Over GPU scan it returns an Eikonal solver and three SIGGRAPH course decks. Nothing carries Knoll's comparison or Smith's measurements.

@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**464 entries** — 48 falsified, 344 measured, 50 verified, 18 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**465 entries** — 48 falsified, 345 measured, 50 verified, 18 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -431,6 +431,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-366` | a GitHub Pages project page is redirected by the user site's custom domain, and an archived repo cannot be fixed through… |
 | `M-368` | the backpressure was measured against a stale queue: drain_dirty ran before gpu_collect (D-014) |
 | `M-370` | an existence check passes on a commit that left the branch: git cat-file -e is a property of the checkout, merge-base --… |
+| `M-371` | MCPro is in the corpus as a 383-character landing page that read "converted, embedded": catalog_read is not a presence o… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -10356,3 +10357,64 @@ second is also **the opposite direction** from the audit's paraphrase of it.
 **Would be shown wrong by:** a CGAL release adding a transition-cell or crack-free octree path, or a
 2023–2026 peer-reviewed DC/MC seam result the sweep missed — the second being the more likely and the
 reason this row names its sweep rather than asserting exhaustiveness.
+
+### 📖 M-371 — MCPro is in the corpus as a **383-character landing page** that read "converted, embedded": `catalog_read` is not a presence oracle either, and P-65 is blocked (D-020)
+
+**M.** Six acquisitions attempted through `home-still` (9,518 documents, 290,612 chunks, CUDA distill,
+both scribe instances idle). `catalog_read` on each candidate stem first, per `✗4`; `paper_download` only
+on the misses.
+
+| paper | DOI | in corpus? | blocks |
+|---|---|---|---|
+| Finken et al., monotonicity constraints | `10.48550/arXiv.2608.12142` | **yes, genuinely** — 3.65 MB PDF, 37,165 chars of markdown by `olmocr`, 12 chunks, 2026-08-23 | **P-66 unblocked** |
+| Stahl & Grosso, *MCPro*, GRAPP 2025 | `10.5220/0013309800003912` | **entry yes, paper no** — see below | **P-65 BLOCKED** |
+| Knoll et al., IA vs RAA, CGF 28(1) | `10.1111/j.1467-8659.2008.01189.x` | no; *"No open-access PDF found"* | **P-67 BLOCKED** |
+| Smith, Levien & Owens, SPAA '25 | `10.1145/3694906.3743326` | no; *"No open-access PDF found"* | nothing — P-70's prior is transcribed |
+| Chernikov & Xu, IMR 2013 | `10.1007/978-3-319-02335-9_28` | no; *"No open-access PDF found"* | nothing — P-63 prior art |
+| Ahrens, Demmel & Nguyen, TOMS 46(3) | `10.1145/3389360` | no; *"No open-access PDF found"* | nothing |
+
+All four misses resolve as **metadata** through `paper_search` — the DOIs are real, the titles match, and
+Chernikov & Xu's title is *"A Computer-Assisted Proof of Correctness of a Marching Cubes Algorithm"* — so
+what failed is the open-access PDF, not the identifier. `paper_download` takes a DOI and nothing else, so
+there is no in-policy route to an author copy.
+
+**The MCPro entry is the finding, and it is `✗4`'s rule one step further out.** The standing rule is that
+`distill_search` is not a presence oracle. `catalog_read` was the prescribed substitute, and on this stem
+it reported `markdown_path` set, `conversion.server = "html-parser"`, `total_pages: 1`, and
+`embedding.chunks_indexed: 1` — every field a present, converted, indexed paper has. The document behind
+it is a **279,882-byte SciTePress landing page**, and its markdown is **383 characters**:
+
+```
+MCPro: A Procedural Method for Topologically Correct Isosurface Extraction Based on Marching Cubes
+Topics:Fundamental Methods and Algorithms; Geometric Computing; Modeling and Algorithms
+InProceedings of the 20th International Joint Conference on Computer Vision, … ,331-338,2025, Porto, Portugal
+```
+
+A title, a topic list and a page range. **Not one sentence of the method.** `pdf_path` ends in `.html`,
+which is the tell and is not a field anybody reads. So the check that was supposed to be sound reported
+sound, for thirteen days, on the acquisition that gates the largest item in Phase 23.
+
+**Two mechanical discriminators, either of which would have caught it, and they are cheap.** The markdown
+is **383 characters against Finken's 37,165** — two orders of magnitude, on documents of comparable page
+count — and `chunks_indexed` is **1 against 12**. A paper that converts to one chunk is a paper that did
+not convert. `pdf_path` not ending in `.pdf` is a third, and it is exact rather than statistical.
+
+**Re-running `paper_download` returns the same landing page** — 279,882 bytes again, and a *different*
+sha256 (`74b1a3d9…` against the catalogued `49730d45…`), because the page carries per-request state. It
+also **reset the entry's `conversion` and `embedding` blocks**, so the entry now honestly reads
+*downloaded, not converted*, which is the true state of the paper text and is left that way deliberately.
+The 383-char markdown object and its single Qdrant chunk are still on disk from the 2026-08-13 ingest;
+`distill_exists` still reports `indexed: true` for the stem. That is a corpus-hygiene item on `big`, not a
+change this repository should make.
+
+**Consequence.** `P-65` is registered and **not run**: `R-063` carries a `> BLOCKED:` line naming the
+acquisition. The paper describes a face classification into hyperbola / singular cross / single line /
+degenerate plane, a quadrant division around the asymptote centre, a per-cell halfedge assembly and an
+inner hexagon — all of that is from the **abstract**, and `CLAUDE.md` rule 5 forbids inventing the parts
+an abstract omits. `P-67` is registered and not run for the same reason: its C3 exists to reproduce
+Knoll's measured 1.5–2× / 3–4× band **and** his superquadric inversion, and reproducing a band from a
+transcription of a summary is what `✗21` catalogues.
+
+**Would be shown wrong by:** a `catalog_read` whose `markdown_path` points at real paper text while
+`chunks_indexed` is 1, which would make the discriminator above a false positive; or either paper becoming
+open-access, which unblocks its experiment with no other change.
