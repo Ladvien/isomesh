@@ -11020,3 +11020,58 @@ the binary. It is reported as a column and is **not** a 1.24× improvement.
 mean the widening is available and something else blocked it; a `gyroid` speedup at or above 2×, which
 would be a finding about `libm` rather than about this loop; or a golden hash moving, which under C2 is a
 veto and not a measurement.
+
+### P-71 — registered for R-069, before the harness: is the 83% a blocking round-trip, and can both targets avoid it?
+
+**`M-167` is the largest single number this project owns about its own GPU path:** synchronisation was
+**83%** of an extraction. `M-159` localised it — the last four bytes cost **0.033 ms to move and 0.375 ms
+to wait for**, because `poll(Wait)` with no submission index drains every dispatch queued before it — and
+`M-160` showed what removing it buys: CPU time flat at ~0.17 ms from 33³ to 129³.
+
+**What `wgpu` 29 gives splits the two targets, and that split is why this is one experiment rather than
+two.** `PollType::Poll` is *"check the device for a single time without blocking"*; `PollType::Wait` is
+*"block until the given submission has completed execution"*. And verbatim from the docs: **"On WebGPU,
+this has no effect. Callbacks are invoked from the window event loop."** So native Bevy has a real CPU
+stall to design away and the web build has **no blocking primitive at all** — meaning any code shaped
+around `Wait` is native-only scaffolding, and the restructuring must not become a `#[cfg]` fork, for the
+same one-path reason the `libm` justification already gives. `TIMESTAMP_QUERY` is in `FeaturesWebGPU`
+(`V-48`) and behaves identically on both targets, which is why C1 can be stated for both.
+
+**Two of the three mechanisms already exist in the tree, so this is partly a measurement of shipped code
+rather than a build.** `extract_buffers` waits **once**, for the four bytes of the triangle count.
+`extract_indirect` waits **not at all** — it sizes the geometry from a budget and turns the total into
+indirect draw arguments on the device. C2 is therefore the difference between two shipped entry points,
+measured in one binary and one run.
+
+**Each clause's population, and C1's was probed on this host before this was written:**
+
+| clause | fires on | established |
+|---|---|---|
+| C1 | the adapter must advertise the feature | **NVIDIA RTX 3090 / Vulkan**, and `TIMESTAMP_QUERY`, `TIMESTAMP_QUERY_INSIDE_PASSES` and `TIMESTAMP_QUERY_INSIDE_ENCODERS` are **all three true**. The instrument exists on the machine the numbers will come from |
+| C2 | every resolution both entry points accept | both already ship; the comparison is within one binary and one run (`M-281`) |
+| C3 | exactly the rows `M-124`'s sweep has, re-run with the ring | the only genuinely new capability here |
+
+**C1's instrument is not currently reachable, and enabling it is a registered `src/` change.**
+`isomesh_gpu::headless::Gpu` requests `Features::empty()`, and `ExtractTimings`' own doc says in as many
+words that timestamp attribution *"need[s] a device feature this crate does not request"*. The change is
+shaped as a **capability check that refuses loudly** on an adapter without the feature — `GPU-007`'s
+pattern — rather than a fallback that quietly reports CPU-side numbers under a GPU-side column name.
+
+**C2's denominator is stated rather than assumed.** *"The measured synchronisation"* is the wait component
+**C1 attributes**, not the whole extraction. If C1 finds map-wait is *not* the largest component then C2's
+own denominator is smaller than `M-167` suggests, and the entry must say so rather than quoting 83% into a
+percentage of something else. That is `✗41`'s chained-ratio defect anticipated instead of repeated.
+
+**A design question that is the owner's, not the harness's, and is registered as a question.** C3 costs
+**one to two frames of latency on collision**. For a voxel game that is invisible; for a CAD tool it is a
+decision. The registration records the question and the entry must surface it rather than pick.
+
+**Void conditions, asserted rather than reported.** The experiment is void if the timestamp period reads
+zero or if a resolved query set comes back monotonically non-increasing, because then the attribution is a
+column that was named and not measured.
+
+**Records** `arm`, `entry_point`, `samples_per_axis`, `cells`, `triangles`, `wall_ms`, `submit_ms`,
+`execute_ms`, `map_wait_ms`, `copy_ms`, `largest_component`, `synchronisation_ms`,
+`synchronisation_share`, `synchronisation_removed_share`, `timestamp_feature`, `timestamp_period_ns`,
+`amortised_ms_per_frame`, `budget_chunks`, `within_one_chunk`, `ring_frames_delay`, `c1_holds`, `c2_holds`,
+`c3_holds`, `adapter`.
