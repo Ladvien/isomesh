@@ -130,44 +130,40 @@ impl<S: Sdf + ?Sized> Sdf for Box<S> {
     }
 }
 
-/// Sample a field on a grid, one **pre-sliced contiguous write per row**.
+/// Sample a field on a grid, into a buffer.
 ///
 /// Ticket: R-067 (P-69). The single definition of "evaluate this field at every
 /// grid point", and it exists because there were **three** — `marching_cubes`,
-/// `marching_tetrahedra` and the dual path each had their own triple loop
-/// pushing into a `Vec`, differing only in whether rows carry padding.
+/// `marching_tetrahedra` and the dual path each had their own triple loop,
+/// differing only in whether rows carry padding.
 ///
-/// # Why the shape, and not just the sharing
+/// # The body is the original one, and that is a measured decision (E×6)
 ///
-/// The three copies all had the same defect. `Vec::push` in the innermost loop
-/// re-proves the capacity bound on **every element**, so the store is not a
-/// contiguous write LLVM can widen, and the `y`/`z` coordinates were recomputed
-/// per element inside it. Here the buffer is sized once, each row is sliced once
-/// so its bound is proved once, the two outer coordinates are hoisted, and the
-/// inner loop is an `iter_mut().enumerate()` over a slice of known length —
-/// which is the shape the autovectorisation literature names (`chunks_exact` and
-/// `zip`, pre-slicing outside the loop, struct-of-fields over index arithmetic).
+/// P-69 registered the restructuring the autovectorisation literature
+/// prescribes — buffer sized once, one slice per row so its bound is proved
+/// once, the outer coordinates hoisted, `iter_mut().enumerate()` over a slice of
+/// known length — and **measured it a 3–7% regression** on five of six
+/// field/scalar pairs, with `total %ymm` across every monomorphisation equal to
+/// **zero**. LLVM widened nothing at either shape, so the hoisted bound check
+/// bought nothing and the `resize`'s zeroing pass cost a little. The shape is
+/// therefore reverted and the **sharing is kept**: three copies of a loop is a
+/// one-path defect whatever the loop's shape, and merging them costs nothing.
 ///
-/// **Whether it actually vectorises is a property of the field, not of this
-/// loop**, and it is decided by `libm`: `sqrtf` carries a `select_implementation`
-/// on `target_feature = "sse2"` and on `aarch64`+`neon`, so a field built from
-/// `sqrt` reduces to hardware instructions, while `sinf` and `cosf` carry no arch
-/// selection at all and are software with argument-reduction branches. A loop
-/// containing one cannot be widened at any shape.
+/// `docs/experiments/p-69.csv` carries both arms; `scripts/p69_asm.sh`
+/// reproduces the register classification.
 ///
 /// # Bit-identity
 ///
-/// Every value is the same expression it was: `origin[k] + cell_size · k`, with
-/// the `y` and `z` terms hoisted rather than re-associated. Hoisting a loop
-/// invariant does not change a rounding, so the output is bit-identical to the
-/// three loops it replaces — which is `T-007`'s 216 golden hashes, and P-69's C2
-/// registers that as a **veto**: a moved hash means LLVM reassociated something
-/// and the change is rejected rather than rebaselined.
+/// This is the arithmetic the three loops had, so all 216 of `T-007`'s golden
+/// hashes are unchanged — which was P-69's C2, registered as a **veto** rather
+/// than as a cost: a moved hash would have meant a reassociation and rejected
+/// the change outright.
 ///
 /// `row_stride` is the distance between row starts and must be at least
-/// `size[0]`; the excess slots are left at [`Real::ZERO`], which the dual path
-/// relies on for its odd-stride padding. `out` is cleared first, so a shorter
-/// grid cannot leave a longer one's values behind.
+/// `size[0]`; the excess slots are filled with [`Real::ZERO`] rather than
+/// skipped, which the dual path relies on for its odd-stride padding and which
+/// keeps the buffer free of uninitialised gaps. `out` is cleared first, so a
+/// shorter grid cannot leave a longer one's values behind.
 pub(crate) fn sample_grid<R: Real, S: Sdf<Scalar = R> + ?Sized>(
     sdf: &S,
     size: [u32; 3],
@@ -178,21 +174,20 @@ pub(crate) fn sample_grid<R: Real, S: Sdf<Scalar = R> + ?Sized>(
 ) {
     let nx = size[0] as usize;
     debug_assert!(row_stride >= nx, "a row cannot be shorter than the grid");
-    let rows = size[1] as usize * size[2] as usize;
+    let pad = row_stride - nx;
     out.clear();
-    // Sized once. The pad slots are zero from here and are never written again,
-    // which is what lets the inner loop be exactly `nx` wide.
-    out.resize(row_stride * rows, R::ZERO);
-
+    out.reserve(row_stride * size[1] as usize * size[2] as usize);
     for z in 0..size[2] {
-        let pz = origin[2] + cell_size * R::from_f64(f64::from(z));
         for y in 0..size[1] {
-            let py = origin[1] + cell_size * R::from_f64(f64::from(y));
-            let start = row_stride * (y as usize + size[1] as usize * z as usize);
-            // One slice, one bound check, `nx` stores.
-            let row = &mut out[start..start + nx];
-            for (x, slot) in row.iter_mut().enumerate() {
-                *slot = sdf.sample([origin[0] + cell_size * R::from_f64(x as f64), py, pz]);
+            for x in 0..size[0] {
+                out.push(sdf.sample([
+                    origin[0] + cell_size * R::from_f64(f64::from(x)),
+                    origin[1] + cell_size * R::from_f64(f64::from(y)),
+                    origin[2] + cell_size * R::from_f64(f64::from(z)),
+                ]));
+            }
+            for _ in 0..pad {
+                out.push(R::ZERO);
             }
         }
     }
