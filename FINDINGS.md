@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**460 entries** — 48 falsified, 344 measured, 47 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**463 entries** — 48 falsified, 344 measured, 50 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -478,6 +478,9 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-45` | R-027's design does not merely change extract_into's contract; it converts a shipped determinism check's failure conditi… |
 | `V-46` | R-030's specified oracle cannot tell the identity from a wrong one; the inversion rule fails before the harness exists (… |
 | `V-47` | a wgpu storage buffer bound read_write and read_only in one bind group is a validation error, not a free alias (GPU-014) |
+| `V-48` | wgpu 29 puts every subgroup operation in the native half of the split Features struct, so the browser backend cannot hav… |
+| `V-49` | a correction to V-23 / GPU-007: WGSL mesh shaders on Metal are unimplemented!() in naga 29, full WGSL support landed in… |
+| `V-50` | CGAL shipped an Isosurfacing package in 6.1 whose own manual pictures cracks at octree level transitions, so M-128/M-132… |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -8694,6 +8697,13 @@ primary literature found. All six are registered in `crates/isomesh/src/experime
 harnesses exist. Experiments are bench-local; `crates/isomesh/src/**` is read-only apart from the
 registrations themselves.
 
+**This heading is not renamed, and what a reader needs is one sentence rather than a rewrite (D-018).**
+`P-55`…`P-60` and `✗39`…`✗43` were registered and run *after* the six this heading names and landed in
+this same section, so the file has no `## Phase 21` and a reader looking for one cannot find it. The
+research docs — and `BACKLOG.md`'s own Phase 21 — call that later material **Phase 21**; it is
+everything from `### P-55` down to `✗43`. The heading stays as written because it records what the
+phase was called at the time, which is the same reason this file re-tiers rather than rewrites.
+
 **Three of the six rested on a claim the source does not make, and that was found by reading the source
 rather than by running anything.** The corrections are recorded here because a registration built on a
 figure that does not exist is the failure ✗21 already catalogues — *a property lifted from a summary, not
@@ -10006,6 +10016,26 @@ floor, or a boundary face whose zero is not the drawn slab's inner face — asse
 `walking_into_the_wall_stops_at_the_sandbox` (removing the boundary from `move_camera` walks the body to
 `x = 42.1`).
 
+## Phase 23 — twelve registrations from the 2026-08-26 audit, each before its harness
+
+Source: `docs/research/2026-08-26-audit-and-phase-23-registrations.md`, a skeptical audit of the four
+Phase 21 experiments and the `✗43` entry followed by twelve new pre-registrations, `P-61`…`P-72`, drawn
+from mathematics, formal logic and systems results the 2026-08-23 sweeps did not reach. **All twelve are
+registered in `crates/isomesh/src/experiment.rs` before their harnesses exist**, each in its own commit,
+and the git order is what makes the predictions falsifiable rather than narrated. Experiments are
+bench-local; `crates/isomesh/src/**` is read-only apart from the registrations themselves, except where
+an experiment *is* a source change and says so at registration (`P-61`, `P-68`'s feature, `P-69`).
+
+**The audit's central finding is a method rule and it changes how these are written.** Four Phase-21
+clauses could not have discriminated anything — `P-58`'s C1 and C2, `P-59`'s C2, `P-60`'s C2 — and every
+one was catchable before its harness existed. So each registration below names the rows on which each
+clause *can* fire, that set is shown non-empty from the CSV itself, and a clause whose population is
+empty is re-fixtured or dropped **before** the harness rather than softened after.
+
+**Four of the twelve are expected to return nulls, registered as such on purpose:** `P-64`'s C2,
+`P-72`'s C1 on the smooth fields, `P-61`'s C4, and `P-67`'s C1 if the condensation is worse than Knoll's
+band suggests. *A phase where every clause holds is a phase whose clauses were too easy.*
+
 ### 🧊 M-370 — an existence check passes on a commit that left the branch: `git cat-file -e` is a property of the checkout, `merge-base --is-ancestor` is a property of the artefact (D-017)
 
 **M.** `scripts/csv_provenance.sh` over all 50 files in `docs/experiments/`, three clauses per file.
@@ -10045,3 +10075,130 @@ says it is what an absent `git` writes and it claims nothing.
 **Would be shown wrong by:** a CSV committed with a header naming a commit outside `HEAD`'s history
 that this gate reports green, or a pinned name that stops violating its clause without the gate saying
 so.
+
+### 📖 V-48 — `wgpu` 29 puts every subgroup operation in the **native** half of the split `Features` struct, so the browser backend cannot have them even though Chrome ships them (D-018)
+
+**Read from the pinned source on disk, not from a doc page.** `wgpu-types-29.0.4/src/features.rs`
+declares `SUBGROUP` (`1 << 38`), `SUBGROUP_VERTEX` (`1 << 39`) and `SUBGROUP_BARRIER` (`1 << 40`) inside
+`FeaturesWGPU`, which has **65** entries. `FeaturesWebGPU` has **18**, enumerated in full —
+`DEPTH_CLIP_CONTROL`, `DEPTH32FLOAT_STENCIL8`, the six `TEXTURE_COMPRESSION_*`, `TIMESTAMP_QUERY`,
+`INDIRECT_FIRST_INSTANCE`, `SHADER_F16`, `RG11B10UFLOAT_RENDERABLE`, `BGRA8UNORM_STORAGE`,
+`FLOAT32_FILTERABLE`, `FLOAT32_BLENDABLE`, `DUAL_SOURCE_BLENDING`, `CLIP_DISTANCES`, `IMMEDIATES`,
+`PRIMITIVE_INDEX` — and **no subgroup entry**. So subgroups reach native Metal, Vulkan and DX12 and do
+not reach `wgpu`'s browser backend at all, independently of what any browser implements.
+
+**Consequence, and it is why `P-70` has a C3 rather than a note:** any subgroup path needs a fallback and
+the nine wasm demos are on it. `P-70`'s C3 exists because of this row, and it is the clause that makes
+the fallback *exercised* rather than merely present.
+
+**Two constraints that will bite, both read from source rather than from an issue tracker.**
+
+*The 1-D workgroup blocker is a single `if` and here is where it lives.*
+`naga-29.0.4/src/valid/interface.rs:281-287` rejects `@builtin(subgroup_id)` and
+`@builtin(subgroup_invocation_id)` whenever `ep.workgroup_size[1..].iter().any(|&s| s > 1)`, returning
+`VaryingError::InvalidMultiDimensionalSubgroupBuiltIn` — *"Workgroup size is multi dimensional,
+`@builtin(subgroup_id)` and `@builtin(subgroup_invocation_id)` are not supported."* This is a validation
+error at shader-module creation, not a runtime fallback, so a bitmap pass dispatching with `y` or `z > 1`
+**does not compile** and must be flattened to 1-D first. That flattening carries its own hash risk and is
+`P-70`'s stated pre-condition.
+
+*The subgroup size moved out of `Limits`.* `subgroup_min_size` and `subgroup_max_size` are fields of
+`AdapterInfo` at `wgpu-types-29.0.4/src/adapter.rs:164` and `:177`, so in 29 they come from
+`adapter.get_info()` and not from `device.limits()`. Code written against a pre-28 example reads them
+from the wrong object.
+
+**Would be shown wrong by:** a `FeaturesWebGPU` in the pinned `wgpu-types` carrying a subgroup bit, or a
+naga version that validates a multi-dimensional workgroup with `subgroup_invocation_id` — either of which
+makes `P-70`'s C3 cheaper than registered rather than wrong.
+
+### 📖 V-49 — a correction to `V-23` / `GPU-007`: WGSL mesh shaders on Metal are `unimplemented!()` in naga 29, full WGSL support landed in `wgpu` **v30.0.0**, and the decision is to wait (D-018)
+
+**`V-23` is right about the pinned version and about to stop being right, and the sharpest evidence is
+one line of naga rather than a changelog sentence.** `naga-29.0.4/src/back/msl/writer.rs:6937`:
+
+```rust
+crate::ShaderStage::Task | crate::ShaderStage::Mesh => unimplemented!(),
+```
+
+Not an error return — a panic. Meanwhile `wgpu-hal-29.0.4/src/metal/device.rs` **does** build mesh
+pipelines (`:1418-1466`, `mesh_stage`, `descriptor.meshBuffers()`) and accepts `ShaderInput::Msl` and
+`ShaderInput::MetalLib` as `ShaderModuleSource::Passthrough` (`:1152-1190`). So the picture at 29 is
+exact: Metal mesh pipelines work, and only with **hand-written MSL**.
+
+**Both changelog quotes verified verbatim against `gfx-rs/wgpu` trunk.** v28.0.0's *Mesh Shaders* major
+change: *"They are now fully supported on Vulkan, and supported on Metal and DX12 with passthrough
+shaders."* v30.0.0 → *Metal*: *"Added full support for mesh shaders, including in WGSL shaders. By
+@inner-daemons in [#8739]."* The same release completes DX12: *"Added support for mesh shaders in naga's
+HLSL writer, completing DX12 support for mesh shaders. By @inner-daemons in [#8752]."*
+**v30.0.0 is dated 2026-07-01** and v30.0.1 2026-08-21, so this is a shipped release and not a plan.
+
+**Trunk's own spec document is stale against trunk's own changelog.** `docs/api-specs/mesh_shading.md`
+still lists the naga backends as `🛠️ SPIR-V`, `🛠️ HLSL`, **`❌ MSL`** with `❌ = Planned` — two releases
+after the HLSL writer was completed and one after MSL landed. Both files are in the same repository at
+the same commit. **`V-23`'s original source was this document**, which is why the characterisation
+outlived the code.
+
+**The decision, recorded as a decision because an omission reads as an oversight.** The mesh-shader draw
+is worth **6.7% at 129³** (`M-149`). Paying for that at `wgpu` 29 means hand-written MSL, a forked shader
+pipeline and a second source of truth for the shader that produces geometry — which is `CLAUDE.md` rule 5
+and the one-path rule at once. 6.7% does not buy that. When Bevy moves to `wgpu` 30 the same 6.7% arrives
+for a feature flag and a WGSL entry point. **So: wait.** `O-5` — the Metal capability probe — is still
+unrun and is now cheap to *interpret*, because this row says what answer a correct `wgpu` 29 must give.
+
+**Would be shown wrong by:** Bevy pinning `wgpu` 30 while this row still says "wait", or a naga 29 patch
+release that emits MSL for a mesh entry point.
+
+### 📖 V-50 — CGAL shipped an Isosurfacing package in 6.1 whose own manual pictures cracks at octree level transitions, so `M-128`/`M-132`/`M-133`/`M-106` are not catching up to a literature (D-018)
+
+**Read from the `v6.1` tag, not from the announcement.** `Isosurfacing_3` ships `marching_cubes()`,
+TMC (Grosso 2016, `10.1111/cgf.12975`) and `dual_contouring()`, authored by Julian Stahl and Maël
+Rouxel-Labbé, under `SPDX-License-Identifier: GPL-3.0-or-later OR LicenseRef-Commercial`. **The papers
+are fair game and the code is not.**
+
+**The seam result is the finding, and CGAL states it plainly with a figure of it.**
+`Isosurfacing_3/doc/Isosurfacing_3/Isosurfacing_3.txt:343-346`, verbatim: *"Note that in this
+configuration, all methods **lose guarantees**, and **cracks can easily appear** in the surface for
+Marching Cubes if the octree is not adapted to the surface being extracted."* And the figure caption at
+`:355-358`: *"the octree … has been applied arbitrary refinement in one eighth of the domain and the
+resulting mesh **exhibits cracks (boundaries) at the regions where octree levels are discontinuous**."*
+
+*One correction to the audit that sourced this row.* It quotes the octree **example**'s comment —
+`examples/Isosurfacing_3/contouring_octree.cpp:76-78`, *"the surface can enter and leave a cell without
+involving the cell's vertex. In practice, that means a hole if at nearby adjacent cells the voxels did get
+refined"* — and reads it as a property of the octree *domain*. It is not: that comment describes the
+example's own `Refine_around_isovalue` split predicate, and its mechanism is **under-detection** (a cell
+whose eight corners agree in sign while the surface clips it), which is a different failure from a crack
+at a level transition. The manual sentence above is the one that says the seam thing, and it says it
+about all three methods. The conclusion is unchanged and now rests on the right sentence.
+
+**So a mature C++ library, shipped 2025-10, has no adaptive seam handling.** Combined with the audit's
+sweep finding no peer-reviewed 2023–2026 work on chunk seams, LOD stitching or crack-free transitions for
+the DC/MC family — the line still terminating at Schaefer/Ju/Warren 2007 and Lengyel's Transvoxel —
+`M-128`, `M-132`, `M-133` and `M-106` are **not** this crate catching up. *(The negative half is the
+audit's sweep, carried here with its provenance rather than re-run: `✗9`'s rule is that "nobody has done
+X" needs evidence like any other claim, and the evidence here is one sweep, not two.)*
+
+**The architecture is worth copying and it factors further than the audit says.** The domain splits into
+a **partition** (`IsosurfacingPartition_3`; `Cartesian_grid_3`, `Octree_partition`), a **value field**
+(`IsosurfacingValueField_3`; `Value_function_3`, `Interpolated_discrete_values_3`) and a **gradient
+field** (`IsosurfacingGradientField_3`; `Finite_difference_gradient_3`, `Gradient_function_3`) — the
+gradient a *separately supplied capability* rather than a finite-difference assumption baked into the
+extractor, which is sharper than `Sdf` + a `NormalStrategy`. And there are two more concepts the audit
+did not name: `IsosurfacingEdgeIntersectionOracle_3` and `IsosurfacingInterpolationScheme_3`, i.e. the
+root-finder and the reconstruction filter are pulled out too. That is five axes, free to adopt.
+
+**Their guarantee table, verified, matches this crate's own `is_closed()`/`is_manifold()` split.**
+MC: 2-manifold **no**, watertight **no**, topologically correct **no**. TMC: **yes / yes / yes**.
+DC: **no / no / no**, sharp features *"yes (not guaranteed)"*. Watertightness carries the footnote
+*"assuming the isosurface does not exit the specified bounding box of the input 3D domain"* — the same
+caveat, in the same place, as `A-002`'s.
+
+**And two claims to not inherit, because the package makes them with no numbers anywhere:** *"it
+generates fewer faces and higher quality faces than Marching Cubes, in general"* (DC section) and
+*"Marching Cubes is substantially faster"* than Delaunay refinement *"but often tends to generate more
+triangle facets for an equivalent desired sizing field"*. Both are unbenchmarked in the manual. The
+second is also **the opposite direction** from the audit's paraphrase of it.
+
+**Would be shown wrong by:** a CGAL release adding a transition-cell or crack-free octree path, or a
+2023–2026 peer-reviewed DC/MC seam result the sweep missed — the second being the more likely and the
+reason this row names its sweep rather than asserting exhaustiveness.
