@@ -10871,3 +10871,60 @@ number a future 3 × 3 × 3 sweep will want to compare against.
 link has two components — which is the third mechanism `O-12` asks about and takes the next free `✗` id; or
 a magnitude seed on which the interior rule stops firing, which would make that arm's zero vacuous and is
 asserted against per seed rather than assumed.
+
+### P-69 — registered for R-067, before the harness: does restructuring the sample loop autovectorise, and do all 216 golden hashes survive it?
+
+**`core::simd` is nightly and staying nightly**, so the lever is autovectorisation — and the measured prior
+says autovectorisation is enough. Wilcox's AArch64/NEON study on 100k `f32` samples: scalar **77.67 µs**,
+hand-written intrinsics **25.78 µs**, autovectorised safe Rust **25.54 µs**. Safe code matched intrinsics.
+
+The patterns that decide it are shape rather than machinery — struct-of-fields rather than index
+arithmetic, pre-slicing once outside the loop so LLVM can prove the bound, and `chunks_exact`/`zip`
+iterators. `dual.rs`'s `sample()` `push`es into a `Vec` inside a triple loop, so the bound is re-proved per
+element and the store is not a provable contiguous write.
+
+**The float caveat cuts the right way, which is why this is registrable at all.** The blanket claim that
+autovectorisation fails on floats is about **reductions**: LLVM will not reassociate float adds without
+fast-math, and stable Rust does not expose it. Elementwise float map and zip vectorise fine. This crate's
+field evaluation is elementwise over independent samples, and its accumulations — active-cell popcounts,
+vertex counts — are **integer**. Both halves land on the good side.
+
+**Two corrections to the clause's own terms, both established from source before this harness was
+written** — which is the audit's central finding used as a step rather than quoted:
+
+| | the doc says | measured from source |
+|---|---|---|
+| **the fields** | C1 names `sphere` **and** `gyroid` | `libm` 0.2.16's `sqrtf` carries a `select_implementation` on `target_feature = "sse2"` (and `aarch64`+`neon`), so `sphere`'s `sqrt(x²+y²+z²) − r` **can** vectorise. `sinf` and `cosf` carry **no arch selection at all** — pure software with argument-reduction branches — so `gyroid`, which is six of them per sample, **cannot**, at any loop shape, while `libm` is the transcendental path |
+| **the machine** | `M-20`'s 4.75 ns/sample falls below 2.4, on the **M5** | the M5 is reachable and **contended**: Spotlight, WindowServer, Messages and loginwindow at ~76% of a core combined, load 1.65–1.87, 13 days up. That is exactly the contention **`M-005` is blocked on**, and `M-005` exists because a memory-bound single-threaded timing taken beside a persistent competitor is not a figure |
+
+So C1 is registered as the doc states it — `sphere` **and** `gyroid` — with `gyroid`'s failure predicted
+here and its cause named, rather than softened to `sphere` alone. And the threshold is re-derived from
+**this repository's own committed baseline on this host**:
+`docs/measurements/resolution_sweep-ryzen9-5900x.csv` fits a marginal **13.1892 ns/sample** over 9 rows
+from 16³ to 256³ for `marching_cubes/f32/sphere`, so 2× is **below 6.5946 ns/sample**.
+
+**Two method rules bind the measurement and both are in the registration.** `M-281` — a millisecond is a
+property of the binary — so the ratio is measured **within one binary and one run**, both loop shapes
+compiled into the harness. `M-280` — a nanosecond is not a unit on a governed CPU — so every row carries
+`cycles_per_sample` and `ghz`.
+
+**C2 is the gate and it is the exact opposite of P-61's C2.** All 216 golden hashes **unchanged**. IEEE
+elementwise operations are exact per lane, so a hash movement means LLVM reassociated something and the
+change is **rejected rather than rebaselined**: here a movement is a defect, not a cost. Its population is
+216 rows, and the instrument is *proven* able to report the bad news rather than assumed to be — `P-61`
+moved 135 of these same 216 four commits ago.
+
+**C3 survives the machine change unaltered.** The doc's reason is that NEON is 2-wide at `f64` against
+4-wide at `f32`; on this host's AVX2 it is 4-wide against 8-wide. Same factor of two, same clause.
+
+**Verification requirement, stated at registration.** `cargo-show-asm` output for the monomorphised `f32`
+instance goes in the ticket. The crate is generic over `Real`; LLVM vectorises the monomorphised instance or
+it does not, and a Criterion delta alone cannot distinguish a vectorised loop from a lucky one. **The whole
+experiment is void if the dump shows no vector instruction in the `f32` `sphere` instance while C1 reports
+a speedup**, because then the speedup is the loop's bookkeeping rather than its arithmetic.
+
+**Records** `arm`, `field`, `scalar`, `samples_per_axis`, `samples`, `loop_shape`, `ns_per_sample`,
+`cycles_per_sample`, `ghz`, `speedup_vs_push`, `marginal_ns_per_sample`,
+`baseline_marginal_ns_per_sample`, `bit_identical_to_push`, `golden_hashes_unchanged`,
+`vectorisable_body`, `c1_speedup_f32`, `c1_holds`, `c2_holds`, `c3_f64_over_f32_gain`, `c3_holds`,
+`machine`, `wall_ms`.

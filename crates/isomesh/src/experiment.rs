@@ -2439,6 +2439,118 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "wall_ms",
         ],
     },
+    Preregistration {
+        id: "P-69",
+        ticket: "R-067",
+        hypothesis: "core::simd is nightly and is staying nightly -- the \
+            LaneCount<N>: SupportedLaneCount bound and the mask-element-type \
+            mismatch are unresolved (rust-lang/portable-simd#364) and the \
+            maintainers' own 2025 summary is 'nightly-only and will remain such \
+            for the foreseeable future'. So the lever is AUTOVECTORISATION, and \
+            the measured prior says autovectorisation is enough: Wilcox's \
+            AArch64/NEON study on 100k f32 samples measured scalar 77.67 us, \
+            hand-written intrinsics 25.78 us, and autovectorised safe Rust \
+            25.54 us -- safe code matched intrinsics. The patterns that decide \
+            it are shape, not machinery: struct-of-fields rather than index \
+            arithmetic, pre-slicing once outside the loop so LLVM can prove the \
+            bound, and chunks_exact / zip iterators. dual.rs's sample() pushes \
+            into a Vec inside a triple loop, so the bound is re-proved per \
+            element and the store is not a provable contiguous write. THE FLOAT \
+            CAVEAT CUTS THE RIGHT WAY: the blanket claim that autovectorisation \
+            fails on floats is about REDUCTIONS, because LLVM will not \
+            reassociate float adds without fast-math and stable Rust does not \
+            expose it. Elementwise float map and zip vectorise fine. This \
+            crate's field evaluation is elementwise over independent samples and \
+            its accumulations -- active-cell popcounts, vertex counts -- are \
+            INTEGER. THIS IS A src/ CHANGE, registered as one. (C1) \
+            Restructuring the sample loop to a pre-sliced contiguous write with \
+            the bound hoisted gives at least 2x on the marginal f32 cost. \
+            POPULATION AND TWO CORRECTIONS TO THE CLAUSE'S OWN TERMS, both \
+            established from source before this harness was written. FIRST, the \
+            fields: the doc names sphere and gyroid. libm 0.2.16's sqrtf carries \
+            a select_implementation on target_feature = 'sse2' (and on \
+            aarch64+neon), so on x86-64 it is a hardware instruction and \
+            sphere's body -- sqrt(x^2+y^2+z^2) - r -- CAN vectorise. libm's sinf \
+            and cosf carry NO arch selection at all: they are pure software with \
+            argument-reduction branches, so gyroid's body, which is six of them \
+            per sample, CANNOT vectorise at any loop shape while libm is the \
+            transcendental path (CLAUDE.md rule 4). So C1 can fire on sphere and \
+            is expected to fail on gyroid for a structural reason named here \
+            rather than discovered afterwards, and the clause is registered as \
+            the doc states it rather than softened to sphere alone. SECOND, the \
+            machine: the doc's threshold is M-20's 4.75 ns/sample falling below \
+            2.4, which is an Apple M5 figure. The M5 is reachable and CONTENDED \
+            -- Spotlight, WindowServer, Messages and loginwindow at a combined \
+            ~76% of a core, load average 1.65 to 1.87, 13 days up -- which is \
+            exactly the contention M-005 is blocked on, and M-005 exists because \
+            a memory-bound single-threaded timing taken beside a persistent \
+            competitor is not a figure. So C1 is measured on the Zen 3 / Ryzen 9 \
+            5900X host against THIS repository's own committed baseline: \
+            docs/measurements/resolution_sweep-ryzen9-5900x.csv fits a marginal \
+            13.1892 ns/sample over 9 rows from 16^3 to 256^3 for \
+            marching_cubes/f32/sphere, so 2x is below 6.5946 ns/sample. The \
+            ratio is measured WITHIN ONE BINARY AND ONE RUN, both loop shapes \
+            compiled into the harness, because M-281 says a millisecond is a \
+            property of the binary; and every row carries cycles and ghz because \
+            M-280 says a nanosecond is not a unit on a governed CPU. (C2) THE \
+            GATE, AND THE CLAUSE MOST LIKELY TO KILL THIS. All 216 golden hashes \
+            are UNCHANGED. Vectorisation must not move one bit: IEEE elementwise \
+            operations are exact per lane, so a hash movement means LLVM \
+            reassociated something, and the change is REJECTED rather than \
+            rebaselined. Unlike P-61's C2, here a movement is a defect and not a \
+            cost. POPULATION: 216 rows, and the instrument is proven able to \
+            report the bad news rather than assumed to be -- P-61 moved 135 of \
+            these same 216 four commits ago. (C3) The f64 gain is at most half \
+            the f32 gain. The doc's reason is that NEON is 2-wide at f64 against \
+            4-wide at f32; on this host's AVX2 it is 4-wide against 8-wide, so \
+            the ratio the clause asserts is the same factor of two and the \
+            clause survives the machine change unaltered. POPULATION: both \
+            scalars are measured on every field, so the clause fires on every \
+            row pair. VERIFICATION REQUIREMENT, STATED AT REGISTRATION: \
+            cargo-show-asm output for the monomorphised f32 instance goes in the \
+            ticket. The crate is generic over Real and LLVM vectorises the \
+            monomorphised instance or does not; that must be inspected per \
+            instantiation, and a Criterion delta alone cannot distinguish a \
+            vectorised loop from a lucky one.",
+        falsified_by: "C1 under 2x, in which case the ceiling is the vector \
+            width and the honest number is smaller than the prior suggests. On \
+            gyroid a falsification is EXPECTED and its cause is named above; a \
+            gyroid speedup at or above 2x would be the surprise and would mean \
+            libm's sinf is being inlined and vectorised, which is a finding \
+            about libm rather than about this loop. C2: ANY hash movement, which \
+            rejects the change outright -- this is the one clause here whose \
+            failure is not a measurement but a veto. C3: an f64 gain above half \
+            the f32 gain, which would mean the f32 path was not the vector path \
+            and C1's number came from something else. And the whole experiment \
+            is void if the asm dump shows no vector instruction in the \
+            monomorphised f32 sphere instance while C1 reports a speedup, \
+            because then the speedup is the loop's bookkeeping and not its \
+            arithmetic.",
+        records: &[
+            "arm",
+            "field",
+            "scalar",
+            "samples_per_axis",
+            "samples",
+            "loop_shape",
+            "ns_per_sample",
+            "cycles_per_sample",
+            "ghz",
+            "speedup_vs_push",
+            "marginal_ns_per_sample",
+            "baseline_marginal_ns_per_sample",
+            "bit_identical_to_push",
+            "golden_hashes_unchanged",
+            "vectorisable_body",
+            "c1_speedup_f32",
+            "c1_holds",
+            "c2_holds",
+            "c3_f64_over_f32_gain",
+            "c3_holds",
+            "machine",
+            "wall_ms",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
