@@ -114,6 +114,43 @@ fn row_loop<R: Real, S: Sdf<Scalar = R>>(
     }
 }
 
+// ─── asm probes ─────────────────────────────────────────────────────────────
+//
+// The registration requires assembly for the **monomorphised `f32` instance**,
+// and with thin LTO and one codegen unit both loops inline into their callers and
+// leave no symbol to inspect. These wrappers are monomorphic and
+// `#[inline(never)]`, so each one is a symbol whose body is exactly the generic
+// loop at exactly the instantiation the timing uses. They are called once from
+// `main` so nothing eliminates them.
+//
+// `scripts/p69_asm.sh` is what reads them back; the classification is a count of
+// packed against scalar arithmetic and of the calls that make widening
+// impossible.
+
+/// The pre-R-067 loop at `Sphere<f32>`.
+#[inline(never)]
+pub fn asm_probe_push_sphere_f32(sdf: &Sphere<f32>, out: &mut Vec<f32>) {
+    push_loop(sdf, [17, 17, 17], [-2.0; 3], 0.25, out);
+}
+
+/// The shipped loop shape at `Sphere<f32>` — `sqrt`, so widenable.
+#[inline(never)]
+pub fn asm_probe_row_sphere_f32(sdf: &Sphere<f32>, out: &mut Vec<f32>) {
+    row_loop(sdf, [17, 17, 17], [-2.0; 3], 0.25, out);
+}
+
+/// The shipped loop shape at `BoxExact<f32>` — `min`/`max`, no calls.
+#[inline(never)]
+pub fn asm_probe_row_box_f32(sdf: &BoxExact<f32>, out: &mut Vec<f32>) {
+    row_loop(sdf, [17, 17, 17], [-2.0; 3], 0.25, out);
+}
+
+/// The shipped loop shape at `CappedGyroid<f32>` — six `libm` calls.
+#[inline(never)]
+pub fn asm_probe_row_gyroid_f32(sdf: &isomesh::fields::CappedGyroid<f32>, out: &mut Vec<f32>) {
+    row_loop(sdf, [17, 17, 17], [-2.0; 3], 0.25, out);
+}
+
 // ─── measurement ────────────────────────────────────────────────────────────
 
 /// One timed loop run: the median of `reps`, with cycles from the same window.
@@ -316,6 +353,20 @@ fn main() {
     let prereg = isomesh::experiment!("P-69");
     common::experiment::run(prereg, |run| {
         let machine = "amd-ryzen-9-5900x-12-core";
+        // Keep the asm probes alive. One call each, results discarded through
+        // `black_box` so the optimiser cannot delete the symbol the
+        // registration requires be inspectable.
+        {
+            let mut buf32: Vec<f32> = Vec::new();
+            asm_probe_push_sphere_f32(&Sphere::<f32>::canonical(), &mut buf32);
+            std::hint::black_box(&buf32);
+            asm_probe_row_sphere_f32(&Sphere::<f32>::canonical(), &mut buf32);
+            std::hint::black_box(&buf32);
+            asm_probe_row_box_f32(&BoxExact::<f32>::canonical(), &mut buf32);
+            std::hint::black_box(&buf32);
+            asm_probe_row_gyroid_f32(&capped_gyroid::<f32>(), &mut buf32);
+            std::hint::black_box(&buf32);
+        }
         let mut probe = Probe::open();
         let mut rows: Vec<Row> = Vec::new();
 
@@ -507,28 +558,22 @@ fn main() {
                         .extract_into(&field, &shape, origin, cell, &mut mesh)
                         .expect("extraction");
                     let hash = isomesh::validate::mesh_hash(&mesh);
-                    let key = format!("\"{extractor_name}/{field_name}/{n}\"");
-                    let idx = fixture
-                        .find(&key)
-                        .or_else(|| fixture.find(&format!("\"{extractor_name}\"")));
-                    // The fixture is a JSON array of objects, so match on the
-                    // triple rather than on a composed key.
+                    // The fixture is one object per line, keys unspaced. Match
+                    // on the triple rather than on a composed key, so a change
+                    // to the key format is a miss rather than a silent pass.
                     let want = fixture
-                        .split("{ ")
-                        .chain(fixture.split('{'))
-                        .find(|chunk| {
-                            chunk.contains(&format!("\"algorithm\": \"{extractor_name}\""))
-                                && chunk.contains(&format!("\"field\": \"{field_name}\""))
-                                && chunk.contains(&format!("\"samples\": {n}"))
+                        .lines()
+                        .find(|line| {
+                            line.contains(&format!("\"algorithm\":\"{extractor_name}\""))
+                                && line.contains(&format!("\"field\":\"{field_name}\""))
+                                && line.contains(&format!("\"samples\":{n},"))
                         })
-                        .and_then(|chunk| {
-                            chunk
-                                .split("\"hash\": \"")
+                        .and_then(|line| {
+                            line.split("\"hash\":\"")
                                 .nth(1)
                                 .and_then(|t| t.split('"').next())
                                 .map(str::to_string)
                         });
-                    let _ = idx;
                     match want {
                         Some(want) => {
                             checked += 1;
