@@ -247,13 +247,25 @@ const MESH_BUDGET: Duration = Duration::from_micros(4_000);
 /// per buffer.
 const GPU_TRIANGLE_BUDGET: u32 = 8_192;
 
-/// GPU chunks allowed in flight at once.
+/// GPU chunks allowed in flight at once, and a hard cap rather than a target.
 ///
 /// Backpressure, not a second budget: each job holds two 295 KB geometry buffers
 /// plus a staging copy, so an unbounded queue against a slow adapter is a
-/// megabyte a chunk with nothing to stop it. When the list is full the drain
-/// stops and its chunks stay in the dirty set, so the work is deferred rather
-/// than dropped -- there is one queue and it is still the only one.
+/// megabyte a chunk with nothing to stop it.
+///
+/// **It has to be checked before the push, and that is not where it was.**
+/// `DirtySet::mesh_within_budget` consults its predicate *after* meshing a
+/// chunk, deliberately, so that a budget too small for one chunk still makes
+/// progress and the livelock its docs warn about cannot happen. So a frame that
+/// *begins* at the cap dispatched one more whatever the predicate said — and
+/// because that repeats on every frame in which no readback completes, the queue
+/// ratcheted with no bound at all: measured 17, then 18, under the load of a full
+/// parallel test run sharing one device. `drain_dirty` now defers the chunk back
+/// into the dirty set instead, so the work is deferred rather than dropped and
+/// there is still one queue.
+///
+/// Refusing to enter the drain at all while the list is full is **not** the fix,
+/// and was tried: it stalled the switch outright at the 900-frame guard.
 const GPU_JOBS_MAX: usize = 16;
 
 // ── the body ────────────────────────────────────────────────────────────────
@@ -697,12 +709,21 @@ fn main() {
         // `switch_algorithm` marks the sandbox before the frame's
         // aim and edit rather than racing them, `move_camera` moves the camera
         // and resolves the body against the field, `aim` traces from where it now
-        // is, `dig` marks at that point, `drain_dirty` meshes what the frame's
-        // budget allows -- after `dig`, so an edit's one to eight chunks clear in
-        // the same frame -- `gpu_collect` finishes whatever the GPU returned, and
-        // `ghost` draws the same point. Unchained, `dig` read a camera transform
-        // one frame stale -- which it did before this, invisibly.
-        // `loading_modal` is last so it reads the post-drain backlog.
+        // is, `dig` marks at that point, `gpu_collect` retires whatever the
+        // device finished, `drain_dirty` then meshes what the frame's budget
+        // allows -- after `dig`, so an edit's one to eight chunks clear in the
+        // same frame -- and `ghost` draws the same point. Unchained, `dig` read a
+        // camera transform one frame stale -- which it did before this,
+        // invisibly. `loading_modal` is last so it reads the post-drain backlog.
+        //
+        // **`gpu_collect` before `drain_dirty`, and that ordering is the
+        // backpressure.** The other way round, `drain_dirty` read a job list that
+        // still held every job the device had already finished, so
+        // `GPU_JOBS_MAX` was measured against a stale count and no slot ever
+        // looked free. Retiring first means the cap is checked against what is
+        // really in flight, which is the difference between deferring a chunk and
+        // deferring every chunk. A job dispatched this frame is still collected
+        // next frame at the earliest, so nothing about the latency changes.
         (
             touch_input,
             grab,
@@ -710,8 +731,8 @@ fn main() {
             move_camera,
             aim,
             dig,
-            drain_dirty,
             gpu_collect,
+            drain_dirty,
             ghost,
             report,
             outline_chunks,
@@ -791,8 +812,9 @@ fn terrain_array(bytes: &[u8], is_srgb: bool) -> Image {
 /// **No ceiling**, and the floor is not decoration. Fly mode exists to leave the
 /// box and look down into it, so a lid would defeat it; but `Ground` is solid to
 /// `-inf` while the chunks stop at `y = -5.4`, so a shaft dug to the bottom
-/// reaches a depth where the mesh ends and collision does not. The floor slab is
-/// what the player sees there instead of a hole into nothing.
+/// reaches a depth where the mesh ends. The floor slab is what the player sees
+/// there instead of a hole into nothing, and [`Walls`] is what stops them
+/// falling into it.
 fn walls(layout: &ChunkLayout<f32>) -> [(Vec3, Vec3); 5] {
     let (lo, hi) = sandbox(layout);
     let half = WALL_THICKNESS * 0.5;
@@ -822,6 +844,72 @@ fn walls(layout: &ChunkLayout<f32>) -> [(Vec3, Vec3); 5] {
             Vec3::new(span_x, WALL_THICKNESS, span_z),
         ),
     ]
+}
+
+/// The sandbox boundary, as a field the body collides with.
+///
+/// The same five faces [`walls`] draws, from the same [`sandbox`] call, so the
+/// thing that stops the player and the thing they see are one fact: solid
+/// outside the box in `x` and `z`, solid below its floor, and **open above it**,
+/// because there is no ceiling to draw or to hit.
+///
+/// **Half-spaces rather than the 0.5-thick slabs**, and that is the safer shape
+/// rather than the lazier one. The body only ever touches a slab's inner face —
+/// the resolver stops it there — and a half-space has no far side to come out
+/// of, where an exactly-modelled slab can be tunnelled through by one fast frame
+/// and leave the player outside the world with nothing to push them back.
+///
+/// Each term is an exact signed distance to one face, negative on the solid
+/// side, so `min` is union and the whole thing is 1-Lipschitz — inside
+/// [`LIPSCHITZ`], which is what keeps the resolver's gradient push sound.
+#[derive(Clone, Copy)]
+struct Walls {
+    lo: Vec3,
+    hi: Vec3,
+}
+
+impl Walls {
+    fn new(layout: &ChunkLayout<f32>) -> Self {
+        let (lo, hi) = sandbox(layout);
+        Self { lo, hi }
+    }
+}
+
+impl Sdf for Walls {
+    type Scalar = f32;
+
+    fn sample(&self, p: [f32; 3]) -> f32 {
+        (p[0] - self.lo.x)
+            .min(self.hi.x - p[0])
+            .min(p[2] - self.lo.z)
+            .min(self.hi.z - p[2])
+            .min(p[1] - self.lo.y)
+    }
+}
+
+/// Two fields as one solid: `min` is union, so the body meets whichever is
+/// nearer.
+///
+/// The terrain and the boundary are separate objects because they answer to
+/// different owners — one is edited by every click, the other is fixed by
+/// `EXTENT` — and joining them here rather than folding the boundary into the
+/// brush log is what keeps the *mesher* from seeing it. The walls are already on
+/// screen as five cuboids; meshing them as field would draw them twice.
+///
+/// `Sdf::gradient` is central differences over `sample`, so this inherits a
+/// correct normal for the union without stating one.
+struct Union<A, B>(A, B);
+
+impl<A, B> Sdf for Union<A, B>
+where
+    A: Sdf<Scalar = f32>,
+    B: Sdf<Scalar = f32>,
+{
+    type Scalar = f32;
+
+    fn sample(&self, p: [f32; 3]) -> f32 {
+        self.0.sample(p).min(self.1.sample(p))
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1634,6 +1722,9 @@ fn drain_dirty(
     let algorithm = world.algorithm;
     let started = Instant::now();
     let mut built: Vec<(ChunkId, Option<Mesh>)> = Vec::new();
+    // Chunks the GPU queue had no room for this frame. They are put back below;
+    // the `Vec` exists because `dirty` is borrowed mutably by the drain.
+    let mut deferred: Vec<ChunkId> = Vec::new();
     let mut gpu_cost = None;
     // A `Cell` because two closures need it: the mesher pushes jobs and the
     // budget predicate reads the count. They cannot both hold `&mut`, and the
@@ -1650,7 +1741,7 @@ fn drain_dirty(
         survivors,
         ..
     } = &mut *world;
-    let report = dirty.mesh_within_budget(
+    dirty.mesh_within_budget(
         &layout,
         [eye.x, eye.y, eye.z],
         |id, origin| {
@@ -1668,6 +1759,23 @@ fn drain_dirty(
             let box_ = ChunkBox::new(origin, span);
             prune_into(brushes, &Ground, box_, survivors);
             if algorithm == Algorithm::MarchingCubesGpu {
+                // **The cap, enforced before the push rather than after it.**
+                // `mesh_within_budget` consults its predicate *after* meshing a
+                // chunk -- deliberately, so a budget too small for one chunk
+                // still makes progress -- so a frame that *begins* at the cap
+                // adds one regardless of what the predicate says. That repeats on
+                // every frame in which no readback completes, so the queue
+                // ratcheted **without bound**: measured 16, then 17, then 18
+                // under the load of a full parallel test run on a shared device.
+                //
+                // The chunk goes back in the dirty set instead. Deferred, not
+                // dropped, and not quietly meshed on the CPU either: key 8 means
+                // the device meshed it, and a silent CPU fallback would make the
+                // HUD's own claim false.
+                if in_flight.get() >= GPU_JOBS_MAX {
+                    deferred.push(id);
+                    return;
+                }
                 if let Some((job, cost)) = gpu_dispatch(
                     &gpu.mc,
                     fields,
@@ -1711,8 +1819,16 @@ fn drain_dirty(
         world.gpu_cost = Some(cost);
     }
     // The next frame's head is where a drained switch is noticed, so a GPU chunk
-    // still in flight keeps the modal up.
-    world.backlog = report.remaining;
+    // still in flight keeps the modal up. The deferred chunks go back first, and
+    // then the set *is* the backlog -- which is why `mesh_within_budget`'s
+    // `report` is no longer read: `report.remaining` counts only what the drain
+    // could not reach, and a chunk the GPU queue had no room for is backlog too.
+    // `a_budgeted_drain_keeps_what_it_could_not_reach` asserts the two agree
+    // when nothing is deferred.
+    for id in deferred {
+        world.dirty.insert(id);
+    }
+    world.backlog = world.dirty.len();
 }
 
 /// Attach, replace or drop the mesh of one chunk.
@@ -2393,34 +2509,31 @@ fn move_camera(
     // that cannot go stale when the player digs: M-116 puts a convex
     // decomposition at 241-272 ms per fragment, and this demo edits the field on
     // every frame of a held button, so a cache is invalid before it is built.
+    //
+    // **The boundary is in that field**, so the five slabs `walls` draws are
+    // solid to the body for the same reason rock is: one field, one resolver,
+    // one ground probe. A position clamp -- which this was -- cannot do the
+    // floor: clamping `y` stops the fall without ever reporting ground, so the
+    // body hangs at the limit with `grounded` false and the jump refused, and
+    // `gravity_step` keeps accelerating into a wall it is not allowed to touch.
+    //
+    // Walk mode only, because `resolve_body` is only called here: fly mode is
+    // how the sandbox is inspected from outside.
+    let layout = world.layout;
     let World {
         brushes,
         velocity,
         grounded,
         ..
     } = &mut *world;
-    let field = BrushStack {
-        base: Ground,
-        brushes,
-    };
+    let field = Union(
+        BrushStack {
+            base: Ground,
+            brushes,
+        },
+        Walls::new(&layout),
+    );
     *grounded = resolve_body(&field, &mut transform.translation, velocity);
-    // The walls are the boundary and this is what makes them one. `Ground` has a
-    // height at every `x` and `z`, so without this a walk past `x = 8` stands on
-    // invisible ground outside the box, in front of the wall the player just
-    // walked through.
-    //
-    // Walk mode only: fly mode is how the sandbox is inspected from outside, and
-    // `aim` already refuses to carve past `sandbox`. No `y` clamp either -- the
-    // field stops the descent and the floor slab is scenery.
-    let (lo, hi) = sandbox(&world.layout);
-    transform.translation.x = transform
-        .translation
-        .x
-        .clamp(lo.x + BODY_RADIUS, hi.x - BODY_RADIUS);
-    transform.translation.z = transform
-        .translation
-        .z
-        .clamp(lo.z + BODY_RADIUS, hi.z - BODY_RADIUS);
 }
 
 /// The loop this example exists for: one brush, one incremental re-mesh, for as
@@ -3077,8 +3190,10 @@ mod tests {
                     switch_algorithm,
                     move_camera,
                     dig,
-                    drain_dirty,
+                    // `gpu_collect` first, exactly as `main` chains it: the cap
+                    // has to be checked against what is really in flight.
                     gpu_collect,
+                    drain_dirty,
                     loading_modal,
                 )
                     .chain(),
@@ -3101,6 +3216,59 @@ mod tests {
         app.world_mut()
             .resource_mut::<ButtonInput<MouseButton>>()
             .clear();
+    }
+
+    /// Step until the dirty set and the GPU queue are both empty, and return the
+    /// frames it took.
+    ///
+    /// **A stall detector, not a frame budget, and the difference is the point.**
+    /// Every caller used to spin a flat count -- 600, or 900 -- chosen when this
+    /// drain took 135 frames. 135 is a property of an *idle* device. Under a full
+    /// parallel test run sharing one adapter, the same drain retires roughly one
+    /// chunk every twelve frames and needs thousands: measured **78 of 256 chunks
+    /// still outstanding at frame 900**, with `pending` pinned at
+    /// [`GPU_JOBS_MAX`] the whole way. That is correct backpressure meeting a busy
+    /// device, and a fixed count turns it into a red test that says nothing.
+    ///
+    /// What has to be true is that the drain **progresses** — how fast is the
+    /// device's business. Same shape as
+    /// `a_budgeted_drain_keeps_what_it_could_not_reach`'s *"the drain is not
+    /// making progress"*, and machine-independent for the same reason. `1200`
+    /// frames with not one chunk retired is two orders of magnitude past the
+    /// slowest rate measured here.
+    ///
+    /// The job cap is asserted here rather than at each call site, because every
+    /// caller wants it and one of them is where it was found to be broken.
+    fn drain(app: &mut App) -> u32 {
+        let mut frames = 0;
+        let mut fewest = usize::MAX;
+        let mut since_progress = 0;
+        loop {
+            step(app);
+            frames += 1;
+            let pending = app.world().resource::<GpuPending>().jobs.len();
+            assert!(
+                pending <= GPU_JOBS_MAX,
+                "frame {frames}: {pending} jobs in flight against a cap of {GPU_JOBS_MAX}"
+            );
+            let world = app.world().resource::<World>();
+            let outstanding = world.backlog + pending;
+            if !world.switching && outstanding == 0 {
+                return frames;
+            }
+            if outstanding < fewest {
+                fewest = outstanding;
+                since_progress = 0;
+            } else {
+                since_progress += 1;
+            }
+            assert!(
+                since_progress < 1200,
+                "the drain stalled at frame {frames} with {outstanding} chunks \
+                 outstanding ({} queued, {pending} in flight)",
+                world.backlog
+            );
+        }
     }
 
     fn eye(app: &mut App) -> Vec3 {
@@ -3209,12 +3377,7 @@ mod tests {
     #[test]
     fn key_eight_meshes_the_sandbox_on_the_gpu() {
         let mut app = harness(false);
-        for _ in 0..600 {
-            step(&mut app);
-            if app.world().resource::<World>().backlog == 0 {
-                break;
-            }
-        }
+        drain(&mut app);
         let cpu_resident = app
             .world_mut()
             .query_filtered::<(), With<Chunk>>()
@@ -3225,21 +3388,12 @@ mod tests {
         app.world_mut()
             .resource_mut::<ButtonInput<KeyCode>>()
             .press(KeyCode::Digit8);
-        let mut frames = 0;
-        loop {
-            step(&mut app);
-            frames += 1;
-            let world = app.world().resource::<World>();
-            let pending = app.world().resource::<GpuPending>().jobs.len();
-            assert!(
-                pending <= GPU_JOBS_MAX,
-                "frame {frames}: {pending} jobs in flight against a cap of {GPU_JOBS_MAX}"
-            );
-            if !world.switching && world.backlog == 0 && pending == 0 {
-                break;
-            }
-            assert!(frames < 900, "the GPU switch never drained");
-        }
+        // `drain` carries the job-cap assertion: the cap, exactly, with no
+        // allowance. It used to hold only because a readback usually completed
+        // every frame; on a loaded shared device it did not, and the queue
+        // ratcheted to 17 and then 18 — which is what `GPU_JOBS_MAX`'s doc now
+        // records and what `drain_dirty`'s deferral fixes.
+        let frames = drain(&mut app);
         let world = app.world().resource::<World>();
         assert_eq!(
             world.algorithm.name(),
@@ -3329,14 +3483,7 @@ mod tests {
         app.world_mut()
             .resource_mut::<ButtonInput<MouseButton>>()
             .release(MouseButton::Left);
-        for _ in 0..600 {
-            step(&mut app);
-            let world = app.world().resource::<World>();
-            let pending = app.world().resource::<GpuPending>().jobs.len();
-            if world.backlog == 0 && pending == 0 {
-                break;
-            }
-        }
+        drain(&mut app);
         let world = app.world().resource::<World>();
         assert!(
             world.last_chunks > 0,
@@ -3389,16 +3536,7 @@ mod tests {
         app.world_mut()
             .resource_mut::<ButtonInput<KeyCode>>()
             .press(KeyCode::Digit8);
-        for _ in 0..900 {
-            step(&mut app);
-            let world = app.world().resource::<World>();
-            if !world.switching
-                && world.backlog == 0
-                && app.world().resource::<GpuPending>().jobs.is_empty()
-            {
-                break;
-            }
-        }
+        drain(&mut app);
         // A second pass over an already-meshed chunk, so `base_ms` is a hit.
         let cached = app
             .world()
@@ -3457,12 +3595,7 @@ mod tests {
         let mut app = harness(false);
         // Drain the startup fill first, so the frames counted below are the
         // stroke's own.
-        for _ in 0..600 {
-            step(&mut app);
-            if app.world().resource::<World>().backlog == 0 {
-                break;
-            }
-        }
+        drain(&mut app);
         app.world_mut()
             .resource_mut::<ButtonInput<MouseButton>>()
             .press(MouseButton::Left);
@@ -3496,11 +3629,11 @@ mod tests {
     fn the_jump_and_the_mode_keys_reach_the_body() {
         let mut app = harness(true);
         // Let the body land, and the fill drain with it.
+        drain(&mut app);
+        // The drain leaves the body mid-fall; give it the frames to land.
         for _ in 0..600 {
             step(&mut app);
-            if app.world().resource::<World>().backlog == 0
-                && app.world().resource::<World>().grounded
-            {
+            if app.world().resource::<World>().grounded {
                 break;
             }
         }
@@ -4596,19 +4729,23 @@ mod tests {
 
     /// Walking hard at the `+x` wall stops at it.
     ///
-    /// `Ground` has a height at every `x` and `z`, so before the clamp this walk
-    /// carried on over invisible ground outside the box -- past the wall the
-    /// player had just watched themselves walk through. `Shift` and 300 frames
-    /// is 43 units of intent against an 8-unit box, so a body that is not
-    /// clamped ends up nowhere near the assertion.
+    /// `Ground` has a height at every `x` and `z`, so without the boundary in the
+    /// collision field this walk carried on over invisible ground outside the box
+    /// — past the wall the player had just watched themselves walk through.
+    /// `Shift` and 300 frames is 43 units of intent against an 8-unit box, so a
+    /// body the wall does not stop ends up nowhere near the assertion.
+    ///
+    /// Depenetration, not a clamp: the body stops where the `+x` half-space's
+    /// distance equals `BODY_RADIUS`, which is the same bound a clamp produced
+    /// and arrives at it the same way rock does.
     #[test]
     fn walking_into_the_wall_stops_at_the_sandbox() {
         let mut app = harness(true);
+        drain(&mut app);
+        // The drain leaves the body mid-fall; give it the frames to land.
         for _ in 0..600 {
             step(&mut app);
-            if app.world().resource::<World>().backlog == 0
-                && app.world().resource::<World>().grounded
-            {
+            if app.world().resource::<World>().grounded {
                 break;
             }
         }
@@ -4631,13 +4768,166 @@ mod tests {
             eye.x,
             hi.x
         );
-        // And it really did reach the wall, so this is a clamp rather than a
+        // And it really did reach the wall, so this is a boundary rather than a
         // body that never moved.
         assert!(
             eye.x > hi.x - BODY_RADIUS - 0.05,
             "the body never reached the wall: x {}",
             eye.x
         );
+    }
+
+    /// **Digging out the bottom no longer drops the player through the floor.**
+    ///
+    /// The reported bug, and the mechanism is worth stating because it is not
+    /// where it looks. `aim` refuses to place a brush outside `sandbox`, but a
+    /// brush *centred* on the floor plane still reaches `radius` below it — up to
+    /// 2.0 at the top of the wheel's range — so a shaft dug to the bottom of the
+    /// box removes the field under the box. The chunks stop at `y = -5.4` and the
+    /// mesh with them, so the body fell out of the visible world and kept going
+    /// until it met whatever `Ground` still had left, embedded in rock nobody can
+    /// see or dig.
+    ///
+    /// The floor slab was drawn from the first commit and was scenery. Now it is
+    /// the same field the terrain is, so the body lands on it and — this is the
+    /// half a `y` clamp cannot do — reports **grounded**, which is what makes the
+    /// jump out of the hole legal.
+    #[test]
+    fn digging_through_the_floor_lands_the_body_on_it_rather_than_losing_it() {
+        let layout = test_layout();
+        let (lo, _) = sandbox(&layout);
+        let lowest = BODY_OFFSETS.into_iter().fold(f32::MIN, f32::max);
+        // A brush at the largest radius the wheel allows, centred on the floor
+        // plane: legal to place, and it takes the field 2.0 units below the box.
+        let carved = [Brush::subtract(Sphere {
+            center: [0.0, lo.y, 0.0],
+            radius: 2.0,
+        })];
+        let field = Union(
+            BrushStack {
+                base: Ground,
+                brushes: &carved,
+            },
+            Walls::new(&layout),
+        );
+        // The fixture is the bug: without the boundary there is nothing solid
+        // under the body for a long way below the floor.
+        assert!(
+            BrushStack {
+                base: Ground,
+                brushes: &carved,
+            }
+            .sample([0.0, lo.y - 1.0, 0.0])
+                > 0.0,
+            "the shaft does not reach below the floor, so this proves nothing"
+        );
+
+        let dt = 1.0 / 60.0;
+        let mut eye = Vec3::new(0.0, lo.y + 3.0, 0.0);
+        let mut velocity = Vec3::ZERO;
+        let mut grounded = false;
+        for _ in 0..600 {
+            gravity_step(grounded, &mut velocity, dt);
+            eye.y += velocity.y * dt;
+            grounded = resolve_body(&field, &mut eye, &mut velocity);
+        }
+        let want = lo.y + lowest + BODY_RADIUS;
+        assert!(
+            grounded,
+            "the body did not land on the floor of the sandbox: eye {eye:?}"
+        );
+        assert!(
+            eye.y >= want - 1e-3,
+            "the body sank through the floor: eye y {} against a floor at {}",
+            eye.y,
+            lo.y
+        );
+        assert!(
+            eye.y - want <= GROUND_PROBE,
+            "the body is hanging {} above the floor",
+            eye.y - want
+        );
+    }
+
+    /// The collision boundary is the geometry that is drawn, on all five faces.
+    ///
+    /// [`walls`] decides what the player sees and [`Walls`] decides what stops
+    /// them; both read [`sandbox`], and this is what holds them to it. A sign
+    /// flipped on one axis is a wall you walk through with the slab still on
+    /// screen — and on this host there is no display to notice that with.
+    #[test]
+    fn the_collision_boundary_is_solid_exactly_where_the_slabs_are() {
+        let layout = test_layout();
+        let (lo, hi) = sandbox(&layout);
+        let mid = (lo + hi) * 0.5;
+        let boundary = Walls::new(&layout);
+        let inside = 1e-3;
+
+        // A point just inside each slab is solid; the mirrored point just inside
+        // the sandbox is not.
+        for (name, solid, air) in [
+            (
+                "-x",
+                Vec3::new(lo.x - inside, mid.y, mid.z),
+                Vec3::new(lo.x + inside, mid.y, mid.z),
+            ),
+            (
+                "+x",
+                Vec3::new(hi.x + inside, mid.y, mid.z),
+                Vec3::new(hi.x - inside, mid.y, mid.z),
+            ),
+            (
+                "-z",
+                Vec3::new(mid.x, mid.y, lo.z - inside),
+                Vec3::new(mid.x, mid.y, lo.z + inside),
+            ),
+            (
+                "+z",
+                Vec3::new(mid.x, mid.y, hi.z + inside),
+                Vec3::new(mid.x, mid.y, hi.z - inside),
+            ),
+            (
+                "floor",
+                Vec3::new(mid.x, lo.y - inside, mid.z),
+                Vec3::new(mid.x, lo.y + inside, mid.z),
+            ),
+        ] {
+            assert!(
+                boundary.sample(solid.to_array()) <= 0.0,
+                "the {name} slab is not solid at {solid:?}"
+            );
+            assert!(
+                boundary.sample(air.to_array()) > 0.0,
+                "the {name} boundary is solid inside the sandbox at {air:?}"
+            );
+        }
+
+        // **No ceiling**, which is the one face that is deliberately missing:
+        // fly mode leaves the box through the top.
+        assert!(
+            boundary.sample([mid.x, hi.y + 1.0, mid.z]) > 0.0,
+            "there is a lid over the sandbox"
+        );
+        // And the faces the slabs are drawn on are the faces this stops at, to
+        // the float: each slab's inner surface is a zero of the field. A slab is
+        // thin in exactly one axis (the clause above asserts that), and its inner
+        // face is half a thickness from its centre along that axis toward the
+        // sandbox — so this is the one point where the picture and the collision
+        // have to agree exactly, and it is checked on all five.
+        for (centre, size) in walls(&layout) {
+            let axis = [size.x, size.y, size.z]
+                .into_iter()
+                .position(|s| s == WALL_THICKNESS)
+                .expect("every slab is thin in one axis");
+            let mut inner = centre;
+            inner[axis] += (mid[axis] - centre[axis]).signum() * size[axis] * 0.5;
+            let reading = boundary.sample(inner.to_array());
+            assert!(
+                reading.abs() <= 1e-4,
+                "the slab at {centre:?} has its inner face at {inner:?}, where the \
+                 collision field reads {reading}"
+            );
+        }
     }
 
     /// The virtual stick's shape, without a phone.

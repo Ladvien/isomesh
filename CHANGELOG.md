@@ -110,6 +110,23 @@ and edit paths the keyboard and mouse drive.
   reads air whenever the body is wedged with its centre over a void and part of its foot on rock — so
   `grounded` went false and `Space` was refused. It now samples the foot sphere's own lower surface
   (`✗45`).
+- **Digging out the bottom of `game_dig`'s sandbox dropped the player through the floor (`✗48`).** `aim`
+  refuses a brush *centred* outside the box, but a brush centred **on** the floor plane reaches its own
+  radius below it, so a shaft to the bottom removed the field under a box whose meshes stop at
+  `y = -5.4`. The five boundary slabs are now part of the field the body resolves against rather than
+  scenery with a position clamp beside it — which is also what makes the floor *standable*: a `y` clamp
+  stops a fall without ever reporting ground, so it would have left the body hanging with the jump
+  refused.
+- **`GPU_JOBS_MAX` did not bound the GPU job queue (`✗47`).** The cap was the second clause of a budget
+  predicate that `DirtySet::mesh_within_budget` consults *after* meshing a chunk — deliberately, so a
+  too-small budget still progresses — so a frame beginning at the cap added one anyway, every frame in
+  which no readback retired. Measured 17, then 18. The cap is now checked before the dispatch and the
+  refused chunk goes back in the dirty set. Separately, `gpu_collect` now runs **before** `drain_dirty`,
+  so the in-flight count is not read before the thing that shortens it (`M-368`).
+- **`game_dig`'s frame rate vanished with its numbers panel.** It opens with the panel hidden, so the
+  steady state showed the mesher on its banner and nothing about what it cost. The frame rate now joins
+  the one line a hidden panel leaves. `ISOMESH_VIEW=nohud` still produces an empty frame, which the
+  committed GIFs depend on.
 
 ### Changed
 

@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**456 entries** — 46 falsified, 342 measured, 47 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**459 entries** — 48 falsified, 343 measured, 47 verified, 17 open, 4 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -85,6 +85,8 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗44` | "IsomeshPlugin is engine-agnostic and platform-agnostic": its frame budget calls std::time::Instant::now(), which compil… |
 | `✗45` | "five samples in a cross under the foot beat one": at a fixed depth the cross reaches into terrain above the foot, and t… |
 | `✗46` | "headless Chrome on this host exposes no navigator.gpu": it exposes the object and no adapter, which is the one failure… |
+| `✗47` | "GPU_JOBS_MAX bounds the queue": the cap was checked after the push, so it bounded nothing at all (D-014) |
+| `✗48` | "the field already stops the descent, and the floor slab is scenery": dig out the bottom and the player leaves the world… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -427,6 +429,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-362` | wasm-opt -Oz shrinks both site modules on disk and makes both bigger gzipped, so it is rejected on all ten (D-012) |
 | `M-365` | one wgpu::Instance per test deadlocks game_dig's suite at default parallelism, and a shared device halves its runtime (D… |
 | `M-366` | a GitHub Pages project page is redirected by the user site's custom domain, and an archived repo cannot be fixed through… |
+| `M-368` | the backpressure was measured against a stale queue: drain_dirty ran before gpu_collect (D-014) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -1653,6 +1656,9 @@ Rules with no incident behind them get ignored. These all have one.
 | **A wall-clock ratio is not a gate. Gate the count the ratio samples** | ✗24 — `empty_cell_rejection_is_measured_per_field` asserted `speedup > 1.0` on every field under a doc comment that said *"recorded rather than asserted"* and *"not a regression gate"*. It failed the 0.0.7 release on a macOS runner at `gyroid 0.98×`, having passed at `1.10×` here — the **same measurement**, with the sign set by the runner. The fix is not a looser threshold: what rejection can save is bounded by **how many cells it proves empty**, and that is an integer, identical everywhere, **16.8%** on `gyroid` against **80.6–95.1%** on every other field. Find the deterministic quantity the timing is a proxy for and assert *that*; print the timing. Related to M-281 (*a millisecond is a property of the binary*) and its sibling: a **ratio** survives the build, and still does not survive the machine when the true ratio is 1 |
 | **An area probe must sample the surface of the shape it is testing. A plane at fixed depth asks a different question, and the difference is the slope** | ✗45 / M-363 — `resolve_body`'s single-point ground probe was genuinely wrong, and the specified fix — five samples in a flat cross at that same depth — was wrong the other way: the lateral samples reach into terrain *higher* than the terrain under the foot, so `gravity_step` cuts gravity and the body hangs **12.5 cm** in the air on a 0.63 gradient. Same failure at 45° on a sphere of radius `R + GROUND_PROBE`: 7.8 cm, because that shape still trades vertical reach for lateral. Only the chord — offset `r` sampled `sqrt(R² − r²)` below the centre, with the tolerance in `−Y` alone — has nothing to trade. **When widening a point query to an area query, put the samples on the collider, and check the widened one against the *unchanged* fixtures first**: the pre-existing settle test caught this on its first run |
 | **A test fixture that opens a driver handle must share it. N handles is N races, and the count that tips it is not the count you tested at** | M-365 — `wgpu_pair()` built a `wgpu::Instance` per call, which was five instances at sixteen tests and passed. Four added tests made it twenty-three and the suite **deadlocked** — at `--test-threads` 12 and 24, clean at 8 and 16, so a race and not a threshold, and the first sighting cost 1800 s against a `timeout`. Neither the six device-opening tests run alone (1.35 s) nor the fifteen others alone (1.33 s) reproduce it; only the whole set does, which is why no single new test looked guilty. `wgpu::Device` and `wgpu::Queue` are `Arc` handles, so one `LazyLock` cloned per test is both the fix and what an application does — **23/23 green and 1.5 s → 0.6 s.** Related to M-293 (*a gate that cannot see the branch*): here the gate saw it and the harness was the hazard |
+| **A cap checked *after* the work is not a cap. If the loop is guaranteed to do one more, the bound is one more per iteration — which is no bound** | ✗47 / M-367 — `GPU_JOBS_MAX = 16` was the second clause of `mesh_within_budget`'s budget predicate, and that predicate is consulted *after* a chunk so that a too-small budget still makes progress. A frame beginning at the cap therefore added one, every frame in which no readback retired: measured 17, then 18 once the assertion was loosened to `cap + 1`. **The loosened assertion is the tell** — a bound that has to be relaxed by exactly one is usually the first term of a series. Check the counter before the push, and give the refused work back to the queue rather than dropping it or silently routing it down another path |
+| **A queue length read before the thing that shortens it is not the queue length** | M-368 — `drain_dirty` seeded its in-flight count from `pending.jobs.len()` while running *before* `gpu_collect` in the same chained frame, so it counted every job the device had already finished and nothing had retired. With the cap enforced and the order untouched, a 256-chunk switch fell to one chunk per twelve frames with the queue pinned at its cap for 900 frames — correct backpressure against a number that was always stale. Retire first, then dispatch into the freed slots; the latency is identical either way |
+| **A fixed frame count in a test is an assumption about the machine. Gate progress, not speed** | ✗47's fallout — `key_eight_meshes_the_sandbox_on_the_gpu` spun `assert!(frames < 900)`, chosen when the drain took 135 frames on an idle device. Sharing one adapter across six tests took the same drain to thousands of frames, and the red test said "never drained" about a demo that was working exactly as designed. The replacement is a stall detector: the outstanding count must *decrease* within 1200 frames, which is machine-independent because a live device always retires something. Same shape as `a_budgeted_drain_keeps_what_it_could_not_reach`'s *"the drain is not making progress"*, and the sibling of ✗24 (*a wall-clock ratio is not a gate*) — a **frame** count is a wall clock with extra steps |
 | A typed error at the call site is louder than an abort — make the invalid state unrepresentable where you can, report it where you can't, and never substitute a default | The no-panic rule, reconciled with "fail loudly": `ValidateConfig` has private fields and one checked constructor, so the validator needs no runtime guard at all |
 | Corpus presence is decided by `catalog_read`, never by `distill_search` | ✗4 — 342 documents readable but unsearchable |
 | **`for_each_reference_field!` looks like a closure and is not. A `return` in its body exits the whole test** | M-199 — the macro takes `\|name, field\|` and **inlines its body once per field as a plain block**, because each field is a different type and no single closure can take all seven. So `if name != "gyroid" { return; }` returned from the *test function* on `sphere`, and the test **passed while running neither control nor the assertion that both had run**. Use `if name == …` instead. The `continue`/`break` uses elsewhere in the tree are all inside genuine inner loops and are fine — a bare one would not compile, which is the only reason this trap is spelt `return` and nothing else. The macro's own doc now says so |
@@ -9916,3 +9922,83 @@ redirect chain ended on had `navigator.gpu` `undefined` and all nine demos refus
 browser, desktop Chrome included. **The diagnostic order that would have saved the time:** when a project
 page redirects somewhere unexpected, read the *user* site's `cname` before anything in the repository
 being deployed.
+
+### 💥 ✗47 / M-367 — "`GPU_JOBS_MAX` bounds the queue": the cap was checked *after* the push, so it bounded nothing at all (D-014)
+
+`drain_dirty`'s backpressure was the second clause of `mesh_within_budget`'s budget
+predicate, `in_flight.get() < GPU_JOBS_MAX`. **The predicate is consulted after meshing a chunk**, and
+deliberately — the crate's own docs say a budget too small for one chunk must still make progress, so
+the livelock cannot happen. The consequence for a *counting* clause is that a frame which **begins** at
+the cap dispatches one more before the predicate can refuse; and because that repeats on every frame in
+which no readback retires, the queue grows by one per frame with no bound:
+
+| observation | value |
+|---|---|
+| declared cap | 16 |
+| first failure | **17** jobs in flight at frame 39 |
+| after asserting `cap + 1` | **18** at frame 47 |
+| jobs outstanding at frame 900 of a 256-chunk switch | 78 chunks, `pending` pinned at 16 |
+| cost per overshoot | two 295 KB geometry buffers plus a staging copy |
+
+Only reachable when readbacks lag a whole frame, which on an idle device they do not — so it survived
+every previous run and surfaced when six tests began sharing one device (M-365).
+
+**Two fixes that look right and are not, both tried and measured.** *Refusing to enter the drain while
+the list is full* stalls the switch outright — measured as a hang at the test's 900-frame guard;
+`Readback::ready` polls the device itself so retirement does not need a new submission, but the frame
+that dispatches nothing also defers every chunk, and the throughput that was carrying the drain was the
+overshoot. *Asserting `cap + 1`* is not a bound: it is the first term of an unbounded series, which the
+18 proved one run later.
+
+**What holds:** the closure checks `in_flight` *before* `gpu_dispatch` and, when there is no room, puts
+the chunk back in the dirty set — deferred rather than dropped, and not quietly meshed on the CPU
+either, because key `8` means the device meshed it and a silent fallback would make the HUD's own claim
+false. `world.backlog` becomes the set's length rather than `report.remaining`, since a chunk the queue
+had no room for is backlog too.
+
+**Would be shown wrong by:** `pending` exceeding 16 on any frame, which
+`key_eight_meshes_the_sandbox_on_the_gpu` now asserts through the shared `drain` helper on every frame
+of every drain in the suite.
+
+### 🧊 M-368 — the backpressure was measured against a stale queue: `drain_dirty` ran before `gpu_collect` (D-014)
+
+`in_flight` starts at `pending.jobs.len()`, and in the chained `Update` order `drain_dirty` came
+**before** `gpu_collect` — so it counted every job the device had already finished but nothing had
+retired yet. The cap was therefore compared against last frame's high-water mark, and no slot ever
+looked free: with the cap fixed and the order left alone, a 256-chunk switch dropped to **one chunk per
+twelve frames** with `pending` pinned at 16 for 900 frames.
+
+Swapping them — retire, then dispatch into the freed slots — restores the switch to under a second for
+the whole suite and costs nothing: a job dispatched this frame is collected next frame at the earliest
+either way, so the latency is unchanged. **A queue length read before the thing that shortens it is not
+the queue length.**
+
+### 💥 ✗48 / M-369 — "the field already stops the descent, and the floor slab is scenery": dig out the bottom and the player leaves the world (D-014)
+
+D-013 shipped the five boundary slabs as geometry with a position clamp on `x` and `z` only, on the
+stated reasoning that *"no `y` clamp — the field already stops descent, and the floor wall is
+scenery"*. **Reported by the user and reproduced:** dig out the bottom and the body sinks through the
+floor.
+
+The mechanism is not where the reasoning looked. `aim` refuses to place a brush *centred* outside
+`sandbox`, but a brush centred **on** the floor plane still reaches its own radius below it — up to
+`2.00` at the top of the wheel's range against a box floor at `y = -5.4`. So a shaft dug to the bottom
+removes the field underneath the box, the chunks and their meshes stop at `-5.4`, and the body falls out
+of the visible world until it meets whatever `Ground` still has, embedded in rock nobody can see or dig.
+
+**And a `y` clamp could not have fixed it**, which is the more useful half: clamping a coordinate stops
+the fall without ever reporting ground, so the body hangs at the limit with `grounded` false, the jump
+refused, and `gravity_step` accelerating into a surface it is not allowed to touch. The boundary has to
+be in the *field* the resolver samples, so that depenetration, the ground probe and the jump all see it
+— which also deleted the `x`/`z` clamp as a second path doing the same job worse.
+
+`Walls` is five half-spaces from the same `sandbox()` call `walls()` draws from, unioned with the brush
+stack for collision only — the mesher must not see them, because they are already on screen as five
+cuboids. Half-spaces rather than the 0.5-thick slabs on purpose: the body only ever touches an inner
+face, and a half-space has no far side for one fast frame to tunnel through.
+
+**Would be shown wrong by:** a body that ends below `lo.y + 1.70` after a shaft is dug through the
+floor, or a boundary face whose zero is not the drawn slab's inner face — asserted on all five by
+`the_collision_boundary_is_solid_exactly_where_the_slabs_are`, with the wiring gated separately by
+`walking_into_the_wall_stops_at_the_sandbox` (removing the boundary from `move_camera` walks the body to
+`x = 42.1`).

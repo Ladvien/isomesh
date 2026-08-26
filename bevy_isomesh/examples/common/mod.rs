@@ -676,15 +676,32 @@ fn update_hud(
     // always sat, and a demo that sets no banner keeps it.
     let top = Val::Px(if headline.is_empty() { 10.0 } else { 32.0 });
 
+    let frame_ms = median(&times.0);
+    let fps = if frame_ms > 0.0 {
+        1000.0 / frame_ms
+    } else {
+        0.0
+    };
+
     if !flags.hud {
+        // **The frame rate outlives the panel too, and for the same reason the
+        // banner does**: with the numbers switched off the two things worth
+        // seeing are which mesher is running and what it costs, and the cost was
+        // the one of the pair that vanished. It joins the hint rather than the
+        // banner because the banner already carries the mesher — one line each,
+        // no duplication when the panel is open.
+        //
+        // Still suppressed by `nohud`, which wants an *empty* frame: the hint is
+        // `""` there and this appends nothing to it, so the committed captures
+        // are unchanged.
         let hint = match (&stats.hint, flags.hud_hint) {
-            (_, false) => "",
-            (Some(line), true) => line.as_str(),
-            (None, true) => "[H] HUD",
+            (_, false) => String::new(),
+            (Some(line), true) => format!("{fps:.0} fps   {line}"),
+            (None, true) => format!("{fps:.0} fps   [H] HUD"),
         };
         for (mut hud, mut node) in &mut query {
             if hud.0 != hint {
-                hud.0 = hint.to_string();
+                hud.0.clone_from(&hint);
             }
             if node.top != top {
                 node.top = top;
@@ -692,13 +709,6 @@ fn update_hud(
         }
         return;
     }
-
-    let frame_ms = median(&times.0);
-    let fps = if frame_ms > 0.0 {
-        1000.0 / frame_ms
-    } else {
-        0.0
-    };
 
     let mut text = String::new();
     text.push_str(&stats.title);
@@ -862,7 +872,11 @@ pub fn surface_material(materials: &mut Assets<StandardMaterial>) -> Handle<Stan
 
 #[cfg(test)]
 mod tests {
-    use super::ViewFlags;
+    use std::collections::VecDeque;
+
+    use bevy::ecs::system::RunSystemOnce;
+
+    use super::*;
 
     /// `nohud` clears the hint as well as the HUD, and an empty list leaves both
     /// on.
@@ -903,5 +917,84 @@ mod tests {
         // Not a prefix match: `nohud` contains `hud` as a substring and must not
         // be read as asking for it.
         assert!(!ViewFlags::parse("nogrid,nohud", 0).hud_requested);
+    }
+
+    /// With the panel hidden, the frame rate and the mesher are both still on
+    /// screen — and with `nohud` neither is.
+    ///
+    /// Two things a reader needs while playing rather than while reading:
+    /// **which mesher is running** and **what it costs**. The banner carried the
+    /// first through a hidden panel from the start; the frame rate went with the
+    /// panel, which is the gap this closes. `game_dig` is the demo that opens
+    /// hidden, so this was its whole steady state.
+    ///
+    /// Driven through `update_hud` itself rather than by inspecting the strings
+    /// it is built from: the `!flags.hud` early return is the branch that used to
+    /// drop the number, and a test that formats its own line would not cross it.
+    /// `nohud` is in the same test because the two requirements pull opposite
+    /// ways — always visible, and an *empty* frame for the GIFs — and a fix for
+    /// one is the obvious way to break the other.
+    fn hud_lines(view: &str, hud: bool) -> (String, String) {
+        let mut app = App::new();
+        let mut flags = ViewFlags::parse(view, 0);
+        flags.hud = hud;
+        app.insert_resource(flags)
+            .insert_resource(FrameTimes(VecDeque::from([8.0, 8.0, 8.0])))
+            .insert_resource(DemoStats {
+                banner: Some(("[1] Marching Cubes".to_string(), Color::WHITE)),
+                hint: Some("[H] numbers".to_string()),
+                ..default()
+            });
+        app.world_mut()
+            .run_system_once(spawn_hud)
+            .expect("spawn_hud needs only `Commands`");
+        app.world_mut()
+            .run_system_once(update_hud)
+            .expect("update_hud needs no window and no renderer");
+        let mut panel = app
+            .world_mut()
+            .query_filtered::<&Text, (With<HudText>, Without<HudBanner>)>();
+        let mut banner = app.world_mut().query_filtered::<&Text, With<HudBanner>>();
+        let panel = panel.iter(app.world()).next().expect("the panel").0.clone();
+        let banner = banner
+            .iter(app.world())
+            .next()
+            .expect("the banner")
+            .0
+            .clone();
+        (panel, banner)
+    }
+
+    #[test]
+    fn a_hidden_panel_still_shows_the_frame_rate_and_the_mesher() {
+        // 8 ms a frame is 125 fps, so the number is checked rather than merely
+        // the word.
+        let (line, banner) = hud_lines("", false);
+        assert!(
+            line.starts_with("125 fps"),
+            "the frame rate is not on the line the hidden panel leaves: {line:?}"
+        );
+        assert!(
+            line.contains("[H] numbers"),
+            "the frame rate displaced the hint instead of joining it: {line:?}"
+        );
+        assert_eq!(
+            banner, "[1] Marching Cubes",
+            "the mesher is not on screen with the panel hidden"
+        );
+
+        // Open, the number belongs to the panel and must not be on both.
+        let (panel, banner) = hud_lines("", true);
+        assert!(
+            panel.contains("125 fps"),
+            "the open panel lost the frame rate: {panel:?}"
+        );
+        assert_eq!(banner, "[1] Marching Cubes");
+
+        // `nohud` wants an empty frame, and that is what the GIFs are recorded
+        // with. Both lines, because the frame rate is new and the banner is not.
+        let (line, banner) = hud_lines("nohud", false);
+        assert_eq!(line, "", "nohud left a frame rate on an empty frame");
+        assert_eq!(banner, "", "nohud left the banner on an empty frame");
     }
 }
