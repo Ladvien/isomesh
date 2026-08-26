@@ -890,83 +890,129 @@ fn geometry<S: Sdf<Scalar = f64>>(field: &S, fx: &Fixture) -> Geometry {
 }
 
 // ─── C4: the two-chunk seam census ──────────────────────────────────────────
-
 /// One seam row.
 struct Seam {
     cell_size: f64,
     vertices: usize,
     mismatches_lower_corner: usize,
     mismatches_centred: usize,
+    worst_ulp_lower_corner: u128,
+    worst_ulp_centred: u128,
+    /// Cut edges whose two arms disagreed about an **endpoint coordinate**.
+    ///
+    /// The M-44 control. A zero here means the fixture never reached the
+    /// configuration and neither mismatch column means anything, so the run
+    /// asserts on it rather than reporting a comfortable zero.
+    coordinate_mismatches: usize,
 }
 
-/// Two neighbouring chunks compute the seam plane's crossings from their own
-/// origins, which is `M-32`'s mechanism, and this counts the ones that disagree
-/// in bits — under both placements.
+/// `M-32`'s two arithmetics, and whether the crossing form participates.
 ///
-/// The two arms differ only in the placement, so a difference here would mean
-/// the crossing form participates in the seam and a zero means it does not. The
-/// registration expects the latter: `M-32` names `world_of_sample`.
+/// **The first version of this fixture was vacuous and reported a clean zero**,
+/// which is why the shape is spelled out here rather than assumed. It put two
+/// chunks side by side along `x` and compared the shared plane's `y`-edges —
+/// where both chunks have the same `y` base, so both reconstruct `o + h·y`
+/// identically and there was nothing to disagree about. It found **0 cut edges**
+/// at all three spacings and looked like a null. `M-44`'s rule caught it: a zero
+/// has to prove it could have been non-zero.
+///
+/// What M-32 actually names is `world_of_sample`: a chunk at integer base `b` is
+/// handed a world origin and reaches its local sample `l` as `(o + h·b) + h·l`,
+/// while the global grid says `o + h·(b + l)`. Those are equal by algebra and
+/// not by IEEE. So the two arms here are the two **arithmetics** at a non-zero
+/// base, and each samples the field at its own coordinates, because that is what
+/// a chunked mesher does.
 fn seam_census<S: Sdf<Scalar = f64>>(field: &S, h: f64, cells: u32) -> Seam {
-    let n = cells as usize + 1;
-    // Chunk A spans samples `0..=cells` from origin `-2`, chunk B the next span,
-    // each reconstructing its own sample positions the way an extractor does:
-    // `chunk_origin + h * local`.
-    let origin_a = -2.0f64;
-    let origin_b = origin_a + h * f64::from(cells);
-    let coord = |origin: f64, i: usize| origin + h * (i as f64);
+    let o = -2.0f64;
+    let base = f64::from(cells);
+    let chunk_origin = o + h * base;
+    // Canonical: one multiply from the global index. Offset-and-add: the chunk's
+    // own origin plus a local multiple, which is every extractor's signature.
+    let canonical = |l: usize| o + h * (base + l as f64);
+    let offset = |l: usize| chunk_origin + h * (l as f64);
 
+    let n = cells as usize + 1;
     let mut vertices = 0usize;
     let (mut bad_lower, mut bad_centred) = (0usize, 0usize);
-    // The seam is chunk A's last sample plane and chunk B's first: A reaches it
-    // as local index `cells`, B as local index 0.
-    for y in 0..n {
-        for z in 0..n {
-            // The y-axis edge on the seam plane, from each side.
-            if y + 1 >= n {
-                continue;
-            }
-            let pa = [
-                coord(origin_a, cells as usize),
-                coord(origin_a, y),
-                coord(origin_a, z),
-            ];
-            let pa_hi = [pa[0], coord(origin_a, y + 1), pa[2]];
-            let pb = [coord(origin_b, 0), coord(origin_b, y), coord(origin_b, z)];
-            let pb_hi = [pb[0], coord(origin_b, y + 1), pb[2]];
+    let (mut worst_lower, mut worst_centred) = (0u128, 0u128);
+    let mut coordinate_mismatches = 0usize;
 
-            let va = field.sample(pa);
-            let vb = field.sample(pa_hi);
-            if (va < 0.0) == (vb < 0.0) {
-                continue;
-            }
-            // The same edge as B sees it. Its field values are the same numbers
-            // only if the coordinates agree bit-for-bit, which is the property
-            // under test, so each side samples its own reconstruction.
-            let wa = field.sample(pb);
-            let wb = field.sample(pb_hi);
-            if (wa < 0.0) == (wb < 0.0) {
-                continue;
-            }
-            vertices += 1;
+    for axis in 0..3 {
+        for u in 0..n {
+            for v in 0..n {
+                for l in 0..n - 1 {
+                    // Index per component: `l` along the edge's axis, and the
+                    // other two take `u` and `v` in axis order.
+                    let mut off = [u, v];
+                    let index = |k: usize| {
+                        if k == axis {
+                            l
+                        } else if k == (axis + 1) % 3 {
+                            off[0]
+                        } else {
+                            off[1]
+                        }
+                    };
+                    let mut lo_can = [0.0f64; 3];
+                    let mut hi_can = [0.0f64; 3];
+                    let mut lo_off = [0.0f64; 3];
+                    let mut hi_off = [0.0f64; 3];
+                    for k in 0..3 {
+                        let i = index(k);
+                        lo_can[k] = canonical(i);
+                        lo_off[k] = offset(i);
+                        hi_can[k] = canonical(if k == axis { i + 1 } else { i });
+                        hi_off[k] = offset(if k == axis { i + 1 } else { i });
+                    }
+                    off = [u, v];
+                    let _ = off;
 
-            let ta = lower_corner_t(va, vb);
-            let tb = lower_corner_t(wa, wb);
-            for k in 0..3 {
-                if key(place_lower_corner(pa[k], pa_hi[k], ta), true)
-                    != key(place_lower_corner(pb[k], pb_hi[k], tb), true)
-                {
-                    bad_lower += 1;
-                    break;
-                }
-            }
-            let da = centred_d(va, vb);
-            let db = centred_d(wa, wb);
-            for k in 0..3 {
-                if key(place_centred(pa[k], pa_hi[k], da), true)
-                    != key(place_centred(pb[k], pb_hi[k], db), true)
-                {
-                    bad_centred += 1;
-                    break;
+                    let mut coords_differ = false;
+                    for k in 0..3 {
+                        if key(lo_can[k], true) != key(lo_off[k], true)
+                            || key(hi_can[k], true) != key(hi_off[k], true)
+                        {
+                            coords_differ = true;
+                        }
+                    }
+
+                    let va = field.sample(lo_can);
+                    let vb = field.sample(hi_can);
+                    if (va < 0.0) == (vb < 0.0) {
+                        continue;
+                    }
+                    let wa = field.sample(lo_off);
+                    let wb = field.sample(hi_off);
+                    if (wa < 0.0) == (wb < 0.0) {
+                        continue;
+                    }
+                    vertices += 1;
+                    if coords_differ {
+                        coordinate_mismatches += 1;
+                    }
+
+                    let (ta, tb) = (lower_corner_t(va, vb), lower_corner_t(wa, wb));
+                    let (da, db) = (centred_d(va, vb), centred_d(wa, wb));
+                    let mut moved_lower = false;
+                    let mut moved_centred = false;
+                    for k in 0..3 {
+                        let a_low = place_lower_corner(lo_can[k], hi_can[k], ta);
+                        let b_low = place_lower_corner(lo_off[k], hi_off[k], tb);
+                        if key(a_low, true) != key(b_low, true) {
+                            moved_lower = true;
+                            worst_lower =
+                                worst_lower.max(ulp_distance(a_low.to_bits(), b_low.to_bits()));
+                        }
+                        let a_ctr = place_centred(lo_can[k], hi_can[k], da);
+                        let b_ctr = place_centred(lo_off[k], hi_off[k], db);
+                        if key(a_ctr, true) != key(b_ctr, true) {
+                            moved_centred = true;
+                            worst_centred =
+                                worst_centred.max(ulp_distance(a_ctr.to_bits(), b_ctr.to_bits()));
+                        }
+                    }
+                    bad_lower += usize::from(moved_lower);
+                    bad_centred += usize::from(moved_centred);
                 }
             }
         }
@@ -976,6 +1022,9 @@ fn seam_census<S: Sdf<Scalar = f64>>(field: &S, h: f64, cells: u32) -> Seam {
         vertices,
         mismatches_lower_corner: bad_lower,
         mismatches_centred: bad_centred,
+        worst_ulp_lower_corner: worst_lower,
+        worst_ulp_centred: worst_centred,
+        coordinate_mismatches,
     }
 }
 
@@ -1271,21 +1320,29 @@ fn main() {
         rows.extend(geometry_rows);
 
         // ── block: seam ─────────────────────────────────────────────────────
-        println!("\n-- seam: two chunks, three spacings, both placements --");
+        println!("\n-- seam: M-32's two arithmetics at a non-zero base, three spacings --");
         println!(
-            "{:>10} {:>10} {:>16} {:>10}",
-            "h", "vertices", "lower_corner", "centred"
+            "{:>10} {:>9} {:>10} {:>13} {:>9} {:>10} {:>11}",
+            "h", "cutEdges", "coordDiff", "lower_corner", "centred", "ulpLower", "ulpCentred"
         );
         let mut c4_delta = 0i64;
+        let mut seam_coordinate_mismatches = 0usize;
         {
             let field = isomesh::fields::Gyroid::<f64>::canonical();
             for h in [0.125f64, 0.1, 3.0 / 32.0] {
                 let s = seam_census(&field, h, 16);
                 println!(
-                    "{:>10.6} {:>10} {:>16} {:>10}",
-                    s.cell_size, s.vertices, s.mismatches_lower_corner, s.mismatches_centred
+                    "{:>10.6} {:>9} {:>10} {:>13} {:>9} {:>10} {:>11}",
+                    s.cell_size,
+                    s.vertices,
+                    s.coordinate_mismatches,
+                    s.mismatches_lower_corner,
+                    s.mismatches_centred,
+                    s.worst_ulp_lower_corner,
+                    s.worst_ulp_centred
                 );
                 c4_delta += s.mismatches_centred as i64 - s.mismatches_lower_corner as i64;
+                seam_coordinate_mismatches += s.coordinate_mismatches;
                 rows.push(vec![
                     ("block", "seam".to_string()),
                     ("field", "gyroid".to_string()),
@@ -1299,9 +1356,27 @@ fn main() {
                         s.mismatches_lower_corner.to_string(),
                     ),
                     ("seam_mismatches_centred", s.mismatches_centred.to_string()),
+                    (
+                        "seam_worst_ulp_lower_corner",
+                        s.worst_ulp_lower_corner.to_string(),
+                    ),
+                    ("seam_worst_ulp_centred", s.worst_ulp_centred.to_string()),
+                    (
+                        "seam_coordinate_mismatches",
+                        s.coordinate_mismatches.to_string(),
+                    ),
                 ]);
             }
         }
+        // **The C4 control.** The first version of this fixture compared two
+        // chunks that reconstruct the shared plane identically, found 0 cut
+        // edges and reported a comfortable zero. A seam census whose two arms
+        // never disagree about a coordinate is not measuring the seam.
+        assert!(
+            seam_coordinate_mismatches > 0,
+            "VOID: the two arithmetics never disagreed about an endpoint \
+             coordinate, so C4's zero is a property of the fixture (M-44)"
+        );
 
         // ── the aggregates, and the verdicts ────────────────────────────────
         let c1_holds = c1_can_fail_at_48 == c1_population;
@@ -1317,6 +1392,17 @@ fn main() {
             pre_lower_max > 0,
             "VOID: the lower-corner form mismatched nothing in the pre-measurement, \
              so the instrument cannot report the bad news it exists to report"
+        );
+        // **C3's own margin, printed rather than left implicit.** The clause is
+        // "within 1 percent" and one ULP at these magnitudes is ~1e-16 world
+        // units against a Hausdorff distance of ~5e-3 -- eleven orders below the
+        // threshold. So a HELD on C3 carries much less information than its
+        // wording implies, the same caveat as ✗41's C2, and the entry says so.
+        // The informative number is `worst_move_ulp`, which is non-zero.
+        println!(
+            "C3 margin: threshold 1e-2 relative, measured change \
+             {worst_hausdorff_ratio:.3e} -- worst_move_ulp is the magnitude that \
+             is actually non-zero"
         );
 
         println!(
