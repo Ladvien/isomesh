@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**251 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**251 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -112,6 +112,28 @@ vectorise, while `libm::sinf`/`cosf` have **no** arch selection at all — pure 
 argument-reduction branches — so `gyroid` cannot, at any loop shape, while `libm` is the transcendental
 path. And the M5 that C1's threshold comes from is **contended**, which is `M-005`'s block, so the ratio
 is measured here within one binary and one run (`M-281`) against this repo's own committed Zen 3 baseline.
+
+**R-070 — Is the granularity of the active-cell structure a parameter, and where is its optimum? (P-72)**
+`P-40` chose **64 cells per word** and never asked whether 64 was right; `M-337` measured the stage at
+5.5× and 12/12 bit-identical, which settles that the bitmap works and says nothing about granularity.
+GVDB (Hoetzlein, HPG 2016) is a **256× spread from one knob**: at 2048³, ⟨3,3,3,3⟩ builds 616,444 bricks
+in 461 ms and ⟨3,3,3,6⟩ builds 2,036 bricks in **1.8 ms**, same data, and its own conclusion is *"larger
+brick sizes produce a fewer number of bricks resulting in faster tree changes."*
+**What the cubic 8³–64³ knob is in this crate, read from the source before registering:** it is the
+**chunk**, not the word. `build_inside_bits` packs 64 cells per `u64` along **x only** — a flat per-row
+word array with no block or brick layer — so there is no cubic granularity inside the bitmap to sweep, and
+`u8`/`u16`/`u32`/`u64` would be a 1-D sweep of a packing width, not GVDB's knob. The unit that is
+*rebuilt on an edit* is the chunk: `mark_edit` marks chunks, `DirtySet` holds chunks, `mesh_dirty`
+re-meshes chunks. That is GVDB's leaf brick with the same semantics, and C1 is denominated in
+**edit-plus-remesh** time, which only the chunk path has.
+**The tradeoff is arithmetic and is why an optimum should exist at all.** Total world cells are held
+fixed, so a chunk of `c` cells re-samples its shared corner planes: `((c+1)/c)³` of the field
+evaluations, i.e. **1.42× at c = 8** against **1.05× at c = 64**. Against that, a finer dirty set
+re-meshes fewer cells per edit. Small chunks pay in duplicated samples and save in wasted remesh.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-070** | M | — |
 
 **R-069 — Is the 83% a blocking round-trip, and can both targets avoid it? (P-71)**
 `M-167` is the largest single number this project owns about its own GPU path: synchronisation was **83%**

@@ -2655,6 +2655,85 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "adapter",
         ],
     },
+    Preregistration {
+        id: "P-72",
+        ticket: "R-070",
+        hypothesis: "The granularity of the active-cell structure is a \
+            first-class parameter and it has never been swept. THE MEASURED \
+            PRIOR IS A 256x SPREAD FROM ONE KNOB: Hoetzlein, GVDB, HPG 2016, \
+            all timings on a Quadro M6000 -- tree build at 2048^3, <3,3,3,3> \
+            616,444 bricks in 461 ms, <3,3,3,4> 83,218 bricks in 69.8 ms, \
+            <3,3,3,6> 2,036 bricks in 1.8 ms. Same resolution, same data, 256x \
+            apart, and the paper's own conclusion is 'larger brick sizes \
+            produce a fewer number of bricks resulting in faster tree \
+            changes.' Also measured there: octrees were 30-40% slower on node \
+            insertion than N^3-trees. P-40 chose 64 cells per word and never \
+            asked whether 64 was right; M-337 measured the stage at 5.5x and \
+            12/12 bit-identical, which settles that the bitmap works and says \
+            nothing about its granularity. P-39's Lipschitz brush pruning \
+            (M-341, 3.36x median) is the direct analogue of GVDB's topology \
+            cull, and GVDB's result says its yield should likewise be \
+            granularity-dependent. WHAT THE CUBIC 8^3-64^3 KNOB IS IN THIS \
+            CRATE, read from the source before registering rather than assumed: \
+            it is the CHUNK, not the word. build_inside_bits packs 64 cells per \
+            u64 along X ONLY -- a flat per-row word array with no block or \
+            brick layer -- so there is no cubic granularity inside the bitmap \
+            to sweep, and u8/u16/u32/u64 would be a 1-D sweep of a packing \
+            width rather than GVDB's knob. The unit that is REBUILT ON AN EDIT \
+            is the chunk: mark_edit marks chunks, DirtySet holds chunks, \
+            mesh_dirty re-meshes chunks. That is GVDB's leaf brick with the \
+            same semantics, and C1 is denominated in EDIT-PLUS-REMESH time, \
+            which only the chunk path has. THE TRADEOFF IS ARITHMETIC, which is \
+            why an optimum should exist at all: total world cells are held \
+            fixed, so a chunk of c cells re-samples its shared corner planes at \
+            ((c+1)/c)^3 of the field evaluations -- 1.42x at c = 8 against \
+            1.05x at c = 64 -- while a finer dirty set re-meshes fewer cells \
+            per edit. Small chunks pay in duplicated samples and save in wasted \
+            remesh. (C1) Sweeping the chunk granularity across 8^3, 16^3, 32^3 \
+            and 64^3 cells per pruning unit on a live edit trace, at a FIXED \
+            total cell count, produces a PRONOUNCED OPTIMUM: the best and worst \
+            edit-plus-remesh times differ by at least 2x. (C2) The optimum is \
+            FIELD-DEPENDENT, and specifically differs between gyroid (surface \
+            everywhere) and fbm_terrain (surface on a sheet). (C3) The spread is \
+            SMALLER than GVDB's 256x, and predicted below 4x: GVDB's figure is \
+            a tree rebuild on a 2048^3 SPH volume, far larger than a chunk \
+            here, and its level-set numbers (5-6x over CPU) are consistently \
+            weaker than its volume numbers (60x).",
+        falsified_by: "C1 by a flat curve -- best-to-worst under 2x -- which is \
+            a genuine null and means M-337's granularity was already at a \
+            plateau; that null is worth having and is the expected outcome on \
+            the smooth fields. C2 by one granularity winning on BOTH fields, \
+            which would make it a constant rather than a parameter. C3 by a \
+            spread above 4x, which would be the more valuable outcome and would \
+            say the chunk-size regime is not the damping factor it looks like. \
+            NO GOLDEN HASH MOVES: this experiment changes no extractor and no \
+            placement -- it varies only how the same total cell count is \
+            partitioned, and a partition that changed the mesh would be a \
+            seam defect and is asserted against.",
+        records: &[
+            "field",
+            "chunk_cells",
+            "world_cells",
+            "chunks",
+            "samples_per_chunk",
+            "sample_duplication",
+            "edits",
+            "dirty_chunks_total",
+            "remeshed_cells_total",
+            "mark_ms",
+            "remesh_ms",
+            "total_ms",
+            "ms_per_edit",
+            "vertices",
+            "triangles",
+            "best_chunk_cells",
+            "worst_chunk_cells",
+            "spread",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

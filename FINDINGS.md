@@ -11186,3 +11186,30 @@ unexplained and worth a look before anyone ships a fixed depth.
 consumer-visible path where indirect draw arguments remove the geometry copy as well as the count wait;
 or a `not_ready` above zero at depth 2, which would mean the ring's latency assumption is optimistic on
 this hardware.
+
+### P-72 — registered for R-070, before the harness exists
+
+**The cubic knob is the chunk, and the source is what settled that.** GVDB's ⟨3,3,3,B⟩ leaf-brick sweep is
+a **256× spread from one parameter** at fixed resolution — 616,444 bricks in 461 ms against 2,036 in
+1.8 ms. `P-40` picked 64 cells per word and never asked. But `build_inside_bits` packs those 64 along
+**x only**, a flat per-row word array with no block layer, so there is no cubic granularity inside the
+bitmap to sweep: `u8`/`u16`/`u32`/`u64` would sweep a **packing width in one dimension**, not GVDB's knob.
+The unit GVDB's knob actually maps to is the one that is *rebuilt on an edit* — `mark_edit` marks chunks,
+`DirtySet` holds chunks, `mesh_dirty` re-meshes chunks — and C1 is denominated in **edit-plus-remesh**
+time, which only the chunk path has. Registering the wrong structure would have made the experiment
+unfalsifiable in the `x35` way: a sweep of something whose spread no clause was about.
+
+**The tradeoff is arithmetic, computed before the harness, which is why an optimum should exist.** Total
+world cells held fixed at 128³, so a chunk of `c` cells re-samples its shared corner planes:
+`((c+1)/c)³` of the field evaluations — **1.4238× at c = 8**, 1.1953 at 16, 1.0968 at 32, **1.0473 at
+c = 64** — against a finer dirty set re-meshing fewer cells per edit. Small chunks pay in duplicated
+samples and save in wasted remesh. C1's 2× has to come out of those two curves crossing.
+
+| clause | prediction | falsified by |
+|---|---|---|
+| C1 | a **pronounced optimum**: best and worst edit-plus-remesh differ by ≥ 2× | a flat curve — a genuine null meaning 64 was already a plateau, and the expected outcome on smooth fields |
+| C2 | the optimum is **field-dependent**, differing between `gyroid` (surface everywhere) and `fbm_terrain` (surface on a sheet) | one granularity winning on both, making it a constant rather than a parameter |
+| C3 | the spread is **below 4×**, far under GVDB's 256× | above 4×, which is the more valuable outcome and says chunk size is not the damping factor it looks like |
+
+**No golden hash moves and that is asserted, not hoped:** this varies only how a fixed cell count is
+partitioned. A partition that changed the mesh would be a seam defect.
