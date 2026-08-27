@@ -2726,6 +2726,8 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "ms_per_edit",
             "vertices",
             "triangles",
+            "distinct_surface_points",
+            "vertex_duplication",
             "best_chunk_cells",
             "worst_chunk_cells",
             "spread",
