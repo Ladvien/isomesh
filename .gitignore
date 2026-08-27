@@ -42,3 +42,12 @@ docs/measurements/volumes/*.part
 # the wasm alone is well past GitHub's 100 MB per-file limit and would double
 # the clone for every contributor. The sources under web/ are committed.
 web/dist/
+
+# Claude Code's per-machine state, for the reason the `.omp/*` rule above gives.
+# Only the `.local` half is machine-specific -- it is this checkout's permission
+# grants on this laptop. `.claude/settings.json`, and anything under
+# `.claude/skills/` or `.claude/agents/`, is procedure that belongs to the
+# repository, so this ignores the one file rather than the directory: git does
+# not descend into an excluded directory, and excluding `.claude/` wholesale
+# would silently un-commit those the day someone adds one.
+.claude/settings.local.json
