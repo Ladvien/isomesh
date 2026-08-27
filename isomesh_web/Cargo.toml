@@ -1,7 +1,7 @@
 [package]
 name = "isomesh_web"
 description = "The wasm module behind ladvien.github.io/isomesh's front-page demo. Not published."
-version = "0.0.9"
+version = "0.0.10"
 edition = "2024"
 rust-version = "1.89"
 license = "MIT OR Apache-2.0"

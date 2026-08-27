@@ -47,6 +47,8 @@ contradict.
 | P-22 … P-37 | `crates/isomesh/src/experiment.rs` | *not tallied here — several split their verdict across clauses, and a column that rounds those to one word would be the kind of summary this page exists to distrust* | | |
 | P-38 … P-47 | `crates/isomesh/src/experiment.rs` | 3 | 7 | — |
 | P-48 … P-56 | `crates/isomesh/src/experiment.rs` | *split, and tallied honestly below: 4 experiments held every clause, 2 were falsified outright, and 3 split — the phase's most useful result is a clause that failed* | | |
+| P-57 … P-60 | `crates/isomesh/src/experiment.rs` | *4 registrations, every one falsified on at least one clause and none on all — `FINDINGS.md` carries them (`✗39`–`✗42`); they are not summarised on this page* | | |
+| P-61 … P-72 | `crates/isomesh/src/experiment.rs` | *12 registered, **10 ran and 2 are blocked on a paper nobody can get** — tallied below. 1 held every clause, 2 were falsified on every clause, and 7 split* | | |
 
 A page called "experiments that held" which quietly dropped the falsifications would be exactly the
 failure this machinery exists to prevent. They are all here.
@@ -77,6 +79,16 @@ strongest evidence on this page that the practice is doing something.
 | **P-20** — a weld key moves no topology metric beyond the splits it names | **held on both falsifiers, wording amended** (M-305) | A constant key moves nothing on **0 of 51** configurations, and non-manifold vertices never rise by more than the split count — so E×4's manufactured bowties do not come back. But boundary edges go **0 → 24** on a creased cube, which H said would not happen. That is not a defect: it **is** the split, seen from the edge column. The exact mirror of E×4, where a *pairwise* refusal did its damage in the vertex column |
 | **P-21** — a freshly extracted mesh separates exactly the sample pairs the field's own sign separates | **held**, both clauses (M-307) | **Marching Cubes, MC+decider and Marching Tetrahedra seal 24 of 24** — eight fields × three resolutions, 9.15 M probes, zero holes and zero membranes. **All three duals fail `fbm_terrain` with the identical count** (92 / 138 / 190) and **every one of those holes is on a face of the sampled domain**: a dual's quad needs all four cells around a sign-changing grid edge and at the domain face only one or two exist. **For a chunked world that face is the chunk seam**, so a dual chunk's collider is not watertight on its own. The property that splits the family is not primal-versus-dual but *does the method put its crossing on the probed grid edge* — subgrid Marching Tetrahedra is primal and scores worst, 18 of 24 |
 | **P-18** — every convex-decomposition precondition is already reported by `ColliderReadiness` | **falsified**, and not where predicted (M-300) | Registered *expecting* to die on self-intersection-freedom. It died on **non-manifold vertices** instead, and self-intersection-freedom turned out not to be an input precondition of anything (✗20). The audit was the product either way |
+| **P-61** — a crossing stored as an offset from the edge midpoint is bit-exactly antisymmetric, so a mirrored grid gives a mirrored vertex | **falsified** on C1 and C2, **held** on C3 and C4 (✗49 / M-372) | **Your vertex positions moved in 0.0.10, and in exchange plain Marching Cubes is now equivariant under all 48 octahedral elements instead of 6.** 0 mismatches on 9.2 M straddling pairs against 1,035,808 for the old lower-corner form. 135 of 216 golden hashes were rebaselined; triangle counts, Hausdorff and self-intersections are unchanged to twelve digits, and 2,285 of 28,124 cut edges moved by ≤ 268 ULP. **If you hash meshes, 0.0.9's hashes will not match.** C1 and C2 were cost clauses and both were priced wrong at registration |
+| **P-63** — `O-12` is finite at 2¹⁸, and one sweep settles the vertex-link question for Marching Cubes | **held** on C1 and C2; C3 falsified by its own block (M-374) | **The oldest open question in the ledger is half closed, by exhaustion rather than by sampling.** Every face incident to an edge vertex comes from one of the four cells sharing that edge — 18 corners, 2¹⁸ = 262,144 patterns, the *whole* space — and not one produces a vertex with a split link, on both interior-ambiguity settings at four magnitude draws. The pre-fix defect reproduces **5,302 times** in the same walk, so the zero means something. **What is still open is the dual family**, which needs 4³ = 64 corners and is filed as `R-072` |
+| **P-64** — bounded model checking proves the combinatorics the property tests only sample | **held**, all three (M-379) | **The case table is proved indexable, not spot-checked.** All 256 sign patterns in 2.04 s and all 16,384 (pattern, mask) pairs in 161 s. The useful half is the failure on the way: pointing Kani straight at the constructor ran CBMC out of **32 GB**, and the proof only exists because the work was split between `const` evaluation over the real constructor and a model checker over the consumer. A `#[kani::should_panic]` control corrupts one triangle and reports the failure, so a vacuous proof cannot pass as a real one |
+| **P-68** — a running error bound turns a vertex position into a position *and* a certified interval | **falsified** on C1 by one unit; **held** on C2, C3 and C4 (✗55 / M-382) | **The bound is sound at coefficient 3 and unsound at the registered 2** — 10 violations in 19,415, which is the kind of margin no sample size finds by luck. The ground truth is exact: `f64` samples are dyadic rationals, so the true crossing is an exact rational and the error is computable in `i128` with no floating point in the loop. That is what makes this a soundness statement rather than two approximations compared |
+| **P-69** — restructuring the sample loop autovectorises, with bit-identity as the gate | **falsified** on C1, **held** on C2, C3 **vacuous** (✗51 / M-375) | **Nothing widened: total `%ymm` across all eleven monomorphisations is zero**, and the prescribed shape is a 3–7% *regression*, so it was reverted. C1's 2× was arithmetically unreachable from the start — the loop is **11.6%** of the marginal extraction cost, so its ceiling is 1.06×. The durable result was in no clause: there were **three** copies of that loop and they are now one (`sdf::sample_grid`), with the original arithmetic and all 216 hashes unchanged |
+| **P-70** — subgroup ballot compaction beats the Hillis-Steele scan | **falsified** on C1 by arithmetic done at registration; **held** on C2 and C3 (✗54 / M-381) | **The mechanism is real — 1.4376× at 2 M elements, bit-identical, reproducing the literature's 1.33–1.49× band — and it is not shipped.** Applied to the path it lives in it moves **1.33%**, because `scan_ms` is 0.3657 of 8.3694 while `upload_ms` is 87.50%. A second WGSL path for 1.33% is what the one-path rule forbids, and naga 29.0.4 rejects `enable subgroups;` outright |
+| **P-71** — the 83% is a blocking round-trip, and both targets can avoid it | **falsified** on all three (✗52 / M-376) | **The largest piece of a GPU extraction is the geometry copy, not the count wait** — 0.7075 ms of 1.1860 at 129³ against map-wait's 0.3177 — so `extract_indirect` removes **31%**, not the registered 60%, and it removes it by *not delivering the bytes*. For a consumer that only draws, that is 100% of what it needs. For a collider consumer the copy is unavoidable, which is why `DeferredGeometry` ships in 0.0.10: measured under the frame-budget scheduler at **1.41 frames of latency, worst case 2** |
+| **P-72** — the granularity of the active-cell structure is a parameter with an optimum | **held** on C1 at 51×, **falsified** on C2 and C3 (M-377) | **Chunk size is the largest single knob in this crate and its optimum is interior at 4³.** Eleven edits cost **4.56 ms at 4³ against 435.81 ms at 64³** at a fixed total cell count, because remesh is `dirty_chunks × chunk_cells³` — 25,344 cells re-meshed against 8,126,464. The registered 8³–64³ range would have given the wrong shape entirely: it is monotone there with the minimum at the smallest granularity swept. **The demos are not retuned on this**, because the fixture excluded per-chunk entity and draw cost |
+| **P-62** — the Plantinga–Vegter certificate is sound against this crate's own tunnel classifier | **held** on C1 and C2, **falsified** on C3 (M-378) | **Zero unsound certificates over 2,389 tunnel cells**, from a predicate that refuses **95%** of the population — so the zero is not the trivial one. It is not free: the cost is 21%, not the registered ceiling, and the reason is structural rather than fixable in isolation — a standalone pass re-gathers the eight corners the extractor already has in registers |
+| **P-66** — a derivative sign test is a usable under-resolution witness | **falsified** on all three (✗53 / M-380) | **The third attempt at this line died too, and it died informatively.** The witness is sound at k = 17 samples and unsound at k = 5, C2's second half was stated backwards, and `thin_plate` ranks **last** on the metric C3 predicted it would top. Two earlier attempts (P-43, P-44) were *value* witnesses; this was a *derivative* witness, and the family is now three for three. Nothing here changes what the crate does |
 
 ---
 
@@ -134,6 +146,38 @@ scale-free equality was available, and a field list naming five members of a set
 was caught by the artefact rather than by review** — and three of them were caught before the harness
 existed, by reading the paper. The registrations that needed no external claim, P-51 and P-56, were the
 two that could be written immediately and the two that needed no correction.
+
+---
+
+## Phase 23 — twelve registered, ten run, and two blocked at the door
+
+All twelve came out of a single audit of this project's own practice, and the audit's central finding
+turned up again *inside* the phase that exists to apply it: **a clause stated as a ratio of a total must
+name the share of that total it can move.** P-69 registered a 2× on a loop that is 11.6% of the cost it was
+denominated in, so its ceiling was 1.06× before anything ran. P-70 registered a speedup on a stage that is
+4.4% of its own path. Both numbers were available at registration and neither was computed.
+
+**Two registrations are blocked, and they are blocked on acquisition rather than on a ticket.**
+
+| blocked | what it needs | why no ticket can unblock it |
+|---|---|---|
+| **P-65** — does MCPro's procedural construction resolve `UnresolvedSixSaddle`? | Stahl & Grosso, GRAPP 2025, `10.5220/0013309800003912` | Six acquisition routes were tried. What is in the library is a **383-character SciTePress landing page** that the catalog reported as *"converted, embedded"* — so the pipeline's own status flag is not a presence oracle either (`M-371`). Running it would mean inventing the quadrant subdivision, halfedge assembly and third routing from an abstract |
+| **P-67** — does reduced affine arithmetic keep P-54's rejection rate in a fixed-size struct? | Knoll et al., `10.1111/j.1467-8659.2008.01189.x` | C1 and C2 are runnable against this crate's own P-54 baseline. **C3 is the informative clause and it is not** — it exists to reproduce a measured 1.5–2× / 3–4× band *and* a superquadric case where intervals win, and reproducing a band from a summary is exactly the failure `✗21` records. Splitting the registration to run the easy two would measure that the method is cheaper without ever testing where it is not |
+
+Neither is on the scorecard above. **A scorecard row implies a verdict**, and these have none; they are
+registered in `crates/isomesh/src/experiment.rs` so the compiler holds the ids, their questions are on
+record in `FINDINGS.md`, and the unblocking event is external — a PDF appearing.
+
+**Three of the ten changed what ships.** P-61 moved every vertex position and rebaselined 135 of 216
+golden hashes, to buy bit-exact equivariance under all 48 octahedral elements. P-71 landed
+`DeferredGeometry` as a third extraction contract. P-72 measured the largest single knob in the crate — a
+**51×** spread in edit-plus-remesh across chunk granularity at a fixed cell count — and deliberately
+retuned nothing, because its fixture excluded the per-chunk entity and draw cost a real demo pays.
+
+**One found a crash rather than an answer.** P-63's exhaustive sweep panicked inside `marching_cubes`, in
+release, on an ordinary trilinear cell: `MAX_PATCH_TRIANGLES` was a **sampled** maximum of 24 where the
+triangulator's own buffer was the **derived** 40. Fixed under its own ticket before any number in the phase
+was committed, and it is in 0.0.10. An exhaustive harness is a fuzzer that knows when it is finished.
 
 ---
 

@@ -8,6 +8,8 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+## [0.0.10] — 2026-08-27
+
 **The project has a site, nine of the demos are playable in it, and the front page runs `isomesh` itself.**
 [ladvien.github.io/isomesh](https://ladvien.github.io/isomesh/) renders this repository's own markdown,
 serves every GIF and screenshot from itself rather than hotlinking `raw.githubusercontent.com`, and
@@ -163,6 +165,38 @@ and edit paths the keyboard and mouse drive.
   look, and three on-screen buttons carve, fill and jump — all feeding the same movement and edit paths
   the keyboard and mouse drive, with no second edit route to keep in step. The buttons stay hidden until a
   touch is seen, so a desktop run is visually unchanged.
+
+### The four things a consumer upgrading from 0.0.9 is actually upgrading into
+
+Everything above is the site and the demos. These are the library, and they are what a `cargo update`
+lands.
+
+- **Vertex positions move, on the default path, on every field.** A crossing is now stored as a **signed
+  offset from the edge midpoint** (`cube::edge_offset`) rather than as a parameter from the lower corner.
+  `d = ((a + b)/2)/(a − b)` is exactly antisymmetric under the simultaneous endpoint-and-sign swap by four
+  IEEE 754 guarantees, which makes plain Marching Cubes bit-exactly equivariant under **all 48 octahedral
+  elements instead of 6** — 0 mismatches on 9.2 M straddling pairs against 1,035,808 for the old form.
+  **135 of 216 golden hashes were rebaselined.** Triangle counts are unchanged, Hausdorff distance and
+  self-intersection counts are identical to twelve digits, and 2,285 of 28,124 cut edges moved by at most
+  268 ULP. If you hash meshes, **0.0.9's hashes will not match.** There is no second path and no flag:
+  `cube::edge_crossing` is gone, all six placements and the WGSL shader are in the centred frame.
+- **A release-mode panic is fixed.** `MAX_PATCH_TRIANGLES` was a **sampled** maximum of 24 while the
+  triangulator's own buffer was the **derived** 40, so an ordinary trilinear cell emitting 26 triangles
+  indexed out of bounds — a panic in release, not an `Error` and not a hole. Found by an exhaustive sweep
+  over all 2¹⁸ sign patterns of a four-cell block.
+- **New public items.** `cube::edge_offset`, also re-exported from `marching_cubes::table` beside
+  `is_inside`. In `isomesh-gpu`: a `wgpu` re-export so a consumer cannot end up with two `wgpu` majors;
+  `StageTimestamps`, `Span`, `Spans` and `MAX_PASSES` for GPU-side pass attribution; `Gpu::with_timestamps`
+  and `Gpu::with_subgroups`; and `DeferredGeometry`, a keyed queue of in-flight geometry read-backs. That
+  last one is a **third** extraction contract beside the two that already ship — `extract_buffers` promises
+  geometry now, `extract_indirect` promises it never leaves the device, `DeferredGeometry` promises it a
+  frame or two later with the wait amortised — not a fallback for either. Measured under
+  `DirtySet::mesh_within_budget` at **1.41 frames of latency, worst case 2**.
+- **Breaking within `0.0.x`.** `isomesh_gpu::Error` gains `FeaturesUnsupported { missing }` and
+  `DeferredQueueFull { capacity }`, so a match on it is no longer exhaustive. `AdapterReport` gains
+  `subgroup_min_size` and `subgroup_max_size`. And `Gpu::open`'s feature check no longer reports
+  `TimestampsUnsupported` for a missing **non-timestamp** feature — it was correct while timestamps were
+  the only requestable capability and became a lie the moment `with_subgroups` existed.
 
 ## [0.0.9] — 2026-08-17
 
