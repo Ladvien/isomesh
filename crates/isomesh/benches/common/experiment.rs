@@ -67,7 +67,7 @@ impl Run {
         let mut row = BTreeMap::new();
         for (k, v) in values {
             assert!(
-                __omp_shell("v.contains(',') && !v.contains('"') && !v.contains('\\n'),")
+                !v.contains(',') && !v.contains('"') && !v.contains('\n'),
                 "{}: value for `{k}` contains a CSV separator and this writer does not quote, \
                  so it would shift every later column: {v:?}",
                 self.prereg.id
