@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-256 tickets. Line numbers are stable until something above them is edited — grep the ID if
+257 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1993,3 +1993,24 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***Controls.*** Three-way agreement - both arms against `cpu_prefix_sum` **and** the shipped `PrefixScan` - so the bench's transcription cannot drift from the shader it transcribes. Fixture is **3% non-zero**, `M-337`'s measured active-cell density, not a uniform fill the extractor never produces. `VOID` without `SUBGROUP`, asserted.
 >
 > ***Supporting crate changes, all clean cutovers.*** `isomesh-gpu` re-exports `wgpu` (every entry point already takes its types, so a consumer already needs the same version); `Gpu::with_subgroups` mirrors `with_timestamps`; **`Gpu::open` returned `TimestampsUnsupported` for ANY missing feature** - correct while timestamps were its only caller, a lie the moment a second existed - now `FeaturesUnsupported { missing }`; and `AdapterReport` carries the subgroup sizes, because a wave intrinsic's cost is a function of that number and that is the reason the struct exists.
+
+| ☑ | **R-066** | M | — |
+> **DONE 2026-08-27 — 💥 ✗55 / M-382 / P-68: C1 FALSIFIED by 10 violations in 19,415, and the registered coefficient is off by exactly one unit. C2, C3 and C4 HELD.**
+>
+> ***The result is not "the bound is unsound", it is "the coefficient is 3".*** Registered `|d| * (2 + |a-b|_err/|a-b|) * u`: **10 violations**. The same population against coefficient **3**: **0**. And the derivation says why, which makes 3 a bound rather than a fudge - `fl(a+b)` carries relative error `u`, hence **absolute** error `u|a+b|`, and dividing by `(a-b)` turns that into `u|a+b|/|a-b|`, which **is** `u * 2|d|`: two units, not one. Add the quotient's own `u` and the coefficient is 3. **The registration counted roundings instead of propagating them.** Max true error **2.1945 ulp** against a max registered bound of **1.9866**.
+>
+> ***Where the ten violations are is the corroboration.*** `gyroid` 4, `noise_cavity` 5, `fbm_terrain` 1 - **zero on all five smooth fields**. The undercount bites only where `|d|` approaches 1/2 and the missing `u|d|` term is largest. A mechanism, not a tail.
+>
+> ***C2 held and the bound is informative.*** Median **1.0000-1.6000 ulp** against a 4-ulp bar, p99 **<= 1.9612** against 64. `box_exact`'s error is **exactly zero on all 1,350** crossings - they land on samples, `a+b` is exactly zero, `d` is exactly +-1/2 - so a ~1 ulp bound there is loose and honestly so: it is a bound, not an estimate.
+>
+> ***C4 held at 1.1391x, and it is the clause that makes this more than a CAD feature.*** Splitting `csg_difference` at the median seam distance (`|f_box + f_sphere|`, where the `max` ties), the near half carries a **13.9% larger mean bound**. So the bound tracks **conditioning**, not magnitude: `M-350`'s crease-angle locality showing up in the **position**.
+>
+> ***C3 held only after its denominator was corrected - `M-375`'s rule firing in the other direction.*** Against **the crossing alone** the bound reads **0.6915**: the crossing is 1.08 ns and the bound adds 2.42 ns, **2.2x the crossing it annotates**. True, and about the wrong total. Against **extraction**, which is what the clause says: **0.0468 ms added to 13.9928 ms** over eight fields at 33³ = **0.33%**.
+>
+> ***C3's "exactly zero when the feature is off" is trivially true and the entry says so.*** No feature was added; the bound is computed in the bench, the crate is unchanged, the 216 hashes are untouched by construction. Landing a per-vertex bound buffer **doubles vertex memory** and is the owner's decision - `P-71`'s ring and `P-70`'s subgroup scan are the same shape.
+>
+> ***Three defects in the exact reference, all caught by the judged count being a recorded column*** - `P-66`'s discipline paying off one experiment later. `d == 0` was refused (shift `-1`, every symmetric edge). An endpoint of exactly `0.0` carries `f64`'s subnormal exponent **-1074**, dragging the common exponent there and making the other endpoint's shift **1019**. And with that shift negative, `(ea - e) as u32` **wrapped to four billion**, so the `> 70` guard passed and `checked_shl` refused instead - which is why fixing the second alone changed nothing. Judged went **16,768 -> 19,415 of 19,415**, and the 2,647 missing were every exactly-zero-error crossing, concentrated in `box_exact` (0 of 1,350) and `csg_difference` (219 of 1,386) - a bias in the direction that flatters the bound.
+>
+> ***Two more controls.*** `two_sum`'s exactness is **asserted in `i128`** on six adversarial pairs, because the denominator term otherwise rests on a six-line function copied into a bench. And a sabotage arm requires a bound ten times too small to produce violations on the same data.
+>
+> ***One supporting change, a clean cutover:*** `cube::edge_offset` becomes `pub` and is re-exported through `marching_cubes::table` beside `is_inside`. `P-61` made it *the* definition of where a crossing is; anything measuring a crossing must ask the same question of the same expression, and a second copy of a one-line formula is the drift `x39` cost 216 golden hashes to find.

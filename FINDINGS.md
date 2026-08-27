@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**479 entries** — 54 falsified, 349 measured, 50 verified, 18 open, 8 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**480 entries** — 55 falsified, 349 measured, 50 verified, 18 open, 8 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -93,6 +93,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗52` | C1 and C2 FALSIFIED, C3 NOT MEASURED: the 83% reproduces at 86.5% and M-160's flat 0.17 ms reproduces at 0.16 ms, but th… |
 | `✗53` | sound at k = 17 and not at k = 5 |
 | `✗54` | C1 FALSIFIED by arithmetic computed at registration, C2 and C3 HELD: the subgroup scan is real at 1.4376× and reproduces… |
+| `✗55` | C1 FALSIFIED by 10 violations in 19,415 and the registered coefficient is off by exactly one unit: 2 is unsound, 3 is so… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -11877,3 +11878,102 @@ at the same cells, the bound is reporting **conditioning** — and a game that w
 collider is untrustworthy gets the same number for free. **No golden hash moves:** the bound is an
 additional output and changes no position; a bound that moved a hash would be a bound that changed the
 arithmetic it reports on.
+
+### 💥 ✗55 / M-382 — C1 FALSIFIED by **10 violations in 19,415** and the registered coefficient is off by exactly one unit: `2` is unsound, `3` is sound over the whole population, and the derivation says why. C2, C3 and C4 HELD (P-68, R-066)
+
+**M.** `cargo bench --bench experiment_p68`, `docs/experiments/p-68.csv`, **8 rows**, `f64`, Zen 3. Every
+axis-aligned grid edge of the sample lattice at 33³ on the eight reference fields — **19,415 crossings,
+19,415 of them judged against exact `i128` arithmetic, no refusals**.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 zero violations | 0 | **FALSIFIED — 10** |
+| C2 median < 4 ulp, p99 < 64 ulp on the six smooth | both | **HELD — median 1.0000–1.6000, p99 ≤ 1.9612** |
+| C3 under 3% of extraction wall time | < 0.03 | **HELD — 0.0034** |
+| C4 bound largest at the seam | correlated | **HELD — 1.1391× nearer the seam** |
+
+**The result is not "the bound is unsound", it is "the coefficient is 3".**
+
+| | |
+|---|---:|
+| violations against the registered `\|d\|·(2 + \|a−b\|_err/\|a−b\|)·u` | **10** |
+| violations against `\|d\|·(3 + \|a−b\|_err/\|a−b\|)·u`, same population | **0** |
+
+**And the derivation says why, which is what makes 3 a bound rather than a fudge.** `fl(a + b)` carries a
+*relative* error up to `u`, hence an **absolute** error up to `u·|a + b|`. Dividing by `(a − b)` turns that
+into an absolute error of `u·|a + b| / |a − b|` — and `|a + b| / |a − b|` **is** `2|d|`, by the definition
+of `d`. So the numerator's rounding contributes **two** units of `u|d|`, not one. Add the quotient's own
+rounding and the first-order coefficient is **3**. **The registration counted roundings (sum, halve,
+divide → "2 inexact steps") instead of propagating them.** The measured shortfall matches: max true error
+**2.1945 ulp** against a max registered bound of **1.9866 ulp**.
+
+**Where the ten violations are is the corroboration:** `gyroid` 4, `noise_cavity` 5, `fbm_terrain` 1 —
+**zero on all five smooth fields**. The undercount only bites where `|a − b|` is small relative to
+`|a + b|`, i.e. where `|d|` approaches ½ and the missing `u|d|` term is largest. That is a mechanism, not
+a distribution tail.
+
+**C2, and the bound is genuinely informative rather than a formality:**
+
+| field | crossings | median bound (ulp) | p99 bound | median true error | max true error |
+|---|---:|---:|---:|---:|---:|
+| `box_exact` | 1,350 | 1.0000 | 1.0000 | **0.0000** | **0.0000** |
+| `csg_difference` | 1,386 | 1.0000 | 1.8936 | 0.0000 | 0.4990 |
+| `sphere` | 1,158 | 1.3590 | 1.9612 | 0.1854 | 0.4862 |
+| `torus` | 1,128 | 1.5698 | 1.9404 | 0.2932 | 0.4990 |
+| `thin_plate` | 510 | 1.6000 | 1.6000 | 0.4500 | 0.4500 |
+| `gyroid` | 5,292 | 1.5070 | 1.9909 | 0.2875 | **2.1022** |
+| `fbm_terrain` | 2,069 | 1.5032 | 1.9931 | 0.1049 | 1.8900 |
+| `noise_cavity` | 6,522 | 1.4805 | 1.9866 | 0.2616 | **2.1945** |
+
+Median bound **1.0–1.6 ulp** against a 4-ulp bar and p99 **≤ 1.99** against 64. **`box_exact`'s error is
+exactly zero on all 1,350 crossings** — its crossings land on samples, `a + b` is exactly zero, `d` is
+exactly ±½, and the arithmetic is exact. A bound reporting ≈1 ulp there is *loose*, and honestly so: it is
+a bound, not an estimate.
+
+**C4 is the clause that makes this more than a CAD feature, and it holds at 1.1391×.** Splitting
+`csg_difference`'s crossings at the median distance to the seam — `|f_box + f_sphere|`, which is where the
+`max` ties — the half nearer the seam carries a **13.9% larger mean bound**. So the bound tracks
+**conditioning**, not magnitude: `M-350` proved a central difference across a CSG seam is wrong by at most
+half the crease angle and essentially attains it, and **the same locality is visible in the position**. A
+game that wants to know where its collider is untrustworthy gets the number for free.
+
+**C3 held only after its denominator was corrected, and that is `M-375`'s rule firing in the other
+direction.** The clause reads *"under 3% of extraction wall time"*. Measured against **the crossing alone**
+the bound reads **0.6915** — the crossing is 1.08 ns and the bound adds 2.42 ns, so it is **2.2× the
+crossing it annotates**. That number is true and about the wrong total. Against extraction: **0.0468 ms
+added to 13.9928 ms over eight fields at 33³ = 0.33%**, because a crossing is a rare event in an extraction
+that samples the whole grid. Both are reported; only the second answers the clause.
+
+> **C3's "exactly zero when the feature is off" is trivially true and the entry says so rather than
+> claiming it.** No feature was added: the bound is computed in the bench, the crate is unchanged, and the
+> 216 golden hashes are therefore untouched by construction. Landing a per-vertex bound buffer **doubles
+> vertex memory**, and that is the owner's decision. `P-71`'s ring and `P-70`'s subgroup scan are the same
+> shape — mechanism measured, decision surfaced, code not merged.
+
+**Three defects in the exact reference, all caught by the judged count being a recorded column.** This is
+the discipline `P-66` established paying off immediately.
+
+1. **`d == 0` was refused.** `decompose(0.0)` is `(0, 0)`, so the exponent shift came out `-1` and every
+   symmetric edge went unjudged — precisely the edges where the error is **exactly zero**.
+2. **An endpoint of exactly `0.0` carries `f64`'s subnormal exponent `-1074`**, which dragged the common
+   exponent there and made the *other* endpoint's shift **1019**. That refused **all 1,350** of
+   `box_exact`'s crossings and **1,167 of `csg_difference`'s 1,386**.
+3. **With that shift negative, `(ea − e) as u32` wrapped to four billion**, so the `> 70` guard *passed*
+   and `checked_shl` refused instead — the same symptom by a different route, which is why fixing (2)
+   alone changed nothing. A zero mantissa is zero at every scale and takes **no** shift; naming that case
+   is the fix, and relying on the shift arithmetic was the defect.
+
+Judged before the fixes: **16,768 of 19,415** — and the 2,647 missing were **not** a random sample. They
+were every crossing that lands on a sample, i.e. every crossing whose error is exactly zero, concentrated
+entirely in `box_exact` (0 of 1,350 judged) and `csg_difference` (219 of 1,386). After: **19,415 of
+19,415**. Had the count not been a column, the bound's median would have been reported over a population
+with its exact cases removed — and that bias runs in the direction that flatters the bound.
+
+**Two more controls.** `two_sum`'s exactness is **asserted** in `i128` on six adversarial pairs, because the
+bound's denominator term otherwise rests on a six-line function copied into a bench. And a **sabotage arm**:
+a bound ten times too small must produce violations on the same data, or C1's zero says nothing about the
+comparison's ability to fire.
+
+**Would be shown wrong by:** a violation against coefficient 3 on any field or resolution; a median bound
+above 4 ulp; a seam ratio at or below 1; or a `box_exact` non-zero error, which would mean the exact
+reference disagrees with arithmetic that is provably exact.
