@@ -271,6 +271,13 @@ pub struct MarchingCubesGpu {
     layout: wgpu::BindGroupLayout,
     cases: wgpu::Buffer,
     scan: PrefixScan,
+    /// GPU-side spans for the two compute passes, when the extractor was built
+    /// by [`with_timestamps`](Self::with_timestamps) (R-069, P-71).
+    ///
+    /// **`None` is not a second path.** `timestamp_writes` is a field of
+    /// `ComputePassDescriptor`, so passing `None` or `Some(..)` is passing data
+    /// through the same dispatch code. Nothing reads this and branches.
+    timestamps: Option<crate::StageTimestamps>,
 }
 
 impl MarchingCubesGpu {
@@ -347,7 +354,56 @@ impl MarchingCubesGpu {
             layout,
             cases,
             scan: PrefixScan::new(device)?,
+            timestamps: None,
         })
+    }
+
+    /// The same extractor, carrying a query set so its compute passes report
+    /// **GPU-side** spans.
+    ///
+    /// Ticket: R-069 (P-71). `ExtractTimings` is wall-clock from the CPU's side,
+    /// and its own documentation says why that cannot be split finer: without a
+    /// wait the submit returns immediately and every millisecond lands on
+    /// whichever call happens to block first. This is the device feature that
+    /// documentation names.
+    ///
+    /// Read the spans with [`take_timestamps`](Self::take_timestamps) after an
+    /// extraction. The extraction path is unchanged — `timestamp_writes` is data
+    /// in a descriptor, not a branch.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::TimestampsUnsupported`] if the device was not created with
+    /// [`wgpu::Features::TIMESTAMP_QUERY`] or the queue's timestamp period is
+    /// zero. **It refuses rather than degrading**: an extractor that quietly
+    /// reported `Instant::now()` deltas under a GPU-side name would be reporting
+    /// a column it did not measure.
+    pub fn with_timestamps(device: &wgpu::Device, queue: &wgpu::Queue) -> Result<Self> {
+        let mut me = Self::new(device, queue)?;
+        me.timestamps = Some(crate::StageTimestamps::new(device, queue)?);
+        Ok(me)
+    }
+
+    /// Resolve and clear the GPU-side spans recorded since the last call.
+    ///
+    /// `None` if this extractor was not built with
+    /// [`with_timestamps`](Self::with_timestamps) — which is a different answer
+    /// from "no passes ran" and is why it is an `Option` rather than an empty
+    /// [`Spans`](crate::Spans).
+    ///
+    /// # Errors
+    ///
+    /// Anything [`StageTimestamps::resolve`](crate::StageTimestamps::resolve)
+    /// can report.
+    pub fn take_timestamps(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+    ) -> Result<Option<crate::Spans>> {
+        match &self.timestamps {
+            Some(t) => Ok(Some(t.resolve(device, queue)?)),
+            None => Ok(None),
+        }
     }
 
     /// Build [`Prologue`] — the buffers both entry points need before their
@@ -777,7 +833,16 @@ impl MarchingCubesGpu {
         {
             let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                 label: Some("isomesh marching cubes"),
-                timestamp_writes: None,
+                // Data, not a branch: `None` when this extractor has no query
+                // set, `Some` when it has (R-069). The dispatch below is the
+                // same code either way.
+                timestamp_writes: self.timestamps.as_ref().and_then(|t| {
+                    t.writes(if std::ptr::eq(pipeline, &self.count) {
+                        "count"
+                    } else {
+                        "emit"
+                    })
+                }),
             });
             pass.set_pipeline(pipeline);
             pass.set_bind_group(0, &bind_group, &[]);

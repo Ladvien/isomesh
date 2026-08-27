@@ -594,3 +594,77 @@ fn the_wgsl_corner_offset_is_the_documented_bit_layout() {
         "marching_cubes.wgsl's corner_offset no longer matches the corner bit layout"
     );
 }
+
+/// R-069's instrument, shown measuring rather than assumed to.
+///
+/// The whole point of `with_timestamps` is that `execute` stops being a
+/// wall-clock guess, so this asserts the four things that would make it a
+/// column named and not measured: the feature is reachable on this adapter, the
+/// period is positive, both compute passes report a span, and each span is
+/// strictly positive. A device that advertises `TIMESTAMP_QUERY` and resolves
+/// zeros would pass a `>= 0` check and mean nothing.
+#[test]
+fn the_timestamp_instrument_reports_a_positive_span_for_each_compute_pass() {
+    let Ok(gpu) = Gpu::with_timestamps() else {
+        // Not a silent skip: the adapter's own answer is the finding, and this
+        // host's is on record in P-71's registration (RTX 3090, all three
+        // timestamp features true). A machine without it should not fail a
+        // suite it cannot run, but it must say so.
+        std::println!("TIMESTAMP_QUERY unavailable on this adapter; span check skipped");
+        return;
+    };
+    let mc =
+        MarchingCubesGpu::with_timestamps(gpu.device(), gpu.queue()).expect("timestamped pipeline");
+
+    // No passes recorded yet, and that is a different answer from "no query set".
+    let before = mc
+        .take_timestamps(gpu.device(), gpu.queue())
+        .expect("resolve")
+        .expect("this extractor has a query set");
+    assert!(before.spans.is_empty(), "nothing has dispatched yet");
+    assert!(before.period_ns > 0.0, "a zero period cannot time anything");
+
+    let grid = GridParams::new([17; 3], [-2.0; 3], 0.25).expect("grid");
+    let field = FieldBuffer::sampled(gpu.device(), gpu.queue(), grid, &Sphere::<f32>::canonical())
+        .expect("field");
+    let mesh = mc
+        .extract(gpu.device(), gpu.queue(), &field)
+        .expect("extraction");
+    assert!(
+        mesh.positions.len() > 0,
+        "the fixture must produce geometry"
+    );
+
+    let spans = mc
+        .take_timestamps(gpu.device(), gpu.queue())
+        .expect("resolve")
+        .expect("this extractor has a query set");
+    assert!(spans.complete, "the query set overflowed");
+    assert_eq!(
+        spans.spans.len(),
+        2,
+        "one span per compute pass: count and emit — got {:?}",
+        spans.spans
+    );
+    for span in &spans.spans {
+        assert!(
+            span.ms > 0.0,
+            "{} measured {} ms: a zero span is a driver that advertises the \
+             feature and does not implement it",
+            span.label,
+            span.ms
+        );
+    }
+    // Resolving clears, so a second read is empty rather than a repeat.
+    let after = mc
+        .take_timestamps(gpu.device(), gpu.queue())
+        .expect("resolve")
+        .expect("query set")
+        .spans;
+    assert!(after.is_empty(), "resolve must clear: got {after:?}");
+    std::println!(
+        "timestamp period {:.4} ns; spans {:?}",
+        spans.period_ns,
+        spans.spans
+    );
+}

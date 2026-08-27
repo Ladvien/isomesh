@@ -88,6 +88,27 @@ impl Gpu {
     /// [`Error::NoAdapter`] when nothing matches, [`Error::DeviceUnavailable`]
     /// when the adapter refuses the request.
     pub fn new() -> Result<Self> {
+        Self::open(wgpu::Features::empty())
+    }
+
+    /// The same device, with [`wgpu::Features::TIMESTAMP_QUERY`] requested.
+    ///
+    /// Ticket: R-069 (P-71). `new`'s `Features::empty()` is a decision and it
+    /// stays the default; this is the one caller that needs more, and it says so
+    /// in its name rather than flipping a flag on the shared path.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::TimestampsUnsupported`] if the adapter does not advertise the
+    /// feature — **checked against `adapter.features()` before the device
+    /// request**, so the failure names the missing capability instead of
+    /// surfacing as a generic `DeviceUnavailable`. Plus anything [`new`](Self::new)
+    /// can report.
+    pub fn with_timestamps() -> Result<Self> {
+        Self::open(wgpu::Features::TIMESTAMP_QUERY)
+    }
+
+    fn open(required: wgpu::Features) -> Result<Self> {
         // No display handle: this is the whole point of the module. Backend
         // selection still honours `WGPU_BACKEND` through the `_from_env`
         // variant, so a machine with two backends can be told which to use
@@ -104,6 +125,13 @@ impl Gpu {
 
         let info = adapter.get_info();
         let limits = adapter.limits();
+        // **Checked here rather than left to the device request.** An adapter
+        // that lacks a requested feature makes `request_device` fail with a
+        // generic error, and "DeviceUnavailable" does not tell a reader which
+        // capability was missing. GPU-007's pattern: refuse, and name it.
+        if !adapter.features().contains(required) {
+            return Err(Error::TimestampsUnsupported);
+        }
         let report = AdapterReport {
             name: info.name,
             backend: info.backend,
@@ -116,7 +144,7 @@ impl Gpu {
         let (device, queue) =
             crate::block_on::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
                 label: Some("isomesh headless"),
-                required_features: wgpu::Features::empty(),
+                required_features: required,
                 // The adapter's own limits rather than downlevel defaults: this
                 // is a native compute path, and asking for less would cap the
                 // grid size for the benefit of a target this crate does not

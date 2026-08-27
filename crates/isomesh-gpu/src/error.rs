@@ -44,6 +44,18 @@ pub enum Error {
     DeviceUnavailable,
     /// Mapping a buffer for read-back failed.
     MapFailed,
+    /// Timestamp queries were asked for and are not usable on this device.
+    ///
+    /// Ticket: R-069 (P-71). Raised when the device was not created with
+    /// [`wgpu::Features::TIMESTAMP_QUERY`], when the queue reports a timestamp
+    /// period of zero — a driver that advertises the feature and does not
+    /// implement it — or when a resolved pair ends before it begins.
+    ///
+    /// **It refuses rather than degrading, on purpose.** Falling back to
+    /// `Instant::now()` under a GPU-side column name would report a number that
+    /// was named and not measured, which is the failure the experiment harness's
+    /// missing-column panic exists to prevent, arriving by a different door.
+    TimestampsUnsupported,
     /// The device disconnected or a submission never completed.
     DeviceLost,
     /// A shader module was included, or composed, but never registered.
@@ -106,6 +118,11 @@ impl fmt::Display for Error {
             Self::NoAdapter => f.write_str("no GPU adapter matched the request"),
             Self::DeviceUnavailable => f.write_str("the adapter would not create a device"),
             Self::MapFailed => f.write_str("mapping a buffer for read-back failed"),
+            Self::TimestampsUnsupported => f.write_str(
+                "timestamp queries are not usable on this device: the feature was \
+                 not enabled, the timestamp period is zero, or a span ended before \
+                 it began",
+            ),
             Self::DeviceLost => f.write_str("the device was lost or a submission never completed"),
             Self::ShaderModuleMissing { name } => {
                 write!(f, "no shader module registered as `{name}`")

@@ -124,6 +124,7 @@ mod mesh_render;
 mod mesh_shader;
 mod scan;
 mod shader;
+mod timestamps;
 
 pub mod headless;
 pub mod jump_flood;
@@ -146,6 +147,7 @@ pub use shader::{
     Composer, FEATURES, FIELD_WGSL, GRID_WGSL, JUMP_FLOOD_WGSL, MARCHING_CUBES_WGSL,
     MESH_RENDER_WGSL, SCAN_WGSL,
 };
+pub use timestamps::{MAX_PASSES, Span, Spans, StageTimestamps};
 
 /// Compiles the README's example as a doctest, without putting the README into
 /// these docs — the same pattern `isomesh` uses. The README's fence is
