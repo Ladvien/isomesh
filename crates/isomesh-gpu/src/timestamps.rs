@@ -64,9 +64,16 @@ pub struct StageTimestamps {
     /// Nanoseconds per tick, from `Queue::get_timestamp_period`.
     period_ns: f32,
     /// Next free slot. Two are consumed per pass.
-    next: std::cell::Cell<u32>,
+    ///
+    /// **Atomic, not `Cell`, and that is not gold-plating.** `MarchingCubesGpu`
+    /// carries one of these and `bevy_isomesh` holds a `MarchingCubesGpu` as a
+    /// Bevy `Resource`, which requires `Send + Sync`. A `Cell` here compiles
+    /// fine in this crate and breaks that crate's examples — which is exactly
+    /// what it did, and `bevy: check --all-targets` is the gate that said so
+    /// (M-293's step, earning its keep).
+    next: core::sync::atomic::AtomicU32,
     /// Labels, in the order the passes were opened.
-    labels: std::cell::RefCell<Vec<&'static str>>,
+    labels: std::sync::Mutex<Vec<&'static str>>,
 }
 
 /// One pass's GPU-side span.
@@ -143,8 +150,8 @@ impl StageTimestamps {
                 mapped_at_creation: false,
             }),
             period_ns,
-            next: std::cell::Cell::new(0),
-            labels: std::cell::RefCell::new(Vec::new()),
+            next: core::sync::atomic::AtomicU32::new(0),
+            labels: std::sync::Mutex::new(Vec::new()),
         })
     }
 
@@ -156,12 +163,19 @@ impl StageTimestamps {
     /// [`Spans::complete`] says so. A panic here would take down an extraction
     /// to protect a measurement.
     pub fn writes(&self, label: &'static str) -> Option<wgpu::ComputePassTimestampWrites<'_>> {
-        let at = self.next.get();
-        if at + 2 > MAX_PASSES * 2 {
-            return None;
-        }
-        self.next.set(at + 2);
-        self.labels.borrow_mut().push(label);
+        use core::sync::atomic::Ordering;
+        // `fetch_update` rather than a load-then-store: two threads recording
+        // passes on one extractor would otherwise hand out the same slot pair
+        // and neither would know. The extraction path is single-threaded today
+        // and this costs nothing; a silently shared slot would cost a wrong
+        // number that looks like a right one.
+        let at = self
+            .next
+            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |at| {
+                (at + 2 <= MAX_PASSES * 2).then_some(at + 2)
+            })
+            .ok()?;
+        self.labels.lock().expect("timestamp labels").push(label);
         Some(wgpu::ComputePassTimestampWrites {
             query_set: &self.set,
             beginning_of_pass_write_index: Some(at),
@@ -184,7 +198,7 @@ impl StageTimestamps {
     /// is a driver that is not measuring, and reporting it as a negative
     /// millisecond would put a number in a column that means nothing.
     pub fn resolve(&self, device: &wgpu::Device, queue: &wgpu::Queue) -> Result<Spans> {
-        let passes = self.next.get() / 2;
+        let passes = self.next.load(core::sync::atomic::Ordering::SeqCst) / 2;
         if passes == 0 {
             return Ok(Spans {
                 spans: Vec::new(),
@@ -230,7 +244,7 @@ impl StageTimestamps {
         };
         self.readback.unmap();
 
-        let labels = self.labels.borrow().clone();
+        let labels = self.labels.lock().expect("timestamp labels").clone();
         let mut spans = Vec::with_capacity(passes as usize);
         for (index, label) in labels.iter().enumerate() {
             let (begin, end) = (ticks[index * 2], ticks[index * 2 + 1]);
@@ -243,8 +257,8 @@ impl StageTimestamps {
             });
         }
         let complete = passes <= MAX_PASSES;
-        self.next.set(0);
-        self.labels.borrow_mut().clear();
+        self.next.store(0, core::sync::atomic::Ordering::SeqCst);
+        self.labels.lock().expect("timestamp labels").clear();
         Ok(Spans {
             spans,
             period_ns: f64::from(self.period_ns),
