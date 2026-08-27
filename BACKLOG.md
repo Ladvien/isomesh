@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**254 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**255 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -201,7 +201,6 @@ aliasing both want and neither has.
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
-| ☐ | **R-064** | M | — |
 
 **R-069 — Is the 83% a blocking round-trip, and can both targets avoid it? (P-71)**
 `M-167` is the largest single number this project owns about its own GPU path: synchronisation was **83%**

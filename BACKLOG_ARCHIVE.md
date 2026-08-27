@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-254 tickets. Line numbers are stable until something above them is edited — grep the ID if
+255 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1959,3 +1959,20 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***And the same shape in the verification.*** The broken file reached a commit because the check was `cargo fmt && cargo clippy ... ; echo 'lint ok'` - `echo` after a semicolon, so `fmt` failed, clippy never ran, and *"lint ok"* printed. `grep '^error' | head && echo CLEAN` fails identically, because `head` exits 0 on empty input. Both replaced by the command's own exit status. **A check that cannot report failure is not a check.**
 >
 > ***Scope, per the registration.*** Neither the proofs nor the bench touch **vertex placement**; that stays under proptest and the 216 golden hashes. What is proved is *"the table cannot be indexed wrongly"*, not *"the mesh is correct"*. Kani sits behind `cfg(kani)`, so hard rule 3 is untouched - `cargo tree -p isomesh -e normal` still reads **2**.
+
+| ☑ | **R-064** | M | — |
+> **DONE 2026-08-27 — 💥 ✗53 / M-380 / P-66: all three clauses FALSIFIED, each for a different and useful reason. The witness is sound at k = 17 and not at k = 5; C2's second half was backwards; `thin_plate` ranks LAST on the metric C3 predicted it would top.**
+>
+> ***C1 fails at the registered k and holds two steps later, and that is the result rather than a caveat.*** False negatives go **322 / 94 / 8 / 1 / 0** as k goes 2 / 3 / 5 / 9 / 17, over **2,172** multi-root edges. All eight at k = 5 are on `noise_cavity` - the only field with genuine sub-cell noise - and they fall with resolution too (5 / 2 / 1). The mechanism is exactly what a sampling-based derivative test should miss: a gradient reversal narrower than the gap between two sample points. The paper's own count scales k with edge length over feature width, and this says **k = 5 is below that threshold on `noise_cavity` and k = 17 is above it**.
+>
+> ***C2's second half is not merely false, it is mechanically impossible - a defect in the registration, not the test.*** Adding a sample point can only ADD an opportunity for two projections to disagree, so `flagged` is monotone non-decreasing in k: **344,500 at k = 2 to 388,159 at k = 17**. A rate that fell with k would mean the witness un-flagged an edge it had flagged, which the test cannot do. **What actually falls with k is the false-negative count**, which is C1's column - the registration attached the falling behaviour to the wrong metric.
+>
+> ***C3 falls with resolution on all eight and `thin_plate` ranks eighth, not first.*** Its non-monotonic fraction is **0.0035 -> 0.0012** against `fbm_terrain`'s **0.5441 -> 0.2554**. The fraction is taken over ALL grid edges, and `thin_plate` is a thin plate in a mostly-empty volume, so almost every edge is far from it and monotone. **The fraction measures how much of the VOLUME has turning gradient, not how badly the SURFACE is under-resolved.**
+>
+> ***`thin_plate`'s real signature is in a different column, and it is the sharper finding.*** Its false-positive rate is the only one that **rises** with resolution - 0.3889 / 0.4412 / 0.4697 - while all seven others fall, several to exactly zero. Refinement does not help because the plate is thinner than every grid tested. That is **`M-100` measured from a new direction**: a field whose sub-cell features Marching Cubes structurally cannot see shows up not as a large number but as a **non-converging** one.
+>
+> ***The deliverable survives with a different formula than the one registered.*** The per-chunk under-resolution number `M-121` and `M-72` both want is not the non-monotonic fraction. Two candidates the data supports: the **non-monotonic rate among single-root edges**, which ranks `thin_plate` first at 33³ and 65³ and is the only quantity here that fails to converge; and the **false-negative count at fixed k**, which is the direct measure of missed roots but needs the oracle, so it is offline. Neither is registered, so neither is claimed - they are what the next registration should be about.
+>
+> ***Controls.*** 2,172 multi-root edges found, so C1's population is real. 385,038 of 7,436,928 edges flagged at k = 5, so the witness can report bad news, and **7,051,890 left unflagged** - a witness that flagged everything would pass C1 trivially, and this one flags 5.18%.
+>
+> ***Scope, as a column not a footnote.*** `all_roots` uses **128** intervals per edge and cannot resolve a root pair closer than one of them, so C1's count is scoped to pairs the oracle can see. `oracle_samples` is on every row.

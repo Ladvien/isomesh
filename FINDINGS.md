@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**476 entries** — 52 falsified, 349 measured, 50 verified, 18 open, 7 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**477 entries** — 53 falsified, 349 measured, 50 verified, 18 open, 7 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -91,6 +91,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗50` | "MAX_PATCH_TRIANGLES = 24 bounds the trilinear patch": it was a sampled maximum plus two, fan_tunnel's own buffer was al… |
 | `✗51` | C1 FALSIFIED, C2 HELD, C3 VACUOUS: the prescribed loop shape is a 3–7% regression, %ymm is zero in every monomorphisatio… |
 | `✗52` | C1 and C2 FALSIFIED, C3 NOT MEASURED: the 83% reproduces at 86.5% and M-160's flat 0.17 ms reproduces at 0.16 ms, but th… |
+| `✗53` | sound at k = 17 and not at k = 5 |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -11614,3 +11615,94 @@ closer together than one of them, so the oracle sample count is recorded per row
 per chunk, cheaply — the missing input to the LOD decision that `M-121`'s 3.14-cell surface pop and
 `M-72`'s aliasing both want and neither has. **No golden hash moves:** the test is a diagnostic and no
 extractor calls it.
+
+### 💥 ✗53 / M-380 — all three clauses FALSIFIED, each for a different and useful reason: the witness is **sound at k = 17 and not at k = 5**, C2's second half was **backwards**, and `thin_plate` ranks **last** on the metric C3 predicted it would top (P-66, R-064)
+
+**M.** `cargo bench --bench experiment_p66`, `docs/experiments/p-66.csv`, **120 rows**, `f64`, Zen 3. Every
+axis-aligned grid edge of the sample lattice — 13,872 / 104,544 / **811,200** at 17³ / 33³ / 65³ — on the
+eight reference fields, `k` swept over 2/3/5/9/17, scored against `subgrid::roots::all_roots` at 128
+intervals per edge.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 zero false negatives at `k = 5` | 0 | **FALSIFIED — 8 over 2,172 multi-root edges** |
+| C2 FP rate < 20% on the six smooth, falling with `k` | both | **FALSIFIED on both** |
+| C3 fraction falls with resolution on all eight, `thin_plate` first | both | **FALSIFIED — falls on all eight, `thin_plate` is last** |
+
+**C1 fails at the registered `k` and holds two steps later, which is the result rather than a caveat:**
+
+| `k` | false negatives | edges flagged |
+|---:|---:|---:|
+| 2 | **322** | 344,500 |
+| 3 | 94 | 375,691 |
+| **5** | **8** | 385,038 |
+| 9 | 1 | 387,357 |
+| **17** | **0** | 388,159 |
+
+**All eight false negatives at `k = 5` are on `noise_cavity`** — 5 at 17³, 2 at 33³, 1 at 65³ — the only
+field with genuine sub-cell noise, and they fall with resolution as well as with `k`. So the mechanism is
+exactly what a sampling-based derivative test should fail at: a gradient reversal narrower than the gap
+between two of the `k` sample points. The paper's own count is `max(2, ⌈‖e‖/w⌉ + 1)`, i.e. it scales `k`
+with edge length over feature width — and this measurement says **the registered `k = 5` is below that
+threshold on `noise_cavity` and `k = 17` is above it**, over 2,172 multi-root edges on eight fields.
+
+**C2's second half is not merely false, it is mechanically impossible, and that is a defect in the
+registration rather than in the test.** Adding a sample point can only **add** an opportunity for two
+projections to disagree, so `flagged` is monotone **non-decreasing** in `k` — 344,500 at `k = 2` to
+388,159 at `k = 17` — and so is the false-positive count. A rate that *fell* with `k` would mean the
+witness un-flagged an edge it had flagged, which the test cannot do. The clause asked for something the
+predicate's own form forbids. `fbm_terrain`, `gyroid` and `noise_cavity` are where it shows: 0.0832 →
+0.0872, 0.0267 → 0.0270, 0.1331 → 0.1371 at 65³. **What actually falls with `k` is the false-negative
+count**, which is C1's column — the registration attached the falling behaviour to the wrong metric.
+
+**C2's first half fails on `thin_plate`, and that is the same finding as C3's, seen from the other side:**
+
+| field | FP rate 17³ | 33³ | 65³ | non-monotonic fraction 17³ → 65³ |
+|---|---:|---:|---:|---|
+| `sphere` | 0.0000 | 0.0000 | 0.0000 | 0.0000 → 0.0000 |
+| `box_exact` | 0.0000 | 0.0000 | 0.0000 | 0.0001 → 0.0000 |
+| `torus` | 0.0488 | 0.0000 | 0.0000 | 0.0294 → 0.0096 |
+| `csg_difference` | 0.0714 | 0.0303 | 0.0175 | 0.0171 → 0.0047 |
+| `gyroid` | 0.1167 | 0.0516 | 0.0269 | 0.1525 → 0.0432 |
+| `noise_cavity` | **0.5357** | 0.3453 | 0.1365 | 0.1548 → 0.0624 |
+| `fbm_terrain` | 0.2962 | 0.1918 | 0.0867 | **0.5441** → 0.2554 |
+| **`thin_plate`** | 0.3889 | **0.4412** | **0.4697** | **0.0035 → 0.0012** |
+
+**`thin_plate` has the *lowest* non-monotonic fraction of the eight and the *highest* false-positive rate
+at 33³ and 65³.** C3 predicted it would top the fraction. It ranks eighth. The reason is that the fraction
+is taken **over all grid edges**, and `thin_plate` is a thin plate in a mostly-empty volume: almost every
+edge is far from the plate, where the field is smooth and monotone. **So the non-monotonic fraction
+measures how much of the *volume* has turning gradient, not how badly the *surface* is under-resolved** —
+`fbm_terrain`, whose gradient turns everywhere, tops it at 0.5441.
+
+**`thin_plate`'s real signature is that its false-positive rate is the only one that *rises* with
+resolution** — 0.3889 → 0.4412 → 0.4697, while all seven others fall, several to exactly zero.
+Refinement does not help it, because the plate is thinner than every grid tested. **That is `M-100`
+measured from a new direction**: a field whose sub-cell features Marching Cubes structurally cannot see
+shows up here not as a large number but as a **non-converging** one.
+
+**So the deliverable survives the falsification, with a different formula than the one registered.** The
+per-chunk under-resolution number `M-121`'s 3.14-cell surface pop and `M-72`'s aliasing both want is
+**not** the non-monotonic fraction over all edges. Two candidates the data supports:
+
+- **the non-monotonic rate among single-root edges** (the FP-rate column), which ranks `thin_plate` first
+  at 33³ and 65³ and is the only quantity here that fails to converge under refinement;
+- **the false-negative count at fixed `k`**, which is the direct measure of missed roots and falls to zero
+  by `k = 17` — but which needs the oracle, so it is an offline diagnostic and not a per-frame number.
+
+Neither is registered, so neither is claimed. They are what the next registration should be about.
+
+**Three controls, all `M-44`-shaped, all non-vacuous.** The oracle found **2,172** multi-root edges, so
+C1's population is real. The witness flagged **385,038** of **7,436,928** edges at
+`k = 5`, so it can report the bad news; and it left **7,051,890** unflagged, which is the control that
+matters most — a witness that flagged every edge would pass C1 trivially, and this one flags 5.18%.
+
+**Scope, recorded as a column rather than a footnote.** `all_roots` divides each edge into **128**
+intervals and cannot resolve a root pair closer together than one of them, so C1's count is scoped to
+pairs the oracle can see. A pair inside one interval is invisible to both instruments and cannot produce a
+false negative here — but it also cannot be ruled out, and `oracle_samples` is on every row so a reader
+can check what was asked.
+
+**Would be shown wrong by:** a false negative at `k = 17` on any field; a field whose non-monotonic
+fraction rises with resolution; or a `thin_plate` FP rate that starts falling at a resolution above 65³,
+which would mean the plate is resolvable after all and `M-100`'s structural claim is a sampling artefact.
