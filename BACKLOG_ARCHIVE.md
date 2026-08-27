@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-257 tickets. Line numbers are stable until something above them is edited — grep the ID if
+258 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -2014,3 +2014,24 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***Two more controls.*** `two_sum`'s exactness is **asserted in `i128`** on six adversarial pairs, because the denominator term otherwise rests on a six-line function copied into a bench. And a sabotage arm requires a bound ten times too small to produce violations on the same data.
 >
 > ***One supporting change, a clean cutover:*** `cube::edge_offset` becomes `pub` and is re-exported through `marching_cubes::table` beside `is_inside`. `P-61` made it *the* definition of where a crossing is; anything measuring a crossing must ask the same question of the same expression, and a second copy of a one-line formula is the drift `x39` cost 216 golden hashes to find.
+
+| ☑ | **R-071** | M | — |
+> **DONE 2026-08-27 — 💥 M-376 amended / P-71: C3 measured and FALSIFIED at 5 of 24 cells. Split out of `R-069`, which left `c3_holds = not_measured` on all twelve rows because the harness swept resolution where the registration names `M-124`'s budget sweep.** `docs/experiments/p-71.csv`, 32 rows.
+>
+> ***The clause could not be measured while the queue was bench scaffolding, so the queue shipped first.*** `DeferredGeometry<K>` is a public type in `isomesh-gpu`, keyed rather than a fixed-depth ring because `mesh_within_budget` meshes **many chunks per frame** and a single-stream ring cannot represent that. It is a **third** contract beside `extract_buffers` (geometry now) and `extract_indirect` (geometry never leaves the device) — each states its own guarantee and a caller picks by requirement — not a fallback for either, which is how the one-path rule is satisfied. `Error::DeferredQueueFull` is its own variant because it is the one error here that is not a failure. `const _: fn() = || assert::<DeferredGeometry<u32>>()` pins `Send + Sync`, which `StageTimestamps` had to learn from `bevy_isomesh` breaking instead.
+>
+> ***C3 FALSIFIED, and every budget from 200 µs up holds.*** 288 chunks on `game_budget`'s own fixture, eight budgets over a 320× range at read-back delays of 1, 2 and 4 frames, 2,360 frames a cell. 19 of 24 cells hold `|meanPassMs − budget| ≤ one_chunk_ms = 0.2841 ms`; the five outside are 25 µs and 50 µs, overshooting by **1.07–1.16 chunks** against a bar of 1.000.
+>
+> ***The overshoot is attributed and the obvious suspect was measured and refused.*** `mesh_within_budget` sorts all 288 chunks every call — 0.0073 ms, **2.6% of the bar**, so not it. A pass that meshes **one** chunk spends **0.3462 ms**; a pass that meshes more than ten spends **0.3049 ms** each. That 1.14× premium on a pass's **first** chunk is `M-159`'s mechanism at pass granularity: `extract_buffers` waits with `poll(Wait)` and no submission index, so the first chunk pays for the previous pass's outstanding deferred copies.
+>
+> ***So the registered falsifier's stated meaning did not happen.*** *"The ring traded a stall for a queue"* would show as `no_room_frames > 0` or as drift with the delay. `no_room_frames` is **0 in all 24 cells** and the overshoot band has no trend in the delay. Same shape as this entry's C1, where the falsifier was execute leading and execute led nowhere.
+>
+> ***The owner's question is a number now.*** The registration says the queue costs *"one to two frames of collision latency"* and declined to pick. Measured: **mean 1.41 frames, worst 2**, identical at all three delays. `E×7` is re-tiered accordingly — the **type** is landed, the **deployment** into `IsomeshPlugin` is still the owner's.
+>
+> ***Three fixture defects, each found by a control.*** `ring_frames_delay` is a **frames** column, not a slots column — at a flat capacity of 2 the queue held one un-ready slot at every drain and the pass meshed exactly one chunk at **every** budget, so `c3_holds` would have measured `budget / chunk_ms` against the number 2. The tolerance must be calibrated under the sweep's own conditions — draining between chunks read 0.2754 ms against a sweep spending 0.32 ms, a 16% underestimate on C3's own bar. And tail-drain collections are excluded from the latency statistics — folding them in reported a worst case of 29–34 frames the running scheduler never paid.
+>
+> ***Read `overshoot_chunks`, not the cell count.*** The bar is where `mesh_within_budget`'s own doc puts the never-livelock price, so cells straddle it: three runs of this fixture gave 4, 9 and 5 cells outside while the band stayed 0.46–1.16. The ratio is a committed column for that reason.
+>
+> ***`StagingRing` is deleted.*** Two queues in one tree is the one-path defect once the shipped one exists; its resolution-swept rows are historical and live in the CSV's git history at `d3b79e7`.
+>
+> ***Verification.*** Four `DeferredGeometry` unit tests, and both halves of the queue's job shown failing before being left passing — a `drain_ready` that frees the slot without harvesting fails `a_deferred_queue_returns_the_bytes_under_their_key`, a hardwired `has_room()` fails `a_full_deferred_queue_refuses_and_stays_where_it_was`. Five sweep controls are assertions, not prints. `preflight --full` green, `csv_provenance.sh` 54 of 59 resolving, `# commit 2fc75b4` from a clean tree.
