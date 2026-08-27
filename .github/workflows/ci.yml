@@ -93,6 +93,13 @@ jobs:
       # index answers confidently and wrongly, which is worse than no index.
       - name: findings index is current
         run: ./scripts/findings_index.sh --check
+      # `publish to crates.io` needs this job, so this is the step that stands
+      # between a partial version bump and an irreversible upload. On `0.0.x`,
+      # `version = "0.0.9"` means `>=0.0.9, <0.0.10`, so a published
+      # `bevy_isomesh 0.0.10` with an unbumped pin silently resolves every
+      # consumer against the *old* `isomesh`.
+      - name: version gate
+        run: ./scripts/version_gate.sh
       # The regression checker itself, not the benches -- those take minutes and
       # their timings are meaningless on a shared runner. This proves the gate
       # still detects a regression, which is the half that can rot silently.

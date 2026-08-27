@@ -68,6 +68,11 @@ step "bevy: fmt" in_bevy cargo fmt --all --check
 step "backlog gate" ./scripts/backlog_gate.sh
 step "findings index" ./scripts/findings_index.sh --check
 step "doc facts" ./scripts/doc_facts.sh
+# Fast, not full: it is a text comparison over six lines, and it guards the one
+# action in this repository that cannot be undone. A published version can be
+# yanked but never deleted, and on `0.0.x` an unbumped path pin resolves to the
+# *previous* release for every consumer without warning.
+step "version gate" ./scripts/version_gate.sh
 # **The gate whose absence is A-1.** Five committed datasets name a commit that
 # left this branch's history, and the header that says so was never read back.
 # It is here rather than in `doc_facts.sh` because that script derives counts
