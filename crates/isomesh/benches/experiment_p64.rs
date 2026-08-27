@@ -49,13 +49,13 @@ use std::time::Instant;
 const HARNESSES: [(&str, &str, &str, u64); 3] = [
     (
         "shipped_case_table_is_indexable_for_every_sign_pattern",
-        "shape, nameable, edge-is-cut, non-degenerate",
+        "shape+nameable+edge-is-cut+non-degenerate",
         "off",
         256,
     ),
     (
         "every_case_and_mask_triangulation_is_indexable",
-        "shape, nameable, edge-is-cut, non-degenerate",
+        "shape+nameable+edge-is-cut+non-degenerate",
         "on",
         256 * 64,
     ),
