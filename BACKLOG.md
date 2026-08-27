@@ -1,12 +1,12 @@
 # isomesh — BACKLOG
 
-**Updated:** 2026-08-26
+**Updated:** 2026-08-27
 **Companions:** `CLAUDE.md` (rules), `FINDINGS.md` (what we know and how well),
 `BACKLOG_ARCHIVE.md` (completed tickets + why they changed),
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**257 tickets archived, 21 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**257 tickets archived, 22 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -302,6 +302,28 @@ is the only genuinely new capability, and its latency question is **the owner's*
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+
+**R-072 — `O-12`'s remaining half: the dual vertex link at 2²⁷, as a nightly gate**
+`P-63` closed the **primal** half of `O-12` by exhaustion — `M-374`, 11 arms × 262,144 sign patterns over
+an 18-corner block, `worst_link_components` **1** on every non-control arm and a control that yields 5,302
+link-defective vertices — and `O-12`'s row was re-tiered to say exactly that. What closed is *"a vertex
+whose two face groups sit in different cells"* **for Marching Cubes**. What did not close is the **dual**
+family, and `P-63`'s own C3 is the strongest possible record of why: it ran the dual arms on that same
+block and came back **vacuous**, `max_incident_faces` **2** on all three. A dual vertex lives at a cell
+*centre* and its link needs the cell's 26 neighbours — **4³ = 64 corners** — so an 18-corner block cannot
+host the configuration at all, let alone decide it. Zero there is not evidence.
+**The sweep that can decide it is 2²⁷ = 134,217,728 sign patterns** over a 3 × 3 × 3 block of cells, an
+estimated 4–45 minutes single-threaded. That is a **nightly** gate, not a `cargo bench` run, which is why
+`R-061`'s prose declined to register it — and then nothing filed it, so an open question named in `O-12`'s
+own text has been invisible to `backlog_gate.sh` since Phase 23 closed. This is that row.
+**It needs a new `P-` id, not an amendment.** `experiment.rs`'s rule is that a registration is not amended
+after its run, and the specific error to not repeat is on record: C3 derived its expected population from
+the **critical** census when the population it needed was dual vertices carrying a *complete* link, which
+in an 18-corner block is empty. The new registration derives its population from the block it sweeps.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-072** | L | — |
 
 ---
 
