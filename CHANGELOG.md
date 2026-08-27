@@ -175,7 +175,7 @@ lands.
   offset from the edge midpoint** (`cube::edge_offset`) rather than as a parameter from the lower corner.
   `d = ((a + b)/2)/(a − b)` is exactly antisymmetric under the simultaneous endpoint-and-sign swap by four
   IEEE 754 guarantees, which makes plain Marching Cubes bit-exactly equivariant under **all 48 octahedral
-  elements instead of 6** — 0 mismatches on 9.2 M straddling pairs against 1,035,808 for the old form.
+  elements instead of 6** — 0 mismatches on 5,800,000 straddling pairs against 1,035,808 for the old form.
   **135 of 216 golden hashes were rebaselined.** Triangle counts are unchanged, Hausdorff distance and
   self-intersection counts are identical to twelve digits, and 2,285 of 28,124 cut edges moved by at most
   268 ULP. If you hash meshes, **0.0.9's hashes will not match.** There is no second path and no flag:

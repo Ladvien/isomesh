@@ -90,7 +90,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗49` | plain Marching Cubes is now bit-exactly equivariant under all 48 octahedral elements |
 | `✗50` | "MAX_PATCH_TRIANGLES = 24 bounds the trilinear patch": it was a sampled maximum plus two, fan_tunnel's own buffer was al… |
 | `✗51` | C1 FALSIFIED, C2 HELD, C3 VACUOUS: the prescribed loop shape is a 3–7% regression, %ymm is zero in every monomorphisatio… |
-| `✗52` | C1 and C2 FALSIFIED, C3 FALSIFIED at 5 of 24 cells: the 83% reproduces at 86.5% and M-160's flat 0.17 ms reproduces at 0… |
+| `✗52` | C1 and C2 FALSIFIED, C3 FALSIFIED at 5 of 24 cells: the 83% reproduces at 87.0% and M-160's flat 0.17 ms reproduces at 0… |
 | `✗53` | sound at k = 17 and not at k = 5 |
 | `✗54` | C1 FALSIFIED by arithmetic computed at registration, C2 and C3 HELD: the subgroup scan is real at 1.4376× and reproduces… |
 | `✗55` | C1 FALSIFIED by 10 violations in 19,415 and the registered coefficient is off by exactly one unit: 2 is unsound, 3 is so… |
@@ -1646,9 +1646,9 @@ point; the numbers are what make it re-checkable.
 | E×2 | **A separate probabilistic-quadric solver** (Trettner & Kobbelt, `10.1111/cgf.13933`) | It supersedes the Tikhonov regularizer and is more robust on near-singular cells | Never measured as a separate solver, because it was shown identical first: a direct assembly of the paper's equations agrees with `solve_with` at `λ = Nσ²` to **1.110e-16 over 296 cells** | **REVERTED before it was written.** In this crate's centroid-relative coordinates the paper's extra term is `σ²Σrᵢ`, and `Σrᵢ ≡ 0` because the centroid *is* the mean of the crossings. A second solver would have been a second execution path computing identical numbers. **Do not re-attempt for isotropic noise**; the open door is anisotropic `Σₙ`, which needs a noise model analytic fields do not have | X-004, `the_probabilistic_quadric_is_the_existing_solve`, M-238 |
 | E×3 | **Crossing-count-scaled regularizer** (`λ = Nσ²`, the part of E×2 that *is* different) | Scaling λ with the number of planes beats one fixed λ per cell | Hausdorff at 65³, scaled ÷ fixed: sphere **1.0000**, torus **0.9957**, csg_difference **0.9992**, box_exact **0.7519**, thin_plate **0.7519**. Self-intersections at 33³ fall on all three noisy fields: **3.118→2.551, 13.837→13.571, 29.745→28.749** | **KEPT behind `experimental`, not made default.** Never worse and 25% better on both sharp fields, which is a real improvement — but the default carries T-007's committed golden hashes and 112 baseline rows, and moving those for a 25% gain on two of eight fields is a decision with evidence attached, not a tidy-up. Promoting it is its own ticket | X-004, `crates/isomesh/src/experimental.rs`, M-238 |
 | E×8 | **A subgroup prefix scan, replacing the Hillis-Steele ladder** | H (P-70): `subgroupExclusiveAdd` plus a short cross-subgroup scan turns 16 workgroup barriers into 2 at `BLOCK` 256 and subgroup 32, and the literature measures 1.33–1.49× for it on six devices | **1.0652 / 1.1281 / 1.3650 / 1.4376×** at 65K / 262K / 1M / 2M elements, bit-identical to both `cpu_prefix_sum` and the shipped `PrefixScan` at every size. Applied to `scan_ms` 0.3657 of `gpu_total_ms` 8.3694 it moves the path **1.33%** | **NOT LANDED.** A second WGSL path in the shipped crate is what the one-path rule forbids and 1.33% does not buy an exception — and naga 29.0.4 **rejects `enable subgroups;` outright**, so the shader compiles on `wgpu` only by omitting a directive WGSL requires. Reopens if `gfx-rs/wgpu#5555` lands **and** the residue moves off `upload_ms`, which is 87.50%. |
-| E×7 | **A staging ring, so the geometry read-back is amortised instead of waited on** | H (P-71): the largest piece of a GPU extraction is the geometry copy (0.7075 of 1.1860 ms at 129³), which indirect draw arguments cannot remove because they remove it by not delivering the bytes; a depth-2 ring over `read_bytes_many_deferred` converts it to a per-frame cost | **120 of 120 read-backs consumed, `not_ready` 0** at 33³/65³/97³/129³, amortised **0.3116 / 0.4325 / 0.6059 / 0.9158 ms**. Drain tail **85 / 127 / 31 / 0** frames — not monotone in the grid. **Re-measured at R-071 under the scheduler it was always about**: `M-124`'s 288-chunk budget sweep, 24 cells, `no_room_frames` **0** everywhere, collision latency **mean 1.41 frames, worst 2** at delays of 1, 2 and 4 | **THE TYPE IS LANDED (R-071, `DeferredGeometry`); THE DEPLOYMENT IS STILL THE OWNER'S.** It had to land to be measured — the clause is about the queue *under a scheduler* and bench scaffolding cannot be put under one — and it ships as a **third** contract beside `extract_buffers` and `extract_indirect`, each stating its own guarantee, not as a fallback for either. What is still open is putting it inside `IsomeshPlugin`'s frame-budget system, which is a latency decision on a consumer's behalf: 1.41 frames is invisible in a voxel game and a decision in a CAD tool, and `P-71` records the question rather than picking. C3 came back **FALSIFIED at 5 of 24 cells** and that does not change this — the miss is a 1.14× premium on a *pass's first chunk* from `extract_buffers`' unindexed `poll(Wait)`, not the queue (`M-376`). |
+| E×7 | **A staging ring, so the geometry read-back is amortised instead of waited on** | H (P-71): the largest piece of a GPU extraction is the geometry copy (0.6663 of 1.1331 ms at 129³), which indirect draw arguments cannot remove because they remove it by not delivering the bytes; a depth-2 ring over `read_bytes_many_deferred` converts it to a per-frame cost | **120 of 120 read-backs consumed, `not_ready` 0** at 33³/65³/97³/129³, amortised **0.3116 / 0.4325 / 0.6059 / 0.9158 ms**. Drain tail **85 / 127 / 31 / 0** frames — not monotone in the grid. **Re-measured at R-071 under the scheduler it was always about**: `M-124`'s 288-chunk budget sweep, 24 cells, `no_room_frames` **0** everywhere, collision latency **mean 1.41 frames, worst 2** at delays of 1, 2 and 4 | **THE TYPE IS LANDED (R-071, `DeferredGeometry`); THE DEPLOYMENT IS STILL THE OWNER'S.** It had to land to be measured — the clause is about the queue *under a scheduler* and bench scaffolding cannot be put under one — and it ships as a **third** contract beside `extract_buffers` and `extract_indirect`, each stating its own guarantee, not as a fallback for either. What is still open is putting it inside `IsomeshPlugin`'s frame-budget system, which is a latency decision on a consumer's behalf: 1.41 frames is invisible in a voxel game and a decision in a CAD tool, and `P-71` records the question rather than picking. C3 came back **FALSIFIED at 5 of 24 cells** and that does not change this — the miss is a 1.14× premium on a *pass's first chunk* from `extract_buffers`' unindexed `poll(Wait)`, not the queue (`M-376`). |
 | E×6 | **The sample loop restructured for autovectorisation** | H (P-69): a pre-sliced contiguous write with the bound hoisted gives at least 2x on the marginal `f32` cost, and all 216 golden hashes stay unchanged | Marginal ns/sample, push ÷ row: `sphere` f32 **1.231 / 1.323 = 0.9305**, `gyroid` f32 **17.793 / 18.278 = 0.9735**, `box_exact` f32 **2.681 / 2.845 = 0.9425**; `f64` 0.977 / 0.983 / 0.899. **`total %ymm` across all eleven monomorphisations = 0.** 0 of 168 golden rows moved | **REVERTED in shape, KEPT in sharing.** The shape costs 3–7% and widens nothing, so it goes back; the *merge* stays, because there were **three** copies of this loop (`marching_cubes/mod.rs:240`, `dual.rs:356`, `marching_tetrahedra.rs:157`) and three copies is a one-path defect whatever the shape. **Do not re-attempt on this target without changing the field**: the loop is 11.6% of the marginal extraction cost, so its ceiling is 1.06x, and `libm`'s `sinf`/`cosf` have no arch selection at all | R-067, `benches/experiment_p69.rs`, `scripts/p69_asm.sh`, `docs/experiments/p-69.csv`, ✗51 / M-375 |
-| E×5 | **The crossing stored as a signed offset from the edge midpoint** | H (P-61): `d = ((a + b)/2)/(a − b)` is exactly antisymmetric under the simultaneous endpoint-and-sign swap by four IEEE 754 guarantees, so a mirrored grid produces a mirrored vertex bit for bit, where a parameter from the lower corner cannot | **0 mismatches on 9.2 M straddling pairs** across `f32` and `f64` against 1,035,808 / 2,000,000 for the lower-corner form. `marching_cubes` **6 → 48 of 48** on all 16 equivariance rows, `worst_component_ulp` 0. 135 of 216 golden hashes moved, 0 counts changed, 2,285 of 28,124 cut edges displaced at ≤ 268 ULP. Hausdorff and self-intersections identical to 12 digits | **KEPT, and it is the default** — there is no second path: `cube::edge_crossing` is gone, all six placements and the WGSL shader are in the centred frame, and the 216 golden hashes are rebaselined. The cost is exactly the registered one (C2 is a cost clause) and the geometric price measured zero. **Do not re-attempt the lower-corner form**; its `1 − t` anchor is an affine map and floating point does not respect those | R-059, `benches/experiment_p61.rs`, `docs/experiments/p-61.csv`, ✗49 / M-372 |
+| E×5 | **The crossing stored as a signed offset from the edge midpoint** | H (P-61): `d = ((a + b)/2)/(a − b)` is exactly antisymmetric under the simultaneous endpoint-and-sign swap by four IEEE 754 guarantees, so a mirrored grid produces a mirrored vertex bit for bit, where a parameter from the lower corner cannot | **0 mismatches on 5,800,000 straddling pairs** across `f32` and `f64` against 1,035,808 / 2,000,000 for the lower-corner form. `marching_cubes` **6 → 48 of 48** on all 16 equivariance rows, `worst_component_ulp` 0. 135 of 216 golden hashes moved, 0 counts changed, 2,285 of 28,124 cut edges displaced (**8.12%**) at ≤ 268 ULP. Hausdorff and self-intersections identical to 12 digits | **KEPT, and it is the default** — there is no second path: `cube::edge_crossing` is gone, all six placements and the WGSL shader are in the centred frame, and the 216 golden hashes are rebaselined. The cost is exactly the registered one (C2 is a cost clause) and the geometric price measured zero. **Do not re-attempt the lower-corner form**; its `1 − t` anchor is an affine map and floating point does not respect those | R-059, `benches/experiment_p61.rs`, `docs/experiments/p-61.csv`, ✗49 / M-372 |
 | E×4 | **Weld gated on the pairwise link condition, rejected pairs left split** | H (P-8): exactly 0 non-manifold edges and vertices on all eight fields × all extractors, where the unconditional weld yields N > 0 | 56 configurations on a centred 2×2×2 block. Ungated is **0/0 in 47 of them**. Across all 56 the gate removes **at most 4** non-manifold edges and adds **up to 791** non-manifold vertices — `noise_cavity` + subgrid goes 301 → **1,092**, and `sphere` + Marching Cubes goes 0 → 96 | **REVERTED, and it was never merged.** Strictly worse: it fixes almost nothing where there was something to fix and manufactures non-manifoldness where there was none. A `k`-way coincidence is manifold only if all `k` merge; refusing one leaves the representative a bowtie, which is why the damage is in the vertex column and the edge column barely moves | R-001, `benches/experiment_p8.rs`, `docs/experiments/p-8.csv`, P-8 |
 
 ---
@@ -10549,10 +10549,19 @@ off-repo script, re-run in `Real`:
 | world, `f64` | 0.125 | 300,000 | 26,051 (8.68%) | **0** | 0 |
 | world, `f32` | 0.125 | 300,000 | 28,618 (9.54%) | **0** | 0 |
 | world, `f64` | 0.1 | 300,000 | 28,521 (9.51%) | **0** | 0 |
+| world, `f32` | 0.1 | 300,000 | 30,998 (10.33%) | **0** | 0 |
 | world, `f64` | 3/32 | 300,000 | 27,678 (9.23%) | **0** | 0 |
+| world, `f32` | 3/32 | 300,000 | 30,065 (10.02%) | **0** | 0 |
 
-**Zero on 9.2 million straddling pairs across both scalars**, and the lower-corner form mismatching a
+**Zero on 5,800,000 straddling pairs across both scalars**, and the lower-corner form mismatching a
 million of them is the control: the instrument can report the other answer, and does, in the same loop.
+
+> **The headline count was wrong by 59% for two commits, and the table it contradicted was three lines
+> above it.** It read *"9.2 million straddling pairs"*; the `pairs` column of the eight `premeasure` rows
+> in `p-61.csv` sums to **5,800,000** — `2 × 2,000,000 + 6 × 300,000`. Two of those eight rows were also
+> missing from the table above, which is how a sum nobody could perform stayed unchallenged: the printed
+> rows came to 5,200,000 and the prose said 9.2 M, so neither number was the file's. Corrected against
+> the CSV, table and headline now agree with each other and with `docs/experiments/p-61.csv`.
 
 > **One of the doc's pre-measured figures does not reproduce, and the disagreement is the doc's script
 > rather than this harness.** The appendix reports `h = 0.1` at **75.0%** for the lower-corner form
@@ -10609,9 +10618,17 @@ hashes came back unchanged.
 
 **Zero of 216 vertex or triangle counts changed**, which is the design confirming itself: a placement
 change cannot touch the sign classification, so the topology is bit-identical and only coordinates move.
-Per fixture, `2,285 of 28,124` cut edges moved — 7.3% of them — at `worst_move_ulp` **0 to 268**, and the
-two fixtures with `edges_moved = 0` are `box_exact` at both resolutions. `thin_plate` is the outlier at
+Per fixture, `2,285 of 28,124` cut edges moved — **8.12%** of them — at `worst_move_ulp` **0 to 268**, and
+the two fixtures with `edges_moved = 0` are `box_exact` at both resolutions. `thin_plate` is the outlier at
 **44.1%** of its cut edges moving.
+
+> **This ratio read 7.3% for two commits and both of its counts were right.** `2,285 / 28,124` is
+> **8.1247%**. 7.24% is the 33³ subset alone (`1,405 / 19,415`); the 25³ subset is 10.10%
+> (`880 / 8,709`); the mean of the per-row `edges_moved_fraction` column is 10.91%. Three defensible
+> statistics over the same file and the entry quoted a fourth that is none of them — which is `✗41`'s
+> rule (*two populations, two numbers, and say which population each one is over*) failing on a single
+> pooled ratio rather than on a chained one. The pooled figure is the one the sentence claims, so the
+> pooled figure is what it now states.
 
 **C3 held and could not have failed, and that is stated rather than banked.** Symmetric Hausdorff and
 self-intersections-per-1,000 are identical to twelve significant digits on all 16 fixtures — every
@@ -11089,7 +11106,7 @@ column that was named and not measured.
 `amortised_ms_per_frame`, `budget_chunks`, `within_one_chunk`, `ring_frames_delay`, `c1_holds`, `c2_holds`,
 `c3_holds`, `adapter`.
 
-### 💥 ✗52 / M-376 — C1 and C2 FALSIFIED, C3 FALSIFIED at 5 of 24 cells: the 83% reproduces at **86.5%** and `M-160`'s flat 0.17 ms reproduces at **0.16 ms**, but the biggest piece is the **geometry copy** and not the count wait — so `extract_indirect` removes 31%, not 60%; and the budgeted pass overshoots by **1.07–1.16 chunks** at the two smallest budgets, which is a pass's first chunk and not the queue (P-71, R-069)
+### 💥 ✗52 / M-376 — C1 and C2 FALSIFIED, C3 FALSIFIED at 5 of 24 cells: the 83% reproduces at **87.0%** and `M-160`'s flat 0.17 ms reproduces at **0.15 ms**, but the biggest piece is the **geometry copy** and not the count wait — so `extract_indirect` removes 32%, not 60%; and the budgeted pass overshoots by **1.07–1.16 chunks** at the two smallest budgets, which is a pass's first chunk and not the queue (P-71, R-069)
 
 **M.** `cargo bench --bench experiment_p71`, `docs/experiments/p-71.csv`, **32 rows**, `f32`, **NVIDIA
 GeForce RTX 3090 / Vulkan**. Three arms: `attribution` (GPU-side spans from `TIMESTAMP_QUERY` against CPU
@@ -11098,24 +11115,32 @@ wall time, four resolutions), `removal` (`extract_buffers` against `extract_indi
 cells). Median of 7 per attribution measurement. Timestamp period **1.0000 ns**, two spans per extraction,
 both asserted strictly positive.
 
-> **C1 and C2 are the 2026-08-27 run at `d3b79e7`; C3 is the amendment below, at `2fc75b4`.** Two runs,
-> stated rather than pooled — `M-281`. The C1/C2 numbers in this entry are the original run's and are
-> unchanged; the amendment's own run reproduced them to within 0.5% (`copy` 0.6663 against 0.7075 at 129³,
-> `synchronisation_removed_share` 0.3239 against 0.3098) and that reproduction is a column in the CSV, not
-> a substitution for the figures quoted here.
+> **Every number below is read from the committed `docs/experiments/p-71.csv`, at `2fc75b4`, which is an
+> ancestor of HEAD.** The entry did not read that way for two commits and this is the correction. C1 and
+> C2 were first measured at `d3b79e7` and this entry quoted *that* run — `copy` 0.7075, `map-wait` 0.3177,
+> `synchronisation_removed_share` 0.3098, a 0.31–0.45 band — while its own **M.** line named a file that
+> had since been rewritten by the C3 amendment's run and contains none of them. Worse, the note that
+> declared the two-run split claimed the amendment *"reproduced them to within 0.5%"*, and its own two
+> cited numbers refute it: `copy` 0.6663 against 0.7075 is **−5.83%** and `synchronisation_removed_share`
+> 0.3239 against 0.3098 is **+4.55%**. Both runs are the same rig, the same binary and the same fixture,
+> so the spread is run-to-run variation on a governed CPU and a shared GPU (`M-280`, `M-281`) — which is
+> the honest description and is an order of magnitude wider than the claim. **The `d3b79e7` figures are
+> not reproduced here**: an entry that quotes numbers no committed file contains is `✗35`'s defect, and
+> the fix is to quote the file, not to explain the gap. The verdicts are unchanged — both clauses are
+> falsified on either run, and by margins far larger than 6%.
 
 | clause | registered | measured |
 |---|---|---|
-| C1 the largest component is **map-wait**, not execute | map-wait | **FALSIFIED — it is `copy`. 0.7075 ms against map-wait's 0.3177 and execute's 0.3149 at 129³** |
-| C2 indirect draw args remove ≥ **60%** of the synchronisation | ≥ 0.60 | **FALSIFIED — 0.3098 at 129³, and 0.31–0.45 across the range** |
+| C1 the largest component is **map-wait**, not execute | map-wait | **FALSIFIED — it is `copy`. 0.6663 ms against map-wait's 0.3191 and execute's 0.3175 at 129³** |
+| C2 indirect draw args remove ≥ **60%** of the synchronisation | ≥ 0.60 | **FALSIFIED — 0.3239 at 129³, and 0.2967–0.3297 across the range** |
 | C3 the queue holds the amortised cost within one chunk across a 320× range | `M-124`'s rows | **FALSIFIED — 19 of 24 cells hold; the 5 outside are 25 µs and 50 µs, overshooting by 1.07–1.16 chunks against a bar of 1.000** |
 
 **Two prior findings reproduce on the way, which is what makes the falsifications readable.**
 
 | prior | says | measured here |
 |---|---|---|
-| `M-167` | synchronisation was **83%** of an extraction | **86.5%** — 1.0252 ms of a 1.1860 ms extraction at 129³ |
-| `M-160` | removing the wait leaves CPU time flat at **~0.17 ms** from 33³ to 129³ | **0.133 / 0.171 / 0.168 / 0.161 ms** across 33³–129³ — flat at ~0.16 ms over a **60× cell range** |
+| `M-167` | synchronisation was **83%** of an extraction | **87.0%** — 0.9854 ms of a 1.1331 ms extraction at 129³ |
+| `M-160` | removing the wait leaves CPU time flat at **~0.17 ms** from 33³ to 129³ | **0.1359 / 0.1619 / 0.1517 / 0.1477 ms** across 33³–129³ — flat at ~0.15 ms over a **64× cell range** |
 
 So the phenomenon is exactly where `M-167` and `M-160` left it. **What is wrong is the decomposition the
 registration guessed.**
@@ -11124,14 +11149,14 @@ registration guessed.**
 
 | n | indirect | buffers | extract | execute (GPU) | submit | map-wait | copy | largest |
 |---:|---:|---:|---:|---:|---:|---:|---:|---|
-| 33 | 0.1330 | 0.2136 | 0.3121 | 0.0444 | 0.0885 | 0.0806 | **0.0985** | copy |
-| 65 | 0.1711 | 0.2738 | 0.4865 | 0.0940 | 0.0771 | 0.1027 | **0.2128** | copy |
-| 97 | 0.1678 | 0.3450 | 0.7306 | 0.1566 | 0.0112 | 0.1771 | **0.3856** | copy |
-| **129** | 0.1609 | 0.4785 | 1.1860 | 0.3149 | 0.0000 | 0.3177 | **0.7075** | **copy** |
+| 33 | 0.1359 | 0.1949 | 0.3149 | 0.0450 | 0.0910 | 0.0590 | **0.1200** | copy |
+| 65 | 0.1619 | 0.2640 | 0.4966 | 0.0924 | 0.0696 | 0.1020 | **0.2327** | copy |
+| 97 | 0.1517 | 0.3334 | 0.7643 | 0.1563 | 0.0000 | 0.1818 | **0.4309** | copy |
+| **129** | 0.1477 | 0.4669 | 1.1331 | 0.3175 | 0.0000 | 0.3191 | **0.6663** | **copy** |
 
-**`copy` is 60% of the whole extraction at 129³ and 69% of its synchronisation.** The count read-back —
-the four bytes `M-159` measured at 0.375 ms of stall — is real and is **0.3177 ms**, the *second* largest
-piece. `execute` is 0.3149 ms and never leads at any resolution, so `M-167`'s *"the arithmetic never moved
+**`copy` is 59% of the whole extraction at 129³ and 68% of its synchronisation.** The count read-back —
+the four bytes `M-159` measured at 0.375 ms of stall — is real and is **0.3191 ms**, the *second* largest
+piece. `execute` is 0.3175 ms and never leads at any resolution, so `M-167`'s *"the arithmetic never moved
 and was never the point"* **survives** and needs no re-tiering: C1's falsifier was execute leading, and
 execute does not lead.
 
@@ -11143,8 +11168,8 @@ execute does not lead.
 > flatness from the other side.
 
 **C2 is falsified for a reason that changes what the direction is worth, and it is not a smaller version
-of the registered claim.** `extract_indirect` removes the count wait **entirely** — that is 0.3177 ms of
-1.0252, i.e. **31%**. It cannot remove the geometry copy, because it removes it by *not delivering the
+of the registered claim.** `extract_indirect` removes the count wait **entirely** — that is 0.3191 ms of
+0.9854, i.e. **32%**. It cannot remove the geometry copy, because it removes it by *not delivering the
 geometry to the CPU at all*: the totals stay in device memory and become indirect draw arguments. So:
 
 - **For a consumer that only draws**, `extract_indirect` removes 100% of the synchronisation it needs to
@@ -11168,7 +11193,7 @@ are in this CSV's git history at `d3b79e7` and not in the file now, because `Sta
 | 129 | 120 | 2 | **120** | 0.9158 | **0** | 0 |
 
 **120 of 120 consumed and zero not-ready at every resolution**: at depth 2 the read-back is always ready
-when its slot comes round, so the mechanism converts a 0.7075 ms blocking copy into a per-frame cost with
+when its slot comes round, so the mechanism converts a 0.6663 ms blocking copy into a per-frame cost with
 no stall. That is a real result about a real mechanism.
 
 **But it was not C3, and the entry said so rather than claiming it.** C3 is registered against *"exactly
