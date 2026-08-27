@@ -11706,3 +11706,54 @@ can check what was asked.
 **Would be shown wrong by:** a false negative at `k = 17` on any field; a field whose non-monotonic
 fraction rises with resolution; or a `thin_plate` FP rate that starts falling at a resolution above 65³,
 which would mean the plate is resolvable after all and `M-100`'s structural claim is a sampling artefact.
+
+### P-70 — registered for R-068, before the harness exists, **and C1 is already arithmetically unreachable**
+
+**`M-375` earned Part 5 the rule *"a clause stated as a ratio of a total must name the share of that total
+it can move."* This is the first registration to apply it prospectively, and it kills C1 before a line of
+WGSL exists.** From `docs/measurements/gpu_vs_cpu.csv` at 129³, committed:
+
+| stage | ms | share of `gpu_total_ms` |
+|---|---:|---:|
+| `upload_ms` | **7.3240** | **87.51%** |
+| `geometry_readback_ms` | 0.6350 | 7.59% |
+| **`scan_ms`** | **0.3657** | **4.37%** |
+| `emit_ms` | 0.0250 | 0.30% |
+| `count_ms` | 0.0200 | 0.24% |
+| **`gpu_total_ms`** | **8.3694** | |
+
+C1 asks for **below 7.0 ms**, i.e. **1.3694 ms removed**. The scan is **0.3657 ms in total**. A *free* scan
+leaves **8.0037 ms**; the literature's own 1.5× ceiling leaves **8.2475 ms**. **C1 cannot be reached by any
+change to the scan**, and C1's registered falsifier says exactly why in its own words — *"which would mean
+the compaction was not the residue."* It is not the residue. The residue is the **upload**, at 87.5%.
+
+**So the experiment measures the mechanism and does not land it, and the reason is the repo's top rule
+rather than the arithmetic alone.** A second WGSL path in the shipped crate is what `CLAUDE.md`'s one-path
+rule forbids, and 4.37% capped at 1.5× — a **1.4% improvement to `gpu_total_ms`** — does not buy an
+exception. The subgroup scan is therefore compiled **in the bench**, from inline WGSL, and never enters
+`isomesh-gpu`. This is `E×7`'s shape from `P-71`: measured, not landed.
+
+**The correctness anchor is three-way, so a transcription cannot drift silently.** The bench's Hillis-Steele
+entry point is a transcription, and a copy of a shipped shader inside a bench is exactly the second
+definition this ledger keeps finding. So its output is required to equal **both** the shipped
+`PrefixScan::scan` **and** `cpu_prefix_sum` on the same input. If the transcription drifts, the crate's own
+oracle catches it — not a human reading two shaders side by side.
+
+**Two of the paper's findings are recorded whatever this returns, because they foreclose the obvious plan.**
+ARM and Apple GPUs give **no forward-progress guarantee**, so plain decoupled look-back **times out on M1
+Max and M3** — single-pass chained scan is off the table on this crate's primary target. And the ceiling is
+structural: reduce-then-scan moves O(3n), chained scan O(2n), so **50% is the theoretical maximum**. Scan is
+memory-bound and subgroups do not change that.
+
+| clause | prediction | falsified by |
+|---|---|---|
+| C1 | 129³ extraction below **7.0 ms**, from `M-150`'s 9.65 | above 7.0 ms — *"which would mean the compaction was not the residue"* |
+| C2 | output **bit-identical** to the current path, same triangles, same order | any difference; a compaction that reorders is a determinism regression and is rejected regardless of speed |
+| C3 | the fallback is **exercised**, not merely present | a fallback that is not tested — `M-44`'s zero-that-could-not-have-been-non-zero in a new place |
+
+**Blocker resolved before writing anything.** naga validates `subgroup_invocation_id` only in **1-D
+workgroup** compute shaders. `scan.wgsl` is already `@workgroup_size(256)` dispatched `(groups, 1, 1)`, so
+no flattening is needed and the hash risk the registration warned about does not arise. **`VOID` if the
+device does not advertise `SUBGROUP`** — every clause would then be about code that did not run — so the
+adapter's reported subgroup size is a recorded column. `P-71`'s probe already measured it at **32** on this
+RTX 3090.

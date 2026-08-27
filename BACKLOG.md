@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**255 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**255 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -201,6 +201,33 @@ aliasing both want and neither has.
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+
+**R-068 — Does subgroup ballot compaction beat the Hillis-Steele scan, and can it reach C1's number? (P-70)**
+**The measured prior is on this hardware class and this API.** Smith, Levien & Owens, *Decoupled Fallback:
+A Portable Single-Pass GPU Scan*, SPAA '25, `10.1145/3694906.3743326`: inclusive prefix sum over 2^25
+elements on WebGPU/Dawn - M1 Max **1.43x**, M3 1.46x, RTX 2080 Super 1.49x, RX 7900 XT 1.33x, Mali-G78
+1.35x, Intel HD 620 1.43x. Two of their findings foreclose the obvious plan whatever this returns: ARM and
+Apple GPUs give **no forward-progress guarantee**, so plain decoupled look-back **times out on M1 Max and
+M3**; and the ceiling is structural - reduce-then-scan moves O(3n), chained scan O(2n), so **50% is the
+theoretical maximum**.
+**C1's number was computed from the committed CSV before any shader was written, and it is arithmetically
+unreachable.** `docs/measurements/gpu_vs_cpu.csv` at 129³ reads `gpu_total_ms` **8.3694**, of which
+`scan_ms` is **0.3657** - **4.37%**. Reaching C1's 7.0 ms needs **1.3694 ms** removed. A **free** scan
+leaves 8.0037; the literature's 1.5x leaves 8.2475. The residue is `upload_ms` at **7.324 ms**, i.e.
+**87.5%**. This is Part 5's rule - *a clause stated as a ratio of a total must name the share of that total
+it can move* - applied **prospectively** for the first time, which is what `M-375` earned it for.
+**So the experiment measures the mechanism and does not land it.** A second WGSL path in the shipped crate
+is what `CLAUDE.md`'s one-path rule forbids, and 4.37% capped at 1.5x does not buy an exception. The
+subgroup scan is compiled **in the bench**, from inline WGSL, and its output is required to match both the
+shipped `PrefixScan` and `cpu_prefix_sum` - three-way, so a transcription that drifted is caught by the
+crate's own oracle rather than by reading two shaders side by side.
+**Blocker resolved before writing anything:** naga validates `subgroup_invocation_id` only in **1-D
+workgroup** compute shaders. `scan.wgsl` is already `@workgroup_size(256)` dispatched `(groups, 1, 1)`, so
+no flattening is needed and its hash risk does not arise.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-068** | M | — |
 
 **R-069 — Is the 83% a blocking round-trip, and can both targets avoid it? (P-71)**
 `M-167` is the largest single number this project owns about its own GPU path: synchronisation was **83%**
