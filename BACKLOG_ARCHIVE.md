@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-259 tickets. Line numbers are stable until something above them is edited — grep the ID if
+260 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -2050,3 +2050,14 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***The generalisable lesson, and it is why this got a ticket rather than a quiet edit.*** A non-vacuity guard must assert that the **population** is non-empty, never that the population is **distributed** a particular way. `within > 0` and `exact > 0` are distribution claims wearing a non-vacuity guard's clothes, and the arithmetic they described was changed by an experiment two phases later. `M-44`'s rule is *a zero that could not have been non-zero is not a measurement*; its converse is not *a count must be non-zero in every bucket*.
 >
 > ***Cost.*** One CI run on the release commit: `test (macos-latest)` red, so `publish to crates.io` was skipped by `needs:`. `deploy to github pages` is independent and succeeded, so the site went live at `0.0.10`'s content before the crates did.
+
+| ☑ | **D-025** | S | — |
+> **DONE 2026-08-27 — `benches/experiment_p69.rs` has not compiled on macOS since the commit that added it, and no gate anywhere could see it: every job that compiles a bench runs on Linux.** `M-383`. 49 commits red locally, green in CI throughout.
+>
+> ***The defect is one line.*** `use common::counters::Probe;` with no `#[cfg]`, against a `benches/common/mod.rs` that gates `mod counters` on `#[cfg(target_os = "linux")]` — `perf_event_open` is a Linux system call. rustc names it precisely, including *"found an item that was configured out"*.
+>
+> ***The other two errors in that run are cascade, and proving so is the work.*** Two `E0308`s reading *"expected type parameter `R`, found `f64`"* against an all-`f64` struct. `cargo check -p isomesh --benches --target x86_64-unknown-linux-gnu` compiles the whole bench set clean and clippy at `-D warnings` agrees, so the arithmetic was never wrong. Guessing here would have meant editing correct code on the platform that actually runs it.
+>
+> ***The shape is `experiment_p12`'s, and it was not a free choice.*** A `#[cfg(target_os = "linux")] mod experiment` with a `main` that refuses and exits non-zero elsewhere — what `experiment_p12`, `experiment_p15` and `a024_aliasing` all already do. `family.rs`'s alternative, writing `unavailable` into the columns, is unavailable to this bench: `cycles_per_sample` and `ghz` are in P-69's `records` and `Run::record` panics on a missing registered column, so the only other path runs through amending the registration.
+>
+> ***Verification.*** `cargo clippy --workspace --all-targets -- -D warnings` green on macOS/arm64, and the same on `x86_64-unknown-linux-gnu` so the platform that runs P-69 is unregressed. `scripts/p69_asm.sh`'s two symbol matchers (`asm_probe`, `^(\S*(?:row_loop|push_loop)\S*):$`) survive the extra module level, checked against the script rather than assumed.

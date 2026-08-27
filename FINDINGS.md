@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**480 entries** — 55 falsified, 349 measured, 50 verified, 18 open, 8 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**481 entries** — 55 falsified, 350 measured, 50 verified, 18 open, 8 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -443,6 +443,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-377` | C1 HELD at 51×, C2 and C3 FALSIFIED: the optimum is interior at 4³ on both fields, and the spread is 12.8× larger than t… |
 | `M-378` | zero unsound certificates over 2,389 tunnel cells |
 | `M-379` | C1, C2 and C3 all HELD: the case table is proved indexable over all 256 sign patterns in 2.04 s and over all 16,384 (pat… |
+| `M-383` | the bench that cannot compile off Linux, and every gate that would see it runs on Linux (D-025) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -12112,3 +12113,52 @@ also the *most* informative clause here, because Knoll's exception is the part o
 **mechanism** rather than a measurement: intervals beat affine forms where the bound overestimation is low,
 and `box_exact` is this crate's low-overestimation field. A P-67 without C3 would measure that RAA is
 cheaper without ever testing where it is not.
+
+
+### M-383 — the bench that cannot compile off Linux, and every gate that would see it runs on Linux (D-025)
+
+**M.** `cargo check -p isomesh --benches` fails on macOS/arm64 and has since **`045dba7`** — 49
+commits, 2026-08-26. `benches/experiment_p69.rs:52` was a bare `use common::counters::Probe;`, and
+`benches/common/mod.rs:26` gates that module on `#[cfg(target_os = "linux")]` because
+`perf_event_open` has no macOS equivalent a bench can reach. rustc says exactly that: *"could not
+find `counters` in `common`"*, with the note *"found an item that was configured out"*. Measured with
+the gate's own command, not a proxy — `cargo clippy --workspace --all-targets -- -D warnings`, which
+is `preflight.sh`'s `root: clippy` step and the CI lint job's, reports `error[E0432]` and *"could not
+compile `isomesh` (bench "experiment_p69") due to 3 previous errors"*.
+
+**Two of those three errors are not defects, and treating them as defects would have been the
+expensive move.** The same run reports `E0308` twice, at `210:37` and `211:23`, both *"expected type
+parameter `R`, found `f64`"* against a `Timed` whose four fields are all `f64`. They are inference
+cascade from the unresolved `Probe`, not arithmetic. What settles it is a cross-target check:
+`cargo check -p isomesh --benches --target x86_64-unknown-linux-gnu` compiles the whole bench set
+clean, and `cargo clippy` at `-D warnings` on that target does too. **The cross-target run is the
+instrument**; without it the choices were to guess, or to "fix" arithmetic that was already correct
+and ship that to the platform where it runs.
+
+**Why nothing saw it, and it is `M-293`'s shape in a third costume.** Every CI job that compiles a
+bench runs on Linux: the lint job's `cargo clippy --workspace --all-targets` and the MSRV job's
+`cargo check --workspace --all-targets`, both `ubuntu-latest`. The test matrix **does** include
+`macos-latest` — and it deliberately does not compile benches, running `cargo test --workspace --lib
+--tests`, with a comment stating that the lint job *"still type-checks all 74 benches"*. That
+reasoning is sound on Linux and silently false off it: the only platform where the bench fails is the
+only platform no bench-compiling job runs on. `M-293` was a **target** the local command did not
+compile; `M-304` was a **compiler version** that differed. This is a **platform** that differs, and
+the reading is the same one all three produce — a green CI and a local gate that had been red long
+enough to look like furniture.
+
+**Fixed in the shape three benches already use, rather than in a new one.** `experiment_p12`,
+`experiment_p15` and `a024_aliasing` each put their counter-using code inside a
+`#[cfg(target_os = "linux")] mod` and refuse loudly from `main` on anything else. `experiment_p69`
+now does the same, and the refusal is not a style choice: `cycles_per_sample` and `ghz` are in P-69's
+`records`, and `common::experiment::Run::record` panics on a registered column that is missing — so
+`family.rs`'s other option, recording the columns as `unavailable`, is not open to this bench without
+amending a registration to fit the machine it happens to be on.
+
+**`scripts/p69_asm.sh` still finds its symbols, checked rather than assumed.** It greps the emitted
+`.s` for `asm_probe` and matches `^(\S*(?:row_loop|push_loop)\S*):$`; nesting the items one module
+deeper lengthens the mangled path and leaves both substrings intact.
+
+**Would be shown wrong by:** a macOS CI job that compiles benches, which would have caught this on
+contact and make the local gate redundant rather than load-bearing. Not added here — it is a workflow
+change, and `preflight.sh`'s own header already records that the CI-versus-local duplication is the
+repository owner's call.
