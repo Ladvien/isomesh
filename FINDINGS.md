@@ -11445,3 +11445,33 @@ which is how the harness knows both halves are reading the same corner values ra
 **Would be shown wrong by:** one certified cell containing a tunnel, at any resolution or on any
 population; a non-monotone yield sequence on any field; or a fused implementation measuring above the
 0.0658 reported here, which would mean the gather subtraction is optimistic.
+
+### P-64 — registered for R-062, before the harness exists
+
+**The split is what makes this tractable, and it is registered rather than discovered.** Bit-blasting IEEE
+754 to SAT is the adversarial case for a model checker; a harness over eight nondeterministic `f32` corner
+values is **256 bits of unconstrained float**, precisely the shape Kani is worst at. But this crate's
+correctness risk is not in the arithmetic. `CLAUDE.md` rule 5 names it exactly: *"wrong case tables produce
+meshes that look fine and are subtly non-manifold."* That is **combinatorics over eight sign bits** — 256
+states, trivial for BMC. So: **verify the combinatorics, keep testing the arithmetic.**
+
+| clause | prediction | falsified by |
+|---|---|---|
+| C1 | Kani proves all four properties over all 256 patterns, interior rule off, under **10 minutes** | a timeout, **or** a property that cannot be expressed against the sign abstraction — the second is the more informative outcome and means the abstraction is wrong, not the tool |
+| C2 | it finds **nothing** the existing suite does not cover — registered as the **expected** result | Kani finding a reachable violation, which is a `✗` entry and the most valuable outcome available |
+| C3 | turning the interior-ambiguity rule on keeps C1 under **30 minutes** | a blow-up, which localises the state explosion to the interior rule and is itself a finding about its branching |
+
+**Why C2 is worth running even though it is expected to find nothing.** A proof and a passing property test
+are different objects. `M-208`–`M-213` is five pre-registered claims that were true on seven reference
+fields and false on the eighth — sampling found the counterexample only because the eighth field existed in
+the fixture. Over 256 states there is no eighth field to forget.
+
+**`VOID` condition, registered:** each harness must report its **check count**. A proof over an empty check
+set is `M-44`'s vacuous zero in formal clothing — "verification successful, 0 checks" is not a proof of
+anything, and the harness has to be able to say so.
+
+**Scope note, registered.** Neither tool touches **vertex placement**. Placement stays under proptest and
+golden hashes. The honest scope is *"the table cannot be indexed wrongly"*, **not** *"the mesh is
+correct"*. Kani is a dev tool with no runtime footprint, so hard rule 3 is not engaged — `cargo tree -p
+isomesh -e normal` is unchanged at two packages, and the gate still reads it. **No published use of Kani
+on geometry or graphics code was found**, which makes this novel as well as useful.

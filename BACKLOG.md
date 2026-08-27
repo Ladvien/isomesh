@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**253 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**253 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -159,6 +159,23 @@ same gap (`10.1007/s00454-011-9345-9`).
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+
+**R-062 — Can bounded model checking prove the combinatorics the property tests only sample? (P-64)**
+`CLAUDE.md` rule 5 names this crate's correctness risk exactly: *"wrong case tables produce meshes that
+look fine and are subtly non-manifold."* That is **combinatorics over eight sign bits** - 256 states -
+and trivial for BMC, where bit-blasting IEEE 754 to SAT is the adversarial case a model checker is worst
+at. So the split is: verify the combinatorics, keep testing the arithmetic.
+**Kani** (`arXiv:2607.01504`) ranges over the eight sign bits and proves, for all 256 patterns, that no
+case-table index goes out of range, no emitted index is at or past the vertex count, no triangle carries
+two equal indices, and nothing panics.
+**Both are dev tools with no runtime footprint, so hard rule 3 is not engaged**, and no published use of
+either on geometry or graphics code was found - which makes this novel as well as useful.
+**Scope note, registered:** neither tool touches vertex placement. Placement stays under proptest and
+golden hashes. The honest scope is *"the table cannot be indexed wrongly"*, not *"the mesh is correct"*.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-062** | M | — |
 
 **R-069 — Is the 83% a blocking round-trip, and can both targets avoid it? (P-71)**
 `M-167` is the largest single number this project owns about its own GPU path: synchronisation was **83%**

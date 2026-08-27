@@ -2517,6 +2517,64 @@ pub const PREREGISTERED: &[Preregistration] = &[
         ],
     },
     Preregistration {
+        id: "P-64",
+        ticket: "R-062",
+        hypothesis: "Bounded model checking proves the combinatorics that \
+            property tests only sample. THE SPLIT THAT MAKES THIS TRACTABLE: \
+            bit-blasting IEEE 754 to SAT is the adversarial case for a model \
+            checker, and a harness over eight nondeterministic f32 corner \
+            values is 256 bits of unconstrained float -- precisely the shape \
+            Kani is worst at. But this crate's correctness risk is not in the \
+            arithmetic; CLAUDE.md rule 5 names it exactly: 'wrong case tables \
+            produce meshes that look fine and are subtly non-manifold.' That is \
+            COMBINATORICS OVER EIGHT SIGN BITS, which is 256 states and trivial \
+            for BMC. So: verify the combinatorics, keep testing the \
+            arithmetic. Kani, arXiv:2607.01504, ranges over the eight sign bits \
+            and proves, for all 256 patterns, that no case-table index goes out \
+            of range, no emitted index is at or past the vertex count, no \
+            triangle carries two equal indices, and nothing panics. Both are \
+            dev tools with no runtime footprint, so hard rule 3 is not engaged, \
+            and NO PUBLISHED USE OF EITHER ON GEOMETRY OR GRAPHICS CODE WAS \
+            FOUND, which makes this novel as well as useful. (C1) Kani proves \
+            all four properties over all 256 sign patterns for marching_cubes \
+            with the interior rule off, in under 10 minutes. (C2) It finds \
+            nothing the existing suite does not already cover. This is \
+            registered as the EXPECTED outcome and is still worth the run: a \
+            proof and a passing property test are different objects, and \
+            M-208 to M-213 is five pre-registered claims that were true on \
+            seven fields and false on the eighth. (C3) Turning the \
+            interior-ambiguity rule on keeps C1 under 30 minutes. SCOPE NOTE: \
+            neither tool touches vertex placement, and the registration must \
+            say so -- placement stays under proptest and golden hashes. The \
+            honest scope is 'the table cannot be indexed wrongly', not 'the \
+            mesh is correct'.",
+        falsified_by: "C1 by a timeout, or by a property that cannot be \
+            expressed against the sign abstraction -- the second outcome is the \
+            more informative one and means the abstraction is wrong, not the \
+            tool. C2 by Kani finding a reachable violation, which is a \
+            falsification entry and the most valuable outcome available here. \
+            C3 by a blow-up, which localises the state explosion to the \
+            interior rule and is itself a finding about that rule's branching. \
+            NO GOLDEN HASH MOVES: the proofs are read-only and no extractor \
+            calls them. VOID if the solver reports zero checks for a property, \
+            since a proof over an empty check set is M-44's vacuous zero in \
+            formal clothing -- each harness must report its check count.",
+        records: &[
+            "harness",
+            "property",
+            "interior_rule",
+            "patterns",
+            "checks",
+            "failed_checks",
+            "status",
+            "solver_seconds",
+            "kani_version",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
         id: "P-69",
         ticket: "R-067",
         hypothesis: "core::simd is nightly and is staying nightly -- the \
