@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**252 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**252 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -133,6 +133,33 @@ re-meshes fewer cells per edit. Small chunks pay in duplicated samples and save 
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+
+**R-060 — Is the Plantinga-Vegter certificate sound against this crate's own tunnel classifier? (P-62)**
+`P-48` certifies a cell **empty** (`M-347`: zero unsound over 1.07e9 evaluations); `P-54` tightens it
+(`M-354`: 3.85x more rejections on `gyroid`). Nothing certifies the other direction - *"this cell's
+surface patch has no hidden topology"* - which is the difference between a mesher that is correct and one
+that can **state where** it is correct.
+**The predicate is already in the tree, so this is a measurement and not a build.**
+`validate::isotopy::cell_is_certified` shipped under `T-015` and is exactly the registered form:
+`0 in-not box-F(C) OR <box-grad-F(C), box-grad-F(C)> > 0`, with both bounds **exact** rather than interval
+approximations, because the surface Marching Cubes approximates is the trilinear interpolant - `F` is a
+convex combination of the eight corners, so clause one is *"all eight corners share a sign"*, and each
+partial is bilinear in the other two coordinates, so its exact range is the min and max of four corner
+differences. `h` cancels: the predicate tests the sign of a sum of three squares.
+**What has never been done is the soundness check, and this crate owns a ground truth the PV literature
+does not.** `A-020`'s classifier counts tunnels and twelve-vertex contours from the trilinear itself -
+`M-214` recorded 2,053 and 173 in 396,000 cells, and `M-222` established that chi falls by exactly two
+per tunnel. A cell containing a tunnel is a cell whose patch is **not** a graph, so a certificate on such
+a cell is unsound. `M-214`'s counts are what make C1 a kill-shot rather than an `M-44` pass over an
+unreached case.
+**Registered caveat, not a discovery:** `C1` guarantees the patch is a *graph*, not that its planar domain
+is connected, so the honest claim is *"no hidden topology in this cell"* and not *"exactly one
+component"*. PV close that gap with a balanced octree this crate does not have; Lin & Yap document the
+same gap (`10.1007/s00454-011-9345-9`).
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-060** | M | — |
 
 **R-069 — Is the 83% a blocking round-trip, and can both targets avoid it? (P-71)**
 `M-167` is the largest single number this project owns about its own GPU path: synchronisation was **83%**

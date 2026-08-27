@@ -2344,6 +2344,83 @@ pub const PREREGISTERED: &[Preregistration] = &[
         ],
     },
     Preregistration {
+        id: "P-62",
+        ticket: "R-060",
+        hypothesis: "P-48 gave this crate a certificate that a cell is EMPTY \
+            (M-347: zero unsound over 1.07e9 evaluations) and P-54 a tighter \
+            one via affine arithmetic (M-354: 3.85x more rejections on \
+            gyroid). There is no certificate in the other direction: nothing \
+            can say 'this cell's surface patch has no hidden topology', which \
+            is the difference between a mesher that is correct and one that can \
+            STATE WHERE it is correct, and it is the CAD half of the mandate. \
+            THE PREDICATE IS ALREADY IN THE TREE, so this is a measurement \
+            rather than a build: validate::isotopy::cell_is_certified shipped \
+            under T-015 and is exactly the registered form, \
+            0 not-in box-F(C) OR <box-grad-F(C), box-grad-F(C)> > 0, from \
+            Plantinga & Vegter, Isotopic approximation of implicit curves and \
+            surfaces, SGP 2004, 10.1145/1057432.1057465. Both bounds are EXACT \
+            rather than interval approximations, because the surface Marching \
+            Cubes approximates is the trilinear interpolant: F is a convex \
+            combination of the eight corner values, so clause one is exactly \
+            'all eight corners share a sign', and each partial derivative is \
+            bilinear in the other two coordinates, so its exact range is the \
+            min and max of four corner differences. The cell size cancels -- \
+            the predicate tests the SIGN of a sum of three squares, so h^2 \
+            factors out. WHAT HAS NEVER BEEN DONE IS THE SOUNDNESS CHECK, and \
+            this crate owns a ground truth the PV literature does not: A-020's \
+            classifier counts tunnels and twelve-vertex contours from the \
+            trilinear itself, M-214 recorded 2,053 and 173 in 396,000 cells, \
+            and M-222 established that chi falls by exactly two per tunnel. A \
+            cell containing a tunnel is a cell whose patch is NOT a graph, so a \
+            certificate on such a cell is unsound. (C1) SOUNDNESS, ONE-SIDED, \
+            THE KILL-SHOT: over eight reference fields at 17^3 / 33^3 / 65^3, \
+            ZERO cells are C1-certified while the A-020 classifier reports a \
+            tunnel or a twelve-vertex contour in them. (C2) YIELD: the \
+            certified fraction of SURFACE cells is above 50% on sphere, torus \
+            and box_exact at 33^3, and rises monotonically with resolution on \
+            all eight fields. (C3) COST: the predicate costs under 5% of \
+            extraction wall time on marching_cubes at 65^3. REGISTERED CAVEAT, \
+            not a discovery: C1 guarantees the patch is a GRAPH, not that its \
+            planar domain is connected -- a graph over a disconnected planar \
+            region still has several components. PV close that globally with a \
+            BALANCED octree this crate does not have, so the honest claim is \
+            'no hidden topology in this cell' and not 'exactly one component', \
+            and the entry must say so. Lin & Yap document the same gap, \
+            10.1007/s00454-011-9345-9.",
+        falsified_by: "C1 by ONE certified cell that the A-020 classifier calls \
+            a tunnel or a twelve-vertex contour. A single unsound certificate \
+            kills the direction, and M-214's counts of 2,053 and 173 prove the \
+            fixture can produce the configuration -- this is not an M-44 pass \
+            over an unreached case, and the population of tunnel cells is \
+            reported per field so a zero is shown to have been able to be \
+            non-zero. C2 by a certified fraction below 50% on any of sphere, \
+            torus or box_exact at 33^3, or by a non-monotone sequence on any \
+            field -- the latter would mean the predicate is measuring the \
+            arithmetic's slack rather than the field's geometry. C3 by above \
+            5%, in which case it is a debug gate rather than a shippable \
+            capability. NO GOLDEN HASH MOVES: the predicate is read-only and \
+            no extractor calls it.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "cells",
+            "surface_cells",
+            "certified_cells",
+            "certified_surface_cells",
+            "certified_surface_fraction",
+            "tunnel_cells",
+            "twelve_vertex_cells",
+            "unsound_certificates",
+            "monotone_in_resolution",
+            "predicate_ms",
+            "extract_ms",
+            "predicate_share",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
         id: "P-63",
         ticket: "R-061",
         hypothesis: "O-12 is the oldest open question in the ledger -- 'is \

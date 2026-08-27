@@ -11314,3 +11314,41 @@ is not a measurement, and the instrument said so instead of printing a fast time
 be worse still, but it is untested; a field whose optimum is not 4³, which would restore C2; or a
 `mark_ms` that scales with the partition, which would mean `mark_edit` is doing per-chunk work this sweep
 did not see.
+
+### P-62 — registered for R-060, before the harness exists
+
+**The predicate is already in the tree, and reading that before registering changed what the experiment
+is.** `validate::isotopy::cell_is_certified` shipped under `T-015` and is exactly the registered form —
+`0 ∉ □F(C) ∨ ⟨□∇F(C), □∇F(C)⟩ > 0`, Plantinga & Vegter SGP 2004. So P-62 is a **measurement of shipped
+code**, like `P-71`'s C2, not a build. What has never been done is the part that makes it an experiment:
+**checking it for soundness against this crate's own tunnel classifier**.
+
+**Why the bounds are exact rather than interval arithmetic, which is the module's own argument and worth
+restating because it is what makes C1 decidable.** The surface Marching Cubes approximates is not the
+analytic field, it is the **trilinear interpolant** of the eight corner values. `F` is then a convex
+combination of those corners, so `0 ∉ □F(C)` is *exactly* "all eight corners share a sign" — clause one is
+free and identifies inactive cells. Each partial derivative is **bilinear** in the other two coordinates,
+so its exact range is the min and max of four corner differences. And `h` cancels: the predicate tests the
+**sign** of a sum of three squares, so `h²` factors out and the arithmetic runs on raw corner differences.
+No interval library, no sampling, no slack — against the surface the extractor actually emits.
+
+**The ground truth C1 is checked against is one this crate owns and the PV literature does not.** `A-020`'s
+classifier reads tunnels and twelve-vertex contours off the trilinear directly; `M-214` recorded **2,053
+tunnels and 173 twelve-vertex contours in 396,000 cells**, and `M-222` established that χ falls by exactly
+two per tunnel. **A cell containing a tunnel is a cell whose patch is not a graph**, so a certificate on
+one is unsound by construction. `M-214`'s counts are what make C1 a kill-shot rather than an `M-44` pass
+over a case the fixture never reaches — and the harness reports the tunnel population per field, so a zero
+is shown to have been able to be non-zero.
+
+| clause | prediction | falsified by |
+|---|---|---|
+| C1 | **zero** certified cells that the classifier calls a tunnel or twelve-vertex contour, over eight fields at 17³/33³/65³ | **one** such cell — a single unsound certificate kills the direction |
+| C2 | certified fraction of **surface** cells above 50% on `sphere`, `torus`, `box_exact` at 33³, rising monotonically with resolution on all eight | below 50% on any of the three, or non-monotone on any field — which would mean the predicate measures arithmetic slack, not geometry |
+| C3 | the predicate costs under **5%** of `marching_cubes` extraction at 65³ | above 5%, making it a debug gate rather than a shippable capability |
+
+**Registered caveat, not a discovery.** C1 guarantees the patch is a **graph**, not that its planar domain
+is connected — a graph over a disconnected planar region still has several components. PV close that
+globally with a *balanced* octree this crate does not have, so the honest claim is **"no hidden topology in
+this cell"**, never "exactly one component". Lin & Yap document the same gap
+(`10.1007/s00454-011-9345-9`). **No golden hash moves:** the predicate is read-only and no extractor calls
+it.
