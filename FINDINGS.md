@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**475 entries** — 52 falsified, 348 measured, 50 verified, 18 open, 7 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**476 entries** — 52 falsified, 349 measured, 50 verified, 18 open, 7 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -439,6 +439,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-374` | settled for Marching Cubes by exhaustion at 2¹⁸ |
 | `M-377` | C1 HELD at 51×, C2 and C3 FALSIFIED: the optimum is interior at 4³ on both fields, and the spread is 12.8× larger than t… |
 | `M-378` | zero unsound certificates over 2,389 tunnel cells |
+| `M-379` | C1, C2 and C3 all HELD: the case table is proved indexable over all 256 sign patterns in 2.04 s and over all 16,384 (pat… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -11475,3 +11476,95 @@ golden hashes. The honest scope is *"the table cannot be indexed wrongly"*, **no
 correct"*. Kani is a dev tool with no runtime footprint, so hard rule 3 is not engaged — `cargo tree -p
 isomesh -e normal` is unchanged at two packages, and the gate still reads it. **No published use of Kani
 on geometry or graphics code was found**, which makes this novel as well as useful.
+
+### 🔬 M-379 — C1, C2 and C3 all HELD: the case table is **proved** indexable over all 256 sign patterns in 2.04 s and over all 16,384 (pattern, mask) pairs in 161 s — but only after the state explosion was localised to `segment_links`' walk, which exhausted 32 GB (P-64, R-062)
+
+**M.** `cargo bench --bench experiment_p64`, `docs/experiments/p-64.csv`, **3 rows**, Kani 0.67.0 / CBMC,
+Zen 3 (the registration named an M5; `M-005`'s contention block applies, so this ran here and says so).
+Proofs live in `marching_cubes::proofs` behind `cfg(kani)`; the bench shells out to `cargo kani` per
+harness and records the solver's own check count, failure count, verdict and time.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 all four properties, 256 patterns, interior off, < 10 min | < 600 s | **HELD — 62 checks, 0 failed, `SUCCESSFUL`, 2.04 s** |
+| C2 finds nothing the suite does not cover | no violation | **HELD — 0 failed checks across both real harnesses** |
+| C3 interior rule on, < 30 min | < 1800 s | **HELD — 63 checks, 0 failed, `SUCCESSFUL`, 161.10 s over 16,384 pairs** |
+
+**The four properties, and the third is the load-bearing one.**
+
+1. **Shape** — `count ≤ MAX_TRIANGLES`, `centroids ≤ MAX_CENTROIDS`, so a caller's stack array cannot
+   overflow. `D-021` earlier this phase is what happens when such a bound is a *sampled* maximum.
+2. **Every code nameable** — each code is a cube edge below `CENTROID_BASE` or a centroid index below
+   *this case's own* `centroids` count.
+3. **Every named edge is cut.** A property of the **pair** (table, sign pattern), not of the table alone.
+   `extraction.rs` places a vertex for whatever edge the table names, by interpolating that edge's two
+   corner values — so a triangle naming an **uncut** edge asks for a crossing that does not exist. That is
+   a vertex at a meaningless position, **not** a bounds error, which is exactly the failure `CLAUDE.md`
+   rule 5 describes as *"looks fine and is subtly non-manifold"*.
+4. **No degenerate triangle** — three distinct codes. Stated over *codes* rather than positions on purpose:
+   two distinct edges can carry the same position when the crossing sits on a shared corner, and that is a
+   placement question this file does not touch.
+
+**The finding that outlives the verdicts: the state explosion is in the walk, not in the sign bits.** The
+first version pointed Kani straight at `triangulate(segment_links(case, joined))` with both arguments
+nondeterministic — the obvious harness, and the one the registration implies. **CBMC ran out of memory:**
+
+| | |
+|---|---:|
+| steps of program expression | **10,230,639** |
+| verification conditions generated | **909,347** |
+| remaining after simplification | **550,658** |
+| symbolic execution | **885.05 s** |
+| equation postprocessing | **270.78 s** |
+| outcome | **out of memory, 32 GB** |
+
+And the `CASES` harness beside it verifies in **2.03 s**. That gap is not the 256-state sign space, which
+is trivial. It is `segment_links`' **data-dependent twelve-edge walk**: every step's successor depends on
+the previous step's value, so symbolic execution cannot merge paths and unrolls the product. C1's
+registered second falsifier was *"a property that cannot be expressed against the sign abstraction, which
+means the abstraction is wrong"* — this is a **third** shape neither the registration nor I anticipated:
+the abstraction is right and the *function* is the wrong thing to bit-blast.
+
+**The fix splits the work between the two engines each good at half of it, and the composition is still a
+proof over the whole input space.** `const` evaluation runs the **real** constructor on all 16,384
+`(case, mask)` inputs — exhaustive by construction, by the same evaluator that builds the shipped `CASES`
+— and Kani then proves the four properties over the stored results with a nondeterministic index, which is
+a lookup. Nothing is sampled and nothing is assumed about the walk. Cost: `cfg_attr(kani,
+allow(long_running_const_eval))` at the crate root, which is a **compile-time budget** lint tuned to catch
+accidental infinite loops, allowed only under Kani's compiler so an ordinary build would still catch a
+runaway const-eval in `segment_links`. 256 × **256** was the first table and rustc refused it outright;
+256 × 64 — every mask `face_bit` can produce — evaluates.
+
+**The control, because a vacuous proof prints the same word as a real one.** `the_properties_can_fail` is
+`#[kani::should_panic]`: it corrupts one live triangle to `[0, 0, 0]` and requires the assertions to fire.
+**71 checks, 2 failed, `SUCCESSFUL (encountered one or more panics as expected)`.** If a property ever
+drifts into a tautology, that harness fails while the two real ones keep printing `SUCCESSFUL`. The bench
+additionally asserts `checks > 0` per harness, because *"`VERIFICATION:- SUCCESSFUL` over zero checks"* is
+`M-44`'s vacuous zero in formal clothing — and it was a **registered** VOID condition, not a discovery.
+
+**A defect this experiment introduced and then made impossible.** `P-64`'s first CSV recorded a `property`
+column reading `"shape, nameable, edge-is-cut, non-degenerate"` and **silently shifted every later column
+by three places** in two of three rows: `checks` landed under `patterns`, the verdict under
+`failed_checks`. Row count right, header right, dataset garbage — and **`D-017`'s provenance gate cannot
+catch this, because the header is fine.** `Run::record` now refuses any value containing a comma, a quote
+or a newline. Quoting was considered and rejected: every column in every experiment is a number, an
+identifier or a boolean, and RFC 4180 would oblige every reader of the committed CSVs to implement it.
+**All 56 committed CSVs were audited by column count; exactly one was affected and it was never
+committed.**
+
+**And a defect in the *verification* rather than the code, worth recording because it is the same shape.**
+The broken file reached a commit because the check was `cargo fmt --all && cargo clippy … ; echo 'lint
+ok'` — the `echo` after a semicolon. `cargo fmt` failed on the syntax error, clippy never ran, and *"lint
+ok"* printed anyway. The replacement `grep -E '^error' | head -12 && echo CLEAN` failed the same way,
+because `head` exits 0 on empty input. Both are now the command's own exit status. **`M-44` in the
+tooling: a check that cannot report failure is not a check.**
+
+**Scope, per the registration and restated because it is the honest boundary.** Neither the proofs nor the
+bench touch **vertex placement**. Placement stays under proptest and the 216 golden hashes. What is proved
+is *"the table cannot be indexed wrongly"*, **not** *"the mesh is correct"*. Kani is a dev tool behind
+`cfg(kani)`, so hard rule 3 is untouched — `cargo tree -p isomesh -e normal` still reads **2**.
+
+**Would be shown wrong by:** a reachable violation of any of the four properties; a check count of zero
+with a `SUCCESSFUL` verdict; the sabotage control passing without failures; or an `AMBIGUOUS_FACES` change
+that lets `joined_mask` set a bit outside the six `face_bit` positions, which would put real inputs
+outside the 64 masks proved here.

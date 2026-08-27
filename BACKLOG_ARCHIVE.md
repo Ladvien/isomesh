@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-253 tickets. Line numbers are stable until something above them is edited — grep the ID if
+254 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1942,3 +1942,20 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***Two fixture defects.*** The population arm above; and the refusal control was per-field and fired on `sphere` at 17³, which refuses nothing - a **correct outcome, not a broken instrument**. What must be shown is that the predicate *can* refuse, which is a property of the predicate, so the control is global. A third control asserts no cell is a classified tunnel while the case table calls it inactive: **0 across all 2,792,064 cells**, which is how the harness knows both halves read the same values.
 >
 > ***Verification.*** `preflight --full` green, `csv_provenance.sh` 50 of 55 resolving. The first CSV rode in with the harness commit carrying its own `WORKING TREE DIRTY` header; D-017's gate refused it, it was removed in its own commit, and the dataset was re-run clean.
+
+| ☑ | **R-062** | M | — |
+> **DONE 2026-08-27 — 🔬 M-379 / P-64: C1, C2 and C3 all HELD. The case table is proved indexable over all 256 sign patterns in 2.04 s and all 16,384 (pattern, mask) pairs in 161 s - after the state explosion was localised to `segment_links`' walk, which exhausted 32 GB.**
+>
+> ***The finding that outlives the verdicts.*** The obvious harness - Kani pointed straight at `triangulate(segment_links(case, joined))` with both arguments nondeterministic - **ran CBMC out of memory**: 10,230,639 steps of program expression, **909,347 verification conditions**, 550,658 after simplification, 885 s of symbolic execution, dead on 32 GB. The shipped `CASES` harness beside it verifies in **2.03 s**. The gap is not the 256-state sign space; it is `segment_links`' data-dependent twelve-edge walk, where each step's successor depends on the previous step's value so symex cannot merge paths. C1's registered second falsifier was *"a property that cannot be expressed against the sign abstraction"*; this is a **third shape** neither the registration nor the run anticipated - the abstraction is right and the *function* is the wrong thing to bit-blast.
+>
+> ***The fix splits the work between two engines and is still a proof over the whole input space.*** `const` evaluation runs the **real** constructor on all 16,384 `(case, mask)` inputs - exhaustive, by the same evaluator that builds the shipped `CASES` - and Kani proves the four properties over the stored results with a nondeterministic index, which is a lookup. Nothing sampled, nothing assumed about the walk. Cost: `cfg_attr(kani, allow(long_running_const_eval))` at the crate root, a compile-time **budget** lint allowed only under Kani's compiler. 256 x 256 was the first table and rustc refused it; 256 x 64 - every mask `face_bit` can produce - evaluates.
+>
+> ***Property 3 is the load-bearing one and is about the pair, not the table.*** `extraction.rs` places a vertex for whatever edge the table names by interpolating that edge's two corner values, so a triangle naming an **uncut** edge asks for a crossing that does not exist - a vertex at a meaningless position rather than a bounds error, which is exactly rule 5's *"looks fine and is subtly non-manifold"*.
+>
+> ***The control, because a vacuous proof prints the same word as a real one.*** `the_properties_can_fail` is `#[kani::should_panic]`, corrupts one live triangle, and reports **71 checks, 2 failed, SUCCESSFUL as expected**. The bench also asserts `checks > 0` per harness - a **registered** VOID condition, since `SUCCESSFUL` over an empty check set is `M-44` in formal clothing.
+>
+> ***A defect introduced here and then made impossible.*** The first CSV recorded `"shape, nameable, edge-is-cut, non-degenerate"` in one column and **silently shifted every later column by three places** in two of three rows. Row count right, header right, dataset garbage - and `D-017`'s gate cannot catch it because the header is fine. `Run::record` now refuses any value containing a comma, quote or newline; quoting was considered and rejected because every column in every experiment is a number, identifier or boolean and RFC 4180 would oblige every reader to implement it. **All 56 committed CSVs audited by column count: exactly one affected, never committed.**
+>
+> ***And the same shape in the verification.*** The broken file reached a commit because the check was `cargo fmt && cargo clippy ... ; echo 'lint ok'` - `echo` after a semicolon, so `fmt` failed, clippy never ran, and *"lint ok"* printed. `grep '^error' | head && echo CLEAN` fails identically, because `head` exits 0 on empty input. Both replaced by the command's own exit status. **A check that cannot report failure is not a check.**
+>
+> ***Scope, per the registration.*** Neither the proofs nor the bench touch **vertex placement**; that stays under proptest and the 216 golden hashes. What is proved is *"the table cannot be indexed wrongly"*, not *"the mesh is correct"*. Kani sits behind `cfg(kani)`, so hard rule 3 is untouched - `cargo tree -p isomesh -e normal` still reads **2**.
