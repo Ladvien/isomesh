@@ -631,7 +631,7 @@ fn the_timestamp_instrument_reports_a_positive_span_for_each_compute_pass() {
         .extract(gpu.device(), gpu.queue(), &field)
         .expect("extraction");
     assert!(
-        mesh.positions.len() > 0,
+        !mesh.positions.is_empty(),
         "the fixture must produce geometry"
     );
 

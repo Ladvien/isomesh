@@ -50,6 +50,16 @@ libm = { workspace = true }
 # Pinned at the version whose MSRV matches ours exactly.
 proptest = "1.11"
 
+# R-069 (P-71). The GPU experiment needs `isomesh-gpu` and `wgpu`, and it lives
+# here rather than in `isomesh-gpu/benches/` for one reason: `benches/common/
+# experiment.rs` is the only writer of the `# commit` provenance header and the
+# only enforcer of a registration's `records`, and a second copy of it in
+# another crate is a second thing to drift. This is the dev-dependency cycle
+# Cargo permits (`isomesh-gpu` depends on `isomesh` normally), and it is
+# invisible to `cargo tree -e normal`, which is what rule 3's gate reads.
+isomesh-gpu = { path = "../isomesh-gpu" }
+wgpu = "29"
+
 # T-006. Held at 0.7 when this workspace promised 1.85 and criterion 0.8's
 # floor was 1.86; the workspace now promises 1.89, so that reason has expired
 # and the hold stands only until someone bumps it deliberately. The `msrv` CI
@@ -485,5 +495,10 @@ test = false
 
 [[bench]]
 name = "experiment_p69"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p71"
 harness = false
 test = false
