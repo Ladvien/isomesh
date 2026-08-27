@@ -69,6 +69,19 @@ pub struct AdapterReport {
     pub max_storage_buffer_binding_size: u64,
     /// Largest total workgroups per dispatch, per axis.
     pub max_compute_workgroups_per_dimension: u32,
+    /// Smallest subgroup this adapter reports.
+    ///
+    /// R-068. Zero when [`wgpu::Features::SUBGROUP`] is absent, which is `wgpu`'s
+    /// own convention and is why it is recorded rather than inferred: a wave
+    /// intrinsic's cost is a function of this number, so a measurement of one
+    /// without it is not reproducible -- the reason this whole struct exists.
+    pub subgroup_min_size: u32,
+    /// Largest subgroup this adapter reports.
+    ///
+    /// Equal to [`Self::subgroup_min_size`] on every desktop adapter this crate
+    /// has met. Both are kept so a machine where they differ is visible instead
+    /// of averaged.
+    pub subgroup_max_size: u32,
 }
 
 impl Gpu {
@@ -99,13 +112,30 @@ impl Gpu {
     ///
     /// # Errors
     ///
-    /// [`Error::TimestampsUnsupported`] if the adapter does not advertise the
+    /// [`Error::FeaturesUnsupported`] if the adapter does not advertise the
     /// feature — **checked against `adapter.features()` before the device
     /// request**, so the failure names the missing capability instead of
     /// surfacing as a generic `DeviceUnavailable`. Plus anything [`new`](Self::new)
     /// can report.
     pub fn with_timestamps() -> Result<Self> {
         Self::open(wgpu::Features::TIMESTAMP_QUERY)
+    }
+
+    /// The same device, with [`wgpu::Features::SUBGROUP`] requested.
+    ///
+    /// R-068. Wave-level intrinsics -- `subgroupExclusiveAdd`,
+    /// `subgroupBallot` -- are unavailable without it and naga rejects a module
+    /// that uses them, so a caller that wants to measure them has to ask before
+    /// the device exists. Mirrors [`with_timestamps`](Self::with_timestamps)
+    /// exactly, including checking the adapter first so the error names the
+    /// missing capability rather than surfacing as `DeviceUnavailable`.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::FeaturesUnsupported`] if the adapter does not advertise the
+    /// feature, plus anything [`new`](Self::new) can report.
+    pub fn with_subgroups() -> Result<Self> {
+        Self::open(wgpu::Features::SUBGROUP)
     }
 
     fn open(required: wgpu::Features) -> Result<Self> {
@@ -130,7 +160,9 @@ impl Gpu {
         // generic error, and "DeviceUnavailable" does not tell a reader which
         // capability was missing. GPU-007's pattern: refuse, and name it.
         if !adapter.features().contains(required) {
-            return Err(Error::TimestampsUnsupported);
+            return Err(Error::FeaturesUnsupported {
+                missing: required.difference(adapter.features()),
+            });
         }
         let report = AdapterReport {
             name: info.name,
@@ -139,6 +171,8 @@ impl Gpu {
             driver: info.driver,
             max_storage_buffer_binding_size: limits.max_storage_buffer_binding_size,
             max_compute_workgroups_per_dimension: limits.max_compute_workgroups_per_dimension,
+            subgroup_min_size: info.subgroup_min_size,
+            subgroup_max_size: info.subgroup_max_size,
         };
 
         let (device, queue) =

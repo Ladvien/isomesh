@@ -149,6 +149,15 @@ pub use shader::{
 };
 pub use timestamps::{MAX_PASSES, Span, Spans, StageTimestamps};
 
+/// The `wgpu` this crate was built against.
+///
+/// Every public entry point here takes `wgpu` types -- `extract(&self, device:
+/// &wgpu::Device, queue: &wgpu::Queue, ...)` -- so a consumer already needs the
+/// crate and already needs the **same version**. Re-exporting it turns a silent
+/// version-mismatch type error into `isomesh_gpu::wgpu`, which cannot mismatch.
+/// Not a new dependency: it is the one this crate's signatures already require.
+pub use wgpu;
+
 /// Compiles the README's example as a doctest, without putting the README into
 /// these docs — the same pattern `isomesh` uses. The README's fence is
 /// `rust,no_run`: it must compile everywhere, including a CI runner with no

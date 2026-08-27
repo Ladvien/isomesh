@@ -56,6 +56,19 @@ pub enum Error {
     /// was named and not measured, which is the failure the experiment harness's
     /// missing-column panic exists to prevent, arriving by a different door.
     TimestampsUnsupported,
+    /// The adapter does not advertise a feature the caller asked for.
+    ///
+    /// R-068. `Gpu::open` previously returned [`Self::TimestampsUnsupported`]
+    /// for **any** missing feature, which was correct while timestamps were its
+    /// only caller and became a lie the moment `with_subgroups` existed: a
+    /// device without `SUBGROUP` would have reported that timestamps were
+    /// unavailable. Carrying the missing set means the error names what is
+    /// actually absent, and adding a third capability cannot reintroduce the
+    /// bug.
+    FeaturesUnsupported {
+        /// The features the adapter lacks.
+        missing: wgpu::Features,
+    },
     /// The device disconnected or a submission never completed.
     DeviceLost,
     /// A shader module was included, or composed, but never registered.
@@ -123,6 +136,9 @@ impl fmt::Display for Error {
                  not enabled, the timestamp period is zero, or a span ended before \
                  it began",
             ),
+            Self::FeaturesUnsupported { missing } => {
+                write!(f, "the adapter does not advertise {missing:?}")
+            }
             Self::DeviceLost => f.write_str("the device was lost or a submission never completed"),
             Self::ShaderModuleMissing { name } => {
                 write!(f, "no shader module registered as `{name}`")
