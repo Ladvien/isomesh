@@ -92,7 +92,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗51` | C1 FALSIFIED, C2 HELD, C3 VACUOUS: the prescribed loop shape is a 3–7% regression, %ymm is zero in every monomorphisatio… |
 | `✗52` | C1 and C2 FALSIFIED, C3 FALSIFIED at 5 of 24 cells: the 83% reproduces at 87.0% and M-160's flat 0.17 ms reproduces at 0… |
 | `✗53` | sound at k = 17 and not at k = 5 |
-| `✗54` | C1 FALSIFIED by arithmetic computed at registration, C2 and C3 HELD: the subgroup scan is real at 1.4376× and reproduces… |
+| `✗54` | C1 FALSIFIED by arithmetic computed at registration, C2 and C3 HELD: the subgroup scan is real at 1.4114× and reproduces… |
 | `✗55` | C1 FALSIFIED by 10 violations in 19,415 and the registered coefficient is off by exactly one unit: 2 is unsound, 3 is so… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
@@ -440,7 +440,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-370` | an existence check passes on a commit that left the branch: git cat-file -e is a property of the checkout, merge-base --… |
 | `M-371` | MCPro is in the corpus as a 383-character landing page that read "converted, embedded": catalog_read is not a presence o… |
 | `M-374` | settled for Marching Cubes by exhaustion at 2¹⁸ |
-| `M-377` | C1 HELD at 51×, C2 and C3 FALSIFIED: the optimum is interior at 4³ on both fields, and the spread is 12.8× larger than t… |
+| `M-377` | C1 HELD at 51×, C2 and C3 FALSIFIED: the optimum is interior at 4³ on both fields, and the spread is 12.7× larger than t… |
 | `M-378` | zero unsound certificates over 2,389 tunnel cells |
 | `M-379` | C1, C2 and C3 all HELD: the case table is proved indexable over all 256 sign patterns in 2.04 s and over all 16,384 (pat… |
 | `M-383` | the bench that cannot compile off Linux, and every gate that would see it runs on Linux (D-025) |
@@ -1645,7 +1645,7 @@ point; the numbers are what make it re-checkable.
 | E×1 | **Surface Nets' centroid as Dual Contouring's vertex rule** | The QEF is worth its cost on sharp fields and not on smooth ones, and pays for it in self-intersection | Hausdorff at 65³, QEF ÷ centroid: sphere **0.486**, torus **0.457**, csg_difference **0.255**, box_exact **0.010**, thin_plate **0.010**. Self-intersections per 1k at 33³: QEF **3.118 / 13.837 / 29.745** on gyroid, fbm_terrain, noise_cavity against centroid's **0.000** | **KEPT as an ablation, not as a default.** Both arms are real answers to different questions and neither dominates — 100× accuracy on sharp features against zero self-intersections. The seam stays so the comparison can be re-run; `Qef` stays the default because sharp-feature recovery is what A-007 exists for | X-002, `benches/ablation.rs`, M-237 |
 | E×2 | **A separate probabilistic-quadric solver** (Trettner & Kobbelt, `10.1111/cgf.13933`) | It supersedes the Tikhonov regularizer and is more robust on near-singular cells | Never measured as a separate solver, because it was shown identical first: a direct assembly of the paper's equations agrees with `solve_with` at `λ = Nσ²` to **1.110e-16 over 296 cells** | **REVERTED before it was written.** In this crate's centroid-relative coordinates the paper's extra term is `σ²Σrᵢ`, and `Σrᵢ ≡ 0` because the centroid *is* the mean of the crossings. A second solver would have been a second execution path computing identical numbers. **Do not re-attempt for isotropic noise**; the open door is anisotropic `Σₙ`, which needs a noise model analytic fields do not have | X-004, `the_probabilistic_quadric_is_the_existing_solve`, M-238 |
 | E×3 | **Crossing-count-scaled regularizer** (`λ = Nσ²`, the part of E×2 that *is* different) | Scaling λ with the number of planes beats one fixed λ per cell | Hausdorff at 65³, scaled ÷ fixed: sphere **1.0000**, torus **0.9957**, csg_difference **0.9992**, box_exact **0.7519**, thin_plate **0.7519**. Self-intersections at 33³ fall on all three noisy fields: **3.118→2.551, 13.837→13.571, 29.745→28.749** | **KEPT behind `experimental`, not made default.** Never worse and 25% better on both sharp fields, which is a real improvement — but the default carries T-007's committed golden hashes and 112 baseline rows, and moving those for a 25% gain on two of eight fields is a decision with evidence attached, not a tidy-up. Promoting it is its own ticket | X-004, `crates/isomesh/src/experimental.rs`, M-238 |
-| E×8 | **A subgroup prefix scan, replacing the Hillis-Steele ladder** | H (P-70): `subgroupExclusiveAdd` plus a short cross-subgroup scan turns 16 workgroup barriers into 2 at `BLOCK` 256 and subgroup 32, and the literature measures 1.33–1.49× for it on six devices | **1.0652 / 1.1281 / 1.3650 / 1.4376×** at 65K / 262K / 1M / 2M elements, bit-identical to both `cpu_prefix_sum` and the shipped `PrefixScan` at every size. Applied to `scan_ms` 0.3657 of `gpu_total_ms` 8.3694 it moves the path **1.33%** | **NOT LANDED.** A second WGSL path in the shipped crate is what the one-path rule forbids and 1.33% does not buy an exception — and naga 29.0.4 **rejects `enable subgroups;` outright**, so the shader compiles on `wgpu` only by omitting a directive WGSL requires. Reopens if `gfx-rs/wgpu#5555` lands **and** the residue moves off `upload_ms`, which is 87.50%. |
+| E×8 | **A subgroup prefix scan, replacing the Hillis-Steele ladder** | H (P-70): `subgroupExclusiveAdd` plus a short cross-subgroup scan turns 16 workgroup barriers into 2 at `BLOCK` 256 and subgroup 32, and the literature measures 1.33–1.49× for it on six devices | **1.0544 / 1.1113 / 1.2796 / 1.4114×** at 65K / 262K / 1M / 2M elements, bit-identical to both `cpu_prefix_sum` and the shipped `PrefixScan` at every size — **including on a second device opened with `Features::empty()`**, which is C3's instrument. Applied to `scan_ms` 0.3657 of `gpu_total_ms` 8.3694 it moves the path **1.27%** | **NOT LANDED.** A second WGSL path in the shipped crate is what the one-path rule forbids and 1.27% does not buy an exception — and naga 29.0.4 **rejects `enable subgroups;` outright**, so the shader compiles on `wgpu` only by omitting a directive WGSL requires. Reopens if `gfx-rs/wgpu#5555` lands **and** the residue moves off `upload_ms`, which is 87.50%. |
 | E×7 | **A staging ring, so the geometry read-back is amortised instead of waited on** | H (P-71): the largest piece of a GPU extraction is the geometry copy (0.6663 of 1.1331 ms at 129³), which indirect draw arguments cannot remove because they remove it by not delivering the bytes; a depth-2 ring over `read_bytes_many_deferred` converts it to a per-frame cost | **120 of 120 read-backs consumed, `not_ready` 0** at 33³/65³/97³/129³, amortised **0.3116 / 0.4325 / 0.6059 / 0.9158 ms**. Drain tail **85 / 127 / 31 / 0** frames — not monotone in the grid. **Re-measured at R-071 under the scheduler it was always about**: `M-124`'s 288-chunk budget sweep, 24 cells, `no_room_frames` **0** everywhere, collision latency **mean 1.41 frames, worst 2** at delays of 1, 2 and 4 | **THE TYPE IS LANDED (R-071, `DeferredGeometry`); THE DEPLOYMENT IS STILL THE OWNER'S.** It had to land to be measured — the clause is about the queue *under a scheduler* and bench scaffolding cannot be put under one — and it ships as a **third** contract beside `extract_buffers` and `extract_indirect`, each stating its own guarantee, not as a fallback for either. What is still open is putting it inside `IsomeshPlugin`'s frame-budget system, which is a latency decision on a consumer's behalf: 1.41 frames is invisible in a voxel game and a decision in a CAD tool, and `P-71` records the question rather than picking. C3 came back **FALSIFIED at 5 of 24 cells** and that does not change this — the miss is a 1.14× premium on a *pass's first chunk* from `extract_buffers`' unindexed `poll(Wait)`, not the queue (`M-376`). |
 | E×6 | **The sample loop restructured for autovectorisation** | H (P-69): a pre-sliced contiguous write with the bound hoisted gives at least 2x on the marginal `f32` cost, and all 216 golden hashes stay unchanged | Marginal ns/sample, push ÷ row: `sphere` f32 **1.231 / 1.323 = 0.9305**, `gyroid` f32 **17.793 / 18.278 = 0.9735**, `box_exact` f32 **2.681 / 2.845 = 0.9425**; `f64` 0.977 / 0.983 / 0.899. **`total %ymm` across all eleven monomorphisations = 0.** 0 of 168 golden rows moved | **REVERTED in shape, KEPT in sharing.** The shape costs 3–7% and widens nothing, so it goes back; the *merge* stays, because there were **three** copies of this loop (`marching_cubes/mod.rs:240`, `dual.rs:356`, `marching_tetrahedra.rs:157`) and three copies is a one-path defect whatever the shape. **Do not re-attempt on this target without changing the field**: the loop is 11.6% of the marginal extraction cost, so its ceiling is 1.06x, and `libm`'s `sinf`/`cosf` have no arch selection at all | R-067, `benches/experiment_p69.rs`, `scripts/p69_asm.sh`, `docs/experiments/p-69.csv`, ✗51 / M-375 |
 | E×5 | **The crossing stored as a signed offset from the edge midpoint** | H (P-61): `d = ((a + b)/2)/(a − b)` is exactly antisymmetric under the simultaneous endpoint-and-sign swap by four IEEE 754 guarantees, so a mirrored grid produces a mirrored vertex bit for bit, where a parameter from the lower corner cannot | **0 mismatches on 5,800,000 straddling pairs** across `f32` and `f64` against 1,035,808 / 2,000,000 for the lower-corner form. `marching_cubes` **6 → 48 of 48** on all 16 equivariance rows, `worst_component_ulp` 0. 135 of 216 golden hashes moved, 0 counts changed, 2,285 of 28,124 cut edges displaced (**8.12%**) at ≤ 268 ULP. Hausdorff and self-intersections identical to 12 digits | **KEPT, and it is the default** — there is no second path: `cube::edge_crossing` is gone, all six placements and the WGSL shader are in the centred frame, and the 216 golden hashes are rebaselined. The cost is exactly the registered one (C2 is a cost clause) and the geometric price measured zero. **Do not re-attempt the lower-corner form**; its `1 − t` anchor is an affine map and floating point does not respect those | R-059, `benches/experiment_p61.rs`, `docs/experiments/p-61.csv`, ✗49 / M-372 |
@@ -10532,6 +10532,19 @@ eight fields × seven extractors × 33³ and 25³, **5,488 extractions** — 16 
 3 seam rows. First CSV in this repository whose provenance line reads `# commit 1cf4265` with **no
 `(WORKING TREE DIRTY)`** beside it.
 
+> **RE-RUN 2026-08-27 for C5 of the audit, and the re-run is its own control.** The registered column
+> `c1_rows_at_48` counted **all 112** equivariance rows while the registered `c1_population` beside it
+> counts the **98** that can fail — a numerator and a denominator over different sets, with the clause's
+> own 28 parked in an extra column called `c1_can_fail_rows_at_48` seven places further along. The
+> obvious name was the wrong number, which is precisely how a reader gets misled by a correct file. Fixed
+> by making `c1_rows_at_48` the count over `c1_population`; the all-rows count keeps its own name,
+> `rows_at_48_all_rows`, and no registration is amended — both names were already this experiment's.
+> **The re-run changed those two columns and `wall_ms` on 81 of 155 rows, and nothing else at all**: all
+> 155 rows, every `elements_vertex_exact`, every `worst_move_ulp`, every Hausdorff and
+> self-intersection ratio, all 8 pre-measurement counts, byte-identical. That is `M-279`'s rule as a
+> control on a refactor — the instrument agrees with itself everywhere it was not changed — and it is
+> why none of the numbers in this entry moved.
+
 | clause | registered | measured |
 |---|---|---|
 | C1 `elements_vertex_exact = 48` on every `fixture_can_fail` row | 98 of 98 | **FALSIFIED — 28 of 98. And `marching_cubes` is 48 of 48 on all 16 of its rows, from 6** |
@@ -11323,59 +11336,72 @@ samples and save in wasted remesh. C1's 2× has to come out of those two curves 
 **No golden hash moves and that is asserted, not hoped:** this varies only how a fixed cell count is
 partitioned. A partition that changed the mesh would be a seam defect.
 
-### 🔬 M-377 — C1 HELD at **51×**, C2 and C3 FALSIFIED: the optimum is interior at **4³** on both fields, and the spread is **12.8× larger** than the registered ceiling — so chunk size is not the damping factor GVDB's 2048³ regime made it look like (P-72, R-070)
+### 🔬 M-377 — C1 HELD at **51×**, C2 and C3 FALSIFIED: the optimum is interior at **4³** on both fields, and the spread is **12.7× larger** than the registered ceiling — so chunk size is not the damping factor GVDB's 2048³ regime made it look like (P-72, R-070)
 
 **M.** `cargo bench --bench experiment_p72`, `docs/experiments/p-72.csv`, **12 rows**, `f64`, Zen 3.
 Chunk granularity swept 2³–64³ at a **fixed 128³ world cell count**, on an eleven-edit dig trace, on
 `gyroid` (surface everywhere) and `fbm_terrain` (surface on a sheet). Median of three traces per arm; the
 initial full build runs once and is not timed.
 
+> **RE-RUN 2026-08-27 for C4 of the audit, and every timing below is the new file's.** The `spread` column
+> carried `gyroid`'s value on the `fbm_terrain` rows — a global maximum under a name that reads per-field,
+> sitting beside `best_chunk_cells` and `worst_chunk_cells` which were always looked up per field. So
+> `fbm_terrain`'s own 47.2× was derivable from the file and not recorded in it, and this entry quoted a
+> 47.19× that appeared in no column. `spread` is now per field and `spread_max_over_fields` carries the
+> quantity C1 and C3 are denominated in. **Fixing a column means re-running, and re-running means
+> re-quoting** (`✗35`, `✗52`): the timings here are the 2026-08-27 re-run's at `5f1f4b3`, not the
+> `2b470c8` run's. **Every integer reproduced exactly** — `dirty_chunks_total` 1,501 / 396 / 108 / 51 /
+> 35 / 31 and 1,456 / 376 / 102 / 57 / 43 / 29, `remeshed_cells_total`, `sample_duplication`, all three
+> vertex columns and both `distinct_surface_points` — which is `M-279`'s rule satisfied: the new run
+> agrees with the old one on everything that is not a clock. Every timing moved by under 1.5%, and the
+> two spreads by 0.7%.
+
 | clause | registered | measured |
 |---|---|---|
-| C1 pronounced optimum, best-to-worst ≥ 2× | ≥ 2× | **HELD — 51.05× on `gyroid`, 47.19× on `fbm_terrain`, and the optimum is *interior*** |
+| C1 pronounced optimum, best-to-worst ≥ 2× | ≥ 2× | **HELD — 50.69× on `gyroid`, 47.21× on `fbm_terrain`, and the optimum is *interior*** |
 | C2 the optimum is field-dependent | differs between the two fields | **FALSIFIED — 4³ wins on both** |
-| C3 the spread is below 4× | < 4× | **FALSIFIED — ~50×, which is 12.8× the ceiling** |
+| C3 the spread is below 4× | < 4× | **FALSIFIED — 50.69×, which is 12.7× the ceiling** |
 
 **The curve, and the reason it needed extending below the registered range:**
 
 | chunk | chunks | grid dup | dirty remeshes | mark ms | remesh ms | **total ms** | ms/edit | raw verts |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | **`gyroid`** | | | | | | | | |
-| 2³ | 262,144 | 3.3750× | 1,501 | 5.13 | 4.65 | 9.78 | 0.889 | 117,490 |
-| **4³** | 32,768 | 1.9531× | 396 | 4.05 | 4.56 | **8.61** | **0.783** | 81,548 |
-| 8³ | 4,096 | 1.4238× | 108 | 3.80 | 5.80 | 9.60 | 0.873 | 66,066 |
-| 16³ | 512 | 1.1995× | 51 | 3.74 | 15.31 | 19.05 | 1.732 | 58,884 |
-| 32³ | 64 | 1.0967× | 35 | 3.70 | 64.48 | 68.18 | 6.198 | 55,596 |
-| 64³ | 8 | 1.0476× | 31 | 3.71 | 435.81 | **439.51** | 39.956 | 53,788 |
+| 2³ | 262,144 | 3.3750× | 1,501 | 5.01 | 4.61 | 9.63 | 0.875 | 117,490 |
+| **4³** | 32,768 | 1.9531× | 396 | 4.02 | 4.59 | **8.61** | **0.783** | 81,548 |
+| 8³ | 4,096 | 1.4238× | 108 | 3.80 | 5.76 | 9.56 | 0.869 | 66,066 |
+| 16³ | 512 | 1.1995× | 51 | 3.72 | 15.30 | 19.02 | 1.729 | 58,884 |
+| 32³ | 64 | 1.0967× | 35 | 3.68 | 64.10 | 67.78 | 6.162 | 55,596 |
+| 64³ | 8 | 1.0476× | 31 | 3.67 | 432.73 | **436.40** | 39.673 | 53,788 |
 | **`fbm_terrain`** | | | | | | | | |
-| 2³ | 262,144 | 3.3750× | 1,456 | 14.85 | 16.16 | 31.01 | 2.819 | 76,344 |
-| **4³** | 32,768 | 1.9531× | 376 | 13.85 | 15.82 | **29.67** | **2.697** | 53,023 |
-| 8³ | 4,096 | 1.4238× | 102 | 13.64 | 20.99 | 34.64 | 3.149 | 42,894 |
-| 16³ | 512 | 1.1995× | 57 | 13.56 | 60.89 | 74.45 | 6.768 | 38,292 |
-| 32³ | 64 | 1.0967× | 43 | 13.58 | 287.95 | 301.53 | 27.412 | 36,264 |
-| 64³ | 8 | 1.0476× | 29 | 13.54 | 1386.26 | **1399.81** | 127.255 | 35,012 |
+| 2³ | 262,144 | 3.3750× | 1,456 | 14.85 | 16.18 | 31.03 | 2.821 | 76,344 |
+| **4³** | 32,768 | 1.9531× | 376 | 13.85 | 15.84 | **29.69** | **2.699** | 53,023 |
+| 8³ | 4,096 | 1.4238× | 102 | 13.64 | 21.02 | 34.66 | 3.151 | 42,894 |
+| 16³ | 512 | 1.1995× | 57 | 13.54 | 60.94 | 74.48 | 6.771 | 38,292 |
+| 32³ | 64 | 1.0967× | 43 | 13.54 | 287.97 | 301.50 | 27.409 | 36,264 |
+| 64³ | 8 | 1.0476× | 29 | 13.52 | 1388.13 | **1401.65** | 127.423 | 35,012 |
 
 **The registered 8³–64³ range gives a monotone curve whose minimum sits at the boundary, and a boundary
 minimum is not C1's "pronounced optimum".** That distinction is the reason 2 and 4 were added: the
 sample-duplication penalty `((c+1)/c)³` is **3.3750 at c = 2** against 1.4238 at c = 8, so if the two
-curves cross anywhere they cross below 8. **They do.** 4³ beats 2³ by 13.6% on `gyroid` and 4.5% on
-`fbm_terrain`, and beats 8³ by 11.5% and 14.4%. Had the sweep stopped where it was registered, the entry
+curves cross anywhere they cross below 8. **They do.** 4³ beats 2³ by 10.6% on `gyroid` and 4.3% on
+`fbm_terrain`, and beats 8³ by 10.0% and 14.3%. Had the sweep stopped where it was registered, the entry
 would have reported the smallest tested granularity as the answer and been wrong about the shape.
 
-**Where the 51× comes from, and it is one number:** `mark_ms` is **flat** — 3.70 to 5.13 on `gyroid`, 13.54
+**Where the 51× comes from, and it is one number:** `mark_ms` is **flat** — 3.67 to 5.01 on `gyroid`, 13.52
 to 14.85 on `fbm_terrain`, because `mark_edit` scans the same world region whatever the partition.
 Everything is `remesh_ms`, and remesh is `dirty_chunks × chunk_cells³`: at 64³ the trace re-meshes
 **31 × 262,144 = 8,126,464 cells**, at 4³ it re-meshes **396 × 64 = 25,344**. That is **321× fewer cells
-for the same eleven edits**, and it lands as 435.81 ms against 4.56.
+for the same eleven edits**, and it lands as 432.73 ms against 4.59.
 
 **C2's falsification is the interesting one.** The registration expected `gyroid`'s everywhere-surface and
 `fbm_terrain`'s sheet to want different granularities, and they do not — 4³ wins on both. What differs is
-the **level**, not the optimum: `fbm_terrain`'s trace costs 3.4× `gyroid`'s at the optimum (29.67 against
-8.61 ms), almost all of it in `mark_ms` (13.85 against 4.05), which is `FbmTerrain`'s per-sample cost and
+the **level**, not the optimum: `fbm_terrain`'s trace costs 3.4× `gyroid`'s at the optimum (29.69 against
+8.61 ms), almost all of it in `mark_ms` (13.85 against 4.02), which is `FbmTerrain`'s per-sample cost and
 not a granularity property at all. So over 2³–64³ the granularity optimum is a **constant of this
 extractor**, and the field decides only how much the whole trace costs.
 
-**C3 is falsified by 12.8× and the registration named that as the more valuable outcome.** The prediction
+**C3 is falsified by 12.7× and the registration named that as the more valuable outcome.** The prediction
 was that the chunk-size regime damps GVDB's 256× to under 4×, on the grounds that a chunk is far smaller
 than a 2048³ SPH volume. It does not damp it: **51× from one knob**, on a 128³ world, in an extractor with
 no tree at all. The mechanism transfers more strongly than the magnitude argument suggested because the
@@ -11820,11 +11846,11 @@ WGSL exists.** From `docs/measurements/gpu_vs_cpu.csv` at 129³, committed:
 
 | stage | ms | share of `gpu_total_ms` |
 |---|---:|---:|
-| `upload_ms` | **7.3240** | **87.51%** |
-| `geometry_readback_ms` | 0.6350 | 7.59% |
+| `upload_ms` | **7.3236** | **87.50%** |
+| `geometry_readback_ms` | 0.6352 | 7.59% |
 | **`scan_ms`** | **0.3657** | **4.37%** |
-| `emit_ms` | 0.0250 | 0.30% |
-| `count_ms` | 0.0200 | 0.24% |
+| `emit_ms` | 0.0253 | 0.30% |
+| `count_ms` | 0.0197 | 0.23% |
 | **`gpu_total_ms`** | **8.3694** | |
 
 C1 asks for **below 7.0 ms**, i.e. **1.3694 ms removed**. The scan is **0.3657 ms in total**. A *free* scan
@@ -11863,17 +11889,30 @@ device does not advertise `SUBGROUP`** — every clause would then be about code
 adapter's reported subgroup size is a recorded column. `P-71`'s probe already measured it at **32** on this
 RTX 3090.
 
-### 💥 ✗54 / M-381 — C1 FALSIFIED by arithmetic computed **at registration**, C2 and C3 HELD: the subgroup scan is real at **1.4376×** and reproduces the literature, and it moves the shipped path by **1.33%** (P-70, R-068)
+### 💥 ✗54 / M-381 — C1 FALSIFIED by arithmetic computed **at registration**, C2 and C3 HELD: the subgroup scan is real at **1.4114×** and reproduces the literature, and it moves the shipped path by **1.27%** (P-70, R-068)
 
 **M.** `cargo bench --bench experiment_p70`, `docs/experiments/p-70.csv`, **8 rows**, RTX 3090 / Vulkan,
 subgroup size **32**, `SUBGROUP` advertised. Both arms compiled from inline WGSL **in the bench**; median
 of 7 after a warm-up, one dispatch per timing.
 
+> **RE-RUN 2026-08-27, because C3 was scored on nothing.** The audit's D-4: *"the fallback is exercised,
+> not merely present"* was recorded as the bare word HELD, and `p-70.csv` had **no column that could have
+> made it false** — the predicate was `any(arm == "hillis" && matches_shipped && matches_cpu)`, which the
+> control five lines above it had already `assert!`ed for every row. `M-44`'s zero in a new place, in a
+> phase that quotes `M-44` six times. C3 now has an instrument and the harness had to be re-run to get it,
+> so **every timing in this entry is the new file's**: the four speedups moved 1.0652 → **1.0544**,
+> 1.1281 → **1.1113**, 1.3650 → **1.2796**, 1.4376 → **1.4114**, and the applied effect 1.33% → **1.27%**.
+> Nothing about any verdict moves; the re-run is quoted rather than the numbers being kept because
+> `✗52`'s defect was exactly the other choice. **A 1.8% run-to-run swing on the headline ratio is itself
+> the reason `M-337`'s re-audit rule exists** — a ratio that moves this much between runs of the same
+> binary is not a gate, and this entry never used it as one: the decision rests on 4.37% and 87.50%,
+> which are integers' worth of stable.
+
 | clause | registered | measured |
 |---|---|---|
 | C1 129³ extraction below 7.0 ms | < 7.0 | **FALSIFIED — a *free* scan leaves 8.0037 ms** |
 | C2 bit-identical output | no difference | **HELD — both arms match the shipped `PrefixScan` and `cpu_prefix_sum` at all four sizes** |
-| C3 the fallback is exercised | tested, not merely present | **HELD** |
+| C3 the fallback is exercised | tested, not merely present | **HELD, and now on a column that could have said no** — the shipped `PrefixScan` on a second device opened with `Features::empty()` agrees bit-for-bit with the subgroup arm at all four sizes, and the same comparator refuses a one-element corruption of that answer |
 
 **C1 was dead before a line of WGSL existed, and `M-375` is why that was known.** Part 5's rule —
 *a clause stated as a ratio of a total must name the share of that total it can move* — applied
@@ -11883,7 +11922,7 @@ prospectively for the first time. The bench **reads** these from
 | stage at 129³ | ms | share |
 |---|---:|---:|
 | **`upload_ms`** | **7.3236** | **87.50%** — the residue |
-| `geometry_readback_ms` | 0.6350 | 7.59% |
+| `geometry_readback_ms` | 0.6352 | 7.59% |
 | **`scan_ms`** | **0.3657** | **4.37%** |
 | `gpu_total_ms` | 8.3694 | |
 
@@ -11894,21 +11933,21 @@ C1 asks for **1.3694 ms** removed and the scan is **0.3657 ms in total**. C1's o
 
 | elements | Hillis-Steele ms | subgroup ms | speedup |
 |---:|---:|---:|---:|
-| 65,536 | 0.0443 | 0.0425 | 1.0652× |
-| 262,144 | 0.0530 | 0.0471 | 1.1281× |
-| 1,048,576 | 0.0891 | 0.0683 | 1.3650× |
-| **2,097,152** | 0.1350 | 0.0934 | **1.4376×** |
+| 65,536 | 0.0502 | 0.0476 | 1.0544× |
+| 262,144 | 0.0591 | 0.0532 | 1.1113× |
+| 1,048,576 | 0.0956 | 0.0747 | 1.2796× |
+| **2,097,152** | 0.1415 | 0.1002 | **1.4114×** |
 
 Smith, Levien & Owens measured 1.43× on M1 Max, 1.46× on M3, 1.49× on RTX 2080 Super, 1.33× on RX 7900 XT,
-1.35× on Mali-G78, 1.43× on Intel HD 620. **1.4376× on an RTX 3090 at 2²¹ elements sits in the middle of
+1.35× on Mali-G78, 1.43× on Intel HD 620. **1.4114× on an RTX 3090 at 2²¹ elements sits in the middle of
 that band** — an independent reproduction on a seventh device. And the speedup **grows with `n`**, from
-1.07× to 1.44×, which is the memory-bound story the paper argues: at 65K the dispatch overhead dominates and
+1.05× to 1.41×, which is the memory-bound story the paper argues: at 65K the dispatch overhead dominates and
 there is nothing for wave ops to save.
 
-**Applied to the shipped path, 1.4376× on 4.37% moves `gpu_total_ms` from 8.3694 to 8.2581 — 1.33%.**
+**Applied to the shipped path, 1.4114× on 4.37% moves `gpu_total_ms` from 8.3694 to 8.2628 — 1.27%.**
 
 **NOT LANDED, and the reason is the repo's top rule rather than the number alone.** A second WGSL path in
-the shipped crate is what `CLAUDE.md`'s one-path rule forbids, and 1.33% does not buy an exception. `E×7`
+the shipped crate is what `CLAUDE.md`'s one-path rule forbids, and 1.27% does not buy an exception. `E×7`
 from `P-71` is the same shape: mechanism measured, decision recorded, code not merged.
 
 **Two naga realities the registration did not anticipate, and they strengthen the decision considerably.**
@@ -11922,7 +11961,7 @@ from `P-71` is the same shape: mechanism measured, decision recorded, code not m
    the subgroup total, `subgroupBroadcast(lane_prefix + value, sg_size - 1u)` — is **rejected**, because
    `sg_size` is a runtime builtin. `subgroupAdd` is a reduction that lands the same value in every lane and
    needs no broadcast, so the shader pays **two wave ops** instead of one plus a broadcast. The measured
-   1.4376× is *with* that extra reduction.
+   1.4114× is *with* that extra reduction.
 
 **C2's scope is narrower than registered and the entry says so.** The clause reads *"bit-identical on all
 eight fields — same triangles, same order"*, and this harness compares **prefix-scan output**, not meshes.
@@ -11937,6 +11976,17 @@ every size — three-way, so the bench's Hillis-Steele transcription cannot sile
 transcribes. The fixture is **3% non-zero counts**, which is `M-337`'s measured active-cell density on a
 sphere at 128³, rather than a uniform fill the extractor never produces. And `VOID` if the adapter lacks
 `SUBGROUP`, asserted rather than assumed.
+
+**C3's instrument, since it is the reason this entry was re-run.** The fallback is not simulated — a second
+`headless::Gpu` is opened with `Features::empty()`, and the arm that runs on it is the **shipped**
+`PrefixScan`, because the fallback *is* the shipped path and a hillis-only copy of the WGSL would be the
+second definition this ledger keeps finding. Four columns carry it: `forced_off_subgroup_feature`
+(**false** on every row, asserted, or the arm is not running under the condition C3 is about),
+`forced_off_matches_subgroup_run` (**true** at 65K / 262K / 1M / 2M), and
+`forced_off_comparator_detects_corruption` (**true** at all four — one element of the fallback's answer is
+bumped and the same closure must refuse it, `E-208`'s rule). The index bumped is `base + 1` rather than
+`base`, because shifting a block's base moves every term in that block by the same constant and the
+identity would survive it — the corruption control needed its own thought, which is the usual shape.
 
 **Would be shown wrong by:** a speedup above 1.5× at any size, which would exceed the paper's structural
 O(3n)→O(2n) ceiling and mean something other than the scan changed; a disagreement with either reference;
