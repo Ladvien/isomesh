@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-251 tickets. Line numbers are stable until something above them is edited — grep the ID if
+252 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1906,3 +1906,20 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***One column that is an artefact and says so.*** `submit` reads 0.0000 at 129³ because it is `indirect_ms − execute_ms`, a CPU wall time minus a **GPU** span. The GPU keeps working after the CPU returns, so the span can exceed the wall time and the difference is clamped rather than reported negative.
 >
 > ***Verification.*** `preflight --full` all green at each boundary, `csv_provenance.sh` 48 of 53 resolving with 40 inherited debts pinned, and the instrument has its own test: `the_timestamp_instrument_reports_a_positive_span_for_each_compute_pass` asserts a positive period and a strictly positive span per pass, so a silent zero is a failure rather than a number.
+
+| ☑ | **R-070** | M | — |
+> **DONE 2026-08-27 — 🔬 M-377 / P-72: C1 HELD at 51x, C2 and C3 FALSIFIED. The optimum is interior at 4³ on both fields, and the spread is 12.8x the registered ceiling.**
+>
+> ***The registered range would have given the wrong shape, and extending it is why the answer is an optimum rather than a boundary.*** 8³-64³ alone is monotone with the minimum AT 8, the smallest granularity swept — which is not C1's "pronounced optimum". `((c+1)/c)³` is **3.3750 at c = 2** against 1.4238 at c = 8, so the curves can only cross below 8, and they do: 4³ beats 2³ by 13.6% / 4.5% and 8³ by 11.5% / 14.4%.
+>
+> ***One number carries the 51x.*** `mark_ms` is flat across every partition — 3.70-5.13 on `gyroid`, 13.54-14.85 on `fbm_terrain` — because `mark_edit` scans the same world region whatever the chunking. It is all remesh, and remesh is `dirty_chunks x chunk_cells³`: **8,126,464 cells re-meshed at 64³ against 25,344 at 4³** for the same eleven edits, a **321x** ratio that lands as 435.81 ms against 4.56.
+>
+> ***C2's falsification is the informative one.*** `gyroid`'s everywhere-surface and `fbm_terrain`'s sheet want the **same** granularity. What differs is the level, not the optimum: `fbm_terrain` costs 3.4x more at the optimum and almost all of it is `mark_ms` (13.85 against 4.05), which is the field's per-sample cost and not a granularity property. Over 2³-64³ the optimum is a **constant of this extractor**.
+>
+> ***C3 is falsified by 12.8x and the registration named that as the more valuable outcome.*** The chunk-size regime does **not** damp GVDB's 256x to under 4x — 51x from one knob, on a 128³ world, in an extractor with no tree. The mechanism transfers more strongly than the magnitude argument allowed, because the cost is *re-meshing a whole brick to service a local edit*, which does not care how big the volume is.
+>
+> ***A cost the registration did not name, found by the identity control.*** Six partitions, six raw vertex counts, **one** distinct-surface-point count (53,110). Duplication runs **2.2122x at 2³** to **1.0128x at 64³**, so the 4³ optimum carries **51.6% more vertex data** than 64³ for the same surface. That is what a consumer paying for GPU upload weighs against the 51x edit win.
+>
+> ***Four fixture defects, all caught by the same assertion.*** The identity control compared raw vertex lists (fired at once: boundary duplicates, `A-015`); the duplication control asserted `((c+1)/c)³` against total field calls (fired at 1.627 vs 1.424: `unit_gradient` per vertex, a second consumer, now a two-term model that **derives** the 6-sample stencil); the dig path missed the surface twice (fixed height missed `fbm_terrain`'s sheet, then `gyroid`'s undulation); and the edit box assumed origin zero, so `mark_edit` scanned 64 cells from the brush once the world was centred. All four surfaced as **`VOID: chunk N marked no dirty chunk in 11 edits`** — `M-44`'s rule working four times in one harness.
+>
+> ***Verification.*** `preflight --full` green at the boundary, `csv_provenance.sh` 49 of 54 resolving. No golden hash moves and none could: the experiment varies only how a fixed cell count is partitioned, and the quantised identity control is the assertion that says so.

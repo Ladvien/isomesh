@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**473 entries** — 52 falsified, 346 measured, 50 verified, 18 open, 7 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**474 entries** — 52 falsified, 347 measured, 50 verified, 18 open, 7 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -437,6 +437,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-370` | an existence check passes on a commit that left the branch: git cat-file -e is a property of the checkout, merge-base --… |
 | `M-371` | MCPro is in the corpus as a 383-character landing page that read "converted, embedded": catalog_read is not a presence o… |
 | `M-374` | settled for Marching Cubes by exhaustion at 2¹⁸ |
+| `M-377` | C1 HELD at 51×, C2 and C3 FALSIFIED: the optimum is interior at 4³ on both fields, and the spread is 12.8× larger than t… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -11213,3 +11214,103 @@ samples and save in wasted remesh. C1's 2× has to come out of those two curves 
 
 **No golden hash moves and that is asserted, not hoped:** this varies only how a fixed cell count is
 partitioned. A partition that changed the mesh would be a seam defect.
+
+### 🔬 M-377 — C1 HELD at **51×**, C2 and C3 FALSIFIED: the optimum is interior at **4³** on both fields, and the spread is **12.8× larger** than the registered ceiling — so chunk size is not the damping factor GVDB's 2048³ regime made it look like (P-72, R-070)
+
+**M.** `cargo bench --bench experiment_p72`, `docs/experiments/p-72.csv`, **12 rows**, `f64`, Zen 3.
+Chunk granularity swept 2³–64³ at a **fixed 128³ world cell count**, on an eleven-edit dig trace, on
+`gyroid` (surface everywhere) and `fbm_terrain` (surface on a sheet). Median of three traces per arm; the
+initial full build runs once and is not timed.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 pronounced optimum, best-to-worst ≥ 2× | ≥ 2× | **HELD — 51.05× on `gyroid`, 47.19× on `fbm_terrain`, and the optimum is *interior*** |
+| C2 the optimum is field-dependent | differs between the two fields | **FALSIFIED — 4³ wins on both** |
+| C3 the spread is below 4× | < 4× | **FALSIFIED — ~50×, which is 12.8× the ceiling** |
+
+**The curve, and the reason it needed extending below the registered range:**
+
+| chunk | chunks | grid dup | dirty remeshes | mark ms | remesh ms | **total ms** | ms/edit | raw verts |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| **`gyroid`** | | | | | | | | |
+| 2³ | 262,144 | 3.3750× | 1,501 | 5.13 | 4.65 | 9.78 | 0.889 | 117,490 |
+| **4³** | 32,768 | 1.9531× | 396 | 4.05 | 4.56 | **8.61** | **0.783** | 81,548 |
+| 8³ | 4,096 | 1.4238× | 108 | 3.80 | 5.80 | 9.60 | 0.873 | 66,066 |
+| 16³ | 512 | 1.1995× | 51 | 3.74 | 15.31 | 19.05 | 1.732 | 58,884 |
+| 32³ | 64 | 1.0967× | 35 | 3.70 | 64.48 | 68.18 | 6.198 | 55,596 |
+| 64³ | 8 | 1.0476× | 31 | 3.71 | 435.81 | **439.51** | 39.956 | 53,788 |
+| **`fbm_terrain`** | | | | | | | | |
+| 2³ | 262,144 | 3.3750× | 1,456 | 14.85 | 16.16 | 31.01 | 2.819 | 76,344 |
+| **4³** | 32,768 | 1.9531× | 376 | 13.85 | 15.82 | **29.67** | **2.697** | 53,023 |
+| 8³ | 4,096 | 1.4238× | 102 | 13.64 | 20.99 | 34.64 | 3.149 | 42,894 |
+| 16³ | 512 | 1.1995× | 57 | 13.56 | 60.89 | 74.45 | 6.768 | 38,292 |
+| 32³ | 64 | 1.0967× | 43 | 13.58 | 287.95 | 301.53 | 27.412 | 36,264 |
+| 64³ | 8 | 1.0476× | 29 | 13.54 | 1386.26 | **1399.81** | 127.255 | 35,012 |
+
+**The registered 8³–64³ range gives a monotone curve whose minimum sits at the boundary, and a boundary
+minimum is not C1's "pronounced optimum".** That distinction is the reason 2 and 4 were added: the
+sample-duplication penalty `((c+1)/c)³` is **3.3750 at c = 2** against 1.4238 at c = 8, so if the two
+curves cross anywhere they cross below 8. **They do.** 4³ beats 2³ by 13.6% on `gyroid` and 4.5% on
+`fbm_terrain`, and beats 8³ by 11.5% and 14.4%. Had the sweep stopped where it was registered, the entry
+would have reported the smallest tested granularity as the answer and been wrong about the shape.
+
+**Where the 51× comes from, and it is one number:** `mark_ms` is **flat** — 3.70 to 5.13 on `gyroid`, 13.54
+to 14.85 on `fbm_terrain`, because `mark_edit` scans the same world region whatever the partition.
+Everything is `remesh_ms`, and remesh is `dirty_chunks × chunk_cells³`: at 64³ the trace re-meshes
+**31 × 262,144 = 8,126,464 cells**, at 4³ it re-meshes **396 × 64 = 25,344**. That is **321× fewer cells
+for the same eleven edits**, and it lands as 435.81 ms against 4.56.
+
+**C2's falsification is the interesting one.** The registration expected `gyroid`'s everywhere-surface and
+`fbm_terrain`'s sheet to want different granularities, and they do not — 4³ wins on both. What differs is
+the **level**, not the optimum: `fbm_terrain`'s trace costs 3.4× `gyroid`'s at the optimum (29.67 against
+8.61 ms), almost all of it in `mark_ms` (13.85 against 4.05), which is `FbmTerrain`'s per-sample cost and
+not a granularity property at all. So over 2³–64³ the granularity optimum is a **constant of this
+extractor**, and the field decides only how much the whole trace costs.
+
+**C3 is falsified by 12.8× and the registration named that as the more valuable outcome.** The prediction
+was that the chunk-size regime damps GVDB's 256× to under 4×, on the grounds that a chunk is far smaller
+than a 2048³ SPH volume. It does not damp it: **51× from one knob**, on a 128³ world, in an extractor with
+no tree at all. The mechanism transfers more strongly than the magnitude argument suggested because the
+cost here is *re-meshing a whole brick to service a local edit*, which does not care how big the volume is
+— only how big the brick is.
+
+**A granularity cost the registration did not name, recorded because the identity control found it:**
+`raw_verts / distinct_surface_points` on `gyroid`, against **53,110** distinct surface points that every
+one of the six partitions agrees on exactly: **2.2122× at 2³**, 1.5355 at 4³, 1.2439 at 8³, 1.1087 at 16³,
+1.0468 at 32³, **1.0128× at 64³**. Chunk-wise extraction emits coincident vertices on every shared chunk
+face (`A-015`, `M-220`), so the 4³ optimum carries **51.6% more vertex data** than 64³ for the same
+surface — 81,548 against 53,788. `weld` closes them, and this is the number a consumer paying for GPU
+upload should weigh against the 51× edit win. It is also the identity control's own corroboration: six
+partitions, six different raw counts, **one** distinct-point count.
+
+**Four fixture defects, all caught by this harness's own controls rather than by review.**
+
+1. **The identity control compared raw per-chunk vertex lists and fired instantly** — 73,032 at 8³ against
+   65,256 at 16³. Correct numbers, wrong question: a finer partition *must* emit more boundary duplicates.
+   And the deduplicated **bit patterns** cannot be compared either, because a chunk computes a corner as
+   `origin + cell_size · i` with its own `origin` and its own `i`, and **`M-32` already measured that
+   disagreement at one ulp** — so bit equality across partitions would fail on correct code for a reason
+   this ledger knows. The control is now the set of surface points quantised to `cell_size × 1e-6`: four
+   orders finer than any real surface movement, four orders coarser than an ulp near 4.0 (≈ 8.9e-16).
+2. **The duplication control asserted `((c+1)/c)³` against *total* field calls** and fired at 1.627144
+   against 1.423828. The gap is a **second consumer of the field the registration did not name**:
+   `edge_position` calls `unit_gradient` per vertex. The control is now a two-term model —
+   `chunks × (c+1)³ + stencil × vertices` — which asserts the grid term exactly and **derives** the
+   stencil from the remainder. It comes back **6 on every one of the twelve arms**, which is a stronger
+   statement than asserting 6 would have been.
+3. **The dig path missed the surface.** A path through the world centre missed `fbm_terrain`'s sheet
+   entirely; a path at one probed height then missed `gyroid`'s surface everywhere except the probe's own
+   `x`, because the gyroid undulates in `y` faster than a 3-cell brush is wide. The height is now probed
+   **per edit at that edit's own `x`** — which is also what a player does.
+4. **The edit box assumed the layout's origin was zero.** `((world − radius) / cell_size).floor()` was
+   right until the world was centred on the fields' own domain, after which `mark_edit` scanned a region
+   **64 cells away from the brush**. Through `layout.cell_of` now, which is the only thing that knows.
+
+All four surfaced as the same assertion: **`VOID: chunk N marked no dirty chunk in 11 edits`**. That is
+`M-44`'s rule doing exactly its job four times in one harness — a zero that could not have been non-zero
+is not a measurement, and the instrument said so instead of printing a fast time for doing nothing.
+
+**Would be shown wrong by:** an optimum below 2³ — the curve is rising at 2³ on both fields, so 1³ should
+be worse still, but it is untested; a field whose optimum is not 4³, which would restore C2; or a
+`mark_ms` that scales with the partition, which would mean `mark_edit` is doing per-chunk work this sweep
+did not see.
