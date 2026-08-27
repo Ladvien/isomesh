@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**477 entries** — 53 falsified, 349 measured, 50 verified, 18 open, 7 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**479 entries** — 54 falsified, 349 measured, 50 verified, 18 open, 8 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -92,6 +92,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗51` | C1 FALSIFIED, C2 HELD, C3 VACUOUS: the prescribed loop shape is a 3–7% regression, %ymm is zero in every monomorphisatio… |
 | `✗52` | C1 and C2 FALSIFIED, C3 NOT MEASURED: the 83% reproduces at 86.5% and M-160's flat 0.17 ms reproduces at 0.16 ms, but th… |
 | `✗53` | sound at k = 17 and not at k = 5 |
+| `✗54` | C1 FALSIFIED by arithmetic computed at registration, C2 and C3 HELD: the subgroup scan is real at 1.4376× and reproduces… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -516,6 +517,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `E×5` | The crossing stored as a signed offset from the edge midpoint |
 | `E×6` | The sample loop restructured for autovectorisation |
 | `E×7` | A staging ring, so the geometry read-back is amortised instead of waited on |
+| `E×8` | A subgroup prefix scan, replacing the Hillis-Steele ladder |
 
 <!-- END GENERATED INDEX -->
 
@@ -1640,6 +1642,7 @@ point; the numbers are what make it re-checkable.
 | E×1 | **Surface Nets' centroid as Dual Contouring's vertex rule** | The QEF is worth its cost on sharp fields and not on smooth ones, and pays for it in self-intersection | Hausdorff at 65³, QEF ÷ centroid: sphere **0.486**, torus **0.457**, csg_difference **0.255**, box_exact **0.010**, thin_plate **0.010**. Self-intersections per 1k at 33³: QEF **3.118 / 13.837 / 29.745** on gyroid, fbm_terrain, noise_cavity against centroid's **0.000** | **KEPT as an ablation, not as a default.** Both arms are real answers to different questions and neither dominates — 100× accuracy on sharp features against zero self-intersections. The seam stays so the comparison can be re-run; `Qef` stays the default because sharp-feature recovery is what A-007 exists for | X-002, `benches/ablation.rs`, M-237 |
 | E×2 | **A separate probabilistic-quadric solver** (Trettner & Kobbelt, `10.1111/cgf.13933`) | It supersedes the Tikhonov regularizer and is more robust on near-singular cells | Never measured as a separate solver, because it was shown identical first: a direct assembly of the paper's equations agrees with `solve_with` at `λ = Nσ²` to **1.110e-16 over 296 cells** | **REVERTED before it was written.** In this crate's centroid-relative coordinates the paper's extra term is `σ²Σrᵢ`, and `Σrᵢ ≡ 0` because the centroid *is* the mean of the crossings. A second solver would have been a second execution path computing identical numbers. **Do not re-attempt for isotropic noise**; the open door is anisotropic `Σₙ`, which needs a noise model analytic fields do not have | X-004, `the_probabilistic_quadric_is_the_existing_solve`, M-238 |
 | E×3 | **Crossing-count-scaled regularizer** (`λ = Nσ²`, the part of E×2 that *is* different) | Scaling λ with the number of planes beats one fixed λ per cell | Hausdorff at 65³, scaled ÷ fixed: sphere **1.0000**, torus **0.9957**, csg_difference **0.9992**, box_exact **0.7519**, thin_plate **0.7519**. Self-intersections at 33³ fall on all three noisy fields: **3.118→2.551, 13.837→13.571, 29.745→28.749** | **KEPT behind `experimental`, not made default.** Never worse and 25% better on both sharp fields, which is a real improvement — but the default carries T-007's committed golden hashes and 112 baseline rows, and moving those for a 25% gain on two of eight fields is a decision with evidence attached, not a tidy-up. Promoting it is its own ticket | X-004, `crates/isomesh/src/experimental.rs`, M-238 |
+| E×8 | **A subgroup prefix scan, replacing the Hillis-Steele ladder** | H (P-70): `subgroupExclusiveAdd` plus a short cross-subgroup scan turns 16 workgroup barriers into 2 at `BLOCK` 256 and subgroup 32, and the literature measures 1.33–1.49× for it on six devices | **1.0652 / 1.1281 / 1.3650 / 1.4376×** at 65K / 262K / 1M / 2M elements, bit-identical to both `cpu_prefix_sum` and the shipped `PrefixScan` at every size. Applied to `scan_ms` 0.3657 of `gpu_total_ms` 8.3694 it moves the path **1.33%** | **NOT LANDED.** A second WGSL path in the shipped crate is what the one-path rule forbids and 1.33% does not buy an exception — and naga 29.0.4 **rejects `enable subgroups;` outright**, so the shader compiles on `wgpu` only by omitting a directive WGSL requires. Reopens if `gfx-rs/wgpu#5555` lands **and** the residue moves off `upload_ms`, which is 87.50%. |
 | E×7 | **A staging ring, so the geometry read-back is amortised instead of waited on** | H (P-71): the largest piece of a GPU extraction is the geometry copy (0.7075 of 1.1860 ms at 129³), which indirect draw arguments cannot remove because they remove it by not delivering the bytes; a depth-2 ring over `read_bytes_many_deferred` converts it to a per-frame cost | **120 of 120 read-backs consumed, `not_ready` 0** at 33³/65³/97³/129³, amortised **0.3116 / 0.4325 / 0.6059 / 0.9158 ms**. Drain tail **85 / 127 / 31 / 0** frames — not monotone in the grid | **NOT LANDED, and deliberately: the mechanism is measured, the decision is the owner's.** It costs one to two frames of collision latency. `P-71` records the question rather than picking, per its registration. What is owed before anyone ships a depth is `M-124`'s own budget sweep with the ring inside `mesh_within_budget`, which is C3's undelivered population. |
 | E×6 | **The sample loop restructured for autovectorisation** | H (P-69): a pre-sliced contiguous write with the bound hoisted gives at least 2x on the marginal `f32` cost, and all 216 golden hashes stay unchanged | Marginal ns/sample, push ÷ row: `sphere` f32 **1.231 / 1.323 = 0.9305**, `gyroid` f32 **17.793 / 18.278 = 0.9735**, `box_exact` f32 **2.681 / 2.845 = 0.9425**; `f64` 0.977 / 0.983 / 0.899. **`total %ymm` across all eleven monomorphisations = 0.** 0 of 168 golden rows moved | **REVERTED in shape, KEPT in sharing.** The shape costs 3–7% and widens nothing, so it goes back; the *merge* stays, because there were **three** copies of this loop (`marching_cubes/mod.rs:240`, `dual.rs:356`, `marching_tetrahedra.rs:157`) and three copies is a one-path defect whatever the shape. **Do not re-attempt on this target without changing the field**: the loop is 11.6% of the marginal extraction cost, so its ceiling is 1.06x, and `libm`'s `sinf`/`cosf` have no arch selection at all | R-067, `benches/experiment_p69.rs`, `scripts/p69_asm.sh`, `docs/experiments/p-69.csv`, ✗51 / M-375 |
 | E×5 | **The crossing stored as a signed offset from the edge midpoint** | H (P-61): `d = ((a + b)/2)/(a − b)` is exactly antisymmetric under the simultaneous endpoint-and-sign swap by four IEEE 754 guarantees, so a mirrored grid produces a mirrored vertex bit for bit, where a parameter from the lower corner cannot | **0 mismatches on 9.2 M straddling pairs** across `f32` and `f64` against 1,035,808 / 2,000,000 for the lower-corner form. `marching_cubes` **6 → 48 of 48** on all 16 equivariance rows, `worst_component_ulp` 0. 135 of 216 golden hashes moved, 0 counts changed, 2,285 of 28,124 cut edges displaced at ≤ 268 ULP. Hausdorff and self-intersections identical to 12 digits | **KEPT, and it is the default** — there is no second path: `cube::edge_crossing` is gone, all six placements and the WGSL shader are in the centred frame, and the 216 golden hashes are rebaselined. The cost is exactly the registered one (C2 is a cost clause) and the geometric price measured zero. **Do not re-attempt the lower-corner form**; its `1 − t` anchor is an affine map and floating point does not respect those | R-059, `benches/experiment_p61.rs`, `docs/experiments/p-61.csv`, ✗49 / M-372 |
@@ -11757,3 +11760,83 @@ no flattening is needed and the hash risk the registration warned about does not
 device does not advertise `SUBGROUP`** — every clause would then be about code that did not run — so the
 adapter's reported subgroup size is a recorded column. `P-71`'s probe already measured it at **32** on this
 RTX 3090.
+
+### 💥 ✗54 / M-381 — C1 FALSIFIED by arithmetic computed **at registration**, C2 and C3 HELD: the subgroup scan is real at **1.4376×** and reproduces the literature, and it moves the shipped path by **1.33%** (P-70, R-068)
+
+**M.** `cargo bench --bench experiment_p70`, `docs/experiments/p-70.csv`, **8 rows**, RTX 3090 / Vulkan,
+subgroup size **32**, `SUBGROUP` advertised. Both arms compiled from inline WGSL **in the bench**; median
+of 7 after a warm-up, one dispatch per timing.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 129³ extraction below 7.0 ms | < 7.0 | **FALSIFIED — a *free* scan leaves 8.0037 ms** |
+| C2 bit-identical output | no difference | **HELD — both arms match the shipped `PrefixScan` and `cpu_prefix_sum` at all four sizes** |
+| C3 the fallback is exercised | tested, not merely present | **HELD** |
+
+**C1 was dead before a line of WGSL existed, and `M-375` is why that was known.** Part 5's rule —
+*a clause stated as a ratio of a total must name the share of that total it can move* — applied
+prospectively for the first time. The bench **reads** these from
+`docs/measurements/gpu_vs_cpu.csv` rather than quoting them, so the row cannot drift from the artefact:
+
+| stage at 129³ | ms | share |
+|---|---:|---:|
+| **`upload_ms`** | **7.3236** | **87.50%** — the residue |
+| `geometry_readback_ms` | 0.6350 | 7.59% |
+| **`scan_ms`** | **0.3657** | **4.37%** |
+| `gpu_total_ms` | 8.3694 | |
+
+C1 asks for **1.3694 ms** removed and the scan is **0.3657 ms in total**. C1's own falsifier says why:
+*"which would mean the compaction was not the residue."* It is not. **The upload is.**
+
+**The mechanism is real, and it lands inside the paper's own band on hardware the paper did not test:**
+
+| elements | Hillis-Steele ms | subgroup ms | speedup |
+|---:|---:|---:|---:|
+| 65,536 | 0.0443 | 0.0425 | 1.0652× |
+| 262,144 | 0.0530 | 0.0471 | 1.1281× |
+| 1,048,576 | 0.0891 | 0.0683 | 1.3650× |
+| **2,097,152** | 0.1350 | 0.0934 | **1.4376×** |
+
+Smith, Levien & Owens measured 1.43× on M1 Max, 1.46× on M3, 1.49× on RTX 2080 Super, 1.33× on RX 7900 XT,
+1.35× on Mali-G78, 1.43× on Intel HD 620. **1.4376× on an RTX 3090 at 2²¹ elements sits in the middle of
+that band** — an independent reproduction on a seventh device. And the speedup **grows with `n`**, from
+1.07× to 1.44×, which is the memory-bound story the paper argues: at 65K the dispatch overhead dominates and
+there is nothing for wave ops to save.
+
+**Applied to the shipped path, 1.4376× on 4.37% moves `gpu_total_ms` from 8.3694 to 8.2581 — 1.33%.**
+
+**NOT LANDED, and the reason is the repo's top rule rather than the number alone.** A second WGSL path in
+the shipped crate is what `CLAUDE.md`'s one-path rule forbids, and 1.33% does not buy an exception. `E×7`
+from `P-71` is the same shape: mechanism measured, decision recorded, code not merged.
+
+**Two naga realities the registration did not anticipate, and they strengthen the decision considerably.**
+
+1. **`enable subgroups;` is rejected outright** by naga 29.0.4: *"this enable-extension specifies standard
+   functionality which is not yet implemented in Naga."* The intrinsics do work **without** the directive —
+   which WGSL **requires** — so this shader compiles on `wgpu` today and **would not compile on a
+   spec-conforming WGSL implementation**. Any plan to ship subgroups through `wgpu` is waiting on
+   `gfx-rs/wgpu#5555`, and that is a hard portability blocker rather than a preference.
+2. **`subgroupBroadcast`'s lane index must be a const-expression.** The natural idiom — the last lane holds
+   the subgroup total, `subgroupBroadcast(lane_prefix + value, sg_size - 1u)` — is **rejected**, because
+   `sg_size` is a runtime builtin. `subgroupAdd` is a reduction that lands the same value in every lane and
+   needs no broadcast, so the shader pays **two wave ops** instead of one plus a broadcast. The measured
+   1.4376× is *with* that extra reduction.
+
+**C2's scope is narrower than registered and the entry says so.** The clause reads *"bit-identical on all
+eight fields — same triangles, same order"*, and this harness compares **prefix-scan output**, not meshes.
+It cannot compare meshes, because the subgroup scan is not wired into an extractor — wiring it in is the
+thing the one-path rule forbids. What is verified is bit-identity on **the quantity being changed**, at
+four sizes, against **two** independent references. A separate fixture gap found on the way: **`gpu_vs_cpu.csv`
+contains only `sphere`**, so C2's "all eight fields" has no committed dataset to be checked against even
+for the shipped path.
+
+**Controls.** Both arms are asserted against `cpu_prefix_sum` **and** the shipped `PrefixScan::scan` at
+every size — three-way, so the bench's Hillis-Steele transcription cannot silently drift from the shader it
+transcribes. The fixture is **3% non-zero counts**, which is `M-337`'s measured active-cell density on a
+sphere at 128³, rather than a uniform fill the extractor never produces. And `VOID` if the adapter lacks
+`SUBGROUP`, asserted rather than assumed.
+
+**Would be shown wrong by:** a speedup above 1.5× at any size, which would exceed the paper's structural
+O(3n)→O(2n) ceiling and mean something other than the scan changed; a disagreement with either reference;
+or naga implementing `enable subgroups;`, which would remove blocker 1 and make the not-landed decision
+purely about the 1.33%.

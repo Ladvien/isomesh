@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-255 tickets. Line numbers are stable until something above them is edited — grep the ID if
+256 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1976,3 +1976,20 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***Controls.*** 2,172 multi-root edges found, so C1's population is real. 385,038 of 7,436,928 edges flagged at k = 5, so the witness can report bad news, and **7,051,890 left unflagged** - a witness that flagged everything would pass C1 trivially, and this one flags 5.18%.
 >
 > ***Scope, as a column not a footnote.*** `all_roots` uses **128** intervals per edge and cannot resolve a root pair closer than one of them, so C1's count is scoped to pairs the oracle can see. `oracle_samples` is on every row.
+
+| ☑ | **R-068** | M | — |
+> **DONE 2026-08-27 — 💥 ✗54 / M-381 / P-70: C1 FALSIFIED by arithmetic computed AT REGISTRATION, C2 and C3 HELD. The subgroup scan is real at 1.4376x, reproduces the literature on a seventh device, and moves the shipped path 1.33%.**
+>
+> ***C1 was dead before a line of WGSL existed, and this is the first prospective use of the rule `M-375` earned.*** Part 5: *a clause stated as a ratio of a total must name the share of that total it can move.* From the committed CSV at 129³ - **read by the bench, not quoted** - `gpu_total_ms` **8.3694**, `scan_ms` **0.3657** (**4.37%**), `upload_ms` **7.3236** (**87.50%**). C1 asks for 1.3694 ms removed; a **free** scan leaves **8.0037**. C1's own falsifier says why: *"which would mean the compaction was not the residue."* It is not - the upload is.
+>
+> ***The mechanism is real and independently reproduces the paper on hardware the paper did not test.*** **1.0652 / 1.1281 / 1.3650 / 1.4376x** at 65K / 262K / 1M / 2M elements. Smith, Levien & Owens measured 1.43 / 1.46 / 1.49 / 1.33 / 1.35 / 1.43x on six devices; **1.4376x on an RTX 3090 sits in the middle of that band**. The speedup **grows with n**, which is their memory-bound argument: at 65K the dispatch overhead dominates and wave ops have nothing to save.
+>
+> ***NOT LANDED (E×8), and the reason is the top rule rather than the number.*** 1.4376x on 4.37% moves `gpu_total_ms` to 8.2581 - **1.33%**. A second WGSL path in the shipped crate is what `CLAUDE.md` forbids, and 1.33% does not buy an exception.
+>
+> ***Two naga realities the registration did not anticipate, and they make the decision much easier.*** `enable subgroups;` is **rejected outright** by naga 29.0.4 - *"not yet implemented in Naga"* - and the intrinsics work only by **omitting a directive WGSL requires**, so the shader would not compile on a spec-conforming implementation. And `subgroupBroadcast`'s lane index must be a **const-expression**, so the natural *"last lane holds the total"* idiom is rejected and `subgroupAdd` is needed instead: the measured 1.4376x is **with** that extra reduction.
+>
+> ***C2's scope is narrower than registered, and the entry says so rather than claiming the clause.*** It reads *"bit-identical on all eight fields"*; this harness compares **prefix-scan output**, because the subgroup scan is not wired into an extractor and wiring it in is the forbidden thing. What is verified is bit-identity on the changed quantity at four sizes against **two** independent references. Fixture gap found on the way: **`gpu_vs_cpu.csv` contains only `sphere`**, so C2's eight fields have no committed dataset even for the shipped path.
+>
+> ***Controls.*** Three-way agreement - both arms against `cpu_prefix_sum` **and** the shipped `PrefixScan` - so the bench's transcription cannot drift from the shader it transcribes. Fixture is **3% non-zero**, `M-337`'s measured active-cell density, not a uniform fill the extractor never produces. `VOID` without `SUBGROUP`, asserted.
+>
+> ***Supporting crate changes, all clean cutovers.*** `isomesh-gpu` re-exports `wgpu` (every entry point already takes its types, so a consumer already needs the same version); `Gpu::with_subgroups` mirrors `with_timestamps`; **`Gpu::open` returned `TimestampsUnsupported` for ANY missing feature** - correct while timestamps were its only caller, a lie the moment a second existed - now `FeaturesUnsupported { missing }`; and `AdapterReport` carries the subgroup sizes, because a wave intrinsic's cost is a function of that number and that is the reason the struct exists.
