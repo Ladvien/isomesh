@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-258 tickets. Line numbers are stable until something above them is edited — grep the ID if
+259 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -2035,3 +2035,18 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***`StagingRing` is deleted.*** Two queues in one tree is the one-path defect once the shipped one exists; its resolution-swept rows are historical and live in the CSV's git history at `d3b79e7`.
 >
 > ***Verification.*** Four `DeferredGeometry` unit tests, and both halves of the queue's job shown failing before being left passing — a `drain_ready` that frees the slot without harvesting fails `a_deferred_queue_returns_the_bytes_under_their_key`, a hardwired `has_room()` fails `a_full_deferred_queue_refuses_and_stays_where_it_was`. Five sweep controls are assertions, not prints. `preflight --full` green, `csv_provenance.sh` 54 of 59 resolving, `# commit 2fc75b4` from a clean tree.
+
+| ☑ | **D-024** | S | — |
+> **DONE 2026-08-27 — a GPU test asserted a property of the *adapter*, and `0.0.10`'s own arithmetic change made it false on Metal. It failed CI on the release push, which skipped `publish to crates.io`.** `every_gpu_vertex_is_a_cpu_vertex_to_within_one_ulp`, `crates/isomesh-gpu/src/marching_cubes/tests.rs`.
+>
+> ***What broke, and it is `P-61` succeeding rather than failing.*** The test's contract is *"every GPU vertex is within one ULP of a CPU vertex"* — `strangers == 0` — and that held on both platforms. Beside it sat `assert!(within > 0, "every vertex agreed exactly -- this adapter does not contract")`, whose stated reason was that a zero there would mean the bound was being checked over an empty set. That reasoning is wrong twice: the bound is asserted over the **emitted vertices**, not over `within`, and *"this adapter contracts a multiply-add"* is a fact about the driver that this crate neither controls nor promises.
+>
+> ***The measurement, which is the finding.*** Same 33³ sphere, same 6,936 vertices, `strangers = 0` on both: **RTX 3090 / Vulkan 6,632 bit-exact and 304 within 1 ULP** (`M-142` measured 6,507 / 429 under the old parameter form), **Apple / Metal 6,936 and 0**. `P-61`'s centred offset has *fewer multiply-adds to contract*, so it reduced the divergence on one adapter and removed it on the other. `M-142`'s *"6% of vertices"* is amended to say it is that adapter's number.
+>
+> ***The fix is the guard the bound actually needs, not the guard that was there.*** Both directional counts are gone; what is asserted is `strangers == 0`, a non-empty population on both sides, and `exact + within + strangers == positions.len()` — complete accounting. A formula error needs no help from `exact > 0`: a wrong expression moves a vertex far further than one ULP and lands in `strangers`.
+>
+> ***Both replacements were shown failing before being left passing.*** Dropping a classification branch → *"every emitted vertex must be classified exactly once, left: 304, right: 6936"*. Widening the neighbourhood probe to ±3 ULP → *"96 gpu vertices are more than one ULP from any cpu vertex"*.
+>
+> ***The generalisable lesson, and it is why this got a ticket rather than a quiet edit.*** A non-vacuity guard must assert that the **population** is non-empty, never that the population is **distributed** a particular way. `within > 0` and `exact > 0` are distribution claims wearing a non-vacuity guard's clothes, and the arithmetic they described was changed by an experiment two phases later. `M-44`'s rule is *a zero that could not have been non-zero is not a measurement*; its converse is not *a count must be non-zero in every bucket*.
+>
+> ***Cost.*** One CI run on the release commit: `test (macos-latest)` red, so `publish to crates.io` was skipped by `needs:`. `deploy to github pages` is independent and succeeded, so the site went live at `0.0.10`'s content before the crates did.

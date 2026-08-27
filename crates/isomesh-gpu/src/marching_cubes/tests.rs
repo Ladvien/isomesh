@@ -116,19 +116,41 @@ fn the_triangle_count_matches_the_cpu_on_every_field() {
     }
 }
 
-/// Every GPU vertex is a CPU vertex to within **one ULP per axis**, and most
-/// are bit-identical.
+/// Every GPU vertex is a CPU vertex to within **one ULP per axis**, and how many
+/// are bit-identical is a property of the adapter rather than of this crate.
 ///
-/// Both sides evaluate the same expressions — `t = a / (a - b)` and
-/// `lo + (hi - lo) * t`, over `origin + h * index` — on identical `f32`
-/// samples, so bit-equality was the expectation. It does not hold, and the size
-/// of the miss is the finding: **1 ULP, on 6% of vertices** (M-142). WGSL
-/// permits a multiply-add to be contracted into a fused one and this adapter's
-/// compiler takes that permission, which rounds once where the CPU rounds
-/// twice.
+/// Both sides evaluate the same expressions on identical `f32` samples, so
+/// bit-equality was the expectation. It did not hold, and the size of the miss
+/// was the finding: **1 ULP, on 6% of vertices** (`M-142`, `t = a / (a − b)`
+/// then `lo + (hi − lo) · t`). WGSL permits a multiply-add to be contracted into
+/// a fused one, and a compiler that takes that permission rounds once where the
+/// CPU rounds twice.
 ///
-/// So the assertion is the measured bound rather than equality, and the bound
-/// is tight: two ULPs would fail this.
+/// **`P-61` changed that expression and the divergence moved with it, by
+/// different amounts on different adapters.** Same 33³ sphere, 6,936 vertices,
+/// `strangers = 0` on both:
+///
+/// | adapter | bit-exact | within 1 ULP |
+/// |---|---:|---:|
+/// | RTX 3090 / Vulkan | 6,632 | 304 |
+/// | Apple / Metal | **6,936** | **0** |
+///
+/// So the assertion here is the **bound**, and the bound only. An earlier version
+/// also asserted `exact > 0` *and* `within > 0`, reasoning that a zero on either
+/// side meant the 1-ULP bound was being checked over an empty set. That was wrong
+/// twice over: the bound is asserted over `mesh.positions`, not over either
+/// count, and **both counts are facts about the driver's contraction** — a
+/// hypothetical adapter that contracts every multiply-add would report
+/// `exact = 0` and one that contracts none reports `within = 0`, and this crate
+/// neither controls nor promises either. `within > 0` failed on macOS CI the
+/// first time the centred form reached it, on an adapter that agreed *perfectly*.
+///
+/// A formula error needs no help from those two: a wrong expression moves a
+/// vertex far further than one ULP, so it lands in `strangers` and the bound
+/// catches it. What is asserted instead is that the accounting is complete and
+/// its population is real — every emitted vertex classified, and vertices on
+/// both sides to classify. That is the non-vacuity guard `strangers == 0`
+/// actually needs.
 ///
 /// The neighbour search is over the 27 combinations of ±1 ULP per axis rather
 /// than a nearest-point scan, which makes it exact instead of a tolerance and
@@ -193,16 +215,23 @@ fn every_gpu_vertex_is_a_cpu_vertex_to_within_one_ulp() {
         strangers, 0,
         "{strangers} gpu vertices are more than one ULP from any cpu vertex"
     );
-    // Non-zero on both sides, or the bound above is being asserted over an
-    // empty set on one of them.
+    // The population, or the bound above is a statement about nothing. A mesh of
+    // this sphere at 33³ is 6,936 vertices on every adapter measured; asserting
+    // only that it is non-empty is deliberate, because the count is the
+    // extractor's business and `extraction_is_deterministic` is where it is
+    // pinned.
     assert!(
-        exact > 0,
-        "no vertex agreed exactly -- suspect a formula, not rounding"
+        !mesh.positions.is_empty(),
+        "no gpu vertices at all -- the bound above would be vacuous"
     );
     assert!(
-        within > 0,
-        "every vertex agreed exactly -- this adapter does not contract, and the \
-         1-ULP finding should be re-read before being trusted elsewhere"
+        !cpu_points.is_empty(),
+        "no cpu vertices at all -- every gpu vertex would be a stranger"
+    );
+    assert_eq!(
+        exact + within + strangers,
+        mesh.positions.len(),
+        "every emitted vertex must be classified exactly once"
     );
 }
 
