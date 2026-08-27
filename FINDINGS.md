@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**474 entries** — 52 falsified, 347 measured, 50 verified, 18 open, 7 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**475 entries** — 52 falsified, 348 measured, 50 verified, 18 open, 7 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -438,6 +438,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-371` | MCPro is in the corpus as a 383-character landing page that read "converted, embedded": catalog_read is not a presence o… |
 | `M-374` | settled for Marching Cubes by exhaustion at 2¹⁸ |
 | `M-377` | C1 HELD at 51×, C2 and C3 FALSIFIED: the optimum is interior at 4³ on both fields, and the spread is 12.8× larger than t… |
+| `M-378` | zero unsound certificates over 2,389 tunnel cells |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -11352,3 +11353,95 @@ globally with a *balanced* octree this crate does not have, so the honest claim 
 this cell"**, never "exactly one component". Lin & Yap document the same gap
 (`10.1007/s00454-011-9345-9`). **No golden hash moves:** the predicate is read-only and no extractor calls
 it.
+
+### 🔬 M-378 — C1 and C2 HELD, C3 FALSIFIED: **zero unsound certificates over 2,389 tunnel cells** where the predicate refuses 95% of the population, and the cost is 21% because a standalone pass gathers corners the extractor already has (P-62, R-060)
+
+**M.** `cargo bench --bench experiment_p62`, `docs/experiments/p-62.csv`, **25 rows**, `f64`, Zen 3. The
+shipped `validate::cell_is_certified` (`T-015`) cross-tabulated against `A-020`'s trilinear classifier on
+the *same* corner values, over the eight reference fields at 17³/33³/65³ plus a 400,000-cell random
+population arm. Fields come from `for_each_reference_field!`, not a retyped list.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 zero unsound certificates | 0 | **HELD — 0 over 2,389 tunnel / twelve-vertex cells** |
+| C2 yield > 50% on three named at 33³, monotone on all eight | both | **HELD — 1.0000 / 1.0000 / 0.8698, and rising on all eight** |
+| C3 predicate under 5% of extraction at 65³ | < 0.05 | **FALSIFIED — 0.2107 worst** |
+
+**C1's population is the whole result, and the first fixture did not have one.** The eight reference fields
+at 17³–65³ produce **seven** tunnel cells in 172,032 — a zero over seven is a hair from `M-44`'s vacuous
+zero, not the kill-shot the registration describes. `M-214`'s 2,053 tunnels came from **400,000 random
+cells**, so that is the arm that was added. It lands almost exactly on `M-214`:
+
+| | `M-214` | here |
+|---|---:|---:|
+| cells | 396,000 | 396,865 active |
+| tunnels | 2,053 | **2,202** |
+| twelve-vertex contours | 173 | **180** |
+
+Different seed, same rates — which corroborates both the classifier and the fixture. And the predicate is
+**extremely discriminating on that population**: it certifies **19,571 of 396,865** active random cells,
+i.e. it says *no* to **95.07%** of them, against **100.00%** on `sphere` at every resolution. So C1's zero
+is not a predicate that says yes to everything; it is a predicate that refuses 377,294 adversarial cells,
+accepts 19,571, and **not one of the accepted ones contains a tunnel**.
+
+**C2, and the monotonicity is the more informative half:**
+
+| field | 17³ | 33³ | 65³ |
+|---|---:|---:|---:|
+| `sphere` | 1.0000 | 1.0000 | 1.0000 |
+| `torus` | 1.0000 | 1.0000 | 1.0000 |
+| `thin_plate` | 1.0000 | 1.0000 | 1.0000 |
+| `fbm_terrain` | 1.0000 | 1.0000 | 1.0000 |
+| `box_exact` | 0.7297 | 0.8698 | 0.9362 |
+| `csg_difference` | 0.6926 | 0.8566 | 0.9275 |
+| `gyroid` | 0.8484 | 0.9294 | 0.9636 |
+| `noise_cavity` | 0.3589 | 0.4859 | **0.8002** |
+
+Every field is non-decreasing, which is what C2's falsifier was watching for: a non-monotone sequence would
+mean the predicate was reading the arithmetic's slack rather than the field's geometry, and there is no
+slack to read — both bounds are exact for a trilinear. The four fields at 1.0000 are **flat, not rising**,
+and the clause was registered as "rises monotonically", so the harness tests `≥` rather than `>`. That is
+the honest reading of a saturated field: `sphere` at 17³ is already fully certified and cannot rise.
+
+**`noise_cavity` is the field that shows the predicate is measuring geometry.** It goes 0.3589 → 0.4859 →
+0.8002, the largest climb of any field, and it is the only field that produced tunnels at all (3 at 17³,
+4 at 33³, 0 at 65³). Refinement is what converts a cell whose patch has hidden topology into eight cells
+whose patches are graphs — which is precisely the PV convergence argument, measured here rather than cited.
+
+**C3 is falsified at 4.2× the ceiling, and the decomposition says why:**
+
+| field (65³) | predicate ms | bare gather ms | extract ms | share | share with gather removed |
+|---|---:|---:|---:|---:|---:|
+| `thin_plate` | 0.7209 | 0.5101 | 3.4218 | **0.2107** | 0.0616 |
+| `box_exact` | 0.7627 | 0.5116 | 3.8130 | 0.2000 | **0.0658** |
+| `torus` | 0.7605 | 0.5120 | 4.0624 | 0.1872 | 0.0612 |
+| `csg_difference` | 0.7771 | 0.5117 | 4.2717 | 0.1819 | 0.0621 |
+| `sphere` | 0.7474 | 0.5075 | 4.2511 | 0.1758 | 0.0564 |
+| `noise_cavity` | 1.3600 | 0.5081 | 19.2885 | 0.0705 | 0.0442 |
+| `gyroid` | 1.0266 | 0.5115 | 15.1811 | 0.0676 | 0.0339 |
+| `fbm_terrain` | 0.8712 | 0.5133 | 51.0242 | 0.0171 | 0.0070 |
+
+**The bare eight-corner gather is 0.51 ms on every single arm** — flat, because it is the same 262,144
+cells × 8 loads whatever the field — and the predicate's own arithmetic is the remaining 0.21 to 0.85 ms.
+So **two thirds of the standalone cost is re-reading corners the extractor has already read** to index its
+case table. A version fused into the extractor's existing gather would pay **0.0658 worst**, which is still
+above 5% but by **1.3 points rather than 16**. That is reported and is explicitly **not** substituted for
+the verdict: the clause is about the standalone predicate, the harness measured the standalone predicate,
+and C3 is falsified.
+
+**The registered caveat, restated because it bounds what C1 means.** A certified cell's patch is a **graph
+over a coordinate plane**, not necessarily **one component** — a graph over a disconnected planar domain
+has several. PV close that globally with a *balanced* octree this crate does not have, and Lin & Yap
+document the same gap (`10.1007/s00454-011-9345-9`). So what C1 licenses is *"no hidden topology in this
+cell"*, never *"exactly one component"*.
+
+**Two fixture defects, both caught by controls.** The population arm above; and the refusal control was
+per-field and fired on `sphere` at 17³, which refuses nothing — **a correct outcome, not a broken
+instrument.** What has to be shown is that the predicate *can* refuse, which is a statement about the
+predicate and therefore about the sweep, so the control is global. A third control asserts that no cell is
+classified as a tunnel while the case table calls it inactive: **0 across all 2,792,064 cells examined**,
+which is how the harness knows both halves are reading the same corner values rather than two samplings.
+
+**Would be shown wrong by:** one certified cell containing a tunnel, at any resolution or on any
+population; a non-monotone yield sequence on any field; or a fused implementation measuring above the
+0.0658 reported here, which would mean the gather subtraction is optimistic.

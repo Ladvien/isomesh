@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-252 tickets. Line numbers are stable until something above them is edited — grep the ID if
+253 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1923,3 +1923,22 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***Four fixture defects, all caught by the same assertion.*** The identity control compared raw vertex lists (fired at once: boundary duplicates, `A-015`); the duplication control asserted `((c+1)/c)³` against total field calls (fired at 1.627 vs 1.424: `unit_gradient` per vertex, a second consumer, now a two-term model that **derives** the 6-sample stencil); the dig path missed the surface twice (fixed height missed `fbm_terrain`'s sheet, then `gyroid`'s undulation); and the edit box assumed origin zero, so `mark_edit` scanned 64 cells from the brush once the world was centred. All four surfaced as **`VOID: chunk N marked no dirty chunk in 11 edits`** — `M-44`'s rule working four times in one harness.
 >
 > ***Verification.*** `preflight --full` green at the boundary, `csv_provenance.sh` 49 of 54 resolving. No golden hash moves and none could: the experiment varies only how a fixed cell count is partitioned, and the quantised identity control is the assertion that says so.
+
+| ☑ | **R-060** | M | — |
+> **DONE 2026-08-27 — 🔬 M-378 / P-62: C1 and C2 HELD, C3 FALSIFIED. Zero unsound certificates over 2,389 tunnel cells, on a population where the predicate refuses 95%.**
+>
+> ***The predicate was already in the tree, so this measured shipped code.*** `validate::cell_is_certified` landed under `T-015` and is exactly the registered PV form, with both bounds **exact** rather than interval approximations because the surface Marching Cubes approximates is the trilinear interpolant. Nothing was reimplemented - a second copy of the predicate would be a second thing to drift, and C1 is a statement about *the* predicate.
+>
+> ***C1's population is the whole result, and the first fixture did not have one.*** Eight reference fields at 17³-65³ give **seven** tunnel cells in 172,032 - a zero over seven is a hair from `M-44`'s vacuous zero. `M-214`'s 2,053 came from **400,000 random cells**, so that arm was added, and it lands on `M-214`: **2,202 tunnels and 180 twelve-vertex contours in 396,865** against 2,053 and 173 in 396,000. Different seed, same rates.
+>
+> ***And the predicate is discriminating on that population, which is what makes the zero mean something.*** It certifies **19,571 of 396,865** random active cells - refusing **95.07%** - against **100.00%** on `sphere` at every resolution. Not one of the 19,571 accepted cells contains a tunnel.
+>
+> ***C2 held on both halves, and `noise_cavity` is the row that shows the predicate reads geometry.*** Yields 1.0000 / 1.0000 / 0.8698 on the three named fields at 33³, and non-decreasing on all eight. `noise_cavity` climbs **0.3589 -> 0.4859 -> 0.8002**, the largest of any field, and is the only field producing tunnels at all (3, 4, 0). Refinement converting a hidden-topology cell into eight graph cells **is** the PV convergence argument, measured rather than cited.
+>
+> ***C3 falsified at 4.2x the ceiling, and decomposed so the number is actionable.*** Worst share **0.2107**. The bare eight-corner gather is **0.51 ms on every arm** - flat, because it is the same 262,144 cells x 8 loads whatever the field - so two thirds of the standalone cost is re-reading corners the extractor already reads to index its case table. Fused, the worst share is **0.0658**: still over 5%, but by 1.3 points rather than 16. Reported, never substituted for the verdict.
+>
+> ***Registered caveat, carried.*** A certified cell's patch is a **graph over a coordinate plane**, not necessarily one component. PV close that with a balanced octree this crate does not have (Lin & Yap, `10.1007/s00454-011-9345-9`). C1 licenses *"no hidden topology in this cell"*, never *"exactly one component"*.
+>
+> ***Two fixture defects.*** The population arm above; and the refusal control was per-field and fired on `sphere` at 17³, which refuses nothing - a **correct outcome, not a broken instrument**. What must be shown is that the predicate *can* refuse, which is a property of the predicate, so the control is global. A third control asserts no cell is a classified tunnel while the case table calls it inactive: **0 across all 2,792,064 cells**, which is how the harness knows both halves read the same values.
+>
+> ***Verification.*** `preflight --full` green, `csv_provenance.sh` 50 of 55 resolving. The first CSV rode in with the harness commit carrying its own `WORKING TREE DIRTY` header; D-017's gate refused it, it was removed in its own commit, and the dataset was re-run clean.
