@@ -111,6 +111,20 @@ pub enum Error {
         /// The most this device will scan in one call.
         max: u32,
     },
+    /// [`crate::DeferredGeometry`] was asked to hold one more read-back than it
+    /// has room for.
+    ///
+    /// R-071 (P-71 C3). Its own variant rather than [`Self::DeviceLost`] or a
+    /// silent drop, because it is the one error here that is **not** a failure:
+    /// it is the queue telling a frame-budget scheduler that this frame's
+    /// submissions have caught up with last frame's collections, which is the
+    /// signal a caller uses to stop submitting. A dropped read-back would be a
+    /// chunk of geometry that was extracted, paid for and never delivered, and
+    /// nothing downstream could tell that from a chunk with no surface in it.
+    DeferredQueueFull {
+        /// In-flight read-backs the queue was built to hold.
+        capacity: usize,
+    },
 }
 
 impl fmt::Display for Error {
@@ -161,6 +175,9 @@ impl fmt::Display for Error {
                 f,
                 "cannot scan {elements} elements; this device dispatches at most {max}"
             ),
+            Self::DeferredQueueFull { capacity } => {
+                write!(f, "the deferred read-back queue is full at {capacity}")
+            }
         }
     }
 }

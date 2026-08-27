@@ -496,5 +496,160 @@ impl Readback {
     }
 }
 
+/// Several [`Readback`]s in flight at once, keyed by what they are read-backs
+/// *of*, collected in submission order.
+///
+/// # Why this exists, and why it is not a fallback
+///
+/// This crate ships two extraction contracts and this is the third. They differ
+/// in what they guarantee, not in how hard they try:
+///
+/// - [`crate::MarchingCubesGpu::extract_buffers`] — geometry **now**, on the
+///   calling line, at the cost of a wait.
+/// - [`crate::MarchingCubesGpu::extract_indirect`] — geometry **never leaves the
+///   device**; totals become indirect draw arguments and there is no wait at all.
+/// - this — geometry **a frame or two later**, with the wait amortised across
+///   the frames a scheduler was going to run anyway.
+///
+/// A caller picks by requirement: a test wants the first, a renderer that only
+/// draws wants the second, and a collider consumer under a frame budget wants
+/// this. None substitutes for another when it fails.
+///
+/// # Why keyed, rather than a fixed-depth ring
+///
+/// `P-71`'s first arm was a depth-2 ring over one stream of read-backs, and a
+/// ring cannot represent what
+/// [`isomesh::DirtySet::mesh_within_budget`](https://docs.rs/isomesh) does:
+/// it meshes **many chunks in one frame**, a count that changes with the budget
+/// and with how much of the world is dirty. A slot per read-back with the
+/// chunk's own id attached is what lets a frame submit five and collect three,
+/// and it is what makes the collected bytes attributable — geometry that comes
+/// back without saying which chunk it belongs to is geometry a caller cannot
+/// install.
+///
+/// `K` is the caller's key type; `isomesh::ChunkId` is the intended one and
+/// nothing here depends on it.
+#[derive(Debug)]
+pub struct DeferredGeometry<K> {
+    /// One slot per in-flight read-back, `None` when free. `Option` rather than
+    /// a compacting `Vec` because [`Readback::take`] consumes, so a collected
+    /// slot is drained with [`Option::take`] and reused in place.
+    slots: Vec<Option<(K, Readback)>>,
+}
+
+/// **`DeferredGeometry` must stay `Send + Sync`,** and this is the gate.
+///
+/// `bevy_isomesh` holds a `MarchingCubesGpu` as a Bevy `Resource`, which
+/// requires both, so a `Cell` or `RefCell` in anything reachable from it
+/// compiles cleanly *here* and breaks that crate's examples at type-check time.
+/// That already happened once, to `StageTimestamps` — see the comment on its
+/// `next: AtomicU32` field. A plain `Vec<Option<(K, Readback)>>` is sufficient
+/// because [`Readback`] is `Send + Sync` already (an `Arc<AtomicU8>` and `wgpu`
+/// types), and this assertion turns a future interior-mutability field into a
+/// compile error in this crate rather than a failure in another workspace.
+const _: fn() = || {
+    fn assert<T: Send + Sync>() {}
+    assert::<DeferredGeometry<u32>>();
+};
+
+impl<K> DeferredGeometry<K> {
+    /// A queue holding at most `capacity` read-backs in flight.
+    ///
+    /// `capacity` is the collision-latency knob: at 1 a submitted chunk must be
+    /// collected before the next can be submitted, at `n` a burst of `n` chunks
+    /// can be in flight and the last of them is `n` collections away.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::DeferredQueueFull`] with `capacity: 0`. A zero-capacity queue is
+    /// full the moment it exists — every [`DeferredGeometry::submit`] would
+    /// refuse — so it is refused at construction where the caller can see it,
+    /// rather than becoming a scheduler that silently meshes nothing.
+    pub fn new(capacity: usize) -> Result<Self> {
+        if capacity == 0 {
+            return Err(Error::DeferredQueueFull { capacity });
+        }
+        let mut slots = Vec::with_capacity(capacity);
+        slots.resize_with(capacity, || None);
+        Ok(Self { slots })
+    }
+
+    /// Whether another [`DeferredGeometry::submit`] would be accepted.
+    #[must_use]
+    pub fn has_room(&self) -> bool {
+        self.slots.iter().any(Option::is_none)
+    }
+
+    /// Record a read-back that has already been submitted, under `key`.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::DeferredQueueFull`] when `!has_room()`. The read-back is
+    /// returned to the caller as part of nothing — it is dropped, which unmaps
+    /// and frees its staging buffer — so a caller that ignores this error has
+    /// lost that chunk's geometry. Ask [`DeferredGeometry::has_room`] before
+    /// paying for the extraction.
+    pub fn submit(&mut self, key: K, readback: Readback) -> Result<()> {
+        let capacity = self.slots.len();
+        let Some(slot) = self.slots.iter_mut().find(|slot| slot.is_none()) else {
+            return Err(Error::DeferredQueueFull { capacity });
+        };
+        *slot = Some((key, readback));
+        Ok(())
+    }
+
+    /// Every read-back that has completed, in submission order. Call once a
+    /// frame.
+    ///
+    /// A slot that is not ready stays in flight and is offered again next call,
+    /// which is what makes this safe to call unconditionally: the return is the
+    /// frame's harvest and an empty `Vec` means "nothing yet", never "nothing
+    /// ever". Each entry's inner `Vec<Vec<u8>>` is that read-back's requests in
+    /// the order they were asked for, exactly as [`Readback::take`] returns
+    /// them.
+    ///
+    /// Submission order is preserved because slots are filled at the lowest free
+    /// index and scanned in index order, and a slot is only freed by a
+    /// collection — so a chunk submitted before another is never collected after
+    /// it *within one frame*. Across frames the order is the order they became
+    /// ready, which is the driver's.
+    ///
+    /// # Errors
+    ///
+    /// Whatever [`Readback::take`] returns: [`Error::MapFailed`] if a map was
+    /// refused. The failing read-back has already been removed from the queue,
+    /// so a retry is the caller re-extracting that chunk rather than asking
+    /// again — there is nothing left here to ask.
+    pub fn drain_ready(&mut self, device: &wgpu::Device) -> Result<Vec<(K, Vec<Vec<u8>>)>> {
+        let mut out = Vec::new();
+        for slot in &mut self.slots {
+            let ready = slot
+                .as_ref()
+                .is_some_and(|(_, readback)| readback.ready(device));
+            if !ready {
+                continue;
+            }
+            // `take` on both: `Readback::take` consumes, and the slot has to be
+            // freed whether the take succeeds or not -- a slot holding a refused
+            // map would be retried forever and never become ready.
+            let (key, readback) = slot.take().expect("checked above");
+            out.push((key, readback.take()?));
+        }
+        Ok(out)
+    }
+
+    /// Read-backs submitted and not yet collected.
+    #[must_use]
+    pub fn in_flight(&self) -> usize {
+        self.slots.iter().filter(|slot| slot.is_some()).count()
+    }
+
+    /// The `capacity` this was built with.
+    #[must_use]
+    pub fn capacity(&self) -> usize {
+        self.slots.len()
+    }
+}
+
 #[cfg(test)]
 mod tests;

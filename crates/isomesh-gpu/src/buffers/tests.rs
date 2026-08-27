@@ -12,7 +12,7 @@
 use isomesh::fields::Sphere;
 use isomesh::{Real, Sdf};
 
-use super::{FieldBuffer, read_buffer, read_bytes_many_deferred};
+use super::{DeferredGeometry, FieldBuffer, read_buffer, read_bytes_many_deferred};
 use crate::headless::Gpu;
 use crate::{Error, GridParams};
 
@@ -236,4 +236,115 @@ fn an_unaligned_deferred_readback_is_refused() {
             stride: 4
         })
     );
+}
+
+/// A zero-capacity queue is refused at construction rather than becoming a
+/// scheduler that meshes nothing.
+///
+/// Every `submit` into it would fail, so the only thing a `new(0)` can produce
+/// is a caller who thinks they have a queue.
+#[test]
+fn a_deferred_queue_of_no_capacity_is_refused() {
+    assert_eq!(
+        DeferredGeometry::<u32>::new(0).err(),
+        Some(Error::DeferredQueueFull { capacity: 0 })
+    );
+}
+
+/// The queue is a **budget**, so it has to refuse rather than grow, and the
+/// refusal must not consume a slot.
+///
+/// `in_flight` before and after the refused submit is the assertion that
+/// matters: a queue that counted the failure would report itself fuller than it
+/// is and starve the scheduler by one chunk a frame, forever.
+#[test]
+fn a_full_deferred_queue_refuses_and_stays_where_it_was() {
+    let gpu = gpu();
+    let mut queue = DeferredGeometry::new(2).expect("a queue of two");
+
+    for key in 0u32..2 {
+        assert!(queue.has_room(), "room for {key}");
+        let readback =
+            read_bytes_many_deferred(gpu.device(), gpu.queue(), &[]).expect("an empty readback");
+        queue.submit(key, readback).expect("submit within capacity");
+    }
+
+    assert!(!queue.has_room());
+    assert_eq!(queue.in_flight(), 2);
+    assert_eq!(queue.capacity(), 2);
+
+    let extra =
+        read_bytes_many_deferred(gpu.device(), gpu.queue(), &[]).expect("an empty readback");
+    assert_eq!(
+        queue.submit(99, extra).err(),
+        Some(Error::DeferredQueueFull { capacity: 2 })
+    );
+    assert_eq!(queue.in_flight(), 2, "a refused submit consumes no slot");
+}
+
+/// The whole point: bytes out, **under the key they went in with**, and the slot
+/// freed.
+///
+/// Geometry that comes back without saying which chunk it belongs to is geometry
+/// a caller cannot install, so the key travelling with the bytes is the contract
+/// and not a convenience. Eight bytes of a recognisable pattern rather than
+/// zeros, because a queue that returned a fresh allocation would pass against
+/// zeros.
+#[test]
+fn a_deferred_queue_returns_the_bytes_under_their_key() {
+    let gpu = gpu();
+    let expected: Vec<u8> = 0xdead_beef_0bad_f00du64.to_le_bytes().to_vec();
+    let source = gpu.device().create_buffer(&wgpu::BufferDescriptor {
+        label: Some("deferred queue source"),
+        size: expected.len() as u64,
+        usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    gpu.queue().write_buffer(&source, 0, &expected);
+
+    let mut queue = DeferredGeometry::new(1).expect("a queue of one");
+    let readback = read_bytes_many_deferred(
+        gpu.device(),
+        gpu.queue(),
+        &[(&source, expected.len() as u64)],
+    )
+    .expect("start the deferred readback");
+    queue.submit("chunk", readback).expect("submit");
+    assert_eq!(queue.in_flight(), 1);
+
+    // The frame loop a scheduler runs, bounded so a mapping that never completes
+    // fails rather than hangs.
+    let mut collected = Vec::new();
+    let mut frames = 0;
+    while collected.is_empty() {
+        collected = queue.drain_ready(gpu.device()).expect("drain");
+        frames += 1;
+        assert!(frames < 5_000, "the mapping never completed");
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+
+    assert_eq!(collected.len(), 1);
+    assert_eq!(collected[0].0, "chunk", "the key it was submitted under");
+    assert_eq!(collected[0].1, vec![expected], "one Vec per request");
+    assert_eq!(queue.in_flight(), 0, "the slot is free again");
+    assert!(queue.has_room());
+}
+
+/// Draining an empty queue is a no-op that returns an empty harvest, which is
+/// what makes `drain_ready` safe to call unconditionally once a frame.
+///
+/// It never reaches [`super::Readback::ready`] because there is no slot to ask,
+/// so it does not poll the device either — a scheduler with nothing in flight
+/// pays nothing for asking. Called twice: an empty `Vec` must mean "nothing yet"
+/// on every call, never "nothing ever".
+#[test]
+fn draining_an_empty_deferred_queue_harvests_nothing() {
+    let gpu = gpu();
+    let mut queue = DeferredGeometry::<u32>::new(4).expect("a queue of four");
+
+    for _ in 0..2 {
+        assert!(queue.drain_ready(gpu.device()).expect("drain").is_empty());
+        assert_eq!(queue.in_flight(), 0);
+        assert!(queue.has_room());
+    }
 }
