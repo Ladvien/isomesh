@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**471 entries** — 51 falsified, 346 measured, 50 verified, 18 open, 6 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**473 entries** — 52 falsified, 346 measured, 50 verified, 18 open, 7 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -90,6 +90,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗49` | plain Marching Cubes is now bit-exactly equivariant under all 48 octahedral elements |
 | `✗50` | "MAX_PATCH_TRIANGLES = 24 bounds the trilinear patch": it was a sampled maximum plus two, fan_tunnel's own buffer was al… |
 | `✗51` | C1 FALSIFIED, C2 HELD, C3 VACUOUS: the prescribed loop shape is a 3–7% regression, %ymm is zero in every monomorphisatio… |
+| `✗52` | C1 and C2 FALSIFIED, C3 NOT MEASURED: the 83% reproduces at 86.5% and M-160's flat 0.17 ms reproduces at 0.16 ms, but th… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -510,6 +511,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `E×4` | Weld gated on the pairwise link condition, rejected pairs left split |
 | `E×5` | The crossing stored as a signed offset from the edge midpoint |
 | `E×6` | The sample loop restructured for autovectorisation |
+| `E×7` | A staging ring, so the geometry read-back is amortised instead of waited on |
 
 <!-- END GENERATED INDEX -->
 
@@ -1634,6 +1636,7 @@ point; the numbers are what make it re-checkable.
 | E×1 | **Surface Nets' centroid as Dual Contouring's vertex rule** | The QEF is worth its cost on sharp fields and not on smooth ones, and pays for it in self-intersection | Hausdorff at 65³, QEF ÷ centroid: sphere **0.486**, torus **0.457**, csg_difference **0.255**, box_exact **0.010**, thin_plate **0.010**. Self-intersections per 1k at 33³: QEF **3.118 / 13.837 / 29.745** on gyroid, fbm_terrain, noise_cavity against centroid's **0.000** | **KEPT as an ablation, not as a default.** Both arms are real answers to different questions and neither dominates — 100× accuracy on sharp features against zero self-intersections. The seam stays so the comparison can be re-run; `Qef` stays the default because sharp-feature recovery is what A-007 exists for | X-002, `benches/ablation.rs`, M-237 |
 | E×2 | **A separate probabilistic-quadric solver** (Trettner & Kobbelt, `10.1111/cgf.13933`) | It supersedes the Tikhonov regularizer and is more robust on near-singular cells | Never measured as a separate solver, because it was shown identical first: a direct assembly of the paper's equations agrees with `solve_with` at `λ = Nσ²` to **1.110e-16 over 296 cells** | **REVERTED before it was written.** In this crate's centroid-relative coordinates the paper's extra term is `σ²Σrᵢ`, and `Σrᵢ ≡ 0` because the centroid *is* the mean of the crossings. A second solver would have been a second execution path computing identical numbers. **Do not re-attempt for isotropic noise**; the open door is anisotropic `Σₙ`, which needs a noise model analytic fields do not have | X-004, `the_probabilistic_quadric_is_the_existing_solve`, M-238 |
 | E×3 | **Crossing-count-scaled regularizer** (`λ = Nσ²`, the part of E×2 that *is* different) | Scaling λ with the number of planes beats one fixed λ per cell | Hausdorff at 65³, scaled ÷ fixed: sphere **1.0000**, torus **0.9957**, csg_difference **0.9992**, box_exact **0.7519**, thin_plate **0.7519**. Self-intersections at 33³ fall on all three noisy fields: **3.118→2.551, 13.837→13.571, 29.745→28.749** | **KEPT behind `experimental`, not made default.** Never worse and 25% better on both sharp fields, which is a real improvement — but the default carries T-007's committed golden hashes and 112 baseline rows, and moving those for a 25% gain on two of eight fields is a decision with evidence attached, not a tidy-up. Promoting it is its own ticket | X-004, `crates/isomesh/src/experimental.rs`, M-238 |
+| E×7 | **A staging ring, so the geometry read-back is amortised instead of waited on** | H (P-71): the largest piece of a GPU extraction is the geometry copy (0.7075 of 1.1860 ms at 129³), which indirect draw arguments cannot remove because they remove it by not delivering the bytes; a depth-2 ring over `read_bytes_many_deferred` converts it to a per-frame cost | **120 of 120 read-backs consumed, `not_ready` 0** at 33³/65³/97³/129³, amortised **0.3116 / 0.4325 / 0.6059 / 0.9158 ms**. Drain tail **85 / 127 / 31 / 0** frames — not monotone in the grid | **NOT LANDED, and deliberately: the mechanism is measured, the decision is the owner's.** It costs one to two frames of collision latency. `P-71` records the question rather than picking, per its registration. What is owed before anyone ships a depth is `M-124`'s own budget sweep with the ring inside `mesh_within_budget`, which is C3's undelivered population. |
 | E×6 | **The sample loop restructured for autovectorisation** | H (P-69): a pre-sliced contiguous write with the bound hoisted gives at least 2x on the marginal `f32` cost, and all 216 golden hashes stay unchanged | Marginal ns/sample, push ÷ row: `sphere` f32 **1.231 / 1.323 = 0.9305**, `gyroid` f32 **17.793 / 18.278 = 0.9735**, `box_exact` f32 **2.681 / 2.845 = 0.9425**; `f64` 0.977 / 0.983 / 0.899. **`total %ymm` across all eleven monomorphisations = 0.** 0 of 168 golden rows moved | **REVERTED in shape, KEPT in sharing.** The shape costs 3–7% and widens nothing, so it goes back; the *merge* stays, because there were **three** copies of this loop (`marching_cubes/mod.rs:240`, `dual.rs:356`, `marching_tetrahedra.rs:157`) and three copies is a one-path defect whatever the shape. **Do not re-attempt on this target without changing the field**: the loop is 11.6% of the marginal extraction cost, so its ceiling is 1.06x, and `libm`'s `sinf`/`cosf` have no arch selection at all | R-067, `benches/experiment_p69.rs`, `scripts/p69_asm.sh`, `docs/experiments/p-69.csv`, ✗51 / M-375 |
 | E×5 | **The crossing stored as a signed offset from the edge midpoint** | H (P-61): `d = ((a + b)/2)/(a − b)` is exactly antisymmetric under the simultaneous endpoint-and-sign swap by four IEEE 754 guarantees, so a mirrored grid produces a mirrored vertex bit for bit, where a parameter from the lower corner cannot | **0 mismatches on 9.2 M straddling pairs** across `f32` and `f64` against 1,035,808 / 2,000,000 for the lower-corner form. `marching_cubes` **6 → 48 of 48** on all 16 equivariance rows, `worst_component_ulp` 0. 135 of 216 golden hashes moved, 0 counts changed, 2,285 of 28,124 cut edges displaced at ≤ 268 ULP. Hausdorff and self-intersections identical to 12 digits | **KEPT, and it is the default** — there is no second path: `cube::edge_crossing` is gone, all six placements and the WGSL shader are in the centred frame, and the 216 golden hashes are rebaselined. The cost is exactly the registered one (C2 is a cost clause) and the geometric price measured zero. **Do not re-attempt the lower-corner form**; its `1 − t` anchor is an affine map and floating point does not respect those | R-059, `benches/experiment_p61.rs`, `docs/experiments/p-61.csv`, ✗49 / M-372 |
 | E×4 | **Weld gated on the pairwise link condition, rejected pairs left split** | H (P-8): exactly 0 non-manifold edges and vertices on all eight fields × all extractors, where the unconditional weld yields N > 0 | 56 configurations on a centred 2×2×2 block. Ungated is **0/0 in 47 of them**. Across all 56 the gate removes **at most 4** non-manifold edges and adds **up to 791** non-manifold vertices — `noise_cavity` + subgrid goes 301 → **1,092**, and `sphere` + Marching Cubes goes 0 → 96 | **REVERTED, and it was never merged.** Strictly worse: it fixes almost nothing where there was something to fix and manufactures non-manifoldness where there was none. A `k`-way coincidence is manifold only if all `k` merge; refusing one leaves the representative a bowtie, which is why the damage is in the vertex column and the edge column barely moves | R-001, `benches/experiment_p8.rs`, `docs/experiments/p-8.csv`, P-8 |
@@ -11075,3 +11078,111 @@ column that was named and not measured.
 `synchronisation_share`, `synchronisation_removed_share`, `timestamp_feature`, `timestamp_period_ns`,
 `amortised_ms_per_frame`, `budget_chunks`, `within_one_chunk`, `ring_frames_delay`, `c1_holds`, `c2_holds`,
 `c3_holds`, `adapter`.
+
+### 💥 ✗52 / M-376 — C1 and C2 FALSIFIED, C3 NOT MEASURED: the 83% reproduces at **86.5%** and `M-160`'s flat 0.17 ms reproduces at **0.16 ms**, but the biggest piece is the **geometry copy** and not the count wait — so `extract_indirect` removes 31%, not 60% (P-71, R-069)
+
+**M.** `cargo bench --bench experiment_p71`, `docs/experiments/p-71.csv`, **12 rows**, `f32`, **NVIDIA
+GeForce RTX 3090 / Vulkan**. Three arms over four resolutions: `attribution` (GPU-side spans from
+`TIMESTAMP_QUERY` against CPU wall time), `removal` (`extract_buffers` against `extract_indirect`, one
+binary, `M-281`), `ring` (an N-frame-delayed double-buffered staging ring over
+`read_bytes_many_deferred`). Median of 7 per measurement. Timestamp period **1.0000 ns**, two spans per
+extraction, both asserted strictly positive.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the largest component is **map-wait**, not execute | map-wait | **FALSIFIED — it is `copy`. 0.7075 ms against map-wait's 0.3177 and execute's 0.3149 at 129³** |
+| C2 indirect draw args remove ≥ **60%** of the synchronisation | ≥ 0.60 | **FALSIFIED — 0.3098 at 129³, and 0.31–0.45 across the range** |
+| C3 the ring holds the amortised cost within one chunk across a 320× range | `M-124`'s rows | **NOT MEASURED — the fixture is not `M-124`'s** |
+
+**Two prior findings reproduce on the way, which is what makes the falsifications readable.**
+
+| prior | says | measured here |
+|---|---|---|
+| `M-167` | synchronisation was **83%** of an extraction | **86.5%** — 1.0252 ms of a 1.1860 ms extraction at 129³ |
+| `M-160` | removing the wait leaves CPU time flat at **~0.17 ms** from 33³ to 129³ | **0.133 / 0.171 / 0.168 / 0.161 ms** across 33³–129³ — flat at ~0.16 ms over a **60× cell range** |
+
+So the phenomenon is exactly where `M-167` and `M-160` left it. **What is wrong is the decomposition the
+registration guessed.**
+
+**The attribution, and it is the point of the experiment:**
+
+| n | indirect | buffers | extract | execute (GPU) | submit | map-wait | copy | largest |
+|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 33 | 0.1330 | 0.2136 | 0.3121 | 0.0444 | 0.0885 | 0.0806 | **0.0985** | copy |
+| 65 | 0.1711 | 0.2738 | 0.4865 | 0.0940 | 0.0771 | 0.1027 | **0.2128** | copy |
+| 97 | 0.1678 | 0.3450 | 0.7306 | 0.1566 | 0.0112 | 0.1771 | **0.3856** | copy |
+| **129** | 0.1609 | 0.4785 | 1.1860 | 0.3149 | 0.0000 | 0.3177 | **0.7075** | **copy** |
+
+**`copy` is 60% of the whole extraction at 129³ and 69% of its synchronisation.** The count read-back —
+the four bytes `M-159` measured at 0.375 ms of stall — is real and is **0.3177 ms**, the *second* largest
+piece. `execute` is 0.3149 ms and never leads at any resolution, so `M-167`'s *"the arithmetic never moved
+and was never the point"* **survives** and needs no re-tiering: C1's falsifier was execute leading, and
+execute does not lead.
+
+> **`submit` reads 0.0000 at 129³ and that is two clocks, not a measurement of nothing.** It is computed
+> as `indirect_ms − execute_ms`, and `execute` is a **GPU-side** span while `indirect` is CPU wall time
+> for a path that submits and does not wait. The GPU keeps working after the CPU returns, so the span can
+> exceed the wall time and the difference is clamped at zero rather than reported negative. What the row
+> *does* say is that CPU recording is at most ~0.09 ms and falls as the grid grows — which is `M-160`'s
+> flatness from the other side.
+
+**C2 is falsified for a reason that changes what the direction is worth, and it is not a smaller version
+of the registered claim.** `extract_indirect` removes the count wait **entirely** — that is 0.3177 ms of
+1.0252, i.e. **31%**. It cannot remove the geometry copy, because it removes it by *not delivering the
+geometry to the CPU at all*: the totals stay in device memory and become indirect draw arguments. So:
+
+- **For a consumer that only draws**, `extract_indirect` removes 100% of the synchronisation it needs to
+  remove, and `M-149`'s 6.7% is the whole remaining prize. The clause's 60% is the wrong bar for it.
+- **For a consumer that needs the bytes** — collider generation, `M-116`'s convex decomposition — the copy
+  is **unavoidable**, and 60% was never available from indirect draw arguments. What is available is
+  *amortising* it, which is C3's ring.
+
+**C3's ring works, and it is the half of this experiment that ships a capability.** Two slots, the frame's
+own indirect extraction as the pump, `read_bytes_many_deferred`'s `PollType::Poll` as the readiness check
+— one call site for both targets and no `#[cfg]`, which is why this shape is legal under the one-path rule
+at all:
+
+| n | frames | depth | consumed | amortised ms/frame | not-ready | drain frames |
+|---:|---:|---:|---:|---:|---:|---:|
+| 33 | 120 | 2 | **120** | 0.3116 | **0** | 85 |
+| 65 | 120 | 2 | **120** | 0.4325 | **0** | 127 |
+| 97 | 120 | 2 | **120** | 0.6059 | **0** | 31 |
+| 129 | 120 | 2 | **120** | 0.9158 | **0** | 0 |
+
+**120 of 120 consumed and zero not-ready at every resolution**: at depth 2 the read-back is always ready
+when its slot comes round, so the ring converts a 0.7075 ms blocking copy into a per-frame cost with no
+stall. That is a real result about a real mechanism.
+
+**But it is not C3, and the entry says so rather than claiming it.** C3 is registered against *"exactly the
+rows `M-124` has"*, and `M-124` is a **budget** sweep — 288 chunks under `DirtySet::mesh_within_budget`,
+budget from 25 µs to 8 ms, 2,360 frames each — which lives in `bevy_isomesh` and needs the dirty-set
+scheduler. This arm swept **resolution** over one field. Calling that HELD or FALSIFIED would be a claim
+about a different experiment, so `c3_holds` is three-state and reads **`not_measured`**. Same shape as
+`P-63`'s C3: a registered population the harness did not deliver. What is owed is the ring inside
+`mesh_within_budget` with `M-124`'s own sweep.
+
+**Three fixture defects, all caught by this harness's own controls rather than by review.**
+
+1. **`extract_indirect` measured 7.3 ms flat at every resolution** on the first run — *slower than the wait
+   it removes*. It sizes its geometry buffers from the budget and creates them per call, so a
+   4,000,000-triangle budget allocates 288 MB per extraction and the arm was timing `create_buffer`. The
+   budget is now twice the measured count, which is what a game sizing from the previous frame would use.
+2. **The ring consumed 1 read-back in 120 frames and reported 0.0004 ms** — the cost of an empty loop
+   wearing the ring's name. `Readback::ready` polls with `PollType::Poll`, a single non-blocking check, and
+   with nothing else submitting the queue never advanced. `tick` now takes the frame's own GPU work as a
+   closure, and the control is `consumed > FRAMES/2` rather than `> 0`.
+3. **`StageTimestamps` was not `Sync`** — `Cell` and `RefCell` compile inside `isomesh-gpu` and break
+   `bevy_isomesh`, which holds a `MarchingCubesGpu` as a Bevy `Resource`. Three examples failed to
+   type-check. **`bevy: check --all-targets` is what caught it**, which is `M-293`'s step earning its keep
+   on the exact class it was added for.
+
+**The design question, surfaced and not answered, per the registration.** The ring costs **one to two
+frames of collision latency**. For a voxel game that is invisible; for a CAD tool it is a decision. The
+measured drain tail is 0 to 127 frames depending on resolution, which is the number that decision should
+be made against — and it is **not monotone** in the grid (127 at 65³, 0 at 129³), which is itself
+unexplained and worth a look before anyone ships a fixed depth.
+
+**Would be shown wrong by:** `execute` leading at any resolution, which would re-tier `M-167`; a
+consumer-visible path where indirect draw arguments remove the geometry copy as well as the count wait;
+or a `not_ready` above zero at depth 2, which would mean the ring's latency assumption is optimistic on
+this hardware.

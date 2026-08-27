@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-250 tickets. Line numbers are stable until something above them is edited — grep the ID if
+251 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -1887,3 +1887,22 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***One number deliberately not claimed.*** The extraction marginal measures **10.68 ns/sample** against the committed `resolution_sweep-ryzen9-5900x.csv` fit of **13.1892**. Different binary, different run, narrower size range — `M-281` — so it is a column and **not** a 1.24x improvement.
 >
 > ***And the M5 arm is owed, not skipped.*** C1's original threshold is an M5 figure. `mac_air` is reachable and carries Spotlight, WindowServer, Messages and loginwindow at ~76% of a core with load 1.65–1.87 over 13 days, which is exactly `M-005`'s block. The Zen 3 arm is what ran; the M5 arm joins `M-005` in waiting for a quiet machine, and the share arithmetic above says it would not change the verdict.
+
+| ☑ | **R-069** | M | — |
+> **DONE 2026-08-27 — ✗52 / M-376 / P-71: C1 and C2 FALSIFIED, C3 NOT MEASURED. The 83% reproduces at 86.5% and `M-160`'s flat 0.17 ms reproduces at 0.16 ms, but the largest piece is the geometry copy, not the count wait.**
+>
+> ***What reproduced, and it is why the falsifications are readable.*** Synchronisation is **1.0252 of a 1.1860 ms** extraction at 129³ — **86.5%**, against `M-167`'s 83%. `extract_indirect`'s CPU time is **0.133 / 0.171 / 0.168 / 0.161 ms** across 33³–129³: flat at ~0.16 ms over a **60× cell range**, which is `M-160`'s property to the digit. Nothing about the phenomenon moved.
+>
+> ***C1's falsifier is `copy`, and `execute` never leads.*** GPU-side spans from `TIMESTAMP_QUERY` against CPU wall time: the geometry read-back is **0.7075 ms** at 129³, the four-byte count wait **0.3177**, the GPU's own `execute` **0.3149**. Copy is 60% of the whole extraction and 69% of its synchronisation. C1 registered *map-wait* as the largest and it is second — but `M-167`'s *"the arithmetic never moved"* **survives**, because C1's falsifier was execute leading and execute leads nowhere.
+>
+> ***C2 is falsified for a reason that changes what the direction is worth.*** `extract_indirect` removes the count wait **entirely** — 0.3177 of 1.0252, i.e. **31%**, not ≥60%. It cannot remove the copy, because it removes it by **not delivering the bytes**. For a consumer that only draws, that is 100% of what it needs and 60% was the wrong bar; for a collider consumer the copy is unavoidable and amortisation is the only route, which is C3's ring.
+>
+> ***C3 is `not_measured`, and the fixture is the reason rather than an excuse.*** The registration says *"exactly the rows `M-124` has"* and `M-124` is a **budget** sweep — 288 chunks under `DirtySet::mesh_within_budget`, 25 µs to 8 ms, 2,360 frames each — in `bevy_isomesh`. This arm swept **resolution**. HELD or FALSIFIED would be a claim about a different experiment, so the column is three-state. Same shape as `P-63`'s C3.
+>
+> ***The ring works and is the shipped capability (E×7), and it is not landed on purpose.*** Depth 2 over `read_bytes_many_deferred`: **120 of 120 read-backs consumed, `not_ready` 0** at every resolution, amortised **0.3116 / 0.4325 / 0.6059 / 0.9158 ms**. One call site for both targets — `PollType::Poll` is the native pump and a documented no-op under WebGPU — so no `#[cfg]` fork, which is why the shape is legal under the one-path rule at all. The **drain tail is 85 / 127 / 31 / 0 frames and is not monotone in the grid**, which is unexplained and is the number a fixed depth should be chosen against. Per the registration the latency question is **the owner's**: one to two frames, invisible in a voxel game, a decision in a CAD tool.
+>
+> ***Three fixture defects, all caught by this harness's own controls.*** `extract_indirect` measured **7.3 ms flat** at every resolution — it sizes from the budget and allocates per call, so the arm was timing 288 MB of `create_buffer`, slower than the wait it removes. The ring consumed **1 read-back in 120 frames** and reported 0.0004 ms, the cost of an empty loop wearing the ring's name, because nothing else submitted and `Poll` is a single non-blocking check; `tick` now takes the frame's own GPU work as a closure and the control is `consumed > FRAMES/2`. And `StageTimestamps` was **not `Sync`** — `Cell`/`RefCell` compile here and break `bevy_isomesh`, which holds a `MarchingCubesGpu` as a Bevy `Resource`; **`bevy: check --all-targets` caught it**, which is `M-293`'s step earning its keep on exactly the class it was added for.
+>
+> ***One column that is an artefact and says so.*** `submit` reads 0.0000 at 129³ because it is `indirect_ms − execute_ms`, a CPU wall time minus a **GPU** span. The GPU keeps working after the CPU returns, so the span can exceed the wall time and the difference is clamped rather than reported negative.
+>
+> ***Verification.*** `preflight --full` all green at each boundary, `csv_provenance.sh` 48 of 53 resolving with 40 inherited debts pinned, and the instrument has its own test: `the_timestamp_instrument_reports_a_positive_span_for_each_compute_pass` asserts a positive period and a strictly positive span per pass, so a silent zero is a failure rather than a number.
