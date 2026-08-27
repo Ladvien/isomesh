@@ -11840,3 +11840,40 @@ sphere at 128³, rather than a uniform fill the extractor never produces. And `V
 O(3n)→O(2n) ceiling and mean something other than the scan changed; a disagreement with either reference;
 or naga implementing `enable subgroups;`, which would remove blocker 1 and make the not-landed decision
 purely about the 1.33%.
+
+### P-68 — registered for R-066, before the harness exists
+
+**The gap is stated in the crate's own mandate, and three existing findings are the evidence.** `M-142`:
+GPU and CPU agree on every triangle and disagree on **6% of vertices by exactly one ULP**. `M-144`:
+bit-identity is a property of the **cell size**, not the port. `M-30`: an unclamped solve can fling a
+vertex **3.18 cells** out of its own cell. **Every one of those had to be measured after the fact.**
+Nothing in the crate reports, per vertex, at run time, how wide the interval containing the true crossing
+is — which is what a CAD consumer means by "how much should I trust this coordinate".
+
+**`P-61`'s centred form is what makes the bound cheap, and that is a dependency between experiments rather
+than a coincidence.** The offset is `d = ((a + b)/2) / (a − b)`: **one quotient, no cancellation**, because
+`a` and `b` straddle zero so `a − b` is a sum of magnitudes. Its first-order bound is therefore
+`|d| · (2 + |a−b|_err / |a−b|) · u`, where the only inexactness that can compound is in the denominator.
+The parameter form `t = a/(a−b)` followed by `lower + t·h` accumulates a subtract, a multiply and an add
+before the vertex exists, and its bound is correspondingly worse.
+
+**The ground truth is *exact*, and that is what makes C1 a soundness statement rather than a comparison of
+two approximations.** `a` and `b` are `f64` samples, hence dyadic rationals. So `a + b` and `a − b` are
+exact integers over a common power of two, the true `d` is an exact rational, and the error of the `f64`
+result is computable in **`i128` with no floating point in the loop**. The registration is explicit that a
+crossing the `i128` reference cannot represent is **not judged** — and that the count of judged crossings
+is a recorded column, because a clause measured on a subset must say which subset.
+
+| clause | prediction | falsified by |
+|---|---|---|
+| C1 | the bound is **sound**: over 10⁶ crossings on eight fields at 33³, the exact error never exceeds it. Zero violations | **one** violation |
+| C2 | not vacuous: median bound under **4 ulp**, p99 under **64 ulp**, on the six smooth fields | a median above 4 ulp — *"the bound is a formality rather than information"* — or a p99 above 64 |
+| C3 | under **3%** of extraction wall time enabled, **exactly zero** off, verified by golden hash | above 3%, or any hash movement with the feature off |
+| C4 | on `csg_difference` the bound is largest **exactly at the seam cells `M-350` bounded** | no correlation with seam proximity, which would mean the bound tracks **magnitude** rather than **conditioning** |
+
+**C4 is the clause that makes this more than a CAD feature.** `M-350` proved a central difference across a
+CSG seam is wrong by at most half the crease angle and *essentially attains* it. If the position bound peaks
+at the same cells, the bound is reporting **conditioning** — and a game that wants to know where its
+collider is untrustworthy gets the same number for free. **No golden hash moves:** the bound is an
+additional output and changes no position; a bound that moved a hash would be a bound that changed the
+arithmetic it reports on.

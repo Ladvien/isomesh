@@ -86,8 +86,8 @@
 // other extractor. Re-exported here because this module's docs and the table
 // construction below are written in terms of them.
 pub use crate::cube::{
-    CORNER_COUNT, EDGE_AXIS, EDGE_CORNERS, EDGE_COUNT, corner_inside, edge_index, edge_on_face,
-    edges_share_a_face, face_corners, is_inside,
+    CORNER_COUNT, EDGE_AXIS, EDGE_CORNERS, EDGE_COUNT, corner_inside, edge_index, edge_offset,
+    edge_on_face, edges_share_a_face, face_corners, is_inside,
 };
 
 /// Upper bound on triangles per cell.

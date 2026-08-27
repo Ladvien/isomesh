@@ -2660,6 +2660,80 @@ pub const PREREGISTERED: &[Preregistration] = &[
         ],
     },
     Preregistration {
+        id: "P-68",
+        ticket: "R-066",
+        hypothesis: "A running error bound turns a vertex position into a vertex \
+            position AND A CERTIFIED INTERVAL. THE GAP IS STATED IN THE CRATE'S \
+            OWN MANDATE: a CAD tool wants to know how much to trust a \
+            coordinate. M-142 found GPU and CPU agree on every triangle and \
+            disagree on 6% of vertices by exactly one ULP; M-144 found \
+            bit-identity is a property of the cell size, not the port; M-30 \
+            found an unclamped solve can fling a vertex 3.18 cells out of its \
+            own cell. Every one of those is a statement about error that had to \
+            be MEASURED AFTER THE FACT. Nothing in the crate reports, per \
+            vertex, at run time, how wide the interval containing the true \
+            crossing is. THE CONSTRUCTION IS TWO EXTRA FLOPS PER CROSSING and \
+            one per solve. A running error bound propagates a first-order error \
+            term alongside the value -- the same machinery as Shewchuk's \
+            adaptive predicates, 10.1007/PL00009321, already mined in five \
+            files, and the static / semi-static / dynamic filter hierarchy of \
+            Bartels, Fisikopoulos & Weiser, 10.1007/s10543-023-00975-x, in \
+            corpus and uncited -- but used to REPORT rather than to BRANCH. \
+            P-61's centred form makes this cheap in a way the parameter form \
+            does not: the offset d is a single quotient with no cancellation, \
+            so its error bound is |d| * (2 + |a-b|_err / |a-b|) * u rather than \
+            the compounded bound a subtract-then-lerp accumulates. (C1) The \
+            reported bound is SOUND: on eight reference fields at 33^3, \
+            comparing against exact rational arithmetic on 10^6 crossings, the \
+            true error never exceeds the reported bound. ZERO VIOLATIONS. (C2) \
+            It is not vacuous: the median reported bound is under 4 ulp and the \
+            99th percentile under 64 ulp on the six smooth fields. (C3) \
+            Carrying it costs under 3% of extraction wall time when enabled and \
+            exactly zero when the feature is off, verified by a golden-hash \
+            comparison against the current build. (C4) THE REASON A GAME WANTS \
+            IT TOO: on csg_difference, the reported bound is largest exactly at \
+            the seam cells M-350 bounded -- that entry proved a central \
+            difference across a CSG seam is wrong by at most half the crease \
+            angle, and this is the same locality showing up in the POSITION \
+            rather than the normal.",
+        falsified_by: "C1 by ONE violation -- a crossing whose exact error \
+            exceeds its reported bound. C2 by a median above 4 ulp, which means \
+            the bound is a formality rather than information, or a 99th \
+            percentile above 64 ulp. C3 by above 3%, or by any golden hash \
+            moving with the feature off. C4 by no correlation between the bound \
+            and seam proximity, which would mean the bound tracks MAGNITUDE \
+            rather than CONDITIONING. NO GOLDEN HASH MOVES: the bound is an \
+            additional output and changes no position, so the 216 hashes cannot \
+            move; a bound that moved one would be a bound that changed the \
+            arithmetic it reports on. VOID if the exact-arithmetic reference \
+            cannot be computed for a crossing, since C1 would then be a zero \
+            over a population the instrument declined to judge -- the count of \
+            crossings the i128 reference admits is a recorded column, and a \
+            clause measured on a subset must say which subset.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "crossings",
+            "exactly_judged",
+            "violations",
+            "median_bound_ulp",
+            "p99_bound_ulp",
+            "max_bound_ulp",
+            "median_true_error_ulp",
+            "max_true_error_ulp",
+            "bound_tightness",
+            "seam_bound_ratio",
+            "bound_ns_per_crossing",
+            "crossing_ns_per_crossing",
+            "bound_share",
+            "golden_hashes_unchanged",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+            "c4_holds",
+        ],
+    },
+    Preregistration {
         id: "P-69",
         ticket: "R-067",
         hypothesis: "core::simd is nightly and is staying nightly -- the \

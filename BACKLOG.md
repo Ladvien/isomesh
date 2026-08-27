@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**256 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**256 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -227,6 +227,27 @@ no flattening is needed and its hash risk does not arise.
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+
+**R-066 — Can a running error bound turn a vertex position into a position *and a certified interval*? (P-68)**
+**The gap is stated in the crate's own mandate.** A CAD tool wants to know how much to trust a coordinate.
+`M-142` found GPU and CPU agree on every triangle and disagree on 6% of vertices by exactly one ULP;
+`M-144` found bit-identity is a property of the cell size, not the port; `M-30` found an unclamped solve
+can fling a vertex 3.18 cells out of its own cell. **Every one of those had to be measured after the
+fact.** Nothing reports, per vertex, at run time, how wide the interval containing the true crossing is.
+**The construction is two extra flops per crossing.** A running error bound propagates a first-order term
+alongside the value - Shewchuk's machinery (`10.1007/PL00009321`, already mined in five files) and the
+filter hierarchy of Bartels, Fisikopoulos & Weiser (`10.1007/s10543-023-00975-x`, in corpus, uncited) -
+but used to **report** rather than to **branch**. `P-61`'s centred form makes this cheap in a way the
+parameter form does not: `d` is a single quotient with no cancellation, so its bound is
+`|d| * (2 + |a-b|_err / |a-b|) * u` rather than the compounded bound a subtract-then-lerp accumulates.
+**The ground truth is exact.** `a` and `b` are `f64` samples, hence dyadic rationals, so `(a+b)/2` and
+`a-b` are exact integers over a common power of two and the true `d` is an exact rational. The error of the
+`f64` result is therefore computable in `i128` with no floating point in the loop - which is what makes C1
+a soundness statement rather than a comparison of two approximations.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-066** | M | — |
 
 **R-069 — Is the 83% a blocking round-trip, and can both targets avoid it? (P-71)**
 `M-167` is the largest single number this project owns about its own GPU path: synchronisation was **83%**

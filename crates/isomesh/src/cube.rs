@@ -210,8 +210,16 @@ pub fn is_inside<R: Real>(value: R) -> bool {
 ///
 /// In debug builds, if the endpoints are not on opposite sides — in which case
 /// there is no crossing to find and the caller has a bug.
+///
+/// # Why this is public
+///
+/// R-066. `P-61` made this *the* definition of where a crossing is, and every
+/// extractor in the crate routes through it. Anything that measures a crossing
+/// -- an error bound, a certificate, a diagnostic -- has to ask the same
+/// question of the same expression, and a second copy of a one-line formula is
+/// exactly the drift `x39` cost this crate 216 golden hashes to find.
 #[inline]
-pub(crate) fn edge_offset<R: Real>(a: R, b: R) -> R {
+pub fn edge_offset<R: Real>(a: R, b: R) -> R {
     debug_assert!(is_inside(a) != is_inside(b));
     ((a + b) * R::HALF) / (a - b)
 }
