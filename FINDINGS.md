@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**481 entries** — 55 falsified, 350 measured, 50 verified, 18 open, 8 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**482 entries** — 55 falsified, 351 measured, 50 verified, 18 open, 8 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -444,6 +444,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-378` | zero unsound certificates over 2,389 tunnel cells |
 | `M-379` | C1, C2 and C3 all HELD: the case table is proved indexable over all 256 sign patterns in 2.04 s and over all 16,384 (pat… |
 | `M-383` | the bench that cannot compile off Linux, and every gate that would see it runs on Linux (D-025) |
+| `M-384` | a gate that is red locally and green in CI, which is M-304 read backwards (D-026) |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -12162,3 +12163,50 @@ deeper lengthens the mangled path and leaves both substrings intact.
 contact and make the local gate redundant rather than load-bearing. Not added here — it is a workflow
 change, and `preflight.sh`'s own header already records that the CI-versus-local duplication is the
 repository owner's call.
+
+
+### M-384 — a gate that is red locally and green in CI, which is `M-304` read backwards (D-026)
+
+**M.** `preflight.sh`'s `isomesh depends on libm and nothing else` step has never passed on this
+machine, and could not have. It compared `"$(cargo tree -p isomesh -e normal | wc -l)"` against `2`
+as a **string**, and BSD `wc` right-pads its output where GNU `wc` does not:
+
+```
+$ cargo tree -p isomesh -e normal | wc -l | sed -n l
+       2$
+```
+
+So the test was `"       2" = "2"`, false on macOS and true on Linux **for every possible dependency
+tree** — the step could report neither a pass it had earned nor a failure it had found. The graph it
+guards is correct and always was: `isomesh v0.0.10` and `libm v0.2.16`, nothing else.
+
+**The mechanism is the duplication this script's own header warns about, and it had already
+drifted.** `preflight.sh` is not what CI runs — `ci.yml` carries its own copy of the dependency
+gate, and the header says so in as many words: *"here there are two — this script and
+`.github/workflows/ci.yml` — and they can drift"*. They had. CI counts **distinct packages**,
+`cargo tree -p isomesh -e normal --prefix none | sort -u | grep -c .`, and compares numerically with
+`-ne`. `preflight.sh` counted **tree lines** and compared as text. Two gates for one rule, asking
+different questions, and only one of them padding-immune — CI's, by accident, because `grep -c` does
+not pad and `-ne` would have tolerated it anyway.
+
+**It is `M-304` with the sign flipped, and the flipped sign is the worse one.** M-304 was a green
+local run and a red CI: a gate reporting success it had not earned. This is a red local run and a
+green CI: a gate reporting failure it had not earned, about a fact that was never in question. Both
+are one defect class — a verdict that depends on the host rather than on the repository — but a step
+that is *always* red is a step that gets read past, and this one sat directly beside `root: clippy`,
+which was also red, for a real reason, and for 49 commits (`M-383`).
+
+**Rule earned, and it is narrower than "test on both platforms".** `wc` is not the only tool whose
+output *format* is a property of the host rather than of the answer. **A shell gate must compare
+numbers as numbers**, or count with something that does not pad. `[ "$x" = 2 ]` is a string
+comparison wearing arithmetic's clothes; `[ "$x" -eq 2 ]` would have been immune, and `grep -c`
+avoids the question entirely. The neighbouring `no bevy in the resolved graph` step already used
+`grep -c` and has always been correct, which is why exactly one of the two adjacent gates was red.
+
+**Fixed by copying CI's pipeline character for character** rather than by stripping the spaces. That
+is the one-path form: the local gate and the remote gate now compute the same number the same way,
+so the next divergence has to be introduced deliberately instead of inherited.
+
+**Would be shown wrong by:** finding that GNU `wc -l` also pads under some option or locale, which
+would mean this was red everywhere and merely unread rather than platform-dependent. Not seen here —
+but note it was never observable from CI either way, because CI never ran this line.

@@ -111,8 +111,15 @@ step "bevy: rustdoc" in_bevy env RUSTDOCFLAGS=-D\ warnings cargo doc --no-deps
 # Rule 2 and rule 3, which are cheap and are the crate's whole pitch.
 step "no bevy in the resolved graph" bash -c \
     '[ "$(cargo metadata --format-version 1 | grep -c "\"name\":\"bevy")" = 0 ]'
+# `--prefix none | sort -u | grep -c .` is ci.yml's dependency gate, character
+# for character, and D-026 is why it is copied rather than paraphrased. This
+# counted tree *lines* with `wc -l` and string-compared the result, so BSD wc's
+# right-padded "       2" never equalled "2" and the step was red on macOS for
+# every possible dependency tree. CI asks a different question -- distinct
+# *packages* -- and asks it with `grep -c`, which does not pad. Two gates, one
+# rule, two answers: exactly the drift this script's own header warns about.
 step "isomesh depends on libm and nothing else" bash -c \
-    '[ "$(cargo tree -p isomesh -e normal | wc -l)" = 2 ]'
+    '[ "$(cargo tree -p isomesh -e normal --prefix none | sort -u | grep -c .)" = 2 ]'
 
 # ── the full set ──────────────────────────────────────────────────────────────
 if [ "$FULL" = 1 ]; then

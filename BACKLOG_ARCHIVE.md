@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-260 tickets. Line numbers are stable until something above them is edited — grep the ID if
+261 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -2061,3 +2061,14 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***The shape is `experiment_p12`'s, and it was not a free choice.*** A `#[cfg(target_os = "linux")] mod experiment` with a `main` that refuses and exits non-zero elsewhere — what `experiment_p12`, `experiment_p15` and `a024_aliasing` all already do. `family.rs`'s alternative, writing `unavailable` into the columns, is unavailable to this bench: `cycles_per_sample` and `ghz` are in P-69's `records` and `Run::record` panics on a missing registered column, so the only other path runs through amending the registration.
 >
 > ***Verification.*** `cargo clippy --workspace --all-targets -- -D warnings` green on macOS/arm64, and the same on `x86_64-unknown-linux-gnu` so the platform that runs P-69 is unregressed. `scripts/p69_asm.sh`'s two symbol matchers (`asm_probe`, `^(\S*(?:row_loop|push_loop)\S*):$`) survive the extra module level, checked against the script rather than assumed.
+
+| ☑ | **D-026** | S | — |
+> **DONE 2026-08-27 — `preflight.sh`'s dependency gate had never passed on macOS and could not have, because it string-compared `wc -l` output and BSD `wc` right-pads.** `M-384`. The graph it guards was correct throughout.
+>
+> ***One line, and the arithmetic is the whole story.*** `[ "$(cargo tree -p isomesh -e normal | wc -l)" = 2 ]` evaluates `"       2" = "2"`, which is false on this platform for **every** possible dependency tree — so the step could report neither an earned pass nor a found failure.
+>
+> ***The cause is the ci.yml duplication `preflight.sh`'s own header predicts.*** CI never runs this script; it carries a second copy of the gate that counts distinct *packages* (`--prefix none | sort -u | grep -c .`) and compares with `-ne`. Two gates for one rule, different questions, and only CI's immune to the padding — by accident, twice over.
+>
+> ***Fixed by adopting CI's pipeline verbatim, not by stripping spaces.*** One path: the two now compute the same number the same way, so a future divergence has to be introduced rather than inherited. The rule that generalises is in `M-384` — a shell gate compares numbers as numbers, because a tool's output *format* is a property of the host.
+>
+> ***Verification.*** `[ "$(... --prefix none | sort -u | grep -c .)" = 2 ]` passes on macOS/arm64 where the old form failed, and the resolved graph is unchanged and still exactly `isomesh` + `libm`. `preflight.sh` fast set all green, `--full` run before the push.
