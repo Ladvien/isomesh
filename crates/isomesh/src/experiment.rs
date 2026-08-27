@@ -3250,6 +3250,1565 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "c3_holds",
         ],
     },
+    Preregistration {
+        id: "P-73",
+        ticket: "R-073",
+        hypothesis: "THE HOOK IS A PROPOSAL IN THIS REPOSITORY'S OWN DOCS. The mechanics \
+            dossier proposes the angle-weighted pseudonormal at 'under 2 degrees \
+            difference on good triangles, over 15 degrees on radius-ratio under \
+            0.15, about 40 lines'. Jin, Lewis and West 2005 \
+            (10.1007/s00371-004-0271-1, 140 citations) scored six connectivity \
+            weightings -- equal, angle, sine-and-edge-length-reciprocal, \
+            adjacent-triangle-area, edge-length-reciprocal, sqrt-edge-length- \
+            reciprocal -- against the analytic normal, and on MARCHING- \
+            TETRAHEDRA OUTPUT EVERY ONE OF THEM HAS A MEDIAN DISCREPANCY OF 5-20 \
+            DEGREES at the highest resolution they tested. Their diagnosis is \
+            spatial aliasing in irregular implicit tessellation, which is M-72's \
+            mechanism seen from the shading side. NormalStrategy already has \
+            AnalyticGradient and CentralDifference; this measures whether a \
+            third is worth having. (C1) On eight reference fields at 33^3 and \
+            65^3, every connectivity weighting has a median angular error \
+            against the analytic gradient of at least 3x CentralDifference's at \
+            the cell size, and thin_plate and noise_cavity are the worst. (C2) \
+            mean |f(v)| -- the off-surface shading canary the dossier proposes \
+            in two lines -- PREDICTS the per-vertex angular error, rank \
+            correlation above 0.7 on at least six of eight fields. (C3) THE \
+            DETERMINISM ARGUMENT, INDEPENDENT OF QUALITY: angle weighting needs \
+            acos, libm's acos has no architecture selection, and a connectivity- \
+            weighted normal is therefore a golden-hash liability on a crate \
+            committing 216 of them. Measured: the connectivity route moves at \
+            least one hash between the M5 and the Zen 3 and the gradient route \
+            moves none. SHARE: C1 and C2 move the whole normals stage; C3 moves \
+            nothing and is a correctness clause.",
+        falsified_by: "C1 by any weighting within 3x, which would mean the 2005 result does \
+            not transfer to trilinear output and the dossier's proposal is \
+            right. C2 by a rank correlation below 0.7 on three or more fields, \
+            which would mean the canary and the error are different phenomena \
+            and the canary is not a proxy for shimmer. C3 by zero hash movement \
+            on the connectivity route, which would be the more interesting \
+            result and would remove the determinism objection entirely. VACUITY \
+            CONTROL: the fixture must contain triangles in the bottom decile of \
+            the aspect-ratio distribution on every field, reported as a column, \
+            or C1 is measuring well-shaped triangles only.",
+        records: &[
+            "field",
+            "resolution",
+            "weighting",
+            "median_angle_error_deg",
+            "p99_angle_error_deg",
+            "gradient_median_deg",
+            "ratio_to_gradient",
+            "canary_mean_abs_f",
+            "canary_rank_correlation",
+            "worst_decile_triangles",
+            "hashes_moved_connectivity",
+            "hashes_moved_gradient",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-74",
+        ticket: "R-074",
+        hypothesis: "NOTHING IN SIX GAMEPLAY DOCUMENTS PROPOSES A LIGHTING FEATURE, and \
+            this is the cheapest one available because the expensive half is \
+            already paid. RTSDF (10.5220/0010996200003124, arXiv 2210.06160) \
+            measures on an RTX 2080 Ti at 1024^2: jump flood 2.09 ms, ray trace \
+            4.60 ms, total frame 10.22 ms at 97 fps -- and 2.09 ms of that is \
+            BUILDING a 128^3 SDF the game does not have. nvblox \
+            (10.1109/icra57147.2024.10611532) measures 0.8-7.3 billion distance \
+            queries per second, about 3 ns per query, on an RTX 3090 Ti, after \
+            paying 0.4 ms per frame to integrate the TSDF. This crate's field is \
+            analytic, resident, and already evaluated on the GPU at M-155's 0.54 \
+            ms for a 129^3 grid; isomesh-gpu/src/jump_flood.rs already exists. \
+            (C1) Screen-space AO by sphere-tracing the resident field costs \
+            under 2.0 ms at 1920x1080 on the Zen 3 / RTX 3090 rig, with 8 rays \
+            per pixel and a 16-step cone march. (C2) Against a mesh-based SSAO \
+            baseline on gyroid and fbm_terrain, field-traced AO has NO darkening \
+            error at chunk seams and no haloing at silhouettes, measured as mean \
+            absolute difference against a 512-ray offline reference; SSAO's seam \
+            and halo error is non-zero on both. (C3) The construction cost RTSDF \
+            pays is ZERO here, measured as the difference between total frame \
+            cost with the field already resident and the same trace after a \
+            jump-flood rebuild. SHARE: C1 moves the whole AO budget, currently \
+            paid in full by a mesh-based pass.",
+        falsified_by: "C1 by above 2.0 ms. C2 by SSAO matching it, which would mean the \
+            field buys nothing a depth buffer does not already have. C3 by a \
+            non-zero resident cost, which would mean the field is not reusable \
+            in the form the tracer wants and there is a conversion nobody \
+            costed. VACUITY CONTROL: the seam and silhouette pixel sets must be \
+            non-empty and reported as counts, because a scene with no visible \
+            seam cannot distinguish the two methods.",
+        records: &[
+            "field",
+            "resolution",
+            "rays_per_pixel",
+            "march_steps",
+            "ao_ms_field",
+            "ao_ms_ssao",
+            "seam_pixels",
+            "silhouette_pixels",
+            "seam_mae_field",
+            "seam_mae_ssao",
+            "halo_mae_field",
+            "halo_mae_ssao",
+            "resident_ms",
+            "rebuild_ms",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+            "adapter",
+        ],
+    },
+    Preregistration {
+        id: "P-75",
+        ticket: "R-075",
+        hypothesis: "M-138 MEASURED THE PRICE OF EXACT PAINT: every sample walks the edit \
+            log, at 2.33x the cost per chunk. That is per SAMPLE. A shading pass \
+            pays it per FRAGMENT, every frame, at screen resolution. The \
+            alternative is bounded per-vertex material weights -- an [f32; 4], \
+            L1-normalised, the de facto standard in voxel renderers -- computed \
+            once during extraction from the same walk. Nobody has published the \
+            comparison; the only public arithmetic for a real pipeline is a blog \
+            post costing 4 materials x 3 triplanar planes x 5 maps = 60 texture \
+            fetches per fragment, with NO TIMING BEHIND IT. SCOPE, stated at \
+            registration: this is weights carried as a VERTEX ATTRIBUTE, which \
+            is additive and breaks nothing. Whether Sdf grows a phase concept \
+            (the PhaseTree proposal) is a public-API decision and is NOT part of \
+            this. (C1) Per-vertex weights, computed inside the existing \
+            extraction walk, cost under 5% of extraction. (C2) At 1920x1080 on \
+            game_dig's scene, per-vertex weights beat a per-fragment log walk by \
+            at least 4x in frame time, and the gap WIDENS with edit-log length \
+            across M-50's four buckets (1-15, 16-30, 31-45, 46-60 brushes). (C3) \
+            Interpolating weights across a triangle is not exact: the material \
+            misclassification rate against the field at 10^6 surface points is \
+            under 2%, and is concentrated within one cell of a material \
+            boundary. SHARE: C1 moves the vertex-attribute stage, currently \
+            zero; C2 moves the whole material shading stage.",
+        falsified_by: "C1 by above 5%. C2 by under 4x, or by a gap that does not widen with \
+            log length -- the second means the fragment path is not paying \
+            M-138's cost and the premise is wrong. C3 by above 2%, or by \
+            misclassification that is not boundary-local, the latter meaning the \
+            weights are not a resampling of the field but a different quantity. \
+            VACUITY CONTROL: the scene must contain at least two materials with \
+            a boundary crossing the visible surface, reported as a boundary- \
+            vertex count.",
+        records: &[
+            "log_bucket",
+            "brushes",
+            "materials",
+            "boundary_vertices",
+            "weights_ms",
+            "extract_ms",
+            "weights_share",
+            "frame_ms_vertex",
+            "frame_ms_fragment",
+            "speedup",
+            "misclassified_points",
+            "misclassified_fraction",
+            "misclassified_within_one_cell",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-76",
+        ticket: "R-076",
+        hypothesis: "TRIPLANAR AND STOCHASTIC FILTERING COMPOSE MULTIPLICATIVELY AND \
+            NOBODY STATES THE PRODUCT. Three planes x three stochastic taps is \
+            nine fetches per map; bevy_isomesh/examples/triplanar.wgsl already \
+            pays the three. Stochastic Texture Filtering (arXiv 2305.05810) and \
+            Heitz-Neyret histogram-preserving blending (10.1145/3233304, 'over \
+            20x faster' than procedural-noise state of the art, HARDWARE NOT \
+            NAMED) both trade fetches for temporal accumulation. The conflict is \
+            the finding worth registering: A DESTRUCTIBLE WORLD HAS ALREADY \
+            SPENT ITS TEMPORAL BUDGET, because geometry that changes rejects \
+            history. This registration is gated on P-77, which measures that \
+            rejection; running it first would price the saving without pricing \
+            the debt. (C1) Selecting one triplanar plane per pixel \
+            stochastically drops the fetch count by exactly 3x and the fragment \
+            cost by at least 2x at 1920x1080. (C2) With TAA resolving the \
+            stochastic choice, the ghosting cost under an active dig is WORSE \
+            than the fetch saving is worth: measured as mean absolute error \
+            against a 3-plane reference in the 8 frames following an edit, above \
+            the error of the same scene with no digging. (C3) Biplanar mapping \
+            -- two planes, no stochastic term, no temporal debt -- gets at least \
+            half the saving of C1 with none of C2's cost. SHARE: C1 moves the \
+            material shading stage, which P-75's C2 will have measured.",
+        falsified_by: "C1 by under 2x. C2 by no difference between digging and static, \
+            which would mean history rejection is not the bottleneck and \
+            stochastic filtering is free here after all. C3 by under half, which \
+            makes the honest recommendation 'keep three planes'. VACUITY \
+            CONTROL: the dig arm must produce a non-zero history-rejection count \
+            from P-77's instrument, or C2 cannot fire.",
+        records: &[
+            "arm",
+            "fetches_per_fragment",
+            "fragment_ms",
+            "frame_ms",
+            "history_rejected_static",
+            "history_rejected_digging",
+            "mae_vs_reference_static",
+            "mae_vs_reference_digging",
+            "frames_after_edit",
+            "biplanar_fetches",
+            "biplanar_fragment_ms",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-77",
+        ticket: "R-077",
+        hypothesis: "THE ONE MEASURED MITIGATION IN THIS AREA IS CHEAP AND THE PROBLEM IT \
+            MITIGATES HAS NEVER BEEN MEASURED UNDER DESTRUCTION. k-DOP clipping \
+            (10.1145/3681758.3697996) replaces TAA's axis-aligned neighbourhood \
+            clamp with a tighter k-discrete-oriented polytope at 0.2 ms overhead \
+            (GPU NOT NAMED IN THE ABSTRACT), and its framing is that prior \
+            bounding-box methods are 'only situationally effective'. Separately, \
+            Epic's account of virtual shadow maps in Fortnite says animated \
+            deformation invalidates shadow pages and that they ABANDONED CACHING \
+            FOR DIRECTIONAL SUN SHADOWS ENTIRELY -- with no invalidation cost \
+            published anywhere. This experiment measures the destruction half; \
+            P-79 measures the shadow half. (C1) In game_dig, the fraction of TAA \
+            history samples rejected in the frame after a brush stroke is at \
+            least 5x the steady-state rejection rate, and the elevated rate \
+            persists for at least 3 frames. (C2) k-DOP clipping recovers at \
+            least half the rejected samples at under 0.3 ms. (C3) The rejection \
+            is SPATIALLY CONCENTRATED at the brush, not global: over 80% of \
+            rejected samples fall within the brush's screen-space bounding box \
+            dilated by one dig radius. SHARE: C1 is a rate, not a ratio of a \
+            total; C2 moves the TAA resolve stage.",
+        falsified_by: "C1 by under 5x, or by a single-frame spike -- either means \
+            destruction is not a temporal problem, and this row and P-76's C2 \
+            close together. C2 by under half, which would mean the rejections \
+            are genuine disocclusions rather than clamp conservatism and no \
+            clipping scheme can help. C3 by under 80%, which would mean an edit \
+            disturbs the whole frame and a localised mitigation cannot work. \
+            VACUITY CONTROL: the steady-state arm must have a non-zero rejection \
+            rate, or the 5x ratio is division by a floor.",
+        records: &[
+            "arm",
+            "stroke_rate_hz",
+            "steady_rejection_fraction",
+            "post_edit_rejection_fraction",
+            "ratio",
+            "frames_elevated",
+            "kdop_ms",
+            "kdop_recovered_fraction",
+            "rejected_in_brush_box",
+            "rejected_total",
+            "concentration_fraction",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-78",
+        ticket: "R-078",
+        hypothesis: "PROBE-BASED GI IS THE ONLY GI FAMILY THAT TOLERATES GEOMETRY \
+            CHANGING EVERY FRAME, AND ITS COST UNDER A DESTRUCTIBLE WORLD IS \
+            UNMEASURED. The best rigorous measurement available is a bachelor's \
+            thesis (Dell'Ova, BTH 2025, DOI UNVERIFIED) finding that 87-96% of \
+            radiance-cascade frame time is the GATHER pass -- cost is dominated \
+            by tracing the scene, not by the cascade structure. That matters \
+            because this crate can trace an SDF instead of a BVH, which is what \
+            P-74 measures. But the question a game asks first is how much of the \
+            cache a dig dirties, and the crate already owns the instrument: \
+            M-311's dirty-cell set and M-314's edit-proportionality \
+            decomposition. (C1) The probe invalidation set is EDIT-PROPORTIONAL, \
+            not volume-proportional: the number of probes whose visibility \
+            changes tracks the brush's dilated support with a constant factor \
+            under 4, across M-50's four edit-log buckets and three probe \
+            densities. (C2) Tracing the field beats tracing the extracted mesh \
+            for probe updates by at least 3x at equal ray count. (C3) A dig that \
+            opens a new air component -- M-311's union-find merge, the banked \
+            breakthrough event -- invalidates STRICTLY MORE probes than a dig of \
+            the same volume that does not. SHARE: C2 moves the gather pass, \
+            which the thesis puts at 87-96% of GI cost.",
+        falsified_by: "C1 by a factor above 4, or by a count that grows with world size at \
+            fixed edit size -- the second kills probe GI for this game outright \
+            and is worth knowing in an afternoon. C2 by under 3x. C3 by no \
+            difference, which would mean the topological event has no lighting \
+            signature and the banked breakthrough event cannot drive a lighting \
+            response. VACUITY CONTROL: the breakthrough arm must actually merge \
+            two air components, asserted from the union-find rather than assumed \
+            from the brush.",
+        records: &[
+            "log_bucket",
+            "probe_density",
+            "world_cells",
+            "brush_support_cells",
+            "probes_invalidated",
+            "invalidation_factor",
+            "gather_ms_field",
+            "gather_ms_mesh",
+            "gather_speedup",
+            "breakthrough",
+            "air_components_before",
+            "air_components_after",
+            "probes_invalidated_breakthrough",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-79",
+        ticket: "R-079",
+        hypothesis: "EPIC'S OWN ANSWER TO DEFORMING GEOMETRY WAS TO STOP CACHING. The \
+            Fortnite virtual-shadow-map write-up gives exactly one quantitative \
+            figure -- a light-loop optimisation from 1.56 ms to 1.08 ms -- and \
+            describes invalidation qualitatively: sun movement causes 'quite \
+            significant shadow page table changes frame to frame', animated \
+            deformation invalidates pages, and directional sun shadows were left \
+            uncached. FOR A WORLD WHERE THE GEOMETRY IS BEING DUG AWAY THAT IS \
+            THE RELEVANT PRECEDENT AND THE NUMBER IS MISSING FROM THE LITERATURE \
+            ENTIRELY. (C1) In game_dig with a cached shadow atlas, one brush \
+            stroke invalidates a page count proportional to the brush's \
+            PROJECTED area from the light, with a constant under 3 -- not to the \
+            brush volume and not to the scene. (C2) Invalidating only the pages \
+            the brush's light-space bounding volume touches produces a PIXEL- \
+            IDENTICAL shadow to a full re-render, on all eight reference fields. \
+            (C3) The saving is worth having: cached-with-invalidation beats \
+            uncached by at least 2x in shadow cost under a continuous dig at \
+            game_dig's throttled 12.5 strokes per second. SHARE: C3 moves the \
+            shadow rendering stage only.",
+        falsified_by: "C1 by a constant above 3, or by scene-proportional invalidation. C2 \
+            by any pixel difference, which would mean the conservative bound is \
+            wrong and localised invalidation is unsound. C3 by under 2x, which \
+            vindicates Epic's decision and closes the direction with a number \
+            they did not publish. VACUITY CONTROL: the light must be positioned \
+            so the brush casts a shadow into the visible frame, asserted by a \
+            non-zero changed-pixel count on the full-re-render arm.",
+        records: &[
+            "field",
+            "light_direction",
+            "brush_volume_cells",
+            "brush_projected_area",
+            "pages_invalidated",
+            "invalidation_constant",
+            "changed_pixels_full",
+            "changed_pixels_localised",
+            "shadow_ms_cached",
+            "shadow_ms_uncached",
+            "stroke_rate_hz",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-80",
+        ticket: "R-080",
+        hypothesis: "M-72 IS THE FINDING THIS IS BUILT ON AND NOBODY HAS EXPLOITED IT. \
+            Sub-cell features do not vanish under coarsening, they ALIAS -- \
+            thin_plate goes 4,088 to 1,016 to 248 to 56 triangles across LOD 0-3 \
+            -- and the dossier's response is to make the disappearance \
+            authorable. There is a second response: the difference between the \
+            fine surface and the coarse one is a VECTOR FIELD THIS CRATE CAN \
+            EVALUATE, because it owns the analytic field at both scales. Bake it \
+            into a tangent-space normal map per coarse chunk and the geometry \
+            fades while the shading does not. The sweep found NO MEASURED STUDY \
+            of normal-mapping detail onto a coarse isosurface at all. (C1) For \
+            each coarse-LOD vertex, the direction from the coarse surface to the \
+            nearest fine-surface point is computable from the field alone -- one \
+            gradient and one root refinement, no fine mesh -- and agrees with \
+            the true nearest point to within 0.1 cells on 95% of vertices at LOD \
+            1 and 2. (C2) A normal map baked from that residual reduces \
+            perceived detail loss: mean angular difference between LOD-2 \
+            shading-with-map and LOD-0 shading is under 10 degrees on \
+            fbm_terrain, against over 25 degrees for LOD-2 without. (C3) WHERE \
+            IT MUST FAIL, STATED IN ADVANCE: it cannot work on thin_plate or \
+            gyroid at LOD 3, because a normal map cannot restore a SILHOUETTE \
+            and both fields lose topology rather than curvature -- predicted \
+            above 25 degrees on both, with the map. SHARE: C2 moves the shading \
+            half of the LOD budget only; triangle counts are unchanged by \
+            construction.",
+        falsified_by: "C1 by under 95%, or by an error that grows with LOD level faster \
+            than the cell size. C2 by over 10 degrees with the map, or under 25 \
+            without -- the second would mean coarsening does not cost shading \
+            detail on this field and the premise is wrong for terrain. C3 by the \
+            map working on thin_plate or gyroid at LOD 3, which would be a much \
+            stronger result than the row claims and would need explaining. \
+            VACUITY CONTROL: the LOD-0 reference must differ from LOD-2 by more \
+            than 25 degrees somewhere, reported as a changed-vertex count, or C2 \
+            is comparing two identical shadings.",
+        records: &[
+            "field",
+            "lod_level",
+            "coarse_vertices",
+            "residual_agree_fraction",
+            "residual_p95_cells",
+            "angle_lod0_vs_lod2_no_map",
+            "angle_lod0_vs_lod2_with_map",
+            "changed_vertices",
+            "bake_ms",
+            "map_bytes_per_chunk",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-81",
+        ticket: "R-081",
+        hypothesis: "THE DOCS ALREADY PROPOSE SDF COLLISION AND CITE THE WRONG PAPER FOR \
+            THE GAME'S ACTUAL CASE. The cited source is Liu et al. \
+            10.1016/j.cagd.2024.102305, which is SDF-vs-SDF for two comparable \
+            solids -- a strictly harder problem needing interval arithmetic, \
+            which is a determinism liability. The game's case is a small \
+            analytic proxy against one enormous static field, and that is \
+            Macklin, Erleben, Mueller, Chentanez, Jeschke and Corse, \
+            10.1145/3384538: per-element local optimisation between an SDF \
+            isosurface and mesh elements, comparing projected gradient descent, \
+            Frank-Wolfe and golden-section search, with GSS WINNING ON THE 1-D \
+            EDGE PROBLEM. Their decisive line, on 129k-triangle rigid shells: \
+            'this mesh-based collision took approximately 15 ms per-step, \
+            compared to under 0.5 ms using SDF-based contact', 48-445 \
+            microseconds per timestep, CUDA on a GTX 2080 Ti. DISCOUNTED \
+            HONESTLY AT REGISTRATION: their 30x is GPU-parallel against a deep \
+            BVH over 129k triangles; this crate's baseline is a much smaller \
+            per-chunk parry3d TriMesh on CPU, so single-digit x is the \
+            prediction. THIS ROW IS GATED ON P-85, which decides whether the 45% \
+            is query cost or construction cost. (C1) Capsule-vs-field by GSS \
+            costs under 20 microseconds per query on the Zen 3 and beats the \
+            shipped TriMesh path by at least 3x on fbm_terrain at 33^3 chunks. \
+            (C2) A fixed iteration count with no data-dependent branching gives \
+            bit-identical contact points across the M5 and the Zen 3, on 10^6 \
+            queries. (C3) Ghost contacts -- collisions against internal edges \
+            between adjacent triangles -- are STRUCTURALLY ABSENT from the field \
+            query: non-zero on the TriMesh path over M-106's 495-seam-crossing \
+            fixture, exactly zero on the field path. SHARE: C1 moves the query \
+            half of the collider's 45%, and P-85 will have measured how large \
+            that half is.",
+        falsified_by: "C1 by under 3x, which would mean the TriMesh path's cost is collider \
+            CONSTRUCTION rather than query and this attacks the wrong half -- in \
+            which case P-85's answer is what matters. C2 by one differing \
+            contact, which puts the method behind the same wall as every other \
+            float-sensitive path. C3 by zero on both, which would mean avian3d \
+            already handles it and Jolt's v5.0.0 internal-edge-removal work and \
+            avian#612 are solving a problem this crate does not have. VACUITY \
+            CONTROL: the TriMesh arm must report a non-zero ghost-contact count, \
+            or C3 cannot fire.",
+        records: &[
+            "field",
+            "chunk_cells",
+            "queries",
+            "gss_iterations",
+            "query_us_field",
+            "query_us_trimesh",
+            "speedup",
+            "contacts_bit_identical",
+            "differing_contacts",
+            "ghost_contacts_trimesh",
+            "ghost_contacts_field",
+            "seam_crossings",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-82",
+        ticket: "R-082",
+        hypothesis: "A DIGGER IS THE FASTEST THING IN THE GAME AND THE WALL IN FRONT OF \
+            IT IS GETTING THINNER EVERY FRAME. That is the exact configuration \
+            discrete collision cannot survive, and there is now a CPU-only \
+            measured answer: Pelletier-Guenette, Mercier-Aubin and Andrews, \
+            10.1145/3747862 (SCA 2025) -- spatio-temporal local optimisation for \
+            first time of impact, a modified Frank-Wolfe with golden-section \
+            search over barycentric coordinates AND TIME, with adaptive triangle \
+            subdivision giving multiple contacts per triangle. Intel i9, single \
+            CPU thread, CPU-only: an 888-triangle shuriken at 0.4 ms total, \
+            11.13 microseconds mean per triangle; 100K triangles at 0.96 \
+            microseconds per triangle. It beats Macklin 2020's discrete \
+            detection on all their tests -- SELF-ADJUDICATED, since no standard \
+            triangle-SDF CCD benchmark exists, and that is stated here rather \
+            than discovered. (C1) At the speed a game_dig projectile travels, \
+            the discrete path tunnels through a wall of thickness t below v*dt \
+            and the CCD path does not, over 10^4 randomised shots at a wall \
+            swept from 2 cells down to t/h = 0.05 (subgrid's floor, M-95). (C2) \
+            Cost per moving element stays under 25 microseconds and is LINEAR in \
+            element count. (C3) A capsule approximated by 8 swept spheres \
+            reaches the same first-time-of-impact as a 200-triangle capsule \
+            mesh, to within one cell, at 10x less cost. SHARE: C2 moves a single \
+            dynamic body's collision budget, not the whole frame.",
+        falsified_by: "C1 by the discrete path not tunnelling, which would mean the game's \
+            speeds are below the threshold and this is premature. C2 by \
+            superlinear cost, or above 25 microseconds. C3 by a disagreement \
+            above one cell, which would mean the proxy is too coarse and the \
+            cheap version of this does not exist. VACUITY CONTROL: the discrete \
+            arm must tunnel at least once, reported as a count, or C1 is \
+            comparing two methods that both work.",
+        records: &[
+            "wall_thickness_cells",
+            "speed_cells_per_step",
+            "shots",
+            "tunnels_discrete",
+            "tunnels_ccd",
+            "us_per_element",
+            "elements",
+            "linear_fit_r2",
+            "toi_capsule_spheres",
+            "toi_capsule_mesh",
+            "toi_disagreement_cells",
+            "cost_ratio_spheres_vs_mesh",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-83",
+        ticket: "R-083",
+        hypothesis: "NOTHING IN THE LITERATURE COMPUTES MASS PROPERTIES FROM AN SDF \
+            ANALYTICALLY, AND NOTHING BENCHMARKS IT. The nearest usable result \
+            is Hartmann and Ewougsi Tekeu, 10.1007/s00707-025-04419-1: inserting \
+            T = x tensor x into the divergence theorem converts the volume \
+            integral for the inertia tensor into a PURE SURFACE INTEGRAL, \
+            evaluated analytically per triangle with linear shape functions. No \
+            wall-clock timings, but the operation count is below tetrahedral \
+            volume discretisation at equal resolution. This crate emits the \
+            surface; the integral is one pass over data it just produced, with \
+            no mesh round-trip to parry3d. IT IS ALSO THE ONLY ROW IN GROUP B \
+            THAT IS CORE-CRATE ELIGIBLE -- pure arithmetic, no_std, allocation- \
+            free, generic over Real. (C1) Volume, centre of mass and the inertia \
+            tensor agree with a dense voxel reference to 1e-4 relative on all \
+            eight reference fields at 33^3, and the error falls at h^2. (C2) \
+            DETERMINISM AND THE TRAP THE PAPER NAMES: float summation is non- \
+            associative, so a fixed triangle iteration order is required for \
+            hash stability; and the paper's own discretisation yields a NON- \
+            SYMMETRIC inertia tensor despite the continuous form being \
+            symmetric, fixed by averaging off-diagonals. Both are measured: \
+            fixed order gives bit-identical tensors across machines, and the \
+            pre-symmetrisation asymmetry is non-zero. (C3) It costs under 2% of \
+            extraction. SHARE: C3 moves the whole mass-properties stage, \
+            currently paid by parry3d after a mesh handoff.",
+        falsified_by: "C1 by worse than 1e-4, or a convergence order below 1.5 -- the \
+            second would mean the surface integral is not seeing the geometry \
+            the volume integral sees. C2 by zero asymmetry, which would mean the \
+            crate's triangles are better behaved than the paper's and the \
+            symmetrisation step can be dropped. C3 by above 2%. VACUITY CONTROL: \
+            the reference must be a dense voxel integration at a resolution that \
+            itself converges, reported with its own h^2 fit, or C1 is measuring \
+            the reference.",
+        records: &[
+            "field",
+            "resolution",
+            "volume",
+            "volume_reference",
+            "volume_rel_error",
+            "com_rel_error",
+            "inertia_rel_error",
+            "convergence_order",
+            "asymmetry_pre",
+            "asymmetry_post",
+            "bit_identical_across_machines",
+            "mass_props_ms",
+            "extract_ms",
+            "share",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-84",
+        ticket: "R-084",
+        hypothesis: "A-027 ALREADY PROPOSES THIS AND DOES NOT CITE THE PAPER THAT \
+            MEASURED IT. Mueller, Chentanez and Kim, 10.1145/2461912.2461934 \
+            (TOG 2013): split the geometry into non-overlapping convex regions \
+            OFFLINE, then at runtime align a convex fracture pattern to the \
+            impact and intersect it against the precomputed compound. The \
+            invariant is that CLIPPING A CONVEX SHAPE AGAINST A CONVEX CELL \
+            YIELDS CONVEX PIECES, so runtime decomposition never happens. \
+            Measured: 'the time to fracture small to average sized objects is \
+            typically negligible, i.e. below 10 ms', staying below 50 ms \
+            throughout, reaching 20k compounds and 32k convexes -- on a Core i7 \
+            at 3.07 GHz with a GTX 680. AND THE 2026 STATE OF THE ART HAS NOT \
+            IMPROVED ON IT: M-297 said no published convex decomposition runs at \
+            interactive rates and that holds -- VisACD (arXiv 2604.04244) is a \
+            GPU method averaging 16.97 seconds per model against CoACD's 36.31 \
+            s, four orders of magnitude off a frame budget. (C1) A brush \
+            intersected against a convex-cell partition of a chunk produces \
+            convex fragments in under 10 ms per fragment, against M-116's \
+            241-272 ms. (C2) THE MULTIPLAYER CLAUSE, and the one that makes this \
+            crate's version better than Mueller's: the convex-cell partition is \
+            a PURE FUNCTION OF THE EDIT LOG -- eight same-kind brushes in all \
+            40,320 orderings give one partition, bit-for-bit, reproducing M-36 \
+            at the cell level. (C3) Piece count stays bounded: a chunk that has \
+            taken 60 brushes (M-50's largest bucket) has under 4x the convex \
+            cells of an unedited one. SHARE: C1 moves the whole destruction- \
+            collider stage.",
+        falsified_by: "C1 by above 25 ms, which is still 10x better than M-116 and would \
+            still be worth landing -- the clause is set at 10 to make the 2013 \
+            number the bar rather than a comfortable one, and the entry must \
+            report both. C2 by more than one partition, which would mean the \
+            decomposition introduces order-dependence the field does not have \
+            and breaks the coordination-free story M-36 bought. C3 by above 4x, \
+            the failure mode that turns this into a memory problem instead of a \
+            time problem. VACUITY CONTROL: the 40,320-ordering arm must actually \
+            reach every ordering, asserted by count, which is M-36's own \
+            fixture.",
+        records: &[
+            "field",
+            "chunk_cells",
+            "brushes",
+            "fragments",
+            "fracture_ms_per_fragment",
+            "fracture_ms_worst",
+            "convex_cells_before",
+            "convex_cells_after",
+            "cell_growth_ratio",
+            "orderings",
+            "distinct_partitions",
+            "partition_hash",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-85",
+        ticket: "R-085",
+        hypothesis: "x52 IS THE TEMPLATE AND IT IS THE MOST TRANSFERABLE THING PHASE 23 \
+            PRODUCED. P-71 predicted the GPU synchronisation would be dominated \
+            by the count wait, measured it, and found the GEOMETRY COPY at 60% \
+            of the whole extraction instead. THE COLLIDER STAGE HAS NEVER HAD \
+            THAT TREATMENT. It is 45% of the pipeline, larger than contouring \
+            (M-135), and nobody knows whether it is BVH construction, triangle \
+            copying, parry3d's constructor, or the weld that M-69 and x18 argue \
+            about. Independent corroboration exists and is weaker than this will \
+            be: Godot Voxel Tools' performance documentation says 'creating a \
+            collider from a mesh is actually much more expensive than meshing \
+            itself (about 3 to 5 times)', WITH NO ABSOLUTE TIMINGS AND NO \
+            HARDWARE. THIS IS THE CHEAPEST ROW IN THE PHASE AND IT DECIDES WHICH \
+            OF P-81 AND P-84 IS WORTH DOING. (C1) Decomposed into copy, \
+            construct, BVH-build and handoff, ONE STAGE IS OVER 50% of the \
+            collider cost at 33^3 and 65^3 chunks on fbm_terrain and gyroid. \
+            (C2) The dominant stage is NOT the one the docs assume: Godot's docs \
+            blame BVH construction; predicted here it is the triangle copy, by \
+            analogy with x52's finding that the copy dominated on the GPU side \
+            for the same structural reason -- the bytes have to move. (C3) The \
+            cost is NOT proportional to triangle count alone: at fixed triangle \
+            count, gyroid's collider costs at least 1.5x sphere's, because seam \
+            boundary edges (M-69's 72 per seam) and degenerate slivers are per- \
+            field. SHARE: this experiment measures shares and moves nothing.",
+        falsified_by: "C1 by four stages each under 50%, which would mean the cost is \
+            diffuse and there is no single lever -- a null worth having, and it \
+            would redirect the group toward P-81's query-side attack. C2 by BVH \
+            construction dominating, which vindicates the folklore and is \
+            equally useful. C3 by proportionality to triangle count, which would \
+            make the whole stage predictable from a number the extractor already \
+            reports and is the best possible outcome for the scheduler. VACUITY \
+            CONTROL: the four stages must sum to the measured total within 5%, \
+            reported as a residual column, or the decomposition is missing a \
+            stage.",
+        records: &[
+            "field",
+            "chunk_cells",
+            "triangles",
+            "copy_ms",
+            "construct_ms",
+            "bvh_ms",
+            "handoff_ms",
+            "total_ms",
+            "residual_ms",
+            "largest_stage",
+            "largest_share",
+            "cost_per_triangle",
+            "seam_boundary_edges",
+            "degenerate_triangles",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-86",
+        ticket: "R-086",
+        hypothesis: "M-115 FOUND THAT A MOVING BODY IS STOPPED HARDER AND MORE OFTEN BY \
+            ORDINARY TERRAIN THAN BY A CHUNK JOIN, AND LEFT THE HARDER QUESTION \
+            OPEN: how many of those stops are REAL. The crate records degenerate \
+            near-zero-area triangles as a metric rather than a gate, because \
+            Marching Cubes genuinely emits slivers whenever a grid corner sits \
+            near zero -- that is the algorithm, not a bug. But a sliver is \
+            exactly what a capsule controller catches on, and M-185 already \
+            found that completing the crossing identity turned a sliver into a \
+            repeated-index triangle the extractor now declines to emit. NOBODY \
+            HAS CONNECTED THE RECORDED METRIC TO THE GAMEPLAY SYMPTOM. This is \
+            also where the literature is thinnest: there is essentially no peer- \
+            reviewed work on capsule-vs-isosurface locomotion at chunk seams, \
+            and M-115 is better evidence than anything published. (C1) Over \
+            game_capsule_walk's 495 seam crossings plus a 10^4-step randomised \
+            walk on fbm_terrain, at least 20% of controller stops occur on a \
+            triangle in the bottom decile of the aspect-ratio distribution. (C2) \
+            Stops are NOT concentrated at chunk seams, confirming M-115 from the \
+            controller's side rather than the body's: seam-adjacent triangles \
+            carry no more stops per triangle than interior ones. (C3) The field \
+            query path from P-81 removes ALL of C1's stops, because it never \
+            sees a triangle. SHARE: this is a rate, not a ratio of a total.",
+        falsified_by: "C1 by under 20%, which would mean slivers are not what stops a \
+            character and the recorded metric has no gameplay consequence -- a \
+            genuine null and worth the afternoon. C2 by a seam excess, which \
+            reopens M-133's 'not reliably seam-closing' as a gameplay defect \
+            rather than a topology one. C3 by any surviving stop, which would \
+            mean the terrain genuinely stops the character there and C1 was \
+            measuring geometry that is correct. VACUITY CONTROL: the walk must \
+            produce a non-zero stop count on both arms, and the bottom aspect- \
+            ratio decile must be non-empty, both reported as counts.",
+        records: &[
+            "field",
+            "steps",
+            "seam_crossings",
+            "stops_total",
+            "stops_on_worst_decile",
+            "worst_decile_fraction",
+            "stops_per_triangle_seam",
+            "stops_per_triangle_interior",
+            "seam_excess_ratio",
+            "stops_field_path",
+            "aspect_ratio_p10",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-87",
+        ticket: "R-087",
+        hypothesis: "THE NAVIGATION DIRECTION IN THIS REPOSITORY IS COSTED AND THE COST \
+            IS FATAL. The docs propose deriving the encounter graph from field \
+            topology via Morse-Smale segmentation and record the price: PLMSS at \
+            256^3 takes 4.40 s single-threaded, 0.36 s on 24 threads, which the \
+            docs themselves call '20-40x over a 16 ms frame'. Recast is worse in \
+            a different way -- a 2026 devlog measures Unreal's navmesh \
+            generation at a constant ~5 ms and a ~10 FPS drop for a relatively \
+            simple sublevel, and Recast rebuilds a tile by voxelising collision \
+            geometry, so this game would voxelise a mesh it generated from \
+            voxels. THERE IS A THIRD OPTION NOBODY IN THESE DOCS HAS CONSIDERED \
+            AND IT IS MEASURED. Massonnat and Verbrugge, \
+            10.1109/CoG60054.2024.10645669 (IEEE CoG 2024): an octree splits \
+            cells containing obstacles, adjacent cells merge by a Hertel- \
+            Mehlhorn-inspired greedy method WHILE PRESERVING CONVEXITY, and A* \
+            runs on the resulting coarse graph with visibility pruning and a 3-D \
+            funnel; extended to dynamic environments with LOCAL octree and graph \
+            updates plus a cell-repairing strategy. Measured on an Intel Core \
+            i7-12700H laptop: octree update 0.22-1.36 ms, local graph update \
+            0.03 ms, about 1 ms total, with cell reduction up to an order of \
+            magnitude (28,190 to 303). The convexity-preserving merge is the \
+            same trick as P-84's fracture invariant; two subfields arriving at \
+            it independently is a signal. (C1) Built on the sign field and the \
+            active-cell bitmap -- never on triangles -- the local repair after \
+            P-72's eleven-edit dig trace costs under 2 ms at 4^3 chunk \
+            granularity. (C2) The repair set is EDIT-PROPORTIONAL, tracking \
+            M-311's 925 dirty cells with a constant factor under 3, and does not \
+            grow with world size at fixed edit size. (C3) Convexity-preserving \
+            merge gives at least 5x cell reduction on fbm_terrain and gyroid, \
+            and gyroid -- topologically the hardest of the eight -- is the one \
+            where it does worst. SHARE: C1 moves the whole navigation-rebuild \
+            stage, currently unbuilt.",
+        falsified_by: "C1 by above 2 ms, which puts it in Recast's band and removes the \
+            reason to prefer it. C2 by world-proportional growth -- the same \
+            falsifier as P-78's C1 and for the same reason. C3 by under 5x on \
+            either field, or by gyroid not being the worst, which would mean the \
+            reduction tracks something other than topological complexity. \
+            VACUITY CONTROL: the dig trace must change the free-space topology \
+            at least once, asserted from the union-find rather than from the \
+            brush, or the repair is measuring a no-op.",
+        records: &[
+            "field",
+            "world_cells",
+            "chunk_cells",
+            "edits",
+            "dirty_cells",
+            "repair_cells",
+            "repair_factor",
+            "octree_update_ms",
+            "graph_update_ms",
+            "total_ms",
+            "cells_before_merge",
+            "cells_after_merge",
+            "reduction",
+            "topology_changes",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-88",
+        ticket: "R-088",
+        hypothesis: "THE HIGHEST-VALUE GAMEPLAY FEATURE IN THE MECHANICS DOSSIER IS \
+            BLOCKED ON A SUB-PROBLEM THE DOSSIER ITSELF NAMES AS THE HARD ONE. \
+            CALIBRE -- every creature carries a half-width lambda, reachable \
+            space is the connected component of {r >= lambda} -- needs rho \
+            maintained under material removal, and the docs say plainly that \
+            'the genuinely hard sub-problem is maintaining rho itself under \
+            material removal', with the defining paper (Chazal and Lieutier \
+            10.1016/j.gmod.2005.01.002) unobtainable and O-19 still open on \
+            which direction the lambda-filter runs. AN OCTREE OF FREE CELLS \
+            GIVES A CLEARANCE LOWER BOUND WITH NO MEDIAL AXIS AT ALL: a cell of \
+            side s that is entirely empty admits a sphere of radius s/2, and \
+            P-87's merged convex regions give a larger bound directly. M-346 \
+            already established the crate can state a clearance rather than only \
+            a connection, with exactly zero error where the answer is known. \
+            This asks whether the octree route reaches the same number cheaply \
+            enough to ship. RIDES P-87 and is not runnable without it. (C1) The \
+            octree clearance lower bound is within 1 VOXEL of the true clearance \
+            on at least 90% of sampled points across M-346's fixtures -- the \
+            same bar the dossier set for CALIBRE's oracle check. (C2) Lambda- \
+            membership flips after an edit are AT MOST 4x the changed samples -- \
+            again the dossier's own registered bar -- and the flip set is \
+            computable from P-87's repair set with no extra traversal. (C3) IT \
+            IS CONSERVATIVE IN THE SAFE DIRECTION: the bound NEVER overstates \
+            clearance, over 10^6 samples. A creature is never told it fits where \
+            it does not. SHARE: this is an accuracy and a rate, not a ratio of a \
+            total.",
+        falsified_by: "C1 by under 90%, which means the bound is too loose to gate a \
+            passage and CALIBRE still needs rho. C2 by above 4x, or by a flip \
+            set that is not a subset of P-87's repair set. C3 BY ONE \
+            OVERSTATEMENT -- this is one-sided and a single violation kills it, \
+            because a gameplay gate that lies in the permissive direction is \
+            worse than no gate. VACUITY CONTROL: the sample set must include \
+            points whose true clearance is known analytically (M-346's fixtures) \
+            and points in dug passages narrower than 2 cells, both reported as \
+            counts.",
+        records: &[
+            "fixture",
+            "samples",
+            "known_clearance_samples",
+            "narrow_passage_samples",
+            "within_one_voxel",
+            "within_fraction",
+            "overstatements",
+            "max_overstatement_cells",
+            "lambda_flips",
+            "changed_samples",
+            "flip_factor",
+            "flips_outside_repair_set",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-89",
+        ticket: "R-089",
+        hypothesis: "M-377'S OWN OPEN QUESTION, AND IT IS AN HOUR OF WORK. The \
+            granularity curve is still RISING at 2^3 on both fields, so 1^3 \
+            should be worse -- the sample-duplication penalty ((c+1)/c)^3 is 8.0 \
+            at c = 1 against 3.375 at c = 2 -- but it is untested, and M-377 is \
+            the entry that established that a boundary minimum is not an answer. \
+            The same entry derived a two-term model that gets a stencil of \
+            exactly 6 on all twelve arms, so the model is available to be \
+            extrapolated against rather than merely fitted. (C1) 1^3 is worse \
+            than 2^3 on both gyroid and fbm_terrain, confirming the interior \
+            optimum at 4^3. (C2) The measured cost at 1^3 matches M-377's two- \
+            term model to within 10%. SHARE: this experiment measures a curve \
+            and moves nothing; it settles whether M-377's 51x is a shape or a \
+            sample.",
+        falsified_by: "C1 by 1^3 winning, which would mean the duplication model is wrong \
+            and the whole granularity result needs re-deriving. C2 by above 10%, \
+            which means the model does not extrapolate and the 4^3 optimum is a \
+            coincidence of the sampled points. VACUITY CONTROL: M-377's own \
+            assertion is inherited verbatim -- 'VOID: chunk N marked no dirty \
+            chunk in 11 edits' -- and the 1^3 arm must mark dirty chunks on \
+            every edit or the row is void.",
+        records: &[
+            "field",
+            "chunk_cells",
+            "world_cells",
+            "chunks",
+            "sample_duplication",
+            "predicted_ms",
+            "measured_ms",
+            "model_error",
+            "mark_ms",
+            "remesh_ms",
+            "total_ms",
+            "dirty_chunks_total",
+            "c1_holds",
+            "c2_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-90",
+        ticket: "R-090",
+        hypothesis: "DREAMS' HIERARCHICAL EVALUATOR CULLS OVER 99% OF NAIVE EDIT \
+            EVALUATIONS BY MAINTAINING A PER-BLOCK EDIT LIST (Evans, SIGGRAPH \
+            2015 Advances -- 1 to 100,000 edits per sculpture, 10-100 M voxels \
+            evaluated per second on a PS4, culling efficiency over 99% against \
+            brute force). This crate's equivalent is P-39's Lipschitz brush \
+            pruning at 3.36x median, measured at CHUNK granularity. M-377 has \
+            now moved the optimum chunk to 4^3 -- SIXTY-FOUR CELLS. The question \
+            the two results create together is whether pruning still pays when \
+            the brick is that small, or whether the per-brick bookkeeping eats \
+            it. (C1) At 4^3 granularity, Lipschitz pruning still gives at least \
+            2x on M-50's 46-60 brush bucket. (C2) Carrying a per-brick \
+            surviving-brush list costs under 8 BYTES PER BRICK amortised across \
+            the dig trace, using x41's finding that 1,507 survivors cut to 73 \
+            necessary. (C3) The two culls COMPOSE rather than overlap: pruning \
+            at chunk granularity then at brick granularity removes strictly more \
+            than either alone, on the eleven-edit trace. SHARE: C1 moves the \
+            field-evaluation share of remesh, which M-377 measured as \
+            essentially all of remesh_ms.",
+        falsified_by: "C1 by under 2x, which would mean P-72's optimum and P-39's win are \
+            in tension and the granularity choice has a hidden cost. C2 by above \
+            8 bytes, which at 4^3 granularity is a real memory line item -- a \
+            128^3 world is 32,768 bricks. C3 by no additional removal, which \
+            would mean the chunk-level cull already found everything and the \
+            brick level is bookkeeping for nothing. VACUITY CONTROL: the trace \
+            must contain bricks whose surviving-brush set differs from their \
+            parent chunk's, reported as a count, or C3 cannot fire.",
+        records: &[
+            "field",
+            "chunk_cells",
+            "brick_cells",
+            "brushes",
+            "bricks",
+            "survivors_chunk_level",
+            "survivors_brick_level",
+            "additional_removed",
+            "bricks_differing_from_parent",
+            "bytes_per_brick",
+            "speedup_chunk_only",
+            "speedup_both",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-91",
+        ticket: "R-091",
+        hypothesis: "TWO ROWS OF THE EXISTING DOCS MEET HERE AND NEITHER NAMES THE HEAD- \
+            TO-HEAD. Item 3.6 proposes Lengyel's one-scalar geomorph at 6 bytes \
+            per vertex instead of 12 and predicts it FAILS on gyroid and \
+            succeeds on fbm_terrain -- 'geomorph on terrain, not on caves'. Item \
+            3.8 proposes switching LOD at the distance where p99 pixels-of-pop \
+            falls under one pixel, against M-121's measured pop of up to 3.14 \
+            cells. The comparison nobody has run is geomorph against the other \
+            standard answer, dithered or alpha-to-coverage cross-fade. THE SWEEP \
+            FOUND NO BENCHMARK FOR ANY DITHERED LOD BLEND ANYWHERE. The one \
+            measured argument in the literature favours morphing and it is a \
+            BANDWIDTH argument rather than an aesthetic one: Haydel, Yuksel and \
+            Seiler (10.1145/3618359) chose morphing over stochastic LOD because \
+            stochastic causes 'significantly increased data movement' spikes at \
+            transitions -- though their hardware is a CYCLE-ACCURATE SIMULATION \
+            OF TRaX, NOT A REAL GPU, which is why the argument that survives the \
+            port is the structural one and not the number. GATED ON P-77, which \
+            measures history rejection. (C1) Geomorph gets p99 pixels-of-pop \
+            under 1.0 on fbm_terrain at the current switch distance and FAILS on \
+            gyroid, reproducing 3.6's prediction. (C2) Dithered cross-fade gets \
+            a LOWER p99 pop than geomorph on gyroid -- because it does not need \
+            a coarse-mesh counterpart along p + t*n, which a triply-periodic \
+            field denies it -- and a HIGHER cost, measured as P-77's temporal- \
+            history rejection. (C3) Dither's cost lands in the same budget \
+            destruction has already spent: rejection under dithered LOD plus \
+            active digging is MORE THAN THE SUM of each alone. SHARE: C1 and C2 \
+            move the LOD transition only; C3 moves the TAA resolve.",
+        falsified_by: "C1 by either half -- geomorph failing on terrain would kill it \
+            outright, and succeeding on gyroid would be a better result than \
+            predicted and needs explaining. C2 by dither also failing on gyroid, \
+            which would mean neither transition works on cave topology and the \
+            honest answer is a hard switch at a distance where nobody looks. C3 \
+            by additivity, which would mean the two effects are independent and \
+            dither is affordable after all. VACUITY CONTROL: the no-transition \
+            arm must show a measurable pop, reported in pixels, or both methods \
+            are being compared against an invisible baseline.",
+        records: &[
+            "field",
+            "switch_distance",
+            "method",
+            "p99_pixels_of_pop",
+            "max_pixels_of_pop",
+            "pop_cells",
+            "bytes_per_vertex",
+            "history_rejected_static",
+            "history_rejected_lod",
+            "history_rejected_lod_and_digging",
+            "sum_of_parts",
+            "superadditivity",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-92",
+        ticket: "R-092",
+        hypothesis: "THE BAR IS PUBLIC AND LOW. meshoptimizer decodes sponza -- 184k \
+            vertices, 262k triangles -- in 1.92 ms on a Core i7-8650U at 2 GHz, \
+            against Draco's 169 ms. That is about 7.3 NANOSECONDS PER TRIANGLE, \
+            SINGLE-THREADED, TO DECODE, and decoding produces geometry and \
+            nothing else. This crate's extraction produces the geometry AND the \
+            material weights AND the gradient normals from a field plus an edit \
+            log that is far smaller than any encoding of 440k triangles. And \
+            M-31's bit-exact cross-platform determinism turns that from a gamble \
+            into a protocol: both endpoints extract the same mesh from the same \
+            field, and the golden hashes prove it. THE SWEEP FOUND NOTHING \
+            PUBLISHED ON THIS. (C1) Marginal extraction cost per triangle is \
+            under 7.3 ns on the Zen 3 for marching_cubes at 33^3 chunks, i.e. \
+            re-extracting is cheaper than decoding an encoded mesh of the same \
+            output. THIS IS GENUINELY UNCERTAIN and is why it is measured rather \
+            than asserted: M-20's 4.75 ns per SAMPLE and x51's 10.68 ns per \
+            sample extraction marginal do not settle a per-TRIANGLE figure. (C2) \
+            The field plus edit log for a dug chunk is at least 20x smaller than \
+            meshopt's encoding of that chunk's triangles, across M-50's four log \
+            buckets. (C3) Extraction from the same field and log on the M5 and \
+            the Zen 3 produces byte-identical output over a 10^4-edit trace -- \
+            M-31 at 216 fixtures extended to a long replay, which is a different \
+            regime. SHARE: C1 is a per-triangle cost, compared like for like \
+            against a published per-triangle cost on named hardware.",
+        falsified_by: "C1 by above 7.3 ns, which closes the argument with a number and is \
+            the outcome to expect if the surface-to-triangle ratio is \
+            unfavourable. C2 by under 20x, which would mean long edit logs \
+            approach the size of the geometry they produce and the argument has \
+            a crossover the log-trimming ticket must respect. C3 BY ONE \
+            DIFFERING BYTE, which is the single most important negative result \
+            available here and would end the direction. VACUITY CONTROL: the \
+            encoded-size arm must use a real encoder on the real triangles, not \
+            an estimate, and its decode time must be measured on this machine \
+            rather than quoted from the blog post.",
+        records: &[
+            "field",
+            "chunk_cells",
+            "triangles",
+            "extract_ms",
+            "ns_per_triangle",
+            "meshopt_bytes",
+            "meshopt_decode_ms",
+            "meshopt_ns_per_triangle",
+            "field_plus_log_bytes",
+            "size_ratio",
+            "log_bucket",
+            "replay_edits",
+            "bytes_differing",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-93",
+        ticket: "R-093",
+        hypothesis: "M-377 NAMED THIS COST AND DID NOT PRICE IT. At 4^3 the trace carries \
+            51.6% MORE VERTEX DATA than 64^3 for the same 53,110 distinct \
+            surface points -- 81,548 against 53,788 -- with the duplication \
+            ratio running 2.2122x at 2^3 down to 1.0128x at 64^3. The entry says \
+            plainly that this is 'the number a consumer paying for GPU upload \
+            should weigh against the 51x edit win', and x54 has since measured \
+            what upload actually costs: 7.3236 ms of an 8.3694 ms GPU total, \
+            87.50%. SO THE WEIGH-OFF IS NOW COMPUTABLE AND IT HAS NEVER BEEN \
+            COMPUTED. (C1) There is a CROSSOVER: below some edits-per-second \
+            rate, 64^3 wins on total frame cost despite the 51x edit penalty, \
+            because the upload dominates. Predicted to exist between 1 and 20 \
+            edits per second -- game_dig throttles the stroke to 12.5 per \
+            second, which is inside that window. (C2) Welding closes the \
+            duplication (M-377 says it does) at a cost that is itself \
+            granularity-dependent, and at 4^3 the weld costs MORE than the \
+            upload it saves. (C3) A per-chunk granularity -- coarse for static \
+            chunks, fine for actively-dug ones -- beats both fixed choices by at \
+            least 1.5x on the eleven-edit trace with a moving camera. SHARE: C1 \
+            weighs the remesh stage against the upload stage, whose shares M-377 \
+            and x54 have both measured.",
+        falsified_by: "C1 by no crossover in 0.1-100 edits per second, which would mean 4^3 \
+            wins unconditionally and the granularity decision is settled rather \
+            than a trade. C2 by the weld being cheaper, which resolves the trade \
+            in 4^3's favour and makes C1's crossover a curiosity. C3 by under \
+            1.5x, in which case one global granularity is the right answer and \
+            the scheduler stays simple. VACUITY CONTROL: the upload arm must \
+            actually upload -- asserted against x54's own gpu_vs_cpu.csv row \
+            rather than quoted, per P-70's precedent -- and the camera arm must \
+            move enough to change the visible chunk set, reported as a count.",
+        records: &[
+            "field",
+            "chunk_cells",
+            "edits_per_second",
+            "remesh_ms",
+            "upload_ms",
+            "weld_ms",
+            "total_ms",
+            "raw_vertices",
+            "distinct_surface_points",
+            "vertex_duplication",
+            "crossover_edits_per_second",
+            "mixed_granularity_ms",
+            "mixed_speedup",
+            "visible_chunk_changes",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-94",
+        ticket: "R-094",
+        hypothesis: "NO PEER-REVIEWED PAPER MEASURES BANDWIDTH OR STORAGE FOR A \
+            DESTRUCTIBLE WORLD. Voxel Plugin and Godot Voxel Tools both document \
+            edit-replication designs with no numbers; the only public datum \
+            anywhere is Teardown's ~1 Mbit per client, from a blog post, and \
+            their reason for replicating COMMANDS rather than voxels is stated \
+            directly: 'commands are the same regardless of object size'. The \
+            08-11 doc estimates 100k operations x 48 B = 4.80 MB against 1.7 GB \
+            per-voxel, from CALM; that is an ESTIMATE, not a measurement, and \
+            the crate now has the machinery to make it one. SCOPE, stated at \
+            registration because BACKLOG.md closes networked editing out and \
+            that is not being reopened: this measures the EDIT LOG, which the \
+            crate owns, which is what a save file is, and which undo rewinds. No \
+            sockets, no clock, no session model. (C1) A one-hour game_dig \
+            session at the throttled 12.5 strokes per second produces an edit \
+            log under 2 MB uncompressed, and the per-edit cost is CONSTANT in \
+            world size and in chunk granularity -- the property that makes the \
+            log the right representation. (C2) Coaxial and nested edits \
+            collapse: a tunnel dug as 200 overlapping capsules along one axis \
+            compresses under max to fewer than 40 surviving brushes, reproducing \
+            x41's survivor arithmetic (1,507 to 73) on a realistic trace rather \
+            than a fixture. (C3) Entropy-coding the log beats a general-purpose \
+            compressor by at least 2x, because brush parameters are strongly \
+            correlated along a stroke. SHARE: this measures sizes and moves \
+            nothing.",
+        falsified_by: "C1 by either half -- size growth with world size would mean the log \
+            is carrying position precision it does not need. C2 by fewer than 3x \
+            collapse, which would mean the log grows with play time in a way \
+            trimming cannot fix. C3 by under 2x, which means zstd is the answer \
+            and no bespoke format is worth writing. VACUITY CONTROL: the trace \
+            must be a real session capture rather than a synthetic sweep, and \
+            the coaxial arm must actually overlap -- reported as the pairwise- \
+            intersection count -- or C2 is compressing disjoint brushes.",
+        records: &[
+            "session_minutes",
+            "strokes",
+            "edits",
+            "bytes_uncompressed",
+            "bytes_per_edit",
+            "world_cells",
+            "chunk_cells",
+            "bytes_per_edit_at_other_world_size",
+            "coaxial_brushes",
+            "surviving_brushes",
+            "collapse_ratio",
+            "overlapping_pairs",
+            "bytes_zstd",
+            "bytes_entropy_coded",
+            "compression_advantage",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-95",
+        ticket: "R-095",
+        hypothesis: "THE 08-11 DOC NAMES THIS GAP IN ONE LINE: 'out-of-order arrival \
+            forces a re-fold from checkpoint; needs checkpoint cadence \
+            measured.' It is also the feature a volumetric editor is unusable \
+            without, and game_editor exists. M-50 already measured the fold's \
+            cost curve -- 0.158, 0.354, 0.525 and 0.589 ms for logs of 1-15, \
+            16-30, 31-45 and 46-60 brushes -- so the cadence should be DERIVABLE \
+            rather than tuned, and that is what makes this a prediction rather \
+            than an implementation. (C1) Undoing the last edit costs strictly \
+            less than re-folding from a checkpoint whenever fewer than N edits \
+            separate them, and N is measurable and STABLE ACROSS FIELDS. (C2) \
+            M-50's cost curve gives the cadence directly: checkpoints every k \
+            edits hold worst-case undo under 16 ms, and k FALLS OUT OF the 0.158 \
+            / 0.354 / 0.525 / 0.589 ms bucket measurements rather than being \
+            tuned. (C3) Undo is BIT-EXACT: undoing then redoing an edit returns \
+            the golden hash to its previous value, over a 10^3-edit trace with \
+            interleaved undo. SHARE: C2 is denominated in a frame, which is the \
+            budget undo has to fit in.",
+        falsified_by: "C1 by no crossover, which would mean undo is always a re-fold and \
+            the checkpoint cadence is the only knob. C2 by a k that does not \
+            predict from M-50 -- i.e. undo cost is not the same function as \
+            evaluation cost, which would be a finding about the fold rather than \
+            about undo. C3 by one mismatch, which would mean the log is not a \
+            faithful history and the save format is lossy. VACUITY CONTROL: the \
+            interleaved-undo trace must include undos that cross a checkpoint \
+            boundary, reported as a count, or C3 tests only the cheap path.",
+        records: &[
+            "field",
+            "edits",
+            "checkpoint_every_k",
+            "undo_ms",
+            "refold_ms",
+            "crossover_n",
+            "crossover_stable_across_fields",
+            "predicted_k_from_m50",
+            "measured_k",
+            "worst_undo_ms",
+            "undos_crossing_checkpoint",
+            "hash_mismatches",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-96",
+        ticket: "R-096",
+        hypothesis: "M-38 IS THE MEASUREMENT THAT DECIDES WHETHER SMOOTH BLENDING CAN \
+            EVER BE ORDER-FREE, AND IT ONLY COUNTED. Smooth union gives 40,317 \
+            distinct results from 40,320 orderings -- against hard union's 1 \
+            (M-36) and mixed add/subtract's 11 (M-37). Counting distinct results \
+            says the operator is order-dependent. IT DOES NOT SAY THE RESULTS \
+            ARE DIFFERENT IN ANY WAY A PLAYER COULD SEE, and that is a \
+            completely different question with a completely different \
+            consequence: if the spread is sub-voxel then smooth union is \
+            effectively commutative at gameplay tolerance even though it is not \
+            bit-commutative, and the ordering authority M-38 seemed to demand is \
+            not needed. One day, on a fixture that already exists, and it \
+            changes a protocol decision. (C1) Across all 40,320 orderings of the \
+            eight-brush fixture, the MAXIMUM symmetric Hausdorff distance \
+            between any two resulting meshes is under 0.1 cells. (C2) The spread \
+            SCALES WITH the blend radius k and vanishes as k approaches 0, \
+            recovering M-36's exact commutativity in the limit -- so k is the \
+            knob, and there is a k below which smooth union is gameplay- \
+            commutative. (C3) The spread is SPATIALLY CONFINED to within 10k of \
+            a seam between two brushes, matching the |smin_k - min| <= k*ln(n) \
+            bound the 2026-08-23 memo derived and measured at max deviation \
+            0.135 against a bound of 0.208. SHARE: this measures a distance, not \
+            a ratio.",
+        falsified_by: "C1 by above 0.1 cells, which confirms M-38's implication and means \
+            smooth-union edits carry a hard ordering requirement. C2 by a spread \
+            that does not fall with k, which would mean the order-dependence is \
+            not the blend and is something else entirely. C3 by spread outside \
+            that shell, which would mean the bound does not localise and the \
+            memo's k-as-a-length interpretation is wrong. VACUITY CONTROL: \
+            M-38's own fixture is inherited and its 40,320 orderings must all be \
+            reached, asserted by count -- and the three orderings that COINCIDE \
+            in M-38 must still coincide here, or the harness is not reproducing \
+            M-38.",
+        records: &[
+            "blend_radius_k",
+            "orderings",
+            "distinct_results",
+            "coincident_orderings",
+            "max_hausdorff_cells",
+            "mean_hausdorff_cells",
+            "p99_hausdorff_cells",
+            "spread_vs_k_slope",
+            "max_deviation_from_seam_cells",
+            "shell_10k_cells",
+            "points_outside_shell",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-97",
+        ticket: "R-097",
+        hypothesis: "M-31 IS 216 GOLDEN HASHES ON EIGHT REFERENCE FIELDS. A SAVE FILE IS \
+            A HUNDRED THOUSAND EDITS. These are different regimes and nothing \
+            has tested the second. Teardown's team is the only public account \
+            and their arc is a warning: they FIRST REWROTE DESTRUCTION IN FIXED- \
+            POINT INTEGER ARITHMETIC, then found floating point workable with \
+            precautions -- 'floating point operations were considered unsafe for \
+            deterministic purposes. That is still true to some extent, but the \
+            picture is more nuanced.' They were not committing cross-platform \
+            hashes. This crate is, so its bar is higher and its evidence should \
+            be too. THE VALUE OF THIS EXPERIMENT IS ENTIRELY IN THE FAILURE \
+            CASE: a divergence at edit 60,000 that fixture testing cannot reach \
+            is the single worst bug this crate could ship. (C1) A 10^5-edit \
+            trace replayed on the M5 and the Zen 3 produces byte-identical \
+            meshes on all eight fields. (C2) If C1 fails, the divergence is \
+            LOCALISED: the first differing edit is identifiable by bisection and \
+            its brush parameters name the operation responsible. (C3) Replay \
+            cost is LINEAR in log length with a constant under 1.2x the sum of \
+            per-edit costs M-50 measured -- i.e. replay does not have a hidden \
+            superlinearity. SHARE: C3 is denominated in the sum of per-edit \
+            costs, which M-50 measured directly.",
+        falsified_by: "C1 by one differing byte -- and that outcome is the point of the \
+            row, not its failure. C2 by a divergence that bisection cannot \
+            localise, which would mean the fold accumulates rather than diverges \
+            and no per-operation fix exists. C3 by above 1.2x, which would put a \
+            ceiling on session length independent of correctness. VACUITY \
+            CONTROL: the trace must exercise all three operator classes M-36, \
+            M-37 and M-38 distinguish -- same-kind, mixed add/subtract, and \
+            smooth union -- reported as three counts, because a trace of only \
+            same-kind brushes is the case already known to be order-free.",
+        records: &[
+            "field",
+            "edits",
+            "same_kind_edits",
+            "mixed_edits",
+            "smooth_union_edits",
+            "bytes_differing",
+            "first_differing_edit",
+            "first_differing_operator",
+            "bisection_steps",
+            "replay_ms",
+            "sum_of_per_edit_ms",
+            "linearity_constant",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-98",
+        ticket: "R-098",
+        hypothesis: "M-378 NAMED THIS AND EXPLICITLY REFUSED TO SUBSTITUTE IT FOR THE \
+            VERDICT. The Plantinga-Vegter predicate costs 21% of extraction \
+            standalone, against a registered 5% ceiling -- but the BARE EIGHT- \
+            CORNER GATHER IS 0.51 ms ON EVERY SINGLE ARM, and two thirds of the \
+            standalone cost is re-reading corners the extractor has already \
+            read. A version fused into the extractor's existing gather would pay \
+            0.0658, which is still above 5% but by 1.3 points rather than 16. \
+            The entry states that as a number and files nothing. This is that \
+            ticket. (C1) Fused into the extraction gather, the predicate costs \
+            AT MOST 0.0658 of extraction at 65^3 on all eight fields -- the \
+            figure M-378 derived, used as a bar rather than a target. (C2) The \
+            certification result is IDENTICAL to the standalone predicate on all \
+            25 rows of p-62.csv plus the 400,000-cell random arm -- same \
+            certified set, same zero unsound. (C3) At 0.0658 it is shippable as \
+            a default rather than a debug gate: the certified fraction is \
+            reportable per chunk at NO EXTRA PASS, and a consumer can read 'this \
+            chunk is 87% certified' from the existing report. SHARE: C1 is a \
+            share of extraction, which is exactly how M-378 stated it.",
+        falsified_by: "C1 by above 0.0658, which would mean the derivation double-counted \
+            something and the fused cost has a term the decomposition missed. C2 \
+            by any difference, which would mean fusing changed the arithmetic \
+            and the soundness proof does not carry over. C3 by needing a second \
+            pass to aggregate, which puts it back above the ceiling. VACUITY \
+            CONTROL: the random arm from p-62.csv is inherited verbatim -- 2,202 \
+            tunnel and 180 twelve-vertex cells -- because the eight reference \
+            fields alone gave seven tunnel cells in 172,032, which M-378 itself \
+            called 'a hair from M-44's vacuous zero'.",
+        records: &[
+            "field",
+            "resolution",
+            "fused_predicate_ms",
+            "standalone_predicate_ms",
+            "bare_gather_ms",
+            "extract_ms",
+            "fused_share",
+            "standalone_share",
+            "certified_cells_fused",
+            "certified_cells_standalone",
+            "set_difference",
+            "unsound_certificates",
+            "tunnel_cells",
+            "twelve_vertex_cells",
+            "extra_passes",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-99",
+        ticket: "R-099",
+        hypothesis: "x53 FALSIFIED ALL THREE CLAUSES AND SAID WHAT THE NEXT REGISTRATION \
+            SHOULD BE ABOUT. Two candidate reformulations survive the data: the \
+            non-monotonic rate AMONG SINGLE-ROOT EDGES -- which ranks thin_plate \
+            first and is the only quantity in the run that fails to converge -- \
+            and the false-negative count at fixed k, which needs the oracle and \
+            is therefore offline. The entry registers neither on purpose: \
+            'Neither is registered, so neither is claimed.' x53's two \
+            registration defects are both corrected here rather than repeated: \
+            C2's second half asked for a false-positive rate that FALLS with k, \
+            which is mechanically impossible because adding a sample point can \
+            only add an opportunity to disagree; and C3's metric was taken over \
+            ALL grid edges, so it measured how much of the VOLUME has turning \
+            gradient rather than how badly the SURFACE is under-resolved, which \
+            is why thin_plate -- a thin plate in a mostly-empty box -- ranked \
+            eighth. (C1) The non-monotonic rate among SINGLE-ROOT edges ranks \
+            thin_plate FIRST of eight at 33^3 and 65^3, where the all-edges rate \
+            ranked it eighth. (C2) It FAILS TO CONVERGE on thin_plate and \
+            converges on the other seven, reproducing x53's observation that \
+            thin_plate's false-positive rate is the only one that rises with \
+            resolution (0.3889, 0.4412, 0.4697). That non-convergence is the \
+            signal an LOD decision wants. (C3) THE CLAUSE x53 GOT BACKWARDS, \
+            STATED CORRECTLY: false NEGATIVES fall with k -- 322, 94, 8, 1, 0 at \
+            k in {2,3,5,9,17} -- and false positives are monotone NON-DECREASING \
+            in k by construction. Both are asserted in the direction the \
+            predicate's form allows. SHARE: this is a rate; it moves nothing and \
+            gates the LOD decision M-121 and M-72 both want an input for.",
+        falsified_by: "C1 by any other ranking, which would mean the denominator was not \
+            the problem and the whole witness family is measuring the volume \
+            rather than the surface. C2 by convergence on thin_plate, or by non- \
+            convergence on a second field. C3 by a non-monotone false-positive \
+            count, which would mean the implementation is not the predicate. \
+            VACUITY CONTROL: x53's oracle_samples column is inherited -- 128 \
+            intervals -- and the caveat with it: a root pair inside one interval \
+            is invisible to both instruments and cannot produce a false negative \
+            here, but also cannot be ruled out.",
+        records: &[
+            "field",
+            "resolution",
+            "k",
+            "single_root_edges",
+            "multi_root_edges",
+            "non_monotonic_single_root",
+            "rate_single_root",
+            "rate_all_edges",
+            "rank_single_root",
+            "rank_all_edges",
+            "converges",
+            "false_negatives",
+            "false_positives",
+            "oracle_samples",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-100",
+        ticket: "R-100",
+        hypothesis: "M-372 FOUND THE OBSTRUCTION AND NAMED IT AS STRUCTURAL. Marching \
+            Tetrahedra improves from {6, 12} to a flat 12 OF 48 AND STOPS, \
+            because a six-tetrahedron decomposition of a cell is not \
+            octahedrally invariant -- its diagonals cut different edges after a \
+            relabelling -- and NO PLACEMENT RULE REACHES THAT. That is a \
+            statement about the DECOMPOSITION, not about the extractor, and \
+            decompositions that are invariant exist: the barycentric \
+            (Kuhn/Freudenthal) subdivision into 24 tetrahedra is invariant under \
+            the full octahedral group by construction. P-3 already verified that \
+            Kuhn tiles face-to-face only if every cell picks the same main \
+            diagonal, and M-51 measured classic MT at about 3x the triangles for \
+            about 4% worse geometry, so the cost side is known and the question \
+            is whether invariance is worth paying for. (C1) A 24-tetrahedron \
+            barycentric decomposition reaches 48 OF 48 on all eight fields at \
+            both resolutions, where the six-tet split reaches 12. (C2) It costs \
+            at most 2x the six-tet split in triangle count -- and since M-51 \
+            already measured a 3x penalty over Marching Cubes, the COMBINED \
+            penalty must stay under 6x, which is the number a consumer actually \
+            pays. (C3) It STILL TILES across chunk seams with zero open edges, \
+            which is the property M-132 measured for the subgrid extractor and \
+            the reason Marching Tetrahedra is in this crate at all. SHARE: C2 is \
+            a triangle count, compared against M-51's already-measured baseline.",
+        falsified_by: "C1 by under 48, which would mean the obstruction is not the \
+            decomposition and M-372's diagnosis needs revising. C2 by above 2x, \
+            which prices invariance out for a game and leaves it a CAD-only \
+            option. C3 by any open edge, which kills it outright regardless of \
+            C1. VACUITY CONTROL: the six-tet arm must reproduce p-61.csv's flat \
+            12 of 48 before the 24-tet arm is believed, reported side by side.",
+        records: &[
+            "field",
+            "resolution",
+            "decomposition",
+            "tetrahedra_per_cell",
+            "elements_vertex_exact",
+            "worst_component_ulp",
+            "triangles",
+            "triangles_vs_six_tet",
+            "triangles_vs_marching_cubes",
+            "open_edges",
+            "seam_configurations",
+            "hausdorff",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-101",
+        ticket: "R-101",
+        hypothesis: "M-372 SAYS THE DUALS ACCUMULATE CROSSINGS IN AN ORDER THAT AXIS \
+            RELABELLING PERMUTES, AND POINTS AT M-177. But M-177 is about \
+            NEGATION equivariance -- 'reordering cannot buy negation \
+            equivariance, and the obstruction is structural' -- and octahedral \
+            relabelling is a different group action. THE EVIDENCE THAT THE TWO \
+            ARE NOT THE SAME CASE IS IN p-61.csv: dual_contouring and \
+            manifold_dual_contouring already reach 48 on 3 OF 16 ROWS, which a \
+            structural obstruction would not permit. So the open question is \
+            narrow and cheap: does accumulating in a RELABELLING-INVARIANT order \
+            -- sorting the crossings by a key that is a function of the cell's \
+            geometry rather than of the axis indices -- take the duals from 3 of \
+            16 to 16 of 16? Note M-24 and M-175: magnitude-ordered sums were \
+            real and insufficient once, and 'ties need no tie-break' survived \
+            9,600 trials and fell to the first test about the tie itself -- so \
+            the key must be total and its tie-break must itself be invariant, \
+            which is registered here rather than discovered. (C1) With crossings \
+            accumulated in an order keyed on (|value|, |offset|) with an \
+            invariant tie-break, dual_contouring reaches 48 on at least 12 OF 16 \
+            rows. (C2) IT IS FREE: no golden hash moves except through the \
+            accumulation order itself, and the Hausdorff error is unchanged to \
+            1e-12 -- the same shape as x49's C3. (C3) manifold_dual_contouring \
+            does WORSE than dual_contouring, because its cycle partition \
+            introduces a second order-dependence the accumulation key cannot \
+            reach. SHARE: C2 is a geometric change of zero, asserted rather than \
+            hoped.",
+        falsified_by: "C1 by under 12, which would mean M-177's obstruction does cover this \
+            case and the duals are structurally out of reach. C2 by any \
+            geometric change, which would mean the reordering is not a \
+            reordering. C3 by the two matching, which would be a stronger result \
+            and would mean the cycle partition is already invariant. VACUITY \
+            CONTROL: p-61.csv's three already-passing dual rows must still pass, \
+            and the tie-break must be exercised -- a count of exact ties in the \
+            key is a required column, because M-175 is the precedent for a tie- \
+            break that is never tested.",
+        records: &[
+            "field",
+            "resolution",
+            "extractor",
+            "accumulation_key",
+            "elements_vertex_exact",
+            "elements_vertex_exact_baseline",
+            "worst_component_ulp",
+            "exact_key_ties",
+            "hausdorff_delta",
+            "hashes_moved",
+            "hashes_moved_expected",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-102",
+        ticket: "R-102",
+        hypothesis: "THE ONE AUDIT ITEM THAT WAS DOWNGRADED RATHER THAN FIXED. x43 claims \
+            '2 of 8,064 not closed before the fix, 0 of 8,064 after' and the \
+            sweep that produced it exists in no bench, no test and no CSV; the \
+            entry now says so honestly, which leaves the claim that the per-ring \
+            apex fix GENERALISES with no evidence behind it and no ticket to \
+            produce any. That is CLAUDE.md hard rule 4 and it is the x35 failure \
+            mode in its third occurrence. P-63 has since built exactly the \
+            machinery this needs -- an exhaustive sign sweep with a fixture-can- \
+            fail control and a magnitude-seed protocol reported per seed and \
+            never pooled. (C1) Over all 8,064 configurations (16 x 8 x 9 x 7 \
+            sizes from 6^3 to 12^3), the post-fix extractor produces ZERO \
+            unclosed meshes, on four independent magnitude seeds reported per \
+            seed and never pooled. (C2) THE CONTROL THE ORIGINAL LACKED: the \
+            pre-fix single-apex fan produces exactly 2 at 6^3 and zero \
+            elsewhere, reproducing the claim the entry could not support. (C3) \
+            The +/-1 magnitude arm is a BAD FIXTURE here for the reason M-374 \
+            found -- has_inner_hexagon's strict 0 < x < 1 rejects, so interior \
+            vertices go to zero -- and the harness reports it as VOID rather \
+            than as a pass. SHARE: this experiment reproduces a rate and moves \
+            nothing.",
+        falsified_by: "C1 by any unclosed mesh, which reopens x43. C2 by a different count, \
+            which would mean the original figure was wrong as well as \
+            unreproducible -- and that is a finding about the entry rather than \
+            about the fix. C3 by the unit arm reporting a pass, which is M-44 in \
+            a new place and would mean the void detector does not work. VACUITY \
+            CONTROL: interior apexes must be non-zero on every generic arm, \
+            reported per seed, exactly as M-374 reports 282,084 to 283,694.",
+        records: &[
+            "seed",
+            "size",
+            "configurations",
+            "unclosed_post_fix",
+            "unclosed_pre_fix",
+            "interior_apexes",
+            "interior_vertices",
+            "has_inner_hexagon_rejects",
+            "arm",
+            "void",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

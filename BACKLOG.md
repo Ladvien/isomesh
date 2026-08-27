@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**261 tickets archived, 22 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**261 tickets archived, 52 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -45,6 +45,71 @@ attached — read that before re-litigating a decision this project already made
   is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
+
+---
+
+## Phase 24 — thirty registrations for the game
+
+**Added 2026-08-27, above Phase 23 for the reason every phase goes on top: rule 1 reads top-down.**
+Nothing here supersedes Phase 17's or Phase 18's open rows, and Phase 23's two blocked acquisitions
+(`R-063`, `R-065`) and its nightly sweep (`R-072`) stay where they are.
+
+**Source: `docs/research/2026-08-27-thirty-experiments-for-the-game.md`.** Phase 23 read back — four clean
+wins, one crash caught before it shipped, five informative falsifications, two blocked on acquisition — then
+thirty registrations aimed at **what a player would notice**. The largest single source is a hole: across all
+six gameplay research docs there is no proposal touching lighting, shadowing, GI, volumetrics or a material
+system, and lighting appears only as a failure symptom. Eight rows are there.
+
+**Two citations in the existing docs are wrong and the corrections change what gets built.** The mechanics
+dossier proposes the **angle-weighted pseudonormal**; Jin, Lewis & West (`10.1007/s00371-004-0271-1`, 140
+citations) measured all six connectivity weightings at **5–20° median error on marching-tetrahedra output**,
+so `R-073` exists to stop that change rather than to make it. And `A-027`'s cut-and-assign **is** Müller,
+Chentanez & Kim 2013 (`10.1145/2461912.2461934`), uncited, measured at **sub-10 ms fracture on 2013
+hardware** — which is the number `M-116`'s 241–272 ms should be read against.
+
+**Order matters in three places and nowhere else.** `R-085` — attributing the collider's 45% with `✗52`'s
+instrument — runs **before** `R-081` and `R-084`, because it decides whether that cost is query-side or
+construction-side and those two attack different halves. `R-077` runs before `R-076` and `R-091`, because
+both spend a temporal budget `R-077` measures. `R-088` rides `R-087`. Everything else is independent, and
+six rows are `S`.
+
+**Six are expected to return nulls and that is registered rather than hoped:** `R-085`'s C1 if the collider
+cost is diffuse, `R-086`'s C1 if slivers stop nobody, `R-089`'s C1 (which is the point), `R-090`'s C3,
+`R-091`'s C2, and `R-101`'s C1 if `M-177`'s obstruction covers the octahedral case too. Phase 23's two most
+useful rows were `✗51` and `✗54`, both of which said *do not build this*, and both cost a day.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-073** | S | — |
+| ☐ | **R-074** | M | — |
+| ☐ | **R-075** | M | — |
+| ☐ | **R-076** | M | — |
+| ☐ | **R-077** | M | — |
+| ☐ | **R-078** | M | — |
+| ☐ | **R-079** | M | — |
+| ☐ | **R-080** | M | — |
+| ☐ | **R-081** | M | — |
+| ☐ | **R-082** | M | — |
+| ☐ | **R-083** | S | — |
+| ☐ | **R-084** | L | — |
+| ☐ | **R-085** | S | — |
+| ☐ | **R-086** | M | — |
+| ☐ | **R-087** | M | — |
+| ☐ | **R-088** | M | — |
+| ☐ | **R-089** | S | — |
+| ☐ | **R-090** | M | — |
+| ☐ | **R-091** | M | — |
+| ☐ | **R-092** | M | — |
+| ☐ | **R-093** | M | — |
+| ☐ | **R-094** | M | — |
+| ☐ | **R-095** | M | — |
+| ☐ | **R-096** | S | — |
+| ☐ | **R-097** | M | — |
+| ☐ | **R-098** | S | — |
+| ☐ | **R-099** | M | — |
+| ☐ | **R-100** | M | — |
+| ☐ | **R-101** | M | — |
+| ☐ | **R-102** | S | — |
 
 ---
 
