@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**254 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**254 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -175,6 +175,33 @@ golden hashes. The honest scope is *"the table cannot be indexed wrongly"*, not 
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+
+**R-064 — Is a derivative sign test a usable under-resolution witness, scored against the root finder? (P-66)**
+**This line died twice and the third attempt has to be a different mechanism.** `P-43`/x29 tried one
+evaluation at the cell centre; `P-44`/x31 tried the mean residual. Both were **value** witnesses - they
+asked whether the trilinear's value at a point disagrees with the field's - and the failure mode they were
+chasing is not a value disagreement, it is a **missed root**: an edge whose endpoints share a sign while
+the field crosses zero twice between them.
+**The witness is a derivative sign test** from Finken, Li, Wang, Guo & Levine, *Topology-Preserving
+Meshing of Implicit Scalar Fields via Monotonicity Constraints*, `arXiv:2608.12142`, IEEE Vis 2026 short
+paper: if every edge of a PL mesh is monotonic with respect to `f`, the PL approximation is topologically
+consistent with `f`'s critical points. The test is one line - sample the directional derivative at `k`
+points along the edge, non-monotonic when any two disagree in sign.
+**Do not port the paper.** It is explicitly 2D and the authors say so; its sampling-density argument, its
+Theorem 1 case analysis (3D Morse theory has four critical-point types and a spherical link, not three
+and a circle) and its separatrix refinement all fail to generalise, and it wants a Hessian this crate's
+field trait does not expose. **Take the edge test alone, as a diagnostic rather than an extraction rule.**
+**What makes this registrable here rather than anywhere else is the oracle.** `subgrid::roots::all_roots`
+finds *all* roots along an edge - `M-94` resolved a slab at 1/1000 of edge length, `M-168` gave each
+crossing an identity - so the root count per edge is a **known quantity in this repository** and the test
+can be scored against it rather than against a hunch.
+**Consequence if it holds:** a chunk can report *"this grid under-resolves this field, here"* as a number,
+cheaply, per chunk - the missing input to the LOD decision `M-121`'s 3.14-cell surface pop and `M-72`'s
+aliasing both want and neither has.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-064** | M | — |
 
 **R-069 — Is the 83% a blocking round-trip, and can both targets avoid it? (P-71)**
 `M-167` is the largest single number this project owns about its own GPU path: synchronisation was **83%**

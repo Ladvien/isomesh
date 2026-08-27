@@ -2575,6 +2575,91 @@ pub const PREREGISTERED: &[Preregistration] = &[
         ],
     },
     Preregistration {
+        id: "P-66",
+        ticket: "R-064",
+        hypothesis: "THE LINE THIS REPLACES DIED TWICE, and the third attempt \
+            has to be a different mechanism. P-43 / x29 tried one evaluation at \
+            the cell centre as an under-sampling witness and was falsified on \
+            both clauses; P-44 / x31 tried the mean residual instead and was \
+            falsified out of sample. Both were VALUE witnesses: they asked \
+            whether the trilinear's value at a point disagrees with the \
+            field's. The failure mode they were chasing is not a value \
+            disagreement, it is a MISSED ROOT -- an edge whose two endpoints \
+            have the same sign while the field crosses zero twice between them, \
+            or opposite signs while it crosses three times. THE WITNESS IS A \
+            DERIVATIVE SIGN TEST, from Finken, Li, Wang, Guo & Levine, \
+            Topology-Preserving Meshing of Implicit Scalar Fields via \
+            Monotonicity Constraints, arXiv:2608.12142, IEEE Vis 2026 short \
+            paper. Their central statement: if every edge of a PL mesh is \
+            monotonic with respect to f, the PL approximation is topologically \
+            consistent with f's critical points. The test itself is one line -- \
+            sample the directional derivative grad-f dot e-hat at k points \
+            along the edge and declare it non-monotonic when any two sampled \
+            projections disagree in sign. DO NOT PORT THE PAPER: it is \
+            explicitly 2D and the authors say so; its sampling-density \
+            argument, its Theorem 1 case analysis (3D Morse theory has four \
+            critical-point types and a spherical link, not three and a circle) \
+            and its separatrix refinement all fail to generalise, and it wants \
+            a Hessian this crate's field trait does not expose. Take the EDGE \
+            TEST ALONE, as a diagnostic rather than an extraction rule. WHAT \
+            MAKES THIS REGISTRABLE HERE RATHER THAN ANYWHERE ELSE IS THE \
+            ORACLE: subgrid::roots::all_roots already finds ALL roots along an \
+            edge -- M-94 resolved a slab at 1/1000 of the edge length, M-168 \
+            gave each crossing an identity, and M-169 established that \
+            identity-based sharing is complete exactly when no root lands on a \
+            grid sample point -- so the number of roots per edge is a KNOWN \
+            QUANTITY IN THIS REPOSITORY and the monotone-edge test can be \
+            scored against it rather than against a hunch. (C1) SOUNDNESS, \
+            ONE-SIDED: on eight reference fields at 17^3 / 33^3 / 65^3, with \
+            k = 5 samples per edge, every edge the subgrid root finder reports \
+            with more than one root is flagged non-monotonic. ZERO FALSE \
+            NEGATIVES. (C2) YIELD: the false-positive rate -- edges flagged \
+            non-monotonic that carry exactly one root -- is below 20% at k = 5 \
+            on the six smooth fields, and the rate falls as k rises. (C3) IT IS \
+            A RESOLUTION WITNESS, WHICH IS THE POINT: the non-monotonic edge \
+            fraction falls monotonically with resolution on all eight fields, \
+            and is highest on thin_plate -- the field whose sub-cell features \
+            Marching Cubes structurally cannot see (M-100). CONSEQUENCE IF IT \
+            HOLDS: a chunk can report 'this grid under-resolves this field, \
+            here' as a number, per chunk, cheaply -- which is the missing input \
+            to an LOD decision that M-121's 3.14-cell surface pop and M-72's \
+            aliasing both want and neither has.",
+        falsified_by: "C1 by ONE multi-root edge the test calls monotonic. C2 \
+            by a false-positive rate above 20% on any of the six smooth fields, \
+            or a rate that does not fall with k, which would mean the test is \
+            measuring sampling noise rather than the field. C3 by a \
+            non-monotone sequence in resolution on any field, or by thin_plate \
+            not ranking first. NO GOLDEN HASH MOVES: the test is a diagnostic \
+            and no extractor calls it. VOID if the oracle reports no multi-root \
+            edge at all, since C1's zero false negatives would then be a zero \
+            over an empty population -- the multi-root edge count is a recorded \
+            column and must be non-zero somewhere in the sweep. The oracle's \
+            own resolution is a stated limit rather than an assumption: it \
+            divides each edge into a fixed number of intervals and cannot see a \
+            root pair closer together than one of them, so the oracle sample \
+            count is recorded per row.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "k",
+            "oracle_samples",
+            "edges",
+            "single_root_edges",
+            "multi_root_edges",
+            "flagged_non_monotonic",
+            "false_negatives",
+            "false_positives",
+            "false_positive_rate",
+            "non_monotonic_fraction",
+            "falls_with_k",
+            "falls_with_resolution",
+            "thin_plate_ranks_first",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
         id: "P-69",
         ticket: "R-067",
         hypothesis: "core::simd is nightly and is staying nightly -- the \

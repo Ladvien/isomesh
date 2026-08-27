@@ -11568,3 +11568,49 @@ is *"the table cannot be indexed wrongly"*, **not** *"the mesh is correct"*. Kan
 with a `SUCCESSFUL` verdict; the sabotage control passing without failures; or an `AMBIGUOUS_FACES` change
 that lets `joined_mask` set a bit outside the six `face_bit` positions, which would put real inputs
 outside the 64 masks proved here.
+
+### P-66 — registered for R-064, before the harness exists
+
+**This line died twice, and the registration says why the third attempt is a different mechanism rather
+than a third tuning.** `P-43`/`✗29` tried one evaluation at the cell centre as an under-sampling witness
+and was falsified on both clauses. `P-44`/`✗31` tried the mean residual instead and was falsified out of
+sample. **Both were *value* witnesses** — they asked whether the trilinear's value at a point disagrees
+with the field's. The failure mode they were chasing is not a value disagreement, it is a **missed root**:
+an edge whose two endpoints share a sign while the field crosses zero twice between them, or have opposite
+signs while it crosses three times. A value witness cannot see that, because the value can agree at every
+sampled point while the root count differs.
+
+**The witness is a derivative sign test**, from Finken, Li, Wang, Guo & Levine, *Topology-Preserving
+Meshing of Implicit Scalar Fields via Monotonicity Constraints*, `arXiv:2608.12142`, IEEE Vis 2026 short
+paper: if every edge of a PL mesh is monotonic with respect to `f`, the PL approximation is topologically
+consistent with `f`'s critical points. The test is one line — sample `∇f · ê` at `k` points along the edge,
+non-monotonic when any two disagree in sign.
+
+**Do not port the paper, and that is registered rather than discovered.** It is explicitly 2D and the
+authors say so. Its sampling-density argument, its Theorem 1 case analysis — 3D Morse theory has **four**
+critical-point types and a **spherical** link, not three and a circle — and its separatrix refinement all
+fail to generalise, and it wants a Hessian this crate's field trait does not expose. **Take the edge test
+alone, as a diagnostic rather than an extraction rule.**
+
+**What makes this registrable here rather than anywhere else is the oracle.**
+`subgrid::roots::all_roots` already finds *all* roots along an edge — `M-94` resolved a slab at 1/1000 of
+edge length, `M-168` gave each crossing an identity, `M-169` established when identity-based sharing is
+complete. So **the root count per edge is a known quantity in this repository**, and the test is scored
+against it rather than against a hunch. That is the difference between this and the two attempts that died.
+
+| clause | prediction | falsified by |
+|---|---|---|
+| C1 | at `k = 5`, **every** edge the root finder reports with > 1 root is flagged non-monotonic — zero false negatives | **one** multi-root edge called monotonic |
+| C2 | false-positive rate below **20%** at `k = 5` on the six smooth fields, falling as `k` rises | above 20% on any of the six, or a rate that does not fall with `k` — which would mean it measures sampling noise |
+| C3 | non-monotonic edge fraction falls monotonically with resolution on all eight, and is **highest on `thin_plate`** — the field whose sub-cell features Marching Cubes structurally cannot see (`M-100`) | a non-monotone sequence, or `thin_plate` not ranking first |
+
+**`VOID` condition, registered.** If the oracle reports **no** multi-root edge, C1's "zero false negatives"
+is a zero over an empty population — `M-44` again. The multi-root edge count is a recorded column and must
+be non-zero somewhere in the sweep. And the oracle's own resolution is a **stated limit rather than an
+assumption**: `all_roots` divides each edge into a fixed number of intervals and cannot see a root pair
+closer together than one of them, so the oracle sample count is recorded per row.
+
+**Consequence if it holds.** A chunk can report *"this grid under-resolves this field, here"* as a number,
+per chunk, cheaply — the missing input to the LOD decision that `M-121`'s 3.14-cell surface pop and
+`M-72`'s aliasing both want and neither has. **No golden hash moves:** the test is a diagnostic and no
+extractor calls it.
