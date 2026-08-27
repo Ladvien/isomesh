@@ -87,6 +87,15 @@
 //! error at the moment it is typed.
 
 #![no_std]
+// R-062. `marching_cubes::proofs` const-evaluates 16,384 triangulations so Kani
+// can prove properties over a lookup rather than symbolically executing
+// `segment_links`' data-dependent walk -- which is what exhausted 32 GB of CBMC.
+// That pushes the cumulative const-eval step budget past rustc's default, which
+// is tuned to catch accidental infinite loops. `cfg_attr(kani, ...)` so the
+// allowance exists only under Kani's compiler: an ordinary `cargo build` still
+// gets the lint, and a real runaway const-eval in `segment_links` would still be
+// caught there.
+#![cfg_attr(kani, allow(long_running_const_eval))]
 
 extern crate alloc;
 

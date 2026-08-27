@@ -41,6 +41,13 @@ missing_debug_implementations = "warn"
 unreachable_pub = "warn"
 unsafe_code = "forbid"
 
+# R-062. `cfg(kani)` is set by Kani's own compiler and by nothing else, so
+# `--cfg kani` code is invisible to `cargo build`, `cargo test` and docs.rs --
+# which is what keeps hard rule 3 untouched. Declaring it here is how the
+# `unexpected_cfgs` lint learns the name; without this the whole workspace fails
+# `-D warnings` the moment a proof module exists.
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(kani)"] }
+
 [workspace.lints.clippy]
 all = { level = "warn", priority = -1 }
 # Mechanically enforces the no-stubs rule: a placeholder cannot be committed.

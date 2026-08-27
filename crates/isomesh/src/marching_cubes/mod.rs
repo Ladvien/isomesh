@@ -14,6 +14,14 @@ pub mod interior;
 pub mod table;
 pub mod trilinear;
 
+/// R-062's bounded-model-checking proofs, compiled only under `cargo kani`.
+///
+/// Behind `cfg(kani)` rather than `cfg(test)` because `kani::any()` does not
+/// exist outside Kani's compiler, and behind a module rather than inline so the
+/// scope of what is proved is readable in one place.
+#[cfg(kani)]
+mod proofs;
+
 #[cfg(test)]
 mod reference;
 #[cfg(test)]
