@@ -11977,3 +11977,64 @@ comparison's ability to fire.
 **Would be shown wrong by:** a violation against coefficient 3 on any field or resolution; a median bound
 above 4 ulp; a seam ratio at or below 1; or a `box_exact` non-zero error, which would mean the exact
 reference disagrees with arithmetic that is provably exact.
+
+### P-65 — registered for R-063, and **blocked at the door**: the paper is unacquirable
+
+**The hook is real and the blocker is specific.** `Error::UnresolvedSixSaddle` is the one configuration this
+crate refuses to mesh: a cell whose contours run past Grosso's Corollary 6 bound has no published
+triangulation, so `extract` returns an error rather than emitting a hole (`A-002b`, `A-020`, `M-228`).
+`M-231` established that the `[9,3]` cell is not a topological subcase but a **singular face** the strict
+interior test lets through, and `M-233` recorded exactly what is missing: **a singular face needs a third
+routing and the resolution mask has two.**
+
+**MCPro is the paper that says it built the third routing.** Stahl & Grosso, GRAPP 2025,
+`10.5220/0013309800003912`. **No lookup table at all**: it classifies each face's bilinear restriction via
+the asymptotic decider into hyperbola / singular cross / single line / degenerate plane, divides the face
+into quadrants around the asymptote centre, assembles face segments into a per-cell halfedge structure,
+solves for the interior saddles, and builds the inner hexagon that decides tunnel-versus-disk. Validation:
+all 20,000 Etiene et al. (2012) cases on Betti numbers and Euler characteristic.
+
+**One disclosure from the paper this crate would have to carry, and it changes a gate rather than adding
+one.** A trilinear isosurface **can genuinely be non-manifold** — singular vertices and edges are real
+features of the interpolant — so MCPro guarantees a topologically correct triangulation *of a possibly
+non-manifold surface*. **On a field that produces a singular face, `is_manifold()` failing is correct
+behaviour, not a defect.** That is a sharper statement than CGAL's TMC row.
+
+**Blocked, and the block is part of the registration.** Six acquisition routes were attempted through
+home-still. The catalog entry for `10.5220/0013309800003912` is a **383-character SciTePress landing page**
+reporting `conversion.server = html-parser`, `total_pages = 1`, `chunks_indexed = 1` — there is no
+open-access PDF (`M-371`). Running this would require **inventing** the quadrant subdivision, the halfedge
+assembly and the third routing from an abstract, which `CLAUDE.md` rule 5 forbids. **The registration
+records the question; the harness waits on the paper.**
+
+**Effort and risk, stated at registration rather than discovered.** This is the largest item in the source
+document, and the determinism risk is specific: asymptotic-decider comparisons near zero are exactly where
+`f32` and `f64` diverge, and `M-43` established that the decider needs **no division and no epsilon**. That
+property must be shown to survive the procedural construction, or **the golden hashes become
+scalar-dependent** — which would be a worse regression than the blocker it removes.
+
+### P-67 — registered for R-065, and **blocked on C3**: two clauses are runnable and the third is the reason not to split
+
+**`P-54` held and left a structural question open.** `M-354` measured affine arithmetic rejecting **3.85×**
+more cells than intervals on `gyroid`, and **exactly zero** more where `min`/`max` destroys the
+correlation. But the form it used **grows a noise symbol per non-affine operation**, so its size is a
+function of the tape — which for a twelve-brush edit log means an allocation whose size depends on the
+scene, inside a `no_std` crate whose whole pitch is that it does not do that.
+
+**Reduced affine arithmetic fixes the symbol count**: all condensed error folds into one accumulated term,
+so the form is `[R; N+1]` — no allocation, fixed operation sequence, which is the determinism property that
+matters here.
+
+**Blocked on C3, and the honest move is not to split the experiment.** C1 (≥ 90% of the full form's
+rejection rate at 3 retained symbols) and C2 (zero allocation, op count independent of tape length) could
+both be run against this crate's own `P-54` baseline. **C3 cannot**: it exists to reproduce Knoll's
+measured **1.5–2× / 3–4×** band *and* his superquadric inversion — the case where intervals **win** — and
+`10.1111/j.1467-8659.2008.01189.x` has no open-access PDF; `paper_download` reported *"No open-access PDF
+found"* (`M-371`). **Reproducing a band from a summary is exactly `✗21`'s failure**, where a property was
+lifted from a summary rather than from the thing itself.
+
+**Running two of three clauses and calling it P-67 would be answering a different registration.** C3 is
+also the *most* informative clause here, because Knoll's exception is the part of his result that is a
+**mechanism** rather than a measurement: intervals beat affine forms where the bound overestimation is low,
+and `box_exact` is this crate's low-overestimation field. A P-67 without C3 would measure that RAA is
+cheaper without ever testing where it is not.

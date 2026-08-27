@@ -2575,6 +2575,92 @@ pub const PREREGISTERED: &[Preregistration] = &[
         ],
     },
     Preregistration {
+        id: "P-65",
+        ticket: "R-063",
+        hypothesis: "MCPro's procedural construction against the one \
+            configuration this crate refuses to mesh. THE HOOK IS \
+            Error::UnresolvedSixSaddle: the README states it plainly -- a cell \
+            whose contours run past Grosso's Corollary 6 bound has no published \
+            triangulation, so extract returns an error rather than emitting a \
+            hole (A-002b, A-020, M-228). M-231 found that the [9,3] cell is not \
+            a topological subcase but a SINGULAR FACE the strict interior test \
+            lets through, and M-233 recorded the blocker: a singular face needs \
+            a third routing and the resolution mask has two. MCPRO IS THE PAPER \
+            THAT SAYS IT BUILT THE THIRD ROUTING. Stahl & Grosso, MCPro: A \
+            Procedural Method for Topologically Correct Isosurface Extraction \
+            Based on Marching Cubes, GRAPP 2025, 10.5220/0013309800003912. NO \
+            LOOKUP TABLE AT ALL: it classifies each face's bilinear restriction \
+            via the asymptotic decider into hyperbola / singular cross / single \
+            line / degenerate plane, divides the face into quadrants around the \
+            asymptote centre, assembles face segments into a per-cell halfedge \
+            structure, solves for the interior saddles, and builds the inner \
+            hexagon that decides tunnel-versus-disk. What is new against MC33 \
+            is exactly SINGULAR FACES, and the authors exhibit configurations \
+            with three adjacent singular faces where MC33 produces \
+            topologically incorrect non-manifold triangulations. Validation: \
+            passes all 20,000 test cases of Etiene et al. 2012 on Betti numbers \
+            and Euler characteristic. ONE HONEST DISCLOSURE FROM THE PAPER THAT \
+            THIS CRATE MUST CARRY IF IT ADOPTS THE METHOD: a trilinear \
+            isosurface CAN GENUINELY BE NON-MANIFOLD -- singular vertices and \
+            edges are real features of the interpolant -- so MCPro guarantees a \
+            topologically correct triangulation OF A POSSIBLY NON-MANIFOLD \
+            SURFACE. On a field that produces a singular face, is_manifold() \
+            failing is CORRECT BEHAVIOUR, not a defect, and that changes what \
+            the validity gate should assert. (C1) The procedural construction \
+            produces a triangulation for EVERY configuration that currently \
+            returns UnresolvedSixSaddle, and for the [9,3] singular-face cells \
+            M-231 identified. (C2) On the eight reference fields at 33^3 / \
+            65^3, MCPro's output has the same Euler characteristic as the \
+            current extractor's on every cell where the current extractor \
+            succeeds, and chi differs by exactly -2 per tunnel where it does \
+            not -- i.e. M-222 survives the change. (C3) COST: the paper reports \
+            about 10% more vertices and triangles than MC33 on a skull volume \
+            and gives NO TIMINGS AT ALL; M-42 measured the asymptotic decider \
+            as free to within a few percent and M-223 the interior rule at \
+            1.95% at 33^3, so MCPro is predicted to cost under 25% more than \
+            the current interior-rule path on noise_cavity, the only field that \
+            exercises it. EFFORT WARNING, STATED AT REGISTRATION: this is the \
+            largest item in the source document, and the determinism risk is \
+            specific -- asymptotic-decider comparisons near zero are exactly \
+            where f32 and f64 diverge, and M-43 established that the decider \
+            needs no division and no epsilon; that property must be shown to \
+            survive the procedural construction or the golden hashes become \
+            scalar-dependent.",
+        falsified_by: "C1 by any configuration it also cannot resolve, which \
+            would move the blocker rather than remove it. C2 by any chi \
+            disagreement outside the tunnel accounting. C3 by above 25%, in \
+            which case it is a correctness mode rather than a default. GOLDEN \
+            HASHES WILL MOVE and that is the registered cost, since the \
+            construction replaces a table path. BLOCKED, AND THE BLOCK IS PART \
+            OF THE REGISTRATION: the paper is unacquirable. Six acquisition \
+            routes were attempted through home-still and the catalog entry for \
+            10.5220/0013309800003912 is a 383-character SciTePress LANDING \
+            PAGE reporting conversion.server = html-parser, total_pages = 1, \
+            chunks_indexed = 1 -- no open-access PDF exists. M-371 recorded \
+            that. Running this experiment would require inventing the quadrant \
+            subdivision, the halfedge assembly and the third routing from an \
+            abstract, which CLAUDE.md rule 5 forbids. The registration records \
+            the question; the harness waits on the paper.",
+        records: &[
+            "field",
+            "samples_per_axis",
+            "unresolved_cells",
+            "resolved_by_mcpro",
+            "singular_face_cells",
+            "euler_agreements",
+            "euler_disagreements",
+            "tunnels",
+            "chi_delta_per_tunnel",
+            "extra_vertices_ratio",
+            "extra_triangles_ratio",
+            "cost_ratio",
+            "decider_is_division_free",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
         id: "P-66",
         ticket: "R-064",
         hypothesis: "THE LINE THIS REPLACES DIED TWICE, and the third attempt \
@@ -2654,6 +2740,75 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "falls_with_k",
             "falls_with_resolution",
             "thin_plate_ranks_first",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-67",
+        ticket: "R-065",
+        hypothesis: "Reduced affine arithmetic: the same rejection rate in a \
+            fixed-size struct. P-54 HELD AND LEFT A STRUCTURAL QUESTION OPEN: \
+            M-354 measured affine arithmetic rejecting 3.85x more cells on \
+            gyroid than intervals, and exactly zero more where min/max destroys \
+            the correlation. The form it used grows a noise symbol per \
+            non-affine operation, so its size is a function of the tape -- which \
+            for a twelve-brush edit log means an allocation whose size depends \
+            on the scene, inside a no_std crate whose whole pitch is that it \
+            does not do that. REDUCED AFFINE ARITHMETIC FIXES THE SYMBOL COUNT: \
+            all condensed error is folded into a single accumulated term, so the \
+            form is a fixed-size struct -- [R; N+1] -- with no allocation and a \
+            fixed operation sequence, which is the determinism property that \
+            matters here. The published cost/tightness comparison is on exactly \
+            this workload, not on ODEs: Knoll, Hijazi, Kensler, Schott, Hansen & \
+            Hagen, Fast Ray Tracing of Arbitrary Implicit Surfaces with Interval \
+            and Affine Arithmetic, CGF 28(1):26-40, 2009, \
+            10.1111/j.1467-8659.2008.01189.x. Verbatim: 'For typical functions \
+            with fairly low-order coefficients and moderate cross-multiplication \
+            of terms, RAA is generally 1.5-2x faster than IA. For functions with \
+            high bound overestimation, RAA is 3-4x faster' -- and his \
+            superquadric is the stated exception where IA wins. (C1) RAA with 3 \
+            retained symbols reaches at least 90% of the full affine form's \
+            cell-rejection rate on gyroid, noise_cavity and a twelve-brush CSG \
+            tape. (C2) RAA allocates ZERO BYTES and its operation count is \
+            independent of tape length, measured by a counter rather than \
+            asserted. (C3) RAA is between 1.5x and 4x faster than the interval \
+            form on the CSG tape, reproducing Knoll's band; and it is SLOWER \
+            than intervals on box_exact, reproducing his superquadric \
+            exception.",
+        falsified_by: "C1 by below 90% on any of the three, which means the \
+            condensation eats the correlation the form exists to preserve. C2 by \
+            any allocation, or an op count that varies with the tape. C3 by \
+            outside the band, or by box_exact not showing the inversion -- the \
+            second is the more interesting failure, because Knoll's exception is \
+            the part of his result that is a mechanism rather than a \
+            measurement. NO GOLDEN HASH MOVES: the form is a rejection test and \
+            no extractor's output depends on it. BLOCKED, AND THE BLOCK IS PART \
+            OF THE REGISTRATION: C3 exists to reproduce Knoll's measured band \
+            and his superquadric inversion, and the paper is unacquirable -- \
+            10.1111/j.1467-8659.2008.01189.x has no open-access PDF and \
+            paper_download reported 'No open-access PDF found' (M-371). C1 and \
+            C2 could be run against this crate's own P-54 baseline, but C3 \
+            cannot: reproducing a band from a summary is exactly x21's failure, \
+            where a property was lifted from a summary rather than from the \
+            thing itself. Splitting the experiment to run two of three clauses \
+            would be answering a different registration. The registration \
+            records the question; the harness waits on the paper.",
+        records: &[
+            "field",
+            "retained_symbols",
+            "cells",
+            "rejected_interval",
+            "rejected_affine_full",
+            "rejected_affine_reduced",
+            "reduced_fraction_of_full",
+            "bytes_allocated",
+            "ops_per_cell",
+            "tape_length",
+            "interval_ns",
+            "reduced_ns",
+            "speedup_vs_interval",
             "c1_holds",
             "c2_holds",
             "c3_holds",

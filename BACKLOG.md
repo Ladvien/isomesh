@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**257 tickets archived, 19 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**257 tickets archived, 21 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -247,6 +247,44 @@ a soundness statement rather than a comparison of two approximations.
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
+
+**R-063 — Does MCPro's procedural construction resolve `UnresolvedSixSaddle`? (P-65) — BLOCKED**
+`Error::UnresolvedSixSaddle` is the one configuration this crate refuses to mesh; `M-231` found the `[9,3]`
+cell is a **singular face** the strict interior test lets through, and `M-233` recorded the gap - a
+singular face needs a **third routing** and the resolution mask has two. MCPro (Stahl & Grosso, GRAPP 2025,
+`10.5220/0013309800003912`) says it built that routing, with **no lookup table at all**, and passes all
+20,000 Etiene et al. cases on Betti numbers and Euler characteristic.
+**Blocked at the door.** Six acquisition routes through home-still; the catalog entry is a **383-character
+SciTePress landing page** (`conversion.server = html-parser`, `total_pages = 1`), no open-access PDF
+(`M-371`). Running it would require inventing the quadrant subdivision, halfedge assembly and third routing
+from an abstract, which rule 5 forbids. **Registered in `experiment.rs`; the harness waits on the paper.**
+**Carry this if it ever lands:** the paper's own disclosure is that a trilinear isosurface **can genuinely
+be non-manifold**, so `is_manifold()` failing on a singular face is *correct behaviour* - which changes
+what the validity gate asserts. And `M-43`'s division-free, epsilon-free decider must be shown to survive,
+or the golden hashes become scalar-dependent.
+
+**R-065 — Does reduced affine arithmetic keep P-54's rejection rate in a fixed-size struct? (P-67) — BLOCKED**
+`P-54` held (`M-354`: **3.85x** more cells rejected on `gyroid`) and left a structural problem: the form
+grows a noise symbol per non-affine operation, so its size depends on the tape - an allocation whose size
+depends on the scene, in a `no_std` crate. RAA folds all condensed error into one term, giving `[R; N+1]`
+with no allocation and a fixed operation sequence.
+**Blocked on C3, and splitting is refused.** C1 and C2 are runnable against this crate's own `P-54`
+baseline. C3 exists to reproduce Knoll's measured **1.5-2x / 3-4x** band *and* his superquadric inversion
+where intervals **win**, and `10.1111/j.1467-8659.2008.01189.x` has no open-access PDF (`M-371`).
+Reproducing a band from a summary is `x21`'s failure. C3 is also the most informative clause, because the
+exception is a **mechanism** rather than a measurement - so a P-67 without it would measure that RAA is
+cheaper without ever testing where it is not. **Registered in `experiment.rs`; the harness waits.**
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-063** | L | — |
+| ☐ | **R-065** | M | — |
+
+**Both are blocked on acquisition, not on a ticket.** The `Blocked by` column names tickets and no ticket
+can unblock these: `M-371` records that six routes were attempted and neither paper has an open-access PDF.
+They are registered in `crates/isomesh/src/experiment.rs`, their questions are on record in `FINDINGS.md`,
+and the unblocking event is external - a PDF appearing, or the authors publishing one.
+
 
 **R-069 — Is the 83% a blocking round-trip, and can both targets avoid it? (P-71)**
 `M-167` is the largest single number this project owns about its own GPU path: synchronisation was **83%**
