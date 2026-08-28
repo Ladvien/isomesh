@@ -766,3 +766,48 @@ test = false
 name = "experiment_p122"
 harness = false
 test = false
+
+[[bench]]
+name = "experiment_p103"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p104"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p106"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p109"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p110"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p112"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p116"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p118"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p119"
+harness = false
+test = false
