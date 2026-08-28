@@ -573,11 +573,7 @@ fn surface_cells(base: &Base) -> Vec<[f64; 3]> {
                 .into_iter()
                 .any(|n| (grid[n] < 0.0) != first);
                 if mixed {
-                    out.push([
-                        at(i) + h * 0.5,
-                        at(j) + h * 0.5,
-                        at(k) + h * 0.5,
-                    ]);
+                    out.push([at(i) + h * 0.5, at(j) + h * 0.5, at(k) + h * 0.5]);
                 }
             }
         }
@@ -774,7 +770,13 @@ impl Rig {
 }
 
 /// Every dirty brick re-meshed from the whole tape. The denominator.
-fn arm_full(rig: &mut Rig, world: &World, base: &Base, tape: &[Brush<Shape>], steps: &[Step]) -> u128 {
+fn arm_full(
+    rig: &mut Rig,
+    world: &World,
+    base: &Base,
+    tape: &[Brush<Shape>],
+    steps: &[Step],
+) -> u128 {
     let t = Instant::now();
     for step in steps {
         let tk = &tape[..step.tape_len];
@@ -930,8 +932,7 @@ fn census(world: &World, base: &Base, tape: &[Brush<Shape>], steps: &[Step]) -> 
             for id in bricks {
                 let s_both =
                     prune_into(&chunk_list, base, world.brick_cube(*id), &mut brick_list) as u64;
-                let s_direct =
-                    prune_into(tk, base, world.brick_cube(*id), &mut direct_list) as u64;
+                let s_direct = prune_into(tk, base, world.brick_cube(*id), &mut direct_list) as u64;
 
                 let calls = Cell::new(0u64);
                 let stack_full = BrushStack {
@@ -1061,9 +1062,12 @@ fn world_lists(world: &World, base: &Base, tape: &[Brush<Shape>]) -> WorldLists 
                                 cy * BRICKS_PER_CHUNK_AXIS + by,
                                 cz * BRICKS_PER_CHUNK_AXIS + bz,
                             ]);
-                            let n =
-                                prune_into(&chunk_list, base, world.brick_cube(id), &mut brick_list)
-                                    as u64;
+                            let n = prune_into(
+                                &chunk_list,
+                                base,
+                                world.brick_cube(id),
+                                &mut brick_list,
+                            ) as u64;
                             out.entries += n;
                             if n > 0 {
                                 out.occupied += 1;
@@ -1186,12 +1190,7 @@ fn world_necessity(world: &World, base: &Base, tape: &[Brush<Shape>]) -> Necessi
                                 cy * BRICKS_PER_CHUNK_AXIS + by,
                                 cz * BRICKS_PER_CHUNK_AXIS + bz,
                             ]);
-                            prune_into(
-                                &chunk_list,
-                                base,
-                                world.brick_cube(id),
-                                &mut brick_list,
-                            );
+                            prune_into(&chunk_list, base, world.brick_cube(id), &mut brick_list);
                             let origin = world.brick.sample_origin(id);
                             mesh_into(&mut mc, &mut reference, base, &brick_list, world, origin);
                             if reference.triangle_count() > 0 {
@@ -1403,10 +1402,7 @@ fn row_of(c: &Case) -> Row {
         ("additional_removed", additional.to_string()),
         ("additional_over_chunk_only", over_chunk.to_string()),
         ("additional_over_brick_only", over_direct.to_string()),
-        (
-            "bricks_differing_from_parent",
-            cs.differing.to_string(),
-        ),
+        ("bricks_differing_from_parent", cs.differing.to_string()),
         (
             "distinct_bricks_differing",
             cs.distinct_differing.to_string(),
@@ -1454,10 +1450,7 @@ fn row_of(c: &Case) -> Row {
             "bytes_per_brick_payload",
             format!("{:.6}", bytes_payload(c.lists_final.entries)),
         ),
-        (
-            "world_necessary_entries",
-            c.necessity.entries.to_string(),
-        ),
+        ("world_necessary_entries", c.necessity.entries.to_string()),
         (
             "bytes_per_brick_necessary",
             format!("{:.6}", bytes_csr_u16(c.necessity.entries)),
@@ -1546,7 +1539,11 @@ fn main() {
 
     let world = World::new();
     let bases: [(&'static str, Base, u64); 2] = [
-        ("gyroid", Base::Gyroid(Gyroid::<f64>::canonical()), 0x90_5EED_6C11_0001),
+        (
+            "gyroid",
+            Base::Gyroid(Gyroid::<f64>::canonical()),
+            0x90_5EED_6C11_0001,
+        ),
         (
             "ground_slab",
             Base::Ground(BoxExact {
@@ -1632,11 +1629,19 @@ fn main() {
 
     let c1 = rows
         .iter()
-        .filter(|r| {
-            r.iter()
-                .any(|(n, v)| *n == "log_bucket" && v == "46-60")
+        .filter(|r| r.iter().any(|(n, v)| *n == "log_bucket" && v == "46-60"))
+        .map(|r| {
+            (
+                r.iter()
+                    .find(|(n, _)| *n == "field")
+                    .expect("field")
+                    .1
+                    .clone(),
+                num(r, "speedup_both"),
+                num(r, "speedup_chunk_only"),
+                num(r, "ceiling_speedup"),
+            )
         })
-        .map(|r| (r.iter().find(|(n, _)| *n == "field").expect("field").1.clone(), num(r, "speedup_both"), num(r, "speedup_chunk_only"), num(r, "ceiling_speedup")))
         .collect::<Vec<_>>();
     println!("\nC1, the registered 46-60 bucket:");
     for (field, both, chunk, ceiling) in &c1 {
@@ -1737,10 +1742,10 @@ fn main() {
         "\nexact counts (machine-independent), 46-60 bucket: \
          eval_ratio_chunk / eval_ratio_both"
     );
-    for r in rows.iter().filter(|r| {
-        r.iter()
-            .any(|(n, v)| *n == "log_bucket" && v == "46-60")
-    }) {
+    for r in rows
+        .iter()
+        .filter(|r| r.iter().any(|(n, v)| *n == "log_bucket" && v == "46-60"))
+    {
         println!(
             "  {:>12}  x{:.4} / x{:.4}   shape evals {} -> {} -> {}",
             r.iter().find(|(n, _)| *n == "field").expect("field").1,

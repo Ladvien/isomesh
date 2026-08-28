@@ -1232,12 +1232,16 @@ fn crossmachine(dir: &Path) -> Crossmachine {
     };
 
     let local_o3 = if opt3 {
-        run_local("route_o3").as_deref().and_then(hashes_from_output)
+        run_local("route_o3")
+            .as_deref()
+            .and_then(hashes_from_output)
     } else {
         None
     };
     let local_o0 = if opt0 {
-        run_local("route_o0").as_deref().and_then(hashes_from_output)
+        run_local("route_o0")
+            .as_deref()
+            .and_then(hashes_from_output)
     } else {
         None
     };
@@ -1334,8 +1338,9 @@ fn crossmachine(dir: &Path) -> Crossmachine {
             ),
             None => (0, 0, 0, 0, 0),
         };
-    let (remote_sweep_libm, remote_sweep_std) =
-        remote.as_ref().map_or((0, 0), |r| (r.sweep_libm, r.sweep_std));
+    let (remote_sweep_libm, remote_sweep_std) = remote
+        .as_ref()
+        .map_or((0, 0), |r| (r.sweep_libm, r.sweep_std));
     // Which fixtures the platform-libm arm moved on. The count alone does not
     // say whether the disagreement is one adapter's rounding on one triangle or
     // a systematic difference, and the fixture names are the cheapest handle on
@@ -1623,18 +1628,12 @@ fn main() {
                 ("field", case.field.to_string()),
                 ("resolution", case.samples.to_string()),
                 ("weighting", label.to_string()),
-                (
-                    "median_angle_error_deg",
-                    format!("{:.6}", agg.medians[arm]),
-                ),
+                ("median_angle_error_deg", format!("{:.6}", agg.medians[arm])),
                 ("p99_angle_error_deg", format!("{:.6}", agg.p99[arm])),
                 ("gradient_median_deg", format!("{:.6}", agg.medians[6])),
                 ("ratio_to_gradient", format!("{ratio:.6}")),
                 ("canary_mean_abs_f", format!("{:.6e}", agg.canary_mean)),
-                (
-                    "canary_rank_correlation",
-                    format!("{:.6}", agg.rho[arm]),
-                ),
+                ("canary_rank_correlation", format!("{:.6}", agg.rho[arm])),
                 ("worst_decile_triangles", agg.worst_decile.to_string()),
                 (
                     "hashes_moved_connectivity",
@@ -1661,10 +1660,7 @@ fn main() {
                     case.weight_degenerate.to_string(),
                 ),
                 ("skipped_corners", case.skipped_corners.to_string()),
-                (
-                    "row_ratio_at_least_3",
-                    (ratio >= C1_RATIO_BAR).to_string(),
-                ),
+                ("row_ratio_at_least_3", (ratio >= C1_RATIO_BAR).to_string()),
                 ("radius_ratio_p10_pooled", format!("{p10:.6}")),
                 ("radius_ratio_median_pooled", format!("{pooled_median:.6}")),
                 ("triangles_below_0p15", case.below_bar.to_string()),
@@ -1684,10 +1680,7 @@ fn main() {
                     (case.reference_mismatch == 0).to_string(),
                 ),
                 ("mwaat_crate_status", case.mwaat_status.to_string()),
-                (
-                    "mwaat_mismatch_vertices",
-                    case.mwaat_mismatch.to_string(),
-                ),
+                ("mwaat_mismatch_vertices", case.mwaat_mismatch.to_string()),
                 ("canary_zero_vertices", case.canary_zero.to_string()),
                 ("canary_max_abs_f", format!("{:.6e}", agg.canary_max)),
                 (
@@ -1771,33 +1764,27 @@ fn main() {
                     "hashes_connectivity_total",
                     cm.local.connectivity.len().to_string(),
                 ),
-                (
-                    "hashes_gradient_total",
-                    cm.local.gradient.len().to_string(),
-                ),
+                ("hashes_gradient_total", cm.local.gradient.len().to_string()),
                 ("hashes_moved_std_acos", cm.moved_std_acos.to_string()),
-                (
-                    "hashes_std_acos_total",
-                    cm.local.std_acos.len().to_string(),
-                ),
+                ("hashes_std_acos_total", cm.local.std_acos.len().to_string()),
                 ("acos_sweep_moved_libm", cm.moved_sweep_libm.to_string()),
                 ("acos_sweep_moved_std", cm.moved_sweep_std.to_string()),
                 ("hashes_moved_codegen", cm.moved_codegen.to_string()),
-                (
-                    "codegen_control_ran",
-                    cm.codegen_control_ran.to_string(),
-                ),
-                (
-                    "port_acos_matches_libm",
-                    cm.port_matches_libm.to_string(),
-                ),
+                ("codegen_control_ran", cm.codegen_control_ran.to_string()),
+                ("port_acos_matches_libm", cm.port_matches_libm.to_string()),
                 (
                     "program_matches_bench",
                     cm.program_matches_bench.to_string(),
                 ),
             ];
-            row.push(("acos_sweep_libm_local", format!("{:016x}", cm.local.sweep_libm)));
-            row.push(("acos_sweep_std_local", format!("{:016x}", cm.local.sweep_std)));
+            row.push((
+                "acos_sweep_libm_local",
+                format!("{:016x}", cm.local.sweep_libm),
+            ));
+            row.push((
+                "acos_sweep_std_local",
+                format!("{:016x}", cm.local.sweep_std),
+            ));
             row.push((
                 "acos_sweep_libm_remote",
                 format!("{:016x}", cm.remote_sweep_libm),

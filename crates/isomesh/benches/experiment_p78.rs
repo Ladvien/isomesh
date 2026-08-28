@@ -658,8 +658,7 @@ where
     let lo = |v: S| ((v - radius - 1.0).floor().max(0.0)) as u32;
     let hi = |v: S| ((v + radius + 1.0).ceil().min(w as S)) as u32;
     for z in lo(center[2])..=hi(center[2]) {
-        for y in lo(center[1])..=hi(center[1])
-        {
+        for y in lo(center[1])..=hi(center[1]) {
             for x in lo(center[0])..=hi(center[0]) {
                 let p = [x as S, y as S, z as S];
                 if before.sample(p) < 0.0 && after.sample(p) >= 0.0 {
@@ -1166,8 +1165,9 @@ fn main() {
                         }
                         let base = i * dirs.len();
                         let changed = lb != la
-                            || (0..dirs.len())
-                                .any(|k| outcome_differs(out_before[base + k], out_after[base + k]));
+                            || (0..dirs.len()).any(|k| {
+                                outcome_differs(out_before[base + k], out_after[base + k])
+                            });
                         if changed {
                             invalidated += 1;
                         }
@@ -1199,10 +1199,7 @@ fn main() {
                         }
                     }
                     deltas.sort_by(S::total_cmp);
-                    let median_delta = deltas
-                        .get(deltas.len() / 2)
-                        .copied()
-                        .unwrap_or(S::NAN);
+                    let median_delta = deltas.get(deltas.len() / 2).copied().unwrap_or(S::NAN);
                     let hit_frac_field = hit_f as f64 / rays_field as f64;
                     let hit_frac_mesh = hit_m as f64 / rays_mesh as f64;
                     let agree_frac = agree as f64 / rays_field as f64;
@@ -1289,10 +1286,7 @@ fn main() {
                         ("hit_frac_field", format!("{hit_frac_field:.4}")),
                         ("hit_frac_mesh", format!("{hit_frac_mesh:.4}")),
                         ("hit_agree_frac", format!("{agree_frac:.4}")),
-                        (
-                            "hit_median_delta_cells",
-                            format!("{median_delta:.4}"),
-                        ),
+                        ("hit_median_delta_cells", format!("{median_delta:.4}")),
                         (
                             "unresolved_frac_field",
                             format!("{:.4}", unres_f as f64 / rays_field as f64),
@@ -1308,10 +1302,7 @@ fn main() {
                         ("pocket_air_samples", pocket_air_samples.to_string()),
                         ("main_component_samples", main_size.to_string()),
                         ("pocket_connected_before", "false".to_string()),
-                        (
-                            "pocket_connected_after",
-                            arm.connected_after.to_string(),
-                        ),
+                        ("pocket_connected_after", arm.connected_after.to_string()),
                         ("rays_field", rays_field.to_string()),
                         ("rays_mesh", rays_mesh.to_string()),
                         ("dirs_per_probe", DIRS.to_string()),

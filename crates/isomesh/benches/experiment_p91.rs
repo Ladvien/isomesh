@@ -285,7 +285,11 @@ fn len3(a: V3) -> f32 {
 /// geomorph verdict in this file.
 fn unit3(a: V3) -> Option<V3> {
     let l = len3(a);
-    if l > 0.0 { Some(mul3(a, 1.0 / l)) } else { None }
+    if l > 0.0 {
+        Some(mul3(a, 1.0 / l))
+    } else {
+        None
+    }
 }
 
 // ─── the ladder ─────────────────────────────────────────────────────────────
@@ -746,9 +750,8 @@ fn geomorph_scan(
             // "Restricted to the containing cell" is a containment test on the
             // intersection *point*: a triangle may straddle a cell wall and be
             // met outside the cell it is listed in.
-            let inside = |lo: V3, hi: V3| {
-                (0..3).all(|k| hit[k] >= lo[k] - 1e-5 && hit[k] <= hi[k] + 1e-5)
-            };
+            let inside =
+                |lo: V3, hi: V3| (0..3).all(|k| hit[k] >= lo[k] - 1e-5 && hit[k] <= hi[k] + 1e-5);
             if inside(clo, chi) && closer(&best_cell) {
                 best_cell = Some(cand);
             }
@@ -1034,10 +1037,10 @@ fn reproduce_m121() -> M121 {
     let all: Vec<(f64, u32, u32)> = out.into_iter().flatten().collect();
     let mut per_switch: Vec<f64> = all.iter().map(|&(m, _, _)| m).collect();
     per_switch.sort_by(f64::total_cmp);
-    let worst = all
-        .iter()
-        .copied()
-        .fold((0.0f64, 0u32, 0u32), |acc, x| if x.0 > acc.0 { x } else { acc });
+    let worst = all.iter().copied().fold(
+        (0.0f64, 0u32, 0u32),
+        |acc, x| if x.0 > acc.0 { x } else { acc },
+    );
     let worst_adjacent = all
         .iter()
         .filter(|&&(_, a, b)| a.abs_diff(b) == 1)
@@ -1639,9 +1642,7 @@ fn render_taa(
                         // surface. One Newton step onto `Surf::Fine` is that
                         // point, computed the same way the motion vector is.
                         let tex_point = match surf {
-                            Surf::Morph(_) if uv_locked => {
-                                ev.project_once(Surf::Fine, world)
-                            }
+                            Surf::Morph(_) if uv_locked => ev.project_once(Surf::Fine, world),
                             _ => world,
                         };
                         *px = Px {
@@ -1812,7 +1813,10 @@ fn resolve_taa(taa: &mut Taa, cur: &[Px], prev_cam: Option<&TaaCam>) -> TaaFrame
         }
         taa.valid[i] = true;
         taa.hist[i] = match hist_rgb[i] {
-            Some(_) => add3(mul3(clipped[i], 1.0 - TAA_ALPHA), mul3(cur[i].rgb, TAA_ALPHA)),
+            Some(_) => add3(
+                mul3(clipped[i], 1.0 - TAA_ALPHA),
+                mul3(cur[i].rgb, TAA_ALPHA),
+            ),
             None => cur[i].rgb,
         };
     }
@@ -1974,7 +1978,10 @@ fn cpu_mhz() -> String {
     std::fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
         .ok()
         .and_then(|s| s.trim().parse::<f64>().ok())
-        .map_or_else(|| "unknown".to_string(), |khz| format!("{:.0}", khz / 1000.0))
+        .map_or_else(
+            || "unknown".to_string(),
+            |khz| format!("{:.0}", khz / 1000.0),
+        )
 }
 
 type Row = Vec<(&'static str, String)>;
@@ -2204,10 +2211,7 @@ fn main() {
                 ("bytes_per_vertex", m.bytes.to_string()),
                 ("history_rejected_static", static_rej.to_string()),
                 ("history_rejected_lod", dither_rej.to_string()),
-                (
-                    "history_rejected_lod_and_digging",
-                    both_rej.to_string(),
-                ),
+                ("history_rejected_lod_and_digging", both_rej.to_string()),
                 ("sum_of_parts", format!("{sum_of_parts:.1}")),
                 ("superadditivity", format!("{superadditivity:.6}")),
                 (
@@ -2261,7 +2265,10 @@ fn main() {
                 ("coarse_vertices", p.coarse_vertices.to_string()),
                 ("fine_triangles", p.fine_triangles.to_string()),
                 ("coarse_triangles", p.coarse_triangles.to_string()),
-                ("degenerate_coarse_triangles", p.degenerate_coarse.to_string()),
+                (
+                    "degenerate_coarse_triangles",
+                    p.degenerate_coarse.to_string(),
+                ),
                 ("fine_bytes", p.fine_bytes.to_string()),
                 ("coarse_bytes", p.coarse_bytes.to_string()),
                 // ── the two displacement measures ───────────────────────────
@@ -2269,7 +2276,10 @@ fn main() {
                     "pop_cells_vertex_metric_max",
                     format!("{:.6}", p.pop_cells_vertex_metric),
                 ),
-                ("pop_cells_surface_max", format!("{:.6}", p.pop_cells_surface)),
+                (
+                    "pop_cells_surface_max",
+                    format!("{:.6}", p.pop_cells_surface),
+                ),
                 (
                     "p99_pixels_vertex_metric",
                     format!("{:.4}", pixels_of(percentile(&p.vertex_sorted, 0.99), d)),
@@ -2323,10 +2333,7 @@ fn main() {
                     format!("{:.6}", p.geomorph.reach.morph_t_max_coarse_cells),
                 ),
                 ("bytes_per_vertex_doc_claim", BYTES_DOC_CLAIM.to_string()),
-                (
-                    "bytes_second_position",
-                    BYTES_SECOND_POSITION.to_string(),
-                ),
+                ("bytes_second_position", BYTES_SECOND_POSITION.to_string()),
                 // ── THE REGISTERED VACUITY CONTROL, on every row ────────────
                 ("vacuity_none_p99_pixels", format!("{none_p99_px:.4}")),
                 ("vacuity_none_max_pixels", format!("{none_max_px:.4}")),
@@ -2348,31 +2355,23 @@ fn main() {
                     format!("{:.4}", percentile(&m121.per_switch, 0.5)),
                 ),
                 // ── the cost instrument ─────────────────────────────────────
-                (
-                    "history_rejected_lod_geomorph",
-                    morph_rej.to_string(),
-                ),
+                ("history_rejected_lod_geomorph", morph_rej.to_string()),
                 (
                     "history_rejected_lod_geomorph_uv_locked",
                     morph_uv_rej.to_string(),
                 ),
                 ("history_rejected_digging", dig_rej.to_string()),
-                (
-                    "history_rejected_this_method",
-                    this_method_rej.to_string(),
-                ),
+                ("history_rejected_this_method", this_method_rej.to_string()),
                 (
                     "taa_population_static",
-                    cost
-                        .iter()
+                    cost.iter()
                         .find(|c| c.name == "static")
                         .map_or(0, |c| c.population)
                         .to_string(),
                 ),
                 (
                     "taa_brushes_placed",
-                    cost
-                        .iter()
+                    cost.iter()
                         .find(|c| c.name == "digging")
                         .map_or(0, |c| c.brushes)
                         .to_string(),
@@ -2453,7 +2452,10 @@ fn main() {
 
     println!();
     println!("P-91 headline, at the repo's own switch distance for level 0 -> 1 (7.0 units),");
-    println!("  {VIEW_HEIGHT_PX:.0} px tall, {:.0} deg vertical FOV:", FOV_Y.to_degrees());
+    println!(
+        "  {VIEW_HEIGHT_PX:.0} px tall, {:.0} deg vertical FOV:",
+        FOV_Y.to_degrees()
+    );
     println!(
         "  VACUITY CONTROL   no-transition p99  fbm_terrain {:.2} px   gyroid {:.2} px",
         headline("fbm_terrain", "none"),

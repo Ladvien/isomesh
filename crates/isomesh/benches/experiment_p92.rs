@@ -363,7 +363,13 @@ impl<R: Wire> Desc<R> {
     /// states a count the body does not produce — so the harness asserts they
     /// agree instead of trusting either.
     fn encoded_len(&self) -> usize {
-        1 + 4 + 4 + 4 + 2 + R::WIDTH * (self.params.len() + 4) + 2 + self.brushes.len() * (1 + 4 * R::WIDTH)
+        1 + 4
+            + 4
+            + 4
+            + 2
+            + R::WIDTH * (self.params.len() + 4)
+            + 2
+            + self.brushes.len() * (1 + 4 * R::WIDTH)
     }
 }
 
@@ -902,13 +908,7 @@ where
         bad.brushes.iter().copied().map(Brush::subtract).collect();
     let bad_base = rebuild(&bad);
     let mut bad_mesh = MeshBuffer::<R>::new();
-    extract_with(
-        mc,
-        &bad_base,
-        &bad_brushes,
-        &grid_of(&bad),
-        &mut bad_mesh,
-    );
+    extract_with(mc, &bad_base, &bad_brushes, &grid_of(&bad), &mut bad_mesh);
     let regen_control_differing = bytes_differing(&original, &mesh_bytes(&bad_mesh));
 
     Point {
@@ -1073,22 +1073,14 @@ impl Emit<'_> {
             ("brushes", p.brushes.to_string()),
             ("brushes_biting", self.brushes_biting.clone()),
             ("brushes_drawn", self.brushes_drawn.clone()),
-            (
-                "ns_per_triangle_total",
-                format!("{:.4}", total_ns / tri),
-            ),
+            ("ns_per_triangle_total", format!("{:.4}", total_ns / tri)),
             (
                 "cycles_per_triangle",
                 num(self.cycles_per_triangle_marginal, 4),
             ),
             (
                 "cycles_per_triangle_total",
-                num(
-                    self.point
-                        .window
-                        .map(|w| w.cycles / (tri * REPS as f64)),
-                    4,
-                ),
+                num(self.point.window.map(|w| w.cycles / (tri * REPS as f64)), 4),
             ),
             ("ghz", num(p.window.map(|w| w.ghz), 4)),
             ("worst_ratio", num(p.window.map(|w| w.worst_ratio), 4)),
@@ -1130,7 +1122,10 @@ impl Emit<'_> {
                 "regen_control_differing",
                 p.regen_control_differing.to_string(),
             ),
-            ("bytes_differing_scope", self.bytes_differing_scope.to_string()),
+            (
+                "bytes_differing_scope",
+                self.bytes_differing_scope.to_string(),
+            ),
             ("peer", self.peer.to_string()),
             ("replay_min_triangles", self.replay_min_triangles.clone()),
             (
@@ -1368,7 +1363,10 @@ fn main() {
     // ── the SHARE line, recomputed and printed before anything is measured ──
     let samples = f64::from(CHUNK_SAMPLES.pow(3));
     let cells = f64::from(CHUNK_CELLS.pow(3));
-    for (label, per_sample) in [("x51 extraction marginal", 10.68), ("committed sweep", 13.1892)] {
+    for (label, per_sample) in [
+        ("x51 extraction marginal", 10.68),
+        ("committed sweep", 13.1892),
+    ] {
         let total_ns = samples * per_sample;
         println!(
             "SHARE  {label}: {per_sample} ns/sample x {samples:.0} samples = {:.1} us per 33^3 \
@@ -1402,8 +1400,18 @@ fn main() {
     // sheet, and it is still one sheet.
     let fbm_knobs = [0.25, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5];
 
-    let dug32 = scatter::<f32>(origin32, BRUSH_CELLS * CELL_SIZE, C1_DUG_BRUSHES, 0x0092_0001);
-    let dug64 = scatter::<f64>(origin64, BRUSH_CELLS * CELL_SIZE, C1_DUG_BRUSHES, 0x0092_0001);
+    let dug32 = scatter::<f32>(
+        origin32,
+        BRUSH_CELLS * CELL_SIZE,
+        C1_DUG_BRUSHES,
+        0x0092_0001,
+    );
+    let dug64 = scatter::<f64>(
+        origin64,
+        BRUSH_CELLS * CELL_SIZE,
+        C1_DUG_BRUSHES,
+        0x0092_0001,
+    );
     let dug32_brushes: Vec<Brush<Sphere<f32>>> =
         dug32.iter().copied().map(Brush::subtract).collect();
     let dug64_brushes: Vec<Brush<Sphere<f64>>> =
@@ -1588,10 +1596,7 @@ fn main() {
             &gyroid_knobs,
             &|scale| {
                 (
-                    Gyroid {
-                        scale,
-                        iso: 0.0,
-                    },
+                    Gyroid { scale, iso: 0.0 },
                     Desc {
                         tag: 1,
                         seed: 0,
@@ -1684,10 +1689,7 @@ fn main() {
             &gyroid_knobs,
             &|scale| {
                 (
-                    Gyroid {
-                        scale,
-                        iso: 0.0,
-                    },
+                    Gyroid { scale, iso: 0.0 },
                     Desc {
                         tag: 1,
                         seed: 0,
@@ -1871,9 +1873,7 @@ fn main() {
     let bpt: Vec<f64> = families
         .iter()
         .flat_map(|(_, _, f)| f.points.iter())
-        .map(|p| {
-            (p.encoded.vertex_bytes + p.encoded.index_bytes) as f64 / p.triangles as f64
-        })
+        .map(|p| (p.encoded.vertex_bytes + p.encoded.index_bytes) as f64 / p.triangles as f64)
         .collect();
     let bpt_lo = bpt.iter().copied().fold(f64::MAX, f64::min);
     let bpt_hi = bpt.iter().copied().fold(0.0f64, f64::max);
@@ -1933,13 +1933,7 @@ fn main() {
         });
         brushes_drawn += 1;
         let trial: Vec<Brush<Sphere<f32>>> = log.iter().copied().map(Brush::subtract).collect();
-        extract_with(
-            &mut mc32,
-            &base32,
-            &trial,
-            &c2_grid,
-            &mut candidate_mesh,
-        );
+        extract_with(&mut mc32, &base32, &trial, &c2_grid, &mut candidate_mesh);
         if bytes_differing(&mesh_bytes(&kept), &mesh_bytes(&candidate_mesh)) > 0 {
             std::mem::swap(&mut kept, &mut candidate_mesh);
         } else {
@@ -2006,12 +2000,7 @@ fn main() {
         extract_with(&mut mc32, &base, &brushes, &c2_grid, &mut timed);
         for _pass in 0..PASSES {
             clock = clock.best(time_point(
-                &mut meter,
-                &mut mc32,
-                &base,
-                &brushes,
-                &c2_grid,
-                &mut timed,
+                &mut meter, &mut mc32, &base, &brushes, &c2_grid, &mut timed,
             ));
         }
         let point = characterise(
@@ -2022,7 +2011,10 @@ fn main() {
             &c2_rebuild,
             (f64::from(n), clock),
         );
-        assert_eq!(point.encoded.roundtrip_differing, 0, "C2 encoder round-trip");
+        assert_eq!(
+            point.encoded.roundtrip_differing, 0,
+            "C2 encoder round-trip"
+        );
         assert_eq!(point.encoded.control_differing, 1, "C2 encoder control");
         assert_eq!(point.regen_differing, 0, "C2 regeneration");
         assert!(point.regen_control_differing > 0, "C2 regeneration control");
@@ -2135,7 +2127,10 @@ fn main() {
     ];
     let final_extent = (final_desc.cell_size * f64::from(final_desc.cells)) as f32;
     let final_encoded = encode_and_time(&rep.final_mesh, final_lo, final_extent);
-    assert_eq!(final_encoded.roundtrip_differing, 0, "C3 encoder round-trip");
+    assert_eq!(
+        final_encoded.roundtrip_differing, 0,
+        "C3 encoder round-trip"
+    );
     assert_eq!(final_encoded.control_differing, 1, "C3 encoder control");
     let (final_bytes, _) = encode_desc(&final_desc);
     // The geometry columns describe the **final chunk** -- the one whose
@@ -2241,8 +2236,10 @@ fn main() {
     println!(
         "C3: {real_peers} real peer stream(s) on disk beside {local_name}; {}",
         if real_peers == 0 {
-            String::from("BLOCKED -- no second machine's stream present, so nothing cross-machine \
-                          was compared")
+            String::from(
+                "BLOCKED -- no second machine's stream present, so nothing cross-machine \
+                          was compared",
+            )
         } else if c3_holds {
             String::from("HELD -- byte-identical")
         } else {

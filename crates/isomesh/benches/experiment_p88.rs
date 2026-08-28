@@ -613,11 +613,7 @@ impl Nav {
         let leaf = &self.leaves[id as usize];
         let s = 1u32 << leaf.level;
         Box3 {
-            lo: [
-                leaf.coords[0] * s,
-                leaf.coords[1] * s,
-                leaf.coords[2] * s,
-            ],
+            lo: [leaf.coords[0] * s, leaf.coords[1] * s, leaf.coords[2] * s],
             hi: [
                 (leaf.coords[0] + 1) * s,
                 (leaf.coords[1] + 1) * s,
@@ -1432,11 +1428,7 @@ fn bounds_ball(tree: &Tree, out: &mut [f32], stack: &mut Vec<(f64, u8, [u32; 3])
                     out[i] = 0.0;
                     continue;
                 }
-                let q = [
-                    f64::from(x) + 0.5,
-                    f64::from(y) + 0.5,
-                    f64::from(z) + 0.5,
-                ];
+                let q = [f64::from(x) + 0.5, f64::from(y) + 0.5, f64::from(z) + 0.5];
                 let wall = q
                     .iter()
                     .map(|&v| v.min(fn_ - v))
@@ -1809,10 +1801,7 @@ fn run_fixture<F: Sdf<Scalar = f64>>(
     }
 
     let known = samples.iter().filter(|s| s.known).count() as u64;
-    let narrow = samples
-        .iter()
-        .filter(|s| s.dug && s.truth < 1.0)
-        .count() as u64;
+    let narrow = samples.iter().filter(|s| s.dug && s.truth < 1.0).count() as u64;
 
     // ── score both estimators over the same samples ─────────────────────────
     let mut acc_ball = Accuracy::default();
@@ -1884,8 +1873,7 @@ fn run_fixture<F: Sdf<Scalar = f64>>(
             flips: loc.flips[li],
             outside_all: loc.outside_all[li],
             outside_leaf: loc.outside_leaf[li],
-            worst_edit_factor: loc.worst_edit_flips[li] as f64
-                / loc.worst_edit_changed[li] as f64,
+            worst_edit_factor: loc.worst_edit_flips[li] as f64 / loc.worst_edit_changed[li] as f64,
             worst_edit_index: loc.worst_edit_index[li],
             repair_set_cells,
             repair_nav_cells,
@@ -2123,9 +2111,8 @@ fn reference_fixture<F: Sdf<Scalar = f64> + Copy>(
 
     // The refined truth: the same edited field on a 2x grid.
     let fine_n = n * REFINE;
-    let fine_layout =
-        ChunkLayout::<f64>::new(CHUNK_CELLS, EXTENT / f64::from(fine_n), [ORIGIN; 3])
-            .expect("fine layout");
+    let fine_layout = ChunkLayout::<f64>::new(CHUNK_CELLS, EXTENT / f64::from(fine_n), [ORIGIN; 3])
+        .expect("fine layout");
     let mut fine_signs = Signs::new([fine_n + 1; 3]);
     let full = BrushStack {
         base: &field,
@@ -2375,10 +2362,7 @@ fn main() {
             ("within_one_voxel", o.acc.within.to_string()),
             ("within_fraction", format!("{within_fraction:.6}")),
             ("overstatements", o.acc.over.to_string()),
-            (
-                "max_overstatement_cells",
-                format!("{:.9}", o.acc.max_over),
-            ),
+            ("max_overstatement_cells", format!("{:.9}", o.acc.max_over)),
             ("lambda_flips", o.flips.to_string()),
             ("changed_samples", o.changed_samples.to_string()),
             ("flip_factor", format!("{flip_factor:.4}")),
@@ -2393,7 +2377,10 @@ fn main() {
             ("octree_depth", o.depth.to_string()),
             ("truth_source", o.truth_source.to_string()),
             ("refine_factor", o.refine.to_string()),
-            ("cell_size_world", format!("{:.8}", EXTENT / f64::from(o.world))),
+            (
+                "cell_size_world",
+                format!("{:.8}", EXTENT / f64::from(o.world)),
+            ),
             ("edits", o.edits.to_string()),
             ("wide_edits", o.wide_edits.to_string()),
             ("narrow_edits", o.narrow_edits.to_string()),
@@ -2420,10 +2407,7 @@ fn main() {
             ),
             ("zero_bound_samples", o.acc.zero_bound.to_string()),
             ("probe_overstatements", o.acc.probe_over.to_string()),
-            (
-                "flips_outside_leaf_subset",
-                o.outside_leaf.to_string(),
-            ),
+            ("flips_outside_leaf_subset", o.outside_leaf.to_string()),
             (
                 "worst_edit_flip_factor",
                 format!("{:.4}", o.worst_edit_factor),
@@ -2433,10 +2417,7 @@ fn main() {
             ("repair_nav_cells", o.repair_nav_cells.to_string()),
             (
                 "repair_set_fraction",
-                format!(
-                    "{:.6}",
-                    o.repair_set_cells as f64 / o.world_cells as f64
-                ),
+                format!("{:.6}", o.repair_set_cells as f64 / o.world_cells as f64),
             ),
             ("world_total_cells", o.world_cells.to_string()),
             ("free_leaves", o.free_leaves.to_string()),

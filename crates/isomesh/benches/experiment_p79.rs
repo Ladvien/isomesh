@@ -787,7 +787,8 @@ fn run_field<F: ReferenceField<Scalar = f64> + Sync>(
             (buried_centre, BRUSH_CELLS[0], clearance, true),
         ];
 
-        for (index, (brush, radius_cells, clearance_cells, buried)) in arms.into_iter().enumerate() {
+        for (index, (brush, radius_cells, clearance_cells, buried)) in arms.into_iter().enumerate()
+        {
             // The buried control is one row per field, on one light, because it
             // is a reachability proof rather than a sweep.
             if buried && light_name != LIGHTS[0].0 {
@@ -876,10 +877,7 @@ fn run_field<F: ReferenceField<Scalar = f64> + Sync>(
                     ("invalidation_constant", format!("{constant:.4}")),
                     ("changed_pixels_full", arm.changed_full.to_string()),
                     ("changed_pixels_localised", changed_local.to_string()),
-                    (
-                        "shadow_ms_cached",
-                        format!("{:.5}", local_ms * STROKE_HZ),
-                    ),
+                    ("shadow_ms_cached", format!("{:.5}", local_ms * STROKE_HZ)),
                     (
                         "shadow_ms_uncached",
                         format!("{:.5}", arm.full_ms * STROKE_HZ),
@@ -896,7 +894,10 @@ fn run_field<F: ReferenceField<Scalar = f64> + Sync>(
                     ("arm_index", index.to_string()),
                     ("brush_radius_cells", format!("{radius_cells:.4}")),
                     ("brush_radius_world", format!("{radius:.6}")),
-                    ("buried_clearance_cells", format!("{:.4}", arm.clearance_cells)),
+                    (
+                        "buried_clearance_cells",
+                        format!("{:.4}", arm.clearance_cells),
+                    ),
                     ("cell_size_world", format!("{cell:.6}")),
                     ("texel_size_world", format!("{texel:.6}")),
                     ("texels_per_cell", TEXELS_PER_CELL.to_string()),
@@ -943,10 +944,7 @@ fn run_field<F: ReferenceField<Scalar = f64> + Sync>(
                     ),
                     (
                         "excess_in_cell_diagonals",
-                        format!(
-                            "{:.4}",
-                            arm.leak.max_excess_cells / 1.732_050_807_568_877_2
-                        ),
+                        format!("{:.4}", arm.leak.max_excess_cells / 1.732_050_807_568_877_2),
                     ),
                     ("sound_dilate_cells", format!("{SOUND_DILATE_CELLS:.4}")),
                     ("pages_invalidated_sound", pages_sound.to_string()),
@@ -1108,7 +1106,10 @@ fn main() {
                         && (num(r, "brush_radius_cells") - radius).abs() < 1e-9
                 })
                 .collect();
-            let k: Vec<f64> = sel.iter().map(|r| num(r, "invalidation_constant")).collect();
+            let k: Vec<f64> = sel
+                .iter()
+                .map(|r| num(r, "invalidation_constant"))
+                .collect();
             let ratios: Vec<f64> = sel.iter().map(|r| num(r, "ratio_per_stroke")).collect();
             let pages: Vec<u64> = sel.iter().map(|r| count(r, "pages_invalidated")).collect();
             let diffs: u64 = sel

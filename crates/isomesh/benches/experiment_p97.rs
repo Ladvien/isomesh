@@ -304,7 +304,13 @@ fn point(origin: [f64; 3], cell_size: f64, i: [u32; 3]) -> [f64; 3] {
 ///
 /// This is [`BrushStack`]'s own `sample`, called once per point. It is the
 /// authoritative replay and the thing `replay_ms` times.
-fn fold_grid<F>(base: &F, brushes: &[Brush<Sphere<f64>>], origin: [f64; 3], cell_size: f64, n: u32) -> Vec<f64>
+fn fold_grid<F>(
+    base: &F,
+    brushes: &[Brush<Sphere<f64>>],
+    origin: [f64; 3],
+    cell_size: f64,
+    n: u32,
+) -> Vec<f64>
 where
     F: Sdf<Scalar = f64>,
 {
@@ -462,8 +468,9 @@ fn mesh_of(values: &[f64], origin: [f64; 3], cell_size: f64, n: u32) -> MeshBuff
 /// The mesh as the bytes C1 compares: three counts, then positions, normals,
 /// indices, all little-endian.
 fn mesh_bytes(mesh: &MeshBuffer<f64>) -> Vec<u8> {
-    let mut bytes =
-        Vec::with_capacity(24 + (mesh.positions.len() + mesh.normals.len()) * 24 + mesh.indices.len() * 4);
+    let mut bytes = Vec::with_capacity(
+        24 + (mesh.positions.len() + mesh.normals.len()) * 24 + mesh.indices.len() * 4,
+    );
     for count in [mesh.positions.len(), mesh.normals.len(), mesh.indices.len()] {
         bytes.extend_from_slice(&(count as u64).to_le_bytes());
     }
@@ -656,7 +663,12 @@ fn peer_dir() -> PathBuf {
 ///
 /// Returns the total, the single-edit baseline extrapolated over the same edit
 /// count, and their ratio.
-fn interactive_arm<F>(base: &F, log: &[Brush<Sphere<f64>>], origin: [f64; 3], cell_size: f64) -> (f64, f64, f64)
+fn interactive_arm<F>(
+    base: &F,
+    log: &[Brush<Sphere<f64>>],
+    origin: [f64; 3],
+    cell_size: f64,
+) -> (f64, f64, f64)
 where
     F: Sdf<Scalar = f64>,
 {
@@ -835,8 +847,11 @@ where
     fs::create_dir_all(&dir).expect("create self dir");
     fs::write(dir.join(format!("{name}.mesh")), &bytes).expect("write mesh");
     fs::write(dir.join(format!("{name}.grid")), &grid).expect("write grid");
-    fs::write(dir.join(format!("{name}.ladder")), ladder_bytes(&probe.ladder))
-        .expect("write ladder");
+    fs::write(
+        dir.join(format!("{name}.ladder")),
+        ladder_bytes(&probe.ladder),
+    )
+    .expect("write ladder");
     fs::write(dir.join(format!("{name}.hash")), format!("{hash:016x}")).expect("write hash");
     fs::write(dir.join("machine.txt"), machine_tag()).expect("write machine");
 
@@ -971,10 +986,7 @@ where
         ("bytes_compared", bytes.len().to_string()),
         ("pristine_bytes", pristine_bytes.len().to_string()),
         ("bytes_beyond_m31", bytes_beyond_m31.to_string()),
-        (
-            "grid_bytes",
-            grid.len().to_string(),
-        ),
+        ("grid_bytes", grid.len().to_string()),
         (
             "grid_bytes_differing",
             grid_differing.map_or_else(|| String::from("BLOCKED"), |d| d.to_string()),
@@ -1039,7 +1051,10 @@ where
             "control_perturbation_depths",
             probe.candidates.len().to_string(),
         ),
-        ("control_depths_reaching_output", candidates_reaching.to_string()),
+        (
+            "control_depths_reaching_output",
+            candidates_reaching.to_string(),
+        ),
         (
             "control_deepest_reaching_from_end",
             (EDITS - control_edit).to_string(),
@@ -1058,7 +1073,10 @@ where
         ),
         (
             "control_first_differing_operator",
-            control_first.map_or_else(|| String::from("NONE"), |k| String::from(op_name(log[k].op))),
+            control_first.map_or_else(
+                || String::from("NONE"),
+                |k| String::from(op_name(log[k].op)),
+            ),
         ),
         (
             "control_bisection_edit",
@@ -1106,7 +1124,16 @@ fn main() {
 
     println!(
         "{:>15} {:>7} {:>9} {:>9} {:>9} {:>7} {:>10} {:>5} {:>10} {:>10}",
-        "field", "verts", "bytes", "replay_ms", "c3_const", "nan_n", "grid_diff", "diff", "c1", "c2"
+        "field",
+        "verts",
+        "bytes",
+        "replay_ms",
+        "c3_const",
+        "nan_n",
+        "grid_diff",
+        "diff",
+        "c1",
+        "c2"
     );
 
     let mut rows: Vec<Row> = Vec::new();

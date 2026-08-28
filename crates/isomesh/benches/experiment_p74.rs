@@ -624,15 +624,7 @@ fn build_scene<F: Sdf<Scalar = f32>>(field: &F) -> Scene {
                 let _ = mc.extract_into(field, &shape, layout.sample_origin(id), CELL, &mut out);
                 let base = (vertices.len() / 7) as u32;
                 for (p, n) in out.positions.iter().zip(&out.normals) {
-                    vertices.extend_from_slice(&[
-                        p[0],
-                        p[1],
-                        p[2],
-                        n[0],
-                        n[1],
-                        n[2],
-                        chunk as f32,
-                    ]);
+                    vertices.extend_from_slice(&[p[0], p[1], p[2], n[0], n[1], n[2], chunk as f32]);
                     points.push(Vector::new(p[0], p[1], p[2]));
                 }
                 for t in out.indices.as_chunks::<3>().0 {
@@ -941,7 +933,11 @@ fn main() {
     let colour_usage = wgpu::TextureUsages::RENDER_ATTACHMENT
         | wgpu::TextureUsages::TEXTURE_BINDING
         | wgpu::TextureUsages::COPY_SRC;
-    let pos_texture = target("p74 position", wgpu::TextureFormat::Rgba32Float, colour_usage);
+    let pos_texture = target(
+        "p74 position",
+        wgpu::TextureFormat::Rgba32Float,
+        colour_usage,
+    );
     let nrm_texture = target("p74 normal", wgpu::TextureFormat::Rgba32Float, colour_usage);
     let depth_texture = target(
         "p74 depth",
@@ -1012,7 +1008,10 @@ fn main() {
     ];
     let up = [0.0, 1.0, 0.0];
     let aspect = WIDTH as f32 / HEIGHT as f32;
-    let view_proj = mat_mul(perspective(FOV_Y, aspect, NEAR, FAR), look_at(eye, centre, up));
+    let view_proj = mat_mul(
+        perspective(FOV_Y, aspect, NEAR, FAR),
+        look_at(eye, centre, up),
+    );
     let inv_view_proj = mat_mul(
         look_at_inverse(eye, centre, up),
         perspective_inverse(FOV_Y, aspect, NEAR, FAR),
@@ -1483,7 +1482,9 @@ fn main() {
         let flood = JumpFlood::new(device).expect("jump flood");
         // Warm, so the first build's shader-cache and allocator costs are not
         // charged to C3.
-        let _ = flood.build(device, queue, &field_buffer).expect("flood warm");
+        let _ = flood
+            .build(device, queue, &field_buffer)
+            .expect("flood warm");
         let flood_started = Instant::now();
         let distances = flood.build(device, queue, &field_buffer).expect("flood");
         let flood_build_ms = flood_started.elapsed().as_nanos() as f64 / 1e6;
@@ -1510,23 +1511,24 @@ fn main() {
         );
 
         // ── the timed arms ─────────────────────────────────────────────────
-        let run_ao = |pipeline: &wgpu::ComputePipeline, label: &'static str, stamped: bool| -> f64 {
-            let mut encoder =
-                device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-            {
-                let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                    label: Some(label),
-                    timestamp_writes: if stamped { stamps.writes(label) } else { None },
-                });
-                pass.set_pipeline(pipeline);
-                pass.set_bind_group(0, &compute_bind, &[]);
-                pass.dispatch_workgroups(groups.0, groups.1, 1);
-            }
-            let started = Instant::now();
-            queue.submit(Some(encoder.finish()));
-            wait();
-            started.elapsed().as_nanos() as f64 / 1e6
-        };
+        let run_ao =
+            |pipeline: &wgpu::ComputePipeline, label: &'static str, stamped: bool| -> f64 {
+                let mut encoder =
+                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+                {
+                    let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                        label: Some(label),
+                        timestamp_writes: if stamped { stamps.writes(label) } else { None },
+                    });
+                    pass.set_pipeline(pipeline);
+                    pass.set_bind_group(0, &compute_bind, &[]);
+                    pass.dispatch_workgroups(groups.0, groups.1, 1);
+                }
+                let started = Instant::now();
+                queue.submit(Some(encoder.finish()));
+                wait();
+                started.elapsed().as_nanos() as f64 / 1e6
+            };
 
         let mut field_gpu: Vec<f64> = Vec::with_capacity(REPS);
         let mut field_wall: Vec<f64> = Vec::with_capacity(REPS);
@@ -1617,7 +1619,11 @@ fn main() {
         // ── the offline reference, on the sampled pixels ────────────────────
         let sample_of = |set: &[usize]| -> Vec<usize> {
             let stride = (set.len() / SAMPLE_CAP).max(1);
-            set.iter().step_by(stride).copied().take(SAMPLE_CAP).collect()
+            set.iter()
+                .step_by(stride)
+                .copied()
+                .take(SAMPLE_CAP)
+                .collect()
         };
         /// `(mae_field, mae_ssao, mae_floor, ref_mean, field_mean, ssao_mean, sampled)`.
         type Set = (f64, f64, f64, f64, f64, f64, usize);
@@ -1846,11 +1852,20 @@ fn main() {
             ("eps_cells", format!("{EPS_CELLS:.3}")),
             ("lift_cells", format!("{LIFT_CELLS:.3}")),
             ("hit_fraction", format!("{hit_fraction:.6}")),
-            ("ao_ms_field_full_coverage", format!("{ao_ms_field_scaled:.6}")),
-            ("ao_ms_ssao_full_coverage", format!("{ao_ms_ssao_scaled:.6}")),
+            (
+                "ao_ms_field_full_coverage",
+                format!("{ao_ms_field_scaled:.6}"),
+            ),
+            (
+                "ao_ms_ssao_full_coverage",
+                format!("{ao_ms_ssao_scaled:.6}"),
+            ),
             ("marches", marches.to_string()),
             ("march_exhausted", diag[3].to_string()),
-            ("march_exhausted_fraction", format!("{exhausted_fraction:.6}")),
+            (
+                "march_exhausted_fraction",
+                format!("{exhausted_fraction:.6}"),
+            ),
             ("seam_field_mean", format!("{seam_field_mean:.6}")),
             ("seam_ssao_mean", format!("{seam_ssao_mean:.6}")),
             ("halo_field_mean", format!("{halo_field_mean:.6}")),

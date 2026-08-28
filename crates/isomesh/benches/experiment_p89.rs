@@ -329,8 +329,12 @@ fn run_arm<F: Sdf<Scalar = f64>>(field: &F, chunk_cells: u32) -> Arm {
     // hand-rolled form assumed an origin of zero (`M-377`'s fourth defect).
     let edit_box = |step: usize| -> ([i64; 3], [i64; 3]) {
         let c = centres[step];
-        let lo = layout.cell_of([0, 1, 2].map(|a| c[a] - radius)).map(|v| v - 1);
-        let hi = layout.cell_of([0, 1, 2].map(|a| c[a] + radius)).map(|v| v + 1);
+        let lo = layout
+            .cell_of([0, 1, 2].map(|a| c[a] - radius))
+            .map(|v| v - 1);
+        let hi = layout
+            .cell_of([0, 1, 2].map(|a| c[a] + radius))
+            .map(|v| v + 1);
         (lo, hi)
     };
 
@@ -438,8 +442,7 @@ fn run_arm<F: Sdf<Scalar = f64>>(field: &F, chunk_cells: u32) -> Arm {
             let (lo, hi) = edit_box(step);
 
             let at_mark = acct.get();
-            let report =
-                mark_edit(&layout, &before, &after, lo, hi, &mut dirty).expect("mark");
+            let report = mark_edit(&layout, &before, &after, lo, hi, &mut dirty).expect("mark");
             mark_calls += acct.get() - at_mark;
             region_cells += report.region_cells;
             region_chunks += report.region_chunks;
@@ -608,11 +611,8 @@ fn committed_p72(root: &Path) -> BTreeMap<(String, u32), Committed> {
         let (Some(field), Some(c)) = (get("field"), get("chunk_cells")) else {
             continue;
         };
-        let num = |name: &str| -> f64 {
-            get(name)
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(f64::NAN)
-        };
+        let num =
+            |name: &str| -> f64 { get(name).and_then(|v| v.parse().ok()).unwrap_or(f64::NAN) };
         let Ok(chunk_cells) = c.parse::<u32>() else {
             continue;
         };
@@ -866,10 +866,11 @@ fn main() {
             let predicted_remesh = k * a.remesh_calls as f64;
             let predicted = predicted_mark + predicted_remesh;
             let error = (total - predicted).abs() / predicted;
-            let k_residual = committed.get(&(field_name.to_string(), a.chunk_cells)).map_or(
-                f64::NAN,
-                |old| (predicted_remesh - old.remesh_ms).abs() / old.remesh_ms,
-            );
+            let k_residual = committed
+                .get(&(field_name.to_string(), a.chunk_cells))
+                .map_or(f64::NAN, |old| {
+                    (predicted_remesh - old.remesh_ms).abs() / old.remesh_ms
+                });
             println!(
                 "{:>12} c={:<3} dup {dup:>7.4}x dirty {:>6} mark {:>8.3} remesh {:>8.3} total \
                  {:>9.3} predicted {:>9.3} err {:>7.2}%",
@@ -981,12 +982,18 @@ fn main() {
     let c2_all = verdicts.iter().all(|(_, _, c2)| *c2);
     println!(
         "C1 1³ is worse than 2³ on both fields: {:?} -> {}",
-        verdicts.iter().map(|(f, c, _)| (*f, *c)).collect::<Vec<_>>(),
+        verdicts
+            .iter()
+            .map(|(f, c, _)| (*f, *c))
+            .collect::<Vec<_>>(),
         if c1_all { "HELD" } else { "FALSIFIED" }
     );
     println!(
         "C2 the two-term model extrapolates to c = 1 within 10%: {:?} -> {}",
-        verdicts.iter().map(|(f, _, c)| (*f, *c)).collect::<Vec<_>>(),
+        verdicts
+            .iter()
+            .map(|(f, _, c)| (*f, *c))
+            .collect::<Vec<_>>(),
         if c2_all { "HELD" } else { "FALSIFIED" }
     );
 

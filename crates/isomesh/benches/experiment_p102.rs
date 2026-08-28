@@ -281,9 +281,7 @@ impl Config {
         };
         let cos_phi = match reading.cos_phi {
             CosPhi::Endpoints => -1.0 + 2.0 * f64::from(self.cos_phi) / f64::from(COS_PHIS - 1),
-            CosPhi::Centres => {
-                -1.0 + (2.0 * f64::from(self.cos_phi) + 1.0) / f64::from(COS_PHIS)
-            }
+            CosPhi::Centres => -1.0 + (2.0 * f64::from(self.cos_phi) + 1.0) / f64::from(COS_PHIS),
             CosPhi::Ladder => -1.0 + 2.0 * f64::from(self.cos_phi) / f64::from(COS_PHIS),
         };
         let sin_phi = (1.0 - cos_phi * cos_phi).sqrt();
@@ -293,8 +291,8 @@ impl Config {
             cos_phi,
         ];
         // 9 values over the closed `-0.8..=0.8`: the step-0.2 ladder.
-        let offset = 2.0 * OFFSET_LIMIT * f64::from(self.offset) / f64::from(OFFSETS - 1)
-            - OFFSET_LIMIT;
+        let offset =
+            2.0 * OFFSET_LIMIT * f64::from(self.offset) / f64::from(OFFSETS - 1) - OFFSET_LIMIT;
         (normal, offset)
     }
 }
@@ -329,8 +327,8 @@ impl Sdf for Cap {
         }
         .sample(p);
         // `vec3::dot`'s order, which is the order `ConvexBody` evaluates in.
-        let plane = self.normal[0] * p[0] + self.normal[1] * p[1] + self.normal[2] * p[2]
-            - self.offset;
+        let plane =
+            self.normal[0] * p[0] + self.normal[1] * p[1] + self.normal[2] * p[2] - self.offset;
         bound.max(plane)
     }
 }
@@ -550,9 +548,7 @@ impl Grid {
     /// `emit_trilinear`'s own `to_world`, so a saddle lands where the extractor
     /// would have put it.
     fn to_world(&self, base: [u32; 3], local: [f64; 3]) -> [f64; 3] {
-        core::array::from_fn(|k| {
-            self.origin[k] + self.cell_size * (f64::from(base[k]) + local[k])
-        })
+        core::array::from_fn(|k| self.origin[k] + self.cell_size * (f64::from(base[k]) + local[k]))
     }
 
     /// The cells of this grid, in the extractor's own order.
@@ -615,11 +611,7 @@ fn analyse(field: &Interpolant, grid: &Grid) -> Analysis {
         let mut corner = [0.0f64; 8];
         for (c, slot) in corner.iter_mut().enumerate() {
             // `cube::corner_offset`'s bit layout.
-            let o = [
-                (c & 1) as u32,
-                ((c >> 1) & 1) as u32,
-                ((c >> 2) & 1) as u32,
-            ];
+            let o = [(c & 1) as u32, ((c >> 1) & 1) as u32, ((c >> 2) & 1) as u32];
             let v = field.at(
                 (base[0] + o[0]) as usize,
                 (base[1] + o[1]) as usize,
@@ -708,11 +700,7 @@ fn interior_cells(positions: &[[f64; 3]], lattice: &Lattice) -> Vec<Option<[u32;
 }
 
 /// Undo the per-ring apex: one apex per cell, back on the body saddle.
-fn pre_fix(
-    mesh: &MeshBuffer<f64>,
-    cells: &[Option<[u32; 3]>],
-    analysis: &Analysis,
-) -> PreFix {
+fn pre_fix(mesh: &MeshBuffer<f64>, cells: &[Option<[u32; 3]>], analysis: &Analysis) -> PreFix {
     let mut positions = mesh.positions.clone();
     let mut remap: Vec<u32> = (0..positions.len() as u32).collect();
     let mut merges = 0u64;
@@ -877,10 +865,7 @@ impl Sweep {
             ("interior_vertices", self.interior_vertices.to_string()),
             ("fan_configurations", self.fan_configurations.to_string()),
             ("apex_merges", self.apex_merges.to_string()),
-            (
-                "unfanned_apex_cells",
-                self.unfanned_apex_cells.to_string(),
-            ),
+            ("unfanned_apex_cells", self.unfanned_apex_cells.to_string()),
             ("unclosed_post_fix", self.unclosed_post_fix.to_string()),
             ("unclosed_pre_fix", self.unclosed_pre_fix.to_string()),
             (
@@ -1109,8 +1094,14 @@ fn faithfulness_control(reading: Reading, configs: &[Config]) -> u64 {
             let cap = Cap::of(*config, reading);
             let field = Interpolant::of(&cap, &grid, Magnitudes::Cap, 0);
             cap_mesh.reset();
-            mc.extract(&cap, &grid.shape, grid.origin, grid.cell_size, &mut cap_mesh)
-                .expect("marching cubes on the cap");
+            mc.extract(
+                &cap,
+                &grid.shape,
+                grid.origin,
+                grid.cell_size,
+                &mut cap_mesh,
+            )
+            .expect("marching cubes on the cap");
             interp_mesh.reset();
             mc.extract(
                 &field,
@@ -1121,13 +1112,15 @@ fn faithfulness_control(reading: Reading, configs: &[Config]) -> u64 {
             )
             .expect("marching cubes on the interpolant of the cap");
             assert_eq!(
-                cap_mesh.positions, interp_mesh.positions,
+                cap_mesh.positions,
+                interp_mesh.positions,
                 "the interpolant of the cap's samples moved a vertex at {} on {size}^3, so the \
                  magnitude arms would not be the same experiment",
                 config.label()
             );
             assert_eq!(
-                cap_mesh.indices, interp_mesh.indices,
+                cap_mesh.indices,
+                interp_mesh.indices,
                 "the interpolant of the cap's samples changed the triangulation at {} on {size}^3",
                 config.label()
             );
@@ -1275,7 +1268,11 @@ fn calibrate(configs: &[Config]) {
             s.unclosed_post_fix,
             s.apexes,
             s.zero_sample_configurations,
-            if reading == READING { "  <- chosen" } else { "" }
+            if reading == READING {
+                "  <- chosen"
+            } else {
+                ""
+            }
         );
     }
 }

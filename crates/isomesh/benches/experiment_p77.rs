@@ -559,8 +559,7 @@ struct Px {
 /// three coordinate multiplies well enough that the noise has no axis-aligned
 /// structure. The multipliers are large odd primes.
 fn hash_lattice(i: i32, j: i32, k: i32, seed: u32) -> f32 {
-    let mut h = (i as u32)
-        .wrapping_mul(0x9E37_79B1)
+    let mut h = (i as u32).wrapping_mul(0x9E37_79B1)
         ^ (j as u32).wrapping_mul(0x85EB_CA6B)
         ^ (k as u32).wrapping_mul(0xC2B2_AE35)
         ^ seed.wrapping_mul(0x27D4_EB2F);
@@ -1282,7 +1281,10 @@ fn cpu_mhz() -> String {
     std::fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
         .ok()
         .and_then(|s| s.trim().parse::<f64>().ok())
-        .map_or_else(|| "unknown".to_string(), |khz| format!("{:.0}", khz / 1000.0))
+        .map_or_else(
+            || "unknown".to_string(),
+            |khz| format!("{:.0}", khz / 1000.0),
+        )
 }
 
 /// The numbers printed at the end, from [`HEADLINE_ARM`].
@@ -1459,11 +1461,7 @@ fn main() {
                  an empty depth buffer reports a zero that could not have been non-zero",
                 cfg.name
             );
-            assert_eq!(
-                c.changed, 0,
-                "P-77 {}: the control world was dug",
-                cfg.name
-            );
+            assert_eq!(c.changed, 0, "P-77 {}: the control world was dug", cfg.name);
             assert_eq!(
                 t.changed_outside, 0,
                 "P-77 {}: frame +{i} has {} changed pixels outside every brush silhouette, \
@@ -1524,11 +1522,15 @@ fn main() {
         // which is the locomotion floor and has nothing to do with the dig, so
         // this is the number that tests the clause's actual mechanism.
         let concentration_attributable = {
-            let d_box = out.treatment[0].rejected_in_box as f64
-                - out.control[0].rejected_in_box as f64;
+            let d_box =
+                out.treatment[0].rejected_in_box as f64 - out.control[0].rejected_in_box as f64;
             let d_tot = out.treatment[0].rejected_aabb_ycocg as f64
                 - out.control[0].rejected_aabb_ycocg as f64;
-            if d_tot <= 0.0 { f64::NAN } else { d_box / d_tot }
+            if d_tot <= 0.0 {
+                f64::NAN
+            } else {
+                d_box / d_tot
+            }
         };
 
         // C1's arithmetic ceiling, from the fixture rather than from the clause.
@@ -1557,138 +1559,170 @@ fn main() {
                 concentration,
                 concentration_attributable,
                 ceiling,
-                reproj_px: out.control[0].reproj_px
-                    / out.control[0].population.max(1) as f64,
+                reproj_px: out.control[0].reproj_px / out.control[0].population.max(1) as f64,
             });
         }
 
-        let summary = |arm: String, f: &Frame, offset: Option<usize>, ctrl: Option<&Frame>| -> Row {
-            let mut r: Row = vec![
-                ("arm", arm),
-                ("stroke_rate_hz", format!("{STROKE_RATE_HZ:.1}")),
-                ("steady_rejection_fraction", format!("{steady:.8}")),
-                ("post_edit_rejection_fraction", format!("{post:.8}")),
-                ("ratio", format!("{ratio:.4}")),
-                ("frames_elevated", frames_elevated.to_string()),
-                ("kdop_ms", format!("{kdop_ms:.4}")),
-                ("kdop_recovered_fraction", format!("{recovered:.8}")),
-                ("rejected_in_brush_box", in_box.to_string()),
-                ("rejected_total", base_rej.to_string()),
-                ("concentration_fraction", format!("{concentration:.6}")),
-                ("c1_holds", c1.to_string()),
-                ("c2_holds", c2.to_string()),
-                ("c3_holds", c3.to_string()),
-                // Extras.
-                ("c1_evaluable", evaluable.to_string()),
-                ("taa_jitter", cfg.jitter.to_string()),
-                ("fixture", cfg.name.to_string()),
-                ("width", cfg.w.to_string()),
-                ("height", cfg.h.to_string()),
-                ("camera_walk_units_per_s", format!("{:.2}", cfg.walk)),
-                ("camera_yaw_rad_per_s", format!("{:.3}", cfg.yaw_rate)),
-                ("camera_pitch_rad", format!("{:.3}", cfg.pitch)),
-                ("albedo_detail", cfg.textured.to_string()),
-                ("held_button", cfg.continuous.to_string()),
-                ("ratio_ceiling_from_footprint", format!("{ceiling:.4}")),
-                (
-                    "concentration_edit_attributable",
-                    if concentration_attributable.is_nan() {
+        let summary =
+            |arm: String, f: &Frame, offset: Option<usize>, ctrl: Option<&Frame>| -> Row {
+                let mut r: Row = vec![
+                    ("arm", arm),
+                    ("stroke_rate_hz", format!("{STROKE_RATE_HZ:.1}")),
+                    ("steady_rejection_fraction", format!("{steady:.8}")),
+                    ("post_edit_rejection_fraction", format!("{post:.8}")),
+                    ("ratio", format!("{ratio:.4}")),
+                    ("frames_elevated", frames_elevated.to_string()),
+                    ("kdop_ms", format!("{kdop_ms:.4}")),
+                    ("kdop_recovered_fraction", format!("{recovered:.8}")),
+                    ("rejected_in_brush_box", in_box.to_string()),
+                    ("rejected_total", base_rej.to_string()),
+                    ("concentration_fraction", format!("{concentration:.6}")),
+                    ("c1_holds", c1.to_string()),
+                    ("c2_holds", c2.to_string()),
+                    ("c3_holds", c3.to_string()),
+                    // Extras.
+                    ("c1_evaluable", evaluable.to_string()),
+                    ("taa_jitter", cfg.jitter.to_string()),
+                    ("fixture", cfg.name.to_string()),
+                    ("width", cfg.w.to_string()),
+                    ("height", cfg.h.to_string()),
+                    ("camera_walk_units_per_s", format!("{:.2}", cfg.walk)),
+                    ("camera_yaw_rad_per_s", format!("{:.3}", cfg.yaw_rate)),
+                    ("camera_pitch_rad", format!("{:.3}", cfg.pitch)),
+                    ("albedo_detail", cfg.textured.to_string()),
+                    ("held_button", cfg.continuous.to_string()),
+                    ("ratio_ceiling_from_footprint", format!("{ceiling:.4}")),
+                    (
+                        "concentration_edit_attributable",
+                        if concentration_attributable.is_nan() {
+                            "NA".to_string()
+                        } else {
+                            format!("{concentration_attributable:.6}")
+                        },
+                    ),
+                    (
+                        "kdop_ms_per_megapixel",
+                        format!("{:.4}", kdop_ms * 1e6 / (cfg.w * cfg.h) as f64),
+                    ),
+                    ("brushes_placed", out.brushes_placed.to_string()),
+                    ("box_area_fraction", format!("{:.8}", out.box_area_fraction)),
+                    ("threads", threads.to_string()),
+                    ("cpu_mhz", mhz.clone()),
+                    ("aabb_ms", format!("{aabb_ms:.4}")),
+                    (
+                        "clamp_ratio_dop_over_aabb",
+                        format!("{:.4}", kdop_ms / aabb_ms),
+                    ),
+                    (
+                        "kdop_recovered_fraction_rgb_axes",
+                        format!("{recovered_rgb_axes:.8}"),
+                    ),
+                    (
+                        "frame_offset",
+                        offset.map_or("NA".to_string(), |o| o.to_string()),
+                    ),
+                    ("population", f.population.to_string()),
+                    ("no_history", f.no_history.to_string()),
+                    ("frame_rejected", f.rejected_aabb_ycocg.to_string()),
+                    ("frame_rejection_fraction", format!("{:.8}", f.fraction())),
+                    ("frame_rejected_aabb_rgb", f.rejected_aabb_rgb.to_string()),
+                    (
+                        "frame_rejected_dop26_ycocg",
+                        f.rejected_dop26_ycocg.to_string(),
+                    ),
+                    ("frame_rejected_dop26_rgb", f.rejected_dop26_rgb.to_string()),
+                    (
+                        "frame_recovered_dop26_ycocg",
+                        f.recovered_dop26_ycocg.to_string(),
+                    ),
+                    (
+                        "frame_recovered_dop26_rgb",
+                        f.recovered_dop26_rgb.to_string(),
+                    ),
+                    (
+                        "frame_extra_rejected_dop26_ycocg",
+                        f.extra_dop26_ycocg.to_string(),
+                    ),
+                    ("frame_changed_pixels", f.changed.to_string()),
+                    (
+                        "frame_changed_outside_silhouette",
+                        f.changed_outside.to_string(),
+                    ),
+                    ("frame_rejected_in_box", f.rejected_in_box.to_string()),
+                    ("frame_rejected_half", f.rejected_half.to_string()),
+                    (
+                        "frame_mean_clip_s_over_rejected",
+                        format!(
+                            "{:.6}",
+                            if f.rejected_aabb_ycocg == 0 {
+                                f64::NAN
+                            } else {
+                                f.clip_s / f.rejected_aabb_ycocg as f64
+                            }
+                        ),
+                    ),
+                    (
+                        "frame_mean_reproj_px",
+                        format!(
+                            "{:.4}",
+                            if f.population == 0 {
+                                0.0
+                            } else {
+                                f.reproj_px / f.population as f64
+                            }
+                        ),
+                    ),
+                    ("frame_aabb_ms", format!("{:.4}", f.aabb_ms)),
+                    ("frame_dop_ms", format!("{:.4}", f.dop_ms)),
+                ];
+                let (cf, cr) =
+                    ctrl.map_or((f64::NAN, 0u64), |c| (c.fraction(), c.rejected_aabb_ycocg));
+                r.push((
+                    "control_rejection_fraction",
+                    if cf.is_nan() {
                         "NA".to_string()
                     } else {
-                        format!("{concentration_attributable:.6}")
+                        format!("{cf:.8}")
                     },
-                ),
-                (
-                    "kdop_ms_per_megapixel",
-                    format!("{:.4}", kdop_ms * 1e6 / (cfg.w * cfg.h) as f64),
-                ),
-                ("brushes_placed", out.brushes_placed.to_string()),
-                ("box_area_fraction", format!("{:.8}", out.box_area_fraction)),
-                ("threads", threads.to_string()),
-                ("cpu_mhz", mhz.clone()),
-                ("aabb_ms", format!("{aabb_ms:.4}")),
-                (
-                    "clamp_ratio_dop_over_aabb",
-                    format!("{:.4}", kdop_ms / aabb_ms),
-                ),
-                (
-                    "kdop_recovered_fraction_rgb_axes",
-                    format!("{recovered_rgb_axes:.8}"),
-                ),
-                ("frame_offset", offset.map_or("NA".to_string(), |o| o.to_string())),
-                ("population", f.population.to_string()),
-                ("no_history", f.no_history.to_string()),
-                ("frame_rejected", f.rejected_aabb_ycocg.to_string()),
-                ("frame_rejection_fraction", format!("{:.8}", f.fraction())),
-                ("frame_rejected_aabb_rgb", f.rejected_aabb_rgb.to_string()),
-                ("frame_rejected_dop26_ycocg", f.rejected_dop26_ycocg.to_string()),
-                ("frame_rejected_dop26_rgb", f.rejected_dop26_rgb.to_string()),
-                ("frame_recovered_dop26_ycocg", f.recovered_dop26_ycocg.to_string()),
-                ("frame_recovered_dop26_rgb", f.recovered_dop26_rgb.to_string()),
-                ("frame_extra_rejected_dop26_ycocg", f.extra_dop26_ycocg.to_string()),
-                ("frame_changed_pixels", f.changed.to_string()),
-                ("frame_changed_outside_silhouette", f.changed_outside.to_string()),
-                ("frame_rejected_in_box", f.rejected_in_box.to_string()),
-                ("frame_rejected_half", f.rejected_half.to_string()),
-                (
-                    "frame_mean_clip_s_over_rejected",
-                    format!(
-                        "{:.6}",
-                        if f.rejected_aabb_ycocg == 0 {
-                            f64::NAN
-                        } else {
-                            f.clip_s / f.rejected_aabb_ycocg as f64
-                        }
-                    ),
-                ),
-                (
-                    "frame_mean_reproj_px",
-                    format!(
-                        "{:.4}",
-                        if f.population == 0 {
-                            0.0
-                        } else {
-                            f.reproj_px / f.population as f64
-                        }
-                    ),
-                ),
-                ("frame_aabb_ms", format!("{:.4}", f.aabb_ms)),
-                ("frame_dop_ms", format!("{:.4}", f.dop_ms)),
-            ];
-            let (cf, cr) = ctrl.map_or((f64::NAN, 0u64), |c| (c.fraction(), c.rejected_aabb_ycocg));
-            r.push(("control_rejection_fraction", if cf.is_nan() { "NA".to_string() } else { format!("{cf:.8}") }));
-            r.push(("control_rejected", if ctrl.is_some() { cr.to_string() } else { "NA".to_string() }));
-            r.push((
-                "control_rejected_in_box",
-                ctrl.map_or("NA".to_string(), |c| c.rejected_in_box.to_string()),
-            ));
-            r.push((
-                "paired_frame_ratio",
-                if cf.is_nan() || cf == 0.0 {
-                    "NA".to_string()
-                } else {
-                    format!("{:.4}", f.fraction() / cf)
-                },
-            ));
-            // Per-frame edit-attributable concentration: the same
-            // treatment-minus-control difference as the summary column, but on
-            // this frame alone, so the persistence of the *locality* can be read
-            // off the series too.
-            r.push((
-                "frame_concentration_edit_attributable",
-                ctrl.map_or("NA".to_string(), |c| {
-                    let d_box = f.rejected_in_box as f64 - c.rejected_in_box as f64;
-                    let d_tot =
-                        f.rejected_aabb_ycocg as f64 - c.rejected_aabb_ycocg as f64;
-                    if d_tot <= 0.0 {
+                ));
+                r.push((
+                    "control_rejected",
+                    if ctrl.is_some() {
+                        cr.to_string()
+                    } else {
+                        "NA".to_string()
+                    },
+                ));
+                r.push((
+                    "control_rejected_in_box",
+                    ctrl.map_or("NA".to_string(), |c| c.rejected_in_box.to_string()),
+                ));
+                r.push((
+                    "paired_frame_ratio",
+                    if cf.is_nan() || cf == 0.0 {
                         "NA".to_string()
                     } else {
-                        format!("{:.6}", d_box / d_tot)
-                    }
-                }),
-            ));
-            r
-        };
+                        format!("{:.4}", f.fraction() / cf)
+                    },
+                ));
+                // Per-frame edit-attributable concentration: the same
+                // treatment-minus-control difference as the summary column, but on
+                // this frame alone, so the persistence of the *locality* can be read
+                // off the series too.
+                r.push((
+                    "frame_concentration_edit_attributable",
+                    ctrl.map_or("NA".to_string(), |c| {
+                        let d_box = f.rejected_in_box as f64 - c.rejected_in_box as f64;
+                        let d_tot = f.rejected_aabb_ycocg as f64 - c.rejected_aabb_ycocg as f64;
+                        if d_tot <= 0.0 {
+                            "NA".to_string()
+                        } else {
+                            format!("{:.6}", d_box / d_tot)
+                        }
+                    }),
+                ));
+                r
+            };
 
         // Window-aggregate rows, then the per-frame series for both worlds.
         let agg = |frames: &[Frame]| -> Frame {
@@ -1778,7 +1812,9 @@ fn main() {
     println!("  kdop_recovered_fraction      {recovered:.6}  (C2 needs >= 0.5)");
     println!("  kdop_ms (CPU clamp pass)     {kdop_ms:.4}  (not a GPU resolve cost)");
     println!("  concentration_fraction       {concentration:.4}  (C3 needs > 0.80)");
-    println!("  edit-attributable            {concentration_attributable:.4}  (C3's mechanism, paired denominator)");
+    println!(
+        "  edit-attributable            {concentration_attributable:.4}  (C3's mechanism, paired denominator)"
+    );
     println!();
 
     common::experiment::run(prereg, |run| {

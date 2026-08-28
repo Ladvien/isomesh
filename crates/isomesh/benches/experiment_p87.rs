@@ -121,8 +121,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::time::Instant;
 
 use isomesh::Sdf;
-use isomesh::chunk::dirty::{DirtySet, mark_edit};
 use isomesh::chunk::ChunkLayout;
+use isomesh::chunk::dirty::{DirtySet, mark_edit};
 use isomesh::connectivity::Air;
 use isomesh::fields::{FbmTerrain, Gyroid};
 
@@ -316,10 +316,8 @@ impl Tree {
                         for dz in 0..2 {
                             for dy in 0..2 {
                                 for dx in 0..2 {
-                                    kids[(dz * 2 + dy) * 2 + dx] = child[((2 * z + dz) * mc
-                                        + (2 * y + dy))
-                                        * mc
-                                        + (2 * x + dx)];
+                                    kids[(dz * 2 + dy) * 2 + dx] = child
+                                        [((2 * z + dz) * mc + (2 * y + dy)) * mc + (2 * x + dx)];
                                 }
                             }
                         }
@@ -488,11 +486,7 @@ impl Nav {
         let leaf = &self.leaves[id as usize];
         let s = 1u32 << leaf.level;
         Box3 {
-            lo: [
-                leaf.coords[0] * s,
-                leaf.coords[1] * s,
-                leaf.coords[2] * s,
-            ],
+            lo: [leaf.coords[0] * s, leaf.coords[1] * s, leaf.coords[2] * s],
             hi: [
                 (leaf.coords[0] + 1) * s,
                 (leaf.coords[1] + 1) * s,
@@ -653,11 +647,7 @@ impl Nav {
                     off[(axis + 2) % 3] = d1;
                     stack.push((
                         l - 1,
-                        [
-                            2 * cc[0] + off[0],
-                            2 * cc[1] + off[1],
-                            2 * cc[2] + off[2],
-                        ],
+                        [2 * cc[0] + off[0], 2 * cc[1] + off[1], 2 * cc[2] + off[2]],
                     ));
                 }
             }
@@ -1012,8 +1002,7 @@ fn repair(
                         cell[1] / CHUNK_CELLS,
                         cell[2] / CHUNK_CELLS,
                     ];
-                    chunk_ids
-                        .push((ch[2] * chunks_per_axis + ch[1]) * chunks_per_axis + ch[0]);
+                    chunk_ids.push((ch[2] * chunks_per_axis + ch[1]) * chunks_per_axis + ch[0]);
                 }
             }
         }
@@ -1423,7 +1412,11 @@ fn breakthrough_path(
         for k in (1..EDITS).rev() {
             path.push([centre[0], centre[1] + k as f64 * step, centre[2]]);
         }
-        assert_eq!(path.len(), EDITS, "the breakthrough trace must have {EDITS} edits");
+        assert_eq!(
+            path.len(),
+            EDITS,
+            "the breakthrough trace must have {EDITS} edits"
+        );
         return (path, radius, brush);
     }
     panic!(
@@ -1579,15 +1572,7 @@ fn run_trace<F: Sdf<Scalar = f64>>(
             }
 
             let mut cost = Cost::default();
-            let t = repair(
-                nav,
-                signs,
-                lo,
-                ext,
-                &new_solid,
-                &mut flipped,
-                &mut cost,
-            );
+            let t = repair(nav, signs, lo, ext, &new_solid, &mut flipped, &mut cost);
 
             // ── control: two independent walks over the same edit ───────────
             assert_eq!(
@@ -1623,11 +1608,7 @@ fn run_trace<F: Sdf<Scalar = f64>>(
                 for &s in &newly_air {
                     for axis in 0..3 {
                         for d in [-1i64, 1] {
-                            let mut nb = [
-                                i64::from(s[0]),
-                                i64::from(s[1]),
-                                i64::from(s[2]),
-                            ];
+                            let mut nb = [i64::from(s[0]), i64::from(s[1]), i64::from(s[2])];
                             nb[axis] += d;
                             if nb.iter().any(|&v| v < 0 || v >= i64::from(sdim)) {
                                 continue;
@@ -2065,10 +2046,7 @@ fn main() {
                 "rebuild_over_trace",
                 format!("{:.2}", a.build_ms / a.trace_total_ms),
             ),
-            (
-                "air_components_before",
-                a.air_components_before.to_string(),
-            ),
+            ("air_components_before", a.air_components_before.to_string()),
             ("air_components_after", a.air_components_after.to_string()),
             ("air_components_max", a.air_components_max.to_string()),
             ("edits_joining", a.edits_joining.to_string()),

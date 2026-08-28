@@ -340,7 +340,11 @@ const NEGATIVE_ZERO: u64 = 1u64 << 63;
 #[inline]
 fn key(v: f64, normalise: bool) -> u64 {
     let b = v.to_bits();
-    if normalise && b == NEGATIVE_ZERO { 0 } else { b }
+    if normalise && b == NEGATIVE_ZERO {
+        0
+    } else {
+        b
+    }
 }
 
 #[inline]
@@ -683,21 +687,19 @@ impl TetMarcher {
                                     off[c] = (k >> 1) & 1;
                                     val[off[0] | (off[1] << 1) | (off[2] << 2)]
                                 });
-                                val[slot] = if let Decomp::Barycentric24 { sampled: true } =
-                                    self.decomp
-                                {
-                                    field.sample(p)
-                                } else {
-                                    sorted_mean(corners)
-                                };
+                                val[slot] =
+                                    if let Decomp::Barycentric24 { sampled: true } = self.decomp {
+                                        field.sample(p)
+                                    } else {
+                                        sorted_mean(corners)
+                                    };
                                 // Face identity: the sample at the low corner of
                                 // the face's own plane, so both cells across a
                                 // face agree on the key.
                                 let mut fb = base;
                                 fb[axis] += side;
-                                pid[slot] = (stride(fb[0], fb[1], fb[2]) as u64 * 3 + axis as u64)
-                                    * 4
-                                    + 1;
+                                pid[slot] =
+                                    (stride(fb[0], fb[1], fb[2]) as u64 * 3 + axis as u64) * 4 + 1;
                             }
                         }
                         let centre: [f64; 3] = std::array::from_fn(|k| {
@@ -971,7 +973,9 @@ fn mesh_of<S: Sdf<Scalar = f64>>(
             }
         }
         other => {
-            let decomp = other.decomp().expect("a tetrahedral arm has a decomposition");
+            let decomp = other
+                .decomp()
+                .expect("a tetrahedral arm has a decomposition");
             TetMarcher::new(decomp).mesh(field, samples, origin, h)
         }
     }
@@ -1309,7 +1313,13 @@ fn seam_census<S: Sdf<Scalar = f64>>(arm: Arm, field: &S, fx: &Fixture) -> Seam 
 
     let whole = mesh_of(arm, field, [n; 3], origin, h);
     let a = mesh_of(arm, field, [split + 1, n, n], origin, h);
-    let b = mesh_of(arm, field, [n - split, n, n], [seam_x, origin[1], origin[2]], h);
+    let b = mesh_of(
+        arm,
+        field,
+        [n - split, n, n],
+        [seam_x, origin[1], origin[2]],
+        h,
+    );
 
     let two_chunk = Mesh {
         positions: a
@@ -1332,7 +1342,8 @@ fn seam_census<S: Sdf<Scalar = f64>>(arm: Arm, field: &S, fx: &Fixture) -> Seam 
 
     let whole_census = edge_census(&whole);
     let two_census = edge_census(&two_chunk);
-    let whole_unpaired: std::collections::HashSet<_> = unpaired(&whole_census).into_iter().collect();
+    let whole_unpaired: std::collections::HashSet<_> =
+        unpaired(&whole_census).into_iter().collect();
     let open_edges = unpaired(&two_census)
         .into_iter()
         .filter(|e| !whole_unpaired.contains(e))
@@ -1352,13 +1363,7 @@ fn seam_census<S: Sdf<Scalar = f64>>(arm: Arm, field: &S, fx: &Fixture) -> Seam 
     let control_open_edges = {
         let mut mirrored = TetMarcher::new(Decomp::SixTet { anchor: 2 });
         let bb = mirrored.mesh(field, [n - split, n, n], [seam_x, origin[1], origin[2]], h);
-        let aa = mesh_of(
-            Arm::SixTetBench,
-            field,
-            [split + 1, n, n],
-            origin,
-            h,
-        );
+        let aa = mesh_of(Arm::SixTetBench, field, [split + 1, n, n], origin, h);
         let mixed = Mesh {
             positions: aa
                 .positions
@@ -1392,7 +1397,10 @@ fn seam_census<S: Sdf<Scalar = f64>>(arm: Arm, field: &S, fx: &Fixture) -> Seam 
     for z in 0..ns - 1 {
         for y in 0..ns - 1 {
             let mut mask = 0u8;
-            for (k, [dy, dz]) in [[0usize, 0usize], [1, 0], [0, 1], [1, 1]].iter().enumerate() {
+            for (k, [dy, dz]) in [[0usize, 0usize], [1, 0], [0, 1], [1, 1]]
+                .iter()
+                .enumerate()
+            {
                 let v = field.sample([coords[sx], coords[y + dy], coords[z + dz]]);
                 if is_inside(v) {
                     mask |= 1 << k;
@@ -1479,7 +1487,11 @@ fn main() {
             };
             assert_eq!(diagonal(0), [0, 6], "the shipped x-face diagonal is 0-6");
             assert_eq!(diagonal(1), [0, 6], "anchor 1 is x-face-compatible with 0");
-            assert_eq!(diagonal(2), [2, 4], "anchor 2 is the crack the control needs");
+            assert_eq!(
+                diagonal(2),
+                [2, 4],
+                "anchor 2 is the crack the control needs"
+            );
         }
         let bary = barycentric_24_tets();
         assert_eq!(bary.len(), 24, "the barycentric split has 24 tetrahedra");
@@ -1571,14 +1583,12 @@ fn main() {
                     // The registered vacuity control, per row: the six-tet arm
                     // against the committed file.
                     let p61_key = match arm {
-                        Arm::MarchingCubes => Some(format!(
-                            "{field_name}/marching_cubes/{}",
-                            fx.samples
-                        )),
-                        Arm::SixTetCrate => Some(format!(
-                            "{field_name}/marching_tetrahedra/{}",
-                            fx.samples
-                        )),
+                        Arm::MarchingCubes => {
+                            Some(format!("{field_name}/marching_cubes/{}", fx.samples))
+                        }
+                        Arm::SixTetCrate => {
+                            Some(format!("{field_name}/marching_tetrahedra/{}", fx.samples))
+                        }
                         _ => None,
                     };
                     let (base, p61_columns_match) = match p61_key {
@@ -1611,11 +1621,7 @@ fn main() {
                                 "{k}: triangle count disagrees with p-61.csv"
                             );
                             (
-                                Some((
-                                    b.elements_vertex_exact,
-                                    b.cut_edges,
-                                    b.triangles,
-                                )),
+                                Some((b.elements_vertex_exact, b.cut_edges, b.triangles)),
                                 matched,
                             )
                         }
@@ -1767,10 +1773,7 @@ fn main() {
                 ("resolution", r.resolution.to_string()),
                 ("decomposition", r.arm.name().to_string()),
                 ("tetrahedra_per_cell", r.arm.tets_per_cell().to_string()),
-                (
-                    "elements_vertex_exact",
-                    r.measured.vertex_exact.to_string(),
-                ),
+                ("elements_vertex_exact", r.measured.vertex_exact.to_string()),
                 (
                     "worst_component_ulp",
                     r.measured.worst_component_ulp.to_string(),
@@ -1785,10 +1788,7 @@ fn main() {
                     format!("{:.6}", r.measured.triangles as f64 / mc),
                 ),
                 ("open_edges", r.seam.open_edges.to_string()),
-                (
-                    "seam_configurations",
-                    r.seam.configurations.to_string(),
-                ),
+                ("seam_configurations", r.seam.configurations.to_string()),
                 ("hausdorff", format!("{:.9}", r.hausdorff)),
                 (
                     "hausdorff_mesh_to_field",
@@ -1826,19 +1826,13 @@ fn main() {
                     "first_failing_element",
                     r.measured.first_failing_element.clone(),
                 ),
-                (
-                    "vertex_failing_labels",
-                    r.measured.failing_labels.clone(),
-                ),
+                ("vertex_failing_labels", r.measured.failing_labels.clone()),
                 (
                     "exact_are_diagonal_stabiliser",
                     r.measured.exact_are_diagonal_stabiliser.to_string(),
                 ),
                 ("cut_edges", r.facts_cut_edges.to_string()),
-                (
-                    "order_sensitive_edges",
-                    r.facts_order_sensitive.to_string(),
-                ),
+                ("order_sensitive_edges", r.facts_order_sensitive.to_string()),
                 (
                     "fixture_can_fail",
                     (r.facts_order_sensitive > 0).to_string(),
@@ -1864,20 +1858,11 @@ fn main() {
                 ("c1_rows_at_48", c1_rows_at_48.to_string()),
                 ("c1_worst_row", c1_worst.to_string()),
                 ("c2_worst_ratio_six_tet", format!("{c2_worst_six:.6}")),
-                (
-                    "c2_worst_ratio_marching_cubes",
-                    format!("{c2_worst_mc:.6}"),
-                ),
+                ("c2_worst_ratio_marching_cubes", format!("{c2_worst_mc:.6}")),
                 ("c3_open_edges_total", c3_open_total.to_string()),
-                (
-                    "vacuity_six_tet_rows_at_12",
-                    six_tet_rows_at_12.to_string(),
-                ),
+                ("vacuity_six_tet_rows_at_12", six_tet_rows_at_12.to_string()),
                 ("vacuity_mc_rows_at_48", mc_rows_at_48.to_string()),
-                (
-                    "vacuity_stabiliser_rows",
-                    stabiliser_rows.to_string(),
-                ),
+                ("vacuity_stabiliser_rows", stabiliser_rows.to_string()),
             ]);
         }
     });

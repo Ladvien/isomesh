@@ -901,10 +901,7 @@ mod experiment {
         iters: &mut u32,
     ) -> Option<f64> {
         let g = scale(add(add(tri[0], tri[1]), tri[2]), 1.0 / 3.0);
-        let r = tri
-            .iter()
-            .map(|v| norm(sub(*v, g)))
-            .fold(0.0_f64, f64::max);
+        let r = tri.iter().map(|v| norm(sub(*v, g))).fold(0.0_f64, f64::max);
         toi_sphere(scene, add(p0, g), step, r, iters)
     }
 
@@ -979,7 +976,12 @@ mod experiment {
     /// **exactly, in every direction**. So against a plane this proxy has no
     /// error at all, and the ToI disagreement C3 measures there is entirely the
     /// triangle mesh's.
-    fn capsule_beads(radius: f64, half_height: f64, axis: [f64; 3], n: usize) -> Vec<([f64; 3], f64)> {
+    fn capsule_beads(
+        radius: f64,
+        half_height: f64,
+        axis: [f64; 3],
+        n: usize,
+    ) -> Vec<([f64; 3], f64)> {
         assert!(n >= 2, "a bead chain needs both endpoints");
         (0..n)
             .map(|k| {
@@ -1019,7 +1021,10 @@ mod experiment {
         let point = |axial: f64, radial: f64, theta: f64| {
             add(
                 scale(a, axial),
-                add(scale(u, radial * theta.cos()), scale(w, radial * theta.sin())),
+                add(
+                    scale(u, radial * theta.cos()),
+                    scale(w, radial * theta.sin()),
+                ),
             )
         };
         let ring: Vec<Vec<[f64; 3]>> = (0..rings)
@@ -1028,8 +1033,7 @@ mod experiment {
                 let (axial, radial) = place(s);
                 (0..longitudes)
                     .map(|j| {
-                        let theta =
-                            std::f64::consts::TAU * (j as f64) / (longitudes as f64);
+                        let theta = std::f64::consts::TAU * (j as f64) / (longitudes as f64);
                         point(axial, radial, theta)
                     })
                     .collect()
@@ -1233,10 +1237,7 @@ mod experiment {
         let mean_x = points.iter().map(|p| p.0).sum::<f64>() / n;
         let mean_y = points.iter().map(|p| p.1).sum::<f64>() / n;
         let sxx: f64 = points.iter().map(|p| (p.0 - mean_x).powi(2)).sum();
-        let sxy: f64 = points
-            .iter()
-            .map(|p| (p.0 - mean_x) * (p.1 - mean_y))
-            .sum();
+        let sxy: f64 = points.iter().map(|p| (p.0 - mean_x) * (p.1 - mean_y)).sum();
         let slope = sxy / sxx;
         let intercept = mean_y - slope * mean_x;
         let ss_tot: f64 = points.iter().map(|p| (p.1 - mean_y).powi(2)).sum();
@@ -1491,7 +1492,10 @@ mod experiment {
             ("walk", WALK),
             ("sprint", SPRINT),
             ("fall_full_height", fall),
-            ("sprint_plus_fall", (SPRINT * SPRINT + 2.0 * GRAVITY * SANDBOX_HEIGHT).sqrt()),
+            (
+                "sprint_plus_fall",
+                (SPRINT * SPRINT + 2.0 * GRAVITY * SANDBOX_HEIGHT).sqrt(),
+            ),
             ("projectile_40", 40.0),
             ("projectile_80", 80.0),
             ("projectile_160", 160.0),
@@ -1545,10 +1549,17 @@ mod experiment {
                 for &(speed_name, speed) in &speeds {
                     for &thickness_cells in &THICKNESS_CELLS {
                         seed = seed.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1);
-                        let row =
-                            c1_row(field, thickness_cells, radius_cells, speed_name, speed, seed);
+                        let row = c1_row(
+                            field,
+                            thickness_cells,
+                            radius_cells,
+                            speed_name,
+                            speed,
+                            seed,
+                        );
                         assert_eq!(
-                            row.crossing, SHOTS,
+                            row.crossing,
+                            SHOTS,
                             "{field}: {} of {SHOTS} shots did not put the element's centre path \
                              inside the solid, so a tunnel over them would be M-44's zero",
                             SHOTS - row.crossing
@@ -1588,9 +1599,12 @@ mod experiment {
             // Printed selectively: 448 rows is a CSV, not a table. The two
             // endpoints of the thickness sweep are the interesting ones — two
             // cells, where a wall is still a wall, and `subgrid`'s 0.05 floor.
-            let endpoint = [THICKNESS_CELLS[0], THICKNESS_CELLS[THICKNESS_CELLS.len() - 1]]
-                .iter()
-                .any(|t| (r.thickness_cells - t).abs() < 1e-12);
+            let endpoint = [
+                THICKNESS_CELLS[0],
+                THICKNESS_CELLS[THICKNESS_CELLS.len() - 1],
+            ]
+            .iter()
+            .any(|t| (r.thickness_cells - t).abs() < 1e-12);
             if endpoint {
                 println!(
                     "{:>6} {:>7.3} {:>7.2} {:>18} {:>9.4} {:>9} {:>9} {:>7}",
@@ -1664,7 +1678,8 @@ mod experiment {
         for shrink in [false, true] {
             for solver in SOLVERS {
                 for (idx, &(longitudes, rings)) in TESSELLATIONS.iter().enumerate() {
-                    let tris = capsule_mesh(BODY_RADIUS, 0.5 * BODY_SPAN, c2_axis, longitudes, rings);
+                    let tris =
+                        capsule_mesh(BODY_RADIUS, 0.5 * BODY_SPAN, c2_axis, longitudes, rings);
                     assert_eq!(tris.len(), ELEMENT_COUNTS[idx]);
                     let sup = support_x_mesh(&tris);
                     let p0 = [wall_lo - sup - 0.5 * c2_step_len, 0.0, 0.0];
@@ -1691,8 +1706,9 @@ mod experiment {
                 let beads = capsule_beads(BODY_RADIUS, 0.5 * BODY_SPAN, c2_axis, n);
                 let sup = support_x_beads(&beads);
                 let p0 = [wall_lo - sup - 0.5 * c2_step_len, 0.0, 0.0];
-                let (ns, cycles) =
-                    timed(&mut probe, || query_spheres(&wall, p0, c2_step, &beads, shrink));
+                let (ns, cycles) = timed(&mut probe, || {
+                    query_spheres(&wall, p0, c2_step, &beads, shrink)
+                });
                 let (toi, tested, iters) = query_spheres(&wall, p0, c2_step, &beads, shrink);
                 c2_rows.push(C2Row {
                     kind: "sphere_ca",
@@ -1746,7 +1762,8 @@ mod experiment {
                 per_tested,
                 r.total_ns / 1000.0 / r.elements as f64,
                 r.total_cycles / r.total_ns,
-                r.toi.map_or_else(|| "none".to_string(), |t| format!("{t:.4}"))
+                r.toi
+                    .map_or_else(|| "none".to_string(), |t| format!("{t:.4}"))
             );
         }
         for ((kind, solver_name, shrink), (slope, r2)) in &fits {
@@ -1900,7 +1917,11 @@ mod experiment {
                 for (orientation, &axis) in axes.iter().enumerate() {
                     let beads = capsule_beads(BODY_RADIUS, half_height, axis, 8);
                     let tris = capsule_mesh(BODY_RADIUS, half_height, axis, 10, 10);
-                    assert_eq!(tris.len(), 200, "C3's mesh arm is registered at 200 triangles");
+                    assert_eq!(
+                        tris.len(),
+                        200,
+                        "C3's mesh arm is registered at 200 triangles"
+                    );
                     let step = [step_cells * CELL, 0.0, 0.0];
                     let step_len = norm(step);
 
@@ -2062,10 +2083,8 @@ mod experiment {
             .filter(|r| r.kind == "triangle_fwgss" && r.solver_name == chosen_name && !r.shrink)
             .map(|r| r.total_ns / 1000.0 / r.tested.max(1) as f64)
             .fold(0.0_f64, f64::max);
-        let c2_holds = solver_cleared_bar
-            && c2_marginal < 25.0
-            && c2_worst_per_tested < 25.0
-            && c2_r2 >= 0.99;
+        let c2_holds =
+            solver_cleared_bar && c2_marginal < 25.0 && c2_worst_per_tested < 25.0 && c2_r2 >= 0.99;
 
         // C3 is scored where it is registered — a **wall**, at `game_dig`'s own
         // body — over both wall arms, because a clause is only tested by the arm
@@ -2093,8 +2112,7 @@ mod experiment {
             .iter()
             .filter(|r| {
                 r.thickness_cells.is_none()
-                    && (r.toi_spheres.is_none()
-                        || r.disagreement_cells.is_some_and(|d| d > 1.0))
+                    && (r.toi_spheres.is_none() || r.disagreement_cells.is_some_and(|d| d > 1.0))
             })
             .map(|r| r.half_height)
             .fold(None, |acc: Option<f64>, h| {
@@ -2187,10 +2205,7 @@ mod experiment {
                 ),
                 ("ghz", f(r.total_cycles / r.total_ns)),
                 ("sphere_bnb_nodes_high_water", r.bnb_nodes.to_string()),
-                (
-                    "toi",
-                    r.toi.map_or_else(|| NA.to_string(), f),
-                ),
+                ("toi", r.toi.map_or_else(|| NA.to_string(), f)),
             ]);
         }
         for r in &c3_rows {
@@ -2207,10 +2222,7 @@ mod experiment {
                     "capsule_aspect",
                     f((r.half_height + BODY_RADIUS) / BODY_RADIUS),
                 ),
-                (
-                    "bead_spacing_cells",
-                    f(2.0 * r.half_height / 7.0 / CELL),
-                ),
+                ("bead_spacing_cells", f(2.0 * r.half_height / 7.0 / CELL)),
                 (
                     "beads_disjoint",
                     (2.0 * r.half_height / 7.0 > 2.0 * BODY_RADIUS).to_string(),
@@ -2230,18 +2242,15 @@ mod experiment {
                 ),
                 (
                     "toi_capsule_mesh_reference",
-                    r.toi_mesh_reference
-                        .map_or_else(|| NA.to_string(), f),
+                    r.toi_mesh_reference.map_or_else(|| NA.to_string(), f),
                 ),
                 (
                     "toi_disagreement_cells",
-                    r.disagreement_cells
-                        .map_or_else(|| NA.to_string(), f),
+                    r.disagreement_cells.map_or_else(|| NA.to_string(), f),
                 ),
                 (
                     "toi_disagreement_floor_cells",
-                    r.disagreement_floor_cells
-                        .map_or_else(|| NA.to_string(), f),
+                    r.disagreement_floor_cells.map_or_else(|| NA.to_string(), f),
                 ),
                 (
                     "proxy_missed_impact",
@@ -2255,28 +2264,22 @@ mod experiment {
                 ("mesh_false_positive", r.mesh_false_positive.to_string()),
                 (
                     "solver_error_cells",
-                    r.solver_error_cells
-                        .map_or_else(|| NA.to_string(), f),
+                    r.solver_error_cells.map_or_else(|| NA.to_string(), f),
                 ),
                 (
                     "support_deficit_spheres_cells",
-                    r.deficit_spheres_cells
-                        .map_or_else(|| NA.to_string(), f),
+                    r.deficit_spheres_cells.map_or_else(|| NA.to_string(), f),
                 ),
                 (
                     "support_deficit_mesh_cells",
-                    r.deficit_mesh_cells
-                        .map_or_else(|| NA.to_string(), f),
+                    r.deficit_mesh_cells.map_or_else(|| NA.to_string(), f),
                 ),
                 ("cost_ratio_spheres_vs_mesh", f(ratio)),
                 ("total_us", f(r.ns_mesh / 1000.0)),
                 ("us_per_element", f(r.ns_mesh / 1000.0 / 200.0)),
                 ("elements", "200".to_string()),
                 ("elements_tested", r.tested_mesh.to_string()),
-                (
-                    "broad_phase_cull",
-                    f(1.0 - r.tested_mesh as f64 / 200.0),
-                ),
+                ("broad_phase_cull", f(1.0 - r.tested_mesh as f64 / 200.0)),
                 ("cycles", f(r.cycles_mesh)),
                 ("ghz", f(r.cycles_mesh / r.ns_mesh)),
                 ("spheres_us", f(r.ns_spheres / 1000.0)),

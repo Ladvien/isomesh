@@ -253,12 +253,7 @@ const REPS: usize = 3;
 /// per re-meshed chunk. Read from the registration, which quotes them, and from
 /// `bevy_isomesh/examples/game_dig.rs`'s own table, which agrees exactly.
 /// **There is no committed CSV for M-50** — see the report.
-const M50: [(f64, f64); 4] = [
-    (8.0, 0.158),
-    (23.0, 0.354),
-    (38.0, 0.525),
-    (53.0, 0.589),
-];
+const M50: [(f64, f64); 4] = [(8.0, 0.158), (23.0, 0.354), (38.0, 0.525), (53.0, 0.589)];
 
 /// The frame C2 is denominated in.
 const FRAME_MS: f64 = 16.0;
@@ -380,7 +375,9 @@ impl World {
         for cz in 0..per_axis {
             for cy in 0..per_axis {
                 for cx in 0..per_axis {
-                    all.push(ChunkId { coords: [cx, cy, cz] });
+                    all.push(ChunkId {
+                        coords: [cx, cy, cz],
+                    });
                 }
             }
         }
@@ -468,8 +465,14 @@ fn time_extract<F: Sdf<Scalar = f64>>(
 fn brush_box(world: &World, brush: &Brush<Sphere<f64>>) -> ([i64; 3], [i64; 3]) {
     let c = brush.shape.center;
     let r = brush.shape.radius;
-    let lo = world.layout.cell_of([c[0] - r, c[1] - r, c[2] - r]).map(|v| v - 1);
-    let hi = world.layout.cell_of([c[0] + r, c[1] + r, c[2] + r]).map(|v| v + 1);
+    let lo = world
+        .layout
+        .cell_of([c[0] - r, c[1] - r, c[2] - r])
+        .map(|v| v - 1);
+    let hi = world
+        .layout
+        .cell_of([c[0] + r, c[1] + r, c[2] + r])
+        .map(|v| v + 1);
     (lo, hi)
 }
 
@@ -486,10 +489,24 @@ fn dirty_chunks<B: Sdf<Scalar = f64>>(
     brushes_after: &[Brush<Sphere<f64>>],
     region: ([i64; 3], [i64; 3]),
 ) -> Vec<ChunkId> {
-    let before = BrushStack { base, brushes: brushes_before };
-    let after = BrushStack { base, brushes: brushes_after };
+    let before = BrushStack {
+        base,
+        brushes: brushes_before,
+    };
+    let after = BrushStack {
+        base,
+        brushes: brushes_after,
+    };
     let mut dirty = DirtySet::new();
-    mark_edit(&world.layout, &before, &after, region.0, region.1, &mut dirty).expect("mark_edit");
+    mark_edit(
+        &world.layout,
+        &before,
+        &after,
+        region.0,
+        region.1,
+        &mut dirty,
+    )
+    .expect("mark_edit");
     let mut out: Vec<ChunkId> = dirty.iter().collect();
     out.sort_unstable_by_key(|id| id.coords);
     out
@@ -626,10 +643,7 @@ fn fit(points: &[(f64, f64)]) -> (f64, f64) {
     let mx = points.iter().map(|p| p.0).sum::<f64>() / n;
     let my = points.iter().map(|p| p.1).sum::<f64>() / n;
     let sxx = points.iter().map(|p| (p.0 - mx) * (p.0 - mx)).sum::<f64>();
-    let sxy = points
-        .iter()
-        .map(|p| (p.0 - mx) * (p.1 - my))
-        .sum::<f64>();
+    let sxy = points.iter().map(|p| (p.0 - mx) * (p.1 - my)).sum::<f64>();
     let slope = sxy / sxx;
     (my - slope * mx, slope)
 }
@@ -764,7 +778,12 @@ fn run_trace<F: Sdf<Scalar = f64>>(
 
     // `(index, snapshot)`, ascending. Entry zero is the bake of the raw base
     // field and is never dropped.
-    let mut ladder: Vec<(usize, Checkpoint)> = vec![(0, Checkpoint { values: base_bake.values.clone() })];
+    let mut ladder: Vec<(usize, Checkpoint)> = vec![(
+        0,
+        Checkpoint {
+            values: base_bake.values.clone(),
+        },
+    )];
     let mut ladder_bytes = base_bake.bytes();
     t.peak_checkpoint_bytes = ladder_bytes;
 
@@ -793,7 +812,13 @@ fn run_trace<F: Sdf<Scalar = f64>>(
         let j = length - 1;
         let c = ladder.last().expect("ladder").0;
         let cp = &ladder.last().expect("ladder").1;
-        let chunks = dirty_chunks(world, cp, &log[c..j], &log[c..length], brush_box(world, &log[j]));
+        let chunks = dirty_chunks(
+            world,
+            cp,
+            &log[c..j],
+            &log[c..length],
+            brush_box(world, &log[j]),
+        );
         if chunks.is_empty() {
             t.empty_dirty_edits += 1;
         }
@@ -806,7 +831,10 @@ fn run_trace<F: Sdf<Scalar = f64>>(
             } else {
                 chunks.clone()
             };
-            let before = BrushStack { base: cp, brushes: &log[c..j] };
+            let before = BrushStack {
+                base: cp,
+                brushes: &log[c..j],
+            };
             let (h, verts_before) = hash_chunks(world, &mut mc, &before, &set);
             hash_before[j] = h;
             vertices_hashed[j] = verts_before;
@@ -825,7 +853,10 @@ fn run_trace<F: Sdf<Scalar = f64>>(
 
         if undone[j] {
             let (c2, cp2) = ladder.last().expect("ladder");
-            let after = BrushStack { base: cp2, brushes: &log[*c2..length] };
+            let after = BrushStack {
+                base: cp2,
+                brushes: &log[*c2..length],
+            };
             let set = region_of[j].as_ref().expect("region").clone();
             let (h, verts_after) = hash_chunks(world, &mut mc, &after, &set);
             hash_after[j] = h;
@@ -854,7 +885,10 @@ fn run_trace<F: Sdf<Scalar = f64>>(
                     }
                 }
                 let (c, cp) = ladder.last().expect("ladder");
-                let field = BrushStack { base: cp, brushes: &log[*c..target] };
+                let field = BrushStack {
+                    base: cp,
+                    brushes: &log[*c..target],
+                };
                 let set = region_of[j].as_ref().expect("region");
                 let timed = timed_of[j].as_ref().expect("timed");
 
@@ -878,7 +912,10 @@ fn run_trace<F: Sdf<Scalar = f64>>(
                     || is_boundary[j] && step == 1
                 {
                     t.cp_vs_log_checks += 1;
-                    let straight = BrushStack { base, brushes: &log[..target] };
+                    let straight = BrushStack {
+                        base,
+                        brushes: &log[..target],
+                    };
                     if hash_chunks(world, &mut mc, &straight, set).0 != hash_before[j] {
                         t.cp_vs_log_hash_mismatches += 1;
                     }
@@ -902,8 +939,8 @@ fn run_trace<F: Sdf<Scalar = f64>>(
                             if na.map(f64::to_bits) != nb.map(f64::to_bits) {
                                 t.cp_vs_log_normal_mismatches += 1;
                             }
-                            let dot = (na[0] * nb[0] + na[1] * nb[1] + na[2] * nb[2])
-                                .clamp(-1.0, 1.0);
+                            let dot =
+                                (na[0] * nb[0] + na[1] * nb[1] + na[2] * nb[2]).clamp(-1.0, 1.0);
                             let deg = dot.acos().to_degrees();
                             t.normal_dev_deg.push(deg);
                         }
@@ -939,7 +976,10 @@ fn run_trace<F: Sdf<Scalar = f64>>(
                     ladder.push((idx, rebuilt));
                 }
                 let (c, cp) = ladder.last().expect("ladder");
-                let field = BrushStack { base: cp, brushes: &log[*c..target] };
+                let field = BrushStack {
+                    base: cp,
+                    brushes: &log[*c..target],
+                };
                 let set = region_of[j].as_ref().expect("region");
                 if hash_chunks(world, &mut mc, &field, set).0 != hash_after[j] {
                     t.hash_mismatches += 1;
@@ -1006,7 +1046,10 @@ fn run_field<F: Sdf<Scalar = f64>>(name: &'static str, base: &F) -> FieldResult 
             continue;
         }
         worst_chunks_curve = worst_chunks_curve.max(chunks.len() as u64);
-        let field = BrushStack { base, brushes: &log[..length] };
+        let field = BrushStack {
+            base,
+            brushes: &log[..length],
+        };
         per_chunk.push((
             length as f64,
             time_extract(&world, &mut mc, &field, &chunks) / chunks.len() as f64,
@@ -1085,14 +1128,19 @@ fn run_field<F: Sdf<Scalar = f64>>(name: &'static str, base: &F) -> FieldResult 
     let undo_ms = time_extract(
         &world,
         &mut mc,
-        &BrushStack { base, brushes: &log[..target] },
+        &BrushStack {
+            base,
+            brushes: &log[..target],
+        },
         &chunks,
     );
 
     // Checkpoints at every `c` in `0 ..= target`, built incrementally — which is
     // itself the bit-exact ladder the trace uses.
     let mut refold_ms = vec![0.0f64; target + 1];
-    let mut cp = Checkpoint { values: base_bake.values.clone() };
+    let mut cp = Checkpoint {
+        values: base_bake.values.clone(),
+    };
     for c in 0..=target {
         if c > 0 {
             cp = advance(&cp, &log[c - 1..c]);
@@ -1101,7 +1149,10 @@ fn run_field<F: Sdf<Scalar = f64>>(name: &'static str, base: &F) -> FieldResult 
         refold_ms[d] = time_extract(
             &world,
             &mut mc,
-            &BrushStack { base: &cp, brushes: &log[c..target] },
+            &BrushStack {
+                base: &cp,
+                brushes: &log[c..target],
+            },
             &chunks,
         );
     }
@@ -1232,7 +1283,13 @@ fn main() {
     // Each field's surface passes through the `±1.5` box the brushes are drawn
     // in, which is what lets every edit move the surface.
     let results = vec![
-        run_field("sphere_r1_2", &Sphere::<f64> { center: [0.0; 3], radius: 1.2 }),
+        run_field(
+            "sphere_r1_2",
+            &Sphere::<f64> {
+                center: [0.0; 3],
+                radius: 1.2,
+            },
+        ),
         run_field("gyroid", &Gyroid::<f64>::canonical()),
         run_field("fbm_terrain", &FbmTerrain::<f64>::canonical()),
     ];
@@ -1279,9 +1336,7 @@ fn main() {
         // C2 is one claim about a derived `k`, not a claim per cadence. The
         // budget check runs at the coarsest swept cadence the derivation
         // permits: that is the trace the prediction actually endorses.
-        let budget_idx = CADENCES
-            .iter()
-            .rposition(|k| *k as f64 <= r.measured_k);
+        let budget_idx = CADENCES.iter().rposition(|k| *k as f64 <= r.measured_k);
         let budget_cadence = budget_idx.map_or(0, |i| CADENCES[i]);
         let budget_worst_ms = budget_idx.map_or(f64::INFINITY, |i| r.traces[i].worst_undo_ms);
         let c2_holds = k_ratio <= 2.0 && budget_worst_ms < FRAME_MS;
@@ -1349,10 +1404,7 @@ fn main() {
                 ("predicted_k_from_m50", format!("{:.1}", r.predicted_k)),
                 ("measured_k", format!("{:.1}", r.measured_k)),
                 ("worst_undo_ms", format!("{:.6}", t.worst_undo_ms)),
-                (
-                    "undos_crossing_checkpoint",
-                    t.crossings.to_string(),
-                ),
+                ("undos_crossing_checkpoint", t.crossings.to_string()),
                 ("hash_mismatches", t.hash_mismatches.to_string()),
                 ("c1_holds", c1_holds.to_string()),
                 ("c2_holds", c2_holds.to_string()),
@@ -1418,10 +1470,7 @@ fn main() {
                 ("c2_budget_worst_undo_ms", format!("{budget_worst_ms:.6}")),
                 ("measured_k_from_trace", empirical_k.to_string()),
                 ("k_ratio_m50_over_trace", format!("{k_ratio_trace:.4}")),
-                (
-                    "worst_dirty_chunks_curve",
-                    r.worst_chunks_curve.to_string(),
-                ),
+                ("worst_dirty_chunks_curve", r.worst_chunks_curve.to_string()),
                 (
                     "formula_worst_undo_ms",
                     format!(
@@ -1433,10 +1482,7 @@ fn main() {
                 ("worst_refold_depth", t.worst_depth.to_string()),
                 // ── C3's other side, and the vacuity controls ───────────────
                 ("undos_total", t.undos.to_string()),
-                (
-                    "crossings_regular_only",
-                    t.crossings_regular.to_string(),
-                ),
+                ("crossings_regular_only", t.crossings_regular.to_string()),
                 ("checkpoints_built", t.checkpoints_built.to_string()),
                 ("checkpoint_rebuilds", t.rebuilds.to_string()),
                 (
@@ -1487,10 +1533,7 @@ fn main() {
                     "max_normal_dev_deg",
                     format!("{:.6}", quantile(&t.normal_dev_deg, 1.0)),
                 ),
-                (
-                    "peak_checkpoint_bytes",
-                    t.peak_checkpoint_bytes.to_string(),
-                ),
+                ("peak_checkpoint_bytes", t.peak_checkpoint_bytes.to_string()),
                 ("log_add", r.ops_seen[0].to_string()),
                 ("log_subtract", r.ops_seen[1].to_string()),
                 ("log_smooth_add", r.ops_seen[2].to_string()),

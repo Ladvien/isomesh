@@ -1247,8 +1247,7 @@ fn measure<F: Sdf<Scalar = f64> + ReferenceField>(
     // window. Their gap is the smallest difference this rig can claim.
     row.resolution_floor_ms = (min_of(&case_again) - min_of(&case)).abs();
     // The other estimator, reported so a reader can see whether the two agree.
-    row.fused_predicate_median_ms =
-        median_of(paired.iter().map(|p| p.fused - p.case).collect());
+    row.fused_predicate_median_ms = median_of(paired.iter().map(|p| p.fused - p.case).collect());
     row.chunked_fused_ms = min_ms(sweeps, || {
         let agg = walk_chunked(
             std::hint::black_box(values.as_slice()),
@@ -1598,7 +1597,11 @@ fn main() {
 
     // ── verdicts ─────────────────────────────────────────────────────────────
     let at65: Vec<&Row> = rows.iter().filter(|r| r.resolution == 65).collect();
-    assert_eq!(at65.len(), 8, "C1 is registered over all eight fields at 65³");
+    assert_eq!(
+        at65.len(),
+        8,
+        "C1 is registered over all eight fields at 65³"
+    );
     let worst = at65
         .iter()
         .max_by(|a, b| a.fused_share().total_cmp(&b.fused_share()))
@@ -1703,7 +1706,8 @@ fn main() {
         worst_modelled.modelled_marginal_ms() / worst_modelled.fused_predicate_ms,
         rows.iter()
             .find(|r| r.field == "noise_cavity" && r.resolution == 65)
-            .map_or(f64::NAN, |r| r.modelled_marginal_ms() / r.fused_predicate_ms)
+            .map_or(f64::NAN, |r| r.modelled_marginal_ms()
+                / r.fused_predicate_ms)
     );
     println!(
         "   THE COUNTED DECOMPOSITION, which is the half that reproduces across runs: at 65³ the \
@@ -1860,10 +1864,7 @@ fn main() {
                     "unsound_if_certify_all",
                     r.unsound_if_certify_all.to_string(),
                 ),
-                (
-                    "mutant_set_difference",
-                    r.mutant_set_difference.to_string(),
-                ),
+                ("mutant_set_difference", r.mutant_set_difference.to_string()),
                 ("hidden_population", hidden_population.to_string()),
                 ("chunks", r.chunks.to_string()),
                 ("chunk_cells", r.chunk_cells.to_string()),

@@ -596,10 +596,8 @@ fn pose(field: &FbmTerrain<f32>, rng: &mut Rng, lo: f32, span: f32) -> Segment {
     let x = lo + rng.next() * span;
     let z = lo + rng.next() * span;
     let axis = rng.direction();
-    let y = height(field, x, z)
-        + CAPSULE_HALF
-        + CAPSULE_RADIUS
-        + (2.0 * rng.next() - 1.0) * POSE_BAND;
+    let y =
+        height(field, x, z) + CAPSULE_HALF + CAPSULE_RADIUS + (2.0 * rng.next() - 1.0) * POSE_BAND;
     let c = [x, y, z];
     Segment {
         a: [
@@ -934,22 +932,70 @@ const PEER_RUSTC: &str = "1.96.1-31fca3adb";
 /// [`PEER_RUSTC`]). The peer runs *this* binary's source unchanged and prints the
 /// digests on its `P-81 c2 block digests` line; nothing else crosses the wire.
 const PEER_BLOCK_DIGESTS: Option<[u64; C2_BLOCKS]> = Some([
-    0x60d3_40e2_a801_5da9, 0xc5c5_fa16_ffc3_33e8, 0x963d_90b2_1578_1b8a, 0x92a9_a88e_ccc9_b92e,
-    0x4334_2364_a40a_27ab, 0x4095_bf5d_dbd3_84bb, 0x97e3_e09b_a596_3e82, 0xf078_cedc_7f89_ea35,
-    0x04ce_8b83_041e_3644, 0x78bb_a7d4_cfc0_2986, 0xa649_a268_e9cd_9a54, 0x9a74_f1cb_2204_1ab0,
-    0x5459_32da_d1f9_a55f, 0xe5ab_781e_8f80_8a2c, 0x8e9a_d6a8_092a_ffb0, 0x69bd_eb66_e1f9_774f,
-    0x66b2_7ee5_9734_dae9, 0x72fc_c009_f31f_a845, 0xfa33_cd50_9ff5_8a57, 0x99ef_61fe_d2b8_4a42,
-    0x9b0c_4fa2_c613_31ae, 0x92ba_97da_6b20_c2a8, 0x9ede_b048_1efd_8f90, 0x37c4_3a83_30ae_7c5c,
-    0x0bdd_a647_65f4_2af8, 0xf0e2_0223_4d83_0656, 0x7022_3801_1fd9_498d, 0xb805_3270_dd9b_3483,
-    0xd02f_2f82_d4ba_f999, 0x28b5_d8d9_f175_1f04, 0xa423_b451_cafa_3c20, 0xc5c9_b8d8_46f4_6222,
-    0x6823_251e_9ad2_eda2, 0x42fc_44a8_1163_ed39, 0x9ec8_f2ba_f072_506f, 0xf49b_bd06_5418_e291,
-    0x94bb_242f_20b4_cf4f, 0xfd55_4fe6_933d_7e91, 0xbb4a_0566_d840_23d7, 0x5061_0a00_e569_fc10,
-    0x353c_723b_1f04_e2ec, 0xd269_7ada_f5e3_6609, 0x8e91_1118_1f2f_f89b, 0xa184_6c1b_719e_342e,
-    0xf632_10fe_cc4b_5124, 0xd9e2_fe23_a325_768f, 0x559e_5635_67f8_6275, 0x15b6_abfa_be11_1c06,
-    0x0976_69bd_293b_9b32, 0x7a80_2bc7_3570_6309, 0x22c3_8891_da97_c55a, 0x4b66_03eb_52ba_ef90,
-    0x3a88_38c3_430a_c52b, 0xa30c_530a_eed7_3919, 0x713b_71e2_48cd_0bca, 0x44e9_1947_efe9_ba3b,
-    0xab10_58c0_3aea_6287, 0x3eea_1314_228a_83fa, 0x38c4_1f70_1985_1d7e, 0xda6b_afe6_6885_b951,
-    0x8764_04f4_9693_1fa3, 0xd961_fb0e_408c_ae3b, 0xfd42_e863_cce5_f1ca, 0x688a_93e1_43b8_0c65,
+    0x60d3_40e2_a801_5da9,
+    0xc5c5_fa16_ffc3_33e8,
+    0x963d_90b2_1578_1b8a,
+    0x92a9_a88e_ccc9_b92e,
+    0x4334_2364_a40a_27ab,
+    0x4095_bf5d_dbd3_84bb,
+    0x97e3_e09b_a596_3e82,
+    0xf078_cedc_7f89_ea35,
+    0x04ce_8b83_041e_3644,
+    0x78bb_a7d4_cfc0_2986,
+    0xa649_a268_e9cd_9a54,
+    0x9a74_f1cb_2204_1ab0,
+    0x5459_32da_d1f9_a55f,
+    0xe5ab_781e_8f80_8a2c,
+    0x8e9a_d6a8_092a_ffb0,
+    0x69bd_eb66_e1f9_774f,
+    0x66b2_7ee5_9734_dae9,
+    0x72fc_c009_f31f_a845,
+    0xfa33_cd50_9ff5_8a57,
+    0x99ef_61fe_d2b8_4a42,
+    0x9b0c_4fa2_c613_31ae,
+    0x92ba_97da_6b20_c2a8,
+    0x9ede_b048_1efd_8f90,
+    0x37c4_3a83_30ae_7c5c,
+    0x0bdd_a647_65f4_2af8,
+    0xf0e2_0223_4d83_0656,
+    0x7022_3801_1fd9_498d,
+    0xb805_3270_dd9b_3483,
+    0xd02f_2f82_d4ba_f999,
+    0x28b5_d8d9_f175_1f04,
+    0xa423_b451_cafa_3c20,
+    0xc5c9_b8d8_46f4_6222,
+    0x6823_251e_9ad2_eda2,
+    0x42fc_44a8_1163_ed39,
+    0x9ec8_f2ba_f072_506f,
+    0xf49b_bd06_5418_e291,
+    0x94bb_242f_20b4_cf4f,
+    0xfd55_4fe6_933d_7e91,
+    0xbb4a_0566_d840_23d7,
+    0x5061_0a00_e569_fc10,
+    0x353c_723b_1f04_e2ec,
+    0xd269_7ada_f5e3_6609,
+    0x8e91_1118_1f2f_f89b,
+    0xa184_6c1b_719e_342e,
+    0xf632_10fe_cc4b_5124,
+    0xd9e2_fe23_a325_768f,
+    0x559e_5635_67f8_6275,
+    0x15b6_abfa_be11_1c06,
+    0x0976_69bd_293b_9b32,
+    0x7a80_2bc7_3570_6309,
+    0x22c3_8891_da97_c55a,
+    0x4b66_03eb_52ba_ef90,
+    0x3a88_38c3_430a_c52b,
+    0xa30c_530a_eed7_3919,
+    0x713b_71e2_48cd_0bca,
+    0x44e9_1947_efe9_ba3b,
+    0xab10_58c0_3aea_6287,
+    0x3eea_1314_228a_83fa,
+    0x38c4_1f70_1985_1d7e,
+    0xda6b_afe6_6885_b951,
+    0x8764_04f4_9693_1fa3,
+    0xd961_fb0e_408c_ae3b,
+    0xfd42_e863_cce5_f1ca,
+    0x688a_93e1_43b8_0c65,
 ]);
 
 /// What the C2 arm measured.
@@ -1295,7 +1341,11 @@ fn classify(window: &Window, tri_index: u32, witness: [f32; 3], normal: [f32; 3]
         dot(cross(sub(a, w), sub(b, w)), raw) / denom,
     ];
 
-    let nrm = [f64::from(normal[0]), f64::from(normal[1]), f64::from(normal[2])];
+    let nrm = [
+        f64::from(normal[0]),
+        f64::from(normal[1]),
+        f64::from(normal[2]),
+    ];
     let nl = dot(nrm, nrm).sqrt();
     let nrm = [nrm[0] / nl, nrm[1] / nl, nrm[2] / nl];
 
@@ -1427,10 +1477,13 @@ fn run_c3(field: &FbmTerrain<f32>) -> C3 {
                 1 => s.1 += 1,
                 2 => {
                     s.0 += 1;
-                    let d = dot(w.tris[rec.tris[0] as usize].n, w.tris[rec.tris[1] as usize].n)
-                        .clamp(-1.0, 1.0)
-                        .acos()
-                        .to_degrees();
+                    let d = dot(
+                        w.tris[rec.tris[0] as usize].n,
+                        w.tris[rec.tris[1] as usize].n,
+                    )
+                    .clamp(-1.0, 1.0)
+                    .acos()
+                    .to_degrees();
                     s.4 += d;
                     s.5 += 1;
                     if d <= JOLT_ACTIVE_EDGE_DEG {
@@ -1439,7 +1492,6 @@ fn run_c3(field: &FbmTerrain<f32>) -> C3 {
                 }
                 _ => s.2 += 1,
             }
-
         }
         // The winding control: a face normal from `cross(v1 - v0, v2 - v0)` must
         // point the same way as the field's own gradient, or every dihedral and
@@ -1516,17 +1568,11 @@ fn run_c3(field: &FbmTerrain<f32>) -> C3 {
                 &target,
                 PREDICTION,
             )
-            .expect("parry supports capsule-vs-triangle contact")
-            else {
+            .expect("parry supports capsule-vs-triangle contact") else {
                 continue;
             };
             out.contacts_trimesh += 1;
-            let f = classify(
-                &window,
-                index,
-                c.point2.to_array(),
-                c.normal2.to_array(),
-            );
+            let f = classify(&window, index, c.point2.to_array(), c.normal2.to_array());
             out.edge_witness_contacts += u64::from(f.on_edge);
             out.internal_edge_contacts += u64::from(f.internal);
             if f.internal && f.deviation_deg > NORMAL_TOL_DEG {
@@ -1694,7 +1740,8 @@ fn main() {
     println!("P-81 c2 branchy digest: {:#018x}", c2.branchy_digest);
     println!(
         "P-81 c2 arch: {} rustc-target-independent evals={}",
-        std::env::consts::ARCH, c2.evals
+        std::env::consts::ARCH,
+        c2.evals
     );
 
     // `None` means the peer run has not been performed, and the columns say
@@ -1706,7 +1753,11 @@ fn main() {
             .zip(peer.iter())
             .filter(|(a, b)| a != b)
             .count() as u64;
-        (differing_blocks == 0, differing_blocks, differing_blocks * C2_BLOCK)
+        (
+            differing_blocks == 0,
+            differing_blocks,
+            differing_blocks * C2_BLOCK,
+        )
     });
     let blocked = || String::from("BLOCKED");
     // The word `common/mod.rs` names for a counter this platform does not have.
@@ -1791,7 +1842,10 @@ fn main() {
                 ("speedup", format!("{:.6}", arm.speedup)),
                 ("speedup_min", format!("{:.6}", arm.speedup_min)),
                 ("speedup_max", format!("{:.6}", arm.speedup_max)),
-                ("query_us_field_median", format!("{:.6}", arm.field_us_median)),
+                (
+                    "query_us_field_median",
+                    format!("{:.6}", arm.field_us_median),
+                ),
                 (
                     "query_us_trimesh_median",
                     format!("{:.6}", arm.trimesh_us_median),
@@ -1815,7 +1869,10 @@ fn main() {
                         _ => unavailable(),
                     },
                 ),
-                ("ghz", arm.ghz.map_or_else(unavailable, |g| format!("{g:.4}"))),
+                (
+                    "ghz",
+                    arm.ghz.map_or_else(unavailable, |g| format!("{g:.4}")),
+                ),
                 (
                     "contact_share_field",
                     format!("{:.6}", arm.contact_share_field),

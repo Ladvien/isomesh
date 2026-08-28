@@ -313,7 +313,8 @@ mod experiment {
 
         // `construct` + `bvh`: parry's constructor, which builds the BVH inside
         // itself and cannot be asked not to.
-        let copy_bytes = vertices.len() * size_of::<Vector>() + indices.len() * size_of::<[u32; 3]>();
+        let copy_bytes =
+            vertices.len() * size_of::<Vector>() + indices.len() * size_of::<[u32; 3]>();
         let t = Instant::now();
         let trimesh = TriMesh::new(vertices, indices)
             .expect("parry accepts a non-empty index buffer, which readiness already asserted");
@@ -445,12 +446,9 @@ mod experiment {
         let (lo, hi) = field.domain();
         let cell_size = (hi[0] - lo[0]) / cells as Scalar;
         let extent = cell_size * cells as Scalar;
-        let layout = ChunkLayout::<Scalar>::new(
-            cells,
-            cell_size,
-            [-extent, -extent * 0.5, -extent * 0.5],
-        )
-        .expect("a chunk layout at the field's own cell size");
+        let layout =
+            ChunkLayout::<Scalar>::new(cells, cell_size, [-extent, -extent * 0.5, -extent * 0.5])
+                .expect("a chunk layout at the field's own cell size");
         let shape = layout.sample_shape().expect("the chunk's sample shape");
 
         let mut joined = MeshBuffer::<Scalar>::new();
@@ -752,7 +750,12 @@ mod experiment {
         let (largest_stage, largest_share) = largest([copy, construct, bvh, handoff], total);
         let (finest_largest_stage, finest_largest_share) =
             finest_largest([copy, construct, bvh, weld, readiness], total);
-        let shares = [copy / total, construct / total, bvh / total, handoff / total];
+        let shares = [
+            copy / total,
+            construct / total,
+            bvh / total,
+            handoff / total,
+        ];
         let min_stage_share = shares.iter().copied().fold(f64::INFINITY, f64::min);
         let stages_above_bar = shares.iter().filter(|s| **s > RESIDUAL_BAR).count();
         let reps_agreeing = reps
@@ -767,9 +770,7 @@ mod experiment {
             .count();
         let worst_residual_share = reps
             .iter()
-            .map(|r| {
-                ((r.total - (r.weld + r.readiness + r.copy + r.trimesh_new)) / r.total).abs()
-            })
+            .map(|r| ((r.total - (r.weld + r.readiness + r.copy + r.trimesh_new)) / r.total).abs())
             .fold(0.0f64, f64::max);
 
         // ── the registered vacuity control ──────────────────────────────────
@@ -934,10 +935,7 @@ mod experiment {
             ("largest_share", format!("{:.6}", a.largest_share)),
             ("cost_per_triangle", format!("{:.6}", a.cost_per_triangle)),
             ("seam_boundary_edges", a.seam_boundary_edges.to_string()),
-            (
-                "degenerate_triangles",
-                a.degenerate_triangles.to_string(),
-            ),
+            ("degenerate_triangles", a.degenerate_triangles.to_string()),
             ("c1_holds", c1.to_string()),
             ("c2_holds", c2.to_string()),
             // ── extras: the attribution, reversible from the file ───────────
@@ -980,15 +978,11 @@ mod experiment {
                 "median_mixing_share",
                 format!(
                     "{:.6}",
-                    (a.medians[4]
-                        - (a.medians[0] + a.medians[1] + a.medians[2] + a.medians[3]))
+                    (a.medians[4] - (a.medians[0] + a.medians[1] + a.medians[2] + a.medians[3]))
                         / a.medians[4]
                 ),
             ),
-            (
-                "finest_largest_stage",
-                a.finest_largest_stage.to_string(),
-            ),
+            ("finest_largest_stage", a.finest_largest_stage.to_string()),
             (
                 "finest_largest_share",
                 format!("{:.6}", a.finest_largest_share),
@@ -998,10 +992,7 @@ mod experiment {
                 "collider_over_contour",
                 format!("{:.6}", a.total_ms / a.contour_ms),
             ),
-            (
-                "counted_total_ms",
-                format!("{:.6}", a.counted_total_ms),
-            ),
+            ("counted_total_ms", format!("{:.6}", a.counted_total_ms)),
             (
                 "counted_over_median",
                 format!("{:.6}", a.counted_total_ms / a.total_ms),
@@ -1166,7 +1157,10 @@ mod experiment {
         // each build starts on a cache the other five arms have just evicted -
         // which is what a chunked pipeline building chunk after chunk actually
         // does, so it is the more representative state as well as the fairer one.
-        println!("\n── the timed phase: {} arms interleaved inside every repeat ──\n", fixtures.len());
+        println!(
+            "\n── the timed phase: {} arms interleaved inside every repeat ──\n",
+            fixtures.len()
+        );
         let mut reps: Vec<Vec<Rep>> = fixtures.iter().map(|_| Vec::with_capacity(REPS)).collect();
         let mut last: Vec<Option<Stages>> = fixtures.iter().map(|_| None).collect();
         for rep in 0..(WARMUP + REPS) {
@@ -1331,8 +1325,8 @@ mod experiment {
                 .find(|a| a.field == "gyroid" && a.samples == *samples)
                 .expect("the gyroid arm at this resolution was just measured");
             let mismatch = gyroid_arm.triangles as i64 - sphere_arm.triangles as i64;
-            let mismatch_share = mismatch.abs() as f64
-                / gyroid_arm.triangles.max(sphere_arm.triangles) as f64;
+            let mismatch_share =
+                mismatch.abs() as f64 / gyroid_arm.triangles.max(sphere_arm.triangles) as f64;
             let ratio = gyroid_arm.cost_per_triangle / sphere_arm.cost_per_triangle;
             let ratio_cycles = gyroid_arm.cycles_per_triangle / sphere_arm.cycles_per_triangle;
             let held = ratio >= FIELD_PENALTY_BAR;

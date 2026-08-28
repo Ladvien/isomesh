@@ -543,9 +543,10 @@ fn solve_cell(
                 for (slot, value) in m_terms.iter_mut().zip(Symmetric3::outer(normal)) {
                     slot[edge] = value;
                 }
-                for (slot, value) in g_terms
-                    .iter_mut()
-                    .zip([normal[0] * d, normal[1] * d, normal[2] * d])
+                for (slot, value) in
+                    g_terms
+                        .iter_mut()
+                        .zip([normal[0] * d, normal[1] * d, normal[2] * d])
                 {
                     slot[edge] = value;
                 }
@@ -565,9 +566,10 @@ fn solve_cell(
                 for (slot, value) in m_sum.iter_mut().zip(Symmetric3::outer(normal)) {
                     *slot += value;
                 }
-                for (slot, value) in g_sum
-                    .iter_mut()
-                    .zip([normal[0] * d, normal[1] * d, normal[2] * d])
+                for (slot, value) in
+                    g_sum
+                        .iter_mut()
+                        .zip([normal[0] * d, normal[1] * d, normal[2] * d])
                 {
                     *slot += value;
                 }
@@ -965,7 +967,11 @@ fn vertex_keys(positions: &[[f64; 3]], g: Option<Element>) -> Vec<[u64; 3]> {
     out
 }
 
-fn triangle_keys(positions: &[[f64; 3]], indices: &[u32], g: Option<Element>) -> Vec<[[u64; 3]; 3]> {
+fn triangle_keys(
+    positions: &[[f64; 3]],
+    indices: &[u32],
+    g: Option<Element>,
+) -> Vec<[[u64; 3]; 3]> {
     let mapped = |i: u32| -> [u64; 3] {
         let p = positions[i as usize];
         let q = match g {
@@ -1712,8 +1718,7 @@ fn main() {
                             );
                         }
                         let moved = positions_moved(&arm_mesh, &shipped_mesh);
-                        let counts_same =
-                            arm_mesh.positions.len() == shipped_mesh.positions.len();
+                        let counts_same = arm_mesh.positions.len() == shipped_mesh.positions.len();
                         let indices_same = arm_mesh.indices == shipped_mesh.indices;
                         if !(counts_same && indices_same) {
                             topology_identical = false;
@@ -1763,7 +1768,10 @@ fn main() {
                             ),
                             ("vertices", arm_mesh.positions.len().to_string()),
                             ("triangles", arm_mesh.triangle_count().to_string()),
-                            ("vertices_baseline", shipped_mesh.positions.len().to_string()),
+                            (
+                                "vertices_baseline",
+                                shipped_mesh.positions.len().to_string(),
+                            ),
                             ("positions_moved", moved.to_string()),
                             ("counts_identical", counts_same.to_string()),
                             ("indices_identical", indices_same.to_string()),
@@ -1840,7 +1848,9 @@ fn main() {
             "  C3  manifold rows at 48, registered arm:        {mdc_at_48} of 16 \
              (shipped baseline {mdc_base})"
         );
-        println!("  C2  golden dual hashes moved / expected:        {moved} / 48, {moved_expected} predicted from moved positions");
+        println!(
+            "  C2  golden dual hashes moved / expected:        {moved} / 48, {moved_expected} predicted from moved positions"
+        );
         println!("      topology identical everywhere:              {topology_identical}");
         println!("      worst |hausdorff delta|:                    {worst_hausdorff_delta:.6e}");
         println!(

@@ -307,8 +307,7 @@ fn reference_moments<S: Sdf<Scalar = f64> + Sync>(
                                             let offset = |i: usize, s: usize| {
                                                 c[i] + (s as f64 + 0.5 - REFINE as f64 * 0.5) * sub
                                             };
-                                            let q =
-                                                [offset(0, sx), offset(1, sy), offset(2, sz)];
+                                            let q = [offset(0, sx), offset(1, sy), offset(2, sz)];
                                             let vq = field.sample(q);
                                             let gq = field.gradient(q);
                                             fine.cube(q, sub, plane_fraction(vq, gq, sub));
@@ -562,7 +561,10 @@ fn clock() -> (String, String) {
     let mhz = read("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
         .ok()
         .and_then(|s| s.parse::<f64>().ok())
-        .map_or_else(|| String::from("unknown"), |khz| format!("{:.0}", khz / 1000.0));
+        .map_or_else(
+            || String::from("unknown"),
+            |khz| format!("{:.0}", khz / 1000.0),
+        );
     let governor = read("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
         .unwrap_or_else(|_| String::from("unknown"));
     (mhz, governor)
@@ -574,8 +576,8 @@ fn clock() -> (String, String) {
 /// cross-machine half of C2 was not measured on this run, and the column says
 /// `no_peer` rather than guessing.
 fn peer_hashes() -> BTreeMap<(String, u32), (String, String)> {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../docs/experiments/p-83-m5-hashes.txt");
+    let path =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/experiments/p-83-m5-hashes.txt");
     let mut out = BTreeMap::new();
     let Ok(text) = std::fs::read_to_string(&path) else {
         return out;
@@ -719,14 +721,16 @@ fn main() {
                 for _ in 0..EXTRACT_REPS {
                     mesh.reset();
                     let start = Instant::now();
-                    mc.extract(&solid, &shape, lo, step, &mut mesh).expect("extract");
+                    mc.extract(&solid, &shape, lo, step, &mut mesh)
+                        .expect("extract");
                     extract_ms.push(start.elapsed().as_secs_f64() * 1e3);
                 }
 
                 // The clip is inert on a field that was already closed, and the
                 // proof is the same mesh, not the same triangle count.
                 bare.reset();
-                mc.extract(&field, &shape, lo, step, &mut bare).expect("extract");
+                mc.extract(&field, &shape, lo, step, &mut bare)
+                    .expect("extract");
                 let clip_inert = mesh_digest(&mesh) == mesh_digest(&bare);
                 assert_eq!(
                     clip_inert, closed,
@@ -793,7 +797,8 @@ fn main() {
                     d.sqrt() / length
                 };
                 let scale = tensor_scale(&reference_inertia);
-                let inertia_rel = tensor_gap(&props.inertia_about_origin, &reference_inertia) / scale;
+                let inertia_rel =
+                    tensor_gap(&props.inertia_about_origin, &reference_inertia) / scale;
 
                 // The centred tensor, for the record: it compounds the centroid
                 // error and is what a physics engine actually consumes.
@@ -807,8 +812,8 @@ fn main() {
                     reference_centred[i][j] += v * c[i] * c[j];
                     reference_centred[j][i] += v * c[j] * c[i];
                 }
-                let inertia_com_rel =
-                    tensor_gap(&props.inertia, &reference_centred) / tensor_scale(&reference_centred);
+                let inertia_com_rel = tensor_gap(&props.inertia, &reference_centred)
+                    / tensor_scale(&reference_centred);
 
                 // Every error must be able to be non-zero, and is.
                 assert!(
@@ -853,12 +858,16 @@ fn main() {
             }
 
             let steps: Vec<f64> = arms.iter().map(|a| a.step).collect();
-            let order_volume =
-                convergence_order(&steps, &arms.iter().map(|a| a.volume_rel).collect::<Vec<_>>());
+            let order_volume = convergence_order(
+                &steps,
+                &arms.iter().map(|a| a.volume_rel).collect::<Vec<_>>(),
+            );
             let order_com =
                 convergence_order(&steps, &arms.iter().map(|a| a.com_rel).collect::<Vec<_>>());
-            let order_inertia =
-                convergence_order(&steps, &arms.iter().map(|a| a.inertia_rel).collect::<Vec<_>>());
+            let order_inertia = convergence_order(
+                &steps,
+                &arms.iter().map(|a| a.inertia_rel).collect::<Vec<_>>(),
+            );
             // Only series that carry information. `box_exact`'s centroid is
             // exactly zero and `thin_plate`'s is 1e-15; a slope fitted through
             // those is a slope through round-off, and taking its minimum turned
@@ -871,7 +880,8 @@ fn main() {
             // A series that was already exact is reported as `exact`, not as a
             // zero slope: the two are opposite results and a reader who grabs
             // the obvious column must not be told the wrong one (C5's rule).
-            let slope = |o: Option<f64>| o.map_or_else(|| String::from("exact"), |v| format!("{v:.4}"));
+            let slope =
+                |o: Option<f64>| o.map_or_else(|| String::from("exact"), |v| format!("{v:.4}"));
 
             for arm in &arms {
                 let share = arm.mass_ms / arm.extract_ms;
@@ -919,9 +929,15 @@ fn main() {
                     ("clip_inert", arm.clip_inert.to_string()),
                     ("clock_governor", governor.clone()),
                     ("clock_mhz", mhz.clone()),
-                    ("inertia_com_rel_error", format!("{:.6e}", arm.inertia_com_rel)),
+                    (
+                        "inertia_com_rel_error",
+                        format!("{:.6e}", arm.inertia_com_rel),
+                    ),
                     ("inertia_hash", format!("{:016x}", arm.inertia_hash)),
-                    ("inertia_scale", format!("{:.12e}", tensor_scale(&reference_inertia))),
+                    (
+                        "inertia_scale",
+                        format!("{:.12e}", tensor_scale(&reference_inertia)),
+                    ),
                     ("mesh_hash", format!("{:016x}", arm.mesh_hash)),
                     ("non_manifold_edges", arm.non_manifold_edges.to_string()),
                     ("order_com", slope(order_com)),

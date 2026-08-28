@@ -550,12 +550,7 @@ fn cast(pos: Vector, motion: Vector, tri: &Tri) -> Option<(f32, Vector)> {
 
 /// Collide-and-slide one swept move, returning what it achieved and the
 /// triangles that blocked it, earliest first.
-fn slide(
-    terrain: &Terrain,
-    pos: Vector,
-    motion: Vector,
-    blockers: &mut Vec<u32>,
-) -> Vector {
+fn slide(terrain: &Terrain, pos: Vector, motion: Vector, blockers: &mut Vec<u32>) -> Vector {
     let mut moved = Vector::ZERO;
     let mut remaining = motion;
     for _ in 0..SLIDE_ITERATIONS {
@@ -774,9 +769,7 @@ fn resolve_field(
     let foot = *centre - Vector::Y * CAPSULE_HALF;
     let r = CAPSULE_RADIUS * FOOTPRINT;
     let edge = match probe {
-        GroundProbe::Chord => {
-            CAPSULE_RADIUS * (1.0 - FOOTPRINT * FOOTPRINT).sqrt() + GROUND_PROBE
-        }
+        GroundProbe::Chord => CAPSULE_RADIUS * (1.0 - FOOTPRINT * FOOTPRINT).sqrt() + GROUND_PROBE,
         GroundProbe::FlatCross => CAPSULE_RADIUS + GROUND_PROBE,
     };
     let middle = CAPSULE_RADIUS + GROUND_PROBE;
@@ -1505,9 +1498,10 @@ fn row(
     lift: &LiftCheck,
     wall: f64,
 ) -> Vec<(&'static str, String)> {
-
-    let population: Vec<TriMeta> =
-        arms.iter().flat_map(|a| a.population.iter().copied()).collect();
+    let population: Vec<TriMeta> = arms
+        .iter()
+        .flat_map(|a| a.population.iter().copied())
+        .collect();
     let stops: Vec<&Stop> = arms.iter().flat_map(|a| a.stops.iter()).collect();
     let steps: u64 = arms.iter().map(|a| a.steps).sum();
     let crossings: u64 = arms.iter().map(|a| a.seam_crossings).sum();
@@ -1630,20 +1624,25 @@ fn row(
     let fraction = on_worst as f64 / stops_total as f64;
 
     // C3 is over C1's stops: the bottom-decile ones.
-    let field_path = stops.iter().filter(|s| s.q <= p10 && s.field_stalls).count() as u64;
+    let field_path = stops
+        .iter()
+        .filter(|s| s.q <= p10 && s.field_stalls)
+        .count() as u64;
     let field_all = stops.iter().filter(|s| s.field_stalls).count() as u64;
     let field_pen_max = stops
         .iter()
         .map(|s| s.field_penetration)
         .fold(0.0_f32, f32::max);
-    let field_pen_mean = stops.iter().map(|s| f64::from(s.field_penetration)).sum::<f64>()
+    let field_pen_mean = stops
+        .iter()
+        .map(|s| f64::from(s.field_penetration))
+        .sum::<f64>()
         / stops_total as f64;
     let mesh_pen_max = stops
         .iter()
         .map(|s| s.mesh_penetration)
         .fold(0.0_f32, f32::max);
-    let slope_at_stops =
-        stops.iter().map(|s| f64::from(s.slope)).sum::<f64>() / stops_total as f64;
+    let slope_at_stops = stops.iter().map(|s| f64::from(s.slope)).sum::<f64>() / stops_total as f64;
 
     // **What C3's zero is worth.** The same replay fires `field_all` times over
     // all `stops_total` stops, so under the null that a bottom-decile stop is an
@@ -1664,7 +1663,10 @@ fn row(
         ("stops_total", stops_total.to_string()),
         ("stops_on_worst_decile", on_worst.to_string()),
         ("worst_decile_fraction", format!("{fraction:.6}")),
-        ("stops_per_triangle_seam", format!("{:.9}", primary.per_seam)),
+        (
+            "stops_per_triangle_seam",
+            format!("{:.9}", primary.per_seam),
+        ),
         (
             "stops_per_triangle_interior",
             format!("{:.9}", primary.per_interior),
@@ -1686,10 +1688,7 @@ fn row(
         ("aspect_ratio_p10_tested", format!("{p10_tested:.6}")),
         ("stops_on_worst_decile_tested", on_worst_tested.to_string()),
         ("degenerate_triangles", degenerate_tris.to_string()),
-        (
-            "degenerate_triangles_tested",
-            degenerate_tested.to_string(),
-        ),
+        ("degenerate_triangles_tested", degenerate_tested.to_string()),
         ("stops_on_degenerate", on_degenerate.to_string()),
         // ── C2, the three variants the registered columns are not ───────────
         ("seam_triangles_tested_xz", primary.seam_tris.to_string()),
@@ -1721,10 +1720,7 @@ fn row(
         ),
         // ── the effective sample size ───────────────────────────────────────
         ("stop_episodes", episodes.len().to_string()),
-        (
-            "episode_seam_stops",
-            episode_rate.seam_stops.to_string(),
-        ),
+        ("episode_seam_stops", episode_rate.seam_stops.to_string()),
         (
             "episode_interior_stops",
             episode_rate.interior_stops.to_string(),
@@ -1733,10 +1729,7 @@ fn row(
             "seam_excess_episodes",
             format!("{:.6}", episode_rate.excess),
         ),
-        (
-            "seam_excess_episodes_sigma",
-            format!("{episode_sigma:.6}"),
-        ),
+        ("seam_excess_episodes_sigma", format!("{episode_sigma:.6}")),
         // ── the slope confound, measured ────────────────────────────────────
         (
             "mean_slope_y_band",
@@ -1768,12 +1761,24 @@ fn row(
         ("mesh_penetration_max", format!("{mesh_pen_max:.4}")),
         // ── the lift check and the clock ────────────────────────────────────
         ("chord_hover_max", format!("{:.6}", lift.chord_settle)),
-        ("chord_hover_gentle_max", format!("{:.6}", lift.chord_gentle)),
+        (
+            "chord_hover_gentle_max",
+            format!("{:.6}", lift.chord_gentle),
+        ),
         ("flat_cross_hover_max", format!("{:.6}", lift.flat_settle)),
-        ("chord_excess_over_bound", format!("{:.6}", lift.chord_excess)),
+        (
+            "chord_excess_over_bound",
+            format!("{:.6}", lift.chord_excess),
+        ),
         ("flat_excess_over_bound", format!("{:.6}", lift.flat_excess)),
-        ("chord_inset_measured", format!("{:.6}", lift.inset_measured)),
-        ("chord_inset_expected", format!("{:.6}", lift.inset_expected)),
+        (
+            "chord_inset_measured",
+            format!("{:.6}", lift.inset_measured),
+        ),
+        (
+            "chord_inset_expected",
+            format!("{:.6}", lift.inset_expected),
+        ),
         ("steepest_gradient", format!("{:.4}", lift.steepest)),
         ("lift_check_columns", lift.columns.to_string()),
         ("metres_travelled", format!("{metres:.2}")),

@@ -103,7 +103,11 @@ fn the_corner_simplex_matches_its_closed_form() {
     // Parallel axis: Iₓᵧ,com = −1/120 + V·cₓcᵧ = −1/120 + (1/6)(1/16) = +1/480,
     // and it changes SIGN, which is what makes it the assertion worth writing —
     // a shift applied the wrong way round lands on −1/80 rather than near zero.
-    assert!(close(p.inertia[0][1], 1.0 / 480.0, 1e-13), "{:?}", p.inertia);
+    assert!(
+        close(p.inertia[0][1], 1.0 / 480.0, 1e-13),
+        "{:?}",
+        p.inertia
+    );
     // Iₓₓ,com = 1/30 − V·(cᵧ² + c𝓏²) = 1/30 − (1/6)(2/16) = 1/80.
     assert!(close(p.inertia[0][0], 1.0 / 80.0, 1e-13), "{:?}", p.inertia);
 }
@@ -115,9 +119,8 @@ fn the_corner_simplex_matches_its_closed_form() {
 #[test]
 fn the_centred_tensor_is_translation_invariant() {
     let shift = [3.5, -2.25, 11.0];
-    let moved: [[f64; 3]; 4] = core::array::from_fn(|v| {
-        core::array::from_fn(|axis| TET_POSITIONS[v][axis] + shift[axis])
-    });
+    let moved: [[f64; 3]; 4] =
+        core::array::from_fn(|v| core::array::from_fn(|axis| TET_POSITIONS[v][axis] + shift[axis]));
 
     let here = mass_properties(&TET_POSITIONS, &TET_TRIANGLES).expect("tet is a solid");
     let there = mass_properties(&moved, &TET_TRIANGLES).expect("shifted tet is a solid");
@@ -198,10 +201,18 @@ fn asymmetry_separates_a_closed_mesh_from_a_leaking_one() {
 
 #[test]
 fn an_inward_wound_mesh_is_rejected_rather_than_flipped() {
-    let inward: [[u32; 3]; 12] =
-        core::array::from_fn(|t| [CUBE_TRIANGLES[t][0], CUBE_TRIANGLES[t][2], CUBE_TRIANGLES[t][1]]);
+    let inward: [[u32; 3]; 12] = core::array::from_fn(|t| {
+        [
+            CUBE_TRIANGLES[t][0],
+            CUBE_TRIANGLES[t][2],
+            CUBE_TRIANGLES[t][1],
+        ]
+    });
     let err = mass_properties(&CUBE_POSITIONS, &inward).expect_err("negative volume");
-    assert!(matches!(err, Error::MassPropertiesUndefined { .. }), "{err:?}");
+    assert!(
+        matches!(err, Error::MassPropertiesUndefined { .. }),
+        "{err:?}"
+    );
 }
 
 #[test]
@@ -238,5 +249,9 @@ fn f32_gets_the_same_answer_at_its_own_precision() {
     let p: MassProperties<f32> =
         mass_properties(&positions, &CUBE_TRIANGLES).expect("cube is a solid");
     assert!((p.volume - 1.0).abs() <= 1e-6, "{}", p.volume);
-    assert!((p.inertia[0][0] - 1.0 / 6.0).abs() <= 1e-6, "{:?}", p.inertia);
+    assert!(
+        (p.inertia[0][0] - 1.0 / 6.0).abs() <= 1e-6,
+        "{:?}",
+        p.inertia
+    );
 }

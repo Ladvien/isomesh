@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**261 tickets archived, 52 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**291 tickets archived, 22 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -78,38 +78,7 @@ cost is diffuse, `R-086`'s C1 if slivers stop nobody, `R-089`'s C1 (which is the
 `R-091`'s C2, and `R-101`'s C1 if `M-177`'s obstruction covers the octahedral case too. Phase 23's two most
 useful rows were `✗51` and `✗54`, both of which said *do not build this*, and both cost a day.
 
-| | Ticket | Size | Blocked by |
-|---|---|---|---|
-| ☐ | **R-073** | S | — |
-| ☐ | **R-074** | M | — |
-| ☐ | **R-075** | M | — |
-| ☐ | **R-076** | M | — |
-| ☐ | **R-077** | M | — |
-| ☐ | **R-078** | M | — |
-| ☐ | **R-079** | M | — |
-| ☐ | **R-080** | M | — |
-| ☐ | **R-081** | M | — |
-| ☐ | **R-082** | M | — |
-| ☐ | **R-083** | S | — |
-| ☐ | **R-084** | L | — |
-| ☐ | **R-085** | S | — |
-| ☐ | **R-086** | M | — |
-| ☐ | **R-087** | M | — |
-| ☐ | **R-088** | M | — |
-| ☐ | **R-089** | S | — |
-| ☐ | **R-090** | M | — |
-| ☐ | **R-091** | M | — |
-| ☐ | **R-092** | M | — |
-| ☐ | **R-093** | M | — |
-| ☐ | **R-094** | M | — |
-| ☐ | **R-095** | M | — |
-| ☐ | **R-096** | S | — |
-| ☐ | **R-097** | M | — |
-| ☐ | **R-098** | S | — |
-| ☐ | **R-099** | M | — |
-| ☐ | **R-100** | M | — |
-| ☐ | **R-101** | M | — |
-| ☐ | **R-102** | S | — |
+**All thirty rows are closed.** They are in `BACKLOG_ARCHIVE.md` with what each one cost and what it contradicted; the prose above stays here because it is what the work was for. Twenty-four of the thirty carry a falsified clause, and six of those were registered as expected nulls before their harnesses existed.
 
 ---
 

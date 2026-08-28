@@ -351,7 +351,8 @@ impl Log {
         }
         Some(
             (c[0] as usize)
-                + (self.dims[0] as usize) * ((c[1] as usize) + (self.dims[1] as usize) * (c[2] as usize)),
+                + (self.dims[0] as usize)
+                    * ((c[1] as usize) + (self.dims[1] as usize) * (c[2] as usize)),
         )
     }
 
@@ -635,9 +636,7 @@ fn run_session(world_cells: u32) -> SessionResult {
         // Never past the face: the eye stops `AIM_NEAR` short of what it is
         // digging, which is the same bound game_dig's `AIM_NEAR` enforces on the
         // brush.
-        let room = stroke_last.map_or(f64::INFINITY, |t| {
-            (length(sub(t, eye)) - AIM_NEAR).max(0.0)
-        });
+        let room = stroke_last.map_or(f64::INFINITY, |t| (length(sub(t, eye)) - AIM_NEAR).max(0.0));
         let mut moved_eye = add(eye, scale(step_dir, (speed * FRAME_DT).min(room)));
         // The sandbox is the wall the demo lines with five slabs. Here it turns
         // the hand around rather than being five brushes that never enter the
@@ -722,8 +721,7 @@ fn run_session(world_cells: u32) -> SessionResult {
     let mut nested = 0usize;
     for i in 0..n {
         for j in i.saturating_sub(64)..(i + 64).min(n) {
-            if i != j
-                && length(sub(log.centres[i], log.centres[j])) + log.radii[i] <= log.radii[j]
+            if i != j && length(sub(log.centres[i], log.centres[j])) + log.radii[i] <= log.radii[j]
             {
                 nested += 1;
                 break;
@@ -1003,7 +1001,10 @@ impl IntModel {
     fn encode(&mut self, rc: &mut RangeEncoder, v: i32) {
         let u = Self::zigzag(v);
         let n = (64 - u.leading_zeros()) as usize;
-        assert!(n < NBITS, "residual needs {n} bits, over the model's {NBITS}");
+        assert!(
+            n < NBITS,
+            "residual needs {n} bits, over the model's {NBITS}"
+        );
         for k in 0..n {
             rc.bit(&mut self.nbits[k], 1);
         }
@@ -1128,7 +1129,12 @@ struct Grid {
     cell: f64,
 }
 
-fn hash_of(mc: &mut MarchingCubes<f64>, out: &mut MeshBuffer<f64>, caps: &[Capsule<f64>], g: &Grid) -> u64 {
+fn hash_of(
+    mc: &mut MarchingCubes<f64>,
+    out: &mut MeshBuffer<f64>,
+    caps: &[Capsule<f64>],
+    g: &Grid,
+) -> u64 {
     out.reset();
     mc.extract(&Coaxial { caps }, &g.shape, g.origin, g.cell, out)
         .expect("tunnel extraction");
@@ -1353,7 +1359,12 @@ fn coaxial_arm() -> CoaxialResult {
     let mut scratch: Vec<Capsule<f64>> = Vec::with_capacity(caps.len());
     for i in 0..caps.len() {
         scratch.clear();
-        scratch.extend(caps.iter().enumerate().filter(|(j, _)| *j != i).map(|(_, c)| *c));
+        scratch.extend(
+            caps.iter()
+                .enumerate()
+                .filter(|(j, _)| *j != i)
+                .map(|(_, c)| *c),
+        );
         if hash_of(&mut mc, &mut mesh, &scratch, &grid) != full {
             necessary += 1;
         }
@@ -1364,14 +1375,24 @@ fn coaxial_arm() -> CoaxialResult {
     for i in 0..caps.len() {
         kept[i] = false;
         scratch.clear();
-        scratch.extend(caps.iter().enumerate().filter(|(j, _)| kept[*j]).map(|(_, c)| *c));
+        scratch.extend(
+            caps.iter()
+                .enumerate()
+                .filter(|(j, _)| kept[*j])
+                .map(|(_, c)| *c),
+        );
         if hash_of(&mut mc, &mut mesh, &scratch, &grid) != full {
             kept[i] = true;
         }
     }
     let surviving = kept.iter().filter(|k| **k).count();
     scratch.clear();
-    scratch.extend(caps.iter().enumerate().filter(|(j, _)| kept[*j]).map(|(_, c)| *c));
+    scratch.extend(
+        caps.iter()
+            .enumerate()
+            .filter(|(j, _)| kept[*j])
+            .map(|(_, c)| *c),
+    );
     let hash_verified = hash_of(&mut mc, &mut mesh, &scratch, &grid) == full;
 
     // The other compressor: merge maximal collinear contiguous equal-radius
@@ -1382,9 +1403,7 @@ fn coaxial_arm() -> CoaxialResult {
     let mut i = 0usize;
     while i < caps.len() {
         let mut j = i;
-        while j + 1 < caps.len()
-            && collinear_contiguous(&caps[j], &caps[j + 1])
-        {
+        while j + 1 < caps.len() && collinear_contiguous(&caps[j], &caps[j + 1]) {
             j += 1;
         }
         merged_caps.push(Capsule {
@@ -1734,7 +1753,11 @@ fn main() {
             if sizes[*i].uncompressed as f64 >= C1_BAR_BYTES {
                 c1_size_all = false;
             }
-            let other = if WORLDS[*i] == 1024 { bpe_small } else { bpe_large };
+            let other = if WORLDS[*i] == 1024 {
+                bpe_small
+            } else {
+                bpe_large
+            };
             if (bpe[*i] - other).abs() > f64::EPSILON {
                 c1_const_all = false;
             }
@@ -1770,10 +1793,7 @@ fn main() {
                 ("bytes_per_edit", format!("{:.6}", bpe[i])),
                 ("world_cells", s.world_cells.to_string()),
                 ("chunk_cells", chunk_cells.to_string()),
-                (
-                    "bytes_per_edit_at_other_world_size",
-                    format!("{other:.6}"),
-                ),
+                ("bytes_per_edit_at_other_world_size", format!("{other:.6}")),
                 ("coaxial_brushes", COAXIAL_BRUSHES.to_string()),
                 ("surviving_brushes", coax.surviving.to_string()),
                 ("collapse_ratio", format!("{collapse_ratio:.6}")),
@@ -1816,10 +1836,7 @@ fn main() {
                 ("quantum", format!("{QUANTUM:.9}")),
                 (
                     "position_bits_needed",
-                    format!(
-                        "{}",
-                        ((hi[0] - lo[0]) / QUANTUM).log2().ceil() as u32
-                    ),
+                    format!("{}", ((hi[0] - lo[0]) / QUANTUM).log2().ceil() as u32),
                 ),
                 (
                     "entropy_bytes_per_edit",
@@ -1870,10 +1887,7 @@ fn main() {
                 ("coaxial_hash_verified", coax.hash_verified.to_string()),
                 ("coaxial_triangles", coax.triangles.to_string()),
                 ("coaxial_grid_samples", coax.grid_samples.to_string()),
-                (
-                    "coaxial_axial_length",
-                    format!("{:.6}", coax.axial_length),
-                ),
+                ("coaxial_axial_length", format!("{:.6}", coax.axial_length)),
                 ("coaxial_merged_brushes", coax.merged.to_string()),
                 (
                     "coaxial_merge_ratio",
@@ -1901,14 +1915,8 @@ fn main() {
                         lens_thickness(coax.radius, coax.delta, 4.0) / CELL_SIZE
                     ),
                 ),
-                (
-                    "wobble_yaw_rate",
-                    format!("{:.6}", coax.wobble_yaw_rate),
-                ),
-                (
-                    "wobble_bow_cells",
-                    format!("{:.6}", coax.wobble_bow_cells),
-                ),
+                ("wobble_yaw_rate", format!("{:.6}", coax.wobble_yaw_rate)),
+                ("wobble_bow_cells", format!("{:.6}", coax.wobble_bow_cells)),
                 ("wobble_runs_k2", coax.wobble[1].1.to_string()),
                 ("wobble_dev_cells_k1", format!("{:.6}", coax.wobble[0].2)),
                 ("wobble_dev_cells_k2", format!("{:.6}", coax.wobble[1].2)),
@@ -1922,10 +1930,7 @@ fn main() {
                 ("sweep_control_entropy", sc_sizes.entropy.to_string()),
                 (
                     "sweep_control_advantage",
-                    format!(
-                        "{:.6}",
-                        sc_sizes.zstd19 as f64 / sc_sizes.entropy as f64
-                    ),
+                    format!("{:.6}", sc_sizes.zstd19 as f64 / sc_sizes.entropy as f64),
                 ),
                 ("sweep_control_closed_loop", "0".to_string()),
             ]);

@@ -740,8 +740,7 @@ fn render(cam: &Cam, brushes: &[[f32; 4]], w: usize, h: usize, threads: usize) -
 /// One 32-bit integer hash of a lattice cell, in `[0, 1)`. Splitmix64's
 /// finaliser truncated to 32 bits.
 fn hash_lattice(i: i32, j: i32, k: i32, seed: u32) -> u32 {
-    let mut h = (i as u32)
-        .wrapping_mul(0x9E37_79B1)
+    let mut h = (i as u32).wrapping_mul(0x9E37_79B1)
         ^ (j as u32).wrapping_mul(0x85EB_CA6B)
         ^ (k as u32).wrapping_mul(0xC2B2_AE35)
         ^ seed.wrapping_mul(0x27D4_EB2F);
@@ -1282,15 +1281,7 @@ fn shade(
         let uv = plane_uv(p, planes[ji]);
         let mut na = [0.0f32; 4];
         for li in 0..nl {
-            let s = sample(
-                na_tex,
-                layers[li],
-                uv,
-                arm.filter,
-                arm.taps,
-                rng,
-                tally,
-            );
+            let s = sample(na_tex, layers[li], uv, arm.filter, arm.taps, rng, tally);
             for c in 0..4 {
                 na[c] += lw[li] * s[c];
             }
@@ -1839,8 +1830,8 @@ fn run_taa_arm(
             let mut changed = 0u64;
             for i in 0..n {
                 let (a, b) = (&gb_dig[i], &gb_static[i]);
-                let differs = a.hit != b.hit
-                    || (0..3).any(|c| (a.world[c] - b.world[c]).abs() > CHANGE_TOL);
+                let differs =
+                    a.hit != b.hit || (0..3).any(|c| (a.world[c] - b.world[c]).abs() > CHANGE_TOL);
                 if !differs {
                     continue;
                 }
@@ -1869,15 +1860,8 @@ fn run_taa_arm(
                     shade_buffer(arms[stream], ar_tex, na_tex, gb, w, h, frame, threads)
                 };
                 let slot = world * 3 + stream;
-                let (mut counters, hist_rgb, clipped) = resolve(
-                    &taa[slot],
-                    &cur,
-                    gb,
-                    prev_cam.as_ref(),
-                    w,
-                    h,
-                    threads,
-                );
+                let (mut counters, hist_rgb, clipped) =
+                    resolve(&taa[slot], &cur, gb, prev_cam.as_ref(), w, h, threads);
                 commit(
                     &mut taa[slot],
                     &cur,
@@ -1913,7 +1897,10 @@ fn cpu_mhz() -> String {
     std::fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
         .ok()
         .and_then(|s| s.trim().parse::<f64>().ok())
-        .map_or_else(|| "unknown".to_string(), |khz| format!("{:.0}", khz / 1000.0))
+        .map_or_else(
+            || "unknown".to_string(),
+            |khz| format!("{:.0}", khz / 1000.0),
+        )
 }
 
 /// `game_dig`'s terrain material as written: three planes, three strata, one
@@ -2165,7 +2152,14 @@ fn main() {
         let mut got_rgb = [0.0f64; 3];
         for d in 0..UNBIASED_DRAWS {
             let mut rng = Rng::new(i, d, 7);
-            let s = shade(&ARM_STOCHASTIC_PLANE, &ar_tex, &na_tex, f, &mut rng, &mut tally);
+            let s = shade(
+                &ARM_STOCHASTIC_PLANE,
+                &ar_tex,
+                &na_tex,
+                f,
+                &mut rng,
+                &mut tally,
+            );
             for c in 0..4 {
                 got_ar[c] += f64::from(s.ar[c]);
             }
@@ -2218,7 +2212,11 @@ fn main() {
     );
 
     // --- C1 and C3 --------------------------------------------------------
-    let idx = |name: &str| arms.iter().position(|a| a.name == name).expect("arm exists");
+    let idx = |name: &str| {
+        arms.iter()
+            .position(|a| a.name == name)
+            .expect("arm exists")
+    };
     let i_tri = idx(ARM_TRIPLANAR.name);
     let i_stoch = idx(ARM_STOCHASTIC_PLANE.name);
     let i_bipl = idx(ARM_BIPLANAR.name);
@@ -2229,8 +2227,7 @@ fn main() {
     let ms_bipl = results[i_bipl].fragment_ms;
     let ms_alu = results[i_alu].fragment_ms;
 
-    let c1_fetch_ratio_exact =
-        ARM_TRIPLANAR.fetches() == 3 * ARM_STOCHASTIC_PLANE.fetches();
+    let c1_fetch_ratio_exact = ARM_TRIPLANAR.fetches() == 3 * ARM_STOCHASTIC_PLANE.fetches();
     let c1_cost_ratio = ms_tri / ms_stoch;
     let c1 = c1_fetch_ratio_exact && c1_cost_ratio >= 2.0;
     // The same ratio between each arm's *fastest* observed pass. On a machine with
@@ -2270,17 +2267,18 @@ fn main() {
     // is exactly why `texels_per_fragment` is reported as a count and never
     // converted into a time here.
     let i_point = idx("stf_1tap_3plane_3stratum_point");
-    let bilinear_minus_point_ns_per_texel = (results[i_tri].fragment_ms
-        - results[i_point].fragment_ms)
-        * 1e6
-        / (3.0 * 18.0 * visible as f64);
+    let bilinear_minus_point_ns_per_texel =
+        (results[i_tri].fragment_ms - results[i_point].fragment_ms) * 1e6
+            / (3.0 * 18.0 * visible as f64);
     let call_ns = (results[i_point].fragment_ms - ms_alu) * 1e6 / (18.0 * visible as f64);
     // One integer add at ~4.2 GHz is 0.24 ns; the fit's slope is per fetch.
     let tally_bound_ns = 0.24;
     let fit_slope_ns = fit_s * 1e6 / visible as f64;
 
     println!();
-    println!("P-76 stage A, material shading stage at {SCREEN_W}x{SCREEN_H} ({visible} fragments):");
+    println!(
+        "P-76 stage A, material shading stage at {SCREEN_W}x{SCREEN_H} ({visible} fragments):"
+    );
     for (arm, r) in arms.iter().zip(&results) {
         println!(
             "  {:44} {:3} fetches {:4} texels  {:9.3} ms  {:7.2} ns/frag",
@@ -2302,7 +2300,9 @@ fn main() {
     println!("  C1 fetch ratio  18/6 = 3 exactly: {c1_fetch_ratio_exact}");
     println!("  C1 cost ratio   {c1_cost_ratio:.4}  (median reps; needs >= 2)");
     println!("  C1 cost ratio   {c1_cost_ratio_min:.4}  (fastest reps; needs >= 2)");
-    println!("  C3 fetch saving ratio {c3_fetch_saving_ratio:.4}  (needs >= 0.5; exactly 0.5 by construction)");
+    println!(
+        "  C3 fetch saving ratio {c3_fetch_saving_ratio:.4}  (needs >= 0.5; exactly 0.5 by construction)"
+    );
     println!("  C3 ms saving ratio    {c3_ms_saving_ratio:.4}  (median reps; needs >= 0.5)");
     println!("  C3 ms saving ratio    {c3_ms_saving_ratio_min:.4}  (fastest reps; needs >= 0.5)");
 
@@ -2501,11 +2501,21 @@ fn main() {
             );
         }
     }
-    println!("  C2 as registered: mae_digging {mae_dig:.8} vs mae_static {mae_static:.8}, delta {stoch_delta:+.8}");
-    println!("  TAA's own ghosting floor (deterministic stream): static {floor_static:.8} digging {floor_dig:.8}");
-    println!("  sampling-attributable excess: static {excess_static:.8} digging {excess_dig:.8}, ratio {excess_ratio:.4}");
-    println!("  biplanar excess (a BIAS, not variance): static {bipl_excess_static:.8} digging {bipl_excess_dig:.8}");
-    println!("  biplanar delta {bipl_delta:+.8} vs stochastic delta {stoch_delta:+.8} (C3's 'none of C2's cost')");
+    println!(
+        "  C2 as registered: mae_digging {mae_dig:.8} vs mae_static {mae_static:.8}, delta {stoch_delta:+.8}"
+    );
+    println!(
+        "  TAA's own ghosting floor (deterministic stream): static {floor_static:.8} digging {floor_dig:.8}"
+    );
+    println!(
+        "  sampling-attributable excess: static {excess_static:.8} digging {excess_dig:.8}, ratio {excess_ratio:.4}"
+    );
+    println!(
+        "  biplanar excess (a BIAS, not variance): static {bipl_excess_static:.8} digging {bipl_excess_dig:.8}"
+    );
+    println!(
+        "  biplanar delta {bipl_delta:+.8} vs stochastic delta {stoch_delta:+.8} (C3's 'none of C2's cost')"
+    );
     println!(
         "  ideal conditions (frozen, unjittered, undug): reference {ideal_reference:.8} \
          stochastic {ideal_stochastic:.8} biplanar {ideal_biplanar:.8}; the stochastic \
@@ -2522,10 +2532,7 @@ fn main() {
         row.push(("mae_vs_reference_static", format!("{mae_static:.8}")));
         row.push(("mae_vs_reference_digging", format!("{mae_dig:.8}")));
         row.push(("frames_after_edit", WINDOW.to_string()));
-        row.push((
-            "biplanar_fetches",
-            ARM_BIPLANAR.fetches().to_string(),
-        ));
+        row.push(("biplanar_fetches", ARM_BIPLANAR.fetches().to_string()));
         row.push(("biplanar_fragment_ms", format!("{ms_bipl:.6}")));
         row.push(("c1_holds", c1.to_string()));
         row.push(("c2_holds", c2.to_string()));
@@ -2555,10 +2562,7 @@ fn main() {
         row.push(("mae_ideal_reference", format!("{ideal_reference:.8}")));
         row.push(("mae_ideal_stochastic", format!("{ideal_stochastic:.8}")));
         row.push(("mae_ideal_biplanar", format!("{ideal_biplanar:.8}")));
-        row.push((
-            "zero_proof_stochastic_rejected",
-            zp_stochastic.to_string(),
-        ));
+        row.push(("zero_proof_stochastic_rejected", zp_stochastic.to_string()));
         row.push((
             "rejection_fraction_static",
             format!(
@@ -2573,7 +2577,10 @@ fn main() {
                 rej_dig as f64 / head.agg[1][0].population.max(1) as f64
             ),
         ));
-        row.push(("c1_fetch_ratio_is_exactly_3", c1_fetch_ratio_exact.to_string()));
+        row.push((
+            "c1_fetch_ratio_is_exactly_3",
+            c1_fetch_ratio_exact.to_string(),
+        ));
         row.push(("c1_cost_ratio", format!("{c1_cost_ratio:.4}")));
         row.push(("c1_cost_ratio_min_based", format!("{c1_cost_ratio_min:.4}")));
         row.push((
@@ -2602,7 +2609,10 @@ fn main() {
             (6.0 * fit_s >= fit_f).to_string(),
         ));
         row.push(("fit_six_fetch_cost_ms", format!("{:.6}", 6.0 * fit_s)));
-        row.push(("fit_predicted_ratio_18_over_6", format!("{predicted_ratio:.4}")));
+        row.push((
+            "fit_predicted_ratio_18_over_6",
+            format!("{predicted_ratio:.4}"),
+        ));
         row.push((
             "bilinear_minus_point_ns_per_texel",
             format!("{bilinear_minus_point_ns_per_texel:.4}"),
@@ -2631,19 +2641,13 @@ fn main() {
             "shading_bias_mean_signed",
             format!("{worst_bias_shaded:.6}"),
         ));
-        row.push((
-            "shading_bias_worst_fragment",
-            format!("{worst_rgb:.6}"),
-        ));
+        row.push(("shading_bias_worst_fragment", format!("{worst_rgb:.6}")));
         row.push((
             "estimator_bias_tolerance",
             format!("{UNBIASED_BIAS_TOL:.4}"),
         ));
         row.push(("zero_proof_rejected", zp.to_string()));
-        row.push((
-            "biplanar_temporal_delta_mae",
-            format!("{bipl_delta:+.8}"),
-        ));
+        row.push(("biplanar_temporal_delta_mae", format!("{bipl_delta:+.8}")));
         row.push((
             "stochastic_temporal_delta_mae",
             format!("{stoch_delta:+.8}"),
@@ -2703,10 +2707,7 @@ fn main() {
             ),
             (
                 "reps_ms_min",
-                format!(
-                    "{:.4}",
-                    r.reps_ms.iter().copied().fold(f64::MAX, f64::min)
-                ),
+                format!("{:.4}", r.reps_ms.iter().copied().fold(f64::MAX, f64::min)),
             ),
             ("fetches_tallied", r.fetches.to_string()),
             ("mean_r", format!("{:.6}", r.mean_rgb[0])),
@@ -2789,10 +2790,7 @@ fn main() {
                         ("world", wn.to_string()),
                         ("stream", stream_name(stream).to_string()),
                         ("frame_rejected", f.rejected.to_string()),
-                        (
-                            "frame_rejection_fraction",
-                            format!("{:.8}", f.fraction()),
-                        ),
+                        ("frame_rejection_fraction", format!("{:.8}", f.fraction())),
                         ("frame_population", f.population.to_string()),
                         ("frame_no_history", f.no_history.to_string()),
                         ("frame_mae", format!("{:.8}", f.mae())),

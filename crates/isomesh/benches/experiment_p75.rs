@@ -508,11 +508,7 @@ fn rasterise(world: &World, camera: &Camera) -> (Vec<Fragment>, Vec<bool>, u64, 
                 depth[idx] = recip;
                 tri_of[idx] = t as u32;
                 let s = 1.0 / recip;
-                bary_of[idx] = [
-                    w0 * inv_d[0] * s,
-                    w1 * inv_d[1] * s,
-                    w2 * inv_d[2] * s,
-                ];
+                bary_of[idx] = [w0 * inv_d[0] * s, w1 * inv_d[1] * s, w2 * inv_d[2] * s];
             }
         }
     }
@@ -571,11 +567,7 @@ fn shade_vertex(world: &World, frags: &[Fragment], out: &mut [u8]) {
         let i0 = world.indices[t * 3] as usize;
         let i1 = world.indices[t * 3 + 1] as usize;
         let i2 = world.indices[t * 3 + 2] as usize;
-        let (w0, w1, w2) = (
-            &world.weights[i0],
-            &world.weights[i1],
-            &world.weights[i2],
-        );
+        let (w0, w1, w2) = (&world.weights[i0], &world.weights[i1], &world.weights[i2]);
         let mut w = [0.0f32; MATERIALS];
         let mut sum = 0.0f32;
         for m in 0..MATERIALS {
@@ -778,10 +770,7 @@ fn brushes_biting(brushes: u32) -> u32 {
 
 fn run_bucket(brushes: u32) -> Bucket {
     let log = build_log(brushes);
-    let sprays = log
-        .iter()
-        .filter(|e| matches!(e, Edit::Spray(_)))
-        .count() as u32;
+    let sprays = log.iter().filter(|e| matches!(e, Edit::Spray(_))).count() as u32;
 
     // C1. Three reps; the reported pair comes from the rep whose extraction was
     // the median, so the two numbers on the row are from one run (`M-281`).
@@ -1248,10 +1237,7 @@ fn main() {
             ("brushes_biting", b.brushes_biting.to_string()),
             ("materials", b.materials.to_string()),
             ("boundary_vertices", b.boundary_vertices.to_string()),
-            (
-                "boundary_vertices_all",
-                b.boundary_vertices_all.to_string(),
-            ),
+            ("boundary_vertices_all", b.boundary_vertices_all.to_string()),
             ("samples", b.samples.to_string()),
             ("vertices", b.vertices.to_string()),
             ("triangles", b.triangles.to_string()),

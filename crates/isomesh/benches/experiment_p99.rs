@@ -382,12 +382,13 @@ fn main() {
     // ── the two rankings, side by side, per (resolution, k) ──────────────────
     //
     // `rank = 1 + #{strictly greater}`, so ties share the better rank.
-    let cohort = |resolution: u32, k: u32, rate: &dyn Fn(&Row) -> f64| -> Vec<(&'static str, f64)> {
-        fields
-            .iter()
-            .map(|f| (*f, rate(find(f, resolution, k))))
-            .collect()
-    };
+    let cohort =
+        |resolution: u32, k: u32, rate: &dyn Fn(&Row) -> f64| -> Vec<(&'static str, f64)> {
+            fields
+                .iter()
+                .map(|f| (*f, rate(find(f, resolution, k))))
+                .collect()
+        };
     let rank_in = |c: &[(&'static str, f64)], field: &str| -> usize {
         let v = c
             .iter()
@@ -508,7 +509,11 @@ fn main() {
             rate_sign_change(r),
             rank_in(&c_sc, r.field),
             r.false_negatives,
-            if seq_of(r.field, r.k).converges { "y" } else { "N" }
+            if seq_of(r.field, r.k).converges {
+                "y"
+            } else {
+                "N"
+            }
         );
     }
 
@@ -604,7 +609,9 @@ fn main() {
         let c_all = cohort(n, K_REGISTERED, &rate_all_edges);
         let r_sr = rank_in(&c_sr, "thin_plate");
         let r_all = rank_in(&c_all, "thin_plate");
-        println!("C1 thin_plate at {n}³, k = {K_REGISTERED}: rank_single_root = {r_sr}, rank_all_edges = {r_all}");
+        println!(
+            "C1 thin_plate at {n}³, k = {K_REGISTERED}: rank_single_root = {r_sr}, rank_all_edges = {r_all}"
+        );
         c1 &= r_sr == 1;
     }
 
@@ -629,7 +636,11 @@ fn main() {
             } else {
                 "DOES NOT CONVERGE"
             },
-            if s.ever_nonzero { "" } else { " [rate is a flat zero]" }
+            if s.ever_nonzero {
+                ""
+            } else {
+                " [rate is a flat zero]"
+            }
         );
         c2 &= s.converges == want;
     }

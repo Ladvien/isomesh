@@ -359,11 +359,7 @@ fn project_once<F: Sdf<Scalar = f64>>(field: &F, v: V3) -> V3 {
     let f = field.sample(v);
     let g = field.gradient(v);
     let g2 = norm2(g);
-    if g2 > 0.0 {
-        add(v, mul(g, -f / g2))
-    } else {
-        v
-    }
+    if g2 > 0.0 { add(v, mul(g, -f / g2)) } else { v }
 }
 
 /// `steps` Newton steps. The attribution arm for whether one step is the limit.
@@ -421,10 +417,7 @@ fn closest_on_tri(p: V3, a: V3, b: V3, c: V3) -> (V3, [f64; 3]) {
     let denom = 1.0 / (va + vb + vc);
     let v = vb * denom;
     let w = vc * denom;
-    (
-        add(add(a, mul(ab, v)), mul(ac, w)),
-        [1.0 - v - w, v, w],
-    )
+    (add(add(a, mul(ab, v)), mul(ac, w)), [1.0 - v - w, v, w])
 }
 
 /// A uniform grid over a mesh's triangles, for exact nearest-point queries.
@@ -485,9 +478,7 @@ impl MeshGrid {
         }
 
         let mut counts = vec![0u32; ncells + 1];
-        let idx = |dims: [usize; 3], x: usize, y: usize, z: usize| {
-            (z * dims[1] + y) * dims[0] + x
-        };
+        let idx = |dims: [usize; 3], x: usize, y: usize, z: usize| (z * dims[1] + y) * dims[0] + x;
         for (_, tlo, thi) in &boxes {
             for z in tlo[2]..=thi[2] {
                 for y in tlo[1]..=thi[1] {
@@ -535,8 +526,7 @@ impl MeshGrid {
     /// visiting the shell the true nearest triangle is registered in.
     fn nearest(&self, positions: &[V3], indices: &[u32], p: V3) -> (f64, usize, [f64; 3], V3) {
         let base = [0, 1, 2].map(|k| {
-            (((p[k] - self.lo[k]) / self.cell).floor() as isize)
-                .clamp(0, self.dims[k] as isize - 1)
+            (((p[k] - self.lo[k]) / self.cell).floor() as isize).clamp(0, self.dims[k] as isize - 1)
         });
         let max_r = self.dims[0].max(self.dims[1]).max(self.dims[2]) as isize;
         let mut best = f64::INFINITY;
@@ -603,7 +593,12 @@ impl MeshGrid {
                         }
                     } else if r == 0 {
                         visit(
-                            base[0], base[1], base[2], &mut best, &mut best_tri, &mut best_bary,
+                            base[0],
+                            base[1],
+                            base[2],
+                            &mut best,
+                            &mut best_tri,
+                            &mut best_bary,
                             &mut best_pt,
                         );
                     } else {
@@ -1034,7 +1029,10 @@ impl Triplanar {
                     for (di, dj) in [(-1isize, 0isize), (1, 0), (0, -1), (0, 1)] {
                         let ni = i as isize + di;
                         let nj = j as isize + dj;
-                        if ni < 0 || nj < 0 || ni >= MAP_TEXELS as isize || nj >= MAP_TEXELS as isize
+                        if ni < 0
+                            || nj < 0
+                            || ni >= MAP_TEXELS as isize
+                            || nj >= MAP_TEXELS as isize
                         {
                             continue;
                         }
@@ -1118,7 +1116,13 @@ impl<F: Sdf<Scalar = f64>> Sdf for Counted<'_, F> {
 
 // ─── the ladder ─────────────────────────────────────────────────────────────
 
-fn mesh_at<F: Sdf<Scalar = f64>>(field: &F, cells: u32, h0: f64, lo: V3, level: u32) -> (MeshBuffer<f64>, f64) {
+fn mesh_at<F: Sdf<Scalar = f64>>(
+    field: &F,
+    cells: u32,
+    h0: f64,
+    lo: V3,
+    level: u32,
+) -> (MeshBuffer<f64>, f64) {
     let lod = ChunkLayout::<f64>::new(cells, h0, lo)
         .expect("valid layout")
         .at_lod(level)
@@ -1262,8 +1266,16 @@ fn run_field<F: ReferenceField<Scalar = f64>>(
                             let e_ref = length(sub(q_mesh, q_cf)) / h0;
                             let e_an = length(sub(q_an, q_cf)) / h0;
                             let e_pred = length(sub(p, q_cf)) / h0;
-                            cf_ref = if cf_ref.is_nan() { e_ref } else { cf_ref.max(e_ref) };
-                            cf_an = if cf_an.is_nan() { e_an } else { cf_an.max(e_an) };
+                            cf_ref = if cf_ref.is_nan() {
+                                e_ref
+                            } else {
+                                cf_ref.max(e_ref)
+                            };
+                            cf_an = if cf_an.is_nan() {
+                                e_an
+                            } else {
+                                cf_an.max(e_an)
+                            };
                             cf_pred = if cf_pred.is_nan() {
                                 e_pred
                             } else {
@@ -1298,8 +1310,8 @@ fn run_field<F: ReferenceField<Scalar = f64>>(
         err_mesh.sort_unstable_by(f64::total_cmp);
         err_an.sort_unstable_by(f64::total_cmp);
         mesh_vs_an.sort_unstable_by(f64::total_cmp);
-        let agree = err_mesh.iter().filter(|e| **e <= AGREE_CELLS).count() as f64
-            / err_mesh.len() as f64;
+        let agree =
+            err_mesh.iter().filter(|e| **e <= AGREE_CELLS).count() as f64 / err_mesh.len() as f64;
         let agree_an =
             err_an.iter().filter(|e| **e <= AGREE_CELLS).count() as f64 / err_an.len() as f64;
 
@@ -1500,7 +1512,10 @@ fn run_field<F: ReferenceField<Scalar = f64>>(
                 v_n += 1;
             }
         }
-        assert!(v_n > 0, "{name} lod {level}: no coarse vertex had a reference");
+        assert!(
+            v_n > 0,
+            "{name} lod {level}: no coarse vertex had a reference"
+        );
         let (v_no, v_with) = (v_no / v_n as f64, v_with / v_n as f64);
 
         let c1 = agree >= 0.95;
@@ -1569,10 +1584,7 @@ fn run_field<F: ReferenceField<Scalar = f64>>(
                 "residual_p95_world",
                 format!("{:.8}", percentile(&err_mesh, 0.95) * h),
             ),
-            (
-                "residual_agree_fraction_analytic",
-                format!("{agree_an:.6}"),
-            ),
+            ("residual_agree_fraction_analytic", format!("{agree_an:.6}")),
             (
                 "residual_p95_analytic_cells",
                 format!("{:.6}", percentile(&err_an, 0.95)),
@@ -1622,7 +1634,10 @@ fn run_field<F: ReferenceField<Scalar = f64>>(
                 changed_mesh_vertices.to_string(),
             ),
             // ── the map's own accounting
-            ("map_texels_total", (3 * MAP_TEXELS * MAP_TEXELS).to_string()),
+            (
+                "map_texels_total",
+                (3 * MAP_TEXELS * MAP_TEXELS).to_string(),
+            ),
             ("map_texels_written", bake.written.to_string()),
             ("map_texels_dilated", bake.dilated.to_string()),
             ("map_texel_conflicts", bake.conflicts.to_string()),

@@ -495,9 +495,21 @@ fn solve3(a: &Plane, b: &Plane, c: &Plane) -> Option<[f64; 3]> {
         return None;
     }
     let r = [-a.d, -b.d, -c.d];
-    let x = det3([r[0], a.n[1], a.n[2]], [r[1], b.n[1], b.n[2]], [r[2], c.n[1], c.n[2]]);
-    let y = det3([a.n[0], r[0], a.n[2]], [b.n[0], r[1], b.n[2]], [c.n[0], r[2], c.n[2]]);
-    let z = det3([a.n[0], a.n[1], r[0]], [b.n[0], b.n[1], r[1]], [c.n[0], c.n[1], r[2]]);
+    let x = det3(
+        [r[0], a.n[1], a.n[2]],
+        [r[1], b.n[1], b.n[2]],
+        [r[2], c.n[1], c.n[2]],
+    );
+    let y = det3(
+        [a.n[0], r[0], a.n[2]],
+        [b.n[0], r[1], b.n[2]],
+        [c.n[0], r[2], c.n[2]],
+    );
+    let z = det3(
+        [a.n[0], a.n[1], r[0]],
+        [b.n[0], b.n[1], r[1]],
+        [c.n[0], c.n[1], r[2]],
+    );
     Some([x / det, y / det, z / det])
 }
 
@@ -1107,10 +1119,7 @@ fn dig_log(base: &Base, chunk: Chunk, n: usize, radius: f64) -> Vec<Edit> {
         let i = out.len();
         let c = [x, y, z];
         let shape = match i % 3 {
-            0 => Shape::Sphere(Sphere {
-                center: c,
-                radius,
-            }),
+            0 => Shape::Sphere(Sphere { center: c, radius }),
             1 => Shape::Cube(BoxExact {
                 center: c,
                 half_extents: [radius * 0.85; 3],
@@ -1157,10 +1166,13 @@ impl Table {
     fn build(log: &[Edit], ds: &[[f64; 3]]) -> Self {
         let k = ds.len();
         let n = log.iter().map(|e| usize::from(e.id)).max().unwrap_or(0) + 1;
-        let mut planes = vec![Plane {
-            n: [0.0, 0.0, 0.0],
-            d: 0.0,
-        }; RESERVED + n * k];
+        let mut planes = vec![
+            Plane {
+                n: [0.0, 0.0, 0.0],
+                d: 0.0,
+            };
+            RESERVED + n * k
+        ];
         for e in log {
             let base = RESERVED + usize::from(e.id) * k;
             for (j, p) in dop_planes(&e.brush.shape, ds).into_iter().enumerate() {
@@ -1249,10 +1261,13 @@ impl Scratch {
     }
 
     fn take(&mut self) -> Vec<Vert> {
-        self.pool.pop().map_or_else(|| Vec::with_capacity(32), |mut v| {
-            v.clear();
-            v
-        })
+        self.pool.pop().map_or_else(
+            || Vec::with_capacity(32),
+            |mut v| {
+                v.clear();
+                v
+            },
+        )
     }
 }
 
@@ -1719,7 +1734,15 @@ fn partition_all(
                 let mut table = Table::build(log, ds);
                 let mut sc = Scratch::new();
                 partition(
-                    base, log, order, chunk, &mut table, mode, planes, lo..hi, only_cut_cells,
+                    base,
+                    log,
+                    order,
+                    chunk,
+                    &mut table,
+                    mode,
+                    planes,
+                    lo..hi,
+                    only_cut_cells,
                     &mut sc,
                 )
             }));
@@ -2178,7 +2201,11 @@ fn sweep(
         }
     }
     let orderings = cols[0].len();
-    assert_eq!(orderings, perms.len(), "every ordering must contribute a hash");
+    assert_eq!(
+        orderings,
+        perms.len(),
+        "every ordering must contribute a hash"
+    );
     let mut distinct = [0usize; 5];
     let mut lowest = [0u64; 5];
     for (i, col) in cols.iter_mut().enumerate() {
@@ -2223,10 +2250,13 @@ fn sweep(
     // ever showed could return anything else — `P-70`'s C3, a held clause with no
     // instrument, which is the worst outcome available here.
     let fine = nudge(log, 1e-9);
-    let fine_part = partition_all(base, &fine, &identity, chunk, ds, mode, planes, true, threads);
+    let fine_part = partition_all(
+        base, &fine, &identity, chunk, ds, mode, planes, true, threads,
+    );
     let coarse = nudge(log, 0.25 * chunk.cell_size());
-    let coarse_part =
-        partition_all(base, &coarse, &identity, chunk, ds, mode, planes, true, threads);
+    let coarse_part = partition_all(
+        base, &coarse, &identity, chunk, ds, mode, planes, true, threads,
+    );
 
     Sweep {
         orderings,
@@ -2351,8 +2381,7 @@ fn run_c13(a: &C13, planes: Planes, threads: usize, probe: &mut Probe) -> Row {
     });
     let impact_planes = dop_planes(&impact, &ds);
 
-    let (comp, mut table) =
-        compound_near(&a.base, &log, a.chunk, &ds, &impact, Mode::Lerp, planes);
+    let (comp, mut table) = compound_near(&a.base, &log, a.chunk, &ds, &impact, Mode::Lerp, planes);
     // The impact's own plane block: one past the last edit's.
     let impact_base_id = (RESERVED + log.len() * ds.len()) as u16;
     table.planes.resize(
@@ -2409,7 +2438,10 @@ fn run_c13(a: &C13, planes: Planes, threads: usize, probe: &mut Probe) -> Row {
         counts.worst_ratio()
     );
 
-    assert!(frags > 0, "the fracture produced no fragments, so C1 has nothing to fail on");
+    assert!(
+        frags > 0,
+        "the fracture produced no fragments, so C1 has nothing to fail on"
+    );
     assert_eq!(
         counted.fragments, frags,
         "the counted rep produced a different fragment count from the timed reps"
@@ -2422,8 +2454,14 @@ fn run_c13(a: &C13, planes: Planes, threads: usize, probe: &mut Probe) -> Row {
         after.cells_cut_by_brushes > 0,
         "no cell was cut by a brush plane, so the 60-brush arm measured nothing"
     );
-    assert_eq!(after.flags.degenerate_verts, 0, "a vertex carried a repeated plane");
-    assert_eq!(after.flags.singular_triples, 0, "a plane triple was near-singular");
+    assert_eq!(
+        after.flags.degenerate_verts, 0,
+        "a vertex carried a repeated plane"
+    );
+    assert_eq!(
+        after.flags.singular_triples, 0,
+        "a plane triple was near-singular"
+    );
     assert_eq!(
         after.flags.convexity_violations, 0,
         "a piece was not convex, which is the invariant this whole construction rests on"
@@ -2459,7 +2497,10 @@ fn run_c13(a: &C13, planes: Planes, threads: usize, probe: &mut Probe) -> Row {
         ("fracture_ms_worst", format!("{worst:.6}")),
         ("reps", REPS.to_string()),
         ("cycles", counts.cycles.count.to_string()),
-        ("ghz", format!("{:.4}", counts.cycles.count as f64 / counted_ns)),
+        (
+            "ghz",
+            format!("{:.4}", counts.cycles.count as f64 / counted_ns),
+        ),
         (
             "cycles_per_fragment",
             format!("{:.1}", counts.cycles.count as f64 / frags as f64),
@@ -2483,21 +2524,18 @@ fn run_c13(a: &C13, planes: Planes, threads: usize, probe: &mut Probe) -> Row {
         ("cell_growth_ratio", format!("{ratio:.6}")),
         ("cells_full_before", before.cells_full.to_string()),
         ("cells_boundary_before", before.cells_boundary.to_string()),
-        ("cells_cut_by_brushes", after.cells_cut_by_brushes.to_string()),
+        (
+            "cells_cut_by_brushes",
+            after.cells_cut_by_brushes.to_string(),
+        ),
         ("total_pieces_before", before.total_pieces.to_string()),
         ("total_pieces_after", after.total_pieces.to_string()),
         (
             "max_pieces_in_a_cell",
             after.max_pieces_in_a_cell.to_string(),
         ),
-        (
-            "max_cuts_in_a_cell",
-            after.flags.max_cuts.to_string(),
-        ),
-        (
-            "max_leaves_in_a_cell",
-            after.flags.max_leaves.to_string(),
-        ),
+        ("max_cuts_in_a_cell", after.flags.max_cuts.to_string()),
+        ("max_leaves_in_a_cell", after.flags.max_leaves.to_string()),
         ("max_verts_seen", after.flags.max_verts.to_string()),
         (
             "degenerate_vertices",
@@ -2585,8 +2623,14 @@ fn run_c2(
         "displacing a brush centre by a quarter of a cell did not change the leaf plane-triple \
          sets, so distinct_topology is a zero over an instrument that cannot say `different`"
     );
-    assert_eq!(s.flags.degenerate_verts, 0, "a vertex carried a repeated plane");
-    assert_eq!(s.flags.singular_triples, 0, "a plane triple was near-singular");
+    assert_eq!(
+        s.flags.degenerate_verts, 0,
+        "a vertex carried a repeated plane"
+    );
+    assert_eq!(
+        s.flags.singular_triples, 0,
+        "a plane triple was near-singular"
+    );
     assert_eq!(
         s.flags.convexity_violations, 0,
         "a piece was not convex, which is the invariant this construction rests on"
@@ -2661,10 +2705,7 @@ fn run_c2(
         ("topo_class_hi_pieces", s.topo_hi_pieces.to_string()),
         ("topo_class_lo_solid", s.topo_lo_solid.to_string()),
         ("topo_class_hi_solid", s.topo_hi_solid.to_string()),
-        (
-            "coincident_plane_pairs",
-            simp.coincident_pairs.to_string(),
-        ),
+        ("coincident_plane_pairs", simp.coincident_pairs.to_string()),
         ("nonsimple_points", simp.nonsimple_points.to_string()),
         ("nonsimple_cells", simp.nonsimple_cells.to_string()),
         (

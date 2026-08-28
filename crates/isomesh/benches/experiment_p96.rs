@@ -1262,10 +1262,7 @@ fn main() {
                         format!("{:.6}", arm.max_dev_from_seam_cells),
                     ),
                     ("shell_10k_cells", format!("{:.6}", arm.shell_cells)),
-                    (
-                        "points_outside_shell",
-                        arm.outside_with_spread.to_string(),
-                    ),
+                    ("points_outside_shell", arm.outside_with_spread.to_string()),
                     ("outside_shell_population", arm.outside_pop.to_string()),
                     (
                         "inside_shell_with_spread",
@@ -1298,14 +1295,8 @@ fn main() {
                         format!("{:.6}", arm.k * (OPERANDS - 1) as f64 / 4.0),
                     ),
                     ("min_margin_world", format!("{:.6}", arm.min_margin)),
-                    (
-                        "min_margin_cells",
-                        format!("{:.6}", arm.min_margin / cell),
-                    ),
-                    (
-                        "boundary_min_world",
-                        format!("{:.6}", arm.boundary_min),
-                    ),
+                    ("min_margin_cells", format!("{:.6}", arm.min_margin / cell)),
+                    ("boundary_min_world", format!("{:.6}", arm.boundary_min)),
                     ("grid_cells", GRID_CELLS.to_string()),
                     ("grid_samples", grid_samples.to_string()),
                     ("grid_index_roundtrip", arm.roundtrip.to_string()),

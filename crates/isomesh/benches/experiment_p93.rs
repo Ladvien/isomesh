@@ -219,9 +219,7 @@ const REPS: usize = 3;
 
 /// The rate sweep C1 is denominated in. `12.5` is `game_dig`'s own
 /// `EDIT_PERIOD = 0.08` inverted, and the registration names it.
-const RATES: [f64; 11] = [
-    0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 12.5, 20.0, 50.0, 100.0,
-];
+const RATES: [f64; 11] = [0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 12.5, 20.0, 50.0, 100.0];
 
 /// The rate C3 is scored at: `game_dig`'s throttled stroke.
 const GAME_RATE: f64 = 12.5;
@@ -686,7 +684,9 @@ fn world_from<F: Sdf<Scalar = f64>>(
             let base = combined.positions.len() as u32;
             combined.positions.extend_from_slice(&out.positions);
             combined.normals.extend_from_slice(&out.normals);
-            combined.indices.extend(out.indices.iter().map(|i| i + base));
+            combined
+                .indices
+                .extend(out.indices.iter().map(|i| i + base));
             units.push(Unit {
                 min: origin,
                 size,
@@ -710,9 +710,8 @@ fn unit_visible(unit: &Unit, eye: [f64; 3], forward: [f64; 3]) -> bool {
     let mut probes = [[0.0f64; 3]; 9];
     probes[0] = [0, 1, 2].map(|a| unit.min[a] + unit.size * 0.5);
     for corner in 0..8u32 {
-        probes[1 + corner as usize] = [0, 1, 2].map(|a| {
-            unit.min[a] + if corner >> a & 1 == 1 { unit.size } else { 0.0 }
-        });
+        probes[1 + corner as usize] =
+            [0, 1, 2].map(|a| unit.min[a] + if corner >> a & 1 == 1 { unit.size } else { 0.0 });
     }
     for q in &probes {
         let d = [0, 1, 2].map(|a| q[a] - eye[a]);
@@ -954,8 +953,11 @@ fn run_arm<F: Sdf<Scalar = f64>>(
             .map(|_| uploader.upload(&[&world.payload]).0)
             .collect(),
     );
-    let welded_upload_ms =
-        median((0..15).map(|_| uploader.upload(&[&welded_payload]).0).collect());
+    let welded_upload_ms = median(
+        (0..15)
+            .map(|_| uploader.upload(&[&welded_payload]).0)
+            .collect(),
+    );
 
     let stream = camera_sweep(uploader, &world.units);
 
@@ -1131,8 +1133,14 @@ fn run_mixed<F: Sdf<Scalar = f64>>(
     reps.sort_unstable_by(|a, b| {
         (a.0 + a.1 + a.2 + a.3 + a.4).total_cmp(&(b.0 + b.1 + b.2 + b.3 + b.4))
     });
-    let (mark_ms, remesh_ms, subdivide_ms, subdivide_upload_ms, dirty_upload_ms, dirty_upload_arena_ms) =
-        reps[REPS / 2];
+    let (
+        mark_ms,
+        remesh_ms,
+        subdivide_ms,
+        subdivide_upload_ms,
+        dirty_upload_ms,
+        dirty_upload_arena_ms,
+    ) = reps[REPS / 2];
 
     // ── the mixed world: coarse where static, fine where dug ────────────────
     let mut coarse_ids: Vec<ChunkId> = Vec::new();
@@ -1432,7 +1440,8 @@ fn main() {
         for a in &arms[1..] {
             let differing = a.world.surface.symmetric_difference(reference).count();
             assert_eq!(
-                differing, 0,
+                differing,
+                0,
                 "chunk {} disagrees with chunk {} on {differing} quantised surface points of {} \
                  on {field_name}: a partition change moved the surface",
                 a.chunk_cells,
@@ -1443,7 +1452,8 @@ fn main() {
         for m in [&mixed, &mixed16] {
             let differing = m.world.surface.symmetric_difference(reference).count();
             assert_eq!(
-                differing, 0,
+                differing,
+                0,
                 "the {}³/{}³ mixed arm disagrees with chunk {} on {differing} quantised surface \
                  points of {} on {field_name}: a two-level partition dropped a seam, which is a \
                  defect and not a speed result",
@@ -1672,8 +1682,7 @@ fn main() {
         for a in &arms {
             for rate in RATES {
                 let remesh_ms = rate * (a.mark_ms + a.remesh_ms) / EDITS as f64;
-                let upload_ms =
-                    rate * a.upload_dirty_ms / EDITS as f64 + a.stream_ms_per_second();
+                let upload_ms = rate * a.upload_dirty_ms / EDITS as f64 + a.stream_ms_per_second();
                 let total_ms = remesh_ms + upload_ms;
                 rows.push(vec![
                     ("field", field_name.to_string()),
@@ -1717,7 +1726,10 @@ fn main() {
                     ("chunks", a.chunks.to_string()),
                     ("edits", EDITS.to_string()),
                     ("triangles", a.world.triangles.to_string()),
-                    ("mark_ms_per_edit", format!("{:.6}", a.mark_ms / EDITS as f64)),
+                    (
+                        "mark_ms_per_edit",
+                        format!("{:.6}", a.mark_ms / EDITS as f64),
+                    ),
                     (
                         "remesh_ms_per_edit",
                         format!("{:.6}", a.remesh_ms / EDITS as f64),
@@ -1746,21 +1758,12 @@ fn main() {
                     ),
                     ("visible_chunk_enters", a.stream.enters.to_string()),
                     ("visible_chunk_exits", a.stream.exits.to_string()),
-                    (
-                        "full_world_upload_bytes",
-                        a.world.payload.len().to_string(),
-                    ),
+                    ("full_world_upload_bytes", a.world.payload.len().to_string()),
                     ("full_world_upload_ms", format!("{:.6}", a.full_upload_ms)),
                     ("welded_vertices", a.welded_vertices.to_string()),
                     ("welded_vertices_removed", a.welded_removed.to_string()),
-                    (
-                        "welded_upload_bytes",
-                        a.welded_payload_bytes.to_string(),
-                    ),
-                    (
-                        "welded_upload_ms",
-                        format!("{:.6}", a.welded_upload_ms),
-                    ),
+                    ("welded_upload_bytes", a.welded_payload_bytes.to_string()),
+                    ("welded_upload_ms", format!("{:.6}", a.welded_upload_ms)),
                     (
                         "weld_saves_upload_ms",
                         format!("{:.6}", a.weld_saving_ms(calib_gb_per_s)),
@@ -1777,10 +1780,7 @@ fn main() {
                         "upload_share_of_total",
                         format!("{:.6}", 100.0 * upload_ms / total_ms),
                     ),
-                    (
-                        "excess_vertex_bytes_vs_64",
-                        format!("{excess_bytes:.0}"),
-                    ),
+                    ("excess_vertex_bytes_vs_64", format!("{excess_bytes:.0}")),
                     ("excess_vertex_bytes_ms", format!("{excess_ms:.6}")),
                     (
                         "excess_reuploads_per_second_for_crossover",
@@ -1789,14 +1789,8 @@ fn main() {
                     // The decomposition the first run could not produce: how much
                     // of the streaming cost is bytes and how much is one
                     // `write_buffer` per visible chunk.
-                    (
-                        "stream_writes",
-                        a.stream.writes.to_string(),
-                    ),
-                    (
-                        "stream_bytes_ms_per_second",
-                        format!("{:.6}", bytes_ms(a)),
-                    ),
+                    ("stream_writes", a.stream.writes.to_string()),
+                    ("stream_bytes_ms_per_second", format!("{:.6}", bytes_ms(a))),
                     (
                         "stream_overhead_ms_per_second",
                         format!("{:.6}", a.stream_ms_per_second() - bytes_ms(a)),
@@ -1813,10 +1807,7 @@ fn main() {
                                 + a.stream_arena_ms_per_second()
                         ),
                     ),
-                    (
-                        "total_arena_ms",
-                        format!("{:.6}", a.total_arena_ms(rate)),
-                    ),
+                    ("total_arena_ms", format!("{:.6}", a.total_arena_ms(rate))),
                     (
                         "crossover_arena_edits_per_second",
                         if crossover_arena.is_finite() {
@@ -1839,10 +1830,7 @@ fn main() {
                         "stream_full_world_uploads_per_second",
                         format!("{:.6}", supplied(a)),
                     ),
-                    (
-                        "crossover_streaming_shortfall",
-                        format!("{shortfall:.4}"),
-                    ),
+                    ("crossover_streaming_shortfall", format!("{shortfall:.4}")),
                     ("grid_duplication", {
                         let c = f64::from(a.chunk_cells);
                         format!("{:.6}", ((c + 1.0) / c).powi(3))
@@ -1903,14 +1891,8 @@ fn main() {
                         "mixed16_coarse_activations",
                         mixed16.activations.to_string(),
                     ),
-                    (
-                        "mixed16_coarse_cells",
-                        mixed16.coarse_cells.to_string(),
-                    ),
-                    (
-                        "mixed16_coarse_chunks",
-                        mixed16.coarse_chunks.to_string(),
-                    ),
+                    ("mixed16_coarse_cells", mixed16.coarse_cells.to_string()),
+                    ("mixed16_coarse_chunks", mixed16.coarse_chunks.to_string()),
                     (
                         "mixed16_granularity_ms",
                         format!("{:.6}", mixed16.total_ms(rate)),
@@ -1924,7 +1906,10 @@ fn main() {
                         format!("{:.6}", best_fixed(rate) / mixed16.steady_total_ms(rate)),
                     ),
                     ("committed_upload_ms", format!("{:.6}", committed.upload_ms)),
-                    ("committed_upload_bytes", (committed.bytes as u64).to_string()),
+                    (
+                        "committed_upload_bytes",
+                        (committed.bytes as u64).to_string(),
+                    ),
                     (
                         "committed_upload_gb_per_s",
                         format!("{committed_gb_per_s:.6}"),
