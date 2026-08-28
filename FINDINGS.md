@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**482 entries** — 55 falsified, 351 measured, 50 verified, 18 open, 8 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**512 entries** — 79 falsified, 357 measured, 50 verified, 18 open, 8 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -94,6 +94,30 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗53` | sound at k = 17 and not at k = 5 |
 | `✗54` | C1 FALSIFIED by arithmetic computed at registration, C2 and C3 HELD: the subgroup scan is real at 1.4114× and reproduces… |
 | `✗55` | C1 FALSIFIED by 10 violations in 19,415 and the registered coefficient is off by exactly one unit: 2 is unsound, 3 is so… |
+| `✗56` | C1 FALSIFIED on 28 of 60 testable rows and separately VACUOUS on 6 of 16 cases, C2 FALSIFIED at 0 of 7 fields, C3 FALSIF… |
+| `✗57` | C1 HELD at 0.3996 / 0.1363 ms and still holds at 0.9406 / 1.2215 ms |
+| `✗58` | C1 FALSIFIED both ways at 2.8997× against a fixture ceiling of 2.9852 and a single-frame spike; C2's recovery half FALSI… |
+| `✗59` | C1's factor bound FALSIFIED at 3.36–8.38 with c1_holds true on 18 of 72 rows, C1's world-size falsifier HELD at 1.391× a… |
+| `✗60` | C1 FALSIFIED at 20.3718 against a bar of 3, C2 FALSIFIED by 4 texels on one row with a 66-of-96-arm geometric leak under… |
+| `✗61` | C1 FALSIFIED on one field of eight with both halves of its falsifier firing, C2 FALSIFIED by 0.62° against a headroom of… |
+| `✗62` | C1 FALSIFIED by its own falsifier: the capture window is 2R + t, not t, so game_dig's 2-cell body radius makes 2R 4.0 ce… |
+| `✗63` | C1 FALSIFIED by 44× to 2,275× at 33³ on all eight fields and no integrator could have passed it: a volume integral over… |
+| `✗64` | 10,464–12,726 cycles per fragment |
+| `✗65` | C1 HELD at 80.3–81.8% and C2 FALSIFIED twice over: the copy is 0.035–0.050% and the BVH does not dominate either, so the… |
+| `✗66` | C1 FALSIFIED at 3.01% against a 20% bar, and the bar was 15.29× chance rather than 2×: a capsule hits a sliver at 2.30×… |
+| `✗67` | C1 and C2 HELD, C3 FALSIFIED: an octree navigation graph built on the sign bitmap and never on a triangle repairs P-72's… |
+| `✗68` | C1 FALSIFIED on both readings (0.688892 and 0.831008 against a 0.90 bar), C2 HELD for the cheap reading and FALSIFIED fo… |
+| `✗69` | C1 HELD at 4.36× and 1.76×, C2 FALSIFIED at 267% and 46%: 1³ is worse than 2³ on both fields, so M-377's 4³ optimum is n… |
+| `✗70` | C1 HELD at 6.3916× and 10.4802× on the registered 46–60 bucket, but only at the brick: P-39's chunk-level cull alone rea… |
+| `✗71` | item 3.6's prediction is exactly inverted: geomorph FAILS on fbm_terrain at 25.0771 px and the gyroid half it was predic… |
+| `✗72` | C1 FALSIFIED on both of its readings, by 3.00× at the cheapest field |
+| `✗73` | C1 FALSIFIED on the quantity it is denominated in, C3 FALSIFIED at every rate on every variant, C2 HELD by 509×: the reg… |
+| `✗74` | C1 HELD on the size half and HELD WITH NO INSTRUMENT on the constancy half, C2 and C3 FALSIFIED: an hour of continuous d… |
+| `✗75` | C1 and C2 FALSIFIED, C3 HELD: undo is always a re-fold — re-folding from a checkpoint is cheaper at every separation, by… |
+| `✗76` | C1 VACUOUS on M-38's own fixture, then HELD to 0.0375 and FALSIFIED from 0.075 on a fixture that can move; C2 HELD, C3 H… |
+| `✗77` | C1 FALSIFIED on 2 of 8 fields by exactly 3 bytes each, C2 FALSIFIED with an empty divergence population, C3 HELD on all… |
+| `✗78` | C1 HELD at 48 of 48 with worst_component_ulp 0, C3 HELD at 0 open edges, C2 FALSIFIED on both halves on 16 of 16 rows: M… |
+| `✗79` | C1 FALSIFIED at 3 of 16 and worse than shipped on 9 of them, C3 FALSIFIED by the two duals agreeing on 64 of 64 row-pair… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -445,6 +469,12 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-379` | C1, C2 and C3 all HELD: the case table is proved indexable over all 256 sign patterns in 2.04 s and over all 16,384 (pat… |
 | `M-383` | the bench that cannot compile off Linux, and every gate that would see it runs on Linux (D-025) |
 | `M-384` | a gate that is red locally and green in CI, which is M-304 read backwards (D-026) |
+| `M-387` | C1, C2 and C3 all HELD: per-vertex material weights cost 3.11–3.16% of extraction and the share is flat across a 4× log,… |
+| `M-388` | C1 HELD (18 = 3 × 6 exactly, cost 2.1115×), C2 HELD on its own falsifier while the clause as worded is VACUOUS, C3 HELD… |
+| `M-393` | C1 HELD at 8.067× and 4.766 µs against a 3× / 20 µs bar, C2 HELD bit-identical over 10⁶ queries across Zen 3 and an Appl… |
+| `M-410` | C1, C2 and C3 all HELD: fused into the extraction gather the Plantinga–Vegter certificate costs 0.0553 worst of extracti… |
+| `M-411` | all three clauses HELD, and the two findings worth more than the HELDs: C1's premise is off by two — rank_all_edges read… |
+| `M-414` | C1, C2 and C3 all HELD: ✗43's withdrawn rate reproduces exactly — 0 of 8,064 unclosed post-fix on five independent magni… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -12570,3 +12600,9882 @@ Five follow-ons the Phase 23 entries named and did not file, plus the audit item
 **Hypothesis.** THE ONE AUDIT ITEM THAT WAS DOWNGRADED RATHER THAN FIXED. ✗43 claims '2 of 8,064 not closed before the fix, 0 of 8,064 after' and the sweep that produced it exists in no bench, no test and no CSV; the entry now says so honestly, which leaves the claim that the per-ring apex fix GENERALISES with no evidence behind it and no ticket to produce any. That is CLAUDE.md hard rule 4 and it is the ✗35 failure mode in its third occurrence. P-63 has since built exactly the machinery this needs -- an exhaustive sign sweep with a fixture-can-fail control and a magnitude-seed protocol reported per seed and never pooled. (C1) Over all 8,064 configurations (16 x 8 x 9 x 7 sizes from 6^3 to 12^3), the post-fix extractor produces ZERO unclosed meshes, on four independent magnitude seeds reported per seed and never pooled. (C2) THE CONTROL THE ORIGINAL LACKED: the pre-fix single-apex fan produces exactly 2 at 6^3 and zero elsewhere, reproducing the claim the entry could not support. (C3) The +/-1 magnitude arm is a BAD FIXTURE here for the reason M-374 found -- has_inner_hexagon's strict 0 < x < 1 rejects, so interior vertices go to zero -- and the harness reports it as VOID rather than as a pass. SHARE: this experiment reproduces a rate and moves nothing.
 
 **Falsified by.** C1 by any unclosed mesh, which reopens ✗43. C2 by a different count, which would mean the original figure was wrong as well as unreproducible -- and that is a finding about the entry rather than about the fix. C3 by the unit arm reporting a pass, which is M-44 in a new place and would mean the void detector does not work. VACUITY CONTROL: interior apexes must be non-zero on every generic arm, reported per seed, exactly as M-374 reports 282,084 to 283,694.
+
+---
+
+## Phase 24 — the results, thirty entries against thirty registrations
+
+Every row below was pre-registered in `crates/isomesh/src/experiment.rs` before its harness existed, its
+harness was committed before it ran, and its dataset was **re-run on a clean tree** after every harness in
+the phase had landed — so each `# commit` line names a commit a reader can check out, and
+`scripts/csv_provenance.sh` passes with no new entry on its dirty-tree list.
+
+**That re-run is not a formality and it is the phase's first durable method finding.** The first pass ran
+with twenty-five harnesses building concurrently, and on the quiet tree one clause's verdict *flipped*
+(`✗57`'s full-coverage AO bar), one briefed mechanism was destroyed by an 84% clock move (`✗69`), one
+whole-trace figure moved 1.67× on the identical binary (`✗67`), one triangle-count trend changed *sign*
+(`M-393`), and one arm's least-squares fit went from unquotable to sound (`✗72`). Every entry below states
+which of its numbers moved and re-grounds any conclusion that a clock had been carrying — which is `✗24`'s
+rule (*a wall-clock ratio is not a gate*) and `M-281`'s (*a millisecond is a property of the binary*)
+applied thirty times in one sitting rather than argued once.
+
+**Twenty-four of the thirty carry a falsified clause.** Six were registered as expected nulls and the nulls
+arrived. Reading the falsifications rather than the checkmarks is the point: several of them refute the
+registration's own premise rather than its prediction, and four refute a figure this repository or a cited
+paper had already published.
+
+### 💥 ✗56 / M-385 — C1 FALSIFIED on **28 of 60** testable rows and separately VACUOUS on **6 of 16** cases, C2 FALSIFIED at **0 of 7** fields, C3 FALSIFIED at **0 of 18** hashes moved: the 2005 result does **not** transfer to trilinear output on this crate's noisy fields, and the determinism objection does not exist — but the connectivity route still loses to what the crate already ships, so the dossier's ~40-line pseudonormal should not be built (P-73, R-073)
+
+**M.** `cargo bench --bench experiment_p73`, `docs/experiments/p-73.csv`, **112 rows** (113 with the
+header), 78 columns, `f64`, Zen 3 (`amd-ryzen-9-5900x-12-core`), with an **Apple M5 / aarch64** as C3's
+second machine. Eight reference fields at 33³ and 65³ × six connectivity weightings plus `CentralDifference`
+at the cell size, every arm scored against `field.gradient(vertex)` over **one** shared vertex population in
+one build and one run (`M-281`). Nothing in `src/` changed and no `NormalStrategy` variant added — the six
+weightings live in the bench, which is what a row that exists to stop a change looks like. Committed at
+**`3a554ed`**, clean tree, an ancestor of HEAD.
+
+> **Every number below is read from the committed `docs/experiments/p-73.csv` at `3a554ed`, whose header
+> carries no `(WORKING TREE DIRTY)`.** The clause verdicts and the mechanism were first worked out from a
+> dirty pre-run of the same harness at `63c7161`; **the clean re-run moved nothing**. Every angle, count,
+> rank correlation and 64-bit hash reproduced to the last printed digit, because `M-280` is satisfied by
+> construction here: **no clock appears anywhere in this experiment**. There is no `wall_ms`, no `ns/sample`
+> and no ratio of two timings — every column is an angle, an exact-arithmetic count, a Spearman rho or an
+> FNV-1a hash, so there is nothing for a governed CPU to move. The only thing that changed between the two
+> runs is the provenance stamp itself.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 every connectivity weighting is **≥ 3×** `CentralDifference`'s median angular error at the cell size, on eight fields at 33³/65³, **and `thin_plate` and `noise_cavity` are the worst** | ≥ 3× on all 96 rows | **FALSIFIED — `c1_rows_at_least_3` = 32 of `c1_rows_testable` = 60, so 28 rows are *under* 3×; `c1_worst_two_as_registered` = `false` at both resolutions. Separately VACUOUS on 6 of 16 cases: `gradient_median_deg` is exactly `0.000000` and `ratio_to_gradient` is `0/0`** |
+| C2 mean \|f(v)\| **predicts** the per-vertex angular error, rank correlation **above 0.7** on at least six of eight fields | ρ > 0.7 on 6 of 8 | **FALSIFIED — `c2_fields_above_bar_at_res` = 0 at both 33 and 65, out of `c2_testable_fields_at_res` = 7. Best ρ anywhere in the file is 0.584622; `fbm_terrain` is *negative*. VACUOUS on `box_exact`** |
+| C3 the connectivity route moves **at least one** golden hash between the M5 and the Zen 3, and the gradient route moves **none** | ≥ 1 and 0 | **FALSIFIED — `hashes_moved_connectivity` = 0 of `hashes_connectivity_total` = 18; `hashes_moved_gradient` = 0 of 3. Not blocked: `second_machine` = `apple-m5-arm64`, `second_machine_note` = `ok`, `second_machine_toolchain` = 1.96.1 against `local_toolchain` 1.98.0** |
+
+**SHARE, recomputed out loud.** The registration's line is *"C1 and C2 move the whole normals stage; C3
+moves nothing and is a correctness clause."*
+
+- **C1's ratio is not an Amdahl ratio and has no share cap.** `ratio_to_gradient` divides two angular-error
+  distributions taken over *the same* vertex population, each denominated in itself, so `1/(1 − share/factor)`
+  does not bind, the range is `[0, ∞)` and the registered 3× is arithmetically reachable. **What arithmetic
+  could not reach is a case whose denominator is zero**, and six of sixteen are: `gradient_median_deg` is
+  exactly `0.000000` on `box_exact`, `csg_difference` and `thin_plate` at both resolutions. No bar on a
+  ratio is reachable there at any share, which is why those 36 rows are scored VACUOUS rather than counted
+  as either verdict. C1 is falsified on the merit of **60 finite ratios**, not on 36 NaNs.
+- **C2's rank correlation has no share cap either.** Spearman's rho is bounded to `[-1, 1]` and its standard
+  error over the 510–28,882 vertices per case is under 0.005, so 0.7 is far outside sampling noise. Its
+  vacuity risk is at the *other* end — identically zero `|f(v)|` means every rank ties and rho does not
+  exist — **and it fired**: on `box_exact`, `canary_mean_abs_f` is `0.000000e0` with `canary_zero_vertices`
+  = `scored_vertices` = 1350 and 5766, so **every** Marching Cubes vertex is exactly on the surface and
+  `case_c2_verdict` reads `vacuous`.
+- **C3 moves nothing and is a correctness clause**, as registered. Its exposure is the second machine, not a
+  share, and the second machine ran.
+
+**C1's ratios, `ratio_to_gradient` by (field, resolution) × weighting.** Bold is under the 3× bar
+(`row_ratio_at_least_3` = `false`).
+
+| field | res | `gradient_median_deg` | equal | angle | sine | area | edge | sqrt |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `sphere` | 33 | 0.075608 | 19.53 | 13.66 | 7.70 | 29.43 | 9.27 | 10.97 |
+| `sphere` | 65 | 0.020085 | 32.51 | 19.17 | 15.39 | 52.47 | 18.43 | 22.22 |
+| `torus` | 33 | 0.854352 | 3.67 | **2.64** | **2.77** | 6.41 | **2.91** | **2.47** |
+| `torus` | 65 | 0.216057 | 5.95 | 3.60 | 3.46 | 8.85 | 4.25 | 4.10 |
+| `box_exact` | 33/65 | **0.000000** | NaN | NaN | NaN | NaN | NaN | NaN |
+| `csg_difference` | 33/65 | **0.000000** | NaN | NaN | NaN | NaN | NaN | NaN |
+| `thin_plate` | 33/65 | **0.000000** | NaN | NaN | NaN | NaN | NaN | NaN |
+| `gyroid` | 33 | 0.000001 | 2.78e6 | 2.10e6 | 2.16e6 | 3.95e6 | 2.32e6 | 2.12e6 |
+| `gyroid` | 65 | 0.000001 | 1.56e6 | 1.06e6 | 1.14e6 | 2.23e6 | 1.30e6 | 1.19e6 |
+| `fbm_terrain` | 33 | 21.150470 | **0.986** | **0.985** | **0.989** | **1.008** | **0.990** | **0.992** |
+| `fbm_terrain` | 65 | 10.559946 | **1.077** | **1.055** | **1.043** | **1.167** | **1.038** | **1.040** |
+| `noise_cavity` | 33 | 18.309318 | **1.221** | **1.217** | **1.162** | **1.330** | **1.160** | **1.179** |
+| `noise_cavity` | 65 | 4.847019 | **1.687** | **1.560** | **1.499** | **1.963** | **1.510** | **1.532** |
+
+The registered falsifier is *"any weighting within 3×"*. **Twenty-eight of the sixty testable rows are
+within 3×** — every one of the 24 `fbm_terrain` and `noise_cavity` rows, plus four of six on `torus` at 33³
+(angle, sine, edge, sqrt). Read `case_c1_verdict` per **row**, not per case: on `torus` 33³ it says `held`
+on `equal` and `adjacent_triangle_area` and `falsified` on the other four, which is the column disagreeing
+with itself inside one case and is exactly the shape of a bar that four weightings clear and two do not.
+
+**`gyroid`'s millionfold is an identity, not a result, and is not quoted as one.** Its
+`gradient_median_deg` is `0.000001` — one microdegree, which is floating-point round-off and not a
+measurement of a reference error. For `f = sin x cos y + sin y cos z + sin z cos x`,
+`(f(x+h) − f(x−h))/2h = (sin h / h) · ∂f/∂x`, and the **same** scalar `sin h/h` multiplies all three
+components, so it cancels under normalisation and the central difference's *direction* is exact. The file
+confirms that to nine decimals from its own `cell_size`: `cd_magnitude_ratio_median` is **0.968402874** at
+`cell_size` 0.437500000 and **0.992043799** at 0.218750000, against `sin(0.4375)/0.4375` = 0.9684028736 and
+`sin(0.21875)/0.21875` = 0.9920437993. So `gyroid`'s twelve `held` rows are a connectivity error divided by
+machine epsilon. **They hold on the clause's own terms and are worthless as evidence for it**; the number
+to read there is the absolute one, `median_angle_error_deg` **2.532198°** on the angle arm at 33³ and
+**0.907948°** at 65³ — squarely in the same band as `sphere` and `torus`, i.e. small.
+
+**`thin_plate`: the prediction was right, its mechanism was wrong, and both halves are on the record.**
+Before the run, the bench's own header argued that C1 would be unreachable there because `CentralDifference`
+differences over a step `h` = 0.125 at 33³ against a plate whose *full thickness* is 0.025 — the stencil
+steps clean through the plate and out the other side — so `gradient_median_deg` would not be a small
+reference error but a second broken instrument. **The conclusion held and the mechanism did not.**
+`cd_magnitude_ratio_median` reads exactly **0.100000000** at `cell_size` 0.125000000 and exactly
+**0.200000000** at 0.062500000; those are `thickness / 2h` = 0.025/0.25 and 0.025/0.125, so both cases
+independently derive the same 0.025 thickness from the file, and the stencil really is **10× and 5× too
+coarse in magnitude**. But `gradient_median_deg` there is not large, it is **exactly 0.000000**. A slab is
+axis-aligned, so the differencing error is confined to the one axis the normal already points along and the
+two tangential differences are exactly zero either way — **and a normal is a direction**. C1 dies on
+`thin_plate` by `0/0`, not by a large denominator. The magnitude is 10× wrong and the direction is bit-exact
+in the same column pair.
+
+**The vacuity is not the same fact three times.** `box_exact`, `csg_difference` and `thin_plate` are exact
+signed distances to axis-aligned boxes; near a face the field reduces to `|x_j| − b_j`, which is **piecewise
+linear**, Marching Cubes' linear edge interpolation is exact on a linear field, and a central difference of
+a linear function *is* its derivative. So the median error of every one of the seven arms is exactly
+`0.000000` and `cd_magnitude_ratio_median` = **1.000000000** on `box_exact` and `csg_difference`. Where the
+signal survives is the tail, and `ratio_p99_to_gradient` says which of the three still carries one:
+
+| field | res | `p99_angle_error_deg`, angle arm | `p99` of `central_difference` | `ratio_p99_to_gradient` |
+|---|---:|---:|---:|---:|
+| `box_exact` | 33 | 28.886463 | 0.000000 | `inf` |
+| `box_exact` | 65 | 22.500000 | 0.000000 | `inf` |
+| `csg_difference` | 33 | 37.591897 | 12.563261 | 2.992209 |
+| `csg_difference` | 65 | 34.447553 | 13.581722 | 2.536317 |
+| `thin_plate` | 33 | 18.450505 | 0.000000 | `inf` |
+| `thin_plate` | 65 | 5.654966 | 0.000000 | `inf` |
+
+`box_exact` 65³ is worth one line because three of its six p99 values are exact rational tangents:
+**18.434949** = `atan(1/3)`, **22.500000** = 45/2 and **26.565051** = `atan(1/2)` (the other three read
+18.337950, 20.368969 and 22.500000). Those are the angles you get by averaging unit **axis** vectors at an
+edge or a corner, which is what a connectivity weighting does and the gradient never does. On the one field
+where the central difference's p99 is exactly zero, the connectivity route's is **22.5°** — the mechanism
+the dossier calls a feature and the analytic gradient calls an error, and the entry does not adjudicate
+which a shader wants.
+
+**Where the 2005 paper's numbers do appear, they appear on both routes at once, and that is the mechanism.**
+`fbm_terrain` and `noise_cavity` are the two fields with surface structure at the cell scale (`cell_size`
+0.500000000 and 0.125000000 at 33³). There every weighting is **20.84–24.35°** at 33³ and **7.27–12.32°** at
+65³ — squarely inside Jin, Lewis & West's 5–20° band, and their diagnosis, spatial aliasing in irregular
+implicit tessellation, is the right one. But `CentralDifference` at the same cell size reads **21.150470°**
+and **18.309318°**. The aliasing is a property of *the sampling*, not of *the weighting*, so both routes eat
+it and the ratio collapses to 0.985–1.687. On the smooth analytic fields the connectivity route is
+**0.309086–5.478382°**, well *below* the 2005 band, while the central difference converges as `O(h²)` —
+`cd_magnitude_ratio_median` on `sphere` goes 0.996393278 → 0.999095484, a factor-4 reduction in `1 − r` for
+a factor-2 in `h` — so *there* the ratio is large. **C1 is falsified from both ends simultaneously: the
+ratio fails where the paper's absolute numbers hold, and holds where the paper's absolute numbers fail.**
+
+Two consequences the registration got backwards. The sub-claim *"and `thin_plate` and `noise_cavity` are the
+worst"* is false: `field_rank_by_error` (1 = largest `field_mean_connectivity_median_deg`) at 33³ is
+`noise_cavity` 1, `fbm_terrain` 2, `gyroid` 3, `torus` 4, `sphere` 5, `box_exact` 6, `csg_difference` 7,
+**`thin_plate` 8** — `thin_plate` is the field on which every method is *exact*, and it is last at 65³ too.
+And in the direction nobody registered, on `fbm_terrain` at 33³ **five of six weightings beat**
+`CentralDifference`: `ratio_to_gradient` 0.985260–0.991917, i.e. the connectivity route is 0.8–1.5% *more*
+accurate than a cell-size difference. Those five rows are the only ones under 1.0 in the whole matrix.
+
+**C2, `canary_rank_correlation` on the angle arm — the dossier's own weighting.**
+
+| field | ρ @33³ | ρ @65³ | `canary_mean_abs_f` @33³ | `canary_max_abs_f` @33³ | `case_c2_verdict` |
+|---|---:|---:|---:|---:|---|
+| `sphere` | 0.396059 | 0.205721 | 7.148188e-4 | 1.701129e-3 | falsified |
+| `torus` | 0.375156 | 0.438110 | 1.299332e-3 | 6.293799e-3 | falsified |
+| `box_exact` | 0.000000 | 0.000000 | **0.000000e0** | **0.000000e0** | **vacuous** |
+| `csg_difference` | 0.358219 | **0.584622** | 1.336310e-4 | 2.422590e-3 | falsified |
+| `thin_plate` | 0.062145 | 0.038215 | 3.061277e-18 | 3.469447e-18 | falsified |
+| `gyroid` | 0.279837 | 0.335371 | 6.423566e-3 | 1.465830e-1 | falsified |
+| `fbm_terrain` | **−0.147513** | **−0.117851** | 1.986061e-2 | 2.277246e-1 | falsified |
+| `noise_cavity` | 0.352912 | 0.384173 | 2.453411e-2 | 1.943451e-1 | falsified |
+
+Zero of seven testable fields clear 0.7 at either resolution; the registered falsifier is *"below 0.7 on
+three or more fields"* and it is below on **all seven**. The best correlation anywhere in the file, over all
+six weightings and both resolutions, is **0.584622** (`csg_difference`, 65³, angle). On `fbm_terrain` the
+sign is wrong at both resolutions and on all six weightings, **−0.117851 to −0.160652**: the vertices
+*furthest* off-surface have *smaller* angular error there. `canary_max_abs_f` shows the canary has real
+spread on every field except `box_exact` (0.0) and `thin_plate` (3.469447e-18), so this is not an instrument
+floor. **`mean |f(v)|` is not a proxy for shading shimmer.**
+
+One asymmetry worth keeping, because it is a different feature and a different ticket. On `csg_difference`
+the same canary predicts the **central difference's** error at ρ = **0.912948** and **0.963016**
+(`canary_rank_correlation` on the `central_difference` rows). The canary is a strong proxy for a
+*finite-difference* error near a CSG seam and a poor one for a *connectivity* error anywhere. C2 asked about
+the connectivity error.
+
+**C3, scored on what is actually in the file.** The second machine ran; nothing here is BLOCKED.
+
+| column | value |
+|---|---|
+| `hashes_moved_connectivity` / `hashes_connectivity_total` | **0 / 18** |
+| `hashes_moved_gradient` / `hashes_gradient_total` | **0 / 3** |
+| `hashes_moved_std_acos` / `hashes_std_acos_total` | **2 / 3**, `hashes_moved_std_acos_fixtures` = `sphere+torus` |
+| `acos_sweep_libm_local` / `_remote` | `76b929f7ad69da18` / `76b929f7ad69da18` — **identical**, `acos_sweep_moved_libm` = 0 |
+| `acos_sweep_std_local` / `_remote` | `3b9f2096421087a2` / `a7874df0d6fc48dc` — **different**, `acos_sweep_moved_std` = 1 |
+| `hash_fixtures`, `codegen_control_ran`, `hashes_moved_codegen` | `sphere+torus+box_exact`, `true`, 0 |
+| `port_acos_matches_libm`, `program_matches_bench` | `true`, `true` |
+| `second_machine` / `_note` / `_toolchain`, `local_toolchain` | `apple-m5-arm64` / `ok` / 1.96.1, 1.98.0 |
+
+Zero movement on all eighteen connectivity hashes across `sphere`, `torus` and `box_exact` at 33³, computed
+on an Apple M5 and a Zen 3. The registered falsifier is *"zero hash movement on the connectivity route"*,
+and the registration itself named that as *"the more interesting result"*. **The determinism objection to a
+connectivity-weighted normal does not exist**, and the mechanism is one line of `src/real.rs`: `Real::acos`
+was added at S-006 precisely because *"libm is the only source of that angle that stays bit-identical across
+platforms"*, and it is wired to `libm::acos`. libm 0.2.16's `acos` is generic pure-Rust `f64` arithmetic
+whose only helper is `sqrt`, and `src/math/arch/mod.rs` selects `sqrt` per architecture — `fsqrt` on
+aarch64+neon, `sqrtsd` on x86-64+sse2, both required by IEEE-754 to be correctly rounded, hence identical.
+The registration's premise (*"libm's `acos` has no architecture selection"*) is **true** and its inference
+runs backwards: no architecture selection means portable. The measurement then prices the objection the
+registration *meant*: had the crate used `std`'s `acos` — glibc here, Apple's libm there — the sweep hash
+differs and `hashes_moved_std_acos` is **2 of 3**. The liability is real for a crate on the platform's libm
+and **zero** for this one, and the whole difference is the S-006 decision. Only the angle weighting needs a
+transcendental at all; MWSELR takes `sin α = |e₁ × e₂| / (|e₁||e₂|)` from the cross-product magnitude, so
+five of the six weightings have no exposure in the first place.
+
+**The vacuity control, its registered column and value, and why that value proves the fixture could have
+failed.** The registered column is **`worst_decile_triangles`**, asserted non-zero per field: its minimum
+over all 112 rows is **224** (`thin_plate` 33³) and it is never zero. That column under the per-field
+reading is `n/10` for any non-empty mesh, so the only thing it can catch is a case that meshed nothing —
+which is worth catching and is stated rather than dressed up. The number that makes it mean something is
+`worst_decile_triangles_below_pooled_p10`, the **strict** reading against one pooled distribution
+(`radius_ratio_p10_pooled` = 0.242312, `radius_ratio_median_pooled` = 0.817624, over 202,538 triangles
+summed across the sixteen cases), **and it reads exactly 0 on two fields**:
+
+| field @33³ | `worst_decile_triangles` | `worst_decile_max_radius_ratio` | `min_radius_ratio` | `triangles_below_0p15` | `..._below_pooled_p10` |
+|---|---:|---:|---:|---:|---:|
+| `sphere` | 234 | 0.334234 | 0.060373 | 38 | 108 |
+| `torus` | 228 | 0.169510 | 0.014469 | 184 | 276 |
+| **`box_exact`** | 336 | **0.787694** | **0.787694** | **0** | **0** |
+| `csg_difference` | 506 | 0.787694 | 0.047541 | 24 | 42 |
+| **`thin_plate`** | 224 | **0.828418** | **0.828418** | **0** | **0** |
+| `gyroid` | 1064 | 0.170613 | 0.000000 | 948 | 1438 |
+| `fbm_terrain` | 396 | 0.197376 | 0.000097 | 304 | 490 |
+| `noise_cavity` | 1325 | 0.225693 | 0.000000 | 861 | 1411 |
+
+On `box_exact` and `thin_plate`, `min_radius_ratio` **equals** `worst_decile_max_radius_ratio` at both
+resolutions — every triangle on those meshes has the same near-equilateral shape, 0.787694 and 0.828418 —
+and `triangles_below_0p15` is 0. So on those two fields C1 *is* measuring well-shaped triangles only,
+exactly as the registration warned, and it says so in the column rather than being discovered in prose. On
+the other six fields the same column reads 42–6537 and `min_radius_ratio` reaches 0.000000. **A zero that
+sits beside a 6537 in the same column is a measurement, not an unreached configuration** — which is `M-44`'s
+rule satisfied by the control that the registration itself demanded. (One reader's caveat: on `box_exact`
+65³ `worst_decile_triangles` reads 11520 of 11528 triangles. That is a tie artefact — the mesh has
+essentially two triangle shapes, so "at or below the 10th percentile" sweeps almost everything.
+`worst_decile_max_radius_ratio` = 0.828427 is the number that says what happened.)
+
+**Five fixture defects the harness's own controls caught, none of them found by review.**
+
+1. **`gradient_median_deg` is exactly `0.000000` on six of sixteen cases**, so C1's ratio is `0/0` there.
+   This is only *legible* because `zero_error_vertices` and `cd_magnitude_ratio_median` were added to
+   explain the zero instead of hiding it: on the angle arm `zero_error_vertices` is 1014/1350 and 5046/5766
+   on `box_exact`, 831/1386 and 4295/6012 on `csg_difference`, 390/510 and 1798/2046 on `thin_plate`. The
+   run's first shape asserted the strict pooled decile per field and **panicked on `box_exact` 33³** — the
+   correct finding delivered by the wrong mechanism, since a field with uniformly good triangles invalidates
+   the clause *on that field*, not the harness. `case_c1_verdict` / `case_c2_verdict` now carry `vacuous`,
+   with the aggregate `c1_testable_cases` (**10**) asserted non-zero so sixteen vacuities could not pass
+   silently.
+2. **The pre-run SHARE prediction about `thin_plate` was wrong in its mechanism**, and the control that
+   caught it is `cd_magnitude_ratio_median` = 0.100000000 / 0.200000000 sitting next to
+   `gradient_median_deg` = 0.000000. The arithmetic in the prediction was right; the conclusion drawn from
+   it — a *large* denominator — is refuted by the measurement. The prediction is kept beside the correction
+   in the bench header rather than replaced.
+3. **`thin_plate`'s canary is round-off, not signal.** `canary_max_abs_f` = 3.469447e-18, and the case is
+   still scored C2-testable (`case_c2_testable` = `true`) and reports ρ = 0.062145 — a correlation over
+   machine epsilon. Excluding it does not change C2's verdict (0 of 6 against a bar of 6 of 8), but nobody
+   should read that 0.062 as a measurement.
+4. **`gyroid`'s ratio column is `1e6`-scaled by a `1e-6` denominator.** Only
+   `cd_magnitude_ratio_median` = `sin h / h` to nine decimals, checkable against `cell_size` in the same
+   row, distinguishes "the reference is exact" from "the reference is broken" — which is the `M-289` failure
+   mode in the opposite direction, and the reason the entry quotes the absolute error there instead.
+5. **`M-289` was the named trap on this path and four independent controls refuse it.**
+   `reference_matches_extraction` = `true` on 112/112, so the reference normal is bit-identical to the one
+   the extractor already stored and this harness has no private idea of the gradient. `ref_fd_median_deg`
+   = **0.000000000** on every row, `ref_fd_p99_deg` at most **1.207e-06**, `ref_fd_over_half_deg` = **0**
+   everywhere — the angle to a fourth-order central difference of `sample` at 1e-6 of the domain extent, an
+   independent gradient to ten digits on all eight fields. `ref_closed_form_max_deg` ≤ **1.207e-06** on the
+   five fields with a closed form written from the geometry, `-1` on the three without. And
+   `mwaat_crate_status` = `match` with `mwaat_mismatch_vertices` = 0 on 112/112 anchors the area arm
+   bit-identically to the shipped `NormalStrategy::AreaWeightedFaces`. Population accounting:
+   `nonmanifold_edges`, `ref_degenerate_excluded`, `cd_degenerate_excluded` and
+   `weight_degenerate_excluded` are 0 on every row; `boundary_vertices_excluded` is non-zero on exactly one
+   field, `fbm_terrain` at 190 of 2069 and 390 of 8638, which is the field whose `closed_in_domain()` is
+   `false`. C3's admissibility is three more: `port_acos_matches_libm`, `program_matches_bench` (all 23 of
+   the standalone program's hashes equal the ones computed in-process through the crate) and
+   `hashes_moved_codegen` = 0 with `codegen_control_ran` = `true`, so a cross-machine difference could not
+   have been attributed to the 1.96.1/1.98.0 toolchain skew.
+
+**What changed as a result: nothing in `src/`, and that is the finding — do not build the angle-weighted
+pseudonormal.** The owner's question was whether the ~40 lines are worth having, and on which fields. Four
+answers, in the order they matter.
+
+1. **Refuse it on quality, not on determinism — the determinism argument is dead.** C3 is falsified;
+   `Real::acos` already exists and is already portable, and a connectivity weighting would move none of the
+   crate's 216 golden hashes. Any future proposal must **not** be refused on this ground, and this entry is
+   where that is written down so the argument is not recycled.
+2. **It loses to what is already there, on both incumbents.** Where `Sdf::gradient` exists,
+   `AnalyticGradient` is exact by construction and the connectivity route's error *is* the
+   `median_angle_error_deg` column: **0.309086° to 24.354097°** on the five fields where any method errs,
+   and 0.000000° on the three where none does. Nothing beats zero. Where only samples
+   exist the incumbent is `CentralDifference`, and the connectivity route is **worse on 55 of 60 testable
+   rows and better on 5** — all five on `fbm_terrain` at 33³, by 0.8–1.5%. A 1% win on one field at one
+   resolution does not buy a fourth `NormalStrategy` variant.
+3. **On which fields it would and would not help, stated plainly.** It would *not* help on `sphere` or
+   `torus`, where the ratio is **2.469927× to 52.467910×** against a route that is already accurate to
+   0.020085–0.854352°; nor on `gyroid`, where the ratio is meaningless but the absolute connectivity error
+   is **0.907948–4.768898°** against a central difference exact to a microdegree. It **cannot** help on
+   `box_exact`, `csg_difference` or `thin_plate`, where Marching Cubes is exact and the connectivity route
+   is the only arm that introduces error at all — its p99 runs **5.599259° to 39.539038°** across the six
+   weightings, where the central difference's is 0.000000 on two of the three. It is **competitive** on
+   `fbm_terrain` and `noise_cavity`, the noisy fields a destructible game actually ships, at 0.985–1.687×,
+   because there the aliasing dominates both routes equally. **So the 2005 result does not transfer to
+   trilinear output on this crate's noisy fields, and the dossier's proposal is not obviously wrong — it is
+   merely not obviously worth 40 lines and a fourth variant.** That is the null, reported as a completed
+   result.
+4. **The off-surface canary should not be built either**, and the two-line version proposed in the dossier
+   is the wrong two lines. C2 is falsified 0-of-7 at both resolutions with the wrong sign on `fbm_terrain`.
+   What `mean |f(v)|` *is* good for is a finite-difference error near a CSG seam, ρ = 0.912948 / 0.963016
+   on `csg_difference` — a different feature, a different ticket, and worth registering separately if
+   anyone wants it.
+
+One number in the dossier this row does **not** test, said so it is not mistaken for tested: the dossier's
+two-sided claim is *"under 2° difference on good triangles, over 15° on radius-ratio under 0.15"*. P-73
+scores no per-vertex stratification by incident-triangle quality, so that claim is unscored. What the file
+bounds either side of it: on `sphere` 33³, 38 of 2312 triangles (1.64%) are below 0.15 and the angle arm's
+`p99_angle_error_deg` is **2.114728°**, so the worst percentile there is nowhere near 15°; on `noise_cavity`
+33³ the same column is **116.533880°**. Both halves of the dossier's claim are field-dependent, and a proper
+test needs a stratification P-73 does not register.
+
+**Would be shown wrong by:** one hash moving on the connectivity route between any two architectures, which
+would restore the determinism objection and re-tier C3; a field on which a connectivity weighting beats
+`CentralDifference` by more than the 1.5% seen on `fbm_terrain` at 33³, which would make the ~40 lines
+purchasable; a reference field with a non-zero `gradient_median_deg` on which every weighting is still ≥ 3×
+— C1's registered shape has never been tested on a *noisy* field with a *working* denominator, because the
+only two fields with cell-scale structure are the two where the denominator is 21.15° and 18.31°; or a
+shading measurement, rather than an angle-against-the-gradient measurement, showing that `box_exact`'s
+22.5° p99 is what a shader wants at a box edge, which would mean the connectivity route's largest
+disagreement with the analytic gradient is a feature and this entry measured the wrong quantity on the three
+exact fields.
+
+### 💥 ✗57 / M-386 — C1 HELD at **0.3996 / 0.1363 ms** and still holds at **0.9406 / 1.2215 ms**
+once the 42.49% / 11.16% coverage is corrected out, but the bar is an absolute millisecond and its own
+verdict flipped between two runs of one binary; C2's comparative half HELD — SSAO's MAE is **1.52–19.09×**
+the field arm's on all six sets — while both of its absolute halves are FALSIFIED; and C3 is FALSIFIED by
+**10.41 / 12.74 ms** of construction the hypothesis said was already paid, because `raw_lipschitz` is
+**1.4140 / 2.1793** and a sphere trace on the resident field is unsound (P-74, R-074)
+
+**M.** `cargo bench --bench experiment_p74`, `docs/experiments/p-74.csv`, **2 rows**, `f32`, **NVIDIA
+GeForce RTX 3090 / Vulkan** on `amd-ryzen-9-5900x-12-core`. `gyroid` and `fbm_terrain` on a 128-cell world
+in 32-cell chunks (`samples_per_axis` 129, 64 chunks), extracted, concatenated and rasterised at 1920×1080
+into a real `Depth32Float` depth attachment plus two `Rgba32Float` G-buffer targets, then AO estimated
+three ways over one shared camera and one uploaded direction table: 8 rays × 16 steps sphere-tracing the
+jump-flooded field on the GPU, 8-sample normal-oriented-hemisphere SSAO against that depth buffer, and a
+512-ray `parry3d` reference against the extracted mesh. `ao_ms_field` / `ao_ms_ssao` are GPU timestamp
+spans, median of 7 (`clock` = `gpu-timestamp-ao/wall-c3`); `resident_ms`, `rebuild_ms` and `gbuffer_ms`
+are wall clock around submit-and-wait, because C3 spans a CPU-visible round trip no GPU span can see
+(`M-280`). Committed at **`175e702`**, no `(WORKING TREE DIRTY)` in the header, an ancestor of HEAD. This
+is the first lighting measurement in the repository.
+
+> **The committed clean re-run moved every clock on this row and it withdrew one of the briefed
+> conclusions.** The pre-run this entry was drafted against was dirty and reported `ao_ms_field` 0.895584 /
+> 0.297952, `ao_ms_field_full_coverage` **2.107926 / 2.669887**, and `c1_holds_full_coverage` **false on
+> both** — i.e. "C1 HELD as measured and FALSIFIED at full coverage". **That conclusion is withdrawn: it
+> was true only of the superseded run.** In the committed file the GPU spans are 2.24× and 2.19× smaller,
+> full coverage reads 0.940647 / 1.221536, and `c1_holds_full_coverage` is **true on both**. Every wall
+> clock moved the *other* way in the same re-run — `resident_ms` ×2.83 / ×3.45, `rebuild_ms` ×1.43 / ×1.65,
+> `gbuffer_ms` ×7.3 / ×11.8 — which is what a quieter device and a busier host look like from two clocks at
+> once, and is not a claim this row can settle. **Not one integer moved**: `hit_pixels` 881,000 / 231,408,
+> `marches` 7,048,000 / 1,851,264, `march_exhausted` 0 / 10,249, `seam_pixels` 84,375 / 17,938,
+> `silhouette_pixels` 5,120 / 7,642, `raw_lipschitz`, `sphere_lipschitz`, `conversion_bytes` and **all nine
+> MAE columns** are byte-identical across the two runs. `M-279`'s rule is satisfied — the new run agrees
+> with the old one on everything that is not a clock — and the replacement for the withdrawn claim is
+> below, denominated in those integers.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 field-traced AO under **2.0 ms** at 1920×1080, 8 rays, 16 steps | < 2.0 ms | **HELD — `ao_ms_field` 0.399648 (`gyroid`) / 0.136320 (`fbm_terrain`); still HELD at 0.940647 / 1.221536 corrected to full coverage, margin 2.13× / 1.64×** |
+| C2a **SSAO does not match it** (the registered falsifier) | SSAO ≥ field on the two named sets | **HELD — SSAO's MAE exceeds the field arm's on seam, silhouette and whole image, on both fields: 3.93× / 2.26×, 19.09× / 1.52×, 11.36× / 2.14×. `c2_holds` = true** |
+| C2b field-traced AO has **NO** darkening error at chunk seams | 0 | **FALSIFIED — `seam_mae_field` 0.021313 / 0.034184** |
+| C2c field-traced AO has **no haloing** at silhouettes | 0 | **FALSIFIED — `halo_mae_field` 0.007323 / 0.028428** |
+| C3 the construction cost RTSDF pays is **ZERO** here | `rebuild_ms − resident_ms` = 0, and a zero resident cost | **FALSIFIED — `rebuild_minus_resident_ms` 10.408696 / 12.735174 ms, and `resident_ms` 2.676582 / 1.201640 is not zero either. `c3_holds` = false on both** |
+| vacuity control: seam and silhouette sets non-empty, as counts | > 0 | **`seam_pixels` 84,375 / 17,938; `silhouette_pixels` 5,120 / 7,642, with both negative arms at exactly 0** |
+
+**The SHARE recomputation, computed and printed before the harness ran, and it is the best thing on this
+row.** C1 is an absolute bar and not a ratio, so there is no `✗51` denominator to be unreachable behind —
+the registered SHARE is *"the whole AO budget, currently paid in full by a mesh-based pass"*, which is
+100%. What had to be checked instead is whether **2.0 ms is arithmetically available at all**, and the two
+published anchors the registration itself cites both say no:
+
+| anchor | implies at 1920×1080, 8 rays, 16 steps |
+|---|---:|
+| queries the configuration demands (`queries_per_frame`) | **265,420,800** per frame |
+| 2.0 ms at that count | **132.71 G queries/s** |
+| nvblox's best measured rate, 7.3 G/s on an RTX 3090 Ti | 36.4 ms |
+| nvblox's worst, 0.8 G/s | 331.8 ms |
+| RTSDF's own 4.60 ms trace at 1024², scaled to 2.07 Mpx and to a 3090 | ≈6.06 ms |
+| 8 trilinear loads per query, all resident in L1 (~17.8 TB/s aggregate) | 0.48 ms |
+| the same traffic all the way out to VRAM (936 GB/s) | 9.1 ms |
+
+265,420,800 = 1920 × 1080 × 8 × 16, and 265,420,800 / 2.0 ms = 132.71 G/s. **The bar sits outside both
+published anchors and inside the spread of the memory hierarchy** — 4.17× above the 0.48 ms an
+all-L1-resident trace would take and 4.55× below the 9.1 ms the same traffic costs from VRAM. It was
+reachable only if three things held at once: a flat 129³ `f32` grid is a far cheaper query than a
+block-hashed TSDF lookup; the 8.586756 MB grid (`distance_bytes` 8,586,756 against 6 MB of L2) is carried
+by locality rather than capacity; and sphere traces terminate early rather than running all 16 steps.
+**The run landed in the L1-bound regime**: at full coverage 0.940647 / 1.221536 ms is 1.96× / 2.54× the
+all-L1 figure and 9.67× / 7.45× under the VRAM one — an order of magnitude nearer the cache end. Against
+the two anchors it is 38.70× / 29.80× faster than nvblox's implied 36.4 ms and 6.44× / 4.96× faster than
+RTSDF's scaled 6.06 ms.
+
+**And that is exactly why the nominal query count is a ceiling and not a count**, which is C1's mechanism.
+Read at face value, 265,420,800 queries in 0.940647 ms is **282.17 G/s**, 38.65× nvblox's best measured
+rate; no plausible per-query win is 38×. The resolution is on the row: `march_exhausted` is **0 of
+7,048,000 marches** on `gyroid` and **10,249 of 1,851,264 — 0.5536%** on `fbm_terrain`, so essentially
+every sphere trace converges before its 16th step and the 16-step product is never issued. A sphere trace
+steps by the true distance (Hart 1996, `10.1007/s003710050084`), so 16 steps is not the binding constraint
+at a 32-cell radius. The remaining difference is representational: an indexed load out of a resident flat
+array is not the same operation as nvblox's block-hashed lookup.
+
+**Coverage, and the part of C1 that is run-independent.** The pass dispatches all 2,073,600 pixels but a
+background pixel returns before it traces anything, so the clock only ran where there was surface:
+
+| field | `hit_pixels` | `hit_fraction` | `ao_ms_field` | `ns_per_traced_pixel` | `ao_ms_field_full_coverage` | `c1_holds_full_coverage` |
+|---|---:|---:|---:|---:|---:|---|
+| `gyroid` | 881,000 | 0.424865 | 0.399648 | **0.4536** | **0.940647** | true |
+| `fbm_terrain` | 231,408 | 0.111597 | 0.136320 | **0.5891** | **1.221536** | true |
+
+881,000 / 2,073,600 = 0.424865 and 231,408 / 2,073,600 = 0.111597; 0.399648 × 10⁶ / 881,000 = 0.4536 ns.
+**`ns_per_traced_pixel` is on the row so a reader recomputes at their own coverage instead of trusting the
+scaling**: full-coverage ms = `ns_per_traced_pixel` × 2,073,600 / 10⁶, which reproduces 0.9406 and 1.2216
+from the two columns independently.
+
+**The linear extrapolation is justified rather than assumed, on three grounds from the file.** (1) At
+7,048,000 and 1,851,264 marches the pass is far above any launch-overhead regime, and the scaling charges
+the fixed dispatch cost a second time, so it over-estimates rather than flatters. (2)
+`march_exhausted_fraction` 0.000000 / 0.005536 says the mean step count per ray is set by convergence, not
+by the cap, so adding traced pixels adds rays at the same depth rather than deepening the existing ones.
+(3) The two rows are themselves a two-point test in the extrapolated variable: coverage differs by
+**3.81×** (0.424865 / 0.111597) while `ns_per_traced_pixel` differs by only **1.30×** (0.5891 / 0.4536),
+and in the direction that makes the *sparser* field dearer per pixel — so the residual non-linearity over
+a near-4× coverage range is under 30% and biased against the extrapolation.
+
+***What C1's verdict is actually worth, which is the replacement for the withdrawn claim.*** The coverage
+correction is a property of the fixture — two integer counts over an integer count, identical in both runs.
+Whether the *corrected* figure clears 2.0 ms is not: **the same binary on the same host answered
+`c1_holds_full_coverage` false and then true**, at 2.107926 / 2.669887 and then 0.940647 / 1.221536. This
+is `✗24`'s rule and `M-281`'s in a new costume — *a wall-clock ratio is not a gate; gate the count the
+ratio samples*, and an absolute millisecond is worse than a ratio because it does not even cancel the
+machine. So the durable content of C1 is not the boolean but `ns_per_traced_pixel`, `hit_pixels` and
+`march_exhausted`, from which the bar is re-decidable on any coverage and any adapter. **A verdict that
+flips between two runs of one binary should never have been the headline, and the registration wrote it as
+one.**
+
+**C2, with the comparative claim and the absolute claims scored separately, because they disagree.**
+
+| set | px sampled | reference mean | field mean | SSAO mean | `mae_field` | `mae_ssao` | ideal-8-ray `mae_floor` | field ÷ floor | SSAO ÷ field |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `gyroid` seam | 1,536 | 0.016099 | 0.010173 | 0.075440 | **0.021313** | 0.083790 | 0.019723 | 1.081× | **3.93×** |
+| `gyroid` silhouette | 1,536 | 0.007323 | 0.000000 | 0.138955 | **0.007323** | 0.139813 | 0.007323 | **1.000×** | **19.09×** |
+| `gyroid` whole image | 1,536 | 0.012390 | 0.006348 | 0.171245 | 0.015661 | 0.177979 | 0.014631 | 1.070× | 11.36× |
+| `fbm_terrain` seam | 1,536 | 0.048847 | 0.021973 | 0.110121 | **0.034184** | 0.077349 | 0.036381 | **0.940×** | **2.26×** |
+| `fbm_terrain` silhouette | 1,536 | 0.045729 | 0.029867 | 0.056522 | **0.028428** | 0.043289 | 0.028940 | **0.982×** | **1.52×** |
+| `fbm_terrain` whole image | 1,536 | 0.075784 | 0.052246 | 0.117719 | 0.037490 | 0.080079 | 0.038258 | **0.980×** | 2.14× |
+
+**The registered falsifier is not met and the registered claim is still false.** *"SSAO matching it"* does
+not happen — SSAO is above the field arm on all six sets — so `c2_holds` is true. But the clause as written
+says field-traced AO has **no** seam darkening and **no** haloing, and `seam_mae_field` and
+`halo_mae_field` are non-zero on every row. Scoring one verdict over both halves would have hidden which
+one the row supports.
+
+***What kind of error the non-zero is, and this is what the `mae_floor` column is for.*** `seam_mae_floor`
+and `halo_mae_floor` are the same 8 directions cast against the **mesh** by `parry3d` against the same
+512-ray reference: the error an *ideal* 8-ray method posts from discretisation alone. The field arm sits at
+**1.081× / 0.940×** the floor at seams, **1.000× / 0.982×** at silhouettes and **1.070× / 0.980×** over the
+whole image — three of six *below* it. On `gyroid`'s silhouettes the field arm and the ideal mesh-traced
+8-ray arm both read exactly **0.000000** over all 1,536 pixels. So the field representation contributes no
+measurable error beyond the ray count: **C2b and C2c are falsified by the 8-ray budget, not by the field.**
+
+***And SSAO's error is not a seam artefact either, which the `all_*` control set is what caught.*** Any
+method with a uniform bias posts a non-zero MAE on any subset, so a seam-set MAE alone cannot test a claim
+about seams. Measured against the whole-image control, SSAO's seam error is **0.471× / 0.966×** and its
+silhouette error **0.786× / 0.541×** of its error everywhere else — at or *below* its error away from the
+named locations. SSAO is uniformly over-dark: `all_ssao_mean` ÷ `all_reference_mean` = **13.82×**
+(`gyroid`) and **1.55×** (`fbm_terrain`). Reading that global bias as the registered seam artefact would
+have been a local conclusion drawn from a uniform error.
+
+***Both arms are biased and they are biased in opposite directions, which is the honest form of "the field
+wins".*** `all_field_mean` ÷ `all_reference_mean` is **0.512× / 0.689×** — the field arm *under*-darkens by
+as much as SSAO over-darkens on `fbm_terrain` — and the mechanism is arithmetic: an 8-sample Bernoulli
+estimator's quantum is 0.125 against true occlusion of 0.012390 / 0.075784, i.e. **10.1× / 1.65× coarser
+than the signal**, so most pixels round to zero in both 8-ray arms at once. That is also why the field arm
+and the mesh floor agree to six decimals rather than to within Monte Carlo noise: the 8 directions are one
+fixed cosine-weighted Hammersley set, **uploaded from Rust and read by both the WGSL trace and the
+`parry3d` caster**, in the same Duff tangent frame, so the two arms cannot sample different hemispheres.
+
+**C3, scored on `resident_ms` and `rebuild_ms` as they stand in the file.**
+
+| field | `resident_ms` | `rebuild_ms` | `rebuild_minus_resident_ms` | vs RTSDF's 2.09 ms flood | `flood_build_ms` | `distance_upload_ms` | `conversion_ms` | `conversion_bytes` | `raw_lipschitz` |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `gyroid` | 2.676582 | 13.085278 | **10.408696** | **4.98×** | 8.281948 | 1.332881 | 9.614829 | 17,173,512 | **1.414040** |
+| `fbm_terrain` | 1.201640 | 13.936814 | **12.735174** | **6.09×** | 7.965775 | 1.393392 | 9.359167 | 17,173,512 | **2.179314** |
+
+The clause says the construction cost is **zero here**. It is 10.408696 and 12.735174 ms —
+**4.98× and 6.09× the 2.09 ms RTSDF pays on older silicon for the same job**, and `conversion_ms` alone
+(`flood_build_ms` + `distance_upload_ms`) is 73.5% and 67.2% of the rebuild. FALSIFIED, and the registered
+falsifier's *stated meaning* is also met on the nose: *"the field is not reusable in the form the tracer
+wants and there is a conversion nobody costed."*
+
+***Read literally, "a non-zero resident cost" is a degenerate test, and the harness says so.***
+`resident_ms` is wall clock around a submit-and-wait of the **trace**, so it can never be zero — 2.676582
+and 1.201640 ms are 6.70× and 8.81× the GPU span inside them, which is round-trip latency and not
+construction. The run-independent reading of the clause is `raw_lipschitz`: a sphere trace is sound exactly
+when the field is 1-Lipschitz, and the crate's resident `Sdf` is **1.414040** (`Gyroid`, sin·cos sums) and
+**2.179314** (`FbmTerrain`) per cell. Above 1 the march overshoots and **the jump flood is a mandatory
+conversion, not an optimisation** — so `c3_holds = raw_lipschitz <= 1.0` is false on both. The positive arm
+is `sphere_lipschitz` = **1.000000**: an exact SDF on the same grid through the same function, so "1.41 > 1,
+therefore a conversion is needed" does not rest on an instrument that has only ever been seen failing.
+`flood_lipschitz` 1.036510 / 1.084507 confirms the flood delivers what the tracer wants.
+
+***And the conversion is charged twice, which is the number that should leave this row.***
+`conversion_bytes` = **17,173,512** = 2 × `distance_bytes` (8,586,756): `JumpFlood::build` returns
+`Vec<f32>`, so the distances the flood has already written into a device buffer are read back to the CPU
+and written straight back. That round trip is what makes the crate's construction 5–6× RTSDF's on faster
+silicon.
+
+**The vacuity control the registration names, and why its values prove the fixture could have failed.**
+
+| column | `gyroid` | `fbm_terrain` | what it is |
+|---|---:|---:|---|
+| `seam_pixels` | **84,375** | **17,938** | the registered count — geometric band around interior chunk-boundary planes |
+| `silhouette_pixels` | **5,120** | **7,642** | the registered count — view-distance discontinuity |
+| `seam_pixels_one_chunk` | **0** | **0** | the identical G-buffer reclassified with the interior plane list emptied |
+| `silhouette_pixels_flat` | **0** | **0** | the same classifier over an image where every pixel hits at one constant distance |
+| `seam_pixels_screen` | 14,741 | 5,817 | an independent second definition — chunk-id discontinuity between screen neighbours |
+
+Both registered sets are non-empty and asserted so, and `seam_pixels < hit_pixels` is asserted too, so the
+seam set is not the whole image. **The two zeros are what make the two counts readings rather than
+tallies** (`M-44`): `seam_pixels_one_chunk` runs the same classifier over the same pixels with the world
+described as one chunk and returns exactly 0, and `silhouette_pixels_flat` runs the same silhouette
+classifier over a constant-distance image and returns exactly 0. Both are `assert_eq!(…, 0)`, so a
+classifier that could not say no would fail the run rather than print a confident count. `seam_pixels_screen`
+cross-checks the geometric band against a second definition instead of trusting it.
+
+**A second vacuity gate had to be added after the first run, and it is the one that caught the fixture:**
+`assert!(reference_mean > 1/512)` on each set. The reference means are now **8.24 and 3.75 quanta** on
+`gyroid` (0.016099, 0.007323 × 512) and **25.01 and 23.41** on `fbm_terrain` (0.048847, 0.045729) — so the
+MAEs below are differences from something rather than from nothing.
+
+**What the depth buffer is, and why it is a faithful stand-in.** A real one. The 64 per-chunk
+`MeshBuffer`s are concatenated into one vertex buffer (position, normal, chunk id) and one index buffer and
+rasterised through a `wgpu` render pipeline at 1920×1080 into a `Depth32Float` depth attachment
+(`depth_write_enabled`, `depth_compare: Less`, cleared to 1.0) plus two `Rgba32Float` G-buffer targets —
+world position + chunk id, world normal + hit mask, `a = -1` as the miss marker; `gbuffer_ms` 2.399620 /
+2.351719 is that pass's own wall clock and nothing more. SSAO reads the depth attachment as a
+`texture_depth_2d` and the normal target, and nothing else; it reconstructs world positions from NDC depth
+through an `inv_view_proj` derived analytically rather than numerically inverted. It is faithful because it
+**is** what a depth prepass over this crate's output produces: the same triangles (`triangles` 101,280 /
+65,254 over `vertices` 53,874 / 34,860), the same hardware rasteriser, the same depth format a deferred
+renderer would bind. Nothing about the image is synthesised. The one arm that *is* synthetic — the
+constant-distance image — exists only as the silhouette classifier's negative control and is labelled as
+such. `field_start_inside` = **0 of 881,000** and **0 of 231,408** says the flooded field and the
+rasterised mesh agree about which side of the surface every primary hit is on, so the three arms are
+estimating one quantity over one population. `adapter` = **NVIDIA GeForce RTX 3090** on `backend` =
+**Vulkan**, as the registration requires.
+
+**Four fixture defects, every one caught by this harness's own controls rather than by review.**
+
+1. **The first run was vacuous and the CSV would have looked perfect.** At `ao_radius_cells = 8` the
+   512-ray reference came back 0.0000 on `gyroid` over 1,536 seam and 1,536 silhouette pixels — and so did
+   the field arm, so `seam_mae_field` and `halo_mae_field` read exactly 0.000000 and C2 scored a flawless
+   HELD. Pure `M-44`: a perfect method and a broken one both score zero against a reference with nothing in
+   it. The cause was geometric rather than a bug — `Gyroid` at scale 1 has channels about π/2 wide, so a
+   hemisphere of radius 0.25 world units genuinely sees no opposite wall. `ao_radius_cells` is now
+   **32.000** (one world unit, comparable to the field's own feature size) and `eps_cells` was **decoupled**
+   from `ao_radius_cells / march_steps`, because tying them made epsilon 2 cells at the wider radius, which
+   stops the march on a surface it has not reached and *invents* occlusion; it is now **0.500**. Then the
+   gate that should have been there from the start.
+2. **C3's predicate was the harness's invention, not the registration's.** `resident_ms < rebuild_ms × 0.05`
+   made the verdict a function of how much of the frame the surface happened to cover, and reported
+   FALSIFIED on `gyroid` and HELD on `fbm_terrain` in one run for a reason with nothing to do with the
+   clause. Replaced with the registered falsifier, instrumented as `raw_lipschitz` with `sphere_lipschitz`
+   = 1.000000 as the positive arm.
+3. **A seam-set MAE alone cannot test a claim about seams.** The `all_*` control set — the same three
+   estimators over a stride sample of every visible pixel — is what turned *"SSAO's seam error is 0.083790"*
+   into *"SSAO's seam error is 0.471× its error everywhere else, so there is no seam artefact"*.
+4. **The shader's traced population and the CPU classifier's could have disagreed silently**, which would
+   have put every per-set number over the wrong population. The shader counts the pixels it actually traced
+   and `assert_eq!` matches it against the CPU count: **881,000 and 231,408**, equal on both rows.
+
+**What changed as a result: nothing landed, and the null is the conclusion. Do not build this as
+registered.** No source change; `crates/isomesh/src/**` and `crates/isomesh-gpu/src/**` are untouched, and
+R-074 is not one of Phase 24's registered source tickets. The field trace is **5.30× / 3.88×** dearer than
+the SSAO pass measured beside it on the same rows (0.399648 vs 0.075392; 0.136320 vs 0.035168, and the same
+ratio at full coverage since both scale by one `hit_fraction`) and buys **11.36× / 2.14×** lower whole-image
+mean absolute error against ground truth, and 1.52–19.09× across all six sets — a real trade, worth having
+on the record. But the hypothesis's premise, *"the expensive half is already paid"*, is **inverted**:
+`raw_lipschitz > 1` means the resident field must be flooded before it can be traced at all, and
+`conversion_ms` is **9.614829 / 9.359167 ms** — 4.60× / 4.48×
+RTSDF's 2.09 ms construction, and **24.1× / 68.7×** the trace it enables (10.2× / 7.7× at full coverage).
+On a static scene the field wins on quality per millisecond; on a destructible one — the only scene this
+crate is for — that conversion is paid on every dig and the depth buffer, which the rasteriser rebuilds for
+free every frame, wins outright. The one-path rule plus a 4–5× cost increase over the baseline does not buy
+an exception; `P-70`/`P-71`'s precedent is to measure it, surface the decision and stop.
+
+**Two decisions this surfaces without opening them here.** First, if field-traced AO is ever wanted, the
+prerequisite is a **device-resident `JumpFlood` output** — a `build_into` that leaves the distances where
+the flood wrote them — which removes 17,173,512 bytes and the larger part of the rebuild in one change and
+helps anything else that wants the distance field on the GPU. Second, and cheaper: **the 8-ray budget, not
+the representation, is what limits quality here**, proved by the six `mae_floor` ratios of 0.940–1.081.
+Anyone tempted to improve field AO by refining the field is optimising the term that is already at the
+floor; the lever is rays, and a per-pixel-rotated kernel needs TAA to resolve, which `P-76`'s C2 and `P-77`
+both argue a destructible world has already spent.
+
+**Registered deviations, stated rather than absorbed.** The *"16-step cone march"* is implemented as a
+16-step **sphere trace**: the step length is the distance to the nearest surface floored at `eps_cells`, so
+the marched sphere radius *is* the cone (Hart 1996), and a ray reaching `d < eps` inside the radius is
+blocked — a binary visibility, which is what the 512-ray mesh reference measures, so all three arms
+estimate one number. A soft Quilez-style accumulator would have produced a quantity the reference does not
+measure. No total frame time is claimed for a pipeline that does not exist: RTSDF's 10.22 ms / 97 fps is
+quoted as the source's number and never as this machine's. The MAEs are over 1,536 pixels per set by
+uniform stride across the sorted set (`seam_sampled` / `halo_sampled` / `all_sampled` = 1536), while the
+registered `seam_pixels` / `silhouette_pixels` are the **full** counts the vacuity control asks for; 512
+rays × 4,608 pixels × 2 fields through `parry3d`'s BVH is `reference_ms` 338.594 / 420.928 ms. SSAO's error
+*magnitude* is radius-dependent and the radius is the clause's 32 cells, so 13.82× over-darkening is a
+large-radius figure — the **sign** of the comparison does not depend on it, the magnitude does. The
+registration names only the Zen 3 / RTX 3090 rig, which is this host, so nothing on this row is BLOCKED.
+
+**Would be shown wrong by:** a `raw_lipschitz` at or below 1 on any field this crate ships, which would
+make the flood optional and restore the hypothesis's premise in one number; a `march_exhausted_fraction`
+near 1, which would mean the 16-step cap is binding and the nominal 265,420,800 queries are really being
+issued, invalidating C1's mechanism at any coverage; a `seam_mae_field` above its `seam_mae_floor` by more
+than the two-arm agreement's own spread, which would mean the field representation contributes seam error
+of its own after all rather than inheriting the 8-ray residue; an SSAO arm whose seam or silhouette MAE
+exceeds its whole-image MAE, which would restore the registered *seam artefact* rather than a uniform bias;
+or a device-resident flood output that brings `conversion_ms` under the trace it enables, which is the one
+change that would make C3's clause worth re-registering.
+
+### 🔬 M-387 — C1, C2 and C3 all HELD: per-vertex material weights cost **3.11–3.16%** of extraction and the share is flat across a 4× log, they beat a per-fragment log walk by **12.93× to 40.89×** widening monotonically across `M-50`'s four buckets, and interpolation misclassifies **0.18–0.35%** of the surface with **99.36–99.73%** of it inside one cell of a boundary — and C1 held only because the surface has **half** the vertices the pre-run estimate assumed, which had predicted it FALSIFIED (P-75, R-075)
+
+**M.** `cargo bench --bench experiment_p75`, `docs/experiments/p-75.csv`, **4 rows**, scalar `f32`,
+Zen 3 (`cpu_mhz` 4200.114 on every row). `game_dig`'s 8×4×8 chunks of 16³ cells — **1,257,728
+samples**, 256 · 17³ — over `M-50`'s 60-carve `ISOMESH_AUTOCARVE=60` trace with one `Edit::Spray`
+after every third carve, swept in that trace's own four brush buckets (15 / 30 / 45 / 60, giving
+`log_len` 20 / 40 / 60 / 80). Median of `reps = 3` for C1, median-of-*ratio* of `shade_reps = 9` for
+C2 so the two absolute times beside a `speedup` come from one run (`M-281`). Committed at
+**`cfb58df`**, header clean — no `(WORKING TREE DIRTY)` — and an ancestor of HEAD.
+
+> **RE-RUN, and every number below is the clean file's.** The original harness ran at `63c7161` with
+> the header stamped `(WORKING TREE DIRTY)` and ~25 sibling agents building; that run is not quoted
+> here, because an entry that quotes numbers no committed file contains is `✗35`'s and `✗52`'s defect.
+> **Every integer and every deterministic column reproduced exactly** — `vertices` 24470 / 25471 /
+> 25482 / 25482, `triangles`, `visible_triangles`, `visible_pixels`, `clipped_triangles`,
+> `boundary_vertices`, `boundary_vertices_all`, `materials`, `brushes_biting`,
+> `field_walk_mismatches`, every misclassification column, `pixel_disagreement`,
+> `within_one_cell_fraction` and `l1_max_error` — which is `M-279`'s rule satisfied: the new run
+> agrees with the old on everything that is not a clock. **Every clock moved, and two things the old
+> run concluded do not survive.** `weights_share` was 2.86–3.12% and is **3.11–3.16%**; `speedup` was
+> 12.812 / 21.853 / 30.875 / 40.305 and is **12.934 / 22.476 / 31.730 / 40.893**; `extract_ms` was
+> 59.964 / 164.033 / 252.418 / 184.709 — **non-monotone in the log** — and is 71.677 / 98.242 /
+> 141.101 / 212.029, monotone. The two withdrawn claims are named in C2 below.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 per-vertex weights inside the existing extraction walk cost **under 5%** of extraction | < 0.05 | **HELD — 0.031337 / 0.031591 / 0.031397 / 0.031135, worst 3.16%, a 1.5% band across a 4× log** |
+| C2 at 1920×1080 on `game_dig`'s scene, weights beat a per-fragment log walk by **≥ 4×**, and the gap **widens** across `M-50`'s four buckets | ≥ 4× and monotone | **HELD — 12.934 / 22.476 / 31.730 / 40.893, `speedup_widens = true`. Per-pixel shading cost over a visibility buffer, *not* engine frame time** |
+| C3 misclassification against the field at 10⁶ surface points is **under 2%** and **concentrated within one cell** of a material boundary | < 0.02, "concentrated" (no number registered) | **HELD — 0.001830 / 0.003407 / 0.003463 / 0.003463, and 99.73 / 99.59 / 99.36 / 99.36% inside one cell, against this harness's stated reading of "concentrated" as ≥ 0.95** |
+
+---
+
+**The pre-run prediction was C1 FALSIFIED, and it is on record in the bench header as it was written.**
+The SHARE arithmetic registered before the harness existed is
+
+```text
+weights_share ≈ (vertices / samples) · (per-vertex walk / per-sample extraction step)
+```
+
+and the estimate put the surface at order **4·10⁴** vertices, so `vertices / samples ≈ 4%`, which with
+a second factor above one predicted **~6%** against a 5% bar. The measured surface is **25,482**
+vertices, so `vertices / samples = 25,482 / 1,257,728 = 0.020260` and the share came in at 3.11–3.16%.
+**C1 held because the estimate was wrong about the vertex count by 2×, not because the clause was
+unreachable** — the clause was live in both directions and the shape of the arithmetic was right. This
+is `M-19`'s rule earning its keep: the prediction being committed before the run is what makes the miss
+readable instead of a tidy story about why 3% was obvious.
+
+**The share's second factor is above one, not below, and its denominator is currently zero.** C1's
+numerator is *the whole vertex-attribute stage*, and in `game_dig` that stage does not exist:
+`insert_attribute` is called for `ATTRIBUTE_POSITION`, `ATTRIBUTE_NORMAL` and an all-zero
+`ATTRIBUTE_UV_0` (`game_dig.rs:2088-2095`) and nothing else, `triplanar.wgsl:119-126` derives its three
+strata **per fragment** from the interpolated normal and the world height, and `isomesh::paint::shade`
+(`paint.rs:254`) exists but no example calls it. So the clause is *"a new cost, as a fraction of
+extraction"*, starting from nothing. And the surcharge over `vertices / samples` runs the wrong way:
+`PaintStack::sample` skips sprays **without evaluating their shapes** — its own doc says *"meshing a
+painted world costs one `match` arm more … and not a field evaluation more"* (`paint.rs:228-241`) —
+while a material weight has to evaluate every one of them.
+
+| bucket | `log_len` | `vertices` | `vertices/samples` | `weights_share` | surcharge |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 20 | 24,470 | 0.019456 | 0.031337 | **1.611×** |
+| 2 | 40 | 25,471 | 0.020252 | 0.031591 | **1.560×** |
+| 3 | 60 | 25,482 | 0.020260 | 0.031397 | **1.550×** |
+| 4 | 80 | 25,482 | 0.020260 | 0.031135 | **1.537×** |
+
+**The mechanism for C1 is that numerator and denominator are the same walk**, which is why the share is
+flat where both absolutes are not: over the 4× log, `extract_ms` grows **2.958×** (71.677 → 212.029)
+and `weights_ms` grows **2.939×** (2.246 → 6.601) — the two growth factors differ by **0.65%**, so
+their ratio cannot move. The residual 1.54–1.61 surcharge is the sprays the per-vertex walk must
+evaluate and the per-sample walk skips (`log_len / brushes = 80/60 = 1.333` on every bucket) plus
+`base_weights` and the argmax. Per-vertex weights are cheap for a purely geometric reason: **the
+surface is 2D inside a 3D sample grid**, and there are ~49× fewer vertices than samples.
+
+> **A variant was built and put back, and its numbers are the bench header's, not this CSV's.** A
+> spray-free arm — the same 60 carves, no `Edit::Spray` at all — reported `weights_share = 0.0203`
+> against `vertices / samples = 0.020260`, i.e. with the sprays skipped a per-vertex weight costs
+> **exactly one sample's worth of walk** and the share *is* the vertex-to-sample ratio. It also
+> reported `boundary_vertices = 244` and `misclassified_points = 3624`. It is not committed as an arm
+> because C2's premise requires the sprays, and **it owes an E× row in Part 4b** — those three numbers
+> appear in no CSV and are quoted here as the bench header's, per `✗39`'s rule about which artefact a
+> number came from.
+
+---
+
+**The instrument, in full, and what it is not.** `crates/isomesh` must not depend on Bevy
+(`CLAUDE.md` hard rule 2), so **there is no renderer here and no frame time is invented anywhere**.
+C2's two numbers are **per-pixel shading cost over a real visibility buffer, explicitly not engine
+frame time.** The harness software-rasterises the extracted mesh at 1920×1080 (`screen_pixels`
+2,073,600) through `game_dig`'s own camera — eye `(0, 1.70, 6.0)` (`game_dig.rs:947`), yaw 0 and pitch
+−0.15 (`game_dig.rs:698-701`, applied at `:2450`), Bevy's default 45° vertical field of view — keeping
+the **nearest fragment per pixel** with its triangle index and its **perspective-correct**
+barycentrics. `visible_pixels` is **1,110,155 of 2,073,600 = 53.54%**; the remaining 963,445 are sky
+and cost nothing in either path, as a real deferred pass would also skip them. `clipped_triangles` is
+**5,179** on every row — triangles dropped whole for a vertex behind the near plane, on the row rather
+than assumed away, because the camera sits 1.2 units above the hilltop.
+
+**The fairness of the split is the load-bearing part, and it is arithmetic rather than assertion.**
+
+| charged to | column | bucket 1 / 2 / 3 / 4 |
+|---|---|---|
+| **neither** — the varyings both paths pay identically (interpolated world position and normal) | `interp_ms` | 14.277 / 12.574 / 13.278 / 20.217 |
+| **neither** — the geometry pass both paths share | `raster_ms` | 19.157 / 19.772 / 19.864 / 27.663 |
+| the vertex path | `frame_ms_vertex` | 6.396 / 6.337 / 6.277 / 7.108 |
+| the fragment path | `frame_ms_fragment` | 82.725 / 142.426 / 199.184 / 290.662 |
+
+The interpolation is computed **once, outside both timers**. On hardware that is the interpolator, and
+charging it to one side would be charging the comparison — `interp_ms` at bucket 4 is 20.2 ms against a
+6.4 ms vertex path, so putting it on the vertex side alone would move the speedup from 40.89 to 10.65
+and putting it on the fragment side would move it to 43.7. It is on the row so a reader can do either
+sum. The **vertex path** interpolates the four-channel weight attribute from the triangle's three
+vertices, renormalises and takes the argmax; the **fragment path** recomputes the same quantity exactly
+— the stratum blend from the interpolated normal and height, then **one walk of the whole edit log**,
+compositing every spray's coverage `ramp(shape(p), softness) · ramp(|f_prefix(p)|, depth) · alpha`
+(`paint.rs:182-217`).
+
+**Every `game_dig` constant is restated with its source line**, because this bench cannot link
+`bevy_isomesh`:
+
+| quantity | value | source |
+|---|---|---|
+| chunk edge | 16 cells | `game_dig.rs:125` |
+| cell size | 0.125 | `game_dig.rs:127` |
+| chunks | 8×4×8 | `game_dig.rs:137` |
+| layout origin | `(−8, −5.4, −8)` | `game_dig.rs:955-969` |
+| terrain | `y − (0.35·sin(0.9x)·cos(0.7z) + 0.15·sin(2.1x))` | `game_dig.rs:171-175` |
+| brush radius | 0.25 | `game_dig.rs:1056` |
+| carve `n` centre | `(−0.9 + 0.30n, 0.55 − 0.045n, 2.2 − 0.34n)` | `game_dig.rs:665-668` |
+| stratum blend | `up·shallow, (1−up)·shallow, 1−shallow` | `triplanar.wgsl:119-126` |
+| slope ramp | `smoothstep(0.55, 0.82, n.y)` | `triplanar.wgsl:76-77, 123` |
+| depth ramp | `smoothstep(−1.6, −0.4, p.y)` | `triplanar.wgsl:83-84, 124` |
+| spray widths | radius 0.75, `softness` 0.10, `depth` 0.05 | `paint.rs:50-55` (the module's own example) |
+
+The five sandbox walls are **not** in the mesh and that is deliberate: they are Bevy cuboids outside the
+field (`game_dig.rs:805-841`) carrying a forced concrete layer, so they walk no log in either path and
+adding them would only add pixels the two paths shade identically — which flatters the vertex path.
+
+---
+
+**C2's "widens" half is nearly implied by construction, and the registration's own falsifier says so.**
+The vertex path's cost is independent of log length **by design** — it reads three vertex attributes —
+and the fragment path's is **monotone in it** by construction, because it is one walk of the log. So
+`speedup = fragment / vertex` cannot fail to widen unless the fragment path is **flat** in log length,
+which is precisely the falsifier the registration names: *"the fragment path is not paying `M-138`'s
+cost and the premise is wrong."* **The clause therefore has content only as a check on the instrument**,
+and the column that carries that check is `fragment_ns_per_log_entry`.
+
+| bucket | `log_len` | `vertex_ns_per_pixel` | `fragment_ns_per_pixel` | `fragment_ns_per_log_entry` | `speedup` | `speedup / log_len` |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 20 | 5.7611 | 74.5168 | **3.7258** | 12.934 | 0.6467 |
+| 2 | 40 | 5.7080 | 128.2939 | **3.2073** | 22.476 | 0.5619 |
+| 3 | 60 | 5.6546 | 179.4203 | **2.9903** | 31.730 | 0.5288 |
+| 4 | 80 | **6.4026** | 261.8211 | **3.2728** | 40.893 | 0.5112 |
+
+**What the column can tell you:** the walk is the cost. `fragment_ns_per_log_entry` is 2.99–3.73 ns and
+never near zero, so the per-pixel cost is a few nanoseconds *per log entry* and not a constant with a
+walk-shaped label on it. The registered falsifier — a fragment path flat in log length — would show
+this column collapsing toward `fixed / log_len`, i.e. falling as `1/log_len`: 3.7258 → 1.86 → 1.24 →
+0.93. It does not.
+
+**What it cannot tell you: the shape of the slope, because it is an absolute per-pixel nanosecond and
+therefore carries the machine.** In the clean run it is **not monotone** — it falls 3.7258 → 3.2073 →
+2.9903 and then **rises to 3.2728**. That bucket-4 rise sits beside a `vertex_ns_per_pixel` of 6.4026
+against bucket 3's 5.6546, **+13.2% on work that is bit-identical**: buckets 3 and 4 share
+`vertices = 25,482`, `triangles = 45,890`, `visible_triangles = 17,357`, `visible_pixels = 1,110,155`,
+`clipped_triangles = 5,179` and `brushes_biting = 26`, and differ only in `log_len` (60 → 80) and
+`sprays` (15 → 20) — which the vertex path never reads. `raster_ms` rises 19.864 → 27.663 (**+39%**) and
+`interp_ms` 13.278 → 20.217 (**+52%**) on that same frozen geometry. Three columns charged to *shared*
+work moving together on identical input is the signature of a machine-wide excursion, not of a loop.
+
+**Two claims from the dirty pre-run are withdrawn here, and the replacements are grounded on the
+integers.**
+
+1. **Withdrawn: "the growth is sub-linear and `fragment_ns_per_log_entry` falls monotonically 3.695 →
+   3.134 → 2.968 → 2.853."** True of the superseded run only; the clean file rises at bucket 4. The
+   run-independent replacement is `speedup / log_len`, which is a **within-row** ratio of two timers
+   taken back-to-back in one rep divided by an integer, so no clock survives it: **0.6467 / 0.5619 /
+   0.5288 / 0.5112, monotone falling.** The fragment path's cost per log entry does fall; the
+   machine-carrying column is simply the wrong place to read it.
+2. **Withdrawn: the least-squares decomposition "`fragment_ns_per_pixel = 22.47 + 2.5785 · log_len`, so
+   2.58 ns is per entry against a 22.5 ns fixed part."** Refitting the clean four points gives
+   **7.75 + 3.065 · log_len** — the intercept moves by **2.9×** off a four-point fit with one excursion
+   in it, so the decomposition is not a reportable quantity. `M-19`'s rule (*"a fitted coefficient means
+   nothing until it is compared to the data's own range"*) and `M-21`'s (*"a physically impossible
+   fitted parameter is the model telling you it is wrong"*) both apply: the intercept here is
+   under-determined and the honest statement is the raw column plus the ratio form.
+
+**The controlled pair is what remains, and it is the cleanest thing in the file.** Buckets 3 and 4 hold
+every geometry integer fixed and change `log_len` by **4/3**. `speedup` goes 31.730 → 40.893, a factor
+of **1.289 — below 4/3 = 1.333**, so the fragment path's growth is sub-linear in the log, and **well
+above 1.000**, so it is not flat. Both halves of C2's instrument check, from one pair of rows with a
+frozen fixture. Against the only public arithmetic in this area — a blog post costing 4 materials × 3
+triplanar planes × 5 maps = 60 texture fetches per fragment **with no timing behind it** — this says the
+vertex-attribute route costs **5.65–6.40 ns/pixel of arithmetic and zero extra fetches**, and the
+exact-paint route costs **74.5–261.8 ns/pixel of pure ALU before a single texture fetch**: 290.7 ms for
+one 1920×1080 pass on one Zen 3 core at an 80-entry log.
+
+---
+
+**C3, and the locality half is the informative one.**
+
+| bucket | `misclassified_points` / 10⁶ | fraction | within one cell | `within_one_cell_fraction` | naive-axis probe |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 1,830 | 0.001830 | 1,825 | 0.997268 | 1,603 → **87.60%** |
+| 2 | 3,407 | 0.003407 | 3,393 | 0.995891 | 2,631 → **77.22%** |
+| 3 | 3,463 | 0.003463 | 3,441 | 0.993647 | 2,670 → **77.10%** |
+| 4 | 3,463 | 0.003463 | 3,441 | 0.993647 | 2,670 → **77.10%** |
+
+The rate is **5.8× to 10.9× inside** the registered 2% ceiling. The registration says *"concentrated
+within one cell"* with **no number**, so this harness states its reading in the code — `local_fraction
+>= 0.95` (`experiment_p75.rs:1222-1225`) — because a clause with no threshold cannot be scored; at
+99.4% it holds under any reading above 0.95. The **approximation** is the barycentric blend of three
+vertex weights, i.e. what a rasteriser hands a fragment. The **reference is the field's own answer** at
+the same world position with the normal from `Sdf::gradient` normalised — literally
+`marching_cubes::unit_gradient` (`mod.rs:739-743`), and `PaintStack` does not override `gradient`, so it
+is the same expression the extractor used for the vertex normals. No mesh quantity enters the reference,
+which is what makes every counted disagreement interpolation and nothing else. 10⁶ points are sampled
+uniformly **by area** over the extracted mesh via a cumulative-area CDF and the √-barycentric method,
+`splitmix64` seeded `0x5075000000000001`, no new dependency.
+
+**The mechanism, and the breakdown says the result is not carried by one term.** `misclassified_paint`
+is 1,680 / 2,907 / 2,941 / 2,941 — **84.9–91.8%** of the total, with `misclassified_paint_local`
+99.39–99.88% of that — and it is boundary-local because the spray's lateral falloff (`softness` 0.10) is
+**under one cell** (0.125): a nearly-step boundary cannot be resolved by interpolation across a sub-cell
+triangle, so the error is exactly a one-cell band along each spray's boundary ring.
+`misclassified_blend` is 150 / 500 / 522 / 522 — **8.2–15.1%**, `blend_local` 98.00–100% — and is the
+stratum blend's own nonlinearity: `base_weights` is `smoothstep` in the normal and in height, and
+interpolating `smoothstep(n_y)` across three vertices is not `smoothstep` of the interpolated `n_y`.
+**Both kinds of boundary are populated**, so the locality result does not rest on one term. The *rate*
+is small for the reason the pre-run arithmetic gave: ten sprays inside the sandbox, each a 0.75-radius
+ball with a boundary ring of about 4.7 units, put roughly `10 · 4.7 · 0.125 ≈ 5.9` unit² of a surface of
+order 280 unit² within one cell of *any* boundary — about **2%**, so a 2% misclassification rate would
+have required misclassifying essentially the whole band and a rate above 2% would have required
+misclassification **off** the band. Both directions were live.
+
+---
+
+**The registered vacuity control is `boundary_vertices`, and it reads 294 / 526 / 526 / 526.** It is
+counted over the **visible** mesh only — a vertex belongs to a triangle that produced at least one pixel
+in the visibility buffer, and some mesh edge at that vertex changes the argmax material — and it is
+`assert!`ed non-zero before any row is written (`experiment_p75.rs:1184-1190`), with the message naming
+the consequence: *"the misclassification rate is measured over a single-material scene and every clause
+is vacuous."* The other registered half, `materials >= 2`, is asserted at `:1191`; it reads **4** on
+every row, counted by the **exact** classifier over visible pixels, so it is ground truth rather than
+the approximation's opinion of itself.
+
+**Why the value proves the fixture could have failed, and the honest limit.** The count **moves with the
+fixture** — 294 at fifteen brushes against 526 at thirty — so it is a measurement of the scene rather
+than a constant, and `boundary_vertices_all` (the same count without the visibility restriction) is
+444 / 955 / 962 / 962, so the restriction removes **33.8% / 44.9% / 45.3% / 45.3%** of the world's
+material-boundary vertices: the restriction bites, and it is the restriction that could have zeroed the
+column. **But this control is *satisfied* rather than *at risk* and the entry says so rather than
+letting an audit find it**: the spray-free variant still reported `boundary_vertices = 244` (bench
+header, not this CSV), because `game_dig`'s stratum blend already puts a grass/dirt boundary on the
+tunnel walls via the slope and depth ramps. **What would zero this column is a camera pointed away from
+the dig, not an absence of materials** — which is a real failure mode for a harness that hard-codes an
+eye position, and is what the assertion actually defends. The control that *is* at risk on the paint is
+`field_walk_mismatches`, below.
+
+---
+
+**Five fixture defects, every one caught by this harness's own controls rather than by review.**
+
+1. **C3's first locality probe was the wrong probe, and it would have scored the clause FALSIFIED.**
+   Version one probed the exact classifier six times at one cell along each **world axis**, holding the
+   normal fixed at the interpolated one. That reading is still on the row as
+   `misclassified_within_one_cell_axis` — 1,603 / 2,631 / 2,670 / 2,670, i.e. **87.60 / 77.22 / 77.10 /
+   77.10%** of the misclassified points, three of four buckets below any reasonable "concentrated" bar
+   and all four below 0.95: **C3 FALSIFIED on locality.** Two independent blind spots, both in the
+   instrument: (a) `base_weights` depends on the **surface normal** (`triplanar.wgsl:123`), so part of
+   the material boundary lives in normal space and a probe that freezes the normal cannot see it; and
+   (b) `depth` is 0.05, under half a cell, so every painted point trivially loses its paint one cell out
+   along `y` and scored "local" for free — the probe was **simultaneously too blind and too
+   permissive**. The reported probe walks the **surface**: four steps of one cell in the tangent plane of
+   the field's normal, each pulled back onto the zero set with one Newton step
+   `q -= f(q)·∇f(q)/|∇f(q)|²`, each re-classified with the field's own normal *there*. That gives
+   99.36–99.73%. **The naive reading is kept beside it because the two disagreeing is the finding:** a
+   locality claim is only as good as the direction the probe moves in. Both columns are in the committed
+   file, so this is `✗39`'s rule satisfied — the repaired instrument's values and the old instrument's
+   are each read from the artefact rather than recalled.
+2. **C3's reference was initially a mesh quantity, not the field.** Version one classified the reference
+   with the **interpolated** normal, so the "ground truth" shared the approximation's own error. Fixed to
+   `Sdf::gradient` normalised, which at a vertex makes reference and attribute agree **by construction**
+   — so every counted disagreement is interpolation. This is `M-289`'s rule: a reference implementation
+   used as ground truth needs the same scrutiny as the thing it checks.
+3. **C2's first timing scheme was destroyed by machine contention and produced a non-monotone fragment
+   cost.** With three interleaved reps and independent medians, `frame_ms_vertex` — a loop whose work is
+   **bit-identical** across buckets 3 and 4 — read 10.24 / 10.27 / 6.09 ms and `frame_ms_fragment` went
+   221.8 → 307.5 → **253.7**, i.e. *down* for a longer log. `raster_ms` and `interp_ms` moved with it,
+   which is how the excursion was known to be machine-wide rather than in the loops. Fixed:
+   `SHADE_REPS = 9`, both paths back to back inside one rep, and the reported triple is the rep whose
+   **ratio** is the median, so the two absolutes beside a `speedup` come from one run (`M-281`).
+   `speedup_min` / `speedup_max` put the residual spread on the row — bucket 4 is **23.219 to 50.521**,
+   a 2.18× band around a median of 40.893. **The clean re-run shows the fix is partial and the
+   diagnostic still works**: bucket 4 carries a residual excursion of exactly the same signature
+   (`raster_ms` +39%, `interp_ms` +52%, `vertex_ns_per_pixel` +13.2% on frozen geometry), and it lands
+   only in columns charged to *neither* path or in the vertex path's absolute — the `speedup` column
+   stays monotone because it is a within-rep ratio. That is the median-of-ratio rule earning its keep on
+   a run it was not designed against.
+4. **`M-50`'s own 60-carve trace is largely inert, and this is `M-50`'s defect rather than this
+   harness's.** `brushes_biting` is **11 / 26 / 26 / 26**: `AutoCarve::centre` leaves the sandbox at
+   `n = 30` (`x = 8.1 > 8`, `z = −8.0`) and never returns, and the first four centres are in the air
+   above the hill, so of the 60 brushes `M-50` binned only **26 ever touch solid rock inside the world**
+   — the rest lengthen the log every sample walks and change no geometry at all. Visible in the file:
+   `vertices` is 25,471 at 30 brushes and 25,482 at both 45 and 60, and `triangles`,
+   `visible_triangles`, `visible_pixels` and `clipped_triangles` are **identical** across buckets 3 and
+   4. This is very likely the mechanism behind `M-50`'s own *"3.7× for 7× the log, and flattening"*. Two
+   consequences: (i) it is a **good** property for C2, because geometry is frozen while log length
+   quadruples, which is the cleanest possible within-one-run comparison and is what makes the bucket-3/4
+   pair above readable; (ii) any future re-use of that trace **as a geometry fixture** is measuring a
+   trace that stopped digging a third of the way through.
+5. **The pre-run SHARE arithmetic was wrong by 2× and predicted the wrong verdict, and the prediction is
+   committed.** Estimated ~4·10⁴ vertices → share ~6% → **C1 FALSIFIED**; measured 25,482 vertices →
+   2.026% of samples → 3.11–3.16% → **C1 HELD**. The arithmetic's *shape* was right — the share is
+   `(vertices/samples)` times a ~1.54 surcharge — and only the vertex count was wrong.
+
+**Two integrity controls beyond the registered one, and both could have failed.**
+`field_walk_mismatches` is **0** on every row: the timed weight walk carries the field through every
+carve itself and that carried value is compared **bit-for-bit** against `PaintStack::sample` at every
+vertex. It is the same operation sequence, so zero is the only correct answer, and a non-zero would mean
+the thing being timed is **not `M-138`'s walk**. The zero was **verified by mutation** rather than
+trusted (`M-44`): swapping `brush::apply`'s two value arguments in the timed walk gives `left: 24470,
+right: 0` — every vertex — and the assertion aborts before any CSV is written. `l1_max_error` is
+**5.960e-8 / 8.941e-8 / 8.941e-8 / 8.941e-8** against an asserted 1e-4; the weight vector is
+L1-normalised *by construction* (`up·s + (1−up)·s + (1−s) = 1` identically, and a splat composite
+`w ← w(1−c) + e_m·c` preserves the sum), so this measures accumulated rounding — and it is **non-zero**,
+hence a live number rather than a structural one. `pixel_disagreement` is 3,444 / 3,670 / 3,670 / 3,670
+of 1,110,155 visible pixels (0.31–0.33%), which also guarantees neither shading loop was optimised away.
+
+---
+
+**What changed as a result: nothing in `src/`, deliberately.** `crates/isomesh/src/**` and
+`crates/isomesh-gpu/src/**` were not touched, the public API was not touched, and the `PhaseTree` /
+`Sdf`-phase question was not entered — the registration scoped it out as a public-API decision, and this
+is *"measure it, surface the decision, and stop"*. The only tree change is an append-only `[[bench]]`
+stanza in `crates/isomesh/Cargo.toml`.
+
+**The recommendation is BUILD IT, as a vertex attribute, and the number that justifies it is not the
+40×.** It is that the cost is **3.11–3.16% of extraction, flat in log length**, for a saving that grows
+without bound as the player digs: at an 80-entry log the exact-paint fragment path costs **261.8
+ns/pixel of pure ALU before a single texture fetch**, which is 290.7 ms for one 1920×1080 pass on one
+Zen 3 core.
+
+**Two things not to build, both priced from columns in this file.** (i) **Do not derive the weights from
+per-corner material walks** and let the extractor's existing edge interpolation carry them — it looks
+like the *"inside the existing walk"* reading and it is ~8 corner walks per crossed cell against one
+walk per vertex, an order of magnitude more, landing far above C1's 5%. The whole reason C1 holds is
+that the surface is 2D inside a 3D sample grid. (ii) **Do not bake `game_dig`'s normal-driven stratum
+term into the attribute.** It is `misclassified_blend` — 150 / 500 / 522 / 522, 8.2–15.1% of the
+misclassification — and it is error for nothing: `smoothstep(n_y)` is cheap per fragment and the
+fragment already has `n_y` as a varying. Bake only the **log-driven** term, the part that actually needs
+the walk. C3 held anyway; this is the term to leave out.
+
+**Would be shown wrong by:** a `speedup` below 4× at any log length, or a `speedup` that stops widening
+— either would mean the fragment path is not paying `M-138`'s cost and the premise is wrong; a
+`fragment_ns_per_log_entry` collapsing as `1/log_len`, which is the same falsification read off the
+per-entry column; a fixture whose surface carries a materially larger `vertices / samples` ratio than
+0.0203 — the share is that ratio times ~1.54, so a surface at 3.2% of samples puts C1 at the 5% bar; a
+`within_one_cell_fraction` below 0.95 under a probe that walks the surface rather than the world axes,
+which would mean the interpolated weights are not a resampling of the field but a different quantity; a
+non-zero `field_walk_mismatches`, which would mean the timed walk is not `PaintStack`'s; or the same
+comparison on a real GPU, where the vertex path costs an extra attribute fetch per vertex and per-pixel
+ALU is not the currency it is on one Zen 3 core — this entry measures shading arithmetic on a CPU
+visibility buffer and claims nothing about a hardware rasteriser's frame time.
+
+### 🔬 M-388 — C1 HELD (**18 = 3 × 6** exactly, cost **2.1115×**), C2 HELD on its own falsifier while the clause as worded is **VACUOUS**, C3 HELD at **0.5000** exactly and **0.5429** in wall clock — and every falsifier failing still leaves the answer *keep three planes*, because stochastic selection manufactures **39,495** extra history rejections in a scene with no dig against the dig's own **8,483** (P-76, R-076)
+
+**M.** `cargo bench --bench experiment_p76`, `docs/experiments/p-76.csv`, **171 rows** (4 `#` lines, one
+header, 9 `stage = material_shading` + 162 `stage = taa_resolve`), `f32` field and shading with `f64`
+clocks and error accumulation, `amd-ryzen-9-5900x-12-core`, 24 threads, `cpu_mhz_start` 4200 →
+`cpu_mhz_end` 4199. Two stages over `game_dig`'s own scene: a fetch-for-fetch transcription of
+`triplanar.wgsl`'s `LAYER_BLEND` path timed single-threaded over the **1,111,025** visible fragments of
+a ray-cast 1920×1080 visibility buffer in the pose the demo opens in, and `P-77`'s software TAA resolve
+at 960×540 with exact motion vectors, three shading streams sharing one G-buffer per world, over the
+**8** frames following one subtracted sphere. Committed at **`9dffb6c`** — the header carries no
+`(WORKING TREE DIRTY)`, and `9dffb6c` is an ancestor of HEAD (`b2b481e`).
+
+> **The reported run was a dirty pre-run taken while ~25 sibling agents were compiling, and this entry
+> is the clean-tree re-read.** Every number that moved is a clock or a clock-derived ratio; **every
+> number stage B produces reproduced exactly**, because the temporal instrument contains no timer at all
+> — `history_rejected_static` 66,310, `history_rejected_digging` 74,793, all six `mae_*` columns,
+> `mae_sampling_excess_ratio_dig_over_static` 2.0247, `zero_proof_rejected` 0,
+> `zero_proof_stochastic_rejected` 23,248, `estimator_mean_signed_error_sampled` 0.000019 and
+> `visible_fragments` 1,111,025 are identical to the superseded report's. That is `M-279`'s rule
+> satisfied in the strongest available form: the new run agrees with the old one on everything that is
+> not a clock, and C2's whole verdict is in the part that is not a clock. The moves, and three
+> withdrawals they force, are below.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 fetch count drops by **exactly 3×** | 3×, as an identity | **HELD — 18 = 3 × 6 in integers, `c1_fetch_ratio_is_exactly_3` = `true`** |
+| C1 fragment cost drops by **≥ 2×** at 1920×1080 | ≥ 2.0 | **HELD — 2.1115 median, 2.1128 fastest-pass; a clock, not a gate (`✗24`, `M-281`), and *not* a fetch-count claim (below)** |
+| C2 dig-time ghosting is **worse than the fetch saving is worth** | no exchange rate exists | **VACUOUS — no instrument in the file can decide an MAE against a millisecond** |
+| C2 as the registration's own falsifier: MAE digging **above** MAE static | any difference | **HELD — 0.00393754 > 0.00375816, delta +0.00017938 (+4.77%)** |
+| C3 biplanar gets **≥ half** C1's saving, in fetches | ≥ 0.5 | **HELD by equality — 6/12 = 0.5000 exactly, forced by construction** |
+| C3 the same, in wall clock | ≥ 0.5 | **HELD by 0.0429 — 0.5429 median, 0.5417 fastest-pass** |
+| C3 **with none of C2's cost** | none | **HELD as scored (`bipl_delta < stoch_delta`), but "none" is false: +0.00013232 is 73.8% of +0.00017938** |
+
+> **Four columns will be misread if this is not said.** (1) `c1_holds`, `c2_holds` and `c3_holds` read
+> `true` on **all 171 rows**, including the five unscored shading arms and every `taa_resolve` row — they
+> are row-invariant verdicts, not per-arm ones, and `c1_holds = true` beside
+> `shading/stf_3tap_3plane_3stratum_point` says nothing about that arm. (2) On the 162 `taa_resolve` rows
+> `fetches_per_fragment` = 6, `fragment_ms` = 205.524547 and `frame_ms` = 383.587859 are **stage A's
+> stochastic-arm values repeated** — the bench says so at `experiment_p76.rs:2738-2739` — not a cost of
+> the resolve, which is never timed. (3) `scored_arm` is `true` on 4 of the 9 shading rows and on **all
+> 162** `taa_resolve` rows, because those rows inherit the stochastic arm's flag; it marks which shading
+> configuration a clause is denominated in, not which rows were measured. (4)
+> `estimator_worst_fragment_error_sampled` = 0.010473 is **5.2×** `estimator_bias_tolerance` = 0.0020 and
+> the control did not fail: the gate is on the **mean** (`estimator_mean_signed_error_sampled` =
+> 0.000019, 0.19 σ from zero against a 20 σ tolerance at the stated 1e-4 standard error), because
+> unbiasedness is a statement about a mean and a max over 4,096 fragments is an extreme-value statistic.
+
+**Stage A — the nine arms, one interleaved sweep, `shade_reps` = 9, median reported:**
+
+| arm | planes × strata × taps | fetches | texels | `fragment_ms` | `reps_ms_min` | spread | `frame_ms` | `fetches_tallied` |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `triplanar_3plane_3stratum_bilinear` | 3 × 3 × 1 | **18** | 72 | **433.960563** | 432.6497 | 4.5439 | 809.937331 | 19,998,450 |
+| `stochastic_1plane_3stratum_bilinear` | 1 × 3 × 1 | **6** | 24 | **205.524547** | 204.7776 | 9.7495 | 383.587859 | 6,666,150 |
+| `biplanar_2plane_3stratum_bilinear` | 2 × 3 × 1 | **12** | 48 | **309.936397** | 309.2218 | 7.3021 | 578.460532 | 13,332,300 |
+| `stochastic_1plane_1stratum_bilinear` | 1 × 1 × 1 | 2 | 8 | 123.163308 | 123.0000 | 1.1405 | 229.870107 | 2,222,050 |
+| `stf_3tap_3plane_3stratum_point` | 3 × 3 × 3 | **54** | **54** | 571.483575 | 569.1686 | 5.8511 | 1066.608169 | 59,995,350 |
+| `stf_1tap_3plane_3stratum_point` | 3 × 3 × 1 | 18 | 18 | 428.221675 | 427.1150 | 12.4784 | 799.226359 | 19,998,450 |
+| `stochastic_1plane_stf_1tap_point` | 1 × 3 × 1 | 6 | 6 | 203.310169 | 202.8283 | 17.0074 | 379.454978 | 6,666,150 |
+| `walls_concrete_3plane_1layer_bilinear` | 3 × 1 × 1 | **6** | **24** | **197.416041** | 197.2986 | 0.7682 | 368.454268 | 6,666,150 |
+| `alu_and_call_only_control` | 3 × 3 × 1, no texel | 0 | 0 | **252.069736** | 251.9870 | 1.5613 | 470.459085 | 19,998,450 |
+
+**The exactness control is integers only and it is what makes C1's first half an identity rather than a
+measurement.** `fetches_tallied` is incremented once per fetch *inside* the timed pass, and on every arm
+it equals the analytic per-fragment count times `visible_fragments`: 18 × 1,111,025 = 19,998,450,
+6 × 1,111,025 = 6,666,150, 12 × 1,111,025 = 13,332,300, 54 × 1,111,025 = 59,995,350,
+2 × 1,111,025 = 2,222,050. So no arm silently skipped a fetch and no arm's fast number is a fast number
+for doing less. **18 = 3 × 6 holds in integers on any machine**, and `c1_fetch_ratio_is_exactly_3` is
+`true` — asserted, not timed. The ALU control's own tally is 19,998,450 at zero texels, which is the
+proof that it really makes all eighteen calls and only skips the loads.
+
+**The registration's count of the baseline is wrong by 3× and the bench found it before measuring.** The
+hypothesis prices *"three planes × three stochastic taps"* as *"nine fetches per map"* and says
+`triplanar.wgsl` *"already pays the three"*. `game_dig` builds the terrain material with
+`settings.z = LAYER_BLEND = -1.0`, which takes the shader's `else` branch: `layer_ar` samples all three
+planes once per **stratum** and `layers_na` samples all three strata for each of three planes, so the
+terrain fragment issues 9 + 9 = **18**, and the unnamed third factor makes the product
+`planes × strata × taps`. At the registration's own three taps that is `stf_3tap_fetches` = **54**, not
+nine. The 3× survives intact because the plane count factors out of both maps: `2 × 3 × 3` over
+`2 × 1 × 3` is 18/6 = 3 exactly.
+
+#### The SHARE line, recomputed
+
+Registered SHARE: *"C1 moves the material shading stage, which P-75's C2 will have measured."*
+
+`R-075` measured the material **selection** sub-stage over its own 1920×1080 visibility buffer at the
+same pose — `docs/experiments/p-75.csv`, `frame_ms_fragment` = **82.725191 ms** for the log-walk path at
+`log_len` = 20 and `frame_ms_vertex` = **6.395743 ms** for the vertex-attribute path, over
+`visible_pixels` = **1,110,155** — and labelled them *"shading cost … not frame time"*. This row measures
+the material **sampling and blending** sub-stage over **1,111,025** fragments. The two counts differ by
+**870 pixels, 0.078%**, from a rasteriser and a ray-caster built independently, so the two rows are
+denominated in the same pixels and this row uses `P-75`'s label unchanged.
+
+C1's measured saving is 433.960563 − 205.524547 = **228.436016 ms**. As a share of what it is
+denominated in:
+
+| denominator | ms | C1's share |
+|---|---:|---:|
+| the sampling-and-blending sub-stage alone | 433.960563 | **52.64%** |
+| plus `P-75`'s recommended vertex-attribute selection path | 440.356306 | **51.88%** |
+| plus `P-75`'s log-walk selection path at `log_len` = 20 | 516.685754 | **44.22%** |
+
+Nothing in the SHARE line is unreachable: the clause is denominated in *"the fragment cost"*, which is
+`fragment_ms`, and C1's 2× is asked of the sub-stage it names rather than of a frame.
+
+**What arithmetic reached before the run:** 18/6 = 3 exactly; C3's 6/12 = 0.5000 exactly; the cost
+ratio's ceiling of 3 as the fixed cost goes to zero; and the 18-not-3 correction above.
+
+**What arithmetic could not reach, and the answer is the row's most transferable finding.** Whether the
+fixed cost is small enough for a 2× needed a measurement, and the bench modelled it as a fetch-count
+claim: `t(k) = F + kS`, `ratio = t(18)/t(6) ≥ 2 ⟺ 6S ≥ F`. The least-squares fit over the four bilinear
+stratum-blend arms at `k` = 2, 6, 12, 18 reproduces from the file — `Sxy/Sxx` over
+(2, 123.163308), (6, 205.524547), (12, 309.936397), (18, 433.960563) gives
+`fit_slope_ms_per_fetch` = **19.186701** and `fit_intercept_ms` = **85.872544**, `fit_r2` = **0.998758**
+— so `fit_six_fetch_cost_ms` = 6 × 19.186701 = **115.120206 ≥ 85.872544** and
+`c1_cost_reachable_6s_ge_f` = `true` with a 1.3406× margin.
+
+**And this harness's own ALU control refutes that model.** `alu_and_call_only_control` is the baseline's
+full 3-plane, 3-stratum control flow — every projection, both `pow` weight sets, all three whiteout
+blends, the lighting — plus all **eighteen fetch calls' address arithmetic and tallies**, with
+`texels_per_fragment` = 0 (`Filter::NoTexel` at `experiment_p76.rs:964-968`). It measures
+`alu_control_ms` = **252.069736 ms**, which is **2.94×** the fitted `F` of 85.872544; the fit's intercept
+is **34.1%** of the fixed cost measured directly, because the four fit arms differ in plane and stratum
+count as well as fetch count and the slope has absorbed the difference. Read off the two rows:
+
+- the baseline's texel loads are 433.960563 − 252.069736 = **181.890827 ms, 41.92%** of the pass;
+- removing **every** texel load while keeping the baseline's plane and stratum shape caps the ratio at
+  433.960563 / 252.069736 = **1.7216×** — *below the registered 2×*.
+
+So **C1's cost half is not reachable from the fetch count at all**, and the 2.1115 it does reach is paid
+by the ALU the two dropped planes stop executing: two of three plane weight sets, two of three whiteout
+blends, two of three `layers_na` accumulations, and twelve of eighteen fetch calls. This is `✗51`'s rule
+— *a clause stated as a ratio of a total must name the share of that total it can move* — applied to a
+clause whose own harness supplies the share. Both ratios are within one interleaved sweep of one binary,
+which is the only form `M-281` permits, and neither transfers to a GPU.
+
+#### C2, and precisely what "not scoreable as literally worded" means
+
+C2 fuses a comparison with an operationalisation and they are not the same claim.
+
+The **comparison** is *"the ghosting cost under an active dig is WORSE than the fetch saving is worth"*.
+It has a dimensionless mean absolute error on one side and milliseconds on the other. The file carries
+both sides — `stochastic_temporal_delta_mae` = **+0.00017938** and
+`triplanar_fragment_ms − stochastic_plane_fragment_ms` = 433.960563 − 205.524547 = **228.436016 ms** —
+and carries **no column, and the registration no constant, that converts one into the other**. No
+reading of the 171 rows can decide it in either direction. A clause with no instrument is **VACUOUS**,
+never HELD, and this one is vacuous for the strongest possible reason: the two quantities have different
+dimensions.
+
+The **operationalisation** in the same sentence, and the only test the registration's own `falsified_by`
+names — *"no difference between digging and static"* — is instrumented, and it is exactly what
+`c2_holds` encodes: `mae_vs_reference_digging` **0.00393754** > `mae_vs_reference_static` **0.00375816**.
+That HELD.
+
+**The distinction cuts against the technique, which is why it must not be resolved in the clause's
+favour.** If the literal comparison were scoreable and true it would say the fetch saving is not worth
+buying, so **a HELD C2 is an argument against building this**, and reading `c2_holds = true` as *"the
+clause holds"* would convert a null into an endorsement. What the file gives a reader instead of an
+exchange rate is the magnitude, against the pass's own signal level (`mean_r`/`mean_g`/`mean_b` on the
+baseline arm = 0.305015 / 0.388943 / 0.305486, mean 0.333148): the whole post-dig MAE is **1.18%** of
+mean image level and the dig-attributable part of it is **0.054%**.
+
+**The registered temporal columns, `dig_at_feet_static`, `frames_after_edit` = 8, 4,133,904 history
+samples per stream per world:**
+
+| stream | world | `frame_rejected` | fraction | window MAE vs 3-plane reference |
+|---|---|---:|---:|---:|
+| `reference_3plane` | static | **66,310** | 0.01604053 | 0.00366139 (`mae_taa_floor_static`) |
+| `reference_3plane` | digging | **74,793** | 0.01809258 | 0.00374159 (`mae_taa_floor_digging`) |
+| `stochastic_1plane` | static | 105,805 | 0.02559445 | **0.00375816** (`mae_vs_reference_static`) |
+| `stochastic_1plane` | digging | 114,924 | 0.02780036 | **0.00393754** (`mae_vs_reference_digging`) |
+| `biplanar_2plane` | static | 66,505 | 0.01608770 | 0.00383510 (`mae_biplanar_static`) |
+| `biplanar_2plane` | digging | 75,060 | 0.01815717 | 0.00396742 (`mae_biplanar_digging`) |
+
+Every one of these is the exact aggregate of the eight `frame_plus_*` rows beneath it, which is worth
+saying because it makes the registered columns auditable line by line: the digging reference stream's
+per-frame counts 12,777 + 9,883 + 9,607 + 8,976 + 9,310 + 9,497 + 6,406 + 8,337 = **74,793**, its static
+twin's 8,164 + 8,537 + 8,731 + 8,437 + 8,944 + 9,271 + 6,105 + 8,121 = **66,310**, and the eight
+`frame_mae` values average to the window MAE to all eight reported digits on all six rows.
+
+**Subtracting the floor is what turns C2 into a mechanism.** The raw +4.77% is mostly TAA's own
+ghosting, which the deterministic 3-plane stream pays too: the floor's own dig delta is
+0.00374159 − 0.00366139 = **+0.00008020**, i.e. **44.7%** of the +0.00017938. What is left is
+sampling-attributable, and it **doubles**: `mae_sampling_excess_static` 0.00009678 →
+`mae_sampling_excess_digging` 0.00019595, `mae_sampling_excess_ratio_dig_over_static` = **2.0247**.
+
+#### The `P-77` linkage, stated in both directions, because the two registrations disagree
+
+`P-77`'s committed file (`docs/experiments/p-77.csv`, `4724b9d`) on the same arm this row reuses:
+`steady_rejection_fraction` = **0.00490399** — the briefed denominator, confirmed —
+`post_edit_rejection_fraction` = **0.01422016**, `ratio` = **2.8997** against a registered 5×,
+`frames_elevated` = **1**, `c1_holds` = **false**. This row's deterministic static fraction,
+`rejection_fraction_static` = 0.01604053, is **3.27×** `P-77`'s on the same instrument and camera, for a
+stated reason: `P-77` shaded with fbm albedo and the *geometric* normal, while here the whiteout blend
+perturbs the normal and the high-frequency content enters the sun, rim and specular terms as well.
+
+- **By `P-76`'s own falsifier**, C2 is not falsified: there is a difference, and it is in the registered
+  direction.
+- **By `P-77`'s falsifier** — *"C1 by under 5x, **or by a single-frame spike** — either means destruction
+  is not a temporal problem, and this row and P-76's C2 close together"* — `frames_elevated` = 1 is that
+  spike, and `P-77` therefore already closed this clause before it ran.
+
+**Both readings are true of the committed files, and this row's per-frame table is what reconciles them:
+the rejection spike is one frame and the image error it causes is not.** Per-frame excess of the digging
+world over the static one, headline arm:
+
+| frame | `frame_rejected` excess, deterministic stream | MAE excess, stochastic stream |
+|---:|---:|---:|
+| +0 | **4,613** | **+0.00026727** |
+| +1 | 1,346 | +0.00021252 |
+| +2 | 876 | +0.00018796 |
+| +3 | 539 | +0.00017063 |
+| +4 | 366 | +0.00015864 |
+| +5 | 226 | +0.00015271 |
+| +6 | 301 | +0.00014369 |
+| +7 | 216 | **+0.00014158** |
+| **sum / mean** | **8,483** | **+0.00017938** |
+
+Frame +0 carries **4,613 of the 8,483**, **54.4%** of the whole eight-frame excess and **3.43×** frame
++1 — `P-77`'s single-frame spike, reproduced on an independently built signal. The MAE excess does the
+opposite: it is elevated on **all eight** frames and decays **monotonically, 8 for 8**, from
++0.00026727 to +0.00014158, ending at 53% of where it started rather than at zero. The mechanism is the
+resolve's own memory: `ALPHA` = 0.1, so the exponential blend's effective sample count is
+`(2 − 0.1)/0.1 = 19` frames, and an error injected in one frame is still on screen after eight. So
+`P-77`'s C1 is correctly falsified — destruction is not a *multi-frame rejection* problem — and that
+does **not** close C2, because C2 measures the image consequence and the image consequence outlives the
+rejection by the length of the history. Two rows, opposite verdicts on the same clause, and the
+disagreement is exactly the 19-frame blend.
+
+#### C3, and the integer that makes "no temporal debt" real and "none of C2's cost" false
+
+C3's threshold is **arithmetically forced to be exactly half**: biplanar drops one plane of three and
+stochastic selection drops two, so 18 − 12 = 6 against 18 − 6 = 12 and `c3_saving_ratio_fetches` =
+**0.5000**. The clause is met by equality, holds only because the registered inequality is non-strict,
+and **cannot discriminate anything** — no biplanar implementation could have failed it. In wall clock
+`c3_saving_ratio_ms` = (433.960563 − 309.936397)/(433.960563 − 205.524547) = **0.5429**, and
+`c3_saving_ratio_ms_min_based` = **0.5417**; the margin is 0.0429, which fixture defect 4 below exceeds.
+
+**"No temporal debt" is true and it is an integer.** In the static world biplanar rejects 66,505 against
+the deterministic stream's 66,310 — **+195** — while the stochastic arm rejects 105,805, **+39,495**.
+Biplanar's manufactured rejection is **1/202.5** of the stochastic arm's. In the zero-proof arm biplanar
+rejects **0**, exactly as the deterministic stream does.
+
+**"None of C2's cost" is false, and the file says by how much.** `biplanar_temporal_delta_mae` =
+**+0.00013232** against `stochastic_temporal_delta_mae` = +0.00017938: biplanar carries **73.8%** of the
+stochastic arm's dig-induced MAE delta, not none. Subtract the deterministic floor's own +0.00008020 and
+it still carries 0.00005212 against 0.00009917 — **52.6%**. The reason is that dropping a plane also
+changes which projection the whiteout normal is built from, and a dig changes the normal.
+
+**And biplanar's error is a bias, which is the half that inverts C3's recommendation.** In the
+zero-proof arm — camera frozen, jitter off, no dig, 24 warm-up frames — `frame_mae` on the biplanar
+stream reads **0.00088446 on all eight frames, identical to eight decimal places**, which is a converged
+systematic difference and not variance; the stochastic stream fluctuates over 0.00085120–0.00085983
+around `mae_ideal_stochastic` = 0.00085509; the deterministic stream sits at `mae_ideal_reference` =
+**0.00000179**, and its per-frame values *climb* 0.00000176 → 0.00000181 across the eight rather than
+decaying, which is the drift signature of the `f32` YCoCg round-trip rather than a convergence residual.
+So under maximally favourable conditions **biplanar's converged bias (0.00088446) is larger than the
+stochastic arm's residual (0.00085509), by 1.034×**, and in the headline arm biplanar's excess over the
+TAA floor is **1.79×** the stochastic arm's (`mae_biplanar_excess_static` 0.00017371 against
+`mae_sampling_excess_static` 0.00009678). TAA removes variance; it does not remove a bias. C3 is right
+that biplanar has no temporal debt and wrong to imply it therefore has no cost.
+
+#### `frame_ms` is a registered column and there is no renderer
+
+`crates/isomesh` must not depend on Bevy, so there is no engine here and **no frame time is invented**.
+`frame_ms` is the per-fragment shading cost scaled to full coverage, `fragment_ns_per_fragment ×
+1920 × 1080 / 1e6`, and the arithmetic is checkable on any row: 390.5948 × 2,073,600 / 1e6 = 809.9373
+against the column's **809.937331**. Equivalently `frame_ms = fragment_ms × 2,073,600 / 1,111,025 =
+fragment_ms × 1.86638` on **every** row — 205.524547 × 1.86638 = 383.588 against 383.587859 — so the
+column is an exact restatement of `fragment_ms` and **carries no independent measurement**. It is the
+material shading stage's cost for a 1080p frame in which every pixel is terrain: no geometry pass, no
+lighting pass, no post, and `P-75`'s label verbatim.
+
+**No clause is scored VACUOUS on `frame_ms`'s account, because no registered clause reads it** — C1's
+second half is about *"the fragment cost"*, which is `fragment_ms`, timed over the real 1,111,025-fragment
+visibility buffer. The honest warning is the other way round: nothing downstream should quote `frame_ms`
+as a frame time or as a second data point, and on the 162 `taa_resolve` rows it is not even this stage's
+number.
+
+#### The vacuity control, its column, and why its value is a measurement
+
+**Column `history_rejected_digging`, value 74,793** — non-zero, so C2 can fire. It is counted on the
+**deterministic** 3-plane stream, which makes it `P-77`'s own quantity rather than a new one, and it is
+the exact integer sum of the eight per-frame counts listed above.
+
+**Why that value proves the fixture could have failed** (`M-44`): `zero_proof_rejected` = **0**, from a
+third arm, `zero_proof_no_jitter_static`, with the camera frozen and the TAA jitter off. Every one of its
+eight `frame_rejected` cells reads 0 over a `frame_population` summing to 4,130,616 — same instrument,
+same `CLAMP_EPS`, same field, same resolve — so the reprojection becomes the identity, the history
+converges on the current frame, and the resolve rejects **exactly nothing**. The bench asserts
+`zero_proof × 100 < rejected_digging`, i.e. 0 < 74,793. An instrument that reaches a hard zero when there
+is nothing to reject is an instrument whose 74,793 is a reading and not a floor.
+
+> **`frame_mean_clip_s` is `NA` on exactly the zero-proof reference and biplanar streams, and that is
+> the control working, not a missing measurement.** It is a mean over *rejected* samples, and those
+> streams rejected none, so the population is empty. The stochastic stream in the same arm reads
+> 0.475225 over its 23,248 rejections.
+
+**A second reading from the same arm is itself the row's central result.**
+`zero_proof_stochastic_rejected` = **23,248**. With a perfectly frozen camera, no jitter, no dig and 24
+frames of warm-up, the *stochastic* stream still rejects 23,248 history samples, because the plane choice
+changes every frame — where the deterministic stream rejects 0. **Stochastic filtering manufactures its
+own history rejection before any dig or any camera motion is charged for.** In the headline arm the same
+mechanism reads **39,495** extra rejections in the static world against the dig's own **8,483** on the
+deterministic stream: the technique's self-inflicted temporal cost is **4.66×** the cost of the
+destruction it was registered to be priced against.
+
+**What actually empties the temporal budget is walking, and it is in the file.** `dig_at_feet_walk`
+rejects **1,527,479 of 4,132,370** samples — `frame_rejection_fraction` **0.36963752** — standing on the
+same field with *no dig at all*, at `frame_mean_reproj_px` 7.2514; digging moves that to 0.36779548,
+**down** by 0.50%. So the registered headline, *"a destructible world has already spent its temporal
+budget"*, is true and true for the wrong reason: at `game_dig`'s own 2.5 units/s the dig is invisible
+beside locomotion. That reproduces `P-77`'s own saturation finding (0.86644885 at its resolution) on an
+independently built signal, and it is why the headline arm and not the walking arm carries C2 — a ratio
+between two saturated numbers measures nothing.
+
+#### Fixture defects this harness's own controls caught
+
+1. **The registered "unbiased" control was asserting the wrong contract, and the truth is a finding.**
+   The first version compared 256 draws of the single-plane arm's *shaded colour* against the 3-plane
+   arm's and demanded they agree; it failed at **0.02229** — which is now in the file as
+   `shading_bias_worst_fragment` = **0.022287**. It was right to fail: `normalize`, `max(0, ·)`, `powf`
+   and the roughness clamp are nonlinear, so the estimator is unbiased in the **maps it samples** and
+   biased in the **colour it shades**. That is `arXiv:2305.05810`'s own title — *filtering **after**
+   shading* — and it means a share of the stochastic error is a bias no accumulation removes. `shade` now
+   returns the sampled maps alongside the colour; the gate is on their mean
+   (`estimator_mean_signed_error_sampled` = 0.000019 against `estimator_bias_tolerance` = 0.0020) and the
+   residual is reported (`shading_bias_mean_signed` = 0.000084).
+2. **Dropping the clamp's `eps` made the zero-proof arm reject 31,274 samples.** Simplifying `P-77`'s
+   `Dop<3>` to a plain `Aabb` silently dropped its `1e-5` dilation. `from_ycocg(to_ycocg(c))` is the
+   identity in real arithmetic and not in `f32`, so the history drifts ~1e-7 per frame, and at any pixel
+   that is its own 3×3's extremum in some channel the box boundary passes exactly through the current
+   colour and clips that 1e-7 to `s ≈ 0`. With the paper's `1e-5` restored the same arm reads
+   `zero_proof_rejected` = **0** and `M-44`'s control is a control. The residual is visible in the file:
+   the zero-proof reference stream's `frame_mae` climbs 0.00000176 → 0.00000181 across the eight frames,
+   which is that drift with the clip no longer firing on it.
+3. **`6S ≥ F`, not `S ≥ F`.** The reachability line printed the wrong inequality: the ratio is
+   `t(18)/t(6)`, so the fixed cost competes with the **six** fetches the stochastic arm still pays, not
+   with one. `c1_cost_reachable_6s_ge_f` is the corrected column, and the SHARE section above records
+   that even the corrected inequality is about a fitted `F` the ALU control refutes.
+4. **`plane_weights` was hoisted above the plane-mode match, charging the biplanar arm three
+   `pow(abs(n), 4)` it never issues** — Quilez's weighting *replaces* that blend. With the charge in,
+   C3's ms saving ratio read **0.4715** on the superseded run, *below* the 0.5 bar: the defect decided the
+   clause. Moved inside the arms that use it, the same ratio read 0.5847 there and **0.5429** on the
+   committed clean tree. The defect was worth **0.1132** against a committed margin of **0.0429** —
+   **2.64× the margin**, which is the pre-run prediction that C3's wall-clock half is decided by fixture
+   detail rather than by mechanism, confirmed the hard way.
+5. **Five timed repetitions were not enough to see the clause.** At `shade_reps` = 5 the baseline arm's
+   max-minus-min was **26% of its own median** with siblings compiling, against a threshold only 10%
+   below the ratio. Nine interleaved reps, `reps_ms_min` and `reps_ms_spread` on every shading row, and
+   a fastest-pass ratio beside the median. On the committed clean tree the baseline's `reps_ms_spread` is
+   **4.5439 on a 433.960563 median — 1.05%** — and median and minimum now agree to 0.062%.
+
+#### What the clean re-run moved, and three withdrawals it forces
+
+| quantity | column | superseded dirty pre-run | committed `9dffb6c` |
+|---|---|---:|---:|
+| C1 cost ratio, median | `c1_cost_ratio` | 2.0092 | **2.1115** |
+| C1 cost ratio, fastest pass | `c1_cost_ratio_min_based` | 2.1122 | **2.1128** |
+| fit-predicted ratio | `fit_predicted_ratio_18_over_6` | 2.1231 | **2.1455** |
+| fitted fixed cost `F` | `fit_intercept_ms` | 89.75 | **85.872544** |
+| fitted `6S` | `fit_six_fetch_cost_ms` | 114.94 | **115.120206** |
+| fit quality | `fit_r2` | 0.9939 | **0.998758** |
+| C3 ms saving, median | `c3_saving_ratio_ms` | 0.5847 | **0.5429** |
+| C3 ms saving, fastest pass | `c3_saving_ratio_ms_min_based` | 0.5424 | **0.5417** |
+| bilinear-minus-point, per texel | `bilinear_minus_point_ns_per_texel` | **−0.2691** | **+0.0957** — sign flipped |
+| 1-plane 1-stratum arm | `fragment_ms` | 122.07 | **123.163308** |
+| baseline within-run spread | `reps_ms_spread` | ~51 at 5 reps | **4.5439** at 9 |
+| clock | `cpu_mhz_start` / `cpu_mhz_end` | 4200 / 4200 | **4200 / 4199** |
+| provenance | `# commit` | working tree dirty | **`9dffb6c`, clean, ancestor of HEAD** |
+
+Nothing else moved. Every integer, every MAE and every rejection count is identical, which is what makes
+the three withdrawals below withdrawals of *reasoning* rather than of *data*.
+
+**Withdrawn 1 — "the extra texels a bilinear tap quad reads cost at or below zero".** The bench doc and
+the report both state this, and the committed run reads `bilinear_minus_point_ns_per_texel` = **+0.0957**,
+positive. The signed number is not a measurement in either direction: the two arms it is computed from
+differ by 433.960563 − 428.221675 = **5.738888 ms**, which is *smaller than the point arm's own
+`reps_ms_spread` of 12.4784 ms*, so this harness cannot resolve the cost of the three extra texels at
+all and its sign is set by the run. **What replaces it is a count comparison taken inside one interleaved
+sweep:** `stf_3tap_3plane_3stratum_point` reads **54 fetch instructions and 54 texels** against the
+baseline's **18 and 72** — three quarters of the texel traffic — and measures 571.483575 against
+433.960563, **1.32× slower**. So on this machine the clock follows the instruction count and not the
+texel count, and a GPU's texture unit prices these the other way round: one instruction, four taps, one
+L1 lookup. Neither machine's wall clock generalises; `fetches_per_fragment` and `texels_per_fragment`
+do, which is why both are columns.
+
+**Withdrawn 2 — "the measured ratio exceeds the pure-fetch prediction because the stochastic arm's `F`
+is smaller".** Measured 2.1115 (median) and 2.1128 (fastest) against `fit_predicted_ratio_18_over_6` =
+2.1455: the measurement is **1.58% below** the prediction, not above — and it was below on the
+superseded run too (2.0092 and 2.1122 against 2.1231), so the claim was never true of any run this
+harness produced. The four-point linear model in the fetch count already accounts for all four arms to
+within 1.6% at `fit_r2` = 0.998758; the plane-count-dependent ALU the model cannot see does not show up
+as a measurable extra saving on top of it.
+
+**Withdrawn 3 — "the median-based ratio landed 0.46% above the 2.0 threshold, and the median convention
+is capable of flipping the boolean".** That was a property of a contended tree. On the quiet tree the
+median (2.1115) and the least-contended estimator (2.1128) agree to **0.062%** and both sit **5.6%**
+above the bar, so the convention no longer decides anything. **The objection that replaces it is not a
+margin but a denominator:** per the SHARE section, `alu_control_ms` = 252.069736 makes the texel traffic
+41.92% of the baseline pass and caps a fetch-count-only saving at 1.7216× — under the registered 2× — so
+C1's cost half was never a fetch-count claim, and the run-independent part of C1 is the integer identity
+18 = 3 × 6 and nothing else (`M-282`, `✗24`: gate the count, print the clock).
+
+#### What changed as a result
+
+**Do not build stochastic plane selection into `bevy_isomesh`'s triplanar material.** Every registered
+falsifier failed to fire and the row still says don't, on integers rather than on clocks:
+
+1. It **manufactures 39,495 history rejections in a static scene** against the dig's own 8,483 — 4.66× —
+   and **23,248 with the camera frozen and the jitter off**, where the deterministic stream rejects 0.
+   The debt the registration expected destruction to have already spent is spent by the mitigation.
+2. Its error does not converge. `mae_ideal_stochastic` = 0.00085509 against `mae_ideal_reference` =
+   0.00000179 — **478×** — under ideal conditions and 24 warm-up frames, and part of it is a bias no
+   accumulation removes (`shading_bias_mean_signed` 0.000084, worst fragment 0.022287).
+3. Its saving is a clock. 2.1115× on this CPU instrument, with `F` here being `P-77`'s geometric lighting
+   plus a Blinn-Phong lobe rather than `apply_pbr_lighting` — Bevy's fixed cost is larger, so a real
+   pipeline's ratio is **lower** than 2.1115 — and the ALU control says the fetch count cannot pay for
+   2× on its own.
+
+**Do not adopt biplanar on C3's strength either.** Its "at least half" is exactly half by construction,
+so the clause cannot discriminate; its steady-state error is 1.79× the stochastic arm's post-TAA error;
+its ideal-arm error is a converged **bias** of 0.00088446, larger than the stochastic arm's residual; and
+it carries 73.8% of the stochastic arm's dig-induced MAE delta rather than none.
+
+**Cut the stratum factor instead, and the file already measures the arm.**
+`shading/walls_concrete_3plane_1layer_bilinear` is **three planes and one stratum**:
+`fetches_per_fragment` = **6** and `texels_per_fragment` = **24**, the *same two integers* as the
+stochastic single-plane arm, at 197.416041 ms against that arm's 205.524547 in the same interleaved
+sweep — with no stochastic term, therefore no manufactured rejection and nothing for TAA to pay off.
+Source arithmetic rather than a CSV number, and flagged as such: `Ground`'s height is
+`0.35·sin(0.9x)·cos(0.7z) + 0.15·sin(2.1x)`, so it lies in `[−0.5, 0.5]`, and with
+`SHALLOW_Y_LO = −1.6`, `SHALLOW_Y_HI = −0.4` the shader's `shallow = smoothstep(−1.6, −0.4, y)` is
+≥ 0.9803 everywhere on the undug surface — so the deep-dirt stratum's weight is **≤ 0.0197** while all
+three planes of both maps are sampled for it, 6 of the 18 fetches, for under 2% of the result. A
+per-fragment branch around a `textureSample` is a WGSL validation error, which is why the shader cannot
+skip them; a **uniform** branch or a two-stratum blend is legal and costs no image quality.
+
+**`P-77`'s instrument is confirmed reusable, with one correction to propagate.** `CLAMP_EPS` = 1e-5 is
+load-bearing rather than decoration (defect 2); anything else gated on this resolve inherits it.
+
+**And nothing downstream should quote `frame_ms`.** It is `fragment_ms × 1.86638` on every row, and on
+the 162 `taa_resolve` rows it is stage A's stochastic-arm number rather than anything the resolve did.
+
+**Would be shown wrong by:** a GPU measurement in which the *texel* count rather than the
+fetch-instruction count sets the clock, which would reverse the `stf_3tap` ordering and restore the
+texel argument the registration priced backwards; a resolve whose blend is short enough that an
+eight-frame window outlives it, which would make the rejection spike and the image error coincide and
+reinstate `P-77`'s single-frame reading of this C2; a stochastic plane selector whose static-scene
+rejection count is at or below the deterministic stream's, which would remove the manufactured-rejection
+objection entirely; a three-plane single-stratum terrain material measuring *above* the stochastic
+single-plane arm at the same six fetches, which would remove the recommendation's alternative; or an
+exchange rate between image MAE and milliseconds registered anywhere in this repository, which would
+make C2's literal clause scoreable — and could then score it either way.
+
+**Recommendation, in a form the owner can act on: pay for three triplanar planes and one stratum, not
+one plane and three strata — six fetches either way, and only the three-plane arm needs no TAA to
+converge.**
+
+### 💥 ✗58 / M-389 — C1 FALSIFIED both ways at **2.8997×** against a fixture ceiling of **2.9852** and a **single-frame** spike; C2's recovery half FALSIFIED at exactly **0** on all 140 rows by the paper's own containment guarantee, its cost half VACUOUS; C3 FALSIFIED at **67.23%** while the mechanism it tests holds at **1.000000** — a dig's temporal debt is **one frame**, and under locomotion there is no history left to owe (P-77, R-077)
+
+**M.** `cargo bench --bench experiment_p77`, `docs/experiments/p-77.csv`, **140 rows** (10 arms × one
+`*/steady_window` + one `*/post_edit_window` + twelve `*/frame_plus_N`), 58 columns, `f32`,
+`amd-ryzen-9-5900x-12-core` at `cpu_mhz` 4200, 24 threads for the ray-cast pass and one for the clamp
+passes on purpose. A software TAA resolve over a ray-cast depth buffer of `game_dig`'s own field with
+exact motion vectors, four neighbourhood volumes evaluated on the same fetched history sample, control
+and treatment worlds run in lockstep over one camera path and one jitter sequence. Committed at
+`abffc18`; the file's own stamp reads `# commit 4724b9d on amd-ryzen-9-5900x-12-core at
+2026-08-28T00:51:04Z` — **no `(WORKING TREE DIRTY)`** — and `4724b9d` is an ancestor of `HEAD`.
+
+> **Every number below is read from the committed file, and the clocks are not the ones R-077 reported.**
+> That run was `63c7161 (WORKING TREE DIRTY)` with ~25 sibling harnesses compiling on the same box, and
+> its own note said so. **Every integer and every ratio reproduces exactly** — 30,409 / 6,200,866,
+> 7,348 / 516,731, 2,568, 5,098, 4,940, 160, 4,792, 5,105, 2,884, 4,611, `ratio` 2.8997,
+> `paired_frame_ratio` 2.8614, `ratio_ceiling_from_footprint` 2.9852, `concentration_fraction`
+> 0.672292, `concentration_edit_attributable` 1.000000, `frames_elevated` 1, every
+> `kdop_recovered_fraction_rgb_axes`, and the whole reprojection curve — which is `M-279`'s rule
+> satisfied: the new run agrees with the old one on everything that is not a clock. **The clocks moved by
+> 2×.** `kdop_ms` on the headline arm was reported at **130.9826 ms** and reads **62.6205**;
+> `kdop_ms_per_megapixel` **252.7 → 120.7957**; `clamp_ratio_dop_over_aabb` **2.2659 → 2.0746**, and the
+> across-arm band **1.55–2.55 → 1.7881–2.1922**. So the report's stated cause for the wide band —
+> sibling contention, `M-280` — is itself confirmed by the quiet re-run, and the band across the nine
+> jittered arms is now **2.0549–2.1922, a 6.7% spread**. **No verdict moved**: `kdop_ms` is three orders
+> above C2's bar on either run, which is the point of scoring that half VACUOUS rather than false.
+
+| clause | registered | measured |
+|---|---|---|
+| C1a post-edit rejection ≥ **5×** steady | ≥ 5.0 | **FALSIFIED — 2.8997, against a fixture ceiling of 2.9852 that was computed before the run** |
+| C1b the elevated rate persists ≥ **3 frames** | ≥ 3 | **FALSIFIED — `frames_elevated` = 1. A single-frame spike, which is the falsifier's own second condition** |
+| C2a k-DOP recovers ≥ **half** the rejected samples | ≥ 0.50 | **FALSIFIED — 0.00000000 on all 140 rows; 0 by containment, and the source says so** |
+| C2b at under **0.3 ms** | < 0.3 ms | **VACUOUS — no GPU TAA resolve pass exists in this crate. Satisfied from the source at tier `V`: +50 µs on an RTX 3090** |
+| C3 > **80%** of rejections inside the dilated brush box | > 0.80 | **FALSIFIED — 0.672292. On the edit-attributable denominator the same quantity is 1.000000** |
+
+---
+
+**The SHARE recomputation, and both magnitude clauses were beyond this fixture's arithmetic before a
+single frame was rendered.** The registration's SHARE line says only *"C1 is a rate, not a ratio of a
+total; C2 moves the TAA resolve stage."* Read as a rate, C1's ceiling is `post ≤ 1.0`, so 5× needs a
+steady rate under 0.20 and the headline arm's 0.0049 leaves 200× of headroom. **That is the wrong
+ceiling.** The dig can only add a rejection at a pixel whose *signal it changed*, and §"C3 is not
+independent of C1" below proves that set lies inside the brush's projected silhouette, so
+
+    ratio ≤ 1 + changed_pixels / steady_rejected
+
+which the harness emits per arm as `ratio_ceiling_from_footprint`. On the headline arm that is
+`(2,568 + 5,098)/2,568 =` **2.9852** — **59.7% of the registered 5×** — and the run achieved **2.8997,
+97.1% of its own ceiling.** C1 did not fail because the dig is gentle. It failed because a 0.25-radius
+brush at `game_dig`'s own aim distance changes **5,098 of 516,731 pixels = 0.99% of the frame** against a
+floor that rejects 0.49%, and 1 + 0.99/0.49 is not 5.
+
+| arm | walk u/s | mean reproj px | steady rejection | **ceiling** | ratio | frames elevated |
+|---|---:|---:|---:|---:|---:|---:|
+| **`dig_at_feet_static`** (headline) | 0.00 | 0.6117 | 0.00490399 | **2.9852** | **2.8997** | **1** |
+| `demo_pose_static` | 0.00 | 0.6115 | 0.01159249 | 1.0603 | 0.9338 | 0 |
+| `dig_at_feet_walk_quarter` | 0.62 | 1.8607 | 0.58710621 | 1.0163 | 1.0028 | 0 |
+| `dig_at_feet_walk_half_speed` | 1.25 | 3.6183 | 0.75028189 | 1.0123 | 0.9984 | 0 |
+| `dig_at_feet_walk_half_res` (480×270) | 2.50 | 3.6413 | 0.75223568 | 1.0106 | 1.0063 | 0 |
+| `demo_pose_walk` | 2.50 | 4.2121 | 0.65138010 | 1.0004 | 1.0028 | 0 |
+| `dig_at_feet_walk` | 2.50 | 7.2424 | 0.86644885 | 1.0093 | 1.0038 | 0 |
+| `dig_at_feet_walk_held` (3 brushes) | 2.50 | 7.2424 | 0.86644885 | 1.0093 | 1.0038 | 0 |
+| `dig_at_feet_walk_untextured` | 2.50 | 7.2424 | 0.98662845 | 1.0082 | 0.9984 | 0 |
+| `zero_proof_no_jitter_static` | 0.00 | 0.0000 | 0.00000000 | *void, see below* | NaN | 0 |
+
+**The largest real ceiling anywhere in the fixture is 2.9852, and the second largest is 1.0603.** C1's 5×
+was unreachable on **every arm**, and on eight of ten it was unreachable by a factor of five.
+
+**C3's 80% was unreachable for the same reason, one substitution later.** From the identity below,
+`concentration ≤ (R − 1 + b)/R`, so clearing 0.80 needs `R ≥ (1 − b)/0.20`. Per arm that is **4.2075 to
+4.9680**, against a ceiling that never exceeds 2.9852. **Two of the three registered clauses were
+decided by the fixture's own footprint, and the harness ran anyway and reported the number** (the `✗51`
+rule).
+
+---
+
+**C1, and the persistence half is the more interesting failure.** Headline arm, standing still at pitch
+−0.6 rad looking at the rock underfoot — `game_dig`'s default state, since the walk is key-driven and the
+demo opens with no key held:
+
+| offset | population | rejected | control | `paired_frame_ratio` | changed px | mean clip `s` | deep clips (`s` < 0.5) |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| **+0** | 516,731 | **7,348** | 2,568 | **2.8614** | 5,098 | **0.340765** | 4,818 (65.6%) |
+| +1 | 516,748 | 3,117 | 2,460 | 1.2671 | 5,105 | 0.808022 | 311 (10.0%) |
+| +2 | 516,735 | 3,203 | 2,810 | 1.1399 | 5,103 | 0.788500 | 396 (12.4%) |
+| +3 | 516,749 | 2,874 | 2,616 | 1.0986 | 5,109 | 0.810035 | 279 (9.7%) |
+| +4 … +11 | ~516,740 | 1,810–3,136 | 1,563–2,867 | 1.1001–1.1580 | 5,096–5,110 | 0.776–0.800 | 227–441 |
+
+`frames_elevated` counts frames at or above `2 × steady = 0.00980798`; frame +0 reads 0.01422016 and
+frame +1 reads 0.00603195, so the count is **1**.
+
+**The one-frame debt is not a threshold artefact, and the tenth arm proves it with the floor removed.**
+On `zero_proof_no_jitter_static` — same fixture, camera frozen *and* TAA jitter off, so the reprojection
+is the identity — the dig rejects **4,792 of 516,327 samples (0.928% of the frame) on the edit frame and
+exactly 0 on each of frames +1 through +11**, while the hole is still there: `frame_changed_pixels` reads
+**5,105 on all twelve frames**. Eleven zeros in a column whose first entry is 4,792.
+
+**Why, and it is because clipping works.** The resolve moves the stale history onto the *shell* of the
+current neighbourhood in the frame the disocclusion appears, and the shell is by construction inside the
+local range, so the next frame's reprojected sample is already valid. The geometry being permanently
+different does not extend the debt; only the *transition* costs anything. `frame_mean_clip_s_over_rejected`
+says the same thing from the other side: **0.086461 on the floorless arm's edit frame**, rising to
+0.776–0.810 on the headline arm's frames +1 onward.
+
+> **The 0.086461 belongs to the floorless arm, not to the headline arm, and R-077's prose ran the two
+> together.** On the headline arm the edit frame reads **0.340765**, because 2,568 of its 7,348
+> rejections are the shallow locomotion floor. Subtract that floor at its own measured mean —
+> `(7,348 × 0.340765 − 2,568 × 0.831331) / 4,780` = **0.0772** — and the dig's own clip depth agrees with
+> the floorless arm's directly-measured **0.086461** to 11%. Both say the same thing: the dig's
+> rejections are *deep*.
+
+---
+
+**C2's recovery half is zero by construction, and the paper's own words are the proof.** Section 3 of
+`10.1145/3681758.3697996` (Ikkala, Lauttia, Jääskeläinen & Mäkitalo, SIGGRAPH Asia 2024 Technical
+Communications), as transcribed in the bench's header:
+
+> *"As a general-purpose approach, we include the X, Y and Z axes and optimize the rest of the axes to
+> achieve tightest bounds around a unit sphere. **This approach should never be looser than an AABB.**"*
+
+A k-DOP that contains the AABB's own axes is a **subset** of that AABB, so every colour the AABB rejects
+the k-DOP also rejects, and the set a k-DOP "recovers" from an AABB in the same colour space is **empty
+by construction**. `kdop_recovered_fraction` reads `0.00000000` on **all 140 rows** and
+`frame_recovered_dop26_ycocg` reads `0` on all 140 — against 30,409 baseline rejections in the headline
+arm's window and 5,370,840 in the walking arm's.
+
+**C2 as registered inverts its source, and the sentence the registration paraphrases is the one that says
+so.** The paper's framing is the opposite direction — Figure 1's caption, same transcription:
+
+> *"neighborhood clipping with an AABB often **allows** colors which don't fit in the color neighborhood;
+> this results in ghosting"*
+
+k-DOP clipping reduces ghosting by rejecting **more**, never by recovering. The direction the source
+actually claims is measured here as `frame_extra_rejected_dop26_ycocg`: **2,884** samples the YCoCg AABB
+accepted and the 26-DOP rejected, on the headline edit frame's 7,348 baseline rejections — the 26-DOP
+rejects **39.2% more**. On `dig_at_feet_walk`, 27,441 extra on 449,842.
+
+**The zero is a containment property, not a dead counter, and the harness carries the arm that proves
+it.** `dop26_rgb` is the same 13-axis polytope in RGB, which does *not* contain the YCoCg baseline's axes.
+`kdop_recovered_fraction_rgb_axes`: **0.58225803** on the quarter-speed arm (177,651 samples),
+**0.42659628** at half resolution (41,777), **0.17634858** on `dig_at_feet_walk` (79,329), and
+**0.00435493** (32 samples) even on the headline static arm. The recovery counter demonstrably reports
+non-zeros; the zero next to it is the theorem.
+
+---
+
+**C2's cost half is about a pass that does not exist in this crate — VACUOUS, and the number comes from
+the source at tier `V`.** `crates/isomesh` must not depend on Bevy (`CLAUDE.md` hard rule 2), so there is
+no renderer and no GPU resolve stage here. `kdop_ms` is the **single-threaded CPU wall-clock of this
+harness's own 13-axis clamp pass** over its own pixel population — 62.6205 ms for 516,731 pixels — and it
+is labelled that way in the bench header, in the printed headline and here. It is not a GPU TAA resolve
+cost and is not offered as one.
+
+The machine-independent figure is `clamp_ratio_dop_over_aabb` — **2.0746** on the headline arm,
+**2.0549–2.1922** across the nine jittered arms. The per-pixel cost is stable to 1.2% across a 4× change
+in pixel count and a 1.9× change in populated pixels: `kdop_ms` ÷ `population` reads **121.0, 121.2,
+121.0, 121.3, 121.7, 122.4 ns/px** on `dig_at_feet_walk`, `dig_at_feet_static`,
+`dig_at_feet_walk_half_res`, `dig_at_feet_walk_quarter`, `demo_pose_walk`, `demo_pose_static` — about
+**508–514 cycles at the `cpu_mhz` = 4200 on the row** for 9 samples × 13 axes, so ~4.3 cycles a dot
+product, which is what a scalar loop should cost. `kdop_ms_per_megapixel` is over *frame* pixels rather
+than populated ones, which is why the two `demo_pose_*` arms read ~64–65 against ~121: at pitch −0.15 the
+horizon is in frame and roughly half the pixels never hit the surface.
+
+**What the source supplies, which the registration missed.** The registration's *"0.2 ms overhead (GPU
+NOT NAMED IN THE ABSTRACT)"* is correct about the abstract and the **body resolves it**: Section 4 puts
+the 0.2 ms on a **GTX 1080 Ti** (32-DOP 0.662 ms against AABB 0.452 ms, `+0.210 ms`) and states that on an
+**RTX 3090** the AABB methods take around **160 µs** and 32-DOP **210 µs** — a **+50 µs** delta. That is
+a factor of **6 under C2's 0.3 ms bar** and a factor of **4 under the 0.2 ms the abstract quotes**, so
+**C2's cost half is satisfied — from the paper, at tier `V`, not from this harness.** Anyone citing 0.2 ms
+for this rig's GPU class is citing the wrong number by 4×. *Provenance, stated because the ledger's rule
+is to verify the source separately from the number:* the paper is **not in the local corpus** —
+`distill_search` returns nothing for it and `docs/research/2026-08-27-thirty-experiments-for-the-game.md`
+line 472 records only the abstract-level note *"GPU not named in the abstract; flag when citing"* — so
+these Section 3, Section 4 and Figure 1 readings rest on the harness author's reading of the paper as
+transcribed verbatim into `crates/isomesh/benches/experiment_p77.rs:40-58`, not on a corpus artefact.
+
+The two ratios are consistent rather than contradictory: the source's own is 0.662/0.452 = **1.465** on a
+1080 Ti and 210/160 = **1.313** on a 3090, against this CPU pass's 2.0746. A scalar CPU loop pays
+linearly in axis count; a GPU pays a large fixed cost for the nine texture fetches and its ratio is
+therefore lower.
+
+---
+
+**C3 is not independent of C1, and the entry has to show why or a reader will count it as a second test.**
+Subtracting a sphere is `f' = max(f, −(|p − c| − r))`. Outside the sphere the second term is negative, so
+a solid point stays solid and an air point is untouched: **the zero set changes only inside the brush.**
+A ray whose depth changed therefore passed through the brush, so every changed pixel lies inside the
+brush's projected silhouette disc — which the harness asserts, and
+`frame_changed_outside_silhouette` = **0 on all 140 rows**. Writing `b` for the dilated box's area
+fraction and `R` for the frame-paired ratio, the concentration is `(R − 1 + b)/R`: the dig's rejections
+are all inside the box, and a fraction `b` of the steady floor's are too.
+
+**The arithmetic, all four numbers from the file.** `R = 7,348/2,568 = 2.861371` (`paired_frame_ratio`
+2.8614), `b = 0.09179126` (`box_area_fraction`):
+
+    predicted   (R − 1 + b)/R = 0.682597      ← computed before the run; R-077 reported 0.6826
+    measured    4,940/7,348   = 0.672292      ← `concentration_fraction`
+    residual                    0.010305
+
+**The residual is not slack — it is a column.** The dilated box holds `160/2,568 =` **6.2305%** of the
+steady floor's rejections against **9.1791%** of the frame's area, because the box sits on the rock
+underfoot where the floor's rejection density is below average. Correct for that and the identity is
+exact to six decimals: `(b × 2,568 − 160)/7,348 = 0.010305`. So the uniform-`b` prediction was high by
+precisely the box's under-representation of the floor, and nothing else.
+
+**The mechanism C3 was written to test held completely.** `concentration_edit_attributable` = **1.000000**
+— the treatment rejected 7,348 and the frame-paired control 2,568, so **4,780** rejections are
+edit-attributable; in the box the treatment has 4,940 and the control 160, so **4,780** are
+edit-attributable there too. **4,780 of 4,780.** It reads 1.000000 on all twelve frames of the window
+(`frame_concentration_edit_attributable`) and 1.000000 on the floorless arm, where the denominator has no
+floor at all (4,792 of 4,792). **What the registered form measures instead is C1**: its denominator is
+every rejection in the frame, and 2,568 of the 7,348 are the locomotion/jitter floor, of which 2,408 fall
+outside the box and drag the fraction to 0.6723.
+
+---
+
+**The registered vacuity control, its column, its value, and why that value could have been zero.**
+Registered text: *"the steady-state arm must have a non-zero rejection rate, or the 5x ratio is division
+by a floor."* Column: **`steady_rejection_fraction`**, and `frame_rejected` on the `*/steady_window` rows.
+Value on the headline arm: **0.00490399 — 30,409 rejections over 6,200,866 history samples**, asserted
+`steady_rejected > 0` for every jittered arm *before any number is reported*, with the assertion message
+naming the clause it protects.
+
+**A non-zero assertion is worthless unless the zero was attainable (`M-44`), so the harness carries the
+arm where it is attained.** `zero_proof_no_jitter_static` is the same fixture with the camera frozen and
+the TAA jitter off, so the reprojection is the identity and the history converges to the current frame.
+It rejects **exactly 0 over 6,195,924 samples**, `frame_mean_reproj_px` **0.0000**, and the harness
+asserts `zero_proof × 100 < headline_steady_rejected` — the zero arm must be two orders of magnitude
+below or the non-zero rate is a property of the harness rather than of the resolve. Printed at run time:
+`P-77 vacuity control: steady rejections 30409 with jitter, 0 without -- the zero was reachable.` **That
+is what makes 0.00490399 a measurement**: the same code path, one knob away, reports 0 over six million
+samples, so the headline arm's 30,409 is the resolve rejecting history and not the instrument idling.
+
+---
+
+**Four columns read `false`, `true`, `NA` or a large number for a reason other than the clause behaving
+that way, and each is quoted here so no reader misparses the file.**
+
+> **`c1_holds` = `false` and `ratio` = `NaN` on `zero_proof_no_jitter_static` is a void gate, not a
+> failure.** `c1 = evaluable && ratio >= 5.0 && frames_elevated >= 3`, and `evaluable` is `steady > 0.0`,
+> which is `false` on that arm **by design** — it is the arm whose steady rate is zero. The ratio is
+> recorded as `NaN` rather than as an infinity a reader might quote, and `c1_evaluable` = `false` is the
+> column that says which.
+
+> **`ratio_ceiling_from_footprint` = `5106.0000` on that same arm is a floored denominator, not a
+> ceiling.** It is `(c₀ + changed)/c₀` with `c₀ = control_rejected.max(1)`, and the true `c₀` is 0, so
+> `c₀` became 1 and the column reports `(1 + 5,105)/1`. It is not a bound on anything.
+
+> **`c2_holds` = `false` on all 140 rows is two different statements wearing one column.** It is
+> `recovered >= 0.5 && kdop_ms < 0.3`. The first conjunct is a genuine falsification at exactly 0. The
+> second is **62.6205 ms of single-threaded CPU clamp pass compared against a 0.3 ms GPU resolve
+> budget** — a category error, not a clause failing, which is why the cost half is scored VACUOUS above
+> and settled from the source instead.
+
+> **`concentration_edit_attributable` = `NA` on six arms is an empty share, not a missing measurement.**
+> It is `Δbox/Δtotal` and is emitted as `NA` when `Δtotal ≤ 0`. On the six walking arms the dug world
+> rejected **fewer** samples than the undug one — `dig_at_feet_walk` reads 449,842 against the control's
+> 450,140, a `paired_frame_ratio` of **0.9993** — because at an 86.6% floor the dig's 4,169 changed
+> pixels are below the noise. **That is itself the finding for those arms**: under locomotion a dig is
+> not merely a small effect on TAA history, it is not detectable at all.
+
+> **`frame_dop_ms` = `0.0000` on the twenty `*/steady_window` and `*/post_edit_window` rows is a gap in
+> the aggregator, not a zero-cost pass.** `agg()` sums `aabb_ms` and does not sum `dop_ms`. The registered
+> `kdop_ms` column is the edit frame's and is correct; the per-frame `frame_dop_ms` values are the ones to
+> read. Similarly, `frame_mean_clip_s_over_rejected` = `NaN` on eleven `zero_proof` rows is a mean over
+> zero rejections.
+
+---
+
+**The instrument, described precisely because `R-076` and `R-091` both denominate clauses in it.**
+`crates/isomesh` must not depend on Bevy, so there is no renderer — but TAA history rejection is a
+**per-pixel geometric predicate**, and the predicate is implemented in full rather than approximated.
+`P-76` has already inherited its containment result (`experiment_p76.rs:1345`: *"`P-77` showed a k-DOP
+that contains the AABB's own axes is a subset of it and recovers exactly zero"*) and `P-91` names it as
+the source of its rejection predicate and its jitter pattern.
+
+1. **The field is `game_dig`'s**, verbatim: `height = 0.35·sin(0.9x)·cos(0.7z) + 0.15·sin(2.1x)`; brushes
+   are subtracted spheres of radius **0.25**, `game_dig`'s default `World::radius`.
+2. **The camera is `game_dig`'s**: `Transform::from_xyz(0.0, 1.70, 6.0)`, `Look { yaw: 0.0,
+   pitch: −0.15 }`, walk **2.5** units/s, Bevy's default `PerspectiveProjection` (45° vertical FOV).
+3. **The depth buffer is `game_dig`'s own ray caster**, transcribed: `AIM_NEAR` 0.30, `AIM_FAR` 25.0,
+   `AIM_STEPS` 128, `AIM_HIT` 0.01, `LIPSCHITZ` 1.25, same sandbox box test. Tracing the field rather than
+   the extracted mesh is what the demo does and for the demo's reason — the field is the thing being
+   edited, so it cannot go stale.
+4. **Motion vectors are exact**, not approximated: the previous-frame screen position is the world hit
+   point projected through the previous frame's view *including the previous frame's jitter*. The geometry
+   is static between frames except where a brush landed, so this is the motion vector a renderer would
+   write.
+5. **The signal is three independent channels of geometry-only radiance** — warm sun in `max(0, n·l)`,
+   cool sky in `n.y`, a view-dependent rim, then distance fog — modulated by 8 octaves of value noise on
+   the **world** hit point at `game_dig`'s own 1.5-unit albedo tile, so it is a texture on the surface and
+   reprojects exactly. A grey signal would put every neighbourhood on the diagonal of colour space, where
+   an AABB is a cube and any oriented volume wins for free; fog is in because a hole revealing a farther
+   surface must move the signal, which is the mechanism under test.
+6. **The resolve is Karis's**: 10-entry R2 jitter (Roberts 2018), bilinear history fetch requiring four
+   valid taps, rectification by **clipping** — a ray from the current colour to the history colour stopped
+   at the volume's shell, which is the operation Section 3 describes — and `history = lerp(clipped,
+   current, 0.1)`. **A sample is rejected when the clip moved it.** 24 warm-up frames at 60 Hz, 12-frame
+   window.
+7. **Four volumes, one fetched history sample**: `aabb_rgb` (Lottes 2011), `aabb_ycocg` (Karis 2014, the
+   baseline, because that is what production TAA does), `dop26_ycocg` and `dop26_rgb` — Klosowski et al.
+   1998's 13-axis 26-DOP, dilated by the paper's own `eps = 1e-5`. The paper's 32-DOP has 16 axes; more
+   axes only tighten the volume and tightness is what decides C2, so 13 is conservative rather than
+   weaker.
+8. **`population` excludes pixels with no usable history** — off-screen, behind the near plane, or
+   reprojecting onto a miss or a partly-invalid bilinear footprint. `no_history` makes the excluded set
+   visible: **81–2,281 per frame, at most 0.83% of population**. *(R-077 reported "780–2,272, under
+   0.5%"; the committed file's range is wider on both ends.)*
+
+**The row's real product is the reprojection curve, because that is the budget the two dependent rows will
+spend.** Steady-state history rejection is a function of **mean reprojection displacement** and almost
+nothing else, with the knee exactly where a 3×3 neighbourhood's ±1 px reach ends:
+
+| mean reproj px | arm | steady rejection | mean clip `s` |
+|---:|---|---:|---:|
+| 0.0000 | `zero_proof_no_jitter_static` | **0.00000000** | NaN (no rejections) |
+| 0.6115 | `demo_pose_static` | 0.01159249 | 0.795711 |
+| 0.6117 | **`dig_at_feet_static`** | **0.00490399** | 0.831331 |
+| 1.8607 | `dig_at_feet_walk_quarter` | 0.58710621 | 0.779579 |
+| 3.6183 | `dig_at_feet_walk_half_speed` | 0.75028189 | 0.677436 |
+| 3.6413 | `dig_at_feet_walk_half_res` (480×270) | 0.75223568 | 0.632035 |
+| 4.2121 | `demo_pose_walk` | 0.65138010 | 0.736737 |
+| 7.2424 | `dig_at_feet_walk` | 0.86644885 | 0.566452 |
+| 7.2424 | `dig_at_feet_walk_untextured` | 0.98662845 | 0.482990 |
+
+**Two independent routes to the same displacement agree to 0.26%, which is the strongest evidence in the
+row that displacement is the variable.** Halving the walk speed gives 3.6183 px and 0.75028189;
+**halving the resolution instead** gives 3.6413 px and 0.75223568 — over a **4× change in pixel count**.
+The half-res arm also pins the resolution scaling directly: 3.6413 against half of 7.2424 = 3.6212, high
+by 0.56%, so displacement is linear in resolution and 1920×1080 reads ~14.5 px. *(Extrapolation, not
+measured — the fixture's largest measured displacement is 7.2424.)*
+
+**So the budget, stated as the two dependent rows need it.** Standing still, **99.51%** of history
+survives and a dig costs **0.93% of the frame for one frame**. Walking at `game_dig`'s own 2.5 units/s
+while looking at ground underfoot, **13.4%** survives *before anything is dug*, and a dig is not
+detectable in it at all (`paired_frame_ratio` 0.9993). **Any proposal that relies on TAA to resolve a
+stochastic or dithered choice must be evaluated in the standing-still regime**, because in the walking
+regime the history is already gone and the choice will never be resolved.
+
+---
+
+**Five fixture defects this harness's own controls caught, in the order they fired.**
+
+1. **A level camera renders an empty depth buffer.** Caught by `assert!(c.population > 0)`, whose message
+   names the `M-44` failure it protects. `game_dig`'s `Transform` alone carries no rotation, and a level
+   ray from an eye at 1.70 never meets a height field whose maximum is 0.50 — the first version of the
+   harness would have reported a zero over an unreached configuration. Fixed by applying the demo's actual
+   opening `Look::pitch` of −0.15, and −0.6 for the dig pose. Both are arms.
+2. **A smooth signal makes the colour neighbourhood a needle and saturates the predicate.** Run 1 shaded
+   from normals and fog alone and measured a steady-state rejection rate of **95.5%** *(a first-run figure
+   recorded in the bench's doc comment; it is **not** in the committed CSV, whose untextured arm reads
+   **0.98662845** with the detail switched off by the `albedo_detail` column)*. A 3×3 AABB over nine
+   samples of a smooth gradient spans one pixel of that gradient, so any sub-pixel reprojection error
+   leaves it. **This is the most transferable finding in the row**: any TAA-rejection measurement on
+   content with no energy near the pixel rate measures its own shading model. Fixed by the world-space
+   albedo detail, which is what `game_dig`'s own textured terrain supplies.
+3. **Even with the detail in, a walking camera saturates at 86.6%, and a ratio between two saturated
+   rates measures nothing.** Caught by `frame_mean_reproj_px`, added as a diagnostic after defect 2:
+   **7.2424 px per frame** at 960×540, where a 3×3 neighbourhood can validate history that moved one.
+   That is a fact about locomotion, not about digging. Fixed by turning the fixture into a **sweep in
+   reprojection displacement** and taking the registered columns from `HEADLINE_ARM` — the only arm whose
+   denominator has headroom. The bench header states explicitly that the arm was *not* chosen for a better
+   verdict: **every arm is falsified on C1**, and the eight non-headline arms are falsified by a factor of
+   five rather than by 1.7×.
+4. **A binary "the clamp moved it" predicate hides whether the rejection was knife-edge.** Caught by
+   adding `frame_rejected_half` (`s` < 0.5) and `frame_mean_clip_s_over_rejected`, and it carries the
+   whole answer to C2's *mechanism*: the dig's rejections are **`s` = 0.086461 with 4,611 of 4,792
+   deep** — genuine disocclusions — while the locomotion floor's are **`s` = 0.831331 with 2,057 of
+   30,409 deep** — conservatism. Without that column C2 would have been "falsified by containment" with
+   no evidence about which of its two named explanations was true.
+5. **A mutation test of the containment control, run deliberately to prove it bites.** Halving
+   `Cam::silhouette_radius` panics with *"frame +0 has 1719 changed pixels outside every brush silhouette,
+   so either the projection or the brush placement is wrong -- subtracting a sphere cannot move the zero
+   set outside the sphere"* — 1,719 of 4,169 changed pixels flagged. The mutation was reverted; the
+   committed radius is the exact silhouette-cone radius `tan(asin(r/d))/tan(fov/2) · H/2`. **So
+   `frame_changed_outside_silhouette` = 0 on all 140 rows is a zero that could have been large**, which is
+   what makes C3's containment algebra a measurement rather than a restatement of its own premise.
+
+---
+
+**What changed as a result, and it is a null reported as a completed result.**
+
+1. **Nothing in the crate, and nothing should.** `crates/isomesh/src/**` and `crates/isomesh-gpu/src/**`
+   are untouched. The row is a bench and a CSV.
+2. **Do not build k-DOP clipping for this game.** Not because it is expensive — the source puts it at
+   **50 µs on an RTX 3090** — but because it cannot address the thing this row measured. It recovers **0**
+   and rejects **39.2% more**, and the rejections a dig causes are deep clips (`s` = 0.086461), which is
+   exactly the condition C2's own falsifier says means *"the rejections are genuine disocclusions rather
+   than clamp conservatism and no clipping scheme can help."* **"Do not build this" is the conclusion, and
+   the row reached it by the falsifier's own stated route rather than around it.** If a tighter volume is
+   ever adopted here it would be for the **locomotion floor**, where the mean clip is shallow (0.831331) —
+   a different experiment with a different registration.
+3. **This row and P-76's C2 close together, which the registration pre-committed to.** C1 failed *"by
+   under 5x"* **and** *"by a single-frame spike"* — 2.8997 and one frame. P-76's C2 asks for ghosting cost
+   *"in the 8 frames following an edit"*, and there is no eight-frame window: the debt is one frame, with
+   eleven measured zeros after it on the floorless arm. **Recommend P-76 be reduced to C1 and C3 and its
+   C2 closed with this row's number.**
+4. **The budget `R-076` and `R-091` were gated on is the reprojection curve above**, and the column is
+   `frame_mean_reproj_px`. Both must be evaluated standing still, because walking there is no history to
+   spend.
+5. **A source correction to carry.** The 0.2 ms in this registration is a **GTX 1080 Ti** figure from
+   Section 4, not a nameless one, and the RTX 3090 delta in the same section is **50 µs**. Anyone
+   re-citing this paper for this rig should quote 50 µs — a 4× correction.
+
+**Would be shown wrong by:** a rejection elevated for three or more frames on *any* fixture, which would
+mean the one-frame debt is a property of `ALPHA` = 0.1 or of this clip-to-shell rectification rather than
+of clipping in general — the sharpest version is a resolve that *clamps* to the shell's nearest point
+instead of clipping along the ray, since the two differ in exactly where the corrected history lands; a
+k-DOP whose axis set **excludes** the baseline's own axes reporting a non-zero `kdop_recovered_fraction`
+against a same-space AABB, which would break the containment argument rather than the measurement (the
+`dop26_rgb` control shows this is a statement about axis sets and not about polytopes); a fixture whose
+brush changes more than four times as many pixels as its steady floor rejects, which is where C1's 5×
+becomes arithmetically reachable and the clause becomes a measurement instead of a footprint;
+`frame_changed_outside_silhouette` reading non-zero on correct code, which would mean the silhouette-cone
+projection rather than the brush is wrong; or a real GPU TAA resolve in a Bevy-side crate measuring the
+26-DOP pass at over 0.3 ms, which is the only thing that could make C2's cost half a falsification here
+rather than a `V`-tier satisfaction.
+
+### 💥 ✗59 / M-390 — C1's **factor** bound FALSIFIED at **3.36–8.38** with `c1_holds` true on **18 of 72** rows, C1's **world-size** falsifier HELD at **1.391×** against a world that grew **8.00×**, C2 FALSIFIED **inverted** on **72 of 72** rows — the `parry3d` BVH over the extracted mesh is **1.95–7.27× faster** than sphere-tracing the field — and C3 HELD on **36 of 36** pairs at **1.25–2.53×** on two digs matched to **171 samples exactly** (P-78, R-078)
+
+**M.** `cargo bench --bench experiment_p78`, `docs/experiments/p-78.csv`, **72 rows**, `f32` (`parry3d` is
+`f32`-only, so an `f64` field arm would have put a precision difference inside C2's ratio), AMD Ryzen 9
+5900X (Zen 3), `cpu_mhz` **3,639.7 on every row**. The fixture is gyroid caves at period 12 inside a block
+sealed at `[2.25, W − 2.25]`, with one **sealed air pocket** — a radius-5 ball of air inside a 3-cell shell
+at the fixed world position `[16, 16, 16]` — swept over 3 worlds (32³/48³/64³ cells at *fixed cell size*)
+× 4 `M-50` log buckets (8/23/38/53 subtracted spheres of radius 3) × 3 probe spacings (2/4/8 cells) × 2
+arms (breakthrough, matched-volume control). The committed provenance line is `# commit abffc18 on
+amd-ryzen-9-5900x-12-core at 2026-08-28T00:51:51Z` — **no `(WORKING TREE DIRTY)`** — and `abffc18` is an
+ancestor of `HEAD`.
+
+> **Every number below is read from the committed `docs/experiments/p-78.csv` at `abffc18`, and the
+> superseded run's numbers are not reproduced here (`✗35`, `✗52`).** The R-078 report was written from a
+> dirty pre-run at `63c7161` taken while ~25 sibling harnesses were compiling, and a first "re-run on a
+> clean tree" commit (`a2c5ff7`) still carried `# commit 1610af0 (WORKING TREE DIRTY)`; both are replaced
+> by this file. **The comparison is the useful part: between `1610af0` and `abffc18`, 51 of the 57 columns
+> are byte-identical on all 72 rows.** The six that move are exactly the clock-derived ones —
+> `cpu_mhz` (4,102.2 → **3,639.7**), `gather_ms_field`, `gather_ms_mesh`, `gather_speedup`, `extract_ms`,
+> `bvh_build_ms` — which is `M-279`'s rule satisfied: the new run agrees with the old one on everything
+> that is not a clock. Against the report's `63c7161` run: `cpu_mhz` 3,823–3,917 → **3,639.7**;
+> `gather_speedup` 0.097–0.445 median 0.201 → **0.137479–0.513805 median 0.2446**; the inverted figure
+> 2.25–10.35× median 4.98× → **1.95–7.27× median 4.09×**; field 2,859–3,369 ns/ray → **1,198–3,704**; mesh
+> 659–713 → **469–693**; `mean_steps_per_ray` 26.6–28.5 → **25.15–29.65**; ns per field *sample* 107–118 →
+> **47.6–125.6**. **Two reported conclusions are withdrawn on those moves and replaced below**: the "at
+> least 2.25× faster" floor, and the fitted "1,214 ns intercept, so an empty log is still 1.81× slower".
+> The verdicts are unchanged, and every integer the verdicts rest on reproduced exactly.
+
+| clause | registered | measured |
+|---|---|---|
+| C1a the invalidation set tracks the brush's dilated support with a constant factor **under 4**, across four log buckets and three probe densities | `invalidation_factor` < 4.0 | **FALSIFIED — 3.356643 … 8.376731; `c1_holds` true on 18 of 72 rows, and on 0 of the 36 breakthrough rows** |
+| C1b "or by a count that grows with world size at fixed edit size" — the falsifier that kills probe GI outright | no growth in `probes_invalidated` | **HELD — worst growth 1.391×, while `world_cells` grows 8.00× and `probes_air_before` 9.58–10.46×** |
+| C2 tracing the field beats tracing the extracted mesh by at least **3×** at equal ray count | `gather_speedup` ≥ 3.0 | **FALSIFIED, inverted — 0.137479 … 0.513805, median 0.2446, `c2_holds` true on 0 of 72; the BVH wins by 1.95–7.27×, so the clause misses by 5.8–21.8× in ratio, median 12.3×** |
+| C3 a dig that opens a new air component invalidates **strictly more** probes than a same-volume dig that does not | strictly more | **HELD — 36 of 36 pairs, ratio 1.2500–2.5333, median 1.8947, on arms matched at `dug_samples` = 171 exactly** |
+
+> **Three verdict columns read `false` for reasons that are not a clause failing, and none of them should
+> be read as one.** (1) `pocket_connected_before` is `false` on all 72 rows: that is the *precondition*
+> holding — the edit log never leaked into the sealed pocket. (2) `pocket_connected_after` is `false` on all
+> 36 control rows: that is the control arm doing its job, and it is asserted, not observed. (3) `c1_holds`
+> is `false` on all 24 `s = 8` rows and **that is quantisation, not width** — see the conditioning
+> paragraph: `probes_in_support_actual` is literally **0** on the twelve `s = 8` breakthrough rows and **1**
+> on the twelve controls, so at that density the factor's denominator is an expectation (0.5586–0.7051
+> probes) and not a population. A `false` there says the lattice is too coarse to answer, not that the
+> invalidation is wide.
+
+**The SHARE recomputation, and one clause arithmetic could not reach before the run.**
+
+C2's registered share is *the gather pass at 87–96% of radiance-cascade frame time* (Dell'Ova, BTH 2025,
+**DOI UNVERIFIED** — flagged at registration, flagged in the bench header, flagged again here). **C2 is
+reachable** because it is a ratio *on the gather itself* rather than on a frame: a 3× gather win is
+`1/(0.13 + 0.87/3)` = **2.38×** at 87% and `1/(0.04 + 0.96/3)` = **2.78×** at 96% on total GI cost by
+Amdahl. Nothing about the arithmetic makes 3× unreachable, and the measurement missed in the other
+direction.
+
+**C1 needed a unit decision, and the registration's literal reading is density-dependent by
+construction.** `probes_invalidated` is a count of *probes* and `brush_support_cells` a count of *cells*,
+so the literal quotient of the two registered columns has a probe lattice in it. Its ceiling — every probe
+in the world invalidated — is `probes_total / brush_support_cells`, and the CSV carries it as
+`factor_ceiling_literal` on every row:
+
+| world | s = 2 | s = 4 | s = 8 |
+|---|---:|---:|---:|
+| 32³ | 11.38–14.32 | **1.42–1.79** | **0.18–0.22** |
+| 48³ | 38.29–48.34 | 4.79–6.04 | **0.60–0.76** |
+| 64³ | 90.77–114.57 | 11.35–14.32 | **1.42–1.79** |
+
+**Four of the nine (world, density) pairs — 32 of the 72 rows — have a literal ceiling below 4, so on
+those rows the literal ratio could not have reached 4 even if every probe in the world had been
+invalidated.** A fifth, (48³, `s = 4`), tops out at 4.79–6.04 and would have needed **66–83% of every
+probe in the world** to reach the bar. Scoring C1 on that quotient would have been `M-44`'s vacuous zero
+in a ratio's clothing.
+
+*(The bench header and the R-078 report both say "seven of the nine". That is not what the committed
+column says, and it is not what the header's own predicted table says either — with the ~10³ support it
+assumed, five of nine fall below 4. The file's count is **four of nine pairs / 32 of 72 rows**, and it is
+the one quoted here. `✗39`'s rule: after fixing an instrument, re-read the column from the artefact.)*
+
+**So `invalidation_factor` is recorded in probe units** — `probes_invalidated / (brush_support_cells / s³)`,
+the invalidated probe count over the number of probes the dilated support itself contains. That is
+algebraically `probes_invalidated · s³ / brush_support_cells`, i.e. **an implied volume ratio**, whose
+numerator is emitted directly as `invalidated_volume_cells`. Its ceiling is
+`world_cells / brush_support_cells` = **91.0222 … 916.5874** — **density-independent**, identical for both
+arms of a pair up to the support, and `assert!(ceiling > 4.0)` fires per row. **Above 4 was always
+reachable, and it was reached on 54 of 72 rows.** Both readings are in the file:
+`invalidation_factor_literal` runs 0.013850–1.047091 and never comes near 4 anywhere.
+
+**The conditioning is not the same at all three densities, and that decides which rows are evidence.**
+`probes_in_support_expected` is `brush_support_cells / s³` and the CSV carries it: about **45** probes at
+`s = 2` (35.75–45.13), **5.6** at `s = 4` (4.4688–5.6406) and **0.70** at `s = 8` (0.5586–0.7051). So one
+invalidated probe is worth **0.02**, **0.18** and **1.43** factor units respectively, and the 4.0 threshold
+sits at **179.5**, **17.9–22.6** and **2.23–2.82** probes. At `s = 8` the factor is quantised in steps
+larger than a third of the bound being tested, an `s = 8` row cannot distinguish a wide invalidation from a
+narrow one, and the integers say so twice over: `probes_invalidated` is **exactly 4** on all twelve `s = 8`
+control rows and **exactly 5** on all twelve breakthrough rows, at every world size and every log length.
+**`s = 2` is the density at which C1 is decided; `s = 8` is reported because the registration asked for
+three densities, and read as quantisation rather than as evidence.**
+
+The sharpest form of that caveat is `invalidated_volume_cells`, which is the same physical region measured
+at three granularities. For the control arm it is **1,128–1,360** cells at `s = 2` and **960–1,088** at
+`s = 4` — a 1.42× spread across two densities and three world sizes — and **exactly 2,048** at `s = 8`,
+which overstates the same dig's `s = 2` reading by **1.51–1.82×** and its `s = 4` reading by
+**1.88–2.13×**, purely because a probe there carries a 512-cell cube.
+
+**C1a is falsified, and the mechanism is the edit log rather than the brush.** `brush_support_cells` is
+**286 on every control row** and 359–361 on every breakthrough row — the measured brush is radius 4 in both
+arms and its support does not move with the log. What moves is the probe count:
+
+| `s = 2`, control arm | log 8 | log 23 | log 38 | log 53 |
+|---|---:|---:|---:|---:|
+| `probes_invalidated` (32³ / 48³ / 64³) | 141 / 142 / 142 | 141 / 142 / 142 | 147 / 150 / 150 | 166 / 170 / 170 |
+| `invalidation_factor` (32³ / 48³ = 64³) | 3.944 / **3.972** | 3.944 / **3.972** | 4.112 / **4.196** | 4.643 / **4.755** |
+| `c1_holds` | true | true | false | false |
+
+So **an ordinary, non-topological dig of radius 4 sits on the bound and crosses it as the edit log grows**:
+the factor is monotone in `log_brushes` at a fixed support, because prior brushes have already opened the
+rock around the measured brush and more probes therefore have a ray that moves. The 4.0 bar is crossed
+between M-50's second and third buckets, and the closest margin anywhere is **1.00 probe** out of the 143.0
+the bar sits at (`M-44`'s rule: record the margin, not the verdict). At `s = 4` the control arm holds on all
+12 rows at 3.357–3.804, with a closest margin of **0.88 probes** out of 17.9 — the same physical region,
+read through a coarser lattice, landing on the other side of the bar. **The bound is not a property of the
+dig; it is a property of the dig, the log length and the lattice together, which is why it is the wrong
+gate.** Every breakthrough row is above 4 at every density: 5.06–8.38 at `s = 2`, 4.10–7.09 at `s = 4`.
+
+**What the factor does say, run-independently, is that the invalidated region is edit-local.** Converted to
+an equivalent ball, the control arm's invalidated volume has radius **6.12–6.87 cells** against a support
+whose equivalent radius is 4.087, so **the invalidated set is the support dilated by 2.03–2.79 cells** —
+consistent at `s = 2` and `s = 4`, at all three world sizes, across a 6.6× range of edit-log length. The
+breakthrough arm dilates by 2.65–4.55 cells. That is a bounded, local, world-independent region measured
+two ways; it is simply not bounded by the number 4 in probe units.
+
+**C1b HELD, decisively, and this is the clause that mattered.** At fixed edit size the world grew **8.00×**
+in cells (32,768 → 262,144) and the live probe population grew **9.58–10.46×** (`probes_air_before`
+1,293 → 5,301 → 13,521 at `s = 2`, bucket 1-15), while `probes_invalidated` grew by at most **1.391×** over
+all 24 (bucket, density, arm) triples. The growth is confined to one step: **23 of the 24 triples are
+exactly constant from 48³ to 64³** — the exception is (46-60, `s = 2`, breakthrough) at 376 → **378**, two
+probes. `s = 8` is exactly constant on all 24 rows.
+
+| bucket 16-30 | 32³ | 48³ | 64³ | 64/32 |
+|---|---:|---:|---:|---|
+| `s = 2` breakthrough | 271 | 332 | 332 | 1.225× |
+| `s = 2` control | 141 | 142 | 142 | 1.007× |
+| `s = 4` breakthrough | 26 | 36 | 36 | 1.385× |
+| `s = 4` control | 15 | 15 | 15 | 1.000× |
+| `s = 8` breakthrough / control | 5 / 4 | 5 / 4 | 5 / 4 | 1.000× |
+
+**The residual is attributed by the arm contrast rather than asserted.** The control arm barely grows at all
+(≤ 1.024× everywhere) while the breakthrough arm grows 1.199–1.391×, and both digs sit near a wall of the
+32³ world — `edit_center` is `6.26_6.12_14.10` for the control, 4.01 cells inside the `x` face at 2.25, and
+`17.41_16.00_23.88` for the breakthrough, 5.87 cells inside the 32³ `z` face at 29.75. So proximity to the
+boundary is not what separates them. What separates them is *range*: a widening changes rays only within a
+couple of cells of the brush, whereas a breakthrough opens a shell and every probe that gains a sight line
+*into the pocket* is invalidated however far away it is. A long-range set is the one a small world clips,
+and 48³ already contains it — which is why adding 64³'s 151,552 further cells and 8,220 further live probes
+adds nothing.
+
+**One deliberate design choice makes that clause honest and is worth stating.** Max ray distance is the
+**world diagonal `√3·W`**, not a bounded gather radius. A finite gather radius would have made C1b true by
+construction — no probe outside the radius could ever be invalidated, so the count could not grow with the
+world whatever the geometry did. That is the `M-44` trap inside C1's second falsifier, and the fixture
+declines it: the ray budget grows with the world and the count still does not.
+
+**The instrument, because "probes whose visibility changes" needed an operational definition.** There is no
+Bevy renderer in `crates/isomesh` and there must not be, so a probe is invalidated exactly when one of its
+gather rays lands somewhere else — which is the operation a probe update actually performs. Probes sit on a
+lattice at spacing `s` offset to cell centres; a probe is *live* where the field is air (`value >= 0`, the
+crate's own convention, `cube::is_inside` being `value < 0`). Each live probe casts `dirs_per_probe` = **32**
+rays on a **fixed** Fibonacci sphere, so before and after are the same gather. Each ray is sphere-traced
+with a **global Lipschitz divisor** — the gyroid is *not* a distance field and `|g|` must not be used as one;
+`∂g/∂x = scale·(cos a·cos b − sin c·sin a)` is bounded by `2·scale`, so `|∇g| ≤ 2√3·scale` = **1.8138** at
+period 12, and every other operand (box, sphere, annulus) is exact with constant 1, so the divisor is
+`max(2√3·scale, 1)`. Per-ray outcome is a hit distance, `MISS`, `UNRESOLVED` (the 96-step budget exhausted:
+`unresolved_frac_field` **0.0066–0.0212**, and it is deterministic, not an error) or `DEAD` (probe not in
+air). A probe is invalidated when its liveness flips or any of its 32 outcomes changes kind or moves more
+than `hit_tol_cells` = **0.5**. **The count has no numerical floor**: where the brush does not dominate,
+`max(f, −sphere)` returns `f` *bit-identically*, so an unaffected ray is bit-identical before and after.
+32 directions under-resolves a real DDGI probe's 64–256 and the bias is **downward**, i.e. toward C1
+holding — stated rather than hidden.
+
+**C2 is falsified in the opposite direction on every row, and the mechanism is a count, not a clock.**
+`gather_speedup` = `gather_ms_mesh / gather_ms_field` runs 0.137479–0.513805 and `c2_holds` is `false` on
+all 72 rows. Restated usefully: at **equal ray count** — `rays_field == rays_mesh` is asserted per row and
+true on all 72, over 992 … 437,632 rays — the `parry3d` BVH over the extracted mesh is **1.95× to 7.27×
+faster** than sphere-tracing the field. Per `M-280` the clock is on every row and the verdict is a ratio;
+per `M-281` both arms are timed in the same loop iteration of the same build, min of 2 passes.
+
+The mechanism is that **the field arm's per-ray work grows linearly with the edit log and the mesh arm's
+does not grow at all.** At `s = 2`, median ns per ray over the two arms:
+
+| world | log 8 | log 23 | log 38 | log 53 | growth |
+|---|---:|---:|---:|---:|---|
+| 32³ field | 1,254 | 1,944 | 2,645 | 3,368 | **2.69×** |
+| 32³ mesh | 516 | 516 | 521 | 522 | 1.010× |
+| 48³ field | 1,353 | 2,095 | 2,838 | 3,587 | **2.65×** |
+| 48³ mesh | 601 | 602 | 602 | 605 | 1.006× |
+| 64³ field | 1,409 | 2,172 | 2,938 | 3,704 | **2.63×** |
+| 64³ mesh | 645 | 646 | 644 | 647 | 1.002× |
+
+`mean_steps_per_ray` is flat within a world (26.3–26.9 at 32³, 28.4–28.7 at 48³, 29.6 at 64³), so none of
+the field arm's growth is extra tracing — it is all per-sample cost. **The run-independent statement is the
+integer the timing is a proxy for (`✗24`):** a field ray costs `mean_steps_per_ray × (2 + log_brushes)`
+primitive SDF evaluations, which is **270** at log 8 rising to **1,491** at log 53, a **5.5×** growth that
+no machine changes. A mesh ray costs one BVH descent, and the BVH's own scaling is visible in the same file:
+`mesh_tris` grows **9.1×** (18,844 → 171,840) for a 1.25× cost (516 → 645 ns), which is a logarithm.
+**There is therefore no edit-log length at which the field arm catches up**, and it does not need
+extrapolating to say so: **at the shortest log in M-50's range the field arm is already 2.18–2.43× slower
+per ray** (1,254/516, 1,353/601, 1,409/645). *The R-078 report's fitted "85.1 ns per brush per ray, 1,214 ns
+intercept, so even at an empty log the field is 1.81× slower" is withdrawn — the same fit on the committed
+file gives 49.2 ns per brush per ray and a 942 ns intercept, i.e. 1.56×, and a conclusion that moves by
+1.6× with the clock should not have been carried on a fit when the measured shortest-log ratio says the
+same thing without one.*
+
+**A prior finding reproduces on the way, which is what makes the field arm's growth readable rather than
+surprising.** `M-50` measured cost per re-meshed chunk against edit-log length on the *same four buckets*
+and read **0.158 / 0.354 / 0.525 / 0.589 ms**, calling it *"3.7× for 7× the log, and flattening"* and
+concluding that *"the `BrushStack` walk is a real cost and not proportional at these lengths"*. This
+harness measures a different work unit (ns per gather ray, ≈27 samples) through the same walk over the same
+bucket midpoints of 8 and 53 brushes and reads **2.63–2.69×** against M-50's **3.73×** (0.589/0.158):
+sub-proportional in both, same shape, same conclusion. Per sample it is 47.80 → 125.56 ns, i.e.
+**2.63×** for **5.5×** the primitives per sample (10 → 55). Two instruments on two work units agreeing on
+the shape is `M-279`'s rule satisfied, and it is why the C2 mechanism does not rest on this run's clock.
+
+**Both arms are proved to be looking at the same scene, because a gather ratio is worthless otherwise.**
+Both are driven from **one** liveness vector and **one** direction set. `hit_frac_field` 0.9788–0.9934,
+`hit_frac_mesh` 0.9969–1.0000, `hit_agree_frac` **0.9777–0.9921** (asserted > 0.8), and
+`hit_median_delta_cells` **0.0287–0.0778** — the two arms agree on the hit point to under a tenth of a cell.
+The mesh is not fast because it misses (it hits *more* often) and the field is not slow because it stalls.
+
+**The honest counter-case, recorded so nobody has to guess.** If the mesh must be **rebuilt** per edit, the
+accounting flips at fine probe density and only there. Median `extract_ms` + `bvh_build_ms` is
+**9.35 + 5.90 = 15.2 ms** at 32³, **32.47 + 21.31 = 53.8** at 48³ and **77.75 + 53.30 = 131.1** at 64³.
+Against that, `gather_ms_field / (gather_ms_mesh + extract_ms + bvh_build_ms)` is **2.66 / 2.70 / 2.70** at
+`s = 2` — the field wins, because at that density the gather is huge — and **0.48 / 0.61 / 0.71** at `s = 4`,
+**0.153 / 0.148 / 0.155** at `s = 8`. **But this is not C2**: C2 is denominated in the gather pass, and the
+crate re-meshes only dirty chunks (`M-50`, `M-314`), so a full-world re-extract per edit is a strawman. The
+build is reported as its own columns rather than folded into the gather, because the gather is the 87–96%.
+
+**The registered vacuity control, which is the crux of the row: the breakthrough arm must actually merge two
+air components, asserted from the union-find rather than assumed from the brush.** `Repair::merges` is
+`touched.len()` — the number of **pre-existing** components the newly-air blob touched — so **1 is an
+ordinary widening, 0 is an isolated bubble in bulk rock (which *adds* a component), and only `>= 2` is
+`M-311`'s join.** Measured: on all **36** breakthrough rows `merges` = **2 exactly**,
+`air_components_before` → `air_components_after` is **2 → 1 or 3 → 2** (always a drop of exactly one),
+`pocket_connected_before` = `false` and `pocket_connected_after` = **`true`**. On all **36** control rows
+`merges` = **1 exactly**, components are **2 → 2 or 3 → 3** (unchanged), and `pocket_connected_after` is
+**`false`**. **That value proves the fixture could have failed, for three separate reasons.** First, the
+arms are *chosen* by the union-find, not checked afterwards: the breakthrough direction is searched over 64
+Fibonacci candidates and accepted only if `merges >= 2 && components() < before && connected(pocket, main)`,
+and the control over 96 directions × 3 standoff radii = **288** candidates, accepted only if
+`merges == 1 && components() == before && !connected`, then narrowed by `argmin |dug − dug_breakthrough|`.
+Second, **both searches can come back empty** — each has its own `expect` and either stops the run — **and
+the control's did, twice**: `expect("no candidate dig widened exactly one air component at a comparable
+volume")` is what halted the first two runs, and defect 1 below is why. Third, the same instrument reads
+**1 on one arm and 2 on the other arm of the same pair**, so neither number is a zero that could not have
+been non-zero: a control reading 2 would not have been a control at all. Before every measured edit the
+harness also asserts `components() >= 2` and `!connected(pocket, main)` — so the edit log never leaked into
+the pocket — and that the pocket is a real cavity: `pocket_air_samples` = **515** on every row, which is
+**exactly** the number of lattice points inside radius 5 of a lattice-centred ball, against the 523.6-cell
+continuum volume the assertion's bar is computed from. The shell is intact and unnibbled, not merely
+non-empty. `main_component_samples` runs 8,959 → 103,023, so the "main air network" the pocket joins is the
+labyrinth and not another pocket.
+
+**C3 HELD on 36 of 36 pairs and the volume match is exact, not approximate.** `dug_samples` is **171 on
+every row of both arms**: the two digs turn exactly the same number of samples from solid to air, so C3's
+"a dig of the same volume" is an integer identity and the effect is pure topology. `probes_invalidated`
+(breakthrough) > `probes_invalidated_control` on all 36 pairs, ratio 1.2500–2.5333, median **1.8947**.
+The probe gap is **86–211** (median 172) at `s = 2` and **8–23** (median 19) at `s = 4`; the implied volume
+gap is **688–1,688** cells (median 1,376) at `s = 2` and **512–1,472** (median 1,216) at `s = 4`, of the
+order of the pocket's own 515 air samples plus the probes outside that gain a sight line through the new
+hole. **The mechanism is that a breakthrough does two things a widening cannot**: every probe inside the
+newly connected pocket suddenly has rays that escape instead of terminating on the shell, and every probe
+on the far side that had the shell in the way now sees into the pocket. Both sets change, in both
+directions, which is why the effect is ~1.9× rather than marginal. `probes_born` — probes that were rock
+before and air after — is 23 against 21 at `s = 2` and 4 against 2 at `s = 4`, so liveness flips are a
+small part of it and most of the gap is rays moving.
+
+**C3's weak spot, stated rather than smoothed.** At `s = 8` the "strictly more" is **5 against 4** — one
+probe — on all 12 pairs. It never inverts, but a one-probe difference at a spacing where the dilated support
+holds 0.56–0.71 probes and `probes_in_support_actual` is 0 is a quantisation-scale signal, not a
+measurement. **C3's evidence is the `s = 2` and `s = 4` rows**, where the gap is 86–211 and 8–23.
+
+**Four fixture defects, three caught by the harness's own controls and one by review, all named because
+each changed an instrument.**
+
+1. **The first fixture inset the sealing block 6.25 cells on every face**, which put only 22.6% of the world
+   inside it and cut the air labyrinth into interleaved fragments. With three air components at 32³ the
+   control-arm search reported **0 of 159 candidate digs usable** and the run stopped. **The fix was the
+   block, not the level set**: at `BLOCK_INSET` = 2.25 the air inside is 2–3 components including the
+   pocket, **64 of 64** breakthrough directions merge and **112** of the control candidates widen exactly
+   one component. The canonical `iso = 0` is kept and there is no level-set fudge in the fixture.
+2. **`brush_support_cells` was `value_changed_cells` first, and the no-clipping control refused it.**
+   `max(f, −sphere)` moves the *value* wherever `−sphere > f`, and `f` reaches −30 deep inside the sealed
+   block, so a brush's value support is tens of cells across and **grows with the world**, because the
+   block's interior distance does. **A quantity that grows with world size cannot be the denominator of a
+   clause about world-proportionality** — it would have hidden exactly the effect C1b is looking for. It is
+   now `M-314`'s `output_changed_cells` (*"cells whose triangles change: this is the set that genuinely
+   needs re-meshing"*), which is local to the ball by construction. `value_changed_cells_in_region` is still
+   emitted, named for the fact that within the given region it is a **window** on an unbounded set: it reads
+   **625** on every control row against an output-changed 286, and **547** on every breakthrough row against
+   an output-changed 359–361 — larger where the other is smaller, which is the clearest possible proof they
+   are different quantities.
+3. **The arm predicates misread `merges`.** The first draft asked for `>= 1` on the breakthrough arm and
+   `== 0` on the control, which is "any dig" against "a dig that opens a new bubble" — both wrong, because
+   `Repair::merges` counts pre-existing components *touched*. Reading `grow_from` rather than guessing is
+   what fixed it, and the corrected predicates are the vacuity control quoted above.
+4. **Caught by review, not by a control:** C2's same-scene columns (`hit_frac_field`, `hit_frac_mesh`,
+   `hit_agree_frac`, `hit_median_delta_cells`) were added *after* the first successful run, because a ratio
+   between two arms is worthless if the arms are not tracing the same geometry and nothing in the harness
+   had asserted that they were. `hit_agree_frac > 0.8` is now an assertion. Recorded as the one defect here
+   that a control did not find.
+
+Two further controls held on all 72 rows and are worth naming because they are cheap and they are the reason
+the numbers above are believable: **two instruments, one number** — the harness builds its own per-cell
+bitmap (it needs one, to say which probes sit inside the support) and asserts both its output-changed
+popcount **and** its value-changed count equal `M-314`'s `EditReport` fields; and **nothing is measured over
+an empty set** — `probes_live > 0` (31 … 13,676) and `brush_support_cells > 0` per row.
+
+**What changed as a result.**
+
+- **Probe GI is viable for this game and the reason is C1b, not C1a.** The cache a dig dirties does not
+  scale with the world: 8.00× the cells and 9.58–10.46× the live probes buy at most 1.391× the invalidated
+  probes, and nothing at all beyond 48³. The registered *constant* is wrong — it is **3.36–4.76** for an
+  ordinary dig at the two densities that can resolve one, rising with the edit log, and **4.10–8.38** for a
+  breakthrough — but "edit-proportional, not volume-proportional" is the load-bearing half and it survives
+  with margin.
+- **Do not gate anything on `invalidation_factor < 4`.** It is a ratio whose value depends on the probe
+  lattice, the edit-log length and the arm; at `s = 8` its denominator is an expectation of 0.70 probes
+  against an actual population of 0. The quantity worth gating is the one that is machine- and
+  lattice-independent: `invalidated_volume_cells` at `s = 2`, which is the support dilated by 2.03–2.79
+  cells for a control dig at every world size and every log length.
+- **Do not build probe re-gathers by sphere-tracing the field.** At equal ray count the BVH over the
+  extracted mesh wins on 72 of 72 rows, by 1.95–7.27×, and the field arm's per-ray primitive count grows
+  5.5× across M-50's log range while the BVH's grows logarithmically in triangles. The exception is
+  narrow and stated: if the whole world must be re-extracted per edit *and* probes are at `s = 2`, the
+  field wins by 2.66–2.70× — which is not a configuration this crate is in, because it re-meshes dirty
+  chunks.
+- **The banked breakthrough event can drive a lighting response.** It is a real, measurable **1.25–2.53×
+  (median 1.89×)** spike in probe-update work, concentrated on the frame the union-find reports the merge —
+  which is exactly the frame the game already knows about. It does not have to be discovered by the GI
+  system.
+
+**Would be shown wrong by:** `probes_invalidated` rising between 48³ and 64³ by more than the two probes one
+triple moved, on a world grown further at fixed edit size — that is C1b's falsifier and it is the one that
+would kill probe GI here; a probe lattice at `s = 2` on which the control arm's `invalidated_volume_cells`
+leaves the 1,128–1,360 band, which would mean the invalidated region is not edit-local after all; a machine
+or a `parry3d` version on which `gather_speedup` reaches 3.0 at any log length, which would need the field
+arm's 270-primitive-per-ray floor to cost less than one BVH descent; a breakthrough pair where
+`probes_invalidated` is not strictly greater at `s = 2` or `s = 4`, which would remove the topological
+event's lighting signature; or a `merges` of 1 on a breakthrough row or 2 on a control row, which would mean
+the two arms were never the two things they are named after.
+
+### 💥 ✗60 / M-391 — C1 FALSIFIED at **20.3718** against a bar of 3, C2 FALSIFIED by **4 texels** on one row with a **66-of-96-arm** geometric leak underneath it, C3 HELD at **3.96×** on `game_dig`'s own brush and FALSIFIED on **189 of 384** rows — so for a world being dug away, page invalidation is a *quantisation* and not an area, and Epic's uncached choice is right at the wheel's maximum and wrong at the default (P-79, R-079)
+
+**M.** `cargo bench --bench experiment_p79`, `docs/experiments/p-79.csv`, **392 rows** (384 dig + 8
+buried-control), `f64`, Zen 3 (`amd-ryzen-9-5900x-12-core`, `cpu_mhz` 4197.4 on every row). Eight
+reference fields × four light directions × three brush radii (2, 8, 16 cells — `game_dig`'s default, its
+wheel's middle, its wheel's maximum) × four page sizes (16/32/64/128 texels), one subtractive sphere
+stroke each, aimed at the surface point the light can see nearest the middle of its own frame. Committed
+at **`02ffe13`**, clean tree, an ancestor of `HEAD`.
+
+> **Every number below is read from the committed `docs/experiments/p-79.csv` at `02ffe13`**, whose header
+> carries no `(WORKING TREE DIRTY)`. The clause verdicts were first taken from a dirty pre-run of the same
+> harness with ~25 sibling `cargo` builds live, and **every integer column reproduced exactly** —
+> `pages_invalidated` at all twelve (radius, page) cells, `changed_pixels_full` 221 / 11,853 / 55,464, the
+> single 4-texel C2 failure, the 89/96 and 66/96 leak counts, all eight `max_change_excess_cells`, all
+> eight buried clearances, the −0.093% calibration, and the 194/190 and 383/1 verdict counts. **Every wall
+> clock moved**, and two conclusions moved with them; both are withdrawn and replaced below.
+>
+> One integer *tally* differs and the committed file is authoritative: at the registered configuration the
+> superseded analysis reported `invalidation_constant` 20.3718 on **28** rows and 40.7437 on **4**, where
+> the file reads **29** and **3** — `torus`/`grazing` has `pages_invalidated` 1, not 2. Nothing on the
+> extraction or field path separates the two trees (the only source commits between them add
+> `isomesh::mass` and its `error.rs` variant), and the superseded analysis recorded its own Python kernel
+> as having been clobbered by a sibling agent mid-session, so this reads as a mis-tally rather than a run
+> difference. It changes no verdict: `c1_holds` is false on all 32 rows either way.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 pages invalidated ∝ **projected** area, constant **< 3**, not volume, not scene | constant < 3 | **FALSIFIED — 20.3718 on 29 of the 32 registered-configuration rows and 40.7437 on 3, i.e. 6.79× to 13.58× the bar; `c1_holds` false on all 32 of them and on 190 of the 384 dig rows.** Both negative halves HELD |
+| C2 localised invalidation is **pixel-identical** to a full re-render, all eight fields | any pixel difference | **FALSIFIED — `pixel_diff_localised_vs_full` = 4 on `fbm_terrain`/`oblique`/r = 16 cells/page = 16 texels (39,251 against 39,247). And the page-independent instrument says the bound is unsound on 66 of 96 arms, 6,985 texels** |
+| C3 cached-with-invalidation beats uncached by **≥ 2×** at 12.5 strokes/s | ≥ 2× | **HELD at the registered configuration — median 3.9607, range 2.2814–6.8727, 32/32 rows. FALSIFIED over the sweep: `c3_holds` false on 189 of 384, median 2.0827, min 0.9327** |
+
+**What the instrument is, because every number here is a texel count and none of them is an engine frame
+time.** There is no Bevy and no wgpu — `crates/isomesh` must not depend on Bevy — so the virtual shadow
+map is built from first principles out of geometry this crate produces. The geometry is the crate's own
+`MarchingCubes` extraction over a 64-cell grid on each field's canonical domain, the same triangles a
+renderer would be handed. The depth image is an **orthographic** light-space depth buffer, 896×896 texels
+(112 cells at 8 texels a cell; 64·√3 = 110.85, so the frame circumscribes the domain cube from every
+direction and the texel size is identical across the direction sweep), filled by a scanline rasteriser
+that takes the smallest `dot(p − centre, light_dir)` over every triangle covering the texel centre and
+`+∞` where none does. That is a shadow map's definition rather than an approximation of one, and
+orthographic projection makes depth linear in screen space so the barycentric interpolation is exact.
+The pages are square blocks of 16/32/64/128 texels, and **128 is UE5's physical virtual-shadow-map page,
+so it is the primary arm** — at `game_dig`'s 12.5 cm cell an eighth-of-a-cell texel is 1.6 cm, the order
+of the screen-pixel footprint a UE5 clipmap level targets in a first-person view. 896 is divisible by all
+four page sizes, so `pages_total` (3,136 / 784 / 196 / 49) is not a fiction.
+
+**The two arms share one code path, which is what makes the C2 diff readable as a result.**
+`render(mesh, light, buf, clip)` is the full pass with `clip` the whole frame and the localised pass with
+`clip` the invalidated page block; the localised arm clears those pages, tests every triangle's
+light-space AABB against them, and rasterises the survivors clipped to them. **There is no second
+rasteriser whose disagreement with the first could be mistaken for a result.** The per-triangle cull is
+O(triangles) in both arms — it is exactly the light loop Epic's one published figure optimised from
+1.56 ms to 1.08 ms — so it is charged to the cached arm rather than wished away. What is *not* charged is
+a GPU's draw-call submission and hierarchical-culling overhead, so the measured C3 ratio is an **upper
+bound** on the achievable saving: the direction that favours the hypothesis, stated so the verdict reads
+with it in mind.
+
+**`shadow_ms_cached` and `shadow_ms_uncached` are the cost of *this* rasteriser at a named page size and
+resolution** — milliseconds of shadow-pass work per second of continuous digging, 12.5 × the localised
+pass and 12.5 × the full pass at 896² texels and the row's own `page_texels`. `stroke_rate_hz` reads
+12.5 on all 392 rows and `shadow_ms_cached` is 12.5 × `shadow_ms_localised_pass` to the last printed
+digit (2.18478 against 12.5 × 0.17478). **No frame rate is invented anywhere in this harness. They are
+not engine frame times.**
+
+**The SHARE recomputation, worked out in cells before any code was written, and it is the most
+transferable thing in the row.** C1's constant is `pages_invalidated / (π r² / page_area)`, and for a
+sphere that is a **pure quantisation ratio with no physics in it**. A projected disc of diameter `d` pages
+has an axis-aligned page footprint between `⌈d⌉²` and `(⌊d⌋+2)²`, so the constant is bounded below by
+`4/π = 1.2732` and **rises without limit as the brush shrinks below one page**. The pre-run table, in
+cells, with the one-cell dilation the registered `pages_invalidated` column uses, against what the run
+measured:
+
+| brush radius | page = 2 cells | 4 cells | 8 cells | 16 cells (UE5's 128 texels) |
+|---|---:|---:|---:|---:|
+| 2 cells (`game_dig` default) — **predicted** | 2.86 – 5.09 | 5.09 | 5.09 | **20.37** |
+| 2 cells — **measured median** | **5.0930** | **5.0930** | **20.3718** | **20.3718** |
+| 8 cells — **predicted** | 1.61 – 1.99 | 1.99 | 2.86 | 5.09 |
+| 8 cells — **measured median** | **1.9894** | **2.8648** | **5.0930** | **11.4592** |
+| 16 cells (wheel maximum) — **predicted** | 1.44 – 1.61 | 1.61 | 1.99 | 2.86 |
+| 16 cells — **measured median** | **1.6114** | **1.9894** | **2.8648** | **2.8648** |
+
+**The prediction for the primary arm was 20.37 and the run measured 20.3718.** Where the table quoted a
+single value it quoted the *best* case `⌈d⌉²`; the run lands at the envelope's top `(⌈d⌉+1)²` in nine of
+the twelve cells and at its bottom in three, which is where the brush happens to fall relative to a page
+boundary and nothing else.
+
+**Conclusion stated before the run: "a constant under 3" is arithmetically unreachable at `game_dig`'s
+default brush for any page of 4 cells or more, and unreachable at UE5's page for every brush the wheel
+can reach except the largest.** Both held. The clause is decided by a **brush-diameter-to-page-size ratio
+the registration never named** — `✗51`'s rule applied before the run rather than after it.
+
+**What arithmetic could not reach before the run, said out loud.** Of the twelve (radius, page) cells,
+four sat entirely above the bar and five entirely below it — nine verdicts available with no machine at
+all. **Three straddled it**, and they are the diagonal where the dilated brush is about two pages across:
+
+| r cells | page cells | `d` pages | `⌈d⌉²` | `(⌈d⌉+1)²` | constant envelope | bar 3 | measured median | `c1_holds` true |
+|---:|---:|---:|---:|---:|---|---|---:|---|
+| 2 | 2 | 3.000 | 9 | 16 | 2.8648 – 5.0930 | **straddles** | **5.0930** | 0/32 → FALSIFIED |
+| 8 | 8 | 2.250 | 9 | 16 | 2.8648 – 5.0930 | **straddles** | **5.0930** | 2/32 → FALSIFIED |
+| 16 | 16 | 2.125 | 9 | 16 | 2.8648 – 5.0930 | **straddles** | **2.8648** | 32/32 → HELD |
+| 2 | 4 | 1.500 | 4 | 9 | 5.0930 – 11.4592 | above | 5.0930 | 0/32 |
+| 8 | 2 | 9.000 | 81 | 100 | 1.6114 – 1.9894 | below | 1.9894 | 32/32 |
+| 16 | 2 | 17.000 | 289 | 324 | 1.4374 – 1.6114 | below | 1.6114 | 32/32 |
+
+The top three rows are the three cells the run had to decide; the bottom three are examples of the nine
+it did not, one from each side of the bar.
+
+The run's contribution to C1 is those three rows: two falsified, one held. **At the default brush the run
+closed the one door arithmetic had left open** — page = 2 cells was predicted 2.86–5.09 and came out
+5.0930 on 32 of 32 rows, so *no* page size in the sweep gets under 3 at `game_dig`'s shipped brush.
+
+**The law, as an integer identity rather than a fitted curve.** `pages_invalidated = a·b` with both `a`
+and `b` in `{⌈d⌉, ⌈d⌉+1}`, `d = 2(r + 1 cell)/page_cells`, on **384 of 384 rows**. That is area *plus*
+perimeter *plus* a constant term, and the constant term is the whole of C1's failure: a 2-cell brush
+inside a 16-cell page invalidates one entire page whatever it does. The `4/π` floor is approached and
+never attained — the minimum `invalidation_constant` anywhere in the sweep is **1.6114** (r = 16 cells,
+page = 16 texels), and the arithmetic says it cannot be attained, since `4/π` needs `d → ∞`.
+
+> **A superseded claim, withdrawn — and it is a category error rather than a run difference.** The
+> pre-commit report said the `4/π` floor *"is hit exactly at page = 2 cells, r = 2 cells
+> (`pages_per_projected_area_cell` = 1.27324)"*. `pages_per_projected_area_cell` is pages per **cell²**, a
+> different quantity from `invalidation_constant`: 1.27324 there is `5.0930 / 4` and coincides with `4/π`
+> only because that page happens to be 4 cells². **The floor is attained nowhere in the file.** The
+> minimum `invalidation_constant` over all 384 dig rows is 1.6114, and no fixture in `game_dig`'s reach
+> could attain 1.2732.
+
+**Both of C1's negative halves HELD, decisively.** *Not scene-proportional:* at page = 16 texels
+`pages_invalidated` is a single integer — **16, 100, 324** at the three radii, spread exactly **0** over
+all 32 (field, light) combinations each — while `triangles_base` spans **4,088** (`thin_plate`) to
+**58,112** (`noise_cavity`), a 14.2× range of scene complexity. `pages_fraction` runs 0.510% of a
+3,136-page atlas to 18.367% of a 49-page atlas. *Not volume-proportional:* over the 2/8/16-cell radius
+sweep `pages_per_volume_cell` varies **25.28×** (page 16) to **56.84×** (page 128), while
+`pages_per_projected_area_cell` varies **3.16×** to **7.11×**. Neither normalisation is constant, but the
+area one is 8× more stable — the law is area-like and the volume model is dead. *Direction:* a sphere's
+projected area is direction-free and the measurement agrees; at page = 16 texels the within-field spread
+of `pages_invalidated` over the four light directions is **0 at every radius**, and every non-zero spread
+at coarser pages is on **`torus`** alone (its largest, 19 pages at page 32 / r 16) — page straddling
+where one field's aim point sits near a boundary, not direction dependence.
+
+**C2's four texels are the smaller half of its falsification, and a page-level-only C2 would have
+returned HELD on 383 of 384 rows for the wrong reason.** Whether a too-tight bound leaks across a page
+boundary depends on where the brush happened to fall inside its page, so C2 is measured a second way that
+page size cannot rescue: every changed texel's distance from the projected brush centre, reported against
+three discs. Over the 96 distinct (field, light, radius) arms:
+
+| bound | column | arms with a leak | texels leaked | worst arm |
+|---|---|---:|---:|---:|
+| the undilated brush, `r` | `changed_pixels_outside_tight_disc` | **89 / 96** | 88,865 | 4,033 |
+| the registered bound, `r + 1 cell` (`game_dig.rs:2682`) | `changed_pixels_outside_dilated_disc` | **66 / 96** | 6,985 | 394 |
+| the derived bound, `r + 2√3 cells` | `changed_pixels_outside_sound_disc` | **0 / 96** | **0** | **0** |
+
+`pixel_diff_sound` is **0 on 384 of 384 rows**. So the bound the engine currently uses is geometrically
+unsound on two thirds of the arms and page quantisation absorbed it in 383 of 384 rows. Measured worst
+reach per field against a 3.4641-cell budget: `thin_plate` 1.4289, `box_exact` 1.4480, `csg_difference`
+1.4480, `torus` 1.7540, `sphere` 1.9785, `noise_cavity` 2.3048, `gyroid` 2.3115, `fbm_terrain` 2.4769 —
+0.825 to 1.430 cell diagonals against a two-diagonal budget, so the derivation is conservative and tight
+to within 30%.
+
+**The mechanism, and it is the reason "the brush's bounding volume" was never the bound.** A subtractive
+brush replaces `f` with `max(f, r − |p − c|)`, so a grid corner `p` changes value iff `|p − c| < r − f(p)`
+— and for a corner **inside** the solid, where `f(p) < 0`, **that reaches further than the brush**. Moving
+a corner moves every marching-cubes vertex on an edge it terminates, because the crossing parameter
+`t = f_a/(f_a − f_b)` is a function of the *values* and not just their signs. Only cells holding a sign
+change carry geometry, so a changed corner is within one cell diagonal of the surface and
+`|f(p)| ≤ √3·cell·L` for an `L`-Lipschitz field; that puts it inside `r + √3·cell·L`, and a
+marching-cubes triangle is confined to its own cell, whose farthest point is another `√3·cell` away.
+Sound reach `= r + √3(1 + L)·cell`, which is `r + 2√3·cell` for the six 1-Lipschitz fields
+(`FieldBound::lipschitz` answers 1 for `Exact` and `Underestimate` alike). Making the bound sound costs
+**2.10%** of the C3 ratio at the registered configuration (median 3.9607 → 3.8774) and one extra ring of
+pages — `pages_invalidated_sound` is 1 on 29 rows, 2 on 2 and 4 on 1, so `invalidation_constant_sound`
+runs 20.3718–81.4873 and **the sound bound makes C1 worse, not better**.
+
+**C3 is real at the brush the demo ships with and gone at the wheel's maximum, and it fails on 189 of 384
+rows.** Both arms are charged at the same 12.5 Hz, so the ratio is the caching benefit alone. The
+predecessor declined an easy pass here and the decline is load-bearing: a truly uncached directional
+shadow re-renders every *frame* while a cached one re-renders only on the 12.5 stroke frames, which would
+multiply the ratio by frame-rate/12.5 — about 4.8× at 60 fps — and make ≥ 2× unfalsifiable on arithmetic
+alone. No frame rate was invented, and the clause duly fails.
+
+| brush radius | page 16 | page 32 | page 64 | page 128 (UE5) |
+|---|---|---|---|---|
+| 2 cells — median ratio (rows ≥ 2×) | 7.5951 (32/32) | 7.6850 (32/32) | 3.9918 (32/32) | **3.9607 (32/32)** |
+| 8 cells | 2.752 (30/32) | 2.200 (20/32) | 1.522 (5/32) | 1.091 (2/32) |
+| 16 cells | 1.317 (4/32) | 1.156 (3/32) | 1.092 (2/32) | **1.088 (1/32)** |
+
+At the registered configuration `shadow_ms_uncached` has median **20.9806 ms** per second of dig against
+`shadow_ms_cached`'s **5.6639 ms**. Two rows come in **below 1.0** — `torus`/`low_45`/r 16/page 64 at
+0.9327 and `gyroid`/`overhead`/r 16/page 128 at 0.9395 — where the localised pass is *slower* than the
+full one.
+
+**Why C3 is capped, stated so it does not depend on this run's clocks.** The saving *available* is the
+integer ratio `pages_total / pages_invalidated`: **196×** (3,136/16) at the default brush and the finest
+page, **49×** at the default brush and UE5's page, down to **5.44×** (49/9) at the wheel's maximum. The
+realised `ratio_per_stroke` captures **1.61% to 43.37%** of it, median **11.92%**, and on **none of the
+384 rows** does it reach half. The gap is the per-triangle cull, which the cached arm pays in full and
+which does not shrink with the page count: fitting `shadow_ms_localised_pass = cull + slope ·
+pages_fraction` per field gives a pure-cull intercept of **0.1532 ms** (`thin_plate`) to **1.7729 ms**
+(`noise_cavity`), 12.29% to 40.85% of the full pass, an implied ceiling of **8.14× down to 2.45×** however
+few pages are invalidated. That fit is a wall clock and is not a gate (`✗24`, `M-281`); the integer
+statement is the durable one — **the shortfall is structural, not a clock artefact**, because the ratio
+never approaches the texel ratio on any row of either run.
+
+> **A superseded conclusion, withdrawn, and it is the reason the paragraph above is written around
+> integers.** The pre-commit report's fit read 0.226–2.095 ms of cull, 11.6%–52.3% of the full pass, and a
+> ceiling of *"8.6× down to 1.9×"* — concluding that *"on `thin_plate` the ceiling is 1.9×, **below the
+> registered 2×**, before a single page is considered"*, and that *"a 1.44× cull improvement would lift
+> `thin_plate`'s ceiling from 1.9× to 2.7× and put it over the line"*. On the clean tree `thin_plate`'s
+> fitted ceiling is **2.45×**, above the bar, so **neither statement survives and both are withdrawn**.
+> `thin_plate`'s intercept moved 0.226 → **0.1532 ms**, −32.2%, and that alone carried its ceiling across
+> the bar — which is what a conclusion denominated in milliseconds is worth.
+> What replaces it is run-independent: the available saving is the integer `pages_total /
+> pages_invalidated`, 5.44× to 196×; the realised ratio captures at most 43.37% of it on any of the 384
+> rows, in either run. The cull cap is real in both runs; **its per-field value is a clock and no field's
+> ceiling should be quoted against the 2× bar.**
+
+**Caching a deforming shadow is therefore not a pixel problem, it is a culling problem** — which is
+exactly the term Epic reported optimising and the only number they published.
+
+**The registered vacuity control: `changed_pixels_full`, asserted `> 0` on every dig row, with the field,
+light and brush radius named in the message.** All 384 pass: minimum **221** (`torus`/`overhead`/r = 2
+cells), median **11,853**, maximum **55,464** (`thin_plate`/`overhead`/r = 16 cells), zeros **0**. The
+assertion fires after the CSV is written, so a failure leaves an artefact to read.
+
+**And that zero is reachable, which is what makes the control a measurement rather than an `M-44` pass —
+that is what the buried-control arm is for.** One brush per field is placed at the deepest interior point
+along the same light ray, and the harness asserts that at least one produces `changed_pixels_full == 0`.
+**Six of eight read exactly 0**: `sphere` (clearance 15.9115 cells), `box_exact` (15.9375),
+`csg_difference` (9.2500), `gyroid` (4.6336), `fbm_terrain` (111.0397), `noise_cavity` (8.6370). A buried
+cavity is behind the first hit, so a first-hit depth buffer must not move; if the buffer were a last-hit
+buffer, or the frame were mis-registered, or the min-depth composition were wrong, these six rows would
+be non-zero. The arm is a control on the control and is **not** clause evidence.
+
+> **On the eight `buried_control` rows, `c2_holds` reads `true` and it is not a C2 pass.** Six of them
+> have `changed_pixels_full == 0`, so the localised composite matches the full re-render over an **empty
+> change set**. For the same reason `max_change_excess_cells` and `excess_in_cell_diagonals` read
+> **`-inf`** on those six: that is a maximum over an empty set, not a measurement of a negative reach.
+> `c1_holds` reads `false` and `c3_holds` `true` on all eight buried rows as well — the same arithmetic
+> applied to a control arm. **Every clause count in this entry is over the 384 `dig` rows only**, which is
+> why they are 194/190, 383/1 and 195/189 rather than the whole-file 194/198, 391/1 and 203/189.
+
+**A third control, and nothing else in the harness would catch what it catches.** `calibrate()` runs
+before anything is measured: it rasterises the unit sphere and checks the covered-texel count against
+`π R² / texel²`, which is that sphere's projected area from every direction. Measured **51,424** texels
+(the `frame_covered_texels` column on the `sphere` rows) against `π / 0.0078125² = 51,472` — an error of
+**−0.093%** against a 3% budget, and the sign is right because the marching-cubes silhouette chords the
+true circle inward. Every number in this row is a texel count, and only this control could see a uniform
+scale error, a swapped basis or a dropped half-texel offset. `frame_covered_texels` itself runs 13,712 to
+262,114 of 802,816 across the fields and lights.
+
+**Six fixture defects, all caught by this harness's own controls rather than by review.**
+
+1. **The first C2 instrument was luck-dependent and would have been written up as HELD.** It scored C2 on
+   `pixel_diff_localised_vs_full` alone, which reads 0 on 383 of 384 rows. Adding the page-independent
+   disc measurement turned that into "66 of 96 arms geometrically unsound". The leak reaches at most
+   2.4769 − 1 = **1.4769 cells past the registered bound, about 12 texels**, so at a 128-texel page it
+   only crosses a page boundary when the brush lands within 12 texels of 128 of one. **This is the single
+   reason the verdict reads FALSIFIED instead of HELD.**
+2. **The first sound bound was wrong and the leak instrument said so immediately.** `radius + 1 cell` was
+   assumed on the grounds that marching cubes only moves geometry within one cell of a changed corner.
+   False: the crossing parameter depends on values, so a corner well inside the solid still moves its
+   vertices. The wrong bound remains in the CSV as `pages_invalidated` / `changed_pixels_outside_dilated_disc`
+   because it is the bound the registration describes and the one the engine uses.
+3. **`torus`'s buried row degenerated into its dig row.** `buried_clearance_cells = 0.0000` and
+   `changed_pixels_full = 221`, identical to its dig row: along the light ray through the torus's aim
+   point there is no interior point — the ray leaves the solid at the inner rim — so `deepest_interior`
+   returned the aim point. Visible in the clearance column. **A reader must not count that row as a buried
+   measurement.**
+4. **`thin_plate`'s buried row is non-zero by construction.** Clearance 0.1500 cells and 1,520 changed
+   texels: a 2-cell brush cuts clean through a 0.4-cell-thick plate, so the "buried" cavity is not buried.
+   Predicted, and self-documenting through the clearance column.
+5. **`gyroid`'s registered Lipschitz bound over-provisions by 3.35×.** `FieldBound::Lipschitz { l: 3.4641 }`
+   makes the derivation ask for `√3 · 4.4641 = 7.7320` cells of dilation; the measured reach is 2.3115.
+   Applied literally it would take the default brush's footprint at UE5's page from **1 page to at least
+   4** — `d = 2(2 + 7.7320)/16 = 1.2165`, so `⌈d⌉² = 4` — for nothing.
+6. **`fbm_terrain` has no derivable bound at all.** It registers `FieldBound::Unbounded`, so `lipschitz()`
+   returns `None` and **no** light-space invalidation radius can be derived — only observed. Its measured
+   2.4769 cells is the worst of the eight and still inside two cell diagonals, but that is a property of
+   this fixture and not a guarantee. It is also the field that produced the one non-zero
+   `pixel_diff_localised_vs_full`. **Any shipped localised invalidation over an unbounded field needs a
+   measured margin, not a derived one.**
+
+**What changed as a result.**
+
+1. **Do not use `radius + cell` as a light-space shadow invalidation bound.** It is geometrically unsound
+   on 66 of 96 arms and leaks up to 394 texels per arm; page quantisation hid it on 383 of 384 rows, so a
+   page-level test would have shipped it. Use `radius + 2√3·cell` — zero leak on 384/384, at a cost of
+   2.10% of the ratio and one extra ring of pages. This is the row's one directly actionable output.
+2. **Do not build page-level shadow caching for `game_dig`'s default brush expecting proportionality.** It
+   is not proportional to anything at that size: a 4-cell hole invalidates one whole 16-cell page and the
+   constant is 20.3718. The saving is still worth **3.96×** because one page is 1/49 = 2.04% of the atlas,
+   so the mechanism is worth having — but any design or budget written against "invalidation is
+   proportional to projected area" is wrong by an order of magnitude at the brush size the demo ships.
+3. **Do not spend the sprint on finer pages.** Going from 128 to 16 texels moves the constant from 20.3718
+   to 5.0930 (4.00×) and the ratio from 3.9607 to 7.5951 (1.92×) — for a **64×** larger page table. The
+   crossover where the constant goes under 3 needs a brush at least two pages wide, i.e. radius ≥ 16 cells
+   (2.0 world units) at a 128-texel page, which is the maximum the mouse wheel allows.
+4. **If one thing is built, attack the light loop and not the page count.** The available texel saving is
+   5.44× to 196× and less than 44% of it is ever realised; the cull is what eats the rest, and it is the
+   same term Epic reported taking from 1.56 ms to 1.08 ms.
+5. **Epic's decision is vindicated at the large-brush end and reversed at the small-brush end, and never
+   because of the pixels.** Under 2× on 189 of 384 rows — 118 of the 128 rows at the wheel's maximum, and
+   **0 of the 128 rows at `game_dig`'s default**. For a world being dug with a hand-sized brush,
+   cached-with-invalidation is worth about **3.96×** of this shadow pass; at the wheel's maximum it is
+   worth about **1.09×** and leaving directional sun shadows uncached is right. **That is the number the
+   Fortnite write-up does not contain.**
+6. **A lead, not a defect claim.** The same "values, not signs" reach applies to the crate's own dirty-cell
+   marking: `mark_edit` takes a caller-supplied region and `game_dig` passes `reach = radius + cell`
+   (`game_dig.rs:2682`, `:3864`). This measurement says the post-edit field differs out to 1.4289–2.4769
+   cells beyond the brush surface on these eight fields, which is further than one cell. Not reproduced
+   through `game_dig`'s own pipeline and not this ticket — recorded for whoever owns the dirty set.
+
+**Would be shown wrong by:** a field whose changed geometry reaches beyond `r + 2√3·cell`, which would
+make `changed_pixels_outside_sound_disc` non-zero and mean no derived bound is safe on any field — the
+`Unbounded` `fbm_terrain` is the candidate and its 2.4769 cells is only a fixture's value, not a
+guarantee; a `pages_invalidated` that falls outside `{⌈d⌉, ⌈d⌉+1}²`, which would mean the footprint is
+not a quantisation of the projected disc and C1's constant is measuring something else; a hierarchical
+page-table walk whose cost scales with `pages_invalidated` rather than with triangles, which would remove
+the O(triangles) cull that caps C3 and could carry the ratio toward the 5.44×–196× the texel counts
+allow; or a dug world at a brush at least two pages wide, where C1's "under 3" becomes reachable and the
+constant is 2.8648 — the wheel's maximum against UE5's page is exactly that case and it holds there
+already.
+
+### 💥 ✗61 / M-392 — C1 FALSIFIED on one field of eight with both halves of its falsifier firing, C2 FALSIFIED by **0.62°** against a headroom of **0.94°** its own reference left and nobody computed, and C3's prediction HELD on `thin_plate` at **28.60°** while FALSIFIED on `gyroid` at **13.22°** — where the *no-map* arm is itself only **14.85°**, so the clause's premise failed rather than the map succeeding: a mean shading-normal angle over the surviving coarse surface cannot see a silhouette (P-80, R-080)
+
+**M.** `cargo bench --bench experiment_p80`, `docs/experiments/p-80.csv`, **24 rows** (eight reference
+fields × LOD 1–3), `f64`, Zen 3 — `cpu_mhz` reads 4197–4200 on every row (`M-280`). Fixture: `M-72`'s own
+ladder, `ChunkLayout::new(64 >> level, h₀, domain_min).at_lod(level)` over each field's own
+`ReferenceField::domain`, so the world extent is fixed and only the spacing changes; the residual predictor
+is one sample, one gradient, one Newton step, `p = v − f(v)·∇f(v)/|∇f(v)|²`, and the shading comparison is
+barycentric vertex-normal interpolation at 16 area-uniform points per coarse triangle, area-weighted, with
+no renderer and none faked. Committed at **`ec31985`**, no `WORKING TREE DIRTY` marker, and
+`git merge-base --is-ancestor ec31985 HEAD` passes.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the field-only residual direction agrees with the true nearest fine-surface point to within **0.1 cells** on **95%** of coarse vertices at LOD 1 and 2 | ≥ 0.95 | **FALSIFIED — `noise_cavity` 0.899724 at LOD 1 and 0.836800 at LOD 2. Holds on the other seven fields, worst `residual_p95_cells` 0.057262 of a 0.1 bar** |
+| C2 LOD-2 shading-with-map within **10°** of LOD-0 on `fbm_terrain`, against over **25°** without | < 10° and > 25° | **FALSIFIED on the with-map half — 10.6195°, a miss of 0.6195°. The no-map half HELD at 25.5971°, clearing its floor by 0.5971°** |
+| C3 above **25°** with the map on `thin_plate` *and* `gyroid` at LOD 3 | > 25° on both | **HELD on `thin_plate` at 28.6007°; FALSIFIED on `gyroid` at 13.2206° — and not because the map worked** |
+
+> **Two verdict columns read `false` for reasons that are not the clause failing, and neither is a
+> falsification.** `c2_holds` is `false` on **all 24 rows**, but C2 is registered on exactly one —
+> `c2_registered_row` is `true` only on `fbm_terrain` at LOD 2. On the six `sphere` and `torus` rows the
+> `false` is caused by the *no-map* arm being **under** 25° (0.0032° to 6.7165°), i.e. by the clause's
+> premise not applying to a field LOD 2 still resolves, not by any map failing. Likewise `c3_holds` is
+> `true` on `noise_cavity` at LOD 2 and 3 (38.4725° and 55.5072°), where C3 is not claimed —
+> `c3_registered_row` is `true` only on `thin_plate` and `gyroid` at LOD 3. And `c1_holds` is `true` on
+> `thin_plate` at LOD 3 where `c1_registered_row` is `false`. Read the `*_registered_row` columns first;
+> the `*_holds` columns on other rows are informational.
+
+> **The first report of this experiment quoted a dirty pre-run at `63c7161`, taken while ~25 sibling agents
+> were compiling, and every number it quoted has been re-read against the committed clean-tree file.** Three
+> moved and all three are clocks: `bake_ms` on C2's registered row **4.5549 → 2.9949** (−34.2%), the
+> `bake_ms` range across all rows **0.1393–7.3100 → 0.1396–5.6718**, and `bake_us_per_texel_written`
+> **0.15–1.50 → 0.1543–1.3517**. Every angle, fraction, integer count and byte figure the report quoted
+> reproduced to the last digit it stated, and no verdict moved — which is the shape `M-377`'s re-run note
+> records, and `M-279`'s rule underneath it: a run that disagrees with its predecessor on anything that is
+> not a clock has a defect, not a variance. **No clause in this registration is denominated in
+> milliseconds**, which is why a 34% clock move costs nothing here: `✗24` and `M-281` are the precedents,
+> the bake cost is *printed*, and every gate is an angle or an integer.
+
+**The ladder is `M-72`'s, and the row proves it rather than asserting it in a comment.** `lod0_triangles`
+on `thin_plate` reads **4,088** and `coarse_triangles` reads **1,016 / 248 / 56** at LOD 1/2/3 — `M-72`'s
+4,088 → 1,016 → 248 → 56, exactly. That is `M-279`'s check in its cheapest form: a new harness's first job
+is to agree with the committed measurement where they overlap, and if these four integers had not
+reproduced, the experiment would have been measuring a different ladder and no clause about it would have
+meant anything.
+
+**The SHARE line, recomputed.** Registered: *"C2 moves the shading half of the LOD budget only; triangle
+counts are unchanged by construction."* Both halves check out, and one of them was only checkable after the
+run.
+
+- **Triangle counts unchanged: TRUE, and verified rather than assumed.** The map is a byte array and never
+  touches `MeshBuffer`; `coarse_triangles` at a level is identical whether the map is baked or not, and the
+  ladder above is the evidence.
+- **C1 is the only clause denominated as a ratio**, so it is the only one `✗51`'s rule applies to. Its
+  denominator is `coarse_vertices` at the registered levels: **510–6,522 at LOD 1** and **126–1,260 at
+  LOD 2**. Non-degenerate on every field, so the 95% has a real population to be 95% *of*.
+- **C1's reachability was computed before the run, and it is a reference-checked-before-the-measurement
+  case.** The clause is only measurable if the ground truth is far tighter than its 0.1-cell tolerance. The
+  ray-fan analytic reference localises its direction to `θ ≈ cap·0.3ⁿ⁻¹/3` after `n` refinement rounds, i.e.
+  `0.15·0.3⁴/3 = 4.05e-4` rad at `FAN_ROUNDS = 5`; a coarse vertex sits on a straddling coarse edge so
+  `d ≤ h/2`, which is `4 h₀` at LOD 3; the *position* error is `d·θ ≈ 1.6e-3 h₀`. C1's tolerance is 0.1
+  coarse cells — **0.2 h₀ at LOD 1 and 0.4 h₀ at LOD 2** — so the reference is **125× and 250× tighter than
+  the tolerance it has to resolve**. Post hoc, `closed_form_analytic_err_cells` confirms it on the four
+  fields with a closed form: **0.000000 to 0.001241**, the worst being `torus` at LOD 2, which is 0.6% of
+  the LOD-1 tolerance. `M-289` is the precedent — a reference that was wrong exactly where the measurement
+  was taken, and two hypotheses reported falsified that were both true — and this is the same check run
+  *before* the verdict rather than after it.
+- **C2's reachability is the thing arithmetic could not reach before the run, and it should have been
+  reached anyway.** What *was* derivable at registration: C1 holding at 0.1 cells does not bound a shading
+  normal, because C1 bounds a **position** and the normal error a position error implies is `0.1·h·κ` —
+  on `fbm_terrain` at LOD 2, `h = 1.0` and the finest octave's wavelength is 0.5, so `κ ≈ 12.6` per unit
+  and `0.1·h·κ ≈ 1.26` rad ≈ **72°**. So C2 always needed its own instrument, which is why the harness
+  carries `lod0_self_angle_deg`. What only the run supplied is the value of that instrument, and it is
+  below.
+
+**C1, on the registered levels.** `residual_agree_fraction` and `residual_p95_cells`, both in cells at the
+level being measured:
+
+| field | agree, LOD 1 | p95 cells, LOD 1 | agree, LOD 2 | p95 cells, LOD 2 |
+|---|---:|---:|---:|---:|
+| `sphere` | 1.000000 | 0.003351 | 1.000000 | 0.002124 |
+| `torus` | 1.000000 | 0.009969 | 1.000000 | 0.007722 |
+| `box_exact` | 1.000000 | **0.000000** | 1.000000 | **0.000000** |
+| `csg_difference` | 1.000000 | 0.002417 | 1.000000 | 0.001556 |
+| `thin_plate` | 1.000000 | **0.000000** | 1.000000 | **0.000000** |
+| `gyroid` | 0.989607 | 0.006241 | 0.995238 | 0.005461 |
+| `fbm_terrain` | 0.990817 | 0.057262 | 0.988571 | 0.048659 |
+| `noise_cavity` | **0.899724** | **0.216238** | **0.836800** | **0.425169** |
+
+Seven fields of eight hold with room: the worst `residual_p95_cells` at a registered level is 0.057262,
+which is 1.7× inside the 0.1 bar, and it is exactly **0.000000** on `box_exact` and `thin_plate` because a
+box's gradient is piecewise constant and one Newton step lands on the face plane with no linearisation
+error at all. `closed_form_pred_err_cells` is **0.000000** on all four closed-form fields, so the predictor
+is exact wherever an exact answer exists.
+
+**`noise_cavity` fails, and both halves of C1's falsifier fire on it.** The first half is the 95%: 0.899724
+and 0.836800. The second is *"an error that grows with LOD level faster than the cell size"*, and it is
+visible in two columns at once. `residual_p95_world` goes **0.02702970 → 0.10629225** from LOD 1 to LOD 2,
+a factor of **3.9324**, while `cell_size` goes 0.125 → 0.25, a factor of **2** — so the error grows
+**1.97× faster than the cell**, and that is exactly why `residual_p95_cells` (already normalised by the
+level's own cell) *doubles* rather than shrinking. `residual_max_cells` reaches **1.713065** coarse cells.
+On the five exact-distance fields the same column shrinks with level.
+
+**The mechanism, and it is the step length rather than the root finder.** `noise_cavity` is Perlin noise at
+frequency 3.45 with iso 0.25 intersected with a sphere of radius 1.5, and the crate declares it
+`FieldBound::Unbounded` — `M-244` is the incident where a guessed Lipschitz constant of 2.598 was caught at
+a measured `|∇f|` of 7.734 on this same field. A gradient magnitude that varies by that much over the level
+set makes `−f/|∇f|²` overshoot, and three Newton steps do not fix it: `angle_deep_deg` tracks
+`angle_direct_deg` to within 0.11–0.74° on those rows. What *does* say the field has structure below the
+coarse cell is the growth in cells: a single linearisation cannot see it, and it sees less of it the
+coarser the cell gets.
+
+**And it is not the reference.** `mesh_vs_analytic_p95_cells` on `noise_cavity` is **0.094866 / 0.077665 /
+0.058895** — the mesh reference and the ray-fan analytic reference, which touches the gradient nowhere,
+agree to within 0.1 cells where the predictor is off by 0.43. `residual_agree_fraction_analytic` reads
+0.934866 / 0.884984 / 0.870968, i.e. the analytic reference *also* fails the clause on this field.
+`analytic_unreached`, `zero_gradient_vertices`, `zero_gradient_texels` and `reference_normal_missing` are
+**0 on all 24 rows**.
+
+**C2, and the attribution is the entry's substance.** All four arms on `fbm_terrain`, degrees:
+
+| level | no-map | with-map | `angle_direct_deg` | `angle_deep_deg` | `lod0_self_angle_deg` | with-map vs analytic |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 14.1352 | 10.1562 | 8.8247 | 8.7636 | 8.1923 | 10.2908 |
+| **2** | **25.5971** | **10.6195** | 10.3492 | 10.3017 | **9.0558** | 10.7895 |
+| 3 | 35.3725 | 13.7746 | 12.9068 | 12.8401 | 7.9089 | 14.7469 |
+
+**The map's own machinery costs a fraction of a degree.** `angle_direct_deg` is the residual normal
+evaluated at the shading point with no texture at all — no triplanar projection, no 8-bit quantisation, no
+tangent frame, no bilinear filter, no gutter. On C2's registered row it is **10.3492** against the
+with-map arm's **10.6195**, so the entire map apparatus costs **0.2703°**. The root refinement is not the
+limit either: three Newton steps instead of one move it by **0.0475°**.
+
+**The LOD-0 mesh's own normal interpolation costs about nine degrees, and that is the binding constraint.**
+`lod0_self_angle_deg` is the angle between the analytic normal at the LOD-0 nearest point and the LOD-0
+*mesh's* interpolated normal there. On `fbm_terrain` at LOD 2 it is **9.0558°**. So a residual normal that
+was exactly right would still score 9.0558° against the reference C2 is registered against, and **C2's 10°
+threshold left 0.9442° of headroom over the best score the instrument's own reference permits**. The
+measured shortfall is **0.6195°**, which is *inside* that headroom. **The clause was reachable, but only
+just, and that margin was never checked at registration** — 10 against a floor of 9.06 is a clause with 9%
+of its own bar to work in, and the arithmetic that says so needs one column this harness happened to carry
+because `✗51`'s rule made it ask.
+
+The floor is a property of the ladder, not of the map, and the column says so across eight fields:
+`lod0_self_angle_deg` is **0.0001** on `sphere`, 0.0568–0.0645 on `torus`, 0.0000–1.2023 on `box_exact`,
+0.3040–1.1805 on `gyroid` — negligible wherever LOD 0 resolves the field — and **7.9089–9.0558** on
+`fbm_terrain` and **5.5675–6.3564** on `noise_cavity`, the two fields carrying detail below `h₀`.
+`fbm_terrain` is four octaves at base frequency 0.25 and lacunarity 2, so its finest octave has wavelength
+**0.5 = 2 h₀**: LOD 0 is *at* Nyquist for its own finest octave, and a map baked from the analytic field is
+carrying detail the reference has already low-passed away. `angle_with_map_vs_analytic_deg` is 10.7895 on
+the same row, so scoring against the analytic normal instead does not rescue the arm — the residual normal
+is itself about 10.8° from the analytic normal there, and the floor argument bounds what was *achievable*
+without claiming the residual achieved it.
+
+**LOD 0 was not refined to lower that floor, deliberately.** `LOD0_CELLS` is 64 because that is `M-72`'s
+grid and `ThinPlate::CANONICAL_CELL_SIZE`'s grid; a finer LOD 0 would reduce `lod0_self_angle_deg` and
+might let C2 pass, and would stop the plate being `M-72`'s plate. The floor's dependence on `h₀` is argued
+from the committed column across eight fields instead.
+
+**C3, and the distinction is the most useful sentence here.** `thin_plate` at LOD 3 comes in at
+**28.6007°** with the map, above the predicted 25 — the prediction HOLDS. `gyroid` at LOD 3 comes in at
+**13.2206°**, below 25 — the prediction is FALSIFIED. But the registered falsifier reads *"C3 by the map
+working on `thin_plate` or `gyroid` at LOD 3"*, **and the map did not work on `gyroid`: the no-map arm there
+is 14.8487°, so the map removed 1.6281° and neither arm is anywhere near 25.** Coarsening `gyroid` to LOD 3
+keeps 556 of 43,116 triangles — **1.29%** — and costs only 14.85° of shading normal *on the surface that
+survives*. C3's stated mechanism, *"a normal map cannot restore a SILHOUETTE"*, is true and is not what
+C3's number measures: **a mean angular difference sampled over the coarse surface never samples where the
+surface is missing.** The clause's number and the clause's mechanism are two different claims, and only the
+number was made falsifiable. A silhouette clause needs a silhouette instrument — coverage, not normals.
+
+**`thin_plate` holds for a reason C3 did not name, and it is `M-72` one level up.** `angle_direct_deg` on
+that row is **2.0650** and `lod0_self_angle_deg` is **2.0650** to four decimals: the box gradient is
+piecewise constant, so the residual normal *is* the analytic normal at the nearest fine point and the 2.07°
+is entirely the LOD-0 mesh's own interpolation across the plate's edges. The achievable score is 2.07° and
+the baked map delivers 28.60° — **the parametrisation destroys 26.5° of a 2.07°-achievable result**.
+`fetch_misses` is **340 of 896** shading samples (37.9%): over a third of the coarse plate fetches texels
+the bake never covered. The plate is `0.4 × 0.0625 = 0.025` world units thick against a texel of 0.0625,
+so its rim is sub-texel in the `x` and `z` pages; at LOD 3 the whole plate is **0.05 coarse cells** thick,
+so a large fraction of coarse triangles carry `x`- or `z`-dominant interpolated normals and land in the
+wrong page. That is aliasing reappearing inside the map's own parametrisation.
+
+**When the map helps and when it hurts,** `angle_with_map_deg − angle_no_map_deg` in degrees, negative
+being better:
+
+| field | LOD 1 | LOD 2 | LOD 3 |
+|---|---:|---:|---:|
+| `sphere` | 0.0000 | 0.0000 | 0.0000 |
+| `torus` | +0.0351 | −0.1351 | −2.0175 |
+| `box_exact` | +0.2635 | −2.7416 | −5.7200 |
+| `csg_difference` | +0.2065 | −2.8204 | −6.0436 |
+| `thin_plate` | −0.1896 | −1.7038 | −3.2664 |
+| `gyroid` | **+1.1127** | **+0.6898** | −1.6281 |
+| `fbm_terrain` | −3.9790 | **−14.9776** | **−21.5979** |
+| `noise_cavity` | **+3.5157** | **+0.7334** | −6.8528 |
+
+**14 of 24 rows improve, 7 get worse, 3 are flat.** It helps most where the coarse loss is large and the
+surface is single-valued in its projection, and it *hurts* exactly where the triplanar projection collapses
+depth: `map_texel_conflicts` is **2,671 of 4,249** written texels on `gyroid` at LOD 1 (62.9%) and **3,022
+of 4,196** on `noise_cavity` at LOD 1 (72.0%) — more than one surface sheet projects to the same texel and
+arbitration keeps one. `noise_cavity` additionally has **177 / 499 / 830** `hemisphere_clamped_texels`:
+detail normals more than 90° from the coarse normal, which a two-channel tangent-space map cannot represent
+at any precision. And it hurts at LOD 1 on `box_exact`, `csg_difference` and `torus`, where the coarse
+normal is already exact — `angle_no_map_at_vertices_deg` is 0.0000 on `box_exact` at every level — and a
+bilinear blur across a sharp edge can only add error.
+
+**Cost, with the machine-independent figures beside the clock.** `map_bytes_per_chunk` is **24,576** on
+every row (3 pages × 64² texels × 2 `u8`), against `lod0_mesh_bytes` of 98,160–1,390,512: **3.99× smaller**
+than `thin_plate`'s fine mesh, 16.68× than `fbm_terrain`'s, 42.08× than `gyroid`'s, 56.58× than
+`noise_cavity`'s. `bake_field_samples` is **556–7,218** with `bake_field_gradients` exactly twice that on
+every row, counted by a wrapper rather than by arithmetic. `bake_ms` (median of 3, one chunk) is
+0.1396–5.6718 and is printed, not gated. Occupancy at LOD 2 is **6.35%–33.01%** of the 12,288 texels
+(`map_texels_written` 780 on `thin_plate` to 4,057 on `gyroid`), so most of the 24 KiB is unused and a real
+implementation would pack it.
+
+**The vacuity control: `changed_vertices`, and its value on C2's registered row is 5,704 of 15,296
+(`changed_fraction` 0.372908).** Registered wording: *"the LOD-0 reference must differ from LOD-2 by more
+than 25 degrees somewhere, reported as a changed-vertex count, or C2 is comparing two identical shadings."*
+It is counted over exactly the population C2's two means are taken over — the area-weighted shading
+samples — because that is the population it exists to guard, and it is asserted on the rows a registered
+verdict depends on, with the literal *"somewhere"* asserted in `main` by scanning the values about to be
+written to the file. On C3's two registered rows it is **496 of 896** (0.553571) on `thin_plate` and
+**1,548 of 8,832** (0.175272) on `gyroid`.
+
+**Why that value proves the fixture could have failed:** the same column reads **exactly 0 on all six
+`sphere` and `torus` rows** and non-zero on the other eighteen. A unit sphere at `h = 0.125` never moves a
+shading normal by 25° under one coarsening step, and no other assertion in the harness implies otherwise —
+so the column is demonstrated sensitive rather than argued to be. That is `M-44`'s rule satisfied by
+demonstration: a zero that could not have been non-zero is not a measurement, and here a zero that *was*
+non-zero on eighteen rows is what makes 5,704 mean something. The second control is
+`map_perturbation_deg` > 0, which catches a decode bug that would leave both C2 arms equal and score a
+false HELD wherever the coarse normal was already close: it reads **23.7256** on C2's registered row,
+6.9729 and 11.1591 on C3's two. **Its honest weakness is on the same six rows**: 0.0000 to four decimals on
+all three `sphere` rows, where the assert passes on a strictly positive value that is nearly vacuous,
+because on a perfectly resolved sphere the residual normal *is* the coarse normal and only quantisation
+separates them.
+
+**Seven fixture defects, each caught by this harness's own controls rather than by review.**
+
+1. **Sampling the shading comparison at coarse mesh *vertices* would have measured almost nothing, and
+   would have "falsified" C2 in the opposite direction.** At a vertex the interpolated normal *is* the
+   vertex normal, which is `normalize(∇f(v))` — the exact analytic normal, all octaves included. On
+   `fbm_terrain` the field is `y − h(x, z)`, exactly linear along a `y` edge, so a coarse vertex on a
+   vertical edge sits exactly on the analytic surface. Measured, both readings on the row:
+   `changed_coarse_mesh_vertices` is **3 of 525** coarse vertices against `changed_vertices` **5,704 of
+   15,296** area samples, and `angle_no_map_at_vertices_deg` is **2.5090** against 25.5971. A
+   vertex-sampled harness would have reported 2.51° for the no-map arm, failed C2's over-25 half, and
+   concluded that coarsening terrain costs no shading detail — by measuring the one place where it costs
+   nothing. `changed_coarse_mesh_vertices` is **0 on all fifteen** `sphere` / `torus` / `box_exact` /
+   `csg_difference` / `thin_plate` rows, which is how visible the trap is once it is on the row.
+2. **The analytic reference was broken, and its own closed-form assert caught it — `M-289` exactly.** The
+   first complete run halted on `sphere` at LOD 2 with *"the analytic reference is 0.021383 LOD-0 cells
+   from the closed form, so it is not a reference"*. The ray-fan's local refinement updated the best
+   direction *inside* the ring loop while the perpendicular basis came from the round's starting
+   direction, so `cos·bd + sin·side` stopped being a unit vector and the compared ray parameter stopped
+   being a distance; the search stalled near 0.011 rad instead of 4.05e-4. Held fixed for the round,
+   normalised per candidate, winner committed at the end: `closed_form_analytic_err_cells` now reads
+   0.000000–0.001241. Found by an assert, not by an audit.
+3. **The vacuity control was first asserted on rows no clause is claimed on**, and halted on `sphere` at
+   LOD 1 — correctly, because that zero is a finding about a smooth field rather than a broken fixture.
+   Halting on it would have let the control decide which fields may appear in the dataset. Restructured so
+   the control stops a vacuous **verdict** (asserted on `c2_registered_row` / `c3_registered_row`) while
+   `main` asserts the registered *"somewhere"* over the emitted rows. The column is now on all 24 rows and
+   reads 0 on six of them, which is stronger evidence of sensitivity than a uniformly passing assert.
+4. **`FAN_ROUNDS` is derived, not picked.** What the closed-form assert compares is a **position**, and a
+   residual angular error `θ` displaces the found point tangentially by `d·θ` — so `d·θ²/2` being
+   negligible is not enough. Three rounds give `≈1.8e-2 h₀` at LOD 3, against the `1e-2 h₀` the assert
+   allows: the reference would have failed its own check. Five give 1.6e-3. The derivation is in the
+   const's doc comment, not in a report.
+5. **The registration fixes two column names that are wrong on any row whose level is not 2** —
+   `angle_lod0_vs_lod2_no_map` and `angle_lod0_vs_lod2_with_map`. They are populated as registered with
+   that row's own comparison, and `angle_no_map_deg` / `angle_with_map_deg` carry identical values under
+   names that cannot be misread. `changed_vertices` is the same shape: it counts shading samples, not
+   vertices, and `changed_fraction` and `shading_samples` are beside it so the denominator is on the row.
+6. **The closed-form columns use `−1` as a sentinel rather than a blank**, on the four fields that have no
+   closed form here (`csg_difference`, `gyroid`, `fbm_terrain`, `noise_cavity`), with the `closed_form`
+   column naming which formula was used on the other four. `−1` is unambiguous for a non-negative error.
+7. **Dropped populations are counted, not silenced.** `degenerate_samples` (zero-area coarse triangles or
+   zero-length interpolated normals) is 0 on eighteen rows, 64 on all three `gyroid` rows and
+   272 / 864 / 800 on `noise_cavity`; `map_texels_dilated` (the bake gutter) is 88–1,088;
+   `hemisphere_clamped_texels` and `fetch_misses` are on every row. An untouched texel encodes `(0, 0)`,
+   which decodes to the coarse normal exactly, so *"no detail here"* needs no second execution path.
+
+**What changed as a result: nothing was landed, and that is the conclusion.** On these eight fields a
+triplanar tangent-space normal map baked from the LOD residual is **not worth shipping**. It improves
+shading on 14 of 24 rows and degrades it on 7, it cannot reach C2's bar on the one field the clause was
+about even with 15.0° of a 25.6° loss removed, and on the field C3 named it destroys 26.5° of a
+2.07°-achievable result. **The failure is in the parametrisation, not in the residual** — which is the arm
+worth reading: `angle_direct_deg` is 0.1200–1.4511° on `box_exact` and `csg_difference`, 2.0650° on
+`thin_plate` at LOD 3 and 4.2840° on `gyroid` at LOD 3, and is strictly below the baked map's arm on **23
+of 24 rows** (the exception is `sphere` at LOD 1, where the two are equal at 0.0032).
+Evaluating the residual normal per fragment — one sample and two gradients of the analytic field, no
+texture, no UV, no bake, no bytes — is a real result and is **not this registration's claim**; it needs its
+own id, because it costs a per-pixel SDF evaluation (four octaves on `fbm_terrain` and `noise_cavity`) and
+a shader path the crate does not have. Two registration defects a successor should not repeat: **C2's
+threshold must be stated relative to the reference's own distance from the field** (register the ratio of
+the with-map arm to `lod0_self_angle_deg`, or register the analytic normal as the reference and say so),
+and **C3's number and C3's mechanism must be the same claim** or the clause can hold for a parametrisation
+reason and fail for a premise reason, which is exactly what happened.
+
+**Would be shown wrong by:** a with-map arm under 10° on `fbm_terrain` at LOD 2 at this ladder, which would
+mean the 9.0558° floor is not a floor and `lod0_self_angle_deg` is measuring the wrong thing; a
+`residual_agree_fraction` at or above 0.95 on `noise_cavity` at LOD 1 or 2 from the same one-gradient
+one-Newton-step predictor, which would put C1's failure in the harness rather than in the step length; a
+`mesh_vs_analytic_p95_cells` above 0.1 on `noise_cavity`, which would move the failure back into the
+reference and make this `M-289` again; a silhouette instrument — coverage rather than normals — showing
+`gyroid` at LOD 3 losing more than 25% of its projected area, which would restore C3's mechanism while
+leaving its number falsified; or `changed_vertices` reading 0 on a registered row, which would void the
+verdict rather than change it.
+
+### 🔬 M-393 — C1 HELD at **8.067×** and **4.766 µs** against a 3× / 20 µs bar, C2 HELD **bit-identical over 10⁶ queries** across Zen 3 and an Apple M5, C3's `TriMesh` half HELD at **93,298 ghost contacts** and its field half VACUOUS — and `P-85` falsifies C1's registered SHARE premise, because the collider's 45% is construction to within **3.12e-5**, so this moves a moving body's per-frame collision budget and **not** the 45% (P-81, R-081)
+
+**M.** `cargo bench --bench experiment_p81`, `docs/experiments/p-81.csv`, **2 rows** (four `#` comment
+lines plus one column header above them; 74 columns), `f32`, Zen 3 (`amd-ryzen-9-5900x-12-core`), with a
+second machine for C2. One 33³ chunk of `fbm_terrain` on the field's own domain — the same
+`common::grid` that `P-85` and `M-135` use, 32 cells per axis, `cell_size` 0.5, welded with
+`weld::epsilon_for` and handed to `parry3d::shape::TriMesh` — against 20,000 tilted capsule poses that
+**both arms answer**, one arm `parry3d::query::contact` and the other a fixed-trip golden-section search
+over `FbmTerrain::sample`. Committed at **`d0c3218`**, provenance line clean (no `(WORKING TREE DIRTY)`),
+verified an ancestor of `HEAD`. The gate file `docs/experiments/p-85.csv` is at **`5c55f12`**, also clean
+and also an ancestor.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 GSS capsule-vs-field is under 20 µs/query on the Zen 3 and beats the shipped `TriMesh` path by ≥ 3× on `fbm_terrain` at 33³ | ≥ 3× and < 20 µs | **HELD — `speedup` 8.067043 at 33³ and 24.928453 at 65³; `query_us_field` 4.766243 µs, 4.20× inside the budget** |
+| C2 a fixed iteration count with no data-dependent branching gives bit-identical contact points across the M5 and the Zen 3, on 10⁶ queries | 0 differing contacts | **HELD — `contacts_bit_identical` true, `differing_contacts` 0 of 1,000,000, `differing_blocks` 0 of 64, `c2_blocker` none. BLOCKED until the peer arm landed** |
+| C3a ghost contacts are non-zero on the `TriMesh` path over `M-106`'s 495-crossing fixture | > 0 | **HELD — `c3_trimesh_holds` true, `ghost_contacts_trimesh` 93,298 of 196,601 contacts** |
+| C3b ghost contacts are exactly zero on the field path, *"because there are no internal edges"* | exactly 0 | **VACUOUS — `ghost_contacts_field` = `VACUOUS`, `c3_field_verdict` = `VACUOUS-field-query-has-no-internal-edges`. No instrument exists; three honest ones read 1,600 / 373 / 14,090** |
+
+> **Three cells in this file read as failures and are not.** (1) `c3_holds` = `VACUOUS`, not `false` —
+> the clause has two halves and only one of them is scoreable, so the whole-clause cell carries the
+> weaker of the two and `c3_trimesh_holds` = `true` carries the half that was measured. (2)
+> `differing_is_bound` = `false` means `differing_contacts` = 0 is **exact rather than an upper bound**;
+> a 64-bit digest localises a disagreement only to its 15,625-query block, so a non-zero count would
+> have been recorded as `differing_blocks × 15,625` with this flag `true`. False here is the good
+> outcome. (3) The 65³ row writes `NA` in `c2_holds`, `c3_holds` and every C2/C3 column: 65³ is an
+> **unregistered corroboration arm for C1 only**, and `NA` is there rather than the 33³ arm's values on
+> purpose — `M-377`'s `spread` column is the entry that earned that rule.
+
+---
+
+#### The SHARE recomputation, out loud, and it falsifies a registered premise
+
+The registration ends *"SHARE: C1 moves the query half of the collider's 45%, and `P-85` will have
+measured how large that half is."* `P-85` has run, and **its answer is that there is no query half.**
+`docs/experiments/p-85.csv`, the `fbm_terrain` / 33 row, at `5c55f12`:
+
+| stage | ms | share of the collider stage | what it is |
+|---|---:|---:|---|
+| `handoff` | 3.917282 | 0.816017 | weld + `collider::readiness` — **construction** |
+| `bvh` | 0.858567 | 0.178850 | `Bvh::from_iter`, binned — **construction** |
+| `construct` | 0.022090 | 0.004602 | `TriMesh::new` minus the BVH — **construction** |
+| `copy` | 0.002400 | 0.000500 | positions + `triangle_indices` — **construction** |
+| **`residual`** | **0.000150** | **0.000031** | everything the four stages did not name |
+| `total` | 4.800489 | | |
+
+The four stages sum to `3.917282 + 0.858567 + 0.022090 + 0.002400 = 4.800339`, and
+`4.800489 − 4.800339 = 0.000150`, which is `residual_ms` to the digit — the decomposition closes. Every
+one of the four is construction, so **the largest slice of that 45% that could be a query is bounded by
+the residual**: `s ≤ 0.000150 / 4.800489 = 3.1247e-5`.
+
+Amdahl, on the committed file:
+
+```text
+collider stage : ceiling 1 / (1 - s)          = 1.0000312x
+whole pipeline : s' = 0.45 * s = 1.4061e-5    = 1.0000141x
+```
+
+**So C1's SHARE line is falsified as a premise** — not by this harness, but by `P-85` before this
+harness existed. `M-135`'s 45% is `collider::readiness`, a build-time validity walk over a `MeshBuffer`
+paid once per chunk when the chunk is meshed; a character controller's per-frame collision query is not
+inside it at all. An infinitely fast field query removes at most **0.0031% of the collider stage** and
+**0.0014% of the pipeline**.
+
+**What arithmetic could and could not reach before the run.** It reached the premise and killed it, which
+is `✗51`'s rule doing its job. It could reach **none of the three clauses**. C1 is a ratio between two
+*independently measured* per-query costs, not a share of a fixed total, so it is unbounded above and the
+3× bar has no arithmetic ceiling; its 20 µs half is an absolute that a per-query measurement answers
+directly. C2 is a bit-equality over 10⁶ records and C3 is a count, and neither is denominated in any
+total. So the experiment was still worth running, and the bench's doc comment says all of this **before**
+the run rather than after.
+
+**Therefore, what a HELD means.** C1's 8.067× is real and it is real about a *different quantity* from
+the one the registration named: the **per-frame collision budget of a moving body**, which no row in this
+repository had ever measured. It **must not be quoted as moving the collider's 45%.** Anyone who wants to
+spend this speedup needs that per-frame budget measured first; that measurement does not exist, and it is
+the missing prerequisite for deciding whether to land the method.
+
+---
+
+#### C1, and the ✗24 problem it has
+
+| arm | triangles | `query_us_field` | `query_us_trimesh` | `speedup` | `cycles_per_query_field` | `cycles_per_query_trimesh` | `cycles_speedup` | `ghz` |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `c1_33` | 3,944 | 4.766243 | 38.449486 | **8.067043** | 20,089.6 | 160,999.4 | 8.014073 | 4.1821 |
+| `c1_65` | 16,882 | 4.759963 | 118.658518 | **24.928453** | 20,403.3 | 498,465.6 | 24.430595 | 4.1763 |
+
+`speedup` is taken inside one repeat of one binary (`M-281`), from the repeat whose *speedup* is the
+median of nine interleaved ones, so the row's three numbers reproduce from each other. The
+clock-independent `cycles_speedup` agrees to 0.66% at 33³ and 2.0% at 65³, so the verdict does not
+depend on the governor.
+
+**`✗24` still applies to the 20 µs half, and the file carries its remedy.** A microsecond is a property
+of the binary and of the clock (`M-281`, `M-280`), and 4.766243 µs is a wall-clock absolute. The
+run-independent restatement available in the row is the cycle count: **20,089.6 cycles per query**, so
+the 20 µs budget is met on **any clock above 20,089.6 / 20 µs = 1.0045 GHz**. `M-280` measured this
+machine's `amd-pstate-epp` `powersave` range as 1.96–5.62 GHz, so the bar clears at every clock the
+machine can reach, and *that* is the statement that survives a re-run. The 3× half has no such integer in
+this file, and a successor should register one — parry's per-query triangle-candidate count against the
+field arm's fixed 22 evaluations — because a wall-clock ratio is not a gate.
+
+**Two controls the ratio needs beside it.** `contact_share_field` 0.433500 and `contact_share_trimesh`
+0.391900 are both asserted above 0.05, so the ratio is not two arms cheaply agreeing that nothing
+touches; and `endpoint_minimisers` 0.698150 is asserted below 0.90, so 30% of the poses gave the 1-D
+optimisation an **interior** answer to find rather than a monotone slide to the bottom endpoint. An
+upright capsule over a heightfield is degenerate in exactly that way, which is why the poses are tilted.
+
+**And the honesty column.** `contact_disagreements` is **2,536 of 20,000 poses (12.68%)** at 33³ and
+1,848 (9.24%) at 65³: the two arms disagree about whether a contact exists at all. `fbm_terrain` is
+`y − h(x, z)`, so the field arm's `d = φ / |∇φ|` is a *first-order* Euclidean rectification and the
+minimiser of `φ` is not exactly the minimiser of `φ / |∇φ|`. **The field query is fast, not exact.**
+Anyone quoting the 8.067× quotes the 12.68% with it.
+
+---
+
+#### The mechanism, in the peer numbers rather than in a ratio
+
+The field arm is **O(1) in triangle count by construction** — 20 GSS iterations plus two bracket
+evaluations plus one `gradient` call, whatever the chunk contains — and parry's arm is a BVH descent
+whose cost grows with the geometry. Between the two C1 arms the mesh carries **16,882 / 3,944 = 4.2804×
+more triangles**, and:
+
+| machine | field 33³ → 65³ | parry 33³ → 65³ | `speedup` 33³ | `speedup` 65³ |
+|---|---|---|---:|---:|
+| Zen 3, µs (committed row) | 4.766243 → 4.759963, **−0.13%** | 38.449486 → 118.658518, **3.0861×** | **8.067043** | **24.928453** |
+| Zen 3, cycles (committed row) | 20,089.6 → 20,403.3, **+1.56%** | 160,999.4 → 498,465.6, **3.0961×** | 8.014073 | 24.430595 |
+| Apple M5, µs (`p-81-m5-digests.txt`) | 2.949046 → 2.967071, **+0.61%** | 20.736844 → 64.057673, **3.0891×** | **7.031713** | **21.589533** |
+
+Three independent readings of parry's sensitivity — 3.0861, 3.0961, 3.0891 — against a field arm that
+moves by at most 1.56% and on one reading moves the *wrong way*. **Same shape on both ISAs.** That is
+why C1's ratio grows with resolution instead of being a fixture constant, and it is Macklin et al.'s
+mechanism (`10.1145/3384538`) at CPU scale: the registration's discount of their GPU 30× to
+"single-digit x" was correct at 33³ and conservative at 65³.
+
+The M5 figures are the peer run's, not the committed row's, and are not comparable to it in absolute
+microseconds — `perf_event_open` has no macOS equivalent, so that row has no clock at all. Only the
+ratios cross the machine boundary.
+
+---
+
+#### C2, and the stub that was refused rather than committed
+
+`contacts_bit_identical` **true**, `differing_contacts` **0 of 1,000,000**, `differing_blocks` **0 of
+64** (`c2_block` 15,625, and `64 × 15,625 = 1,000,000` exactly), `c2_blocker` **none**. A record is
+`(contact point x, y, z, depth)` as four raw `f32` bit patterns folded FNV-1a-64 over **explicit
+little-endian bytes**, so the digest does not inherit the host's byte order.
+`local_digest` = `local_repeat_digest` = `0x2be626c099a75222` over two independent passes in one process
+(`locally_self_consistent` true — the floor the cross-machine clause stands on), the branchy control
+digest is `0x4067d5c9b10dcc68`, and the M5 reproduced **both** whole-run values.
+`c2_contacts` 453,404 of 10⁶, so the digest is not a digest of rejections.
+`branch_misses_per_query_field` **1.8344** against `branch_misses_per_query_branchy` **4.4675** — a
+**2.44×** reduction, which makes "no data-dependent branching" a number rather than an adjective.
+
+**The stub, and this is the part that is not in the CSV.** `PEER_BLOCK_DIGESTS` briefly existed in the
+harness as a **64-entry table of zeros**. Left there, `contacts_bit_identical` would have compared a real
+run against nothing and reported `true`: a fabricated bit-identical result, which is `✗35`'s failure and
+`P-70`'s C3 in one costume. It was deleted and replaced by `Option<[u64; C2_BLOCKS]> = None`, with the
+`None` arm wired to a **BLOCKED** verdict and a `c2_blocker` column naming what was missing. The
+intermediate peer CSV then wrote, on disk, `contacts_bit_identical=BLOCKED` /
+`c2_blocker=no-peer-digest-table-committed` — and only after that were the real M5 digests pasted in.
+**No placeholder ever reached an artefact**, and the BLOCKED row is the evidence rather than the claim.
+So C2 was genuinely BLOCKED until the peer arm landed, and it is HELD only because a second machine
+actually ran.
+
+**The peer arm is a machine, not a model of one.** MacBook Air, Apple M5, `aarch64-apple-darwin`, rustc
+1.96.1 (31fca3adb), macOS 26.5.2. The bench source md5 `b648e531c0a1ab0964009b020a82ed50` was checked
+**equal on both machines immediately before the peer build**, and the bench was built and run unmodified
+— `counted` already carries a `cfg(not(target_os = "linux"))` arm and the `common::counters` import is
+`cfg`-gated, so no macOS patch was needed and none was applied. The cheap cross-check came out right:
+the peer printed `evals=22000000`, exactly `10⁶ × (GSS_ITERATIONS + 2) = 10⁶ × 22`, which is the bench's
+own assertion and proves the two machines walked the same pose stream and spent the same fixed number of
+field samples per query. Without it the digest comparison would be void. The comparison then closes from
+four directions: identical whole-run and branchy digests; the Zen 3 reading the table at 0 of 64; the M5
+reading the same table at `c2 true (0 blocks differ)`; and all 64 block digests diffed clean from an
+independent scratch tree outside the repository, x86-64 against aarch64, block for block rather than only
+via the fold.
+
+**parry is not bit-portable and the field arm is.** `internal_edge_contacts` reads **172,316** on the Zen
+3 (committed row) and **172,315** on the M5: **exactly one contact** differs. That column is incremented
+from `classify(&window, index, c.point2, c.normal2)` where `c` comes from
+`parry3d::query::contact(capsule, triangle)`, so it is a pure function of **parry's witness point** and
+of nothing in the GSS path — one contact's minimum barycentric coordinate crossed `FEATURE_TOL` = 1e-3 on
+one machine and not the other. So parry 0.30's capsule-vs-triangle narrowphase, which is glam SIMD and
+reassociation-sensitive, is **not bit-portable across x86-64 and aarch64**, while the field arm compared
+against it *in the same binary on the same two machines* is bit-identical over 10⁶ queries. Three
+cautions, all load-bearing: it is **one contact, so it is evidence of non-portability and not a rate** —
+no percentage may be put on it; it is **not in the digest**, so it cannot be read as weakening C2; and it
+**sets the precision of the C3 cross-machine comparison at ≈ 6e-6**. It also answers C2's registered
+falsifier from both sides in one fixture — *"one differing contact, which puts the method behind the same
+wall as every other float-sensitive path"* — the wall is real, the `TriMesh` arm is behind it, the field
+arm is not.
+
+---
+
+#### C3, whose two halves are different verdicts
+
+A contact is a ghost contact iff all three of: the witness point lies on an **edge or vertex** of the
+triangle (min barycentric ≤ `FEATURE_TOL` 1e-3); every edge so implicated is **internal**, shared by
+exactly two triangles of the window mesh; and the contact normal lies **outside the cone** spanned by the
+faces meeting at that feature, `a − d > 5°` where `d` is the dihedral and `a` the smallest angle to any
+incident face. The fixture is `M-106`'s `game_capsule_walk` path over streamed `fbm_terrain`, driven to
+**`seam_crossings` 495** (asserted equal), 24,666 steps, 496 windows, as a **kinematic sweep rather than
+a controller** — because a controller's trajectory diverges between the two arms by construction and a
+comparison of two collision methods needs both asked the same question.
+
+| column | value | of |
+|---|---:|---|
+| `contacts_trimesh` | 196,601 | contacts over the walk |
+| `edge_witness_contacts` | 172,316 | condition 1 — 87.65% of the contacts had a feature witness |
+| `internal_edge_contacts` | 172,316 | conditions 1 and 2 — **identical**, see below |
+| `ghost_contacts_trimesh` | **93,298** | the cone test removed 79,018, i.e. 45.86% of the feature population |
+| `ghost_contacts_trimesh_rawdev` | 154,941 | the naive "> 5° from every incident face" reading, kept in the file |
+| `ghost_contacts_trimesh_15deg` | 68,599 | a 15° excess bar |
+| `ghost_contacts_trimesh_jolt` | 33,357 | additionally requiring dihedral ≤ 5°, Jolt's default `mActiveEdgeCosThresholdAngle` |
+| `ghost_poses_trimesh` | 18,948 | 76.82% of the 24,666 steps |
+| `mesh_ghost_excess_max_deg` | 114.4951 | worst excess over the local dihedral |
+
+**The `TriMesh` half HELD, and the number has a consequence.** 93,298 ghost contacts over one 495-crossing
+walk, of which Jolt's *default* 5° inactive-edge rule reaches only 33,357 — **59,941 sit on active edges
+that the cheap default does not touch** and would need `mEnhancedInternalEdgeRemoval` / `avian#612`. The
+registered falsifier for C3 was *"zero on both, which would mean avian3d already handles it"*. It is
+93,298, not zero: avian3d does not already handle it, and the problem is this crate's.
+
+**The field half is VACUOUS, and this is the interesting one.** The registered class is *"collisions
+against internal edges between adjacent triangles"* and the registration's own reason for predicting zero
+is *"because there are no internal edges"*. That is a **definitional emptiness, not a measurement**: the
+field query returns `∇φ` at a point on the isosurface, and there is no code path by which an edge could
+enter it. Three instruments were built to give the clause teeth and all three failed the same way — each
+has to import the mesh as its scoring reference, and then measures the **mesh's discretisation error**
+rather than anything the field did:
+
+| column | rule | reading |
+|---|---|---:|
+| `ghost_contacts_field_projected_rawdev` | project the field's contact onto the mesh; normal > 5° from every incident face | 1,600 |
+| `ghost_contacts_field_projected` | the same, as an excess over the local dihedral | 373 |
+| `ghost_contacts_field_at_mesh_witness` | evaluate `∇φ` at the **mesh arm's own** ghost witness point and apply the identical cone test | 14,090 |
+
+**37.8× apart, over one population, from one field.** `mean_dihedral_deg` is 16.7770, so a smooth normal
+sitting exactly between two Marching Cubes facets is 8.4° from both — the most correct normal available,
+and it trips a naive 5° bar. A quantity whose three honest measurements disagree by that much is not
+being measured. Note especially that the **tightest** of the three, the paired test at the mesh arm's own
+witness point, came back at **14,090 and not at zero**, with `field_ghost_excess_max_deg` 95.3055: the
+field half was **not quietly awarded a pass**, it was found to have no instrument. Hence
+`ghost_contacts_field` = `VACUOUS` with `c3_field_verdict` naming the reason, all three surrogates kept
+in the file as the evidence, and `c3_trimesh_holds` = `true` carrying the half that is real. `VACUOUS`
+here, never `HELD`.
+
+**What a successor should register instead.** The intrinsic difference between an edge-derived normal and
+a surface normal is not their angle to any facet — it is their **stability**. An edge normal is a
+function of where the body is, so it swings tens of degrees when the body moves a millimetre; a surface
+normal moves with the surface's curvature. *Degrees of normal change per centimetre of body travel* is
+reference-free, applies identically to both arms, and is the gameplay symptom itself. It is a different
+question from the one `P-81` registered, so it belongs to a new id rather than to a quiet substitution
+here.
+
+---
+
+#### The vacuity control
+
+Registered: *"the `TriMesh` arm must report a non-zero ghost-contact count, or C3 cannot fire."*
+Column **`ghost_contacts_trimesh`**, value **93,298**, asserted live in `main()` as
+`assert!(c3.ghost_trimesh > 0)`.
+
+**That assertion alone is weaker than it looks, and the file says why.** `c3_trimesh_holds` is literally
+`ghost_trimesh > 0` — the *same predicate* as the vacuity control — so passing the control and holding
+C3's `TriMesh` half are one measurement, not two. What proves the fixture could have failed is the
+sub-populations, each of which the fixture could independently have missed:
+
+- **The witness points had to land on features.** `edge_witness_contacts` 172,316 of 196,601 contacts.
+  A capsule that only ever met triangle interiors gives zero here and the count is unreachable.
+- **Those features had to be internal.** `internal_edges` **6,660,389** against `boundary_edges`
+  140,682 — a boundary share of 2.07%. Edges are keyed by the **raw bits of the two endpoint positions**
+  rather than by index; index-keyed edges would have made every chunk-seam edge read as a boundary,
+  condition 2 unsatisfiable there, and the count a guaranteed zero for the wrong reason. `M-69`'s
+  duplicate vertices are bit-identical, which is what makes position keying sound. **On this fixture
+  condition 2 removed nothing** — `internal_edge_contacts` equals `edge_witness_contacts` at 172,316,
+  and since `classify` sets `internal = on_edge && internal`, that equality says *every* feature witness
+  in 24,666 steps sat on an edge shared by exactly two triangles. That is what an oversized window is
+  supposed to produce, and it is precisely why the control for condition 2 has to be the
+  `internal_edges` / `boundary_edges` pair rather than the contact count: the contact count cannot
+  distinguish "condition 2 was satisfiable and always satisfied" from "condition 2 was never tested".
+- **The normals had to leave the cone.** The cone test removed **79,018 of 172,316 (45.86%)**, so it is
+  discriminating rather than a pass-through, and the survivors go up to **114.4951°** of excess.
+- **The winding had to be right.** `outward_share` 0.999981, asserted above 0.99 — a sign-flipped winding
+  inverts every dihedral and every deviation in the harness.
+- **`nonmanifold_edges` 11** are excluded by `count != 2`, so they can only reduce the count.
+
+Five orders of magnitude of margin, and the M5 reproduced **93,298 / 196,601 / 154,941 / 6,660,389 /
+140,682 / 495 exactly**, so the control is not an artefact of one ISA's rounding.
+
+---
+
+#### The clean-tree re-run: what moved
+
+Both prior reports were written from a **dirty pre-run** (`63c7161 (WORKING TREE DIRTY)`,
+`2026-08-28T00:07:43Z`) taken while roughly twenty-five sibling agents were compiling. Every number above
+is re-read from `d0c3218`. **Every integer reproduced exactly** — 93,298 / 196,601 / 172,316 / 154,941 /
+68,599 / 33,357 / 18,948 / 6,660,389 / 140,682 / 495 / 24,666 / 496 / 3,944 / 16,882 / 11 / 1,675 /
+14,090 / 373 / 1,600 / 453,404, both digests, 0 of 64 blocks and 0 of 10⁶ contacts — which is `M-279`'s
+rule satisfied. **Only clocks moved**, and two of them moved enough to matter:
+
+| quantity | dirty run | clean run |
+|---|---:|---:|
+| `speedup` 33³ | 7.989133 | **8.067043** (+0.98%) |
+| `speedup` 65³ | 24.985669 | **24.928453** (−0.23%) |
+| `speedup_min` 33³ | **6.341401** | **7.990273** (+26.0%) |
+| `speedup_max` 33³ | 8.442864 | 8.077843 (−4.3%) |
+| `query_us_field` 33³ | 4.876392 | 4.766243 (−2.26%) |
+| `query_us_trimesh` 33³ | 38.958143 | 38.449486 (−1.31%) |
+| `query_us_field` 65³ | 4.991012 | 4.759963 (−4.63%) |
+| `query_us_trimesh` 65³ | 124.703765 | 118.658518 (−4.85%) |
+| `cycles_speedup` 33³ | 7.903110 | 8.014073 (+1.40%) |
+| `cycles_speedup` 65³ | 23.543932 | 24.430595 (+3.77%) |
+| `branch_misses_per_query_field` | 1.9740 | 1.8344 |
+| `branch_misses_per_query_branchy` | 4.5873 | 4.4675 |
+| branch-miss reduction | 2.32× | **2.44×** |
+| `P-85` `handoff_share` | 0.812955 | 0.816017 |
+| `P-85` `construct_share` | 0.007298 | 0.004602 |
+| `P-85` `total_ms` | 4.797392 | 4.800489 |
+| `P-85` `residual_ms` | 0.000150 | **0.000150** (unchanged) |
+
+**Two briefed conclusions are withdrawn, and both were true only of the superseded run.**
+
+1. **Withdrawn: *"4.28× the triangles costs the field arm +2.4% (4.876 → 4.991 µs)."*** On the clean tree
+   the same pair reads **4.766243 → 4.759963, which is −0.13%** — the sign flipped. **Replaced by:** the
+   comparison is made *within one row-pair of one binary* and stated three ways at once — cycles on the
+   Zen 3 (+1.56%), microseconds on the Zen 3 (−0.13%), microseconds on the M5 (+0.61%) — against parry's
+   3.0861× / 3.0961× / 3.0891× over the same 4.2804× of geometry. The load-bearing fact is not the
+   field arm's sign, it is that **the field arm is O(1) in triangle count by construction** while parry
+   is not, and no reading of it exceeds 1.6% against parry's 3.09×.
+2. **Withdrawn: *"speedup_min 6.341401, so the bar clears on the worst repeat."*** True of both runs as a
+   verdict, but **6.34 is a number the committed file does not contain**, and quoting it would be `✗35`'s
+   defect. **Replaced by:** the clean row's `speedup_min` **7.990273** / `speedup_max` **8.077843** — a
+   1.1% spread against the dirty run's 6.34–8.44, which is a **33% spread on the identical binary**. The
+   worst-repeat statistic moved 26% between the two runs and the integers moved not at all: that pair is
+   itself the argument for `✗24`, and it is why the durable form of C1's 20 µs half is the **1.0045 GHz
+   clock threshold** and not the microsecond.
+
+Two further numbers from the prior reports appear in **no** committed file and are not quoted here: an
+M5 speedup pair of "7.036× / 21.769×" (the committed peer artefact reads **7.031713** and **21.589533**,
+from a later peer revision), and the dirty run's `cycles_per_query_*` of 20,418.8 / 161,372.0 at
+`ghz` 4.1819. The committed row's are 20,089.6 / 160,999.4 at 4.1821.
+
+Note also that `docs/experiments/p-81-m5-digests.txt` itself quotes the *dirty* committed row (7.989× and
+4.876 µs, provenance `2026-08-28T00:07:43Z`) when it reports its independent scratch-tree reproduction of
+**8.032× / 4.785 µs**. That reproduction is unaffected — it was a separate tree, separate `target/`,
+separate process with both arms inside one build — and against the clean row's **8.067043** it is
+**0.43% apart** rather than the 0.54% the artefact states. The digest table below that prose is
+unaffected in every respect.
+
+---
+
+#### The fixture defects the harness's own controls caught
+
+1. **A 64-entry zero `PEER_BLOCK_DIGESTS` placeholder.** It would have scored `contacts_bit_identical`
+   true against nothing. Replaced by `Option<[u64; 64]>`, with `None` scored **BLOCKED** and a
+   `c2_blocker` column naming the gap; the intermediate peer CSV wrote
+   `contacts_bit_identical=BLOCKED / c2_blocker=no-peer-digest-table-committed` on disk before any real
+   digest existed. `✗35`'s failure mode **refused rather than committed**.
+2. **A fabricated zero on the non-Linux row.** `counted` returns `None` off Linux, and the CSV was
+   writing `ghz=0.0000` and `cycles_per_query_*=0.0` — against the bench's own doc comment promising
+   *"`unavailable` rather than invented"*, and exactly the cell `P-64` is remembered for. Found by the
+   peer run. Six columns now write the literal `unavailable`: `ghz`, `cycles_per_query_field`,
+   `cycles_per_query_trimesh`, `cycles_speedup`, `branch_misses_per_query_field` and
+   `branch_misses_per_query_branchy`.
+3. **Condition 3 was a raw angular deviation and counted two different things on the two arms.** On the
+   mesh arm it finds edge-derived normals; on the field arm it finds Marching Cubes faceting, because
+   `mean_dihedral_deg` 16.7770 puts a correct smooth normal 8.4° from both facets. Replaced by the
+   excess-over-dihedral form, which is immune by construction and applies identically to both arms;
+   `ghost_contacts_trimesh_rawdev` 154,941 keeps the naive reading in the file so the difference is
+   visible rather than argued.
+4. **The field arm's first scoring projected its own contact point onto the mesh.**
+   `field_projection_dist_max` **0.285152** — 0.57 of a cell — is the measurement that the count was
+   dominated by the displacement rather than by the field, since over half a cell on `fbm_terrain` the
+   true normal rotates by more than a facet cone is wide. Replaced by the paired test at the mesh arm's
+   own witness point, which came back **worse** (14,090 against 373) and is what forced the VACUOUS
+   verdict rather than a flattering one.
+5. **Upright capsule poses would have made C1's search a comparison.** With `x` and `z` fixed over a
+   heightfield, `φ` is monotone in `y` and the minimiser is always the bottom endpoint. Orientations are
+   sampled over the sphere and `endpoint_minimisers` **0.698150** is asserted below 0.90.
+6. **Index-keyed edges would have made C3's `TriMesh` count a guaranteed zero.** Every chunk-seam edge
+   would have read as a boundary and condition 2 would have been unsatisfiable there. Keyed by raw
+   endpoint bits instead; `internal_edges` 6,660,389 against `boundary_edges` 140,682 is the control.
+7. **`internal_edge_contacts` differing by one across machines** — turned from a wart into the parry
+   non-portability result above, once it was traced to parry's witness point rather than to the GSS path.
+8. **The unregistered 65³ arm writes `NA` in the C2 and C3 columns** rather than repeating the 33³ arm's
+   values, which is `M-377`'s `spread` defect avoided by construction.
+
+---
+
+#### What changed as a result
+
+- **Do not spend C1 expecting to move the 45%.** `P-85` measures that 45% as construction to within
+  3.12e-5, so the Amdahl ceiling from any query-side change is 1.0000312× on the collider stage and
+  1.0000141× on the pipeline. The 8.067× is real about the **per-frame collision budget of a moving
+  body**, which is a different and previously unmeasured quantity. **Measuring it is the prerequisite for
+  deciding whether to land this**, and that measurement does not exist.
+- **The determinism result is the landable one, and it is independent of the speed one.** A fixed-trip,
+  branchless-select GSS over a field whose arithmetic is only `+ − × ÷ floor`, with no `mul_add` anywhere
+  in the query path, gives bit-identical contact points across Zen 3 and Apple M5 over 10⁶ queries and
+  4 × 10⁶ folded `f32`s, at a 2.44× branch-miss reduction against the branchy form. **Nothing else
+  float-sensitive in this crate has that property**, and the same fixture shows parry does not.
+- **If a mesh collider ships, internal-edge removal is not optional.** 93,298 ghost contacts over one
+  495-crossing walk, **59,941 of them on active edges** that Jolt's default 5° threshold does not reach.
+- **The docs' citation is wrong for this case.** Liu et al. `10.1016/j.cagd.2024.102305` is SDF-vs-SDF
+  for two comparable solids, a strictly harder problem needing interval arithmetic and therefore a
+  determinism liability. Macklin, Erleben, Mueller, Chentanez, Jeschke and Corse `10.1145/3384538` is the
+  paper for a small analytic proxy against one enormous static field, with GSS winning on the 1-D edge
+  problem — which is this fixture, because a capsule is an edge with a radius.
+- **A successor id is owed** for C3's field half, registered on **normal stability per centimetre of body
+  travel** rather than on angle to a facet; and `gss_min_branchy` is an E-variant built and kept, owing a
+  Part 4b row — it answers no clause and exists only so that "no data-dependent branching" is a measured
+  branch-miss difference rather than an adjective.
+
+**Would be shown wrong by:** a per-frame collision-budget measurement showing the query is a negligible
+share of a moving body's frame, which would make C1's 8.067× as unspendable as the 45% already is; a
+third machine, a different `parry3d` version or a different rustc producing one differing block out of
+64, which falsifies C2 by its own registered bar; a fixture on which parry's per-query cost is **flat**
+in triangle count, which would mean the 8.07 → 24.93 growth is `fbm_terrain`'s BVH shape rather than the
+mechanism; or a reference-free instrument for the field arm's ghost class — one that does not import the
+mesh as its scoring reference — reading non-zero, which would convert C3's field half from VACUOUS to
+FALSIFIED.
+
+### 💥 ✗62 / M-394 — C1 FALSIFIED by its own falsifier: the capture window is `2R + t`, not `t`, so `game_dig`'s 2-cell body radius makes `2R` **4.0 cells** against a fastest per-frame step of **2.4588 cells** — **0 tunnels over 500,000 shots** on all 25 scored thickness×speed combinations, and thinning the wall from 2 cells to a twentieth of a cell changes the zero not at all; C2 HELD at **1.5644 µs/element tested** against a 25 µs bar; C3 HELD as registered at **0.1629 cells** and FALSIFIED on a convex rim above aspect 8.0, where the registered fixture is support-exact and cannot tell the two apart (P-82, R-082)
+
+**M.** `cargo bench --bench experiment_p82`, `docs/experiments/p-82.csv`, **800 rows**, 65 columns,
+scalar `f64`, Zen 3 (`amd-ryzen-9-5900x-12-core`), CPU-only. Three arms: `c1_tunnelling` (448 rows —
+2 fields × 4 element radii × 7 speeds × 8 wall thicknesses, 10⁴ randomised shots each, 4,480,000
+shots), `c2_scaling` (64 rows — 4 solver budgets × interval-shrink on/off × 8 element counts) and
+`c3_proxy` (288 rows — 3 fixtures × 6 capsule half-heights × 16 orientations). The fixture is
+`game_dig`'s own geometry restated as constants with its source lines named: `CELL_SIZE = 0.125`
+(`cell_size` column), the demo's fixed 16 ms frame (`frame_seconds = 0.016000`), `BODY_RADIUS = 0.25`
+= 2 cells, and a wall swept from the registered 2 cells down to `M-95`'s 0.05-cell subgrid floor.
+Committed at **`e740138`**, no `(WORKING TREE DIRTY)` on the provenance line, and an ancestor of
+`HEAD` (`782188c`).
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the discrete path tunnels a wall of thickness `t < v·Δt` at a `game_dig` speed and the CCD path does not | tunnels > 0 discrete, 0 CCD, over 10⁴ shots per row | **FALSIFIED — 0 of 500,000 discrete tunnels on the 50 scored rows, and 0 of 4,480,000 CCD tunnels anywhere in the sweep. The falsifier's own words: "the game's speeds are below the threshold and this is premature"** |
+| C2 cost per moving element under 25 µs and linear in element count | < 25 µs, linear | **HELD — worst 1.564418 µs/element tested at 1,600 elements (16.0× under the bar), marginal 0.424731 µs/element, `linear_fit_r2` 0.995687** |
+| C3 an 8-swept-sphere capsule reaches the same first ToI as a 200-triangle capsule mesh, within one cell, at 10× less cost | ≤ 1.0 cell, ≥ 10× | **HELD as registered — 0.162891 cells worst over the 32 scored wall rows, cost ratio 56.05× / 95.43× median / 144.94×. FALSIFIED on a convex rim above `h = 7r` (aspect 8.0): 17 of 96 rim rows are a proxy miss of a contact the exact reference confirms, 3 of them with a disagreement floor over the one-cell bar** |
+
+> **`c1_holds` reads `false` on all 800 rows including the 352 `c2_scaling` and `c3_proxy` rows, and
+> `c3_holds` reads `true` on all 800 including the 17 rim rows where the proxy missed a real
+> contact.** Both are the run's aggregate verdicts stamped on every row, not per-row measurements.
+> C1 is measured only on the 448 `c1_tunnelling` rows; C3's registered scoring population is the 32
+> wall rows at `game_dig`'s own capsule, and the rim arm is **reported, not scored** — which is why a
+> `true` sits beside `proxy_missed_impact = true`. Read the rim verdict from `proxy_missed_impact` and
+> `toi_disagreement_floor_cells`, never from `c3_holds`.
+
+> **`toi_disagreement_cells` is empty on 21 of the 288 C3 rows, and empty is not zero.** Those are the
+> 17 rows where the bead proxy reported no impact inside the step and the 4 where the triangle mesh
+> did (`proxy_missed_impact` / `mesh_missed_impact`; the two sets are disjoint, 17 + 4 = 21). A
+> difference of two ToIs does not exist when one arm has no ToI, so the disagreement is carried
+> instead by `toi_disagreement_floor_cells` on exactly those 21 rows — the travel still remaining
+> after the *other* arm's contact, which is a **lower bound** on the disagreement. Every
+> `max_disagreement` quoted below for the rim is therefore a maximum over the rows that returned two
+> ToIs, and the misses are quantified by the floor column beside it.
+
+## C1: the registration wrote a point particle's threshold
+
+**The mechanism was derived before the harness existed, and it is one inequality.** The registration
+says the discrete path tunnels a wall of thickness `t` below `v·Δt`. That is the threshold for a
+**point**. A sphere of radius `R` is caught by an end-of-frame probe whenever either frame position
+lands in the overlap window, and that window is `2R + t` wide, so the discrete path tunnels only when
+
+```text
+v·Δt > 2R + t.
+```
+
+The CSV carries the window as `discrete_threshold_cells`, and it equals `2R + t` exactly on all 448
+`c1_tunnelling` rows. `game_dig`'s `BODY_RADIUS = 0.25` is **2 cells**, so `2R = 4.0` cells before the
+wall exists at all, while the fastest thing the demo can produce — sprint 9.0 u/s composed with a
+full-sandbox-height fall, `sqrt(9² + 2·18·8) = 19.209373` u/s — moves `19.209373 × 0.016 / 0.125 =`
+**2.4588 cells** per frame (`speed_units_per_second` 19.209373, `speed_cells_per_step` 2.458800).
+`4.0 / 2.4588 = 1.627×`: **the body's diameter is 1.63 times a whole frame of travel at the very
+fastest the game can move**, so there is no sub-frame phase in which both frames sit outside the wall.
+
+**The wall's thickness is the smaller term.** At `R = 2` cells the window runs from 6.00 cells at
+`t = 2` down to **4.05** cells at `t = 0.05` — a 97.5% reduction in the wall changes the window by
+1.2%. That is why the zero does not move:
+
+| `t` (cells) | window `2R + t` | step 0.32 | step 1.152 | step 2.1722 | step 2.4588 |
+|---:|---:|---:|---:|---:|---:|
+| 2.000 | 6.000 | 0 | 0 | 0 | 0 |
+| 1.500 | 5.500 | 0 | 0 | 0 | 0 |
+| 1.000 | 5.000 | 0 | 0 | 0 | 0 |
+| 0.750 | 4.750 | 0 | 0 | 0 | 0 |
+| 0.500 | 4.500 | 0 | 0 | 0 | 0 |
+| 0.250 | 4.250 | 0 | 0 | 0 | 0 |
+| 0.125 | 4.125 | 0 | 0 | 0 | 0 |
+| 0.050 | 4.050 | 0 | 0 | 0 | 0 |
+
+(`tunnels_discrete`, summed over the `slab` and `dug` fields at `body_radius_cells = 2.000000`,
+10⁴ shots per field per cell of the table. The **25 combinations** where `t < v·Δt` as the
+registration specifies — 3 at the walk step, 6 at sprint, 8 and 8 at the two fall speeds — are 50
+rows and **500,000 shots**, and every one of them reads 0.)
+
+**The threshold by speed, at `game_dig`'s own body radius.** Each row is 8 thicknesses × 2 fields ×
+10⁴ shots:
+
+| `speed_name` | u/s | `speed_cells_per_step` | `tunnels_discrete` |
+|---|---:|---:|---:|
+| `walk` | 2.500000 | 0.320000 | 0 of 160,000 |
+| `sprint` | 9.000000 | 1.152000 | 0 of 160,000 |
+| `fall_full_height` | 16.970563 | 2.172232 | 0 of 160,000 |
+| `sprint_plus_fall` | 19.209373 | 2.458800 | 0 of 160,000 |
+| `projectile_40` | 40.000000 | 5.120000 | **2,331** of 160,000 |
+| `projectile_80` | 80.000000 | 10.240000 | **43,090** of 160,000 |
+| `projectile_160` | 160.000000 | 20.480000 | **101,061** of 160,000 |
+
+**The threshold by radius** — `slab`, `t = 0.05` cells, the fastest `game_dig` speed, one row each:
+
+| `body_radius_cells` | `discrete_threshold_cells` | step | `tunnels_discrete` |
+|---:|---:|---:|---:|
+| 0.00 (the registration's implicit point) | 0.050 | 2.4588 | **9,743** of 10,000 |
+| 0.25 | 0.550 | 2.4588 | **7,352** of 10,000 |
+| 1.00 | 2.050 | 2.4588 | **500** of 10,000 |
+| 2.00 (`game_dig`'s own) | 4.050 | 2.4588 | **0** of 10,000 |
+
+The step overtakes the first three windows and not the fourth, exactly. **The failure C1 registered
+needs a small fast thing, not a thin wall** — and `game_dig` has no projectile: it edits the field
+through a ray-cast aim, and its only moving body is the player.
+
+**The closed form agrees with the instrument on every slab row.** Over the 224 `slab` rows,
+`sign(tunnels_discrete > 0)` matches `speed_cells_per_step > discrete_threshold_cells` on **224 of
+224**. On the 224 `dug` rows it matches on **213**, and all **11** disagreements are in the same
+direction — the step marginally exceeds `2R + t` and no tunnel occurs:
+
+| field | `t` | speed | `R` | step | `2R + t` | tunnels |
+|---|---:|---|---:|---:|---:|---:|
+| `dug` | 0.125 | `fall_full_height` | 1.0 | 2.172232 | 2.125 | 0 |
+| `dug` | 0.050 | `fall_full_height` | 1.0 | 2.172232 | 2.050 | 0 |
+| `dug` | 0.250 | `sprint_plus_fall` | 1.0 | 2.458800 | 2.250 | 0 |
+| `dug` | 0.125 | `sprint_plus_fall` | 1.0 | 2.458800 | 2.125 | 0 |
+| `dug` | 0.050 | `sprint_plus_fall` | 1.0 | 2.458800 | 2.050 | 0 |
+| `dug` | 1.000 | `projectile_40` | 2.0 | 5.120000 | 5.000 | 0 |
+| `dug` | 0.750 | `projectile_40` | 2.0 | 5.120000 | 4.750 | 0 |
+| `dug` | 0.500 | `projectile_40` | 2.0 | 5.120000 | 4.500 | 0 |
+| `dug` | 0.250 | `projectile_40` | 2.0 | 5.120000 | 4.250 | 0 |
+| `dug` | 0.125 | `projectile_40` | 2.0 | 5.120000 | 4.125 | 0 |
+| `dug` | 0.050 | `projectile_40` | 2.0 | 5.120000 | 4.050 | 0 |
+
+**All eleven are the safe direction, and the reason is geometric.** The `dug` field is `game_dig`'s
+own 0.5-unit wall with a default-radius spherical brush subtracted from behind, so the residual
+thickness is exactly `t` **on the axis only**; the pocket is a sphere, and over the half-cell lateral
+spread the shots are drawn from, the residual grows off-axis by up to 0.063 cells. A dug wall is
+therefore strictly harder to tunnel than the slab formula predicts, and the formula errs conservative
+on the geometry the game actually has.
+
+## The vacuity control, and why its zero could have been a number
+
+> VACUITY CONTROL: the discrete arm must tunnel at least once, reported as a count, or C1 is comparing
+> two methods that both work.
+
+**Column: `tunnels_discrete` per row, `tunnels_discrete_total` on every row. Value: 1,447,505 discrete
+tunnels over 4,480,000 shots**, asserted `> 0` after the sweep. The scored population returns
+0/500,000 — and the same harness, the same two fields, the same shot generator and the same discrete
+predicate return **9,743 of 10,000** at radius 0 and **101,061 of 160,000** at `game_dig`'s own 2-cell
+radius once the speed reaches 160 u/s. The instrument demonstrably reports tunnels when tunnels
+exist, so the scored zero is a property of the body, not of the fixture. That is `M-44`'s rule
+satisfied by a population three orders of magnitude wide rather than by an argument.
+
+Two further controls make the counts mean what they say, both asserted:
+
+- **`shots_crossing_solid == shots` on all 448 rows** (4,480,000 of 4,480,000). Every shot's centre
+  path is sampled *at* the wall's mid-plane and must read `f < 0`, so a counted tunnel can never be a
+  shot that missed the wall — `M-44`'s zero wearing a one's clothes.
+- **`prediction_mismatches = 0` on all 448 rows.** For an exact slab the discrete predicate is
+  closed-form (`|x| − t/2 < R`); the harness computes it from the geometry and compares it to what
+  sampling the field actually said. Non-vacuous: `tunnels_discrete_predicted` spans **0 to 9,975**
+  across the 224 slab rows, so the predicate takes both values and the comparison discriminates. A
+  harness that asserts its arithmetic against itself has asserted nothing; this asserts the arithmetic
+  against the instrument.
+- **`ccd_toi_error_cells = 0.000000` over `ccd_toi_checks = 2,240,000` comparisons**, min 10,000 and
+  max 10,000 per slab row. The check-count column exists *because* a zero error over zero comparisons
+  is `M-44`'s vacuous zero, and it was added after a clean run in which the all-zeros column had no
+  population behind it. `sphere_bnb_nodes_high_water` peaks at **1,869** of an asserted 4,096-node
+  cap, so the solver is bounded rather than allowed to turn a stall into a silent "no collision".
+
+## SHARE, recomputed
+
+The registration's SHARE line is *"C2 moves a single dynamic body's collision budget, not the whole
+frame."*
+
+- **C2's 25 µs is absolute, not a ratio**, so `✗51`'s Amdahl obstruction cannot apply to it. What the
+  share bounds is the **element count**: at the bar, a 10% slice of `game_dig`'s own 16 ms frame
+  (`frame_seconds = 0.016000`) buys `1600 / 25 =` **64 elements**. `game_dig`'s shipped body is 4
+  spheres — `4 × 25 = 100` µs, **0.625%** of the frame; an 8-bead capsule proxy is 200 µs, **1.25%**;
+  a 200-triangle capsule mesh is `200 × 25 = 5000` µs, **31.25% of the whole frame**, which is not a
+  single body's budget at all. Reachable, and loose.
+- **C3's 10× is a ratio between two whole measurements**, so its share is 1.0 and the ceiling is
+  `1/(1 − 1/10) = 1.111` — no obstruction. Element counts alone give `200/8 =` **25×** before any
+  per-element difference, so the clause could only fail if a triangle test were 2.5× *cheaper* than a
+  sphere test. Reachable.
+- **C1 is a count, not a ratio** — and arithmetic reached it before the run. `2R = 4.0` cells against
+  a maximum step of 2.4588 cells is not a share argument, it is a decision: **C1 was predicted
+  FALSIFIED before the harness was written**, at every thickness in the registered sweep, and the run
+  happened to produce the number rather than to discover the verdict. That is `✗54`'s pattern.
+- **What arithmetic could not reach before the run** is exactly two things, and they are the two the
+  machine decides: C2's **absolute** half (25 µs is a wall clock on a governed CPU — `M-281`, `✗24` —
+  which is why every timed row carries `ghz` and `cycles_per_element`), and C3's **cost ratio**, whose
+  25× element-count floor is arithmetic but whose per-element factor is not. C3's *accuracy* half on
+  the registered fixture was shown unfalsifiable by arithmetic in advance (see below), and the rim's
+  failure aspect `h = 7r` is arithmetic too — so the only genuinely run-dependent numbers in this row
+  are microseconds and the rim's miss counts.
+
+## C2: linear, flat, and 16× inside a bar the cited method itself would miss
+
+`fw8_gss10` (Algorithm 2 ×8, Algorithm 1 ×10), interval shrink off, triangle arm — the registered
+element counts, each exactly realisable as `2 · longitudes · rings`:
+
+| `elements` | `elements_tested` | `broad_phase_cull` | `total_us` | `us_per_element` | `cycles_per_element` | `ghz` |
+|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 8 | 0.000000 | 9.110 | 1.138750 | 5,050.75 | 4.435 |
+| 16 | 16 | 0.000000 | 19.811 | 1.238187 | 5,333.25 | 4.307 |
+| 40 | 27 | 0.325000 | 33.691 | 1.247815 | 5,319.70 | 4.263 |
+| 100 | 47 | 0.530000 | 61.290 | 1.304043 | 5,521.28 | 4.234 |
+| **200** | 94 | 0.530000 | **128.291** | 1.364798 | 5,754.67 | 4.217 |
+| 400 | 144 | 0.640000 | 197.362 | 1.370569 | 5,771.10 | 4.211 |
+| **888** | 250 | 0.718468 | 367.813 | 1.471252 | 6,187.78 | 4.206 |
+| 1,600 | 452 | 0.717500 | 707.117 | **1.564418** | 6,535.88 | 4.178 |
+
+`marginal_us_per_element = 0.424731`, `linear_fit_r2 = 0.995687` over the eight counts. The sphere arm
+is flatter still: `marginal_us_per_element = 0.283267`, `linear_fit_r2 = 1.000000`, and
+`us_per_element` sits at 0.288750 at 8 elements and 0.283266 at 1,600 — a swept sphere's inner
+minimisation is one field evaluation, so there is nothing for the element count to perturb.
+
+**Mechanism.** An SDF collider has no pairwise broad phase — there is nothing to test *against*, only
+a function to evaluate — so the element loop is structurally `O(n)`, and the fit confirms rather than
+discovers that. The 37% drift in `us_per_element` from 8 to 1,600 elements is memory and governor, not
+algorithm: `cycles_per_element` rises 5,051 → 6,536 over the same range while `ghz` falls 4.435 →
+4.178. **Stated as a weakness:** because there is no broad phase to go quadratic, C2's linearity half
+is close to structurally implied and `r2` is a weak instrument for it. What the fit *can* rule out is
+superlinear cache behaviour at large `n`, and none appears. The absolute half is the informative one,
+and it passes by 16.0×.
+
+**The paper's sublinearity does not reproduce here, and the reason is a stated deviation.** Their
+Table 3 is strongly sublinear because the time interval shrinks whenever an earlier contact is found,
+making every later triangle a cheaper problem. Measured as its own arm (`interval_shrink`): at 1,600
+elements `fw8_gss10` reads **1.567759** µs/element with the shrink on against **1.564418** off — very
+slightly *more*, not less. This harness gives Algorithm 2 a **fixed** iteration count so cost is
+data-independent and rows are comparable within one build and one run (`M-281`), and a fixed-count
+solver on a shrunken interval does exactly as much work as on a full one. The paper's gain comes from
+its adaptive termination, which the fixed count removes. Measured, not a win here, and the reason is a
+declared deviation rather than a contradiction of the paper.
+
+## The source audit, which corrects the registration's own quoted figures
+
+Pelletier-Guénette, Mercier-Aubin and Andrews, *Real-Time Triangle-SDF Continuous Collision
+Detection*, `10.1145/3747862`, PACMCGIT 8(4) Art. 49, SCA 2025.
+
+1. **The registration's two shuriken figures reconcile only through a fact it omits.** It reads *"an
+   888-triangle shuriken at 0.4 ms total, 11.13 microseconds mean per triangle"*. Table 4 reads
+   `Shuriken / FWGSS: Total 0.4 ms, Tri. Tested 36, Mean 11.13 µs`. The **mesh** has 888 triangles;
+   **36** of them reached the narrow phase, and `36 × 11.13 = 400.7` µs — **0.40 ms exactly**. The
+   naive reading, `0.4 ms / 888 = 0.45 µs/tri`, **is a figure that appears nowhere in the paper**.
+   This harness therefore reports cost per element *tested* — the paper's own unit — with
+   `broad_phase_cull` beside it, and never divides a total by a mesh size.
+2. **`0.96 µs/tri at 100K` is a per-triangle mean whose total is 86.85 ms** — five 16 ms frame
+   budgets. The per-triangle figure is affordable; the scene is not.
+3. **C2's 25 µs bar is below the cited method's own worst published scene mean.** FWGSS's per-triangle
+   means are **25.57 µs (Skate), 7.93 (Bunny), 11.13 (Shuriken)**, against Macklin et al. 2020's DCD
+   at 30.69–67.97. The method the registration cites would **fail C2 on one of its three published
+   scenes**. So C2 passing here at 1.5644 µs/tested is not this harness beating the paper — it is a
+   far simpler problem: one analytic `max` of exact distance fields, an analytic gradient, no
+   rotation, no discretised SDF, no adaptive subdivision.
+4. Table 4's runtime share for Shuriken/FWGSS is **74.07%** — collision detection is three quarters of
+   their frame, and DCD is 97.28%.
+
+## C3: the registered fixture is support-exact, so it measures the mesh
+
+**The mechanism, and it is why the clause could not fail as registered.** The support function of a
+union of spheres is the max of the spheres' support functions, and the 8 bead centres **include both
+segment endpoints**, so
+
+```text
+sup_beads(n̂) = |h·(â·n̂)| + r = sup_capsule(n̂)   for every n̂,
+```
+
+exactly. The harness asserts it rather than arguing it: **`support_deficit_spheres_cells` is
+`0.000000` on all 192 wall rows**, asserted below `1e-12`. Against a plane the proxy is
+**support-exact**, so the measured disagreement on the registered fixture is not the proxy's error at
+all — it is the **200-triangle mesh's inscribed-polyhedron deficit**, `r(1 − cos(π/10)) = 0.0979`
+cells of faceting for 10 longitudes, growing with the half-height. The two columns track each other to
+four decimals at every half-height:
+
+| `capsule_half_height_cells` | aspect | `toi_disagreement_cells` (worst) | `support_deficit_mesh_cells` |
+|---:|---:|---:|---:|
+| **4.8** (`game_dig`'s own) | 3.4 | **0.162891** | 0.162629 |
+| 9.6 | 5.8 | 0.347904 | 0.347588 |
+| 14.4 | 8.2 | 0.585198 | 0.585786 |
+| 19.2 | 10.6 | 0.895958 | 0.895906 |
+| 24.0 | 13.0 | 0.942291 | 0.941845 |
+| 28.8 | 15.4 | 1.218634 | 1.224642 |
+
+C3's scored population is the **32** wall rows at `game_dig`'s own capsule (radius 2 cells, half-height
+4.8 cells from `BODY_OFFSETS`' 1.2-unit span, aspect 3.40): worst `toi_disagreement_cells`
+**0.162891**, mean 0.077861, min 0.000040, against a 1.0-cell bar — **HELD**, and held by a
+mechanism, not by a margin. `cost_ratio_spheres_vs_mesh` is **56.051261** worst, 95.432759 median,
+144.938750 best against a 10× bar; over all 192 wall rows the worst is 28.052083, still 2.8× the bar.
+Solver accuracy on the scored rows: `solver_error_cells` **0.001878** worst against
+`solver_accuracy_bar_cells = 0.010000`, and 0.009180 worst over all 284 rows carrying the column, with
+`solver_chosen = fw8_gss10` and `solver_cleared_accuracy_bar = true`. `mesh_false_negative` and
+`mesh_false_positive` are **0 and 0** over all 288 C3 rows against an independent exact reference
+(`toi_capsule_mesh_reference`); the paper's own equivalents are 0.94% and 0.98% over 2,048
+configurations.
+
+**This is `P-70`'s C3 shape, and the predecessor said so out loud and built a second fixture rather
+than waiting for the next audit to find it.** Asserting "within one cell" on a fixture where the proxy
+is exact by identity is asserting a tenth of a cell of *someone else's* faceting.
+
+**Where the clause actually fails — the convex rim, reported and not scored.** 8 beads spaced `2h/7`
+apart stop overlapping at `h = 7r`: in cells, `r = 2`, so the union opens at `h = 14` cells, which is
+aspect `(14 + 2)/2 =` **8.0**, and the sweep crosses it. Above that the union has real gaps and a
+2-cell convex nub enters one:
+
+| `capsule_half_height_cells` | `capsule_aspect` | `bead_spacing_cells` | `beads_disjoint` | `proxy_missed_impact` | worst disagreement (rows with both ToIs) | miss floors, cells |
+|---:|---:|---:|---|---:|---:|---|
+| 4.8 | 3.4 | 1.371429 | false | 0 of 16 | 0.225229 | — |
+| 9.6 | 5.8 | 2.742857 | false | 0 of 16 | 0.287957 | — |
+| 14.4 | **8.2** | 4.114286 | **true** | **1 of 16** | 0.613518 | **1.031761** |
+| 19.2 | 10.6 | 5.485714 | true | **4 of 16** | 0.676828 | 0.841832, 0.848926, 0.863238, 0.939196 |
+| 24.0 | 13.0 | 6.857143 | true | **6 of 16** | 0.908178 | 0.826662, 0.842625, 0.848432, 0.887874, 0.939367, **1.031884** |
+| 28.8 | 15.4 | 8.228571 | true | **6 of 16** | 0.753377 | 0.825655, 0.888037, 0.930081, 0.934070, 0.939168, **1.031840** |
+
+`bead_spacing_cells` crosses `2r = 4.0` between 9.6 and 14.4, exactly where `beads_disjoint` flips —
+the geometry and the column agree. **17 of 96 rim rows are a proxy miss that the exact reference
+confirms is a real contact** (`mesh_false_negative = 0` throughout, so the reference is not the thing
+that is wrong). Against a **plane** the same beads are exact; the gaps are invisible to a flat surface
+and fatal to a curved one, which is the whole reason the registered fixture cannot tell a working
+proxy from a holed one.
+
+**How strictly C3 is falsified on the rim, stated exactly.** The registered bar is "a disagreement
+above one cell". On the 17 misses the disagreement is bounded **below** by
+`toi_disagreement_floor_cells`, and **3 of the 17 exceed one cell outright** — 1.031761 at aspect 8.2,
+1.031884 at 13.0 and 1.031840 at 15.4. The other 14 floors lie between 0.825655 and 0.939196, so a
+purely metric reading of the bar does not condemn them. What condemns them qualitatively is the kind
+of failure rather than its size: the proxy reports **no impact at all** within the step on a
+configuration where a contact exists, which in a resolver is a body passing through a rock, not a
+sub-cell ToI error. So the honest answer to C3 is: **the cheap version exists for `game_dig`'s body**
+(aspect 3.40, beads overlapping, 0.1629 cells of disagreement that belongs to the mesh anyway, 56×
+cheaper) **and does not exist above aspect ~8**, and the rule for any future implementation is beads
+spaced under `2r` — `ceil(h/r) + 1` of them — never a fixed 8.
+
+## Four fixture defects the harness's own controls caught
+
+1. **Conservative advancement Zeno-stalled on the dug field.** The sphere solver began as plain
+   conservative advancement (Mirtich 1996; the temporal half of Macklin et al. `10.1145/3384538`, and
+   what the cited paper's own §4.6 uses). With `L = 1` a clearance `c` licenses advancing by
+   `c/|step|`, and the clearance shrinks by `1 − cos θ` per step — at most 0.293 on the slab face, so
+   twenty iterations reach `f64`. On the **`dug`** field the brush leaves a concave seam where the
+   pocket meets the slab, a sphere crossing that seam moves nearly **tangentially** to the pocket's
+   own surface, `cos θ → 0`, the factor → 1, and the march never converges. **The 512-iteration
+   assertion fired at `τ = 0.1824`** (bench doc comment; a pre-fix number, not in the committed CSV).
+   There was deliberately no "give up and return no collision" branch, which is why this surfaced as a
+   stall rather than as a fabricated zero in the exact column C1 is scored on. Replaced by a
+   **Lipschitz branch and bound over time intervals**, which is sound *by construction* rather than by
+   fixture: for 1-Lipschitz `φ` and a straight segment of length `L`,
+   `min_{t∈[a,b]} φ(p(t)) ≥ φ(p(m)) − L(b−a)/2`, so an interval whose bound exceeds the radius
+   provably contains no contact and is dropped, and the earlier half is examined first, so the first
+   leaf reached is the earliest contact. Resolves a graze in `O(log)` instead of never; leaf resolution
+   `L·2⁻⁴⁰ = 2.3e-12` world units at the fastest speed swept; **`sphere_bnb_nodes_high_water` = 1,869
+   of an asserted 4,096 cap** in the committed file.
+2. **FWGSS returned `t_end` instead of the crossing.** Algorithm 2's `t_end` is Equation 9's constraint
+   used as a **culling** device — lowered only where a penetrating sample was seen — while the
+   unsigned-distance line search deliberately lands *on* the isosurface, where `φ` is `±ε`. When it
+   landed on the `+ε` side, `t_end` was never lowered below the penetrating time and the harness
+   reported a ToI of exactly **1.0 against a closed-form 0.5, a 0.576-cell error**, systematic per
+   orientation because the sign of that `ε` is deterministic (bench doc comment; pre-fix, not in the
+   CSV). Caught by `solver_error_cells` against the closed-form support ToI. The paper describes the
+   same behaviour from the other side (§4.3, *"may never quite reach its target"*). Fixed: the ToI is
+   the earliest crossing found by the line search, with penetrating times kept as valid-if-late upper
+   bounds. **Worst error in the committed file: `solver_error_cells = 0.009180`** against
+   `solver_accuracy_bar_cells = 0.010000`.
+3. **The rim launch was calibrated by the proxy under test — `M-44` in a new place.** `rim_launch`
+   first bisected the launch position so the **bead proxy's** own analytic ToI landed mid-step. At
+   `h = 3.6` units the beads are 1.029 apart, so the bead nearest the capsule's mid-point sits
+   `h/7 = 0.514` off the axis — further than `r_rim + r_bead = 0.5` — which means **no bead can ever
+   touch the rim** on a broadside strike. The bead ToI was `+∞` at every launch position, the
+   bisection ran its bracket to `x₀ = 0`, and the body started centred *inside* the rim: sixteen rows
+   reported `toi = 0.00000` on both arms, a comparison of two methods that were both already
+   penetrating. Fixed by placing on the **true capsule** — point-to-segment distance minus radius,
+   finite for every orientation — so the reference is the geometry both proxies approximate rather
+   than either proxy.
+4. **The fixture's dynamic range was smaller than the clause's own bar — `✗51`'s rule in a geometric
+   costume.** The launch first placed the true capsule's contact at `τ = 0.5`, leaving half a step of
+   approach. A representation whose support falls short of the capsule's by more than the *remaining*
+   travel cannot contact the wall at all inside one step, so the fixture reported "none" rather than a
+   disagreement — and at half a sprint step that ceiling is **0.576 cells, below C3's own one-cell
+   bar**. Fixed two ways: the placement moved to `τ = 0.1`, and a second wall arm (`wall_wide`, 8
+   cells per step against a 16-cell wall) gives the one-cell bar 7.2 cells of room. **The fix is
+   visible in the committed artefact:** at `h = 28.8` cells the narrow `wall` arm still clips at a
+   worst disagreement of **0.919980** with one of its 16 rows returning no mesh ToI at all
+   (`mesh_missed_impact = true`), while `wall_wide` reports **1.218634** against a true mesh support
+   deficit of **1.224642**.
+
+A fifth, recorded because it is the same rule applied to the harness's own instrument rather than to
+its headline: **`ccd_toi_error_cells` read 0.000000 on every row and nothing in the artefact proved the
+comparison had ever been made.** `ccd_toi_checks` was added and asserted non-zero — 10,000 per slab
+row, **2,240,000** in total. `M-44` applies to instrument checks, not only to results.
+
+## What changed as a result
+
+**Do not build this.** That is the result, and it is a completed one. At every speed a `game_dig` body
+can reach, over 500,000 randomised shots against a wall swept from 2 cells to a twentieth of a cell,
+the **shipped discrete resolver missed zero contacts**. The CCD arm also missed zero — 0 of 4,480,000
+across the entire sweep, at every speed to 160 u/s and every thickness to 0.05 cells — so it bought
+nothing measurable. The cost of the wrong decision is now priced: a 200-triangle capsule CCD query is
+**128.291 µs**, which is `128.291 / 16000 =` **0.80% of a 16 ms frame**, and 56–145× the cost of the
+8-bead proxy (`spheres_us` 0.56–2.70 µs on the scored rows). Nothing in `crates/isomesh/src/**`
+changes; this row does not want a source change.
+
+**The number that would make this actionable is 40 u/s.** That is the first swept speed at which
+`game_dig`'s own 2-cell body tunnels — 2,331 of 160,000 — and it is `40 / 19.209373 =` **2.08× the
+fastest speed the demo can produce**. The window says the crossing is at `2R + t ≈ 4` cells of travel
+per frame, i.e. `4 × 0.125 / 0.016 =` **~31 u/s**. If a projectile, a thrown tool or a vehicle is ever
+added above roughly 30 u/s, discrete collision stops working and this row becomes live. Below that it
+is premature — which is exactly what the registration said its own falsification would mean.
+
+**And if it is ever needed, reach for the bead proxy — not because it is 56× cheaper, but because it
+is exact against a plane, which the 200-triangle mesh is not** (0.162891 cells of faceting error at
+`game_dig`'s own body, 1.224642 at aspect 15.4). It is valid only while the beads overlap: 8 beads
+cover a capsule to aspect 8.0, and above that they have holes a 2-cell rock enters.
+
+**Would be shown wrong by:** a discrete tunnel at a `game_dig` speed — any non-zero
+`tunnels_discrete` on a row with `body_radius_cells = 2.0` and `speed_cells_per_step ≤ 2.4588` — which
+would mean the `2R + t` window is not what decides it; a `game_dig` body whose effective radius in the
+resolver is smaller than `BODY_RADIUS` (a foot sphere, a probe point, a swept ray), which would move
+`2R` and could put the game inside the tunnelling regime at its own speeds; a rim fixture at aspect
+below 8.0 producing a proxy miss, which would mean bead disjointness is not the mechanism; or a
+`us_per_element` above 25 µs on a machine whose `ghz` column shows it was not simply governed down.
+
+### 💥 ✗63 / M-395 — C1 FALSIFIED by **44× to 2,275×** at 33³ on all eight fields and **no integrator could have passed it**: a volume integral over the same triangles agrees with the surface integral to **1.7e-13**, so the whole gap is Marching Cubes. C2 splits — cross-machine determinism HELD on **48 of 48 hashes** across Zen 3 and an Apple M5, the asymmetry half FALSIFIED by an exact **`0.000000e0`** on `box_exact`. C3 FALSIFIED at **20 of 24** rows. And the paper's surface form costs **2.14×** the classical origin-fan it was registered as cheaper than (P-83, R-083)
+
+**M.** `cargo bench --bench experiment_p83`, `docs/experiments/p-83.csv`, **24 rows** (8 reference
+fields × 17³/33³/65³), `f64`, Zen 3 (`amd-ryzen-9-5900x-12-core`, `powersave`, `clock_mhz` 4200 on
+every row). Each field is intersected with an axis-aligned clip box and extracted by Marching
+Cubes, and its volume, centre of mass and inertia tensor are compared against a dense
+tangent-plane voxel integration of the same clipped field at **256³ with boundary voxels refined
+4³** — so the comparison is the polyhedron against the field, not the quadrature against a closed
+form. The provenance line reads
+`# commit 9cbe95a on amd-ryzen-9-5900x-12-core at 2026-08-28T00:53:36Z` with **no
+`(WORKING TREE DIRTY)`**; `9cbe95a` is an ancestor of HEAD, the file itself landed at `6bf877d`,
+and the cross-machine fixture `docs/experiments/p-83-m5-hashes.txt` at `22c9fa0`. Four `#` comment
+lines plus the column header, then **24 data rows counted from the file**, 46 columns.
+
+> **Every number below is read from the committed clean-tree CSV, not from the run the original
+> report quoted.** That run was `# commit 63c7161 (WORKING TREE DIRTY)` at `2026-08-27T23:08:43Z`,
+> taken while ~25 sibling Phase-24 agents were compiling. **Nothing that is not a clock moved.**
+> All 24 rows of `volume_rel_error`, `com_rel_error`, `inertia_rel_error`, `convergence_order`,
+> the three `order_*` columns, `asymmetry_pre`, `asymmetry_pre_abs`, `tetra_rel_error`, every
+> `reference_*` column and all 48 hashes reproduce the quoted digits exactly — which is `M-279`'s
+> rule satisfied in the strongest available form, since the M5 arm agrees with both Ryzen runs on
+> the same 48 hashes. What moved is timing, and one reported conclusion dies with it:
+>
+> - **WITHDRAWN: *"18.13–18.35 ns/triangle on 23 of 24 rows (one 35.83 ns outlier under
+>   contention)"*.** There is no outlier on the quiet tree. `mass_props_ms / triangles` is
+>   **18.14–18.35 ns on all 24 rows** — a **1.16%** band, `(18.35 − 18.14)/18.14`, across a
+>   **234×** range of triangle counts, `58,112/248`. The run-independent statement that replaces
+>   it is that band itself: the mass pass is a fixed instruction count per triangle, and `M-281`
+>   applies to the nanoseconds but not to the flatness.
+> - `extract_ms` per sample: sphere `13.6 ns` → **12.1–12.9 ns**; `fbm_terrain` `237 ns` →
+>   **203.2–227.0 ns**. Extraction got faster on a quiet machine, as expected.
+> - `surface_over_tetra_ms`: IQR `2.1368–2.1417` → **2.1380–2.1412**, median **2.1404**, full
+>   range **2.1290–2.1552**. `tetra_ms / triangles`: `8.48 ns` → **8.47–8.59 ns**, median 8.49.
+> - `share`: the eleven values the report quoted moved by **−0.41% to +1.92%** of themselves, four
+>   up and four down at 33³. **WITHDRAWN: *"contention biases `share` downward, conservative
+>   against a falsified C3"*** — the sign is not consistent, and the correct reading is in C3
+>   below.
+> - **CORRECTED, not moved:** the report gave `asymmetry_pre_abs` as *"1.48e-17 … 2.29e-11"*,
+>   which is the range over the 33³ rows only. Over all 21 non-`box_exact` rows the committed file
+>   reads **1.249114e-17 … 5.200818e-11**. The relative column `asymmetry_pre` is **9.815228e-18 …
+>   2.743539e-15**, i.e. at most **12.4 ulp**, and that is unchanged.
+> - **Also corrected:** *"the reference is 16–8500× better than the method everywhere"* mixed
+>   denominators. The `8,533×` is `csg_difference`'s `reference_gap_rel` against its 65³ *volume*
+>   error; the `16×` is `noise_cavity`'s against its 65³ *inertia* error. Held to one field per
+>   pairing, the honest span is given in the vacuity section.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 volume, com and inertia within **1e-4** of the dense voxel reference on all eight fields at 33³, error falling at `h²` | ≤ 1e-4 on all three, and order ≥ 1.5 | **FALSIFIED — `c1_holds` false on all 24 rows. Smallest failing value at 33³ is `noise_cavity`'s inertia, `4.412184e-3` = 44× the bar; the smallest volume miss is `sphere`'s `9.353191e-3` = 94×; the largest is `thin_plate`'s inertia, `2.275269e-1` = 2,275×. The `h²` half HOLDS on 5 of 8 fields: `convergence_order` ≥ 1.5 on `sphere` 1.9771, `torus` 2.0259, `box_exact` 1.8388, `csg_difference` 1.7092, `gyroid` 1.9784; below on `thin_plate` 0.8975, `fbm_terrain` 1.2918, `noise_cavity` 0.7886** |
+| C2a fixed triangle order gives bit-identical tensors across machines | identical | **HELD — `bit_identical_across_machines` = `true` on 24/24. 24 distinct `inertia_hash` and 24 distinct `mesh_hash`, all 48 reproduced on the second machine** |
+| C2b the pre-symmetrisation asymmetry is non-zero | > 0 | **FALSIFIED — `asymmetry_pre_abs` is exactly `0.000000e0` on `box_exact` at 17³, 33³ and 65³. The registered falsifier verbatim: *"C2 by zero asymmetry, which would mean the crate's triangles are better behaved than the paper's and the symmetrisation step can be dropped"*** |
+| C3 mass properties cost under **2%** of extraction | `share` < 0.02 | **FALSIFIED — 20 of 24 rows. `share` spans `0.007338`–`0.154014`; the four passes are `fbm_terrain` at 1.9361 / 1.2301 / 0.7338% and `thin_plate` at 65³ at 1.9619%** |
+
+---
+
+## The source that landed, and its contract
+
+**This is one of only two registered source changes in Phase 24 and the only one that landed.**
+`crates/isomesh/src/mass.rs` (+ `src/mass/tests.rs`, 9 tests), one line in `lib.rs` —
+`pub mod mass;` at line 127 — and one new
+`Error::MassPropertiesUndefined { volume, largest_moment }`. Read from the module:
+
+- **`no_std`.** No `use std::`, no `alloc::`; `mass.rs` imports `crate::vec3::{cross, dot, sub}`
+  and `crate::{Error, Real, Result}` and nothing else.
+- **Allocation-free.** Fourteen scalar accumulators — `volume_sum`, `centroid_sum[3]`,
+  `trace_sum`, `outer_sum[3][3]` — one pass over the triangle slice, no scratch buffer, no `&mut`
+  output parameter because there is nothing to reuse.
+- **Generic over `Real`**, arrays in every public signature:
+  `mass_properties(&[[R; 3]], &[[u32; 3]]) -> Result<MassProperties<R>>`. No math library in the
+  API.
+- **No new dependency.**
+- **No panicking path.** Out-of-range indices return
+  `Error::IndexOutOfRange { at, index, vertices }`; a surface that does not bound a positive
+  finite volume, or a moment that overflowed, returns `Error::MassPropertiesUndefined`. An
+  inward-wound mesh is **rejected, not flipped** — the sign is the caller's contract, and
+  repairing it would make an inside-out mesh indistinguishable from a correct one.
+- **No square root is evaluated anywhere in the module.** `N = (X₂ − X₁) × (X₃ − X₁)` is left
+  unnormalised because `‖N‖` cancels between the area element `dA` and the unit normal `n` in
+  every one of the paper's integrals, so the triangle's area is never formed.
+  `grep sqrt crates/isomesh/src/mass.rs` returns nothing. The one quadrature kernel is
+  `120·∫(x·x)x dξdη = (S·S)S + Q·S + 2Σₐ(S·Xₐ)Xₐ + 2Σₐ(Xₐ·Xₐ)Xₐ`, the paper's Eq. (48) with Table
+  1 folded in; the leading factors `1/18`, `1/96`, `1/400`, `1/240` are applied once at the end,
+  one correctly rounded division per number rather than a rounding per triangle.
+
+---
+
+## SHARE, recomputed — and C1's arithmetic was decided before the run
+
+**C1's 1e-4 could not be reached at 33³ by any integrator, and the committed file proves it two
+ways.** The registered comparison is against a dense voxel integration *of the field*, so what is
+being measured is the distance between the Marching Cubes polyhedron and the solid. On the
+canonical sphere (`R = 1`, domain `[−2, 2]`, `h = 4/32 = 0.125` at 33³) the chord deficit of a
+linear-interpolant polyhedron is `≈ (h/R)²/4` = **3.906e-3**, already 39× the bar before anything
+is measured; `1e-4` needs `h/R ≤ 0.02`, i.e. **201³**. The file's own columns say the same thing
+more strongly. Taking each field's 33³ error and its own fitted order from the CSV, the resolution
+at which the bar would first be met — `32·(err/1e-4)^(1/p) + 1` — is:
+
+| field | `volume_rel_error` @33³ | `order_volume` | res for 1e-4 | `inertia_rel_error` @33³ | `order_inertia` | res for 1e-4 |
+|---|---:|---:|---:|---:|---:|---:|
+| `sphere` | 9.353191e-3 | 1.9887 | **314³** | 1.557260e-2 | 1.9771 | **412³** |
+| `torus` | 3.566312e-2 | 2.0259 | 583³ | 4.088751e-2 | 2.0275 | 622³ |
+| `box_exact` | 2.213542e-2 | 1.9354 | 522³ | 4.729309e-2 | 1.8388 | 913³ |
+| `csg_difference` | 2.719990e-2 | 1.9141 | 599³ | 5.454607e-2 | 1.8165 | 1,028³ |
+| `thin_plate` | 1.223958e-1 | 0.9769 | 46,338³ | 2.275269e-1 | 0.8975 | 176,027³ |
+| `gyroid` | 1.941390e-2 | 2.0167 | 437³ | 3.144638e-2 | 1.9784 | 587³ |
+| `fbm_terrain` | 1.054115e-2 | 2.5699 | **197³** | 2.230116e-2 | 2.5038 | 278³ |
+| `noise_cavity` | 3.055301e-2 | 0.7886 | 45,330³ | 4.412184e-3 | 2.0338 | 207³ |
+
+**C3's 2% is resolution-dependent by construction, and that is arithmetic, not a measurement.**
+With triangles `T ∝ h⁻²` and samples `C ∝ h⁻³`, `share = (T·c_t)/(C·c_c) ∝ h`: it falls with
+resolution and rises on cheap fields, so the same code passes or fails the clause depending only
+on the grid it is handed. The committed file shows exactly that — `sphere`'s share is 0.154014 →
+0.094181 → 0.051850 over two doublings, a ratio of 1.635 then 1.816, converging on 2.
+
+**One thing the arithmetic could not reach before the run: whether the reference itself
+converges.** That is the registered vacuity control and it is a property of an integrator nobody
+had written yet. It is reported below.
+
+---
+
+## C1 — the clause is not about the integrator, and the file settles that
+
+At 33³, against the 1e-4 bar (`c1_holds` = `false` on **all 24 rows**):
+
+| field | `volume_rel_error` | `com_rel_error` | `inertia_rel_error` | `convergence_order` | `tetra_rel_error` |
+|---|---:|---:|---:|---:|---:|
+| `sphere` | 9.353191e-3 | 6.218771e-7 | 1.557260e-2 | 1.9771 | 1.803797e-14 |
+| `torus` | 3.566312e-2 | 1.265193e-4 | 4.088751e-2 | 2.0259 | 1.953176e-15 |
+| `box_exact` | 2.213542e-2 | `1.415529e-55` | 4.729309e-2 | 1.8388 | 3.258468e-14 |
+| `csg_difference` | 2.719990e-2 | 1.865803e-3 | 5.454607e-2 | 1.7092 | 2.324769e-14 |
+| `thin_plate` | 1.223958e-1 | `3.908137e-15` | 2.275269e-1 | 0.8975 | 3.166401e-14 |
+| `gyroid` | 1.941390e-2 | 3.554784e-3 | 3.144638e-2 | 1.9784 | 1.076360e-14 |
+| `fbm_terrain` | 1.054115e-2 | 5.100315e-4 | 2.230116e-2 | 1.2918 | 2.793406e-14 |
+| `noise_cavity` | 3.055301e-2 | 1.950766e-3 | 4.412184e-3 | 0.7886 | 1.390602e-14 |
+
+Volume and inertia miss on **8 of 8**; the centroid passes on three (`sphere`, `box_exact`,
+`thin_plate`) and those are the three whose true centroid is the origin. `convergence_order` is
+the minimum of `order_volume`, `order_com` and `order_inertia` over the informative series, and
+the minimum comes from a different column on different fields: inertia on `sphere`, `box_exact`,
+`thin_plate` and `gyroid`; the centroid on `csg_difference` and `fbm_terrain` (`fbm_terrain`'s
+`order_volume` is **2.5699** and its `order_inertia` **2.5038** — only the centroid is slow,
+because the solid is a large exactly-represented box with a small wrinkled lid and every centroid
+error lives in the lid); and volume on `torus` and `noise_cavity`, whose series is not even
+monotone: `2.979575e-2 → 3.055301e-2 → 9.984830e-3`.
+
+**`tetra_rel_error` is what makes this entry worth writing.** It is the surface integral against a
+classical signed-tetrahedron *volume* integral — the origin fanned to every triangle,
+`V = det(a,b,c)/6` and `∫xᵢxⱼ = (V/20)(aᵢaⱼ + bᵢbⱼ + cᵢcⱼ + sᵢsⱼ)` — over the **same polyhedron**,
+which is exact for a closed oriented triangle mesh. Over all 24 rows it spans **1.909884e-15 to
+1.682692e-13**, asserted `< 1e-6`. So the surface integral is **exact on the polyhedron it is
+handed**, to thirteen digits, and the entire 1e-2 gap against the voxel reference is Marching
+Cubes geometry against the field.
+
+**C1's registered falsifier says a convergence order below 1.5 *"would mean the surface integral
+is not seeing the geometry the volume integral sees"*. A volume integral over the same triangles
+agrees to thirteen digits. The surface integral sees exactly that geometry; the geometry is 1e-2
+from the field at 33³. C1 as written cannot be passed by any integrator — it is a Marching Cubes
+fidelity clause wearing a mass-properties clause's name**, and the three orders below 1.5 are the
+three fixtures whose feature size is at or under `h`, not three failures of the method:
+`thin_plate` is `2 × (4/64) × (0.4/2) = 0.025` thick (`ThinPlate::THICKNESS_IN_CELLS` = 0.4 at its
+canonical `4/64` cell) against the `cell_size` column's 0.25 / 0.125 / 0.0625 (0.2, 0.4, 0.8 of a
+cell), `noise_cavity`'s blobs are two to four cells across and change topology between
+resolutions, and `fbm_terrain`'s lid is fractal.
+
+`inertia_com_rel_error` is the centred tensor, which is what a physics engine consumes and which
+compounds the centroid error: at 65³ it is 1.549174e-2 against `inertia_rel_error`'s 1.502183e-2
+on `csg_difference`, 1.912352e-1 against 1.863736e-1 at 17³. The compounding is real and small; it
+does not change any verdict.
+
+---
+
+## C2 — two clauses in one column
+
+**C2a, cross-machine determinism: HELD, 24/24**
+
+`bit_identical_across_machines` is `true` on every row. The second machine is an **Apple M5
+(MacBook Air, `aarch64-apple-darwin`, `rustc 1.96.1`)**, reached at ssh `mac_air`, and it ran the
+harness — this half is **not BLOCKED**. Its four projected columns are committed as
+`docs/experiments/p-83-m5-hashes.txt`, whose own header records that the M5 CSV's provenance line
+reads `# commit unknown on apple-m5 at 2026-08-27T23:06:02Z`, *"`unknown` because the tree was
+rsynced without `.git`"*. That is the honest anchor: the fixture is 24 rows of
+`field,resolution,inertia_hash,mesh_hash`, and **all 48 hashes match the committed Ryzen CSV
+exactly**, with 24 distinct `inertia_hash` and 24 distinct `mesh_hash` so the match is not a
+constant. Without the file the column reads `no_peer` and `c2_holds` reads `blocked`, so the
+measurement is real rather than assumed.
+
+The `mesh_hash` half is stronger than the clause asked for: **Marching Cubes extraction is itself
+bit-identical across ISA and OS**, which is the crate's unconditional-`libm` policy paying off,
+and it is why the 48 hashes are also identical between the dirty and the clean Ryzen runs.
+
+**C2b, non-zero pre-symmetrisation asymmetry: FALSIFIED**
+
+`asymmetry_pre_abs` is **exactly `0.000000e0` on `box_exact` at all three resolutions**. On the
+other 21 rows it is `1.249114e-17` to `5.200818e-11` absolute, which relative to the tensor beside
+it (`asymmetry_pre`) is `9.815228e-18` to `2.743539e-15` — **at most 12.4 ulp**,
+`2.743539e-15 ÷ 2⁻⁵²`. Symmetrisation moves the answer by less than the last bits everywhere, and
+by nothing at all on an axis-aligned box.
+
+> **`c2_holds` conflates the two halves and reads `false` on `box_exact` at 17³, 33³ and 65³ for a
+> reason that is not the cross-machine clause failing.** The bench computes it as
+> `arm.props.asymmetry > 0.0 && identical == "true"` (`experiment_p83.rs:894`), a conjunction of
+> C2a and C2b. On those three rows `identical` is `true` — the hashes match the M5 — and the
+> `false` is entirely the `> 0.0` term. Score the halves separately: **C2a HELD 24/24, C2b
+> FALSIFIED**, and `c2_holds` reading `true` on the other 21 rows is only C2b's absence of an
+> exact zero there, not a stronger result.
+
+> **`asymmetry_post` is `0.000000e0` on all 24 rows and is structurally zero — it is not a
+> result.** The symmetrised tensor stores each off-diagonal entry once and mirrors it
+> (`mass.rs:305-307`), so the column can only ever read zero and proves that the step was
+> **applied**, not that it was **needed**. The informative column is `asymmetry_pre`.
+
+**The mechanism, and the paper is right about its own inputs.** Each triangle contributes a
+rank-one `G ⊗ N`, whose antisymmetric part cancels only against the rest of a closed surface, so
+the asymmetry is a *global cancellation residual*. The paper's Eq. (22) requires
+`∮(x·x)x⊗n dA = ∮(x·x)n⊗x dA`, *"which holds in the exact case but might be violated by
+discretization schemes"*, and its §6.1 measures the violation on a GiD-triangulated cylinder,
+`Θˣᶻ ≠ Θᶻˣ`. It also names the cause in its own sentence: *"A further aspect, which has to be kept
+in mind, is related to the precision of the coordinates generated by the CAD system. Commonly,
+they have a limited precision, which can be seen in the diagrams. Thus, the achievable accuracy is
+limited"*, and its conclusion generalises it — *"The more accurate the surface integration is
+performed the more symmetric the tensor becomes."* This crate hands the kernel `f64` coordinates
+from an analytic field on a mesh with `boundary_edges` = 0 and `non_manifold_edges` = 0 on all 24
+rows, so the cancellation reaches the round-off floor. On `box_exact` it reaches further: every
+vertex coordinate, every cross product and every cubic moment is a dyadic rational that is exact
+in `f64`, so the cancellation is exact and the zero is a true zero rather than a small number.
+
+**The column is still worth keeping, and the reason is in a test rather than the CSV.**
+`mass::tests::asymmetry_separates_a_closed_mesh_from_a_leaking_one` deletes one triangle from a
+cube shifted to `(7, 5, 3)` and asserts the residual jumps from `≤ 1e-13·Θ₀₀` to `> 1e-3·Θ₀₀`.
+That is the `M-44` proof that this zero could have been non-zero; it lives in the test because no
+reference field produces a leaking mesh. `MassProperties::asymmetry` is public as a **leak
+detector**, not as a symmetry residual.
+
+---
+
+## C3 — falsified at 20 of 24, and the gate is a clock
+
+| field | `share` 17³ | 33³ | 65³ | `triangles`/cells @65³ | `extract_ms`/sample @65³ |
+|---|---:|---:|---:|---:|---:|
+| `sphere` | 0.154014 | 0.094181 | 0.051850 | 3.63% | 12.1 ns |
+| `torus` | 0.135213 | 0.068775 | 0.035214 | 3.21% | 15.8 ns |
+| `box_exact` | 0.134830 | 0.089904 | 0.053555 | 4.40% | 14.3 ns |
+| `csg_difference` | 0.114116 | 0.077515 | 0.046097 | 4.59% | 17.2 ns |
+| `thin_plate` | 0.065408 | 0.036779 | **0.019619** | 1.56% | 13.8 ns |
+| `gyroid` | 0.096408 | 0.075699 | 0.050066 | 16.45% | 57.5 ns |
+| `fbm_terrain` | **0.019361** | **0.012301** | **0.007338** | 8.59% | 203.2 ns |
+| `noise_cavity` | 0.095796 | 0.074924 | 0.051489 | 22.17% | 75.0 ns |
+
+**The raw columns every derived per-item figure above is computed from**, so the arithmetic is
+reproducible from this entry: `triangles` over `cells` = `(resolution − 1)³`, `mass_props_ms` and
+`tetra_ms` over `triangles`, `extract_ms` over `resolution³` samples and over `triangles`.
+
+| field | res | `triangles` | `mass_props_ms` | `extract_ms` | `tetra_ms` |
+|---|---:|---:|---:|---:|---:|
+| `sphere` | 17³ | 536 | 0.009760 | 0.063371 | 0.004560 |
+| `sphere` | 33³ | 2,312 | 0.041990 | 0.445844 | 0.019640 |
+| `sphere` | 65³ | 9,512 | 0.172622 | 3.329231 | 0.080661 |
+| `torus` | 17³ | 656 | 0.011930 | 0.088231 | 0.005570 |
+| `torus` | 33³ | 2,256 | 0.040951 | 0.595436 | 0.019130 |
+| `torus` | 65³ | 8,416 | 0.152872 | 4.341280 | 0.071361 |
+| `box_exact` | 17³ | 584 | 0.010630 | 0.078840 | 0.004970 |
+| `box_exact` | 33³ | 2,696 | 0.048911 | 0.544035 | 0.022850 |
+| `box_exact` | 65³ | 11,528 | 0.210182 | 3.924577 | 0.098191 |
+| `csg_difference` | 17³ | 584 | 0.010630 | 0.093151 | 0.004960 |
+| `csg_difference` | 33³ | 2,768 | 0.050210 | 0.647746 | 0.023450 |
+| `csg_difference` | 65³ | 12,020 | 0.218242 | 4.734394 | 0.101921 |
+| `thin_plate` | 17³ | 248 | 0.004540 | 0.069411 | 0.002130 |
+| `thin_plate` | 33³ | 1,016 | 0.018480 | 0.502464 | 0.008680 |
+| `thin_plate` | 65³ | 4,088 | 0.074201 | 3.782115 | 0.034690 |
+| `gyroid` | 17³ | 2,536 | 0.046010 | 0.477245 | 0.021490 |
+| `gyroid` | 33³ | 10,632 | 0.193362 | 2.554364 | 0.090791 |
+| `gyroid` | 65³ | 43,116 | 0.791237 | 15.803898 | 0.367123 |
+| `fbm_terrain` | 17³ | 1,188 | 0.021590 | 1.115150 | 0.010090 |
+| `fbm_terrain` | 33³ | 5,208 | 0.094500 | 7.682171 | 0.044210 |
+| `fbm_terrain` | 65³ | 22,508 | 0.409493 | 55.805111 | 0.191782 |
+| `noise_cavity` | 17³ | 2,560 | 0.046491 | 0.485314 | 0.021720 |
+| `noise_cavity` | 33³ | 13,236 | 0.240042 | 3.203810 | 0.112131 |
+| `noise_cavity` | 65³ | 58,112 | 1.060090 | 20.588742 | 0.495274 |
+
+**The run-independent statement, which is `✗24`'s rule applied to this clause.**
+`mass_props_ms / triangles` is **18.14–18.35 ns on all 24 rows** and `tetra_ms / triangles` is
+**8.47–8.59 ns**, each a ~1.2% band over a 234× range of triangle counts — those are instruction
+counts, stable, and they make `share` an identity: `share < 0.02` ⟺
+`extract_ms/triangle > 50 × 18.2 ns = 0.91 µs`. Every passing row clears it and every failing row
+does not: `fbm_terrain` extracts at 0.939 / 1.475 / 2.479 µs per triangle, `thin_plate` at 65³ at
+0.925, and the next highest is `torus` at 65³ at 0.516. So C3 is not a property of `isomesh::mass`
+at all — it is a statement about how expensive the *field sample* is and how many triangles per
+cell the grid produces, and the method passes exactly where `FbmTerrain`'s per-sample cost buries
+it.
+
+**Two of the four passes are inside the run-to-run spread of their own gate.** `thin_plate` at 65³
+clears 2% by **1.905%** of the bar and `fbm_terrain` at 17³ by **3.195%**, while the same eleven
+`share` values moved by up to **1.92%** between the dirty and the clean run of the identical
+binary. A verdict decided by that margin is a coin the governor tosses; the same clause read
+against the integer `triangles/cells` column — 1.56% on the one passing non-`fbm` row against
+3.21%–22.17% everywhere else — is decided by the grid and reproduces exactly.
+
+---
+
+## The result that refutes a sentence in the registered hypothesis
+
+`surface_over_tetra_ms` = `mass_props_ms / tetra_ms`, both medians of 25 passes over the identical
+triangle list in the identical run and the identical build: **2.1290 to 2.1552 across 24 rows,
+median 2.1404, IQR 2.1380–2.1412**. Per triangle that is 18.14–18.35 ns for the paper's form
+against 8.47–8.59 ns for the classical origin-fan signed-tetrahedron decomposition — **at
+identical accuracy on identical input**, since `tetra_rel_error` is ≤ 1.682692e-13.
+
+The registration says *"the operation count is below tetrahedral volume discretisation at equal
+resolution."* The paper's own sentence behind that is §6.1's: *"For the same surface
+discretization using the surface and the volume discretization approach, the number of
+multiplications to generate the MMI tensor is larger for the volume discretization"* — and the
+volume discretisation it is comparing against is spelled out one paragraph earlier as *"a
+discretization with tetrahedral elements having the same surface discretization"*, i.e. a
+**filled** tetrahedral mesh with interior elements. That claim is not in dispute and this
+experiment does not test it. The origin fan is a different object: it needs no interior mesh
+either, it consumes the same triangle list, and against it the paper's form does **2.14× the
+work**. The sentence as written into the registration is refuted for the comparison this crate
+would actually make.
+
+**The decision is surfaced and stops there: no swap is recommended.** Swapping `mass.rs`'s kernel
+for the fan is a one-function change that buys `18.17 − 8.49 = 9.7` ns per triangle — on the
+largest fixture here, 58,112 triangles, that is 0.56 ms once — and loses `asymmetry`, which is the
+only leak detector the module has. The measurement is the deliverable; the trade is a caller's to
+make.
+
+---
+
+## The vacuity control — which is about the reference, not the method
+
+The registration's own words: *"the reference must be a dense voxel integration at a resolution
+that itself converges, reported with its own h² fit, or C1 is measuring the reference."* **The
+column is `reference_order`**, from a three-grid Richardson fit over 64³/128³/256³ of the whole
+ten-moment vector, normalised so each component is order one, with `reference_gap_rel` (the raw
+last-doubling movement, which assumes nothing) and `reference_residual_rel` (the extrapolation)
+beside it.
+
+| field | `reference_order` | `reference_gap_rel` | `reference_residual_rel` | `reference_order_naive` | `reference_gap_rel_naive` | `reference_vs_analytic_rel` |
+|---|---:|---:|---:|---:|---:|---:|
+| `sphere` | **2.0003** | 1.376154e-5 | 4.585949e-6 | 5.4249 | 1.176248e-4 | **3.816395e-6** |
+| `torus` | **2.0033** | 5.375834e-5 | 1.786528e-5 | 2.9629 | 2.185529e-3 | **1.411006e-5** |
+| `box_exact` | `exact` | 0.000000e0 | 0.000000e0 | `exact` | 0.000000e0 | **0.000000e0** |
+| `csg_difference` | 2.4559 | 8.411885e-7 | 1.874879e-7 | 2.1659 | 8.788166e-5 | `na` |
+| `thin_plate` | **0.4150** | 5.311877e-5 | 1.593563e-4 | `exact` | 0.000000e0 | `na` |
+| `gyroid` | **2.0529** | 2.820704e-5 | 8.956313e-6 | 2.6857 | 5.983313e-4 | `na` |
+| `fbm_terrain` | **−0.0013** | 1.414626e-5 | 1.597787e-2 | 10.3456 | 5.443452e-5 | `na` |
+| `noise_cavity` | 1.5706 | 1.498060e-4 | 7.603527e-5 | 1.0514 | 5.166988e-4 | `na` |
+
+**Leg 1 — it reproduces closed forms.** `reference_vs_analytic_rel` is the reference volume
+against `4π/3`, `2π²Rr²` (`Rr² = 0.09`) and `8`: **3.816395e-6, 1.411006e-5, and exactly zero**.
+Its own self-estimate `reference_residual_rel` reads 4.585949e-6 and 1.786528e-5 on those two —
+**1.20× and 1.27× the true error, bracketing it from above** — which is what makes the estimate
+believable on the five fields with no closed form.
+
+**Leg 2 — the naive arm fails on the same samples, and it is the proof the control could have
+failed.** `reference_order_naive` and `reference_gap_rel_naive` are the identical integration with
+boundary voxels classified by their centre's sign instead of by the tangent-plane volume fraction.
+On the four fields where both arms are informative the naive gap is **8.5×, 40.7×, 104.5× and
+21.2×** worse (`sphere`, `torus`, `csg_difference`, `gyroid`), and the order column reads
+**5.4249, 2.9629, 2.1659, 2.6857** and **10.3456** — noise, beside the tangent-plane arm's 2.0003
+/ 2.0033 / 2.4559 / 2.0529 on exactly the same data. *An h² fit next to a column that does not fit
+h² on the same data is evidence; an h² fit on its own is a hope.* One caveat stated rather than
+buried: **`thin_plate`'s naive arm reads `exact` because it finds no plate at all.** The slab is
+0.025 thick over a `[−2, 2]` domain, so at 64³ and 128³ (`h` = 0.0625, 0.03125) no voxel centre
+lands inside it, both grids return exactly zero, the first gap is zero and the fit is skipped.
+That `exact` is a degenerate agreement, not an accurate reference.
+
+**Leg 3 — the reference is far better than the method on every field, held to one denominator.**
+Comparing `reference_gap_rel` against the same row's 65³ `inertia_rel_error` — 3.892281e-3,
+1.024324e-2, 1.272173e-2, 1.502183e-2, 1.192619e-1, 7.818202e-3, 3.199166e-3 and 2.430607e-3 in
+the table's field order: **283× (`sphere`), 191× (`torus`), ∞ (`box_exact`, gap exactly zero),
+17,858× (`csg_difference`), 2,245× (`thin_plate`), 277× (`gyroid`), 226× (`fbm_terrain`), 16×
+(`noise_cavity`)**. The narrowest margin is 16×, while C1's inertia miss at 33³ spans 44× to
+2,275× the bar, so no verdict here is reference-limited.
+
+**Two reference orders are honest failures, and both have a cause.** `thin_plate`'s **0.4150**:
+the plate is 0.025 thick against the finest reference voxel's 0.015625, so a single voxel is cut
+by *both* faces and the one-tangent-plane cell model is simply the wrong model — the boundary
+layer is the entire body. `fbm_terrain`'s **−0.0013**: the sequence has **stalled**, not diverged.
+Its last-doubling movement is 1.414626e-5, which is small; the Richardson column reads 1.597787e-2
+only because it divides by `2^p − 1` with `p ≈ 0`. That is why `reference_gap_rel` is emitted
+beside it, and it is why the leg-3 comparison above uses the gap rather than the residual.
+
+**Three further controls, all asserted per row rather than printed.**
+
+- **`boundary_edges` = 0 and `non_manifold_edges` = 0 on all 24 rows.** The divergence theorem
+  does not apply to a surface with a hole, and a leaking mesh would make every number here a
+  different question's answer.
+- **`clip_inert`, and it is the column that could have failed and did.** Every field is
+  intersected with an axis-aligned box — one code path, with `clip_half_extent` as data: 1.5 on
+  five fields, 1.75 on `noise_cavity`, 5.875 on `fbm_terrain`, 6.5 on `gyroid`. For the seven
+  closed fields the box sits outside the surface, and the harness proves the intersection is inert
+  by extracting with and without it and comparing the **mesh hash**, then asserts
+  `clip_inert == ReferenceField::closed_in_domain()`. It is `true` on 21 rows and **`false` on
+  `fbm_terrain`'s three**, where the clip is what closes the solid.
+- **Every relative error asserted strictly positive.** A zero would mean the method and the
+  reference are one computation wearing two names.
+
+---
+
+## Four fixture defects, each caught by this harness's own controls
+
+1. **A degenerate centroid series reported *"the method does not converge"* for a quantity the
+   method computes exactly.** Five of the eight fields are centred on the origin, so
+   `com_rel_error` is `1.415529e-55` on `box_exact` and `3.9e-15` on `thin_plate` at every
+   resolution. A least-squares slope through three round-off values is ~0, and folding that
+   through the `min` reported **`convergence_order` 0.0000 on `box_exact`** — turning *the method
+   is exact here* into *the method does not converge* — and drove **every `reference_order`
+   negative** (−1.90 on `sphere`, −4.32 on `box_exact`) with residuals of 100%. Fixed with an
+   `INFORMATIVE = 1e-10` floor on the series and its differences, and — **chore C5's rule**,
+   `docs/research/2026-08-27-phase-24-agent-prompt.md` — an excluded series emits the string
+   **`exact`**, never `0.0000`, because a reader who grabs the obvious column must not be handed
+   the opposite of the truth. `order_com` reads `exact` on `box_exact` and `thin_plate`;
+   `reference_order` reads `exact` on `box_exact`.
+2. **The reference's order was a minimum over ten scalar moment series, and read −3.91 on
+   `fbm_terrain` and −5.75 on `noise_cavity`.** One near-zero off-diagonal moment changes sign
+   between two grids and its two successive differences land in the wrong ratio. Replaced by the
+   Euclidean norm over the whole normalised ten-vector, which cannot do that and is the residual
+   of the whole integration — which is what the vacuity control is asking about.
+3. **Richardson's `gap/(2^p − 1)` divides by something that vanishes as the observed order does.**
+   On `fbm_terrain` it reported **1.597787e-2** for a last-doubling movement of **1.414626e-5** —
+   an error larger than the quantity. Both columns now go out, the extrapolation where the order
+   supports it and `reference_gap_rel`, which assumes nothing.
+4. **Both sides of the speed ratio were measuring redundant arithmetic, and the control was
+   flattering the method.** `mass.rs` recomputed the three per-corner contractions once per axis —
+   eighteen dot products where six suffice, on the innermost loop — and the tetrahedral control
+   did nine divisions per triangle. Hoisting the module's was necessary before reporting a cost
+   clause falsified; hoisting the control's moved `surface_over_tetra_ms` from **1.68 to 2.14**,
+   i.e. the instrument had been reporting a 1.68× penalty where the real one is 2.14×.
+
+---
+
+## What changed as a result
+
+- **`isomesh::mass` landed.** It is exact on the polyhedron to 1.7e-13 against an independent
+  volume integral, `no_std`, allocation-free, generic over `Real`, arrays in the signature, no new
+  dependency, no panicking path, and no square root. C1 being falsified is a statement about
+  Marching Cubes, not about the module.
+- **Do not treat the symmetrisation as a numerical step on this crate's meshes.** It corrects at
+  most 12.4 ulp and exactly nothing on an axis-aligned box. It stays in `mass.rs` — two adds and a
+  halve, and fidelity to the paper's Eq. (66) — but the number to look at is `asymmetry_pre`, and
+  its value is as a leak detector.
+- **`asymmetry` is public for that reason and no other**, with the leaking-cube test as its
+  could-have-been-non-zero proof.
+- **Do not adopt the paper's inertia kernel over the origin fan on a cost argument.** 2.14× on
+  identical input at identical accuracy; the registered claim holds only against a filled volume
+  mesh.
+- **Do not expect mass properties at 2% of extraction.** It is 3.5%–15.4% on the 20 rows that
+  fail, covering seven of the eight fields, and under 2% only where the field sample is expensive.
+  It is still far cheaper than the `parry3d` handoff it replaces — the registered bar is a claim
+  about the wrong denominator.
+- **A future re-registration of C1 should name Marching Cubes, not the integrator**, and should
+  gate on `tetra_rel_error` — which is a property of the arithmetic, reproduces across machines,
+  and would catch a real integrator defect that the 1e-4 bar cannot distinguish from grid
+  coarseness.
+
+**Would be shown wrong by:** a `tetra_rel_error` that rises above the 1e-13 floor on any fixture,
+which would move C1's gap back onto the integrator and make the clause meaningful as written; a
+watertight `f64` fixture on which `asymmetry_pre` rises above ~1e-14 relative without a boundary
+edge, which would restore C2b; a mesh whose `inertia_hash` differs between the Ryzen and the M5,
+which would break C2a and with it the fixed-iteration-order argument; or an origin-fan
+implementation that is *slower* than the surface form on the same triangle list, which would
+restore the registration's operation-count sentence for the comparison that matters.
+
+### 💥 ✗64 / M-396 — C1 HELD by three to four orders, C2 FALSIFIED as registered and HELD under one named repair, C3 FALSIFIED and resolution-dependent: the fracture costs **10,464–12,726 cycles per fragment** against `M-116`'s 240.7–271.8 ms, and the convex-cell partition is a pure function of the edit log **only** if a crossing vertex is solved from its stable-id plane triple *and* coincident planes are collapsed — 6 / 6 / 2 / **1** distinct partitions over all 40,320 orderings (P-84, R-084)
+
+**M.** `cargo bench --bench experiment_p84`, `docs/experiments/p-84.csv`, **12 rows**, `f64`, Zen 3. Two
+arms: `c1c3`, eight rows — `fbm_terrain` and `gyroid` at 16³ and 32³ cells a chunk, dug by 60 brushes from
+`M-50`'s largest bucket and fractured by a 3-cell impact `k`-DOP, median of 9 timed reps plus one separate
+counted rep for cycles; and `c2`, four rows — `M-36`'s own eight `Subtract` brushes on an 8³ `box_exact`
+chunk, every one of the 40,320 orderings run on each of four arms crossing two vertex arithmetics with two
+plane orders. Committed at **`6bf877d`**.
+
+> **Every number below is read from the committed `docs/experiments/p-84.csv`, whose `# commit` header
+> reads `6bf877d on amd-ryzen-9-5900x-12-core at 2026-08-28T00:54:39Z` with no `(WORKING TREE DIRTY)`
+> marker, and `6bf877d` is an ancestor of `HEAD` (`b2b481e`).** The file has four `#` comment lines, one
+> column header and **12** data rows over 71 columns. The reporting run was a dirty pre-run taken while
+> roughly twenty-five sibling benches were compiling, and **every clock in it moved** (`M-281`). Withdrawn
+> and replaced, old → new: `fracture_ms_per_fragment` **0.002508–0.005124 → 0.002544–0.003047**, so the
+> reported *"1952× to 3987× under the 10 ms bar"* and *"4879× under the 25 ms falsifier"* are withdrawn for
+> **3,282–3,931×** and **8,205–9,827×**; `fracture_ms_worst` **0.019191–0.059309 → 0.014230–0.037386**;
+> `cycles_per_fragment` **10,717–21,233 → 10,464.1–12,726.2**, a 1.67× collapse at the top end on the
+> identical binary, which is why the 21,233 is withdrawn outright; `ghz` **3.877–4.189 → 3.9429–4.1858**;
+> `m116_speedup_mean_low` **46,975–95,973 → 79,008.6–94,099.2**; `m116_speedup_mean_high`
+> **53,044–108,373 → 89,217.0–106,819.7**; `m116_speedup_worst` **6,222–19,228 → 9,869.9–25,931.1**, which
+> moved *up* at the top as well as up at the bottom. The reported *"three to five orders of magnitude of
+> headroom"* is withdrawn as a single band and replaced with the two it conflates: **three to four orders
+> against the registered bar and its falsifier, four to five against `M-116`'s own stage.** Every integer,
+> every hash and every exact ratio reproduced bit-identically — `fragments` 4941 / 1733 / 2245 / 1065,
+> `fracture_cells` 149 / 166 / 170 / 225, `cell_growth_ratio` to all six decimals, `orderings` 40320,
+> `distinct_partitions` 6 / 6 / 2 / 1, `distinct_partitions_raw` 18720, `partition_hash`
+> `e6be63994b22e771` on the arm that holds — which is `M-279`'s rule satisfied: the quiet run agrees with
+> the noisy one on everything that is not a clock. The `p-85.csv` shares the bench header quotes also
+> belong to a superseded run and are re-read below.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 a brush intersected against a convex-cell partition produces convex fragments in under **10 ms** per fragment, against `M-116`'s 241–272 ms | `< 10 ms`, falsified above 25 | **HELD — 0.002544–0.003047 ms per fragment, `3,282–3,931×` under the bar and `8,205–9,827×` under the falsifier; 10,464.1–12,726.2 cycles per fragment at 3.9429–4.1858 GHz** |
+| C2 the convex-cell partition is a **pure function of the edit log**, bit for bit, over all 40,320 orderings of eight same-kind brushes | `distinct_partitions == 1` | **FALSIFIED as registered — 6 on `lerp`+`as_logged`, 6 on `lerp`+`canonical`, 2 on `solve`+`as_logged`. HELD at 1 on `solve`+`canonical` alone** |
+| C3 a chunk that has taken 60 brushes has under **4×** the convex cells of an unedited one | `< 4×` | **FALSIFIED — 6.412534 and 6.019270 at 16 cells a chunk; 1.360286 and 1.381061 at 32, on the same fields and the same 60 brushes** |
+| vacuity control: the 40,320-ordering arm must reach every ordering, asserted by count | `orderings == 40320` | **SATISFIED — 40320 on all four `c2` rows, `permutations_distinct` 40320, both asserted before any arm runs** |
+
+No clause is VACUOUS and none is BLOCKED: all three got an instrument, and no clause names a second
+machine or a real GPU wall clock, so nothing was owed to `mac_air` or to a frame timer.
+
+> **Three `*_holds` values read `false` for something narrower than "the clause failed", and eight read
+> `NA` for something that is not a failure at all.** `c2_holds` is `NA` on the eight `c1c3` rows and
+> `c1_holds` / `c3_holds` are `NA` on the four `c2` rows — the two arms measure different clauses on
+> different fixtures, so those `NA`s are arm scope and not verdicts. Within the `c2` arm the three `false`s
+> are three different failures. On `lerp`+`canonical`, `distinct_topology = 1` and `distinct_solid_flags =
+> 1`: the arrangement and the union **are** order-free and only `distinct_positions = 6` is not, so that
+> `false` is *arithmetic alone*. On `solve`+`as_logged`, `distinct_positions = 2` equals `distinct_topology
+> = 2`: there is no arithmetic divergence at all, so that `false` is *labelling alone*. Only
+> `lerp`+`as_logged` carries both, and its `distinct_partitions = 6` equals its `distinct_positions`
+> because the positions hash refines the topology hash — the full hash tracks `distinct_positions` exactly
+> in all four arms (6 = 6, 6 = 6, 2 = 2, 1 = 1), so the four numbers are one instrument read at four
+> depths and not four independent counts.
+
+---
+
+**The SHARE line, recomputed against the committed `p-85.csv` first, because `R-085` removed this row's
+cost case and the entry has to say so precisely.** The registration reads *"SHARE: C1 moves the whole
+destruction-collider stage."* `R-085` has since attributed the collider's 45%, and from
+`docs/experiments/p-85.csv` at **`5c55f12`** (also an ancestor of `HEAD`), over its six rows:
+
+| stage | share of the chunk collider build, `p-85.csv` |
+|---|---|
+| `handoff_share` — the crate's own weld plus `collider::readiness` | **0.799083–0.818325** |
+| `bvh_share` — parry3d's `QbvhBuilder` | **0.178850–0.198394** |
+| `construct_share` | −0.000133–0.004602 |
+| `copy_share` — the triangle copy | **0.000350–0.000500**, i.e. 0.035–0.050% |
+| `residual_share` | 0.000003–0.000031 |
+
+*(The bench header quotes handoff 0.795854–0.815711, bvh 0.179151–0.199501 and copy 0.000354–0.000565
+from the superseded `p-85` run; the committed file's figures are the ones above.)*
+
+**There is no convex-decomposition term anywhere in that 45%, because the crate does not do convex
+decomposition** — `README.md:182` lists it under *"Not yet"* and `README.md:69` says *"not here — export
+the mesh and decompose downstream"*. Four stages plus the residual sum to 0.999969–0.999997, so the
+decomposition is complete and the missing term is missing because the work does not happen, not because
+the instrument lost it. So, clause by clause:
+
+- **C1 moves none of `R-085`'s 45%.** It moves `M-116`'s own stage: `avian3d` 0.7's
+  `convex_decomposition_from_mesh` at **240.7 / 271.8 / 249.0 ms mean per fragment**, worst
+  **323.7 / 369.0 / 362.6**, over 23–24 fragments per target. **100% of that stage, because there is no
+  second path** — the crate has one way to get a fragment collider and it is the one `M-116` measured.
+- **C2 has no share and no cost content.** It is the determinism clause, unaffected by `R-085`, **and it is
+  the clause that survives.**
+- **C3 has no share either.** It is a memory bound guarding C1's mechanism.
+
+So `R-085`'s conclusion *"do not build `R-084` for cost"* **is correct about the chunk collider and silent
+about the stage C1 is denominated in.** The 45% is handoff and BVH; C1's 241–272 ms is a stage that is not
+in the pipeline at all yet. Both statements are true at once and neither refutes the other.
+
+**Arithmetic reached both bars before the run and one thing it could have reached and did not.** C1 was
+falsifiable in either direction a priori — `240.7 / 10 = 24.07×` and `240.7 / 25 = 9.63×` are both inside
+a plausible range for a plane-clip arrangement. C2 was falsifiable a priori because Sutherland–Hodgman's
+`t = d_a/(d_a − d_b)` on endpoints earlier clips produced is order-dependent by inspection. C3 was
+falsifiable only on a fixture where `convex_cells_before` is not 1, which is a recorded fixture decision
+(see the instrument, step 2). **What arithmetic could have reached and nobody computed is that C3's bar is
+not resolution-free**: `convex_cells_before` grows with the cube of the cell count while the cut region is
+fixed in *cells*, so the ratio is dominated by its denominator. Measured on `fbm_terrain`, the denominator
+grows **7.6529×** from 16³ to 32³ against a cell-count ratio of 8, the numerator grows **1.6234×**, and
+7.6529 / 1.6234 = **4.7141** — exactly the 6.412534 / 1.360286 the two rows report. On `gyroid`: 7.3563 /
+1.6878 = **4.3584**, exactly 6.019270 / 1.381061. That is one input→output pass over the fixture, it was
+available before the harness existed, and it is Part 5's *enumerate the rows before writing the harness*
+rule in a new costume — the population was not empty, but the bar's dependence on the fixture's own
+resolution was derivable from the fixture and was not derived.
+
+---
+
+**C1, and the number that is not a clock.** Müller's *"typically negligible, i.e. below 10 ms"* was
+measured on a Core i7 at 3.07 GHz with a GTX 680; this is the same runtime step on a 5900X thirteen years
+later.
+
+| field | cells | planes | fragments | cells | total ms | **ms/fragment** | worst ms | cycles | **cycles/frag** | GHz |
+|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `fbm_terrain` | 16 | `as_logged` | 4941 | 149 | 13.843179 | 0.002802 | 0.037386 | 55,300,811 | 11,192.2 | 3.9429 |
+| `fbm_terrain` | 16 | `canonical` | 4941 | 149 | 13.169523 | 0.002665 | 0.034094 | 55,442,868 | 11,221.0 | 4.0100 |
+| `fbm_terrain` | 32 | `as_logged` | 1733 | 166 | 4.454512 | 0.002570 | 0.014230 | 18,580,650 | 10,721.7 | 4.1821 |
+| `fbm_terrain` | 32 | `canonical` | 1733 | 166 | 4.432910 | 0.002558 | 0.014570 | 18,559,017 | 10,709.2 | 4.1844 |
+| `gyroid` | 16 | `as_logged` | 2245 | 170 | 6.822454 | 0.003039 | 0.033564 | 28,520,915 | 12,704.2 | 4.1836 |
+| `gyroid` | 16 | `canonical` | 2245 | 170 | 6.839404 | **0.003047** | 0.035505 | 28,570,399 | **12,726.2** | 4.1661 |
+| `gyroid` | 32 | `as_logged` | 1065 | 225 | 2.716876 | 0.002551 | 0.022180 | 11,144,217 | **10,464.1** | 4.1858 |
+| `gyroid` | 32 | `canonical` | 1065 | 225 | 2.709866 | **0.002544** | 0.024765 | 11,309,281 | 10,619.0 | 4.1797 |
+
+`cycles` and `fragments` are both integers on the row and `cycles_per_fragment` is their exact quotient, so
+**10,464.1–12,726.2 cycles per fragment is the form of C1 that does not depend on this machine's
+governor** (`M-280`, `M-281`, `✗24`). Stated as a clock-free bound: **at the paper's own 3.07 GHz the worst
+arm is 4.145 µs per fragment, which is 2,412× under the paper's own 10 ms figure**, and even at a
+hypothetical 1 GHz it is 12.726 µs, still 786× under. That is the sentence a wall-clock ratio cannot
+carry.
+
+Against `M-116`, both registered bars reported as the falsifier demands:
+
+| field | cells | planes | vs 240.7 ms mean | vs 271.8 ms mean | vs 369.0 ms worst |
+|---|---:|---|---:|---:|---:|
+| `fbm_terrain` | 16 | `as_logged` | 85,912.3× | 97,012.7× | 9,869.9× |
+| `fbm_terrain` | 16 | `canonical` | 90,306.9× | 101,975.1× | 10,823.0× |
+| `fbm_terrain` | 32 | `as_logged` | 93,642.8× | 105,742.1× | 25,931.1× |
+| `fbm_terrain` | 32 | `canonical` | 94,099.2× | 106,257.4× | 25,326.0× |
+| `gyroid` | 16 | `as_logged` | 79,204.9× | 89,438.6× | 10,994.0× |
+| `gyroid` | 16 | `canonical` | **79,008.6×** | **89,217.0×** | 10,392.8× |
+| `gyroid` | 32 | `as_logged` | 94,353.0× | 106,544.1× | 16,636.2× |
+| `gyroid` | 32 | `canonical` | 94,597.1× | 106,819.7× | 14,899.8× |
+
+**`fracture_ms_worst` is the one column here that should be read as an order of magnitude and nothing
+finer.** It is a single-piece maximum accumulated over 9 reps, not a median, and it moved 0.019191–0.059309
+→ 0.014230–0.037386 between the reporting run and this one on the identical binary. What survives quoting
+is the within-row ratio, which is taken inside one run and one build: the worst fragment costs **5.5× to
+13.3× the median fragment** across the eight rows, and even the worst of the worst, 0.037386 ms, is
+**267.5×** under the 10 ms bar and **668.7×** under the 25 ms falsifier.
+
+**The mechanism is that nothing is decomposed.** Clipping a convex shape against a convex cell yields
+convex pieces, so a fragment arrives with a collider already attached. `avian3d`'s 240.7 ms is not made
+faster; it is not spent. The impact `k`-DOP is the fracture pattern, every solid piece of every overlapped
+cell is split by the pattern's planes, a leaf inside all of them is a fragment, and **no field is sampled
+inside the timed region at all** — a leaf inherits its parent's solid classification, which is precisely
+what the paper's invariant buys. 1,065–4,941 fragments come out of 149–225 overlapped cells, with
+392–2,339 remainder pieces beside them.
+
+---
+
+**C2, and the repair is the row.** Four arms, all 40,320 orderings each, crossing the two forks the
+construction actually has. The registration anticipated only the first.
+
+| | `as_logged` | `canonical` |
+|---|---|---|
+| **`lerp`** — `v = a + t(b−a)`, `t = d_a/(d_a − d_b)`, the arithmetic `A-027` describes | topology **2**, positions **6**, solid flags **2** → `distinct_partitions` **6** | topology **1**, positions **6**, solid flags **1** → **6** |
+| **`solve`** — Cramer's rule on the three plane equations, triple in ascending **stable edit id** order | topology **2**, positions **2**, solid flags **2** → **2** | topology **1**, positions **1**, solid flags **1** → **1**, `c2_holds = true`, `partition_hash e6be63994b22e771` |
+
+The two repairs are independent and each removes exactly one column of divergence. **`solve` removes the
+arithmetic**: Cramer's rule on a triple named by the edits' own identities — not by their positions in the
+log, which is the premise `M-36` is about — is order-free by construction, and `solve`+`as_logged`'s
+`distinct_positions = 2 = distinct_topology` says 100% of its residue is combinatorial and none of it
+arithmetic. **`canonical` removes the labelling**: a cut plane is dropped when a *smaller stable id* in the
+same cell bounds the same plane in either orientation, which takes `distinct_topology` and
+`distinct_solid_flags` to 1 in both vertex modes. Neither alone is enough. `lerp`+`canonical` still reports
+6 positions with 1 topology — 100% arithmetic — and `solve`+`as_logged` still reports 2 with 2.
+
+**The topological half is the fixture, not a clipper bug, and `simplicity_scan` measures it instead of
+assuming it.** On `M-36`'s own eight-brush fixture, `coincident_plane_pairs = 3` in `nonsimple_cells = 3`
+of the 182 cut cells, with `nonsimple_points = 36` and `max_planes_at_a_point = 4`. Two brushes contribute
+the *same* half-space three times over; a half-space appearing twice cannot move an intersection of
+half-spaces, but it leaves a vertex on that plane with **two ids it could equally be tagged with**, and
+which one it gets is decided by the traversal. Those 36 points are exactly the `slivers_dropped = 36`
+zero-width leaves the `as_logged` rows report, and collapsing the coincident planes takes
+`coincident_plane_pairs`, `nonsimple_cells`, `nonsimple_points`, `max_planes_at_a_point` and
+`slivers_dropped` all to **0**. **Axis-aligned is not generic**: `dop_dirs = 6` on every row, and two
+hand-authored brushes agreeing on one tangent plane is not a coincidence worth calling unlikely. Note that
+`degenerate_vertices = 0` and `singular_triples = 0` both read clean on the `as_logged` rows — neither
+counter can see two *distinct* ids naming the *same* plane, which is why `simplicity_scan` had to exist.
+
+**It is a labelling failure and not a geometry failure, and the columns say which.**
+`topo_class_lo_pieces = topo_class_hi_pieces = 1709` and `topo_class_lo_solid = topo_class_hi_solid =
+1026` in all four arms: the two topology classes hold the same leaves and the same solid leaves and differ
+only in what those leaves are called. `convex_cells_after = 1026` and `total_pieces_after = 1709` are
+identical across all four arms, and `partition_volume_error_rel = 3.331e-16` throughout. **So the compound
+is order-free — its geometry, its leaf count and its solid classification — in every arm including the
+naive one. What is not order-free is the id triple a vertex carries, which is exactly what a replication
+hash would sign.**
+
+> **`c2_holds = true` on `solve`+`canonical` sits on the same row as `distinct_partitions_raw = 18720`, and
+> the registration's words are "bit for bit".** `partition_hash` is taken over each cell's *sorted* piece
+> multiset, which isolates arithmetic order-dependence from emission order — the question C2 asks.
+> `partition_hash_raw` is taken over the breadth-first split's emission order, and it splits **18,720**
+> ways in every one of the four arms. So the thing that is one is the partition as a set of convex pieces
+> with named vertices, not the byte stream that serialises it. A protocol that signs a canonicalised
+> representation gets 1; a protocol that signs the emission order gets 18,720, on the arm where C2 holds.
+> The 18,720 is also the strongest vacuity control on the row, and it is free: the traversal demonstrably
+> took 18,720 distinct shapes over the same 40,320 orderings, and the canonical hash still came out once.
+
+**The consequence, stated the way a networked editor needs it: a networked editor cannot assume two clients
+that applied the same eight edits in different orders hold the same compound** — even though `M-36`
+guarantees they hold the same *field* — **unless it computes each crossing vertex by solving its three
+plane equations on the ascending stable-id triple and collapses coincident planes to the smallest stable id
+in the cell before arranging.** Those are two one-line requirements and together they are the difference
+between 6 and 1. Neither is a tolerance and neither costs more than a divide.
+
+---
+
+**C3, and the bar is not resolution-free.**
+
+| field | cells | cell size | before | after | **ratio** | `c3_holds` | all leaves before | all leaves after | **all-leaf ratio** |
+|---|---:|---:|---:|---:|---:|---|---:|---:|---:|
+| `fbm_terrain` | 16 | 0.250 | 2,904 | 18,622 | **6.412534** | `false` | 3,357 | 82,259 | **24.5037** |
+| `fbm_terrain` | 32 | 0.125 | 22,224 | 30,231 | 1.360286 | `true` | 24,198 | 58,249 | 2.4072 |
+| `gyroid` | 16 | 0.250 | 2,439 | 14,681 | **6.019270** | `false` | 3,222 | 61,278 | **19.0186** |
+| `gyroid` | 32 | 0.125 | 17,942 | 24,779 | 1.381061 | `true` | 21,065 | 49,804 | 2.3643 |
+
+Identical in both plane modes, so this is not the coincident-plane defect. **The wider all-leaves reading
+is worse, not better**: at 16 cells a chunk it is 6.13× and 4.75× the 4× bar against 1.60× and 1.50× on the
+solid-only reading, so the 16-cell failure is not an artefact of counting only solid pieces. At 32 cells
+both readings hold.
+
+**The clause names no resolution, so a resolution at which it fails falsifies it** — and the reason is the
+denominator arithmetic above. One fixture caveat belongs beside the ratio and is in the file:
+`brush_radius_cells = 1.50` and `impact_radius_cells = 3.00` are in **cells**, so the 32-cell arms dig
+brushes of half the world radius the 16-cell arms dig. That is the natural scaling for a voxel editor — a
+brush is so many cells wide — but it means C3's two resolutions are not the same hole, which is why
+`cell_size_world` is on the row.
+
+> **The reporting run's proposed repair does not survive this file, and it is withdrawn.** It suggested
+> that *"a bound on `max_pieces_in_a_cell` or on pieces per cut cell would be the resolution-free
+> version."* Neither is resolution-free on this data: `max_pieces_in_a_cell` is 4,290 → 855 on
+> `fbm_terrain` and 2,979 → 485 on `gyroid` across the same two resolutions, and new pieces per cut cell
+> is 33.37 → 9.12 and 22.75 → 7.07. `max_cuts_in_a_cell` moves too, 47 → 26 and 41 → 20. **What a
+> resolution-free version of C3 should be denominated in is an open question this row does not answer.**
+> What the row does answer is that the registered 4× bar is a statement about chunk resolution wearing the
+> clothes of a statement about brush count, and it should not be reused as written.
+
+---
+
+**What the instrument is, in full, because no convex decomposition exists in the crate.** `A-026` and
+`A-027` are both open and `A-026` is blocked on a scope decision, so this bench builds the substrate it
+measures — and it is *not* a convex decomposition of a mesh, it is the construction `A-027` proposes, which
+is why it is cheap. **The chunk grid supplies the outer convex cells for free**: a chunk is a grid of
+`chunk_cells³` cubes and a cube is convex, so Müller's offline ACD pass is simply not needed — he pays for
+it offline with approximate convex decomposition, and a voxel field already has it. **The unedited surface
+contributes one tangent plane per boundary cell**: for a cell whose eight corners straddle zero, the plane
+through the local zero crossing with normal `∇f/|∇f|`, and `cube ∩ half-space` is one convex piece — so an
+unedited chunk's compound is its full cells plus its boundary cells, `cells_full_before` 2,419 / 20,227 /
+1,657 / 14,820 plus `cells_boundary_before` 483 / 2,029 / 783 / 3,129 against `convex_cells_before` 2,904 /
+22,224 / 2,439 / 17,942, agreeing to within 0.15%. That is what a marching-cubes-derived convex
+decomposition looks like, and it is why `convex_cells_before` is a real number rather than 1; had the
+partition come from brush planes alone, an unedited chunk would be one cell and C3's ratio would have been
+unbounded by fixture rather than by measurement, so this is a recorded fixture decision and not an
+accident. **Each brush contributes its `k`-DOP supporting planes** from the shape's exact support function
+`h(d) = max_{x∈S} d·x` — sphere `c·d + r|d|`, box `c·d + Σ b_i|d_i|`, capsule `max(a·d, b·d) + r|d|`
+(Klosowski, Held, Mitchell, Sowizral & Zikan, IEEE TVCG 4(1), 1998) — so these are tangent planes and the
+enclosure is exact for a box brush and conservative for a sphere or a capsule. **The partition of one cell
+is the arrangement of its cube by the planes that cross it**, built breadth-first: split every current
+piece by the next plane and drop the empty ones, so every leaf is an intersection of half-spaces and hence
+convex. A piece is carried as its vertex set with each vertex tagged by the sorted ids of its three
+defining planes, which makes the 1-skeleton recoverable — two vertices are adjacent exactly when they share
+two planes — so clipping needs no face-cap reconstruction. **C1's fracture is Müller's runtime step
+verbatim**, and the compound is collected *outside* the timed region because "precomputed" is the paper's
+premise.
+
+**Both halves of the paper's invariant are checked rather than assumed, and that is what makes the C1
+number mean anything.** `convexity_violations = 0` on all 12 rows — every vertex of every piece is on the
+piece's own side of every plane incident to it, to `1e-9` of the cell size — which is the *convex* half:
+"clipping a convex shape against a convex cell yields convex pieces" held **on this data** rather than in
+the abstract. `partition_volume_error_rel` is the *non-overlapping* half: every cell's leaf volumes must
+sum to its cube's, and overlapping pieces would sum high while a gap would sum low. It reads
+**3.331e-16** on the four `c2` rows and **1.776e-15 to 3.442e-15** on the eight `c1c3` rows, against an
+asserted bound of `1e-9`. So the pieces are convex **and** they tile, and both are measurements.
+
+**The fidelity price of the `M-116` comparison is on the row and it is not free.** `avian3d` decomposes an
+arbitrary fragment mesh; this substrate approximates the solid to the fidelity of a 6-DOP-cut grid.
+`volume_error_rel`, the compound's volume against the folded field's volume sampled on a 96³ lattice
+(`compound_volume_after` against `field_volume_sampled`): **0.000685 / 0.000096 / 0.000428 / 0.000236**,
+i.e. 0.0685% / 0.0096% / 0.0428% / 0.0236%. That is the column, and it is what the 79,008.6–106,819.7×
+is bought with.
+
+**The vacuity control, its column and its value.** The registered control is a count: `orderings = 40320`
+on all four `c2` rows, asserted, with `permutations_distinct = 40320` asserted pairwise distinct before any
+arm runs — `M-36`'s own fixture reached in full rather than sampled. That count alone proves the arm ran
+everywhere; it does not prove a **1** would have been a measurement, so three live controls sit beside it.
+**`perturbed_hash_differs = true`** on all four rows: displacing brush 0's centre by `1e-9` — far below a
+cell, so no plane moves across a cell boundary and the displacement can only show up in the coordinates —
+changes `partition_hash`, asserted. That is the value that proves the fixture could have failed: the
+instrument demonstrably says *different* when the input differs by one part in a billion, so
+`distinct_partitions = 1` on `solve`+`canonical` is a zero the instrument was able to break.
+**`perturbed_topology_differs = true`** licenses the second zero separately: a `1e-9` nudge cannot move a
+plane across a cell boundary, so it cannot license `distinct_topology = 1`, and a coarse nudge of a quarter
+cell is applied and the leaf plane-triple sets must change. Without it, `distinct_topology == 1` would be
+`P-70`'s C3 — a held clause with no instrument. And **`distinct_partitions_raw = 18720`** in every arm, as
+above. On the `c1c3` side the population controls are `fragments > 0` (1,065–4,941), `convex_cells_before >
+0` (2,439–22,224) and `cells_cut_by_brushes > 0` (471–967) — C1 and C3 each had a non-empty population to
+fail on, and the hash covers `cells_hashed = 182` of the 8³ chunk's 512 cells, the ones a brush plane
+actually crosses, because the other 330 receive no brush plane and would pad the measurement with a
+constant.
+
+---
+
+**Six fixture defects, every one caught by a control in this harness rather than by review, and the fourth
+cost an arm.** *(The brief for this entry said four; the harness documents six, and the last two are the
+ones that changed what C2 measures.)*
+
+1. **`cube_verts` aliased its cube-face plane ids.** Corners were tagged `i*2, 2+j*2, 4+k*2`, which puts
+   the x-max face on the same id `set_cube` writes y-min to, y-max on z-min's id, and z-max on
+   `SURFACE_ID`. Every corner on a far face then carried a repeated plane id, `shared_two` reported false
+   edges between unrelated vertices, and the false vertices bred: one piece reached **8.4 million vertices
+   in a single 268 MB allocation** and the process was OOM-killed. Caught by `degenerate_vertices == 0`.
+2. **A split half was pruned with the wrong orientation.** The first repair for (1) tested each candidate
+   against *every* plane the piece's tags mention as `n·x + d <= 0`; the outside half of a split is bounded
+   by the cut plane the other way round, so that test deleted it whole. One 16³ `fbm_terrain` cell reported
+   its single surviving leaf at `8.6e-5` against a cube of `1.5625e-2`. Caught by the per-cell volume
+   closure, **at a relative error of exactly 1.0**.
+3. **The compound did not carry each cell's surface plane.** Ids `0..=6` are rewritten per cell; `fracture`
+   restored the cube but not `SURFACE_ID`, so every piece bounded by the surface was measured against
+   another cell's surface plane and pruned to nothing. Caught by `fragments > 0`.
+4. **The 14-DOP arm is cut, and the volume control is why — this is the instructive one.** With the eight
+   cube-diagonal directions added to make a 14-DOP, one 16³ `fbm_terrain` cell closed at **1.3495e-2**
+   against a cube of **1.5625e-2** — **13.6% of the cube missing** — and another emitted duplicated leaves.
+   The vertex-tag clipper's rule that *two vertices are adjacent exactly when they share two planes* is
+   sound for a **simple** polytope, one whose every vertex lies on exactly three facets, and an oblique
+   14-plane set makes non-simple ones: four planes through a point put three tagged vertices on one plane
+   pair, two of them at the same position, and both chords to the third produce the same crossing vertex.
+   Rather than report a piece count from an arrangement that does not tile its own cube, the arm was
+   removed. **Every row in `p-84.csv` is `dop_dirs = 6`** — the axis-aligned DOP, exact for a box brush and
+   a conservative enclosure for a sphere or a capsule. **Fixing it needs a clipper that derives vertices
+   from plane triples rather than from edges. That is a design change, not a tolerance**, and it is the one
+   piece of work this row files against the construction itself.
+5. **The canonical sort ran after the sums it was supposed to canonicalise.** The inherited version sorted
+   each leaf's vertices by plane triple *for the hash only*, leaving `centroid` and `volume` summing in the
+   breadth-first split's emission order. Both are naive float sums, so both were ULP-order-dependent, and
+   both feed a **decision**: the centroid picks the leaf's solid flag through `fold`, the volume picks
+   whether the leaf is a sliver at all. Two order dependencies **manufactured by the instrument**, standing
+   in front of the exact question C2 asks. The sort now runs first, which makes every derived quantity a
+   function of the leaf's vertex *set*. Caught by splitting the single hash into the three projections and
+   finding `distinct_positions` and `distinct_solid_flags` disagreeing for reasons one number could not
+   distinguish.
+6. **The 6-DOP arm is not immune to defect 4 either, and `M-36`'s own fixture proves it.** Axis-aligned was
+   being treated as generic. `simplicity_scan` finds `coincident_plane_pairs = 3` in 3 of the 182 cut
+   cells, `nonsimple_points = 36`, `max_planes_at_a_point = 4` — and those 36 points are precisely the 36
+   zero-width leaves the sliver filter was silently absorbing. Before this scan existed,
+   `degenerate_vertices = 0` and `singular_triples = 0` both read clean, because **neither counter can see
+   two distinct ids naming the same plane.**
+
+---
+
+**What changed as a result.**
+
+1. **Do not build `A-027` for cost — confirmed and sharpened rather than overturned.** `R-085`'s 45% has no
+   convex-decomposition term in it, so C1's 79,008.6–106,819.7× is against a stage that does not exist in
+   this crate yet. C1's real content is that **Müller's 2013 result reproduces with three to four orders
+   of headroom against its own bar on 2026 hardware, and four to five against `M-116`'s measured
+   alternative** — which is a reason the design is not the risk, not a reason to spend a phase on it.
+2. **If `A-027` is ever built, two things are mandatory and both are one line.** Solve each crossing vertex
+   from its three plane equations on the ascending stable-id triple rather than lerping along the clipped
+   edge — that is the whole difference between 6 and 2 distinct partitions and it costs a divide. And
+   collapse coincident planes to the smallest stable id in the cell before arranging — that is the
+   difference between 2 and 1. Together they are the difference between `M-36`'s coordination-free story
+   surviving at cell level and not.
+3. **The order-dependence is in the vertex names, not in the volume.** 1,709 leaves, 1,026 solid, closure
+   `3.331e-16`, in all four arms: anyone shipping this can rely on the compound's geometry, its leaf count
+   and its solid classification being order-free **even in the naive version**. What is not order-free is
+   the plane triple a vertex carries, which is exactly what a replication hash signs. That distinction is
+   worth carrying into any design that hashes geometry across peers.
+4. **C3's registered 4× bar should not be reused as written**, and no replacement is proposed here because
+   none of the three candidates in the file is resolution-free either.
+5. **Stop tracking the convex-decomposition literature.** `M-297` holds: VisACD (`arXiv:2604.04244`) is a
+   **GPU** method averaging 16.97 s per model against CoACD's 36.31 s — four orders of magnitude off a
+   frame budget. Thirteen years after Müller, nobody has improved on *preserving* convexity instead of
+   *recovering* it, and `A-027` proposes his construction without citing him. This row is the last time
+   that literature needs a look.
+6. **One superseded mechanism is withdrawn.** An earlier, smaller run of the same harness (6 rows, before
+   the `planes_mode` axis existed) attributed the `solve` arm's residual 2 classes to *"which
+   near-degenerate leaves survive the sliver filter and the eps snap"*. That is wrong: the residue is
+   coincident planes making the vertex **tag** ambiguous, and `canonical` takes it to 1 without touching
+   the sliver filter. That run's hashes — `03131b1fc0cf55be`, `1edacb8eda3a17aa` — appear in no committed
+   file and are not quoted.
+
+**Would be shown wrong by:** a coincident-plane group whose smallest stable id is not itself order-free —
+which would mean `canonical` is only relabelling the ambiguity rather than removing it, and would take
+`solve`+`canonical` off 1; a cell whose 6-DOP arrangement is non-simple for a reason `simplicity_scan`
+does not read, since it scans the cube's six faces and the cell's cut set and nothing else; a
+`distinct_partitions` of 1 arriving on a run where `perturbed_hash_differs` reads `false`, which would make
+the 1 an instrument that cannot say *different*; a fracture whose `cycles_per_fragment` rises with cell
+count in a way these two resolutions did not show, which would mean the plane-clip arrangement has a term
+this fixture's 149–225 overlapped cells never reached; or a chunk resolution at which `cell_growth_ratio`
+exceeds 4× *and* the denominator argument above does not account for it, which would mean C3 is measuring
+something other than its own denominator.
+
+### 💥 ✗65 / M-397 — C1 HELD at **80.3–81.8%** and C2 FALSIFIED *twice over*: the copy is **0.035–0.050%** and the BVH does not dominate either, so the collider's 45% is **this crate's own weld and readiness gate** at 80% of the build while all of `parry3d` is **18.2–19.7%**; and C3 FALSIFIED at **1.017–1.047×** against a 1.5× bar, at matched triangle *and* vertex count (P-85, R-085)
+
+**M.** `cargo bench --bench experiment_p85`, `docs/experiments/p-85.csv`, **6 rows** (7 lines with the
+header), `f32`, `amd-ryzen-9-5900x-12-core`, `ghz` 4.1862–4.1890 on every row. Four registered arms
+(`arm = c1c2`: `fbm_terrain` and `gyroid` at 33³ and 65³ samples per axis) plus two `c3_match` arms —
+`sphere` at a **searched** 68³ and 137³, because C3's "at fixed triangle count" cannot be met on a shared
+grid when one field is a surface everywhere and the other is one shell. Nine timed repeats after three
+warmups, **the repeat as the outer loop and the arm as the inner one**, and the reported row is the repeat
+whose *total* is the median, reported whole. Committed at **`5c55f12`**, whose header carries no
+`(WORKING TREE DIRTY)` and which is an ancestor of HEAD.
+
+> **Every number below is read from the committed `p-85.csv` at `5c55f12`.** The measurements were first
+> taken on a dirty tree at `63c7161`, with five sibling agents building on the host, and this entry does
+> **not** quote that run (`✗35`, `✗52`). Every integer reproduced exactly — `triangles`, `vertices`,
+> `seam_boundary_edges` 92 / 324 / 200 / 684, `degenerate_triangles` 2 / 12 / 6 / 6,
+> `unwelded_duplicate_vertices` 1 / 2 / 1 / 2, `triangle_mismatch` 72 and 96, `reps_agreeing_on_largest`
+> 9/9. Every share and every ratio moved in the third decimal or less. The four figures worth naming
+> because a reader may have seen the older ones: `copy_share`'s top end **0.00056 → 0.00050**, C3's 65³
+> ratio **1.024 → 1.017** (and its cycles counterpart **1.015 → 0.9975**, i.e. now marginally *below*
+> parity), `collider_over_contour` on `sphere` 137³ **2.90 → 2.05**, and `residual_share_worst_rep`'s
+> worst cell **≤0.005% → 0.0372%** — all four inside the same verdict by margins of one to three orders.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 one of `copy` / `construct` / `bvh` / `handoff` is over **50%** of the collider cost, at 33³ and 65³ on `fbm_terrain` and `gyroid` | > 0.50 | **HELD — `largest_stage` is `handoff` on 4 of 4 registered arms (6 of 6 rows), `largest_share` 0.803226–0.818325, `reps_agreeing_on_largest` 9 of 9 on every row.** Carried by the registration's own bundling — see below |
+| C2 the dominant stage is the **triangle copy**, not the BVH the docs blame | `copy` largest | **FALSIFIED, and the registered falsifier did not fire either — `copy_share` 0.000350–0.000500, `bvh_dominates` false on 4 of 4** |
+| C3 at fixed triangle count `gyroid`'s collider costs ≥ **1.5×** `sphere`'s | ≥ 1.5× | **FALSIFIED — `c3_ratio` 1.047287 at the 33³ pair, 1.017153 at the 65³ pair; `c3_ratio_cycles` 1.040373 and 0.997500** |
+
+**This was the phase's pivotal row, and it was scheduled first for exactly that reason.** The registration
+says so itself — *"THIS IS THE CHEAPEST ROW IN THE PHASE AND IT DECIDES WHICH OF P-81 AND P-84 IS WORTH
+DOING"* — and both of those have since run on its answer. What it decided is recorded at the end of this
+entry.
+
+**The attribution, which is the point of the experiment:**
+
+| field | cells | triangles | `copy` | `construct` | `bvh` | `handoff` | *(weld* | *readiness)* | `total` | largest |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| `fbm_terrain` | 33³ | 3,944 | 0.0024 | 0.0221 | 0.8586 | **3.9173** | *1.5021* | *2.4152* | 4.8005 | `handoff` 0.8160 |
+| `gyroid` | 33³ | 10,628 | 0.0050 | 0.0262 | 2.5499 | **10.5610** | *4.0076* | *6.5534* | 13.1423 | `handoff` 0.8036 |
+| `fbm_terrain` | 65³ | 16,882 | 0.0083 | 0.0290 | 4.0934 | **18.6070** | *7.3476* | *11.2595* | 22.7379 | `handoff` 0.8183 |
+| `gyroid` | 65³ | 43,112 | 0.0203 | 0.0505 | 11.3394 | **46.5769** | *18.2347* | *28.3422* | 57.9873 | `handoff` 0.8032 |
+| `sphere` | 68³ | 10,556 | 0.0050 | 0.0263 | 2.4728 | **9.9597** | *3.7746* | *6.1851* | 12.4639 | `handoff` 0.7991 |
+| `sphere` | 137³ | 43,016 | 0.0204 | **−0.0076** | 11.2770 | **45.5925** | *18.0430* | *27.5494* | 56.8825 | `handoff` 0.8015 |
+
+Milliseconds. `handoff` is exactly `weld_ms + readiness_ms` on every row, to the bit. The shape is
+**field- and resolution-independent to about a percentage point** across a 10.9× triangle range
+(3,944 → 43,112) and two fields of opposite topology: `readiness_share` 0.484322–0.503105, `weld_share`
+0.302843–0.323148, `bvh_share` 0.178850–0.198394, `construct_share` −0.000133 to +0.004602, `copy_share`
+0.000350–0.000500. **That constancy is itself C3's mechanism**, and it is why the verdicts are read from
+shares and ratios rather than from milliseconds (`M-280`, `M-281`).
+
+**`construct_ms` should be read as zero, not as a small stage.** It is `TriMesh::new`'s wall time minus an
+out-of-band probe of `rebuild_bvh`'s own body, and it is **not clamped** — `sphere` 137³ reads
+**−0.007550 ms**, a negative in the committed file, which is the honest report that parry's non-BVH work is
+below the noise floor rather than `✗52`'s clamped `submit` at 0.0000. `bvh_share_of_construct` says the
+same from the other side: **0.974916–1.000670**. `trimesh_new_ms` is recorded, so the subtraction is
+reversible from the CSV: `construct_ms + bvh_ms == trimesh_new_ms` on all six rows.
+
+#### C1 held on the registered list and is marginal on any finer one, and this must be said plainly
+
+C1's HELD is **carried by the registration's own decision to make `handoff` "anything between"**. Split it
+into the weld and the readiness gate — the finest split the harness can produce — and the largest stage
+becomes `readiness` on all six rows:
+
+| arm | `finest_largest_stage` | `finest_largest_share` |
+|---|---|---:|
+| `fbm_terrain` 33³ | `readiness` | **0.503105** |
+| `gyroid` 33³ | `readiness` | 0.498651 |
+| `fbm_terrain` 65³ | `readiness` | 0.495185 |
+| `gyroid` 65³ | `readiness` | 0.488765 |
+| `sphere` 68³ | `readiness` | 0.496240 |
+| `sphere` 137³ | `readiness` | **0.484322** |
+
+C1's registered falsifier is *"four stages each under 50%"*. Under the finest split that falsifier is
+**met on three of the four registered arms** and missed on the fourth by **0.31 percentage points**. So the
+clause is robust on the four-stage list it was written against — 80.3–81.8%, never within 30 points of the
+bar — and **straddles the bar on any decomposition that separates the weld from the gate**. Both
+`finest_largest_stage` and `finest_largest_share` are columns, so this is in the artefact and not only in
+prose. *(Out of file, and stated as such: six runs of the same binary during development put that same
+share between 0.437 and 0.536 — a spread this single-run file cannot show, and the reason the sensitivity
+is reported rather than filed as a curiosity.)* **Any future prose quoting a share from this row must say
+which decomposition it belongs to.**
+
+#### C2 is falsified by the prediction *and* by the folklore, and the answer is a third thing
+
+The registered prediction was the copy, by analogy with `✗52`. `copy_share` is **0.000350–0.000500** —
+0.035% to 0.050% of the build, and against `✗52`'s geometry copy at **59% of a GPU extraction** that is
+**three orders of magnitude** down. The registered *falsifier* was BVH construction dominating, which would
+have vindicated Godot's documentation; `bvh_dominates` is **false on 4 of 4** registered arms and on all
+six rows, with `bvh_share` 0.178850–0.198394. Neither the hypothesis nor the folklore it was contrasted
+against survives.
+
+**Why the copy cannot dominate here, and why the registration's structural analogy is exactly backwards.**
+`✗52`'s copy dominated because it crossed a bus. This one crosses nothing: `copy_bytes` is
+**72,144 to 775,728** bytes moved at `copy_gb_per_s` **30.06–38.18**, which is memory bandwidth. On the CPU
+side the bytes do not have to go anywhere, so the copy is a memcpy and a memcpy of 776 KB is free next to
+a 46 ms walk.
+
+**Why parry's constructor is the BVH and nothing else** is read from the source rather than inferred:
+`TriMesh::new` is `with_flags(v, i, TriMeshFlags::empty())`, which moves the two buffers in, calls
+`set_flags(empty())` — which builds nothing — and then, because `result.bvh.is_empty()`, calls
+`rebuild_bvh()` (`parry3d-0.30.2/src/shape/trimesh.rs:724-751`). **There is no `TriMesh` without a BVH**,
+which is why `bvh_ms` is a transcribed probe run outside the total window and `construct_ms` is a
+difference.
+
+**So the answer is the crate's own work, and it is arithmetic from the row.** `copy_ms + trimesh_new_ms` is
+everything `parry3d` does: **0.883057 / 2.581101 / 4.130744 / 11.410274 ms** on the four registered arms,
+which is **18.17% / 19.64% / 18.17% / 19.68%** of the build (20.09% and 19.85% on the two `sphere` arms).
+The other four fifths are `weld::Welder`'s O(V) spatial hash and `collider::readiness`' T-001 validity walk
+— an edge hash for the manifold counts, a link walk for bowtie vertices, a per-face area test. Both are
+multi-pass walks driven by **counts**, not by geometry, which is the mechanism behind both the
+field-independence of the shares and C3's falsification.
+
+#### C3 is falsified at matched triangle *and* vertex count, which is what makes it airtight
+
+| pair | `triangles` | `vertices` | `cost_per_triangle` (µs) | `cycles_per_triangle` | ratio | ratio, cycles |
+|---|---:|---:|---:|---:|---:|---:|
+| `gyroid` 33³ vs `sphere` 68³ | 10,628 / 10,556 | 5,290 / 5,280 | 1.236571 / 1.180737 | 5101.14 / 4903.18 | **1.047287** | 1.040373 |
+| `gyroid` 65³ vs `sphere` 137³ | 43,112 / 43,016 | 21,532 / 21,510 | 1.345040 / 1.322357 | 5593.07 / 5607.09 | **1.017153** | **0.997500** |
+
+`triangle_mismatch` is **72** and **96**, i.e. `triangle_mismatch_share` **0.677%** and **0.223%**, both
+asserted under 3%. Unplanned but recorded, the pairs also match in **vertices** to 10/5,290 = **0.189%**
+and 22/21,532 = **0.102%** — so both drivers of the two dominant stages are held fixed, not just the one
+the clause names. The governor-independent instrument agrees and at the 65³ pair crosses parity:
+`c3_ratio_cycles` **0.997500** says `gyroid` is fractionally *cheaper* per triangle than `sphere` in
+cycles. **The cost is proportional to triangle count to within 5%**, which the registration named as *"the
+best possible outcome for the scheduler"*.
+
+**The per-field structure C3 named is real, measured, and does not cost.** `gyroid` carries
+**324** and **684** `seam_boundary_edges` against `sphere`'s **272** and **536** (19.1% and 27.6% more) and
+**12** and **6** `degenerate_triangles` against `sphere`'s **0** and **0**. The mechanism exists; it moves
+the cost by 2–5%, not by 50%. A degenerate sliver costs the same to hash and to walk as a healthy triangle.
+
+#### `M-279`'s rule: the new instrument agrees with the old one where they overlap
+
+`M-135` measured the 45% as `collider::readiness` at `f64`, mean share 45.0% against contour 29.0%, weld
+25.5%, normals 0.4%. `readiness_ms` here is that same stage, at `f32`, in a different binary:
+
+| arm | `readiness_ms` (p-85) | `collider_ms` (`stage_breakdown.csv`) | deviation |
+|---|---:|---:|---:|
+| `fbm_terrain` 33³ | 2.415150 | 2.504471 | **−3.57%** |
+| `gyroid` 33³ | 6.553404 | 6.774106 | **−3.26%** |
+| `fbm_terrain` 65³ | 11.259483 | 11.318704 | −0.52% |
+| `gyroid` 65³ | 28.342203 | 28.345036 | **−0.01%** |
+
+**Within 3.6% on all four arms**, across a scalar change and two binaries. That is what says the two
+harnesses are measuring the same stage, and it is the only reason this row is allowed to speak about
+`M-135`'s number at all. Note the denominators differ and must not be conflated: `M-135`'s 45% is of a
+four-stage pipeline that counts the weld separately, while `readiness_share` here is 48.4–50.3% of a
+`total_ms` that **includes** the weld.
+
+**And `M-135`'s 45% is a validity-check cost, not a collider build.** Nothing in the shipped tree pays it:
+`parry3d` is a dev-dependency by design and `game_dig` resolves its body against the **field**, not against
+triangles. Any future prose treating that 45% as "the collider" should say **"the collider *check*"**.
+
+#### The vacuity control, and exactly how far its teeth reach
+
+Registered: *"the four stages must sum to the measured total within 5%, reported as a residual column, or
+the decomposition is missing a stage."* `residual_ms` is that column and it is asserted, on the row **and**
+on the worst of the nine repeats. Measured: `residual_share` **0.000031 / 0.000011 / 0.000007 / 0.000003**
+on the registered arms and 0.000010 / 0.000003 on the `sphere` arms; `residual_share_worst_rep` at most
+**0.000372**. `copy + construct + bvh + handoff + residual == total` on all six rows to the bit.
+
+**A zero has to prove it could have been non-zero (`M-44`), and here the proof is a named plausible
+omission rather than an identity.** The weld is precisely the stage a four-item list called
+*copy / construct / bvh / gate* does not contain, and the registration's own hypothesis puts it in
+contention (*"or the weld that `M-69` and `✗18` argue about"*). So the harness also computes
+**`residual_share_without_weld`** and asserts it **exceeds** the bar: it reads **0.302853–0.323148**, six
+times the 5% bar. The instrument is shown firing on the exact omission it exists to catch.
+
+**And the control's limit is stated rather than hidden.** `stages_above_bar` is **2** on every row and
+`min_stage_share` is −0.000133 to 0.000500: only `bvh` and `handoff` are individually above 5% of the
+total, so the residual is **blind** to dropping `copy` or `construct` altogether. The CSV names which
+stages those are instead of implying the control is total.
+
+#### Seven fixture defects, each caught by one of this harness's own controls rather than by review
+
+1. **C3 matched the sphere's resolution to `gyroid`'s *pre-weld* triangle count** while the row records the
+   post-weld count parry is actually handed. Caught by `assert_eq!` between the fixture phase and the timed
+   arm: `left: 10628, right: 10632`. Welding collapses duplicate vertices and a triangle whose corners
+   collapse stops being a triangle — and 10,632 is exactly what `stage_breakdown.csv` records for
+   `gyroid` 33³, so the two counts are both real and the wrong one was being matched. "Fixed triangle
+   count" has to mean the count the collider receives.
+2. **The C1 sensitivity line aggregated the finest split with `max` over arms instead of `min`.** Caught by
+   reading the harness's own printed output, which announced "C1 would be HELD" from the best arm. C1 is a
+   conjunction over four arms, so its **weakest** arm decides it, and here the two answers genuinely
+   differ: on the committed run the registered arms' `finest_largest_share` runs 0.488765 to 0.503105, so
+   `max` clears the bar and `min` does not. Fixed to the minimum, with both ends printed.
+3. **`c3_ratio` meant `gyroid ÷ sphere` on one row of a pair and `sphere ÷ gyroid` on the other.** Caught
+   by reading the emitted CSV back. A column whose meaning depends on which row you are reading is a
+   corrupt-but-plausible artefact — correct header, garbage data. C3's claim has a direction, so the column
+   has one; verified in the committed file, where **both** rows of each pair now read **1.047287** and
+   **1.017153**.
+4. **Five independent per-stage medians made `residual_ms` read +4.33% on `gyroid` 65³** — inside the
+   registered bar and pointing at a missing stage — **while the worst single repeat's residual read
+   0.000%**. Caught by `residual_share_worst_rep` disagreeing with `residual_share` by three orders of
+   magnitude. Every repeat's stages summed to its own total exactly; the 4.33% was five medians disagreeing
+   about which repeat they came from, and it would have made the registered columns fail to add up in the
+   CSV. Fixed by reporting the repeat whose **total** is the median, whole; per-stage medians are kept as
+   `*_median_ms` and `median_mixing_share` (−0.001821 to +0.004430) states how far apart the two views are.
+5. **Sequential arm ordering let a machine excursion land on one arm of a ratio.** Caught by the `sphere`
+   arm's wall time moving **58%** between two runs of the same binary while its cycle count moved **1.5%**
+   — `M-280` arriving uninvited. Fixed by making the repeat the outer loop and the arm the inner one, so
+   all six arms are built inside each of the nine repeats and an excursion lands across every arm. The
+   price is that each build starts on a cache the other five just evicted, which raises absolutes
+   uniformly and leaves the shares where they were — and it is what a chunked pipeline building chunk after
+   chunk actually does.
+6. **The counted (hardware-counter) build ran outside the interleaved regime**, which is a control firing
+   on its own scheduling. Caught by `counted_over_median` reading 1.355–1.372 on a run whose residuals were
+   0.00002%. Fixed by giving the counted build its own interleaved wave; on the committed run
+   `counted_over_median` is **0.985141–1.012489**.
+7. **`duplicate_vertices` on the row is measured *after* the weld and is therefore zero by construction** —
+   `M-44`'s zero exactly, a number that could not have been non-zero, and it is 0 on all six rows. Caught
+   while trying to price the weld. Fixed by reading the unwelded single-chunk mesh once, untimed, in
+   `prepare`: **`unwelded_duplicate_vertices` = 1 / 2 / 1 / 2** on the registered arms. That one pair of
+   columns turned *"the weld is 30% of the build"* into *"the weld is 30% of the build and removes one or
+   two vertices per chunk"*, which is the finding that prices the shipped examples.
+
+#### What changed as a result
+
+**The redirection this row was scheduled to make: `R-081`, not `R-084`.**
+
+- **`R-084` (convex decomposition) is the wrong half, for cost.** It acts strictly downstream of the copy —
+  it replaces or augments the `TriMesh` constructor — so its entire reachable share is
+  `copy_ms + trimesh_new_ms`, **18.17–19.68%** of the build on the registered arms, and a convex
+  decomposition costs far more than a binned SAH BVH build. A construction-side attack has a ~20% ceiling
+  on a number it would **raise**. **`R-084` has since run and found no convex-decomposition term anywhere
+  in the 45%** — so *"do not build `R-084` for cost"* is correct **about the chunk collider** and **silent
+  about the stage `R-084`'s own C1 is denominated in**. If it is built, build it against a contact-quality
+  bar, not a time one.
+- **`R-081` (the field query) is the right half**, because it removes the artefact rather than a stage of
+  it: no weld, no gate, no copy, no `TriMesh`, no BVH. It removes 100% of **4.800489–57.987347 ms per
+  chunk** — one 65³ `gyroid` chunk is **3.62 frames at 16 ms** — and **11.410274 ms** of that survives even
+  if the weld and the gate are both skipped. **`R-081` recomputed its share against this file and found
+  there is no query half at all**: all four registered stages are construction, and the residual bounds any
+  query component at `s ≤` **3.12e-5** (0.000150 ms of 4.800489, the largest of the six). So `R-081`'s C1
+  SHARE premise was **falsified as a premise, by this file, before that harness existed**.
+- **The cheapest win is neither ticket, and it is not a ticket.** `collider::readiness` is
+  **48.4–50.3%** of the build and it is a **diagnostic**, not a requirement — parry refuses only an empty
+  index buffer. Running the gate in debug and never in release halves the cost with no algorithm at all.
+- **The shipped examples are already priced correctly.** `bevy_isomesh/examples/game_walk.rs::to_trimesh`
+  and `game_capsule_walk` build one collider per chunk and neither welds nor runs the gate. Given
+  `unwelded_duplicate_vertices` of 1 or 2 per chunk, that is the **correct** choice rather than an
+  omission: they pay 18.17–19.68% and forgo two coincident vertices and a diagnostic. The weld remains
+  load-bearing for a collider assembled from **more than one** chunk — the two-chunk probe measures
+  92 / 324 / 200 / 684 `seam_boundary_edges` closed by it, `M-69`'s mechanism reproduced per field.
+
+**Godot's folklore, measured inside one binary, is testimony about one game's fields.** The registration
+cites Godot Voxel Tools — *"creating a collider from a mesh is actually much more expensive than meshing
+itself (about 3 to 5 times)"*, no timings, no hardware. Comparing against `M-135`'s committed `contour_ms`
+would be a cross-build ratio, which `M-281` forbids, so the contour is re-timed in this binary:
+`collider_over_contour` reads **9.365259** and **5.942653** on `gyroid`, **5.305239** and **2.045088** on
+`sphere`, and **0.642880** and **0.411314** on `fbm_terrain` — **inverted on the field this game actually
+meshes**, where the contour is **1.56×** and **2.43×** the collider build. The two costs are denominated in
+different things: the contour is per-**sample** and dominated by field evaluation (`fbm_terrain`'s 65³
+contour is 55.281225 ms for 16,882 triangles while `gyroid`'s is 9.757821 ms for 43,112), and the collider
+is per-**triangle**. Godot's 3–5× is the ratio of triangles-per-sample to field-cost-per-sample, and says
+nothing about collider generation being intrinsically expensive.
+
+**Would be shown wrong by:** `copy_share` rising toward `✗52`'s regime on any path where the vertices must
+be *converted* rather than memcpy'd — an `f64` mesh narrowing into `glam::Vec3`, or a device-side buffer, is
+the obvious candidate and no row here has one; a `bvh_dominates` true on any field, which would vindicate
+the Godot documentation after all; a field whose `c3_ratio` reaches 1.5× at matched triangle **and** vertex
+count, which would restore C3 and mean the per-field structure does cost after all; a `readiness_ms` that
+stops agreeing with `M-135`'s `collider_ms` within a few percent, which would mean the two harnesses are
+not measuring the same stage and this row cannot speak about the 45%; or a decomposition that splits
+`handoff` and reports the largest stage above 50% on all four registered arms — the committed
+`finest_largest_share` runs 0.488765 to 0.503105, so that observation would settle C1 on the finer list
+rather than leave it straddling.
+
+### 💥 ✗66 / M-398 — C1 FALSIFIED at **3.01%** against a 20% bar, and the bar was **15.29× chance** rather than 2×: a capsule hits a sliver at **2.30×** its area share, which is real enrichment and still six times too little, so the recorded `degenerate_triangles` metric has no gameplay consequence. C2 FALSIFIED by the letter of its column at **1.134** and **1.055 ± 0.101** over episodes, which does not reopen `M-133`. C3 HELD weakly — 0 of 89 against a null expectation of **1.052** (P-86, R-086)
+
+**M.** `cargo bench --bench experiment_p86`, `docs/experiments/p-86.csv`, **3 rows**, `f32`, Zen 3
+(`amd-ryzen-9-5900x-12-core`). Two independent fixtures on `fbm_terrain` — a `game_capsule_walk`
+path driven until the body itself makes **495 chunk-column crossings** (28,723 steps, 2,899.77 m)
+and a **10⁴-step** randomised walk over an eight-chunk square — plus their pooled `combined` row;
+the controller is collide-and-slide over `parry3d` swept-capsule casts at a fixed `dt` of 0.016667
+s, with no Bevy under `crates/`, and the field arm is `game_dig::resolve_body` transcribed with the
+`✗45`/`M-363` chord ground probe. Committed at **`28194ca`**, whose provenance line carries no
+`(WORKING TREE DIRTY)` and which is an ancestor of HEAD.
+
+> **This entry quotes the clean-tree re-run and not the run the harness was built on.** The original
+> pre-run stamped `# commit 63c7161 (WORKING TREE DIRTY)` while ~25 sibling agents were compiling,
+> and that file was never committed — `docs/experiments/p-86.csv` has exactly one commit, `383f77f`
+> *"p-86.csv - re-run on a clean tree"*. **One number moved and it is the wall clock:**
+> `wall_seconds` **22.0 → 16.4**, a 1.34× speed-up from the quiet machine. Every other value on all
+> three rows is identical — all 2,961 stops, all 594 episodes, all 753,052 triangles,
+> `worst_decile_area_share` 0.01307925, `seam_excess_episodes_sigma` 0.100977,
+> `chord_inset_measured` 0.114346. **No clause here is denominated in time.** Every verdict is an
+> integer count, a ratio of two integer counts, or an area share of a fixed mesh, which is `✗24`'s
+> rule (*gate the count the ratio samples*) and `M-281`'s (*a millisecond is a property of the
+> binary*) applied before the fact rather than after — and it is why a 34% clock move left all three
+> verdicts untouched. `wall_seconds` is printed and carries nothing. No clause names a second
+> machine, so nothing here is BLOCKED.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 at least **20%** of controller stops land on a triangle in the bottom decile of the aspect-ratio distribution | ≥ 0.20 | **FALSIFIED — 0.030057, i.e. 89 of 2,961; 0.0287–0.0392 on every reading of the clause** |
+| C2 seam-adjacent triangles carry **no more** stops per triangle than interior ones | ≤ 1.0 | **FALSIFIED by the column — `seam_excess_ratio` 1.134027; but 1.055 ± 0.101 over episodes and the two arms straddle unity** |
+| C3 the field-query path removes **all** of C1's stops | `stops_field_path` = 0 | **HELD, and weak — 0 of 89, against a null expectation of 1.052** |
+
+**This is one of the six rows Phase 24 registered as an expected null, and it came back a null.**
+The registration's own falsifier says so: *"C1 by under 20%, which would mean slivers are not what
+stops a character and the recorded metric has no gameplay consequence — a genuine null and worth the
+afternoon."*
+
+---
+
+**The SHARE recomputation is what makes this a strong null rather than a shrug, and it has to
+lead.** The registration reads *"SHARE: this is a rate, not a ratio of a total."* That is true and
+incomplete. It is true in `✗51`'s sense: `worst_decile_fraction` is
+`stops_on_worst_decile / stops_total`, both produced by this harness, so the statistic spans 0 to 1
+and C1 is not arithmetically unreachable. **What the registration never does is name the null
+rate**, and the null rate is the whole result.
+
+| quantity | column | value |
+|---|---|---|
+| the decile's share of triangles, by **count** | `decile_triangles / triangles` | 75,306 / 753,052 = **0.100001** |
+| the decile's share of triangles, by **area** | `worst_decile_area_share` | **0.01307925** |
+| C1's bar under a uniform-over-**triangles** null | — | 0.20 / 0.100001 = **2.00× chance** |
+| C1's bar under an area-weighted null | `c1_bar_over_chance` | 0.20 / 0.01307925 = **15.29× chance** |
+| the enrichment actually measured | 0.030057 / 0.01307925 | **2.298× chance** |
+| what C1 needed on top of what happened | 15.29 / 2.298 | **6.65×** |
+
+A decile is 10% of the triangles by construction, so reading the clause against a count share makes
+the 20% bar a mere 2× chance and the clause looks like a coin-flip proposition. **A swept capsule
+does not sample triangles by count.** It hits a triangle roughly in proportion to the area that
+triangle presents to the sweep, and a bottom-decile triangle is *near-zero-area by definition* —
+that is what puts it in the bottom decile. So the honest null is the decile's **area** share, 1.308%
+of the mesh, and C1's bar is **15.29× chance**. Stated the other way: reaching 20% of 2,961 stops
+needs **592 stops** on the decile, and 89 arrived.
+
+**A clause needing 15× area-weighted enrichment on a mesh whose slivers are coplanar with their
+neighbours was expected to fail, and this is the arithmetic the registration could not reach before
+the run.** The count share 0.100001 is a property of the definition of a decile and was known a
+priori; the **area** share 0.01307925 is a property of `fbm_terrain` meshed by Marching Cubes at
+0.5-unit cells and could only be measured. Both are in the file, which is why the null is
+quantitative rather than a shrug: the enrichment is not 1.0. Slivers *are* hit above their area
+share, by 2.30×. They are simply nowhere near 15×.
+
+**C1, on every reading of the clause:**
+
+| reading | numerator | denominator | fraction | bar |
+|---|---:|---:|---:|---:|
+| **registered** — the blocking triangle is in the bottom decile of `q` over all meshed triangles | 89 | 2,961 | **0.030057** | 0.20 |
+| **generous** — *any* triangle blocking that step is bottom-decile (`stops_any_blocker_worst_decile`) | 116 | 2,961 | 0.039176 | 0.20 |
+| **decile over the tested population** instead of the whole mesh (`aspect_ratio_p10_tested` 0.235517) | 96 | 2,961 | 0.032421 | 0.20 |
+| path arm alone (`aspect_ratio_p10` 0.223288) | 70 | 2,298 | 0.030461 | 0.20 |
+| randomised arm alone (`aspect_ratio_p10` 0.222721) | 19 | 663 | 0.028658 | 0.20 |
+
+**The two independent fixtures agree to 0.18 of a percentage point** — 3.046% over 495 seam
+crossings against 2.866% over a 10⁴-step randomised walk — and the widest reading of the clause is
+3.92%. There is no reading between 2.9% and 3.9% that comes within 5× of the bar. `q` is the crate's
+own mean-ratio quality, `2√3·|cross| / Σlᵢ²`, transcribed from `validate_indexed`: 1 for
+equilateral, 0 for degenerate, so *"the bottom decile of the aspect-ratio distribution"* is the
+bottom decile of the number the crate already records.
+
+**The crate's own `degenerate_triangles` metric, which is the thing this experiment exists to
+connect to a gameplay symptom, is stricter than a decile and scores exactly zero.** It counts
+`area ≤ AREA_EPSILON_REL · cell_size²` with `AREA_EPSILON_REL = 1e-6` — numerically zero area, not
+merely thin:
+
+| column | value |
+|---|---|
+| `degenerate_triangles` | **225** of 753,052 = 0.0299% of the mesh |
+| `degenerate_triangles_tested` | **8** — the ones the broadphase ever handed to the controller |
+| `stops_on_degenerate` | **0** of 2,961 |
+| expected stops on 8 tested triangles at the measured 0.029827 stops per tested triangle | **0.24** |
+
+> **`stops_on_degenerate = 0` is honest and low-powered, and the entry says which.** Only 8 of the
+> 225 degenerate triangles were ever within reach, so the expected count under the null is 0.24 and
+> a zero against 0.24 proves little on its own. The load-bearing C1 answer is the bottom-decile one
+> — 89 stops attributed across 9,928 *tested* decile triangles — which has real power. The vacuity
+> assert (`degenerate_triangles == 0 || degenerate_triangles_tested > 0`) is what makes the zero a
+> measurement rather than `M-44`, and it is the weaker of the two instruments by design.
+
+---
+
+**C2 is FALSIFIED by the letter of its registered column, and it must not be read as reopening
+`M-133`.**
+
+| definition | seam tris | interior tris | seam stops | interior stops | excess |
+|---|---:|---:|---:|---:|---:|
+| **registered** — `x`/`z` band, tested denominator | 23,109 | 76,164 | 758 | 2,203 | **1.134027** |
+| `x`/`z` band, all meshed | — | — | 758 | 2,203 | 1.122359 |
+| all axes, tested | — | — | 2,164 | 797 | 1.190351 |
+| all axes, all meshed | 508,011 | 245,041 | 2,164 | 797 | 1.309678 |
+
+> **`c2_holds` reads `false` on `path_495_crossings` and `combined` and `true` on
+> `random_10k_steps`, and that disagreement is the finding rather than the column.** The clause says
+> *"no more"*, so 1.134027 > 1.0 is a genuine failure of the registered inequality and the verdict
+> stands as FALSIFIED. But the sign is **not reproducible between the two fixtures**: 1.204331 on
+> the seam-crossing path and **0.907098** on the randomised walk, two walks on the same field and
+> the same mesh. A lip mechanism at a chunk join does not flip sign between two walks over it.
+> Reading the `false` as "seams stop characters" is a misparse of a column whose companion row reads
+> `true`.
+
+Three measurements say the excess does not survive its own error bar, and all three are in the file:
+
+**(a) The two arms straddle unity.** 1.204331 and 0.907098.
+
+**(b) Over episodes — the effective sample size — the excess is inside one sigma of 1.0.** A body
+climbing one 55° face stalls on *every frame* of the climb, so the raw stop count is autocorrelated
+and a Poisson bar over it is far too tight. `stop_episodes` counts maximal runs of consecutive
+stalling steps: **2,961 stops are 594 episodes**.
+
+| arm | `seam_excess_ratio` | `seam_excess_episodes` | `seam_excess_episodes_sigma` | σ from 1.0 |
+|---|---:|---:|---:|---:|
+| `path_495_crossings` | 1.204331 | 1.025551 | 0.122464 | **0.21** |
+| `random_10k_steps` | 0.907098 | 1.116542 | 0.178934 | **0.65** |
+| `combined` | 1.134027 | **1.054675** | **0.100977** | **0.54** |
+
+The episode sigma is `excess · √(1/seam_stops + 1/interior_stops)` over `episode_seam_stops` 144 and
+`episode_interior_stops` 450. The same expression over the **raw** counts (758 and 2,203) gives
+0.0478, against which 1.134027 sits 2.81σ high — so the raw bar is **2.11× too tight**, and
+reporting the raw 1.13 as a finding is exactly the error the episode counter exists to prevent.
+
+**(c) The slope confound is measured and absent for the registered bucket.** Stops happen where the
+terrain is steep, so any bucket steeper than its complement carries more stops for a reason that has
+nothing to do with what the bucket is named after.
+
+| bucket | mean `\|∇h\|` inside | mean `\|∇h\|` outside |
+|---|---:|---:|
+| `x`/`z` seam band (registered) | `mean_slope_xz_band` **0.9480** | `mean_slope_off_xz_band` **0.9488** |
+| `y` band | `mean_slope_y_band` **0.9608** | `mean_slope_off_y_band` **0.9307** |
+| at stops | `mean_slope_at_stops` **1.4497** | population 0.9488 |
+
+The registered bucket is slope-neutral to 0.08%, so its 1.13 is not a slope artefact — it is noise.
+The `y` band is measurably steeper, which is why the all-axis 1.310 is a slope excess and not a seam
+excess (defect 1 below).
+
+**The honest summary, which is not the column:** the registered inequality fails at 1.134 on 2,961
+autocorrelated stops; over the 594 independent episodes the excess is **1.055 ± 0.101**, 0.54σ from
+unity, with the sign not reproducible between two fixtures and the slope confound measured at zero.
+`M-133` stays a topology claim. C2's registered falsifier — *"a seam excess, which reopens `M-133`'s
+'not reliably seam-closing' as a gameplay defect rather than a topology one"* — describes an
+observation this run did not make.
+
+---
+
+**C3 is HELD and weak, and the entry says so out loud.** `stops_field_path = 0` on all three rows.
+The number that makes it weak is in the file beside it:
+
+| column | path | random | combined |
+|---|---:|---:|---:|
+| `stops_field_replay_all` — field replays that stalled, over **all** stops | 34 | 1 | **35** |
+| `stops_total` | 2,298 | 663 | 2,961 |
+| `stops_on_worst_decile` | 70 | 19 | 89 |
+| `stops_field_path_expected` = `stops_on_worst_decile · stops_field_replay_all / stops_total` | 1.036 | 0.029 | **1.052** |
+| `stops_field_path` | **0** | **0** | **0** |
+
+The same replay fires on 35 of 2,961 stops — 1.18% — so under the null that a bottom-decile stop is
+an ordinary stop, the expected count inside C1's 89-stop set is **1.052**. **A zero against an
+expectation of roughly one is not significant** (p ≈ 0.35 under Poisson). C3 is scored HELD because
+its registered falsifier is *"any surviving stop"* and none survived; it is scored **weak** because
+the instrument had about one expected event to remove. `field_control_stalls = 569` proves the
+instrument can fire at all, and the 35 live replays prove it fires on real data — so this is not
+`M-44`. It is a real zero with almost no power, which is a different and smaller thing.
+
+**The mechanism by which the field path removes those stops is measured, not argued, and it is not
+flattering.** The field controller does not clear a sliver by being smarter; it clears it by
+standing **inside the rock**. Replaying each mesh-controller stop through the transcribed
+`resolve_body` and then asking `parry3d` how deep the resulting capsule sits in the crate's own
+triangles:
+
+| column | value | as a fraction of the 0.4 capsule radius |
+|---|---:|---:|
+| `field_penetration_mean` | **0.0864** | 21.6% |
+| `field_penetration_max` | **0.1413** | 35.3% |
+| `mesh_penetration_max` | 0.0013 | 0.3% |
+
+And on its own trajectory the field controller stalls **more**, not less: `stops_field_walk`
+**3,346** against the mesh arm's 2,961. `game_dig`'s own comment prices this error at *"18% of a
+radius into the steepest slope, which is 7 cm and invisible"*; on `fbm_terrain` it is 8.6 cm mean
+and **14.1 cm max**, which understates by **2.02×** on a field that comment is not written about.
+
+---
+
+**Mechanism: what stops a capsule on `fbm_terrain` is a hillside, not a triangle.**
+`mean_slope_at_stops` is **1.4497** against a population mean of **0.9488** — stops happen where
+`|∇h|` is 52.8% above average, i.e. on **55.4°** faces against a 43.5° mean, with
+`steepest_gradient` 2.5453 (68.6°) available. Collide-and-slide loses horizontal progress as `sin²θ`
+when it climbs, so `M-115`'s `STALL_SHORTFALL` of **0.50** is precisely a 45° gate: **every stop
+this harness records is a 45°-or-steeper face**, which is correct geometry doing its job.
+
+The reason the sliver enrichment stops at 2.30× is geometric and it is the run-independent statement
+of this result: **a Marching Cubes sliver is a thin triangle lying in the same plane as its
+neighbours.** It presents almost no area to the sweep and it does not stick out, so a capsule that
+reaches its cell is nearly always stopped by the fat triangle beside it. Removing every
+bottom-decile triangle removes at most 3.0% of stops, and those stops are on 55° faces the fat
+triangles in the same cells would have stopped anyway. The enrichment is real (2.30×, not 1.0) and
+the payoff is not (3.0%, not 20%).
+
+**The registered vacuity control, its columns and its values.** The registration asks for *"a
+non-zero stop count on both arms, and the bottom aspect-ratio decile must be non-empty, both
+reported as counts"*. Both are `assert!`ed in `row()`, and two more were added because the
+registered pair does not cover C3:
+
+| control | column | value |
+|---|---|---|
+| registered 1 — non-empty bottom decile | `decile_triangles` | **75,306** (9,928 of them `decile_triangles_tested`) |
+| registered 2 — non-zero stops, path arm | `stops_total` | **2,298** |
+| registered 2 — non-zero stops, randomised arm | `stops_total` | **663** |
+| added 3 — attribution complete | unattributed stops | **0**, `assert_eq!` |
+| added 4 — C3's instrument can fire | `field_control_stalls` | **569** against a vertical wall |
+| added 5 — both C2 buckets populated | `seam_triangles_tested_xz` / `interior_triangles_tested_xz` | **23,109** / **76,164** |
+| added 6 — the degenerate bucket was reachable | `degenerate_triangles_tested` | **8** |
+
+**Why `decile_triangles = 75,306` proves the fixture could have failed.** The decile is not an empty
+tail invented by a percentile on a short list: it is 10.0001% of a 753,052-triangle distribution,
+its threshold `aspect_ratio_p10 = 0.223245` sits deep inside `q`'s range (1.0 is equilateral),
+**9,928** of its members were actually handed to the controller, and the fixture *did* land 89 stops
+on them. Reaching C1's 592 stops therefore required no triangle the fixture did not have and no stop
+the fixture did not produce — only 6.65× more enrichment than the 2.30× observed. The 20% bar was
+reachable in fact and not only in arithmetic, and it was missed by a factor of 6.65. Under the
+*count*-share reading it would have needed only 2.00× chance and was still missed. The vacuity pair
+is also why the second arm matters: two fixtures with independent stop populations (2,298 and 663)
+landing on 3.046% and 2.866% is a null with a reproducibility claim attached, not a single walk's
+number.
+
+**Five fixture defects, all caught by this harness's own controls rather than by review.**
+
+1. **The all-axis seam band is not a seam test.** A band one cell either side of `y = 0` — a real
+   chunk plane — selects the terrain whose *height* is near zero, and on an fbm heightfield that is
+   the zero-crossing band, which is the steepest part of the surface. It bucketed **465,178 of
+   688,728 triangles (67.5%)** as "seam" on the path arm. Caught by the raw counts and then
+   quantified: `mean_slope_y_band` **0.9608** against `mean_slope_off_y_band` **0.9307**, so the `y`
+   band *is* measurably steeper and steepness is what causes stops. The all-axis excess **1.309678**
+   is therefore a slope excess. The registered columns use `game_capsule_walk::measure`'s own
+   `x`/`z` test, which is the definition that answers *"confirm `M-115` from the controller's
+   side"*, and that bucket is slope-neutral (0.9480 against 0.9488).
+2. **`ensure` inflates the interior denominator.** It meshes a whole chunk when the body comes
+   within `REACH` of it, so a chunk the walk merely clipped contributes ~500 triangles of which only
+   the ones by its own boundary were ever reachable — a seam excess manufactured by the meshing
+   policy. Caught by `triangles` **753,052** against `triangles_tested` **99,273**: 86.8% of the
+   meshed denominator was never handed to the controller. A per-triangle `tested` flag set in the
+   broadphase is now C2's denominator. It moves the combined excess from 1.122359 to 1.134027 — so
+   the defect was **not** the cause of the excess, and the number is now over a denominator that
+   cannot manufacture one.
+3. **Stops are autocorrelated and the raw error bar is 2.11× too tight.** 2,961 stops are **594**
+   episodes. Caught by the two arms disagreeing in *sign* on C2 (1.204331 against 0.907098), which
+   is impossible at the raw-count bar of ±0.0478. `seam_excess_episodes` **1.054675 ± 0.100977** is
+   the number that says C2's 1.13 is not evidence of a seam defect; without it this entry would have
+   reported a 13% seam excess as a finding.
+4. **The ground-probe lift check measured the spawn height, twice.** Version 1 bucketed hover by the
+   *spawn* column's gradient, but `resolve_field` pushes along the gradient, which is mostly
+   horizontal on a slope, so a body dropped on a gentle column slides into a steep one; it read
+   0.2342 against a 0.63 gradient. Version 2 spawned 0.25 above the terrain, at which height the
+   probe already answers, so gravity was cut on step one and every column reported 0.245 = spawn
+   minus one step — chord and flat cross then returned *identical* maxima and the discriminating
+   assertion fired on a correct lift. Caught by the assertions themselves, twice. The check is now a
+   quasi-static trigger measurement plus an exact bound derived from the probe's own five sample
+   points with the terrain rise read from the field, plus a built-in mutation test:
+   `chord_inset_measured` **0.114346** against `chord_inset_expected` **0.114343**,
+   `chord_excess_over_bound` **−0.000023**, and `✗45`'s flat cross at `flat_excess_over_bound`
+   **+0.114154** with `flat_cross_hover_max` 0.735 against `chord_hover_max` 0.645. The
+   transcription is pinned to three decimals rather than to an inequality, and the bound check is
+   demonstrably able to fire.
+5. **C3's zero has almost no power and nothing in the registration says so.** Caught by emitting
+   `stops_field_replay_all` (35 of 2,961) and deriving `stops_field_path_expected` = **1.052**. C3
+   is scored HELD with the expectation printed beside it; a real test of *"the field path removes
+   sliver stops"* needs roughly 10× the stops or a fixture that manufactures slivers deliberately.
+
+*Not a defect, and recorded because it sets the direction of every deviation:* this controller stops
+on **8.00%** of steps (2,298 of 28,723) where `M-115`'s Avian body stalled on roughly 2% of frames.
+Expected, and in the honest direction — no friction where Avian has 0.4, no step offset either way,
+and a commanded rather than integrated horizontal velocity. It gives C1 four times the stop sample
+`M-115` had, and C1 still came back at 3%.
+
+**What changed as a result. This is a "do not build this" row, and that is a conclusion.**
+
+- **Do not promote `degenerate_triangles` from a metric to a gate, and do not add sliver collapsing
+  or quality-driven remeshing for the controller's sake.** The measured ceiling on removing every
+  bottom-decile triangle is 3.0% of stops; the crate's own degenerate count is 0.0299% of the mesh
+  and took 0 stops. `M-115`'s open question — *how many of those stops are real* — is answered: at
+  least 96% of them, and by the geometry rather than by the extractor.
+- **`M-133` is not reopened.** It stays a topology claim, on 1.055 ± 0.101 over independent
+  episodes, a sign that flips between two fixtures, and a slope confound measured at zero.
+- **A decision is surfaced and not taken.** The field-query path does remove the bottom-decile
+  stops, by penetrating the surface 8.6 cm on average and 14.1 cm at worst — 21.6% and 35.3% of a
+  capsule radius — while stalling *more* on its own trajectory (3,346 against 2,961). That trade
+  belongs to the owner. `game_dig`'s *"at worst 7 cm and invisible"* comment is measured wrong for
+  `fbm_terrain` by 2.02×; that is a comment fix in a file this ticket may not touch, left as a note
+  rather than an edit.
+- **Nothing landed in the crate.** `crates/isomesh/src/**` untouched; the change is the new bench
+  and its `[[bench]]` block.
+
+**The one sentence the crate needs:** the recorded `degenerate_triangles` metric has **no gameplay
+consequence** — 3.01% of controller stops fall on the bottom aspect-ratio decile against a
+registered 20% bar and against an area-weighted chance of 1.31%, and not one of the 2,961 stops fell
+on a triangle the crate actually counts as degenerate.
+
+**Would be shown wrong by:** a fixture whose slivers are **not** coplanar with their neighbours — a
+step, a lip, or a transition seam that leaves a thin triangle standing proud of the surface —
+putting ≥ 20% of stops on the bottom decile, which would mean the 2.30× enrichment measured here is
+a property of a smooth heightfield rather than of thin triangles; or a controller with a step
+offset, which climbs over the fat triangle and leaves the sliver as the only blocker; or any stop
+landing on a triangle the crate counts as degenerate once more than 8 of the 225 are within the
+controller's reach.
+
+### 💥 ✗67 / M-399 — C1 and C2 HELD, C3 FALSIFIED: an octree navigation graph built on the sign bitmap and never on a triangle repairs P-72's eleven-edit dig in **0.1433–0.4366 ms** for the worst single edit and **0.8793–2.5396 ms** for all eleven, over a repair set **1.50–1.83×** the crate's own dirty-cell count that grows **1.6355×** while the world grows **512×** — but the convexity-preserving merge gives **2.5492–3.8597×**, not the registered 5×, because the order of magnitude is in the **octree**, not in the merge (P-87, R-087)
+
+**M.** `cargo bench --bench experiment_p87`, `docs/experiments/p-87.csv`, **16 rows**, scalar `f64`,
+`amd-ryzen-9-5900x-12-core` with `clock_mhz` **4202** on every row. Two fields (`fbm_terrain`, `gyroid`)
+× four world sizes (32³–256³, **512×** in cells) × two eleven-edit traces at **4³** chunk granularity,
+radius-6-cell spherical brushes, the height probed per edit at that edit's own `x` — P-72's trace
+inherited literally, plus an added `breakthrough` arm. Median of three traces per arm; every integer
+asserted equal across reps. Committed at **`383f77f`**, whose provenance line carries no
+`(WORKING TREE DIRTY)` and which is an ancestor of `HEAD` (`782188c`).
+
+> **Every number below is read from the committed `docs/experiments/p-87.csv` at `383f77f`.** The
+> harness's first artefact was `63c7161 (WORKING TREE DIRTY)`, taken while ~25 sibling agents were
+> compiling, and this entry does not quote it (`✗35`, `✗52`). **Every integer and every integer-derived
+> ratio reproduced to the last digit** — `repair_factor` 1.5025–1.8257, `repair_growth` 1.6355 / 1.6750 /
+> 1.0366 / 0.9717 at 256³, `reduction` 3.8597 / 3.6759 / 3.6048 / 3.5660 and 2.5492 / 2.5524 / 2.5575 /
+> 2.5653, `merge_drift` 1.0011–1.2369, `nav_dirty_chunks / mesh_dirty_chunks` 0.7567–0.9326,
+> `topology_changes` 0 and 2 — which is `M-279`'s rule satisfied: the quiet run agrees with the dirty one
+> on everything that is not a clock. **Every clock moved, and one of them moved enough to change what may
+> be said.** Worst single edit 0.1730–0.5117 → **0.1433–0.4366 ms**; whole-trace 4.2487 → **2.5396 ms**
+> worst, a **1.67×** move on the identical binary and fixture; `build_ms` at 256³ 212.4876 / 179.5515 /
+> 220.5410 / 281.2375 → **121.4720 / 120.4441 / 164.9126 / 167.1912** (1.34–1.75× faster);
+> `rebuild_over_repair` at 256³ 495.44 / 357.90 / 545.94 / 549.64 → **468.66 / 361.05 / 645.90 / 382.96**,
+> one element moving **30%**. The consequence is spelled out under C1: the eleven-edit reading of the 2 ms
+> bar is **not a gate**, and the entry states it as an integer instead (`✗24`, `M-281`).
+
+| clause | registered | measured |
+|---|---|---|
+| C1 local repair after P-72's eleven-edit dig costs under **2 ms** at 4³ granularity | `octree_update_ms + graph_update_ms < 2.0` | **HELD — 0.1433–0.4366 ms**, 4.6–14.0× under the bar, on all 16 rows (`c1_holds` `true` ×16). *Under the eleven-edits-in-one-frame reading it fails on 4 of the 8 `p72_dig` rows (2.3611–2.5396 ms) and holds on all 8 `breakthrough` rows (0.8793–1.1847 ms) — see below; the clause as registered is the single-edit one.* |
+| C2 the repair set is edit-proportional, factor **< 3** against the dirty set, and does not grow with world size at fixed edit size | `repair_factor < 3` and `repair_growth < 2` | **HELD — `repair_factor` 1.5025–1.8257 on all 16 rows; `repair_growth` 1.6355 / 1.6750 (`p72_dig`) and 1.0366 / 0.9717 (`breakthrough`) at 256³ while `world_total_cells` grew 512×** |
+| C3 the convexity-preserving merge gives **≥ 5×** cell reduction on both fields, and `gyroid` is worst | `reduction ≥ 5` on both, `gyroid < fbm_terrain` | **FALSIFIED on the bar — 3.5660–3.8597 on `fbm_terrain`, 2.5492–2.5653 on `gyroid`, 1.30–1.96× short of 5×. The ordering half HELD: `gyroid` is worst at all four world sizes.** |
+
+**SHARE, and it is the reason none of the three clauses needed an Amdahl ceiling.** The registration's
+SHARE line is *"C1 moves the whole navigation-rebuild stage, currently unbuilt"* — share **1.0**. `✗51`'s
+`1/(1 − s + s/factor)` does not bind, and for a plainer reason than share 1.0: **none of the three clauses
+is a speedup against a baseline.** C1 is an absolute latency bar on a stage that does not exist yet, C2 is
+a ratio of two directly counted sets, C3 is a ratio of two directly counted sets. All three were
+arithmetically reachable before the run and the harness prints that before its first row rather than
+discovering it afterwards. **What arithmetic could not reach before the run is C1's second reading and C2's
+shape.** The registration says "the local repair after P-72's eleven-edit dig trace costs under 2 ms" and
+does not say whether the subject is one edit or the trace; the two readings differ by 8.19–9.82× on the
+`p72_dig` arm and 2.71–3.06× on the `breakthrough` arm, and which one a frame budget cares about is the
+trace. And C2's falsifier is *world-proportional growth*, whose negation is not derivable from the
+mechanism alone — a local repair whose leaf surgery happened to dissolve
+a world-sized region would still be "local" by construction and world-proportional by measurement. The
+only thing arithmetic settled in advance is the falsifier's own magnitude: 32³ → 256³ is **512×** in cells,
+so anything short of that is a measurement and not a tautology.
+
+**The comparison the registration invites and this entry refuses.** Massonnat & Verbrugge measure octree
+update 0.22–1.36 ms, local graph update 0.03 ms, ~1 ms total on an **Intel Core i7-12700H**. This is a Zen
+3 at 4202 MHz. `M-281` forbids that as a gate, so the paper's figures are the reason the direction was
+worth building and are not a bar anything here passes or fails. For the record and not as a verdict:
+`octree_update_ms` **0.0623–0.2452**, `graph_update_ms` **0.0810–0.1914**, `total_ms` **0.1433–0.4366**.
+
+**The two readings of C1, both from the file:**
+
+| field | world | trace | `dirty_cells` | `repair_cells` | factor | octree ms | graph ms | **worst edit ms** | median edit ms | **11 edits ms** | `topology_changes` |
+|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `fbm_terrain` | 32³ | `p72_dig` | 4,058 | 7,245 | 1.7854 | 0.0695 | 0.0997 | **0.1693** | 0.1169 | 1.3863 | 0 |
+| `fbm_terrain` | 32³ | `breakthrough` | 3,027 | 4,703 | 1.5537 | 0.1935 | 0.1201 | **0.3137** | 0.0605 | 0.9284 | 2 |
+| `fbm_terrain` | 64³ | `p72_dig` | 6,036 | 9,875 | 1.6360 | 0.1068 | 0.0938 | **0.2006** | 0.1688 | 1.8240 | 0 |
+| `fbm_terrain` | 64³ | `breakthrough` | 2,809 | 4,263 | 1.5176 | 0.1967 | 0.1151 | **0.3118** | 0.0781 | 0.8793 | 2 |
+| `fbm_terrain` | 128³ | `p72_dig` | 7,545 | 11,747 | 1.5569 | 0.1417 | 0.1446 | **0.2863** | 0.2359 | **2.5396** | 0 |
+| `fbm_terrain` | 128³ | `breakthrough` | 2,979 | 4,643 | 1.5586 | 0.1983 | 0.1155 | **0.3138** | 0.0669 | 0.9609 | 2 |
+| `fbm_terrain` | 256³ | `p72_dig` | 7,608 | 11,849 | 1.5574 | 0.1443 | 0.1149 | **0.2592** | 0.2215 | **2.4886** | 0 |
+| `fbm_terrain` | 256³ | `breakthrough` | 3,110 | 4,875 | 1.5675 | 0.2139 | 0.1197 | **0.3336** | 0.0615 | 0.9544 | 2 |
+| `gyroid` | 32³ | `p72_dig` | 3,999 | 7,301 | 1.8257 | 0.0623 | 0.0810 | **0.1433** | 0.1091 | 1.2390 | 0 |
+| `gyroid` | 32³ | `breakthrough` | 3,013 | 4,632 | 1.5373 | 0.1955 | 0.1143 | **0.3097** | 0.0738 | 0.9187 | 2 |
+| `gyroid` | 64³ | `p72_dig` | 6,152 | 10,323 | 1.6780 | 0.0966 | 0.1204 | **0.2169** | 0.1774 | 1.8846 | 0 |
+| `gyroid` | 64³ | `breakthrough` | 2,826 | 4,246 | 1.5025 | 0.1919 | 0.1154 | **0.3073** | 0.0703 | 0.9032 | 2 |
+| `gyroid` | 128³ | `p72_dig` | 7,886 | 12,322 | 1.5625 | 0.1199 | 0.1292 | **0.2490** | 0.2136 | **2.3611** | 0 |
+| `gyroid` | 128³ | `breakthrough` | 2,858 | 4,425 | 1.5483 | 0.1987 | 0.1194 | **0.3181** | 0.0736 | 0.8948 | 2 |
+| `gyroid` | 256³ | `p72_dig` | 7,845 | 12,229 | 1.5588 | 0.1303 | 0.1250 | **0.2553** | 0.2308 | **2.5062** | 0 |
+| `gyroid` | 256³ | `breakthrough` | 2,895 | 4,501 | 1.5547 | 0.2452 | 0.1914 | **0.4366** | 0.0731 | 1.1847 | 2 |
+
+`total_ms` is the **worst single edit** of the median rep, and `octree_update_ms + graph_update_ms =
+total_ms` exactly on all 16 rows — both components come from that one edit, because amortised is not the
+statistic for the frame a breakthrough lands on. `c1_holds` is that column against 2.0 and reads `true`
+sixteen times.
+
+> **`c1_holds` = `true` is a verdict about one edit and says nothing about the four bolded whole-trace
+> cells.** A reader who takes the column as "the eleven-edit dig fits in 2 ms" is reading a claim the
+> column does not make.
+
+**The whole-trace reading, and why it is reported rather than gated.** `trace_total_ms` exceeds 2 ms on
+exactly four rows — `fbm_terrain` and `gyroid` at 128³ and 256³ on `p72_dig` — at **2.3611–2.5396 ms**,
+i.e. **1.18–1.27×** the bar. On the superseded dirty run the same four rows read **2.88–4.25 ms**, 1.44–2.12×
+the bar. **The verdict did not flip and the margin did**, and the margin is now smaller than the 1.67×
+spread the identical binary showed on this very column between two runs. **So "the eleven-edit dig does not
+fit a 2 ms frame budget" is withdrawn as a conclusion**: it is a wall clock on a governed CPU, and `✗24`'s
+rule applies — a wall-clock ratio is not a gate, gate the count the ratio samples. The run-independent
+replacement, from integers only:
+
+- The trace reclassifies **12,288–23,040** cells, being `nav_dirty_chunks × 64` exactly on all 16 rows,
+  over **192–386** dirty 4³ chunks for eleven edits.
+- That chunk set is **0.7567–0.9326** of `mesh_dirty_chunks` — the set `isomesh::chunk::dirty::mark_edit`
+  hands the *mesher* for the same eleven edits — on **all 16 rows, never above 1**. Whatever a frame costs,
+  the navigation repair's footprint is a strict fraction of a stage this crate already pays for. That is
+  the sentence a frame budget should be given, and it is an integer ratio, so it is the only form of the
+  claim that survives a re-run.
+
+> **The tempting cross-bench version of that sentence is not available.** `M-377` measures the *mesher* on
+> the same field, the same 128³ world, the same 4³ granularity and the same eleven-edit dig at **29.69 ms**
+> per trace, against **2.5396 ms** here — 8.6%. Different bench, different binary, different run, so
+> `M-281` forbids it as a gate and it is recorded as an indication of scale only. The chunk-count ratio
+> above is the same statement without the clock.
+
+**The mechanism, and it is one paragraph.** A `MIXED` unit cell — the surface passes through it — is an
+obstacle, which is the paper's "cells containing obstacles are split" taken to the leaf: at maximum depth
+there is nothing left to split. An edit therefore does four bounded things. It flips sign bits inside the
+brush box (`dirty_cells`, taken from `EditReport::sign_changed_cells` and independently recomputed by the
+harness as `pattern_changed_cells` — **equal on all 16 rows**). It re-derives the `AIR`/`SOLID`/`MIXED`
+state of every cell of every 4³ chunk containing a flipped bit. It walks the pyramid **bottom-up over the
+edit's own ancestors only** — the candidate set at level *l* is the deduplicated parents of the level *l−1*
+nodes whose state actually moved, so `nodes_reevaluated` is 714–1,767 for eleven edits and the world
+contributes only `octree_depth`, which is 5, 6, 7, 8. And it rebuilds leaves under the **topmost** changed
+nodes — those with no changed parent — plus the free-leaf pool of every region that lost a member. Nothing
+in that chain is indexed by world size, which is why `repair_growth` is 1.6355 rather than 512.
+
+**C2's saturation is the half that decides the direction, and it is visible as a plateau.** `repair_growth`
+against the same field-and-trace at 32³ reads 1.0000 → 1.3630 → 1.6214 → **1.6355** on `fbm_terrain`/`p72_dig`
+and 1.0000 → 1.4139 → 1.6877 → **1.6750** on `gyroid`/`p72_dig`. From 128³ to 256³ the world grows **8×**
+in cells and the repair set moves by **+0.87%** and **−0.75%** — it *shrinks* on `gyroid`. The rise from 32³
+to 128³ is not world-proportionality either: at 32³ a radius-6 brush spans 12 of 32 cells on an axis, so
+consecutive brushes overlap and the union of eleven of them is smaller than eleven disjoint brushes; by 128³
+they are disjoint and the set saturates. `dirty_per_edit` says the same thing from the crate's side — 368.9
+→ 548.7 → 685.9 → **691.6** on `fbm_terrain`. Against `M-311`'s 925 dirty cells for one radius-6 brush in a
+solid lattice, `repair_per_m311` is **0.4173–1.2110**, also under 3.
+
+**C3 is falsified by the bar and its ordering half is intact, and the two must not be read from one
+column.**
+
+| field | world | free cells | all leaves | free leaves (`cells_before_merge`) | regions (`cells_after_merge`) | **`reduction`** | free cells per free leaf | free cells per region |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `fbm_terrain` | 32³ | 10,512 | 4,579 | 1,293 | 335 | **3.8597** | 8.13 | 31.38 |
+| `fbm_terrain` | 64³ | 88,162 | 18,852 | 5,422 | 1,475 | **3.6759** | 16.26 | 59.77 |
+| `fbm_terrain` | 128³ | 721,331 | 75,811 | 21,492 | 5,962 | **3.6048** | 33.56 | 120.99 |
+| `fbm_terrain` | 256³ | 5,835,575 | 304,291 | 86,475 | 24,250 | **3.5660** | 67.48 | 240.64 |
+| `gyroid` | 32³ | 14,820 | 7,141 | 1,996 | 783 | **2.5492** | 7.42 | 18.93 |
+| `gyroid` | 64³ | 124,765 | 29,044 | 8,201 | 3,213 | **2.5524** | 15.21 | 38.83 |
+| `gyroid` | 128³ | 1,023,258 | 117,349 | 33,339 | 13,036 | **2.5575** | 30.69 | 78.49 |
+| `gyroid` | 256³ | 8,287,363 | 471,808 | 134,638 | 52,485 | **2.5653** | 61.55 | 157.90 |
+
+> **`c3_holds` reads `false` on all 16 rows and it is a conjunction of three tests, two of which passed.**
+> The harness computes `reduction >= 5 && peer_reduction >= 5 && gyroid_worst`. `gyroid_worst` is **true on
+> every row** — 2.5492 < 3.8597, 2.5524 < 3.6759, 2.5575 < 3.6048, 2.5653 < 3.5660 — so the registered
+> falsifier *"or by `gyroid` not being the worst, which would mean the reduction tracks something other
+> than topological complexity"* **did not fire**. The reduction does track topological complexity; it
+> simply does not reach 5×. Reading `false` as "the ordering was wrong" inverts the finding.
+
+**Where the paper's order of magnitude actually is, and it is not in the merge.** 28,190 → 303 is **93.0×**,
+and the greedy convexity-preserving merge here delivers 2.55–3.86× — 24–36× short. But the merge is the
+*second* stage. Free cells per free leaf, which is the **octree's own** aggregation before a single merge
+runs, goes **8.13 → 67.48** on `fbm_terrain` and **7.42 → 61.55** on `gyroid` across the sweep: an 8.3×
+improvement in compression from the tree alone, still climbing at 256³, against a merge factor that is
+**flat to four significant figures on `gyroid`** (2.5492 / 2.5524 / 2.5575 / 2.5653) and mildly *falling*
+on `fbm_terrain` (3.8597 → 3.5660). End to end the structure gives 240.64 and 157.90 free cells per
+navigation region at 256³, which is the paper's order of magnitude and then some — but the tree earned it.
+The reason the merge cannot: two boxes merge only when they are face-contiguous on one axis and their
+extents agree **exactly** on the other two, and a dense field riddles free space with unit-cell `MIXED`
+obstacles, so one obstacle cell blocks a whole slab. `gyroid` has 2 air components to `fbm_terrain`'s 1 and
+tunnels on all three axes, which is exactly why it merges worst — the falsified bar and the held ordering
+have the same cause.
+
+**The registered vacuity control, its column, and the value that proves the fixture could have failed.**
+The control is `topology_changes`: the dig must change the free-space topology at least once, read from
+`isomesh::connectivity::Air` — crate source, maintained independently of everything in the harness — and
+never from the brush. It is asserted `>= 2` on the `breakthrough` arm and it reads **exactly 2 on all eight
+of those rows**: `air_components_before` 1 (`fbm_terrain`) / 2 (`gyroid`), `air_components_max` **2 / 3**,
+`air_components_after` back to 1 / 2, with `edits_pocketing` = 1 and `edits_joining` = 1. One brush entirely
+inside solid seals a pocket (+1 component); the shaft descending from open air breaks into it (−1). **The
+proof that a 2 could have been a 0 is in the same file, in the same column, from the same instrument:** the
+`p72_dig` arm scores **0 on all eight of its rows**, with `edits_joining` = 0 and `edits_pocketing` = 0.
+The identical union-find, reader and world, one arm 2 and one arm 0 — which is `M-44`'s reachability check
+satisfied by demonstration in both directions rather than by argument. The near-miss is recorded too
+(`M-44`'s second rule, record the margin): `air_merges` on the `p72_dig` rows is **11–27**, non-zero on
+every row, and scoring *that* as a topology change would have made the control pass on an arm that never
+changed the topology at all — `Air::dig` reports a merge when the blob's own fresh label is absorbed within
+one call, which is not two pre-existing components becoming one. That is `P-70`'s C3, and the harness names
+it in the code rather than in review.
+
+**The registered vacuity control fired against the registration's own fixture, and that is the most
+valuable thing in this row.** C1 names *"P-72's eleven-edit dig trace"*, so the trace was inherited
+literally — and **P-72's trace scores `topology_changes` = 0 on all eight of its rows**. The failure is
+structural, not accidental: every brush in that trace straddles the surface, because the height is probed
+per edit at that edit's own `x` precisely so it *would* hit the surface (which is P-72's own fix for two
+void runs). So every newly-air sample is adjacent to open air that is already there, and the dig **widens
+one component eleven times** — 1,999 to 4,882 newly-air samples per trace and not one component created or
+destroyed. Read strictly, as a change in the number of air components, which is the only topological
+quantity `Air` maintains, **the registered control cannot fire on the registered fixture.** The two
+available responses were to weaken the control to `air_merges > 0`, which is the easier question and would
+have passed vacuously, or to add an arm on which it can fire. The harness took `P-62`'s precedent — that row
+added a 400,000-cell random arm because eight reference fields gave only seven tunnel cells, *"a hair from
+`M-44`'s vacuous zero"* — and added `breakthrough`, which carries the live assertion while `p72_dig` keeps
+the registered trace and **reports** its 0. Both arms are in the file, so C1 and C2 are still measured on
+the fixture the registration names, and the control is still real. **A registered vacuity control that
+cannot fire on the registered fixture is a defect in the registration, and it is only findable by writing
+the control as an assertion instead of a printed column.**
+
+**Fixture defects the harness's own controls caught, in the order they fired:**
+
+1. **Leaf-id recycling inside one repair, caught by the region/free tiling equality on the first run:**
+   `after edit: regions cover 10854 of 10831 free cells`, `fbm_terrain` at 32³. `Nav::kill_leaf` returned
+   ids to the free list immediately, so a dissolved region's member list — read *later* in the same repair,
+   to recover its surviving free leaves for the merge pool — named a **different** node: the fresh leaf that
+   had taken the id. When that fresh leaf was `SOLID`, a non-free leaf was handed to the free-space merge,
+   and the region volumes then over-covered the free volume by 23 cells. Fixed with a `leaf_retire` list
+   drained into `leaf_free` only at repair end. The 23-cell excess is the whole signal: a timing-only
+   harness would have reported a slightly *faster* repair.
+2. **The registered vacuity control could not fire on the registered fixture** — `topology_changes` = 0 on
+   all eight `p72_dig` rows, as above. Caught by asserting the control rather than printing it.
+3. **`gyroid`'s solid branch was expected to refuse a radius-6 sealed chamber at 32³** (its labyrinth
+   branch is ≈0.65 world units half-thick and 6 cells is 0.75 at 32³), so `breakthrough_path` searches
+   radii 6, 4, 3, 2 against the **bitmap** and panics if none fits, rather than defaulting. The ladder
+   **never fired**: `brush_cells` reads **6 on all 16 rows**, because the search asks the sampled sign
+   field and not the analytic field. Reported because the expectation was wrong in the harness's own doc
+   comment and the file is what settles it — and because it means both arms use the same brush size, so the
+   two traces are comparable at equal brush.
+4. **A local merge that silently shreds the structure would still be fast**, so the incremental merge is
+   scored against a **global** re-merge of the same final field. `merge_drift` =
+   `post_regions_incremental / post_regions_global` reads **1.2369** at 32³ and falls monotonically to
+   **1.0050 / 1.0011** at 256³: the local strategy leaves at most 23.7% more regions than a from-scratch
+   merge on the smallest world and **0.11–0.50%** more on the largest. The degradation shrinks as the world
+   grows, which is the direction that matters.
+
+**The build-versus-repair number, and it has a crossover the direction has to respect.** `build_ms` is the
+from-scratch cost of the whole structure — pyramid, leaves, global merge, graph — measured in the same run
+and the same binary as the repair (`M-281`), so `rebuild_over_repair = build_ms / total_ms` and
+`rebuild_over_trace = build_ms / trace_total_ms` are within-run ratios.
+
+| field | world | `build_ms` | `rebuild_over_repair` | `rebuild_over_trace` | world cells ÷ `reclassified_cells` |
+|---|---:|---:|---:|---:|---:|
+| `fbm_terrain` | 32³ | 0.7431 | 4.39 | **0.54** | 2.2× |
+| `fbm_terrain` | 64³ | 3.7338 | 18.61 | 2.05 | 13.7× |
+| `fbm_terrain` | 128³ | 19.9076 | 69.54 | 7.84 | 95.3× |
+| `fbm_terrain` | 256³ | 121.4720 | **468.66** | 48.81 | 764.3× |
+| `gyroid` | 32³ | 1.2512 | 8.73 | **1.01** | 2.2× |
+| `gyroid` | 64³ | 5.7288 | 26.41 | 3.04 | 13.1× |
+| `gyroid` | 128³ | 28.2459 | 113.42 | 11.96 | 91.0× |
+| `gyroid` | 256³ | 164.9126 | **645.90** | 65.80 | 757.6× |
+
+`p72_dig` rows. **At 32³ incremental repair is a loss**: rebuilding the whole structure costs **0.54×** the
+eleven-edit trace on `fbm_terrain` and 1.01× on `gyroid`. The integer says why, and says it without a clock
+— the repair reclassifies **15,040 of 32,768 cells, 45.9% of the world**, so there is nothing local about a
+local repair when the brush is 12 cells across a 32-cell world. By 256³ it reclassifies **21,952 of
+16,777,216, 0.131%** — a footprint **764×** smaller than the world it sits in, against **2.2×** at 32³ — and
+the measured stage ratio is 469–646× on the worst edit and 49–141× on the trace. Because one element of
+that band moved 30% between two runs of the
+same binary, the load-bearing form of this row is **"two to three orders of magnitude from 128³ up, and
+under 1× at 32³"**, with the crossover between 32³ and 64³.
+
+**The repair set, precisely, because `R-088` rides it.** `repair_cells` = `leaves_removed + leaves_added +
+regions_removed + regions_added`, summed over the eleven edits of one rep, and that identity holds on all
+16 rows. One edit performs, in order:
+
+1. **Bits.** Flip sign bits inside the brush's sample box; `flipped` is the changed samples only.
+2. **Locate.** Every cell incident to a flipped sample (up to 8 per sample, indices `s−1` and `s` per axis)
+   → deduplicated `pattern_changed_cells`, which equals the crate's `sign_changed_cells` on all 16 rows;
+   the 4³ chunk of each such cell → deduplicated `nav_dirty_chunks`.
+3. **Reclassify.** Re-derive `AIR`/`SOLID`/`MIXED` from the eight corner bits for **every** cell of every
+   dirty chunk — `reclassified_cells` = `nav_dirty_chunks × 64`, exactly, on all 16 rows — because whole
+   chunks are the granularity a chunked world hands its consumers. Cells whose state actually moved are
+   `state_changed_cells` (2,038–7,236 per trace).
+4. **Pyramid.** Bottom-up, level by level: candidates at level *l* are the deduplicated parents of level
+   *l−1* nodes whose state moved; `nodes_reevaluated` counts candidates (714–1,767 per trace). Only nodes
+   whose combined state moves propagate upward.
+5. **Tops.** The changed nodes with no changed parent. Everything below a top is rederived; nothing above
+   it needs to be.
+6. **Leaf surgery.** `collect_under(tops)` → `leaves_removed` (1,196–4,135 per trace); each killed id goes
+   to `leaf_retire`, **not** to `leaf_free`. `derive_under(tops)` → `leaves_added` (2,419–7,304).
+   Steps 1–6 are `octree_update_ms`.
+7. **Graph.** The merge pool is the newly added `AIR` leaves plus the still-live free leaves of every region
+   that lost a member (`regions_removed`, 214–401 per trace); `merge_pool` re-merges it into
+   `regions_added` (327–648 per trace), and `max_pool_leaves` — the largest single-edit pool — is
+   **145–263**. This is `graph_update_ms`.
+8. **Retire.** Only now is `leaf_retire` drained into `leaf_free`. Defect 1 is why.
+
+Invariants asserted after every edit, not printed: the leaves partition the world (Σ `(2^level)³` =
+`world_cells³`); the regions tile the free leaves and each region's box volume equals its own members'
+volumes, which is how convexity is checked rather than argued; every integer identical across three reps;
+and both arms agree on the pre-edit `Static` snapshot, so the build is a pure function of the bitmap.
+
+**What changed as a result.** The direction is **not dead and not cheap in the way the paper suggested**.
+C1 and C2 clear the two questions that could have killed it — the repair is local in the only sense that
+matters (its chunk set is a strict subset-sized fraction of the mesher's own, on every row) and it does not
+grow with the world (1.6355× against 512×). C3 says the *reason to prefer it* has moved: the coarse graph's
+compression comes from the octree, so a build that keeps the tree and drops the Hertel–Mehlhorn merge
+entirely keeps 8.13–67.48 free cells per navigation cell and loses only the 2.5–3.9× on top. Whether the
+merge is worth its code is now a measured question rather than an assumed benefit. Three things this row
+does **not** license: quoting a whole-trace millisecond as a budget claim (`✗24` — quote
+`nav_dirty_chunks / mesh_dirty_chunks` ≤ 1 instead); comparing anything here to the paper's ~1 ms
+(`M-281` — different machine); and building the repair at world sizes at or below 32³, where a full rebuild
+is cheaper than the eleven-edit trace.
+
+**Would be shown wrong by:** a `repair_growth` that resumes climbing above 256³, which would mean the
+128³–256³ plateau was the brush saturating rather than the repair being local, and would restore C2's
+falsifier; a field on which `gyroid` is not the worst merge, which would break C3's surviving half and
+mean `reduction` tracks something other than topological complexity; a merge with a non-box convexity
+predicate reaching 5× on either field, which would show the bar was reachable and the greedy axis merge
+was the wrong instrument rather than the claim being wrong; a `nav_dirty_chunks / mesh_dirty_chunks` above
+1 on any fixture, which would make the navigation repair a new stage rather than a rider on an existing
+one; or a graph query — A\* with visibility pruning and a 3-D funnel, which this harness does not build —
+whose cost on 24,250 or 52,485 regions is itself over frame budget, which would make every number above
+irrelevant.
+
+### 💥 ✗68 / M-400 — C1 FALSIFIED on both readings (**0.688892** and **0.831008** against a 0.90 bar), C2 HELD for the cheap reading and FALSIFIED for the tight one, C3 HELD on the analytic fixtures and FALSIFIED on the reference fields at **62 / 649 overstatements**: the octree does give a clearance number without a medial axis, and **there is no version of it that is both accurate enough and local** (P-88, R-088)
+
+**M.** `cargo bench --bench experiment_p88`, `docs/experiments/p-88.csv`, **14 rows** (7 fixtures ×
+2 estimators), scalar `f64`, Zen 3. `M-346`'s fixture inherited literally — a `BoxExact` swallowing
+`[−2, 2]³` at 64³ with a `Capsule` of radius 2, 4 or 8 cells subtracted along `x`, so the field
+value *is* the exact clearance — plus `fbm_terrain` and `gyroid` at 64³/128³ under an eleven-edit
+trace (8 sphere brushes at 6 cells on `P-72`'s probed path, then 3 narrow capsule cuts), truth from
+the same query on a **4× refined** sign grid. 160,000 samples per row, **1,120,000 per estimator**.
+Committed at `0a7594c`, clean tree, an ancestor of `HEAD`.
+
+> **The registration's own sentence contains two estimators and they give different verdicts, so
+> both are run over the same samples, the same trace and the same truth, and both get a row.**
+> `region` is the literal reading — *"P-87's merged convex regions give a larger bound directly"* —
+> `d(p, ∂B)` for the merged convex region `B` holding `p`, one `O(depth)` leaf walk. `ball` is the
+> reading CALIBRE's own definition invites, since λ-membership *is* a thresholded ball query: `d(p,
+> ⋃ non-free cells)` by branch-and-bound descent of the same pyramid, with `ball ≥ region` asserted
+> per sample. Scoring only the literal one would answer the question with a straw estimator; scoring
+> only the tight one would be `P-70`'s C3.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 bound within 1 voxel on ≥ 90% of samples, across `M-346`'s fixtures | ≥ 0.90 | **FALSIFIED on both — `region` 330,668/480,000 = 0.688892, `ball` 398,884/480,000 = 0.831008** |
+| C2a λ-membership flips ≤ 4× changed samples | ≤ 4.0 | **HELD on both, with room — worst over every λ and fixture 0.8482; worst single edit 1.1176** |
+| C2b the flip set is computable from `P-87`'s repair set with no extra traversal | 0 flips outside | **HELD for `region` (0 at every λ, and 0 outside the *leaf* subset) — FALSIFIED for `ball` (149–682 outside at every λ ≥ 1.0)** |
+| C3 the bound never overstates, over 10⁶ samples | 0 overstatements | **FALSIFIED — 62 (`region`) and 649 (`ball`) over 1,120,000 samples each; 0 on the 480,000 analytic ones** |
+
+**SHARE, recomputed.** The registration says *"this is an accuracy and a rate, not a ratio of a
+total"*, and that is correct as written. `✗51`'s ceiling `1/(1 − s + s/factor)` binds a **speedup**
+denominated in a share of a larger total; none of these three clauses is a speedup, so no share can
+throttle them. C1's denominator *is* the sample set — share 1.0 by construction — and it is
+reachable in both directions: an exact bound scores 1.0, and a one-cell-thick region inside an
+eight-cell channel is 7.5 cells short. C2 is a ratio of two directly counted sets plus a subset
+test, both reachable either way. C3 is a one-sided count and a count has no denominator to dilute.
+`M-281` does not bind — no clause compares against another machine — and `clock_mhz` (4200) is on
+every row anyway because `bound_ns_per_query` is.
+
+**The one thing arithmetic could not reach before the run is C2b**, and it is the clause that split.
+C1's failure mode was derivable in kind (a merged region is a box inside the free set, so it can
+only understate) but not in magnitude; C3's analytic zero is provable; C2a's bar of 4 was never in
+danger, since the flip set measured 0.25–0.85 of the changed set rather than a multiple of it.
+Whether the *dependency radius* of a bound exceeds the repair set is a property of the merge
+geometry rather than of a formula, and no amount of pre-run arithmetic settles it.
+
+**Accuracy, per fixture. `within_fraction` is `within_one_voxel / samples`; errors are in cells.**
+
+| fixture | truth | `region` fraction | `ball` fraction | `region` max understatement | `ball` max understatement | `region` p90 err | `ball` p90 err |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `slab_r2` | analytic | **1.000000** | **1.000000** | 1.000000 | 1.000000 | 0.962671 | 0.962671 |
+| `slab_r4` | analytic | 0.701425 | 0.835625 | 2.000000 | 1.171573 | 1.774336 | 1.103077 |
+| `slab_r8` | analytic | 0.365250 | 0.657400 | 4.000000 | 1.291796 | 3.500651 | 1.268201 |
+| `fbm_terrain_64` | refined 4× | 0.463406 | 0.929638 | 12.552669 | 1.299013 | 6.236757 | 0.948900 |
+| `gyroid_64` | refined 4× | 0.350888 | 0.864406 | 16.316283 | 1.299033 | 8.418815 | 1.051693 |
+| `fbm_terrain_128` | refined 4× | 0.394875 | 0.871400 | 24.922016 | 1.299031 | 12.542291 | 1.035101 |
+| `gyroid_128` | refined 4× | 0.275438 | 0.784444 | 32.956128 | 1.299037 | 17.150570 | 1.136304 |
+
+C1 is registered *"across `M-346`'s fixtures"*, so its verdict is the pooled analytic figure:
+0.688892 and 0.831008, both under 0.90. Pooled over all seven fixtures it is 0.507326 and 0.848988;
+the widest single `ball` row that clears the bar is `fbm_terrain_64` at 0.929638, and that is a
+refined row, not one C1 is registered on.
+
+> `c1_holds` reads `true` on the `slab_r2` rows and on `fbm_terrain_64 / ball`, and `false` on the
+> other eleven. That column is **per row**; C1's verdict is the pooled analytic one and it is
+> FALSIFIED on both estimators. Two `true`s out of fourteen do not make a 90% bar.
+
+**And the easiest fixture passes by equality, which is worth saying rather than banking.** `slab_r2`
+scores 1.000000 with `max_understatement_cells` = **exactly 1.000000** on both estimators. The bar
+is *within* one voxel; the worst sample sits on it. One more cell of channel radius and it stops
+passing — which is precisely what `slab_r4` does.
+
+**The mechanism, and it is different for the two readings.** On the `region` reading
+`max_understatement_cells` is **1.000000 / 2.000000 / 4.000000** at `r = 2 / 4 / 8` cells: exactly
+`r/2`, three fixtures in a row, an integer relation and not a fit. `P-87`'s convexity-preserving
+greedy merge grows runs along `x` and then along `y`, and the `z` rows of a digitised disc rarely
+share a `y`-extent, so **a cylinder is merged into thin z-slabs** and the inradius at the axis is
+half a slab thickness rather than `r`. The bound is correct — a slab really does admit that sphere —
+and it is a bound on the wrong object. On the `ball` reading the slab geometry is irrelevant and the
+limit is **digitisation**: 1.000000 / 1.171573 / 1.291796, the free-cell union being the analytic
+channel eroded by up to a cross-section diagonal. Those two columns are the whole accuracy story,
+and they say the loose reading fails for a reason a better merge could fix while the tight reading
+fails for a reason only a finer grid can.
+
+**Locality, per fixture, over the registered λ sweep {0.5, 1.0, 1.5, 2.0, 3.0} cells.**
+
+| fixture | changed samples | `region` flip factor by λ | `region` outside repair set | `ball` flip factor by λ | `ball` outside repair set by λ ≥ 1.0 |
+|---|---:|---|---:|---|---|
+| `slab_r2/r4/r8` | 228 | 0.2456 / 0 / 0 / 0 / 0 | **0 at every λ** | 0.2456 / 0 / 0 / 0 / 0 | **0 at every λ** |
+| `fbm_terrain_64` | 3,387 | 0.8482 / 0.1913 / 0.1913 / 0.0567 / 0.0118 | **0 at every λ** | 0.8482 / 0.6430 / 0.6430 / 0.5244 / 0.3927 | 283 / 283 / 474 / **682** |
+| `gyroid_64` | 3,476 | 0.8331 / 0.1899 / 0.1899 / 0.0184 / 0.0023 | **0 at every λ** | 0.8331 / 0.6064 / 0.6064 / 0.4822 / 0.3179 | 260 / 260 / 332 / **451** |
+| `fbm_terrain_128` | 3,845 | 0.7865 / 0.3017 / 0.3017 / 0.1165 / 0.0312 | **0 at every λ** | 0.7865 / 0.5506 / 0.5506 / 0.4455 / 0.3334 | 191 / 191 / 240 / **474** |
+| `gyroid_128` | 4,032 | 0.7654 / 0.2262 / 0.2262 / 0.0635 / 0.0099 | **0 at every λ** | 0.7654 / 0.4965 / 0.4965 / 0.3869 / 0.2453 | 149 / 149 / 215 / **328** |
+
+**C2a holds everywhere with room.** The largest flip factor anywhere in the file, over every λ, both
+estimators and all seven fixtures, is **0.8482** against a bar of **4** — a factor of 4.7 of
+headroom — and the strictest per-edit reading, `worst_edit_flip_factor`, tops out at **1.1176**
+(edit 3 of `fbm_terrain_64 / ball`). λ = 0.5 is always the largest, because there membership
+degenerates toward "the cell is air" and the flip set approaches the sign-change set itself.
+
+**C2b is the row.** `flips_outside_repair_set` is **0 on all seven `region` rows at every λ**, and
+`flips_outside_leaf_subset` is 0 as well — the region-bound flip set lies inside the **leaf** half
+of `P-87`'s repair set alone, which is tighter than the clause asked for. On the `ball` rows it is
+non-zero at every λ ≥ 1.0, up to 682. The mechanism is the obvious one once stated: removing
+material raises the clearance of every cell within λ of the removal, and a cell λ away has neither a
+changed leaf nor a changed region. So the tight estimator needs a blast radius of λ around every
+edit, which is exactly the extra traversal the clause forbids. λ = 1.0 and λ = 1.5 give identical
+numbers on every row because a cell-centre ball bound's value set jumps 0.866 → 1.5: `bound ≥ 1.0`
+iff all 26 neighbours are free.
+
+> `c2_holds` reads `false` on four `ball` rows, and **not because the factor failed**. C2 is a
+> conjunction: the factor half passed on those rows (0.3927 / 0.3179 / 0.3334 / 0.2453, against 4),
+> and the subset half failed. A reader who takes `c2_holds = false` as a flip-count blow-up has it
+> backwards.
+
+**Cost, as a within-row ratio, because an absolute nanosecond is a property of the binary (`M-281`,
+`✗24`).**
+
+| fixture | `region` ns/query | `ball` ns/query | `ball / region` |
+|---|---:|---:|---:|
+| `slab_r2` | 20.9 | 660.1 | **31.6×** |
+| `slab_r4` | 26.6 | 791.3 | 29.8× |
+| `slab_r8` | 30.7 | 1043.4 | 34.0× |
+| `fbm_terrain_64` | 31.5 | 623.2 | 19.8× |
+| `gyroid_64` | 37.0 | 849.2 | 23.0× |
+| `fbm_terrain_128` | 53.5 | 958.4 | 17.9× |
+| `gyroid_128` | 56.3 | 1393.8 | 24.8× |
+
+The gate-relevant statement is the ratio band, **17.9–34.0×**, taken inside one row of one file: the
+reading that nearly clears C1 costs one to two orders more per query than the reading that rides the
+repair set exactly. The absolute columns are printed, not asserted.
+
+**C3, and why the analytic zero is provable rather than lucky.** `overstatements` is **0** and
+`max_overstatement_cells` is **0.000000000** on all six slab rows — 480,000 analytic samples per
+estimator — and it could not have been otherwise: a cell all eight of whose corners lie inside a
+convex cylinder lies inside it, so a bound read off the free-cell union of a digitised convex
+channel cannot exceed the exact distance to that channel's wall. On the reference fields, against a
+4× refined truth:
+
+| fixture | `region` overstatements | `region` worst (cells) | `ball` overstatements | `ball` worst (cells) |
+|---|---:|---:|---:|---:|
+| `fbm_terrain_64` | 38 | 0.250000 | 463 | **0.500000** |
+| `gyroid_64` | 17 | 0.246773 | 101 | 0.289306 |
+| `fbm_terrain_128` | 5 | 0.250000 | 81 | 0.250000 |
+| `gyroid_128` | 2 | 0.179235 | 4 | 0.179235 |
+| **total** | **62** | | **649** | |
+
+**One violation kills a one-sided clause and there are 649.** No tolerance was applied; the strict
+comparison `bound > truth` produced these, and 0.25 and 0.50 cells are half a voxel, not float slop.
+The mechanism is `M-347` made operational: a coarse cell whose eight corners are all outside can
+still have the surface passing through it, the 4× grid finds a solid sample there, and the coarse
+bound has claimed clearance through material.
+
+> **The caveat, stated in the direction that matters.** Refinement is one-sided evidence in
+> `M-347`'s own sense — it can catch a lie, it cannot prove there are none, so 62 and 649 are
+> floors. And against the **coarse trilinear** surface, which is what this crate's mesher and
+> collider actually produce, the bound *cannot* overstate: trilinear interpolation of eight positive
+> corners is positive throughout the cell. So the falsification is about the **voxelisation**, not
+> about the octree — and that is exactly the direction a gameplay gate cannot tolerate. A creature
+> is told it fits where it does not, and the lie is in the sign field.
+
+**The registered vacuity control, both halves.**
+
+| fixture | `known_clearance_samples` | `narrow_passage_samples` | `narrow_within_one_voxel` |
+|---|---:|---:|---:|
+| `slab_r2` | 160,000 | 23,878 | **23,878** |
+| `slab_r4` | 160,000 | 6,895 | **6,895** |
+| `slab_r8` | 160,000 | 1,716 | **1,716** |
+| `fbm_terrain_64` | 0 | 10,618 | **10,618** |
+| `gyroid_64` | 0 | 9,957 | **9,957** |
+| `fbm_terrain_128` | 0 | 8,427 | **8,427** |
+| `gyroid_128` | 0 | 8,313 | **8,313** |
+| **total per estimator** | **480,000** | **69,804** | **69,804** |
+
+The first half is asserted non-zero in the total and wherever `truth_source == analytic`. **The
+second half is the one that matters**: a narrow-passage sample is air *now*, solid in the pristine
+field (so the passage was dug), and of true clearance under one cell (so it is narrower than two
+cells). The fixture is built so the column can fire: every trace closes with capsule cuts of radius
+**0.9 cells** whose axis runs down a line of **cell centres**, so exactly the four sample lines at
+`√2/2 = 0.707` cells go to air and the next ring at 1.58 does not — a passage one cell across. And
+**the line is searched, not assumed**: `narrow_line` picks the cell-centre line through the most
+solid material *after* the wide dig and asserts it solid at more than half of 64 probes, because a
+cut down a line that is already air removes nothing and the column would be `M-44`'s vacuous zero.
+
+**What those samples then prove, and it is the most useful number here.** `narrow_within_one_voxel`
+equals `narrow_passage_samples` on **every one of the fourteen rows** — the bound is within one
+voxel on **100% of the dug one-cell passages**, on both estimators, including the `region` rows that
+pool to 0.688892 overall. So C1's failure is entirely in the **open** channels and not in the
+interesting ones. The bound is loose exactly where a creature has room to spare, and tight exactly
+where the gate would be consulted.
+
+**C3's zero is a measurement (`M-44`).** `probe_overstatements` re-runs the identical comparison
+against `bound + 0.5` cells — the classic error of measuring to an obstacle cell's *centre* instead
+of its box — and reads **29,008 to 110,111** per row, asserted `> 0` everywhere. Half a voxel of
+optimism would have been caught 84,382 times on `slab_r2 / region` alone; the strict comparison
+caught it 0 times. Likewise for C2b's zero: `lambda_flips > 0` per row, `repair_set_cells` a strict
+subset of the world (`repair_set_fraction` 0.047761–0.249142 of `world_total_cells`), and a global
+assertion that the identical containment predicate returns non-zero somewhere in this run — it does,
+1,935 times across the `ball` rows, and that is the result rather than the control.
+
+**Fixture defects this harness's own controls caught.**
+
+1. **A refinement factor whose arithmetic cap sat under the bar it was gating.** A coarse non-free
+   cell at distance `D` is guaranteed to contain a non-free *fine* cell only in the corner holding
+   its solid corner sample, so the refined truth can exceed the coarse bound by at most `√3·(1 −
+   1/f)` — **0.866** cells at `f = 2`. That is under the one-voxel bar, so no reference row could
+   ever miss C1, and the first run duly scored `within_fraction = 1.000000` with
+   `max_understatement_cells = 0.866025` **on the nose on every reference row**. That is the cap,
+   not a measurement of the surface — `M-283`'s tell, exactness as the symptom. `REFINE = 4` puts
+   the cap at 1.299 so the bar is reachable in both directions, and the reference `ball` rows then
+   read 0.784444–0.929638.
+2. **A "worst λ" selection that always picked the degenerate λ.** Ordering the sweep by flip count
+   alone selects **λ = 0.5 on every row** — the file still shows why, since `flip_factor_l05` is the
+   largest entry on all fourteen rows — and at λ = 0.5 membership degenerates to "the cell is air",
+   where both estimators trivially ride the repair set: `flips_outside_repair_set_l05` is **0 on
+   every row, `ball` included**. The entire `ball` locality result was invisible and the global
+   `M-44` assertion fired. Selection is now ordered by `(flips_outside_repair_set, flips)`, which is
+   why `lambda_cells` reads 3.0 on the four reference `ball` rows and 0.5 elsewhere, and every λ's
+   numbers are on the row regardless.
+
+**Corrections to the pre-registration run.** The numbers first reported for this row came from a
+dirty tree (`63c7161 (WORKING TREE DIRTY)`) while roughly twenty-five sibling harnesses were
+compiling. Every integer and every ratio taken within a row reproduced exactly on the quiet tree at
+`0a7594c` — all fourteen `within_fraction` values, all `max_understatement_cells`, `overstatements`
+38/17/5/2 and 463/101/81/4, the flip factors, the 682/451/474/328 outside-counts,
+`worst_edit_flip_factor` 1.1176, both vacuity columns. **Only the clock moved, and it moved a long
+way**: `bound_ns_per_query` fell from 29.6–116.4 to **20.9–56.3** on `region` and from 782.6–1682.6
+to **623.2–1393.8** on `ball`, the worst single row 116.4 → 56.3, a **2.07×** move on the identical
+binary — the same effect `P-87` saw at 1.67× and `M-281` explains. The briefed statement *"14–31×
+dearer"* is withdrawn as a property of that run; the run-independent replacement is the within-row
+ratio band **17.9–34.0×**, and the conclusions rest on integers and on ratios taken inside one row.
+
+**Consequence.** Neither reading reaches CALIBRE's bar on `M-346`'s fixtures, and the two failures
+are not the same failure. The reading that rides `P-87`'s repair set exactly — 0 flips outside it,
+in fact inside the leaf subset — is the one that fails C1 worst (0.688892), because a
+convexity-preserving merge answers with the inradius of a slab. The reading that nearly passes C1
+(0.831008 analytic, 0.929638 on the widest reference row) cannot ride the repair set at all, needs a
+λ-radius blast around every edit, and costs 17.9–34.0× per query. **So the answer to the ticket is a
+null, and the null is the result: do not build this as CALIBRE's clearance oracle.** CALIBRE still
+needs `ρ`, or it needs a finer sign field and a real distance transform rather than a region box.
+Two things are worth keeping: the bound is within one voxel on 100% of dug one-cell passages, which
+is where a gate is actually consulted, and `P-87`'s repair set is demonstrably sufficient for any
+bound that is a function of a cell's *own* leaf.
+
+**Would be shown wrong by:** a merge that preserves convexity without slabbing a cylinder — the
+`r/2` relation is a property of the greedy `x`-then-`y` run order, not of octrees, and a merge whose
+regions were maximal inscribed boxes would move `region`'s 0.688892 upward without touching its
+perfect locality; a `ball` estimator whose λ-neighbourhood is provably inside `P-87`'s repair set
+plus a bounded halo that can be computed during the repair walk rather than after it, which would
+make C2b hold at the tight reading; any overstatement found on the analytic fixtures, which would
+falsify the convexity argument above rather than the voxelisation; or a refinement beyond 4× that
+leaves `overstatements` at 62 and 649, which would suggest those counts have converged rather than
+being floors.
+
+### 💥 ✗69 / M-401 — C1 HELD at **4.36×** and **1.76×**, C2 FALSIFIED at **267%** and **46%**: 1³ is worse than 2³ on both fields, so `M-377`'s 4³ optimum is now interior with measured neighbours on both sides and **nothing left untested below it** — and `M-377`'s two-term model does *not* extrapolate to c = 1, because at one cell a chunk the cost stops being field evaluations (P-89, R-089)
+
+**M.** `cargo bench --bench experiment_p89`, `docs/experiments/p-89.csv`, **6 rows**, `f64`, Zen 3,
+at **`22c9fa0`** — a clean tree, no `(WORKING TREE DIRTY)` on the header, an ancestor of HEAD.
+`p-72`'s fixture verbatim — same 128³ world cell count, same `EXTENT`, same `ORIGIN`, same six-cell
+brush, same eleven-edit probed-per-edit dig path, same three-trace median, same three controls —
+with the granularity list changed to `[1, 2, 4]` and the model machinery C2 needs added.
+
+> **Every number below is read from the committed `docs/experiments/p-89.csv` at `22c9fa0`. The
+> pre-registration run at `63c7161` was dirty, is superseded, and its numbers are not reproduced
+> here** — quoting a run absent from the file cited is `✗35`'s and `✗52`'s defect. The correction is
+> not cosmetic. On the M-279 side the two runs agree completely: **every integer and every
+> prediction reproduced exactly** — `dirty_chunks_total` 5,976 / 1,501 / 396 and 5,811 / 1,456 /
+> 376, `min_dirty_chunks_per_edit` 493 / 121 / 30 and 440 / 109 / 31, `region_chunks_total`,
+> `mark_field_calls` 90,112 on all six arms, `model_work_calls`, both stencils, all four vertex
+> columns, `k_ns_per_call` 41.985658 / 152.875911, `k_residual`, and therefore `predicted_ms`
+> 11.5093 / 37.4387 **bit-identical**, because the predictions are committed `p-72` values times
+> this run's deterministic call counts. What moved is the clocks, and only on the 1³ arms:
+>
+> | | `63c7161` (dirty, superseded) | `22c9fa0` (committed) |
+> |---|---:|---:|
+> | `gyroid` 1³ `mark_ms` / `remesh_ms` / `measured_ms` | 16.2242 / 6.7022 / 22.9264 | **29.3633 / 12.9144 / 42.2777** |
+> | `gyroid` 1³ `model_error` | 0.991994 | **2.673356** |
+> | `gyroid` 1³ `mark_model_error` / `remesh_model_error` | 2.238104 / **0.031288** | **4.860460 / 0.987177** |
+> | `fbm_terrain` 1³ `mark_ms` / `remesh_ms` / `measured_ms` | 25.4096 / 22.4127 / 47.8223 | **27.4164 / 27.3053 / 54.7217** |
+> | `fbm_terrain` 1³ `model_error` | 0.277351 | **0.461635** |
+> | `fbm_terrain` 1³ `mark_model_error` / `remesh_model_error` | 0.711359 / **0.007894** | **0.846518 / 0.208677** |
+> | 2³ and 4³ `measured_ms`, all four | 9.7229 / 8.8756 / 31.0102 / 30.3875 | 9.6883 / 8.5748 / 31.0779 / 29.8045 |
+>
+> The four coarse arms moved by **−0.36% / −3.39% / +0.22% / −1.92%**; the 1³ arms moved by
+> **+84.4%** and **+14.4%**, `remesh_ms` at `gyroid` 1³ by **1.93×**. **Both verdicts are unchanged
+> on either run** — C1's smallest margin is 1.54× on the old run and 1.76× here against a bar of
+> 1.0, C2's smallest error is 27.7% there and 46.2% here against 10% — but one *claim* does not
+> survive: the superseded run read `remesh_model_error` at 1³ as **3.1% and 0.79%** and supported
+> "the model extrapolates, only the flat-mark premise fails". Here both halves are outside the 10%
+> bar. **That claim is withdrawn.** `M-280` and `M-281` apply: a millisecond on a governed CPU is a
+> property of the run, and the 1³ arm — 2,097,152 chunks against 32,768 at 4³ — is the arm with the
+> least cache-resident state and therefore the most to lose to machine conditions. The
+> run-independent half of the finding is the counted amortisation collapse below, which is integer
+> arithmetic.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 1³ is worse than 2³ on **both** fields | 1³ slower on both | **HELD — 42.2777 against 9.6883 ms on `gyroid` (4.3638×) and 54.7217 against 31.0779 on `fbm_terrain` (1.7608×)** |
+| C2 the cost at 1³ matches `M-377`'s two-term model to within 10% | `model_error` < 0.10 | **FALSIFIED on both — 2.673356 (267.3%) on `gyroid`, 0.461635 (46.2%) on `fbm_terrain`** |
+
+**Neither clause is VACUOUS.** Both are instrumented by columns, and C2 is deliberately not implied
+by its own construction: `k_field` is a least-squares-through-origin fit at **two** anchors, c = 2
+and c = 4, so the fit has a residual and `model_error` is not identically zero at the anchor.
+`k_residual` reads **0.001826 / 0.001843** on `gyroid` and **0.003132 / 0.003248** on `fbm_terrain`
+— non-zero, which is the whole point. A single anchor would have been `P-70`'s C3, a clause whose
+predicate is implied by how it was built. `c1_holds` and `c2_holds` are **global** verdicts over
+both fields, evaluated at c = 1 and stamped on all six rows, so the 0.107169 in the `gyroid` 4³
+row's `model_error` is an in-sample diagnostic and **not** a C2 verdict.
+
+**SHARE, recomputed before the run, said out loud, and half wrong in the informative direction.**
+The registration's own SHARE is *"this experiment measures a curve and moves nothing"*, so no clause
+is denominated in a share of a runtime and there is no `1/(1 − share/factor)` ceiling to check. C2's
+10% bar does have a reachability question, it is arithmetic on `docs/experiments/p-72.csv` alone,
+and the harness prints it from the file before measuring anything (`P-70`'s discipline: a number in
+a comment drifts). `gyroid`'s committed `mark_ms` is 3.6734 / 3.6840 / 3.7205 / 3.8009 / 4.0234 /
+5.0104 at c = 64 → 2 — flat to **3.47%** over 64³–8³, then **rising 1.245315× from 4³ to 2³**, where
+mark is **52.06%** of `total_ms`:
+
+| field | committed `mark_ms` 4³ → 2³ | mark share of `total_ms` at 2³ | cost of a **flat** mark term at 1³ if that step repeats once | C2's 10% bar |
+|---|---:|---:|---:|---|
+| `gyroid` | **1.245315×** | 52.06% | **12.77%** | **arithmetically UNREACHABLE from the constant half of the model** |
+| `fbm_terrain` | 1.071874× | 47.85% | 3.44% | reachable |
+
+So it was stated, from the committed file, before the run, that C2 was already out of reach on
+`gyroid` for a reason that has nothing to do with c = 1's remesh cost — and it was **run anyway**,
+per `✗51`. It should be: the pre-run figure is a **floor, not an estimate**, and it under-states
+both failures because it assumes the 4³→2³ step *repeats once*. It does not repeat; it explodes.
+Measured `mark_ms` from 2³ to 1³ is **5.8294×** on `gyroid` and **1.8353×** on `fbm_terrain`,
+against the 1.2453× and 1.0719× the estimate extrapolated. That is why `fbm_terrain`, computed
+*reachable* at 3.44%, still failed — at **46.2%**, 13× the predicted cost. The reachability
+arithmetic named the ordering of the two failures correctly and their magnitude not at all.
+
+**C1, and the value of this row is that it closes `M-377`'s own open question by confirming a
+boundary.** `M-377`'s "would be shown wrong by" reads, in as many words: *"an optimum below 2³ — the
+curve is rising at 2³ on both fields, so 1³ should be worse still, but it is untested."*
+
+| field | 1³ | 2³ | **4³** | 1³ / 2³ | 1³ / 4³ |
+|---|---:|---:|---:|---:|---:|
+| `gyroid` `measured_ms` | **42.2777** | 9.6883 | **8.5748** | **4.3638×** | **4.9305×** |
+| `fbm_terrain` `measured_ms` | **54.7217** | 31.0779 | **29.8045** | **1.7608×** | **1.8360×** |
+
+`sample_duplication` reads exactly **8.000000** at 1³ against 3.375000 and 1.953125, asserted
+against `((c+1)/c)³` to 1e-4. **There is no granularity below 1**, so `M-377`'s 4³ now has a
+measured neighbour on each side and no untested region under it. The phase registered this as an
+expected null and it is one: the result is that the answer did not move. A null that closes a named
+open question is a completed result, and this one converts a *conjecture about the shape of the
+curve* into a *bracketed minimum*.
+
+**C2 is falsified in both halves, and the half that was supposed to be safe is the correction.**
+`M-377`'s model is a **field-evaluation count**, `units × (c+1)³ + stencil × vertices`, and this
+harness asserts that identity against a counted field rather than assuming it — on the build *and*
+on the remesh, with the stencil derived from the remainder. It comes back **6 on all twelve
+populations**, exactly:
+
+| field | c | build calls | − grid | = | stencil × `build_vertices` | remesh calls | − grid | = | stencil × `remesh_vertices` |
+|---|---:|---:|---:|---:|---|---:|---:|---:|---|
+| `gyroid` | **1** | 17,992,540 | 16,777,216 | 1,215,324 | **6 × 202,554** | 154,788 | 47,808 | 106,980 | **6 × 17,830** |
+| `gyroid` | 2 | 7,760,844 | 7,077,888 | 682,956 | 6 × 113,826 | 109,713 | 40,527 | 69,186 | 6 × 11,531 |
+| `gyroid` | 4 | 4,570,084 | 4,096,000 | 474,084 | 6 × 79,014 | 109,410 | 49,500 | 59,910 | 6 × 9,985 |
+| `fbm_terrain` | **1** | 17,560,264 | 16,777,216 | 783,048 | **6 × 130,508** | 147,774 | 46,488 | 101,286 | **6 × 16,881** |
+| `fbm_terrain` | 2 | 7,518,156 | 7,077,888 | 440,268 | 6 × 73,378 | 105,504 | 39,312 | 66,192 | 6 × 11,032 |
+| `fbm_terrain` | 4 | 4,401,778 | 4,096,000 | 305,778 | 6 × 50,963 | 103,946 | 47,000 | 56,946 | 6 × 9,491 |
+
+**So `W(c) = dirty_chunks × (c+1)³ + 6 × remesh_vertices` is measured exactly rather than
+modelled**, and `M-377`'s stencil of 6 is confirmed on a seventh and eighth population including a
+granularity where a chunk holds a **single cell**. What C2 tests is the bridge from that count to a
+millisecond — flat `mark_ms` from the committed CSV plus `k_field × W(c)` — and the bridge is where
+it breaks:
+
+| field | c | `mark_ms` | `predicted_mark_ms` | `mark_model_error` | `remesh_ms` | `predicted_remesh_ms` | `remesh_model_error` | `model_error` |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `gyroid` | **1** | 29.3633 | 5.0104 | **4.860460** | 12.9144 | 6.4989 | **0.987177** | **2.673356** |
+| `gyroid` | 2 | 5.0371 | 5.0104 | 0.005321 | 4.6512 | 4.6064 | 0.009738 | 0.007437 |
+| `gyroid` | 4 | 4.0393 | 5.0104 | 0.193820 | 4.5355 | 4.5937 | 0.012657 | 0.107169 |
+| `fbm_terrain` | **1** | 27.4164 | 14.8476 | **0.846518** | 27.3053 | 22.5911 | **0.208677** | **0.461635** |
+| `fbm_terrain` | 2 | 14.9387 | 14.8476 | 0.006133 | 16.1392 | 16.1290 | 0.000633 | 0.003269 |
+| `fbm_terrain` | 4 | 13.9623 | 14.8476 | 0.059628 | 15.8422 | 15.8908 | 0.003058 | 0.030383 |
+
+Both terms are outside the bar at 1³ on both fields, and mark is the worse of the two on both — 486%
+against 99%, and 85% against 21%. Mark is also the term the pre-run arithmetic condemned. **The
+flat-mark premise is the larger failure and the field-call term is no longer exonerated.**
+
+**The mechanism, and it is one sentence backed by integers rather than by a clock: `k_field` is not
+a constant, because the model counts field evaluations and 1³ is the granularity at which field
+evaluations stop being the cost.** Divide the measured `remesh_ms` by the exactly-counted `W`:
+
+| field | c | `W` = `model_work_calls` | measured ns / call | fitted `k_ns_per_call` | ratio | `remeshed_cells_total` / `dirty_chunks_total` | `region_chunks_total` |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `gyroid` | **1** | 154,788 | **83.433** | 41.985658 | **1.9872×** | **1.0000** | 37,125 |
+| `gyroid` | 2 | 109,713 | 42.394 | 41.985658 | 1.0097× | 8.0000 | 5,632 |
+| `gyroid` | 4 | 109,410 | 41.454 | 41.985658 | 0.9873× | 64.0000 | 868 |
+| `fbm_terrain` | **1** | 147,774 | **184.777** | 152.875911 | **1.2087×** | **1.0000** | 37,125 |
+| `fbm_terrain` | 2 | 105,504 | 152.972 | 152.875911 | 1.0006× | 8.0000 | 5,632 |
+| `fbm_terrain` | 4 | 103,946 | 152.408 | 152.875911 | 0.9969× | 64.0000 | 856 |
+
+The per-call cost is **constant to 1.0% and 0.3% across 2³ and 4³** and inflates by 1.99× and 1.21×
+at 1³. The right-hand columns say why, and they are pure integer arithmetic from the file: **cells
+re-meshed per dirty chunk is exactly 64, 8 and 1**, so every per-chunk cost that is not a field
+evaluation — the buffer, the layout setup, the dirty-set entry, the eight-corner gather bookkeeping
+— gets **64× less amortisation at 1³ than at 4³ and 8× less than at 2³**. The model has no term for
+it, so `k` absorbs it and stops being a coefficient. Note the direction the naive duplication story
+points: `W` at 1³ is only **1.4108×** and **1.4006×** `W` at 2³ — because a 1³ dirty set is the
+tightest possible wrap around an edit and re-meshes **half** the cells 2³ does (5,976 against
+12,008; 5,811 against 11,648) — while `remesh_ms` rises **2.7766×** and **1.6919×**. The 8×
+duplication lands on the untimed build, not on the trace.
+
+**`mark_edit` shows the same collapse with the field work held provably fixed**, which is what makes
+the mechanism a mechanism and not an interpretation of a clock. `mark_field_calls` is **exactly
+90,112 on every one of the six arms, both fields** — 11 edits × 2 × 16³ corner samples — because the
+edit box is a *world-cell* box, and `region_cells_total` is likewise **exactly 37,125 = 11 × 15³ on
+every arm**. Against zero change in field evaluation, `region_chunks_total` rises **868 → 5,632 →
+37,125** on `gyroid` (**42.77×**) and **856 → 5,632 → 37,125** on `fbm_terrain` (**43.37×**), and at
+1³ every region cell *is* a chunk, so `region_chunks_total == region_cells_total` exactly. `mark_ms`
+tracks the chunk count, not the sample count: the excess over the flat term is **24.3529 ms over
+37,125 region chunks = 0.656 µs/chunk** on `gyroid` and **12.5688 ms = 0.339 µs/chunk** on
+`fbm_terrain`. The two are within 1.94× of each other while the fields' per-sample costs differ by
+3.64× (`k_ns_per_call` 41.99 against 152.88), which is the signature of a term that is closer to
+field-independent than to field-proportional — bookkeeping, as bookkeeping should be, though not the
+near-identity the superseded run read. Consequence: mark's share of the trace goes **47.11% → 51.99%
+→ 69.45%** on `gyroid` and 46.85% → 48.07% → 50.10% on `fbm_terrain`. **`M-377`'s "everything is
+`remesh_ms`" is a statement about 8³–64³ and inverts below 2³.** The same premise is visibly wrong
+*in sample* in the other direction too: **94.3%** and **94.8%** of the 4³ rows' `model_error`
+(1.0293 and 0.9339 ms of over-prediction) is the flat mark term carrying c = 2's 5.0104 and 14.8476
+against 4³'s actual 4.0393 and 13.9623.
+
+**The vacuity control, its column and its value.** `M-377`'s assertion inherited **verbatim** —
+`VOID: chunk {c} marked no dirty chunk in {EDITS} edits on {field}` — instrumented by column
+**`dirty_chunks_total`**; plus the registration's own stronger wording, which `p-72` never
+instrumented — *"the 1³ arm must mark dirty chunks on **every edit** or the row is void"* —
+instrumented by column **`min_dirty_chunks_per_edit`**, asserted `> 0`:
+
+| field | `dirty_chunks_total` 1³ / 2³ / 4³ | `min_dirty_chunks_per_edit` 1³ / 2³ / 4³ |
+|---|---:|---:|
+| `gyroid` | 5,976 / 1,501 / 396 | **493** / 121 / 30 |
+| `fbm_terrain` | 5,811 / 1,456 / 376 | **440** / 109 / 31 |
+
+**Why those values prove the fixture could have failed:** that exact string is the one that returned
+zero and caught **four** distinct fixture defects in `p-72` — a dig path that missed `fbm_terrain`'s
+sheet, a dig path that missed `gyroid`'s undulation at a fixed height, an edit box computed against
+an origin of zero, and a world in the positive octant. The fixture here is `p-72`'s unchanged, so
+the zero remains reachable by every one of those four routes. The per-edit form is strictly stronger
+than the total, and that is not decoration: `p-72`'s third defect produced a *non-zero total* from
+productive edits beside edits that dug air, which a `> 0` total accepts. Here the **weakest single
+edit at 1³ still marked 493 and 440 chunks**, so no row is carried by one lucky edit. Two further
+non-vacuity guards sit on the other side: `stencil_of` refuses a zero-vertex population (*"the
+{what} emitted no vertices, so its stencil is a division by zero"*), and the untimed accounting
+pass's dirty-chunk count is asserted equal to the timed rep's, without which `W` would not be the
+work that was timed.
+
+**Fixture defects, and the result is a null with a reason: no new one, on a fixture whose controls
+caught four.** All three inherited controls passed on the first run at 1³. That is a claim about
+instruments that were *exercised*, not about instruments that were absent, and here is what each one
+established at a granularity `p-72` never reached:
+
+1. **The surface-identity control passed at the granularity where a seam defect is loudest.**
+   `distinct_surface_points` is **53,110** on all three `gyroid` partitions and **34,360** on all
+   three `fbm_terrain` partitions — quantised to `cell_size × 1e-6`, four orders finer than any real
+   surface movement and four orders coarser than an ulp near 4.0 (`M-32`) — against raw `vertices`
+   of **209,030 / 117,490 / 81,548** and **135,812 / 76,344 / 53,023**. At 1³ *every internal face
+   is a chunk face*, so a partition-dependent vertex would have had 2,097,152 chunks' worth of
+   opportunity. Three partitions, three raw counts, one distinct-point count — `M-377`'s
+   corroboration shape, extended.
+2. **The anchor control is what makes C2's parameters legitimate rather than convenient.** `k_field`
+   is fitted against committed `p-72` `remesh_ms`, which is only legal if this run's 2³ and 4³ arms
+   *are* those arms, so `dirty_chunks_total` is asserted equal to the committed integers — **1,501 /
+   396** and **1,456 / 376**, and it passed. `M-279`: the new run must agree with the old one on
+   everything that is not a clock.
+3. **`k_residual` is `NaN` on both 1³ rows by construction, and that is the column saying "out of
+   sample".** There is no committed `p-72` arm at c = 1 to residual against. It is what makes the 1³
+   prediction an extrapolation rather than a fit.
+4. **The fixture did not survive 1³ unmodified, and the change was forced by the arm rather than
+   chosen.** `p-72` stores every chunk's initial `MeshBuffer` in a `BTreeMap` and uses it only to
+   sum `build_vertices` before dropping it. At 1³ that is **2,097,152 live `MeshBuffer`s for a
+   running total**, so the sum is accumulated directly. No measured quantity changes:
+   `build_vertices`, `distinct_surface_points`, `vertices` and `triangles` at 2³ and 4³ all
+   reproduce `p-72`'s committed integers exactly.
+5. **The trace's field-call accounting runs as a fourth, untimed pass**, because a `Cell` increment
+   inside the timed region perturbs the thing being timed; `p-72` counts only the untimed build. The
+   pass is deterministic and its dirty-chunk count is asserted equal to the timed rep's.
+
+**Budget, since the registration flagged 1³ as a risk** (2,097,152 chunks, 8× duplication): it is
+not one. `arm_wall_s` is **2.114 / 0.851 / 0.520** on `gyroid` and **6.355 / 2.666 / 1.536** on
+`fbm_terrain`, **14.042 s over all six arms**, and a **full three-repeat median was taken at every
+granularity** (`reps` = 3 on all six rows). No substitution was needed, because the expensive parts
+at 1³ — the 2,097,152-chunk build and the identity pass — are outside the repeated trace, which
+touches ~6,000 chunks.
+
+**What changed as a result. Nothing in `crates/isomesh/src/**`, and that is the answer: do not build
+a 1³ active-cell structure.** It is 4.36× and 1.76× worse than 2³ and 4.93× and 1.84× worse than the
+4³ optimum on edit-plus-remesh; it costs **3.94×** the field evaluations of 4³ on every full build
+(17,992,540 against 4,570,084); and it carries **3.935794×** and **3.952619×** vertex duplication
+against 1.535455× and 1.543161× at 4³ — **2.56× the raw vertex bytes for the same surface** (209,030
+against 81,548). Three things for the ledger that are not "nothing":
+
+- **`M-377`'s 4³ optimum is now bracketed.** Measured neighbours on both sides, and nothing untested
+  below, because there is no granularity under 1. The open question is closed rather than deferred.
+- **`M-377`'s two-term expression is confirmed as a *call* model and refuted as a *time* model
+  outside 2³–64³.** The count identity holds exactly at 1³ with a stencil of 6; the constant that
+  converts calls to milliseconds does not, and misses by 99% and 21% one step below the range it was
+  fitted in. Anything sizing chunks by `M-377`'s model needs
+  `remeshed_cells_total / dirty_chunks_total` beside it — the amortisation factor, exactly
+  64 / 8 / 1 here — because that is the quantity the missing term is divided by.
+- **`M-377`'s "`mark_ms` is flat" should be read as scoped to 8³–64³.** It is a statement about a
+  range in which `region_chunks` is small, and it is wrong by 486% one step outside it while
+  `mark_field_calls` does not move by a single call. Any later work budgeting `mark_edit` as
+  constant needs `region_chunks_total`, which is now a column.
+
+**Would be shown wrong by:** a 1³ arm measuring *faster* than 2³ on either field, which would break
+the duplication argument and force `M-377`'s whole granularity result to be re-derived; a
+`remesh_ms` at 1³ within 10% of `k_field × W(1)` on a quiet machine, which would restore the
+field-call bridge and put the entire model error back on the flat-mark premise where the superseded
+run had it; a `mark_ms` that tracks `mark_field_calls` rather than `region_chunks_total` — i.e. flat
+at 1³ — which would mean the 42.8× rise in per-chunk classification is not what mark is paying for;
+or an implementation in which `remeshed_cells_total / dirty_chunks_total` falls to 1 without the
+per-call cost inflating, which would mean the missing term is not per-chunk at all.
+
+### 💥 ✗70 / M-402 — C1 HELD at **6.3916×** and **10.4802×** on the registered 46–60 bucket, but only at the brick: `P-39`'s chunk-level cull alone reads **1.5799×** and **1.8825×**, under its own 2× bar and under its own clock-free evaluation ratios of **1.5956** and **1.8993**; C2 FALSIFIED at **9.398804** and **10.996338 bytes per brick**, lost to the index and not the payload; C3 the registered null — `additional_removed` **0 on 8 of 8**, because the brick enclosure is *nested* inside the chunk's and the two culls are one test at two scales (P-90, R-090)
+
+**M.** `cargo bench --bench experiment_p90`, `docs/experiments/p-90.csv`, **8 rows**, `f64`, Zen 3
+(`amd-ryzen-9-5900x-12-core`). A 128³-cell world over `[-2, 2]³` partitioned twice — **32,768 bricks of
+4³** (`M-377`'s optimum) and **64 chunks of 32³** (`P-39`'s granularity, eight bricks to a chunk edge) —
+re-meshed under `P-72`'s inherited eleven-edit dig trace on top of `M-50`'s four log buckets (15/30/45/60
+surface-following sphere and capsule brushes, `Add` or `Subtract`, nested prefixes of one LCG log), on
+`gyroid` (`base_lipschitz` 3.464102) and `ground_slab` (`BoxExact`, 1.000000). Four arms interleaved
+inside each of **21 repetitions** (`M-281`): the full tape, chunk-pruned, chunk-then-brick-pruned, and an
+empty-tape **floor**. `speedup_*` are ratios of medians; `speedup_both_min`/`_max` are per-repetition
+ratios. `clock` is `std_time_Instant_monotonic`. **Committed at `96d15be`** — the provenance line carries
+no `(WORKING TREE DIRTY)`, and `96d15be` is an ancestor of `HEAD`.
+
+> **Every number below is read from the committed file at `96d15be`, and the harness's own first run is
+> superseded.** That run stamped `# commit 63c7161 (WORKING TREE DIRTY)`, and its own note records
+> roughly eighteen sibling harnesses compiling throughout. **Every integer reproduced exactly** — all
+> three survivor totals, all three removal totals, `bricks_differing_from_parent`, `world_brick_entries`,
+> `world_bricks_occupied`, the necessity counts, every byte column (they are functions of integer entry
+> counts) and both `eval_ratio_*` — which is `M-279`'s rule satisfied. **What moved is every clock
+> column, and the per-repetition band moved most.** On `gyroid` 46–60 `speedup_both` 6.1285 → **6.3916**,
+> and its band `[3.8996, 10.5988]` → **`[6.3743, 6.4626]`** — a 2.718× spread collapsing to **1.0139×**;
+> `ceiling_speedup` 10.8324 → **11.9405**, `share_prunable` 0.907684 → **0.916251**,
+> `speedup_chunk_only` 1.5241 → **1.5799**. On `ground_slab` 46–60 `speedup_both` 11.9383 → **10.4802**,
+> band `[8.3818, 17.5399]` → **`[10.1347, 10.6243]`**, `ceiling_speedup` 40.6865 → **35.6532**,
+> `share_prunable` 0.975422 → **0.971952**, `speedup_chunk_only` 1.9223 → **1.8825**. **No verdict
+> flipped**: `c1_holds`, `c2_holds` and `c3_holds` are identical row for row across the two runs. The
+> first run's own conclusion that *"21 repetitions and `speedup_both` still spans a 2.7× range"* is
+> **withdrawn** — that spread was the load and not the measurement; on a quiet tree the band is **1.4%**
+> wide on `gyroid` 46–60 and **4.8%** on `ground_slab` 46–60. What survives run-independently is the pair
+> of integer ratios, 15.6941 and 18.3847, which are the same in both files.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 pruning still gives ≥ **2×** at 4³ on `M-50`'s 46–60 bucket | ≥ 2× | **HELD — 6.3916× on `gyroid`, 10.4802× on `ground_slab`, and at every one of 21 repetitions (`speedup_both_min` 6.3743 and 10.1347). Clock-free companions: `eval_ratio_both` 15.6941 and 18.3847** |
+| C2 a per-brick surviving-brush list costs **< 8 bytes/brick** amortised over the trace | < 8 | **FALSIFIED — 9.398804 and 10.996338 (peak); 8.922674 and 10.386746 (`bytes_per_brick_mean_trace`, the literal reading). Holds at 1–15 and 16–30, fails from 31–45 up** |
+| C3 chunk-then-brick removes **strictly more than either alone** | > 0 | **FALSIFIED — `additional_removed` 0 on all 8 rows; `additional_over_brick_only` is exactly 0 while `additional_over_chunk_only` is 1,620–12,366** |
+
+**And the sharp second number, which is what makes C1 readable:** `speedup_chunk_only` is **1.5799** and
+**1.8825** at 46–60 — **below the registered 2× on both fields**. `P-39`'s chunk-level cull, transplanted
+unchanged to a world of 4³ bricks, does not clear the bar C1 sets. So the honest headline is not
+*"pruning still pays at 4³"*; it is **pruning still pays at 4³ only if the prune is done at 4³ too**.
+
+---
+
+**The SHARE recomputation leads, because it is what decides whether the clause was ever reachable.** The
+registration denominates C1 in *"the field-evaluation share of remesh, which `M-377` measured as
+essentially all of `remesh_ms`"*. That is the wrong denominator by construction: pruning removes **brush
+evaluations and nothing else** — the base field and the marching-cubes cell work are untouchable — so the
+share C1 can actually move is
+
+```text
+share_prunable = (remesh_full_ms − remesh_floor_ms) / remesh_full_ms
+```
+
+where the floor is the same dirty bricks re-meshed from the base field with an **empty tape**. That floor
+is a **measured fourth arm** (`remesh_floor_ms`), interleaved with the other three, not an assumption, and
+`ceiling_speedup = remesh_full_ms / remesh_floor_ms` sits beside it in the file.
+
+| field | bucket | `remesh_full_ms` | `remesh_floor_ms` | `share_prunable` | `ceiling_speedup` | needs, for 2× | `eval_ratio_both` |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `gyroid` | 1–15 | 6.7869 | 2.5434 | 0.625253 | **2.6685** | **4.9921×** | **4.5581×** |
+| `gyroid` | 16–30 | 13.7725 | 2.5522 | 0.814687 | 5.3963 | 2.5889× | 8.9391× |
+| `gyroid` | 31–45 | 21.7538 | 2.5574 | 0.882440 | 8.5063 | 2.3074× | 11.9832× |
+| **`gyroid`** | **46–60** | 30.3804 | 2.5443 | **0.916251** | **11.9405** | **2.2012×** | **15.6941×** |
+| `ground_slab` | 1–15 | 4.4215 | 0.6873 | 0.844548 | 6.4329 | 2.4511× | 4.9724× |
+| `ground_slab` | 16–30 | 10.8162 | 0.6963 | 0.935628 | 15.5347 | 2.1478× | 11.4335× |
+| `ground_slab` | 31–45 | 18.4123 | 0.6957 | 0.962218 | 26.4676 | 2.0817× | 15.1878× |
+| **`ground_slab`** | **46–60** | 24.7246 | 0.6935 | **0.971952** | **35.6532** | **2.0594×** | **18.3847×** |
+
+*"Needs, for 2×"* is the arithmetic the `✗51` rule asks for, stated as a factor rather than a share:
+`(full − floor) / (full/2 − floor)` is the reduction in **brush work** a 2× total speedup requires, given
+that the floor cannot be touched. At the registered bucket that is **2.2012×** and **2.0594×** against
+measured evaluation reductions of 15.6941× and 18.3847× — **7.13× and 8.93× of headroom**. The harness's
+pre-run estimate, written into its header before the first run, was `share ≈ 0.906` and a ceiling of
+`≈10.6×` on the harder base; measured, 0.916251 and 11.9405. C1 was reachable with a factor of five to
+spare and the arithmetic said so in advance.
+
+**And the registration chose the one bucket where the ratio is comfortably reachable.** At **1–15 on
+`gyroid` the ceiling is 2.6685** — the bar is 74.9% of the maximum available — and the required brush-work
+reduction, **4.9921×**, is *larger than the reduction the mechanism actually delivers there*, **4.5581×**
+in exact evaluation counts. So the clause fails at 1–15 for a reason that is arithmetic on integers and
+does not need the clock at all; the clock agrees, at `speedup_both` **1.7684** against a 2× bar. **Had C1
+named the 1–15 bucket it would have been a `✗51`-shaped clause** — a ratio of a total registered without
+checking the share of that total it could move. This is a comment on the registration, and it is fair
+because the arithmetic is entirely inside the committed file.
+
+> **`c1_holds` reads `false` on the `gyroid` 1–15 row, and that is not C1 being falsified.** C1 is
+> registered on the 46–60 bucket only; the column is computed per row, so the seven `true`s and one
+> `false` describe eight rows of which **one** is the clause's population. On that population C1 HELD on
+> both fields. The 1–15 row is quoted above as the share observation, not as a verdict.
+
+**C1's clock-free half, and it is the load-bearing half (`✗24`, `M-280`).** `shape_evals_*` are exact
+counts of brush enclosure-and-distance evaluations, and they include **every evaluation the pruning itself
+made** — one per brush per chunk pass, plus one per surviving-chunk-brush per brick pass. At `gyroid`
+46–60 the trace evaluates **6,080,091** brushes unpruned, **3,810,543** with the chunk cull and
+**387,413** with both, i.e. 1.5956× and 15.6941×; at `ground_slab` 46–60, **5,211,855 → 2,744,135 →
+283,489**, i.e. 1.8993× and 18.3847×. Both `eval_ratio_*` columns are identical in the superseded run and
+in this one — the counts are deterministic functions of a seeded log and a fixed partition.
+
+**They also bound the clock, which is how "chunk-only misses the bar" becomes machine-independent.** The
+three arms mesh the identical cells — asserted, not assumed: the pruned and unpruned arms must make
+identical `Sdf::sample` counts (`samples_total` 89,130–111,158) — so an arm's time is the shared floor
+plus work proportional to its own brush-evaluation count. With a positive floor, `full/chunk` is then
+**strictly less than** `eval_ratio_chunk`. Both those ratios are **below 2** (1.5956 and 1.8993), so
+`P-39`'s chunk-level cull cannot reach C1's bar at 4³ granularity **on any machine**, not merely on this
+one. Measured, the clock sits 0.98% and 0.88% under its own bound — 1.5799 against 1.5956, 1.8825 against
+1.8993 — which is the consistency check that the model is the right one.
+
+**Where the win comes from, in one line of arithmetic.** A brush is prunable over a box of circumradius
+`r` only when it clears the running field by `(1 + l)·r`, and `r` is **0.10825** at 4³ against **0.86603**
+at 32³ — a factor of eight. So the threshold is **0.4833 world units at the brick and 3.8660 at the
+chunk** on `gyroid`, and 0.2165 against 1.7321 on `ground_slab`. **3.8660 is larger than `gyroid`'s value
+can ever be** — it is a sum of three sine–cosine products, so bounded by ±3 term by term — which is why
+the chunk pass is weak on that field: it leaves a mean of **34.3920** brushes per re-mesh of a tape
+growing 50 → 60, and the brick pass cuts that to **3.3216** — a further **10.35×**, **90.34%** of the
+chunk-level survivors removed at the brick. On `ground_slab`, 29.0450 → 2.9129, 9.97×. **4³ is not where
+pruning survives; 4³ is what makes it pay.**
+
+**The per-brick bookkeeping does not eat the win, and the file says how much it does cost.** A prune costs
+one shape evaluation per brush per box while a mesh costs **125 samples** per box (`samples_per_brick`,
+derived from the layout and checked against `(cells + 1)³`). Fitting one per-evaluation cost from the full
+and floor arms gives **3.894–4.726 ns** across all eight rows — the marginal brush evaluation is a
+property of the brush, not of the base, exactly as the pre-run `≈4 ns` estimate assumed. That single
+constant predicts the **chunk** arm to within −3.8% to +4.7% (seven of eight rows inside 2%), and the
+measured **both** arm comes out **10.1–27.7% slower** than the same model says it should — 4.7532 against
+a predicted 4.3180 ms at `gyroid` 46–60, 2.3592 against 2.0006 at `ground_slab` 46–60. At 3.3 surviving
+brushes per brick the fixed per-brick cost is no longer negligible against the brush work. That is the
+bookkeeping, priced — it is visible, and it is an order of magnitude smaller than the win.
+
+**How much of the ceiling is left on the table, and it is an identity rather than a mystery.**
+`speedup_both / ceiling_speedup = remesh_floor_ms / remesh_both_ms`, so the attained fraction of the
+ceiling **is** the floor's share of the pruned arm: **53.5%** at `gyroid` 46–60 (2.5443 of 4.7532 ms) and
+**29.4%** at `ground_slab` 46–60 (0.6935 of 2.3592). The residue is brush work that survived the bound,
+not overhead.
+
+---
+
+**C2 is FALSIFIED on both readings of "amortised", and the representation is named because an assumed
+representation is an assumed answer.** The costed structure is a **CSR arena over the whole world's
+bricks**:
+
+- `offsets: [u32; bricks + 1]` — **4.000122 B/brick**, dense and unavoidable if a brick is to be looked
+  up in O(1) during re-mesh, and **paid whether or not the brick has a survivor**.
+- `indices: [u16; entries]` — **2 B per surviving brush**, an index into the world edit log. The `u16`
+  caps the log at **65,535 edits** against Dreams' 100,000; `bytes_per_brick_u32idx` is the cost of not
+  capping — **14.797485** and **17.992554 B/brick**, 473.5 and 575.8 KiB for a 128³ world.
+
+**That reduces C2 to an integer bar arithmetic could reach before the run, and did not.** With
+`bricks = 32,768`, `4·(bricks + 1) + 2·entries < 8·bricks` is exactly `entries ≤ 65,534`, i.e. **fewer
+than 1.99994 surviving brushes per world brick on average**. Measured `world_brick_entries` and its margin
+to that bar: `gyroid` 36,283 (+29,251), 59,767 (+5,767), 74,825 (**−9,291**), 88,452 (**−22,918**);
+`ground_slab` 36,284 (+29,250), **65,208 (+326)**, 90,609 (**−25,075**), 114,626 (**−49,092**). So C2
+holds at the two shortest buckets and fails from the middle bucket up, and `ground_slab` 16–30 clears by
+**326 entries of a 65,534 bar** — `bytes_per_brick` 7.980103 against 8, 0.25% under. The arithmetic could
+name the bar in advance; only the run could supply `entries`.
+
+**The clause is lost to the index, not to the payload, and every alternative is in the file** (46–60,
+both fields):
+
+| encoding | `gyroid` | `ground_slab` | verdict |
+|---|---:|---:|---|
+| payload alone, index charged at zero (`bytes_per_brick_payload`) | 5.398682 | 6.996216 | under 8 on both — the floor is affordable |
+| chunk-relative `u16` offsets into a per-chunk arena (`_chunkarena`) | **7.410400** | 9.007935 | the tightest O(1)-indexable form; under on one field only |
+| per-brick `u64` bitmask over the parent chunk's survivors (`_bitmask64`) | 8.000000 | 8.000000 | **exactly 8** — legal (`max_chunk_survivors` 50 and 44 ≤ 64) and still not *under* 8 |
+| registered CSR `u16` (`bytes_per_brick`) | **9.398804** | **10.996338** | **FALSIFIED** |
+| two-level sparse, 512-bit occupancy per chunk (`_sparse`) | 9.068604 | 10.842651 | worse — occupancy is 88.62% and 93.04%, and sparse loses when nearly every brick has a list |
+| global CSR with `u32` indices, no 65,535 cap (`_u32idx`) | 14.797485 | 17.992554 | the price of Dreams' 100,000-edit log |
+
+**No representation that indexes a brick in O(1) gets under 8 bytes on both fields at 46–60. Exactly one
+gets under on one field.** The mean-over-the-trace reading is no kinder: `bytes_per_brick_mean_trace`
+8.922674 and 10.386746.
+
+**C2's cited premise is measured rather than inherited, and `✗41`'s Part-5 chaining rule is obeyed.** The
+clause invokes *"`✗41`'s finding that 1,507 survivors cut to 73 necessary"*. Necessity here is
+leave-one-out over **the same 32,768 bricks** at the same final tape, so `bytes_per_brick` and
+`bytes_per_brick_necessary` are two statistics over one population with nothing multiplied:
+`survivors_to_necessary_world` **66.2066×** and **101.6188×**, `bytes_per_brick_necessary` **4.081665**
+and **4.068970** — comfortably under 8. **It is not a route to passing C2, for two reasons.** The
+necessary set is not constructible by any conservative bound — deciding it cost 32,768 × (|S| + 1)
+re-meshes per row here — and the 66–102× is inflated against `✗41`'s own 20.64× by the confound `✗41`
+named: only **3,391 of 32,768** `gyroid` bricks and **1,462 of 32,768** `ground_slab` bricks carry any
+triangle, so most of the reduction is bricks whose necessary count is zero because nothing there meshes.
+The dirty-brick statistics (`survivors_brick_level` 1,322 over 398 re-meshes) are a different population
+and are never combined with the world-wide one.
+
+> **`necessary_only_identical` reads `false` on two rows and it is not a clause verdict.** It is `✗41`'s
+> **joint**-droppability upgrade, which held on 64 of 64 chunks there and **fails here**: re-meshing from
+> the leave-one-out-necessary brushes alone changed the mesh on **1** brick at `gyroid` 31–45 and **3** at
+> `gyroid` 46–60, of 26,124 and 28,774 bricks where leave-one-out removed anything, and on **0** of the
+> four `ground_slab` rows. The failure mode `✗41` named but never observed — two brushes each
+> individually redundant and jointly decisive — is real at brick granularity with a surface-following log.
+
+---
+
+**C3 is the registered null and it is a completed result: `additional_removed` = 0 on 8 of 8.** *"Do not
+build this"* is the conclusion, and the reason is structural rather than a property of this fixture.
+
+| field | bucket | `removed_chunk_only` | `removed_brick_only` | `removed_both` | `additional_over_chunk_only` | `additional_over_brick_only` | `additional_removed` |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `gyroid` | 1–15 | 280 | 3,094 | 3,094 | 2,814 | **0** | **0** |
+| `gyroid` | 16–30 | 1,680 | 8,875 | 8,875 | 7,195 | **0** | **0** |
+| `gyroid` | 31–45 | 4,592 | 14,698 | 14,698 | 10,106 | **0** | **0** |
+| `gyroid` | 46–60 | 8,173 | 20,539 | 20,539 | 12,366 | **0** | **0** |
+| `ground_slab` | 1–15 | 900 | 2,520 | 2,520 | 1,620 | **0** | **0** |
+| `ground_slab` | 16–30 | 3,525 | 7,424 | 7,424 | 3,899 | **0** | **0** |
+| `ground_slab` | 31–45 | 6,198 | 12,312 | 12,312 | 6,114 | **0** | **0** |
+| `ground_slab` | 46–60 | 8,667 | 17,369 | 17,369 | 8,702 | **0** | **0** |
+
+> **`additional_removed` is 0 while `additional_over_chunk_only` is 12,366 on the same row, and both are
+> correct.** The clause says *"strictly more than **either** alone"*, so the registered column is
+> `removed_both − max(removed_chunk_only, removed_brick_only)`, which is the **minimum** of the two
+> one-sided differences. The large positive number is the comparison against the *chunk* level; the zero
+> is the comparison against the *brick* level. Neither is an empty share and neither is a void gate — the
+> populations are 2,520 to 20,539 removals per row.
+
+**The mechanism, and it is why the zero is exact rather than approximate.** A brick's enclosure ball is
+contained in its parent chunk's: the furthest brick centre sits `√3 · 0.4375` from the chunk centre, and
+`0.4375 + 0.0625 = 0.5`, so `d + r_brick ≤ r_chunk` with equality at the chunk corner (the `pad()` slack
+is 16 ULP and moves nothing at this scale). The base field is `l`-Lipschitz, so
+`|f(c_brick) − f(c_chunk)| ≤ l·d`, and therefore the brick's interval is a sub-interval of the chunk's for
+every shape. **Any brush the chunk test rejects, the brick test rejects too.** The two culls are the
+**same test at two scales — nested, not composed** — and the chunk level is a strictly weaker instance
+that can find nothing the brick level misses. The file corroborates it as an exact integer identity rather
+than an argument: `survivors_brick_level` equals `survivors_brick_direct` on every row (847/847,
+1,068/1,068, 1,273/1,273, 1,322/1,322 and 632/632, 698/698, 843/843, 970/970), over **1,594 and 1,297**
+brick prunes.
+
+**The fourth arm is why this is a measurement and not a tautology.** `removed_brick_only` is the full tape
+pruned directly over the brick box with **no chunk pass in front of it**. Had `additional_removed` been
+defined against chunk-only instead, the vacuity control would have **implied** C3 HELD — a brick whose
+survivor set differs from its parent's *is* an additional removal over chunk-only — which is `P-70`'s C3,
+a HELD with no instrument behind it. The harness names this in its own header as the reason the fourth arm
+exists.
+
+---
+
+**The registered vacuity control: `bricks_differing_from_parent`, asserted non-zero in `main`.** Values
+**397 / 399 / 400 / 398** on `gyroid` and **305 / 324 / 328 / 333** on `ground_slab`, against
+`remeshes` of 397/399/400/398 and 312/324/328/333.
+
+**Why that value proves the fixture could have failed the control.** The counter is **not saturated**: on
+`ground_slab` 1–15 it reads **305 of 312** re-meshes, and `distinct_bricks_differing` **249 of 256**
+distinct dirty bricks — seven re-meshes whose brick survivor set was *identical* to the parent chunk's. A
+counter that could only ever return all-of-them would not have produced 305/312. And the magnitude says
+what the zero in `additional_removed` is **not**: it is not that the brick level does nothing, because the
+brick level cuts the mean survivor count from 34.3920 to 3.3216 per re-mesh at 46–60 — **90.34%**. It is
+that the **chunk** level adds nothing to the brick level.
+
+**Two more controls held and are worth naming.** Soundness: every dirty brick re-meshed from the full
+tape, from its chunk's survivors and from its brick's survivors is **bit-identical** in positions and
+normals plus `mesh_hash` — `meshes_bit_identical` and `hashes_identical` `true` on 8 of 8, both asserted,
+so no speedup here belongs to a wrong mesh. And `M-44`: every one of the eleven edits marked at least one
+dirty brick, asserted per step. The re-mesh counts also satisfy `M-279` where they overlap with a prior
+measurement: `M-377` recorded **396** dirty 4³ chunks for the same eleven-edit `gyroid` trace, and this
+harness reads **397–400** with a longer tape in front of the dig.
+
+**Five fixture defects and instrument corrections — four caught by an instrument firing, one by
+re-reading the clause before the run.**
+
+1. **The mechanism does not exist on one of `M-377`'s two fields, and the harness asserts it rather than
+   saying it.** `FbmTerrain::value_bound()` is `FieldBound::Unbounded`, so `lipschitz()` is `None`, so
+   there is no base enclosure to test a brush against and **no brush can ever be pruned at any
+   granularity**. A timed arm there would have priced bookkeeping against a structurally zero benefit.
+   `ground_slab` (`BoxExact`, one sheet at `y = 0`) replaces it and brackets the quantity that decides the
+   answer — `l` = 1.000000 against 3.464102 — and the unavailability is an assertion on
+   `lipschitz().is_none()`, so the row breaks if the crate ever gives `fbm_terrain` a constant.
+2. **The first fixture panicked, and the panic was right.** `P-72`'s per-column `y` probe cannot place a
+   log brush on `gyroid`: its period is 2π against a 4-unit world, so whole columns of `[-2, 2]³` never
+   cross zero, and it died at `(-0.940, -1.633)`. Placement is now by **enumeration** — the centres of the
+   cells of a 64³ scan whose corners disagree in sign — which has no failure case to paper over. The dig
+   path keeps `P-72`'s per-edit probe unchanged, which is the construction that stopped two of *that*
+   harness's runs being void.
+3. **`additional_removed` was nearly defined so that the vacuity control implied it.** Caught from the
+   clause's own wording before the run; the fix is the brick-direct fourth arm and the min-of-two-sided
+   definition above, both documented in the harness header.
+4. **An assertion the author wrote from `✗41` fired, and was correct to.** `necessary_only_hash_unchanged`
+   was written as an `assert!`, expecting `✗41`'s joint-droppability result to transfer. It does not — 4
+   bricks across the 8 rows change their mesh when every individually-unnecessary survivor is dropped at
+   once. Converted to the counted column `necessary_only_bricks_differing`. Written as a comment instead,
+   `✗41`'s 20.64× would have been quoted here as though it applied.
+5. **The repetition count was raised 9 → 21 by its own spread columns, and that was still not enough.**
+   `speedup_both_min`/`_max` put the per-repetition band on the row rather than in a footnote, and on the
+   dirty tree it read `[3.8996, 10.5988]` at 21 repetitions. Only the clean-tree re-run at `96d15be`
+   closed it to `[6.3743, 6.4626]`. **The columns that decide the entry are the integers** — `✗24`'s rule,
+   and this is the run that proves the point rather than asserting it.
+
+**What changed.** Nothing in `crates/isomesh/src/**`: `R-090` is a measurement ticket and `P-70`/`P-71`'s
+precedent applies — measure it, surface the decision, stop. What the result licenses:
+
+1. **If per-brick pruning is ever built, build it at the brick.** The chunk pass stays worth keeping as a
+   **pre-filter** — it cuts the brick pass's input from the full tape to a mean of 34.39 brushes, an exact
+   1.5956× evaluation saving on its own — but it must **not** be sold as a cull: 1.5799× and 1.8825× on
+   the clock, 1.5956 and 1.8993 in exact counts, under the registered 2× bar on both fields and provably
+   so on any machine.
+2. **Do not carry a per-brick surviving-brush list on a 128³ world at 46–60 log length.** 9.398804 to
+   10.996338 B/brick is **300.8 to 351.9 KiB**, and no O(1)-indexable representation gets under 8 on both
+   fields. Materialise the list lazily for the dirty bricks and discard it: a survivor set costs one shape
+   evaluation per brush to recompute against 2–4 bytes per brick per world to store.
+3. **Do not store only the necessary brushes.** 4.068970–4.081665 B/brick would pass C2, but the set is
+   not computable by any bound and on this fixture it is not even valid — 4 bricks change their mesh when
+   all individually-unnecessary survivors are dropped at once.
+4. **Do not apply Lipschitz brush pruning to an `Unbounded` base.** There is nothing to prune against, at
+   any granularity.
+
+**Would be shown wrong by:** a single brick where the two brick-level arms disagree in either direction,
+which would mean the running fold's prefix rather than the box containment decides the survivor set and
+would put C3 back in play — the file's exact equality on all eight rows currently rules it out; an
+O(1)-indexable per-brick encoding under 8 bytes on both fields at 46–60, which would restore C2 — the
+payload alone is 5.398682 and 6.996216, so the room exists if a structure can index a brick without a
+dense offset per brick; a `speedup_chunk_only` at or above 2× on a field whose base Lipschitz constant is
+low enough that the 32³ threshold still bites, which would make `P-39`'s granularity sufficient after all
+and is the one direction the two fields here cannot rule out; or a `remesh_floor_ms` that is not the
+floor — a base field or cell loop that pruning *can* cheapen — which would raise every `ceiling_speedup`
+and change what the SHARE line is denominated in.
+
+### 💥 ✗71 / M-403 — item 3.6's prediction is **exactly inverted**: geomorph FAILS on `fbm_terrain` at **25.0771 px** and the `gyroid` half it was predicted to lose is the one that HELD at **4.1900 px**, because Lengyel's containing-cell rule is missing a morph target on **39.69%** of terrain fine vertices against the **< 1%** the clause needs; and dither, registered as the expensive option, costs **3.49× less** temporal history (P-91, R-091)
+
+**M.** `cargo bench --bench experiment_p91`, `docs/experiments/p-91.csv`, **30 rows** (35 lines: four `#`
+comment lines, one column header, 30 data rows), 81 columns, `f32` fields with `f64` statistics,
+`amd-ryzen-9-5900x-12-core`, 24 threads. Fixture is `game_lod_flyover`'s own block geometry —
+`FbmTerrain::<f32>::canonical()` and `Gyroid::<f32>::canonical()`, `BASE_H = 0.25` doubling per level,
+meshed with `MarchingCubes` at level `L` and `L+1`, five transition methods per (field, level pair) at the
+repo's own switch distances `LEVEL_RANGE·(L+1)` = 7.0 / 14.0 / 21.0. Committed at **`874a68b`**, header
+`# commit 874a68b on amd-ryzen-9-5900x-12-core at 2026-08-28T00:56:51Z` with **no `(WORKING TREE DIRTY)`**
+marker, and `git merge-base --is-ancestor 874a68b HEAD` passes.
+
+> **`✗24` and `M-281` are discharged by construction, not by argument: there is no clock in this row.**
+> No column is denominated in time. Every registered number is an integer count, a ratio of two integers
+> taken inside one row, or an exact projection of geometry through a fixed camera. `cpu_mhz` is on the row
+> and nothing is computed from it. The independent reproduction below therefore differs in exactly one
+> cell, and that cell is `cpu_mhz`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 geomorph p99 pixels-of-pop **< 1.0** on `fbm_terrain` at the current switch distance **and ≥ 1.0** on `gyroid` | terrain < 1 px, gyroid ≥ 1 px | **FALSIFIED by the terrain half — 25.0771 px against a bar of 1.0, a 25.1× miss. The gyroid half HELD at 4.1900 px** |
+| C2 dither gets a **lower** p99 pop than geomorph on `gyroid` **and a higher cost** in `P-77`'s history rejection | lower pop, higher cost | **FALSIFIED on the cost half — 123,769 against geomorph's best case 431,578, i.e. 3.49× *cheaper*. The pop half HELD — 0.9683 px against 4.1900 px** |
+| C3 rejection under dithered LOD **plus** active digging exceeds the sum of each alone | superadditivity > 1.0 | **HELD by sign only — 1.002476 against a fixture ceiling of 1.075770, which is 241 interaction samples of 97,321 (0.25%), i.e. additivity to engineering precision** |
+
+> **`c1_holds` is a single global verdict replicated on all 30 rows, and the half that killed it is the
+> terrain half.** C1 is a conjunction over two fields with *opposite* required directions, so the bench
+> computes one boolean from the two level-0 geomorph rows and stamps it everywhere. A reader who grabs
+> `c1_holds = false` off the `gyroid` geomorph row will attribute the failure to `gyroid` — which is the
+> exact opposite of what happened, since `gyroid`'s half is the one that passed. The disambiguating column
+> is `c1_half_this_row_holds`: `false` on the three `fbm_terrain` geomorph rows, `true` on the three
+> `gyroid` geomorph rows, and `NA` on the other 24 rows, because a clause about the morph has no half on a
+> row that does not morph.
+
+> **`c2_holds = false` is a conjunction of which one part passed.** `c2_pop_half_holds = true` and
+> `c2_cost_half_holds = false` on all 30 rows. The pop half — the half the registration argued for from
+> topology, that a triply-periodic field denies a morph its target along `p + t·n` — is the half that
+> held. The cost half fell in the direction *opposite* to the prediction.
+
+**C1, at the two rows the clause is actually about, plus the arm it is scored against:**
+
+| field, L0→1, d = 7.0 | `none` (hard switch) | `geomorph` | `dither` (S = 8) | needs |
+|---|---:|---:|---:|---|
+| `fbm_terrain` `p99_pixels_of_pop` | 29.7375 | **25.0771** | 3.7172 | < 1.0 |
+| `gyroid` `p99_pixels_of_pop` | 7.7467 | **4.1900** | **0.9683** | ≥ 1.0 for C1 |
+| `fbm_terrain` `max_pixels_of_pop` | 41.6578 | 41.6578 | 5.2072 | — |
+| `gyroid` `max_pixels_of_pop` | 8.7655 | 6.2964 | 1.0957 | — |
+
+**The mechanism number, and it is where the two orders of magnitude live.** The geomorph residual is
+**exactly zero** where the morph target exists and **the full displacement** where it does not, so the
+clause is a statement about a failure count and nothing else:
+
+| rule, `fbm_terrain` L0→1 (1,159 fine vertices) | fail fraction | integers |
+|---|---:|---|
+| containing coarse cell (item 3.6, registered) | **0.396894** | 460 no-hit + 0 flipped + 0 no-normal, 699 success; 460/1159 = 0.396894 |
+| 3×3×3 dilation | **0.053494** | 62/1159 |
+| no cell restriction, ±3 coarse cells | **0.053494** | 62 no-hit + 0 flipped, 1,097 success; 62/1159 = 0.053494 |
+
+| rule, `gyroid` L0→1 (3,309 fine vertices) | fail fraction | integers |
+|---|---:|---|
+| containing coarse cell (registered) | **0.484436** | 1,603 no-hit, 1,706 success; 1603/3309 = 0.484436 |
+| 3×3×3 dilation | **0.083409** | 276/3309 |
+| no cell restriction, ±3 coarse cells | **0.083409** | 276 no-hit + 0 flipped, 3,033 success; 276/3309 = 0.083409 |
+
+Both accounting identities close exactly — `success + no_hit + flipped + no_normal == fine_vertices` on
+every arm of every row, asserted — and the three fractions are monotone by nesting, also asserted.
+
+**So item 3.6 is right in sign and wrong by two orders of magnitude in size.** On the unrestricted ray,
+which is the arm that tests 3.6's *stated* mechanism (a heightfield is star-shaped along the up axis and a
+triply-periodic minimal surface is not), terrain does beat gyroid: 0.053494 against 0.083409, a factor of
+**1.5592**. Directionally correct, and both are five to eight times too many for a sub-pixel p99. The
+containing-cell restriction contributes **7.42×** more failures on terrain than non-star-shapedness does
+(0.396894 / 0.053494) and **5.81×** more on gyroid. Lengyel's own withheld guarantee — *"(It is unclear
+whether this point always exists.)"* — is now a measured number on both fields.
+
+**SHARE recomputation, in full, including the part arithmetic could not reach before the run.**
+
+The registration's SHARE is *"C1 and C2 move the LOD transition only; C3 moves the TAA resolve."* Those are
+**two disjoint budgets**, so there is no double count to price and no `✗51`-style share ceiling: the pop
+clauses move geometry the transition emits, C3 moves history the resolve reuses, and neither clause is
+stated as a fraction of a total.
+
+**C1's terrain half is reachable only if `geomorph_fail_fraction_cell` is under about 1%.** The residual
+distribution is two-valued — 0 on morph success, the full surface displacement on failure — so a 99th
+percentile lands inside the failure population as soon as that population exceeds 1%, and the p99 is then
+approximately the hard switch's own. The alternative route, failures whose own displacement happens to be
+sub-pixel, is arithmetically **dead**: at `d = 7.0`, `H = 1080`, `θ = 45°` one pixel is
+`1 / 186.2393 = 0.005369` world units `= 0.021478` fine cells at `fine_h = 0.25`, against `M-121`'s already
+measured pop of 0.6–1.6 cells typical and 3.136 worst. **C1's terrain half is therefore precisely the test
+"does Lengyel's containing-cell rule succeed on more than 99% of fine vertices"**, which is what item 3.6's
+implied near-zero failure rate claims. It is a real test rather than a dead end, and the column it turns on
+is `geomorph_fail_fraction_cell`. Measured: 0.396894, which is **39.7× the 1% the clause needed** — the
+clause fell for a reason that was reachable in either direction and was decided by an integer.
+
+**C3's ceiling is 1.075770, from the fixture rather than from the clause.** The combined arm's rejections
+lie inside the union of the two causes, so `superadditivity ≤ 1 + excess_dig / (excess_lod + excess_dig)`:
+the dither's flip set is the whole frame while the dig's changed set is only the brush silhouette
+(`taa_brushes_placed` = 2; the bench names the geometry as a 0.25-radius brush at about 3 units), so
+`excess_dig` is small and 1.0 is clearable only just.
+`1 + 7,374 / 97,321 = 1.075770`, and the measured 1.002476 sits **3.27%** of the way from 1.0 to that
+ceiling. `superadditivity_ceiling` is on the row so the verdict reads against what the fixture allowed
+rather than against 1.0 alone.
+
+A looser bound is also on the row and worth stating because it is the one that proves 1.0 was nowhere near
+a wall: no arm can reject more than the whole population, so `superadditivity ≤ (taa_population_static −
+static) / (excess_lod + excess_dig) = (1,030,808 − 33,822) / 97,321 =` **10.244**. The union bound is the
+tight one and it is what the column carries.
+
+**One thing the registration's own reachability note got wrong, and the file shows it.** The bench header
+says *"C2 has no arithmetic bound and needed none."* C2's pop half does have one, and it is the same bound
+as C1's. The dither arm is an analytic alpha-to-coverage model — the resolved residual is `δ / min(S, F)`
+with `S = 8` slots and `F = 12` fade frames — so the dither column is **exactly** the `none` column divided
+by 8: `pop_world_p99` 0.041595 / 8 = 0.005199 on `gyroid` at d = 7.0, to the last committed digit. C2's pop
+half therefore reduces to *"is geomorph's p99 above one eighth of the hard switch's"*, and since geomorph's
+p99 is approximately the hard switch's whenever the failure fraction exceeds 1%, the pop half was decided
+by `geomorph_fail_fraction_cell` too. Measured margin: 4.1900 / 0.9683 = **4.327×**. The half held for a
+real reason, and that reason is not independent of C1's.
+
+**C3's arithmetic, reproducible from the row's own `history_rejected_*` columns.** All six counts are
+global to the run and identical on all 30 rows; `taa_population_static` = 1,030,808 samples (480 × 270
+resolve over an 8-frame window after 16 warm-up frames):
+
+| arm | column | rejected |
+|---|---|---:|
+| static, jitter on | `history_rejected_static` | 33,822 |
+| dithered LOD | `history_rejected_lod` | 123,769 |
+| active digging | `history_rejected_digging` | 41,196 |
+| dithered LOD **and** digging | `history_rejected_lod_and_digging` | 131,384 |
+| geomorph LOD, triplanar | `history_rejected_lod_geomorph` | 432,188 |
+| geomorph LOD, UV-locked | `history_rejected_lod_geomorph_uv_locked` | 431,578 |
+
+- `excess_rejected_lod` = 123,769 − 33,822 = **89,947**
+- `excess_rejected_digging` = 41,196 − 33,822 = **7,374**
+- `sum_of_parts` = 33,822 + 89,947 + 7,374 = **131,143.0**
+- `superadditivity` = (131,384 − 33,822) / (89,947 + 7,374) = 97,562 / 97,321 = **1.002476**
+- `superadditivity_excess_samples` = 131,384 − 131,143 = **241**
+- `superadditivity_ceiling` = 1 + 7,374 / 97,321 = **1.075770**
+
+`c3_holds = true` is a sign test on 1.002476 > 1.0. **241 samples of interaction out of 97,321 is 0.25%,
+and 0.25% is additivity** — which is C3's own registered falsifier, *"additivity would mean the two effects
+are independent and dither is affordable after all."* Reporting HELD without that sentence inverts what the
+row means. The geometric reason is on the row: `excess_dig` is 8.20% of `excess_lod`, so there is almost
+nothing for the two causes to overlap over.
+
+**Mechanism: a morph and a dither fail in orthogonal dimensions, and each failure is structural.**
+
+*Geometry.* The morph needs a coarse-surface intersection along `p + t·n` inside the containing coarse
+cell. It is missing on 460 of 1,159 terrain vertices and 1,603 of 3,309 gyroid vertices, and the failures
+are not degenerate normals — `geomorph_no_normal_cell` is 0 on every row — nor, under the registered rule,
+flipped hits: `geomorph_flipped_cell` is 0 on four of six rows and 1 on the other two. Under the
+*unrestricted* rule the flip class does appear, and only on the cave: `geomorph_flipped_reach` is 0 / 1 / 1
+on the three terrain rows and 0 / 38 / 32 on the three gyroid rows, which is the one place in the file
+where non-star-shapedness shows up as its own signature rather than as a missing hit.
+A dither needs no target at all,
+so its residual is `δ / S` unconditionally, and it wins the pop comparison on the field item 3.6 predicted
+would defeat a morph.
+
+*Time, and here the causality inverts.* A morph moves the surface at **every** pixel on **every** frame of
+the fade, so normal, depth and fog all change every frame and the 3×3 YCoCg neighbourhood clamp rejects
+history across the whole transition. A dither moves nothing: a renderer writes zero motion and a flipped
+pixel's history is a content mismatch confined to `1/S` of the coverage, which the clamp mostly contains.
+Measured 432,188 against 123,769 — a **3.4919×** inversion of the registered clause, scored against
+geomorph's best case 431,578 so dither had to beat the arm that favours geomorph and still won by
+**3.4870×**. The owner's own explanation for that number was falsified by the control built for it: the
+UV-locked arm exists to test whether `game_dig`'s world-space triplanar material sliding under the morphing
+surface is the confound, and 431,578 against 432,188 is a **0.14%** difference against a 3.49× effect. The
+cost is the surface motion itself, not the material.
+
+*What that does to the one measured argument in the literature.* Haydel, Yuksel and Seiler
+(`10.1145/3618359`) chose morphing over stochastic LOD because stochastic causes *"significantly increased
+data movement"* spikes at transitions. Their budget is data movement at the transition; this row's budget
+is temporal reuse across it. Two budgets, opposite verdicts, and neither invalidates the other — which is
+exactly why only the structural half of their argument was ever portable off a cycle-accurate TRaX
+simulation.
+
+**Instrument agreement, `M-279`'s rule, checked three ways and asserted.**
+
+1. The pixel conversion is item 3.8's verbatim and is on the row rather than in a comment:
+   `pixels_per_world_unit_at_distance` = **186.2393** at d = 7.0, and
+   `1080 / (2 × 7 × tan(22.5°)) = 186.2393` — exact for the stated camera (`view_height_px` = 1080,
+   `fov_y_deg` = 45.0, Bevy's `PerspectiveProjection::default`). It reads 93.1197 at d = 14.0 and 62.0798
+   at d = 21.0, both exactly `H / (2 d tan(θ/2))`.
+2. `pop_world_max` × that factor is `max_pixels_of_pop`: 0.223679 × 186.2393 = **41.6578** on the
+   `fbm_terrain` `none` row, to the last committed digit. `distance_for_p99_under_one_px` is the same
+   identity read the other way — 7.0 × 29.7375 = **208.16** — because the projection is exactly
+   proportional to `1/d`.
+3. `pop_cells_vertex_metric_max` = **1.541236** on the terrain L0→1 block sits under
+   `m121_reproduced_adjacent_only` = **1.6177**, the maximum of the same statistic over all twelve blocks,
+   so the new pixel instrument agrees with `M-121` where the two overlap. `reproduce_m121` runs `M-121`'s
+   own `worst_gap` over all twelve blocks and every ordered level pair and is **asserted** against the
+   committed 3.136 with a one-sided 1% tolerance: measured `m121_reproduced_worst_pop_cells` = **3.1412**,
+   **+0.16%**, with `m121_reproduced_median` = **1.4574** inside `M-121`'s own *"typically 0.6–1.6"*.
+
+**Independent reproduction, which is what makes this row integer-reproducible.** `R091Final` re-ran the
+bench and diffed all **30 rows × 81 columns cell by cell against the owner's run: one differing cell,
+`cpu_mhz` (4201 against 4200)**. Every registered column, every rejection count, every pixel figure, the
+3.1412 and the 241 interaction samples reproduce exactly.
+
+**The registered vacuity control, its column, its value, and why that value proves the fixture could have
+failed.** Registered: *"the no-transition arm must show a measurable pop, reported in pixels, or both
+methods are being compared against an invisible baseline."*
+
+Columns: `vacuity_none_p99_pixels` and `vacuity_none_max_pixels`, stamped on **every** row, plus an
+assertion loop that re-reads `p99_pixels_of_pop`, `max_pixels_of_pop` and `pop_cells` back off every
+emitted `method = none` row and asserts each strictly positive, with `assert_eq!(none_rows, pops.len())` so
+no geometry escapes the control. Values at the current switch distance: `fbm_terrain` **29.7375 px** p99 /
+**41.6578 px** max / 0.894715 `pop_cells`; `gyroid` **7.7467 px** / **8.7655 px** / 0.188263.
+
+That value proves the fixture could have failed for a reason stronger than its size. **The same instrument
+demonstrably emits exact zeros**: the geomorph residual is 0.0 on `geomorph_success_cell` = 699 of 1,159
+terrain vertices (60.31%) and 1,706 of 3,309 gyroid vertices (51.56%), so a zero is inside this
+instrument's range and the 29.7375 is not an artefact of an instrument that cannot report nothing. Had the
+two levels extracted the same surface at the switch, every residual would be identically zero and the
+assertion would have fired — and in that world *"geomorph achieves sub-pixel pop"* would be a true
+statement about nothing. The baseline is also 29.74× and 7.75× the one-pixel bar both methods are scored
+against, and it is corroborated as the same pop `M-121` measured, not a new one (item 3 above).
+
+Second half of the same control: **a one-slot dither is a hard switch scattered across pixels, so
+`dither_s1` must read exactly `none`** — asserted to `f64::EPSILON`, and it does, on all six level pairs
+(29.7375 / 41.6578 and 7.7467 / 8.7655 at d = 7.0). Had a geometric benefit leaked into the dither model,
+every dither number in the file would be an artefact of the harness rather than of alpha-to-coverage.
+
+**Fixture defects the harness's own controls caught.**
+
+1. **The `M-121` reproduction failed first, and the fix is a finding about `M-121`.** Restricted to
+   adjacent level pairs it reads **1.6177** cells against the committed **3.136** — a 1.94×
+   disagreement. `game_lod_flyover::level_for` is recomputed every frame under a user-controlled fly
+   speed, so a block can cross two `LEVEL_RANGE` boundaries between frames and switch 0 → 2 in one step,
+   while `h = spacing(min(was, now))` divides a two-level displacement by the level-0 cell. Enumerating
+   all six ordered pairs on all twelve blocks reproduces **3.1412**. `M-121`'s 3.136 is a **two-level**
+   switch. `m121_reproduced_adjacent_only` keeps the trap visible on every row.
+2. **A 40–60% geomorph failure rate on both fields is either a finding or a fixture defect, and the only
+   way to tell is to ask whether the ray misses the coarse surface or merely meets it next door.** The
+   first run read exactly that, so two extra nested restriction arms were built — 3×3×3 dilation, and no
+   restriction within ±3 coarse cells — with `cell ⊆ cell27 ⊆ reach` asserted monotone and
+   `success + no_hit + flipped + no_normal == fine_vertices` asserted on each. Verdict: **finding, not
+   defect** — the unrestricted arm still fails 5.35% and 8.34%.
+3. **The owner's own explanation for the 3.49× cost was falsified by the control built for it.** The
+   UV-locked geomorph arm tests the triplanar-material hypothesis and reads 431,578 against 432,188 —
+   0.14% against a 3.49× effect.
+4. **`P-77`'s smooth-shade defect, inherited rather than rediscovered.** `P-77`'s first run read a 95.5%
+   steady-state rejection rate off a smooth shade; the world-space albedo detail that fixes it is
+   transcribed here rather than re-derived.
+5. **`P-77`'s camera defect binds this fixture.** The rejection rate is a function of reprojection
+   displacement and a walking camera saturates it at 86.6%, so the camera is pinned to `P-77`'s static
+   `HEADLINE_ARM` regime — the only regime where C2's and C3's ratios have headroom.
+6. **`M-121`'s statistic overstates the visible displacement, and the registered column had to change to
+   say so.** A vertex-to-nearest-**vertex** distance contains the coarse mesh's own vertex spacing:
+   `p99_pixels_vertex_metric` = **67.1820 px** against the registered vertex-to-nearest-**triangle**
+   `p99_pixels_of_pop` = **29.7375 px**, a **2.2592×** correction. Both are on every row.
+7. **The gyroid coarse mesh yields four zero-area triangles at every level**, counted as
+   `degenerate_coarse_triangles = 4` rather than silently skipped, because the closest-point routine
+   divides by a zero barycentric sum on one.
+8. **Stated, not fixed: the cost half has no zero-proof arm of its own.** Its vacuity control is
+   `assert!(static_rej > 0)` with 33,822 of 1,030,808, inherited from `P-77`'s
+   `zero_proof_no_jitter_static` arm reading exactly 0. That is weaker than `P-77`'s control and the row
+   says so.
+9. **Stated, not fixed: the denominators are not shared with `P-77`.** This static arm's rate is
+   33,822 / 1,030,808 = **3.28%**, 6.7× `P-77`'s 0.49% headline, because the scene differs (480 × 270,
+   LOD-block geometry, a trilinear-reconstruction cast rather than analytic sphere tracing). **No number
+   may be cross-quoted between `P-77` and `P-91`.** 3.28% still leaves about 30× of headroom, so C2's and
+   C3's ratios are measurements and not quotients of saturated rates.
+10. **Stated, not fixed: the pop metric is plausible, not perceptual.** StopThePop (`arXiv:2402.00525`)
+    and FLIP (`10.1145/3406183`) are the only published popping metrics and both need a trained
+    perceptual model. This is a projected geometric displacement and must not be quoted as a visibility
+    threshold. No frame time is claimed anywhere in the file.
+
+**Every number in the two reports was re-checked against the committed clean re-run, and two do not
+survive it.** The reports were written off a run stamped `63c7161 (WORKING TREE DIRTY)` while roughly
+twenty-five sibling agents were compiling; the committed file is the quiet-tree re-run at `874a68b`.
+Everything else in both reports reproduces to the last committed digit — the pixel figures, all six
+rejection counts, 1.002476, 241, 3.1412, 1.6177, 1.541236, 186.2393, 4 / 6 / 12 bytes, the four degenerate
+triangles.
+
+- `geomorph_fail_fraction_cell27` — the owner's report tabulates the 3×3×3 dilation at **0.1044** on
+  terrain and **0.1614** on gyroid. The committed file reads **0.053494** and **0.083409**, which are
+  `62/1159` and `276/3309`, *identical to the unrestricted `reach` arm* on five of the six rows (the
+  sixth, `gyroid` L2→3, is 67/273 against 66/273 — one vertex). **Neither reported figure appears in any
+  column of `docs/experiments/p-91.csv`**, and the independent reproduction diffed against the owner's
+  own saved run found only `cpu_mhz` differing, so the reported pair belongs to a draft run earlier than
+  either. **The conclusion those figures supported — that the dilation is an intermediate step between
+  the containing cell and an unrestricted ray — is withdrawn.** What the committed integers say instead
+  is stronger and run-independent: one cell of dilation already recovers **every** target a
+  ±3-coarse-cell search finds, so the whole 0.396894 → 0.053494 collapse is the containing-cell wall and
+  nothing beyond it, and the residual 5.35% / 8.34% is star-shapedness with no restriction left to blame.
+- `cpu_mhz` — 4201 in the independent reproduction, **4200** in the committed file. It is the only cell
+  that moved in 2,430, and nothing is computed from it.
+
+**A briefed conclusion withdrawn on the committed file's evidence.** C2 is one of the six clauses this
+phase registered as an expected null, and the null's stated content is *"dither also failing on gyroid,
+which would mean neither transition works on cave topology and the honest answer is a hard switch at a
+distance where nobody looks."* **That null did not fire and must not be reported as the result.** At the
+repo's own switch distance the 8-slot dither reads **0.9683 px on `gyroid` — the only one of all 30 rows
+whose p99 falls under one pixel** — and `distance_for_p99_under_one_px` for that row is **6.78 units**,
+*below* the 7.0 the demo already switches at. Dither works on cave topology. The completed result is a
+different and larger null, and it is two prohibitions rather than one: **do not build item 3.6's geomorph,
+and do not build item 3.8's switch rule.** C2 fell on its cost half, in the direction opposite to the
+prediction.
+
+**What changed as a result.**
+
+1. **Do not build item 3.6's one-scalar geomorph as specified.** The containing-cell rule fails on 39.69%
+   of terrain and 48.44% of gyroid fine vertices, so the field it was predicted to succeed on is the one
+   that kills it. If a morph is built at all the restriction must be relaxed to at least the 3×3×3
+   neighbourhood, and even 5.35% is five times too many for a sub-pixel p99.
+2. **Do not derive switch distances from item 3.8's rule under a hard switch.**
+   `distance_for_p99_under_one_px` on `fbm_terrain` L0→1 is **208.16** units against the demo's **7.0** —
+   `7.0 × 29.7375`, an exact within-row identity — a **29.74×** switch distance. On `gyroid` it is 54.23,
+   still 7.75×. The rule is not a tunable, it is a prohibition.
+3. **If a cross-fade is built, build the dither, and this reverses the one measured argument in the
+   literature.** Dither wins the pop on gyroid (0.9683 px against 4.1900 px) and costs 3.49× less
+   temporal history. The shippable form of item 3.8 is 8× alpha-to-coverage, which needs 26.02 units on
+   terrain instead of 208.16 and is already sub-pixel on gyroid at 7.0.
+4. **The bytes argument is stronger than the docs claim and it does not save the method.**
+   `bytes_per_vertex` = **4** against `bytes_second_position` = **12** is a **3×** saving, not the 2×
+   implied by the gameplay doc's *"6 bytes/vertex instead of 12"*; `bytes_per_vertex_doc_claim` = 6 is on
+   the row so a reader can redo the arithmetic. `morph_t_max_coarse_cells_cell` is 0.584485 on terrain and
+   0.097031 on gyroid, so a quantisation would need under one coarse cell of range. A 3× memory win on a
+   transition that is visible at 25 px is not a trade worth making.
+5. **C3 closes as independence, and that is a budgeting decision.** A 0.25% interaction means a
+   cross-fade's TAA cost does not hide inside digging's, so the two must be added rather than shared.
+   Dither is affordable on its own terms — 123,769 against geomorph's 432,188 — not because destruction
+   already paid for it.
+
+**Would be shown wrong by:** a containing-cell geomorph failure fraction under 0.01 on `fbm_terrain` at
+`BASE_H = 0.25`, which would restore C1's terrain half and with it item 3.6; a morph implementation whose
+temporal-history rejection is below a dither's on the same resolve, which would restore C2's cost half and
+Haydel/Yuksel/Seiler's ordering; a `superadditivity` above about 1.02 on a fixture whose dig silhouette is
+a larger share of the frame, which would make C3's mechanism claim readable as a mechanism rather than a
+sign; a perceptual validation against `FLIP_t` or a forced-choice study showing that a 25-pixel geometric
+displacement is not visible, which would void the whole pixel instrument rather than any one clause; or a
+`geomorph_fail_fraction_cell27` that separates from `geomorph_fail_fraction_reach` on a field where the
+coarse surface is more than one cell away along the normal, which would make the dilation an intermediate
+step after all.
+
+### 💥 ✗72 / M-404 — C1 FALSIFIED on both of its readings, by **3.00×** at the cheapest field
+and **58.4×** at a dug chunk, while C2 HELD at **77.6–246.2×** and C3 HELD at **0 differing bytes over
+10,000 edits** — so the title inverts: you do not choose between extracting and decoding, you already
+extracted because the chunk was dug, and the answer is **send the log, keep the mesh local, regenerate
+because the extraction was going to happen anyway** (P-92, R-092)
+
+> **Numbering.** ✗72 is the next falsified id and M-404 the next measured id. Against the
+> highest committed pair (`✗55`, `M-384`) those are **`✗56`** and **`M-385`**, dual-numbered on the
+> `✗52 / M-376` precedent because one clause falsified and two carry substantial measured material.
+
+**M.** `cargo bench --bench experiment_p92`, `docs/experiments/p-92.csv`, **86 rows** (91 lines: four `#`
+comments, one column header, 86 data rows — counted, not briefed), scalar `f32` and `f64`,
+**AMD Ryzen 9 5900X** (`amd-ryzen-9-5900x-12-core`, `ghz` 4.1336–4.1934 on 84 rows, `worst_ratio` 1.0000
+so nothing was multiplexed). Four arms: `c1_marginal` (80 rows — five field families × two precisions ×
+eight knob points, each family a least-squares `t = a + b·T` at a fixed 33³ grid), `c2_size` (4 rows,
+`M-50`'s four log buckets), `c3_replay` (1 row), `c3_control` (1 row). Fixture: 33³ chunks —
+**35,937 samples, 32,768 cells** — `marching_cubes`, with `gyroid_dug30` and the C2/C3 chunks carrying
+real subtract-sphere brush logs. Committed at **`ad0a5a3`**, no `(WORKING TREE DIRTY)` on the header, and
+`git merge-base --is-ancestor ad0a5a3 HEAD` passes.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 marginal extraction cost per triangle < **7.3 ns** at 33³ | < 7.3 ns | **FALSIFIED — 21.9212 ns at the cheapest field, 3.00× the bar; 426.1258 ns at 58.4× worst. `c1_holds` = `false` on all 80 C1 rows** |
+| C1's own gloss, *"cheaper than decoding an encoded mesh of the same output"* (a **total**) | < 7.3 ns | **FALSIFIED — `ns_per_triangle_total` 49.4097–2930.7178 ns, i.e. 6.77× to 401.5× the bar. Arithmetically unreachable before the run** |
+| C1 against the decode measured **on this machine** | < `meshopt_ns_per_triangle` | **FALSIFIED — `c1_holds_vs_measured` = `false` on all 86 rows; local decode is 4.2589–6.4373 ns, so the best marginal misses by 3.41× even against the slowest local decode** |
+| C2 field + log ≥ **20×** smaller than meshopt's encoding, across `M-50`'s four buckets | ≥ 20× | **HELD — 246.1824 / 141.0236 / 99.6973 / 77.6249. `c2_holds` = `true` on 4 of 4** |
+| C3 byte-identical extraction over a 10⁴-edit trace, M5 against Zen 3 | 0 differing bytes | **HELD — `bytes_differing` = 0, `replay_edits` = 10,000, `peer` = `experiment_p92_replay-apple-m5.bin`** |
+
+---
+
+#### The SHARE recomputation, said out loud, and the clause arithmetic could not reach
+
+`✗51`'s rule: a clause stated against a cost names the share of that cost it can move, **before** the run.
+C1 is not a speedup ratio, so the arithmetic is a reachability check — and the registration's own text
+carries **two incompatible readings** that the check separates.
+
+- **The literal wording** — *"Marginal extraction cost per triangle"* — puts the 35,937-sample grid pass
+  and the 32,768-cell classification walk in the fitted fixed term `a` and leaves only the emit stage in
+  `b`. Reachable, genuinely unknown, and what the harness fits.
+- **The gloss** — *"re-extracting is cheaper than decoding an encoded mesh of the same output"* — is a
+  **total**, because a receiving endpoint that decodes does not sample the field at all. Two committed
+  per-sample marginals for `marching_cubes` on this Zen 3 bracket that total: **10.68 ns/sample** (`✗51`)
+  and **13.1892 ns/sample** (`docs/measurements/resolution_sweep-ryzen9-5900x.csv`). So one 33³ extraction
+  costs `10.68 × 35,937 = 383,807 ns` to `13.1892 × 35,937 = 473,980 ns`, and `total/T ≤ 7.3 ns` needs
+  **T ≥ 52,576 to 64,929 triangles** out of 32,768 cells — **1.60 to 1.98 triangles per cell averaged
+  over the whole volume.** A marching-cubes surface is `O(n²)`. Even at the ceiling of 5 triangles per
+  active cell that demands **10,515 to 12,986 active cells, 32.1%–39.6% of the grid**; the widest fixture
+  here reached 26,384 triangles, short of the bar by **1.99×–2.46×** on triangle count alone.
+  **The total reading was unreachable by arithmetic before any code ran, and it is written here because
+  that is the rule.** The run confirms it rather than discovering it.
+
+`triangle_term_share` = `b·T/(a + b·T)` reports how much of an extraction the *marginal* clause is even
+about: **0.0115 to 0.8072** across the C1 rows. So C1-as-registered talks about between 1% and 81% of a
+chunk extraction and never all of it. **C2** is a ratio of two independent byte counts with no Amdahl
+ceiling — reachable. **C3** is a byte count — reachable.
+
+---
+
+#### C1 — the fitted marginal, and how the fit separates the grid-sampling term
+
+**Not by dividing a total by a count.** Within one family the grid is fixed at 33³ and the knob is an
+**area** knob, chosen so the sample loop's instruction sequence does not change: `box_exact` half-extent
+(`min`/`max`/`abs`, no `libm` call at all — the crate's cheapest field and therefore the **lower bound**),
+`sphere` radius (one `sqrt` whatever the radius), `gyroid` `scale` (the six `libm` calls run at every
+scale), `fbm_terrain` `amplitude` (a trailing multiply over the same four octaves and the same lattice),
+`gyroid_dug30` `scale` (the thirty subtract-spheres are walked at every sample regardless). Only the
+triangle count moves, so `t = a + b·T` puts the sampling and classification cost in `a` and the emit cost
+in `b`. Eight knob points a family, timed round-robin, `fit_points` = 8.
+
+| family | prec | `ns_per_triangle` (fitted `b`) | `cycles_per_triangle` | `fit_a_ms` | `fit_r2` | `fit_sound` | × 7.3 |
+|---|---|---:|---:|---:|---:|:--:|---:|
+| `box_exact` | f32 | **21.9212** | **93.0802** | 0.277785 | 0.999982 | true | **3.00** |
+| `box_exact` | f64 | 22.9063 | 95.7758 | 0.276431 | 0.999961 | true | 3.14 |
+| `sphere` | f32 | 27.8346 | 117.4800 | 0.228030 | 0.999919 | true | 3.81 |
+| `sphere` | f64 | 29.8024 | 126.4834 | 0.265546 | 0.999912 | true | 4.08 |
+| `gyroid` | f32 | 58.6082 | 245.0759 | 0.590806 | 0.993040 | true | 8.03 |
+| `gyroid` | f64 | 90.7579 | 379.5804 | 0.840029 | 0.991489 | true | 12.43 |
+| `fbm_terrain` | f32 | 130.8575 | 543.0724 | 6.649519 | 0.999792 | true | 17.93 |
+| `fbm_terrain` | f64 | 129.9082 | 536.9738 | 6.381141 | 0.999781 | true | 17.80 |
+| `gyroid_dug30` | f32 | 309.5667 | 1298.4850 | 2.096217 | 0.998105 | true | 42.41 |
+| `gyroid_dug30` | f64 | **426.1258** | 1782.5839 | 2.630045 | 0.998302 | true | **58.37** |
+
+**The tightest lower bound is `box_exact/f32` at 21.9212 ns/triangle = 93.0802 cycles/triangle.** No field
+in the crate can undercut it — `✗51` classified its body as min/max/abs with no calls — and it misses the
+bar by **3.00×**.
+
+**`M-19`'s check on `fit_a_ms`, against the family's own range.** `box_exact/f32`'s `a` = 0.277785 ms sits
+against measured `extract_ms` of **0.283863 ms** (296 triangles) to **0.498445 ms** (10,088 triangles):
+`a` is **97.9% of the smallest run and 55.7% of the largest**. Negligible at the top of the range,
+dominant at the bottom — **do not extrapolate this marginal below roughly 300 triangles.** No `fit_a_ms`
+in the committed run is negative, which is `M-21`'s signature checked and clear.
+
+**The total basis, `ns_per_triangle_total` = `extract_ms·1e6/triangles`:**
+
+| family | prec | triangles | `ns_per_triangle_total` | `triangle_term_share` |
+|---|---|---|---:|---:|
+| `box_exact` | f32 | 296 – 10,088 | 958.9966 → **49.4097** | 0.0229 – 0.4437 |
+| `box_exact` | f64 | 296 – 10,088 | 954.1318 → 50.2701 | 0.0240 – 0.4557 |
+| `sphere` | f32 | 104 – 7,976 | 2228.4808 → 56.4110 | 0.0125 – 0.4934 |
+| `sphere` | f64 | 104 – 7,976 | 2592.6250 → 63.1274 | 0.0115 – 0.4721 |
+| `gyroid` | f32 | 4,564 – 25,436 | 182.8501 → 83.1473 | 0.3205 – 0.7049 |
+| `gyroid` | f64 | 4,564 – 25,436 | 249.3166 → 124.7822 | 0.3640 – 0.7273 |
+| `fbm_terrain` | f32 | 2,374 – 5,172 | **2930.7178** → 1416.9058 | 0.0447 – 0.0924 |
+| `fbm_terrain` | f64 | 2,374 – 5,172 | 2818.0455 → 1363.9064 | 0.0461 – 0.0952 |
+| `gyroid_dug30` | f32 | 7,840 – 26,384 | 564.4389 → 393.4284 | 0.5485 – 0.7868 |
+| `gyroid_dug30` | f64 | 7,840 – 26,384 | 734.5309 → 527.9047 | 0.5801 – 0.8072 |
+
+**49.4097 ns is the best total anywhere — 6.77× the bar — and 2930.7178 is 401.5×.**
+
+---
+
+#### `fit_sound` is a required caveat, and the caveat is now about the *column*, not about one arm
+
+`fit_sound` is `a > 0 && r² ≥ 0.95` (`FIT_R2_FLOOR` = 0.95), and it exists so a reader who grabs the
+obvious `ns_per_triangle` is not misled — chore `C5`'s lesson. **In the committed clean run every one of
+the 80 C1 rows reads `fit_sound = true`**, with `fit_r2` spanning **0.991489** (`gyroid/f64`, the lowest)
+to **0.999982** (`box_exact/f32`). So no committed marginal in this table is unquotable.
+
+> **Six rows read `fit_sound = n/a`, and that is not a failed fit.** The four `c2_size` rows and the two
+> `c3_replay`/`c3_control` rows are single-mesh arms, not knob sweeps: they carry `fit_points` = 1,
+> `fit_a_ms` = 0.000000 and `fit_r2` = 0.000000 because there is no line to fit. Their `ns_per_triangle`
+> is therefore a **total**, not a marginal — 308.3787 / 441.7750 / 572.4733 / 701.6788 on the C2 buckets
+> (identical to their own `ns_per_triangle_total`) and 672.1540 on the C3 row. Reading those four zeroes
+> as a collapsed fit is the misparse the column was added to prevent.
+
+> **`c1_holds` reads `n/a` on the 6 non-C1 rows and `false` on all 80 C1 rows; `c2_holds` reads `n/a` on
+> the 82 non-C2 rows and `true` on 4 of 4; `c3_holds` reads `n/a` on 84, `true` on the replay row, and
+> `control` on the control row.** `c3_holds = control` is a label, not a verdict: that row's
+> `bytes_differing` = 1 is the *desired* outcome. Every `n/a` here is "this arm does not score this
+> clause", never "this clause failed".
+
+> **`regen_control_differing` = 0 on the two C3 rows, and that is a control that does not run in that arm,
+> not a control that fired empty.** The regeneration control belongs to the C1 and C2 arms, where it
+> reads **2,435 to 2,459,570** (C1) and **1,235,003 to 1,235,873** (C2).
+
+---
+
+#### The vacuity control the registration names, shown as the pair it is
+
+> *the encoded-size arm must use a real encoder on the real triangles, not an estimate, and its decode
+> time must be measured on this machine rather than quoted from the blog post.*
+
+`meshopt` 0.6.2 — the Rust FFI binding to zeux's own meshoptimizer C library — is a **dev**-dependency,
+and every row runs the real codec over that row's real triangles.
+
+| column | value | why it proves the fixture could have failed |
+|---|---|---|
+| `meshopt_roundtrip_differing` | **0** on all 86 rows | encode → decode loses no vertex and no triangle (compared up to rotation, because the index codec normalises each triangle's rotation) |
+| `meshopt_control_differing` | **1** on all 86 rows | one quantised position component moved by **one ULP**, through the real encoder and the real decoder, compared by the **same** comparator, and **exactly one** vertex differs. A blind comparator says 0; a useless one says thousands |
+| `regen_differing` | **0** on all 86 rows | the field-plus-log byte string is decoded back, the chunk is re-extracted from the decoded description, and **not one mesh byte moves** |
+| `regen_control_differing` | **2,435 – 2,459,570** | flip one bit of the encoded `cell_size` exponent and thousands to millions of mesh bytes move |
+| `meshopt_bytes_per_triangle` | **2.5531 – 5.3462** | an estimate cannot vary row to row; the spread is asserted non-zero |
+| `meshopt_decode_ms` / `meshopt_ns_per_triangle` | **4.2589 – 6.4373 ns** | measured *here*, so `c1_holds_vs_measured` scores C1 against this machine rather than against the blog post. A 4.19 GHz Zen 3 lands at or slightly under the published 2 GHz i7-8650U figure, so **7.3 is a fair bar and not a handicap** |
+| `brushes_biting` | = `brushes`: 15/15, 30/30, 45/45, 60/60, with `brushes_drawn` = 64 | a log padded with no-ops would compare a fat description against geometry it did not produce |
+| `replay_min_triangles` | **12,394** > 0 | a digest stream of 10,000 hashes of the *empty* mesh would agree perfectly across two machines and mean nothing |
+
+**`meshopt_roundtrip_differing` = 0 beside `meshopt_control_differing` = 1, and `regen_differing` = 0
+beside `regen_control_differing` in the thousands-to-millions, are the whole thesis of this experiment
+instrumented rather than argued** — *the bytes are sufficient to regenerate the chunk* — on every row.
+
+---
+
+#### C2 — HELD in all four of `M-50`'s buckets, by 3.88×–12.31× more than required
+
+| `log_bucket` | `brushes` | `triangles` | `vertices` | `meshopt_bytes` (vtx + idx) | `field_plus_log_bytes` | `size_ratio` | `size_ratio_f32` | × 20 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1–15 | 15 | 15,460 | 8,143 | 72,870 (54,308 + 18,562) | 296 | **246.1824** | 577.5203 | 12.31 |
+| 16–30 | 30 | 16,460 | 8,629 | 77,704 (57,836 + 19,868) | 551 | **141.0236** | 329.1252 | 7.05 |
+| 31–45 | 45 | 16,960 | 8,877 | 80,356 (59,795 + 20,561) | 806 | **99.6973** | 232.3015 | 4.98 |
+| 46–60 | 60 | 17,340 | 9,077 | 82,360 (61,322 + 21,038) | 1,061 | **77.6249** | 180.4675 | 3.88 |
+
+meshopt was given its strongest line — 16-bit quantised positions over the chunk's own box, octahedral
+normals in two bytes, vertex-cache then vertex-fetch optimisation — and `size_ratio_f32` (180.5–577.5) is
+the same ratio against an unquantised `f32` position+normal encoding. The C3 replay's final chunk, with
+`f64` wire scalars and 50 brushes, still gives `size_ratio` **43.3201**.
+
+**The description grows exactly linearly and the geometry does not.** `field_plus_log_bytes` steps
+296 → 551 → 806 → 1,061: **+255 bytes per 15 brushes = 17.0 bytes a brush** (op + centre + radius) over a
+**41-byte** base field description, arithmetic from those four integers. The triangles it produces grow
+sub-linearly — 15,460 → 17,340 as the log goes 15 → 60 — so the ratio decays as `1/N`: 246 → 141 → 100 →
+78. `[INFERENCE]` extrapolating that decay puts the 20× crossover near **250 brushes** on a chunk this
+size, far outside `M-50`'s buckets and the number `R-095`'s log trimming should respect.
+
+---
+
+#### C3 — HELD, zero differing bytes over 10,000 edits, Zen 3 against Apple M5
+
+`bytes_differing` = **0**, `bytes_differing_scope` = `cross-machine-digest-stream`, `peer` =
+`experiment_p92_replay-apple-m5.bin`, `replay_edits` = **10,000**, `replay_min_triangles` = **12,394**,
+`replay_total_triangles` = **148,093,810**, `replay_ms` = **99,541.849**, `extract_ms` = **9.954185** ms
+mean per edit, final chunk 15,785 triangles / 8,251 vertices.
+
+The trace is **200 chunks × 50 subtract-spheres**, each brush placed strictly inside its own chunk so a
+chunk's log is exactly its own brushes and the window needs no approximation. After every edit the chunk
+is re-extracted in `f64` and hashed with **`isomesh::validate::mesh_hash`** — `M-31`'s own instrument, the
+one the 216 golden hashes are taken with — and the 8 bytes are appended to a digest stream written to
+`target/experiment_p92_replay-<machine-slug>.bin`. There is **one** code path: compare the local stream
+against every other stream in that directory. Zero peers would be a comparison over an empty set, not a
+branch — and the set is never empty, because the harness also writes
+`experiment_p92_replay-control-onebyteflipped.bin`.
+
+**The `c3_control` row is the comparator's liveness proof:** same 10,000-edit stream with one byte
+deliberately flipped, `bytes_differing` = **1**, `bytes_differing_scope` = `control-onebyteflipped`,
+asserted non-zero. So the 0 reported against the M5 is a measurement and not a comparator that never
+looks. The digest artefact md5'd identically on both machines (`92719079f6d47afb4a62e9ff9ae03fa5`,
+reported from the two runs' stdout — the md5 itself is not a CSV column), and every *integer* on the CSV
+reproduced on the M5: `replay_total_triangles`, `replay_min_triangles`, every C1 triangle count, every
+`meshopt_bytes`, every `field_plus_log_bytes`, and `brushes_drawn` = 64.
+
+**`meshopt` as a dev-dependency, justified.** It is *required* rather than convenient: the registration
+makes "a real encoder on the real triangles, not an estimate" the vacuity control, and the 1.92 ms sponza
+figure C1 is scored against was measured with **this** codec — `meshopt-rs`, the pure-Rust
+reimplementation, would give a different density and answer a different question. Budget check reported by
+the original run: **`cargo tree -p isomesh -e normal` is `isomesh` + `libm`, unchanged**, with and without
+`--features experimental`. New lock entries are dev/build only (`meshopt` 0.6.2, `cc`, `jobserver`,
+`shlex`, `find-msvc-tools`, `float-cmp`), all declared MSRVs ≤ 1.85 against the workspace's 1.89.
+
+---
+
+#### Mechanism
+
+Per triangle marching cubes does roughly 0.9 new vertices' worth of work, and each new vertex costs one
+edge lerp, **one `Sdf::gradient`**, one normalise and a push, plus a table lookup and three index pushes.
+**The gradient is the swing factor, and the family ordering is exactly the ordering of gradient cost:**
+`box_exact`'s is min/max/abs (**21.9 ns/tri**) → `Sphere`'s is a `sqrt` and three multiplies (**27.8**) →
+`Gyroid`'s is six `libm` transcendentals (**58.6–90.8**) → `FbmTerrain`'s is four differentiated noise
+octaves (**129.9–130.9**) → a 30-brush `BrushStack` **has no analytic gradient at all**, so `Sdf`'s
+default central difference charges **six full stack evaluations per vertex** (**309.6–426.1**).
+
+meshopt's decoder touches a triangle without evaluating anything: a byte-oriented delta/entropy decode at
+`meshopt_bytes_per_triangle` **2.5531–5.3462** bytes. **Decoding reads bytes; extracting evaluates a
+field.** 93 cycles per triangle is simply more work than an entropy decoder does, and the gap widens to
+58× once the field is a brush stack. The total picture is worse in the direction that decides
+"transmit or regenerate": `triangle_term_share` says only **2.3%–44.4%** of a `box_exact` chunk extraction
+is per-triangle work at all — the rest is 35,937 grid samples and a 32,768-cell classification walk that a
+decoder never performs.
+
+C2 goes the other way for the same reason the crate exists: **the description is procedural.** A
+17,340-triangle chunk is 82,360 encoded bytes; the field plus a 60-brush log is 1,061.
+
+C3 holds because `libm` is the only float backend (`I-001`) and the cell size is a power of two (`M-32`),
+so `origin + h·local` is exact and every sample is the same bit pattern on both machines. The replay
+reaches a regime the 216 fixtures do not — 10,000 sequential edits, stacks 1–50 deep folded with `max`
+(exact and associative), gyroid arguments to 80 radians across a 40×40×8-unit world — and nothing drifts.
+
+---
+
+#### What the clean-tree re-run moved, and what was withdrawn
+
+The bench was first run on a dirty tree with roughly 25 sibling agents compiling. **Every clock moved;
+every integer and every byte count did not.** `✗24` (*a wall-clock ratio is not a gate*) and `M-281`
+(*a millisecond is a property of the binary*) are why the verdicts below rest on integers and on ratios
+taken within a single row.
+
+| figure | pre-run (dirty) | committed `ad0a5a3` | move |
+|---|---:|---:|---|
+| `box_exact/f32` `ns_per_triangle` | 21.8202 | **21.9212** | +0.5% |
+| `box_exact/f64` `ns_per_triangle` | 30.8145 | **22.9063** | **1.35× down** |
+| `box_exact/f64` `fit_a_ms` | 0.475095 | **0.276431** | **1.72× down** |
+| `sphere/f64` `ns_per_triangle` | 42.8750 | **29.8024** | **1.44× down** |
+| `gyroid/f32` `ns_per_triangle` | 88.6915 | **58.6082** | **1.51× down** |
+| `gyroid/f32` `fit_r2` / `fit_sound` | 0.79190 / **false** | **0.993040 / true** | the unsound arm became sound |
+| `fbm_terrain/f32` `ns_per_triangle` | 135.4014 | **130.8575** | −3.4% |
+| `gyroid_dug30/f64` `ns_per_triangle` | 423.3456 | **426.1258** | +0.7% |
+| `box_exact/f32` `cycles_per_triangle` | 91.87 | **93.0802** | +1.3% |
+| `ns_per_triangle_total` span | 49.43 → 4269.0 | **49.4097 → 2930.7178** | the top end fell **1.46×** |
+| C3 `replay_ms` | 143,182.691 | **99,541.849** | **1.44× down** |
+| C3 mean per-edit `extract_ms` | 14.318 | **9.954185** | **1.44× down** |
+| `ghz` range | 4.1613 – 4.1952 | **4.1336 – 4.1934** | |
+| every triangle count, `meshopt_bytes`, `field_plus_log_bytes`, `size_ratio`, `brushes_drawn` = 64, `replay_min_triangles` = 12,394, `replay_total_triangles` = 148,093,810, `bytes_differing`, `regen_differing`, `meshopt_control_differing` | — | **identical** | 0 |
+
+**Three conclusions withdrawn, and what replaced each.**
+
+1. **Withdrawn: *"`gyroid/f32` is `fit_sound = false` in the committed run (r² = 0.79190) and its 88.6915
+   ns/tri must not be quoted."*** On the quiet tree that arm is sound at r² = **0.993040** and its
+   marginal is **58.6082** — a **1.51×** move on the identical binary, which is exactly why it was
+   unquotable. **Replaced by:** all 80 C1 rows read `fit_sound = true`, `fit_r2` ≥ **0.991489**, and no
+   verdict rests on any single arm because the **cheapest field** carries the lower bound and
+   `box_exact/f32` moved 0.5%. The `fit_sound` caveat now attaches to the *column* — six `n/a` rows that
+   are single-mesh arms, blockquoted above — not to one family.
+2. **Withdrawn: the Apple M5 per-triangle table** (`box_exact` 12.0593/13.7526, `sphere` 12.8799/15.0818,
+   `gyroid` 35.5467/55.2021, `dug30` 183.7123/231.5293 ns/tri, "still fails by 1.65× at its best").
+   **No committed file contains an M5 timing** — `docs/experiments/p-92.csv` carries the Zen 3's clocks
+   only, and the M5's contribution is a digest stream, not a duration. Quoting them would be `✗35`'s
+   defect. **Replaced by:** C1 is falsified on the committed machine by **3.00×** at the cheapest field
+   the crate has, on the marginal basis, and by **6.77×** at the best total; what is established
+   cross-machine is C3's **byte** agreement, which is an integer and machine-independent by construction.
+3. **Withdrawn: *"6.8–132× on the total basis"* and *"regen_control_differing ∈ [2,435, 2,459,570]"* read
+   as a whole-file range.** The committed total span is **6.77× to 401.5×** the bar; and
+   `regen_control_differing` is [2,435, 2,459,570] on the **C1** rows, 1,235,003–1,235,873 on the **C2**
+   rows, and **0** on the two C3 rows where that control does not run. **Replaced by** the per-arm
+   figures above.
+
+---
+
+#### Fixture defects the harness's own controls caught
+
+1. **The first knob choice was wrong and `M-21` caught it.** The original sweep used gyroid's `iso` and
+   fbm's `frequency`, both of which change the surface's **topology** rather than only its area — so
+   triangles-per-active-cell moves with the knob and time is not linear in triangles. `r²` came back
+   **0.19262** and **0.36605**, and `gyroid_dug30/f64` fitted a fixed cost of **−9.32 ms**: a negative
+   cost for sampling 35,937 grid points. Replaced with **area** knobs, which is why the committed
+   `fit_r2` floor is 0.991489.
+2. **Median-of-N was the wrong estimator, and the harness proved it against itself.** `sphere/f32`
+   returned `r² = 0.658` where the *identical* `f64` fixture returned 0.99963 in the same run. Switched to
+   the minimum; then, when per-point batching let a sibling's `cargo` land entirely on one knob point
+   (`box_exact/f64`: r² 0.99994, then **0.32081** next run) — a slope error, not a level error — to the
+   **minimum over 15 round-robin passes of 5 reps**.
+3. **The `brushes_biting` control fired at 44 of 45.** Drawing each bucket independently produced a log
+   containing a brush that changed nothing, which is `P-94`'s C2 collapse arriving uninvited. Rebuilt as
+   one 60-brush log drawn by rejection with the buckets as prefixes: **`brushes_drawn` = 64 for 60 kept**,
+   so 4 of 64 randomly placed brushes were already swallowed by their predecessors on a 33³ chunk — an
+   incidental measurement of the collapse `R-094`/`R-096` are about.
+4. **A column carrying another arm's number — `M-377`'s defect, caught by reading the harness's own CSV.**
+   The first C3 row put the replay's 148,093,810-triangle total in `triangles` beside the **final
+   chunk's** 74,294-byte encoding, giving `meshopt_bytes_per_triangle` = **0.0005**. Fixed: a C3 row's
+   geometry columns all describe the final chunk (15,785 triangles, `meshopt_bytes_per_triangle` =
+   **4.7066**) and the aggregates moved to `replay_total_triangles` / `replay_ms`.
+5. **The index round-trip is not a `Vec<u32>` equality, and asserting that it was would have produced a
+   false failure.** meshoptimizer's index codec normalises each triangle's rotation. Measured on a
+   3,200-triangle probe: **7,500 of 9,600 indices differ literally, 0 of 3,200 triangles differ up to
+   rotation.** `differing_triangles` compares up to rotation and documents why.
+6. **`cycles_per_triangle` is less robust than `ns_per_triangle`, and one row shows it.** Cycles come from
+   the counter window of each point's fastest pass rather than a min over passes, so `fbm_terrain/f32`
+   reads 543.0724 against `f64`'s 536.9738 while their ns marginals are 130.8575 and 129.9082. On the
+   cheap arms both are stable and mutually consistent — `box_exact/f32`: 21.9212 ns and 93.0802 cycles at
+   4.1901 GHz agree to **1.34%** (`93.0802/4.1901 = 22.2143` ns against the fitted 21.9212). Quote the
+   cheap arms' cycles; treat the expensive arms' as indicative.
+
+---
+
+#### What changed as a result
+
+1. **Do not build "regenerate instead of transmit" as a CPU-versus-bandwidth trade against an encoder.
+   The argument as registered is dead.** Re-extraction costs **3.00×** more per triangle than decoding at
+   the crate's cheapest field on the marginal basis, **58.4×** at a dug chunk, and **6.77×–401.5×** on the
+   total basis that actually applies to a receiver. Transmitting wins on CPU and it is not close.
+2. **The direction that survives is not a CPU argument — it is a wire-format and save-file argument, and
+   C2/C3 establish it.** **77.6–246.2×** smaller at `M-50`'s log lengths, and **bit-identical** on a Zen 3
+   and an Apple M5 over 10⁴ edits. **The honest framing: you are not choosing between extracting and
+   decoding — you already extracted, because the chunk was dug.** The 21.9 ns/triangle is a **sunk cost of
+   editing**, not an alternative to a 7.3 ns/triangle decode. So: **send the log, keep the mesh local, and
+   regenerate because the extraction was going to happen anyway.** That is Teardown's conclusion reached
+   from this crate's own numbers, and it needs no new machinery.
+3. **One source change this found and did not land.** `BrushStack` has no analytic `gradient`, so dug
+   chunks pay **six full stack evaluations per vertex** for their normals — **309.6–426.1 ns/triangle
+   against gyroid's own 58.6–90.8**, a penalty carried entirely by normals and **the largest single
+   per-triangle cost in this experiment**. `∂ₓ max(f, −s)` is `∂ₓf` or `−∂ₓs` depending on which branch
+   won: **one comparison per axis, zero extra field evaluations.** It is a source change, therefore a
+   separate ticket and a separate conversation (`P-70`/`P-71`'s rule). **Surfaced, not merged.**
+4. **Nothing here reopens meshlet or cluster compression.** The encoder came out *faster* than extraction,
+   which argues for keeping geometry local — not for compressing it.
+5. **Null reported as a completed result.** "Do not build regeneration as a decode substitute" is the
+   conclusion, not an absence of one. C1 was registered as *genuinely uncertain*; it is now settled with a
+   number, and the number closes the argument in the direction the falsifier named.
+
+**Would be shown wrong by:** a field whose analytic gradient is cheap enough that the fitted marginal
+lands under 7.3 ns — `box_exact/f32`'s 21.9212 is the crate's floor, so this needs a *new* field cheaper
+than min/max/abs, which is why the falsification is structural rather than a threshold; or, for C2, a log
+past roughly 250 brushes on a 33³ chunk, where the 17-bytes-a-brush growth crosses the 20× bar and
+`size_ratio` falls below it; or, for C3, **one** differing byte between two machines' digest streams —
+which would end the direction outright, and is exactly why `c3_control` proves the comparator is live on
+every invocation.
+
+### 💥 ✗73 / M-405 — C1 FALSIFIED on the quantity it is denominated in, C3 FALSIFIED at every rate on every variant, C2 HELD by **509×**: the registration's 87.50% is the **sample-grid** upload on a path `GPU-011a` deleted, the **vertex** upload C1 is actually about is **1.71%** of a 12.5 edits/s frame at the 4³ optimum, and reaching the window floor of 0.1 edits/s would need a bus **20.7× slower** than this rig's — so 4³ wins unconditionally and granularity is settled rather than a trade (P-93, R-093)
+
+**M.** `cargo bench --bench experiment_p93`, `docs/experiments/p-93.csv`, **132 rows** (2 fields × 6
+granularities × 11 edit rates), `f64`, **NVIDIA GeForce RTX 3090 / Vulkan** on a Ryzen 9 5900X at
+4,200,056 kHz. `M-377`'s fixture carried forward — chunk granularity 2³–64³ at a fixed 128³ world, an
+eleven-edit dig trace on `gyroid` and `fbm_terrain` — with a camera arm added: a ±1.4 rad sinusoidal yaw
+at 60 Hz for 2 s, uploading each chunk that enters the frustum, timed on the device through one persistent
+`VERTEX | INDEX | COPY_DST | COPY_SRC` buffer. Median of three traces per arm. Committed at **`487bdf3`**,
+clean header, an ancestor of `HEAD`.
+
+> **Every number in this entry is the committed clean-tree run's, and that matters more here than usual.**
+> The reported figures came from a dirty pre-run at `63c7161` taken while ~25 sibling agents were
+> compiling, and **three of C1's six sub-verdicts flipped**. The contention estimate is the harness's own
+> reproduction of `M-377`: `mark + remesh` per edit at 64³ reads **40.6043 ms** against `M-377`'s published
+> **39.673** on `gyroid` (**+2.35%**) and **127.4117** against **127.423** on `fbm_terrain`
+> (**−0.01%**), where the dirty run read up to **+44%**. Every integer reproduces `p-72.csv` exactly — all
+> twelve `raw_vertices` (117,490 / 81,548 / 66,066 / 58,884 / 55,596 / 53,788 and 76,344 / 53,023 / 42,894
+> / 38,292 / 36,264 / 35,012), both `distinct_surface_points` (53,110 and 34,360), all twelve
+> `vertex_duplication`, all six `chunks`, `normal_stencil` 6 on all twelve arms. `M-279`'s rule is
+> satisfied: the new run agrees with the old on everything that is not a clock.
+>
+> **The clocks, meanwhile, moved by up to 5.6× on the same binary, which is why no verdict below rests on
+> one** (`✗24` — *a wall-clock ratio is not a gate*; `M-281` — *a millisecond is a property of the
+> binary*). `calibration_upload_gb_per_s` went **8.0675 → 5.099342** (1.58× on the identical payload
+> through the identical path). The per-chunk crossover read **0.2200 / 0.1347 / 0.1488 / 0.1018** across
+> four dirty runs and **0.572216** here — a **5.62× swing**, with one reading 1.8% from falsifying and
+> another clearing the floor 5.7×. The verdicts therefore rest on the byte columns, which are exact
+> integers over one shared calibrated rate, and on ratios taken within a single row.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 a crossover exists in 0.1–100 edits/s, predicted 1–20, because 4³ carries 51.6% more vertex **data** | crossover ∈ [0.1, 100] | **FALSIFIED — on bytes, the registered quantity, it is 0.004834 edits/s on `gyroid` and 0.001015 on `fbm_terrain`: 20.7× and 98.5× below the sweep floor, 207× and 985× below the predicted window.** `c1_holds_bytes` = `false` on all 132 rows |
+| C2 at 4³ the weld costs MORE than the upload it saves | weld_ms > saving | **HELD — 68.3161 ms against 0.134126 ms on `gyroid` (509.3×) and 42.6815 against 0.087844 on `fbm_terrain` (485.9×); worst at 64³ at 13,005.7×** |
+| C3 a per-chunk granularity beats **both** fixed choices by ≥ 1.5× at 12.5 edits/s | ≥ 1.5× | **FALSIFIED — 0.2376× on `gyroid` and 0.1171× on `fbm_terrain`. The registered 64³/4³ pair never beats the better fixed choice at any of the eleven rates on either field, even with the subdivision transition amortised to zero (max 0.9936×); the tuned 16³/4³ pair peaks at 1.3760× and never reaches 1.5×** |
+
+No clause is VACUOUS and none is BLOCKED: each has a column that could have said no, and P-93 names no
+second machine.
+
+> **Three `false` columns will be misread unless they are spelled out.** `c1_holds_bytes` = `false` does
+> **not** mean "no crossover exists" — the byte crossover is finite and positive at 0.004834 and 0.001015
+> edits/s. It is *outside the registered band*, and the falsifier's own words ("*no crossover in 0.1-100
+> edits per second*") make that a falsification: at any rate a game can produce, 4³ wins. `weld_pays` =
+> `false` on **all 132 rows** and that `false` is C2 **HELD**, not C2 failing — it is the column saying the
+> weld does not pay for itself. And `c1_holds` = `true` and `c1_holds_arena` = `true` on both fields are
+> **not** the clause holding on its own terms; see below.
+
+**The first result is that the registration's denominator is the wrong set of bytes.** The bench reads it
+from the artefact rather than quoting it (`P-70`'s precedent), and it reproduces:
+
+| `docs/measurements/gpu_vs_cpu.csv`, `samples` = 129 | value | column |
+|---|---:|---|
+| `upload_ms` | 7.323576 | `committed_upload_ms` |
+| `gpu_total_ms` | 8.369384 | — |
+| share | **87.5046%** | — |
+| payload, 129³ × 4 B | 8,586,756 | `committed_upload_bytes` |
+| effective rate | 1.172481 GB/s | `committed_upload_gb_per_s` |
+
+That 87.50% is the **sample-grid** upload with host-side field evaluation inside it, and the file's own
+source says so verbatim — `bevy_isomesh/examples/gpu_vs_cpu.rs:31-37`: *"`FieldBuffer::sampled` evaluates
+the SDF **on the CPU** and uploads the samples. So this path does not remove field evaluation from the
+CPU's budget — it adds an upload to it. […] Evaluating the field in the shader is what would change that,
+and it is not this ticket."* `GPU-011a` then did exactly that, and `M-155` measured the whole 129³ path
+falling from **8.37 ms to 0.54 ms**. So the registration's share is a different quantity, on a path the
+crate no longer takes. `M-377`'s bill is a **vertex** upload.
+
+*(The report attributed that quotation to `mesh_render.rs`. It is not there; it is in the example that
+produces the CSV. Corrected.)*
+
+**And `M-377`'s own headline overstates the vertex upload by 1.97×, from integers already in the file.**
+The payload is `raw_vertices × 24 + 3 × triangles × 4`, and `triangles` is *granularity-invariant* —
+104,518 on `gyroid` and 67,910 on `fbm_terrain` at every one of the six partitions. So the index buffer is
+a constant 1,254,216 / 814,920 bytes that dilutes the vertex duplication:
+
+| | vertices 4³ / 64³ | ratio | payload 4³ / 64³ | ratio |
+|---|---:|---:|---:|---:|
+| `gyroid` | 81,548 / 53,788 | 1.5161× (**+51.61%**) | 3,211,368 / 2,545,128 | 1.2618× (**+26.18%**) |
+| `fbm_terrain` | 53,023 / 35,012 | 1.5144× (**+51.44%**) | 2,087,472 / 1,655,208 | 1.2612× (**+26.12%**) |
+
+Both payload figures check exactly: 81,548 × 24 + 1,254,216 = 3,211,368; 35,012 × 24 + 814,920 =
+1,655,208. **The excess a consumer actually pays is 666,240 bytes on `gyroid` and 432,264 on
+`fbm_terrain`** (`excess_vertex_bytes_vs_64`), not 51.6% of the trace.
+
+**The cost model, exactly.** Every rate-dependent column is milliseconds **per second of gameplay**:
+
+```
+total_ms(c, r) = r · edit_ms(c) + stream_ms_per_second(c)
+edit_ms(c)    = (mark_ms + remesh_ms + upload of the re-meshed chunks) / 11
+```
+
+`stream_ms_per_second` is real device upload for the chunks that **entered view**, over the 2 s camera
+sweep. **Weld is deliberately excluded from `total_ms`** — it is never applied on any arm, because C2
+prices it separately and folding it in would charge C1 for C2's answer.
+
+**The share recomputation, said out loud** (`✗51` — *a clause stated as a ratio of a total must name the
+share of that total it can move*). At the 4³ optimum at `game_dig`'s own 12.5 edits/s:
+
+| | total ms/s | upload share by the **clock** | upload share by **bytes** | Amdahl ceiling |
+|---|---:|---:|---:|---:|
+| `gyroid` | 60.5357 | **83.8374%** (`upload_share_of_total`) | **1.7057%** | 1.0174× |
+| `fbm_terrain` | 82.3913 | **58.7953%** | **0.8468%** | 1.0085× |
+
+Byte share is
+`(12.5 × upload_dirty_bytes_per_edit / calibration_upload_gb_per_s + stream_bytes_ms_per_second) / total_ms`
+= `(12.5 × 35,865 / 5.099342e6 + 0.944642) / 60.5357`. **So C1 is denominated in a term worth 1.71% and
+0.85% of the frame, against the registration's 87.50%** — the clause could move the total by at most
+1.74% even if the bus were free. Of the 83.84% clock figure, **97.97% is not bytes at all**: the
+byte-attributable 1.032558 ms/s sits inside a measured 50.7517 ms/s of `write_buffer` and submit cost.
+
+**The one piece arithmetic could not reach before the run, and the run supplies it as an integer.** The
+registration could compute `d_edit` from `p-72.csv`, and it could compute the excess payload from
+`raw_vertices`. What it could not compute is how many times a moving camera re-crosses the bus with the
+same chunk. The camera arm answers it exactly: **`visible_chunk_enters` = 3 × `stream_units` and
+`visible_chunk_exits` = 2 × `stream_units` on all twelve arms**, so
+`2 × stream_upload_bytes_per_second = 3 × full_world_upload_bytes` **exactly** on all twelve — the camera
+streams precisely **1.5 full-world payloads per second** (`stream_full_world_uploads_per_second` =
+1.500000 on both fields). With that integer in hand the whole clause closes as arithmetic:
+
+| | d_edit (ms) | excess bytes | excess ms @ 5.0993 GB/s | re-uploads/s needed for a 0.1/s crossover | supplied | shortfall |
+|---|---:|---:|---:|---:|---:|---:|
+| `gyroid` | 40.543485 | 666,240 | 0.130652 | **31.0316** | 1.500000 | **20.6877×** |
+| `fbm_terrain` | 125.260589 | 432,264 | 0.084769 | **147.7677** | 1.500000 | **98.5118×** |
+
+`31.0316 = 0.1 × 40.543485 / 0.130652`, and `20.6877 = 31.0316 / 1.5`. **`crossover_streaming_shortfall`
+is identically `0.1 / crossover_bytes_edits_per_second`** — the two columns are one fact stated twice
+(0.1/0.004834 = 20.69, 0.1/0.001015 = 98.52). At the registration's own predicted 12.5 edits/s multiply by
+125: **3,878.95** and **18,470.96** full-world excess re-uploads per second, against 1.5.
+
+**Restated clock-free, which is the form that survives a re-run.** Requiring the byte crossover to reach
+0.1 edits/s requires `1.5 · Δbytes / (B · Δedit) ≥ 0.1`, i.e. a bus no faster than
+`15 · Δbytes / Δedit`:
+
+- `gyroid`: `15 × 666,240 / 40.543485` = **0.2465 GB/s** — **20.69× slower** than this rig's measured
+  5.0993, and **127.8× under** PCIe 4.0 ×16's 31.5 GB/s ceiling.
+- `fbm_terrain`: **0.0518 GB/s** — **98.51× slower** than measured, **608.5× under** the bus ceiling.
+
+**C1 was declared arithmetically unreachable before the run under any streaming model in which vertex data
+is uploaded on change, and run anyway per `✗51`** — the magnitude of the miss is the deliverable, and it
+is two orders of magnitude.
+
+**Three crossovers, measured, with their status.** They answer the clause at three levels of realism.
+
+| instrument | column | `gyroid` | `fbm_terrain` | verdict |
+|---|---|---:|---:|---|
+| exact bytes over one calibrated rate — **the clause as registered, and the only one not a clock in its numerator** | `crossover_bytes_edits_per_second` | **0.004834** | **0.001015** | `c1_holds_bytes` **false** — FALSIFIED on both |
+| arena, one `write_buffer` per frame | `crossover_arena_edits_per_second` | 0.410188 | 0.152020 | `c1_holds_arena` **true** — HELD on both, **not load-bearing** |
+| per-chunk `write_buffer`, the shape `bevy_isomesh` ships | `crossover_edits_per_second` | 0.572216 | 0.177604 | `c1_holds` **true** — HELD on both, **not load-bearing** |
+
+**Both HELDs clear the 0.1 floor and neither is load-bearing.** Per-chunk sits **1.75×** (`gyroid`) and
+**5.63×** (`fbm_terrain`) *below* the registered 1–20 window's lower bound, and arena **2.44×** and
+**6.58×** below it — so the registered prediction is missed in every case, and the sweep floor is the only
+thing either clears. Their spread across runs of the same binary settles it: per-chunk read **0.1018 /
+0.1347 / 0.1488 / 0.2200** on the dirty pre-runs and **0.572216** here (**5.62×**), and the arena
+instrument **changed sign** — `d_stream_arena` was **−4.2994 ms/s** on `gyroid` (no crossover at all,
+`c1_holds_arena` false) and is **+16.391553** here. A verdict that flips on the same binary is `✗24`'s
+defect exactly. The byte crossover moved too — 0.002150 → **0.004834** and 0.000394 → **0.001015** — but
+only because the calibrated rate moved, and it did not come near changing its verdict: it would have to
+move 20.7× to.
+
+**Everything the clean re-run moved, old → new.** Every integer is unchanged; every clock moved.
+
+| quantity | dirty pre-run `63c7161` | committed `487bdf3` |
+|---|---|---|
+| `calibration_upload_gb_per_s` | 8.0675 | **5.099342** |
+| `crossover_bytes_edits_per_second` gy / fbm | 0.002150 / 0.000394 | **0.004834 / 0.001015** |
+| `crossover_arena_edits_per_second` gy / fbm | none, `d_stream` −4.2994 / 0.017503 | **0.410188 / 0.152020** |
+| `c1_holds_arena` gy / fbm | false / false | **true / true** — both flipped |
+| `crossover_edits_per_second` gy / fbm | 0.101756 / 0.036741 | **0.572216 / 0.177604** |
+| `c1_holds` gy / fbm | true / false | **true / true** — `fbm_terrain` flipped |
+| `c1_holds_bytes` gy / fbm | false / false | **false / false** — the verdict that did not move |
+| `excess_vertex_bytes_ms` gy / fbm | 0.0826 / — | **0.130652 / 0.084769** |
+| `excess_reuploads_per_second_for_crossover` gy / fbm | 69.76 / 380.75 | **31.0316 / 147.7677** |
+| `crossover_streaming_shortfall` gy / fbm | 46.5× / 253.8× | **20.6877× / 98.5118×** |
+| `weld_ms` at 4³ gy / fbm | 108.7440 / 68.8827 | **68.316064 / 42.681522** |
+| `weld_saves_upload_ms` at 4³ gy / fbm | 0.0848 / 0.0555 | **0.134126 / 0.087844** |
+| C2 ratio at 4³ gy / fbm | 1,283× / 1,241× | **509.3× / 485.9×** |
+| `mixed_speedup` at 12.5/s gy / fbm | 0.0518 / 0.0684 | **0.2376 / 0.1171** |
+| `mixed_steady_speedup` at 12.5/s gy / fbm | 0.2904 / 1.0354 | **0.9857 / 0.6435** |
+| best `mixed16` speedup anywhere in the file | 1.90× (steady 1.72× at 1/s) | **1.2882× (steady 1.3760×)** |
+| `mixed_subdivide_ms_total` gy / fbm | 309.65 / 654.46 | **162.435338 / 497.115556** |
+| ms per coarse activation | 44–109 | **24.3 / 84.5** |
+| 64³ `mark + remesh` per edit vs `M-377` | up to **+44%** | **+2.35% / −0.01%** |
+| `total_ms` at 4³, 12.5/s, gy | 21.96 | **60.5357** |
+| `upload_share_of_total`, same cell | 55.5% | **83.8374%** |
+| byte-attributable share, same cell | 2.7% | **1.7057%** |
+| arena lever at `gyroid` 2³ | 41.53 → 6.07 ms/s (**6.8×**) | **44.8756 → 27.8349 (1.61×)** |
+
+Unchanged — every integer column, of which these were quoted in the superseded report and re-read here:
+all twelve `raw_vertices`, both `distinct_surface_points`, all twelve `vertex_duplication`, `chunks`,
+`normal_stencil`, `stream_writes`, `visible_chunk_enters` / `exits` / `changes`, `stream_units`,
+`stream_upload_bytes_per_second`, `welded_vertices` (53,098 / 34,359), `mixed_coarse_activations`
+(7 / 6 of 8), `mixed16_coarse_activations` (26 / 32 of 512), `excess_vertex_bytes_vs_64`,
+`stream_full_world_uploads_per_second`, `upload_roundtrip_verified`, `calibration_upload_bytes`,
+`committed_upload_ms` / `_bytes` / `_gb_per_s`. The first four were additionally cross-checked against
+`docs/experiments/p-72.csv` and agree exactly, which is `M-279`'s overlap test.
+
+**WITHDRAWN: "the arena reading came out with a negative delta, i.e. coarse chunks stream more expensively
+than fine ones."** That was true only of the superseded run. On the committed run both arena deltas are
+positive (+16.391553 and +18.993325). **The run-independent replacement, grounded on integers and on
+ratios within one row:** streamed bytes are exactly 1.5× resident bytes on every arm, so
+`stream_bytes_ms_per_second` is **strictly monotone decreasing** in chunk size on both fields — while
+**gyroid's two clocks are not.** Its 8³ arm costs **more** than its 4³ arm on both, **39.4124 vs 28.4166**
+ms/s per-chunk and **38.2552 vs 22.3303** arena, while carrying **11.57% fewer bytes** (2,839,800 against
+3,211,368). Coarse-chunk over-fetch on entry is real; it lives in the clocks, not in the bytes, and the
+byte column is what separates them.
+
+**The streaming decomposition, which is where the two HELDs come from:**
+
+| chunk | `stream_writes` | frames | per-chunk ms/s | arena ms/s | **bytes ms/s** | overhead ms/s | ms per uploading frame, arena |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| **`gyroid`** | | | | | | | |
+| 2³ | 38,994 | 32 | 44.8756 | 27.8349 | **1.198383** | 43.6772 | 1.740 |
+| **4³** | 9,642 | 32 | 28.4166 | 22.3303 | **0.944642** | 27.4720 | 1.396 |
+| 8³ | 2,364 | 32 | 39.4124 | 38.2552 | **0.835343** | 38.5770 | 2.391 |
+| 16³ | 534 | 31 | 28.7316 | 29.2142 | **0.784640** | 27.9470 | 1.885 |
+| 32³ | 153 | 25 | 13.5161 | 15.7187 | **0.761428** | 12.7546 | 1.257 |
+| 64³ | 24 | 7 | 5.2170 | 5.9387 | **0.748664** | 4.4683 | 1.697 |
+| **`fbm_terrain`** | | | | | | | |
+| 2³ | 25,311 | 33 | 42.1289 | 28.3827 | **0.778682** | 41.3503 | 1.720 |
+| **4³** | 6,270 | 32 | 26.8839 | 23.2278 | **0.614042** | 26.2698 | 1.452 |
+| 8³ | 1,509 | 31 | 20.5741 | 22.4804 | **0.542534** | 20.0316 | 1.450 |
+| 16³ | 369 | 29 | 20.4099 | 19.2892 | **0.510045** | 19.8999 | 1.330 |
+| 32³ | 93 | 22 | 12.5505 | 13.1320 | **0.495728** | 12.0547 | 1.194 |
+| 64³ | 18 | 7 | 4.6371 | 4.2344 | **0.486889** | 4.1502 | 1.210 |
+
+Last column is `2 × stream_arena_ms_per_second / stream_frames_uploading`, the bench's `CAMERA_SECONDS`
+being 2.0. The arena path issues **one** write per frame, so that column is essentially a lone
+`submit` + `poll(Wait)` — and it spans **1.194 to 2.391 ms**, a **2.0× spread on the same operation**.
+That spread is the whole arena crossover, and it is why `d_stream_arena` can change sign between runs.
+On the per-chunk path **96.68%** of `gyroid` 4³'s streaming cost is overhead (27.4720 of 28.4166) against
+**0.944642 ms/s of bytes**.
+
+**Mechanism.**
+
+1. **The two terms were never within two orders of magnitude and cannot be made so.** `remesh` is
+   `dirty_chunks × chunk_cells³`; at 64³ the same eleven edits re-mesh 262,144 cells per dirty chunk
+   against 4³'s 64. That lands as **40.2833 ms/edit of remesh at 64³ against 0.4261 at 4³** on `gyroid`,
+   a `d_edit` of **40.5435 ms per edit**. The entire surplus geometry 4³ carries is **666,240 bytes =
+   0.1307 ms on the wire**. One edit's remesh penalty buys 310 crossings of that surplus.
+2. **`M-377`'s 51.6% is a VRAM-residency number, and this is the first measurement that separates
+   residency from bandwidth-per-second.** They differ by a constant here — exactly 1.5× — because the
+   camera's yaw gives every visible unit exactly 3 enters and 2 exits. On a camera that revisits chunks
+   more often the constant rises, but it multiplies a 0.13 ms quantity: at the 0.1/s floor it would have
+   to reach 31.03 to matter, and 1.5 is what a 2,000 px/s flick supplies.
+3. **The weld loses by a structural margin, not a constant factor.** It is O(vertices) with a lattice
+   probe each; the saving is (vertices removed) × 24 bytes at 5.0993 GB/s, i.e. **4.7 ns per vertex
+   removed**. The ratio is set by probe cost over bytes-at-bandwidth and cannot be tuned into range.
+4. **A mixed granularity is pinned to the better fixed choice's dominant term.** Its cost is
+   (fine edit) + (coarse-ish stream), and at every rate in the window those differ by more than an order
+   of magnitude, so the mixed total tracks whichever dominates and adds a transition on top:
+   **24.3 ms per activation** on `gyroid` ((162.4353 + 7.7686)/7) and **84.5 ms** on `fbm_terrain`
+   ((497.1156 + 9.6173)/6) — a guaranteed multi-frame hitch neither fixed choice pays.
+
+**C2, at every granularity:** `weld_ms` against `weld_saves_upload_ms`, the saving derived from exact byte
+counts at the calibrated rate.
+
+| chunk | `gyroid` weld / saves / ratio | `fbm_terrain` weld / saves / ratio | welded away |
+|---:|---|---|---:|
+| 2³ | 96.5906 / 0.303286 / **318.5×** | 63.9469 / 0.197604 / **323.6×** | 64,392 / 41,985 |
+| **4³** | **68.3161 / 0.134126 / 509.3×** | **42.6815 / 0.087844 / 485.9×** | 28,450 / 18,664 |
+| 8³ | 57.8209 / 0.061260 / **943.9×** | 34.2898 / 0.040172 / **853.6×** | 12,968 / 8,535 |
+| 16³ | 46.6952 / 0.027458 / **1,700.6×** | 30.8279 / 0.018513 / **1,665.2×** | 5,786 / 3,933 |
+| 32³ | 45.4495 / 0.011983 / **3,792.8×** | 30.2075 / 0.008968 / **3,368.4×** | 2,498 / 1,905 |
+| 64³ | 45.1687 / 0.003473 / **13,005.7×** | 30.4795 / 0.003076 / **9,908.8×** | 690 / 653 |
+
+**The registration expected the weld's *cost* to be granularity-dependent; what is granularity-dependent
+is the *saving*.** `weld_ms` is nearly flat (45.17–96.59 on `gyroid` across a 2.18× range of raw vertices)
+while the saving falls **87×** from 2³ to 64³, so the ratio worsens monotonically as chunks coarsen.
+`welded_vertices` lands at **53,098** against `distinct_surface_points` **53,110** on `gyroid` and
+**34,359** against **34,360** on `fbm_terrain`, *identically at all six granularities* — the weld reaches
+within 12 and 1 vertices of the exact distinct-point count from six different raw counts, which
+independently confirms `M-377`'s duplication is real seam duplication and not a counting artefact.
+
+**C3, on the registered pair and on a fairer one:**
+
+| rate | `mixed_speedup` gy/fbm | `mixed_steady_speedup` gy/fbm | `mixed16_speedup` gy/fbm | `mixed16_steady_speedup` gy/fbm |
+|---:|---|---|---|---|
+| 0.1 | 0.3138 / 0.2380 | 0.3306 / 0.2539 | 0.3998 / 0.8733 | 0.4029 / 0.9042 |
+| 0.2 | 0.4301 / 0.3513 | 0.4758 / 0.3977 | 0.5699 / **1.2882** | 0.5786 / **1.3760** |
+| 0.5 | **0.7119** / 0.3087 | 0.8963 / 0.4085 | 1.0442 / 1.1301 | 1.0827 / 1.3042 |
+| 1.0 | 0.6641 / 0.2617 | **0.9936** / 0.4255 | **1.1107** / 0.9567 | **1.1884** / 1.2109 |
+| **12.5** | **0.2376 / 0.1171** | 0.9857 / 0.6435 | 0.7584 / 0.4257 | 1.0614 / 0.7659 |
+| 100.0 | 0.1552 / 0.0915 | 0.9793 / **0.8688** | 0.6009 / 0.3324 | 0.9753 / 0.6458 |
+
+Six of the eleven swept rates; the maximum of each of the four columns on each field appears in one of
+these rows.
+
+**The maximum anywhere in the file, over both fields, all eleven rates and all four variants, is
+1.3760×.** Nothing reaches 1.5. On the registered 64³/4³ pair the mixed scheme **never beats the better
+fixed choice at all** — max 0.9936× even with the transition amortised to zero. The 16³/4³ pair exists
+because a 128³ world holds only **eight** 64³ chunks and the trace activated **7 of 8** (6 of 8 on
+`fbm_terrain`), leaving almost no static bulk to be coarse about; at 16³ it activated **26 of 512** and
+**32 of 512**, and still does not clear the bar.
+
+**WITHDRAWN: "the 16³/4³ variant reaches 1.90× at 0.1 edits/s and 1.72× at 1/s, clearing the bar but only
+at rates where nobody has a problem."** On the committed run `mixed16_speedup` peaks at **1.1107×**
+(`gyroid`, at 1.0 edits/s) and **1.2882×** (`fbm_terrain`, at 0.2), and `mixed16_steady_speedup` at
+**1.1884×** and **1.3760×** at the same two rates. Nothing clears 1.5, so the caveat is unnecessary:
+C3 is falsified outright, at every rate on every variant.
+
+**Vacuity control, as registered.** *"The upload arm must actually upload — asserted against `✗54`'s own
+`gpu_vs_cpu.csv` row rather than quoted, per `P-70`'s precedent."*
+
+| column | value | why this value proves the fixture could have failed |
+|---|---|---|
+| `upload_roundtrip_verified` | **true** | `Queue::write_buffer` stages host-side, so a harness that never submitted would time a `memcpy` and call it an upload. The calibration payload goes through the same `Uploader` every row uses and is then **read back** with `isomesh_gpu::read_bytes` and compared byte for byte. Bytes that never reached device memory cannot come back. |
+| `calibration_upload_bytes` | **8,586,756** | Exactly the committed row's `samples³ × 4`, computed from the file at run time, not typed in. |
+| `calibration_upload_ms` | **1.683895** | |
+| `calibration_upload_gb_per_s` | **5.099342** | Asserted `< 31.5` (`bus_ceiling_gb_per_s`, PCIe 4.0 ×16). **This is the assertion a zero cannot pass**: a zero-cost upload gives an infinite rate and stops the harness — `M-44`'s rule with an instrument. Also asserted `> 1.172481`, the committed row's own effective rate read from the artefact, because the committed figure carries host field evaluation and this path does not, so a pure-bus path must beat it. Asserted against the file so it cannot drift from it. |
+
+*"…and the camera arm must move enough to change the visible chunk set, reported as a count."*
+**`visible_chunk_changes` = 16,070** at `gyroid` 4³ (9,642 enters + 6,428 exits over 3,214 units);
+`mixed_visible_chunk_changes` = 15,305. **Both enters and exits are asserted non-zero on all eight arms
+per field** — a set that only ever grew would be a frustum opening rather than a camera moving. The full
+range is 40 to 64,990 changes (`gyroid`) and 30 to 42,185 (`fbm_terrain`).
+
+Inherited from `M-377`: every arm marked dirty chunks and produced geometry and uploaded bytes and welded
+something away; all six granularities plus both mixed arms agree on the quantised surface point set with
+**zero** symmetric difference, so no two-level partition dropped a seam; and grid duplication matches
+`((c+1)/c)³` to 1e-4 with the normal stencil **derived** from the remainder at **6 on all twelve arms**.
+
+**Four fixture defects, all caught by this harness's own controls rather than by review.**
+
+1. **The mixed arm subdivided chunks outside the world.** `edit_box` pads the brush by one cell, so
+   `mark_edit` legitimately marks fine chunks at coordinate −1 and 32; dividing those down gave coarse
+   coordinates −1 and 2 on a world holding only 0 and 1. The 64³/4³ arm reported **eleven activations of
+   eight coarse chunks** and paid a full 4,096-chunk subdivision for each phantom, meshing empty space and
+   charging it to the scheduler. Caught only because the harness printed `activations/coarse_chunks`
+   rather than activations alone — **a count with no denominator cannot be absurd.** Filtered to in-world
+   coordinates; now 7 of 8 and 6 of 8. The *fixed* arms are left unfiltered on purpose, because that is
+   `M-377`'s behaviour and all twelve `raw_vertices` reproduce it exactly.
+2. **`weld_saves_upload_ms` came back negative**, which is impossible since welding strictly removes
+   bytes. Two upload medians of three, each ~0.4 ms, cannot resolve a 30 kB delta on a governed machine.
+   The saving is now derived from exact byte counts at the calibrated rate, and the measured difference is
+   **kept in the file** as `weld_saves_upload_ms_measured` — where it is **still negative on 5 of 12 arms**
+   (`gyroid` 4³ −0.166602, 8³ −0.000630, 32³ −1.834237; `fbm_terrain` 4³ −0.230752, 8³ −1.366982). That is
+   the honest statement of the instrument's floor, and it is wider than the entire saving at every
+   granularity. Same substitution `M-337`'s re-audit forced on `P-40`: gate on counts.
+3. **C1 was first answered by the wrong mechanism and the harness could not say so.** The first run
+   measured streaming with one `write_buffer` per visible chunk, got a crossover inside the registered
+   window, and scored C1 HELD. The tell was in the file: the streaming term spread **12.9×** across the
+   granularities while the vertex data spread **2.18×**. Fixed by measuring all three upload paths on the
+   same frames' bytes and recording `stream_writes` / `stream_bytes_ms_per_second` /
+   `stream_overhead_ms_per_second`, so the artefact itself shows which mechanism produced the number.
+4. **The second instrument had the wrong sign.** The arena path's residue is a per-frame `submit` + `poll`
+   the 64³ arm pays across 7 frames and the 4³ arm across 32 — seven samples of a 1.2–2.4 ms quantity —
+   and it returned `d_stream` = **−4.2994 ms/s** on `gyroid`, i.e. no crossover at all. On the clean tree
+   the same instrument returns **+16.391553** and scores HELD. **That flip is the defect's proof, not its
+   repair**, and it is why the exact-byte crossover exists as a third instrument and why the verdict rests
+   on that one.
+
+**What changed as a result: nothing landed, and that is the answer rather than an omission.** `M-377`'s
+open question — *"the number a consumer paying for GPU upload should weigh against the 51× edit win"* — is
+now answered, and the weigh-off is not close. **The granularity decision is settled, not a trade.**
+
+Three things not to build, each with the number that refuses it:
+
+1. **Do not build a per-chunk or mixed granularity scheduler.** It loses to plain 4³ at every one of the
+   eleven rates on the registered 64³/4³ pair (max **0.9936×**, i.e. never wins); the tuned 16³/4³ variant
+   peaks at **1.3760×** against a bar of 1.5, and does so at 0.2–1.0 edits/s where the mixed frame already
+   costs 21.56–27.90 ms/s; and it adds a **24.3–84.5 ms** subdivision hitch per activated coarse chunk
+   that no fixed granularity pays.
+2. **Do not weld chunk seams to save upload.** It costs **509×** the upload it saves at the optimum
+   granularity and **13,006×** at the coarsest. If welding is ever wanted, it must be justified by
+   something other than bandwidth — index-buffer locality, collider quality, file size.
+3. **Do not quote `gpu_vs_cpu.csv`'s 87.50% as "what upload costs" again.** It is the sample-grid upload
+   including host field evaluation, on a path `GPU-011a` superseded at `M-155` (8.37 → 0.54 ms). The
+   vertex-upload share of a 12.5 edits/s frame at 4³ is **1.71%** by bytes on `gyroid` and **0.85%** on
+   `fbm_terrain`.
+
+**The lever the registration did not name, and it is smaller than the dirty run suggested.** If vertex
+upload is ever a real cost here it will be the per-chunk `write_buffer` call, not the bytes: at `gyroid`
+2³ the arm issues **38,994** writes and spends **43.6772 of 44.8756 ms/s** on overhead. An arena renderer
+issuing one write per frame cuts that to **27.8349 ms/s — 1.61×**. *(WITHDRAWN: the reported "6.07 ms/s,
+a 6.8× cut". On the clean tree it is 1.61×, so the lever is 4.2× smaller than briefed.)* And the lever
+**reverses** as chunks coarsen: at 4³ the arena is worth **1.27×** (`gyroid`) and **1.16×**
+(`fbm_terrain`), and at 16³/32³/64³ on `gyroid` it is **worse** than per-chunk (0.983× / 0.860× /
+0.878×), because it trades many small writes for one large write plus the same per-frame submit. At the
+granularity this crate actually ships the arena is worth **16–27%**, and it is a renderer change in
+`bevy_isomesh` rather than an extractor change.
+
+**Would be shown wrong by:** a streaming model in which the camera re-crosses the bus with the same
+geometry **31 times a second** on `gyroid` or **148** on `fbm_terrain` rather than the measured 1.5 —
+a teleporting or cutting camera, or a chunk-eviction policy that re-uploads on every frustum test rather
+than on entry, either of which would put the byte crossover inside the registered window without any
+number here changing; a renderer whose vertex format is materially larger than 24 B/vertex *and* whose
+index buffer scales with granularity, which would restore `M-377`'s 51.6% to the byte column; a bus under
+**0.25 GB/s** (`gyroid`) or **0.052 GB/s** (`fbm_terrain`), which is what C1 needs and is 128× and 609×
+under PCIe 4.0 ×16; a weld with no per-vertex probe — this one costs **837.8 ns per vertex** (68.3161 ms
+over 81,548 vertices at `gyroid` 4³), so a spatial-hash or sort-based pass at 20 ns a vertex would bring
+C2's 509× to about **12×**, still losing but no longer structurally; or a world large enough that the 4³
+arm's `mark_ms` stops being flat, which would move `d_edit` and is `M-377`'s own open question rather
+than this one's.
+
+---
+
+**Numbering needed:** the next `✗` (highest committed `✗55`) **and** the next `M-` (highest committed
+`M-384`), dual-numbered on the `✗52 / M-376` precedent — C1 and C3 are falsified, and the entry carries
+substantial measured material (three crossover instruments, the streaming decomposition, the weld sweep,
+and the exact 1.5× streaming identity).
+
+### 💥 ✗74 / M-406 — C1 HELD on the size half and **HELD WITH NO INSTRUMENT** on the constancy half, C2 and C3 FALSIFIED: an hour of continuous digging is **415,038 B** and a saturated hour is **734,400 B** against a 2 MB bar, all **200 of 200** coaxial capsules are individually necessary bit-exactly, and the bespoke coder beats `zstd -19` by only **1.42–1.53×** — while `zstd` on the *same* residuals lands within **1.39–1.43×** of it, so the whole win is the **model** and not the coder (P-94, R-094)
+
+**M.** `cargo bench --bench experiment_p94`, `docs/experiments/p-94.csv`, **10 rows** (five world sizes
+64/128/256/512/1024 cells at `chunk_cells = 16`, then the 128-cell world's one hour re-derived at
+granularities 2/4/8/32/64), scalar `f64`, Zen 3. The fixture is a **replay of `game_dig`'s dig loop** — its
+`EDIT_PERIOD`, both gates, `AIM_*`, `LIPSCHITZ`, `CELL_SIZE = 0.125` and `Ground` transcribed by line —
+flown for a full simulated hour per world, in which **no brush centre is scripted**: a centre is where the
+sphere trace stops on the field *as already edited*. Committed at **`782188c`**, header clean (no
+`(WORKING TREE DIRTY)`), and an ancestor of HEAD.
+
+> **The clean-tree re-run moved nothing, and that is worth stating because the entry was drafted against a
+> dirty pre-run.** The superseding figures were taken at `a747921 (WORKING TREE DIRTY)` while ~25 sibling
+> harnesses were compiling, and the original report bet on determinism — xorshift64\* seeded from
+> `world_cells`, a fixed `dt`, integer and exact arithmetic in both compressors — predicting *"only the
+> header should change."* Checked column by column against `782188c`: **every one of the 83 columns
+> reproduces exactly**, including all five `edits`, all five `bytes_uncompressed`, `closed_loop_edits`,
+> both compressors' byte counts, `dirty_chunks_per_edit` and `trace_span_cells`. **No number moved, old →
+> new.** This harness contains no clock at all — every column is a count, a byte length, a ratio of two
+> counts, or a distance — so `✗24`'s *a wall-clock ratio is not a gate* and `M-281`'s *a millisecond is a
+> property of the binary* are satisfied by construction rather than by care, and `M-279`'s rule (the new
+> run must agree on everything that is not a clock) is satisfied over the whole file.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 (size) one hour under **2 MB** uncompressed | < 2,000,000 B | **HELD — 415,038 B largest measured hour (20.8% of the bar); the saturated bound `bytes_at_43200_edits` = 734,400 B is 36.7%, i.e. 2.72× of headroom** |
+| C1 (constancy) per-edit cost constant in world size and chunk granularity | no growth | **HELD WITH NO INSTRUMENT — `bytes_per_edit` = 17.000000 on all 10 rows and could not have come out otherwise. Said out loud rather than scored** |
+| C2 200 coaxial capsules compress to **fewer than 40** survivors | < 40, falsifier < 3× | **FALSIFIED — `surviving_brushes` = 200, `collapse_ratio` = 1.000000. Leave-one-out necessity is 200 of 200** |
+| C3 entropy coding beats a general-purpose compressor by **≥ 2×** | ≥ 2.0 | **FALSIFIED — `compression_advantage` 1.418111 / 1.430490 / 1.483570 / 1.533404 / 1.534017, and `zstd` on the same residuals is within 1.386–1.428×** |
+
+**The hour, five times over.** Each world is a separate hour; the row's `bytes_uncompressed` is
+`edits × 17` exactly.
+
+| `world_cells` | `sandbox_extent` | `strokes` | `edits` | of 43,200 | `bytes_uncompressed` | `closed_loop_edits` | `trace_span_cells` | `position_bits_needed` |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 64 | 8.000 | 211,320 | 1,169 | 2.71% | 19,873 | 1,128 | 92.422 | 15 |
+| 128 | 16.000 | 191,168 | 6,207 | 14.37% | 105,519 | 6,068 | 184.477 | 16 |
+| 256 | 32.000 | 135,600 | 20,099 | 46.53% | 341,683 | 19,469 | 367.953 | 17 |
+| 512 | 64.000 | 120,128 | 23,967 | 55.48% | 407,439 | 23,156 | 735.552 | 18 |
+| **1024** | 128.000 | 118,340 | **24,414** | **56.51%** | **415,038** | 23,623 | **890.721** | 19 |
+
+**The refusal accounting closes exactly on every row**, which is what makes the low edit counts readable
+rather than suspicious: `edits + gate_refusals_distance + gate_refusals_nohit = strokes`, i.e.
+1,169 + 0 + 210,151 = 211,320; 6,207 + 116 + 184,845 = 191,168; 20,099 + 146 + 115,355 = 135,600;
+23,967 + 362 + 95,799 = 120,128; 24,414 + 281 + 93,645 = 118,340. An hour at 60 Hz is 216,000 frames and
+`216,000 − 4 × edits` reproduces `strokes` to within 4 on all five rows — so a *refused* attempt retries on
+the next frame while an *accepted* one costs the five-frame throttle. `strokes` is therefore due frames,
+not edits, and the only quantity C1 is denominated in is `edits`.
+
+**C1's size half, against the two public figures, and the 08-11 doc's own width would have lost.** The
+serialised record is op `u8` plus centre `3 × i32` plus radius `i32` at a quantum of 1/4096 world units —
+**17 B**, `bytes_per_edit` = 17.000000 — and quantisation is applied *before* both compressors so neither
+wins on precision the other kept. `43,200 × 17 = 734,400 B` against 2,000,000. At the estimate's own
+48 B/op it would be `43,200 × 48 = 2,073,600 B`, **1.0368× over the bar and a FALSIFIED**. So C1 is a claim
+about the record's width.
+
+| comparison | column | value |
+|---|---|---:|
+| largest hour ÷ the 08-11 doc's 4.80 MB estimate | `hour_bytes_over_estimate` | **0.086466** |
+| largest hour ÷ Teardown's ~1 Mbit = 125,000 B | `hour_bytes_over_teardown` | **3.320304** |
+| largest entropy-coded hour ÷ the same 125,000 B | `entropy_bytes_over_teardown` | **0.994144** (world 512) |
+
+**The estimate is 11.565× high on the measured hour** (`1 / 0.086466`) and that decomposes into **three**
+factors, not the two the original report named: 48 B against 17 B is 2.8235×, 100,000 operations against an
+hour's 43,200 attempts is 2.3148×, and those two alone give **6.536×** — which is the overstatement against
+the *saturated* bound, `4,800,000 / 734,400`. The remaining 1.7695× is `43,200 / 24,414`: the hour did not
+saturate. **The report's "11.6× from two factors of 2.8 and 2.3" is withdrawn — 2.8235 × 2.3148 = 6.536,
+and the third factor has to be named or the arithmetic does not close.**
+
+> **`entropy_bytes_over_teardown` peaks at 0.994144 on the 512-cell world, not on the 1024-cell one.** The
+> report quoted 1024's 0.989856. The larger world logged *more* edits (24,414 against 23,967) and coded to
+> *fewer* bytes (123,732 against 124,268), because its longer, straighter strokes predict better. So the
+> "an hour of digging is 0.99× Teardown's per-client figure" coincidence is real at 0.994144 — and it stays
+> a **coincidence of magnitude between testimony and a measurement**, because the blog post never states
+> whether ~1 Mbit is per second, per session, or a steady state. Nothing here is denominated in it.
+
+**C1's constancy half has no instrument, and the harness's response to that is the part worth keeping.**
+`Brush<S>` is a shape plus an op. It holds no chunk reference and no grid index, and its coordinates are
+fixed-width, so per-edit cost *cannot* depend on chunk granularity and cannot depend on world size. A
+harness asserting `bytes_per_edit` constant would be asserting the definition of the type — `P-70`'s C3
+shape, a clause whose predicate is unfalsifiable by the fixture. What was done instead: fly the whole hour
+**separately in five sandboxes**, re-derive the granularity rows from the 128-cell hour, and put **two
+liveness columns** on the row proving both knobs moved something else *in the same harness* while
+`bytes_per_edit` does not.
+
+| knob | liveness column | range | spread |
+|---|---|---|---:|
+| world size 64 → 1024 cells | `trace_span_cells` | 92.422 → 890.721 | **9.64×** |
+| granularity `chunk_cells` 2 → 64 | `dirty_chunks_per_edit` | 229.308523 → 1.702755 | **134.65×** |
+
+And `position_bits_needed` = 15/16/17/18/19 is the mechanism behind the constant: the information in a
+coordinate **does** grow with world size, one bit per doubling, exactly as `log2(extent / quantum)` says.
+The record spends 32 bits on it at every world. It is **over-provisioned by 13 bits at the largest world
+measured**, so the width is constant because it was never fitted to the world in the first place.
+
+> **`c1_constancy_holds` reads `true` on all 10 rows and that `true` is not evidence.** It is computed by
+> comparing `bytes_per_edit` against `bytes_per_edit_at_other_world_size` under `f64::EPSILON` — one
+> constant against the same constant, an identity that no code change to this crate could make fail. It is
+> on the row for completeness of the registered records, and the verdict above is **HELD WITH NO
+> INSTRUMENT** on its account.
+
+**C2 is FALSIFIED, arithmetically unreachable, and the arithmetic was written into the harness's SHARE
+paragraph before the run.** A capsule is a segment dilated by `radius`, and coaxial capsules **tile** the
+axis: capsule `i` is the only brush reaching full radius over its own axial slab, because a point at axial
+offset `u` past `p_i` and radial offset `ρ` is inside the previous capsule only when `ρ ≤ √(r² − u²)`.
+Dropping a run of `k` therefore leaves an uncovered lens of radial thickness
+`r − √(max(0, r² − (kδ/2)²))`, which reaches the full radius as soon as `kδ ≥ 2r`. At the measured
+`coaxial_delta` = 0.250000 against `coaxial_radius` = 0.250000 — `coaxial_delta_over_radius` = 1.000000,
+which is the demo's own distance gate satisfied with room —
+
+- **one drop** leaves `lens_cells_drop_1` = **0.267949 cells**, over a quarter of a cell of rock, which the
+  0.125 lattice resolves;
+- **200 → 40 means keeping every fifth**, so `k = 4`, `kδ/2 = 0.5 > r`, and `lens_cells_drop_4` =
+  **2.000000 cells** — a **solid disc of rock of radius `r` plugging the tunnel**.
+
+**So no sound drop-based compressor reaches 40 at any grid resolution**, and the run existed to produce the
+number rather than to discover that. It produced it three ways: `surviving_brushes` = 200 from a greedy
+bit-exact drop, `coaxial_necessary_leave_one_out` = 200 from `✗41`'s own leave-one-out instrument
+(removing any single capsule moves `mesh_hash`), and `coaxial_hash_verified` = true, which re-meshes the
+whole tunnel over `coaxial_grid_samples` = 69,797 samples after the greedy pass rather than trusting the
+per-candidate tests — `✗41`'s `necessary_only_hash_unchanged`, and the reason 200 is a measurement and not
+a heuristic. `coaxial_axial_length` = 50.000000 units, `coaxial_triangles` = 18,640.
+
+**`✗41`'s 1,507 → 73 is a different redundancy, and that is the substantive content of the
+falsification.** `✗41` dropped brushes whose Lipschitz enclosure never reaches a given chunk's surface, out
+of 64 randomly placed brushes on a base sphere. A stroke has none of those: every brush in it cut wall you
+can see. **What collapses a stroke is a change of representation, not a removal** — and that is a large
+collapse, measured on the same arm:
+
+| arm | column | value |
+|---|---|---:|
+| collinear-run merge, brushes after | `coaxial_merged_brushes` | **1** |
+| collapse of that merge | `coaxial_merge_ratio` | **200.000000** |
+| how far the field moved, worst cell corner of the padded box | `coaxial_merge_deviation_cells` | **5.684e-14** |
+
+The union of collinear, contiguous, equal-radius capsules **is** the hull capsule —
+`min_i d(p, seg_i) = d(p, seg_hull)` identically — so **200 → 1 is exact in ℝ** and fails only
+bit-exactness, by 5.7e-14 cells, which is `f64` rounding in the fold and not geometry.
+
+> **`coaxial_merge_hash_equal` reads `false` and it is not the merge failing.** The merge is exact as a set
+> and the deviation column says so at 5.7e-14 cells — twelve orders below anything a player or an
+> extractor can express at `cell_size` 0.125. `false` records that `mesh_hash` is a **bit** comparison, and
+> the fold's arithmetic reorders. **The bit-exact drop is nonetheless what `surviving_brushes` registers**,
+> for a reason internal to the clause: the registration says the arm reproduces `✗41`'s *survivor*
+> arithmetic, and a survivor is a brush that **was in the log and stayed**. The hull capsule is not one of
+> the 200. Scoring the merge as a survivor count would clear C2 by redefining its noun, and every other
+> piece of evidence in this crate is bit-exact.
+
+**What a merge is worth on a stroke a hand could actually make**, since a dead-straight bore is the easy
+case: the same closed loop re-flown with `wobble_yaw_rate` = 0.010000 rad/s bows by `wobble_bow_cells` =
+**8.328517 cells** (asserted above one cell, or the arm would be the straight arm renamed), and merging
+maximal runs of `k` costs:
+
+| `k` | brushes | column | deviation, cells |
+|---:|---:|---|---:|
+| 1 | 200 | `wobble_dev_cells_k1` | **0.000000** |
+| 2 | 100 | `wobble_dev_cells_k2` | 0.000833 |
+| **5** | **40** | `wobble_dev_cells_k5` | **0.005000** |
+| 10 | 20 | `wobble_dev_cells_k10` | 0.020833 |
+| 20 | 10 | `wobble_dev_cells_k20` | 0.083333 |
+| 50 | 4 | `wobble_dev_cells_k50` | 0.520815 |
+| 200 | 1 | `wobble_dev_cells_k200` | 8.328517 |
+
+**C2's own registered number, 40, is reachable at 0.005000 cells — 1/200 of the bow the stroke already
+has — by merging and not by dropping.** `wobble_dev_cells_k200` equals `wobble_bow_cells` exactly, which is
+the identity that says the whole-stroke merge deviates by precisely the bow.
+
+**Nested edits, the other half of C2's wording, measured on the session rather than the fixture:**
+`session_nested_dropped` = 68 / 127 / 426 / 530 / 649 brushes provably contained in another
+(`|c_i − c_j| + r_i ≤ r_j`, exactly redundant under `max` with no mesh test needed), i.e.
+`session_nested_fraction` **0.020461–0.058169**. Two to six percent of a real log, not the order of
+magnitude the clause's "coaxial *and nested* edits collapse" implies.
+
+**C3 is FALSIFIED, and the column that decides the ticket is `bytes_zstd_of_deltas`.** Both sides see the
+same quantised byte stream. `bytes_zstd` is `zstd` at **level 19** — the strongest setting, chosen
+deliberately so the bar is not cleared by handicapping the baseline — and `bytes_entropy_coded` is an
+adaptive binary range coder (LZMA's, 11-bit probabilities, 5-bit adaptation) over a second-order linear
+predictor, **decoded back and asserted equal** to its input.
+
+| `world_cells` | `bytes_zstd` (-19) | `bytes_zstd_level3` | `bytes_entropy_coded` | `compression_advantage` | `bytes_zstd_of_deltas` | `zstd_deltas_over_entropy` | `bytes_entropy_first_order` | `entropy_bytes_per_edit` |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 64 | 9,412 | 9,404 | 6,637 | 1.418111 | 9,196 | 1.385566 | **6,382** | 5.677502 |
+| 128 | 50,173 | 50,630 | 35,074 | 1.430490 | 48,974 | 1.396305 | **33,723** | 5.650717 |
+| 256 | 157,564 | 162,335 | 106,206 | 1.483570 | 151,387 | 1.425409 | **102,924** | 5.284143 |
+| 512 | 190,553 | 196,950 | 124,268 | 1.533404 | 177,348 | 1.427141 | **120,916** | 5.184963 |
+| 1024 | 189,807 | 207,354 | 123,732 | 1.534017 | 176,682 | 1.427941 | **121,001** | 5.068076 |
+
+**`zstd` applied to the *same* second-order residuals lands within 1.386–1.428× of a fully adaptive binary
+arithmetic coder.** The bespoke coder's whole advantage over stock `zstd -19` is 1.418–1.534×, and 1.39–1.43
+of that survives when `zstd` is handed the transform. **The win is the model, not the coder** — so the
+actionable recipe is *second-difference the quantised record, then `zstd`*: a fifty-line transform, not a
+format. At the smallest log `bytes_zstd_level3` is 8 B **smaller** than level 19 (9,404 against 9,412), so
+the baseline was never weakened to make the comparison; at the largest it is 9.2% larger.
+
+**And the predictor the clause was registered on the strength of is slightly *worse* on a real session.**
+`bytes_entropy_first_order` is **2.21–3.85% smaller** than second order on every world (6,382 against
+6,637; 121,001 against 123,732). C3's stated mechanism is that *brush parameters are strongly correlated
+along a stroke*, and within one stroke they are — a stroke is a nearly constant velocity along a ray, which
+is what a second-order predictor is for. But a session is many strokes, and the **direction changes between
+them make the second difference noisier than the first**. `mean_aim_step_over_radius` = 5.86–9.50 says how
+far consecutive aim points sit apart in radii, which is where that discontinuity lives.
+
+**Mechanism, in one line each.** C1: the log is `(shape, op)` at fixed width, so size is `edits × 17 B` and
+nothing else, and the constancy is a property of `Brush<S>` rather than of the world — with 13 bits of
+coordinate slack at 128 units to prove the width was never fitted. C2: coaxial capsules tile the axis, so a
+*removal* always leaves a lens, and only a *merge* collapses a stroke. C3: `zstd` already finds the
+correlation, because the 17-byte record puts the three `i32`s at fixed byte offsets and neighbouring edits
+share their high bytes, which is exactly what an LZ match window matches — and 5.07–5.68 B/edit is already
+near the payload's real information content given `distinct_radii` = 3 and one op.
+
+**Vacuity control — both registered halves, plus three more.**
+
+1. **`closed_loop_edits`** (registered half one: *a real session capture rather than a synthetic sweep*) —
+   **1,128 / 6,068 / 19,469 / 23,156 / 23,623**, which is **96.49–97.76%** of edits, asserted non-zero. It
+   counts edits whose hit distance along the ray **exceeds the hit distance the *unedited* `Ground` would
+   have returned from the same eye and the same direction**. An edit can only be counted there if a
+   previous edit moved the surface, so it is a direct measurement of the feedback loop, and it could have
+   been zero: a scripted sweep scores **zero on it by construction**.
+2. **The sweep control arm** — `AutoCarve::centre`-shaped, straight line, fixed cadence, no feedback at all
+   — scores `sweep_control_closed_loop` = **0** at `sweep_control_edits` = **6,207**, the identical edit
+   count, with `sweep_control_advantage` = **11.947167** (28,040 `zstd` bytes to 2,347 entropy-coded)
+   against the session's 1.430490 at the same count. So *"session, not sweep"* is a measured **8.35×**
+   difference in compressibility, not a claim — and 2,347/6,207 = 0.378 B/edit against the session's
+   5.650717 says how much information a scripted straight line does not carry.
+3. **`overlapping_pairs`** (registered half two: *the coaxial arm must actually overlap*) — **492** of the
+   `C(200,2)` = 19,900 pairs, by exact segment-to-segment distance under `r_i + r_j`, asserted non-zero.
+   Zero would mean C2 was compressing disjoint brushes.
+4. **`entropy_roundtrip_ok`** = true — the range decoder rebuilds every record, including the four-byte
+   count prefix in the length, so `bytes_entropy_coded` is the length of a real encoding rather than an
+   entropy figure nobody can invert.
+5. **`wobble_bow_cells`** = 8.328517 > one cell, asserted — otherwise the wobbled arm is the straight arm
+   under another name and its whole tolerance sweep is vacuous.
+
+> **Two zeros on the row are zeros by construction and must not be read as measurements.**
+> `sweep_control_closed_loop` = 0 is the *point* of the control arm — a sweep has no feedback, and the
+> number is there to give the session's 96.5–97.8% a floor to be measured against. `wobble_dev_cells_k1` =
+> 0.000000 is the identity control of the merge sweep: merging runs of one changes nothing, so a non-zero
+> there would indict the merge machinery. Neither is a `zero that could not have been non-zero` in `M-44`'s
+> sense being passed off as evidence.
+
+**Three fixture defects, all caught by the same two counters — `edits` against the hour's 43,200 attempts,
+and `gate_refusals_nohit` — and all three are session-policy failures in the same direction.** *(The
+diagnostic figures below are from the harness's development runs recorded in `history://R094DigBytes`, not
+from the committed CSV.)* **An unsaturated hour clears C1's bar by not digging, which is the cheapest
+possible false HELD** — every one of these would have been reported as a smaller, safer number.
+
+1. **The first policy flew the eye along the view direction.** 1,067 edits in an hour against 210,661
+   no-hit refusals: the eye left the rock and the ray ran out of sandbox before reaching the ground. Fixed
+   by making the feet follow the crosshair — a digging player walks into the hole they are making.
+2. **The second policy re-aimed at the last aim point on a no-hit.** *Worse* — 96 edits in a three-minute
+   session. The eye stops `AIM_NEAR` short of that point, so the ray starts inside the cavity that point
+   carved, exits through the hole and finds nothing, and the look is then pinned at the same failing
+   direction for the rest of the hour. Fixed by a monotone downward scan: the world is a heightfield, so
+   there is always rock below.
+3. **The third attempt suspended the phase's look script during a recovery so the scan could accumulate.**
+   *Worst* — 137 edits in an hour, against 1,993 in three minutes without it. A latch refreshed on every
+   failure never expires, because a lost hand fails on every due frame; the script stayed suspended, the
+   feet stopped (they follow a crosshair that stopped moving), and the session died. **Reverted** — the
+   scan now accumulates only during `Bore` and `Sweep`. The generalisable half: *prefer a partial
+   instrument that cannot deadlock to a complete one that can.*
+
+**Two findings from the same counters that are not defects.**
+
+- **You run out of rock in a small sandbox.** Saturation rises **monotonically** with world size — 2.71% /
+  14.37% / 46.53% / 55.48% / 56.51% of 43,200 at extents 8/16/32/64/128 units — because a small world gets
+  excavated into open space where the crosshair finds nothing, which is exactly what
+  `gate_refusals_nohit` = 210,151 of 211,320 due frames says at extent 8. **The registered "one-hour
+  session" is therefore a bound, not an attainment**, and it is on the row as `bytes_at_43200_edits` =
+  **734,400**. Every C1 statement above is made against that bound and not against the measured hour.
+- **12.5 strokes/s is not what `game_dig` delivers.** `EDIT_PERIOD = 0.08` with no catch-up quantises at
+  60 Hz to five frames = 1/12 s, so an hour offers **43,200** attempts and not `strokes_nominal_12_5` =
+  **45,000** — a 4.0% correction to the registration's own throttle figure, on the row so it cannot be lost.
+
+**What changed as a result.**
+
+1. **Do not write a bespoke edit-log codec.** C3's own falsifier says so and `bytes_zstd_of_deltas` says it
+   twice. Ship the transform: second-difference the quantised record, then `zstd`.
+2. **Do not trim a stroke by dropping brushes.** 200 of 200 necessary bit-exactly, and the lens arithmetic
+   says no grid resolution rescues it. `prune_into`'s per-chunk Lipschitz pruning (`P-39`, `✗41`) is a
+   different and still-good idea; log trimming *along a stroke* is not.
+3. **If a stroke compressor is ever wanted, merge capsule runs with a tolerance** — 200 → 40 at 0.005
+   cells, 200 → 10 at 0.083 cells, on a stroke that already bows 8.33 cells. That is a 5–20× cut in the
+   log's **term count**, which matters more than bytes because every field sample walks the log (`M-50`'s
+   0.158 → 0.589 ms per-edit curve). A source change beyond this ticket's scope: measured, surfaced,
+   stopped, and filed separately.
+4. **Nothing needs doing about save-file size.** 0.415 MB measured, 0.734 MB saturated, against a 2 MB bar
+   and an estimate 6.54× high on the bound.
+5. **The 08-11 doc's 48 B/op is corrected to 17 B serialised / 32 B in memory** — and the 32 deserves its
+   own line, because it is a live cost rather than a documentation fix: `bytes_per_edit_in_memory` = 32 is
+   `size_of::<Brush<Sphere<f32>>>()`, and **`SmoothAdd { k: f64 }` forces 8-byte alignment on `BrushOp`,
+   taking the op tag to 16 B for *every* brush, smooth or not**. A carve-only log pays 15 bytes per edit
+   for a variant it never uses, which is 88% of the serialised record's whole width.
+
+**Scope, restated because `BACKLOG.md` closes networked editing out and this row does not reopen it.** This
+measures the **edit log** — the crate's own data structure, what a save file is, and what undo rewinds. No
+sockets, no clock, no session model, and none was added. Teardown's ~1 Mbit and the 08-11 doc's 4.80 MB are
+quoted as comparisons; neither is an input to any column.
+
+**Deviations, declared.** The eye is flown rather than walked (`game_dig` itself flies during a scripted
+capture, and the log depends on the eye and the view direction). The aim is traced once per throttle period
+rather than once per rendered frame, because only the aim at a stroke instant can enter the log — a
+distance-gate refusal then waits a period instead of a frame, which can only **lower** the edit count, the
+conservative direction for a size bound. The brush wheel is `[0.25, 0.60]` rather than `game_dig`'s
+`[0.10, 2.00]`, because `R_MAX` sets the nearest-brush accelerator's ring bound and a 2.0 brush is a
+chamber scoop; it cannot affect `bytes_per_edit`, which is the record's width. Sandbox walls are a
+turn-the-hand-around clamp rather than `game_dig`'s five slab brushes, because those slabs are never in the
+log. The session is carve-only, so `distinct_radii` = 3, there is one op, and the op byte carries ~0 bits —
+declared, not exploited. `f64` throughout where `game_dig` is `f32`; both are four bytes at the 1/4096
+quantum, so no size column moves. `zstd` is a **dev-dependency**: `cargo tree -p isomesh -e normal` stays
+`isomesh + libm`.
+
+**Would be shown wrong by:** a `bytes_per_edit` that is not 17 — which now means a change to `Brush<S>`'s
+layout or to the record, not a change to the world, and would be a source finding rather than a measurement
+one; a saturating session policy that logs meaningfully more than 43,200 edits an hour, which would put the
+uncompressed hour over the 2 MB bar and falsify C1's size half on its own bound; any *sound* drop-based
+compressor reaching 40 survivors on a coaxial run, which would mean the tiling argument or
+`coaxial_hash_verified` is wrong; a session whose strokes are long enough and straight enough that the
+second-order predictor beats the first, which would restore C3's stated mechanism without restoring its 2×;
+or `zstd` on the second-order residuals falling *far* behind the range coder on some other trace, which
+would mean the coder is worth writing after all and the recommendation in point 1 is premature.
+
+### 💥 ✗75 / M-407 — C1 and C2 FALSIFIED, C3 HELD: **undo is always a re-fold** — re-folding from a checkpoint is cheaper at *every* separation, by **16.3×/15.9×/19.0× at `d = 0`** and still **1.30×/1.29×/1.55× at `d = 127`**, and the fitted crossover lies **40.95 / 38.50 / 73.86 edits past the bottom of the log**; M-50's curve predicts a cadence of **193.8** against a fit-free measured **32**, and the disagreement is a *shape* difference, not a scale factor (P-95, R-095)
+
+**M.** `cargo bench --bench experiment_p95`, `docs/experiments/p-95.csv`, **18 rows** (three fields ×
+six cadences 4/8/16/32/64/128), `f64`, Zen 3 (`amd-ryzen-9-5900x-12-core`, `cpu_mhz` 4196.969 on every
+row). Fixture: a 48³-cell world in 16-cell chunks at `cell_size` 0.125 — `game_dig`'s geometry, so a
+per-chunk millisecond here means what M-50's four buckets mean — carrying a 1,000-edit log of overlapping
+spheres cycling `Subtract, Subtract, Add, SmoothAdd` (`log_subtract` 500, `log_add` 250,
+`log_smooth_add` 250) over `sphere_r1_2`, `gyroid` and `fbm_terrain`, three reps, medians. Committed at
+**`664c88e`**, no `(WORKING TREE DIRTY)` in the provenance line, and `merge-base --is-ancestor 664c88e
+HEAD` passes. Four `#` comment lines plus the column header sit above the 18 data rows; the 15 registered
+columns are present in registered order followed by 68 extras.
+
+> **Provenance defect first, because it changes what C2 could be scored against: `M-50` has no committed
+> CSV.** Its four bucket medians — 0.158 / 0.354 / 0.525 / 0.589 ms per re-meshed chunk for logs of
+> 1–15 / 16–30 / 31–45 / 46–60 — exist only as prose at `FINDINGS.md:1098` and in `game_dig`'s docstring
+> table at `bevy_isomesh/examples/game_dig.rs:77-79`. The two agree exactly, and both trace to E-202: a
+> live `ISOMESH_AUTOCARVE=60` run under a mouse, printing to stdout, in an `f32` layout. **This is the
+> `F-009` class of failure** — a number that gates later work and lives in a paragraph rather than in an
+> artefact — so the instruction to read C2's denominator out of a committed file could not be honoured,
+> and treating the four medians as *this* machine's baseline would violate `M-281` outright (a
+> millisecond is a property of the binary). **What the harness did instead: it measures the baseline
+> inside the run.** The same four log-length buckets are re-measured here at the same chunk size and cell
+> size, `predicted_k_from_m50` and `measured_k` are computed by the *same* formula from the *same* 16 ms
+> budget and the *same* measured worst-case dirty-chunk count, and `measured_k_from_trace` answers the
+> question with no fitting in it at all. Every verdict below rests on an integer, a within-row ratio or a
+> sign.
+
+> **Re-run 2026-08-28 on a clean tree; every number below is `664c88e`'s.** The original run's clocks
+> were taken with ~25 sibling agents compiling, and the report itself recorded `worst_undo_ms` at
+> (`sphere_r1_2`, `k = 32`) reading 16.18 / 12.69 / 11.22 / 12.36 ms across four runs of one binary.
+> **Moved:** the `d = 127` ratio floor 1.08× → **1.290×**; the crossover margins +30.31 / +28.92 / +60.27
+> → **+40.95 / +38.50 / +73.86**; `measured_k` 32 / 32 / 16 → **52.4 / 38.6 / 19.0** and `k_ratio`
+> 6.1–12.1× → **3.70 / 5.02 / 10.21×**; `bucket_ratio_spread` on `sphere_r1_2` 3.00 → **2.1083**;
+> `fit_intercept_ms` low end −0.31 → **−0.016525 ms**; the worst-undo envelope quoted as 4.36 → 49.85 ms
+> → **3.266 → 33.162 ms** on `sphere_r1_2` (33.16 / 39.73 / 35.42 ms at `k = 128` across the three
+> fields), a top-of-envelope move of about **1.50× on the identical binary**. **Every integer reproduced
+> exactly:** `undos_crossing_checkpoint` 51/26/16/10/6/5, `crossings_regular_only` 47/22/12/6/2/1,
+> `checkpoints_built` 250/125/62/31/15/7, `peak_checkpoint_bytes` 225.30 → 7.18 MiB, all four
+> `cp_vs_log` counts, and the whole normals table. That split — integers fixed, absolute milliseconds
+> ±20%, every ratio taken within one row — is what the verdicts are built on.
+
+| clause | registered | measured |
+|---|---|---|
+| C1a undo beats a re-fold whenever fewer than `N` edits separate them | some `N > 0` exists | **FALSIFIED — `crossover_n = 0` on all 18 rows; undo never wins at any swept `d`. `crossover_direction = none_undo_never_wins`** |
+| C1b and `N` is STABLE ACROSS FIELDS | same `N` on all three fields | **VACUOUS — there is no `N` to be stable. `crossover_stable_across_fields = none_on_all_fields`** |
+| C2 M-50's curve gives the cadence: `k` falls out of the four bucket medians, worst undo < 16 ms | agreement within 2×, and the endorsed cadence's trace under 16 ms | **FALSIFIED on the first half — `k_ratio` 3.7003 / 5.0232 / 10.2079, all > 2. The second half PASSED: 9.799 / 11.671 / 6.678 ms** |
+| C3 undo is BIT-EXACT over a 10³-edit interleaved-undo trace | one mismatch falsifies | **HELD — `hash_mismatches` 0 over 3,654 undo/redo round trips (203 per row × 18), `checkpoint_rebuild_mismatches` 0 over 51/26/16/10/6/5 rebuilds** |
+
+> **Two `false` columns that a reader must not misparse.** `crossover_n = 0` is the *sentinel for "no
+> crossover anywhere in the sweep"*, not a crossover at separation zero — the harness reports the
+> smallest `d` with `undo < refold(d)` and `0` for none, and every row is the latter. And `c2_holds =
+> false` is a **conjunction of which one part passed**: `k_ratio <= 2.0 && budget_worst_ms < 16.0`. The
+> budget half held on all three fields (`c2_budget_worst_undo_ms` 9.798835 / 11.671141 / 6.678113 ms at
+> `c2_budget_cadence` 32 / 32 / 16). C2 fails on the derivation, not on the frame.
+
+**The mechanism was proved before the run, and it is a monotonicity argument rather than a constant.**
+`refold(d)` costs one trilinear lattice lookup plus `d` brush samples per grid sample, so it is monotone
+non-decreasing in the separation `d`. Undoing the last edit through the log walks the base field plus
+`n − 1` brushes and **does not depend on `d` at all**. So `{ d : undo < refold(d) }` is an **up-set**: if
+the inequality ever holds it holds for every larger `d`. C1's registered wording — *"whenever fewer than
+`N` edits separate them"* — describes a **down-set**, and no down-set can exist for any instrument in
+which re-folding gets dearer the further back the checkpoint sits. That is stated in the bench's own
+header before the harness ran (`✗51`'s rule applied to a direction rather than a magnitude), and the
+sweep was run anyway on `P-70`'s precedent: say it first, then produce the number.
+
+**The number, at every swept separation, as a within-row ratio (`undo_ms / refold_ms_at_dN`):**
+
+| field | `undo_ms` | `d`=0 | 1 | 2 | 4 | 8 | 16 | 32 | 64 | 127 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `sphere_r1_2` | 37.795 | **16.29×** | 15.72 | 15.02 | 12.13 | 9.42 | 6.62 | 4.15 | 2.37 | **1.303×** |
+| `gyroid` | 41.990 | **15.88×** | 15.31 | 14.71 | 11.88 | 9.25 | 6.52 | 4.08 | 2.33 | **1.290×** |
+| `fbm_terrain` | 29.863 | **19.03×** | 18.39 | 17.65 | 14.23 | 11.09 | 7.82 | 4.90 | 2.79 | **1.547×** |
+
+**And the crossover is answered from the whole sweep rather than its last two points, because the
+registered `N` sits at the boundary of any search that can be run.** The offset
+`(base − lookup)/brush` is a constant independent of log length, so a crossover — if one existed — would
+always sit a fixed number of edits from the *bottom* of the log. Two runs of an earlier harness put
+`sphere_r1_2`'s at `d = 125` of 127 and at none at all: `P-72`'s defect, a boundary hit reported as a
+location. So all 128 sweep points are fitted as `refold(d) = A + B·d`:
+
+| field | `refold_fit_intercept_ms` `A` | `refold_fit_slope_ms_per_edit` `B` | `crossover_n_fitted` `(undo − A)/B` | `crossover_margin_edits_past_log` |
+|---|---:|---:|---:|---:|
+| `sphere_r1_2` | 2.191761 | 0.211983 | **167.95** | **+40.95** |
+| `gyroid` | 2.504465 | 0.238575 | **165.50** | **+38.50** |
+| `fbm_terrain` | 1.485383 | 0.141279 | **200.86** | **+73.86** |
+
+A checkpoint cannot sit below the base field, so `d ≤ n − 1 = 127` always. A **positive** margin therefore
+says no crossover can exist **at any log length** — the fit says undo would need the checkpoint to be
+40.95 / 38.50 / 73.86 edits deeper than the deepest place a checkpoint can be. **The registered
+consequence lands verbatim:** *"undo is always a re-fold and the checkpoint cadence is the only knob."*
+
+**SHARE, recomputed — and one clause arithmetic could not reach before the run.** C2 is denominated in a
+frame, 16 ms, which is the budget undo has to fit in. Least squares through M-50's four medians at their
+bucket midpoints (8, 23, 38, 53 edits → 0.158, 0.354, 0.525, 0.589 ms) gives
+`cost(L) = 0.10882 + 0.0097600·L` ms per re-meshed chunk (`m50_fit_intercept_ms`,
+`m50_fit_slope_ms_per_edit` on every row). With `m` dirty chunks, `k ≤ (16/m − 0.10882)/0.0097600`:
+**1628 at m = 1, 399 at m = 4, 194 at m = 8, 50 at m = 27**. The fixed per-chunk term alone only eats the
+frame at `m ≥ 147` chunks, 5.4× more than this world contains — so C2's clause is an *upper bound with
+room*, reachable, and worth scoring. `worst_dirty_chunks_curve = 8` is the measured count, giving
+`predicted_k_from_m50 = 193.8`. **C1, by contrast, was arithmetically unreachable before any measurement**
+— the monotonicity argument above — and the pre-run statement of that is the reason the sweep reports a
+fitted margin instead of a "no crossover found" shrug.
+
+**C2's verdict criterion was declared before the run** (agreement within 2×; 2× rather than tighter
+because M-50 is an `f32` layout under a mouse on a different base field and this is `f64`), **and the
+verdict does not rest on the scale factor, which machine load contaminates. It rests on the shape, all of
+it within-run.**
+
+| field | `predicted_k_from_m50` | `measured_k` | `k_ratio` | `measured_k_from_trace` | `k_ratio_m50_over_trace` |
+|---|---:|---:|---:|---:|---:|
+| `sphere_r1_2` | 193.8 | 52.4 | **3.7003×** | **32** | **6.0553×** |
+| `gyroid` | 193.8 | 38.6 | **5.0232×** | **32** | **6.0553×** |
+| `fbm_terrain` | 193.8 | 19.0 | **10.2079×** | **32** | **6.0553×** |
+
+`measured_k_from_trace` is the fit-free answer: the coarsest swept cadence whose trace actually kept the
+worst single undo inside the frame. It is **32 on all three fields** (`worst_undo_ms` 9.80 / 11.67 / 10.75
+at `k = 32`, against 17.71 / 21.19 / 19.48 at `k = 64`). M-50's curve says 193.8. **A cadence read off
+M-50 is 6.06× too generous, on the one machine, in one build, with no fit in the denominator.**
+
+**Three shape mismatches, each independent of the clock's absolute level:**
+
+1. **The four bucket ratios to M-50 are not constant.** A pure scale factor — same function, different
+   constant — would show one ratio repeated four times. It does not:
+
+   | field | b1 ms/chunk | ratio | b2 | ratio | b3 | ratio | b4 | ratio | `bucket_ratio_spread` |
+   |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+   | `sphere_r1_2` | 0.257339 | 1.6287 | 0.935731 | 2.6433 | 1.416272 | 2.6977 | 2.022578 | 3.4339 | **2.1083** |
+   | `gyroid` | 0.600637 | 3.8015 | 1.254039 | 3.5425 | 1.904093 | 3.6268 | 2.727439 | 4.6306 | **1.3072** |
+   | `fbm_terrain` | 1.474141 | 9.3300 | 2.179956 | 6.1581 | 2.922338 | 5.5664 | 3.732226 | 6.3365 | **1.6761** |
+
+   Every median rests on 15 samples (`bucket_sample_counts = 15+15+15+15`), and the spread is a ratio of
+   two ratios taken inside one row.
+2. **`fit_intercept_ms` varies with the base field where M-50's curve has one constant** — **−0.016525 /
+   +0.192025 / +1.048783 ms** against M-50's single **0.108820**. The intercept is the cost of re-meshing
+   a chunk with an *empty* log, i.e. the base field's own sample cost: `Sphere` is three multiplies,
+   `FbmTerrain` is octaves of noise. M-50 measured one base field and its intercept is that field's.
+3. **`fit_slope_ms_per_edit` varies per field** — **0.03850837 / 0.04686973 / 0.05011090** against M-50's
+   0.00976000 — and it must, because the marginal cost of one more edit in the log is
+   `(corner samples + 6 × vertices)` brush evaluations: eight corners per cell plus the central-difference
+   stencil at every emitted vertex, and **the vertex count is a property of the surface, not of the log**.
+
+So evaluation cost is a function of log length **and** base-field cost **and** surface complexity, and
+M-50's four medians carry only the first. Per the registration this is *"a finding about the fold rather
+than about undo"*: **`fold_cost(L)` is not one curve, and a cadence derived from a single field's curve is
+far too generous** — 193.8 where 32 is what the frame permits.
+
+**C3, and the one place a hash can actually move.** Through the log alone, undo-then-redo returning the
+same hash is an *identity* — the field at length `L` is a pure function of `log[..L]` — so no trace could
+refute it, and a HELD on that would be `M-44`'s vacuous zero. So the trace's state is always represented
+the way an editor with checkpoints represents it, `checkpoint(c) ⊕ log[c..L]` for the deepest valid
+checkpoint, and an undo below `c` **drops** that checkpoint while the redo rebuilds it from the one
+beneath. Both halves are asserted: `hash_mismatches = 0` (203 hashed round trips per row, 3,654 over the
+file, of which 3 per row hash **every** chunk in the world rather than the edit's own region) and
+`checkpoint_rebuild_mismatches = 0`, comparing the rebuilt snapshot against the dropped one scalar for
+scalar over 51 / 26 / 16 / 10 / 6 / 5 rebuilds per cadence.
+
+**And the C3 instrument is shown to have teeth by the column beside it.** `cp_vs_log_hash_mismatches`
+runs the *same* hash over the *same* chunks with the checkpoint path against a full fold from the base
+field, and it **equals `cp_vs_log_checks` on every one of the 18 rows** — 9, 9, 9, 6, 4, 4 checks and 9,
+9, 9, 6, 4, 4 mismatches, **100% disagreement**. The zero in `hash_mismatches` is therefore a zero that
+demonstrably could have been non-zero: the very same hash function over the very same chunk set, given a
+checkpoint that is one step less faithful, moves every single time.
+
+**The finding nobody asked for: a dense-grid checkpoint is bit-exact in the positions and badly lossy in
+the normals.** `cp_vs_log_position_mismatches = 0` on all 18 rows, over the same comparisons that produce
+100% hash disagreement — so the whole of that disagreement is normals:
+
+| field | `k` | normals compared | mismatched | fraction | p50 dev | p99 dev | max dev |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `sphere_r1_2` | 4 | 60,119 | 56,446 | **93.89%** | 6.438° | 107.001° | 179.131° |
+| | 8 | 60,119 | 53,292 | 88.64% | 5.363° | 104.467° | 179.131° |
+| | 16 | 39,611 | 32,616 | 82.34% | 5.036° | 105.794° | 179.131° |
+| | 32 | 31,691 | 22,578 | 71.24% | 2.838° | 101.696° | 179.034° |
+| | 64 | 18,746 | 8,218 | 43.84% | 0.000001° | 88.887° | 179.034° |
+| | 128 | 15,719 | 2,441 | **15.53%** | 0.000000° | 43.636° | 176.886° |
+| `gyroid` | 4 | 90,302 | 87,459 | **96.85%** | 3.281° | 96.425° | 175.838° |
+| | 8 | 90,302 | 84,502 | 93.58% | 2.701° | 95.293° | 175.838° |
+| | 16 | 45,079 | 39,369 | 87.33% | 3.177° | 91.169° | 175.838° |
+| | 32 | 41,181 | 31,738 | 77.07% | 1.402° | 89.239° | 174.590° |
+| | 64 | 21,993 | 11,862 | 53.94% | 0.075° | 64.723° | 169.462° |
+| | 128 | 22,145 | 7,327 | **33.09%** | 0.000000° | 36.260° | 154.125° |
+| `fbm_terrain` | 4 | 70,343 | 66,860 | **95.05%** | 6.344° | 105.794° | 175.711° |
+| | 8 | 70,343 | 63,890 | 90.83% | 5.564° | 105.341° | 175.711° |
+| | 16 | 45,553 | 37,805 | 82.99% | 5.127° | 105.349° | 177.211° |
+| | 32 | 36,931 | 27,002 | 73.11% | 3.566° | 98.642° | 174.295° |
+| | 64 | 23,631 | 11,225 | 47.50% | 0.000001° | 80.201° | 175.890° |
+| | 128 | 17,141 | 4,425 | **25.82%** | 0.000000° | 51.708° | 169.161° |
+
+**Mechanism.** A checkpoint is exact *at a lattice point*: it stores the `f64` the fold produced there,
+`brush::apply` is a pure function of that value and the brush's own sample, `CELL_SIZE` is a power of two
+and `ORIGIN` a multiple of it, so `(p − origin)/h` is exact on the lattice and the interpolation weights
+are exactly 0 or 1 there (`M-32`'s spacing rule). Positions are computed from lattice corner values, so
+they are bit-exact — 0 mismatches, and that is the column proving it. **But marching cubes takes its
+normal from `Sdf::gradient`, a central difference at `p ± DIFF_STEP·max(|p|,1)`, and that lands *off* the
+lattice — where a trilinear snapshot is a different field from the one it was baked from.** A trilinear
+interpolant is `C⁰` and its gradient is piecewise constant per cell with a jump at every cell wall, so a
+probe that straddles a wall reads a gradient the true fold never had; 179° means the two normals point
+opposite ways.
+
+**And the direction is the useful part: fidelity improves as the cadence coarsens** — 93.89% → 15.53% on
+`sphere_r1_2`, 96.85% → 33.09% on `gyroid`, 95.05% → 25.82% on `fbm_terrain`, with p50 falling to exactly
+0.000000° at `k = 128` — because a coarser cadence means more brushes are re-evaluated analytically above
+the snapshot and fewer samples come from interpolation. **That runs opposite to speed** (`worst_undo_ms`
+3.266 → 33.162 ms on `sphere_r1_2`, 3.754 → 39.732 on `gyroid`, 3.461 → 35.416 on `fbm_terrain`)
+**and opposite to memory** (`peak_checkpoint_bytes` 236,239,192 → 7,529,536 B, **225.30 → 7.18 MiB**, and
+250 → 7 `checkpoints_built`). **So the checkpoint cadence is a three-way trade — latency, memory,
+normal fidelity — and it was registered as a two-way one.** Nothing in the repo had this. Practical
+consequence: a checkpoint is a valid *cache* for positions and not for shading, so a re-fold that lands
+on screen must recompute normals against the analytic fold, or the cadence knob silently sets lighting
+quality.
+
+**Registered vacuity control, and how close it came to being a decoration.** Registered: *the
+interleaved-undo trace must include undos that cross a checkpoint boundary, reported as a count, or C3
+tests only the cheap path.* `undos_crossing_checkpoint` = **51 / 26 / 16 / 10 / 6 / 5** across the six
+cadences, asserted non-zero on every row, and each crossing forces a snapshot drop and a rebuild — that
+is exactly the population `checkpoint_rebuilds` counts, so C3's 0 mismatches were earned on the expensive
+path 203 times per row. **Why that value proves the fixture could have failed:** the regular burst
+schedule is cadence-independent by design (a burst every 25 edits, depths cycling
+`1,2,3,5,8,9,4,6,7`), so whether a regular burst ever reaches a checkpoint is an accident of arithmetic —
+a crossing needs a multiple of `k` inside `[l−u+1, l]`. `crossings_regular_only` is that count and it
+falls **47 → 22 → 12 → 6 → 2 → 1**: at `k = 128` **exactly one** such coincidence exists in a thousand
+edits (the burst at `l = 900`, depth 7, over the checkpoint at 896). That is `P-62`'s *"a hair from
+`M-44`'s vacuous zero"*. The total is non-zero **by construction** rather than by luck because four
+*boundary bursts* are placed at `c + 1` for four checkpoints spread through the trace, each three deep, so
+the second undo of each pops the ladder at every cadence — and the difference
+`undos_crossing_checkpoint − crossings_regular_only` is **exactly 4 on all six cadences**, which is those
+four bursts and nothing else. Second `M-44` control:
+`hash_sets_without_geometry = 0` on every row, so no round trip was validated over a set of empty meshes
+whose hash is a constant.
+
+**Five fixture defects, all found by this harness's own controls rather than by review.**
+
+1. **The first run panicked on the `M-44` assertion: 8 of the first 128 edits dirtied no chunk at all.**
+   The mechanism is `min` — an `Add` brush sitting in bulk solid computes `min(field, shape)` where
+   `field` is already the more negative, so it changes nothing. Not a slow edit, a **no** edit. And the
+   undo of a no-op edit is worse than useless for C3: its hashed region is a set of *empty meshes*, whose
+   hash is a constant, so the check could not have failed. **That is `M-44` wearing C3's clothing, and it
+   would have passed silently** as a HELD with no instrument. Fix: a candidate brush is accepted only if
+   it **flips the sign of at least one lattice sample inside its own bounding box**, tested against a
+   running exact snapshot of the fold; exhausting 256 candidate positions panics rather than shrugs. The
+   log is therefore per field (`P-72`'s per-field probe is the precedent), with radii and operations from
+   separate generators so only the centres move.
+2. **The acceptance test's running snapshot has to be folded over the whole lattice, not the brush's
+   bounding box.** A `Subtract` changes the value wherever `−shape` exceeds the field, which reaches
+   beyond the sphere even where the *sign* cannot move; a bbox-only fold drifts from the true snapshot and
+   the sign-flip test then lies about later edits — silently reintroducing defect 1.
+3. **`crossover_n` is not reproducible, and it was reporting a boundary hit as a location.** Two runs put
+   `sphere_r1_2`'s crossover at `d = 125` of 127 and at none at all — `P-72`'s defect exactly. Fix: the
+   answer comes from a least-squares fit over all 128 sweep measurements as `crossover_n_fitted` plus
+   `crossover_margin_edits_past_log`, both ratios of measured times, which is what `M-280` asks for on a
+   governed clock. `crossover_n` is retained only as the registered column, with `0` meaning *none*.
+4. **The first draft of the vacuity comment asserted in prose that `crossings_regular_only` was zero at
+   `k = 128`, and the run refuted it** — it is 1. The claim was wrong and the fix does not depend on it
+   either way: the four constructed boundary bursts make the control non-zero at every cadence
+   regardless, and `crossings_regular_only` is now reported beside the total so a reader can see how thin
+   the accidental margin is.
+5. **A bucket median could have rested on a single reading.** Each of M-50's four log-length buckets is
+   asserted to carry ≥ 10 samples — *"under ten is a single reading wearing a median's name"* — which is
+   why the cost curve is measured over `HEAD = 128` edits (≥ 60 so all four buckets are covered).
+   `bucket_sample_counts = 15+15+15+15` on every row. The same rule made `quantile` return a readable 0.0
+   only alongside `cp_vs_log_checks`, so an empty normals sample cannot masquerade as perfect agreement.
+
+**What changed as a result.** (a) Undo is **not** a distinct operation to be optimised: it is a re-fold at
+`d = k − 1`, and the only knob is the cadence. Any design that budgets "cheap undo of the last edit"
+separately from re-meshing is budgeting a path that does not exist — at `d = 0` the log path is still
+15.9–19.0× dearer. (b) **M-50 must not be used as a cadence oracle**, and the reason is its shape, not its
+age: intercept is the base field's sample cost and slope carries the surface's vertex count, neither of
+which transfers. The empirical cadence on this world is **32**, six times finer than M-50 predicts.
+(c) `M-50` should be re-run into a committed CSV; it currently gates arithmetic in three registrations
+(P-95, P-97, P-98) and lives in prose — `F-009` again. (d) A checkpoint is a position cache, not a field
+snapshot: normals must be recomputed analytically after a checkpointed re-fold. (e) The cadence's memory
+axis is not free either — 225.30 MiB of snapshots to buy a 3.27 ms worst undo on a 48³ world is 30× the
+cost of the 7.18 MiB that buys 33.16 ms.
+
+**Would be shown wrong by:** a base field whose sample cost is *below* a trilinear lattice lookup, which
+would make the offset `(base − lookup)/brush` negative and could put a genuine crossover inside the log —
+all three fields here cost more than an array index; a chunk count large enough that
+`worst_dirty_chunks_curve` moves off 8, since both `k` derivations divide the frame by it; a normal
+computed from the lattice corner values rather than from `Sdf::gradient`, which would move
+`cp_vs_log_normal_mismatches` toward zero and dissolve the third axis of the trade; or one
+`hash_mismatches` on a longer trace, which would mean the ladder is not a function of the log.
+
+### 💥 ✗76 / M-408 — C1 VACUOUS on `M-38`'s own fixture, then HELD to **0.0375** and FALSIFIED from **0.075** on a fixture that can move; C2 HELD, C3 HELD in a bounded window: `M-38`'s 40,317 distinct results are meshes **2.2e-16 world units** apart in a branch where **no smoothing happens**, so `M-38` is retired rather than confirmed and smooth union is gameplay-commutative below **half a cell** of blend radius (P-96, R-096)
+
+**M.** `cargo bench --bench experiment_p96`, `docs/experiments/p-96.csv`, **16 rows**, `f64`, Zen 3
+(`amd-ryzen-9-5900x-12-core`), 12 threads, CPU only. All `8! = 40,320` orderings of `M-38`'s eight
+`SmoothAdd` brushes folded onto a base box, each ordering meshed by Marching Cubes on a 32³ grid, over
+eight blend radii `k ∈ {0, 1e-6, 1e-3, 0.01, 0.0375, 0.075, 0.15, 0.3}` on **two** fixtures: `m38`, which
+is `M-38`'s verbatim (`BoxExact::canonical()` plus `brush::tests::eight`, cell 0.078125), and
+`m38_exposed`, which keeps all eight brushes, all eight ops and the permutation machinery and shrinks the
+base half-extent from 1.0 to 0.35 so brush-brush seams reach the surface (cell 0.0625). Committed at
+**`a02b6b5`**, header clean — no `(WORKING TREE DIRTY)`. No timing column is reported, so `M-280`'s clock
+obligation does not arise; every column is an integer, an exact-arithmetic quantity or a deterministic
+reduction over a fixed fold.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 max symmetric Hausdorff over all 40,320 orderings < **0.1 cells** | < 0.1 | **VACUOUS on `m38` at every `k` — 0.000000000, with `active_samples` 0. HELD on `m38_exposed` for `k ≤ 0.0375` (bound **0.078547743**), FALSIFIED for `k ≥ 0.075` (**0.311239209**, and **0.656099534** at `M-38`'s own `k = 0.15`)** |
+| C2 the spread scales with `k` and vanishes as `k → 0`, recovering `M-36` | falls with `k`, 1 result at `k = 0` | **HELD on `m38_exposed` — log-log slope **2.519871** on the mesh spread, **1.287781** on the field spread, monotone in `k`, and `distinct_results = 1` with `coincident_orderings = 40319` at `k = 0` exactly. VACUOUS on `m38` (fewer than three arms above the fit floor)** |
+| C3 the spread is confined to within **10k** of a seam | `points_outside_shell = 0` | **HELD on `m38_exposed` at `k = 1e-3, 0.01, 0.0375` — `points_outside_shell = 0` with a live outside-shell population and live inside-shell spread. VACUOUS elsewhere, on both sides and for different reasons** |
+
+**The registered vacuity control passes with flying colours on a fixture that cannot move, and that is the
+finding.** `orderings = 40320` on all sixteen rows, the 40,320 permutations are asserted pairwise distinct,
+and on `m38` at `k = 0.15` the harness reproduces `M-38` exactly: `distinct_results = 40317`,
+`coincident_orderings = 3`, `coincident_groups = 3`, `largest_coincident_group = 2` — three colliding
+pairs. A mis-nested or mis-sampled fold does not land on 40,317-with-3. The corroborating controls are all
+live too: `stack_agreement = 64` on every row (the precomputed nine-operand fold asserted bit-for-bit
+equal to `BrushStack::sample` at all 64 probes), `grid_index_roundtrip = 35937 = grid_samples`,
+`boundary_min_world > 0` on every row so no Hausdorff distance is measuring a clipped mesh edge.
+
+**And none of it can see whether the smooth branch was reached — it was not.** Every brush in
+`brush::tests::eight` lies strictly inside `BoxExact::canonical()`, so the base is the smallest of the
+nine operands everywhere and the runner-up is far away. `min_margin_world`, the smallest gap anywhere on
+the grid between the two smallest operands, is **0.180976** (`min_margin_cells` 2.316493) against
+`k = 0.15`; `smooth_min` clamps `h = clamp(0.5 + 0.5(b−a)/k, 0, 1)` to 0 or 1 whenever `|b − a| ≥ k`, so
+at `M-38`'s own `k` **not one fold step on the whole grid enters the smooth branch**: `blended_samples`
+and `active_samples` are both **0**. The 40,317 distinct results are the cancellation residue of
+evaluating `(b + (a − b)·1) − k·1·0` instead of returning `a` — algebraically the hard min, numerically a
+few ULP:
+
+| `m38` arm | `blended_samples` | `active_samples` | `max_spread_world` | `max_hausdorff_to_ref_world` | `max_hausdorff_cells` |
+|---:|---:|---:|---:|---:|---:|
+| `k = 0` | 0 | 0 | 0.000000e0 | 0.000000e0 | 0.000000000 |
+| `k = 1e-6` | 0 | 0 | **1.554312e-15** | 2.220446e-16 | 0.000000000 |
+| `k = 1e-3` | 0 | 0 | **1.554312e-15** | 2.220446e-16 | 0.000000000 |
+| `k = 0.01` | 0 | 0 | **1.554312e-15** | 2.220446e-16 | 0.000000000 |
+| `k = 0.0375` | 0 | 0 | **1.554312e-15** | 2.220446e-16 | 0.000000000 |
+| `k = 0.075` | 0 | 0 | **1.554312e-15** | 2.220446e-16 | 0.000000000 |
+| **`k = 0.15`** | 0 | 0 | **1.554312e-15** | 2.220446e-16 | 0.000000000 |
+| `k = 0.3` | 777 | 0 | **1.554312e-15** | 2.220446e-16 | 0.000000000 |
+
+**`max_spread_world` is identical from `k = 1e-6` to `k = 0.3` — five and a half decades — because it is
+not a function of `k` at all.** No geometric quantity does that. `max_hausdorff_to_ref_world` is
+2.220446e-16 world units, one ULP of a vertex coordinate, which is **2.84e-15 cells**: thirteen orders
+under the 0.1-cell bar. `topology_changes` and `sign_flips` are 0 on every `m38` row. So `m38`'s C1 answer
+is a zero that could not have been anything else, and it is scored **VACUOUS**, not HELD — `M-44`'s rule
+(*"a measurement that comes back zero has to prove it could have come back non-zero"*) applied to the
+**clause** rather than only to the registered control, which is the point the registered control missed.
+
+**The SHARE recomputation, said out loud, including the clause that arithmetic could not reach.** The
+registration says *"SHARE: this measures a distance, not a ratio"*, so there is no share of a total to
+name; what has to be checked instead is that the 0.1-cell bar is reachable from both sides.
+`smooth_min`'s penalty term is `k·h·(1−h)`, maximal `k/4` at `h = 1/2`, so
+`min(a,b) − k/4 ≤ smin ≤ min(a,b)`. The fixture folds `n = 9` operands — base box plus eight brushes — in
+`n − 1 = 8` applications, so **every ordering's field lies within `(n−1)k/4 = 2k` of the
+ordering-invariant hard min** and two orderings differ by at most **`4k`**. On a near-unit-gradient SDF a
+field perturbation `δ` moves the isosurface by about `δ`, so the worst-case surface spread is `4k/cell`:
+
+| `k` | worst case, `m38` cells (0.078125) | vs the 0.1-cell bar |
+|---:|---:|---|
+| 0.3 | 15.36 | 154× |
+| **0.15** | **7.68** | **77×** |
+| 0.075 | 3.84 | 38× |
+| 0.0375 | 1.92 | 19× |
+| 0.01 | 0.512 | 5.1× |
+| 1e-3 | 0.0512 | **0.51× — bar guaranteed by arithmetic** |
+
+So C1 was reachable in both directions at every `k ≥ 0.01` and **arithmetically unreachable — guaranteed
+HELD — for `k ≲ 0.002`**, which is exactly what the `1e-3` and `1e-6` arms are: they confirm the bound
+rather than test the clause, and they are labelled that way rather than counted as three-quarters of a
+sweep. C2 and C3 name no ratio. Both directions of C1 then actually happened, on different arms.
+
+**The pairwise reduction, stated rather than substituted.** C1 names `max_{i,j} d_H(M_i, M_j)` over 40,320
+meshes — **812,838,080** pairs. Symmetric Hausdorff is a metric on compact sets, so for any reference `R`,
+`max_{i,j} d_H(M_i,M_j) ≤ max_i d_H(M_i,R) + max_j d_H(M_j,R)`, and since `i ≠ j` may be assumed the two
+largest distances-to-reference bound the diameter. That sum, `top1 + top2`, is
+**`max_hausdorff_bound_cells`**, computed from **all** 40,320 orderings against the identity ordering.
+**`max_hausdorff_cells` is a different quantity**: the exact all-pairs maximum over a sampled subset of at
+most 128 orderings (`subset_orderings` 127 or 128 per arm, `exact_pairs_sampled` 8001 or 8128), built from
+the 64 largest distances-to-reference plus 64 evenly strided and deduplicated — a **lower** bound biased
+towards the extremes. The scoring uses each for what it can prove: **HELD arms are scored on the bound**,
+because a bound under the bar proves the registered all-pairs quantity is under the bar, and **FALSIFIED
+arms are scored on the exact column**, which is a real measured pair of orderings. Both columns are in the
+file, `exact_pair_max_cells ≤ bound_cells` is asserted on **every** row so the reduction is checked rather
+than assumed, and the nearest-neighbour queries underneath are exact — the bucket search widens until
+`best ≤ r·cell`, which proves no unscanned bucket can hold anything closer, and panics rather than return
+an unproven answer. Substituting one of these for the other silently is `P-70`'s C3 and is not done here.
+
+**`m38_exposed`, where the clauses have instruments.** Shrinking the base to 0.35 makes the brush union
+protrude so brush-brush seams reach the surface; the base is *not* one of the permuted objects — the fold
+seeds with it and permutes the eight brushes — so this is the smallest edit that reaches the blend while
+leaving the permuted fixture untouched. It is a deviation from the registration, labelled as one in the
+`fixture` and `base_half_extent` columns. Without it all three clauses would have been vacuous on all
+sixteen rows.
+
+| `k` | distinct | coincident | `active` | `blended` | exact `max_hausdorff_cells` | bound cells | `max_spread_cells` | `sign_flips` | `topology_changes` | C1 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 0 | 1 | 40319 | 0 | 0 | 0.000000000 | 0.000000000 | 0.000000 | 0 | 0 | vacuous |
+| 1e-6 | 31798 | 8522 | 0 | 2 | 0.000000000 | 0.000000000 | 0.000000 | 0 | 0 | vacuous |
+| 1e-3 | 31798 | 8522 | 4 | 187 | 0.000000000 | 0.000000000 | 0.000335 | 0 | 0 | **true** |
+| 0.01 | 32343 | 7977 | 116 | 1934 | 0.000162343 | 0.000324686 | 0.005355 | 0 | 0 | **true** |
+| **0.0375** | 32109 | 8211 | 1868 | 7286 | **0.044393906** | **0.078547743** | 0.036043 | **0** | **0** | **true** |
+| **0.075** | 37291 | 3029 | 7600 | 14511 | **0.311239209** | 0.597168345 | 0.094980 | **5** | **26,880** | **false** |
+| **0.15** | 40232 | 88 | 23636 | 27123 | **0.656099534** | 1.263269441 | 0.202103 | 43 | 33,152 | **false** |
+| 0.3 | 40319 | 1 | 35593 | 35620 | **0.931143672** | 1.438664553 | 0.467200 | 319 | 37,256 | **false** |
+
+The crossing lies between `k = 0.0375` and `k = 0.075` — between **0.6 and 1.2 cells** of blend radius at
+`cell_size_world = 0.0625`. At 0.0375 the bound itself, 0.0785, is under the bar, so the registered
+all-pairs maximum is proved under 0.1 cells. At 0.075 the falsification is a measured pair at
+**0.311239209 cells, 3.1× the bar** — not a loose bound failing. At `M-38`'s own `k = 0.15` it is
+**0.656099534, 6.6× the bar** (`mean_hausdorff_cells` 0.510335485, `p99_hausdorff_cells` 0.631634721).
+
+**The mechanism has two halves, and the second one is a topology knee the field spread does not have.**
+
+*The deviation is compactly supported, which the log-semiring bound is not.* Once `|b − a| ≥ k` the
+operator returns its argument exactly and the blend is off, so deviation lives in a shell of width ~`k`
+around each seam plus the accumulated `≤ 2k` drift of the running fold. Measured against C3's own
+columns, the confinement is **~0.09–0.14 of the `10k` shell**, i.e. about **1.0–1.4k**, not 10k:
+
+| `k` | `max_deviation_from_seam_cells` | `shell_10k_cells` | ratio | `outside_shell_population` | `points_outside_shell` | C3 |
+|---:|---:|---:|---:|---:|---:|---|
+| 1e-3 | 0.014498 | 0.160000 | 0.091 | 33,963 | **0** | **true** |
+| 0.01 | 0.190335 | 1.600000 | 0.119 | 18,081 | **0** | **true** |
+| 0.0375 | 0.790596 | 6.000000 | 0.132 | 295 | **0** | **true** |
+| 0.075 | 1.668724 | 12.000000 | 0.139 | **0** | 0 | vacuous |
+| 0.15 | 3.410582 | 24.000000 | 0.142 | **0** | 0 | vacuous |
+| 0.3 | 6.359713 | 48.000000 | 0.133 | **0** | 0 | vacuous |
+
+So `k` really is a length, and a **shorter** one than the memo's bound implies. C3's window is bounded on
+both sides and each side is a different vacuity: below it `inside_shell_with_spread = 0` — there is no
+spread to confine (`k = 0` and `1e-6`) — and above it `outside_shell_population = 0`, the `10k` shell has
+swallowed the grid so `points_outside_shell` **cannot** be non-zero. The ratio is stable at 0.133–0.142
+across the three vacuous arms, so the localisation is corroborated where the count cannot fail; it is
+reported per row rather than averaged into a verdict. The memo's *other* quantity is emitted separately
+and neither reading is substituted for the other: `max_deviation_world` = 1.450240e-2 / 3.241517e-2 /
+6.860920e-2 / 1.518338e-1 at `k = 0.0375 / 0.075 / 0.15 / 0.3`, against `deviation_bound_poly_world`
+(`2k`) = 0.075 / 0.15 / 0.30 / 0.60 and `deviation_bound_kln9_world` (`k·ln 9`) = 0.082396 / 0.164792 /
+0.329584 / 0.659167 — **19% to 25% of the polynomial bound**, so `|smin_k − min| ≤ k·ln n` holds with
+about 4× margin. The 2026-08-23 memo measured 0.135 against 0.208 (65%) on eight spheres with no
+dominating base; the lower ratio here is the base box holding the argmin.
+
+*The mesh Hausdorff has a knee the field spread does not, and it is topological.* At `k = 0.0375`,
+`sign_flips = 0` and `topology_changes = 0`: `max_hausdorff_to_ref_cells` 0.039274 against
+`max_spread_cells` 0.036043, **ratio 1.09** — pure vertex sliding, surface motion equals field
+perturbation over unit gradient. At `k = 0.075`, `sign_flips = 5` and `topology_changes = 26,880 of
+40,320`, and the Hausdorff jumps to 0.298584 against a field spread of 0.094980, **ratio 3.1**. Five grid
+samples whose *sign* depends on the ordering create or destroy whole Marching Cubes vertices, and a
+created vertex's nearest counterpart in the other mesh is a third of a cell away. **So C1's failure
+threshold is not where the field spread reaches 0.1 cells; it is where the field spread first reaches
+`|field|` at a near-surface sample** — a sharper criterion than the registration's, and measurable from
+the field alone without meshing.
+
+*And the ordering spread is capped, not cumulative.* Every ordering's field lies within `2k` of the **same**
+ordering-invariant hard min, so the spread is capped at `4k` independently of fold order. That is why a
+small `k` buys gameplay commutativity and why C2's field slope is 1.287781 rather than something
+exponential in the brush count. C2's two slopes are sweep-level scalars, deliberately repeated on every
+row of their fixture and documented as such — the opposite of `M-377`'s per-field-column defect.
+
+**Three fixture defects, all caught by this harness's own controls rather than by review.**
+
+1. **`M-38`'s fixture never enters the smooth branch at `M-38`'s `k`.** `min_margin_world = 0.180976`
+   against `k = 0.15`, `blended_samples = 0`, `active_samples = 0`, `max_spread_world` constant at
+   1.554312e-15 across five and a half decades of `k`. The registered vacuity control — 40,320 orderings,
+   40,317 distinct, 3 coincident — passes perfectly on a fixture that cannot move. `M-38` is `M-44`'s own
+   cited precedent for the fixture trap (*"third occurrence... M-32, M-38"*), and this is the same fixture
+   failing the same way about a different quantity.
+2. **`blended_samples` and `active_samples` are NOT the same control, and gating C1's vacuity on the wrong
+   one printed a HELD with no instrument.** At `m38`, `k = 0.3`, the blend is finally reached —
+   `blended_samples = 777`, `max_deviation_world = 1.180559e-2` — and `active_samples` is **still 0**:
+   only ever one operand is within `k` of the running minimum, so the blend itself is order-independent
+   and the spread stays at 1.554312e-15. The first scoring pass gated C1's vacuity on `blended_samples`
+   and printed `c1_holds = true` on that arm. C1 asks how far apart two *orderings* are, not whether the
+   operator did anything, so its gate is **`active_samples`**. Fixed before the committed run; both
+   columns are in the file so the distinction can be re-checked rather than taken on trust.
+3. **The closure control is live rather than decorative.** `boundary_min_world` on `m38` falls from
+   0.250000 at `k ≤ 0.15` to **0.238194** at `k = 0.3` — the fold pulling the surface outward by 0.011806,
+   which is exactly `max_deviation_world` at that arm. Still positive, so nothing was clipped and no
+   Hausdorff distance is measuring a grid wall, but the control moved when the physics said it should.
+
+**What changed as a result.** In one sentence a protocol decision can be made from: **smooth union is
+commutative at gameplay tolerance — max symmetric Hausdorff under 0.1 cells across all 40,320 orderings —
+for blend radii up to about half a cell, and is not commutative at 1.2 cells or above**, where a measured
+pair of orderings differs by 0.311 cells and two thirds of orderings disagree about the mesh topology. So
+a networked editor **may merge a run of smooth unions freely if it caps `k` at half a cell**, and must
+impose a total order above that. `M-38`'s headline is **retired rather than confirmed**: on its own
+fixture at its own `k` the 40,317 distinct results correspond to meshes 2.84e-15 cells apart, the number
+counts f64 cancellation patterns in a branch where no smoothing occurs, and it is invariant under `k`
+across five and a half decades, which no geometric quantity is. A count has no units, which is why `M-38`
+could not have known. **Do not build a fixed-point `Real` for this**: `M-39` priced fixed point as
+repairing smooth-min's 1-ULP commutativity gap, and this run shows that gap is the *entire* measured
+effect on `M-38`'s fixture and is 2.2e-16 world units. The effect that crosses 0.1 cells is
+**non-associativity**, which no storage format touches. `BrushOp::commutes_with` stays exactly as it is —
+it answers a bit-exactness question and its answer is still correct. Nothing in `crates/isomesh/src`
+changed and nothing should; this is a null on the source and a conclusion on the protocol.
+
+**Would be shown wrong by:** a fixture whose brush-brush seams reach the surface *and* whose C1 falsifies
+below `k = 0.0375`, which would move the half-cell protocol threshold; a field with gradient far from unity
+at the seam, where the `4k` field bound would no longer translate into `4k/cell` of surface motion and the
+2.5 log-log slope would not hold; a `sign_flips > 0` arm whose Hausdorff/field-spread ratio stays near 1,
+which would break the topology-knee mechanism and mean the 0.075 falsification has some other cause; or
+any run in which the `m38` arm's `max_spread_world` varies with `k`, which would mean the smooth branch
+*was* reached there and this entry's retirement of `M-38` is wrong.
+
+### 💥 ✗77 / M-409 — C1 FALSIFIED on **2 of 8** fields by exactly **3 bytes** each, C2 FALSIFIED with an **empty divergence population**, C3 HELD on all eight at **1.0055–1.0173×** against 1.2: the `f64` fold is bit-identical across x86-64 and AArch64 at **every one of 100,000 prefixes** on all eight fields, and the only divergence in 2,470,824 compared bytes is the **sign bit of a NaN** that `unit_gradient` emits in release from a plateau `M-31`'s zero-edit fixtures cannot have (P-97, R-097)
+
+**M.** `cargo bench --bench experiment_p97`, `docs/experiments/p-97.csv`, **8 rows** (four `#` comment lines plus one column header above them; one row per reference field, `edits = 100000` on every row), `f64`, **Zen 3** (`local_machine` `x86_64-linux`, `cpu_khz` 4,190,370–4,200,232 per `M-280`) against the **Apple M5** (`peer_machine` `aarch64-macos`). The fixture is one 10⁵-brush tape drawn from a fixed integer `SplitMix64` seed, replayed at **33³ samples** — the top of `golden.rs`'s `RESOLUTIONS`, i.e. `M-31`'s own fixture resolution with 100,000 folds in it instead of none — with the dig confined to an off-centre box a quarter of each field's extent per axis (`dig_box_fraction_of_extent` **0.25**), so each mesh carries a pristine surface `M-31` already hashes *and* a region that has taken 10⁵ folds. Committed at **`b2b481e`** — the `# commit` header carries no `(WORKING TREE DIRTY)` — and `git merge-base --is-ancestor b2b481e HEAD` passes; the file itself landed at `bd8b134`, also an ancestor of HEAD.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the 10⁵-edit trace replays byte-identically on the M5 and the Zen 3, all eight fields | one differing byte falsifies | **FALSIFIED — 3 bytes on `box_exact`, 3 on `csg_difference`, 0 on the other six. 6 of 2,470,824 compared bytes, 2.43 × 10⁻⁶** |
+| C2 if C1 fails, bisection localises the first differing edit and its brush names the operation | an edit index and an operator | **FALSIFIED — `first_differing_edit` is `NONE` on all eight and `grid_bytes_differing` is 0 on all eight over 287,496 bytes of folded grid each. There is no differing edit to find** |
+| C3 replay cost is linear, constant under 1.2× the sum of per-edit costs | < 1.2× | **HELD on all eight — 1.005532 to 1.017252, worst row 15.2% under the bar** |
+
+> **Every number here is read from the committed `docs/experiments/p-97.csv` at `b2b481e`, and this is not the file the original R-097 report quoted.** That report's numbers came from a **dirty pre-run at `63c7161`** taken while roughly twenty-five sibling agents were compiling. Every integer reproduced exactly; every clock moved, one of them across a qualitative boundary. Old → new:
+>
+> | column | dirty `63c7161` | committed `b2b481e` | move |
+> |---|---|---|---|
+> | `linearity_constant` `sphere` | 0.978121 | **1.017252** | **+4.00%, and it crosses 1.0** — the old row said replay was *cheaper* than the extrapolated per-edit sum, the committed row says dearer |
+> | `linearity_constant` `noise_cavity` | 1.157731 | **1.009014** | **−12.85%** |
+> | `linearity_constant` `fbm_terrain` | 1.111644 | **1.016382** | −8.57% |
+> | `linearity_constant` `torus` / `box_exact` / `csg_difference` / `thin_plate` / `gyroid` | 1.017135 / 1.022281 / 1.015727 / 1.015656 / 1.018880 | 1.005532 / 1.014081 / 1.008346 / 1.013862 / 1.009369 | −1.14% / −0.80% / −0.73% / −0.18% / −0.93% |
+> | span of the eight constants | 0.978121–1.157731 (0.17961) | **1.005532–1.017252 (0.01172)** | **15.3× narrower** |
+> | worst row's margin under the 1.2 bar | 3.5% | **15.2%** | the clause got *more* comfortable, not less |
+> | `replay_ms` | 19,308–23,026 | **19,157.586–19,392.905** | slowest row **−15.8%** |
+> | `fold_ms` | 19,307–23,019 | 19,156.348–19,391.293 | |
+> | `extract_ms` | 1.2–7.3 | **1.167–1.612** | slowest row **4.53× faster** |
+> | `sum_of_per_edit_ms` | 18,984–20,141 | 19,028.720–19,099.021 | |
+> | `per_edit_ms` | 0.1898–0.2014 (6.1% spread) | **0.190287198–0.190990210 (0.37% spread)** | |
+> | `interactive_linearity_constant` | 4.662–45.368 | **7.460408–45.598325** | low end **+60.0%**; still > 1.2 on all eight, which is what the assert needs |
+> | `cpu_khz` | 4,189,216–4,202,679 | 4,190,370–4,200,232 | |
+>
+> **Unchanged to the last digit, which is `M-279`'s rule satisfied:** all eight `bytes_differing` (0/0/**3**/**3**/0/0/0/0), every byte-decomposition column, `first_differing_vertex` **3353** and **3428**, `nan_normal_vertices`, `grid_bytes` 287,496 and `grid_bytes_differing` 0, `bytes_compared` per row and its 2,470,824 total, `bytes_beyond_m31` per row, all four mesh hashes, the class counts 37,723 / 37,364 / 24,913, `cell_size`, `vertices`, `triangles`, and **every** `control_*` column. No verdict moved.
+
+**The eight rows, and the divergence is three bytes in one place:**
+
+| field | `bytes_differing` | normals | at NaN normals | positions / indices / counts | `first_differing_vertex` | `nan_normal_vertices` | `grid_bytes_differing` | C1 | C2 | `linearity_constant` |
+|---|---:|---:|---:|---|---:|---:|---:|---|---|---:|
+| `sphere` | 0 | 0 | 0 | 0 / 0 / 0 | NONE | 0 | 0 | HELD | EMPTY | 1.017252 |
+| `torus` | 0 | 0 | 0 | 0 / 0 / 0 | NONE | 0 | 0 | HELD | EMPTY | 1.005532 |
+| **`box_exact`** | **3** | **3** | **3** | 0 / 0 / 0 | **3353** | **1** | **0** | **FALSIFIED** | **FALSIFIED** | 1.014081 |
+| **`csg_difference`** | **3** | **3** | **3** | 0 / 0 / 0 | **3428** | **1** | **0** | **FALSIFIED** | **FALSIFIED** | 1.008346 |
+| `thin_plate` | 0 | 0 | 0 | 0 / 0 / 0 | NONE | 0 | 0 | HELD | EMPTY | 1.013862 |
+| `gyroid` | 0 | 0 | 0 | 0 / 0 / 0 | NONE | 0 | 0 | HELD | EMPTY | 1.009369 |
+| `fbm_terrain` | 0 | 0 | 0 | 0 / 0 / 0 | NONE | 0 | 0 | HELD | EMPTY | 1.016382 |
+| `noise_cavity` | 0 | 0 | 0 | 0 / 0 / 0 | NONE | 0 | 0 | HELD | EMPTY | 1.009014 |
+
+`mesh_hash_local` against `mesh_hash_peer`: `dfdbb0786c10d8aa` / `a502e1802d09a62a` on `box_exact`, `d2863a2854678dba` / `315b05f9372d7e3a` on `csg_difference`, **identical on the other six**. `vertices`, `triangles` and `bytes_compared` agree on all eight — the two machines emit the same mesh, of the same size, in the same order.
+
+**C2 is falsified with nothing in its population, and that is the finding rather than a technicality.** `grid_bytes_differing` is **0 on all eight rows** over 287,496 bytes of final folded grid each (33³ × 8 = 287,496 exactly; 2,299,968 bytes across the eight), and the 100,000-entry per-prefix digest ladder is identical on all eight, so `first_differing_edit` reads `NONE` and `bisection_steps` reads **1** — the search probes the final prefix, finds it equal, and stops. **The replay never diverged.** The two machines agree bit-for-bit on the state after every one of the 100,000 edits, so there is no differing edit for a bisection to localise and no brush parameters to name. That reaches C2's registered falsifier — *"a divergence that bisection cannot localise"* — by a **better route than the registered one**: not *"the fold accumulates"* but *"the fold never diverged at all"*, so no per-operation fix exists because **no operation is responsible**. The registration expected the falsifier to indict the fold; the measurement exonerates it and indicts the extractor's normal rule instead.
+
+**Where the divergence is, and it is one line of source.** All three differing bytes on each field are in the **normals** (`bytes_differing_normals` 3, `bytes_differing_positions` / `_indices` / `_counts` all 0), all three sit on a vertex whose own normal is not finite (`bytes_differing_at_nan_normals` 3), and each field has exactly **one** such vertex (`nan_normal_vertices` 1 on those two, 0 on the other six). Zen 3 writes `0xfff8000000000000` in all three components and the M5 writes `0x7ff8000000000000`: **same quiet-NaN payload, opposite sign bit.** In little-endian `f64` that is one differing byte per component — `0xff` against `0x7f` at byte 7 — so **3 components × 1 byte = 3 bytes**, which is the column. x86-64 SSE's default NaN is negative and AArch64's is positive, and **IEEE 754 leaves the sign of a NaN produced by an invalid operation unspecified**, so neither machine is wrong.
+
+The NaN comes from `unit_gradient`, `crates/isomesh/src/marching_cubes/mod.rs:739`:
+
+```rust
+fn unit_gradient<R: Real, S: Sdf<Scalar = R>>(sdf: &S, position: [R; 3]) -> [R; 3] {
+    let g = sdf.gradient(position);
+    let len = vec3::length(g);
+    debug_assert!(len > R::ZERO, "zero gradient at a surface vertex");
+    vec3::scale(g, len.recip())
+}
+```
+
+The zero-gradient guard is a **`debug_assert!` only**, and a bench runs in release: `len.recip()` is `+inf`, `0 * inf` is NaN, and nothing shouts. Its doc comment is the reason this is invisible to `M-31`, and it is correct as written — *"That means the field is degenerate there; it cannot happen for any exact distance field, where `|grad|` is 1."* True, and exactly the point: an exact reference field has no plateau, but **a grid folded through 100,000 min/max brushes does**. `apply` is `field.min(shape)` for `Add` and `field.max(-shape)` for `Subtract`, and `min`/`max` **select** an argument rather than computing one, so adjacent lattice samples are frequently clamped to *bit-identical* values and the trilinear interpolant over such a cell has an exactly zero analytic gradient. Only `box_exact` and `csg_difference` reach it because only they have flat axis-aligned faces that align with the lattice, which makes the plateau **exact** rather than merely small. **`crates/isomesh/src/transvoxel/cell.rs:387` carries the same construction** — same `debug_assert!`, same `vec3::scale(g, length.recip())`, deliberately duplicated because the `marching_cubes` copy is module-private — so the defect is in two extractors, not one.
+
+**The SHARE recomputation, and it is a provenance finding.** C3 is registered against *"the sum of per-edit costs **`M-50` measured**"*, and **`M-50` has no committed CSV.** Its four medians — **0.158 / 0.354 / 0.525 / 0.589 ms** per re-meshed chunk for logs of 1–15 / 16–30 / 31–45 / 46–60 — exist only as prose at `FINDINGS.md:1098` and as a docstring table at `bevy_isomesh/examples/game_dig.rs:79`, taken from `E-202`, a live Bevy example under a mouse on a different build and a different run. `docs/measurements/edit_trace.csv` is a different measurement (three rows of dirty-cell counts, no timing at all). Two things follow, and neither is a quibble:
+
+1. **Taken literally the clause is not decidable, because the verdict is chosen by which of four buckets you pick.** Against the committed `replay_ms` of 19,157.586–19,392.905 ms: 10⁵ × 0.158 ms = 15,800 ms gives **1.2125–1.2275×**, which is **above 1.2 on all eight rows** — FALSIFIED. 10⁵ × 0.354 = 35,400 ms gives 0.5412–0.5478×, 10⁵ × 0.525 = 52,500 ms gives 0.3649–0.3694×, and 10⁵ × 0.589 = 58,900 ms gives **0.3253–0.3293×** — HELD, on all eight, three times over. One denominator out of four flips the clause on every row. *(The bench's own SHARE note understates this: it says the literal ratio is "~0.1–0.3× and no possible outcome reaches 1.2". Against the smallest bucket it reaches 1.23. The clause is bucket-dependent, not merely unfalsifiable.)*
+2. **And comparing another machine's wall clock against this one violates `M-281` outright** — a millisecond is a property of the binary, and `M-50`'s came from a different binary, a different build and a different run. This is the **`F-009` class** of failure: an entry's numbers denominated in a figure that no committed artefact contains, which `F-009` was opened to gate mechanically after Phase 19 shipped it twice.
+
+**What the harness measured instead**, stated in the bench before the run rather than discovered after it: `sum_of_per_edit_ms` is the **marginal cost of one edit inside this run** — the slope between a 1,000-brush tape and a 2,000-brush tape over the same grid, times 10⁵. `slope_tape_short_ms` 190.220–199.172, `slope_tape_long_ms` 380.860–389.480, `per_edit_ms` **0.190287198–0.190990210**. The slope and not the ratio to zero, because a short fold also pays the base field's transcendentals once and `fbm_terrain`'s are not a per-edit cost. **That baseline is reachable in both directions:** the 10⁵ tape is ~5 MB and does not fit the cache a 1,000-brush tape sits in, so a constant above 1.2 is physically available — and the interactive arm demonstrates the instrument getting there, at **7.460408–45.598325×**, asserted `> 1.2` so that C3's HELD cannot be `P-70`'s C3 again.
+
+| field | `replay_ms` | `fold_ms` | `extract_ms` | `sum_of_per_edit_ms` | `linearity_constant` | achieved ms/edit at 10⁵ | marginal ms/edit (1k→2k) | `interactive_linearity_constant` |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `sphere` | 19,392.905 | 19,391.293 | 1.612 | 19,064.021 | **1.017252** | 0.193929 | 0.190640 | 42.556779 |
+| `torus` | 19,157.586 | 19,156.348 | 1.237 | 19,052.189 | 1.005532 | 0.191576 | 0.190522 | 42.511634 |
+| `box_exact` | 19,305.711 | 19,304.538 | 1.173 | 19,037.634 | 1.014081 | 0.193057 | 0.190376 | 41.251508 |
+| `csg_difference` | 19,218.169 | 19,216.993 | 1.176 | 19,059.094 | 1.008346 | 0.192182 | 0.190591 | 39.054959 |
+| `thin_plate` | 19,292.492 | 19,291.324 | 1.167 | 19,028.720 | 1.013862 | 0.192925 | 0.190287 | 45.598325 |
+| `gyroid` | 19,267.079 | 19,265.623 | 1.456 | 19,088.238 | 1.009369 | 0.192671 | 0.190882 | **18.746598** |
+| `fbm_terrain` | 19,342.615 | 19,341.400 | 1.215 | 19,030.861 | 1.016382 | 0.193426 | 0.190309 | **7.460408** |
+| `noise_cavity` | 19,271.180 | 19,269.816 | 1.364 | 19,099.021 | 1.009014 | 0.192712 | 0.190990 | 17.199971 |
+
+**One conclusion from the original report is withdrawn here rather than repeated.** It read *"the same fields read 0.96–1.03 at a 3,000-edit calibration, so the constant rises with tape length"* — and that calibration is in no committed CSV, so quoting it is the same defect the SHARE line above diagnoses, and comparing it to this run is `M-281` besides. The within-file evidence is narrower and points partly the other way: the *average* per-edit cost of the 1,000-brush tape (0.190220–0.199172 ms) is **higher** than that of the 2,000-brush tape (0.190430–0.194740) on seven of eight fields, because the short tape amortises the base field's cost over fewer edits — exactly what the bench's `SLOPE_TAPES` comment says it would. The only rise with length that this file contains is between the 1k→2k marginal cost and the achieved 10⁵ average, and that gap **is** `linearity_constant`: **+0.55% to +1.73%**, above 1.0 on all eight rows. So the honest statement is that C3 held with a **15.2% margin**, not a marginal one, and its liveness rests entirely on the interactive arm's assert and not on the 10⁵ rows sitting near the bar.
+
+**The regime evidence — this is not `M-31` under a longer name.** `bytes_beyond_m31` is the difference between the replayed mesh's byte stream and the **zero-edit** mesh of the same field, which is precisely what the golden fixture hashes:
+
+| field | `pristine_bytes` | `bytes_compared` | `bytes_beyond_m31` | share of the compared stream | of which differ inside the common prefix |
+|---|---:|---:|---:|---:|---:|
+| `sphere` | 83,352 | 256,920 | 238,209 | **92.72%** | 64,641 / 83,352 = 77.55% |
+| `torus` | 81,240 | 267,624 | 249,064 | **93.06%** | 62,680 / 81,240 = 77.15% |
+| `box_exact` | 97,176 | 264,360 | 219,832 | **83.16%** | 52,648 / 97,176 = **54.18%** |
+| `csg_difference` | 99,768 | 266,232 | 225,375 | **84.65%** | 58,911 / 99,768 = 59.05% |
+| `thin_plate` | 36,696 | 254,376 | 240,918 | **94.71%** | 23,238 / 36,696 = 63.33% |
+| `gyroid` | 381,624 | 449,160 | 351,522 | **78.24%** | 283,986 / 381,624 = 74.42% |
+| `fbm_terrain` | 146,688 | 276,864 | 251,693 | **90.91%** | 121,517 / 146,688 = **82.84%** |
+| `noise_cavity` | 471,912 | 435,288 | 338,766 | **77.83%** | 302,142 / 435,288 = 69.41% |
+
+**77.83%–94.71%** of every compared stream differs from the zero-edit mesh, asserted `> 0` in the harness. Two arithmetic caveats, both recomputed from the committed columns rather than quoted: `bytes_differing` counts a length difference as differing in every byte one stream lacks, and `pristine_bytes ≠ bytes_compared` on all eight rows because the dig changes the vertex count — on `noise_cavity` the *pristine* mesh is the longer of the two (471,912 against 435,288), so the dig removed surface there. Netting the length term out, **54.18%–82.84%** of the bytes the two meshes hold in common still differ. Either reading says the same thing: the compared mesh is not `M-31`'s mesh. **And the divergence landed in the edited region, not the pristine one** — `box_exact` and `csg_difference` have the lowest in-common shares of the eight and are the two fields that broke C1.
+
+> **The original report's *"79–86%"* for this share is withdrawn.** The underlying integers are identical between the dirty and the committed run, so nothing moved; the figure was arithmetic taken across rows — the minimum of `bytes_beyond_m31` over the maximum of `bytes_compared` and back — which is not any row's share. The per-row range is **77.83%–94.71%**.
+
+**The vacuity control has two parts and both matter.** The registered one is the trace's **composition**: `same_kind_edits` **37,723**, `mixed_edits` **37,364**, `smooth_union_edits` **24,913**, identical on all eight rows because the integer draws are shared across fields, asserted each `> 0` and asserted to **partition** `edits` — 37,723 + 37,364 + 24,913 = **100,000** exactly. The classification is the crate's own `BrushOp::commutes_with` (`Add`/`Add` and `Subtract`/`Subtract` and nothing else) rather than a second opinion written in the bench, so an edit is *same-kind* when it commutes with the previous hard edit and *mixed* when it does not. **That value proves the fixture could have failed:** 37,364 edits do **not** commute with their predecessor, which is `M-37`'s regime (11 distinct results from 40,320 orderings), and 24,913 are smooth unions, which is `M-38`'s (**40,317** distinct results from 40,320 orderings). A trace of only same-kind brushes is the case `M-36` already knows is order-free — one result from all 40,320 orderings — and a C1 HELD over *that* trace would have been a determinism claim about a computation already proved order-insensitive. 62,277 of the 100,000 edits are outside it.
+
+The separate and more important control is **`control_bytes_differing`**: the same tape is replayed with **one ULP** added to a single brush's radius and the differing output bytes are asserted `> 0`. It reads **9** on seven fields and **835** on `gyroid`. So the zeros on the six HELD fields are measurements and not an artefact of a comparator that cannot see — which is `M-44`'s rule, and it is the only thing that makes `bytes_differing = 0` mean anything at all.
+
+| control column | six hard-op fields | `gyroid` |
+|---|---:|---:|
+| `control_perturbation_depths` | 18 | 18 |
+| `control_depths_reaching_output` | **7** | **8** |
+| `control_perturbed_edit` | **99,936** | **98,976** |
+| `control_deepest_reaching_from_end` | **64** | **1,024** |
+| `control_perturbed_operator` | `subtract` | **`smooth_add`** |
+| `control_bytes_differing` | **9** | **835** |
+| `control_first_differing_edit` | 99,936 | 98,976 |
+| `control_bisection_edit` | 99,936 | 98,976 |
+| `control_bisection_agrees` | **true** | **true** |
+| `control_bisection_steps` | 16 | 17 |
+| `control_divergence_heals` | **false** | **false** |
+| `control_differing_prefixes` | **64** | **1,024** |
+
+Three things this table says that the single asserted non-zero does not. **The depth is measured, not guessed** — 18 candidate positions at `edits − 2^j` plus edit 0, of which only 7 (8 on `gyroid`) reach the output at all, and the earliest that does is 64 edits from the end (1,024 on `gyroid`). **The bisection instrument proves itself on a divergence it can localise**: `control_first_differing_edit == control_bisection_edit` on all eight, `control_bisection_agrees` true, `control_divergence_heals` false, and `control_differing_prefixes` equals `control_deepest_reaching_from_end` exactly on every row — the perturbation appears at edit 99,936 (98,976) and never once heals, so the 16 or 17 probes land on the truth. Set that against the main columns' `bisection_steps` of **1**: the same search takes 16–17 probes when there is something to find and 1 when there is not, which is what makes C2's `NONE` a measurement rather than a shrug. And **the deepest-reaching perturbation on `gyroid` is a `smooth_add`**, surviving **1,024** edits against the hard ops' 64 — a **16×** deeper reach — because `smooth_min` **computes** `mix(b, a, h) − k·h·(1 − h)` rather than selecting an argument, so a one-ULP change stays in the value instead of being discarded by the next `min`. That is also why its `control_bytes_differing` is 835 against 9.
+
+**Five fixture defects the harness's own controls caught, before any of these numbers were believed.**
+
+1. **The first `M-44` control was planted at edit 50,000 and reached *zero* output bytes**, and the control refused the run rather than printing a clean zero. It was right, and the reason is the mechanism the experiment is about: `Add` is `min` and `Subtract` is `max`, and a `min` **selects** an argument rather than computing one, so a perturbed brush only survives at a lattice point where it is still the selected argument after every later edit — with hundreds of later brushes covering each point, it almost never is. A guessed position was replaced by a **measured geometric depth ladder**, which turned a broken control into the result in the table above.
+2. **The trace was first scattered uniformly over the whole domain, and six of the eight fields produced the identical mesh hash** — `c5dd8988f595a347` at 5,000 edits, on every field whose domain is `[-2, 2]³`. The base field had been *erased*: with thousands of sphere centres in a 32-cell domain the nearest centre to any point is a fraction of a cell away, so `min(field, shape)` is a function of the brushes and nothing else. Eight rows would have been **one measurement copied eight times**, and C1 would have been a determinism claim about `sqrt`, `min` and `max` with **no transcendental anywhere in the output** — the exact opposite of the `libm` property `M-31` exists to pin. Caught by the pairwise-distinct-hash assert in `main`, and fixed by confining the dig to a box.
+3. **After re-centring, `box_exact` and `csg_difference` still collided**, because a dig box at 0.25–0.75 of the extent swallowed exactly the unit-sphere bite that distinguishes the two fields. Fixed by moving the box **off centre**, to 0.30–0.55. Those two are the fields that ultimately diverged, so **the fixture defect and the finding were one lattice apart** — the same two rows that were once indistinguishable are the only two that broke C1.
+4. **The manual paired fold is asserted bit-for-bit equal to `BrushStack::sample`** at all 35,937 lattice points, because the ladder C2 is bisected against comes from a transposed fold and `replay_ms` times the crate's own. Two folds are two answers to one question, and the assert is what stops the ladder describing a different computation from the one the clause is about.
+5. **`first_differing_operator` reads `NONE` and `bisection_steps` reads `1`, rather than being filled with the nearest available value.** There is no differing edit, so there is no operator; a column that reported the closest brush would have manufactured a localisation the run does not have. The same discipline covers the peer's absence: the missing-comparison case records the literal string `BLOCKED`, never a zero.
+
+**What changed as a result.** **No source change** — `crates/isomesh/**` is untouched, and R-097 is not one of the phase's two registered source changes. Three things for the owner:
+
+1. **A real, release-only defect.** The crate emits **NaN normals** for any field with a plateau, in both `marching_cubes/mod.rs:739` and `transvoxel/cell.rs:387`, and only shouts about it in debug. That is a **lighting bug on one machine** before it is a determinism bug on two. The fix is **one branch in `unit_gradient`**; whether a zero gradient is an error — as the subgrid extractor already treats it — or a defined value is the owner's call, not this experiment's, and it belongs in both copies or the duplication becomes a divergence of its own.
+2. **Committing a golden hash of a mesh containing a NaN commits a platform-specific fixture.** `M-31`'s 216 hashes are safe only because the reference fields never produce a zero gradient at a surface vertex. A golden fixture over *edited* geometry would not be, and these two rows are the evidence — same vertices, same triangles, same positions, same indices, different hash, on the sign bit of a number IEEE 754 declines to specify.
+3. **Do not build the Teardown move.** A fixed-point rewrite of the fold would fix **nothing measured here**: the `f64` fold is already bit-identical across x86-64 and AArch64 at 10⁵ edits, at **every one of 100,000 prefixes**, on all eight fields, over 2,299,968 bytes of grid state, with `grid_bytes_differing` 0 everywhere. `libm` plus `f64` held perfectly. The only divergence in the run is a **division by zero**, and integer arithmetic does not repair that — it only changes which value the invalid operation returns.
+
+**One provenance caveat, recorded plainly.** The peer artefact directory `docs/experiments/p-97-peer/` (8 × `.mesh` / `.grid` / `.ladder` / `.hash`, plus `machine.txt`) is an **input**, not an output. The M5 runs first with no peer present, which is the registration's own **BLOCKED** outcome and is recorded as the literal string rather than as a zero; its `target/p97-self/` is then copied into `docs/experiments/p-97-peer/` on the Zen 3, and the Zen 3 run produces the committed CSV. **On a tree without that directory the bench records `BLOCKED` for C1 and C2 rather than 0** — a missing comparison is never a passing one — which is why it is committed. One number in the original report cannot be checked against the CSV and is not claimed here: the two differing vertices were reported at world `(−1.0, −1.0, 0.875)`, and there is no position column in the file. `first_differing_vertex` **3353** and **3428** are what the artefact carries.
+
+**Would be shown wrong by:** a third machine whose default NaN sign matches neither, or an adapter on which `box_exact` produces **no** NaN normal at all — either would mean the plateau is not where this entry says it is. A `grid_bytes_differing` above zero on any field, which would move the divergence into the fold and make C2's falsifier the registered one after all. A fixed `unit_gradient` under which the two machines still disagree, which would mean the NaN was a symptom of something else. Or a longer tape — 10⁶ edits, or a trace that reaches plateaux on a field with curved faces — diverging in the *positions*, which is the outcome the registration was actually afraid of and which 10⁵ edits did not produce.
+
+### 🔬 M-410 — C1, C2 and C3 all HELD: fused into the extraction gather the Plantinga–Vegter certificate costs **0.0553 worst** of extraction at 65³ against `M-378`'s derived **0.0658**, certifies the **same set** on 25 of 25 rows with **0** unsound over 2,389 hidden-topology cells, and aggregates per chunk at **0** extra passes — but the aggregable object is the **count pair, not the fraction**, which is wrong by **12.9 points** on `noise_cavity`; and `M-378`'s prose gloss on its own 0.0658 is not a recipe for it (P-98, R-098)
+
+**M.** `cargo bench --bench experiment_p98`, `docs/experiments/p-98.csv`, **25 rows**, `f64`, Zen 3
+(`cpu_mhz` 4193.3–4202.3 on the row, `M-280`). A bench-local fused walk reproduces the extractor's own
+eight-corner prologue (`marching_cubes/mod.rs:259-268`) once and derives both the case byte and the
+certificate from the same registers, over the eight reference fields at 17³/33³/65³ plus `p-62.csv`'s
+400,000-cell random arm inherited verbatim; `crates/isomesh/src/**` was read-only for the ticket, so
+nothing shipped moved. Committed at **`0527d48`**, clean tree (no `WORKING TREE DIRTY` on the header), an
+ancestor of `HEAD`.
+
+> **The committed file is a clean-tree re-run, and C1's headline numbers are not the ones the harness's
+> own agent reported.** That report was written off a dirty pre-run of the same binary. **Every
+> integer reproduced exactly** — `certified_cells_fused`, `active_cells`, `certified_active_fused`,
+> `refused_cells`, `tunnel_cells`, `twelve_vertex_cells`, `unsound_certificates` and `cells` agree with
+> `p-62.csv` on all 25 rows with **zero mismatches**, and `unsound_if_certify_all`, `set_difference` and
+> `extra_passes` are unchanged. What moved is C1's identity: the worst 65³ `fused_share` was **0.053922
+> on `sphere`** and is **0.055328 on `box_exact`**, with the range **0.004858–0.053922** now
+> **0.004806–0.055328** and `fused_share_upper` **0.05398 → 0.055610**. The verdict is unchanged and the
+> margin is 1.19× rather than 1.22×. **And one briefed conclusion does not survive the clean run and is
+> withdrawn below**: the claim that `M-378`'s gather-subtraction *over-estimates* the fused cost on every
+> field. `M-377`'s rule — re-running means re-quoting — is why the sentence is here rather than the old
+> numbers.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 fused predicate ≤ 0.0658 of extraction at 65³, all eight fields | ≤ 0.0658 | **HELD — 0.055328 worst on `box_exact`, 8/8, range 0.004806–0.055328** |
+| C1 read against the conservative `fused_share_upper` | ≤ 0.0658 | **HELD — 0.055610 worst on `box_exact`, strictly harder, same verdict** |
+| C2 certified **sets** identical, no certificate on hidden topology | `set_difference` 0, `unsound` 0 | **HELD — 0 and 0 on 25/25, over 2,389 tunnel / twelve-vertex cells** |
+| C3 certified fraction aggregable per chunk at no extra pass | `extra_passes` 0 | **HELD — 0 on 25/25 from a counted `cells_visited == cells`** |
+
+**C1 at 65³, which is the only resolution the clause is registered over:**
+
+| field (65³) | active / 262,144 | fused ms | extract ms | **`fused_share`** | `_upper` | `standalone_share` | bar budget ms |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `box_exact` | 5,768 (2.200%) | 0.1373 | 2.4819 | **0.055328** | 0.055610 | 0.293057 | 0.1633 |
+| `sphere` | 4,760 (1.816%) | 0.1283 | 2.4485 | 0.052404 | 0.052805 | 0.297711 | 0.1611 |
+| `noise_cavity` | 28,375 (10.824%) | 0.8395 | 17.3901 | 0.048276 | 0.048314 | 0.074145 | 1.1443 |
+| `csg_difference` | 6,014 (2.294%) | 0.1426 | 3.0098 | 0.047372 | 0.047469 | 0.243884 | 0.1980 |
+| `torus` | 4,208 (1.605%) | 0.1362 | 2.9205 | 0.046653 | 0.046820 | 0.251128 | 0.1922 |
+| `thin_plate` | 2,048 (0.781%) | 0.1019 | 2.2689 | 0.044898 | 0.045229 | 0.608243 | 0.1493 |
+| `gyroid` | 21,432 (8.176%) | 0.4555 | 13.1726 | 0.034577 | 0.034582 | 0.074551 | 0.8668 |
+| `fbm_terrain` | 8,413 (3.209%) | 0.2552 | 53.0894 | 0.004806 | 0.004820 | 0.015195 | 3.4933 |
+
+**The bar holds at 65³ and does not hold at 17³, and an entry that omits the resolution is wrong.** Four
+of the eight 17³ rows read **0.0673 (`torus`), 0.0685 (`csg_difference`), 0.0708 (`sphere`), 0.0818
+(`box_exact`)** — above the bar. All eight 33³ rows are under it (0.004065–0.062599). This is not a
+regression in the predicate; it is arithmetic. Clause one's marginal is a fixed per-cell cost —
+`clause_one_margin_ms / cells` is **0.455–0.595 ns per cell on all twenty-four sampled rows**, tightest
+cluster 0.479–0.488, i.e. **≈ 2.0 cycles at 4.2 GHz** — while `extract_ms` per cell falls as the grid
+shrinks (0.0499 ms over 4,096 cells on `box_exact` at 17³ is 12.2 ns/cell against 9.5 ns/cell at 65³).
+`Part 5`'s rule about a suite sampling one point of a stated range applies to the *reader* here: the
+registration says "at 65³", the harness measures three resolutions, and the honest claim is the
+registered one.
+
+**SHARE, recomputed from `p-62.csv` before the harness ran — and the recomputation found a defect in a
+published entry.** C1 is a share of extraction, which is how `M-378` stated it, so the bar had to be
+re-derived rather than accepted. `(predicate_ms − gather_ms) / extract_ms` from `p-62.csv` at 65³:
+
+| field (`p-62.csv`, 65³) | predicate ms | gather ms | extract ms | standalone | fused | gather/predicate |
+|---|---:|---:|---:|---:|---:|---:|
+| `box_exact` | 0.7627 | 0.5116 | 3.8130 | 0.2000 | **0.065854** | 0.671 |
+| `csg_difference` | 0.7771 | 0.5117 | 4.2717 | 0.1819 | 0.062130 | 0.658 |
+| `thin_plate` | 0.7209 | 0.5101 | 3.4218 | **0.2107** | 0.061605 | 0.708 |
+| `torus` | 0.7605 | 0.5120 | 4.0624 | 0.1872 | 0.061171 | 0.673 |
+| `sphere` | 0.7474 | 0.5075 | 4.2511 | 0.1758 | 0.056432 | 0.679 |
+| `noise_cavity` | 1.3600 | 0.5081 | 19.2885 | 0.0705 | 0.044166 | 0.374 |
+| `gyroid` | 1.0266 | 0.5115 | 15.1811 | 0.0676 | 0.033930 | 0.498 |
+| `fbm_terrain` | 0.8712 | 0.5133 | 51.0242 | 0.0171 | 0.007014 | 0.589 |
+
+**The number is right and the sentence is not a recipe for it.** 0.0658 is the **maximum of `p-62.csv`'s
+own `fused_share` column at 65³** — `box_exact`'s cell reads 0.065844 and recomputes to 0.065854.
+`M-378`'s gloss is *"two thirds of the standalone cost is re-reading corners"* attached to its worst
+standalone share, and that arithmetic gives a **different number**: `0.2107 − ⅔(0.2107) = 0.0702`, while
+`thin_plate`'s own fused share is **0.0616**. The 21% and the 0.0658 come from **different rows** — the
+worst standalone share is `thin_plate`, the worst fused share is `box_exact` — and `gather/predicate` is
+0.374–0.708, never two thirds uniformly. So the published sentence reads as a derivation and is a gloss
+over a column maximum. Two consequences: the bar was usable as registered, and *`Part 5`'s "an entry that
+says an instrument was fixed must show the fixed instrument's values" has a sibling* — **an entry that
+states a derivation must state the arithmetic that produces its own number.** (A second, narrower
+correction: 0.0658 is the column maximum **at 65³**; over all 25 rows of `p-62.csv` the largest
+`fused_share` is `torus` at 17³, **0.097828**. The registration scopes C1 to 65³, so this does not touch
+the bar — but "the maximum of the column" is only true of the eight rows the clause is about.)
+
+**What arithmetic could reach before the run, and what it could not.** The bar is an upper bound on
+*added* cost, so `0.0658 × extract_ms` over 262,144 cells at ~4.2 GHz is the budget: tightest is
+`thin_plate` at **0.2252 ms = 0.859 ns/cell ≈ 3.6 cycles/cell**, against a fused per-cell cost on an
+inactive cell of **one branch on a byte the extractor already built** — so ~3× headroom on the tightest
+field, derivable in advance. Arithmetic could not reach three things, and each needed an instrument.
+**(a)** C2 and C3 are counts, not shares, so no Amdahl-style ceiling applies to them at all and the SHARE
+line correctly says nothing about them. **(b)** Whether a ~0.1 ms marginal is *resolvable* against a
+2.3 ms denominator on a host whose load average ran 3–16 all session: decided only by the rig's own
+floor control (below). **(c)** The 17³ overshoot above, which is a consequence of the same fixed per-cell
+clause-one cost the reachability argument used — visible in the arithmetic only once someone computes the
+budget at a resolution the clause was not registered over, which nobody did.
+
+**Mechanism, stated on integers because the integers are identical on every run (`M-337`).** Fusing
+removes the whole re-gather: `loads_fused_additional` is **0** on all twenty-four sampled rows while
+`loads_standalone_additional` is exactly `8 × cells` — **2,097,152** at 65³, a second full pass over the
+grid for the same answer — both asserted, not derived. And clause two runs on exactly the active cells:
+`clause_two_evals == active_cells` is asserted per row, so the predicate's variable cost is
+0.781%–10.824% of cells at 65³ and nothing else. The reason clause one is free is algebra rather than
+tuning: `F` is a convex combination of the eight corners, so `0 ∉ □F(C)` **is** "all eight corners share
+a sign", which **is** `case == 0 || case == 255` — a comparison on a byte the extractor already holds.
+That term is the one `M-378`'s subtraction left inside the predicate's account.
+
+**Withdrawn: the fused marginal is *not* uniformly below the gather-subtracted estimate.** On the dirty
+pre-run every field's measured marginal came in at 0.48–0.98 of
+`standalone_predicate_ms − bare_gather_ms`, and that was reported as "the derivation over-estimates by
+1.02×–2.07×, and the error tracks the active-cell fraction". On the committed run the same ratio spans
+**0.117 (`thin_plate`) to 1.163 (`noise_cavity`)**, with `fbm_terrain` at **1.062** — two fields where the
+measured marginal *exceeds* the estimate. The ordering was never a property of the predicate: both terms
+are differences of separately-estimated wall times, and `thin_plate`'s `standalone_predicate_ms` alone
+moved from `p-62.csv`'s 0.7209 to **1.3800** here. The run-independent statement that replaces it is the
+integer pair above — `0` added loads against a second `8 × cells` — which needs no clock at all.
+
+**Cross-instrument agreement, and where it stops (`M-279`).** Every count column of `p-98.csv` reproduces
+`p-62.csv` exactly across all 25 rows: `cells`, `certified_cells`, surface/`active_cells`,
+`certified_active_fused`, `refused_cells`, `tunnel_cells`, `twelve_vertex_cells` and
+`unsound_certificates` — **zero mismatches**, a new harness agreeing with the old one everywhere they
+overlap. `bare_gather_ms` reproduces `M-378`'s *"0.51 ms on every single arm"* as **0.5051–0.5675** on all
+eight 65³ rows. The timings do not all agree, and the entry says so rather than averaging them:
+`thin_plate`'s standalone predicate reads 1.3800 ms against 0.7209, and its `extract_ms` 2.2689 against
+3.4218 — `extract_ms` here is a warmed minimum taken *inside the same repetition* as the walks, which is
+the conservative direction for C1 (smaller denominator, larger share) and is why `standalone_share` runs
+to **0.608243** here against `M-378`'s 0.2107. C1's verdict does not rest on any of those: its numerator
+is the fused marginal.
+
+**The vacuity control, and it is unusually strong.** The registered control is `p-62.csv`'s 400,000-cell
+random arm inherited **verbatim** — same LCG (`0x2026 ^ 0x5EED1234`, multiplier 6364136223846793005),
+same seed, same draw order — and the harness **asserts** the population rather than noting the intent:
+`tunnel_cells` = **2,202** and `twelve_vertex_cells` = **180**, exactly `M-378`'s. The eight reference
+fields alone give **seven** tunnel cells (3 on `noise_cavity` at 17³, 4 at 33³, and 0 everywhere else),
+which `M-378` itself called *"a hair from `M-44`'s vacuous zero"*. Beside it, three columns show the zero
+could have been non-zero:
+
+| column | random arm | over the 25 rows | what it proves |
+|---|---:|---:|---|
+| `unsound_if_certify_all` | **2,382** | **2,389** | the number `unsound_certificates` would have read for a certificate replaced by `true`, counted through the *same* `if hidden { if certified { … } }` branch |
+| `mutant_set_difference` | **15,578** | **24,252** | a mis-paired-`z` fused variant certifies a different set, so `set_difference` is a comparison and not a constant |
+| `resolution_floor_ms` | — | 0.0001–0.0010 at 65³ | two readings of the *identical* baseline loop in one window; every 65³ marginal is **≥ 127×** the floor (`thin_plate`, the tightest) and `floor_share` ≤ **0.000401** |
+
+**`unsound_if_certify_all` = 2,382 is the value that makes C2 a result.** It is not a straw man and not a
+separate loop: the degenerate certificate is evaluated at the same cell, in the same branch, with the same
+`hidden` test, so the two counters differ in exactly one predicate. A gate that reads 0 where the worst
+possible predicate reads 2,382 has been shown able to fire. `unsound_mutant` came back **0** — the
+mis-paired-`z` mutant is *wrong without being unsound* on this population, which is precisely why the
+degenerate certificate and not the mutant is what licenses C2's zero, and why both controls are carried.
+The predicate is also extremely discriminating on that arm: **19,571 certified of 396,865 active**, a
+refusal of **377,294** cells (95.07%), and not one accepted cell contains a tunnel.
+
+**C2 is a set comparison, and the distinction is the clause's whole reason for existing.**
+`set_difference` is a symmetric difference over a **bitset indexed by global cell number**, asserted
+against `certified_cells_fused` on every row — not `certified_cells_fused == certified_cells_standalone`,
+which is also 0 on all 25 rows and would pass on two implementations certifying equal-sized *different*
+sets. Both readings are reported; only the first is the gate.
+
+**C3's real content is that the aggregable object is the count pair, not the fraction.** `extra_passes`
+is 0 from a counted `cells_visited == cells` — 262,144 visits over 262,144 cells at 65³, asserted, so the
+number is a traversal count and not an intention. Per-chunk counts sum exactly:
+`chunk_active_sum == active_cells` and `chunk_certified_sum == certified_active_fused` on all 25 rows,
+512 chunks of 512 cells at 65³ (8³ cells per chunk, `M-377`'s granularity optimum). The trap is one layer
+up. `IsotopyReport::certified_fraction` returns **1.0 for an empty chunk**, so a mean of per-chunk
+fractions is not the global fraction:
+
+| field (65³) | `mean_chunk_fraction` | `global_fraction` | gap |
+|---|---:|---:|---:|
+| `noise_cavity` | 0.929270 | **0.800176** | **12.91 pts** |
+| `csg_difference` | 0.989396 | 0.927502 | 6.19 pts |
+| `box_exact` | **0.994841** | **0.936200** | 5.86 pts |
+| `gyroid` | 0.966018 | 0.963606 | 0.24 pts |
+| `sphere` / `torus` / `thin_plate` / `fbm_terrain` | 1.000000 | 1.000000 | 0.00 |
+
+A consumer can read *"this chunk is 93.6% certified"* out of the same traversal — **provided the report
+carries `(certified, active)` and the caller divides at the end.** Average the fractions and the answer is
+wrong by up to 12.9 points, in the optimistic direction, on exactly the fields where certification is
+partial. The random arm reads 0.049313 against 0.049314 for the same pair, because all 500 of its chunks
+have active cells: **the fraction trap only bites where a chunk can be empty**, which is every chunk in a
+real world.
+
+**And the shipped route to the same number is a second traversal.** `extra_passes_shipped_api` is a **1**
+written on every row — a statement, not a counter — because `validate::isotopy_report` is a separate call
+over the same grid. The timing is what makes it a measurement: **1.0281 ms against a 0.1426 ms fused
+marginal on `csg_difference`, 7.2×**, and 1.8×–9.7× across the eight 65³ fields (`isotopy_report_ms`
+0.9906–1.4946 ms). The report's own count is cross-checked against the flat and chunk-major fused walks on
+every row, so the three implementations agree on *what* is certified while disagreeing by 7× on what it
+costs to ask.
+
+**Three fixture defects, all caught by this harness's own controls rather than by review.** The readings
+below are the defective instruments' own and are recorded in the bench's doc comment; **no committed CSV
+contains them**, which is the point of naming them here.
+
+1. **The first baseline was measuring LLVM, not the predicate.** `walk_case` originally read the eight
+   corners' sign bits and discarded the values, so LLVM dropped the loads and left a sign scan —
+   subtracting *that* charges the fused predicate for materialising the corners, which is the one cost
+   fusion removes. It produced `fused_predicate_ms` **0.6920 ms** on `sphere` at 65³ against a
+   `forced_margin_ms` of **0.8328 ms**: 83% of the cost of running clause two on *every* cell, for
+   running it on 1.8% of them. Arithmetically impossible, and invisible without the ordering control
+   (`fused ≤ forced`). The extractor cannot discard those values — `corner_value` is live for
+   `joined_mask` and every edge interpolation — so all three walks now hold them live identically. The
+   defective reading is **kept as a column**: `walk_signs_ms` 0.2860–0.2871 ms and
+   `fused_share_vs_signs` 0.018444–**0.364466** at 65³, worst on `thin_plate` — **6.6× C1's own
+   0.055328 and 5.5× the bar.** Same baseline, opposite verdict.
+2. **A share clause needs both halves in the same window.** With numerator and denominator timed in
+   separate loops, four runs of the *identical binary* put the worst 65³ `fused_share` at **0.0457,
+   0.0471, 0.0527 and 0.0779** — a 1.7× spread straddling the bar, three HELD and one **FALSIFIED**, with
+   nothing about the predicate changing. Timing extraction inside the same repetition and taking the
+   minimum of both series gave 0.0475, 0.0484, 0.0501, 0.0511, 0.0529 — a 1.1× spread, all HELD.
+   **`M-281`'s "one build and one run" has to be read as one *window*, not one process, whenever the
+   clause is a ratio** — and the durable half of the fix is `Counted`, whose integers do not have this
+   failure mode at all.
+3. **`thin_plate`'s marginal read −0.0180 ms** before the pairing went in. Not a negative cost: drift
+   below the timer's own floor. The rig therefore measures its floor — two timings of the identical
+   baseline inside one repetition — and asserts `resolution_floor_ms / extract_ms < 0.0658` on every 65³
+   row, because **an upper bound is passed by "unresolvably small"** and a one-sided clause has to say
+   which it got. On the committed run `thin_plate` reads **0.1019 ms against a 0.0008 ms floor, 127×**,
+   the tightest ratio in the file. No row is unresolvable and no marginal is negative.
+
+**A bracket that is reported and does not decide the clause.** An additive model
+`clause_one_margin + (clause two ns/cell) × active_cells`, each term measured where it is large, reads
+`modelled_share` **0.078522** worst on `box_exact` — *above* the bar. It is carried because it locates the
+mechanism, and it is explicitly not a second reading of C1: both its terms are themselves unpaired timing
+differences, it runs 1.28–1.47× the measured marginal on the five low-activity fields and 0.65–0.91× on
+`gyroid`, `fbm_terrain` and `noise_cavity`, so it brackets rather than measures.
+
+**What changed as a result.**
+
+- **The crate can say where it is correct, by default rather than as a debug gate, and the price is
+  named.** At ≤ **0.055328** of extraction at 65³ on all eight fields — one comparison on a byte the
+  extractor already holds, plus 11.31–14.60 ns/cell on the 0.78%–10.82% of cells that are active — a
+  certified-cell count comes out of the extraction traversal itself. That is a capability `M-378`
+  falsified in its standalone form and stated as a number it filed nothing about.
+- **Do not ship the standalone pass.** It buys the identical set (`set_difference` 0 on 25/25) for a
+  second `8 × cells` = **2,097,152** grid loads at 65³, i.e. the 0.0152–0.6082 `standalone_share`.
+- **Do not aggregate `certified_fraction`.** Any per-chunk pipeline must carry `(certified, active)` and
+  divide once; `IsotopyReport::certified_fraction`'s 1.0-on-empty is a latent 12.9-point error the moment
+  a caller means it per chunk.
+- **Do not build `validate::isotopy_report` into a per-chunk pipeline.** It is a second traversal at
+  7.2× the fused marginal for a number the first traversal already has.
+- **`M-378`'s "two thirds" sentence is corrected here rather than in place**, and its 0.0658 stands as
+  what it actually is: the maximum of its own `fused_share` column at 65³.
+- **Any quotation of "under 0.0658" must carry "at 65³".** Four of the eight 17³ rows are above it.
+
+**Would be shown wrong by:** a field or resolution at 65³ whose fused marginal exceeds
+0.0658 × `extract_ms`, which would mean the fixed per-cell clause-one cost is not fixed or clause two
+reaches inactive cells; **one** certified cell that `A-020` calls a tunnel or a twelve-vertex contour, on
+any population — the falsifier `M-378` registered and this row inherits; a non-zero `set_difference`,
+which would mean fusing changed the arithmetic and PV's soundness argument does not carry across the
+fusion; a `cells_visited` above `cells`, which puts the certificate back above the ceiling as a second
+pass; or an `unsound_if_certify_all` of 0 on the random arm, which would mean the 0 above was counted
+over an empty population and this entry measures nothing.
+
+### 🔬 M-411 — all three clauses HELD, and the two findings worth more than the HELDs: C1's premise is off by two — `rank_all_edges` reads **6**, not eighth — and the metric C1 endorses **needs the oracle too**, so the deployable LOD input is `rate_sign_change`, which reproduces the ranking on **all 120 rows** (P-99, R-099)
+
+**M.** `cargo bench --bench experiment_p99`, `docs/experiments/p-99.csv`, **120 rows** = 8 reference fields
+× 3 resolutions {17³, 33³, 65³} × 5 `k` {2, 3, 5, 9, 17}, `f64`, scalar,
+`amd-ryzen-9-5900x-12-core`. Fixture, predicate, fields, resolutions, `k` and oracle are all `P-66`'s,
+inherited rather than re-invented: `k` samples of `∇f · ê` along every axis-aligned grid edge, flagged
+non-monotonic when two sampled projections disagree in sign, against `subgrid::roots::all_roots` at 128
+intervals per edge. What is new is the **denominator**. **`# commit a6a3ed3 on
+amd-ryzen-9-5900x-12-core at 2026-08-28T00:28:36Z`** — no `(WORKING TREE DIRTY)`, and `a6a3ed3` is an
+ancestor of HEAD.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the single-root rate ranks `thin_plate` **first of eight** at 33³ and 65³ | rank 1 | **HELD — `rank_single_root` = 1 on all 10 rows at 33³ and 65³, at every `k`; rates 0.441176 and 0.469697** |
+| C2 it **fails to converge** on `thin_plate` and converges on the other seven | 1-of-8 split | **HELD — `converges` = `false` for `thin_plate` and `true` for the other seven, at all five `k`; 0.388889 → 0.441176 → 0.469697** |
+| C3 false **negatives** fall with `k`, false **positives** are monotone non-decreasing | both, in the permitted direction | **HELD — FN 322 / 94 / 8 / 1 / 0 and FP 9,886 / 10,387 / 10,565 / 10,637 / 10,658 over `k` = {2,3,5,9,17}** |
+
+> **Every number below is read from the committed `docs/experiments/p-99.csv` at `a6a3ed3`, which is a
+> clean-tree re-run.** The measuring agent's report quoted a run at `63c7161 (WORKING TREE DIRTY)`, and
+> quoting a superseded run is `✗35`'s and `✗52`'s defect. So every figure was re-read from the clean file
+> rather than copied. **This file has no timing column** — every quantity is an exact integer count or a
+> ratio of two of them — so `M-280` and `M-281` do not apply and the re-run reproduces the dirty run
+> **bit for bit on every number**, which is the outcome a clock-free artefact should have and is worth
+> recording as such. Two things in the prior report are nevertheless corrected here, and both are
+> *scope* errors rather than moved values: *"the two denominators differ by at most 6 edges anywhere in
+> the file"* is true only at 65³ — the maximum over the whole file is **20**, at `noise_cavity` 33³ — and
+> the reproduction control compares **840** cells, not 720, because `oracle_samples` is shared with
+> `p-66.csv` too.
+
+## SHARE, recomputed, and one clause that was arithmetically unreachable to check
+
+**No clause here is a ratio of a runtime total, so `✗51`'s arithmetic has nothing to bite on and there is
+no `1/(1 − share/factor)` to compute.** The registration says so itself: *"SHARE: this is a rate; it moves
+nothing and gates the LOD decision `M-121` and `M-72` both want an input for."* All three clauses are
+comparisons of exactly counted integer populations — a rank, a sequence direction, and two monotonicities
+— over a sweep with 3 resolutions and 5 `k`, one more than each clause's structural minimum. **All three
+were reachable before the run**, and the one thing that could have made C1 unreachable *by arithmetic* is
+a tie at the top: `rank` is defined as `1 + (number of fields with a strictly greater rate)`, so "ranks
+first" is satisfied by a tie and a tie is not a result. That is why `rank1_strict_single_root` is
+asserted at 33³ and 65³ **before the CSV is written** and recorded on every row. It is `true` on all 120
+rows; at 65³, `k = 5` the top two are **0.469697 against 0.136549**, a 3.44× separation.
+
+**The reachability finding that is not arithmetic, and it contradicts the registration's own framing.**
+`✗53` split its two surviving candidates into a deployable one and an offline one — the single-root rate
+as *"the FP-rate column"*, and the false-negative count *"which needs the oracle, so it is an offline
+diagnostic and not a per-frame number"*. **That split is wrong, and it is wrong about the half `P-99`
+registered.** `rate_single_root`'s denominator is *"edges the root finder reports with exactly one
+root"*, which cannot be known without `all_roots` — 129 field evaluations per edge, 811,200 edges at 65³.
+So **C1 as registered endorses an offline metric**, and the per-chunk LOD input `M-121`'s 3.14-cell
+surface pop and `M-72`'s aliasing both want is still not in hand from C1 alone. This was caught by
+writing the SHARE section before the harness, and it was answered rather than merely noted: the bench
+records four extra `sign_change` columns, and that is where the deployable signal turns out to live.
+
+## C1 — the denominator was the defect, and the premise was off by two
+
+| field | `rate_single_root` | `rank_single_root` | `rate_all_edges` | `rank_all_edges` | `flagged_non_monotonic` |
+|---|---:|---:|---:|---:|---:|
+| **`thin_plate`** | **0.469697** | **1** | 0.001185 | **6** | 961 |
+| `noise_cavity` | 0.136549 | 2 | 0.062366 | 2 | 50,591 |
+| `fbm_terrain` | 0.086720 | 3 | **0.255369** | **1** | 207,155 |
+| `gyroid` | 0.026888 | 4 | 0.043225 | 3 | 35,064 |
+| `csg_difference` | 0.017465 | 5 | 0.004662 | 5 | 3,782 |
+| `torus` | **0.000000** | 6 | 0.009615 | **4** | **7,800** |
+| `box_exact` | 0.000000 | 6 | 0.000001 | 7 | **1** |
+| `sphere` | 0.000000 | 6 | 0.000000 | 8 | **0** |
+
+65³, `k = 5`. **The reversal the experiment exists to show is total**: `thin_plate` goes from 6th to 1st
+and `fbm_terrain` from 1st to 3rd when the denominator changes from all grid edges to the edges that
+carry the surface.
+
+**The registration's parenthetical is a premise defect and the entry quotes 6.** C1 says *"where the
+all-edges rate ranked it **eighth**"*, inherited verbatim from `✗53`'s prose — *"`thin_plate` has the
+lowest non-monotonic fraction of the eight ... It ranks eighth."* **`rank_all_edges` for `thin_plate` is
+`6`, on all 15 of its rows**, at every resolution and every `k`. Five fields score strictly higher, so
+the rank is 6; the two *below* it are `sphere`, which flags exactly **0** edges at every resolution, and
+`box_exact`, which flags **1** edge of 811,200 at 65³. So the true statement is *"last of the six fields
+whose gradient turns anywhere in the volume"*, and eighth was never available. **C1's predicate — the
+ranking of `rate_single_root` — is what `falsified_by` names, and it held. The premise did not.**
+
+**`torus` is the sharpest single illustration of the volume/surface distinction and the registration did
+not name it.** It ranks **4th of eight on the all-edges rate at every resolution** — 408, 1,848 and 7,800
+flagged edges at 17³, 33³, 65³ — and **exactly 0.000000, tied last, on the single-root rate at 33³ and
+65³**. All 7,800 of its flagged edges at 65³ are off-surface. A metric that ranks the torus fourth for
+under-resolution is measuring the field's interior, not its mesh.
+
+**C1's registered scope was exactly right, and the file shows why.** At **17³** `thin_plate` is
+`rank_single_root` = **2**, behind `noise_cavity` at 0.535714, at `k` ∈ {3, 5, 9, 17}; it is rank 1 at
+17³ only at `k = 2`. `thin_plate`'s flagged count is `k`-independent (see the mechanism) while
+`noise_cavity`'s rises with `k`, so the coarsest grid is the one resolution where the ranking is decided
+by the sample count rather than by the geometry. Registering C1 at 33³ and 65³ was not conservatism; at
+17³ the clause would have been FALSIFIED.
+
+## C2 — the convergence criterion was declared in the bench before the run
+
+**Stated in `experiment_p99.rs`'s doc comment, committed before the first run:** a field **converges** at
+fixed `k` when its `rate_single_root` sequence over 17³ → 33³ → 65³ is **non-increasing**; it **fails to
+converge** when the sequence rises at either step. `converges_strictly` (strictly decreasing at both
+steps) and `rate_ever_nonzero` are separate columns **so that a field whose rate is identically zero is
+not silently counted as evidence of convergence**. An unstated criterion is not a clause, and a flat zero
+is not a falling sequence.
+
+| field | 17³ | 33³ | 65³ | `converges` | `converges_strictly` | `rate_ever_nonzero` |
+|---|---:|---:|---:|---|---|---|
+| **`thin_plate`** | 0.388889 | 0.441176 | 0.469697 | **`false`** | `false` | `true` |
+| `noise_cavity` | 0.535714 | 0.345278 | 0.136549 | `true` | `true` | `true` |
+| `fbm_terrain` | 0.296154 | 0.191768 | 0.086720 | `true` | `true` | `true` |
+| `gyroid` | 0.116667 | 0.051587 | 0.026888 | `true` | `true` | `true` |
+| `csg_difference` | 0.071429 | 0.030303 | 0.017465 | `true` | `true` | `true` |
+| `torus` | 0.048780 | 0.000000 | 0.000000 | `true` | `false` | `true` |
+| `sphere` | 0.000000 | 0.000000 | 0.000000 | `true` | `false` | **`false`** |
+| `box_exact` | 0.000000 | 0.000000 | 0.000000 | `true` | `false` | **`false`** |
+
+`k = 5`, the `k` `✗53`'s quoted sequence comes from. **`thin_plate` rises at both steps and reproduces
+`✗53`'s 0.3889 / 0.4412 / 0.4697 to six places**, and the same 1-of-8 split holds at every `k` in the
+sweep — `converges` = `false` occurs on exactly the five `thin_plate` rows and nowhere else.
+
+**The two columns that keep C2 honest are doing work.** Four fields converge *strictly*. `torus`
+converges non-strictly and `rate_ever_nonzero` = `true`, so its 0.048780 → 0 → 0 is a real fall.
+**`sphere` and `box_exact` converge at a flat zero**: their denominators are real (`single_root_edges`
+4,758 and 5,766 at 65³) and their numerators are 0, so "converges" is true of them and is *not* evidence
+of anything falling. Without `rate_ever_nonzero` on the row, C2's *"converges on the other seven"* would
+have been carried in part by two fields that never had a rate to reduce.
+
+## C3 — both halves asserted in the direction the predicate's form allows
+
+| `k` | false negatives | false positives (`non_monotonic_single_root`) | flagged, all edges | multi-root edges |
+|---:|---:|---:|---:|---:|
+| 2 | **322** | 9,886 | 344,500 | 2,172 |
+| 3 | 94 | 10,387 | 375,691 | 2,172 |
+| 5 | 8 | 10,565 | 385,038 | 2,172 |
+| 9 | 1 | 10,637 | 387,357 | 2,172 |
+| 17 | **0** | **10,658** | 388,159 | 2,172 |
+
+Summed over 8 fields × 3 resolutions. **322 / 94 / 8 / 1 / 0 matches `✗53`'s five numbers exactly.**
+`false_positives` and `non_monotonic_single_root` are identical on all 120 rows — they are the same count
+under two registered names, written once from one field rather than measured twice. Per
+`(field, resolution)`, `fn_non_increasing_with_k` and `fp_non_decreasing_with_k` are `true` on all 120
+rows.
+
+**`✗53`'s C2 defect is corrected rather than repeated.** It asked for a false-positive rate that *falls*
+with `k`, which is mechanically impossible: adding a sample point can only add an opportunity for two
+projections to disagree. The registered direction here is non-decreasing, and the measured rise is
+**+7.81%** (9,886 → 10,658).
+
+**The instrument that could actually have caught a violation is `flag_dropped_at_higher_k`, and it is
+stronger than the registered count check.** Two totals can both move in the permitted direction while
+individual edges swap in and out of the flagged set. The bench tracks the per-edge flag across all five
+`k` and counts edges flagged at one `k` and unflagged at the next larger one; the column is **0** on all
+120 rows. Set inclusion of the flagged sets implies the false-negative *sets* shrink edge by edge, which
+is strictly stronger than the counts falling.
+
+**The honest scope of C3, said out loud: both directions are entailed by the sample grids being nested.**
+`KS` = {2, 3, 5, 9, 17} gives `t = i/(k−1)` with denominators 1, 2, 4, 8, 16, so every coarser sample set
+is a bit-exact subset of the `k = 17` set. What C3 tests is that **the implementation is the predicate**,
+not a property of any field. To keep the direction falsifiable at all, the bench recomputes each `k`
+independently instead of subsetting the `k = 17` projections — 36 gradient evaluations per edge against
+17, **2.1× the work**, paid deliberately so that C3's second half is true by construction of the
+*predicate* and not by construction of a helper. **The content of C3 is its magnitudes**: the whole
+false-negative population lives on two fields, and it is `noise_cavity`'s sub-cell gradient reversals
+that 322 → 0 is measuring.
+
+| field | 17³ | 33³ | 65³ | multi-root at 65³ |
+|---|---|---|---|---:|
+| `noise_cavity` | 160 / 52 / 5 / 1 / 0 | 95 / 28 / 2 / 0 / 0 | 30 / 6 / 1 / 0 / 0 | 698 |
+| `fbm_terrain` | 12 / 4 / 0 / 0 / 0 | 18 / 4 / 0 / 0 / 0 | 7 / 0 / 0 / 0 / 0 | 147 |
+
+`false_negatives` at `k` = 2 / 3 / 5 / 9 / 17. **No other field produces a false negative at any `k`.**
+`csg_difference` and `gyroid` have multi-root edges (48 and 114 at 65³) and the witness catches every one
+of them at `k = 2` already; `thin_plate`, `sphere`, `box_exact` and `torus` have **`multi_root_edges` = 0
+everywhere**, so `thin_plate` — the field C1 and C2 are about — structurally *cannot* produce a false
+negative in this file. At `k = 2` the witness finds 1,850 of the 2,172 multi-root edges, **85.2%**, from
+the two grid corners the extractor has already sampled.
+
+## Mechanism — `thin_plate`'s rate is a closed form, and the axis breakdown proves it
+
+**`nm_single_root_axis_y` carries 100% of `thin_plate`'s flagged single-root edges at every resolution and
+every `k`** — 49 / 225 / 961, with `nm_single_root_axis_x` = `nm_single_root_axis_z` = **0**. The plate is
+a box with half-extents `[1, 0.0125, 1]` on `[-2, 2]³` (`ThinPlate::canonical`,
+`THICKNESS_IN_CELLS = 0.4` at `CANONICAL_CELL_SIZE = 0.0625`); `y` is its thin axis. With `m` = interior
+footprint columns = `(n−3)/2` — 7, 15, 31 at `n` = 17, 33, 65:
+
+$$\texttt{non\_monotonic\_single\_root} = m^2, \qquad \texttt{single\_root\_edges} = 2m^2 + 4m, \qquad
+\texttt{rate\_single\_root} = \frac{m}{2m+4} = \frac{1}{2} - \frac{1}{m+2}$$
+
+Measured against predicted: **49/126, 225/510, 961/2046 — exact at all three resolutions, to the
+integer.**
+
+Why: `ThinPlate` overrides `gradient` with the analytic `box_gradient`, whose interior branch is
+`g[j] = d[j].signum()` for `j = argmax q`. The plate's mid-plane `y = 0` is its **medial axis**, where the
+distance gradient genuinely does not exist, and every registered resolution is odd so `y = 0` is a sample
+plane (`M-266`). There `d[1] = +0.0` and `f64::signum(+0.0) = 1.0`, so the mid-plane is assigned `+ŷ`;
+one cell below, the exterior branch gives `−ŷ`. The `y`-edge from `y = −h` to `y = 0` therefore samples
+projections `(−1, +1)` and is flagged **at `k = 2` already** — which is why every `thin_plate` count in
+the file is identical across all five `k` — while the edge from `y = 0` to `y = +h` samples `(+1, +1)`
+and is not. Exactly one flagged `y`-edge per interior column: `m²`. The denominator adds the other `m²`
+`y`-edges plus the `4m` rim `x`/`z`-edges at `y = 0`.
+
+**That is the mechanism of C2's non-convergence, and it is structural rather than noisy:** the numerator
+is a two-dimensional sheet on the medial plane growing as `m²`, and the only term diluting it is a
+one-dimensional rim growing as `m`. Refinement dilutes the rim and never the sheet, so the rate rises
+monotonically toward `1/2`. `h = 4/(n−1) = 0.0625` at 65³ against a 0.025-thick plate — the plate is
+**2.5× thinner than a cell** at the finest resolution tested. **[INFERENCE]** the closed form holds while
+`y = 0` is the only sample plane touching the plate, i.e. while `h > 0.0125`, which is every odd
+`n < 321`; at `n = 321` the samples at `y = ±h` land exactly on the plate's faces. That is five
+refinement levels above 65³, and it is the quantitative form of `M-100`. `✗53` listed *"a `thin_plate` FP
+rate that starts falling above 65³"* among its own falsifiers; the formula says it cannot.
+
+**The other seven axis splits confirm the breakdown reads geometry rather than noise.** `fbm_terrain` has
+`nm_single_root_axis_y` = **0** at every resolution (391 x / 0 y / 358 z at 65³): it is a heightfield,
+`∂f/∂y ≡ 1`, and a `y`-edge can never turn. `csg_difference` and `gyroid` are isotropic to the edge
+(35/35/35 and 193/193/193 at 65³). `noise_cavity` is near-isotropic (1312/1340/1291).
+
+**Why the all-edges denominator ranked it sixth is the same arithmetic from the other side:**
+`thin_plate`'s numerator is an `m²` sheet inside a `3(n−1)n²` box, so `rate_all_edges` *falls* as
+`Θ(1/n)` — 0.003532 → 0.002152 → 0.001185 — purely because the box grows faster than the plate's
+surface. The all-edges rate is a volume statistic; the single-root rate is a surface statistic; **the
+numerator was never the problem.**
+
+## The vacuity control, its value, and the caveat that ships with it
+
+**Column `oracle_samples`, value `128` on all 120 rows** — `✗53`'s column, inherited, with
+`assert_eq!(ORACLE_SAMPLES, 128)`. Pinning the constant is the cheap half. **The half that proves the
+fixture could have failed is asserted before the artefact is written**, and every one of these is a
+`VACUOUS:` assertion in the bench rather than a sentence in this entry:
+
+- **`multi_root_edges` sums to 2,172** at `k = 5`. At 128 intervals the oracle finds a non-empty
+  population C3 can be wrong about; a zero here would make the false-negative sequence a row of zeros
+  over an empty set.
+- **`false_negatives` at the coarsest `k = 2` is 322**, non-zero. **So the 0 at `k = 17` is a zero that
+  could have been non-zero — and was, four `k` earlier, on the same edges.** `M-44`'s rule satisfied by
+  demonstration rather than by argument.
+- **`single_root_edges > 0` on every one of the 120 rows** (minimum **126**, `thin_plate` at 17³). C1's
+  denominator is never empty, so no rate in the file is `NaN` and no rank is taken over a hole.
+- **`flagged_non_monotonic` is 385,038 of 7,436,928 `edges` at `k = 5`, leaving 7,051,890 unflagged.** The
+  witness can report both answers; one that flagged everything would make every rate 1 and every rank a
+  tie, and one that flagged nothing could rank nothing.
+- **`rank1_strict_single_root` = `true`**, asserted at 33³ and 65³ before the CSV exists — C1's "first"
+  is not a tie.
+- **`fp_moves_with_k` = `true` on 8 of the 24 `(field, resolution)` pairs** (`fbm_terrain` ×3,
+  `noise_cavity` ×3, `gyroid` at 33³ and 65³) — C3's non-decreasing half is not satisfied by a constant.
+- **At least one field converges with `rate_ever_nonzero` = `true`** (five do) — C2's "converges on the
+  other seven" is not a statement about empty numerators.
+
+**The caveat, unresolved and unresolvable here.** `all_roots` cannot see two roots closer together than
+one interval, i.e. **1/128 of an edge**. **A root pair inside one interval is invisible to *both*
+instruments: it cannot produce a false negative in this file, and it also cannot be ruled out.** Every
+false-negative count here, including the 0 at `k = 17`, is scoped to pairs the oracle can resolve. This
+is a bound on the instrument, not a measurement of the world, and it is a recorded column rather than a
+footnote for exactly that reason.
+
+## The deployable metric, which is the answer C1 could not give
+
+**`rate_sign_change` scores C1's numerator against `sign_change_edges` — edges whose endpoints straddle
+the isosurface, which Marching Cubes already classifies for free — and it gives the identical ranking.**
+`rank_sign_change` equals `rank_single_root` on **all 120 rows**. The two denominators are equal on **18
+of the 24 `(field, resolution)` pairs** and differ only on `noise_cavity` (+18, +20, +6 at 17³, 33³, 65³)
+and `fbm_terrain` (+5, +4, +1). The largest divergence anywhere in the file is **20 edges of 6,522**, at
+`noise_cavity` 33³, falling to 6 of 28,882 at 65³. `thin_plate`'s `rate_sign_change` is **0.469697** at
+65³, bit-identical to `rate_single_root` because it has no multi-root edge at all.
+
+The difference has a closed reading, and it is `oracle_parity_violations` = **0** on all 120 rows that
+licenses it: an endpoint sign change is equivalent to an odd root count, so
+`sign_change_edges − single_root_edges` is exactly the count of edges with **three or more** roots. That
+is 20 edges at `noise_cavity` 33³ and zero on six of the eight fields — the oracle-free denominator
+over-counts by precisely the population the oracle exists to find, and that population is small enough
+not to move a single rank.
+
+## What changed as a result
+
+**Nothing in `crates/isomesh/src/**`, and nothing should.** This row measures a rate, surfaces the LOD
+decision, and stops.
+
+**The decision, surfaced with the numbers behind it: the per-chunk signal is
+`flagged_non_monotonic / sign_change_edges` at `k = 2`, not `rate_single_root` at `k = 5`.** `k = 2` is
+the two grid corners the extractor has already sampled, it costs two gradient evaluations per straddling
+edge and **no oracle**, and it gives the identical ranking — `rank_sign_change` = 1 for `thin_plate` at
+33³ and 65³ at `k = 2`. What `k = 2` buys less of is soundness, and its size is on the row:
+`false_negatives` **322** at `k = 2` against 8 at `k = 5` and 0 at `k = 17`, i.e. 85.2% of the 2,172
+multi-root edges still caught. **For an LOD gate that is the right trade** — the gate consumes a ranking,
+and a 322-edge miss leaves the ranking intact at every resolution.
+
+**Do not build the version that consumes `rate_single_root` or `false_negatives` directly.** Both need
+`all_roots` — 129 field evaluations per edge, 811,200 edges at 65³ — and they are offline diagnostics,
+for the reason `✗53` gave for one of them and missed for the other. **Reported as a null in one
+direction and a result in the other: C1's registered metric is not shippable, and the column beside it
+is.**
+
+**`✗53` had the winning metric in its own artefact under a name that hid it.** `p-66.csv`'s
+`false_positive_rate` column *is* `rate_single_root` — it reads 0.388889 / 0.441176 / 0.469697 on
+`thin_plate`'s `k = 5` rows — while its `non_monotonic_fraction` column is `rate_all_edges` and its
+`thin_plate_ranks_first` column reads `false` on all 120 rows. The reversal was in the file for a phase;
+what was missing was a name that said which denominator each column used.
+
+## Five fixture defects, all caught by this harness's own controls rather than by review
+
+1. **The registration's C1 premise is wrong by two ranks.** `rank_all_edges` for `thin_plate` is **6** of
+   8, never 8, on all 15 of its rows. Caught by recording both rankings on every row instead of arguing
+   the contrast in prose — which is what `✗53` did, and its *"the lowest non-monotonic fraction of the
+   eight"* is the source of the error. The true statement is *"last of the six fields whose gradient
+   turns anywhere"*; the two below are `sphere` at 0 flagged edges and `box_exact` at 1 in 811,200.
+2. **The inherited claim that the single-root rate is the *deployable* candidate is wrong** — its
+   denominator is defined by the oracle. Caught by writing the SHARE section before the code, and
+   answered by adding the four `sign_change` columns rather than by a note. This is the finding that
+   keeps `M-121`/`M-72`'s ticket honest: C1 held and did not deliver the input it was registered to gate.
+3. **C1 would have been FALSIFIED had it been registered at 17³.** `thin_plate` is `rank_single_root` = 2
+   there at `k` ∈ {3, 5, 9, 17} — rank 1 only at `k` = 2 — behind `noise_cavity`'s 0.535714 at `k` = 5.
+   Caught by computing ranks at **every** resolution and `k` and recording them, rather than only at the
+   two the clause names — so the file shows the clause's boundary instead of hiding it.
+4. **`thin_plate`'s entire flagged population depends on the fixture's grid alignment**, and the field's
+   own doc comment says why: the plate is centred at `y = 0` and every registered resolution is odd, so
+   the medial plane is a sample plane (`M-266`). **[INFERENCE]** a half-cell shift removes the surface
+   entirely at every level — the doc comment cites
+   `lod::tests::the_aliasing_is_alignment_and_a_half_cell_shift_removes_it` — and would therefore remove
+   the metric that ranks it first at the same time. Consistent, and it bounds the claim: the witness
+   reports an under-resolved feature it can *see*, and cannot warn about one the grid misses outright. A
+   shifted-plate arm is not registered and was not run.
+5. **A deliberate deviation from `P-66`'s code that does not move a number, checked rather than assumed.**
+   Every edge is axis-aligned, so `∇f · ê` is the single component `g[axis]`; `P-66` normalised `(h,0,0)`
+   and took a three-term dot product behind a `len == 0.0` guard for an input that cannot occur. Removing
+   the division and the branch is bit-identical in sign classification, and the guard was a fallback for
+   an impossible case. **Verified rather than asserted: all 840 shared cells — 7 columns
+   (`edges`, `single_root_edges`, `multi_root_edges`, `flagged_non_monotonic`, `false_negatives`,
+   `false_positives`, `oracle_samples`) × 120 rows — are identical to the committed `p-66.csv` at
+   `16efbec`, 0 mismatches.** `M-279`'s rule satisfied: a new instrument's first job is to agree with the
+   old one where they overlap.
+
+No clause was VACUOUS and none was BLOCKED. No clause names a second machine. `oracle_parity_violations`
+and `flag_dropped_at_higher_k` are both **0** on all 120 rows, asserted *after* the CSV is written because
+they are predicate results a reader needs the numbers to interpret, not vacuity gates.
+
+**Would be shown wrong by:** `thin_plate` ranking below any field on `rate_single_root` at 33³ or 65³,
+which would mean the denominator was not the problem and the whole witness family measures the volume; a
+`rate_single_root` sequence that turns over on `thin_plate` below `n = 321`, which would break the `m²`
+closed form and with it C2's mechanism; a second field failing to converge, which would make
+non-convergence a property of the metric rather than of a sub-cell feature; a non-monotone
+`false_positives` count or a non-zero `flag_dropped_at_higher_k`, either of which would mean the
+implementation is not the predicate; or a resolution at which `rank_sign_change` diverges from
+`rank_single_root`, which would withdraw the oracle-free denominator and leave the LOD signal offline
+after all.
+
+### 💥 ✗78 / M-412 — C1 HELD at **48 of 48** with `worst_component_ulp` **0**, C3 HELD at **0 open edges**, C2 FALSIFIED on both halves on **16 of 16 rows**: `M-372`'s obstruction is real and it is in the **decomposition**, because a 24-tetrahedron barycentric split reaches full octahedral equivariance bit-exactly where the six-tet split is stuck at 12 — and removing it costs **2.4405× the six-tet split and 7.9353× Marching Cubes** against registered bars of 2× and 6× (P-100, R-100)
+
+**M.** `cargo bench --bench experiment_p100`, `docs/experiments/p-100.csv`, **80 rows**, `f64`,
+`amd-ryzen-9-5900x-12-core`. Five decomposition arms × eight reference fields × {33³, 25³}, each
+arm driven through one copy of `P-61`'s equivariance instrument — all 48 signed axis permutations
+applied to `P-61`'s two unchanged fixtures on the fields' own symmetric domain cube, 3,840
+extractions in all. Committed at `# commit bd8b134` with **no `(WORKING TREE DIRTY)`**; `bd8b134`
+is an ancestor of `HEAD` (`e70f2e7`).
+
+> **Re-run on a clean tree, and the original report's provenance note is superseded.** That report
+> closed with *"the CSV provenance line reads `commit 63c7161 (WORKING TREE DIRTY)`"* and
+> predicted the integers and exact ratios would reproduce. They did, without exception: every
+> `elements_vertex_exact`, every `worst_component_ulp`, all sixteen triangle triples, every
+> degenerate and non-degenerate count, every seam column. **Three things in that report do not
+> survive contact with the committed file and are withdrawn here.** (i) `elements_triangle_exact`
+> for `barycentric_24` was reported as *"6 on 13 rows"*; the file reads **6 on 14 rows**, 12 on
+> `thin_plate`/33³ and 48 on `box_exact`/33³ — 13 + 1 + 1 = 15 and the arm has 16 rows, so this
+> was an arithmetic slip rather than a run move. (ii) The run wall time *"~2m01s on the Zen 3 /
+> RTX 3090 rig"* is not in any committed column and is withdrawn; the file's own `wall_ms` runs
+> **11–3,058 ms per row, 32,403 ms summed**, covers only the 48-element equivariance measurement,
+> and is read by no clause. (iii) The GPU in that sentence is irrelevant — this experiment is
+> scalar `f64` on the CPU throughout. **No verdict moved.** Every number quoted below is either a
+> column of `p-100.csv` or arithmetic shown from its columns, and every ratio is taken between
+> integers of a single `(field, resolution)` row, so `M-280` and `M-281` do not reach it.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 `barycentric_24` reaches 48 of 48 where the six-tet split reaches 12 | 48 on all 16 rows | **HELD — `elements_vertex_exact` = 48 on 16 of 16, `worst_component_ulp` = 0 on 16 of 16, `vertex_failing_labels` empty on 16 of 16, `first_failing_element` = `none` on 16 of 16. Side by side in the same instrument and the same run: both six-tet arms 12 on 32 of 32, `marching_cubes` 48 on 16 of 16** |
+| C2 at most 2× the six-tet split, and the combined penalty under 6× | ≤ 2.0 and ≤ 6.0 | **FALSIFIED on both halves, 16 of 16 rows each. `triangles_vs_six_tet` 2.3505–2.7264, mean 2.4405. `triangles_vs_marching_cubes` 6.1912–10.5579, mean 7.9353. Smallest margin against the *looser* of the two applicable bars is 1.1801×** |
+| C3 still tiles across chunk seams with zero open edges | 0 | **HELD — `open_edges` = 0 on 80 of 80, `c3_open_edges_total` = 0, with the mismatched-diagonal control reading 80–3,765 on the same 80 rows** |
+
+> **`c2_holds` reads `false` on all 80 rows, and 64 of them are not being accused of anything.**
+> It is a run aggregate stamped onto every row, computed once from `c2_worst_ratio_six_tet`
+> (2.726437) and `c2_worst_ratio_marching_cubes` (10.557864) — both maxima taken over the
+> **`barycentric_24` arm alone**. So `false` sits beside `marching_cubes` rows whose own
+> `triangles_vs_marching_cubes` is `1.000000` and `six_tet_crate` rows whose own
+> `triangles_vs_six_tet` is `1.000000`. `c1_holds` and `c3_holds` read `true` on all 80 for the
+> same structural reason, not because `marching_cubes` was scored on C1.
+
+**The measurement, and it is sixteen integer triples:**
+
+| field | n | `marching_cubes` | six-tet | `barycentric_24` | 6/MC | **b24/6** | **b24/MC** | haus 6-tet | haus b24 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `sphere` | 33 | 2,312 | 7,032 | 17,040 | 3.0415 | **2.4232** | **7.3702** | 0.005510930 | 0.004105556 |
+| `sphere` | 25 | 1,064 | 3,168 | 7,536 | 2.9774 | **2.3788** | **7.0827** | 0.011585054 | 0.008878386 |
+| `torus` | 33 | 2,256 | 6,848 | 16,096 | 3.0355 | **2.3505** | **7.1348** | 0.019014098 | 0.008980723 |
+| `torus` | 25 | 912 | 2,904 | 7,200 | 3.1842 | **2.4793** | **7.8947** | 0.033755986 | 0.020707873 |
+| `box_exact` | 33 | 2,696 | 10,440 | 28,464 | 3.8724 | **2.7264** | **10.5579** | 0.102062073 | **0.000000000** |
+| `box_exact` | 25 | 1,448 | 5,544 | 13,488 | 3.8287 | **2.4329** | **9.3149** | 0.044194174 | 0.034429552 |
+| `csg_difference` | 33 | 2,768 | 10,572 | 27,924 | 3.8194 | **2.6413** | **10.0882** | 0.102062073 | 0.054373556 |
+| `csg_difference` | 25 | 1,496 | 5,604 | 13,344 | 3.7460 | **2.3812** | **8.9198** | 0.083064754 | 0.080049958 |
+| `thin_plate` | 33 | 1,016 | 3,832 | 9,488 | 3.7717 | **2.4760** | **9.3386** | 0.089267855 | 0.012490879 |
+| `thin_plate` | 25 | 568 | 2,104 | 5,008 | 3.7042 | **2.3802** | **8.8169** | 0.076335391 | 0.074109953 |
+| `gyroid` | 33 | 10,632 | 30,492 | 72,648 | 2.8679 | **2.3825** | **6.8330** | 0.361561125 | 0.340314162 |
+| `gyroid` | 25 | 4,608 | 12,984 | 31,392 | 2.8177 | **2.4177** | **6.8125** | 0.694706520 | 0.738667548 |
+| `fbm_terrain` | 33 | 3,946 | 11,544 | 27,466 | 2.9255 | **2.3792** | **6.9605** | 0.321452719 | 0.267772593 |
+| `fbm_terrain` | 25 | 2,122 | 6,324 | 14,926 | 2.9802 | **2.3602** | **7.0339** | 0.484227260 | 0.494777106 |
+| `noise_cavity` | 33 | 13,236 | 35,832 | 87,556 | 2.7072 | **2.4435** | **6.6150** | 1.096310418 | 0.709508532 |
+| `noise_cavity` | 25 | 5,188 | 13,408 | 32,120 | 2.5844 | **2.3956** | **6.1912** | 1.007580940 | 1.180559480 |
+
+Vertex counts move by the same factor — `vertices` b24/6-tet is **2.3236–2.7258** against the
+triangle range 2.3505–2.7264 — so C2's falsification is a genuinely finer contour and not a
+fanning artefact of the triangle count. And the 24-tet split does buy geometry for the price:
+symmetric Hausdorff is **lower on 13 of 16 rows** (−25.5% `sphere`/33³, −52.8% `torus`/33³, −86.0%
+`thin_plate`/33³, and exactly 0 on `box_exact`/33³) and higher on 3 — `gyroid`/25³ +6.3%,
+`fbm_terrain`/25³ +2.2%, `noise_cavity`/25³ +17.2%, the coarse-grid noise fields, where
+interpolated points inside a cell fabricate detail the samples do not support.
+
+**The SHARE recomputation, said out loud, and it found a hidden dependency that tightens the
+clause.** The registration's SHARE line reads *"C2 is a triangle count, compared against `M-51`'s
+already-measured baseline"*, and the recomputation below was done **before this harness was
+written**.
+
+*First half — reachable, and bracketed by arithmetic alone.* `triangles_vs_six_tet` is a ratio of
+two directly measured integer counts, not a fraction of a whole, so `✗51`'s unreachable-share
+failure mode does not apply. The absolute ceiling is derivable with no run at all: a tetrahedron
+with one or two corners inside contributes at most **2** triangles, so 24 tetrahedra cap at **48**
+triangles per cell against the six-tet split's cap of **12** — a hard **4×** bound, with a floor
+of 1×. The registered 2.0 sits strictly inside `[1, 4]` and could have gone either way. Measured
+2.3505–2.7264, in the upper middle of that bracket.
+
+*Second half — reachable, but **not independent**, and it silently tightens the first.* The two
+halves are the same measurement:
+
+```
+b24/MC = (b24/6tet) × (6tet/MC)      exactly, in integers:  17040/7032 × 7032/2312 = 17040/2312
+```
+
+So C2 has **one degree of freedom, not two**, and the 6× combined bar is a bar on `b24/6tet` of
+`6/(6tet/MC)`. This run **measures** `6tet/MC` rather than assuming `M-51`'s ~3×: mean **3.2415**
+over 16 rows, range **2.5844** (`noise_cavity`/25³) to **3.8724** (`box_exact`/33³). Substituting
+the mean, the combined bar is a bar of **6 / 3.2415 = 1.8510** on `b24/6tet` — **7.5% tighter than
+C2's own stated 2.0**, so the clause's binding bar is not the one it states.
+
+*And here is the piece arithmetic could not reach before the run.* `6/x = 2.0` at exactly
+`x = 3.0`, which is `M-51`'s figure to its own stated precision — so which of the two bars binds was
+**undecidable in advance**. Measured per row:
+
+| `6tet/MC` | derived bar `6/(6tet/MC)` on `b24/6tet` | rows | binding bar |
+|---|---|---:|---|
+| > 3.0 — `sphere`/33³, `torus` both, `box_exact` both, `csg_difference` both, `thin_plate` both | **1.5494–1.9766** | 9 | the combined 6×, tighter than 2.0 |
+| < 3.0 — `sphere`/25³, `gyroid` both, `fbm_terrain` both, `noise_cavity` both | 2.0133–2.3216 | 7 | the stated 2.0 |
+
+Every row exceeds whichever bar binds it, and the smallest margin is **1.1801×**
+(`fbm_terrain`/25³ against 2.0); the largest is 1.7596× (`box_exact`/33³ against 1.5494). **Not
+marginal on any row.**
+
+*And measuring `6tet/MC` reproduces `M-51` independently*, which is the corroboration that makes
+the falsification readable rather than a lone number:
+
+| field | `M-51` | here at 33³ | Δ |
+|---|---:|---:|---:|
+| `sphere` | 3.04× | 3.0415 | +0.1% |
+| `torus` | 3.04× | 3.0355 | −0.1% |
+| `box_exact` | 3.91× | 3.8724 | −1.0% |
+| `csg_difference` | 3.83× | 3.8194 | −0.3% |
+| `thin_plate` | 3.84× | 3.7717 | −1.8% |
+| `gyroid` | 2.87× | 2.8679 | −0.1% |
+| `fbm_terrain` | 2.87× | 2.9255 | +1.9% |
+
+Seven of seven within 1.9%, from a different marcher in a different bench. `noise_cavity` is the
+eighth field and has no `M-51` counterpart; it reads 2.7072 and 2.5844.
+
+**A robustness check on C2, because two rows carry a large degenerate-sliver mass that predates
+this ticket.** `box_exact`/33³ and `csg_difference`/33³ are **72.41%** (7,560 of 10,440) and
+**61.24%** (6,474 of 10,572) zero-area triangles in the *shipped* six-tet extractor by
+`validate::accuracy`'s area epsilon, and 78.41% (22,320 of 28,464) and 68.84% (19,224 of 27,924)
+in the 24-tet arm. Every other row is under 3%. Recomputing the ratio on `accuracy_triangles` —
+non-degenerate triangles only:
+
+| reading | `b24/6tet` | above 2.0 | `b24/MC` | above 6.0 |
+|---|---|---:|---|---:|
+| raw `triangles` | 2.3505–2.7264, mean 2.4405 | **16/16** | 6.1912–10.5579, mean 7.9353 | **16/16** |
+| non-degenerate `accuracy_triangles` | 2.1230–2.4860, mean 2.3706 | **16/16** | 2.2789–9.3149, mean 6.9611 | **14/16** |
+
+**The falsification does not depend on which count is used** — that is worth stating as such,
+because it is the one thing that could have made C2 an artefact of a pre-existing crate defect
+rather than a property of the decomposition. The first half fails on 16 of 16 rows on both
+readings. The combined bar survives on exactly **2 of 16** rows under the non-degenerate reading,
+and those two rows are **precisely the two whose denominator is mostly slivers**: `box_exact`/33³
+(2.2789) and `csg_difference`/33³ (3.1431). On those rows `6tet/MC` collapses from 3.8724 raw to
+**1.0682** non-degenerate, which is the whole of the effect — the six-tet arm's inflated raw count
+*is* the slivers.
+
+**Mechanism — why the six-tet split is stuck at 12, checked element by element rather than
+counted.** All six Kuhn tetrahedra contain the cell's main diagonal `0–7`, which runs along
+`(1,1,1)`; a signed axis permutation maps that direction to itself exactly when all three signs
+agree, so the stabiliser is `(6 permutations) × (+++, −−−)` = **12**, and with four body diagonals
+`48/4 = 12`. The harness checks that the exactly-reproducing set **is** that subgroup:
+`exact_are_diagonal_stabiliser` is `true` on 32 of 32 six-tet rows, `first_failing_element` is
+`perm=012;sign=-++` — the bare `x`-reflection, the cheapest element that moves the diagonal — and
+the 36 entries of `vertex_failing_labels` are exactly the six non-uniform sign patterns
+`{-++, +-+, --+, ++-, -+-, +--}` crossed with the six permutations, read straight off the column.
+Their `worst_component_ulp` is **9.2135e18–9.2425e18**: the relabelled vertex set is a *different*
+set, not a near miss.
+
+**Mechanism — why the 24-tet split has nothing to move, and the two things that had to be true for
+bit-exactness.** Each tetrahedron is (cell centre, face centre, two adjacent corners of that
+face); an octahedral element sends a face to a face and a face edge to a face edge, and the
+stabiliser of one tetrahedron is the order-2 reflection swapping its two cube corners, so
+`48/2 = 24` is a single orbit and the construction never names an axis order or a diagonal. Two
+further conditions are load-bearing and both are in the bench: **(i)** the face-centre and
+cell-centre *values* are means summed in **sorted** order (`f64::total_cmp`), because floating
+addition is commutative and not associative — a fixed corner order would have leaked the axis
+labelling into the value and falsified C1 by the *averaging* rather than by the decomposition;
+**(ii)** the crossing is `R-059`'s centred offset `((a+b)/2)/(a−b)`, which `P-61` showed is
+invariant under swapping the edge endpoints, so the marcher never has to canonicalise which end of
+a tetrahedron edge comes first. The result is `worst_component_ulp` **0**, not "close".
+
+`six_tet_bench` is what makes this a statement about the decomposition. It runs the identical case
+classification, quad ordering, crossing placement and vertex cache as `barycentric_24` and differs
+**only in the tetrahedron list** — and it reproduces the shipped crate's triangle count exactly on
+all 16 rows (7,032/7,032, 10,440/10,440, 35,832/35,832 …) while reading 12. So the 48 cannot be an
+artefact of the new marcher.
+
+**Mechanism — C3, and it is stronger than the clause.** `seam_mesh_identical` is `true` on **80 of
+80** rows: the two-chunk mesh is the same triangle-key multiset as the single pass over the union
+grid, not merely closed. Kuhn tiles across a seam only because every cell picks the same main
+diagonal — a convention two chunks must agree on. The 24-tet split has no convention to agree on:
+a shared face is cut into four triangles by its own centre, identically from both sides, and that
+centre's averaged value is the mean of the same four corner values whichever cell asks.
+`seam_coords_exact` is `true` on 80 of 80, so `M-32`'s chunk-origin arithmetic is not silently
+supplying the zero, and `seam_configurations` is 5 (`fbm_terrain`) to 14 (`noise_cavity`), so the
+shared plane genuinely carried distinct cut sign patterns.
+
+**The vacuity control, the registered one, and it reads a file rather than a comment.**
+
+| control | column | value | why the value proves the fixture could have failed |
+|---|---|---|---|
+| **REGISTERED — the six-tet arm reproduces `p-61.csv`'s flat 12 of 48 before the 24-tet arm is believed** | `elements_vertex_exact` beside `elements_vertex_exact_p61`, `cut_edges_p61`, `triangles_p61`, `p61_columns_match`; aggregates `vacuity_six_tet_rows_at_12`, `vacuity_mc_rows_at_48` | **12 on 32 of 32** six-tet rows; **48 on 16 of 16** `marching_cubes` rows; `p61_columns_match` `true` on 80 of 80 | The 12 is **parsed out of the committed `docs/experiments/p-61.csv`** by `p61_baseline()` — 112 equivariance rows — and asserted per row, not typed into a comment. That is `P-70`'s discipline: the number the vacuity control turns on is a number in a file the harness opens. Four columns are asserted per baseline row, and two of them (`cut_edges`, `order_sensitive_edges`) are properties of the grid and the field values that no extractor touches, so a mismatch would mean this is not `P-61`'s instrument at all. The bracket is what makes C1 meaningful: an instrument that always said 48 would make C1 empty and one that could never say 48 would make it unreachable, and here **one instrument, one run, one set of 16 fixtures reads 12 for one decomposition and 48 for two others**. Both counts are `assert_eq!`, so the run cannot finish without them. |
+| C3's positive arm — the mismatched-diagonal seam | `seam_control_open_edges` | **80** (`torus`/25³) to **3,765** (`box_exact`/33³), ≥ 80 on every one of the 80 rows, asserted `> 0` | Chunk B is re-marched with Kuhn's six anchored on corner **2**, which splits every `x`-face on `2–4` instead of `0–6`, so the two chunks disagree about the diagonal of their shared face — `P-3`'s crack. The counter demonstrably reports a crack, which is the only thing that makes `open_edges` = 0 a measurement rather than an `M-44` pass. |
+| the open-edge census can be non-zero on real geometry | `boundary_open_edges` | 0 to **4,410** (`box_exact`/33³; `csg_difference`/33³ 3,933, `fbm_terrain`/33³ 454) | The single-pass mesh's own unpaired edges — the open surfaces' domain boundary. Non-zero on the open fields proves the census counts edges rather than returning an empty map, and subtracting this set is exactly what stops `gyroid`'s and `fbm_terrain`'s boundary being read as a seam crack. |
+| the exact-zero Hausdorff is not a zero over an empty set | `hausdorff_mesh_to_field`, `hausdorff_field_to_mesh`, `accuracy_forward_samples`, `accuracy_reverse_samples`, `accuracy_triangles`, `accuracy_degenerate_triangles` | `box_exact`/33³ `barycentric_24` reads `hausdorff` **0.000000000** with **13,448** forward and **4,450** reverse samples and 6,144 + 22,320 = **28,464** triangles accounted for, i.e. the whole mesh | Both directions of the symmetric distance are asserted non-empty and the accuracy report's triangle accounting is asserted equal to the mesh's, so the zero is a real exactness result on the axis-aligned box — the cell centre and face centres let an axis-aligned face be reproduced exactly, which no other arm here does. `M-44` applied to a column the registration names but does not gate. |
+| identity element | asserted, not recorded | element 0 must reproduce the reference bit-exactly on all 80 rows | `P-61`'s own control. A non-deterministic arm would make its row measure nothing. |
+
+> **`fixture_can_fail` reads `false` on 2 of 16 fixtures — `box_exact` at both resolutions,
+> `order_sensitive_edges` = 0 — and that is not C1 scoring itself on a fixture that cannot fail.**
+> That column is `P-61`'s question about the **crossing formula**: whether any cut edge has
+> endpoints a relabelling would swap. It is silent about the decomposition, and the six-tet arm
+> reads **12 on both of those rows** — so the fixture demonstrably discriminates decompositions
+> there even with no order-sensitive edge in it. Over the 14 rows that do carry one (24–643 each),
+> C1 is **14 of 14**. The same `false` appears on `box_exact`'s rows in `p-61.csv`, which is one
+> more way the two instruments agree.
+
+> **`elements_vertex_exact_p61`, `cut_edges_p61` and `triangles_p61` are blank on 48 of 80 rows,
+> and blank is not a failure.** `p-61.csv` has no counterpart for `six_tet_bench` or for either
+> 24-tet arm, so those rows carry no baseline and `p61_columns_match` defaults to `true` for them.
+> The 32 rows that do carry a baseline — 16 `marching_cubes` and 16 `six_tet_crate` — all match on
+> all four asserted columns.
+
+**Four fixture defects, every one caught by this harness's own controls rather than by review.**
+
+1. **C3's positive control was a fixture that could not fail, and the run aborted rather than
+   record a vacuous HELD.** Its first version gave chunk B Kuhn's six anchored on corner **1** and
+   reported **zero** open edges — `M-44` exactly. The diagnosis is worth keeping: Kuhn's diagonal
+   on the face normal to axis `a` joins the face corner where the *other two* axes both carry the
+   anchor's bits to the corner where both are flipped, so it depends only on the anchor's bits on
+   those two axes. `anchor = 1` differs from `anchor = 0` on `x` alone, so both split every
+   `x`-face on `0–6`/`1–7` and tile across an `x`-seam perfectly — they differ only *inside* the
+   cell. An `x`-seam needs an anchor whose `y` or `z` bit differs, and `anchor = 2` splits every
+   `x`-face on `2–4`/`3–5`. Fixed, and the premise is now asserted structurally in `main()` —
+   `diagonal(0) == [0,6]`, `diagonal(1) == [0,6]`, `diagonal(2) == [2,4]` — so the control cannot
+   silently go vacuous again. **This narrows `P-3`**: *"Kuhn tiles face-to-face only if every cell
+   picks the same main diagonal"* is true and not tight. `anchor = 1` picks the `1–6` diagonal,
+   not `0–7`, and still tiles face-to-face along `x`; by the rule above, so does `anchor = 7` on
+   all six faces.
+2. **A zero in a registered column had no provenance.** `box_exact`/33³ `barycentric_24` reports
+   `hausdorff` exactly `0.000000000`. Six accuracy-provenance columns and two asserts were added —
+   both distance directions non-empty, and `accuracy`'s triangle accounting equal to the mesh's
+   triangle count — after which the zero survives as a real exactness result rather than an empty
+   measurement. Found on the second run; the committed file is the third and carries the columns.
+3. **A pre-existing crate artefact surfaced, and it is the reason the robustness check above
+   exists.** `box_exact`/33³ and `csg_difference`/33³ are 72.41% and 61.24% zero-area triangles
+   **in the shipped six-tet extractor**, against under 3% on every other row. That is a property
+   of the crate at 33³ on axis-aligned fields, not of this ticket, and it is worth an id of its
+   own: 7,560 zero-area triangles per chunk is index-buffer and vertex-shader cost a game pays for
+   nothing.
+4. **The registration's name for the decomposition is ambiguous and the harness resolves it by the
+   number.** Kuhn/Freudenthal of a cube is **six** tetrahedra — the crate already ships it — and
+   the full barycentric subdivision of a cube is **forty-eight** flag simplices. The invariant
+   decomposition with exactly **24** is cell centre + face centre + face edge, and that is what
+   was built and what the bench asserts structurally before anything is meshed (24 distinct
+   tetrahedra, each coned to the centre slot, each with two cube corners differing in exactly one
+   bit).
+
+**Measured and not scored: triangle-level equivariance did not come with C1's vertex-level
+result.** `elements_triangle_exact` for `barycentric_24` is **6 of 48 on 14 rows**, 12 on
+`thin_plate`/33³ and 48 on `box_exact`/33³. This is not a registered clause, and `marching_cubes`
+scores **1, 2 or 4** of 48 on the same column on its own 16 rows, so it is not a regression
+against anything. The cause is local and cheap: the two-inside quad's fan starts at the
+**lowest-indexed cut edge**, which is an axis-label-dependent choice, and a fan anchored on the
+lexicographically smallest vertex-position bits would be label-free. Naming it as a **follow-on
+with its own id**, not as a result of this one. (The column is also not comparable to `p-61.csv`'s
+column of the same name and is not asserted against it: `triangle_keys` here uses **unordered**
+vertex-key triples, because half the octahedral group is a reflection and reverses winding, so an
+ordered key would report at least 24 failures on a perfectly equivariant extractor.)
+
+**What changed as a result.** **Invariance is reachable by changing the decomposition rather than
+the placement rule, and it prices out for a game.** `M-372`'s diagnosis is confirmed at the level
+of the mechanism and its *"no placement rule reaches that"* is now correctly bounded: no placement
+rule, but a different decomposition does — exactly, bit for bit, on all eight fields at both
+resolutions. It costs **2.4405× the six-tet split's triangles on the mean, 2.7264× at worst, and
+7.9353× / 10.5579× against Marching Cubes**, against registered bars of 2× and 6×, and the
+falsification survives the non-degenerate recomputation. A game would pay roughly eight triangles
+for every one Marching Cubes emits to gain a property no player can see, so **this is not built as
+a shipping extractor** — it stays a **CAD-only option**. No source change: `crates/isomesh/src/**`
+was not touched and the 24-tet split lives only in the bench, which is also where the one-path
+rule puts it — a second extractor with a second decomposition is the two-paths defect the crate
+forbids, and 8× the triangles buys no exception. What is worth keeping at zero shipping cost is
+the **oracle**: a decomposition with 48 independent bit-exact relations per fixture where the
+shipped tetrahedral extractor has 12, on the extractor family whose reason for existing in this
+crate is to be the topological reference, plus the only arm in the run that reproduces an
+axis-aligned box exactly.
+
+**Would be shown wrong by:** a `barycentric_24` row under 48 on a fixture carrying an
+order-sensitive edge, which would put the obstruction back in the marcher and re-open `M-372`; a
+decomposition that is octahedrally invariant and costs under 2× the six-tet split, which would
+re-open the price rather than the principle; a non-zero `open_edges` at a seam while
+`seam_control_open_edges` still fires, which would kill C3 regardless of C1; or a fix to the
+crate's degenerate-sliver output on axis-aligned fields, which would move `box_exact`/33³ and
+`csg_difference`/33³ — their non-degenerate combined ratios already sit at 2.2789 and 3.1431 — and
+would require C2's *second* half to be re-read on those two rows, though its first half fails
+there at 2.1333 and 2.1230 either way.
+
+### 💥 ✗79 / M-413 — C1 FALSIFIED at **3 of 16** and *worse than shipped on 9 of them*, C3 FALSIFIED by the two duals agreeing on **64 of 64** row-pairs, C2 HELD at a stated cost of **40 of 48** golden dual hashes: the registered key reorders a reduction `A-016` already made invariant, and the one reduction that is not invariant is `vec3::length` — changing only that takes both duals to `pure_permutation_exact` **6 of 6 on 32 of 32 rows** (P-101, R-101)
+
+> **Ids needed, not invented.** C1 and C3 are falsified, so this is 💥 and takes the **next `✗` after `✗55`**.
+> It also carries substantial measured material that no clause asked for — the obstruction is *located*,
+> not merely argued — so it is dual-numbered on the `✗52 / M-376` precedent and also takes the **next
+> `M-` after `M-384`**. Both placeholders above are for the file's owner to resolve.
+
+**M.** `cargo bench --bench experiment_p101`, `docs/experiments/p-101.csv`, **320 rows**, `f64`,
+`amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **320 data rows**
+across 76 columns — counted from the file, not from the brief. Two blocks: `equivariance` (128 rows —
+eight fields × {25³, 33³} × two duals × four arms, each row one 48-element octahedral measurement on
+`P-57`'s mirror-closed grids reached through `P-61`, with the 25³ arm at `3L/32` because `L/12` is not
+dyadic and its grid does not mirror) and `golden` (192 rows — eight fields × {17³, 25³, 33³} × two duals ×
+four arms, each row one extraction scored against the committed `crates/isomesh/golden_hashes.json`). The
+shipped extractor is the fifth arm and rides on every row in the `*_baseline` columns. Committed at
+**`fa17a34`** — `# commit fa17a34 on amd-ryzen-9-5900x-12-core at 2026-08-28T01:27:23Z`, no
+`(WORKING TREE DIRTY)`, and `git merge-base --is-ancestor fa17a34 HEAD` passes (HEAD is `e70f2e7`,
+`p-101.csv - re-run on a clean tree`).
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the key order takes `dual_contouring` to 48 of 48 on ≥ 12 of 16 rows | ≥ 12 | **FALSIFIED — `c1_rows_at_48` = 3 of `c1_population` = 16, identical to `baseline_rows_at_48_dual_contouring` = 3, and strictly worse on 9 of 16 rows, better on none** |
+| C2 it is free: no golden hash moves except through the accumulation order, Hausdorff unchanged to 1e-12 | ≤ 1e-12 | **HELD — `hashes_moved` 40 = `hashes_moved_expected` 40, `max_hausdorff_delta` 3.008704396734e-14, `golden_counts_changed` 0, `topology_identical` true on 320 of 320** |
+| C3 `manifold_dual_contouring` does *worse* than `dual_contouring` | strictly worse | **FALSIFIED — `c3_rows_at_48_manifold` = 3 = `c1_rows_at_48` = 3; the two agree on `elements_vertex_exact`, `pure_permutation_exact` *and* `pure_sign_flip_exact` on 64 of 64 row-pairs (16 rows × 4 arms)** |
+
+> **`c3_holds` reads `false` because the two duals *matched*, which the registration itself names as
+> "a stronger result".** Nothing about that `false` means the manifold path is worse, broken, or
+> unmeasured — it means the cycle partition is already relabelling-invariant. And it is invariant rather
+> than *inert*: under the registered arm the two extractors' vertex counts differ on 6 of 16 rows
+> (`gyroid` 33³ 5,240 against 5,268; `noise_cavity` 33³ 6,176 against 6,426; also `gyroid` 25³,
+> `fbm_terrain` 33³/25³, `noise_cavity` 25³), so `CycleQef` is actively splitting vertices and the
+> equivariance counts coincide anyway.
+>
+> **`share_reachable_before_run` reads `false_the_accumulation_is_already_invariant` on all 320 rows.**
+> That column is not a failure of anything. It is the harness's own pre-run verdict on C1, recorded in the
+> artefact — see SHARE below.
+>
+> **`bit_identical_to_shipped` reads `false` on 64 of the registered arm's 80 rows.** That is the change
+> under test being visible, not a defect: it reads `true` on all 80 rows of the `edge_slot` replica arm,
+> which is the instrument check.
+
+---
+
+#### C1, per row — the 16 rows the clause is scored on
+
+`block = equivariance`, `accumulation_key = abs_value_abs_offset`, `extractor = dual_contouring`. Every
+`elements_vertex_exact_baseline` is asserted equal to `docs/experiments/p-61.csv`'s own value
+(`baseline_matches_p61` true on 320 of 320); I re-checked all 128 of those comparisons against `p-61.csv`
+independently and found 0 mismatches.
+
+| field / res | shipped evx | arm evx | shipped perm | arm perm | sign flip (both) | positions moved | key ties | unbreakable |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `sphere` 33³ | 2 | **1** | 2 | **1** | 1 | 972 | 23,128 | 21,560 |
+| `sphere` 25³ | 2 | **1** | 2 | **1** | 1 | 416 | 17,248 | 17,248 |
+| `torus` 33³ | 2 | 2 | 2 | 2 | 1 | 816 | 6,664 | 4,440 |
+| `torus` 25³ | 4 | **2** | 4 | **2** | 1 | 340 | 3,136 | 2,940 |
+| `box_exact` 33³ | 48 | 48 | 6 | 6 | 8 | 0 | 198,352 | 25,480 |
+| `box_exact` 25³ | 48 | 48 | 6 | 6 | 8 | 0 | 106,624 | 18,424 |
+| `csg_difference` 33³ | 2 | **1** | 2 | **1** | 1 | 163 | 168,070 | 24,553 |
+| `csg_difference` 25³ | 2 | **1** | 2 | **1** | 1 | 90 | 92,953 | 17,807 |
+| `thin_plate` 33³ | 48 | 48 | 6 | 6 | 8 | 0 | 68,992 | 3,136 |
+| `thin_plate` 25³ | 24 | 24 | 6 | 6 | 4 | 0 | 37,632 | 2,352 |
+| `gyroid` 33³ | 2 | **1** | 2 | **1** | 1 | 3,687 | 17,591 | 13,283 |
+| `gyroid` 25³ | 2 | **1** | 2 | **1** | 1 | 1,565 | 11,907 | 9,533 |
+| `fbm_terrain` 33³ | 4 | 4 | 2 | 2 | 2 | 1,233 | **0** | **0** |
+| `fbm_terrain` 25³ | 2 | 2 | 2 | 2 | 1 | 670 | **0** | **0** |
+| `noise_cavity` 33³ | 2 | **1** | 2 | **1** | 1 | 3,691 | 22,981 | 16,178 |
+| `noise_cavity` 25³ | 2 | **1** | 2 | **1** | 1 | 1,362 | 13,426 | 10,273 |
+
+**The three tallies the clause needs, taken row by row against the same row's own baseline column:**
+
+| quantity | worse | same | better |
+|---|---:|---:|---:|
+| `elements_vertex_exact` vs `elements_vertex_exact_baseline` | **9** | 7 | **0** |
+| `pure_permutation_exact` vs `pure_permutation_exact_baseline` | **9** | 7 | **0** |
+| `pure_sign_flip_exact` vs `pure_sign_flip_exact_baseline` | 0 | **16** | 0 |
+
+Nine of sixteen is **more than half the rows**, and nothing improves. `elements_tested` is 48 on every
+equivariance row, so no row is short of the full group.
+
+**The distribution shift.** `elements_vertex_exact` over the 16 rows goes
+`{2: 10 rows, 4: 2, 24: 1, 48: 3}` → `{1: 8, 2: 3, 4: 1, 24: 1, 48: 3}`. The shipped minimum is **2**; the
+arm invents a bucket at **1** and puts eight rows in it. `pure_permutation_exact` goes
+`{2: 11, 4: 1, 6: 4}` → `{1: 8, 2: 4, 6: 4}`. Sign flips do not move at all: `{1: 11, 2: 1, 4: 1, 8: 3}`
+before and after.
+
+**The fields that fall all the way to the identity alone** — `elements_vertex_exact` = 1, i.e. 1 of 48
+octahedral elements exact, and 1 of 6 permutations, and 1 of 8 sign patterns: **`sphere`, `csg_difference`,
+`gyroid` and `noise_cavity`, at both 33³ and 25³** — eight rows. Each of those had the `x↔y` swap before
+and loses it. `torus` 25³ falls 4 → 2 without reaching the identity. The identity is never lost: the
+harness asserts the identity element vertex- *and* triangle-exact on all 128 equivariance measurements, and
+`elements_triangle_exact` is ≥ 1 everywhere.
+
+**The exact set is always a product subgroup, which is what licenses scoring the two halves separately.**
+`elements_vertex_exact == pure_permutation_exact × pure_sign_flip_exact` on **all 128** equivariance rows
+and on all 128 baseline triples — 1 = 1×1, 48 = 6×8, 24 = 6×4, 12 = 6×2, 6 = 6×1, 4 = 2×2, 3 = 3×1. So
+"the relabelling half" and "the negation half" are not a rhetorical split; they are separable factors in
+every row of the file.
+
+---
+
+#### SHARE, recomputed — and it is a **source audit**, not an arithmetic one
+
+`✗51`'s rule is that a clause denominated in a fraction of a total must name the share of that total it can
+move. C1 is not a ratio — it is a count of rows — so the `1/(1 − share/factor)` form does not apply. What
+does apply is the prior question the rule is really about: *of the reductions this change can reach, how
+many are the ones that break the property?* The answer is **0 of 1**, and it is decidable by reading
+`crates/isomesh/src/` before running anything.
+
+Walk every reduction on the path from a cell's eight corner samples to its dual vertex:
+
+| step | where | axis-index-ordered? |
+|---|---|---|
+| corner sampling | the field | no — one call per corner, no reduction |
+| `cube::is_inside` | `cube.rs:171` — `value < R::ZERO` | no — a sign test, no arithmetic at all |
+| `cube::edge_offset` | `cube.rs:222` — `((a + b) * HALF) / (a - b)` | no — **exactly** antisymmetric under the simultaneous endpoint-and-sign swap, by `P-61`'s four IEEE guarantees: `fl(a+b) = fl(b+a)`; halving by a power of two is exact; `fl(b−a) = −fl(a−b)` because round-to-nearest is odd; `fl(S/−D) = −fl(S/D)` for the same reason |
+| `cube::place`, the cell origin | `cube.rs:233` — `(lo + hi) * HALF + (hi − lo) * d`, applied per axis in `hermite.rs:96-100` | no — componentwise; axis `k` of the output reads only axis `k` of the input |
+| `Sdf::gradient` | the field | no — the rotated wrapper is `g·∇f(g⁻¹p)`, so a permuted-and-signed input yields the permuted-and-signed gradient exactly |
+| **`vec3::length(gradient)`** | **`hermite.rs:103` → `vec3.rs:46` → `vec3.rs:41` → `vec3.rs:27-29`** | **YES. `length` is `length_squared(a).sqrt()`, `length_squared(a)` is `dot(a, a)`, and `dot`'s body is the single line `a[0] * b[0] + a[1] * b[1] + a[2] * b[2]` — a three-term sum evaluated left to right in axis-index order. This is the whole survivor.** |
+| `HermiteCell::centroid` | `hermite.rs:225-236` — `[[R; EDGE_COUNT]; 3]`, then `axes.map(sum_equivariant)` | no — twelve slots per axis, absent edges at `R::ZERO`, reduced by `A-016`'s magnitude sort with `M-175`'s signed-value tie-break; `M-176` establishes the zero padding is transparent, negative zero included |
+| `solve_with`'s `AᵀA` and `g` | `dual_contouring/solve.rs:289-298` — `m_terms.map(sum_equivariant)`, `g_terms.map(sum_equivariant)` | no — twelve slots per matrix entry and per gradient component, same reduction (`A-016`) |
+| `determinant`, `adjugate`, `mul_vec` | `solve.rs:215-220`, `228-230` — `mul_equivariant` and `dot_equivariant` | no — magnitude-ordered (`M-24`, which is the entry that established the determinant needed the same treatment as the dot) |
+| `apply_clamp` (`Clamp::ToCell`) | `dual_contouring.rs:192-201` — per-axis `slot.clamp(centre − inset, centre + inset)` | no — componentwise `min`/`max` |
+
+**Exactly one axis-index-ordered reduction survives, and the registered change cannot reach it.** The
+registered change reorders *the crossing accumulation*, which is `centroid` plus `AᵀA` plus `g` — all three
+of which have been order-independent since `A-016`. The share a *different* invariant order can move is
+therefore **0 of the 1 remaining axis-index-dependent reduction**. That is the finding, and the harness
+recorded it before the run: the SHARE table above is the bench's own header, present verbatim in
+`22c9fa0` — *"Phase 24 — thirty harnesses, committed before their runs"* — and `git diff 22c9fa0 HEAD --
+crates/isomesh/benches/experiment_p101.rs` is **empty**, so the file that says *"C1 is arithmetically
+unreachable before the run. It is run anyway"* is byte-identical to the one that produced `p-101.csv`.
+`M-19`'s rule, satisfied structurally rather than by assertion.
+
+**The same conclusion from the committed data with no source read at all, which is the stronger argument.**
+`docs/experiments/p-61.csv`, `block = equivariance`, `sphere` at 33³:
+
+| extractor | `elements_vertex_exact` | `pure_permutation_exact` | `pure_sign_flip_exact` | `fixture_can_fail` |
+|---|---:|---:|---:|---|
+| `surface_nets` | 6 of 48 | **6 of 6** | 1 of 8 | true |
+| `dual_contouring` | 2 of 48 | **2 of 6** | 1 of 8 | true |
+| `manifold_dual_contouring` | 2 of 48 | 2 of 6 | 1 of 8 | true |
+
+`surface_nets` is the dual with **no normals at all** and the **same** `sum_equivariant` centroid — it is
+literally `HermiteCell::centroid` and nothing else. It reaches all six pure axis permutations where the QEF
+duals reach two. **The accumulation is common to both, so the four-element gap cannot be the
+accumulation.** And `surface_nets` reaches `pure_sign_flip_exact` **1 of 8** on that same row — the
+sign-flip failure is fully present with the accumulation held constant, which is `M-177` and not an
+ordering question in any group.
+
+**What arithmetic could *not* reach before the run, and therefore what the run bought.** C1's verdict was
+derivable; its *magnitude* was not — that the key order is not merely useless but **actively worse on 9 of
+16 rows** is a measurement, and the mechanism for it (the tie-break's own axis-index fallback, below) could
+not be predicted from the reduction audit because the audit is about the reductions the crate *ships*, not
+about the ones a candidate introduces. C2's *predicate* was near-tautological — the accumulation order is
+the only thing the arm changes, so every moved hash is "through the accumulation order" by construction —
+but its **cost** (40 of 48 hashes, 56.4% of vertices) is a number no argument produces. C3 was genuinely
+undecidable in advance: `HermiteCell::restricted` changes *which* twelve slots are populated, not the order
+they are reduced in, and whether restricting the slot set alters the exact-element count is an empirical
+question. It does not — 64 of 64 row-pairs agree — and that is a new fact about `CycleQef`.
+
+---
+
+#### C2, and what "free" does and does not mean
+
+`block = golden`, `accumulation_key = abs_value_abs_offset`, 48 rows (eight fields × three resolutions ×
+two duals). `mesh_hash_shipped == golden_hash_committed` on all 48 (`golden_fixture_matches_shipped` true),
+so `hashes_moved` is not measured against a stale fixture.
+
+| quantity | column | value |
+|---|---|---:|
+| golden dual rows scored | `golden_dual_rows` | 48 |
+| hashes moved | `hashes_moved` / `hashes_moved_expected` | **40 / 40** |
+| vertex positions moved | Σ `positions_moved` / Σ `vertices` | **37,764 / 66,930 = 56.4%** |
+| vertex counts changed | `golden_counts_changed`, `vertices` vs `vertices_baseline` | **0**, equal on 320 of 320 |
+| index buffers changed | `indices_identical` | true on 320 of 320 |
+| topology changed | `topology_identical` | true on 320 of 320 |
+| worst geometric move | `max_hausdorff_delta` | **3.008704396734e-14** against a bar of **1e-12** |
+
+**Every one of the 40 moved hashes is accounted for by a moved vertex position on the same row, and every
+one of the 8 unmoved hashes by zero moved positions.** I checked the biconditional
+`mesh_hash_moved == (positions_moved > 0)` on all 48 rows: **0 mismatches**. The 8 rows that hold are
+`box_exact` and `thin_plate` at 17³ and 33³, both duals — which is an independent reproduction of `M-178`'s
+own four survivors: the axis-aligned fields at the resolutions whose cell size is a binary fraction of the
+domain (0.25 and 0.125; the golden 25³ fixture's `2L/24 = 0.166666667` is not, and both fields move there,
+by 69 and 10 positions). On exactly-representable crossing coordinates, reordering cannot change a result
+that was never rounded. `hausdorff_shipped` and `hausdorff_arm` print identically to twelve digits on
+**48 of 48** rows.
+
+**The 1e-12 bar is cleared by a factor of 33.2, not by four orders.** `1e-12 / 3.008704396734e-14 = 33.24`
+— between one and two orders of magnitude. The pre-run report's *"unchanged four orders inside the
+registered 1e-12 bar"* is arithmetically wrong about the number it quotes in the same sentence, and it is
+withdrawn here in favour of the ratio. The verdict is unaffected: the clause is HELD by 33×.
+
+**So it is a reordering and nothing else, and the geometry is unchanged well inside the bar. It is not
+costless to land**, and the registration's word "free" means geometrically free. 40 of 48 committed golden
+dual hashes and 56.4% of golden dual vertices move — for a regression.
+
+---
+
+#### The mechanism, and it is *located* rather than argued
+
+All four arms are in **one binary and one run** — `M-281`'s prescription, rather than one arm here against
+a committed CSV from another build — which is what makes the arm-to-arm comparison below admissible at all.
+Aggregates over the 32 dual equivariance rows (16 per extractor, 48 elements each, 1,536 element-slots):
+
+| arm | crossing accumulation | normal | rows @ 48 | rows @ perm 6 | Σ perm exact | Σ sign-flip exact | Σ evx | golden hashes moved | golden positions moved | max \|ΔHausdorff\| |
+|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| shipped (`*_baseline` cols) | twelve slots, magnitude-ordered | `vec3::length` | 6/32 | 8/32 | 100/192 | 82/256 | 392 | — | — | — |
+| `edge_slot` (replica) | same, retranscribed here | same | 6/32 | 8/32 | 100/192 | 82/256 | 392 | **0/48** | **0/66,930** | **0.000000000000e0** |
+| **`abs_value_abs_offset`** (registered) | **running sum in key order** | same | 6/32 | 8/32 | **80/192** | 82/256 | **372** | 40/48 | 37,764 | 3.008704396734e-14 |
+| `edge_slot_equivariant_normal` | twelve slots, magnitude-ordered | **`dot_equivariant(g,g).sqrt()`** | 6/32 | **32/32** | **192/192** | 82/256 | **492** | 34/48 | 9,115 | **2.879640970121e-16** |
+| `abs_value_abs_offset_equivariant_normal` | running sum in key order | equivariant | 6/32 | 12/32 | 100/192 | 82/256 | 400 | 40/48 | 39,214 | 3.008704396734e-14 |
+
+Read that table as four statements.
+
+**1. The instrument is sound.** `edge_slot` is this bench's own transcription of `HermiteCell::from_corners`,
+`solve::solve_with` and `apply_clamp`, driven through the public `DualContouring::with_rule`. It reproduces
+the shipped extractor **bit for bit** — `replica_bit_identical` true on 320 of 320, `bit_identical_to_shipped`
+true on all 80 of its rows, 0 of 48 golden hashes moved, 0 of 66,930 positions moved, `max_hausdorff_delta`
+exactly `0.000000000000e0`. Without it, every difference in a later arm could be a transcription error
+rather than the change under test; with it, the instrument is **demonstrably able to read zero**, which is
+what makes its non-zeros mean anything (`E-208`, `M-44`).
+
+**2. The relabelling obstruction is `vec3::length`, and one expression proves it.** The
+`edge_slot_equivariant_normal` arm changes **exactly one line** — the normal's length becomes
+`dot_equivariant(g, g).sqrt()` — and nothing else. `pure_permutation_exact` goes from 8 of 32 rows at 6 of
+6 to **32 of 32**, and from 100 of 192 element-slots to **192 of 192**. Perfect, on every field, at both
+resolutions, on both duals. Per row for `dual_contouring`: `sphere` 2→6, `torus` 2→6 and 4→6,
+`csg_difference` 2→6, `gyroid` 2→6, `fbm_terrain` 2→6 and 2→6, `noise_cavity` 2→6, with `box_exact` and
+`thin_plate` already at 6. `elements_vertex_exact` rises on **12 of 16 rows per extractor with 0 worse**:
+`{2: 10, 4: 2, 24: 1, 48: 3}` → `{6: 11, 12: 1, 24: 1, 48: 3}`.
+
+**Why left-to-right is exactly two survivors, and why `p-61.csv` already recorded that number.** `dot(a, a)`
+evaluates `(a₀² + a₁²) + a₂²`. Under an axis permutation π the gradient permutes exactly, so the sum
+becomes `(a²_π(0) + a²_π(1)) + a²_π(2)`. IEEE addition is commutative, so this is bit-identical to the
+original precisely when π fixes `{0, 1}` as a set — **the identity and the `x↔y` swap, and no others**. It
+is not identical in general when π moves `a₂` into a partial sum, because associativity is what fails.
+`p-61.csv` measured exactly that population before anyone had named the expression: `✗49 / M-372`'s own
+table reads *"`dual_contouring` / `manifold_dual_contouring` | 2 of 48, 22 rows | **identity and the `x↔y`
+swap**"*. Two out of six, on the nose, from one three-term sum.
+
+**3. `M-177` covers the negation half and nothing moved it.** `pure_sign_flip_exact` is **bit-identical to
+the shipped value on every one of the 32 dual rows under all four arms** — Σ 82 of 256 in every row of the
+table above, and I verified the equality row by row across all 128 equivariance rows. Four accumulations
+and two normalisations did not move the negation half by a single element. That is why `rows @ 48` is
+**6 of 32 in every arm including the perfect one**: `elements_vertex_exact` is the product of the two
+factors, and a perfect permutation factor times a sign-flip factor of 1 is still 6 of 48. The
+`first_failing_element` column says the same thing in one field: on all 26 failing equivariance rows in
+every arm it reads `perm=012;sign=-++` (24 rows) or `perm=012;sign=+-+` (2 rows) — `perm=012` is the
+**identity permutation**, so the first element to fail is always a pure reflection, never a relabelling.
+No row in the whole file fails first on a non-identity permutation.
+
+**4. The registered key order makes it worse, and the tie census says exactly how.** A running sum needs a
+**total order on the crossings**; a twelve-slot magnitude reduction needs no such thing, because it orders
+the *terms*. The registered key `(|a+b|, |edge_offset(a,b)|)` plus its invariant tie-breaks — `|a−b|`, the
+crossing position's three component magnitudes sorted descending, the normal's likewise — is *not* total on
+these fixtures. When a pair ties on all of it the order falls back to **edge index**, which is precisely
+what an axis relabelling permutes. Over the 128 equivariance rows `total_key_ties` = **6,304,928** and
+`total_unbreakable_key_ties` = **1,523,248** (24.16%). Per row on the registered `dual_contouring` arm the
+unbreakable fraction runs from **4.5%** on `thin_plate` 33³ to **93.2%** on `sphere` 33³ and **100.0%** on
+`sphere` 25³ (17,248 of 17,248 — every single primary tie survives every invariant tie-break). So the
+registered "relabelling-invariant order" is **strictly less invariant than what `A-016` already ships**,
+and the tie count is the measure of by how much. This is `M-175` arriving as a result rather than as a
+warning: the tie-break the registration demanded be instrumented is the thing that breaks the mechanism.
+
+**The attribution of the 9 losses is a conjunction, and it is necessary but not sufficient — one row says
+so.** All 9 losing rows have both `positions_moved > 0` and `unbreakable_key_ties > 0`. Of the 7 unchanged
+rows: **4** are unchanged because `positions_moved = 0` (`box_exact` 33³/25³, `thin_plate` 33³/25³ — the
+equivariance block's 25³ cell size is the dyadic `0.1875`, so `M-178`'s exactness mechanism covers both
+resolutions there, unlike the golden block's `0.166666667`); **2** because `exact_key_ties = 0`
+(`fbm_terrain` 33³/25³ — the key is already total on that field, so the edge-index fallback is never
+reached, and its 1,233 and 670 moved positions cost it nothing); and **1**, `torus` 33³, moves 816
+positions *and* has 4,440 unbreakable ties *and* keeps both of its exact elements. So the conjunction does
+not predict which rows break, and any claim that it does is withdrawn — `torus` 33³ is the counterexample
+in the file.
+
+**5. The two changes fight.** `abs_value_abs_offset_equivariant_normal` — the key order *plus* the
+equivariant normal — reaches `pure_permutation_exact` 6 of 6 on only **12 of 32** rows and Σ 100 of 192,
+back at the shipped total. Per row on `dual_contouring`: 9 worse than shipped, 3 better, 4 equal, with
+`torus` landing on an order-**3** subgroup (`pure_permutation_exact` = 3) at both resolutions. The key
+order destroys most of what the normalisation buys, which is the same mechanism seen from the other side.
+
+---
+
+#### The vacuity control: two columns, both non-degenerate
+
+**Registered control 1 — `vacuity_baseline_rows_still_at_48` = 6.** `p-61.csv`'s three already-passing dual
+rows are `box_exact` 33³, `box_exact` 25³ and `thin_plate` 33³, and there are three of them *per extractor*,
+so the counter's population is **6 of 6** — with `baseline_rows_at_48_dual_contouring` = 3 and
+`baseline_rows_at_48_manifold` = 3 beside it in the file so the denominator is explicit rather than
+inferred. All 6 still pass under the registered arm, at `positions_moved` = 0 and `hausdorff_delta` =
+`0.000000000000e0`. They pass for `M-178`'s reason and not by luck.
+
+**Registered control 2 — the tie-break is *exercised*: `total_key_ties` = 6,304,928, of which
+`total_unbreakable_key_ties` = 1,523,248 fall through to edge index.** `M-175` is the precedent for a
+tie-break that was never tested, survived 9,600 measured trials because those trials were the one case where
+it happened to be true, and fell to the first test written about the tie itself. Here the tie is a column
+before it is a conclusion.
+
+**Why that value proves the fixture could have failed.** The tie census is **not a constant of the harness**:
+it reads **0 on all 40 `fbm_terrain` rows** (16 in the equivariance block, 24 in the golden block) and
+**198,352** on `box_exact` 33³ in the equivariance block. So the column distinguishes fields by three orders
+of magnitude, a zero on a field that has ties would be visible, and the zero it *does* report is a property
+of `FbmTerrain`'s sample values rather than of the instrument. Two further tells that it is measuring
+something real: the unbreakable *fraction* spans 4.5% to 100.0% across fields, and the causal direction is
+visible in the verdict — both zero-tie rows are among the seven the registered change leaves alone, and the
+two 100%/93% rows are among the nine it breaks worst. That is `M-44`'s rule met on both sides: the zero
+could have been non-zero elsewhere in the same column, and the non-zero could have been zero.
+
+**Three instrument checks beyond the two registered, each an `assert!` and a column.**
+`replica_bit_identical` = true (the bench's own transcription is bit-identical to the shipped extractor over
+every position, normal and index on all 32 equivariance fixtures and all 48 golden rows);
+`baseline_matches_p61` = true (the shipped arm reproduces `p-61.csv`'s `elements_vertex_exact`,
+`pure_permutation_exact` and `pure_sign_flip_exact` on all 32 dual rows — re-verified here against
+`p-61.csv` directly, 128 comparisons, 0 mismatches); `golden_fixture_matches_shipped` = true (the committed
+`golden_hashes.json` equals the shipped arm's own hash on all 48 dual rows).
+
+**No clause is VACUOUS and none is BLOCKED.** Every one of the three verdicts rests on a column that could
+have read the other way: C1 on `elements_vertex_exact` against `elements_vertex_exact_baseline` on the same
+row; C2 on the `edge_slot` arm demonstrating 0 moved hashes, 0 moved positions and `0.000000000000e0` on the
+same instrument; C3 on the two duals' vertex counts differing on 6 of 16 rows while their equivariance
+counts coincide. No clause named a second machine, so none is blocked on one.
+
+**And P-101 has no timing clause at all** — every clause is an integer count, a bit-pattern comparison or an
+exact-arithmetic bound, so `✗24`'s failure mode (a wall-clock ratio used as a gate) is structurally absent
+rather than avoided. `wall_ms` is recorded on every row and is scored by nothing.
+
+---
+
+#### Fixture defects the harness's own controls caught
+
+1. **The vacuity counter's numerator and denominator were over different sets.** The first run printed
+   *"already-passing rows still at 48: 6 of 3"* — the counter spans both extractors while the label quoted
+   the per-extractor figure. Same shape as `✗49`'s two miscounted denominators. Caught before the artefact
+   was final; the print now reads *"6 of 6 (3 per extractor, both counted)"* and the CSV carries
+   `baseline_rows_at_48_dual_contouring` = 3 and `baseline_rows_at_48_manifold` = 3 beside
+   `vacuity_baseline_rows_still_at_48` = 6, so a reader cannot recover the wrong denominator from the file.
+2. **The registered key names a scalar an edge crossing does not have.** `(|value|, |offset|)` is
+   underspecified: a crossing has two corner samples and no single "value". The harness fixed the reading
+   *in the committed header before running* — `value = a + b`, symmetric in the two samples because a
+   reflection along the edge's own axis swaps which corner is low; `offset = cube::edge_offset(a, b)`, which
+   that swap negates exactly, so `|offset|` is the invariant. A different reading (`|a|+|b|`,
+   `max(|a|,|b|)`, `|a−b|`) moves the tie *count* and not the verdict, because the failure mode is the
+   edge-index fallback and any key built from edge-local scalars has unbreakable ties on a symmetric field —
+   `sphere` 25³ is 100% unbreakable *with* the position and normal magnitude multisets already added as
+   tie-breaks.
+3. **The tie-break of last resort is axis-dependent, and it is counted rather than hidden.** When two
+   crossings tie on `(|a+b|, |offset|, |a−b|, sorted |position|, sorted |normal|)` the order falls back to
+   edge index, which no group action fixes. `unbreakable_key_ties` is that count, per row and in aggregate.
+   Naming it is what makes C1's falsification mechanistic instead of merely negative.
+4. **A per-cell `Vec` in the key sort would have made the run unaffordable, and the file prices it.** The
+   first draft of `solve_cell` allocated one per surface cell. Σ `cells_solved` over all 320 rows is
+   **11,060,460** cell solves (10,792,740 in the equivariance block, 267,720 in the golden block) over
+   Σ `crossings_visited` = **44,923,744** crossings, so the sort runs eleven million times and would have
+   allocated eleven million times. Replaced by a fixed `[(Key, u8); 12]` with a sorted prefix slice before
+   the first run. Not a correctness defect — a cost one, caught by arithmetic rather than by a timeout.
+   *(The pre-run report estimated this as "66,930 cells × 49 extractions × 128 rows ≈ 4×10⁸"; that
+   multiplies a 48-row per-arm total by a per-row factor and overstates the run by 38×. The figure above
+   is a sum of a committed column.)*
+5. **The equivariance block's census columns are over 49 extractions, not one, and the file says so.**
+   `exact_key_ties`, `unbreakable_key_ties`, `cells_solved` and `crossings_visited` on an equivariance row
+   cover the reference plus all 48 rotated meshes. `cells_solved` makes it checkable:
+   `cells_solved == 49 × vertices` on **all 128** equivariance rows (`sphere` 33³ = 56,840 = 49 × 1,160), and
+   `cells_solved == vertices` on all 192 golden rows. Every per-mesh figure quoted anywhere must come from
+   the golden block, where the registered arm's totals are 36,274 primary ties and 8,082 unbreakable
+   (22.28%) over 66,930 cells and 272,184 crossings. Stated so no reader divides by 49 unknowingly — or
+   fails to.
+6. **`worst_component_ulp` carries two different quantities in one column, and the reading has to be
+   stated per arm.** Values near 9.2e18 are `✗39`'s documented `+x` / `−x` pairing artefact of the
+   sorted-merge multiset difference, which appears *wherever the vertex sets differ at all*; they are not
+   displacements. On the registered `dual_contouring` arm the genuine displacements are `box_exact` 0 and 0,
+   `thin_plate` 33³ 0, `thin_plate` 25³ **2**, `fbm_terrain` 33³ **5,376**, `fbm_terrain` 25³ **18,312** —
+   and everything else on that arm is above 1e15. On the `edge_slot_equivariant_normal` arm the
+   displacement-scale values are different numbers on different rows (`thin_plate` 25³ 2, `fbm_terrain` 25³
+   **5,584**, `fbm_terrain` 33³ **7,488**, `gyroid` 25³ **27,456**). The pre-run report presented a single
+   mixed list without naming the arm; that list is corrected here to two per-arm lists, because `✗39`'s own
+   rule is that a repaired instrument's column must be re-read from the artefact and quoted per row.
+7. **`multi_crossing_cells` is a column that cannot read anything else.** It increments when a solved cell
+   has more than one crossing, and it equals `cells_solved` on **all 320 rows** — because a cell with a sign
+   change has at least three cut edges, always. It confirms the sort always had something to order, and by
+   `M-44`'s standard it is not a measurement: it could not have come back lower. Recorded as a structural
+   fact, not as evidence.
+
+---
+
+#### What changed as a result
+
+**No source change landed, and this is not a rebaseline.** `R-101` was registered as one of only two
+permitted source changes in Phase 24, and the harness declined the permission: both candidate
+accumulations are **bench-local `VertexRule`s** driven through the public `DualContouring::with_rule`
+(`dual_contouring.rs:254`, `X-002`'s entry point and the same seam `M-237` used to run `Qef` against
+`Centroid`). Verified on the branch: `git log main..HEAD` touches **no** file under
+`crates/isomesh/src/dual_contouring.rs`, `dual_contouring/solve.rs`, `manifold_dual_contouring.rs`,
+`hermite.rs`, `vec3.rs`, `golden.rs`, or `crates/isomesh/golden_hashes.json`. The branch's only `src`
+changes are `error.rs`, `experiment.rs`, `lib.rs`, `mass.rs` and `mass/tests.rs` — registration metadata
+and `P-73`'s module, none of them on the dual path. **The 40 moved golden hashes are a measured cost of a
+change that was never applied**, not a new baseline: `golden_hashes.json` is byte-unchanged and
+`mesh_hash_shipped == golden_hash_committed` on all 48 golden dual rows. That is also what makes this arm
+better than the source edit the ticket authorised: `M-281` is satisfied by construction, and the cost is
+priced without rebaselining anything.
+
+**Landing a mechanism is not this row's call, and the decision to surface is that there is nothing to
+land.** The registered change is not "not yet" — it is **no**. It is worse on 9 of 16 rows per extractor,
+better on none, and would move 40 of 48 golden dual hashes and 56.4% of golden dual vertices to buy that
+regression.
+
+**`M-372`'s premise is falsified by measurement.** `✗49 / M-372` says, in the `FINDINGS.md` sentence
+`P-101` was registered on: *"Axis relabelling reorders the accumulation into `AᵀA`, and that is enough."*
+It is not enough and it has not been the mechanism since `A-016`: `AᵀA` is twelve `sum_equivariant` slots
+per entry, `surface_nets` with the same centroid and no normals reaches 6 of 6 permutations where the QEF
+reaches 2, and reordering the accumulation four different ways moves the permutation count **down**. The
+diagnosis needs correcting where it is quoted.
+
+**`M-177`'s obstruction does cover the octahedral case for the duals — for the negation half, which is the
+half that binds.** `pure_sign_flip_exact` did not move by one element under four accumulations and two
+normalisations. The three of sixteen rows that already reach 48 are explained by something other than the
+accumulation: `box_exact` and `thin_plate` at exactly-representable spacings, where the crossing
+coordinates are never rounded and no ordering rule is doing any work (`M-178`). So *"make the duals
+octahedrally equivariant at 48 of 48"* should be foreclosed as a goal, with a number: the reachable ceiling
+for a dual whose vertex is a sum of rounded terms is the 6 pure relabellings, plus whatever the
+exactly-representable fields give free. `P-100`'s Kuhn subdivision is aimed at the same 48 and this row is
+evidence about its ceiling too — a decomposition fix cannot reach the negation half either.
+
+**The remaining lead is `vec3::length`, and it is one call site.** `dot_equivariant` **already exists**, is
+already `pub`, and already runs three lines away in the same solve (`solve.rs:103`, called at
+`solve.rs:228-230`). `hermite.rs:103` calls `vec3::length(gradient)` instead. Measured cost of changing
+only that: **34 of 48** golden dual hashes move, **9,115 of 66,930** vertices (13.6%), `max_hausdorff_delta`
+**2.879640970121e-16**, `topology_identical` / `counts_identical` / `indices_identical` true on all 48,
+`golden_counts_changed` 0, and 14 rows hold rather than 8 — `box_exact` and `thin_plate` at *all three*
+resolutions plus `sphere` 17³, because on axis-aligned geometry the gradient has two zero components and
+magnitude-ordering a sum of squares changes nothing. Measured benefit: `pure_permutation_exact` 6 of 6 on
+**32 of 32** dual rows, `elements_vertex_exact` up on 24 of 32 and down on none. It is simultaneously more
+equivariant and **104× geometrically tighter** (3.008704396734e-14 ÷ 2.879640970121e-16 = 104.5) than the
+registered change. It is still a rebaseline of 34 golden hashes, and per the phase brief that is the
+owner's call and not this row's. A wider variant — making `vec3::dot` itself magnitude-ordered — was not
+measured here, and its blast radius is larger than the pre-run report stated: counted from the source,
+`vec3::dot` has **25** non-test call sites, `vec3::length_squared` **8** and `vec3::length` **21** — **54
+across 15 modules** (`brush`, `dual`, `hermite`, `marching_cubes/mod`, `marching_tetrahedra`, `normals`,
+`orient`, `property`, `property/extraction`, `subgrid/extract`, `transvoxel/cell` and
+`validate/{accuracy, sealing, self_intersection, tri_grid}`). The report's *"13 production call sites"*
+is a count of **files** and it omits `property.rs` and `property/extraction.rs`; the number of sites is
+54. So that variant's blast radius is the whole **216-row** golden fixture, not 48.
+
+**The instrument is the durable artefact.** `experiment_p101` is a reusable two-obstruction rig for any
+future dual-equivariance claim: `pure_permutation_exact` and `pure_sign_flip_exact` separate the reachable
+half from `M-177`'s structural half — and the file proves they *are* separable, because
+`elements_vertex_exact` is exactly their product on all 128 rows — while the `edge_slot` replica arm makes
+any bench-local reimplementation of the DC vertex path provable bit-for-bit against the shipped one.
+
+**Would be shown wrong by:** a crossing accumulation order — any order, not just this key — that raises
+`pure_sign_flip_exact` above the shipped value on one dual row, which would mean `M-177` does not bound the
+negation half and the 48-of-48 goal should be reopened; a row where `edge_slot_equivariant_normal` fails to
+reach `pure_permutation_exact` 6 of 6, which would mean `vec3::length` is not the only relabelling
+obstruction and the SHARE audit missed a reduction; a `positions_moved` above zero on `box_exact` or
+`thin_plate` at a dyadic spacing, which would break `M-178`'s exactness mechanism and with it the
+explanation of the 3 rows that already reach 48; a `manifold_dual_contouring` row whose equivariance triple
+diverges from `dual_contouring`'s, which would restore C3; or a key whose tie-break is total on these
+fixtures — `unbreakable_key_ties` = 0 everywhere — reaching more than 8 of 32 rows at
+`pure_permutation_exact` 6, which would mean the edge-index fallback and not the running sum was the whole
+cost of the registered order.
+
+### 🔬 M-414 — C1, C2 and C3 all HELD: `✗43`'s withdrawn rate reproduces exactly — **0 of 8,064** unclosed post-fix on **five** independent magnitude fixtures and **2 of 8,064** pre-fix at 6³ at `t7c6o0+t9c6o0` — and C2's share is `fan_configurations` = **2**, so *"exactly 2"* was reachable by exactly 2 and *"zero elsewhere"* was **arithmetically forced rather than measured** (P-102, R-102)
+
+**M.** `cargo bench --bench experiment_p102`, `docs/experiments/p-102.csv`, **43 rows**, scalar `f64`, Zen 3
+(`amd-ryzen-9-5900x-12-core`). `✗43`'s own population, recovered rather than invented: 1,152 single-plane
+caps `max(|p| − 1.5, n·p − offset)` — 16 θ × 8 cos φ × 9 offsets over `property::unit_vector`'s
+`(0..τ, −1..=1)` and `convex_body`'s `−0.8..=0.8` — meshed at each of 6³–12³ samples
+(`cells / configurations` = 125 cells at 6³ to 1,331 at 12³) under six arms, plus `✗43`'s own reduced
+plane as a one-configuration control row. Committed
+at **`7fc91fa`**, `# commit` header clean (no `(WORKING TREE DIRTY)`), and an ancestor of HEAD.
+
+> **Every integer in this entry is the clean re-run's, and every integer the pre-run reported reproduced
+> bit for bit.** `interior_apexes` 4,462 / 4,990 / 4,904 / 4,983 / 4,949 / 0, `triangles` 1,940,948 to
+> 1,943,206 per live arm, `fan_configurations` 2 and 0, `unclosed_pre_fix` 2 and 0,
+> `zero_sample_configurations` 1,408 per arm, and the 942-against-936 artefact at `exact/9³` — all
+> unchanged. The one quantity that is not in the file is a clock: the pre-run's *"whole run ≈ 25–35 s"*
+> appears in no column and is not quoted here. What the file carries is `wall_ms` per row — 99 to 728 on
+> the 42 sweep rows, 0 on the one-configuration control — and
+> **2,380 / 2,481 / 2,482 / 2,611 / 2,529 / 2,507 ms** per arm. No verdict reads it: every clause here is an
+> exact integer count, so nothing was BLOCKED on a second machine and nothing needed one.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 zero unclosed meshes post-fix over all 8,064, four magnitude seeds, per seed and never pooled | 0 of 8,064 | **HELD — `unclosed_post_fix` = 0 on all 43 rows, `unclosed_post_fix_where` = `none` on all 43, `non_manifold_vertices_post_fix` = 0 on all 43. Five arms × 8,064 configurations, seven rows each** |
+| C2 the pre-fix single-apex fan gives exactly 2 at 6³ and zero elsewhere | 2 at 6³, 0 at 7³–12³ | **HELD on the arm that is `✗43`'s fixture — `unclosed_pre_fix` = 2 at `arm=exact size=6`, `unclosed_pre_fix_where` = `t7c6o0+t9c6o0`, and 0 at sizes 7–12. VACUOUS on the 41 rows where `fan_configurations` = 0** |
+| C3 the ±1 magnitude arm reports VOID rather than a pass | `void = true` | **HELD — `void` = true on all 7 `unit` rows with `interior_apexes` = 0; `c3_holds` = true on all 43 rows** |
+
+**`✗43`'s two headline numbers, side by side with the file that now contains them:**
+
+| `arm` | `seed` | rows | Σ `configurations` | Σ `unclosed_post_fix` | Σ `unclosed_pre_fix` | Σ `fan_configurations` | Σ `interior_apexes` | Σ `triangles` |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `x43_fixture` | `none` | 1 | 1 | **0** | **1** | 1 | 2 | 48 |
+| `exact` | `none` | 7 | 8,064 | **0** | **2** | **2** | 4,462 | 1,940,948 |
+| `unit` | `none` | 7 | 8,064 | 0 | 0 | 0 | **0** | 1,931,192 |
+| `generic` | `0x00002026` | 7 | 8,064 | **0** | 0 | 0 | 4,990 | 1,943,064 |
+| `generic` | `0x0005eed1` | 7 | 8,064 | **0** | 0 | 0 | 4,904 | 1,942,888 |
+| `generic` | `0x00c0ffee` | 7 | 8,064 | **0** | 0 | 0 | 4,983 | 1,943,206 |
+| `generic` | `0xdeadbeef` | 7 | 8,064 | **0** | 0 | 0 | 4,949 | 1,943,070 |
+
+**The exact arm per size, which is the row `✗43` reported and could not cite:**
+
+| size | `configurations` | `cells` | `trilinear_cells` | `hexagon_cells` | `interior_apexes` | `interior_vertices` | `fan_configurations` | `unclosed_pre_fix` | `unclosed_post_fix` | `zero_sample_configurations` |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| **6** | 1,152 | 144,000 | 912 | 16 | 362 | 458 | **2** | **2** | 0 | 0 |
+| 7 | 1,152 | 248,832 | 2,692 | 0 | 1,142 | 1,142 | 0 | 0 | 0 | **128** |
+| 8 | 1,152 | 395,136 | 952 | 0 | 360 | 360 | 0 | 0 | 0 | 0 |
+| 9 | 1,152 | 589,824 | 1,864 | 0 | **942** | **936** | 0 | 0 | 0 | **1,152** |
+| 10 | 1,152 | 839,808 | 784 | 0 | 352 | 352 | 0 | 0 | 0 | 0 |
+| 11 | 1,152 | 1,152,000 | 1,520 | 0 | 736 | 736 | 0 | 0 | 0 | **128** |
+| 12 | 1,152 | 1,533,312 | 1,152 | 0 | 568 | 568 | 0 | 0 | 0 | 0 |
+
+29,417,597 cells meshed twice each — once post-fix, once through the reconstructed pre-fix fan — across the
+43 rows.
+
+**SHARE, said out loud, and this is the transferable part of the row.** No clause here is a ratio of times,
+so `✗51`'s `1/(1 − share/factor)` bar has nothing to divide: both rate clauses are counts over an
+*enumerated* population, so their denominators are exact by construction — `configurations` = 1,152 per size
+and 8,064 over the seven sizes, asserted in the harness before it sweeps rather than assumed.
+
+- **C1's share is 8,064 of 8,064.** Every configuration is meshed and validated, so one unclosed mesh
+  anywhere moves the clause. C1's exposure is not arithmetic, it is vacuity — a zero over empty meshes — and
+  `empty_meshes` = 0 on all 43 rows against **1,940,948 to 1,943,206 triangles per live arm** (11,644,416
+  over the file) says the population is real.
+- **C2's share is `fan_configurations`, not 1,152.** Undoing the fix can only unclose a configuration that
+  has a cell fanning **two or more** rings from one apex; every other configuration is **bit-identical**
+  before and after, because a single fanned ring took the body saddle either way. So
+  `unclosed_pre_fix ≤ unclosed_post_fix + fan_configurations`. Measured: `fan_configurations` = **2** at 6³
+  on the exact arm and **0 on all 41 other sweep rows**. So *"exactly 2 at 6³"* was reachable by **exactly
+  2** — the tightest margin a count clause can have, one configuration of slack in neither direction — and
+  *"zero elsewhere"* was **arithmetically forced, not measured**: on 41 rows the share is 0, so
+  `unclosed_pre_fix` could not have been anything but 0 however wrong the pre-fix fan is. That is `✗51`'s
+  rule applied to a count instead of a ratio, and the harness acts on it rather than narrating it: `c2()`
+  returns `false` when `fan_configurations == 0`, so **`c2_holds` is true on exactly 1 of 43 rows and false
+  on 42** — false on 41 for zero share, and false on the `x43_fixture` control row because that row is one
+  configuration and its `unclosed_pre_fix` of 1 is not C2's 2. A row whose share is 0 reports `false` beside
+  a share column that says why, instead of banking a pass. `share_bound_holds()` is an **assertion**, not a
+  column — it fires per row over the control row plus all 42 sweep rows — and the inequality is
+  independently true on all 43 rows of the committed file.
+- **C3 has no share.** It is a statement about a fixture and moves nothing.
+
+**Mechanism, and it resizes what `"0 of 8,064 after"` is evidence for.** **8,062 of the 8,064 exact-arm
+configurations are bit-identical before and after the fix.** The fix only changes a cell where two rings are
+both longer than three vertices. On the exact arm `interior_apexes` = 4,462 with `unfanned_apex_cells` = 0
+and `apex_merges` = 2, and a merge costs `rings − 1`, so the sweep's interior rule fired on
+**4,462 − 2 = 4,460 cells**, of which **4,458 fanned exactly one ring** — where post-fix places the apex at
+the body saddle, precisely what pre-fix did — and **2 fanned two rings** and contributed the two merges.
+`unfanned_apex_cells` = 0 on all 43 rows, so `✗43`'s *second* artefact (an apex created for a cell no ring
+fanned) does not occur in this population at all. The post-fix zero is therefore mostly a statement that
+the *rest* of the extractor is closed on 8,064 caps; the fix's own share of it is two configurations, and
+that is the honest denominator to quote the rate against.
+
+**Those two are one geometry, twice.** `unclosed_pre_fix_where` names them `t7c6o0` and `t9c6o0`, and
+`reading` = `theta_ladder+cosphi_endpoints` fixes the ladders as `θ = i·τ/16`, `cos φ = −1 + 2j/7`,
+`offset = −0.8 + 0.2k`. So both are `cos φ = −1 + 12/7 = 5/7` at `offset = −0.8`, differing only in
+`θ = 7·360°/16 = 157.5°` against `9·360°/16 = 202.5°` — and `157.5° + 202.5° = 360°`, so the two normals
+share `cos θ` and `cos φ` and differ in the sign of `sin θ` alone. **They are the same plane reflected in
+`y = 0`**, and `✗43`'s *"2"* is one geometric instance appearing twice because the θ ladder contains both
+mirror images. Not a repeated computation — `cos(157.5°)` and `cos(202.5°)` are evaluated separately — but
+one instance, not two.
+
+**Why the four magnitude seeds cannot host C2, which is the thing the registration did not predict.**
+Re-drawing every sample's magnitude while keeping its sign **destroys both fanned cells outright** —
+`fan_configurations` = 0 on all 28 generic rows — while *increasing* the apex count (4,462 → 4,904–4,990).
+Whether a cell fans two rings is not a property of its sign pattern; it is a property of where the body
+saddles fall, and that is a property of the magnitudes. So the seed protocol tests the **fix's** robustness
+across magnitude space, which is C1, and is structurally incapable of testing C2 — which is why C2 is HELD
+on one arm and VACUOUS on the rest rather than HELD five times.
+
+**The vacuity control answers both ways inside one walk, which is `M-44` by demonstration rather than by
+assertion.** The registered control is `interior_apexes` non-zero on every live arm, per seed, never
+pooled — `M-374`'s 282,084-to-283,694 shape. Measured over 8,064 configurations each: **`exact` 4,462,
+`0x00002026` 4,990, `0x0005eed1` 4,904, `0x00c0ffee` 4,983, `0xdeadbeef` 4,949**, each `assert!`ed `> 0`.
+That value is what proves the fixture could have failed: the interior rule is the *only* code path `✗43`'s
+defect can live in, so 4,460 cells reaching it, 2 of them fanning two rings to one apex, is the population
+the clause is denominated in — and the pre-fix column returns **1** on the `x43_fixture` row and **2** on
+`exact/6³` from inside it, so the instrument is shown emitting bad news before its zeros are read.
+
+And the **same instrument reads 0** on the `unit` arm, over **9,876 trilinear cells** — the identical
+`trilinear_cells` total as every other arm, so nothing shrank — where
+**`trilinear_cells == has_inner_hexagon_rejects == interior_vertex_rejects` on every one of the seven rows**
+(912 / 2,692 / 952 / 1,864 / 784 / 1,520 / 1,152). At ±1 magnitude the interpolant's saddles are symmetric,
+`has_inner_hexagon`'s strict `0 < x < 1` rejects, `interior_vertex()` returns `None`, and the interior rule
+never fires: every cell that takes the trilinear path rejects at both gates. Its 8,064 closed meshes are
+the interior-rule-*off* arm's zeros wearing a different name, and `void = true` is the only honest verdict.
+Deliberately, **the harness does not assert `interior_apexes == 0` there**, and the bench says why in its
+own comment: asserting it would make C3 a clause whose predicate an assertion in its own harness already
+forces — a HELD with no instrument, which is the outcome this file records as **VACUOUS** and never as
+HELD (`✗51`'s C3). The unit arm's `interior_apexes`, `void`, `c1_holds` and `c2_holds` are measured,
+written and printed; if the interior rule ever fires at ±1, the run completes and the row says so.
+
+> **`c1_holds` reads `false` on the seven `unit` rows, and that is not C1 failing anywhere.** `c1()` is
+> `!void && empty_meshes == 0 && unclosed_post_fix == 0`, so a void arm cannot bank a pass on a clause about
+> the post-fix extractor. `unclosed_post_fix` is **0 on all 43 rows including those seven**;
+> `c1_holds` = true on the 36 live rows.
+
+**Four fixture defects, every one caught by this harness's own controls rather than by review.**
+
+1. **The interpolant blended two corners where it must return one, and no count in the experiment could
+   see it.** `Interpolant::locate` first reused the vertex-classification helper, which answers *"which cell
+   is `x` strictly inside"* and so returns the **lower** cell for an `x` sitting exactly on a sample plane;
+   the weight came out one ULP short of `1.0`. The faithfulness control caught it on the first configuration
+   it tried, as a one-ULP vertex displacement. **Every integer column in this CSV would have been identical
+   with the bug in place** — `M-143`'s shape in a bench fixture.
+2. **`zero_sample_configurations` = 1,408 of 8,064 on every sweep arm** — 128 at 7³, **1,152 at 9³, which is
+   all of them**, and 128 at 11³. At odd sizes the lattice contains 0 exactly; at 9³, `h = 0.5` puts the
+   radius-1.5 bound's own surface on samples `(±1.5, 0, 0)` and permutations, so `|p| − 1.5 = 0` and
+   `cube::is_inside(0)` is false. All 1,408 still meshed closed, so C1's zero is not hiding behind a
+   degenerate sub-population — but the 9³ row is fully degenerate and a reader comparing it to 8³ needs to
+   know.
+3. **`M-374`'s classification artefact reappeared, on exactly one row.** `interior_vertices` equals
+   `interior_apexes + 6 · hexagon_cells` on **42 of 43 rows**; on `exact/9³` the predicted 942 exceeds the
+   measured **936** by 6, because at `h = 0.5` six apexes land on a sample plane and the coordinate
+   classification files them as face vertices. Confined to a column no verdict reads: the verdicts come from
+   the predicted column and from `unclosed_*`, and the merge path is separately guarded by
+   `classification_mismatches` = **0 on all 43 rows**.
+4. **One deliberate departure from the pre-fix code, and the identity that bounds it.** The reconstruction
+   leaves a merged-away apex in `positions` unreferenced instead of never creating it, so
+   `unreferenced_pre_fix = apex_merges + unfanned_apex_cells` — verified on all 43 rows, 2 on `exact/6³` and
+   1 on `x43_fixture` — rather than the pre-fix code's own count. It cannot move `is_closed()`, because χ is
+   computed from **referenced** vertices, which is why the `x43_fixture` row reproduces `✗43`'s published
+   pre-fix report (`V 27, E 72, F 48, χ 3, components 2, non-manifold vertices 1, degenerate triangles 1`,
+   `is_closed()` false) number for number — asserted in the bench, corroborated in the file by
+   `unclosed_pre_fix` 1, `non_manifold_vertices_pre_fix` 1, `unclosed_post_fix` 0,
+   `non_manifold_vertices_post_fix` 0.
+
+**One thing the entry under-determines, and the harness prints rather than hides.** `✗43` pins the four
+factors but not the *discretisation* of each interval: 16 values of θ over a half-open interval and 8 values
+of `cos φ` over a **closed** `[−1, 1]` each admit three readings, and only the 9 offsets are forced. The
+harness therefore prints the pre-fix count at 6³ under all six readings before it sweeps and records the one
+it swept under in the `reading` column — `theta_ladder+cosphi_endpoints` on all 43 rows, which is both the
+reading the ticket instructs and the most literal reading of the three intervals. C1 and C3 hold under all
+six; **only C2's count depends on the choice**, so the calibration table is the evidence for it and is
+printed on every run. Those per-reading counts are printed, not columns, so they are not quoted here.
+`✗43`'s own reduced counterexample plane is on none of the six grids, which is consistent with the entry:
+that plane came from proptest and the sweep was a separate prevalence scan.
+
+**What changed as a result: nothing in `crates/isomesh/src/**`, and that is the correct outcome.** The
+registration said so in advance (*"this experiment reproduces a rate and moves nothing"*) and the file
+agrees — the shipped extractor is closed on 8,064 configurations at five independent magnitude fixtures.
+What changed is the **evidence status of an existing entry**, which is the whole point: `✗43`'s rate was
+withdrawn at D-019 because *"that sweep exists in no bench, no test and no CSV"*, and that was the one
+audit item downgraded rather than fixed. It now exists — bench, CSV, pre-registered falsifier — and
+`CLAUDE.md` hard rule 4 is discharged for it. Two things a future reader must carry forward:
+
+- **`✗43`'s claim that *"the per-ring apex fix generalises"* is now a measured claim** over 8,064
+  configurations × five live magnitude fixtures, instead of one field at six grid sizes. Its *"0 of 8,064
+  after"* is 8,062 unchanged meshes plus 2 repaired ones, and its *"2"* is one mirror pair; quoting the rate
+  without that denominator overstates what the sweep tests **about the fix** as opposed to about the rest of
+  the extractor.
+- **Do not build a magnitude-seeded version of C2.** Four seeds were run and not one of them can host the
+  defect (`fan_configurations` = 0 on all 28 generic rows). They earn their cost on C1 and are structurally
+  incapable of testing C2. That is a completed result, and *"do not build this"* is the conclusion.
+
+**Would be shown wrong by:** any row with `unclosed_post_fix > 0`, which reopens `✗43`; the `x43_fixture`
+row's pre-fix mesh coming back **closed**, which is the harness's own `VOID` assertion and would mean the
+pre-fix column cannot report bad news on the one case known to have failed; any row with
+`unclosed_pre_fix > unclosed_post_fix + fan_configurations`, which would mean the reconstruction moves
+vertices the fix never touched and C2's 2 is measuring the bench rather than the defect; a
+`classification_mismatches` above 0, which would mean the per-cell analysis and the mesh disagree about
+which cells the fix touches and the pre-fix arm is undoing the wrong thing; `interior_apexes` coming back
+non-zero on the `unit` arm, which would retire C3 and `M-374`'s mechanism together; or a seventh reading
+of the θ / `cos φ` ladders that reproduces `✗43`'s 2 at 6³ under a *different* pair of configurations,
+which would mean the count is a property of the discretisation rather than of the geometry. It would be
+**weakened** — not overturned — by a magnitude draw with `fan_configurations ≥ 2` and `unclosed_pre_fix`
+of 0: the share bound is one-sided, and such a row would show that fanning two rings is necessary for the
+defect and not sufficient, which is a claim this file does not currently make either way.
