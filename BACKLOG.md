@@ -1,12 +1,12 @@
 # isomesh — BACKLOG
 
-**Updated:** 2026-08-27
+**Updated:** 2026-08-28
 **Companions:** `CLAUDE.md` (rules), `FINDINGS.md` (what we know and how well),
 `BACKLOG_ARCHIVE.md` (completed tickets + why they changed),
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**291 tickets archived, 22 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**291 tickets archived, 42 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -45,6 +45,66 @@ attached — read that before re-litigating a decision this project already made
   is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
+
+---
+
+## Phase 25 — twenty registrations from the bit-packing sweep
+
+**Added 2026-08-28, above Phase 24 for the reason every phase goes on top: rule 1 reads top-down.**
+Phase 24 is closed. Nothing here supersedes Phase 17's or Phase 18's open rows, and Phase 23's two
+blocked acquisitions (`R-063`, `R-065`) and its nightly sweep (`R-072`) stay where they are.
+
+**Source: `docs/research/2026-08-28-bitpacking-simd-acquisition-and-backlog.md`.** A survey across twelve
+topics found **four corpus categories entirely absent** — broadword/SWAR, compressed and hierarchical
+bitmaps, SIMD integer codecs and bit-packing, and stream compaction without hardware `PEXT`. **All four
+are now closed and seventeen papers landed** (`M-415`), and the eight that did not are a resolver finding
+rather than a corpus one: the sweep's highest-value target, Vigna's *Broadword Implementation of
+Rank/Select Queries*, **has no DOI at all**.
+
+**Two figures in the source doc are wrong and the corrections change what gets registered.** `✗51`'s
+share is **11.6%**, not the 11.5% the doc quotes — so its ceiling was `1/(1 − 0.116/2)` = **1.061×**. And
+the active-cell bitmap packs **samples, not cells**: `dual.rs:359` sets `bit_row = size[0].div_ceil(64)`
+and the cell row is one word shorter, handled separately by `cell_words` (`dual.rs:484`) and `cell_mask`
+(`:445`). `R-104` is therefore about a **sample-plane** relayout with a documented cell/word asymmetry
+underneath it, and the doc's *"64 cells per `u64`"* — repeated in `experiment.rs:3192` — is wrong by one.
+
+**Order matters in two places and nowhere else.** `R-121` runs **first** and can close `R-103`, `R-104`
+and `R-106` before a harness exists. `R-112` consumes `R-107`'s rank directory. Everything else is
+independent, and seven rows are `S`.
+
+**Rows expected to return nulls, registered rather than hoped:** `R-108`'s C1, because the 2026-08-23
+dossier already argues the set-bit walk's cost is dominated by words skipped entirely; `R-117`'s C1,
+where the outcome to hope for is that nothing on the hot path is contraction-sensitive and rustc does
+not contract `a*b + c` by default; and `R-121`'s C2 if bit work is under 15%, which closes three more
+rows. Phase 24's two most useful rows were `✗51` and `✗54`, both of which said *do not build this*.
+
+**Every row is bench-local.** `crates/isomesh/src/**` is read-only for the whole phase apart from the
+twenty registrations themselves; unlike Phase 24 there is **no registered source change**. A mechanism
+that earns landing gets its own ticket afterwards — a landing not registered in advance is `V-45`'s
+failure mode.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-103** | M | `R-121` |
+| ☐ | **R-104** | M | `R-121` |
+| ☐ | **R-105** | S | — |
+| ☐ | **R-106** | M | `R-121` |
+| ☐ | **R-107** | M | — |
+| ☐ | **R-108** | S | — |
+| ☐ | **R-109** | M | — |
+| ☐ | **R-110** | M | — |
+| ☐ | **R-111** | S | — |
+| ☐ | **R-112** | M | `R-107` |
+| ☐ | **R-113** | S | — |
+| ☐ | **R-114** | S | — |
+| ☐ | **R-115** | S | — |
+| ☐ | **R-116** | M | — |
+| ☐ | **R-117** | M | — |
+| ☐ | **R-118** | M | — |
+| ☐ | **R-119** | M | — |
+| ☐ | **R-120** | M | — |
+| ☐ | **R-121** | M | — |
+| ☐ | **R-122** | S | — |
 
 ---
 
