@@ -108,9 +108,21 @@ step "bevy: check --all-targets" in_bevy cargo check --all-targets
 step "bevy: clippy" in_bevy cargo clippy --all-targets -- -D warnings
 step "root: rustdoc" env RUSTDOCFLAGS=-D\ warnings cargo doc --workspace --no-deps
 step "bevy: rustdoc" in_bevy env RUSTDOCFLAGS=-D\ warnings cargo doc --no-deps
-# Rule 2 and rule 3, which are cheap and are the crate's whole pitch.
-step "no bevy in the resolved graph" bash -c \
-    '[ "$(cargo metadata --format-version 1 | grep -c "\"name\":\"bevy")" = 0 ]'
+# D-027: ci.yml's dependency-gates step runs these two greps inline, and
+# preflight only had the resolved-graph form -- so a branch could ship a
+# rule-2 violation that every local gate missed, and one did. Same pipelines,
+# character for character, so the next one is caught here.
+rule2_gate() {
+    if sed 's/#.*//' crates/*/Cargo.toml | grep -n bevy; then
+        echo "rule 2 violated: a crates/ manifest names bevy outside a comment" >&2
+        return 1
+    fi
+    if grep -rn --include='*.rs' bevy crates/ | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|/\*|\*)'; then
+        echo "rule 2 violated: non-comment bevy reference in crates/ source (listed above)" >&2
+        return 1
+    fi
+}
+step "rule 2: no bevy in crates/" rule2_gate
 # `--prefix none | sort -u | grep -c .` is ci.yml's dependency gate, character
 # for character, and D-026 is why it is copied rather than paraphrased. This
 # counted tree *lines* with `wc -l` and string-compared the result, so BSD wc's

@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-291 tickets. Line numbers are stable until something above them is edited — grep the ID if
+292 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -2071,7 +2071,14 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 >
 > ***Fixed by adopting CI's pipeline verbatim, not by stripping spaces.*** One path: the two now compute the same number the same way, so a future divergence has to be introduced rather than inherited. The rule that generalises is in `M-384` — a shell gate compares numbers as numbers, because a tool's output *format* is a property of the host.
 >
-> ***Verification.*** `[ "$(... --prefix none | sort -u | grep -c .)" = 2 ]` passes on macOS/arm64 where the old form failed, and the resolved graph is unchanged and still exactly `isomesh` + `libm`. `preflight.sh` fast set all green, `--full` run before the push.
+| ☑ | **D-027** | S | — |
+> **DONE 2026-08-28 — the rule-2 source grep in ci.yml's dependency-gates step failed on `main` for the first time since it was written, and preflight could not have caught it: preflight's rule-2 step is only the resolved-graph form, while the manifest and source greps live inline in the workflow.** The F-001 shape again — a branch shipped 66 commits without CI ever seeing them, and the one gate that only CI runs found the one violation.
+>
+> ***The violation is one line of prose.*** `crates/isomesh/src/experiment.rs:3421`, inside the P-76 registration's hypothesis string: `bevy_isomesh/examples/triplanar.wgsl`. The gate exempts lines whose first non-whitespace is `//`, `/*` or `*`; a string-continuation line inside a `Preregistration` literal is none of those, so the path prefix tripped the grep. The registration is prose about the crate's own example, not a dependency — rule 2's intent (no Bevy in `crates/`) was never in question.
+>
+> ***Fixed by amending the prose, not the gate.*** The string now says "the triplanar example" — the reference survives, the path does not. And preflight now replicates both greps character-for-character, so the next branch that only CI could catch is caught locally: `step "rule 2: no bevy in crates/"` runs the same `sed`/`grep` pipelines the workflow runs.
+>
+> ***Verification.*** The exact CI grep is clean on the fixed tree; `preflight --full` green; the fix pushed and the lint job's dependency-gates step passed on the new run.
 
 | ☑ | **R-073** | S | — |
 > **DONE 2026-08-28 — 💥 ✗56 / M-385 / P-73: the ~40-line angle-weighted pseudonormal is NOT built, and the reason is quality rather than determinism. C1 FALSIFIED on **28 of 60** testable rows and separately VACUOUS on **6 of 16** cases, C2 FALSIFIED at **0 of 7** fields, C3 FALSIFIED at **0 of 18** hashes moved. Nothing in `src/` changed and no `NormalStrategy` variant was added.** `docs/experiments/p-73.csv`, 112 rows, 78 columns, committed at `3a554ed`.

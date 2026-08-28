@@ -3418,7 +3418,7 @@ pub const PREREGISTERED: &[Preregistration] = &[
         ticket: "R-076",
         hypothesis: "TRIPLANAR AND STOCHASTIC FILTERING COMPOSE MULTIPLICATIVELY AND \
             NOBODY STATES THE PRODUCT. Three planes x three stochastic taps is \
-            nine fetches per map; bevy_isomesh/examples/triplanar.wgsl already \
+            nine fetches per map; the triplanar example already \
             pays the three. Stochastic Texture Filtering (arXiv 2305.05810) and \
             Heitz-Neyret histogram-preserving blending (10.1145/3233304, 'over \
             20x faster' than procedural-noise state of the art, HARDWARE NOT \
