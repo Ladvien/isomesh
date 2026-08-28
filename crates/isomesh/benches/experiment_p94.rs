@@ -571,8 +571,6 @@ fn run_session(world_cells: u32) -> SessionResult {
     let mut step_count = 0u64;
     let mut edits_by_phase = [0u64; 4];
     let mut nohit_by_phase = [0u64; 4];
-    // Frames left of "the hand has lost the wall and is scanning for it".
-    let mut recover = 0u32;
 
     let frames = (SESSION_SECONDS / FRAME_DT).round() as u64;
     let mut phase_time = 0.0;
@@ -593,26 +591,28 @@ fn run_session(world_cells: u32) -> SessionResult {
             Phase::Chamber => 0.1,
             Phase::Relocate => 4.0,
         };
-        // While the hand is recovering a lost wall the phase's own look script
-        // is suspended. Without that suspension `Chamber` and `Relocate`
-        // rewrite `pitch` every frame and the downward scan below cannot
-        // accumulate -- measured 604 edits of a possible 2,160 at 128 cells
-        // against 2,014 at 1,024 cells, where `Bore` happened to be running.
-        if recover == 0 {
-            match phase {
-                Phase::Bore => {}
-                Phase::Sweep => yaw += 0.5 * FRAME_DT,
-                Phase::Chamber => {
-                    yaw += 1.0 * FRAME_DT;
-                    pitch = -0.2 + 0.6 * (2.0 * phase_time).sin();
-                }
-                Phase::Relocate => {
-                    yaw += (heading - yaw).clamp(-1.5 * FRAME_DT, 1.5 * FRAME_DT);
-                    pitch += (-0.25 - pitch).clamp(-FRAME_DT, FRAME_DT);
-                }
+        // The phase's own look script. `Chamber` and `Relocate` rewrite `pitch`
+        // every frame, so the downward scan in the no-hit arm below only
+        // accumulates while `Bore` or `Sweep` is running -- and **suspending the
+        // script during a recovery made it far worse rather than better**, which
+        // is the third fixture defect these counters caught. A latch refreshed
+        // on every failure never expires, because a lost hand fails on every
+        // due frame: the script stayed suspended for the rest of the hour, the
+        // feet stopped (they follow the crosshair, and the crosshair stopped
+        // moving), and the hour fell from 1,993 edits in three minutes to
+        // **137 edits in sixty**. A partial instrument that cannot get stuck
+        // beats a complete one that can.
+        match phase {
+            Phase::Bore => {}
+            Phase::Sweep => yaw += 0.5 * FRAME_DT,
+            Phase::Chamber => {
+                yaw += 1.0 * FRAME_DT;
+                pitch = -0.2 + 0.6 * (2.0 * phase_time).sin();
             }
-        } else {
-            recover -= 1;
+            Phase::Relocate => {
+                yaw += (heading - yaw).clamp(-1.5 * FRAME_DT, 1.5 * FRAME_DT);
+                pitch += (-0.25 - pitch).clamp(-FRAME_DT, FRAME_DT);
+            }
         }
         pitch = pitch.clamp(-1.25, 1.2);
         let dir = direction_of(yaw, pitch);
@@ -687,9 +687,6 @@ fn run_session(world_cells: u32) -> SessionResult {
             // cannot deadlock, and the yaw kick stops it retracing one meridian.
             pitch = (pitch - 0.35).max(-1.25);
             yaw += 0.37;
-            // Half a second of scanning, refreshed on every failure, so the
-            // phase script cannot overwrite the scan mid-recovery.
-            recover = 30;
             continue;
         };
         let centre = add(eye, scale(dir, t));
