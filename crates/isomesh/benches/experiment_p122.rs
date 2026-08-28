@@ -132,6 +132,47 @@
 //!   repetition, and the arms **alternate order by repetition parity** so
 //!   neither is permanently the one that runs second.
 //!
+//! # The popcount baseline, and why neither arm pays it
+//!
+//! Phase 25 established a build fact that changes what several sibling rows are
+//! measuring, and it has to be on this row too — as a zero, stated, rather than
+//! as an absence a later reader has to re-derive. **This repository emits no
+//! `popcnt`.** There is no `.cargo/config.toml` and no `target-cpu` in any
+//! manifest, so the default `x86-64` baseline is in force,
+//! `cfg!(target_feature = "popcnt")` is **false**, and `u64::count_ones()`
+//! lowers to the ~12-instruction SWAR sequence rather than to the one
+//! instruction this CPU actually has. Every published rank/select figure that
+//! assumes a hardware popcount is therefore describing something an order of
+//! magnitude cheaper than what this build runs.
+//!
+//! **P-122 does not touch that quantity on either side.** Both arms make
+//! **zero** `count_ones` calls per cell, so both the `instruction_ratio` C2 is
+//! scored on and the `branch_miss_ratio` C1 is scored on are invariant to the
+//! popcount lowering, and neither verdict could move under
+//! `-C target-cpu=native`. Three things establish that rather than assume it:
+//!
+//! - The control stream is one case **byte** per cell, scanned densely through
+//!   a 256-byte length table. It is not a bitmap, there is no rank, no select
+//!   and no word-population fold anywhere in either arm — the whole reason a
+//!   *byte* stream is Stream VByte's shape rather than a bit-packed one.
+//! - The crate's own `count_ones` callers — `marching_cubes/trilinear.rs`,
+//!   `hermite.rs`, `manifold_dual_contouring.rs` — are all unreachable from
+//!   here. `MarchingCubes::new()` defaults to `FaceAmbiguity::Separate` and
+//!   `InteriorAmbiguity::Ignore`, so `mod.rs:292`'s trilinear branch cannot be
+//!   taken; the other two are the dual paths, which this row does not measure.
+//! - So is the *binary*, which is the check that does not depend on reading the
+//!   call graph correctly: `objdump -d
+//!   target/release/deps/experiment_p122-<hash>` greps **0** `popcnt` **and 0
+//!   occurrences of `0x3333333333333333`**, the SWAR magic constant. Not "no
+//!   hardware popcount" — no popcount in either form, hardware or emulated,
+//!   anywhere in the linked binary. The sibling row that found the fact reports
+//!   18 of that constant in its own binary, so the grep does discriminate.
+//!
+//! `target_feature_popcnt`, `count_ones_calls_per_cell_single` and
+//! `count_ones_calls_per_cell_split` are columns, so a reader comparing this
+//! row against a rank/select row can see in one cell which of them pays the
+//! SWAR tax.
+//!
 //! # SHARE
 //!
 //! Each clause's reachable share, as a column:
@@ -1194,6 +1235,14 @@ mod experiment {
             gather_ratios.iter().copied().fold(f64::MAX, f64::min),
             gather_ratios.iter().copied().fold(0.0f64, f64::max)
         );
+        println!(
+            "Popcount baseline: target_feature=popcnt is {}, so count_ones lowers to ~12 SWAR \
+             instructions in this build. Neither arm here calls count_ones (0 per cell on both), \
+             the control stream is a BYTE per cell rather than a bitmap, and this bench's binary \
+             greps 0 popcnt and 0 of the 0x3333333333333333 SWAR constant — no popcount in \
+             either form. Both verdicts are invariant to -C target-cpu=native.",
+            cfg!(target_feature = "popcnt")
+        );
 
         for r in &rows {
             for arm in [Arm::Single, Arm::Split] {
@@ -1302,6 +1351,17 @@ mod experiment {
                     ),
                     ("control_stream_bytes", r.cells.to_string()),
                     ("payload_length_table_bytes", "256".to_string()),
+                    // The Phase 25 popcount baseline, as a zero on this row
+                    // rather than as an absence: `count_ones` lowers to ~12
+                    // SWAR instructions in this build, and neither arm here
+                    // calls it, so neither verdict can move under
+                    // `-C target-cpu=native`. See the module docs.
+                    (
+                        "target_feature_popcnt",
+                        cfg!(target_feature = "popcnt").to_string(),
+                    ),
+                    ("count_ones_calls_per_cell_single", "0".to_string()),
+                    ("count_ones_calls_per_cell_split", "0".to_string()),
                     (
                         "mesh_identical_to_shipped",
                         r.mesh_identical_to_shipped.to_string(),
