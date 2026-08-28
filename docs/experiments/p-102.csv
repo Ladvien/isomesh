@@ -1,0 +1,48 @@
+# experiment P-102 (R-102)
+# hypothesis: THE ONE AUDIT ITEM THAT WAS DOWNGRADED RATHER THAN FIXED. x43 claims '2 of 8,064 not closed before the fix, 0 of 8,064 after' and the sweep that produced it exists in no bench, no test and no CSV; the entry now says so honestly, which leaves the claim that the per-ring apex fix GENERALISES with no evidence behind it and no ticket to produce any. That is CLAUDE.md hard rule 4 and it is the x35 failure mode in its third occurrence. P-63 has since built exactly the machinery this needs -- an exhaustive sign sweep with a fixture-can- fail control and a magnitude-seed protocol reported per seed and never pooled. (C1) Over all 8,064 configurations (16 x 8 x 9 x 7 sizes from 6^3 to 12^3), the post-fix extractor produces ZERO unclosed meshes, on four independent magnitude seeds reported per seed and never pooled. (C2) THE CONTROL THE ORIGINAL LACKED: the pre-fix single-apex fan produces exactly 2 at 6^3 and zero elsewhere, reproducing the claim the entry could not support. (C3) The +/-1 magnitude arm is a BAD FIXTURE here for the reason M-374 found -- has_inner_hexagon's strict 0 < x < 1 rejects, so interior vertices go to zero -- and the harness reports it as VOID rather than as a pass. SHARE: this experiment reproduces a rate and moves nothing.
+# falsified by: C1 by any unclosed mesh, which reopens x43. C2 by a different count, which would mean the original figure was wrong as well as unreproducible -- and that is a finding about the entry rather than about the fix. C3 by the unit arm reporting a pass, which is M-44 in a new place and would mean the void detector does not work. VACUITY CONTROL: interior apexes must be non-zero on every generic arm, reported per seed, exactly as M-374 reports 282,084 to 283,694.
+# commit 7fc91fa on amd-ryzen-9-5900x-12-core at 2026-08-28T00:32:33Z
+seed,size,configurations,unclosed_post_fix,unclosed_pre_fix,interior_apexes,interior_vertices,has_inner_hexagon_rejects,arm,void,c1_holds,c2_holds,c3_holds,ambiguous_cells,apex_merges,cell_size,cells,classification_mismatches,empty_meshes,fan_configurations,hexagon_cells,interior_vertex_rejects,non_manifold_vertices_post_fix,non_manifold_vertices_pre_fix,reading,triangles,trilinear_cells,unclosed_post_fix_where,unclosed_pre_fix_where,unfanned_apex_cells,unreferenced_post_fix,unreferenced_pre_fix,wall_ms,zero_sample_configurations
+none,6,1,0,1,2,2,3,x43_fixture,false,true,false,true,3,1,0.800000,125,0,0,1,0,2,0,1,theta_ladder+cosphi_endpoints,48,3,none,x43_plane,0,0,1,0,0
+none,6,1152,0,2,362,458,896,exact,false,true,true,true,912,2,0.800000,144000,0,0,2,16,536,0,2,theta_ladder+cosphi_endpoints,102932,912,none,t7c6o0+t9c6o0,0,0,2,109,0
+none,7,1152,0,0,1142,1142,2692,exact,false,true,false,true,2692,0,0.666667,248832,0,0,0,0,1550,0,0,theta_ladder+cosphi_endpoints,176724,2692,none,none,0,0,0,193,128
+none,8,1152,0,0,360,360,952,exact,false,true,false,true,952,0,0.571429,395136,0,0,0,0,592,0,0,theta_ladder+cosphi_endpoints,216464,952,none,none,0,0,0,244,0
+none,9,1152,0,0,942,936,1864,exact,false,true,false,true,1864,0,0.500000,589824,0,0,0,0,922,0,0,theta_ladder+cosphi_endpoints,223204,1864,none,none,0,0,0,254,1152
+none,10,1152,0,0,352,352,784,exact,false,true,false,true,784,0,0.444444,839808,0,0,0,0,432,0,0,theta_ladder+cosphi_endpoints,303968,784,none,none,0,0,0,381,0
+none,11,1152,0,0,736,736,1520,exact,false,true,false,true,1520,0,0.400000,1152000,0,0,0,0,784,0,0,theta_ladder+cosphi_endpoints,426728,1520,none,none,0,0,0,540,128
+none,12,1152,0,0,568,568,1152,exact,false,true,false,true,1152,0,0.363636,1533312,0,0,0,0,584,0,0,theta_ladder+cosphi_endpoints,490928,1152,none,none,0,0,0,659,0
+none,6,1152,0,0,0,0,912,unit,true,false,false,true,912,0,0.800000,144000,0,0,0,0,912,0,0,theta_ladder+cosphi_endpoints,101632,912,none,none,0,0,0,115,0
+none,7,1152,0,0,0,0,2692,unit,true,false,false,true,2692,0,0.666667,248832,0,0,0,0,2692,0,0,theta_ladder+cosphi_endpoints,174376,2692,none,none,0,0,0,201,128
+none,8,1152,0,0,0,0,952,unit,true,false,false,true,952,0,0.571429,395136,0,0,0,0,952,0,0,theta_ladder+cosphi_endpoints,215744,952,none,none,0,0,0,286,0
+none,9,1152,0,0,0,0,1864,unit,true,false,false,true,1864,0,0.500000,589824,0,0,0,0,1864,0,0,theta_ladder+cosphi_endpoints,221128,1864,none,none,0,0,0,261,1152
+none,10,1152,0,0,0,0,784,unit,true,false,false,true,784,0,0.444444,839808,0,0,0,0,784,0,0,theta_ladder+cosphi_endpoints,303264,784,none,none,0,0,0,403,0
+none,11,1152,0,0,0,0,1520,unit,true,false,false,true,1520,0,0.400000,1152000,0,0,0,0,1520,0,0,theta_ladder+cosphi_endpoints,425256,1520,none,none,0,0,0,578,128
+none,12,1152,0,0,0,0,1152,unit,true,false,false,true,1152,0,0.363636,1533312,0,0,0,0,1152,0,0,theta_ladder+cosphi_endpoints,489792,1152,none,none,0,0,0,637,0
+0x00002026,6,1152,0,0,465,465,912,generic,false,true,false,true,912,0,0.800000,144000,0,0,0,0,447,0,0,theta_ladder+cosphi_endpoints,103090,912,none,none,0,0,0,100,0
+0x00002026,7,1152,0,0,1364,1436,2680,generic,false,true,false,true,2692,0,0.666667,248832,0,0,0,12,1316,0,0,theta_ladder+cosphi_endpoints,177880,2692,none,none,0,0,0,195,128
+0x00002026,8,1152,0,0,478,478,952,generic,false,true,false,true,952,0,0.571429,395136,0,0,0,0,474,0,0,theta_ladder+cosphi_endpoints,216932,952,none,none,0,0,0,250,0
+0x00002026,9,1152,0,0,941,941,1864,generic,false,true,false,true,1864,0,0.500000,589824,0,0,0,0,923,0,0,theta_ladder+cosphi_endpoints,223150,1864,none,none,0,0,0,274,1152
+0x00002026,10,1152,0,0,404,404,784,generic,false,true,false,true,784,0,0.444444,839808,0,0,0,0,380,0,0,theta_ladder+cosphi_endpoints,304160,784,none,none,0,0,0,382,0
+0x00002026,11,1152,0,0,758,770,1518,generic,false,true,false,true,1520,0,0.400000,1152000,0,0,0,2,760,0,0,theta_ladder+cosphi_endpoints,426860,1520,none,none,0,0,0,553,128
+0x00002026,12,1152,0,0,580,586,1151,generic,false,true,false,true,1152,0,0.363636,1533312,0,0,0,1,571,0,0,theta_ladder+cosphi_endpoints,490992,1152,none,none,0,0,0,728,0
+0x0005eed1,6,1152,0,0,425,473,904,generic,false,true,false,true,912,0,0.800000,144000,0,0,0,8,479,0,0,theta_ladder+cosphi_endpoints,103042,912,none,none,0,0,0,120,0
+0x0005eed1,7,1152,0,0,1343,1415,2680,generic,false,true,false,true,2692,0,0.666667,248832,0,0,0,12,1337,0,0,theta_ladder+cosphi_endpoints,177794,2692,none,none,0,0,0,197,128
+0x0005eed1,8,1152,0,0,475,475,952,generic,false,true,false,true,952,0,0.571429,395136,0,0,0,0,477,0,0,theta_ladder+cosphi_endpoints,216922,952,none,none,0,0,0,301,0
+0x0005eed1,9,1152,0,0,926,938,1862,generic,false,true,false,true,1864,0,0.500000,589824,0,0,0,2,936,0,0,theta_ladder+cosphi_endpoints,223132,1864,none,none,0,0,0,298,1152
+0x0005eed1,10,1152,0,0,396,396,784,generic,false,true,false,true,784,0,0.444444,839808,0,0,0,0,388,0,0,theta_ladder+cosphi_endpoints,304128,784,none,none,0,0,0,394,0
+0x0005eed1,11,1152,0,0,761,779,1517,generic,false,true,false,true,1520,0,0.400000,1152000,0,0,0,3,756,0,0,theta_ladder+cosphi_endpoints,426886,1520,none,none,0,0,0,632,128
+0x0005eed1,12,1152,0,0,578,584,1151,generic,false,true,false,true,1152,0,0.363636,1533312,0,0,0,1,573,0,0,theta_ladder+cosphi_endpoints,490984,1152,none,none,0,0,0,669,0
+0x00c0ffee,6,1152,0,0,486,510,908,generic,false,true,false,true,912,0,0.800000,144000,0,0,0,4,422,0,0,theta_ladder+cosphi_endpoints,103244,912,none,none,0,0,0,99,0
+0x00c0ffee,7,1152,0,0,1350,1434,2678,generic,false,true,false,true,2692,0,0.666667,248832,0,0,0,14,1328,0,0,theta_ladder+cosphi_endpoints,177876,2692,none,none,0,0,0,195,128
+0x00c0ffee,8,1152,0,0,486,498,950,generic,false,true,false,true,952,0,0.571429,395136,0,0,0,2,464,0,0,theta_ladder+cosphi_endpoints,216992,952,none,none,0,0,0,249,0
+0x00c0ffee,9,1152,0,0,932,950,1861,generic,false,true,false,true,1864,0,0.500000,589824,0,0,0,3,929,0,0,theta_ladder+cosphi_endpoints,223180,1864,none,none,0,0,0,278,1152
+0x00c0ffee,10,1152,0,0,398,398,784,generic,false,true,false,true,784,0,0.444444,839808,0,0,0,0,386,0,0,theta_ladder+cosphi_endpoints,304136,784,none,none,0,0,0,445,0
+0x00c0ffee,11,1152,0,0,757,757,1520,generic,false,true,false,true,1520,0,0.400000,1152000,0,0,0,0,763,0,0,theta_ladder+cosphi_endpoints,426826,1520,none,none,0,0,0,601,128
+0x00c0ffee,12,1152,0,0,574,574,1152,generic,false,true,false,true,1152,0,0.363636,1533312,0,0,0,0,578,0,0,theta_ladder+cosphi_endpoints,490952,1152,none,none,0,0,0,662,0
+0xdeadbeef,6,1152,0,0,434,482,904,generic,false,true,false,true,912,0,0.800000,144000,0,0,0,8,470,0,0,theta_ladder+cosphi_endpoints,103088,912,none,none,0,0,0,109,0
+0xdeadbeef,7,1152,0,0,1356,1416,2682,generic,false,true,false,true,2692,0,0.666667,248832,0,0,0,10,1326,0,0,theta_ladder+cosphi_endpoints,177844,2692,none,none,0,0,0,211,128
+0xdeadbeef,8,1152,0,0,491,491,952,generic,false,true,false,true,952,0,0.571429,395136,0,0,0,0,461,0,0,theta_ladder+cosphi_endpoints,216982,952,none,none,0,0,0,253,0
+0xdeadbeef,9,1152,0,0,937,961,1860,generic,false,true,false,true,1864,0,0.500000,589824,0,0,0,4,923,0,0,theta_ladder+cosphi_endpoints,223210,1864,none,none,0,0,0,275,1152
+0xdeadbeef,10,1152,0,0,398,398,784,generic,false,true,false,true,784,0,0.444444,839808,0,0,0,0,386,0,0,theta_ladder+cosphi_endpoints,304136,784,none,none,0,0,0,380,0
+0xdeadbeef,11,1152,0,0,757,763,1519,generic,false,true,false,true,1520,0,0.400000,1152000,0,0,0,1,762,0,0,theta_ladder+cosphi_endpoints,426834,1520,none,none,0,0,0,584,128
+0xdeadbeef,12,1152,0,0,576,582,1151,generic,false,true,false,true,1152,0,0.363636,1533312,0,0,0,1,575,0,0,theta_ladder+cosphi_endpoints,490976,1152,none,none,0,0,0,695,0
