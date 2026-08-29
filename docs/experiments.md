@@ -55,6 +55,7 @@ contradict.
 | P-61 … P-72 | `crates/isomesh/src/experiment.rs` | *12 registered, **10 ran and 2 are blocked on a paper nobody can get** — tallied below. 1 held every clause, 2 were falsified on every clause, and 7 split* | | |
 | P-73 … P-102 | `crates/isomesh/src/experiment.rs` | *30 registered and **all 30 ran** — tallied below. 6 held every clause, 2 were falsified on every clause, and 22 split, so **24 of the 30 carry at least one falsified clause*** | | |
 | P-103 … P-122 | `crates/isomesh/src/experiment.rs` | *20 registered and **all 20 ran** — tallied below. Sixty clauses: **34 held, 24 falsified, 2 vacuous**. 2 rows held every clause, 1 held every clause it could fire, and **17 of the 20 carry at least one falsified clause*** | | |
+| P-123 … P-126 | `crates/isomesh/src/experiment.rs` | *4 registered and **all 4 ran** — tallied below. Twelve clauses: **9 held, 2 falsified, 1 vacuous**. 2 rows held every clause, 2 carry a falsification, and **1 landed a source change, registered in advance*** | | |
 
 A page called "experiments that held" which quietly dropped the falsifications would be exactly the
 failure this machinery exists to prevent. They are all here.
@@ -305,6 +306,58 @@ prove the resulting zero could have been non-zero. `experiment_p116.rs`'s emitte
 comparing the source against its own reverse, and the three-conjunct instrumentation located the defect in
 exactly one of them. A third defect — a committed CSV column recording a decimal digit count rather than a
 stride — was found by writing this page's row for `P-104` against the dataset rather than against the run.
+
+---
+
+## Phase 26 — four experiments the backlog had left unregistered, and two of them close a question
+
+Not a sweep. These four were already in `BACKLOG.md`, unblocked, and had **never been registered**:
+`R-027a` split out of `R-027` on `V-45` in Phase 17, `R-052` and `R-053` left as the successors to
+`R-050` and `R-048` when Phase 20 closed, and `R-072` named in `O-12`'s own text and then filed by
+nobody. That last one is the reason the phase exists at all — an open question was invisible to
+`scripts/backlog_gate.sh` clause 6 for want of a `P-` id to be missing, which is exactly the drift the
+clause exists to surface and could not.
+
+**Three of the four are corrections to an experiment that already ran**, and each names in its own
+registration the error it is not repeating. **One landed a source change**, registered in advance.
+
+| prediction | verdict | what it means if you depend on this crate |
+|---|---|---|
+| **P-126** — `O-12`'s remaining half: is the *dual* vertex link a single cycle, over all 2²⁷ sign patterns of a 3×3×3 block? | **held**, all three (M-439) | **`O-12` is closed by exhaustion, and the closure is a standing gate rather than a claim.** `worst_link_components` reads **1** on every non-control arm over **134,217,728** patterns and **5,067,767,808** dual vertices, while all three controls read **2** with 99.9M–221.8M link-defective vertices. C1 is additionally *proved*: two lemmas checked exhaustively at start-up — a cycle's consecutive edges always share a cell face over 256 cases × 64 masks, and with the joined bit agreed the two cells sharing a face induce the identical pairing over 49,152 combinations — so the sweep's job is that no reachable pattern escapes the proof. `control/open_block` reproduces `P-63`'s own vacuity as a *measurement* at the right block size: 5.07 G dual vertices of which only **860,880,896** carry a complete link |
+| **P-124** — port Finken et al.'s monotone-edge condition to the **ambient** complex, where `✗36` proved the mesh-edge reading is saturated | **held**, all three (M-437) | **The detector has signal, and it is almost entirely in the edges a chord predicate cannot reach.** At 65³ over 262,144 cells, `diagonal_only_failures` is **17,862 of 17,862** on `sphere`, **10,563 of 10,567** on `box_exact` and **12,669 of 13,693** on `thin_plate` — cells rejected by a tetrahedral diagonal with every axis edge monotone. The mesh-edge control runs the same predicate in the same run and reproduces `✗36`'s saturation, which is what makes the ambient count a property of the *complex* rather than of the tolerance. The tolerance was fixed at registration — scaled by `max(|f(a)|, |f(b)|)` — because a tolerance vanishing at the endpoints is precisely what `✗36` caught |
+| **P-123** — decompose `M-318`'s 45× buffer-churn gap; if the order-only term dominates, a canonical reorder at emission recovers it | **held** on C1, **falsified** on C2, C3 held on 3 rows and **vacuous** on 3 (✗97 / M-436) | **The gap is not ordering, and `R-027` is closed for good.** The order-only term is **0.0000%–0.137%** of the churn; the predecessor-shift term is **97.9%–99.4%**. `sphere` 129³ reproduces `M-318` to the digit — `churn_total` **15,706**, `churn_geometric` **346** — and spends 15,370 of it on slots shifted because an earlier cell emitted a different *number* of vertices. That is Acar's sequential-counter instability, and no reorder at emission touches it: the only remaining shape is the persistent edge→slot map `V-45` refused, which makes `extract_into` stop being a pure function of its inputs. The vacuity control fired both ways — the canonical arm drove the order-only term to **exactly 0** while leaving geometry unchanged, and a permuted arm drove the same detector non-zero |
+| **P-125** — ship the pinch predicate as a `validate` report, so a caller can ask whether the `=`-corner repair is safe on **its** data | **held** on C1 and C2, **falsified** on C3 on 2 of 6 rows (✗98 / M-438) | **The clearance is sound and the count is not, and the difference matters.** C1 reproduces `M-352` exactly — **516 of 17,201** collapse groups on `bonsai`, **0 of 50** on `fuel` — from the baseline mesh alone with no repair applied, and C2 gives one identical census over every face permutation, which is `✗26`'s objection asked in advance. C3 fails because a pinch count is an **upper bound**: 516 pinches weld **129** components, since several pinches can weld the same pair and a pinch inside one component welds nothing. So *zero pinches is a genuine clearance* — confirmed on all three zero rows — and a non-zero count bounds what a weld could reach rather than predicting it |
+
+**The four registrations were written the same day and three of them contained an error the harness
+author found and reported rather than amended.** That is the machinery catching the person operating it,
+for the third phase running, and all three were available before any harness existed:
+
+- **`P-124`'s C2 is internally inconsistent.** It says the non-monotone population *"is O(n) and HALVES
+  PER REFINEMENT, so the count … must fall by a factor in [1.7, 2.3] per doubling"*. An O(n)
+  population's **count grows**; it is the **density** that halves, and `✗36`'s own table is a density
+  (178.1 / 86.1 / 42.3 / 21.0 per 1k). The literal reading was arithmetically dead.
+- **`P-126` wrote 2²⁷ for a 64-corner block**, which is 2⁶⁴. The harness resolved it with a
+  period-3-per-axis identification that makes both registered numbers true, recorded the identification
+  as a column, and stated the cost: the sweep is exhaustive over 3-periodic fields and visits each
+  configuration 128 times.
+- **`P-126`'s C2 names `FaceAmbiguity::Connected`, which does not exist** — `ambiguity.rs` ships only
+  `Separate` and `AsymptoticDecider` — so the clause as literally written cannot fire, and the harness
+  says why: an always-joined rule is a function of the shared face's four signs, both cells agree, and a
+  link provably cannot split when they agree.
+
+**And one harness rejected its own first implementation on a measurement.** `P-125`'s report groups
+coincident vertices, and the obvious grouping is equality on the lattice cell key — a genuine
+equivalence relation, and `MeshReport::weld_buckets`' own notion. Measured against the shipped welder on
+`sphere` 25³, where `M-48` recorded `Welder::weld` removing 48 vertices and 96 triangles at this very
+epsilon, it finds **30 of the 48 merges and 60 of the 96 folding faces**, because a coincidence class
+straddling a cell face splits between two buckets. For a report whose entire job is issuing clearances,
+under-reporting is a **false clearance**. Rewritten as ε-connected components: **48 and 96, exactly the
+weld**, and erring on the safe side because the welder's classes refine the closure.
+
+**Three of the four experiments contain no clock at all** — every column is an integer count over an
+enumerated population — so `M-280` has nothing to move and their clean re-runs could not have shifted a
+digit. `P-126`'s `wall_seconds` sums to about **1,015 s**, inside the ticket's own 4–45 minute estimate,
+and no clause reads it.
 
 ---
 

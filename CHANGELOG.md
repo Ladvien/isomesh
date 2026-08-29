@@ -46,7 +46,45 @@ never calls `mul_add`, so **0 of 216 golden hashes differ across `x86_64-unknown
 `aarch64-apple-darwin`** today. A future `target-feature=+fma` build, a `-ffast-math` equivalent or one
 hand-written `mul_add` would move golden hashes at those eleven sites. `M-430` carries the list.
 
+**Phase 26 registered one source change and landed it, and the other three rows are measurement.**
+`isomesh::validate::pinch_census` answers *"is it safe to weld this mesh"* **before** the weld runs, and
+it is the first thing this project has landed that was registered in advance in the shape `V-45` cost —
+a `P-` entry naming the source change, then the harness, then the landing. Four pre-registered
+experiments, four benches, four committed CSVs and four `FINDINGS.md` entries — **twelve clauses: 9 held,
+2 falsified, 1 vacuous** (`✗97`, `✗98`, `M-436`–`M-439`). Three of the four carry **no clock at all**:
+every column is an integer count over an enumerated population, so `M-280` has nothing to move in them.
+
+**What a consumer should take from it: one new query, and two questions closed by exhaustion.** `O-12`'s
+dual half is closed — all **134,217,728** sign patterns of a 3 × 3 × 3-cell block, `worst_link_components`
+**1** on every non-control arm against three controls reading 2, so `ManifoldDualContouring`'s vertex
+links are manifold on every reachable 3-periodic configuration. And `R-027`'s cheap hope is closed the
+other way: after a brush edit the **order-only** share of buffer churn is **0.0000%–0.137%** while the
+**predecessor shift** is **97.9%–99.4%**, so the canonical reorder that would have cost nothing buys
+nothing, and `M-318`'s own proposed arm measures **1.63%–4.82% worse** than the shipped scan on 6 of 6.
+
+**Three of these four registrations contained an error that the harness author found and reported rather
+than amended**, and every one was available before any harness existed — an O(n) count confused with a
+density, a `2²⁷` written for a 64-corner block, and a `FaceAmbiguity::Connected` that does not exist.
+`crates/isomesh/src/experiment.rs:27-31` is why none was edited; each entry carries the column that
+shows it.
+
 ### Added
+
+- **`isomesh::validate::pinch_census` — is it safe to weld this mesh, asked before the weld runs.**
+  Welding coincident vertices is required and destructive (`M-59`, `M-99`, `M-96`), and until now the
+  crate had no way to ask which it would be on a given mesh. `pinch_census(&[[R; 3]], &[u32],
+  &ValidateConfig) -> PinchReport` reports `collapse_groups`, `pinch_groups`, `pieces_joined`,
+  `folding_faces`, `sharing_edges` and `groups_moving_geometry`, with `is_pinch_free()` and
+  `moves_no_geometry()` as the two predicates a caller wants; `pinch_features` is the same pass returning
+  the member and cluster lists beside the counts, in CRS form, and `pinch_census` calls it and drops the
+  second half exactly as `validate_indexed` does to `validate_features`. **A group is an ε-connected
+  component, not a lattice bucket** — the obvious bucket reading finds 30 of the 48 merges the shipped
+  welder performs on `sphere` 25³ and 60 of its 96 folding faces, and for a report whose entire job is
+  issuing clearances an under-count is a **false clearance**; the ε-closure finds 48 and 96, exactly the
+  weld. `no_std`, generic over `Real`, arrays in every public signature. **The count is an upper bound on
+  components welded and is documented as one**: several pinches can weld the same pair, and a pinch inside
+  one component welds nothing. Order-independent over 128 face permutations, measured. Nine tests,
+  including one that predicts the weld on a real extraction. `docs/experiments/p-125.csv`, `✗98`, `M-438`.
 
 - **`isomesh::mass` — volume, centre of mass and the inertia tensor from the surface, with no volume mesh.**
   Hartmann & Ewougsi Tekeu, *Gauss divergence theorem for the calculation of the mass and area moment of

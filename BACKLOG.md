@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**312 tickets archived, 23 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**316 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -45,6 +45,58 @@ attached — read that before re-litigating a decision this project already made
   is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
+
+---
+
+## Phase 26b — what Phase 26 earned
+
+**Added 2026-08-29, above Phase 26a for the reason every phase goes on top: rule 1 reads top-down.**
+Phase 26 is closed (`✗97`, `✗98`, `M-436`–`M-439`). Unlike Phase 25 it registered a source change and
+landed it — `validate::pinch_census`, `M-438` — so that row owes nothing here. Of the other three,
+`M-436` and `M-439` are closures: `R-027a` answered its parent's question in the direction that keeps
+`R-027` declined, and `R-072` closed `O-12`'s dual half by exhaustion and its own nightly workflow is
+the landing. **One row earns a ticket**, and it is the one that held every clause.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-124** | M | — |
+
+**R-124 — land `P-124`'s ambient non-monotone cell flag as a public refinement query, and decide the
+granularity it reports at.** `M-437` is Phase 26's only all-clauses-held row, and what it measured is a
+cheap per-cell answer to *"is this grid too coarse to represent what is actually here"* — the question an
+LOD or auto-refine consumer asks and this crate cannot currently answer. The mechanism is a monotonicity
+test over the **ambient** complex — the tetrahedral scaffold inside the cell, **diagonals included** —
+and the signal is almost entirely in edges the mesh-edge reading structurally cannot see: `box_exact`
+flags **10,567** cells at 65³ of which **10,563** are diagonal-only (**99.962%**), `thin_plate` **13,693**
+of which **12,669** (**92.5%**).
+
+**Why this is a ticket and not a hope: the instrument was proved sound before it measured anything.**
+`✗36` killed the previous attempt **by proof** rather than by measurement — a mesh edge is a straight
+chord across the surface, so it is monotone by geometry and the reading was a dead instrument. `P-124`
+carries that dead reading as a **control** and it reproduces `docs/experiments/p-55.csv` bit for bit on
+all 24 overlapping `(field, resolution)` pairs, which is what makes the new reading a second measurement
+rather than a second opinion. Its resolution witness is exact: `box_exact`'s population ratio is
+**1.967635** at every resolution, against the 2× a correct witness must show.
+
+**The scoping constraint, and it is the reason this is M and not S.** The measured population is large —
+**173,277 of 479,022** cells at 65³ overall, **42.25%** of 2,696,419 at 129³ — so a boolean per cell is
+not by itself actionable and a consumer that refines every flagged cell refines nearly half the grid.
+What a caller needs is either a severity the flag does not currently carry, or the diagonal-only split
+as its own column, since a cell failing only on a diagonal is a different physical claim from one
+failing on an axis edge. **That choice is the ticket**, and it must be made against a consumer rather
+than in the abstract.
+
+**Acceptance.** (a) A `Preregistration` for the landing, before the code, naming the granularity chosen
+and the consumer it was chosen for. (b) The query lands under `validate`, `no_std`, generic over `Real`,
+arrays in every public signature, sharing the tetrahedral edge enumeration with `sealing`'s `TET_EDGES`
+rather than transcribing a second copy — `P-124` verified its own enumeration against the closed form
+`3n²(n−1) + 3n(n−1)² + (n−1)³`, so the shipped one must be checked the same way. (c)
+`crates/isomesh/golden_hashes.json` unchanged: this reads the field and emits no geometry, so a moved
+hash is a defect. (d) A committed CSV over all eight reference fields at 33³/65³/129³ carrying the
+chosen granularity beside `P-124`'s own columns, so a reader can see the landed query agrees with the
+experiment that earned it. (e) The mesh-edge control **stays** in the shipped tests as a vacuity
+control, because a flag that cannot be shown to discriminate is the defect `✗36` already cost this
+project once.
 
 ---
 
@@ -115,7 +167,9 @@ acceptable and is the reason (d) exists.
 
 **Added 2026-08-27, above Phase 23 for the reason every phase goes on top: rule 1 reads top-down.**
 Nothing here supersedes Phase 17's or Phase 18's open rows, and Phase 23's two blocked acquisitions
-(`R-063`, `R-065`) and its nightly sweep (`R-072`) stay where they are.
+(`R-063`, `R-065`) stay where they are. Its nightly sweep `R-072` **closed 2026-08-29** — `P-126`/`M-439`
+swept all 134,217,728 sign patterns of a 3 × 3 × 3 block and read `worst_link_components` **1** on every
+non-control arm, which is the dual half of `O-12`.
 
 **Source: `docs/research/2026-08-27-thirty-experiments-for-the-game.md`.** Phase 23 read back — four clean
 wins, one crash caught before it shipped, five informative falsifications, two blocked on acquisition — then
@@ -448,7 +502,6 @@ in an 18-corner block is empty. The new registration derives its population from
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
-| ☐ | **R-072** | L | — |
 
 ---
 
@@ -578,8 +631,6 @@ it is a later ticket.
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
 | ☐ | **R-054** | S | |
-| ☐ | **R-052** | M | |
-| ☐ | **R-053** | S | |
 
 **R-046 — Does either half of the tangent-sphere constraint survive this crate's extractors? (P-51)**
 Sellán, Batty & Stein state both halves: the surface excludes every positive sphere and is *tangent to
@@ -682,9 +733,11 @@ obligation in the same commit as the result.
 ## Phase 18 — Mechanics from the field
 
 **Added 2026-08-17, and placed above Phase 17 for the same reason Phase 17 sits above Phase 16:** rule
-1 reads top-down and this is the current work front. Nothing here supersedes Phase 17's open rows —
-R-027a in particular stays live and stays cheap; if a sitting is short, it is still the best S in the
-file.
+1 reads top-down and this is the current work front. Nothing here supersedes Phase 17's open rows.
+R-027a **closed 2026-08-29**, and it was the cheap S this paragraph promised: `P-123`/`✗97`/`M-436` spent
+one bench on it and the answer inverted the hypothesis — the order-only term is **0.0000%–0.137%** of the
+churn and the predecessor shift is **97.9%–99.4%**, so the canonical reorder R-027 was declined for buys
+nothing that was ever available.
 
 **Source: `docs/research/2026-08-17-mechanics-from-the-field.md`** — five parallel corpus hunts
 (surface-intrinsic computation, modal analysis, structural mechanics, shape semantics, volumetric
@@ -778,14 +831,12 @@ rather than sequential.**
 
 | | ID | Ticket | Size | Blocked by |
 |---|---|---|---|---|
-| ☐ | **R-027** | **A stable vertex naming, so the output is edit-proportional too.** **Split out of R-020 2026-08-16 on M-314**, which measured the gap: after a brush edit the *computation* is edit-proportional — 792 dirty cells at 33³, 65³ and 129³ alike — while the *buffer* is not, with **56–77%** of vertex slots changing for an edit touching **0.038%** of cells, and the ratio growing `O(n²)`. **The cause is a counter.** Vertices are appended in scan order and indices name buffer positions, so a cell emitting a different triangle count shifts every index after it. **The crate already has the stable name and throws it away**: the edge cache is keyed on `(lower sample, axis)`, which is a grid-global identity independent of emission order, and the packing step replaces it with a sequential slot. **H:** naming vertices by grid edge rather than by emission order takes `buffer_moved` to within a constant factor of `geometric_moved` — 330-ish rather than 15,706 at 129³ — with the *same triangles*, byte-identical after a canonical reorder. **Falsified by:** buffer churn that stays `O(n²)` under a stable naming, which would locate the instability somewhere other than the counter and would be the more interesting result. **This is what would make R-020's claim about a shipped extractor rather than about its dependency structure**, and it is the one thing standing between the measurement and *"the first isosurface extractor with an edit-proportional output"* — a claim V-43 says is available for scalar-field isosurfacing and for nothing wider. **Cost to weigh before starting:** a grid-keyed buffer is sparser than a packed one and every consumer's index buffer changes meaning, so this is an API question as much as an implementation one — read X-005's blast-radius note first, since it counted the same kind of cost for a different change. **FINDINGS:** `M-`. | L | — |
+| ☐ | **R-027** | **A stable vertex naming, so the output is edit-proportional too.** **Split out of R-020 2026-08-16 on M-314**, which measured the gap: after a brush edit the *computation* is edit-proportional — 792 dirty cells at 33³, 65³ and 129³ alike — while the *buffer* is not, with **56–77%** of vertex slots changing for an edit touching **0.038%** of cells, and the ratio growing `O(n²)`. **The cause is a counter.** Vertices are appended in scan order and indices name buffer positions, so a cell emitting a different triangle count shifts every index after it. **The crate already has the stable name and throws it away**: the edge cache is keyed on `(lower sample, axis)`, which is a grid-global identity independent of emission order, and the packing step replaces it with a sequential slot. **H:** naming vertices by grid edge rather than by emission order takes `buffer_moved` to within a constant factor of `geometric_moved` — 330-ish rather than 15,706 at 129³ — with the *same triangles*, byte-identical after a canonical reorder. **Falsified by:** buffer churn that stays `O(n²)` under a stable naming, which would locate the instability somewhere other than the counter and would be the more interesting result. **This is what would make R-020's claim about a shipped extractor rather than about its dependency structure**, and it is the one thing standing between the measurement and *"the first isosurface extractor with an edit-proportional output"* — a claim V-43 says is available for scalar-field isosurfacing and for nothing wider. **Cost to weigh before starting:** a grid-keyed buffer is sparser than a packed one and every consumer's index buffer changes meaning, so this is an API question as much as an implementation one — read X-005's blast-radius note first, since it counted the same kind of cost for a different change. **FINDINGS:** `M-318`, `M-436`. | L | — |
 > **DECLINED AND SPLIT 2026-08-17 on V-45. The reason is harder than the API cost this row weighs.** M-318 found only one of three shapes delivers the 45×: a **persistent edge→slot map**, i.e. state carried across extractions. This row prices that as `extract_into` losing purity plus X-005's 294 call sites. **That accounting misses the binding constraint.** `validate::determinism.rs:268` runs `check_determinism` **three** times, the third into a **reused** buffer, under a doc comment saying why in as many words — *"to catch output that depends on the buffer's prior state… nothing else checks that it survives being driven that way."* R-027's only working shape **is** output that depends on prior state. So this does not cost a migration on top of a working design; **it converts a shipped gate's failure condition into its intent**, and T-004 is committed rather than preferred. Not a preference — a stop.
 > 
-> Reopen only on a formulation where the map is **derivable from the inputs** — a pure function of grid and field rather than of call history — which would keep the third run meaningful. Nothing in M-318's three shapes is that. **Blocked on R-027a**, which is the measurement this row should have had first: M-318 already says the encoding is not the cost, so locating where the 45× actually goes may dissolve the L entirely.
-| ☐ | **R-027a** | **Where does M-318's 45× actually go?** **Split out of R-027 2026-08-17 on V-45**, which stopped the parent: its only working shape breaks T-004's reused-buffer run. This is the measurement that should have preceded the design. M-318 established the *ceiling* — a grid-edge naming takes buffer churn 15,706 → 346 at 129³, flat in `n` — and simultaneously established that **the encoding is not the obstacle**. Those two facts together mean nobody has yet asked where the 45× is spent: how much is vertices that genuinely move geometrically, how much is slots shifted by a predecessor cell's triangle count, and how much is order alone. **H:** the churn decomposes with the order-only term dominant, so a *canonical reorder at emission* — which needs no persistent state and so leaves T-004 intact — recovers most of the 45× without touching `extract_into`'s contract. **Falsified by:** a decomposition where the geometric and predecessor-shift terms dominate, which would mean only the persistent map can help and R-027 stays stopped rather than merely blocked — a result worth having either way. **Harness:** instrument the existing `edit_trace` bench; no new field, no new extractor. **FINDINGS:** `M-`. | S | — |
-> **CEILING MEASURED 2026-08-17, before any API was touched (M-318).** A grid-edge naming would take buffer churn from **15,706 to 346** at 129³ — **45×**, flat in `n`, and equal to the true geometric change. **The prize is the whole gap**; M-314's split has no residue once the naming changes. Counted from the value arrays alone, keyed on the *edge* rather than on position, since position-keying would make the answer equal `geometric_moved` by construction and measure nothing.
-> 
-> **But the encoding is not the hard part, and that changes the scoping.** Three shapes and only the third works: a stable *order* does not help, because a crossing appearing still shifts every index after it; **index-is-edge-id** is stable and costs **230× the memory** (6.4 M slots for 27,822 vertices at 129³); and a **persistent edge → slot map**, allocating on first use and compacted occasionally, is what an incremental engine actually runs — and it is **state carried across extractions**, so `extract_into` stops being a pure function of its inputs. **X-005's 294 call sites are the smaller half of the cost.** The measurement says the prize is real; it does not say the shape is cheap.
+> Reopen only on a formulation where the map is **derivable from the inputs** — a pure function of grid and field rather than of call history — which would keep the third run meaningful. Nothing in M-318's three shapes is that. **Was blocked on R-027a**, which is the measurement this row should have had first: M-318 already says the encoding is not the cost, so locating where the 45× actually goes may dissolve the L entirely.
+>
+> **R-027a ANSWERED IT 2026-08-29, and it removes the cheap hope rather than the row (`✗97`/`M-436`).** The churn does not decompose the way this row's *"stable order" reading needs. Over six rows the **order-only** term is **0.0000%–0.137%** of the churn and the **predecessor shift** is **97.9%–99.4%** — so a canonical reorder at emission, the one shape that would have cost no purity, buys between **2 slots and 0**. Worse for the row's own accounting: `M-318`'s proposed canonical arm is **1.63%–4.82% MORE** churn than the shipped scan on **6 of 6**, where `M-318` predicted only that it *"does not help"*. **The ceiling is also bigger than the 45× this row is priced against** — `noise_cavity` reads **178.6×** at 129³ against `sphere`'s 45.4× — and **none of the increase is reachable without the persistent map**, which is exactly the shape `determinism.rs:268` forbids. So the decline stands, now on a measurement rather than on an argument, and the reopening condition above is unchanged and is still the only one.
 | ☐ | **R-021** | **Maintain the contour tree, not the triangles.** **The reframe from `10.48550/arXiv.1406.4005`:** the maintainable object is scalar-field level-set topology, `O(log n)` per certificate failure, with certificates failing only on adjacent-vertex value swaps or saddle collisions — and it handles general update operations, not just continuous motion. **Caveat that must be carried:** that paper is **2-manifolds only** (`h: ℝ² → ℝ`, a triangulated terrain). The two 3D results the question hinges on — Tarasov & Vyalyi 1998 and Safa & Wang 2014 — are **both unobtainable**, and Edelsbrunner's 3-manifold Reeb maintenance is `O(n)` per certificate failure, asymptotically no better than rebuilding. **H:** the contour tree of a chunk can be maintained under a brush edit in time proportional to the dirty set, where full recomputation is not. **Falsified by:** maintenance cost tracking chunk volume. **Worth if it holds:** it changes axis 8 from "re-mesh fewer triangles" to "maintain topology, re-derive geometry" — a different algorithm class. **FINDINGS:** `M-`. | L | — |
 > **CORRECTED AND RE-BLOCKED 2026-08-17 on V-44, and the new reason is better than the old one.** **This row's caveat is contradicted by the paper it is built on.** `10.48550/arXiv.1406.4005`'s own related-work paragraph says a prior algorithm *"handles certificate failures in **`O(log(n))`** time"* and that *"their algorithm also works for **simple 3-manifolds** where the Reeb Graph is a contour tree"* — so *"`O(n)` per certificate failure, asymptotically no better than rebuilding"* cannot stand as written. The real weakness that paragraph names is the **event count**, not the per-event cost: certificates fail whenever *any* two vertices share a contour rather than only on adjacent-vertex swaps. Different objection, different remedy. **Tarasov & Vyalyi is findable** (`10.1145/276884.276892`, 60 citations, no open link) so *paywalled* is the accurate word, not *unobtainable* — and its title is **construction**, not maintenance, which is weaker support than this row implies. The 2-manifold restriction on the 2014 paper *is* confirmed.
 >

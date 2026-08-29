@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**546 entries** — 96 falsified, 361 measured, 50 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**550 entries** — 98 falsified, 363 measured, 50 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -135,6 +135,8 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗94` | C1 FALSIFIED on 4 of 32 rows, all four fbm_terrain, ratio 1.7965–1.9008 against a 2.0× bar and every one of them decided… |
 | `✗95` | C1 HELD with the worst residual_share at 0.005195 against a 0.05 bar, C2 HELD with max_reference_integer_share_at_65 = 0… |
 | `✗96` | C1 FALSIFIED on 0 of 16 rows with branch_miss_ratio spanning 1.001214–1.983313 — the split doubles mispredictions at wor… |
+| `✗97` | C2 FALSIFIED on 6 of 6 with order_only_share topping out at 0.001373626 against a 0.50 bar, C1 HELD on 6 of 6 at a worst… |
+| `✗98` | C1 HELD to the integer (516 of 17,201 pinches on bonsai, 0 of 50 on fuel), C2 HELD with distinct_censuses 1 over 128 fac… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -496,6 +498,8 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-419` | C1, C2 and C3 all HELD on 8 of 8 rows: the circuit is 12 word operations and 24 including the plane build against a bar… |
 | `M-430` | 11 contraction-sensitive expressions |
 | `M-432` | C1 VACUOUS on all 16 rows because the registered perturbation had nothing to move (baseline_spread 0, and buckets_of_thr… |
+| `M-437` | C1, C2 and C3 all HELD on 24 of 24 rows: on the ambient complex the predicate discriminates on 8 of 8 fields at every re… |
+| `M-439` | C1, C2 and C3 all HELD and O-12's dual half is closed by exhaustion: worst_link_components 1 on every non-control arm ov… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -24545,3 +24549,414 @@ advance is what `V-45` cost.**
 **VACUITY CONTROL.** dual_vertices_with_complete_link asserted non-zero PER ARM and never pooled; patterns_swept asserted equal to 134,217,728 exactly, so a sweep that silently narrowed its own domain is a failure rather than a fast pass; and the control arm's link_defective_vertices asserted greater than zero in the same run.
 
 ---
+
+---
+
+## Phase 26 — the results, four entries against four registrations
+
+Every row below was pre-registered in `crates/isomesh/src/experiment.rs` before its harness existed, its
+harness was committed before it ran, and its dataset was **re-run on a clean tree** in one serial pass —
+so each `# commit` line names a commit a reader can check out, and `scripts/csv_provenance.sh` passes
+with no new entry on its dirty-tree list. Where a `# commit` sha names the *previous* dataset's commit,
+that is the serial loop working as designed: each run starts on the clean tree the last commit left.
+
+**Twelve clauses: 9 held, 2 falsified, 1 vacuous.** Two rows held every clause (`M-437`, `M-439`) and two
+are dual-numbered (`✗97`, `✗98`). **One landed a source change**, `P-125`, registered in advance the
+`P-61`/`P-69` way — because a landing not registered in advance is what `V-45` cost.
+
+**Three of these four registrations were written the same day and contained an error the harness author
+found and reported rather than amended**, and all four errors were available before any harness existed:
+`P-124`'s C2 confuses an O(n) *count* with a *density*, and its vacuity sentence demands a zero one
+sentence after demanding the same instrument be shown able to read non-zero; `P-126` writes 2²⁷ for a
+64-corner block, and names a `FaceAmbiguity::Connected` that does not exist. `P-123`'s hypothesis claims
+its three terms sum exactly when the exact partition is at the slot level and the scored term counts
+crossings. Every one is recorded in its entry with the column that shows it, and
+`crates/isomesh/src/experiment.rs:27-31` is why none was edited.
+
+**Three of the four contain no clock at all** — every column is an integer count over an enumerated
+population — so `M-280` has nothing to move and their clean re-runs could not have shifted a digit.
+
+---
+
+### 💥 ✗97 / M-436 — C2 FALSIFIED on 6 of 6 with `order_only_share` topping out at **0.001373626** against a 0.50 bar, C1 HELD on 6 of 6 at a worst `residual_share` of 0.008160237 with every residual exactly accounted by an integer identity, C3 HELD on 3 of 3 scored rows by reproducing `M-318`'s keyed 318 / 310 / 346 *and* its 15,706 to the digit and VACUOUS on the 3 `noise_cavity` rows that have no published comparand: the churn is 77.2255%–99.4445% predecessor-shift, a canonical reorder at emission recovers at most 0.137% of it and measurably makes the churn 1.6%–4.8% *worse*, so `R-027` closes on its own registered falsifier (P-123, R-027a)
+
+**M.** `cargo bench --bench experiment_p123`, `docs/experiments/p-123.csv`, **6 rows** — four `#` comment lines plus one column header plus **6 data rows** across **56 columns**, counted from the file rather than from the brief. The fixture shape, also counted from the file: **two fields × three resolutions** (`sphere` and `noise_cavity` at 33³, 65³, 129³), `edits` = **515** and `dirty_cells` = **792** and `brush_radius_samples` = **5.0** identical on all six rows, `cells` = 32,768 / 262,144 / 2,097,152, and **three emission arms per row in one binary** — the shipped `scan` order carrying the subject, plus the `canonical_control_*` and `permuted_control_*` column families, which is why an arm-to-arm difference is the emission order and nothing else. `amd-ryzen-9-5900x-12-core` (Zen 3). The header reads `# commit 5e5ff1b on amd-ryzen-9-5900x-12-core at 2026-08-29T02:23:46Z`, with no `(WORKING TREE DIRTY)`; the dataset landed as **`675d912`** (`p-123.csv - re-run on a clean tree`, the child of the `5e5ff1b` the run was stamped at), and `git merge-base --is-ancestor 675d912 HEAD` passes.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the three terms account for the churn with `residual_share` under 5%, per row | < 0.050000 (`c1_bar`) | **HELD — `c1_holds` true on 6 of 6, `residual_share` 0.008160237 / 0.000939629 / 0.000764039 (`sphere` 33³/65³/129³) and 0.006083203 / 0.000159898 / 0.000043858 (`noise_cavity`), a worst case 6.1× under the bar; and the residual is not slack but an exact integer, `churn_residual` = −11 / +4 / −12 / −31 / +3 / −3, equal on all six rows to `churn_geometric_slots − churn_geometric` (307−318, 314−310, 334−346, 688−719, 594−591, 380−383) and to `edges_moved − geometric_slot_collisions` (12−23, 12−8, 0−12, 51−82, 49−46, 13−16)** |
+| C2 the order-only term is at least 50% of the churn on at least one reference field | ≥ 0.500000 (`c2_bar`) | **FALSIFIED — `c2_holds` false on 6 of 6; `order_only_share_max` = 0.001373626 on `c2_best_field` = `noise_cavity`, which is 364× short of the bar. `churn_order_only` is 0 / 0 / 2 of 1,348 / 4,257 / 15,706 on `sphere` and 7 / 2 / 0 of 5,096 / 18,762 / 68,403 on `noise_cavity`, against `churn_predecessor_shift` of 1,041 / 3,943 / 15,370 and 4,401 / 18,166 / 68,023 — 77.2255%, 92.6239%, 97.8607%, 86.3619%, 96.8234% and 99.4445% of the churn** |
+| C3 the geometric term equals `M-318`'s own keyed column | 318 / 310 / 346 | **HELD on 3 of 3 scored rows, VACUOUS on 3 — `geometric_matches_m318` true on the three `sphere` rows with `churn_geometric` = 318 / 310 / 346 equal to `m318_keyed_moved` = 318 / 310 / 346, and `m318_buffer_moved_reproduced` / `m318_vertices_reproduced` both true, so `churn_total` = 1,348 / 4,257 / 15,706 and the vertex counts 1,758 / 6,918 / 27,822 reproduce `M-318`'s published row at every resolution rather than only at the one it quotes. `noise_cavity` reads `vacuous` on both columns: `M-318` never ran that field, so there is no comparand and a clause that could not have fired is not HELD (`docs/experiments.md:237-242`)** |
+
+> **`c2_holds` reading `false` on 6 of 6 is not this row failing — it is this row's registered falsifier firing, and what it falsifies is `R-027`, not `P-123`.** The registration says so in as many words: C2 under 50% on every field *"CLOSES R-027 for good rather than failing this row, because a reorder at emission then cannot recover the gap and the only remaining shape is the persistent edge-to-slot map `V-45` already refused."* So `false` here does **not** mean the churn was mismeasured (`churn_total` reproduces `M-318`'s `buffer_moved` exactly on all three comparable rows), does **not** mean the 45× prize is smaller than advertised (it is *larger* — see SHARE), and does **not** mean a canonical emission order is merely unhelpful: the `canonical_control_total` column reads **1,413 / 4,403 / 16,011 / 5,339 / 19,279 / 69,521** against `churn_total`'s 1,348 / 4,257 / 15,706 / 5,096 / 18,762 / 68,403, so grid-edge emission order makes the churn **1.63%–4.82% worse on 6 of 6 rows** by moving slots out of order-only and into predecessor-shift. `M-318`'s own prediction for that shape was *"Does not help"*; measured, it hurts.
+>
+> **Six vacuity controls fired, and two of them are `M-44` read in both directions on the same detector in the same run.** (1) `churn_total > 0` before any share of it is reported — 1,348 to 68,403, asserted per row. (2) `canonical_control_order_only` = **0 exactly on 6 of 6** while `canonical_control_geometric` = 318 / 310 / 346 / 719 / 591 / 383 is **bit-identical to `churn_geometric` on 6 of 6**, with the canonical arm's edge multiset asserted equal to the `scan` arm's, so the reorder is provably a permutation and the geometry provably untouched. (3) The same detector reads `permuted_control_order_only` = **1,388 / 2,810 / 23,814 / 5,230 / 25,962 / 106,474** — 0.660× to 1.557× of the churn — so the three zeros in `churn_order_only` and the six in `canonical_control_order_only` are measurements rather than the instrument's inability to speak, and C2's 50% bar is demonstrably reachable by this instrument on this fixture. (4) `replica_bit_identical` true on 6 of 6, so the transcribed march is the shipped one before any arm's difference is attributed to ordering. (5) `cut_edges_before` = `vertices_before` and `cut_edges_after` = `vertices_after` on 6 of 6 (1,758 / 6,918 / 27,822 / 6,522 / 28,882 / 119,400 before), which is `✗1`/`M-2`/`M-22`'s `V_mc = C` and is what makes the transcribed edge cache provably complete. (6) The one remaining zero, `edges_moved` = **0** at `sphere`/129³, is admissible because the same column reads 12 / 12 / 51 / 49 / 13 on the other five rows and because `churn_geometric` there decomposes exactly as 245 appeared + 101 vanished + 0 moved = 346 — an independent reproduction of `M-318`'s inference that *"at 129³ they are identical, so nothing merely moved there"*, which `M-318` could only read off a coincidence between two totals.
+
+**The mechanism, so no reader needs the code.** Vertices are appended in scan order and indices name positions in that buffer, so a cell that emits a different *number* of vertices shifts **every index after it** — *"a sequential counter is the classic instability in Acar's sense, and nothing about the field's locality protects against it"* (`edit_trace.rs:25-29`, this row's own subject bench). That is 77.2%–99.4% of a gap `M-318` reported as 45×, and the column that says it most directly is `shifted_survivors` against `survivors`: **1,041 of 1,641, 3,943 of 6,817, 15,372 of 27,721, 4,408 of 6,132, 18,168 of 28,636, 68,023 of 119,263** — that is 55.45%–71.89% of the crossings that *did not change at all* sitting at a different slot, and `churn_predecessor_shift + churn_order_only == shifted_survivors` on 6 of 6. Locality of the edit is not the problem and never was: 515 edited samples and 792 dirty cells produce 68,403 moved slots at `noise_cavity`/129³, of which zero are recoverable by reordering.
+
+**The registration is wrong about the residual, and this entry records that rather than amending it.** The hypothesis states the three terms are *"a prefix partition of the same diff so they sum to the churn exactly"*, and C1 then calls *"a non-zero [residual] a decomposition defect rather than noise"*. Both cannot be true of the same instrument, and measured, the residual is **non-zero on 6 of 6 and is not a defect**. The exact partition is at the **slot** level — `churn_geometric_slots + churn_predecessor_shift + churn_order_only == churn_total`, asserted per arm — while the registered geometric term is a count of **crossings**, and the gap between the two readings is exactly the definitional one `M-318` had already named (`FINDINGS.md:5977-5979`): a crossing that *moves* claims a slot in each extraction and is one changed value, while a slot that loses a vanished crossing and gains an appeared one hosts two changed values and is one slot. The harness asserts that identity per row rather than tolerating it (`experiment_p123.rs:1078-1083`), so C1's 5% bar is a bound on an exactly-predicted integer and not on noise. The crossing-level reading is not a convenience: the registered vacuity control demands the geometric term be *unchanged* by a reorder, and it is the slot-level reading that **fails** that — `canonical_control_geometric_slots` = 312 / 320 / 341 / 700 / 590 / 374 moves against `churn_geometric_slots` = 307 / 314 / 334 / 688 / 594 / 380 on **6 of 6 rows**, in both directions. `churn_geometric_slots` is recorded beside `churn_geometric` so that the choice is auditable from the file rather than trusted.
+
+**`noise_cavity` is a deviation from the registration's fixture, taken deliberately, and it is what makes C2 a disjunction at all.** C2 is registered as *"at least 50% … on at least one reference field"*, and one field cannot support a disjunction; `M-318`'s own *"would be shown wrong by"* names the same field as its untested risk — *"a field whose edits change crossings far from the dirty set … `noise_cavity` is the candidate and was not run"*. Run, it answers the risk in the opposite direction from the worry: `churn_geometric` on `noise_cavity` reads **719 / 591 / 383**, declining in *n* exactly as `sphere`'s 318 / 310 / 346 is flat, so long-range field structure does not inflate the keyed column. What it does inflate is the churn — 68,403 against `sphere`'s 15,706 at 129³.
+
+**No clock and no hardware counter exists anywhere in this dataset.** `verdict_unit` reads `integer_value_counts` on 6 of 6 and there is **no `ns_` column among the 56**, so `M-280`'s governed-CPU problem — a nanosecond is not a unit and a wall-clock ratio is never a gate — has nothing here to move, and `✗24` has no ratio to object to. That is also the strongest thing that can be said about the clean re-run: every column is an integer count of values or an exact ratio of two such counts, so the re-run could not have shifted a digit, and the three integers `M-318` published for this fixture came back identical.
+
+**SHARE, recomputed.** This row moves nothing, proposes no source change and has no extraction share, so `✗51`'s `1/(1 − share)` form does not apply — no clause here is or may become a speedup claim. What stands in a share's place is the denominator each clause is a fraction of, and the measured file revises the registration's pre-run arithmetic upward. **The irreducible floor** — what a grid-edge naming leaves behind — is `churn_geometric / churn_total`: **346 of 15,706 = 2.20298%** at `sphere`/129³, and **383 of 68,403 = 0.55992%** at `noise_cavity`/129³. **The whole prize** is its complement, **97.79702%** and **99.44008%**, i.e. a per-row ceiling of **4.239× / 13.732× / 45.393×** on `sphere` and **7.088× / 31.746× / 178.598×** on `noise_cavity` — so `M-318`'s 45× is the *smallest* of the two 129³ figures and the untested field's ceiling is nearly four times larger. **The share a canonical reorder at emission could remove** is `churn_order_only / churn_total`: **0.000000%, 0.000000%, 0.012734%, 0.137363%, 0.010660%, 0.000000%** — at most 7 slots of 5,096, and exactly 0 on three of six rows. The prize is real, larger than reported, and **none of it is reachable by the one shape that leaves `extract_into` a pure function of its inputs**. The only remaining shape is the persistent edge → slot map, which is state carried across extractions and which `V-45` refused because `validate/determinism.rs:268-272`'s third run exists to fail on output that depends on the buffer's prior state. No clause in this row proposes it and no column here is evidence for it.
+
+---
+
+### 🔬 M-437 — C1, C2 and C3 all HELD on 24 of 24 rows: on the ambient complex the predicate discriminates on **8 of 8** fields at every resolution against a bar of 6, `box_exact`'s density halves at **1.967635 / 1.982970**, and the signal is almost entirely in edges the old reading structurally could not see — **100%** of `sphere`'s rejections and **99.96%** of `box_exact`'s are diagonal-only, with `non_monotone_axis_edges` reading **0** and **1** respectively (P-124, R-052)
+
+**M.** `cargo bench --bench experiment_p124`, `docs/experiments/p-124.csv`, **24 rows**, `f64`,
+`amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **24 data rows**
+across **68 columns** — counted from the file, not from the brief. The fixture is **eight reference fields
+× {33³, 65³, 129³}**, one row per pair, and every row carries two arms from one binary: the **ambient**
+sweep over every distinct tet edge of the shipped Kuhn/Freudenthal six-tetrahedra split — `cells` = (n−1)³
+= **32,768 / 262,144 / 2,097,152**, `tets` = 6·`cells` = **196,608 / 1,572,864 / 12,582,912**, `tet_edges`
+= **238,688 / 1,872,064 / 14,827,904**, identical on all eight fields at a given resolution because the
+complex is a property of the grid — and the **mesh-edge control**, which is `✗36`'s own reading run through
+the same `examine` on the same fields in the same run. Committed at **`675d912`** —
+`# commit 675d912 on amd-ryzen-9-5900x-12-core at 2026-08-29T02:24:09Z`, no `(WORKING TREE DIRTY)`; that
+sha is the *previous* dataset commit (`p-123.csv - re-run on a clean tree`), which is the serial
+one-run-one-commit discipline visible on the artefact. The dataset itself landed in **`2392c20`**
+(`p-124.csv - re-run on a clean tree`) and `git merge-base --is-ancestor 2392c20 HEAD` passes.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the contrapositive of Theorem 1 part 2b as an **integer** over every cell, one failing tet edge rejecting a cell | neither 0 everywhere nor equal to `cells` | **HELD — `non_monotone_cells` spans 2,599 to 1,526,016 over 24 rows and is never 0 and never `cells`; the extremes are `box_exact` 33³ at 2,599 of 32,768 (`non_monotone_cell_rate` 0.079315186) and `fbm_terrain` 129³ at 1,526,016 of 2,097,152 (0.727661133), so both registered falsifiers miss by a wide margin; `c1_holds` true on 24 of 24** |
+| C2 `box_exact` is the resolution witness `✗36` handed over — a factor in [1.7, 2.3] per doubling | 1.7 ≤ r ≤ 2.3 on both doublings | **HELD on the density, which is the only reading that can sit in a band — `box_exact_population_ratio` 1.967635 (`total_cmp`-selected as the worse of the two doublings), `box_exact_rate_ratio_33_to_65` 1.967635 and `box_exact_rate_ratio_65_to_129` 1.982970, from rates 79.315186 / 40.309906 / 20.328045 per 1k. The literal *count* reading is recorded beside it and fails: `box_exact_count_falls` false on 24 of 24, counts 2,599 → 10,567 → 42,631, `box_exact_count_ratio_33_to_65` 4.065795 and `..._65_to_129` 4.034352** |
+| C3 the count is strictly between 0 and `cells` on at least six of the eight reference fields | ≥ 6 of 8 | **HELD at the ceiling — `discriminating_fields_here` 8 at 33³, 8 at 65³ and 8 at 129³ against `discriminating_fields_bar` 6, and `c1_row_discriminates` true on 24 of 24; the eight per-field 65³ counts are `sphere` 17,862, `torus` 32,858, `box_exact` 10,567, `csg_difference` 16,140, `thin_plate` 13,693, `gyroid` 85,051, `fbm_terrain` 236,992, `noise_cavity` 65,859, all against `cells` = 262,144** |
+
+> **The three `false` readings in this file are not bad news, and one of them is the row's sharpest
+> finding.** `box_exact_count_falls` is **false** on 24 of 24 and that is the registration being wrong
+> rather than the witness failing: C2 as written says the population *"is O(n) and **halves per
+> refinement**, so the count … must fall by a factor in [1.7, 2.3] per doubling"*, and an `O(n)`
+> population's **count grows** — it is the **density** that halves. `✗36`'s own table is a density
+> (**178.1 / 86.1 / 42.3 / 21.0** per 1k, ratios **2.07 / 2.04 / 2.01**), so the literal reading was
+> **arithmetically dead before this harness existed** and the band was always a band on the rate. The
+> registration is **not amended** — `experiment.rs:27-31` forbids it — so both readings are in the file and
+> the count ratios settle it at **≈4× per doubling**, which is the signature of a **2D** locus in a **3D**
+> complex: on the ambient complex `‖∇f‖` = 1 and `g` is constant inside each face's slab, so what is left
+> is the interior **medial axis**, not `✗36`'s **1D** box-edge chord population. Different dimensions,
+> *same codimension*, which is exactly why the band transfers when the `O(n)` does not.
+>
+> **`guard_inert` reads `false` on 15 of 24 rows and that is the tolerance repair being visible.** `✗36`
+> scaled by `|f(a)| + |f(b)|` — the residual at two vertices that are *on the zero set* — and measured
+> `max_abs_tolerance` **exactly 0.0** on `box_exact` at all four resolutions. Here the registered scale is
+> `max(|f(a)|, |f(b)|)` over **grid samples**, and `max_abs_tolerance` is **non-zero on every one of the 24
+> rows**, `box_exact`'s three included (**1.732051e-12**), spanning 1.732051e-12 to 9.621357e-12;
+> `nonzero_g_discarded_at_1e12` reaches **9,980** on `sphere` 129³ where the control's is 0–20, so the
+> guard now performs substantive work. What is **not** claimed: it is still not verdict-bearing.
+> `counts_equal_across_tolerances` is true on 24 of 24 and `non_monotone_edges_at_1e14` =
+> `non_monotone_edges` = `non_monotone_edges_at_1e10` on every row, because `worst_reversal` is **exactly
+> `w`** on `sphere`, `box_exact` and `thin_plate`, **`√2·w`** on `torus` and **`√3·w`** on `csg_difference`
+> and `gyroid` — an edge-length quantity 10 to 11 orders above the guard, where `✗36`'s deciding reversal
+> was the chord sagitta falling as `h²`. The reversal here falls as `h¹`, halving exactly per doubling, and
+> that change of power law is independent evidence that the complex, not the fixture, moved. The
+> coefficient is `P-55`'s own **1e-12** with **1e-14** and **1e-10** recorded beside it as a sensitivity
+> strip, fixed at registration rather than after the first surprise.
+>
+> **`mesh_edge_control_saturated` reads `false` on 9 of 24 rows and the assertion is deliberately scoped to
+> `sphere` only.** `✗36`'s chord theorem is about a **strictly convex** surface; `box_exact`'s faces are
+> planar, so the chord's component along an axis-aligned unit gradient is an exact `f64` zero
+> (`zero_g_samples` 162,784 / 1,207,736 / 9,286,156 on the ambient arm) and nothing is flagged —
+> `mesh_edge_control_per_1k` 86.05 / 42.33 / 21.00. A control asserted saturated everywhere could not have
+> passed, and asserting it would have been the `P-63`-C3 error in the other direction.
+>
+> **Which vacuity controls fired, all four of them, as `assert!`s rather than as columns (`M-44`).**
+> **(i)** `mesh_edge_control_non_monotone > 0` on **every** row — 348 to 279,285 — so the same `examine`,
+> in the same run, is demonstrably able to flag a non-monotone edge before any ambient count is believed.
+> **(ii)** `2 · control_non_monotone > control_edges` on **`sphere`** at every resolution — 3,156 of 3,468,
+> 13,092 of 14,268, 51,732 of 57,684, i.e. **910.03 / 917.58 / 896.82 per 1k**. That is the control showing
+> the mesh reading is **saturated rather than discriminating**, which a control that merely fired would not
+> show, and it is the whole reason the ambient count is attributable to the complex: 8 of 8 fields
+> discriminate on the ambient complex while the chord reading returns a strict majority on five of them
+> (`sphere`, `torus`, `gyroid`, `fbm_terrain`, `noise_cavity`). **(iii)** The diagonals were **swept**:
+> `tet_edges_face_diagonal` + `tet_edges_body_diagonal` > 0 on every row (**101,376 + 32,768** at 33³,
+> **6,340,608 + 2,097,152** at 129³), and `tet_edge_count_matches_closed_form` is true on 24 of 24 against
+> `3n²(n−1) + 3n(n−1)² + (n−1)³` = `tet_edges_closed_form`, so a zero in `diagonal_only_failures` would
+> have meant *swept and monotone* rather than *never visited*. **(iv)** `pl_local_extrema` is recorded
+> beside `critical_points_lower_bound`, and the pair separates the two ways a zero arises: `thin_plate` and
+> `fbm_terrain` read **0 extrema on the grid at all**, while `gyroid` reads **173 / 373 / 928** and
+> `noise_cavity` **429 / 864 / 1,706** with a certified count of **0** — every extremum sitting in a
+> rejected star. `sphere` certifies **1** and `torus` **4** at all three resolutions, which is Theorem 1
+> Part 1 over monotone stars; the column **gates nothing**, because the 3D transport of Part 1 is exactly
+> as unproved as Part 2b's 2D pigeonhole.
+>
+> **The control is not merely a control: it reproduces `✗36`'s committed mesh-edge arm bit for bit on
+> **24 of 24** overlapping rows.** `mesh_edge_control_edges`, `mesh_edge_control_non_monotone` and
+> `mesh_edge_control_per_1k` equal `docs/experiments/p-55.csv`'s `edges`, `non_monotone_edges` and
+> `non_monotone_per_1k` on every (field, resolution) the two files share — `sphere` 65³ 14,268/13,092/
+> 917.577796, `torus` 65³ 12,624/11,282/893.694550, `box_exact` 65³ 17,292/732/42.331714 — and
+> `mesh_edge_control_max_abs_tolerance` reproduces `p-55.csv`'s **`0.000000e0`** on all three `box_exact`
+> rows. `p-55.csv` is pinned in `csv_provenance.sh`'s `DIRTY_DEBT` and its header reads `# commit db0ca10
+> (WORKING TREE DIRTY)`, so `✗36`'s published integers now have a **clean-tree witness** under a second
+> `P-` id. The pin does not move and is not claimed to: `check_pin` fails when a pinned file stops
+> violating, and `p-55.csv` is still the dirty artefact.
+>
+> **What the ambient reading bought, which is the whole hypothesis, in one column.**
+> `diagonal_only_failures` — cells rejected by a face or body diagonal with **every** axis edge monotone —
+> is the part of the complex a chord predicate structurally cannot reach, and it partitions the rejections
+> exactly: `axis_only_reachable_cells` + `diagonal_only_failures` = `non_monotone_cells` on 24 of 24. At
+> 65³ it is **100.000%** on `sphere` (17,862 of 17,862, with `non_monotone_axis_edges` = **0** — the
+> ambient axis-edge reading *reaches* `P-55`'s registered zero, on the field `✗36` proved it unreachable
+> for), **99.962%** on `box_exact` (10,563 of 10,567, `non_monotone_axis_edges` = **1**), 92.522% on
+> `thin_plate`, 75.848% on `torus`, 69.672% on `csg_difference`, 41.957% on `gyroid`, 23.388% on
+> `noise_cavity` and 18.958% on `fbm_terrain` — **173,277 of 479,022** cells over the resolution, rising to
+> 42.25% of 2,696,419 at 129³. **Had that column read 0 the ambient reading would have been the axis-edge
+> reading with extra work**, and it does not.
+>
+> **`k_samples_min` 2, `k_samples_max` 3 on 24 of 24**, so an axis edge is decided by its two endpoint
+> gradients and a diagonal by those plus **one** interior sample — `gradient_evals` equals `sample_evals` +
+> `tet_edges_face_diagonal` + `tet_edges_body_diagonal` exactly on all 24 rows (35,937 + 101,376 + 32,768 =
+> **170,081**; 2,146,689 + 6,340,608 + 2,097,152 = **10,584,449**), which is why the count is
+> field-independent. All eight fields reach an **analytic** `Sdf::gradient`, the correction `✗36` had to
+> make to `P-55`'s own registration, so every `∇f` here is exact rather than `O(h²)`. `degenerate_edges` is
+> **0** on all 24 ambient rows, and `nonfinite_g_samples` reads **14 at every resolution** on `sphere` —
+> the Freudenthal vertex figure exactly, one per tet edge incident to the single grid sample sitting on the
+> sphere's centre, where `∇(‖p‖ − r)` is `0/0`; a `total_cmp` on the edge length routes it to `degenerate`
+> rather than to an unordered comparison.
+
+**SHARE, recomputed.** **Zero, and registered as zero rather than discovered to be zero.** No clause here
+is a cost, a wall-clock ratio or a fraction of an extraction: C1 and C3 are integer comparisons and C2 is
+a ratio of two integer **populations** over denominators that are exact by construction — one
+cross-multiplied division of integers-as-`f64`, identical on any machine at any clock. So **`M-280` and
+`✗24` do not bite, no `perf_event_open` counter is opened, and this governed CPU's 1.96–5.62 GHz span
+under `powersave`/`balance_performance` cannot move a verdict.** `predicate_ns` (11,140,723 to
+2,222,229,874), `predicate_ns_per_edge` (46.41–150.30) and `control_extract_ns` are in the file and are
+**read by nothing**; `✗51`'s share bar has nothing to apply to, because nothing in `crates/isomesh/src/`
+evaluates monotonicity of anything and there is therefore no total for a fraction of it to be taken from.
+What stands in a share's place is one integer per clause over an exactly enumerated denominator: C1's is
+`cells` = (n−1)³, C2's is the same, and C3's is the **8** fields of `for_each_reference_field!`. The
+complex is the **shipped** one, reached through the public
+`isomesh::marching_tetrahedra::table::{TETS, TET_EDGES}`, so it is bit-for-bit what `MarchingTetrahedra`
+marches and `P-100`'s seam result transfers unchanged — `✗78 / M-412` measured `open_edges` **0 on 80 of
+80** rows across a chunk seam against a mismatched-diagonal control reading 80–3,765, so "the tet edge
+`{v, v+δ}`" is well defined without asking which cell named it, and the 36 edge instances (6 tets × 6
+edges) are **derived**, not transcribed, down to **19 distinct cell-local edges** — 12 axis, 6 face
+diagonal, 1 body diagonal — asserted as `[12, 6, 1]` before the first field is sampled. **The one number
+that was decided in advance and is load-bearing is C2's witness.** Of the eight fields' own density ratios
+(`rate_ratio_from_previous`), only **five** sit inside [1.7, 2.3] — `sphere` 1.937521/1.968753, `torus`
+1.809970/1.896785, `box_exact` 1.967635/1.982970, `csg_difference` 1.871623/1.924177, `thin_plate`
+1.914555/1.955130 — while `gyroid` (1.441770/1.625530), `noise_cavity` (1.388178/1.405378) and
+`fbm_terrain` (**1.070483**/1.242409) would each have **falsified** it. `box_exact` was fixed as the
+witness by `✗36`'s own falsifier before this harness existed, so C2 is a clause about a pre-named field
+and not a clause about the best of eight.
+
+---
+
+### 💥 ✗98 / M-438 — C1 HELD to the integer (**516 of 17,201** pinches on `bonsai`, **0 of 50** on `fuel`), C2 HELD with `distinct_censuses` **1** over **128** face permutations on 6 of 6 rows, C3 FALSIFIED on **2 of 6**: the census predicts **520** pieces joined and the repair welds **129** components, because a pinch count is an **upper bound** on a weld and can never be an equality — the report is sound as a *clearance* and unsound as a *count* (P-125, R-053)
+
+**M.** `cargo bench --bench experiment_p125`, `docs/experiments/p-125.csv`, **6 rows** across **34
+columns** — four `#` comment lines plus one column header plus **6 data rows**, counted from the file
+rather than from the brief; 17 of the 34 columns are `P-125`'s registered `records` and the other 17 are
+`M-273` extras. The fixture, also counted from the file: **four CT rows** with `is_control = false` —
+`fuel_iso32` and `fuel_half_offset`, both 64³ `uint8` at **3,200 vertices / 6,338 triangles**, at
+`isovalue` `32` and `32.5`; `bonsai_iso32` and `bonsai_half_offset`, both 256³ `uint8` at **533,221
+vertices / 1,061,042 triangles**, at the same two isovalues — plus **two hand-built rows** with
+`is_control = true`, `constructed_pinch` at 38 vertices / 14 triangles and `constructed_long_range` at 10
+vertices / 8 triangles, both `isovalue = none`. `f64` throughout, `amd-ryzen-9-5900x-12-core` (Zen 3).
+Run on a clean tree — `# commit 2392c20 on amd-ryzen-9-5900x-12-core at 2026-08-29T02:26:01Z`, with no
+`(WORKING TREE DIRTY)` on that line — and committed as `p-125.csv - re-run on a clean tree` at
+**`1f95b95`**, for which `git merge-base --is-ancestor 1f95b95 HEAD` passes. The run-level verdict is
+taken over the four CT rows, the two constructed rows being controls: **C1 held on 4 of 4, C2 on 4 of 4,
+C3 on 3 of 4**.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the predicate separates the two volumes as `M-352` measured them — 516 of 17,201 on `bonsai` and 0 of 50 on `fuel`, both exactly, from the baseline mesh alone | both integers exactly, no tolerance | **HELD** — `collapse_groups` **17,201** and `pinch_groups` **516** on `bonsai_iso32` against `expected_collapse_groups` 17,201 / `expected_pinch_groups` 516; `collapse_groups` **50** and `pinch_groups` **0** on `fuel_iso32` against 50 / 0. `c1_holds` true on **6 of 6** rows. Corroborated downstream in the same rows: `folding_faces` **164** on `fuel` and **58,097** on `bonsai` reproduce `M-352`'s `triangles_dropped` exactly, `triangles_after` 6,338 − 164 = **6,174** and 1,061,042 − 58,097 = **1,002,945**, and `vertices_removed` = `collapsing_vertices` − `collapse_groups` on every row (132 − 50 = **82**; 47,001 − 17,201 = **29,800**) |
+| C2 the answer is independent of triangle iteration order — 128 permutations of the face list give one identical census — and the report allocates once rather than per group | `distinct_censuses` = 1; no per-group allocation | **HELD** — `distinct_censuses` **1** against `order_permutations` **128** on **6 of 6** rows, i.e. 768 permuted censuses collapsing to six, including on `bonsai`'s 17,201 groups; `buffers_reserved_exactly` true on 6 of 6, so `len == capacity` on all three returned buffers, which only a `Vec` that never grew can satisfy. `c2_holds` true on 6 of 6 |
+| C3 the census predicts the repair: applying the repair and counting the components it welds reproduces the report's pinch count exactly, on every fixture | equality, every fixture | **FALSIFIED** — `c3_holds` false on **2 of 6** (3 of 4 CT rows hold). `bonsai_iso32`: `pinch_excess_components` **520** against `components_welded` **129**, with `components_before` 814 → `components_after` 655. `constructed_long_range`: `pinch_excess_components` **1** against `components_welded` **0**, `components_before` 1 → `components_after` 1. The literal reading of the clause is worse still — `components_welded_equals_pinch_groups` is false on 3 of 6 rows (129 ≠ 516 on `bonsai`, 5 ≠ 4 on `constructed_pinch`, 0 ≠ 1 on `constructed_long_range`) |
+
+> **`c3_holds` reading `false` does not mean the predicate is wrong, does not mean the shipped report is
+> wrong, and does not mean a caller was told anything untrue.** C3 asked a *local* census to predict a
+> *global* count, and no local census can. A pinch is a group whose members fall into two or more
+> **sharing clusters** — pieces of the surface meeting only at that point — and `pieces_joined` sums
+> `clusters − 1` over the group's own members. Two facts make that a bound rather than an equality, and
+> both are visible in this file. **(i) Several pinches can weld the same pair of components:** on
+> `bonsai` the 516 pinch groups are scattered over a plant scan with only **814** baseline components to
+> join, so the second and every later pinch between one pair of pieces is a union that finds the two
+> already merged and counts nothing — `welded_components` tallies *successful* unions, which is why 520
+> local joins reduce to **129** global welds. **(ii) A pinch entirely inside one component welds
+> nothing:** `constructed_long_range` is that case built on purpose — two vertices at one position that
+> share no triangle, so the predicate correctly calls the group a pinch, joined by a six-triangle strip
+> that already connects them, so `components_welded` reads **0** over `components_before` **1**. The
+> module states the direction in advance: the welder joins a vertex to the *lowest-indexed*
+> representative within ε and therefore stops a chain, so **the welder's classes refine the closure**
+> (`pinch.rs:78-83`), and `pinch.rs:115-124` reserves the gap explicitly — `pieces_joined` counts pieces
+> *the group's own members lie on*, not components of the whole mesh, and *"that gap is `P-125`'s C3 and
+> is measured by the harness, not asserted here"*. So what the clause licenses is exactly this: the
+> report is **sound as a clearance and unsound as a count**. `is_pinch_free()` is the safe direction —
+> zero pinches means zero welds, confirmed on three independent rows in this run (`fuel_iso32`,
+> `fuel_half_offset` and `bonsai_half_offset` all read `pinch_groups` 0, `components_welded` 0 and
+> `components_before` = `components_after`) — and a non-zero pinch count is an **upper bound on what a
+> weld could reach**, never the number of components it will reach.
+>
+> **Four vacuity controls fired, and they are assertions rather than columns — a run that could not fire
+> aborts instead of recording a pass.** (1) The same instrument returned non-zero in the same run:
+> `bonsai_iso32`'s `pinch_groups` **516** is asserted `> 0`, so `fuel`'s **0 of 50** is a zero that could
+> have been non-zero (`M-44`). (2) The constructed fixture reported its construction:
+> `constructed_pinch_reported` **4** = `constructed_pinch_expected` **4** on all six rows, with
+> `pinch_excess_components` asserted **5** on that row — the fixture is built so 4 and 5 differ, so a
+> harness that conflated group count with pieces joined could not have passed. (3) The union-find was
+> shown able to answer *yes, they share*: `share_control_all_true` true on **6 of 6**, over
+> `share_control_pairs` **212 / 0 / 80,501 / 0 / 2 / 0** — **80,715 pairs asked run-wide**, every one
+> answering with a single cluster label. `share_control_pairs` equals `sharing_edges` on all six rows, so
+> the bench's independent enumeration of member-pairs-inside-a-face and the module's own `sharing_edges`
+> agree exactly. (4) C3 was proved able to read both ways *in this run*: `constructed_pinch` is built so
+> C3 holds and its `c3_holds` is asserted **true** (`components_welded` 5 = `pinch_excess_components` 5,
+> `components_before` 12 → `components_after` 7), `constructed_long_range` is built so C3 fails and its
+> `c3_holds` is asserted **false**. A control reading the wrong way there is `P-63`-C3's failure mode — a
+> zero over a population that cannot host the phenomenon — and aborts the run. One fixture-integrity
+> cross-check rides beside them on every row: `repair_matches_report` true on 6 of 6, so the faces the
+> bench actually dropped equal the shipped report's `folding_faces` and C3 is not comparing a repair the
+> census never described.
+
+**`M-352`'s own 520 is a third number, and it reconciles rather than conflicting.** Three distinct
+figures describe `bonsai` and only the first two are `M-352`'s: **516** pinch groups, **520** pieces
+joined, **129** components welded. `M-352` quoted its own `pinch_excess_components` column correctly —
+*"counts 520 previously separate pieces joined"* — and that column is the sum of `clusters − 1` over the
+pinch groups, so 520 − 516 = **4** `bonsai` groups span three or more sharing clusters. What `M-352` did
+not measure, and its prose called *"520 components"* without qualification, is the **global** figure;
+`P-125` measures it as **129**, and the accounting closes on the row:
+`components_drift_from_dropped_faces` is **−30**, and 129 welds plus 30 components lost to dropped faces
+is exactly the 814 → 655 fall of **159**. A fold whose only face is dropped *removes* a component and a
+dropped bridge *splits* one, and neither is a weld — which is why the drift column exists rather than
+the difference being attributed to the predicate. So `M-352`'s number stands as a local count and is
+**not** a component count; the registration inherited the loose word and C3 inherited the error.
+
+**C3's registered form was arithmetically undecidable before this harness ran, and the harness recorded
+that rather than resolving it silently.** The clause says the weld count *"reproduces the report's pinch
+count exactly"*, and the report has two pinch figures that `M-352` had already measured as different —
+516 and 520. A group spanning three clusters welds **two** components, so an identity against the group
+*count* is impossible on any fixture where a group spans three, and `M-352`'s own 520 ≠ 516 says four
+`bonsai` groups do. `c3_holds` is therefore scored on the only reading that could hold,
+`components_welded == pinch_excess_components`, and the other reading is carried beside it as
+`components_welded_equals_pinch_groups` so the entry can quote either. Both fail on `bonsai`. The
+registration is **not amended** — `crates/isomesh/src/experiment.rs:27-31` forbids it — and this is
+recorded as the finding it is.
+
+**The two `half_offset` rows read `collapse_groups` 0 and they are VACUOUS for C1, not HELD.** At
+isovalue 32.5 a `uint8` sample cannot equal the isosurface, so no crossing lands *on* a sample, no two
+cut edges place a vertex at the same point, and the mechanism's precondition is removed rather than
+tested: their `expected_collapse_groups` and `expected_pinch_groups` are both **0**, so `c1_holds` on
+those rows is `0 == 0 && 0 == 0` and could not have read false. The clause that could not fire is
+VACUOUS. C1's registered content is carried entirely by the two `iso32` rows, and it is carried there
+without vacuity because `bonsai_iso32`'s 516 and `fuel_iso32`'s 0 are the same instrument in the same
+run. What the `half_offset` rows *are* is a negative control on the precondition — the census does not
+invent groups where there is nothing to collapse, `collapsing_vertices` 0, `folding_faces` 0,
+`sharing_edges` 0, `triangles_after` = `triangles`, `components_before` = `components_after` — and they
+are an independent reproduction of `M-352`'s own C3 control at the same two isovalues. They are recorded
+as instrument evidence, not as two more C1 passes.
+
+**A false clearance was measured and rejected while the module was being written, and it is the reason a
+group is an ε-connected component.** ε-closeness is not transitive, so *"every pair within ε"* is not a
+partition at all; its transitive closure is, and so is the other candidate — equality on the lattice
+cell key, which is `MeshReport::weld_buckets`' own notion and a genuine equivalence relation. On
+`sphere` at 25³, where `M-48` recorded `Welder::weld` removing **48 vertices and 96 triangles** at this
+very epsilon, the bucket reading finds **17 groups over 47 vertices — 30 of the 48 merges and 60 of the
+96 folding faces** — because a coincidence class straddling a cell face is split between two buckets.
+The closure finds **24 groups over 72 vertices: 48 and 96, exactly the weld**, with `sharing_edges`
+**144** licensing its `is_pinch_free()`. **A census that under-reports a collapse is a false clearance,
+and issuing clearances is this report's entire job**, so the bucket reading is disqualified in the
+direction that matters and the closure errs in the direction that is safe — the same refinement fact
+that makes C3's number an upper bound is what makes the clearance trustworthy. Both readings were
+measured, not argued: `validate::pinch::tests::the_census_predicts_the_weld_on_a_real_extraction`.
+
+**This is Phase 26's only landed source change, and it was registered in advance — the `P-61`/`P-69`
+way, because a landing that was not registered in advance is exactly what `V-45` cost.** The registration
+names it before the module existed: *"a new report beside `validate::sealing` in
+`crates/isomesh/src/validate/`, reporting the pinch census for a mesh and its snap epsilon."* What landed
+is `crates/isomesh/src/validate/pinch.rs` (674 lines) with `pinch/tests.rs` (336 lines), declared `mod
+pinch;` at `crates/isomesh/src/validate.rs:43` and re-exported one line later at `:53` as
+`pub use pinch::{PinchGroups, PinchReport, pinch_census, pinch_features};`. The new public surface is
+exactly those four items plus their methods: **`pinch_census`** — the whole census as eleven counts;
+**`pinch_features`** — the same plus which vertices, for a caller that has to draw the answer;
+**`PinchReport`** with `vertices`, `triangles`, `trailing_indices`, `faces_skipped`, `collapse_groups`,
+`collapsing_vertices`, `pinch_groups`, `pieces_joined`, `folding_faces`, `sharing_edges`,
+`groups_moving_geometry`, the two opt-in predicates `is_pinch_free` and `moves_no_geometry`, and a
+`Display` impl; and **`PinchGroups`**, compressed-row storage over `vertices`/`starts`/`clusters` with
+`group_count`, `members`, `clusters_of`, `clusters_in` and `clusters_are_split`. Every entry point takes
+slices rather than a `MeshBuffer`, for the reason `validate_indexed` does — the callers that matter do not
+have one — and nothing is required of the mesh: it need not be welded, closed, manifold or well-formed,
+and a malformed face is skipped and counted rather than dereferenced (`faces_skipped`, 0 on all six rows
+here). `is_pinch_free()` is the shipped answer to the question `M-352` closed with and could not answer:
+*"The precondition is cheap to test — one union-find over the baseline triangles — and that is the
+shippable result here, not the label."* The landing commit is `21ac389`, *"R-053 - the pinch predicate, as
+a validate report registered before it was written"*, and it touches exactly four files: the module, its
+tests, the two added lines in `validate.rs`, and the bench. No extractor, no `golden_hashes.json`, no
+golden hash: the report is additive and no consumer-visible behaviour moved.
+
+**C2 asked `✗26`'s question in advance rather than after a landing, and that is the clause worth
+copying.** `distinct_censuses` **1** over `order_permutations` **128** on all six rows: the face list is
+shuffled 128 ways from a fixed SplitMix64 seed and every census — report *and* compressed-row groups
+*and* cluster labels — comes back identical. It is designed for rather than hoped for: `super::Dsu`
+unions by size and its determinism rests on callers unioning in sorted order, but the second phase here
+unions in **face order**, so the module's union-find keeps the **lower** index as the root. Every set's
+root is then its least member, `PinchGroups::clusters` carries a canonical vertex index whichever order
+the faces arrived in, and the cluster count is free — a cluster has exactly one root, that root is a
+member, so counting members that are their own label needs no per-group allocation, which is the other
+half of C2's falsifier. Two things the registration overstated are recorded rather than amended: `O(V +
+F)` is `O(V log V + V·k + F)` — the `log V` is `validate`'s sort-then-scan convention and the `k` is the
+27-cell probe `weld` itself uses — and *"allocates once"* is **seven** buffers, allocated once each and
+none per group.
+
+**Nothing here is timed, no geometry moved, and there is no share — so `M-280`/`✗24` and `✗51` both have
+nothing to bite on.** Every clause is an integer equality over an enumerated population; the file
+contains no nanosecond, no cycle and no ratio column, so the governed CPU spanning 1.96–5.62 GHz cannot
+reach any verdict in it and this is the one row in the phase whose clean re-run could not have moved
+anything by re-running. `max_snap_distance` is exactly **`0e0` on 6 of 6 rows** and
+`groups_moving_geometry` is **0 on 6 of 6**, independently reproducing `M-352`'s exact zero: the
+vertices are already at the corner, only indices merge, so the pinch question is a decision rather than
+an approximation and the report claims nothing about position. `faces_skipped` is 0 on all six rows, so
+no row's population was quietly reduced by an unusable face.
+
+**SHARE, recomputed.** **None, and it is registered as none — recomputed by grep rather than quoted.**
+The only occurrences of `pinch_census`, `pinch_features`, `PinchReport` or `PinchGroups` anywhere in
+`crates/` are `crates/isomesh/src/validate/pinch.rs`, its `pinch/tests.rs`, the two-item re-export at
+`crates/isomesh/src/validate.rs:53`, and `crates/isomesh/benches/experiment_p125.rs`. Nothing in
+`extractor.rs`, `marching_cubes/`, `dual_contouring/` or `chunk/` calls it, and it did not exist before
+this ticket, so there is no extraction fraction for a `1/(1 − share)` ceiling to be computed against,
+`✗51`'s bar does not apply, and **no clause here is or may become a speedup claim**. The prior question
+`✗51` is really about — *of the thing the change can reach, how much is the thing that matters?* — has an
+answer here too, and it is the clearance/count split: of the two questions a caller can ask this report,
+it answers **one** soundly. *"Is this repair safe on my data?"* is answered exactly, by an integer, from
+the baseline mesh alone, before any repair is applied. *"How many components will it weld?"* is answered
+only as an upper bound, and `pinch.rs:113-124` says so in the shipped documentation.
+
+---
+
+### 🔬 M-439 — **C1, C2 and C3 all HELD and `O-12`'s dual half is closed by exhaustion: `worst_link_components` 1 on every non-control arm over all 134,217,728 sign patterns of a 3 × 3 × 3-cell block, against three controls reading 2 at 113,246,208 / 221,792,256 / 99,876,864 link-defective vertices** — C1 was decided by two exhaustively-checked lemmas *before* the sweep and the sweep's job is that no reachable pattern escapes them, `control/open_block` reproduces `P-63`'s truncation as a measurement at the right block size (860,880,896 complete links of 5,067,767,808), and two registration errors are reported rather than amended (P-126, R-072)
+
+**M.** `cargo bench --bench experiment_p126`, `docs/experiments/p-126.csv`, **6 rows** across **43 columns** — four `#` comment lines plus one column header plus six data rows, eleven lines in the file, counted from it rather than from the brief. The shape, also counted from the file: **six arms in one binary**, `is_control` `false` on three and `true` on three; `block_cells` **27**, `block_corners` **64**, `distinct_corner_sites` **27** and `patterns_swept` **134,217,728** on every one of the six; `corner_identification` `period_3_per_axis` on all six; `boundary` `periodic` on five and `open` on one; `vertex_rule` `one_per_marching_cubes_cycle` on five and `one_per_cell` on one; `ambiguous_face_pairing` taking five distinct values over the six rows (`separate` on three, `every_ambiguous_face_joined`, `consistent_per_grid_face`, `high_x_face_of_each_cell`). Six arms × 27 cells × 2²⁷ patterns is **21,743,271,936 cell evaluations** and Σ `dual_vertices` = **28,214,247,016 link walks**. `amd-ryzen-9-5900x-12-core` (Zen 3). Committed at **`f28d557`** — the file's own provenance line reads `# commit 1f95b95 on amd-ryzen-9-5900x-12-core at 2026-08-29T02:43:08Z`, with no `(WORKING TREE DIRTY)`, and `git merge-base --is-ancestor f28d557 HEAD` passes. The two shas are not a discrepancy and the distinction is the point: `1f95b95` is the tree the harness measured, stamped by the harness itself before the dataset existed, and `f28d557` is the commit that carries the dataset — `p-126.csv - re-run on a clean tree`, one file, eleven insertions, nothing else.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 over the full 2²⁷ sweep, `worst_link_components` is 1 on every non-control arm — the dual vertex link is a single connected cycle, so the dual output is a manifold at the vertex | = 1 | **HELD** — `worst_link_components` **1** with `worst_link_pattern` `none` on all three non-control arms (`mdc/separate`, `mdc/every_ambiguous_face_joined`, `mdc/mixed_consistent`), each over `patterns_swept` **134,217,728** and 27 cells, with `link_defective_vertices` **0** and `incomplete_link_vertices` **0**; the denominators are `dual_vertices` **5,067,767,808**, **5,067,767,808** and **4,630,724,200**, and `max_incident_faces` reaches **7**, **7** and **12**, so the length-12 cycles the case table's `MAX_TRIANGLES` is about are inside the swept population rather than outside it |
+| C2 the control arm, which deliberately partitions a cell's edge cycles, reads `worst_link_components` greater than 1, so the instrument is shown emitting bad news before its ones are read | > 1 | **HELD** on a corrected control, three times over — `worst_link_components` **2** on all three `is_control = true` arms with `link_defective_vertices` **113,246,208** (`control/one_vertex_per_cell`, at `worst_link_pattern` `0x0000210`, `worst_link_case` `0x18`, `worst_link_cell` 0), **221,792,256** (`control/inconsistent_join_x`, `0x0000208` / `0x28` / cell 2) and **99,876,864** (`control/open_block`, `0x0000426` / `0x1b` / cell 1). The registration names the mechanism as *"the way `manifold_dual_contouring`'s `FaceAmbiguity::Connected` does"* and **that variant does not exist**, so the clause as literally written could not have fired; the harness reports that instead of inventing it, files the always-joined arm as a **non-control**, and re-seats C2 on a shipped extractor's rule |
+| C3 the population is derived from the block this sweep sweeps and not from a census taken elsewhere: `dual_vertices_with_complete_link` per arm, non-zero, against a value computed from the 64 corners the sweep enumerates | > 0 per arm, never pooled, equal to the closed form | **HELD** — `dual_vertices_with_complete_link` **5,067,767,808 / 5,067,767,808 / 4,630,724,200 / 3,595,567,104 / 4,784,652,288** on the five stitched arms and **860,880,896** on `control/open_block`, every one asserted non-zero per arm; `active_cells` = `expected_active_cells` = **3,595,567,104** = 27 × 2¹⁹ × 254 on all six rows, and `dual_vertices` = `expected_dual_vertices` on the five arms whose joined mask is a function of the cell's own sign byte — 27 × 2¹⁹ × `cycles_per_256_sign_bytes` at **358**, **358**, **254** and **338**, with `expected_dual_vertices` honestly `unavailable` on `mdc/mixed_consistent`, whose mask is drawn per grid face from the pattern and therefore has no per-sign-byte closed form |
+
+> **The three verdict columns are per-arm complements, and a reader who does not know that will misread every row.** `c1_holds` is `!is_control && worst_link_components == 1`; `c2_holds` is `is_control && worst_link_components > 1 && link_defective_vertices > 0`; `c3_holds` is the population identity and is true on all six. So `c1_holds` reads **`true` on the three non-control arms and `false` on the three controls**, and `c2_holds` reads exactly the reverse. **Neither `false` is a failure of anything.** C1 is not defined on a control — a control that satisfied C1 would abort the run, which is the registration's own instruction — and C2 is not defined on a non-control. There is no row in this file on which both clauses are scored, and no clause is FALSIFIED: `worst_link_components` reads 1 exactly where C1 asks for 1 and 2 exactly where C2 asks for more than 1.
+>
+> **Three further `false` readings, none of them bad news.** `pairing_is_consistent` is `false` on `control/inconsistent_join_x` alone; that is the arm's entire design — it joins each cell's high-`x` face and separates its low one, so the two cells sharing an `x`-face always disagree, breaking the one property C1's proof rests on and nothing else. `target_feature_popcnt` is `false` on all six rows: a build fact carried from `P-105` (no `target-cpu`, no `RUSTFLAGS`), and the reason a 4 KB 12-bit population table stands in for `u64::count_ones` rather than a lowered SWAR sequence. And `worst_link_pattern` reads `none` on the non-control arms because there is no breach to name, while `worst_link_case` `0x01` and `worst_link_cell` `0` beside it are **not** a breach either: those two are set whenever the component count exceeds the running worst, which starts at zero, so on a non-control arm they record the *first vertex that reached one component* — one corner inside, cell 0 — and not a defect.
+>
+> **All four registered vacuity controls fired, and so did four structural ones the registration did not name.** (1) `patterns_swept` is asserted equal to 134,217,728 on every arm, so a sweep that silently narrowed its own domain is a failure rather than a fast pass. (2) `dual_vertices_with_complete_link > 0` is asserted **per arm and never pooled** — and the counter is shown able to read *less* rather than only "complete": `control/open_block` runs the identical shipped rule on the unstitched block and reads `incomplete_link_vertices` **4,206,886,912** against `dual_vertices_with_complete_link` **860,880,896**, with `isolated_vertices` **689,963,008** inside that — a cycle whose every owned edge lacks its quad. On the five stitched arms `incomplete_link_vertices` is asserted **0**. (3) Each control's `worst_link_components > 1` **and** `link_defective_vertices > 0` are assertions, so a control reading 1 aborts rather than banking a pass. (4) The closed forms are exact integer identities over the block, asserted before any verdict is read: `active_cells` = 27 × 2¹⁹ × 254 and `dual_vertices` = 27 × 2¹⁹ × `cycles_per_256_sign_bytes`, so a fixture that drifted by one cell cannot pass. Beside those: `face_disconnected_sign_bytes` **8** is asserted *greater than zero* — 8 of 256 sign bytes have a face-disconnected cut set, and without them the one-vertex-per-cell control could not fire and C1's ones would prove nothing; `replica_quad_link_agreements` **242,776** is asserted greater than zero, or one of the two link walks is not measuring a link; and the block's own completeness is asserted structurally, 27 of 27 cells carrying all twelve quads and all six faces when stitched, exactly 1 of 27 when open.
+>
+> **`M-44` applied to each zero in the file, by naming the control that makes it admissible.** `link_defective_vertices` **0** on the three non-control arms is admissible because the same walk in the same run reads 113,246,208, 221,792,256 and 99,876,864 on the three controls. `incomplete_link_vertices` **0** and `isolated_vertices` **0** on the five stitched arms are admissible because `control/open_block` reads 4,206,886,912 and 689,963,008 with the identical rule. `pairing_disagreements` **0** is admissible because `control/inconsistent_join_x` is the arm built to break exactly that property and reads `pairing_is_consistent` `false`. `cycle_adjacency_violations` **0** and `two_cut_edge_face_splits` **0** are over enumerated domains — 256 cases × 64 masks, and every face of every case — and their sibling counter `face_disconnected_sign_bytes` reads 8 on the same tables, so the face machinery is shown able to report a non-zero. **One zero is arithmetically forced and is recorded as such rather than counted as evidence:** `replica_diagonal_merges` **0** cannot read anything else once `replica_quad_link_agreements` **242,776** equals `replica_vertices` **242,776**, because a diagonal can only merge components and there was never a second component to merge.
+
+**C1 is *proved*, not only swept, and that is the strongest form this result can take.** Two lemmas are verified over their whole domains at start-up, before a pattern is drawn, and asserted zero. First, **a cycle's consecutive edges always share a face of the cell** — `next[e]` is the segment leaving `e` on one of `e`'s two faces — checked over all 256 cases × all 64 joined masks: `cycle_adjacency_violations` **0**, with `two_cut_edge_face_splits` **0** beside it for the case where a face carries exactly two cut edges. Second, **with the joined bit agreed, the two cells sharing a face induce the identical pairing on that face's cut edges** — checked over 3 axes × 2 sides × 256 near cases × 16 far patterns × both bits = 49,152 combinations: `pairing_disagreements` **0**. Together they close it: every consecutive pair of a cycle is linked in the neighbour too, so the cycle's link is connected and `worst_link_components` is 1. **So C1 was decided by arithmetic available before the harness existed**, and what the 2²⁷ sweep buys is precisely two things and not a third — that the bench-local integer model of the dual topology is the shipped one, and that **no reachable pattern escapes the argument**. A proof plus an exhaustive check of its transcription is a stronger statement than either, and it is the same shape `M-374` used on the primal half.
+
+**`P-63`'s named error is not repeated, and this file *proves* that rather than promising it.** `M-374`'s C3 derived its expected population from the **critical** census — 524,288 2D- or 3D-ambiguous cells — when the population it needed was dual vertices carrying a **complete** link, which in a 3 × 3 × 2 block of 18 corners is *empty*: a dual vertex lives at a cell centre and its link needs the cell's 26 neighbours, so `max_incident_faces` came back **2** on all three dual arms and the verdict was correctly *"FALSIFIED, and vacuously"*. Here every population is a closed form asserted at start-up: `active_cells` **3,595,567,104** on every arm, and `dual_vertices` from `cycles_per_256_sign_bytes` over the 256 sign bytes. And the truncation is not merely avoided — **`control/open_block` reproduces it as a measurement at the right block size.** Same shipped rule, same 134,217,728 patterns, unstitched: `dual_vertices` **5,067,767,808** of which only **860,880,896** carry a complete link, `incomplete_link_vertices` **4,206,886,912**, `isolated_vertices` **689,963,008**. That is **16.99% complete against 83.01% truncated**, and it is 4.5866× the centre cell's whole share of the vertices (5,067,767,808 / 27 = 187,695,104) — so completeness on an open block is not "the centre cell only", it is any cycle that happens to avoid the boundary, which is a sharper statement about what `P-63`'s block was doing than `P-63` could make from inside it. The same arm reads `worst_link_components` **2** and `link_defective_vertices` **99,876,864**: on a truncated block the shipped rule *is* non-manifold at a vertex, and stitching is what buys C1.
+
+**Two registration errors, both reported and neither amended, because `experiment.rs:27-31` forbids amending a registration after its run.** **(a) Sixty-four free corners is 2⁶⁴, not 2²⁷.** The registration fixes both *64 corners* and *2²⁷ = 134,217,728 patterns*, and those cannot both describe a free sweep. The harness reconciles them by naming the identification that makes both true and reporting it as a column on every row: `corner_identification` `period_3_per_axis`, with `block_corners` **64** and `distinct_corner_sites` **27** side by side — the block is 4 × 4 × 4 corners at coordinates `0..=3` and corner 3 *is* corner 0 on every axis, so the 64 corners take 27 distinct values and the sweep is exactly 2²⁷. The choice is argued rather than convenient: a 4³ corner lattice has cube-group orbits of size 8, 24, 24 and 8, no union of which is 27, so *every* 27-bit sub-lattice of a 64-corner block breaks the cube symmetry and freezes some cell's corners, whereas 3-periodicity extends the field to all of ℤ³ and leaves **all 27 cells with all 26 neighbours** — the property `P-63`'s block did not have and the one C3 is about. The cost is stated and not hidden: the sweep is exhaustive over **3-periodic** sign fields, 2²⁷ of the 2⁶⁴ a free 4³ block admits, and because a cell's link is decided by 20 of the 27 sites (its own eight and its six face-neighbours', asserted equal to 20 at start-up) **each distinct link configuration is visited 2⁷ = 128 times**. All 27 cells are censused rather than one because shifting a 3-periodic pattern is a bijection of the domain, so the census sees not one configuration more — it is chosen for the denominator, which is why `dual_vertices` runs to 5,067,767,808 instead of 187,695,104. **(b) `FaceAmbiguity::Connected` does not exist.** `marching_cubes/ambiguity.rs` ships exactly `Separate` and `AsymptoticDecider`; the registration's C2 names a third variant, so C2 as literally written cannot fire, and the harness says so rather than fabricating the variant. `mdc/every_ambiguous_face_joined` is what such a rule would do, and it is filed as a **non-control** on an argument the file also checks: an always-joined rule is still a function of the shared face's four corner signs, so both cells reach the same answer, and lemma 2 — `pairing_disagreements` **0** — says a link cannot split when they do. The measurement is blunter than the argument: **that arm's row is identical to `mdc/separate` in every column of this file except `arm`, `ambiguous_face_pairing` and `wall_seconds`** — `cycles_per_256_sign_bytes` **358** both, `dual_vertices` **5,067,767,808** both, `max_incident_faces` **7** both. The file carries the aggregate and not the per-case distribution, so the coincidence is recorded and deliberately not explained; what it does establish is that the arm meant to carry the registered wording is indistinguishable from the shipped default at every resolution this dataset has. `mdc/mixed_consistent` is the arm that is not: one bit per **grid face** drawn from the pattern and handed to *both* cells, sweeping the whole family of crack-free pairings of which the asymptotic decider is one member — the only arm reaching `max_incident_faces` **12**, unreachable from either uniform extreme, and the only one with no closed form for `dual_vertices`.
+
+**The model is asserted to be the shipped path, and `replica_bit_identical` reads `true` on all six rows.** Before the sweep the harness runs the shipped `DualContouring` and `ManifoldDualContouring` under both shipped face rules — `replica_shipped_arms` **3** over `replica_patterns` **1,024**, so **3,072 real extractions** on an open 5 × 5 × 5-sample grid with SplitMix64 magnitudes, `P-63`'s own fixture at a block that can host a complete link — and asserts per pattern and per arm that `mesh.positions.len()` equals the model's dual-vertex count exactly, that `mesh.indices.len()` equals 6 × the model's quad count exactly, and that the **per-vertex incident-triangle count**, element for element in emission order, equals the model's prediction. `replica_vertices` **242,776** and `replica_triangles` **330,612** are the totals that carries — 165,306 quads, 991,836 indices — and `replica_decider_face_disagreements` **0** is the shipped asymptotic decider agreeing across every interior grid face, which is the one property `mdc/mixed_consistent` stands in for. `replica_quad_link_agreements` **242,776** equals `replica_vertices` exactly: the quad-level link and the link walked through the triangulator's slot-0–slot-2 diagonal agreed on **every** vertex, `replica_diagonal_merges` **0**. That diagonal is an output-format artefact and a link walked through it answers a question about `emit_quad_axis` rather than about the dual; adding it can only merge components, so a quad-level 1 implies a triangulated 1 — the direction C1 needs — and the harness measures both and asserts the inequality instead of asserting the argument. A transcription of shipped arithmetic is not attributable until it has been asserted identical to the shipped path, which is `experiment_p101.rs`'s `edge_slot` discipline, and 3,072 extractions against 0 mismatches is what discharges it here.
+
+**The bench *is* the gate, there is no second path, and that is the row's only durable output.** After writing the CSV the harness filters its recorded non-control breaches and prints `P-126 GATE: PASS — every non-control arm read worst_link_components 1 over all 134217728 patterns of the 3 x 3 x 3 block.`; on any breach it `eprintln!`s the arm, the `worst_link_components` value and the `worst_link_pattern`, cites `A-017`'s record of MDC's non-manifoldness as a limit of the algorithm, and `std::process::exit(1)`s — so a future failure *names the configuration* rather than reporting that one exists. A control reading 1 aborts earlier still, on an assertion, because that is `P-63`'s C3 failure mode arriving again. `.github/workflows/nightly.yml` runs it on a `schedule` cron at 07:00 UTC plus `workflow_dispatch`, reads the toolchain out of the manifest the way `ci.yml`'s `msrv` job does, and **contains no verdict logic at all** — checkout, read the declared MSRV, install it, `cargo bench -p isomesh --bench experiment_p126`, report the exit code. That matters for a specific reason: a gate whose verdict lives in YAML has two implementations of the question and they drift, which is the two-paths defect this crate forbids; here one binary answers the question once and gates it forever, and the workflow's only claim is an exit status. Pinning the toolchain buys reproducibility of a *failure* against a named compiler and nothing more, because every clause on this row is an integer count over an enumerated population and no toolchain can move it.
+
+**`wall_seconds` sums to 1,015.200 s — 16 minutes 55 seconds — inside the registration's own 4-to-45-minute estimate, and no clause reads a clock.** Per arm: 156.154, 156.537, 243.777, 131.558, 161.548, 165.626. **`P-126` has no timing clause of any kind**, so `M-280` and `✗24` have nothing to move here: on a governed CPU spanning 1.96–5.62 GHz under `powersave`/`balance_performance` a nanosecond is not a unit and a wall-clock ratio is never a gate, and this row structurally avoids both rather than surviving them. The consequence for this phase's clean re-run is worth stating plainly: every scored column in this file is an exact integer over a domain fixed by construction, so the clean-tree re-run **could not have moved a verdict** — `wall_seconds` is the only quantity in the file free to differ from any earlier run, and it is read by no clause, no assertion and no exit code. Two observations are therefore recorded and explicitly not scored: `mdc/mixed_consistent` at 243.777 s is 1.56× the uniform arms, consistent with its component table being 256 × 64 rows rather than 256 (393 KB against 6 KB, out of L1 rather than in it); and `control/one_vertex_per_cell` at 131.558 s is the fastest, having one component per cell to walk instead of `cycles_per_256_sign_bytes`/254 ≈ 1.41. Neither is a claim, neither is a ratio anyone may quote, and the sweep contains no `common::counters::Probe` because there is no cost clause on this row for a retired-instruction count to be the right unit for.
+
+**No source change landed, and `O-12` is closed on a stated half.** `R-072`'s harness commit touches exactly two files — `crates/isomesh/benches/experiment_p126.rs` and `.github/workflows/nightly.yml` — and **nothing whatsoever under `crates/isomesh/src/`**, so no consumer-visible behaviour moved, no golden hash moved, and there is nothing to rebaseline. `O-12` asked for *"an exhaustive search over configurations spanning more than two cells … or a proof that a cell-local cycle triangulation plus shared face segments cannot produce a non-manifold **vertex**"*. `M-374`/`P-63` delivered the first for Marching Cubes' edge vertices at 2¹⁸ and left the dual case standing, because its block could not host it. This row delivers **both halves for the dual**: a proof, in two lemmas asserted zero over 256 × 64 and 49,152 combinations, *and* an exhaustive check of that proof's transcription over 134,217,728 patterns × 27 cells on the smallest block in which a cell has all 26 neighbours, against three controls that read 2. **What remains open is named rather than left to the reader.** Exhaustivity is over **signs and 3-periodic fields** — 2²⁷ of the 2⁶⁴ a free 4³ block admits, each configuration visited 128 times — and over no magnitudes at all, which is not a gap in the way `M-374`'s magnitude sampling was a gap, because every clause here is a function of the sign byte and the joined mask and the sweep sweeps both exhaustively; the residue is a free non-periodic field of more than 3 × 3 × 3 cells, which the nightly gate does not reach and no clause claims. And this row is silent about the *other* non-manifoldness: `M-224`/`M-225` locate MDC's defect at an **edge** — an ambiguous grid face whose four cut edges lie in one cycle on both sides puts four quads on one dual edge, predicted exactly from the grid at 30, 64, 8 and 40 with zero error — and `M-234` closed that by decision rather than by code. A manifold vertex link is not a manifold mesh, the two mechanisms are independent, and nothing here weakens `M-234`'s stated limit.
+
+**SHARE, recomputed. None, and it was registered that way.** This row moves nothing, proposes no source change, and **no clause here is or may become a speedup claim**, so `✗51`'s bar — a mechanism that wins its microbenchmark and moves under 1% of an extraction earns no ticket — has no share to divide and there is no Amdahl ceiling to compute. What stands in a share's place is the column each clause is read from, with its denominator exact by construction. **C1**: `worst_link_components` over `dual_vertices`, per arm — 5,067,767,808 on `mdc/separate`, the same on `mdc/every_ambiguous_face_joined`, 4,630,724,200 on `mdc/mixed_consistent` — an integer count of connected components with no tolerance in it. **C2**: `worst_link_components` and `link_defective_vertices` on the three controls, and `control/one_vertex_per_cell`'s figure is predicted in closed form and asserted rather than merely observed non-zero — **113,246,208 = 27 cells × 2¹⁹ × 8**, the 8 of 256 sign bytes whose cut set is face-disconnected, which is exactly **8/254 = 3.1496%** of that arm's `dual_vertices` = `active_cells` = 3,595,567,104. So the control is not just non-zero, it is the *right* non-zero, to the unit. The other two controls carry `expected_link_defective_vertices` `unavailable` and are honest about it: an inconsistent joined bit and an open boundary are not functions of the sign byte alone, so their 221,792,256 and 99,876,864 are asserted greater than zero and not against a formula. **C3**: `dual_vertices_with_complete_link` per arm, never pooled, against `expected_dual_vertices` computed from the 256 sign bytes at start-up. A shipped extractor is invoked **3,072 times in the replica check and zero times in the sweep** — 134,217,728 extractions is not the experiment, and the sweep builds no mesh, allocates nothing and evaluates no field.
+
+**Would be shown wrong by:** a non-control arm reading `worst_link_components` above 1 on any future nightly, which the gate would name to the pattern and which would falsify a *proof* rather than a sample and locate `A-017`'s limit at a vertex; a free, non-periodic sign field over a larger block producing a split dual vertex link, which the 3-periodic identification does not reach and this row does not claim; a shipped `FaceAmbiguity` variant whose joined bit is *not* a function of the shared face's four corner signs, which would break lemma 2 and put `control/inconsistent_join_x`'s 221,792,256 defects on the shipped path; a change to `dual.rs`'s quad-to-cell correspondence or to `manifold_dual_contouring.rs`'s cycle walk that made `replica_bit_identical` read `false`, which would retire the model and every number above with it; or a `replica_diagonal_merges` above zero, which would mean the quad-level link and the triangulated link had diverged and that C1's chosen link is the wrong one to have walked.
