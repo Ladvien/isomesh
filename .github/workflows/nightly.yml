@@ -1,0 +1,58 @@
+name: nightly
+
+# R-072 / P-126. `crates/isomesh/benches/experiment_p126.rs` sweeps all
+# 2^27 = 134,217,728 sign patterns of a 3 x 3 x 3-cell block and asks whether any
+# dual vertex's incident-quad link has more than one connected component. That
+# takes an estimated 4 to 45 minutes single-threaded, which is a nightly job and
+# not something `ci.yml` can carry on every push.
+#
+# **The bench is the gate and this workflow contains no verdict logic.** After
+# writing `docs/experiments/p-126.csv` the bench exits non-zero, naming the arm
+# and the pattern, if any non-control arm read `worst_link_components` above 1,
+# and it aborts if a control arm read 1. There is exactly one implementation of
+# the question and it is the binary; this file runs it and reports its exit code.
+on:
+  schedule:
+    # 07:00 UTC daily. A cron-triggered workflow only ever runs on the default
+    # branch, which is the branch whose answer this gate is about.
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  dual-vertex-link:
+    name: P-126 dual vertex link at 2^27
+    runs-on: ubuntu-latest
+    # The sweep's own estimate is 4 to 45 minutes and a cold release build of the
+    # crate is a few more. Ninety leaves headroom on a slow shared runner without
+    # letting a hung job burn six hours.
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+
+      # The same mechanism `ci.yml`'s `msrv` job uses: the toolchain is read out
+      # of the manifest rather than written here, so this job cannot drift from
+      # the version the crate declares to its consumers.
+      #
+      # Pinning matters less than it looks: every clause on this row is an
+      # integer count over an enumerated population, so no toolchain can move the
+      # verdict. What it buys is that a failure is reproducible against a named
+      # compiler instead of against whatever stable the runner shipped that week.
+      - name: read the declared MSRV
+        id: msrv
+        run: |
+          set -euo pipefail
+          version=$(cargo metadata --format-version 1 --no-deps \
+            | tr ',' '\n' | grep '"rust_version"' | head -1 | cut -d'"' -f4)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "declared MSRV: $version"
+      - name: install it
+        run: rustup toolchain install ${{ steps.msrv.outputs.version }} --profile minimal
+
+      - name: P-126
+        run: cargo +${{ steps.msrv.outputs.version }} bench -p isomesh --bench experiment_p126
