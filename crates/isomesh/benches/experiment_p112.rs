@@ -123,6 +123,20 @@
 //! reasoning: a signed 3% overshoot is exactly as much a failure to account for
 //! the total as a 3% shortfall. `residual_signed_share` is beside it.
 //!
+//! **And that residual is paired within a repetition, which is a repair this
+//! row also paid for.** On the first clean-tree run — 2026-08-29, at
+//! `36e1135` — the bar fired on `torus 65³` at `0.0920`, and the cause was the
+//! pairing rather than the decomposition. The `total_pre`/`total_post` average
+//! only cancels a drifting clock against the `cut2` those two windows
+//! *bracket*; medianing all five quantities independently and then differencing
+//! them lets repetition *i* supply `cut2` and repetition *j* supply `total`, so
+//! `total_j − cut2_i` is a clock excursion between two repetitions and not
+//! anything the three phases did. Each repetition's five windows are adjacent in
+//! time, so `residual_share` is now the **median of the per-repetition shares**.
+//! The unpaired quantity is kept as `residual_share_across_reps` and the spread
+//! as `residual_share_worst_rep`, because a repair that leaves no trace in the
+//! artefact is indistinguishable from a bar that was moved.
+//!
 //! The rejected instrument is **kept as three columns rather than deleted**:
 //! `scan_ms_isolated`, `scatter_ms_isolated`, `residual_share_isolated`, plus
 //! `scan_share_isolated` and `scatter_share_isolated`. `cut0` *is* the isolated
@@ -871,6 +885,8 @@ mod experiment {
         residual_ms: f64,
         residual_share: f64,
         residual_signed_share: f64,
+        residual_share_across_reps: f64,
+        residual_share_worst_rep: f64,
         scan_ms_isolated: f64,
         scatter_ms_isolated: f64,
         residual_share_isolated: f64,
@@ -1290,20 +1306,47 @@ mod experiment {
         // pair of windows over the *same* body, so the residual is the
         // instrument's own reproducibility — which is a control that can fail,
         // and does not pass by algebra.
+        //
+        // **The residual is paired WITHIN a repetition, and that is a fixture
+        // repair rather than a preference.** This assertion fired on
+        // `torus 65³` on 2026-08-29 at a residual share of `0.0920`, and the
+        // cause was the pairing rather than the decomposition. `total_pre` and
+        // `total_post` are averaged so a monotonically drifting clock cancels —
+        // but that cancellation only holds when the `cut2` they bracket is the
+        // *same repetition's* `cut2`. Medianing all five quantities
+        // independently and then differencing them lets repetition *i* supply
+        // `cut2` and repetition *j* supply `total`, and `total_j − cut2_i` is a
+        // clock excursion between two repetitions rather than anything the
+        // decomposition did. Each repetition's five windows are adjacent in
+        // time, so the per-repetition residual is the quantity the module doc
+        // above describes; the median of those shares is what the bar reads.
+        // The unpaired form is kept as `residual_share_across_reps`, and the
+        // spread as `residual_share_worst_rep`, so the repair is visible in the
+        // artefact instead of only in this comment.
         let count_ms = c_count.ms();
         let scan_ms = c_scan.ms();
         let scatter_ms = c_scatter.ms();
         let total_ms = c_total.ms();
         let phase_sum_ms = count_ms + scan_ms + scatter_ms;
-        let residual_ms = total_ms - phase_sum_ms;
-        let residual_signed_share = residual_ms / total_ms;
+        let mut per_rep_share: Vec<f64> = (0..REPS)
+            .map(|k| {
+                let total_k = (w_total_pre[k].nanos + w_total_post[k].nanos) / 2.0;
+                (total_k - w_cut2[k].nanos) / total_k
+            })
+            .collect();
+        let residual_share_worst_rep = per_rep_share.iter().map(|s| s.abs()).fold(0.0f64, f64::max);
+        let residual_share_across_reps = ((total_ms - phase_sum_ms) / total_ms).abs();
+        let residual_signed_share = median(&mut per_rep_share);
         let residual_share = residual_signed_share.abs();
+        let residual_ms = residual_signed_share * total_ms;
         assert!(
             residual_share < RESIDUAL_BAR,
-            "{field} {n}^3: the three prefix-differenced phases sum to {phase_sum_ms:.6} ms \
-             against a separately measured total of {total_ms:.6} ms, a residual share of \
-             {residual_signed_share:.4} against a bar of {RESIDUAL_BAR}; the decomposition does \
-             not account for the total and no share below it is believable"
+            "{field} {n}^3: the three prefix-differenced phases fail to account for the \
+             bracketing total within a repetition — median residual share \
+             {residual_signed_share:.4}, worst repetition {residual_share_worst_rep:.4}, \
+             against a bar of {RESIDUAL_BAR}; the medianed phases sum to {phase_sum_ms:.6} ms \
+             against a medianed total of {total_ms:.6} ms. The decomposition does not account \
+             for the total and no share below it is believable"
         );
         assert!(
             scan_ms > 0.0 && count_ms > 0.0 && scatter_ms > 0.0,
@@ -1391,6 +1434,8 @@ mod experiment {
             residual_ms,
             residual_share,
             residual_signed_share,
+            residual_share_across_reps,
+            residual_share_worst_rep,
             scan_ms_isolated: c_scan_isolated.ms(),
             scatter_ms_isolated: c_scatter_isolated.ms(),
             residual_share_isolated,
@@ -1594,6 +1639,14 @@ mod experiment {
                 (
                     "residual_signed_share",
                     format!("{:.6}", row.residual_signed_share),
+                ),
+                (
+                    "residual_share_across_reps",
+                    format!("{:.6}", row.residual_share_across_reps),
+                ),
+                (
+                    "residual_share_worst_rep",
+                    format!("{:.6}", row.residual_share_worst_rep),
                 ),
                 ("scan_ms_isolated", format!("{:.6}", row.scan_ms_isolated)),
                 (
