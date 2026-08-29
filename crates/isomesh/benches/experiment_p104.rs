@@ -1561,7 +1561,17 @@ mod experiment {
                             (m.interleaved_words * 8).to_string()
                         },
                     ),
-                    ("values_row_stride", m.samples.to_string().len().to_string()),
+                    // The unpadded reconstruction's row stride, in bytes: `row`
+                    // is `n` floats (`fill`'s parameter, `:277`), so at
+                    // `n = 128` this is the **512-byte row** the module doc
+                    // names, beside the 64 KiB plane below it. Recorded as
+                    // `m.samples.to_string().len()` until 2026-08-29 — the
+                    // decimal digit count of the sample count, which is not a
+                    // stride and read 6 or 7 on every row. No verdict read it.
+                    (
+                        "values_row_bytes",
+                        (m.resolution as usize * size_of::<f32>()).to_string(),
+                    ),
                     ("values_row_samples", m.resolution.to_string()),
                     (
                         "values_plane_bytes",
