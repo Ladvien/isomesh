@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**312 tickets archived, 22 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**312 tickets archived, 23 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -45,6 +45,69 @@ attached — read that before re-litigating a decision this project already made
   is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
+
+---
+
+## Phase 26a — what Phase 25 earned
+
+**Added 2026-08-29, above Phase 24 for the reason every phase goes on top: rule 1 reads top-down.**
+Phase 25 is closed (`✗80`–`✗96`, `M-416`–`M-435`). It registered **no** source change on purpose, so a
+mechanism that earned landing gets its own ticket here rather than a quiet commit — landing unregistered
+is `V-45`'s failure mode.
+
+**One row of twenty earns a ticket, and the other nineteen are refusals with a number attached.** That
+is the phase working rather than the phase failing: `✗51`'s rule is that a mechanism which wins its
+microbenchmark and moves under one percent of an extraction should not be built, and refusing it *is*
+the result. `R-114` won by **2.568×** and its stage is **0.000088–0.000994** of an extraction, so its
+ceiling is **1.00039×**. `R-107`'s stage is at most **0.97%**. `R-112`'s is **0.0162%–0.4825%**.
+`R-108`'s is **0.0103%–0.146%**. `R-120` wins by **1.80–2.38×** on a per-chunk island labelling that is
+not on the extraction path at all. `R-122`'s C2 held *below* 1 — the split stream is 2.9%–14.6% cheaper
+in instructions — but `P-121` puts `emit` at **0.30%–5.51%** of extraction instructions, so the
+reachable saving is under **0.81%**. None of those is worth an extraction's disruption, and each row's
+archive annotation says so with its own share.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-123** | M | — |
+
+**R-123 — land `P-106`'s SWAR cut-edge circuit where cut-edge flags alone suffice, and price it against
+the fold the crate already has.** `M-419` is Phase 25's only all-clauses-held row and its share is two
+orders of magnitude larger than any other mechanism in the phase. The circuit is **12** word operations
+and **24** including the plane build, against a registered bar of 24 — counted by executing the same
+source over a counting word type rather than by reading it — it reproduces the crate's own table on
+**256 of 256** patterns where a deliberately broken circuit misses **192**, and it costs **11.3602**
+instructions per cell against the byte table's **94.3858**, a `ratio` of **0.1204**.
+
+**Two independent harnesses agree on the denominator, which is why this is a ticket and not a hope.**
+`P-121`'s `instructions_classify` reads **83.4157–84.8217** per cell across all nine fields — flat, as a
+fixed eight-corner sign test must be — and `P-106`'s bench-local byte comparand reads **88.3706–94.3858**,
+so the comparand is **6–13% conservative** rather than a strawman. `P-121` then puts the classify stage
+at **73.27%** of a `sphere` extraction's instructions, **61.11%** of `box_exact`'s and **2.47%** of
+`fbm_terrain`'s, and `P-106`'s own `extraction_ceiling` column spans **1.0231× to 2.4752×** in the same
+order. The win is real and it is a *cheap-field* win.
+
+**The hard scoping constraint, measured and not negotiable: the twelve flags cannot feed `CASES`.** The
+256 cut masks take only **128 distinct values** and every complement pair agrees on 256 of 256, so the
+map from case index to cut mask is not injective and a consumer of the flags still needs the case byte
+to triangulate. So this lands *only* where cut-edge flags alone are the answer.
+
+**And the ticket's first job is to establish that the share is not already spent.** `dual.rs:424`'s
+`active_word` already folds four rows of two words with `any & !all`, word-parallel, so part of
+`P-106`'s measured saving is a saving `A-024` and `M-337` already took. **`R-123` must not double-count
+it.** The acceptance below therefore prices the landing against the *shipped* path rather than against
+`P-106`'s bench-local byte table.
+
+**Acceptance.** (a) A `Preregistration` for the landing, before the code, stating the share it claims
+against `P-121`'s `instructions_classify` and naming the golden-hash consequence. (b) The circuit lands
+behind the existing public API with **no new public item** and no new dependency. (c)
+`crates/isomesh/golden_hashes.json` unchanged — the flags are a bit-exact function of the same eight
+sign bits, `P-106` proved that on 256 of 256 patterns and 262,144 cells of a pseudorandom field, so any
+moved hash is a defect and not a trade. (d) A committed CSV measuring the *end-to-end*
+`MarchingCubes::extract` and `DualContouring::extract` instruction counts before and after, on all eight
+reference fields at 65³ and 129³, so the claim is an extraction number rather than a stage number. (e)
+If the measured end-to-end saving is under 1% because `active_word` had already taken it, **the ticket
+closes as a refusal with that number** and the circuit does not land. That outcome is explicitly
+acceptable and is the reason (d) exists.
 
 ---
 
