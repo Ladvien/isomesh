@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**526 entries** — 79 falsified, 358 measured, 50 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**546 entries** — 96 falsified, 361 measured, 50 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -118,6 +118,23 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗77` | C1 FALSIFIED on 2 of 8 fields by exactly 3 bytes each, C2 FALSIFIED with an empty divergence population, C3 HELD on all… |
 | `✗78` | C1 HELD at 48 of 48 with worst_component_ulp 0, C3 HELD at 0 open edges, C2 FALSIFIED on both halves on 16 of 16 rows: M… |
 | `✗79` | C1 FALSIFIED at 3 of 16 and worse than shipped on 9 of them, C3 FALSIFIED by the two duals agreeing on 64 of 64 row-pair… |
+| `✗80` | C1 FALSIFIED as a whole-fixture gate at 21 of 32 rows clearing 0.10 (23 of 32 in instructions), C2 FALSIFIED on 32 of 32… |
+| `✗81` | C1 VACUOUS because the layout it is about is unreachable through the public API — the registered control read 1.0173× wh… |
+| `✗82` | C1 FALSIFIED on 32 of 32 rows with the best c1_deciding_ratio at 64³ reading 1.039764 against a 2× bar, C2 HELD bit-exac… |
+| `✗83` | C1 FALSIFIED on 24 of 24 rows with offset_share spanning 0.000328–0.009714 against a 0.05 bar, so the offset stage is at… |
+| `✗84` | C1 FALSIFIED on 16 of 16 exactly as registered: broadword select costs +48.9 to +61.0 instructions per set bit over dual… |
+| `✗85` | C1 FALSIFIED on 24 of 24 at 7.2959–12.6711 bits per crossing against a 4.0-bit bar it could not have reached — low_bits_… |
+| `✗86` | C1 FALSIFIED on 24 of 24 rows and in every unit (flip_plus_rank_ratio_instructions 2.2506–2.6863 against a bar of 2.0),… |
+| `✗87` | C1 FALSIFIED on 16 of 16 rows in all four recorded forms (ratio 0.41717–0.94158, instruction_ratio 0.32412–0.94875, and… |
+| `✗88` | C1 FALSIFIED on 16 of 16 with the rank arm 2.2× to 8.6× slower (speedup 0.116376–0.461247 against a bar of 1.25), C2 FAL… |
+| `✗89` | C1 FALSIFIED at 0 of 4 granularities straddling 6.25% and 1 of 4 where the winner varies, C2 FALSIFIED by 2 of 8 rows be… |
+| `✗90` | C1 HELD at 1.612× (65³) and 2.568× (129³) on the sparsest field as measured, and stronger in instructions — 2.129× and 3… |
+| `✗91` | C1 FALSIFIED on 16 of 16 rows at access_ratio 57.7683–115.7726 against a registered bar of 2.0 — random access is 29× to… |
+| `✗92` | C1 HELD at 256 of 256 triangulations identical to CASES, C3 HELD with 4 of 4 properties over 8,712 checks and 0 violatio… |
+| `✗93` | C1 FALSIFIED with the registered arm lifting 0 of 26 rows and reading the shipped baseline's 6 of 32 exactly, C2 FALSIFI… |
+| `✗94` | C1 FALSIFIED on 4 of 32 rows, all four fbm_terrain, ratio 1.7965–1.9008 against a 2.0× bar and every one of them decided… |
+| `✗95` | C1 HELD with the worst residual_share at 0.005195 against a 0.05 bar, C2 HELD with max_reference_integer_share_at_65 = 0… |
+| `✗96` | C1 FALSIFIED on 0 of 16 rows with branch_miss_ratio spanning 1.001214–1.983313 — the split doubles mispredictions at wor… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -476,6 +493,9 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-411` | all three clauses HELD, and the two findings worth more than the HELDs: C1's premise is off by two — rank_all_edges read… |
 | `M-414` | C1, C2 and C3 all HELD: ✗43's withdrawn rate reproduces exactly — 0 of 8,064 unclosed post-fix on five independent magni… |
 | `M-415` | seventeen papers acquired and all four missing categories closed, and the eight that did not land are a resolver finding… |
+| `M-419` | C1, C2 and C3 all HELD on 8 of 8 rows: the circuit is 12 word operations and 24 including the plane build against a bar… |
+| `M-430` | 11 contraction-sensitive expressions |
+| `M-432` | C1 VACUOUS on all 16 rows because the registered perturbation had nothing to move (baseline_spread 0, and buckets_of_thr… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -22889,3 +22909,1561 @@ One row, and its premise correction is worth more than its clauses: `CASES` is *
 **SHARE.** C1 is a per-cell counter ratio rather than a fraction of extraction time, and C2 is a cost bound -- so no time claim is made and x51's bar does not apply. Whether a misprediction reduction is worth anything in wall time is a question this row deliberately does not answer.
 
 **VACUITY CONTROL.** branch_misses_per_cell_single must be NON-ZERO on the single-stream arm, or there is no misprediction to remove and the ratio is division by a floor.
+
+---
+
+## Phase 25 — the results, twenty entries against twenty registrations
+
+Every row below was pre-registered in `crates/isomesh/src/experiment.rs` before its harness existed, its
+harness was committed before it ran, and its dataset was **re-run on a clean tree** after every harness in
+the phase had landed — so each `# commit` line names a commit a reader can check out, and
+`scripts/csv_provenance.sh` passes with no new entry on its dirty-tree list. **No row changed
+`crates/isomesh/src/`** apart from the twenty registrations themselves, so nothing here moved a golden
+hash or any consumer-visible behaviour; that was the phase's condition, not an outcome.
+
+**Sixty clauses: 34 HELD, 24 FALSIFIED, 2 VACUOUS.** Seventeen of the twenty rows carry at least one
+falsified clause and are dual-numbered `✗80`–`✗96`; three do not (`M-419`, `M-430`, `M-432`). Reading the
+falsifications rather than the checkmarks is the point, and this phase's are unusually load-bearing:
+**eleven of them were arithmetically decided before the harness ran** and say so in a column, and **five
+refute a figure this repository or a cited paper had already published**.
+
+**Two harnesses aborted on their own vacuity controls, and both aborts were worth more than the clause
+they interrupted.** `experiment_p112.rs` refused twice — `torus 65³` at a residual share of `0.0920`, then
+`sphere 65³` at `0.0692` — and instrumenting all five windows per repetition showed the three
+prefix-differenced phases account for the total **to the last retired instruction** (`0.000000` on 40 of
+40) while the *nanosecond* residual reads 4–8% **with a field-dependent sign** and the two `total` windows
+inside one repetition differ by up to 10%. The bar did not move; the unit did, and
+`residual_control_mutant_share` now proves the resulting zero could have been non-zero (`M-44`).
+`experiment_p116.rs` refused because `emit_node` writes the condition-**true** child first, so the emitted
+source enumerates root-to-leaf path words *descending* while the cross-check walked them ascending — it
+was comparing the text against its own reverse, and `text == rev(binary)` located the defect in exactly
+one of three conjuncts.
+
+**One committed dataset was wrong in a column no verdict read, and it was replaced rather than annotated.**
+`p-104.csv`'s `values_row_stride` recorded `m.samples.to_string().len()` — the number of *decimal digits*
+in the sample count — and read 6 or 7 on all 72 rows. That is `P-64`'s class of defect exactly: right
+header, right row count, garbage value. Fixed to `values_row_bytes`, which reads `256 / 508 / 512 / 516`
+at `n = 64 / 127 / 128 / 129`, and re-run.
+
+**And that re-run produced the phase's sharpest method finding, because it re-measured the same binary on
+the same fixture twice.** Of the 65 columns the two `p-104.csv` datasets share, **30 are byte-identical**
+— every verdict column, and `tax_vs_127_instructions` on all 72 rows — and **35 moved**. The split is
+total: every instruction-denominated column moved at most **0.006%**, and cycle-denominated columns moved
+by up to **221.8%** (`torus` 128³ `m287_tax_vs_127_unpadded` `1.8768 → 6.0389`). `M-280` says *on a
+governed CPU a nanosecond is not a unit* and `✗24` says *a wall-clock ratio is never a gate*; this is
+those two rules with a control attached, and it is why the coincidence `P-104`'s first run appeared to
+find — a `3.3714` against `M-287`'s published `3.37` — is **retracted** in `✗81` rather than reported.
+
+Nineteen of the twenty harnesses record `target_feature_popcnt` as `false`, because the repository sets no
+`target-cpu` and no `RUSTFLAGS`, so `count_ones` lowers to a SWAR sequence rather than `popcnt`. Each row
+that could be affected says which of its verdicts is contingent on that and by how much; **none is**, and
+two rows checked it by reading their own machine code rather than asserting it.
+
+---
+
+### 💥 ✗80 / M-416 — C1 FALSIFIED as a whole-fixture gate at **21 of 32** rows clearing 0.10 (**23 of 32** in instructions), C2 FALSIFIED on **32 of 32** with `instruction_ratio` spanning **0.579154–1.08354** against a bar of 0.5 and the bit-sliced arm strictly *worse* on all eight 65³ `f32` rows, C3 HELD across **24 of 24** golden hashes, **811,008** case indices and **903,600** sign bits: cutting sign tests per cell from **8.0000** to **1.0476–1.0967** bought nothing because the sign test was never the instruction cost, and every row that looks like a win is a row where the *byte* comparand pays an `f64` penalty — `instructions_per_cell_byte` **50.8118** against `instructions_per_cell_bitsliced` **29.4278** (P-103, R-103)
+
+**M.** `cargo bench --bench experiment_p103`, `docs/experiments/p-103.csv`, **32 rows**, `amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **32 data rows across 64 columns** — counted from the file, not from the brief. One block: eight reference fields × `{33³, 65³}` × `{f32, f64}`, sixteen rows at `cells` = **32,768** and sixteen at `cells` = **262,144**, each row four classify arms (`byte_dense`, `bitsliced_dense`, `swar8_dense`, `bitsliced_active`) plus the shipped `MarchingCubes::extract` as the C1 denominator, measured in six flat sibling `perf_event_open` windows per repetition with the arm order rotated by repetition index. Committed at **`36e1135`** — `# commit 36e1135 on amd-ryzen-9-5900x-12-core at 2026-08-29T00:07:57Z`, no `(WORKING TREE DIRTY)`, and `git merge-base --is-ancestor 36e1135 HEAD` passes (the dataset landed as **`57e7074`**, `p-103.csv - re-run on a clean tree`).
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the case-classification stage is at least 10% of Marching Cubes extraction, `P-121`'s stage boundary, share measured before any speedup is claimed | ≥ 0.10, scored per row | **FALSIFIED — `c1_holds` true on 21 of 32 rows and false on 11; `c1_rows_clearing_bar` = 21, `c1_rows_clearing_bar_instructions` = 23, `c1_holds_all_rows` false on 32 of 32. `classify_share` spans 0.016235 (`fbm_terrain` 33³ `f32`) to 0.545819 (`thin_plate` 65³ `f32`); `classify_share_instructions` spans 0.023508–0.61888** |
+| C2 eight sign bit-planes plus eight shift-and-OR pairs produce 64 case indices in under **half** the instructions per cell of the byte path | `instruction_ratio` < 0.5 on the **worst** row | **FALSIFIED — `c2_holds` false on 32 of 32, `c2_holds_all_rows` false. `worst_instruction_ratio` = 1.083542, `best_instruction_ratio` = 0.579154; `instruction_ratio` exceeds **1.0** on 8 rows (every 65³ `f32` row, 1.051929–1.083542). `instruction_ratio_rep_spread` ≤ 0.000008, so the miss is not noise** |
+| C3 zero movement in `M-31`'s 216 golden hashes, because the case index is an integer | 0 | **HELD — `hashes_moved` = 0 on 32 of 32; `golden_hashes_reproduced` = 24 of `golden_hash_rows` = 24; `golden_case_mismatches` = 0 over `golden_cells_checked` = 811,008; `golden_sign_mismatches` = 0 over `golden_samples_checked` = 903,600; `sign_bits_identical` = `samples_checked` (35,937 and 274,625) on every row** |
+
+> **The vacuity controls fired and they are the licence for the C3 zero.** `cases_identical` equals `cells` on all 32 rows (32,768 and 262,144) — but so does `corrupt_control_mismatches`, the same comparison with plane 3 inverted, which flips bit 3 of every cell's case index and is asserted to read `cells` **exactly** rather than merely "> 0". `single_bit_control_mismatches` reads **1** on all 32 rows: one flipped bit of plane 3, belonging to the centre cell, produces exactly one mismatch. The coarse control proves the comparator can see *a* difference; the single-bit control proves it is per-cell and not a length or a checksum. A C3 zero over a comparator that cannot report a mismatch would not have been a measurement.
+>
+> **C1's `false` on 11 rows is not "the classify stage is cheap".** It is field evaluation being expensive: the 11 rows are `gyroid`, `fbm_terrain` and `noise_cavity`, where the denominator `ns_per_cell_extract` reaches **297.649** against **9.586324** on the cheapest row. `gyroid` crosses the bar between resolutions on the identical mechanism — `classify_share` 0.090709 at 33³ `f32` (false) and 0.139003 at 65³ `f32` (true) — which is why `✗51`'s per-row scoring is the only honest reading and why `c1_holds_all_rows` is a separate column. The two rows that clear in instructions but not in cycles are both `gyroid` (33³ `f32`, 0.158395 against 0.090709; 65³ `f64`, 0.110906 against 0.076753). The denominator is also the **conservative** one: it is the shipped `MarchingCubes::extract`, which `P-121` measured at **15–24% more** than its bit-identical classify-then-compact mirror, so every `classify_share` here is that much lower than the same share taken against `P-121`'s total. C1 was scored on the harder denominator and still cleared on 21 rows.
+>
+> **C2's `false` on 32 of 32 locates the cost, and the location contradicts the hypothesis.** `sign_tests_per_cell_byte` is **8.0000** on every row and `sign_tests_per_cell_bitsliced` is **1.0967** (33³) / **1.0476** (65³) — a **7.3–7.6×** reduction in exactly the quantity FastLanes' `Scalar_T64` result targets — and `instruction_ratio` still never reaches 0.5. The instructions are in the *deliverable*: assembling 64 dense case bytes costs `instructions_per_cell_bitsliced` **26.6926–29.9596**, a 12% band across all 32 rows, while `instructions_per_cell_byte` spans **24.7684–50.8118**, a factor of **2.05**. So the bit-sliced arm's cost is essentially independent of field and of scalar width, and every apparent win is the comparand getting worse: `instruction_ratio` is **0.579154** on all eight 33³ `f64` rows and **0.598879** on all eight 65³ `f64` rows purely because `instructions_per_cell_byte` is 50.8118 and 44.6246 there, against 24.7684 at 65³ `f32` where the bit-sliced arm *loses* at 1.083542. The mechanism is real and it is in the wrong column: the sign predicate was 8 tests and is now 1, and the case-index assembly — eight iterations of a four-operation lane spread, run eight times per word — costs what the eight tests did.
+>
+> **Two arms that are columns and not clauses, because the registration named the other reading.** `instruction_ratio_swar8` (one sign *byte* per sample, eight lanes — the registration's literal `p0 | p1 << 1 | … | p7 << 7`) spans 0.451656–0.764293, `worst_instruction_ratio_swar8` = 0.764293, so the unscored reading also misses 0.5 on its worst row. `instruction_ratio_active` — the eight planes folded to `any & !all` and walked with `trailing_zeros`, which is what a shared classifier would actually return — spans 0.248656–0.689462 and clears 0.5 on **27 of 32** rows over `active_fraction` 0.007812–0.188477. That is a smaller claim than C2's, not a rescue of it. `instruction_ratio_vs_byte_compact` reads **0.308582–0.34755** against `instructions_per_cell_byte_compact` **85.4002–87.8943**, i.e. the bit-sliced word beats the *shipped* branch-and-compact shape by ~3×; that comparison is deliberately not C2's, because `mod.rs:262-268` consumes `case` in the same loop iteration and a bit-sliced word cannot, so `instruction_ratio` is scored deliverable-for-deliverable against a dense byte store.
+>
+> **No verdict here is contingent on the popcount lowering.** `target_feature_popcnt` reads `false` on all 32 rows — no `.cargo/config.toml`, no `target-cpu`, so `count_ones` would lower to the ~12-instruction SWAR sequence — and `count_ones_calls_per_cell_bitsliced` and `count_ones_calls_per_cell_byte` are both **0** on all 32 rows. Every arm is shifts, masks, adds, ORs, comparisons, `trailing_zeros` and `x &= x − 1`. Neither C1 nor C2 could move under `-C target-cpu=native`, which is the only reason it is legitimate not to have built one (`M-281`).
+>
+> **No time claim is made or available.** `cycle_ratio` spans 0.460299–1.380015 and `cycle_ratio_rep_worst` reaches 1.73979 on a machine whose measured `ghz` moves between **3.977** and **4.1893** inside this run alone and whose governor spans 1.96–5.62 GHz. `ns_per_cell_byte` and `ghz` are recorded for `M-280`'s reason and no clause consults them; the instruction form carries C2's verdict and `instruction_ratio_rep_spread` ≤ 0.000008 is why it can.
+
+**SHARE, recomputed.** C1's share *is* `classify_share`, so the clause is its own ceiling and the row's ceiling is `1/(1 − classify_share·(1 − instruction_ratio))` computed in-row. The best row in the whole fixture is `thin_plate` 65³ `f64`: `classify_share` 0.453019 against `instruction_ratio` 0.598879 gives **1.2221×**, and the unscored eight-lane arm's best is `thin_plate` 33³ `f64` at **1.3037×** (`classify_share` 0.424860, `instruction_ratio_swar8` 0.451656). C2's share is `instructions_per_cell_byte` itself — the quantity a halving would halve — and it was not halved on any row. **Part of this row was decided by arithmetic before the harness existed and the registration says so in its own `SHARE:` sentence:** `1/(1 − 0.10/2) = 1.05×` fixes the value of a 2× on a sub-10% stage, which is why C1 is checked first and why the 11 falsified rows close on arithmetic rather than on C2. The gate that made the row live at all is `R-121`'s measured `integer_share` maximum of **0.7245** at 65³ against a 0.15 bar; a classify stage that was not integer-dominated would have been Amdahl-dead before either clause was measured. What survives is C3 — a bit-sliced sign plane reproduces the shipped eight-sign integer on 811,008 cells and the shipped sign predicate on 903,600 samples, exactly, and it is the crate's first shared classifier — and the finding that its cost is field- and width-independent where the six inline copies' cost is not. Neither fact is a speedup and no ticket is filed for one.
+
+---
+
+### 💥 ✗81 / M-417 — C1 VACUOUS because the layout it is about is unreachable through the public API — the registered control read **1.0173×** where it needed **3.37×**, while C1's own figure of **1.0138×** sat *under* its **1.5** bar — C2 FALSIFIED at a fold instruction ratio of **1.8054** against **1 ± 0.2**, C3 HELD as a bit-identical equality on **72 of 72** rows; and the strongest thing in the file is a retraction: `M-287`'s 3.37× tax, which the superseded dataset appeared to reproduce at **3.3714×**, reads **8.1052×** on the re-run — a **2.40×** move on the same measurement of the same code, while `c2_instruction_ratio_fold` read **1.8054** on both (P-104, R-104)
+
+**M.** `cargo bench --bench experiment_p104`, `docs/experiments/p-104.csv`, **72 rows**, 66 columns, `f32`
+throughout, `amd-ryzen-9-5900x-12-core` (Zen 3), `ghz` **4.1445–4.1860** on every row. Four `#` comment
+lines plus one column header plus **72 data rows** — counted from the file, not from the brief: nine
+`field` values (`sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate`, `gyroid`, `fbm_terrain`,
+`noise_cavity`, and `sphere_surface_free` as the ninth, `M-287`'s own surface-free fixture) × four
+`resolution` values {`64`, `127`, `128`, `129`} × two `layout` values (`along_x` 36 rows, `interleaved`
+36), `reps` = 5 sibling counter windows per arm, ten arms per row reduced to stages by prefix
+difference. Committed at **`d12dddc`** — `# commit d12dddc on amd-ryzen-9-5900x-12-core at
+2026-08-29T01:10:18Z`, no `(WORKING TREE DIRTY)`; the dataset landed as **`bdb9baa`**
+(`p-104.csv - re-run on a clean tree`), and `git merge-base --is-ancestor bdb9baa HEAD` passes.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 bit `k` being the `k`-th cell of a 4×4×4 block brings `M-287`'s 128³ tax below 1.5× on `M-287`'s own fixture | `c1_bar` = 1.5, and *only if* the vacuity control reproduces 3.37× to within 10% | **VACUOUS — `c1_holds` reads the literal string `vacuous` on 72 of 72 rows; `c1_vacuity_control_reproduced` = `false`, `c1_vacuity_control_tax` 1.0173 against `c1_vacuity_control_target` 3.37, and the `m287` scaffold beside it `m287_scaffold_control_tax` 5.8267 — neither within 10%. C1's own figure, `c1_tax_vs_127_interleaved` = 1.0138 on `c1_field` = `sphere_surface_free`, is under the 1.5 bar and is worth nothing** |
+| C2 `active_word`'s fused `any & !all` fold survives the relayout within ±20% of its instructions per cell | `c2_tolerance` = 0.20 about 1 | **FALSIFIED — `c2_instruction_ratio_fold` = 1.8054, and `c2_instruction_ratio_fold_this_row` 1.9166 / 1.8337 / 1.8054 / 1.6881 at 64 / 127 / 128 / 129, outside [0.8, 1.2] at every size; `instructions_per_cell` 1.652409–1.781632 `along_x` against 3.007599–3.167085 `interleaved`; `c2_holds` false on 72 of 72** |
+| C3 the emitted mesh is bit-identical | equality | **HELD — `c3_holds` and `mesh_identical` true on 72 of 72; `c3_list_matches_scalar`, `c3_list_matches_shipped` and `c3_recording_wrapper_transparent` true on 72 of 72. Cost, recorded not footnoted: `resort_ns_per_vertex` 1.615148–3.204712 on the 30 `interleaved` rows that have vertices** |
+
+> **A coincidence, retracted — and it is the most useful number in this row.** This dataset supersedes
+> `beebe8f`, whose only difference in source is the one recorded column fixed in `d12dddc`
+> (`experiment_p104.rs:1564`), outside every counted window: no measured quantity's code path moved
+> between the two runs, and both were clean-tree. Yet `m287_tax_vs_127_unpadded` on `sphere` at 128³ went
+> **3.3714 → 8.1052**, a **2.40×** move, because `m287_cycles_per_sample_unpadded` went 91.685142 →
+> **135.475250** at 128 while the 127 denominator went 27.194825 → **16.714696**. The superseded draft of
+> this entry quoted 3.3714 as reproducing `M-287`'s published **3.37** to four figures. **That claim is
+> withdrawn**: a cycle ratio that reads 3.3714 on one clean run and 8.1052 on the next reproduces
+> nothing, and the agreement was a coincidence of two independently drifting numbers. `M-280` and `✗24`
+> arriving as a retraction rather than as advice. It **strengthens** C1's `vacuous` verdict — the control
+> failed on both runs, once by reading no tax where it looked (`c1_vacuity_control_tax` 0.9959 then
+> **1.0173**) and once by the scaffold beside it reading far more than 3.37 (7.9472 then **5.8267**).
+>
+> **The contrast, same file, same fixture, two clean runs.** Of the 65 columns the two datasets share,
+> **30 are byte-identical**, including every verdict column (`c1_holds`, `c2_holds`, `c3_holds`,
+> `mesh_identical`, all three `c3_list_*`, `c2_instruction_ratio_fold` = **1.8054**,
+> `tax_vs_127_instructions` on all 72 rows) and every structural one (`active_cells`, `cells`, `samples`,
+> `bitmap_words`, `bitmap_bytes`, `m287_padded_row_samples`, `target_feature_popcnt`,
+> `count_ones_calls_per_counted_window`). **35 moved**, and the split is total: the instruction-denominated
+> ones moved by at most **0.006%** (`c2_instruction_ratio_fold_this_row` 1.8053 → 1.8054 on one row;
+> `instructions_per_cell` **0.001%**), the cycle-denominated ones by up to **221.8%**
+> (`m287_tax_vs_127_unpadded` on `torus` 128³ 1.8768 → 6.0389; `cycles_per_sample` up to 44.9%,
+> `tax_vs_127` up to 80.3%, `c1_ceiling_at_128`'s maximum 1.08274 → 1.00654). The second run is simply
+> the quieter machine — `tax_vs_127` now spans **0.9894–1.1262** where it spanned 0.5565–1.9984,
+> `c2_cycle_ratio_fold_this_row` spans **1.7229–2.3844** with no zero rows where four rows previously
+> collapsed to 0.0000 on a non-positive prefix difference, and `resort_ns_per_vertex` on the interleaved
+> arm spans 1.615148–3.204712 where it previously reached 35.872449. **C2's verdict survives both runs
+> unchanged to four decimals; no cycle figure in this file survives either run as a quotable quantity.**
+>
+> **Why C1 is `vacuous` and not falsified.** The tax is nowhere near the bitmap: `tax_vs_127` on the
+> *unmodified* `along_x` bitmap stage at 128 on `sphere_surface_free` is **1.0173**, and the two aliasing
+> periods `M-287` separated are both in `emit_quads` (`dual.rs:697-713`: `AXIS = 0` walks `z` innermost at
+> a `row · size[1] · 4` = 64 KiB stride, `AXIS = 2` walks `y` innermost at a `row · 4` = 512-byte one).
+> Where the tax does live the scaffold arm sees it plainly — every 128³ row of the unpadded scaffold is
+> taxed (`m287_tax_vs_127_unpadded` **1.1245–8.1052**, `m287_l1d_misses_per_sample_unpadded`
+> **5.291085–6.313110**) and every padded twin is not (`m287_tax_vs_127_padded` **1.0019–1.1526**,
+> `m287_l1d_misses_per_sample_padded` **1.530724–1.546318**). And **no caller can reach the taxed layout
+> any more**: the tax is a property of `DualMesher::values`, whose row stride is
+> `row_stride(size) = size[0] | 1` floats since `A-024` (`dual.rs:333`); an `f32` 64 KiB plane needs
+> `row · size[1] = 16384 = 2¹⁴`, and an odd `row` greater than one cannot divide a power of two.
+> `m287_padded_row_samples` is that arithmetic in the file — **65 / 127 / 129 / 129** at the four sizes,
+> so 128³ pads to 129 and the spike is gone before any relayout is proposed. The unpadded arm is
+> therefore reconstructed bench-local, and `values_row_bytes` **256 / 508 / 512 / 516** with
+> `values_plane_bytes` **16384 / 64516 / 65536 / 66564** is the reconstruction saying so: at `n = 128`
+> exactly the 512-byte row and the 65,536-byte = 2¹⁶ plane `M-287` named. Had the control been waived,
+> **1.0138 < 1.5** would have been recorded as C1 HELD on a fixture where nothing was ever taxed. That is
+> the whole reason the control was registered.
+>
+> **`c3_holds` = true is not "the interleaved layout won".** It is the equality it says it is: a 4×4×4
+> word can be walked back into the ascending-`x` order `dual.rs:489-497` needs, exactly, with the mesh
+> bit-identical — and the mirror is licensed, because `c3_list_matches_shipped` is true on 72 of 72
+> against the traversal the shipped `DualContouring` actually performs, recovered through a recording
+> `VertexRule` injected with the public `DualContouring::with_rule`. What did *not* happen is any saving:
+> `interleaved` is slower than `along_x` on **36 of 36** (field, resolution) pairs, `cycles_per_sample`
+> ratio **1.4570–1.8704** (`along_x` 1.815406–2.260030 against `interleaved` 3.048325–3.483571) — and
+> that ordering is the one cycle-denominated statement here that held across both runs. The registered C3
+> falsifier — the re-sort costing more than the layout saves — therefore cannot be scored as a cost at
+> all: there is nothing saved to pay the **1.615148–3.204712 ns/vertex** re-sort out of.
+> `resort_ns_per_vertex` reads the literal `unavailable` on **12 of 72** rows, exactly the rows where
+> `active_cells` = 0 — `sphere_surface_free` at all four sizes, and `thin_plate` at 64 and 128 against
+> **8,192** active cells at 127 and 129. That is a per-vertex quantity refusing to divide by zero rather
+> than recording a fabricated one.
+>
+> **The instruction form carries C2, and the file shows why in both directions.**
+> `tax_vs_127_instructions` is **0.9918–1.0681** across all 72 rows — byte-identical to the superseded
+> run — while the cycle tax spans 0.9894–1.1262 here and spanned 0.5565–1.9984 there: a cache-set stride
+> effect is by construction invisible to an instruction count, and its absence there is the signature
+> that the arm measures layout rather than work. `target_feature_popcnt` is `false` and
+> `count_ones_calls_per_counted_window` is `0` on 72 of 72 — this build emits no `popcnt`, the fold arm
+> accumulates with `acc ^= word` and never popcounts, so **no verdict here is contingent on the popcount
+> question**.
+>
+> **The registration's own correction, which stands.** `experiment.rs:3192` says the active-cell bitmap
+> packs "64 cells per `u64`" and that is **wrong by one**: `dual.rs:359` sets
+> `bit_row = size[0].div_ceil(64)` and packs one bit per **sample**, along `x` only; the *cell* row is one
+> word shorter and is handled separately by `cell_words = cells_x.div_ceil(64)` (`dual.rs:484`) and
+> `cell_mask` (`dual.rs:445`). `P-104`'s hypothesis carries that correction, which is where it belongs —
+> `experiment.rs:27-31` forbids amending a registration after its run, so the documented-wrong line is
+> **not something to edit**; the record corrects it. The asymmetry is priced, not decorative: `E-307`
+> measured the packed stage going 0.451–0.470 ns/cell at 128 samples to 0.599–0.637 at 129, about 30% of
+> the stage for a word that cannot contain a cell.
+>
+> **One column was wrong and was fixed before this dataset.** `values_row_stride` recorded
+> `m.samples.to_string.len` — the decimal digit count of the sample count, 6 or 7 on every row of
+> `beebe8f` — and is replaced in `d12dddc` by `values_row_bytes`, which reads **512** at `n = 128` as the
+> module doc's "512-byte row" requires. No verdict read either form.
+
+**SHARE, recomputed.** C1's share is measured in this run, not quoted:
+`bitmap_share_of_m287_scaffold` — the `along_x` bitmap stage's cycles per sample over the `m287`
+scaffold's, same field, same size, same run — is **0.002006–0.184607** over 72 rows and **0.019265** on
+the row C1 is scored (`sphere_surface_free`, 128, `along_x`), because at that size the scaffold costs
+**96.749480** c/s and the bitmap stage **1.863848**. `c1_ceiling_at_128` = `1/(1 − share·(1 − 1/tax))` is
+therefore at most **1.00654** across all 72 rows (`sphere` 129³ `along_x`) and reads **1.00033** /
+**1.00044** on the two rows the clause is actually scored on — so **C1's ceiling was arithmetically
+decided before the harness existed**: even a perfect transposition buys under 0.05% of the scaffold where
+the clause is registered. That conclusion is the one thing on the cycle side that both runs agree on —
+the ceiling's *maximum* moved 1.08274 → 1.00654 between them, and ≈1 either way. The Group A gate that
+put this row live rather than Amdahl-dead is `R-121`'s measured `integer_share` maximum of **0.7245** at
+65³ against a **0.15** bar; that gate says the integer work is worth attacking, and this row says the
+active-cell bitmap is not the place. C2 is a cost bound and C3 an equality — neither is or may become a
+speedup claim, and the one ratio here that could be mistaken for one (`cycles_per_sample`, `interleaved`
+slower on 36 of 36) is a wall clock and is never a gate (`✗24`).
+
+---
+
+### 💥 ✗82 / M-418 — C1 FALSIFIED on **32 of 32** rows with the best `c1_deciding_ratio` at 64³ reading **1.039764** against a **2×** bar, C2 HELD bit-exact on **32 of 32** with the one-bit control differing on all 32, C3 **VACUOUS on 28 of 32** rows and FALSIFIED on the one field whose trend clears its own noise: LLVM autovectorises the naive fold to **8.75 = 35/4** instructions per word and leaves the carry-save chain scalar at **9.0625 = 145/16**, so Harley–Seal executes **more** instructions per word on every row (`instruction_ratio` ≤ **0.965255**) and the mechanism's saving is competing against a saving the compiler already took (P-105, R-105)
+
+> **Verdict encoding.** This harness writes `c1_holds`/`c2_holds`/`c3_holds` as **`0`/`1`, not `false`/`true`** — `c1_holds` = `0` on all 32, `c2_holds` = `1` on all 32, `c3_holds` = `0` on all 32. The `0` in `c3_holds` is **not** the whole verdict: the string columns `c1_verdict`/`c2_verdict`/`c3_verdict` carry it, and `c3_verdict` reads `VACUOUS` on 28 rows and `FALSIFIED` on 4. Read the string columns; the integers cannot distinguish *falsified* from *unscoreable*.
+
+**M.** `cargo bench --bench experiment_p105`, `docs/experiments/p-105.csv`, **32 rows**, `f64` (`scalar` on every row), `amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **32 data rows** across **54 columns** — counted from the file, not from the brief. One block: eight fields (`sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate`, `gyroid`, `fbm_terrain`, `noise_cavity`) × four `resolution` values {16, 32, 64, 128}, giving `words` {256, 1024, 4096, 32768} and `bitmap_bytes` 2,048 → 262,144. Each row is two interleaved counted arms — naive `iter.map(count_ones).sum` against the sixteen-word Harley–Seal carry-save fold — with `windows_per_arm` = 5 and `reps` ∈ {65536, 16384, 4096, 512} chosen so every window processes about 2²⁴ words regardless of bitmap size. Measured on **`beebe8f`** — `# commit beebe8f on amd-ryzen-9-5900x-12-core at 2026-08-29T00:09:21Z`, no `(WORKING TREE DIRTY)` — and the dataset landed as **`f80dfde`**, `p-105.csv - re-run on a clean tree`; `git merge-base --is-ancestor f80dfde HEAD` passes.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 at least **2×** on the counting pass over a 64³ chunk's bitmap against `iter.map(count_ones).sum` | ≥ 2.0 at `resolution` = 64 | **FALSIFIED — `c1_holds` = `0` and `c1_verdict` = `FALSIFIED` on 32 of 32. `c1_deciding_resolution` = 64 on every row and `c1_deciding_ratio` spans **0.865097** (`noise_cavity`) to **1.039764** (`thin_plate`): the mechanism's best 64³ field is **4.0% faster**, not 100%. Across all 32 rows `ratio` (cycle-denominated) runs **0.659020 – 1.070207** and `ns_ratio` runs **0.656369 – 1.072622**; `c1_disagreement` = `0` on 32 of 32, so the cycle form and the wall-clock form agree about the 2× bar and the cycle form carries the verdict** |
+| C2 the count is **bit-exact** on every fixture — an equality, not a ratio (`M-349`'s discipline) | exact equality | **HELD — `counts_equal` = `1` and `c2_verdict` = `HELD` on 32 of 32; `count_naive` == `count_harley_seal` on every row, from 128 (`thin_plate` 16³) to 118,885 (`noise_cavity` 128³). The vacuity control fired: `control_counts_differ` = `1` on 32 of 32 with `control_delta` = `1` — one deliberately flipped bit, seen. `tail_lengths_checked` = 65 with `tail_mismatches` = `0` closes the remainder path the fixture cannot reach (all four `words` are multiples of 16)** |
+| C3 the advantage is monotone non-decreasing in the word count across 16³, 32³, 64³, 128³ | monotone, three steps | **VACUOUS on 28 of 32 / FALSIFIED on 4 — `c3_vacuous` = `1` and `c3_verdict` = `VACUOUS` on the 28 rows of seven fields; `c3_steps_separated` = `0` on all 28, so no consecutive pair's `[ratio_min, ratio_max]` was ever disjoint. `box_exact` is the only field where the trend is resolvable — `c3_trend_span` **0.029351** > `c3_noise_span` **0.008606**, `c3_steps_separated` = `1`, `advantage_exists` = `1` on all four rows — and there C3 **FALSIFIES**: `ratio` goes 1.009483 → 1.038835 → **1.022979** → **1.011367** and `monotone_step_holds` = `0` at 64³ and 128³, i.e. the advantage *decreases* over the last two steps** |
+
+> **What C3's 28 `VACUOUS` rows mean, and what they do not.** They do not mean the clause was skipped. Two of the harness's three registered unscoreability conditions fired, both from the run's own numbers:
+>
+> - **No advantage to be monotone in.** `advantage_exists` (`ratio_min > 1`, the lowest of the row's five window pairs) reads `0` on **7 of 32** rows — `sphere` 16³, `thin_plate` 16³, `fbm_terrain` 16³/32³/128³, `noise_cavity` 16³/64³. On those rows Harley–Seal is *behind* in at least one window; `thin_plate` 16³'s `ratio_min` is **0.655124** and `fbm_terrain` 128³'s is **0.761105**. Ordering a quantity that is not positive is not a monotonicity test.
+> - **The trend is inside the instrument.** On **5 of 8** fields `c3_trend_span` < `c3_noise_span`: `sphere` 0.341790 < 0.381687, `torus` 0.021846 < 0.085949, `gyroid` 0.019872 < 0.043437, `noise_cavity` 0.205110 < 0.382109, and worst of all `fbm_terrain` **0.025024 < 0.623962** — the four-point trend is **25× narrower** than one of its own rows' reproducibility across five interleaved windows. This is `M-280`/`✗24` exactly: on a governed CPU a nanosecond is not a unit, this machine is `powersave`/`balance_performance` spanning 1.96–5.62 GHz, and a wall-clock ratio is never a gate. `ghz` is on every row (4.1616 – 4.1870, so the clock was in fact quiet) and it still does not license ranking inside the noise. Reporting the size of what cannot be resolved is `R-085`'s discipline, and `c3_trend_span`/`c3_noise_span` are that report.
+>
+> **C1's `0` is not a defect in the implementation — it is the compiler already holding the ground.** `instructions_per_word_naive` reads exactly {8.8711, 8.7803, 8.7576, **8.7510**} by resolution and `instructions_per_word_hs` exactly {9.5040, 9.1729, 9.0901, **9.0660**}. The disassembly says why: the naive fold is **autovectorised** — two `movdqu`, twice the `psrlw`/`pand`/`psubb`/`paddb` byte-population sequence, closed by `psadbw`/`paddq` — **35 SSE2 instructions over 4 words = 8.75 exactly**; the carry-save chain's nine live accumulators keep it in general-purpose registers one word at a time, **145 scalar instructions over 16 words = 9.0625 exactly**. At 128³ the counters read 8.7510 against 8.75 (0.011% over) and 9.0660 against 9.0625 (0.039% over), which is the check that the counted window contains the loop it claims to and nothing else. So `instruction_ratio` = naive/HS is **< 1 on all 32 rows**, 0.933416 → 0.965255: the mechanism issues *more* instructions per word, not fewer. This clause was decided by arithmetic available from `objdump -d` before any timer ran.
+>
+> **The null was measured in the mechanism's best case, not its worst.** `target_feature_popcnt` = `0` on 32 of 32 — the repository sets no `target-cpu` and no `RUSTFLAGS`, `POPCNT` is SSE4.2-era and not in the baseline `x86_64`, and `objdump -d` finds **zero** `popcnt` instructions in the bench binary. That is the regime where the popcounts Harley–Seal removes are a ~12-instruction SWAR expansion rather than one instruction at four per cycle, i.e. the regime that *favours* the mechanism. It still does not win. A row measured under `target_feature_popcnt` = `1` is not comparable with these, and would only be worse for Harley–Seal.
+>
+> **Where the mechanism does win, and why it cancels.** `ipc_hs` reaches **5.1396** against `ipc_naive` **4.8493**; the carry-save chain is the better-scheduled code. It also executes 3.5–7% more instructions per word. The two cancel: `cycles_per_word_naive` 1.8046–2.8715 against `cycles_per_word_hs` 1.7661–2.9116, and `ratio` sits on 1.0.
+>
+> **The crate does not count the bitmap, and the harness checked rather than asserted it.** `count_ones_in_dual_rs` = `0` on 32 of 32, read out of `crates/isomesh/src/dual.rs` on every run. The bitmap's five consumers read whole words (`:385`), read a word shifted by one (`:395`), fold four rows into an active-cell word (`:424`), mask off words carrying no cell (`:445`) and walk set bits (`:490`). The fixture mirrors the crate's own geometry rather than approximating it: `bit_row` runs 1/1/2/3 while `cell_words` runs 1/1/1/2, the documented sample-row/cell-row asymmetry at `dual.rs:472-484`.
+
+**SHARE, recomputed.** **C1's share of extraction is exactly zero**, and `count_ones_in_dual_rs` = `0` is the column that says so — there is no counting pass in the shipped crate, so `✗51`'s `1/(1 − share·factor)` ceiling has no share to divide and this row prices a stage the crate would have to **add**. What C1 *is* denominated in is `words` at `resolution` = 64 — **4,096 words, `bitmap_bytes` = 32,768**, exact by construction — against a named bench-local baseline, which is the only reason stating it as a ratio is legitimate. C2's share is `words`: the equality is over every word of every bitmap, and it cannot be vacuous over an all-zero map because `active_cells` is asserted non-zero and runs 128 → 118,885 (`active_fraction` 0.003906 → 0.296387). C3's share is the span of `words`, 256 → 32,768, a factor of **128**, with `bitmap_bytes` crossing out of L1 (32 KiB) into L2 — so its unscoreability is not an artefact of measuring inside one cache level. **No clause here is or may become an extraction speedup claim**, and none was made.
+
+---
+
+### 🔬 M-419 — C1, C2 and C3 all HELD on **8 of 8** rows: the circuit is **12** word operations and **24** including the plane build against a bar of **24**, its masks equal the crate's own table on **256 of 256** patterns where a deliberately broken circuit misses **192**, and it costs **11.3602** instructions per cell against the byte table's **94.3858** — `ratio` **0.1204**, a **7.72–8.31×** cut on the classify stage that buys an extraction ceiling of **2.4752×** at best and **1.0231×** on `fbm_terrain`, because the twelve flags take only **128** distinct values and so cannot feed `CASES` (P-106, R-106)
+
+**M.** `cargo bench --bench experiment_p106`, `docs/experiments/p-106.csv`, **8 rows**, **64 columns** —
+counted from the file: four `#` comment lines, one column header, eight data rows. The registration names
+twelve of those columns; the harness records fifty-two more. One row per field — `sphere`, `torus`,
+`box_exact`, `csg_difference`, `thin_plate`, `gyroid`, `fbm_terrain`, `noise_cavity` — all at
+`resolution` = 65, i.e. `samples` = **274,625** and `cells` = **262,144** (64³), with `sample_bit_row` = 2,
+`cell_words_per_row` = 1 and `pad_lanes` = 0, so no row is measured on a padded word. `reps` = 7, eight
+sibling counter windows per repetition (never nested — Zen 3 has six general-purpose counters and `Probe`
+opens six), and the two registered arms alternate which runs first by repetition parity.
+`amd-ryzen-9-5900x-12-core` (Zen 3), `ghz` 4.1774–4.1848. Stamped **`f80dfde`** —
+`# commit f80dfde on amd-ryzen-9-5900x-12-core at 2026-08-29T00:09:45Z`, no `(WORKING TREE DIRTY)` — and
+landed as **`dd8ef7f`** (`p-106.csv - re-run on a clean tree`, that one file, 13 insertions).
+`git merge-base --is-ancestor` passes for both against HEAD.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the twelve cut-edge flags for 64 cells derive from the eight sign planes in at most 24 word operations | ≤ 24 | **HELD, and exactly rather than by margin — `word_ops` = 12 (twelve XORs, one per edge, over `EDGE_CORNERS`) and `word_ops_total` = 24 = `word_op_bar` = 24, of which `word_ops_plane_build` = 12; `c1_holds` and `c1_holds_with_plane_build` both true on 8 of 8. The count is not estimated: the circuit is written once over a four-operation alphabet and instantiated twice, on `u64` and on a counting word type, and `tally_agrees_with_u64` = true on 8 of 8 is the assertion that the counted circuit is the measured one** |
+| C2 the SWAR masks equal the byte-table path's on all 256 sign patterns, exhaustively rather than sampled | 256 of 256 | **HELD — `masks_identical_patterns` = `patterns_tested` = 256, tested packed 64 patterns to a word so each sits in a different bit lane; `masks_identical_patterns_uniform` = 256 is the weaker same-lane form, kept so a lane bug and a logic bug stay distinguishable. Extended past the pattern space on the same rows: `cells_agreeing` = `cells` = 262,144 and `cells_agreeing_random` = 262,144 on a 50%-dense pseudorandom sign field where every word boundary is crossed. The comparand table is itself derived twice and cross-checked — `table_matches_cases_patterns` = 256, asserted before any measurement runs** |
+| C3 instructions per cell below the byte-table path's | ratio < 1 | **HELD on 8 of 8 — `instructions_per_cell_swar` 11.3602 (11.4408 on `fbm_terrain`) against `instructions_per_cell_table` 94.3858 on six rows, 88.3706 and 89.3701 on the other two; `ratio` = 0.1204 / 0.1271 / 0.1295, i.e. 7.72× to 8.31× fewer instructions. `instruction_ratio_rep_spread` ≤ 0.004092 across 7 repetitions, so the win is not a clock artefact — it is a count** |
+
+> **What the 8.31× is not.** `distinct_cut_masks` = **128** on all 8 rows and `complement_pairs_agree`
+> = **256 of 256**: complementing all eight signs preserves "these two differ", so
+> `cut_mask(case) == cut_mask(case ^ 0xFF)` — the classic Marching Cubes complement ambiguity, recorded as
+> two columns rather than left as a remark. **The twelve flags are strictly less information than the case
+> index and cannot feed `CASES`**, because that map is not injective. C3's win is on the
+> crossing-allocation half of classification only; the triangle table still needs the case byte, and that
+> is `P-103`'s row, not this one.
+>
+> **How much of the win is the circuit and how much is the shape of the answer.** Within one layout,
+> `ratio_planes_layout` = **0.0720** (0.0725 on `fbm_terrain`) and `ratio_masks_layout` = **0.6855**
+> (0.7240, 0.7318) — 13.9× in the plane layout against 1.46× in the per-cell mask layout. The registered
+> `ratio` compares each arm in its **own native** layout, which is the honest comparison because there is
+> no layout-neutral consumer, and `instructions_per_cell_table_planes` = 157.8377 is an **upper bound** on
+> the byte path in the plane layout: it converts with a per-cell scatter, not with a bit-matrix transpose,
+> because a transpose is itself a SWAR mechanism and would make the comparand partly the thing under test.
+>
+> **All four vacuity controls fired.** `mutant_pattern_mismatches` = **192 of 256** — edge 0 computed as
+> `lo & hi` instead of `lo ^ hi`, the bug a reader would most plausibly write — so the 256 is admissible
+> rather than an equality between two names for one computation. `mutant_cell_mismatches_carry` = **3,861**
+> of 262,144, the plane build with `hi << 63` dropped; it is scored on the **pseudorandom** field
+> deliberately, because on every reference field the sample at `x = n − 1` is outside, its sign bit is 0,
+> and dropping the carry-in changes nothing — that control would have read 0 and proved a live comparator
+> dead. `tally_agrees_with_u64` true on 8 of 8, and `cut_cells` > 0 on every row (2,048 on `thin_plate` up
+> to 28,375 on `noise_cavity`), so no row compares two ways of computing zero.
+>
+> **No verdict here is contingent on the popcount lowering.** `target_feature_popcnt` = **false** on all 8
+> rows, and `count_ones_calls_per_cell_swar` = `count_ones_calls_per_cell_table` = **0**: the circuit is
+> XOR, shift and OR, the packer is a shift-and-OR fold, and the byte arm is a table index. A
+> `-C target-cpu=native` build could not move `ratio`, and measuring one would mean comparing across
+> binaries, which `M-281` forbids.
+>
+> **The clock columns are provenance.** `ns_per_cell_swar` 0.763000–0.782449 against `ns_per_cell_table`
+> 3.896408–4.149829, `cycle_ratio` 0.1839–0.2002, beside `ghz`. No clause consults them: on a governed CPU
+> spanning 1.96–5.62 GHz a nanosecond is not a unit (`✗24`, `M-280`), and C3's verdict is carried by the
+> instruction form.
+>
+> **The named figure that is not a comparand.** Fujita's *Bitwise Parallel Bulk Computation* did not
+> download in `M-415`'s acquisition, and its 13.4 × 10⁹ cell-updates/s is quoted from
+> `docs/research/2026-08-28-bitpacking-simd-acquisition-and-backlog.md`, not from any paper in the corpus.
+> Nothing above is scored against it and no column is denominated in it.
+
+**SHARE, recomputed.** `swar_saving_share_instructions` = (`instructions_per_cell_table` −
+`instructions_per_cell_swar`) / `instructions_extract_mc`, per row, and `extraction_ceiling` =
+1 / (1 − that) — `✗51`'s arithmetic, measured in this binary against the shipped `MarchingCubes::extract`
+on the same grid in the same run. The best row is `sphere`: 83.0256 saved against 139.3075,
+`swar_saving_share_instructions` = **0.595987**, `extraction_ceiling` = **2.4752×**. Then 2.3978 (`torus`),
+2.0628 (`thin_plate`), 1.9759 (`box_exact`), 1.8550 (`csg_difference`) — and it collapses to **1.2132×**
+(`gyroid`), **1.0760×** (`noise_cavity`) and **1.0231×** (`fbm_terrain`), where `instructions_extract_mc`
+is 3,411.8421 per cell and field evaluation owns almost all of it. **An 8.31× on classify is not an 8.31×
+on extraction: the largest honest number in this row is 2.4752×, and that is a ceiling at zero
+implementation cost, not a speedup.** The gate that opened this row is `P-121`'s, quoted from
+`docs/experiments/p-121.csv` rather than inherited: `max_reference_integer_share_at_65` = **0.724533**,
+which is `integer_share` on the `sphere 65³ f32 marching_cubes` row against the 0.15 bar — and on the same
+file `fbm_terrain 65³ f32 marching_cubes` reads `integer_share` **0.021974**, which is precisely why this
+row measures eight fields instead of quoting one. (Both figures moved on the clean tree: the harness's own
+SHARE prose cites the pre-run's **0.7260** and **0.0215**, and `p-121.csv` reads **0.724533** and
+**0.021974**. Neither move changes a verdict here, and both are recorded so the two artefacts do not
+silently differ.) Two more shares are on every row for the same reason: `case_stream_share_instructions`
+**0.006563–0.161172**, the case-index build alone measured here rather than imported, and
+`cut_edge_share_instructions` **0.025901–0.677535** — and stated plainly, **the shipped extractor never
+materialises a cut mask at all**, so that column is what a cut-mask pass *would* cost as a fraction of a
+whole extraction, not a stage share of the shipped path. C1's share is not a share: it is an exact integer
+against an exact bar, identical in every build and on every machine. C2's is an enumerated population of
+256, exact by construction.
+
+---
+
+### 💥 ✗83 / M-420 — C1 FALSIFIED on **24 of 24** rows with `offset_share` spanning **0.000328–0.009714** against a **0.05** bar, so the offset stage is at most **0.97%** of extraction and the mechanism's whole extraction-level ceiling is `1/(1 − 0.009714)` = **1.0098×** — Amdahl-dead exactly the way `✗51` was, and the registration's own named falsifier; C2 HELD at **0.032227** space overhead against **0.0351** with a rank query folding **at most 7 words at 33³, 65³ and 129³ alike**, and C3 HELD with `slots_equal` = `active_cells` on all 24 rows (512–118,885) against a one-level-short directory that mismatches **47,104–1,651,200** times (P-107, R-107)
+
+**M.** `cargo bench --bench experiment_p107`, `docs/experiments/p-107.csv`, **24 rows**, `f32` samples
+(the harness's `Bitmaps::build(values: &[f32], n: u32)`),
+`amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **24 data rows**
+across **53 columns** — counted from the file, not from the brief. The fixture is eight fields
+(`sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate`, `gyroid`, `fbm_terrain`, `noise_cavity`)
+× three resolutions (`33`, `65`, `129`), one row each; `cells` is 32,768 / 262,144 / 2,097,152 and
+`cells_checked` — every bit position in the cell bitmap, not merely every cell — is 65,536 / 262,144 /
+2,097,152. Run on **`dd8ef7f`** — `# commit dd8ef7f on amd-ryzen-9-5900x-12-core at 2026-08-29T00:26:48Z`,
+no `(WORKING TREE DIRTY)` — and committed as **`9918120`** (`p-107.csv - re-run on a clean tree`);
+`git merge-base --is-ancestor 9918120 HEAD` passes.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the offset/compaction stage is at least 5% of CPU extraction, checked first | ≥ 0.05 | **FALSIFIED — `c1_holds` false on 24 of 24. `offset_share` (numerator `cycles_offset`, denominator `cycles_extract_mc`) spans 0.000328 (`fbm_terrain` 129³) to 0.009714 (`sphere` 33³); 0 rows clear the bar. Every alternative denominator agrees: `offset_share_dc` ≤ 0.005629 (`c1_holds_dc` false 24/24), `offset_share_instructions` ≤ 0.008045 (`c1_holds_instructions` false 24/24), `offset_share_scan_only` ≤ 0.006004** |
+| C2 a two-level rank directory answers the slot query in O(1) at no more than 3.51% space overhead | ≤ 0.0351 space, O(1) query | **HELD — `c2_holds` true on 24 of 24. `overhead_fraction` = 0.032227 on every row (`directory_bytes` 264 / 1,056 / 8,448 over `bitmap_bytes` 8,192 / 32,768 / 262,144 — the registration's "about 1.1 KiB on a 64³ chunk's 32 KiB bitmap" is the 1,056-over-32,768 row). The O(1) half is a count, not a clock: `max_words_scanned_rank` = 7 on all 24 rows and does not move with resolution, while `max_words_scanned_scan` = 1,023 / 4,090 / 32,746** |
+| C3 the directory's answers equal the prefix sum's on EVERY cell | every cell | **HELD — `c3_holds` true on 24 of 24. `slots_equal` = `active_cells` on every row, 512 (`thin_plate` 33³) to 118,885 (`noise_cavity` 129³), and `rank_equal_all_bits` = `cells_checked` on every row, so the equality is over all 65,536 / 262,144 / 2,097,152 bit positions and not only the active ones. `directory_total_equals_popcount` true 24/24, `pad_bits_set` 0 on 24/24** |
+
+> **Both vacuity controls fired, and C3 is admissible only because of the second one.**
+> `short_directory_mismatches` — the same query answered by a directory deliberately built one level
+> short — reads **47,104 to 1,651,200**, never zero, so C3's equality is between two computations that
+> *could* have disagreed rather than two names for one. `bitmap_matches_scalar` is true on 24 of 24,
+> which pins the bitmap the directory ranks to the scalar predicate before any rank is taken.
+>
+> **`c1_holds` reading `false` on every row is the row's intended cheapest output, not a defect in the
+> mechanism.** The registration names this outcome in `falsified_by` — *"C1 by the offset stage measuring
+> under 5% of extraction, which makes this Amdahl-dead the way `✗51` was and closes the row before C2 is
+> built"* — and the falsification is *conservative*: the harness's numerator keys slots by cell and pays
+> `slot_table_bytes` 131,072 / 1,048,576 / 8,388,608, where the crate keys by `(sample, axis)` and pays
+> `crate_edge_table_bytes` 431,244 / 3,295,500 / 25,760,268, so the measured share is taken against a
+> numerator about **3× smaller** than the one the crate actually carries and still cannot reach 1%.
+>
+> **The wall-clock ratio is reported and carries no verdict** (`✗24`, `M-280`). `ns_per_query_rank`
+> 5.7899–10.9673 against `ns_per_query_scan` 256.8374–10,774.9345 gives `query_ratio_ns` 35.346–1,470.878
+> — on a run whose own `ghz` column spans **1.3077–4.1834** across the 24 rows. The instruction form is
+> the one that decides: `instructions_per_query_rank` **126.754–131.868**, flat in resolution, against
+> `instructions_per_query_scan` **4,776.389–166,672.475**, which is not.
+>
+> **The comparand that matters is `sequential`, and the directory loses to it.** The shipped path never
+> asks a random slot question; it walks cells in order with a running counter, and that costs
+> `instructions_per_query_sequential` **0.259–2.553** (`ns_per_query_sequential` 0.0139–0.2712) — so the
+> rank query is **51.7× to 496.1×** dearer per query than the pass it would replace. The directory buys
+> *random access*, not throughput, and that is exactly the property `R-112` needs.
+>
+> **`target_feature_popcnt` is `false` on 24 of 24, and no verdict here is contingent on it.** A
+> `count_ones` is the SWAR sequence, not an instruction; `count_ones_per_query_rank` is **4.566** on every
+> row and `count_ones_per_query_scan` is 507.836 / 2,069.836 / 16,253.836, so a hardware popcount would
+> move `rank` and `scan` in the same direction. The offset stage makes **none** — it is `trailing_zeros`
+> and `word &= word − 1` — so **C1, the clause that gates the row, is popcount-independent.**
+
+**SHARE, recomputed.** C1 *is* the share, and the arithmetic that decides it was available before the
+harness ran. The CSV's own `# hypothesis:` line records two priors — `M-135`'s contour stage at 29% of
+the pipeline, and `✗54`'s GPU scan at 4.37% of `gpu_total_ms`, already below this clause's 5% bar — and
+`experiment_p107.rs`'s module doc records a third from `P-121` —
+`(cycles_emit_prepare + cycles_emit_walk) / cycles_total` at 0.0800, a strict superset of the offset
+work. The measurement lands an order of magnitude under even that: the largest
+`offset_share` on the file is **0.009714**, so an offset stage reduced to *zero cost* would move
+extraction by `1/(1 − 0.009714)` = **1.0098×**, one part in a hundred; on `dual_contouring`
+(`offset_share_dc` ≤ 0.005629) the ceiling is **1.0057×**. No implementation of this mechanism, however
+good, can clear that — which is `✗51`'s shape, and stating it for the cost of one bench is the row's
+value. What the row still bought is not nothing: C2 and C3 held, so the structure is **correct**
+(`slots_equal` = `active_cells`, `rank_equal_all_bits` = `cells_checked`, both against a live short-directory
+control) and **cheap** (3.2227% space, 7 words folded at any resolution), and `R-112` consumes exactly that
+directory as the middle phase of its count/scan/scatter.
+
+---
+
+### 💥 ✗84 / M-421 — C1 FALSIFIED on **16 of 16** exactly as registered: broadword select costs **+48.9 to +61.0 instructions per set bit** over `dual.rs:489-497`, an `instruction_ratio` of **0.2085–0.3165** (3.2× to 4.8× worse) with **zero** `count_ones` calls to blame it on; C2 HELD with `order_identical` true on 16 of 16 behind **149,083** exhaustively verified `(word, rank)` pairs; C3 HELD with `set_bits_per_nonzero_word` **2.886–32.000**; and the clause was Amdahl-dead before the harness existed — `walk_share_of_extraction` **0.000103–0.001462**, so deleting the walk entirely buys at most **1.00146×** (P-108, R-108)
+
+**M.** `cargo bench --bench experiment_p108`, `docs/experiments/p-108.csv`, **16 rows**, `f32`
+(`scalar` on all 16), `amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column
+header plus **16 data rows** across **58 columns** — counted from the file, not from the brief. Eight
+fields (`box_exact`, `csg_difference`, `fbm_terrain`, `gyroid`, `noise_cavity`, `sphere`,
+`thin_plate`, `torus`) × two resolutions, `words` = **4,096** at 65³ and **32,768** at 129³ against
+`bitmap_words` 8,450 and 49,923 — the one-word sample/cell asymmetry reproduced rather than smoothed.
+Per row, five **sibling** counter windows (`scan`, `walk`, `select_literal`, `select_broadword`,
+`popcount`) plus a whole-extraction denominator; every registered per-set-bit column is the marginal
+`(arm − scan) / set_bits`. `set_bits` spans **2,048–118,885**, `words_nonzero` **64–16,979**,
+`active_fraction` **0.003906–0.108242** — fourteen of sixteen rows at or under 5.7% active, `gyroid`
+65³ (8.2%) and `noise_cavity` 65³ (10.8%) named rather than dropped. Committed at **`ff2ec47`**
+(`p-108.csv - re-run on a clean tree`) and stamped
+`# commit 9918120 on amd-ryzen-9-5900x-12-core at 2026-08-29T00:27:23Z`, no `(WORKING TREE DIRTY)`;
+`git merge-base --is-ancestor 9918120 HEAD` and `--is-ancestor ff2ec47 HEAD` both pass.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 broadword select beats `dual.rs:489-497`'s `trailing_zeros` + `active &= active - 1` walk on a 97%-zero bitmap | ratio > 1 | **FALSIFIED — `c1_holds` false on 16 of 16. `instruction_ratio` (walk over select, per set bit) 0.2085–0.3165, median 0.2475: `instructions_per_set_bit_walk` 13.065–28.266 against `instructions_per_set_bit_select` 61.978–89.297, i.e. `extra_instructions_per_set_bit_select` +48.913 to +61.031, median +53.32. `c1_holds_cycles` false on 16 of 16 with `cycle_marginal_valid` true on 16 of 16 (`cycle_ratio` 0.1110–0.3722), and the wall-clock form agrees at `ratio` 0.1112–0.3748 (`ns_per_set_bit_walk` 0.7565–2.2890 against `ns_per_set_bit_select` 4.4172–6.8031)** |
+| C2 identical visitation order and identical emitted indices, because `dual.rs:496` exists to keep vertex creation order | exact equality | **HELD — `order_identical` true on 16 of 16, asserted as well as recorded: all three walk arms emit element-for-element identical `Vec<u32>`s. `select_ranks_verified` = 149,083 `(word, rank)` pairs checked against a linear scan before any timing, plus `byte_sums(x) >> 56 == x.count_ones` on every one of those words** |
+| C3 the advantage is reported per set bit, not per word, so words skipped entirely cannot carry the ratio | `words_nonzero > 0` and `set_bits > words_nonzero` | **HELD — `c3_holds` is literally that conjunction and is true on 16 of 16: `words_nonzero` 64–16,979 and `set_bits_per_nonzero_word` 2.886–32.000, median 6.96, so the tightest row still carries nearly three set bits per non-zero word. The discipline it protects is discharged on the row: `ratio` (per set bit, median 0.2101) sits beside `whole_pass_ratio` (identically the per-word ratio, median 0.6130), and `scan_share_of_walk_pass` is 0.4914–0.9238, median 0.8531** |
+
+> **`c1_holds` reads `false` on every row and that is the registration's own forecast, not a
+> surprise.** `falsified_by` says it in words — *"C1 by not beating the current walk … this is a
+> **registered expected null**"* — because the 2026-08-23 dossier had already argued the pass is
+> dominated by the words neither arm touches. `scan_share_of_walk_pass` **0.4914–0.9238** is that
+> argument turned into a number. What the null bought is the number and the mechanism, which is what
+> a null with no measurement cannot buy: the walk had **never been measured against another walk**
+> (`M-337` measured the *bitmap* against the eight-corner gather — the predicate, not the
+> enumeration), so this is the first price for what a set bit costs to produce, **13.065–28.266
+> instructions**; the `PEXT` foreclosure now has a published rate on every row
+> (`published_pdep_penalty` = `2x-4x`, Pandey/Bender/Johnson's `PDEP`+`TZCNT` select on Haswell)
+> rather than an unknown one; and the candidate's stated rationale — a countable trip count in place
+> of a data-dependent loop exit — is refuted directly: `branch_misses_per_set_bit_select`
+> **0.00842–0.13109** against `branch_misses_per_set_bit_walk` **0.00831–0.13101**, agreeing row for
+> row to three figures. The incumbent's loop-exit branch is already free; what mispredicts is the
+> shared outer word loop, which both arms pay identically.
+>
+> **The vacuity controls fired and are what makes C3's `true` mean anything.** The registered one is
+> asserted per row, not merely recorded (`words_nonzero > 0` and `set_bits > words_nonzero`), so a
+> fixture whose per-set-bit denominator had collapsed to one bit per word would have aborted the run
+> instead of reporting a ratio. Two unregistered instrument checks sit beside it and also assert:
+> `scan_arm` returns `words_nonzero` and `popcount_arm` returns `set_bits`, each compared against an
+> independent population count — a baseline that scanned a different word set could not go unnoticed,
+> and a wrong select rank would otherwise have surfaced as a C2 list disagreement, which is a worse
+> diagnosis than a wrong rank.
+>
+> **Which form carries C1.** `c1_holds` is `instruction_ratio > 1.0`; `M-280`/`M-281` forbid the
+> nanosecond form from carrying it, and `ghz` **4.1816–4.1893** on this run is why the three forms
+> happen to agree here, not a reason to trust the ns column. The instruction form is also the
+> *conservative* one — 3.2×–4.8× where the ns form says 2.7×–9.0× — and it is a lower bound on the
+> cycle gap, since both arms are pure ALU-and-L1 work with indistinguishable miss rates while
+> broadword select is a long dependent chain against three independent instructions: `cycle_ratio`
+> median 0.2103 against `instruction_ratio` median 0.2475.
+
+**`target_feature_popcnt` is `false` on all 16 rows, and no verdict here is contingent on it.** The
+build sets no `target-cpu`, so `u64::count_ones` is a SWAR sequence — priced in this binary at
+`instructions_per_count_ones` **22.9–30.6**, median 29.06, on the **nine** rows where
+`count_ones_price_readable` is `true` (`count_ones_price_share` ≥ 0.05); the other seven are flagged,
+not averaged, and `thin_plate`'s 149.5/150.0 readings rest on 1–2% of the pass and are the two loops'
+compilation difference rather than a price. That handicap is deliberately kept *off* the verdict:
+`select_variant` is `broadword` on 16 of 16 and
+`count_ones_per_set_bit_select_broadword` = `count_ones_per_set_bit_select` = **0** on 16 of 16, the
+same as `count_ones_per_set_bit_walk` — so `-C target-cpu=native` cannot make the scored arm cheaper
+by one instruction. The contingent arm is the one not scored: `select_literal` makes
+`count_ones_per_set_bit_select_literal` **1.0312–1.3465** calls per set bit and costs
+`instructions_per_set_bit_select_literal` **76.0–103.3**, **+14.0 to +20.1** instructions per set bit
+above the broadword arm on every row, so a hardware `POPCNT` would narrow the gap from about 4× to
+about 3× and cannot close it — and the incumbent would get cheaper too, since `active &= active - 1`
+becomes one `BLSR`. `PEXT`/`PDEP` are foreclosed for three independent reasons that no measurement can
+lift — the crate forbids `unsafe`, `core::simd` and `#[cfg(target_arch)]`, and `_pext_u64` needs all
+three — which is why the foreclosure is priced on the row instead of tested.
+
+**SHARE, recomputed.** C1's share is `walk_share_of_extraction`: the set-bit walk's marginal cycles
+over the shipped `DualContouring::extract` on the same field and grid, measured as a fifth sibling
+window in the same run, against `extraction_cycles_per_cell` **40.40–1,165.93** as the denominator.
+Measured **0.000103** (`fbm_terrain` 129³) **to 0.001462** (`thin_plate` 65³) — **between one part in
+ten thousand and one and a half parts in a thousand of an extraction**. So `c1_ceiling` = `1/(1 −
+share)` reads **1.000103× to 1.001464×**, the column verbatim, which is what making
+the walk *free* could give a whole extraction; `✗51`'s ceiling was 1.061× and it was reached by a
+clause nobody thought was dead. The extremes are set by the field, not the walk —
+`extraction_cycles_per_cell` is **1,011.92** on `fbm_terrain` 129³ against **45.93** on `thin_plate`
+65³, so the same walk is a smaller part of the more expensive field. C2 has no share; it is an
+equality.
+C3's share is `scan_share_of_walk_pass` **0.4914–0.9238**, median 0.8531, which is exactly the
+quantity C3 exists to keep out of the numerator: quoting per-word instead of per-set-bit would have
+reported a 1.6× loss (`whole_pass_ratio` median 0.6130) where the mechanism costs 4.8×, a dilution of
+**3.0× at the median**.
+
+---
+
+### 💥 ✗85 / M-422 — C1 FALSIFIED on **24 of 24** at **7.2959–12.6711 bits per crossing** against a 4.0-bit bar it could not have reached — `low_bits_width` equals `⌈log₂(u/n)⌉` on **24 of 24** and the fixture's *densest* row already has `u/n` = **16.5304** where 4 bits demands `u/n ≤ 8` — C2 FALSIFIED on **24 of 24** at **36.841–158.737×** the dense load in instructions, and C3 HELD on **24 of 24** with `values_equal` = `crossings` and the shifted-width mutant mismatching on every one of them: Elias–Fano is correct, cheap against the incumbent's *space*, and the wrong structure for a sequence this sparse in the universe it indexes (P-109, R-109)
+
+**M.** `cargo bench --bench experiment_p109`, `docs/experiments/p-109.csv`, **24 rows** across **61
+columns** — four `#` comment lines plus one column header plus 24 data rows, counted from the file, not
+from the brief. Eight fields × {33³, 65³, 129³}, one row each, no scalar or extractor arm: every row is
+one bench-local `marching_cubes` mirror of `edge_vertices`, its Elias–Fano re-encoding of the same key
+sequence, and both structures replayed over the crate's own probe order (`probes` **3,048–717,252**) and
+over a uniform present-key order beside it. `samples` ∈ {35937, 274625, 2146689}, `universe` = `3 ·
+samples` on 24 of 24, `dense_bytes` ∈ {431244, 3295500, 25760268}, `ef_bytes` **700–130,820**.
+`amd-ryzen-9-5900x-12-core` (Zen 3), `ghz` **4.1697–4.1885** on every row. Run against **`ff2ec47`** —
+`# commit ff2ec47 on amd-ryzen-9-5900x-12-core at 2026-08-29T00:31:36Z`, no `(WORKING TREE DIRTY)` — and
+committed at **`d05a310`** (`p-109.csv - re-run on a clean tree`); `git merge-base --is-ancestor d05a310
+HEAD` passes.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the encoded map costs at most 4 bits per crossing | ≤ 4.0 bits | **FALSIFIED — `c1_holds` false on 24 of 24. `bits_per_crossing` 7.2959 (`noise_cavity` 33³) to 12.6711 (`thin_plate` 129³); `bits_per_crossing_no_select` 6.5354–11.7841, so dropping the select hints does not reach it either (`c1_holds_no_select` false on 24 of 24), and `bits_per_crossing_with_values` 39.2959–44.6711 is the whole structure with its unencoded 32-bit `value_bytes`** |
+| C2 access costs at most 1.5× the current direct addressing | ≤ 1.5× | **FALSIFIED — `c2_holds` false on 24 of 24. `access_ratio_instructions` 36.8408 (`gyroid` 33³) to 158.7369 (`thin_plate` 129³): `instructions_per_access_ef` 294.7368–1269.9247 against `instructions_per_access_dense` 8.0000–8.0027. The nanosecond form agrees — `access_ratio` 52.8084–183.7042, `c2_holds_ns` false on 24 of 24 — and the random-order forms are worse, `access_ratio_instructions_random` 59.1506–252.9526** |
+| C3 the decoded map equals the dense array on every crossing | 0 differing | **HELD — `c3_holds` true on 24 of 24. `values_equal` = `crossings` on 24 of 24 (510–119,400), `positional_values_equal` = `crossings` on 24 of 24, and `absent_sentinel_correct` = `absent_probed` (3,841–4,093 per row), so a lookup that answered *something* for every key could not have passed** |
+
+> **C1 was decided by arithmetic available before the harness existed, and the harness says by how much.**
+> Elias–Fano spends `2 + ⌈log₂(u/n)⌉` bits per element, so a 4-bit budget demands **`u/n ≤ 8`**. Measured
+> `universe_per_crossing` runs **16.5304 to 786.3330** — the *densest* row is already 2.07× the ceiling
+> and the sparsest 98× it. `low_bits_width` equals `⌈log₂(u/n)⌉` on **24 of 24**, and `bits_per_crossing`
+> exceeds `2 + ⌈log₂(u/n)⌉` by only **0.2638–0.9804** bits (the select hints), so the paper's own cost
+> model is confirmed to under one bit and that model is what forecloses the clause: at `u/n` = **786.3330**
+> the floor is about **12** bits and the row measured **12.6711**; the cheapest encoding anywhere in the
+> fixture is **7.2959**. The universe is `3 n³` and the crossings are a surface, `O(n²)`, so `u/n` grows
+> linearly in resolution — 33³ → 129³ moves `thin_plate` from 211.3941 to 786.3330 and its cost from
+> 10.9804 to 12.6711 bits. **The clause was unreachable on every field at every resolution.**
+>
+> **C1's bar was tighter than the incumbent it was written against.** The registration set 4 bits as
+> "where the dense `u32` array's 32 bits per SLOT stops being the thing to beat", but the incumbent's
+> per-crossing figure is `dense_bits_per_crossing` **528.9715–25,162.6549** — the active fraction
+> `1 / universe_per_crossing` is **6.05% down to 0.13%** — and `space_ratio_dense_over_ef` is
+> **13.4612–563.2876**. The encoding beats the shipped structure's space by up to 563× and still misses
+> its registered bar by 1.8–3.2×. Both readings are true; the bar is the one that was registered.
+>
+> **The instruction form carries C2's verdict (`M-280`, `M-281`); the nanosecond form only agrees.**
+> `ns_per_access_dense` **0.3372–0.6681** against `ns_per_access_ef` **32.2171–67.0548**, on a CPU governed
+> `powersave`/`balance_performance` across 1.96–5.62 GHz — corroboration, not the gate. The best
+> instruction ratio measured anywhere is **36.8408** (`gyroid` 33³) against a 1.5× bar.
+> `target_feature_popcnt` is **false** on 24 of 24 (no `target-cpu`, so `count_ones` lowers to the
+> ~12-instruction SWAR sequence), and the call count is measured rather than estimated: on `sphere` 33³ a
+> lookup makes **6.8217** `count_ones` calls (`count_ones_per_access_ef`) and a positional access
+> **5.1079** (`count_ones_per_access_ef_positional`), ranging **5.4856–16.8659** and **4.5757–5.2507**
+> over the 24 rows. Crediting a one-cycle `popcnt` arithmetically still leaves
+> `access_ratio_instructions_popcnt_credited` at **27.8239–150.0834**, and **`c2_contingent_on_popcnt` is
+> false on 0 of 24 rows** — the missing popcount did not decide C2. The gap is structural: one
+> bounds-checked `u32` load against a `select0`, a bit-run scan, and a low-bits compare per candidate.
+>
+> **C3's `true` is admissible only because the mutant fired.** `mutant_value_mismatches` = `crossings` on
+> **24 of 24** — a decoder rebuilt at `mutant_low_bits_width` = `low_bits_width + 1` (verified `l + 1` on
+> 24 of 24) against a structure encoded at `l` mis-decodes **every** value. Without it C3 is an equality
+> between two names for one computation, since the comparand *is* the array the mirror built. The mirror is
+> checked twice more: `shipped_vertices` = `crossings` with `centroid_vertices` = 0 on 24 of 24 (`V_mc = C`
+> recovered from the run rather than quoted at it), and `mirror_on_edge` = `crossings` on 24 of 24, which
+> places every mirrored vertex exactly on the grid edge its key names instead of merely counting them.
+>
+> **What the row does not say.** Nothing here is a defect in Vigna. The measurement confirms the paper's
+> cost model to under a bit and confirms O(1) *positional* access:
+> `instructions_per_access_ef_positional` **141.0577–154.0460** and `ns_per_access_ef_positional`
+> **8.0780–9.6807** are flat in `n` where the lookup form is not — `P-107`'s "the directory buys random
+> access, not throughput" in a second shape. Elias–Fano is the right structure for a monotone sequence that
+> is *dense* in its universe; these are surface crossings in a volumetric edge universe, and the crate
+> never performs the operation the paper makes O(1) — it performs `edge_vertices[key]`. **This row
+> forecloses the quasi-succinct family for this use**, with the fixture's own `u/n` on every line, so no
+> future ticket needs to re-measure it.
+
+**SHARE, recomputed.** C1 is a space bound and C2 a cost bound against a named baseline; neither is a
+ratio of an extraction total, so `✗51`'s `1/(1 − share/factor)` bar does not apply and no speedup is
+claimed. **C1's share is `bits_per_crossing`** (bar 4.0, key sequence only), bounded below by
+`universe_per_crossing` and scored also as `bits_per_crossing_no_select` and
+`bits_per_crossing_with_values`. **C2's share is `access_ratio_instructions`** (bar 1.5) over the crate's
+own probe order. **C3's share is `values_equal / crossings`, bar 1** — an equality over an enumerated
+population, denominator exact by construction. The row prices an encoding and moves no extraction time;
+what it feeds is `R-027a`'s 45× buffer-churn ceiling, which `M-318` measured and which nothing here
+re-claims.
+
+---
+
+### 💥 ✗86 / M-423 — C1 FALSIFIED on **24 of 24** rows and in every unit (`flip_plus_rank_ratio_instructions` **2.2506–2.6863** against a bar of 2.0), while its rank-only conjunct is a **2.1–2.4%** near miss whose sign the *unit* decides — `rank_ratio_instructions` **2.0419–2.0485** on the registered 65³ arm against a nanosecond `rank_ratio` of **1.9031–2.0209** that reads under the bar on 6 of those 8 rows; C2 and C3 HELD on 24 of 24, `distinct_final_states` **1** against `control_distinct_final_states` **128**, `rank_answers_equal` **131,072 of 131,072** — so Pibiri & Kanda's counter tree is provably insertion-order-independent and costs about **2×** a static directory's query to be so (P-110, R-110)
+
+**M.** `cargo bench --bench experiment_p110`, `docs/experiments/p-110.csv`, **24 rows**, 63 columns,
+`amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **24 data rows** —
+counted from the file, not from the brief: eight reference fields (`sphere`, `torus`, `box_exact`,
+`csg_difference`, `thin_plate`, `gyroid`, `fbm_terrain`, `noise_cavity`) × three resolutions
+{33³, 65³, 129³}, eight rows each, with `registered_arm` true on the eight 65³ rows and false on the other
+sixteen. Every row is one flip set of `flips` = **4,096** distinct cell bits replayed under `permutations` =
+**128** seeded orderings (ordering 0 the identity, 1…127 seeded Fisher–Yates), three arms — `static`
+(`P-107`'s block+superblock directory), `mutable` (a `BRANCH` = 64 b-ary tree of *counts*), and `journal`
+(the order-sensitive control) — over one shared `Vec<u64>` cell bitmap mirrored from `dual.rs:359-381`.
+Committed at **`17650e4`** (`p-110.csv - re-run on a clean tree`); the run was taken on the tree the CSV
+names, `# commit d05a310 on amd-ryzen-9-5900x-12-core at 2026-08-29T00:31:51Z`, with no
+`(WORKING TREE DIRTY)`, and `git merge-base --is-ancestor 17650e4 HEAD` passes — as does the same check on
+the stamped `d05a310`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 `flip(i)` plus rank stays within 2× of the static directory's rank cost | ≤ 2.0 | **FALSIFIED — `c1_holds` false on 24 of 24, and so are `c1_holds_ns` and `c1_holds_cycles`. `c1_holds` is the conjunction taken over the instruction form; the hypothesis's own reading, `flip_plus_rank_ratio_instructions`, is 2.2506–2.6863 (registered arm 2.3712–2.3782) and the falsifier's reading, `rank_ratio_instructions`, is 1.9219–2.3569 (registered arm 2.0419–2.0485). `instructions_per_rank_mutable` 257.389–314.984 against `instructions_per_rank_static` 133.645–133.926** |
+| C2 the final structure is independent of the order the flips arrive in, bit-identical over the registered permutations | `distinct_final_states` = 1 | **HELD — `distinct_final_states` = 1 and `final_structures_identical` true on 24 of 24, over `permutations` = 128 orderings of `flips` = 4,096, while `control_distinct_final_states` = 128 of 128 in the same run** |
+| C3 rank answers equal the static directory's after every permutation | all equal | **HELD — `rank_answers_equal` = `rank_answers_checked` = 131,072 (128 orderings × 1,024 random cell bits) on 24 of 24, plus `mutable_equals_prefix_all_bits` = `static_equals_prefix_all_bits` = `full_sweep_bits` = 65,536 / 262,144 / 2,097,152 — an exhaustive sweep of every cell bit against a running prefix counter** |
+
+> **C2's `1` against a control of `128` is this row's durable content, and it is the clause the registration
+> named as the one that closes the row.** `V-45`'s objection — a structure written across calls cannot
+> survive `validate/determinism.rs`'s third, reused-buffer run — **does not arise for this mechanism**. A
+> `flip(i)` is one XOR on the word plus a ±1 on exactly one slot per level, and ±1 on an integer commutes,
+> so the final tree is a function of the flip *set*. That is now measured rather than argued: `1` on every
+> row, and `final_structures_identical` is an exact bit-for-bit comparison of every level and every word
+> against ordering 0, so a hash collision cannot report agreement that is not there.
+>
+> **The `1` is admissible because the comparator was shown able to hold `128`** (`M-44`). The `journal` arm
+> — keep the static counters, append flips to a log, rebuild at `JOURNAL_CAP` = 1000, correct queries from
+> the residual — is a *working* mechanism, not a strawman: `control_answers_correct` true on 24 of 24,
+> `control_structures_identical` **false** on 24 of 24, `control_distinct_final_states` **128**. With
+> `flips` = 4,096 the residual log is non-empty (4,096 mod 1,000 = 96), which is what keeps the control
+> itself non-vacuous. It is also *expensive*: `instructions_per_rank_control` **691.631–702.663** against
+> the static directory's **133.645–133.926**, over 5×. So the obvious way to make a static directory mutable
+> is both order-sensitive and far slower than the paper's.
+>
+> **C1's `false` does not mean the cost is unexplained — it is located, and the location was derived before
+> the run.** `tree_levels` reads **2** at all three resolutions while `top_level_slots` reads **2 / 8 / 64**,
+> and a query scans the slots *before* its own child index at each level. `instructions_per_rank_static` is
+> flat at **133.645–133.926** across all 24 rows while `instructions_per_rank_mutable` climbs monotonically
+> with that width — **257.389–258.270** at 33³, **272.890–273.773** at 65³, **314.101–314.984** at 129³ — so
+> the whole difference is the level scan the paper reaches for SIMD to fix and `crates/isomesh/src/` cannot
+> (zero `unsafe`, zero `core::simd`, zero `#[cfg(target_arch)]`). Everything below the scan is identical by
+> construction: `max_words_scanned` = **7** on 24 of 24, `mutable_directory_bytes` exceeds
+> `static_directory_bytes` by exactly **4 bytes** at every resolution (268/264, 1060/1056, 8452/8448), and
+> `mutable_overhead_fraction` **3.2242–3.2715%** against `static_overhead_fraction` **3.2227%**.
+>
+> **The unit changes the near miss, not the verdict — and the instruction form is the gate** (`M-280`,
+> `M-281`, `✗24`; `ghz` reads **4.1759–4.1891** on a `powersave`/`balance_performance` CPU spanning
+> 1.96–5.62 GHz, so a nanosecond here is not a unit). On the rank-only conjunct the two forms *disagree in
+> sign*: on the registered 65³ arm `rank_ratio_instructions` is **2.0419–2.0485**, over the bar by 2.1–2.4%
+> on all eight rows, while the nanosecond `rank_ratio` spans **1.9031–2.0209** and sits *under* 2.0 on six
+> of the eight (`box_exact` 2.0081 and `thin_plate` 2.0209 are the two that do not). Scored on wall clock
+> alone that conjunct would have read HELD on 6 of 8 rows; scored on retired instructions it reads
+> FALSIFIED on 8 of 8. C1 as registered is falsified either way, because the hypothesis's `flip`-plus-rank
+> reading is **2.2400–2.3535** in nanoseconds and **2.3712–2.3782** in instructions on the same arm —
+> `flip` costs `instructions_per_flip` **44.003–44.098**, a third of a whole static rank, and no unit hides
+> that. This is exactly the shape `✗24` legislated for: had the harness gated on the clock, the phase would
+> own a HELD that a re-run could flip.
+>
+> **The null is measured in the mechanism's *favourable* regime.** `target_feature_popcnt` is **false** on
+> 24 of 24 — no `target-cpu`, no `RUSTFLAGS`, so `count_ones` lowers to the ~12-instruction SWAR sequence.
+> Both arms end in the same `block_tail` call and make no other popcount call, so
+> `count_ones_per_rank_mutable` = `count_ones_per_rank_static` on every row (**4.506** at 33³, **4.475** at
+> 65³ and 129³; the harness's aggregate print quotes the 4.506 maximum), and `count_ones_per_flip` = **0.000**.
+> Popcount is therefore a common additive term `P` in `(P + M)/(P + S)`, and making `P` cheaper moves that
+> ratio **further from 1** in the direction it already is. Since every ratio here is > 1, a build with
+> hardware `popcnt` would report a **larger** ratio: C1 is falsified on that build too, without measuring
+> it (`M-281` forbids comparing across binaries; the call counts are the honest substitute).
+>
+> **Instrument checks.** `bitmap_matches_scalar` true on 24 of 24 — every row re-classifies every cell by an
+> eight-corner scalar test against the mirrored bitmap (`M-279`; `R-120` and `R-121` each caught a real
+> defect that way) — and `pad_bits_set` = **0** on 24 of 24, before and after the flips, because the flip
+> set is drawn over cells rather than raw bit indices. `active_cells_before` **512–118,885** and
+> `active_cells_after` **4,486–122,511** are both columns: the post-flip bitmap is deliberately no longer
+> the field's own active set.
+
+**SHARE, recomputed.** **No time is claimed of extraction and this row has no Amdahl denominator** — by
+registration, C1 is a cost bound against a baseline named and re-measured in the same run on the same
+bitmap (`P-107`'s directory, `256b654`), and C2 is the property `validate/determinism.rs:273-303` demands.
+So `R-121`'s `integer_share` gate is not this row's ceiling and nothing here converts to a speedup. The
+only share on the row is space: `mutable_overhead_fraction` **3.2242–3.2715%** of the bitmap, four bytes
+more than the static directory at every resolution. What C1 falsifies is the *price*: order-independent
+mutability costs `rank_ratio_instructions` **1.9219–2.3569×** the static directory's rank across the three
+widths — **2.0419–2.0485×** on the registered 65³ arm — and it grows with the top-level width, while
+`flip_plus_rank_ratio_instructions` puts the registered arm's combined operation at **2.3712–2.3782×**.
+There is today no consumer to charge that to: nothing in `crates/isomesh/src/` maintains a rank structure
+across mutations, `dual.rs`'s bitmap being built once per extraction and thrown away. The mechanism is
+admissible and about 2× too expensive to land unasked; the number to quote when a sweep does need one is
+`rank_ratio_instructions` at the width it will actually run at, not at 65³.
+
+---
+
+### 💥 ✗87 / M-424 — C1 FALSIFIED on **16 of 16** rows in all four recorded forms (`ratio` **0.41717–0.94158**, `instruction_ratio` **0.32412–0.94875**, and above 1 is where the table wins), C3 FALSIFIED on **14 of 16** and holding only on `csg_difference` 129³ and `thin_plate` 129³, C2 HELD on **16 of 16**: the 2 KiB table is a bit-exact drop-in that issues **2.00000–22.17637** stores per set bit against the walk's **1.00000**, and that ratio is analytic — it was decidable from the bitmap's own bit census before a clock was read (P-111, R-111)
+
+**M.** `cargo bench --bench experiment_p111`, `docs/experiments/p-111.csv`, **16 rows**, `amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **16 data rows** across **71 columns** — counted from the file, not from the brief. Eight fields (`sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate`, `gyroid`, `fbm_terrain`, `noise_cavity`) × two `resolution` values, 65 and 129 — `cells` 262,144 and 2,097,152, `cell_words_per_row` 1 and 2, so `dual.rs:484`'s cell/sample word asymmetry is exercised on both sides of the `u64` boundary. The four arms (`scan`, `walk`, `table`, `table_byteskip`) ride every row as column families rather than as rows, and `enumeration` is a prefix difference of two **sibling** counter windows, never nested. `reps` 15 on all 16 rows, `inner_reps` 53–722, `ghz` **4.1813–4.1866** across the whole pass. Committed at **`07fd713`** (`p-111.csv - re-run on a clean tree`) from a run stamped one commit earlier in the serial pass — `# commit 17650e4 on amd-ryzen-9-5900x-12-core at 2026-08-29T00:32:19Z`, no `(WORKING TREE DIRTY)`, and `git merge-base --is-ancestor 17650e4 HEAD` and `git merge-base --is-ancestor 07fd713 HEAD` both pass.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the table beats `dual.rs:489-497`'s set-bit walk on a 97%-zero bitmap | `ratio > 1` | **FALSIFIED on 16 of 16** — `ratio` **0.41717** (`gyroid` 65³) to **0.94158** (`thin_plate` 129³), against `ratio_definition` on every row reading *"`ns_per_set_bit_walk/ns_per_set_bit_table`; above 1 means the table wins"*. `ns_per_set_bit_walk` 1.78496–26.77291 against `ns_per_set_bit_table` 3.07728–28.43399. The reproducible form agrees: `instruction_ratio` **0.32412–0.94875**, `cycle_ratio` 0.41730–0.94287, `ratio_from_rep_minima` 0.41434–0.94209 — `c1_holds`, `c1_holds_instructions`, `c1_holds_cycles` and `c1_holds_from_rep_minima` all `false` on all 16 rows, `c1_agreement` `true` on all 16 |
+| C2 identical output order and identical indices | exact | **HELD on 16 of 16** — `order_identical` `true` 16 of 16, `c2_holds` `true` 16 of 16, and the unregistered `table_byteskip` arm agrees too: `byteskip_order_identical` `true` 16 of 16 |
+| C3 the table's L1 cost does not eat the win, as L1D read misses per set bit | `l1_misses_per_set_bit_table <= l1_misses_per_set_bit_walk`, zero tolerance | **FALSIFIED on 14 of 16, HELD on 2** — held only on `csg_difference` 129³ (walk **0.33069** vs table **0.32699**, `l1_delta_per_set_bit_table_minus_walk` **−0.003701**) and `thin_plate` 129³ (walk **0.87090** vs table **0.86673**, delta **−0.004173**). On the other 14 the delta is positive, **+0.001066** (`fbm_terrain` 129³) to **+0.015307** (`fbm_terrain` 65³); `l1_miss_ratio_table_over_walk` **1.00416–1.09405** |
+
+> **C3 is the mechanism's own most likely failure mode, the registration named it in advance — *"the table costing more L1 than it saves on a 97%-zero bitmap"* — and it is what happened, but only on 11 of the 16 rows does the reading survive the instrument.** `c3_holds` is scored on the registration unamended, at zero tolerance, so a 0.4% difference between two hardware counter medians falsifies it exactly as loudly as a 9.4% one. `c3_holds_within_instrument_spread` is the column that separates the two: it asks `l1_misses_per_set_bit_table <= l1_misses_per_set_bit_walk_rep_max`, i.e. whether the table's median lands at or below the walk arm's own **worst** of 15 repetitions. It reads `true` on **5 of 16** rows — the 2 where C3 held (where it is true by construction) and **3 of the 14 falsified ones**: `sphere` 129³, `fbm_terrain` 129³ and `noise_cavity` 129³. **On those three the falsification is a measurement about the instrument and not about the table.** `M-280`'s rule was written for a governed clock, but it is a statement about instruments, not about nanoseconds: a difference smaller than the instrument's own run-to-run band is a reading of the band. The two rows where C3 *held* fail the same test in the other direction — `thin_plate` 129³'s −0.479% sits inside a walk band of 0.85754–0.87162, so it is not a win either. That leaves **`csg_difference` 129³ as the single row in the fixture where the table genuinely reads fewer L1 misses per set bit** (−1.119%, against a walk band of 0.33026–0.33105), and **11 of 16 rows where the registered failure mode is real and outside the band**, the largest being `gyroid` 65³ at **+9.407%** and `fbm_terrain` 65³ at **+7.377%** over walk bands of 0.12370–0.12402 and 0.20722–0.20782.
+
+| row | `l1_..._walk` | walk `_rep_min`–`_rep_max` | `l1_..._table` | `l1_delta_..._table_minus_walk` | `c3_holds` | `..._within_instrument_spread` |
+|---|---:|---:|---:|---:|:--:|:--:|
+| `csg_difference` 129³ | 0.33069 | 0.33026–0.33105 | **0.32699** | **−0.003701** | **true** | true |
+| `thin_plate` 129³ | 0.87090 | 0.85754–0.87162 | **0.86673** | **−0.004173** | **true** | true |
+| `sphere` 129³ | 0.40248 | 0.39996–0.41515 | 0.40844 | +0.005967 | false | **true** |
+| `fbm_terrain` 129³ | 0.25638 | 0.25589–0.25988 | 0.25745 | +0.001066 | false | **true** |
+| `noise_cavity` 129³ | 0.12000 | 0.11991–0.12266 | 0.12179 | +0.001783 | false | **true** |
+| `torus` 129³ | 0.44163 | 0.43555–0.44397 | 0.44433 | +0.002697 | false | false |
+| `fbm_terrain` 65³ | 0.20754 | 0.20722–0.20782 | 0.22285 | **+0.015307** | false | false |
+| `gyroid` 65³ | 0.12385 | 0.12370–0.12402 | **0.13550** | **+0.011648** | false | false |
+
+The eight rows not listed all read `c3_holds` `false` with `c3_holds_within_instrument_spread` `false`.
+
+> **C1 was decided by arithmetic that existed before the harness did, and the harness records the arithmetic as columns.** `stores_per_set_bit_walk` is **1.00000** on 16 of 16 — the incumbent writes exactly one slot per set bit. `stores_per_set_bit_table` is **2.00000–22.17637**, and it is not a timing: it is `64 · words_nonzero / set_bits`, because the registered arm writes eight slots for each of a word's eight bytes unconditionally. I re-derived it from `words_nonzero` and `set_bits` on the first three rows and it reproduces exactly. A mechanism that issues 2 to 22 stores per useful store cannot beat one that issues one, on any machine, and no clause needed a clock to know that.
+>
+> **The table's best case is structural and the fixture contains it.** The two rows where the table comes closest are `thin_plate` 129³ (`ratio` 0.94158) and `thin_plate` 65³ (0.90741), and they are exactly the two rows where `stores_per_set_bit_table` reads its floor of **2.00000** — `words_nonzero` 256 against `set_bits` 8,192 and 64 against 2,048, i.e. exactly 32 set bits inside every word the arm touches. The table only becomes competitive when the set bits inside a touched word are dense, `thin_plate` is the one field in the fixture where they are, and it still loses by **6%**.
+>
+> **`table_byteskip` names the cause, which is why an unregistered arm was worth recording.** Guarding the eight stores with `if byte != 0` drops `stores_per_set_bit_table_byteskip` to **1.00000–3.30116** and the arm still loses on **all 16** rows: `ratio_byteskip` **0.61669–0.95226**, `instruction_ratio_byteskip` **0.59449–0.96628**. So this is not *the unconditional stores are a bad idea*; it is *the table lookup is a bad idea here*. The prefix-differenced enumeration windows put it starkest, with the shared word scan subtracted: `instructions_per_set_bit_enumeration_walk` **14.37935–35.17299** against `instructions_per_set_bit_enumeration_table` **46.69463–218.81947**, `enumeration_instruction_ratio` **0.09596–0.60468** — the enumeration alone costs the table **1.65×–10.4×** the walk's retired instructions.
+>
+> **The clause was tested at and beyond its own registered regime.** The hypothesis names `M-337`'s 1.89% / 0.93% / 0.46% active fractions as *"the regime, not an assumption"*; measured `active_fraction` spans **0.0039062–0.108242**. Only `thin_plate` (0.0039062, 0.0078125) and `sphere`/`torus` 129³ (0.0091705, 0.0083122) sit inside that band — `gyroid` 65³ at **0.0817566** and `noise_cavity` 65³ at **0.1082420** are an order of magnitude denser. C1 is falsified at both ends.
+>
+> **A measurement-hygiene result that costs nothing and confirms the serial protocol.** The harness's module doc (`experiment_p111.rs:178-192`) records two consecutive runs of the identical binary, minutes apart under six concurrent bench agents, reading `thin_plate` 129³'s walk arm at **26.32** then **43.74** ns per set bit — a 1.66× move that flipped `c1_holds` for that row from `false` to `true` — while `instruction_ratio` read **0.9487** then **0.9488**. This clean serial run reads `ns_per_set_bit_walk` **26.77291** for that row and `instruction_ratio` **0.94875**: the clock reproduces the *fast* contended reading and the instruction form reproduces both to four figures. `ghz` held inside **0.13%** across all 16 rows, which is why the ns and instruction forms agree here at all — and is not a licence to gate on the ns form.
+>
+> **Vacuity controls, all four, and none of them asserts an outcome.** `set_bits` **2,048–118,885** on 16 of 16, so no per-set-bit denominator divides an empty population. `words_nonzero` **64–16,979** and `bytes_nonzero` **256–42,015**, both non-zero on every row, so both arms actually entered their inner loops rather than scoring a ratio of two skipped passes. `table_bytes` **2048** on 16 of 16, which is the registered "2 KiB" as an assertion rather than a claim. The counter arm is `cfg(target_os = "linux")` and `exit(1)`s elsewhere on `experiment_p12`'s precedent, so no off-Linux run could have recorded a fabricated cache zero — this pass ran on Linux and the L1 columns are real readings. `order_identical`, `c1_holds`, `c2_holds` and `c3_holds` are recorded and never asserted, which is the only reason a 14-of-16 falsification exists to read.
+>
+> **`c1_holds = false` on every row is the row's product, not its failure.** The registration asks whether the only admissible scalar reduction of simdjson's compaction beats `dual.rs:495-497`. It does not, C2 proves the answer is not an artefact of measuring a different computation — `order_identical` and `byteskip_order_identical` are `true` on all 16 rows, so the table produces the identical index sequence in the identical order and simply costs more to produce it — and `table_byteskip` locates the cost in the lookup rather than in the stores. That is a complete, causally-located *do not build this*.
+>
+> **One contingency, named and not quantified.** The registered arm advances its cursor with `byte.count_ones` (`experiment_p111.rs:477`), eight calls per non-zero word, and `target_feature_popcnt` is `false` in this build — the repository sets no `target-cpu` and no `RUSTFLAGS` — so that advance lowers to a SWAR sequence rather than one instruction, while the walk's `trailing_zeros` is a single instruction on any x86-64. No column in `p-111.csv` isolates it. It cannot rescue C1: `stores_per_set_bit_table`/`stores_per_set_bit_walk` is analytic and popcnt-independent, and `table_byteskip`, which calls `count_ones` strictly less often, loses on all 16 rows anyway.
+
+**SHARE, recomputed.** The stage this row competes in is `cycles_emit_walk`, and it is on every row as a column so no reader can mistake a per-set-bit ratio for an extraction speedup. `p121_emit_walk_share_mc_65` is **0.0029–0.0601** and `p121_emit_walk_share_dc_65` is **0.0002–0.0109**, carried from `P-121`'s 65³ stage decomposition. `extraction_ceiling_mc` **1.00291–1.06394** and `extraction_ceiling_dc` **1.00020–1.01102** are `1/(1 − share)`: deleting this stage *entirely and perfectly* buys at most **1.064×** under `marching_cubes` (`gyroid`) and **1.011×** under `dual_contouring`. What the measured `ratio` would actually buy is `extraction_speedup_mc` **0.92254–0.99895** and `extraction_speedup_dc` **0.98914–0.99992** — **below 1 on 16 of 16 rows in both extractors**, i.e. landing this mechanism would make `marching_cubes` extraction up to **7.7% slower**. Per `✗51`'s rule the share was read before the harness was written and it bounds the *consequence*, not the result: C1, C2 and C3 are a per-set-bit comparison, an exact equality and a per-set-bit cache count, and they remain scoreable at any share. Note that the share columns are `P-121`'s wave-time figures, taken while several bench agents were running, and the harness cites them as a prior rather than a measurement; they are a different `P-121` quantity from the `integer_share` maximum of **0.7245** that opened the Group A gate, and no re-reading of them can change the direction here, since every `extraction_speedup_*` is below 1 for a `ratio` below 1 whatever the share is.
+
+---
+
+### 💥 ✗88 / M-425 — C1 FALSIFIED on **16 of 16** with the rank arm **2.2× to 8.6× slower** (`speedup` 0.116376–0.461247 against a bar of 1.25), C2 FALSIFIED on **16 of 16** at `scan_share` 0.036580–0.158941 against 0.20 — which makes C1 *arithmetically unreachable*, since the largest scan share's scan-free ceiling is **1.1890×** — the registered **70% scatter falsifier fires on 7 of 16** rows and closes C1 and C2 together, C3 HELD on 16 of 16; and the vacuity control fired first, which is how `residual_share` came to be denominated in **retired instructions**, where it reads **0.000000** while its own millisecond form reads 4–8% with a field-dependent sign (P-112, R-112)
+
+**M.** `cargo bench --bench experiment_p112`, `docs/experiments/p-112.csv`, **16 rows** across **107
+columns**, `amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **16
+data rows** — counted from the file, not from the brief: eight fields × {65³, 129³}
+(`sphere torus box_exact csg_difference thin_plate gyroid fbm_terrain noise_cavity`), five arms on every
+row of which the registration scores three, `reps` 5, `ghz` on every row (4.1702–4.1849). Produced on a
+clean tree at **`c00634c`** (`R-112 - the residual control fired twice; the decomposition is exact and the
+unit was wrong`) — `# commit c00634c on amd-ryzen-9-5900x-12-core at 2026-08-29T00:40:38Z`, no
+`(WORKING TREE DIRTY)` — and landed as **`a5eefa5`** (`p-112.csv - re-run on a clean tree`).
+`git merge-base --is-ancestor c00634c HEAD` and `git merge-base --is-ancestor a5eefa5 HEAD` both pass.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 replacing phase 2 with `P-107`'s O(1) rank cuts the three-phase compaction total by ≥ 1.25× | ≥ 1.25× | **FALSIFIED — `c1_holds` false on 16 of 16; `speedup` = `total_ms`/`rank_total_ms` spans 0.116376 (`gyroid` 65³) to 0.461247 (`thin_plate` 129³) — the rank arm is 8.6× to 2.2× *slower*; `rank_total_ms` 0.025480–0.950802 against `total_ms` 0.008410–0.189266. Instruction twin agrees: `c1_holds_instructions` false on 16 of 16, `speedup_instructions` 0.103078–0.401029** |
+| C2 the scan phase is ≥ 20% of the three-phase total | ≥ 0.20 | **FALSIFIED — `c2_holds` false on 16 of 16; `scan_share` 0.036580 (`noise_cavity` 65³) to 0.158941 (`thin_plate` 129³), `scan_ms` 0.000990–0.008992 against `count_ms` 0.001781–0.014704 and `scatter_ms` 0.005139–0.167048. `scatter_share` 0.559306–0.882611, and the registered 70% falsifier (`scatter_falsifier_fires`) is true on 7 of 16 — `sphere`/`torus`/`gyroid`/`fbm_terrain`/`noise_cavity` at 65³ and `gyroid`/`noise_cavity` at 129³. `c2_holds_instructions` false on 16 of 16, `scan_share_instructions` 0.027528–0.089287** |
+| C3 all three arms emit identical output | bit-for-bit | **HELD — `c3_holds` true on 16 of 16: `output_identical` and `output_identical_all_arms` true on 16 of 16 over `compacted_len` = `active_cells` = 2,048–118,885 elements, `bitmap_matches_scalar` true on 16 of 16, `rank_equal_all_bits` = `cells_checked` (262,144 at 65³, 2,097,152 at 129³), `short_directory_mismatches` 122,880–1,651,200 > 0 and `mutant_output_mismatches` 2,048–118,885 > 0** |
+
+> **The row was closed by its own registered falsifier, not merely by a missed bar.** The registration
+> says the scatter phase above 70% "would mean the offsets were never the cost and closes C1 and C2
+> together"; `scatter_falsifier_fires` is true on 7 of 16 rows, and the seven are exactly the rows with the
+> *lowest* `scan_share` and the *worst* `speedup` — `gyroid` 65³ carries `scatter_share` 0.846329,
+> `scan_share` 0.051563 and `speedup` 0.116376 together. The two verdict forms, milliseconds and retired
+> instructions, **agree on 16 of 16 rows**; per `M-280` the instruction form is the one that carries.
+>
+> 🎯 **C2 makes C1 unreachable by arithmetic that existed before the harness did, and the registration
+> said so.** Removing a phase of share `s` entirely gives at most `1/(1 − s)`, so 1.25× demands
+> `s ≥ 0.20`. The largest measured share is `scan_share` 0.158941, whose
+> `speedup_ceiling_scan_free` = **1.188978×** — under the 1.25 C1 asked for. A *free* scan on the best row
+> in the fixture still misses C1. `R-107` had also already priced the mechanism: the shipped ascending walk
+> costs 0.013–0.131 ns/cell and one O(1) rank query costs ~6 ns, two to three orders of magnitude apart,
+> and `experiment_p112.rs:33-42` records that expectation **before** the measurement rather than after it.
+>
+> 🧪 **The vacuity control fired twice, and the repair is the method finding on top of the result.** The
+> `R-085` residual bar aborted the harness at `torus` 65³ = `0.0920` and then `sphere` 65³ = `0.0692`.
+> Instrumenting all five windows per repetition at 65³ located the cause, and it was not the arithmetic:
+>
+> | field | `pre` ns | `cut2` ns | `post` ns | ns residual | instruction residual |
+> |---|---:|---:|---:|---:|---:|
+> | `sphere` | 9,723 | 10,277 | 9,640 | **−6.2%** | **0.000000** |
+> | `torus` | 9,840 | 9,884 | 10,854 | **+4.5%** | **0.000000** |
+> | `box_exact` | 11,077 | 10,300 | 10,896 | **+6.3%** | **0.000000** |
+> | `csg_difference` | 11,183 | 10,475 | 11,333 | **+7.0%** | **0.000000** |
+>
+> The three prefix-differenced phases account for the total **to the last retired instruction** on 40 of 40
+> repetitions; the nanosecond residual reads 4–8% **with a field-dependent sign**, and `pre`/`post` — the
+> identical body twice, 40 ms apart inside one repetition — differ by up to 10%. **So the unit moved and
+> the bar did not:** `RESIDUAL_BAR` is still `0.05` and `residual_share` reads **0.000000** on all 16 rows,
+> four orders of margin and machine-independent. `residual_control_mutant_share` — the same arithmetic with
+> the scatter phase dropped, asserted to *exceed* the bar — reads **0.626656 to 0.884974**, so the zero
+> could have been non-zero (`M-44`). Every wall-clock form is kept and **read by nothing**:
+> `residual_share_ms` 0.001380–0.075756, `residual_share_ms_within_rep` 0.001899–0.074882,
+> `residual_share_ms_worst_rep` up to 0.078985, and **`total_pre_post_spread_share` 0.001648–0.119796 is
+> the column that says the millisecond form was unmeasurable at a 5% bar** — 12% of spread between two runs
+> of the same body cannot resolve a 5% residual. `ghz` moved by 0.35% across the whole run (4.1702–4.1849)
+> and the millisecond residual still swung to 7.6%, so this is not a headline clock excursion; it is
+> `M-280` at rest.
+>
+> **`target_feature_popcnt` is `false` on all 16 rows, and both verdicts are contingent on it.** Phase 1 is
+> nothing but popcounts — `count_ones_calls_count_phase` = `bitmap_words` (4,096 at 65³, 32,768 at 129³) —
+> while `count_ones_calls_scan_phase` and `count_ones_calls_scatter_phase` are **0**. A hardware popcount
+> would shrink phase 1 only, which *raises* `scan_share` toward C2's bar. The projection column says by how
+> much: `count_instructions_per_word` measures 8.7509–8.7571, below the 11-instruction SWAR excess, so the
+> floor clamps to zero and `scan_share_instructions_popcnt_floor` prices phase 1 at **free** — and it still
+> tops out at **0.124712**, a ceiling of **1.1425×**, under both 0.20 and 1.25. It is a labelled projection
+> and no verdict reads it.
+>
+> **Unregistered, reported and scored by nothing.** Two formulations that replace the scan without a
+> per-element query: one rank query per non-empty word tops out at `speedup_rank_word_unregistered`
+> **0.845559** (`thin_plate` 129³, 256 queries) and one per cell row at
+> `speedup_rank_row_unregistered` **0.697513** (`noise_cavity` 129³). Both are still losses, and their
+> instruction twins are worse (0.625582 and 0.501183). No clause reads either; `c1_holds` reads `speedup`
+> and nothing else. Beside them, `three_phase_over_sequential` 0.964879–2.245429 says Billeter's three
+> phases are themselves up to **2.25× slower than the shipped `dual.rs:489-497` walk**, and the
+> instruction form is above 1 on **16 of 16** rows (1.093808–1.860825): the crate's existing running
+> counter beats the decomposition this row was measuring inside.
+>
+> One control is **vacuous by construction and says so**: `pad_bits_possible` is `false` and `pad_bits_set`
+> is `0` on all 16 rows, because `cells_x` is 64 at 65³ and 128 at 129³ and `cell_mask` masks nothing.
+> Recorded as `M-44`'s zero that could not have been non-zero, not counted as evidence.
+
+**SHARE, recomputed.** C1 and C2 are ratios *inside* the three-phase compaction total, not fractions of
+extraction, and this row measures the outer share rather than importing it:
+`compaction_share_of_extraction` = `total_cycles`/`cycles_extract_mc` reads **0.00016218–0.00482468** —
+the whole three-phase compaction is **0.0162% to 0.4825% of a `marching_cubes` extraction** (instruction
+form `compaction_share_of_extraction_instructions` 0.00018447–0.00516821, same order). So
+`extraction_ceiling_scan_free` = `1/(1 − scan_share·compaction_share)` reads **1.00001722× to
+1.00062728×**:
+the best extraction-level speedup a scan removed *entirely and for free* could buy anywhere in this
+fixture is **1.00063×**. C1's 1.25× was a 1.25× on one part in a few hundred, and it was not reached
+anyway. C3's share is an equality over an enumerated population of `compacted_len` elements; it moves no
+time and has no ceiling. **No ticket is earned here** — the mechanism loses its own microbenchmark by
+2.2×–8.6× *and* the stage it sits in cannot move an extraction by 0.1%.
+
+---
+
+### 💥 ✗89 / M-426 — C1 FALSIFIED at **0 of 4** granularities straddling 6.25% and **1 of 4** where the winner varies, C2 FALSIFIED by **2 of 8** rows below the boundary on bytes — both arithmetically fixed before the harness existed, because a 64³ chunk indexes in `u32` and its byte crossover is **3.125%**, not 6.25% — and C3 HELD on **32 of 32** at **24 B** of per-chunk overhead against **8 B** of payload: Roaring's boundary separates *granularities*, not fields (every field reads 0.2415–0.2859 at 4³ and 0.0039–0.0567 at 64³), so the container type is a compile-time consequence of `chunk_cells` and never a per-field runtime decision, which is the registration's own row-closing outcome; and the density the crate had never measured is **0.39%–5.67%** at 128³, refuting the research doc's derived *"thin_plate ≈ 4.9%"* by 12.5× (P-113, R-113)
+
+**M.** `cargo bench --bench experiment_p113`, `docs/experiments/p-113.csv`, **32 rows**, **57 columns**,
+`f64`, `amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **32 data
+rows** — counted from the file, not from the brief. Eight reference fields × four granularities
+(`chunk_cells` ∈ {4, 8, 16, 64}) over one shared 128³ cell world (`world_cells` = 128 on all 32 rows), two
+bench-local arms per row: the bitmap mirrored from `dual.rs:405-436`'s fused `any & !all` fold, and an
+array of chunk-local indices whose width is set by the chunk size (`index_bytes` 1 / 2 / 2 / 4). The walk
+comparison is scored on `cycles_per_active_cell_*` from `common::counters::Probe`, with `ns_per_walk_*` and
+a `ghz` column beside it (`ghz` 4.1532–4.1932 over the 32 rows). Measured against tree state **`07fd713`**
+— `# commit 07fd713 on amd-ryzen-9-5900x-12-core at 2026-08-29T00:32:37Z`, no `(WORKING TREE DIRTY)` —
+and committed as **`776a9bb`** (`p-113.csv - re-run on a clean tree`); `git merge-base --is-ancestor
+776a9bb HEAD` passes, as does the same check on `07fd713`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 measured active-cell density straddles Roaring's 6.25% across the eight fields — at least one below and one above — so the representation is a *decision* rather than a constant | ≥ 1 below **and** ≥ 1 above, with the `winner` varying | **FALSIFIED — `c1_holds` false on 32 of 32. `granularities_straddling` = 0 of 4, `granularities_winner_varies` = 1 of 4; `c1_straddles_here` false on 32 of 32, `c1_winner_varies_here` true only on the eight 64³ rows. `distinct_winners` = 1 at 4³/8³/16³ and 2 at 64³** |
+| C2 below the threshold an array-of-indices beats the bitmap on **both** bytes and the active-cell walk | zero failures over the rows below 6.25% | **FALSIFIED — `c2_holds` false on 32 of 32 with `c2_failures` = 2, both on the bytes half: `gyroid`@64³ `array_bytes` 346,512 ≥ `bitmap_bytes` 262,336, and `noise_cavity`@64³ 475,732 ≥ 262,336. `rows_below_boundary` = 8, so the clause was scored, not vacuous. The walk half recorded zero failures — `cycles_per_active_cell_array` 1.995388–2.073175 against `cycles_per_active_cell_bitmap` 3.000605–7.549405 — but see below on what that can support** |
+| C3 at `M-377`'s 4³ optimum a chunk is one word and the bitmap's per-chunk overhead exceeds its payload, measured as bytes per active cell | overhead > payload on all 8 fields | **HELD — `c3_holds` true on 32 of 32. At `chunk_cells` = 4, `bitmap_overhead_bytes_per_active_cell` 1.311587–1.553006 against `bitmap_payload_bytes_per_active_cell` 0.437196–0.517669, a ratio of exactly 3.000 on 8 of 8 rows: 24 B of `Vec<u64>` header against 8 B of payload, with `words_per_chunk` = 1 asserted rather than assumed (`experiment_p113.rs:913-918`)** |
+
+#### The boundary lies across `chunk_cells`, not across `field` — which is why C1 could not fire
+
+| granularity | `density` over the eight fields | `fields_below_boundary` | `fields_above_boundary` | `distinct_winners` | `c1_straddles_here` | `c1_winner_varies_here` | `byte_crossover_density` |
+|---|---|---:|---:|---:|---|---|---:|
+| 4³ | 0.2414672 – 0.28591321 | 0 | 8 | 1 | false | false | 0.125000 |
+| 8³ | 0.10380145 – 0.18710497 | 0 | 8 | 1 | false | false | 0.062500 |
+| 16³ | 0.06250000 – 0.15774271 | 0 | **7** | 1 | false | false | 0.062500 |
+| 64³ | 0.00390625 – 0.05668879 | 8 | 0 | 2 | false | **true** | 0.031250 |
+
+At 16³ the two counts sum to 7 because `thin_plate` lands **exactly** on 6.25% — 8,192 `active_cells` over
+32 `chunks_occupied` of 4,096 `cells_per_chunk` is precisely 1/16 — and is therefore neither below nor
+above and counts for neither side. `density_span_over_fixture` = **73.193782**, comfortably over the
+registered one-decade bar, and every bit of that span is generated by `chunk_cells`: within any single
+granularity the eight fields never cross the boundary. `winner` reads `split` on **26** rows and `array` on
+**6** (the six 64³ rows whose `density` is under 3.125%) and **`bitmap` on none**.
+
+> **The array arm's walk column is a ceiling, and the entry states which direction it can carry.**
+> `array_walk_saturated` is `true` on **32 of 32** rows and `bitmap_walk_saturated` is `false` on 32 of 32.
+> `walk_floor_cycles_per_active_cell` — the identical consumer driven over one contiguous ramp of the same
+> length, the cheapest it can be driven at all — reads 1.995125–2.007284, and `cycles_per_active_cell_array`
+> reads 1.995388–2.073175: the array arm sits on the floor at every index width. `ns_per_walk_array` spans
+> only **0.476553–0.483389** across a 73.19× density sweep and four index widths, a **1.43%** band. That
+> flat line *is* the saturation.
+>
+> **What it supports:** `array < bitmap`. A ceiling that already loses bounds the true cost from above, so
+> the inequality holds a fortiori and C2's walk half is sound as an inequality.
+>
+> **What it cannot support:** any magnitude, and any claim in the other direction. `walk_cycle_ratio`
+> 1.500920–3.777934 and `walk_cycle_difference` 1.001982–5.551116 are *lower bounds* on the bitmap's
+> disadvantage, not measurements of it. `bitmap < array` was unobservable on a floor-clamped array arm, so
+> `winner` never taking the value `bitmap` on any of the 32 rows is **not evidence** that the bitmap never
+> wins a walk — it is the instrument's own reach.
+>
+> **The verdict rides on the instruction form, per `M-280`/`M-281`.** `instructions_per_active_cell_bitmap`
+> **8.961855–36.135714** against `instructions_per_active_cell_array` **3.377593–4.998033** — **1.854×** to
+> **10.642×** more retired instructions per active cell, machine-independent, sign-agreeing with the cycle
+> columns on all 32 rows. `target_feature_popcnt` is `false` in this build and does **not** bind here:
+> `count_ones` appears only in fixture construction (`experiment_p113.rs:301`), outside every timed span,
+> and the timed bitmap walk is `trailing_zeros` + `x &= x - 1` (`:432-433`), both baseline x86-64.
+>
+> **Both falsified halves were decided by arithmetic that predates the harness.** `byte_crossover_density`
+> is `1/(8 · index_bytes)`, and `bitmap_overhead_bytes` equals `array_overhead_bytes` on every row
+> (`size_of::<Vec<W>>` is 24 for every `W`), so the bytes comparison reduces to payload alone: the array
+> is smaller exactly when `density < 1/(8 · index_bytes)`. Roaring's 4,096-of-2¹⁶ is the **two-byte** case,
+> so it coincides with this fixture only at 8³ and 16³; at 64³ the index is `u32` and the crossover is
+> **3.125%**. C2's two failures are therefore forced: `gyroid` (0.04128456) and `noise_cavity`
+> (0.05668879) are the only two fields whose 64³ `density` exceeds 3.125% while sitting under 6.25%, and
+> the remaining six 64³ rows (0.00390625–0.01646996) are under both. C3 is the same shape in the other
+> direction — `size_of::<Vec<u64>>` = 24 against 4³/64 × 8 = 8 bytes is exactly 3×, field-independent —
+> so the run's contribution to C3 was asserting `words_per_chunk` = 1 and populating the denominators, not
+> deciding the inequality.
+>
+> **`c2_holds` reading `false` is not "the array loses".** It reads false because the registered threshold
+> is the wrong constant for two of the four granularities, which is a defect in the *rule*, not in the
+> representation. The mechanism the row was asked to price is intact and now has a closed form.
+>
+> **The vacuity controls fired, and one of them fired during authoring.** `active_cells` is non-zero on
+> 32 of 32 rows (8,192–118,885). `walk_checksum` is asserted equal and non-zero across both arms with
+> `fold_mismatches` = **0** on 32 of 32, which is what proves the two arms visited the same cells in the
+> same order. That non-zero assertion had already refused a run: with `^` as the consumer the checksum
+> cancelled to **exactly zero on both arms at 4³**, because XOR is GF(2)-linear and a sphere's 4³ chunks
+> repeat one 6-bit pattern by the thousand; the consumer is `wrapping_add` for that reason
+> (`experiment_p113.rs:114-119`). The one-decade density-span control passed at 73.19× — and passing it
+> while still failing C1 is the row's sharpest method point: a span control proves the *range* is wide, not
+> that the range is wide **along the axis the clause quantifies over**.
+
+**SHARE, recomputed.** No extraction time is claimed, so `✗51`'s `1/(1 − share/factor)` bar does not apply
+to any clause here and none of the three is a fraction of a total. C1's share is
+`fields_below_boundary` + `fields_above_boundary` — **8** at 4³/8³/64³ and **7** at 16³, where one field
+sits on the boundary. C2's share is `rows_below_boundary` = **8 of 32**, non-empty, so the clause is
+FALSIFIED rather than VACUOUS. C3's share is the **8** rows at `chunk_cells` = 4. What the row delivers
+past its clauses is the number it was registered to obtain: `world_density`, the active-cell density of
+this crate's eight reference fields at 128³ in a release build, is **0.00390625–0.05668879** — every field
+**below** Roaring's 6.25% container boundary and every field **above** its 0.1% "bitmap is unlikely to be
+the proper data structure" floor. `thin_plate`'s measured world density is **0.390625%**, so the research
+doc's inference of *"around 4.9%"* — derived from `M-306`'s rejected-brush shares at 17³ in a debug build —
+is high by **12.5×** and must not be quoted again. And because density within a granularity is effectively
+field-independent, the representation is selected by `chunk_cells` at compile time; there is no runtime
+container-type switch to build, which is exactly the falsifier the registration named as the outcome that
+closes the row.
+
+---
+
+### 💥 ✗90 / M-427 — C1 HELD at **1.612×** (65³) and **2.568×** (129³) on the sparsest field as measured, and **stronger in instructions — 2.129× and 3.318×** — but the win is confined to sparsity: at 4.1% and 5.7% active the hierarchy *loses* (`gyroid` 129³ **0.909×**, `noise_cavity` 129³ **0.914×**); C2 FALSIFIED on **21 of 32** rows, **16 of them arithmetically before the harness existed**, because 4,096 is the one-level ceiling and the two-level best case, not a mean; C3 HELD on **32 of 32** with `mesh_identical` true everywhere; and the measured share retires the mechanism anyway — `traversal_share_of_extraction` peaks at **0.000994**, so `extraction_speedup_ceiling` peaks at **1.00039×** (P-114, R-114)
+
+**M.** `cargo bench --bench experiment_p114`, `docs/experiments/p-114.csv`, **32 rows** across **57
+columns**, `amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **32
+data rows** — counted from the file, not from the brief. One block: **eight** fields (`sphere`, `torus`,
+`box_exact`, `csg_difference`, `thin_plate`, `gyroid`, `fbm_terrain`, `noise_cavity`) × **two**
+resolutions (`cells` reads 262,144 and 2,097,152, i.e. 65³ and 129³ samples — the two grids whose cell
+rows are exactly one and two `u64` wide) × **two** summary depths (`levels` = 1 on 16 rows, 2 on 16). The
+flat arm is not a fourth axis: it is built once, shared, and rides on every row in `words_tested_flat`
+(4,096 at 65³, 32,768 at 129³) and `ns_per_cell_flat`. `reps` = 5 windows per quantity on all 32 rows.
+Committed at **`8d5ab93`** (`p-114.csv - re-run on a clean tree`); the header line names the tree the run
+was taken on — `# commit a5eefa5 on amd-ryzen-9-5900x-12-core at 2026-08-29T00:41:06Z`, no
+`(WORKING TREE DIRTY)` — and `git merge-base --is-ancestor 8d5ab93 HEAD` passes.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 at least 1.5× on the active-cell traversal of the sparsest field **as measured**, that field named in the CSV | ≥ 1.5× | **HELD — `sparsest_field` = `thin_plate` on 32 of 32 rows; `sparsest_field_active_fraction` 0.00781250 at 65³ and 0.00390625 at 129³, the smallest `active_fraction` at each resolution. `sparsest_field_ratio` = 1.6123 (65³, two levels) and 2.5678 (129³, two levels); one level reads 1.7808 and 2.2976. `sparsest_field_ratio_instructions` = 2.1285 and 3.3182 (one level 2.1141, 3.2027). `c1_holds`, `c1_holds_cycles` and `c1_holds_instructions` are all true on 32 of 32 — the three forms agree, and the instruction form is the larger margin on all four readings** |
+| C2 two levels skip 4,096 cells per test, reported as cells skipped per word tested | ≥ 4,096.0 | **FALSIFIED — `c2_holds` false on 21 of 32 rows, true on 11. `cells_skipped_per_test` spans 1,820.000 (`gyroid` 65³, one level) to 15,299.765 (`thin_plate` 129³, two levels). All 16 `levels` = 1 rows fail, at 3,072.000–4,064.000. Five `levels` = 2 rows fail, and `active_fraction` separates them cleanly: every cleared row is at 0.00390625–0.02294159, every failing two-level row at 0.03209305–0.10824203 — `fbm_terrain` 65³ 3,458.954 at 0.03209305, `gyroid` 129³ 2,488.906 at 0.04128456, `noise_cavity` 129³ 3,347.721 at 0.05668879, `gyroid` 65³ 2,043.509 at 0.08175659, `noise_cavity` 65³ 2,889.143 at 0.10824203. The eleven that cleared are the two-level rows of `sphere`, `torus`, `box_exact`, `csg_difference` and `thin_plate` at both resolutions, plus `fbm_terrain` 129³** |
+| C3 identical mesh | any difference falsifies | **HELD — `mesh_identical` true on 32 of 32, `c3_holds` true on 32 of 32. Five ordered active-cell lists agree, including the list the shipped extractor traverses, recovered through a bench-local recording `VertexRule` behind the public `DualContouring::with_rule`** |
+
+> **The 16 `levels` = 1 failures were decided by arithmetic before the harness was written, and the file
+> is built to show it.** `cells_skipped_per_test` is `cells_skipped_total / summary_words_tested`. At one
+> level `summary_words_tested` = `level_1_words` = `level_0_words / 64` — 64 at 65³, 512 at 129³ — so the
+> quotient is at most `cells / level_1_words` = 262,144/64 = 2,097,152/512 = **exactly 4,096**, attained
+> only by a bitmap with no active cell at all. The sparsest row in the fixture, `thin_plate` 129³, reads
+> **4,064.000** = 4,096 × (2,080,768/2,097,152); a clause registered as "≥ 4,096" over a population with
+> 8,192 `active_cells` cannot fire upward. C2 is registered *"at two levels"*, and the module doc states
+> that the one-level rows carry the same column and the same bar **so the discrimination is visible in
+> the data instead of argued in prose** — the verdict reports both because the column reports both.
+>
+> **The five two-level failures are the same arithmetic from the other side, and they name the
+> mechanism's limit exactly.** At two levels the divisor is `level_2_words + level_1_words_nonzero`, so
+> 4,096 is reachable only when a level-2 word is *wholly* empty; the registered figure is the fan-out of
+> one zero top-level bit (`cells_per_top_level_zero_bit`, which reads **4096.0** on 15 of the 16 two-level
+> rows), i.e. a **best case**, and `cells_skipped_per_test` is the **mean** over every summary word
+> tested. Where level 1 is dense the mean cannot approach it: `gyroid` 129³ has `level_1_words_nonzero`
+> 398 of `level_1_words` 512, `noise_cavity` 129³ 336 of 512, `gyroid` 65³ 56 of 64, `noise_cavity` 65³
+> 48 of 64. `fbm_terrain` 65³ is the extreme: **64 of 64** level-1 words are non-empty, so the second
+> level adds a divisor and removes nothing, and the row's `cells_skipped_per_test` **falls** from
+> 3,513.000 at one level to 3,458.954 at two. It is also the one row with `top_level_fanout_verified`
+> **false** and `zero_top_level_bits` **0** — at 65³ one level-1 word spans a whole `z` slice and a
+> heightfield crosses every slice, which the module doc predicted in advance rather than discovered.
+>
+> **Where the hierarchy loses, in the run's own columns.** `ratio` = `ns_per_cell_flat / ns_per_cell_hier`
+> spans **0.9049** to **2.5678**; it is below 1 on **8 of 32** rows — every `gyroid` and every
+> `noise_cavity` row, at both depths. Two-level readings, with each row's `active_fraction`:
+>
+> | field / res | `active_fraction` | `ratio` | `ratio_instructions` | `words_tested_hier` / `_flat` | `breakeven_traversals` |
+> |---|---:|---:|---:|---|---:|
+> | `thin_plate` 129³ | 0.00390625 | **2.5678** | **3.3182** | 392 / 32,768 | 2.052 |
+> | `thin_plate` 65³ | 0.00781250 | **1.6123** | **2.1285** | 97 / 4,096 | 2.525 |
+> | `fbm_terrain` 129³ | 0.01646996 | 1.1475 | 1.4059 | 3,796 / 32,768 | 2.582 |
+> | `gyroid` 129³ | 0.04128456 | **0.9087** | 1.0014 | 17,385 / 32,768 | **inf** |
+> | `noise_cavity` 129³ | 0.05668879 | **0.9137** | 1.0203 | 15,118 / 32,768 | **inf** |
+> | `gyroid` 65³ | 0.08175659 | **0.9889** | 0.9931 | 2,333 / 4,096 | **inf** |
+> | `noise_cavity` 65³ | 0.10824203 | **0.9937** | 1.0097 | 1,933 / 4,096 | **inf** |
+>
+> At 4.1% and 5.7% active the second level is a net cost in *both* units, and `breakeven_traversals`
+> reads **`inf`** on all 8 losing rows — no number of traversals amortises a build whose per-traversal
+> saving is negative. On the 24 winning rows it reads **1.367 to 5.351**, which is the honest single-shot
+> caveat: the summary must be shared across at least two traversals before it is ahead. `ghz` spans
+> 4.1653–4.1875 and `clock_ratio_hier_over_flat` 0.9976–1.0035 across all 32 rows, so no `ratio` here is
+> a clock artefact — but per `M-280` the nanosecond form is still not the gate, and it is
+> `ratio_instructions` that puts the eight losing rows at 0.9931–1.0296 where `ratio` puts them at
+> 0.9049–0.9937 — seven of the eight are at or above parity in instructions. The traversal walks
+> set bits with `trailing_zeros` + `a &= a - 1` (`dual.rs:489-497`), not `count_ones`, so this row's
+> instruction counts are **not** contingent on `target_feature_popcnt` being `false` in this build.
+>
+> **Both vacuity controls fired, and the first fired hard.** `words_tested_hier` is **strictly less**
+> than `words_tested_flat` on **32 of 32** rows, not merely one: `word_ratio` spans **1.7504** (`gyroid`
+> 65³, one level) to **83.5918** (`thin_plate` 129³, two levels), and the sparsest row tests **97** words
+> against the flat arm's **4,096** — a **42.2×** reduction in words tested (`word_ratio` 42.2268) that
+> buys only 1.612× of wall clock, which is the clearest statement in the file that the flat walk's cost
+> is not in the word tests. `cells_skipped_per_test` is non-zero on 32 of 32 (minimum 1,820.000). The
+> hypothesis's own first sentence is verified rather than asserted: `level_1_size_ratio` and
+> `level_2_size_ratio` read **64.0000** on 32 of 32, and `summary_overhead_fraction` is **0.015869**
+> (= 65/4096, the two summary levels over `level_0_words`) on every row.
+
+**SHARE, recomputed — and it is what actually closes this row.** The registration inherited `M-337`'s
+5.5× for the flat bitmap on a surface-free field and said "the stage is known to be large enough to
+matter". The harness measured the share instead of inheriting it, and the inherited premise does not
+survive: `traversal_share_of_extraction` — the flat traversal's cycles per cell over the shipped
+`DualContouring::extract`'s cycles per cell, same grid, same run — reads **0.000088 to 0.000994**, i.e.
+the active-cell walk is under **one tenth of one percent** of an extraction. So
+`extraction_speedup_ceiling` = `1/(1 − share·(1 − 1/ratio))` reads **1.00039× at its best** (`thin_plate`
+129³) and **0.99994×** on the `gyroid` 129³ row. C1 is a stage clause and its 1.5× bar has no Amdahl
+ceiling, so **C1 held on its own terms and this does not retract it** — the mechanism is real, it is
+VDB's node bitmask one level up re-measured at this crate's granularity, and 2.568× / 3.318× on a
+sparse field is a true reading. But a mechanism that wins its microbenchmark and moves **under 0.1%** of
+an extraction earns no landing ticket: this is the `✗51` / `R-114` shape, and refusing to land it is the
+result. `crates/isomesh/src/**` did not change; the whole hierarchy is bench-local, mirroring
+`row_stride`, `build_inside_bits`, `inside_word`, `active_word` and `cell_mask` line for line.
+
+---
+
+### 💥 ✗91 / M-428 — C1 FALSIFIED on **16 of 16** rows at `access_ratio` **57.7683–115.7726** against a registered bar of **2.0** — random access is **29× to 58× past** it, and past it on the second rank granularity too (`access_ratio_teb64` **31.7068–77.5062**) — while C2 HELD on 16 of 16 at `space_ratio` **2.3666–563.7505** against **1.5** and C3 HELD with `answers_equal` = `cells` on 16 of 16: this is the falsifier the registration named in advance as *closing the family rather than just the row*, so TEB, WAH and EWAH are all retired for this crate's active-cell bitmap in one measurement (P-115, R-115)
+
+**M.** `cargo bench --bench experiment_p115`, `docs/experiments/p-115.csv`, **16 rows**, `f32`
+(`scalar` = `f32` on all 16), `amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one
+column header plus **16 data rows** across **67 columns** — counted from the file, not from the brief.
+One row per (field, resolution): eight fields (`sphere`, `torus`, `box_exact`, `csg_difference`,
+`thin_plate`, `gyroid`, `fbm_terrain`, `noise_cavity`) × {65³, 129³}, so `cells` is 262,144 on eight
+rows and 2,097,152 on eight. Each row carries **four sibling counter windows** over one shared index
+array — flat, TEB, TEB-with-word-granularity-rank, and a do-nothing floor — each batched to its own
+`inner_reps` (`inner_reps_flat` 708–1,898, `inner_reps_teb` 14–31, `inner_reps_teb64` 23–54,
+`inner_reps_floor` 3,036–3,151), over `accesses` = 16,384 random indices drawn from
+`access_seed` = `0x000001155eed1115`, `reps` = 15. Committed at **`d369458`** —
+`# commit 8d5ab93 on amd-ryzen-9-5900x-12-core at 2026-08-29T00:41:27Z`, no `(WORKING TREE DIRTY)`,
+and `git merge-base --is-ancestor d369458 HEAD` passes (HEAD is an ancestor-consistent tip,
+`p-115.csv - re-run on a clean tree`).
+
+| clause | registered | measured |
+|---|---|---|
+| C1 random access costs at most 2× the flat bitmap's per access | ≤ 2.0 (`c1_bar` = `2.0`, `c1_carrier` = `cycles`) | **FALSIFIED on 16 of 16 — `access_ratio` 57.7683 (`fbm_terrain` 129³) to 115.7726 (`noise_cavity` 129³); `cycles_per_access_flat` 1.8028–2.4760 against `cycles_per_access_teb` 108.6049–251.8176. `c1_holds_instructions` is also `false` on 16 of 16: `instruction_access_ratio` 27.8098–59.2286, `instructions_per_access_flat` 11.5005 (constant) against `instructions_per_access_teb` 319.8256–681.1577** |
+| C2 space saving of at least 1.5× against the flat bitmap | ≥ 1.5 (`c2_bar` = `1.5`) | **HELD on 16 of 16 — `space_ratio` 2.3666 (`gyroid` 65³) to 563.7505 (`thin_plate` 129³); `flat_bytes` ∈ {32768, 262144} against `teb_bytes` 225–71,878, broken out as `tree_bytes` + `label_bytes` + `rank_bytes` + `metadata_bytes` (= 32 on every row). Survives the faster rank too: `space_ratio_teb64` 1.8778–454.3224, ≥ 1.5 on 16 of 16** |
+| C3 identical answers on every cell | equality, population = every cell | **HELD on 16 of 16 — `answers_equal` = `cells` exactly: 262,144 on the eight 65³ rows and 2,097,152 on the eight 129³ rows, an exhaustive sweep and not a sample** |
+
+> **C1 is falsified by the structure, not by a tuning constant, and not by the harness's own overhead.**
+> The paper names the rank granularity as an empirical space/time trade-off, so the same tree, labels and
+> `prune_depth` were re-encoded with one `u32` per tree word in the same binary: `access_ratio_teb64`
+> still reads **31.7068–77.5062**, a minimum of **15.9× the bar**. And the raw windows are the form most
+> favourable to the clause, because the floor is a common addend — subtract `cycles_per_access_floor`
+> (1.2253–1.2267, flat across sixteen rows of identical work) and the cycle ratio moves *up* to
+> **125.5–338.8**; subtract `instructions_per_access_floor` (7.0005, constant) and the instruction ratio
+> moves up to **69.5–149.8**. Per `M-280` the wall-clock form (`ns_access_ratio`, `ns_per_access_flat`
+> 0.4306–0.5917 against `ns_per_access_teb` 25.9662–60.1676 at `ghz` 4.1787–4.1864) is recorded and
+> **consulted by no clause**; `c1_carrier` = `cycles` names the unit the verdict is carried in, with the
+> deterministic instruction form beside it agreeing.
+>
+> **This clause was arithmetically decided before the harness existed, and the registration says so in
+> its own falsifier.** A flat access is one masked load: `instructions_per_access_flat` = **11.5005**,
+> i.e. 4.5 instructions above the floor. A TEB lookup is a dependent path walk of `mean_node_visits`
+> **2.5937–6.4773** levels (`max_node_visits` 9–20, `tree_height` 18 or 21), and each level is a rank —
+> `popcounts_per_access_teb` **8.3516–23.3634** against `popcounts_per_access_flat` **0**. With
+> `target_feature_popcnt` = **false** on 16 of 16 (no `target-cpu`, no `RUSTFLAGS`, so `count_ones`
+> lowers to the ~12-instruction SWAR sequence and the bench binary contains zero `popcnt`), ~9–23
+> popcounts plus 2.6–6.5 serialised loads cannot land within 2× of 4.5 instructions. Free hardware
+> `POPCNT` would not save it either: `instruction_access_ratio_teb64` is 12.1377–28.6045 with the
+> popcount work already reduced to one masked `count_ones`, still 6–14× the bar.
+>
+> **The comparand is not a strawman and C2's win is not an artefact of an unoptimised encoding.** Both
+> of the paper's space optimisations are in: implicit tree nodes take `teb_unoptimised_bytes` down to
+> `teb_bytes` by 9.6–11.0% on the 65³ rows, and `best_prune_depth` searches all `h + 1` instances, where
+> the *fully* pruned tree is **not** the smallest on 6 of 16 rows (`teb_bytes` < `teb_fully_pruned_bytes`
+> — `torus` 65³ 2,633 against 2,634; `gyroid` 129³ 67,177 against 67,253; `noise_cavity` 129³ 71,878
+> against 71,898; also `gyroid` 65³, `noise_cavity` 65³, `torus` 129³), with `prune_depth` 0–11.
+>
+> **Both vacuity controls fired.** C3's equality is worthless from an instrument that cannot see
+> inequality, so every row also encodes the fully pruned tree with its deepest level cut off
+> (`truncated_cut_depth` 13–20) and sweeps every cell through that too:
+> `truncated_tree_mismatches` reads **1,168** (`torus` 65³) to **37,903** (`noise_cavity` 129³), non-zero
+> on 16 of 16. That is what makes `answers_equal` = `cells` admissible rather than tautological. The
+> floor window is the second control, and it is what lets the C1 falsification be attributed to the
+> structure rather than to the index walk.
+
+> **`✗91` forecloses the whole RLE family for this crate's active-cell bitmap, and the registration
+> pre-committed to that reading.** Its `falsified_by` is explicit: C1 fails *"by random access above 2x
+> the flat bitmap's, which is the whole reason to prefer TEB over WAH and therefore the falsifier that
+> closes the family rather than just the row."* WAH and EWAH store a bitmap as fill and literal words
+> whose bit-`k` position is knowable only by decoding every preceding word — random access is O(words),
+> not O(1) — so they were never candidates for a summary that `P-107`'s directory needs `rank(k)` from.
+> TEB is the one RLE-family scheme that keeps O(1) access, it was measured with the paper's own
+> navigation, its own rank granularity *and* a faster one, and it lost by **29× to 58×**. There is no
+> surviving member. **TEB, WAH and EWAH are retired here; a later reader re-proposing any of the three
+> is re-proposing a measured 58× regression.**
+
+**SHARE, recomputed — and C2's win is enormous and worthless, which is the finding.** No extraction time
+is claimed: C1 is a cost bound, C2 a space bound, C3 an equality, and none is a fraction of a total.
+The object being compressed is `flat_bytes` = **262,144 bytes = 256 KiB** at 129³ (one bit per cell,
+`cells` = 2,097,152) and **32,768 bytes = 32 KiB** at 65³. So the *entire* upside available to any
+compression of this structure is 256 KiB, once, for a whole 129³ extraction. `thin_plate` 129³ takes
+`teb_bytes` to **465** — `space_ratio` **563.7505**, a saving of **261,679 bytes ≈ 255.5 KiB** — and pays
+`access_ratio` **63.8770** for it (`cycles_per_access_flat` 2.4760 against `cycles_per_access_teb`
+158.1867). Priced over the population the bitmap is actually read on, one lookup per cell:
+2,097,152 × (158.1867 − 2.4760) = **3.265 × 10⁸ cycles ≈ 78.1 ms** at `ghz` 4.1800, against 255.5 KiB
+saved. That is the trade in full, and it is not one this crate can take at any compression ratio —
+the registered clause is *random* access and an extraction's own scan is sequential, so treat 78 ms as
+the random-access bound rather than the measured scan cost, but the bound is four orders of magnitude
+larger than the thing being bought. The harness's own SHARE section puts the ceiling on any downstream
+use at `1/(1 − 0.0800)` = **1.087×**, from `P-121`'s measured offset/compaction share of extraction
+(0.0073–0.0800), which is why no clause here is or may become a speedup claim. A structure that is
+**563× smaller and 64× slower to read** is a strictly worse summary than 256 KiB of flat bits.
+
+---
+
+### 💥 ✗92 / M-429 — C1 HELD at **256 of 256** triangulations identical to `CASES`, C3 HELD with **4 of 4** properties over **8,712** checks and **0** violations, C2 FALSIFIED on **0 of 8** rows at ratio **1.016528–1.038325**; and the row's real content is that GRAPHGEN is *inert* on this table — the synthesised optimal tree is the complete eight-level tree (`average_path_len` **8.000000**, `min_average_path_len` = `max_average_path_len`) and the DRAG merges exactly **one** node of **511**, so **99.8043%** of the tree survives compression (P-116, R-116)
+
+**M.** `cargo bench --bench experiment_p116`, `docs/experiments/p-116.csv`, **8 rows** across **63
+columns** — counted from the file, not from the brief: four `#` comment lines, one column header, eight
+data rows, one per reference field (`sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate`,
+`gyroid`, `fbm_terrain`, `noise_cavity`) at the single grid `resolution` **65** / `cells` **262,144**, each
+row `reps` **16** with the arm order alternating and `inner` batched per field between **8** and **23**
+passes. `amd-ryzen-9-5900x-12-core` (Zen 3), `ghz` 4.1792–4.1826 on all eight rows. Committed at
+**`a0c027e`** — `# commit a0c027e on amd-ryzen-9-5900x-12-core at 2026-08-29T00:44:36Z`, no
+`(WORKING TREE DIRTY)`, and `git merge-base --is-ancestor a0c027e HEAD` passes; the dataset landed in
+**`0e7ae35`** (`p-116.csv - re-run on a clean tree`), also an ancestor of HEAD.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the synthesised tree, compressed to a DRAG and emitted as Rust, produces triangulations identical to `CASES` on all 256 patterns | 256 of 256 | **HELD — `patterns_tested` 256 = `triangulations_identical` 256, `c1_holds` true on 8 of 8; `mesh_identical` and `mesh_identical_to_shipped` both true on 8 of 8; `mutant_tree_mismatches` 2, so the comparator can fail** |
+| C2 the generated form is not slower than the table lookup, in instructions per cell | `ratio` ≤ 1.00 | **FALSIFIED on 0 of 8 rows — `ratio` 1.016528–1.038325, `instructions_per_cell_table` 130.6919–316.3329 against `instructions_per_cell_generated` 135.7007–321.5613, `c2_holds` false on 8 of 8, and `instruction_ratio_spread` 0.000000 on every row** |
+| C3 `P-64`'s four properties hold on the generated form | 4 of 4, 0 violations | **HELD — `properties_held` 4, `property_violations` 0 over `property_checks` 8,712 on `patterns_tested` 256, `c3_holds` true on 8 of 8; `sabotages_caught` 4 of 4, `sabotage_failed` true** |
+
+> **GRAPHGEN is sound and inert here, and that is a structural fact about the Marching Cubes case table
+> rather than about GRAPHGEN.** Bolelli et al.'s DRAG compression is driven by *don't-care* entries and by
+> condition combinations that share an action. This table has neither to give: `dont_care_entries` **0**
+> (all 256 assignments specified), `distinct_actions` **255** over 256 patterns, `shared_action_patterns`
+> **1**. The dynamic program was run for the maximum as well as the minimum over `dp_subcube_states`
+> **6,561** memoised subcube states, and `min_average_path_len` = `max_average_path_len` = **8.000000** —
+> *every* ordering of the eight conditions is optimal, there is no shorter tree, and `condition_order` is
+> the identity `01234567`. So `tree_nodes` **511** = `tree_internal_nodes` **255** + `tree_leaf_nodes`
+> **256**, and the DRAG merges exactly one node: `drag_nodes` **510**, `drag_nodes_merged` **1**,
+> `drag_compression` **0.998043**. The merge is a **leaf** merge — `drag_internal_nodes` **255** =
+> `tree_internal_nodes` **255**, `drag_leaf_nodes` **255** against `tree_leaf_nodes` **256** — i.e. the
+> one duplicated action collapses two leaves into one and **nothing above the leaves shares at all**. A
+> pipeline whose entire compression budget on a 256-row table is one leaf has nothing to exploit; it
+> emitted correct code (C1, `emitted_rust_compiles` true, `emitted_rustc_message` `ok`) and bought
+> nothing.
+>
+> **`c2_holds` reading `false` is not noise and not a defect.** `instruction_ratio_spread` is **0.000000**
+> on 8 of 8 rows, so the count is exactly reproducible across the 16 repetitions and the bar needs no
+> tolerance. The verdict is carried by the instruction form and by nothing else: `cycle_ratio`
+> 1.058465–1.196361, `branch_miss_ratio` 0.988585–1.869089 and `ns_per_cell_table`/`ns_per_cell_generated`
+> (6.785424–21.254511 against 8.019250–22.481447) are beside it and gate nothing — `M-280`, `M-281`, on a
+> governed CPU spanning 1.96–5.62 GHz a nanosecond is not a unit. **And the ratio's spread across fields
+> is entirely its denominator's.** The absolute cost is field-independent:
+> `instructions_per_cell_generated − instructions_per_cell_table` is **+5.0088** (`thin_plate`) to
+> **+5.5280** (`fbm_terrain`) instructions per cell on every row, which is the eight-deep
+> compare-and-branch chain replacing `case_of`'s eight branchless `case |= 1 << c` and one indexed load.
+> `noise_cavity` shows the *lowest* ratio (**1.016528**) only because its march is the most expensive
+> (316.3329), not because the mechanism is cheaper there. Quote the +5 instructions, not the percentage.
+>
+> **The harness's own emitted-text cross-check fired on the first clean-tree run, and the repair is on
+> record as `a0c027e`.** `emit_node` writes the condition-TRUE child first, so the emitted source
+> enumerates root-to-leaf path words in **descending** order — text head `[0, 127, 191, 63, …]` against
+> binary head `[0, 128, 64, 192, …]` — while the comparand walked `0..PATTERNS` upward and therefore
+> compared the text against its own reverse. It could never have passed. The defect was *located* rather
+> than guessed: `text == rev(binary)` and `text == emitted_leaf_order` both held, which pins it to exactly
+> one of the three conjuncts, the path enumeration; the fix walks `PATTERNS - 1 - i`. No clause was
+> weakened and no bar moved. So `emitted_matches_compiled` **true** on 8 of 8 is a repaired check, and the
+> emitted artefact — `emitted_bytes` **88,761**, `emitted_lines` **1,311**, accepted by
+> `rustc --emit metadata` — is now known leaf-for-leaf to be the same decision function as the expansion
+> C2 counted instructions on, which is what `M-281` requires.
+>
+> **The vacuity controls, all six, fired or were asserted.** `patterns_tested` 256 equals
+> `triangulations_identical`; `mutant_tree_mismatches` **2** (two leaf ids swapped in a copy of
+> `LEAF_OF_CASE`, and the C1 comparator saw it — without which C1 is an equality between two names for the
+> one `triangulate(segment_links(…))`); `property_checks` **8,712**, non-zero, because
+> *"SUCCESSFUL over zero checks"* prints the same word as a proof; `sabotages_caught` **4** of 4, one per
+> property, each required to trip *its own* property — **count past `MAX_TRIANGLES`**, **a live triangle
+> carrying `NO_EDGE`**, **a triangle naming an uncut edge**, and **a triangle carrying two equal codes**,
+> all four `CAUGHT`;
+> `emitted_rust_compiles`/`emitted_matches_compiled` both true; and `min_average_path_len` =
+> `max_average_path_len`, without which the fixed condition order the emitted code uses is not known to be
+> optimal.
+>
+> **Kani ran, and what it proves is narrower than what C3 says.** `kani_version` **cargo-kani 0.67.0**,
+> `kani_status` **SUCCESSFUL** over `kani_checks` **62** with `kani_failed_checks` **0** in
+> `kani_solver_seconds` **2.0410** (`a0c027e`'s own message quotes 2.06 s from the run that aborted; the
+> committed clean run reads 2.0410). Its sabotage arm reads `kani_sabotage_status`
+> **SUCCESSFUL (encountered one or more panics as expected)** over `kani_sabotage_checks` **71** with
+> `kani_sabotage_failed_checks` **2** — that arm *passing* is the load-bearing part: it means the prover
+> can see a defect, so the 0-of-62 above is not a solver that proves everything. **INSTRUMENT, per the
+> registration:** C3's verdict is the exhaustive 256-pattern Rust check, not Kani, because
+> `crates/isomesh/src/**` is read-only for the whole of Phase 25 and `marching_cubes::proofs` is
+> `cfg(kani)` inside it, so a `#[kani::proof]` cannot be placed over a bench-local form. The 62 checks are
+> a proof about the **shipped `CASES`** and reach the generated form only through C1's pointwise identity
+> over all 256 patterns.
+>
+> **The premise the ticket was motivated by does not exist, and the registration says so first.** `CASES:
+> [McCase; 256]` (`marching_cubes/table.rs:180`) is already derived at compile time by `const fn
+> build_cases` (`:182-194`); the transcribed Bourke tables (`reference.rs:29`, `:53`) are imported only
+> by `marching_cubes/tests.rs:15` as a cross-check and are nowhere on the extraction path. The
+> mistranscription risk is already mitigated in the shipped path, so this row never compared a synthesised
+> tree against a transcription — it compared one against a `const fn`. `✗50` remains the real incident in
+> this area and it was a **bound**, not a table; a code generator would not have caught it.
+
+**SHARE, recomputed.** C2 is a *not-slower* bound and not a speedup, so the registration claims no share
+and this entry does not smuggle one back in — there is no `1/(1 − s)` to compute and nothing here is
+Amdahl-gated. What the falsification bounds is the opposite direction: the generated form's
+**+5.0088–5.5280 instructions per cell** is measured over the whole Marching Cubes march (both arms share
+`experiment::gather` and `emit_cell`, so the delta is the case lookup and only the case lookup), against a
+march costing `instructions_per_cell_table` **130.6919–316.3329** per cell — a **1.65%–3.83%** whole-march
+regression for zero compression. C1 and C3 carry no share either: both are equalities over an enumerated
+population whose denominator is exact by construction at **256**. Neither arm popcounts and neither reads
+a `u64` bitmap — **zero** `count_ones` calls per cell in either — so this build's `target_feature_popcnt`
+= `false` cannot reach any verdict on this row. Nothing lands: R-116 earns no ticket, and the reason is
+`min_average_path_len` = `max_average_path_len` = **8.000000**, not the ratio.
+
+---
+
+### 🔬 M-430 — C1 HELD by **11 contraction-sensitive expressions** under `crates/isomesh/src/`, two of them crossing an exact zero (`marching_cubes::corner_position` and `dual::place_vertices`, both **4377498837804122113 ULP**, `relative_difference` **1.0**); C2 HELD with **216** golden hashes and **0 differing** across `x86_64-unknown-linux-gnu` and `aarch64-apple-darwin`; C3 HELD with **no** unattributed divergence — the risk is real, named, and entirely unrealised, because `mul_add_call_sites` is **0** and `fma_instructions_isomesh_text` is **0** on both targets (P-117, R-117)
+
+**M.** `cargo bench --bench experiment_p117`, `docs/experiments/p-117.csv`, **34 rows**, `f64` throughout (`scalar` = `f64` on 34 of 34), `amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **34 data rows** across **45 columns** — counted from the file, not from the brief. The shape is **17 `expression_site` values × 2 `target` values**: 15 subject sites spread over **9 files** under `crates/isomesh/src/` (`fields/noise.rs` 4, `dual_contouring/solve.rs` 3, `vec3.rs` 2, then `cube.rs`, `marching_cubes/mod.rs`, `dual.rs`, `hermite.rs`, `predicates.rs`, `fields/mod.rs` one each) plus 2 controls, and `target` reads `x86_64-unknown-linux-gnu` on 17 rows and `aarch64-apple-darwin` on 17. `docs/experiments/p-117-m5-fma.txt` is an **INPUT to this bench, not an output** — the peer's 216 hashes, its disassembly reading and its per-site ULP gaps, produced under `ISOMESH_P117_PEER=1` on `apple-m5` and read back here to fill every aarch64 row; without it C2 would have been recorded `BLOCKED`, never zero-filled. Toolchains differ by design and are recorded: peer `rustc 1.96.1 (31fca3adb 2026-06-26)` on `aarch64-apple-darwin` / `apple-m5` (`rustc=rustc~1.96.1~(31fca3adb~2026-06-26)` in the artefact), local `rustc 1.98.0 (88d9e12ae 2026-08-18)`. Committed at **`6c72319`** (`p-117.csv - re-run on a clean tree`) — header line `# commit 0e7ae35 on amd-ryzen-9-5900x-12-core at 2026-08-29T00:45:04Z`, naming the clean tree the bench ran *on*, no `(WORKING TREE DIRTY)`, and `git merge-base --is-ancestor 0e7ae35 HEAD` passes.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 at least one expression in `crates/isomesh/src/` is contraction-sensitive — fused and unfused differ in the last bit on a reachable input | ≥ 1 site with `ulp_difference` > 0 | **HELD — `c1_holds` true on 34 of 34; 11 of the 15 subject sites read `ulp_difference` > 0, the other 4 read exactly 0; `reachable` is true on 32 of 34 rows (false only on the two `control::searched_separator` rows, whose triple is searched for rather than harvested)** |
+| C2 the 216 golden hashes are identical on `x86_64-unknown-linux-gnu` and `aarch64-apple-darwin` today | 0 differing | **HELD — `c2_holds` true on 34 of 34, `hashes_identical` true on 34 of 34, `golden_rows` = 216 on 34 of 34, `golden_hashes_differing` = 0, `golden_cross_machine_identical` true, `golden_matches_committed_fixture` true on 34 of 34, `c2_blocker` = `-`** |
+| C3 any divergence is attributed to a **named expression** and reproduced by an isolated probe, not merely observed at the mesh level | no unattributed divergence | **HELD — `c3_holds` true on 34 of 34; `probe_reproduced` true on 34 of 34, every row carrying `expression_site`, `file`, `line`, `shape`, `fusion_variant` and `worst_input`; unattributed divergences: none** |
+
+#### C1 — the eleven sites, with the divergence deliberate fusion buys
+
+Every figure is `ulp_difference` / `inputs_differing` / `inputs_tried` / `fusion_variant` from the row for that `expression_site`. All eleven read **identically on both targets** — the ULP measurement is a source-level both-ways evaluation over inputs harvested from the eight reference fields, so it is a property of the arithmetic, not of the backend.
+
+| expression site | file:line | shape | ULP | differing / tried | variant |
+|---|---|---|---:|---|---|
+| `cube::place` | `cube.rs:234` | `(lo + hi) * HALF + (hi - lo) * d` | **93** | 4,164 / 408,276 | `fuse-offset-term` |
+| `marching_cubes::corner_position` | `marching_cubes/mod.rs:761` | `origin[0] + cell_size * R::from_f64(…)` | **4377498837804122113** | 83,936 / 408,276 | `fuse-product` |
+| `dual::place_vertices` | `dual.rs:616` | `origin[0] + cell_size * R::from_f64(f64::from(x))` | **4377498837804122113** | 152,064 / 1,216,512 | `fuse-product` |
+| `hermite::HermiteCell::from_corners` | `hermite.rs:99` | `cell_origin[axis] + cell_size * place(from, to, d)` | **171** | 5,291 / 408,276 | `fuse-product` |
+| `vec3::dot` | `vec3.rs:29` | `a[0]*b[0] + a[1]*b[1] + a[2]*b[2]` | **2** | 23,990 / 136,092 | `fuse-both-adds` |
+| `vec3::cross` | `vec3.rs:33` | `a[1]*b[2] - a[2]*b[1]` | **4359373239303840856** | 16,731 / 33,121 | `fuse-first-product` |
+| `solve::Symmetric3::adjugate` | `dual_contouring/solve.rs:186` | `self.yy*self.zz - self.yz*self.yz` | **64** | 19,297 / 33,121 | `fuse-second-product` |
+| `solve::dot_equivariant` | `dual_contouring/solve.rs:104` | `sum_equivariant([a[0]*b[0], …])` | **8796093022208** | 65,270 / 136,092 | `fuse-into-sorted-sum` |
+| `noise::fade` | `fields/noise.rs:96` | `t3 * (t * (t * six - fifteen) + ten)` | **8** | 7,642 / 24,036 | `fuse-inner` |
+| `noise::perlin_value_accumulation` | `fields/noise.rs:168` | `value += w * dot` | **121** | 6,302 / 64,096 | `fuse-product` |
+| `noise::fbm_lattice_offset` | `fields/noise.rs:237` | `p[0] * freq + k * R::from_f64(OCTAVE_OFFSET[0])` | **4** | 133 / 24,036 | `fuse-offset` |
+
+**The two figures near 2⁶² are not large numerical errors — they are sign-crossings, and that is worse.** On both `marching_cubes::corner_position` and `dual::place_vertices`, `unfused_value` is exactly `0.00000000000000000e0` (`unfused_result` `0x0000000000000000`) and `fused_value` is `-4.44089209850062616e-16` (`fused_result` `0xbcc0000000000000`); `vec3::cross` goes from exact `0` to `2.74129141882754686e-17`. `ulp_difference` is an integer bit distance, so crossing the sign bit costs about 2⁶² of it. `relative_difference` reads **1.0** on all three and `worst_case_cancels` reads **true** — the meaningful statement is that a grid coordinate that lands *exactly on* a lattice plane stops doing so, which is a predicate flip in a surface-crossing test, not a rounding wobble.
+
+The other four subject sites read **0 ULP over the same harvest** and are as much of the deliverable: `solve::Symmetric3::determinant` 0 / 33,121 (`fuse-product`), `predicates::two_product` 0 / 33,121 (`fuse-every-cross-product` — Shewchuk's roundoff `y = (a_lo * b_lo) - err3`, the one shape the registration expected FMA to break, and `on_extraction_path` is `false` there because the extractors never call the module), `noise::fbm_octave_accumulation` 0 / 8,012, `FbmTerrain::sample` 0 / 2,003.
+
+> **The controls are what make C1's non-zeros and C3's zero admissible, and both are two-sided.**
+> `control::exact_products` — `perlin`'s `g · d` at `fields/noise.rs:145`, a **real** site whose gradient components are exactly `0` and `±1` so every product is exact — reads `control_exact_products_ulp` = **0** on 34 of 34, and must: a non-zero there means the comparator cries wolf and every ULP in the table above is noise. `control::searched_separator` — a triple *searched* for with SplitMix64 rather than chosen by hand, on `cube.rs:349-356`'s precedent — reads `control_searched_separator_ulp` = **1** on 34 of 34, over 470 differing of 4,096, and must exceed zero: a comparator that reports 0 everywhere is blind, not clean. Both are `assert!`ed before a row is written.
+> The disassembly reader has its own control. `fmadd_in_known_fused_probe` is **true** on 34 of 34 and `fma_instructions_in_known_fused_probe` = **1**, with `known_fused_probe_evidence` naming the mnemonic actually seen rather than asserting the category: `dispatch-to-fma:vfmadd213sd` on x86-64 (in `known_fused_dispatch_symbol` = `compiler_builtins::…::fma_with_fma`) and `fmadd` on `aarch64-apple-darwin` / `apple-m5` (in `p117_probe_known_fused`). A reader that cannot see an FMA where one must exist cannot claim to see its absence anywhere else — which is exactly what the C1 codegen column claims: `contracted_in_codegen` is **false** on 34 of 34 and `fma_instructions_isomesh_text` is **0** on 34 of 34, over `isomesh_symbols_scanned` 153 on x86-64 and 96 on aarch64 (`fma_instructions_isomesh_extract` = 0 over 20 and 9 extractor symbols respectively).
+
+> **C2 HELD is the reassuring half, and the two halves together are the finding: the risk is real and unrealised.** 216 golden rows, `golden_hashes_differing` = **0** across the two targets, and `golden_matches_committed_fixture` **true** on both arms against `crates/isomesh/golden_hashes.json`. Beside that, `mul_add_call_sites` = **0** on 34 of 34 — the crate never *requests* fusion; `mul_add_mentions` = **6** and all six are prose (`experiment.rs` 3, `fields/noise.rs` 1, `predicates.rs` 1, `real.rs` 1). So `rustc` declining to contract `a*b + c` by default is the entire reason eleven measured sensitivities have never moved a hash. **This is not a target-feature accident.** `fma_instructions_binary_total` reads **2** on x86-64 and **24** on `aarch64-apple-darwin`: the aarch64 backend emits FMA in that binary two dozen times and **zero** of them land in any of the 96 isomesh symbols, so the aarch64 zero is a refusal to contract, not an unavailable instruction. On the x86-64 arm the repository sets no `target-cpu` and no `RUSTFLAGS` — the same fact that leaves `target_feature_popcnt` `false` in this build — so `+fma` is off there as well, and **both zeros are contingent on build flags nothing in the repository pins**. Any future `-ffast-math`-equivalent, any `target-feature=+fma` build, or one hand-written `mul_add` at any of the eleven named sites moves golden hashes; two of them do it by turning an exact zero into a signed epsilon. C1 holding is therefore not a defect report — it is the list of eleven lines to guard, and `P-61` already proved the 216-hash gate can fire by moving 135 of them.
+
+**SHARE, recomputed. None, and that was registered rather than discovered.** This row moves no time, claims no ratio and has no Amdahl ceiling; `M-280` does not apply because no clause here is a nanosecond. What stands in a share's place is one column per clause, and each verdict above is quoted from it: C1 from `ulp_difference` per `expression_site` with `inputs_tried` / `inputs_differing` as denominator and numerator and `worst_input` carrying the reproducing bits; C2 from `hashes_identical` over `golden_rows`, with `golden_hashes_differing` and `golden_matches_committed_fixture` behind the boolean; C3 from `probe_reproduced` beside `expression_site`, `file` and `line`, with `contracted_in_codegen` as the machine-code half of the same question. The audit's own cost was one afternoon and its output is an eleven-line watch list; the registration's stated hope was that C1 would be *falsified* — that no sensitive expression existed at all — and the measurement says otherwise on 11 of 15 sites while C2 says the crate has not yet paid for it.
+
+---
+
+### 💥 ✗93 / M-431 — C1 FALSIFIED with the registered arm lifting **0 of 26** rows and reading the shipped baseline's **6 of 32** exactly, C2 FALSIFIED at **7.926391×** retired instructions against a **2.0×** bar, C3 HELD at `hashes_moved` **40** = `hashes_moved_expected` **40** and **0** triangle counts moved: with *every* reduction on the dual vertex path exact, `pure_sign_flip_exact` still reads **6 of 32**, so `M-177` is not an accumulation defect and `P-101`, `P-118` and `R-118` close together (P-118, R-118)
+
+**M.** `cargo bench --bench experiment_p118`, `docs/experiments/p-118.csv`, **400 rows**, `f64`,
+`amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **400 data rows**
+across **105 columns** — counted from the file, not from the brief. Five `rule` arms at 80 rows each
+(`edge_slot`, `ordered_naive`, `superaccumulator_solve_nine`, `superaccumulator_all_twelve` — the
+registered arm — and `superaccumulator_all_twelve_and_normal`), split into `block = equivariance`
+(160 rows: eight fields × {25³, 33³} × two duals × five arms, `equivariance_rows` = 32 per arm, each row
+one `elements_tested` = 48 octahedral measurement) and `block = golden` (240 rows: eight fields ×
+{17³, 25³, 33³} × two duals × five arms, `golden_dual_rows` = 48 per arm, each scored against the
+committed `crates/isomesh/golden_hashes.json`). The shipped extractor rides every row in
+`baseline_elements_vertex_exact`. Committed at **`77a9d7a`** —
+`# commit 77a9d7a on amd-ryzen-9-5900x-12-core at 2026-08-29T00:52:17Z`, no `(WORKING TREE DIRTY)`, and
+`git merge-base --is-ancestor 77a9d7a HEAD` passes (HEAD is an ancestor-consistent tip, `p-118.csv - re-run on a clean
+tree`).
+
+| clause | registered | measured |
+|---|---|---|
+| C1 an exactly order-independent accumulator reaches `elements_vertex_exact` 48 of 48 on the equivariance fixture, where the shipped solve is below it | all 26 | **FALSIFIED — `c1_rows_lifted` = 0 of `c1_population` = 26; `c1_rows_at_48` = 6 of `equivariance_rows` = 32, identical to `baseline_rows_at_48` = 6, and `arm_superaccumulator_all_twelve_rows_at_sign_8` = 6 of 32, the shipped reading unchanged** |
+| C2 cost under 2× simple ordered summation, which is Neal's own figure | `c2_bar` = 2.0 | **FALSIFIED — `cost_ratio` 7.926391, from `instructions_per_solve_superacc` 14897.3072 over `instructions_per_solve_ordered` 1879.4565** |
+| C3 golden-hash movement confined to vertices whose accumulation order changes and NO TRIANGLE COUNT MOVES | 0 counts | **HELD — `hashes_moved` 40 = `hashes_moved_expected` 40, `triangle_counts_moved` 0, `max_hausdorff_delta` 4.818367926873e-14, and `topology_identical` / `triangle_count_identical` / `indices_identical` / `counts_identical` true on 400 of 400** |
+
+**C1 was arithmetically out of reach before this harness existed, and the file says so in a column.**
+`c1_reachable_before_run` reads `false_p101_locates_the_obstruction_in_vec3_length_and_m177` on all 400
+rows. From `docs/experiments/p-101.csv`, already on disk: `edge_slot_equivariant_normal` reaches
+`pure_permutation_exact = 6` on **32 of 32** equivariance rows — the permutation half is `vec3::length`'s
+naive dot, not the accumulation — while `pure_sign_flip_exact = 8` stays at **6 of 32** for the shipped
+extractor and for all four of `P-101`'s arms, which is `M-177`. `elements_vertex_exact = 48` needs both
+halves. The row was run anyway, with a fifth arm arranged to *locate* the failure rather than argue it.
+
+| `rule` | rows at 48 (of 32) | rows at perm 6 | rows at sign 8 | golden hashes moved (of 48) | triangle counts moved |
+|---|---:|---:|---:|---:|---:|
+| `edge_slot` (instrument check) | 6 | 8 | 6 | 0 | 0 |
+| `ordered_naive` | 6 | 8 | 6 | 40 | 0 |
+| `superaccumulator_solve_nine` | 6 | 8 | 6 | 36 | 0 |
+| **`superaccumulator_all_twelve`** (registered) | 6 | 8 | 6 | 40 | 0 |
+| `superaccumulator_all_twelve_and_normal` | 6 | **32** | 6 | 40 | 0 |
+
+> **`M-177` is not an accumulation defect, and that is this row's result.** The registered arm's three
+> equivariance columns are *identical to the shipped baseline* — `arm_superaccumulator_all_twelve_rows_at_48`
+> 6, `_rows_at_perm_6` 8, `_rows_at_sign_8` 6 against `arm_edge_slot_*` 6 / 8 / 6 — so exactness moves
+> nothing. The fifth arm then makes **every** reduction on the dual vertex path exact, superaccumulating
+> all twelve slots *and* the normal's length, and takes `_rows_at_perm_6` to **32 of 32** while
+> `_rows_at_sign_8` stays at **6**. An accumulator that is exactly order-independent, rounded once rather
+> than eleven times, buys the permutation half and buys nothing at all on the sign-flip half. `M-177`'s
+> obstruction covers the octahedral case, which is precisely the falsifier's stated consequence:
+> `P-101`, `P-118` and `R-118` close together.
+>
+> **The vacuity controls fired, all of them.** `baseline_elements_vertex_exact` is populated on 400 of 400
+> rows and takes six distinct values (2 on 240 rows, 48 on 80, 4 on 40, 6 on 20, 16 and 24 on 10 each) —
+> `baseline_matches_p101` is true on 400 of 400, so the run reproduces `✗79 / M-413`'s own reading before
+> it measures a move away from it. `replica_bit_identical` and `golden_fixture_matches_shipped` are true on
+> 400 of 400, and `bit_identical_to_shipped` is true on all 80 `edge_slot` rows and false on 252 of the
+> other 320 — the change under test being visible, not a defect. The accumulator itself was tested before
+> any mesh was built: `superacc_exact_cases` **10**, `superacc_integer_oracle_cases` **5** (i128 oracle),
+> `superacc_permutation_cases` **10** at 64 shuffles each, `superacc_negation_cases` **10**, and
+> `superacc_cases_where_shipped_differs` **4** — that last is the battery's own control, because a battery
+> on which `sum_equivariant` and the superaccumulator never disagree proves nothing. `worst_chunk_magnitude_bits`
+> reads **54** of 64 over the battery *and* the whole cost corpus (the harness's stdout prints 53, which is
+> the battery-only census), against the module doc's no-carry-propagation bound of `12 · 2^53 < 2^57`.
+
+**C2's failure has a mechanism, not just a number.** `superacc_reductions_per_solve` = **12** (3 centroid +
+6 matrix + 3 gradient), and each one pays a whole `superacc_chunks` = **67**-chunk read-out over
+`superacc_mean_terms_per_reduction` = **3.993103** terms (`cost_corpus_crossings` 4632 over
+`cost_corpus_solved` 1160). Neal's 2× is an *array* figure; a four-term reduction cannot amortise a
+fixed-size read-out, so the bar was unreachable for a structural reason the corpus makes explicit. The
+verdict is scored in retired instructions. `ns_cost_ratio` **8.135137** (from `ns_per_solve_ordered`
+143.3831 and `ns_per_solve_superacc` 1166.4407) and `cycles_per_solve_ordered` 599.5316 /
+`cycles_per_solve_superacc` 4876.8079 are recorded beside it and **no verdict reads them** — on a governed
+CPU spanning 1.96–5.62 GHz a nanosecond is not a unit (`M-280`, `✗24`).
+
+**Incidental, and measured here for the first time: what `A-016` costs.**
+`instructions_per_solve_edge_slot` **8715.1955** against `instructions_per_solve_ordered` **1879.4565**
+gives `shipped_over_ordered_instruction_ratio` **4.637083** — the shipped `sum_equivariant` path costs
+4.64× a naive ordered sum on the dual vertex solve. No clause asked for that; it is the price of
+equivariance on the path, and a reader can now see it without inferring it.
+
+**C3 held, and it agrees with a different experiment.** The 40 golden rows that moved are the *same* 40
+(field, resolution, dual) configurations `✗79 / M-413` recorded: comparing `mesh_hash_moved` per golden row
+against `p-101.csv`'s `abs_value_abs_offset` arm gives an identical set of 40, symmetric difference empty —
+two mechanisms with nothing in common, a canonical key reorder and an exact fixed-point accumulator,
+displacing exactly the same vertices. `max_hausdorff_delta` here is 4.818367926873e-14 against `p-101.csv`'s
+3.008704396734e-14. `grid_mirrors` reads `false` on the 80 golden 25³ rows (eight fields × two duals × five
+arms) because `2L/24` is not dyadic and that grid does not mirror bit-exactly — which is exactly why C1 is
+scored on the `equivariance` block only: a non-mirroring row would be falsified by the fixture rather than
+by the extractor.
+
+**SHARE, recomputed.** The dual vertex solve only. `M-25` puts the sharp-feature solve at 3% over Surface
+Nets and at **6.5% on Zen 3**, the machine this phase runs on, so the ceiling is `1/(1 − 0.065)` =
+**1.070×**. C1 is a correctness clause and C2 a cost bound; neither is or may become a speedup claim, and
+no column in this file is a speedup. The mechanism is refused on both counts and gets no landing ticket:
+it lifts `c1_rows_lifted` = 0 rows and would cost `cost_ratio` 7.926391 inside a 1.070× envelope.
+
+---
+
+### 🔬 M-432 — C1 **VACUOUS** on all 16 rows because the registered perturbation had nothing to move (`baseline_spread` 0, and `buckets_of_three_or_more_spanning_chunks` = **0 on 16 of 16** says why), C2 HELD at `instruction_cost_ratio` **1.0888–1.1059** against a 1.25 bar, C3 HELD on **768** welds — and the mechanism itself is not in doubt, because the vacuity control reproduced `P-9` exactly (`baseline_spread_within_bucket` **4** and **2** against `p9_published_spread` **4** and **2**, `p9_reproduced` true on 16 of 16) and the double buffer took both to **0** (P-119, R-119)
+
+**M.** `cargo bench --bench experiment_p119`, `docs/experiments/p-119.csv`, **16 rows**, `f64`,
+`amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **16 data rows**
+across **64 columns** — counted from the file, not from the brief. Eight distinct `field` values
+(`sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate`, `gyroid`, `fbm_terrain`, `noise_cavity`)
+× two `extractor` values, one row each; `cells` = **46,656** on every row (eight chunks of 18³, `P-9`'s
+own fixture); `permutations` = **8** and `permutations_extended` = **32**. Three welds share one
+broadphase per row — `single` (a line-by-line mirror of `Welder::weld_split_by`, `mirror_matches_shipped`
+true on 16 of 16 and asserted), `double_indexed` (double-buffering and nothing else) and `double`
+(double-buffering plus the canonical tie-break). Committed at **`6c72319`** —
+`# commit 6c72319 on amd-ryzen-9-5900x-12-core at 2026-08-29T00:45:28Z`, no `(WORKING TREE DIRTY)`,
+and `git merge-base --is-ancestor 6c72319 HEAD` passes; the dataset landed as **`2a9b234`**
+(`p-119.csv - re-run on a clean tree`), also an ancestor of HEAD.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 double-buffering removes `P-9`'s vertex-count spread — 4 under `dual_contouring`, 2 under `manifold_dual_contouring` — to exactly 0 | spread → 0 | **VACUOUS — `c1_holds` reads the literal string `vacuous` on 16 of 16. The registered column `baseline_spread` is over *chunk append order* and reads 0 on 16 of 16, `baseline_spread_extended` 0 on 16 of 16 over 32 orders; `control_fires` (`baseline_spread > 0`) is `false` on every row, so `double_buffered_spread` = 0 is a zero removed from a zero. The mechanism is still shown to work, on the *other* perturbation family — see below.** |
+| C2 the cost is under 1.25× the single-buffer path | ≤ 1.25 | **HELD — `instruction_cost_ratio` 1.0888–1.1059, `c2_holds` true on 16 of 16. The clock agrees: `cost_ratio` (the registered column, and it is the nanosecond ratio) 1.0802–1.1686, `c2_holds_ns` true on 16 of 16, `cycle_cost_ratio` 1.0793–1.1665 at `ghz` 4.1802–4.1877** |
+| C3 the mesh is identical under every permutation of chunk append order | equality | **HELD — `mesh_identical_across_permutations` true on 16 of 16, `distinct_canonical_meshes_double` = 1 on 16 of 16. Scored as a conjunction over three families: 8 chunk orders, 32 extended chunk orders (`double_buffered_spread_extended` 0) and `P-9`'s 8 within-bucket permutations (`mesh_identical_across_permutations_within_bucket` true on 16 of 16) — 48 welds per row, 768 in the file. The control gives it meaning: `mesh_identical_across_permutations_single` is *false* on the two `torus` rows, where `distinct_canonical_meshes_single` = 6 of 8** |
+
+> **The census is what turns `baseline_spread = 0` from a hope into an explanation, and it is decided by
+> the fixture rather than by the sweep.** Seven columns that no clause reads —
+> `buckets_of_two_or_more`, `buckets_of_three_or_more`, `p9_published_buckets_of_three_or_more`,
+> `buckets_spanning_chunks`, `buckets_of_three_or_more_spanning_chunks`, `largest_bucket`,
+> `chunk_orders_distinct` — were wired out in `0b51cd8`, and they answer the only question the vacuity
+> control exists to ask. The perturbation was genuinely applied: `chunk_orders_distinct` = **8** of 8
+> seeds on every row. It simply had no purchase. **`buckets_of_three_or_more_spanning_chunks` is 0 on
+> 16 of 16** — and that is the only kind of bucket whose *member count* chunk append order can change,
+> because first fit only elects a different number of representatives from a chain of three or more, and
+> only a bucket straddling a chunk boundary has its member order moved by the append. Twelve rows have
+> no bucket at all (`buckets_of_two_or_more` = 0). `torus` has **4** cross-chunk buckets but
+> `largest_bucket` = **2**, and a bucket of exactly two elects one representative in either order.
+> `noise_cavity` has the only chains — `buckets_of_three_or_more` **1** under `dual_contouring` and **2**
+> under `manifold_dual_contouring`, equal to `p9_published_buckets_of_three_or_more` on both rows,
+> `largest_bucket` **3** — and `buckets_spanning_chunks` = **0** on both, so they sit inside one chunk
+> and the append never reorders them. C1's vacuity was therefore decided by the geometry of the block
+> before a single permutation ran; the census is a function of the identity-order mesh only.
+>
+> **`vacuous` here does not mean the mechanism failed, and the registration's own control proves it.**
+> The registered control is that the single-buffer arm reproduce `P-9`'s published spread, and it fired
+> in the right direction on all 16 rows: `p9_reproduced` true 16 of 16, which asserts
+> `baseline_spread_within_bucket` == `p9_published_spread` **and**
+> `distinct_outputs_within_bucket` == `p9_published_distinct_outputs` on every row — including the two
+> that move, `noise_cavity`/`dual_contouring` at **4** and `noise_cavity`/`manifold_dual_contouring` at
+> **2**, and the nine-distinct-output rows (`torus` **5**, `noise_cavity` **8**). Under that same
+> protocol `double_buffered_spread_within_bucket` is **0** on 16 of 16. So the double buffer *does*
+> remove `P-9`'s spread; what is vacuous is the registered column, because the registration named
+> chunk append order while the 4 and the 2 came from within-bucket permutation. Those are two
+> statements and the harness ran both rather than substituting one for the other.
+>
+> **The two halves of the mechanism are separated in the file, and only one of them is double-buffering.**
+> `spread_double_indexed` = **0** on 16 of 16: double-buffering alone makes the partition a function of
+> the ε-graph, so the vertex count is order-free by construction. It does not make the *mesh* order-free
+> — `mesh_identical_across_permutations_indexed` is **false** on the two `torus` rows. C3 is bought by
+> the canonical tie-break, which is a different device, and the entry should not be read as C3 crediting
+> the double buffer.
+>
+> **Three costs no clause bounded, reported and unscored.** (1) Memory: `peak_bytes_ratio` **2.8577–
+> 4.2813×** (`peak_bytes_single` 23,976–294,076 against `peak_bytes_double` 88,448–840,384). That is a
+> real price for determinism and nothing in the registration capped it. (2) The answer moves. Label
+> propagation converges to the transitive closure of ε-closeness, which `weld.rs:41-52` refuses on
+> purpose: `vertex_delta` reads **−4** and **−2** on the two `noise_cavity` rows (`vertices_single`
+> 7,700 → `vertices_double` 7,696; 7,938 → 7,936) and 0 on the other fourteen — the closure removes
+> exactly as many representatives as ordering could elect, which is the same 4 and 2. (3) The ε
+> guarantee is exceeded: `max_move_over_epsilon` reads **1.732051** (√3) on both `noise_cavity` rows and
+> **1.000000** on both `torus` rows, so the chain-dragging `weld.rs` warns about is real on this
+> fixture, not theoretical. This is a *different* weld that is deterministic, not a deterministic
+> version of the shipped one.
+>
+> **`target_feature_popcnt` is `false` on 16 of 16 and no verdict here is contingent on it** —
+> `count_ones_calls_per_vertex` is **0** on every row; neither arm is a bitmap.
+
+**SHARE, recomputed.** C1 and C3 are determinism equalities and C2 is a cost bound, so no clause is a
+fraction of a total and none is a speedup claim — the measured mechanism is **8.9–10.6% more
+expensive**, not faster. C2's denominator is named: `instructions_per_cell_single`, **96.9447–1421.9796**
+instructions per cell over the 46,656 cells of the eight-chunk block, against
+`instructions_per_cell_double` **107.0542–1562.3943**. The window is the weld alone, prefix-differenced
+against a sibling `restore` window that both arms pay (`instructions_per_cell_restore` 0.0906–1.1215,
+under 0.1% of the single arm, so the dilution is negligible and visible: `cost_ratio_undiluted`
+1.0802–1.1686 against `cost_ratio_with_restore` 1.0800–1.1682). Per `M-280`/`M-281` the **instruction
+form carries the verdict** and the nanosecond form is recorded beside it for comparison; on this row
+they agree, which is the useful thing to be able to say. The share C1 could have moved is
+`baseline_spread` itself, and it was **0** — the crate's chunked-append path has no vertex-count
+order-dependence on this fixture to buy back. Parallel SurfaceNets' one-to-two-orders-of-magnitude
+figure is a parallel result and every loop in `crates/isomesh/src/**` is sequential; nothing here is
+scored against it.
+
+---
+
+### 💥 ✗94 / M-433 — C1 FALSIFIED on **4 of 32** rows, all four `fbm_terrain`, `ratio` **1.7965–1.9008** against a **2.0×** bar and every one of them *decided* (`ratio_band_decides` true, nine-repetition band topping out at **1.8221**); C2 HELD on **32 of 32** — `order_independent`, `labels_consecutive` and `distinct_final_states` = 1 across `orders_tested` = 3, so `✗26`'s defect does not reproduce in a per-chunk union-find that is never asked to delete; C3 HELD on **32 of 32** (`partition_identical`) against a mutant that mismatches on **125,877–2,222,208** samples; and on the deterministic `instruction_ratio` the 2× bar is cleared on only **14 of 32** (P-120, R-120)
+
+**M.** `cargo bench --bench experiment_p120`, `docs/experiments/p-120.csv`, **32 rows**, `f64`,
+`amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **32 data rows**
+across **52 columns** — counted from the file, not from the brief. Eight fields × {65³, 129³} ×
+{`base`, `dug`}, sixteen rows per arm; `chunk_cells` 32,768 and `samples_per_chunk` 35,937 on all 32,
+`chunks` 8 at 65³ and 64 at 129³, `reps` 9 and `orders_tested` 3 on all 32. Committed at **`2a9b234`** —
+`# commit 2a9b234 on amd-ryzen-9-5900x-12-core at 2026-08-29T00:46:15Z`, no `(WORKING TREE DIRTY)`, and
+`git merge-base --is-ancestor 2a9b234 HEAD` passes (HEAD is an ancestor-consistent tip; the dataset landed in `3cb450a`,
+`p-120.csv - re-run on a clean tree`).
+
+| clause | registered | measured |
+|---|---|---|
+| C1 at least 2× against the shipped flat-label structure on per-chunk island labelling | ≥ 2.0× | **FALSIFIED — `c1_holds` true on 28 of 32, false on 4: `fbm_terrain` 65³ `base` `ratio` 1.8128, 65³ `dug` 1.7973, 129³ `base` 1.9008, 129³ `dug` 1.7965. Every other row clears it, `ratio` topping out at 2.3759 (`thin_plate` 129³ `base`). `ratio` is `cycles_per_cell_flat / cycles_per_cell_union_find` — the scoring form, per `M-280`/`M-281`; `ns_ratio` agrees to four figures on all four failing rows (1.8134, 1.7961, 1.9006, 1.7961), and `instruction_ratio` is lower still (1.6732, 1.6197, 1.6967, 1.6213)** |
+| C2 final labels are consecutive and independent of iteration order | exact | **HELD — `labels_consecutive` true on 32 of 32 and `order_independent` true on 32 of 32, with `distinct_final_states` = 1 on 32 of 32 over scan orders `[forward reverse z_fast]` (`orders_tested` = 3): the final label array is bit-identical across all three, not merely partition-equivalent** |
+| C3 the label sets equal the flat-label path's partition exactly | exact | **HELD — `partition_identical` true on 32 of 32, and `mirror_matches_shipped` true on 32 of 32, so the flat comparand is checked against a real `isomesh::connectivity::Air` on the same chunk values rather than assumed** |
+
+> **28 of 32 is not "held", and the entry says so in both directions.** C1 is a per-row gate and it failed
+> on four rows; the heading is 💥 for that reason alone. But the four are not a noise near-miss:
+> `ratio_band_decides` is **true** on all four, meaning the whole nine-repetition band
+> (`ratio_rep_min`–`ratio_rep_max`) lies below 2.0 — widest is `fbm_terrain` 129³ `dug` at **1.7271–1.8112**.
+> The shortfall survives the strictest reading too: `instruction_ratio` on those rows is **1.6197–1.6967**,
+> *lower* than both the cycle and the nanosecond form, so no clock artefact rescues them.
+>
+> **Symmetrically, three of the 28 "true" rows are undecided.** `ratio_band_decides` is **false** on
+> `noise_cavity` 65³ `dug` (band **1.9834–2.0305**), `gyroid` 129³ `dug` (**1.9686–2.1194**) and
+> `noise_cavity` 129³ `base` (**1.9943–2.1532**) — the band straddles the bar, so `c1_holds` = true there is
+> a property of which repetition was medianed. The defensible tally is **25 held, 4 falsified, 3 undecided**.
+> And on `instruction_ratio`, the reproducible form, only **14 of 32** rows reach 2.0: `forms_agree` is false
+> on **14** rows where the cycle ratio clears the bar and the instruction ratio does not (e.g. `sphere` 129³
+> `dug`, `ratio` 2.2111 against `instruction_ratio` **1.9994**). The harness scores cycles on purpose and the
+> reason is mechanical: the mechanism under test is **locality**, and an instruction count is blind to it by
+> construction.
+>
+> **The locality is the mechanism, and it is structural rather than a timing accident.**
+> `l1_misses_per_cell_union_find` is **0.15625–0.15923** on all 32 rows — flat, field-independent, a raster
+> scan over one array. `l1_misses_per_cell_flat` is **1.35212–2.91384**: BFS flood fill touching ±1, ±33 and
+> ±1089 in an order no prefetcher follows. `l1_miss_ratio` is therefore **8.6187×–18.6289×**. The four
+> failing rows are exactly the four where the *comparand* got cheap, not where the union-find got slow:
+> `fbm_terrain` is the only field with `air_fraction` **0.44993–0.48887** against a minimum of **0.76214**
+> everywhere else, its `l1_misses_per_cell_flat` collapses to **1.35212–1.45887** (`l1_miss_ratio`
+> **8.6187–9.3367** against **14.2863–18.6289** on the other 28), and `instructions_per_cell_flat` falls to
+> **80.66688–87.39525** from **≥ 132.6428**. Both arms get cheaper on a half-solid field; the flat arm gets
+> cheaper faster, and 2× is where that crosses.
+>
+> **What C2 licenses and what it does not.** `connectivity.rs:29-46` explicitly refuses a union-find in
+> favour of flat labels because it *was* one and adding `fill` broke it — `✗26`: parent pointers encode
+> union history, not spatial adjacency. C2 is that defect measured rather than argued: the final id of a
+> component is fixed by pass two, which walks ascending raster order always, so it is a function of the
+> partition alone. Measured, the specific defect `✗26` recorded **does not reproduce here** —
+> `order_independent` true on 32 of 32, `labels_consecutive` true on 32 of 32, `partition_identical` true on
+> 32 of 32. That is a claim about *this* union-find: per-chunk, bench-local, rebuilt from scratch, three
+> scan orders, and **never asked to delete**. `✗26` condemned an *incrementally maintained* structure asked
+> to handle `fill`, and nothing on any of these 32 rows exercises a deletion. C2 is not a licence to revisit
+> `connectivity.rs:29-46`; `connectivity/world.rs:387` already states the surviving discipline — every
+> restitch builds it from scratch, so it only ever unions.
+>
+> **Both vacuity controls fired.** The registered one — *components must exceed 1 on the DUG arm* —
+> `components_dug` reads **9–53** on all 32 rows (it is carried onto the base rows, so the assertion is
+> checkable from any row), against `components` **1–53**. It was needed: `components` is **1** on **10 of
+> the 16** `base` rows, and on those rows `control_distinct_final_states` reads **1** — an
+> order-*sensitive* flattening produces one labelling too when a chunk has one component, so those ten rows
+> cannot testify for C2 and the harness does not assert them. On the other 22 rows the control reads **3**
+> (21 rows) or **2** (`gyroid` 65³ `base`, `components` = 2) against `distinct_final_states` = 1, which is
+> where C2's evidence actually lives. C3's control, `mutant_partition_mismatches` — a union-find with the
+> −z unions dropped — is non-zero on all 32 rows at **125,877–2,222,208** samples, so `partition_identical`
+> is not a comparator that cannot see a severed component.
+>
+> **No verdict here is contingent on the missing `popcnt`.** `target_feature_popcnt` is **false** on 32 of
+> 32, as everywhere in this build, and `count_ones_per_cell_flat` and `count_ones_per_cell_union_find` are
+> **0** on 32 of 32 — neither arm population-counts anything. This is a scan-and-equivalence-table result,
+> not a bitmap one, and C1 would not move under `-C target-cpu=native`.
+
+**SHARE, recomputed.** Per-chunk island labelling is **not on the extraction path at all**, so `✗51`'s
+`1/(1 − share/factor)` ceiling does not apply and **no extraction speedup is claimed or implied by any
+clause here**. C1's share is `ns_per_cell_flat` **in full** — the denominator is a named structure,
+`Air::build`'s flood fill on the same chunk, not a fraction of a total — and the comparand is priced
+*conservatively*: `ns_per_cell_shipped_air / ns_per_cell_flat` is **1.8247×–2.0175×**, so the bench-local
+mirror excludes roughly half of what the real `Air::build` costs (its `set_size` bookkeeping and its
+`O(6n)` `solid_faces` pass, dropped from both arms). Against the whole shipped structure,
+`ns_per_cell_shipped_air / ns_per_cell_union_find` is **3.3999×–4.6860×**, and **3.4000×–3.8345× on the
+four rows that falsified C1** — which is the number anyone deciding whether to land this should read, and
+it is not the number the clause was written against. C2's share is the enumerated population
+`chunks × orders_tested` = **3,456** labelling runs, all compared; C3's share is `air_samples` =
+**33,828,137** of `samples_labelled` **41,399,424**. Wu, Otoo & Shoshani's 5×–100× was registered as an
+upper bound and not a prediction, and the gap is the size of the registration's caution: the best row
+here is **2.3759×**, a factor of 2.1 below the *bottom* of the published band. Voxel islands are not
+random binary images.
+
+---
+
+### 💥 ✗95 / M-434 — C1 HELD with the worst `residual_share` at **0.005195** against a **0.05** bar, C2 HELD with `max_reference_integer_share_at_65` = **0.724533** against **0.15** — the gate that made `P-103`, `P-104` and `P-106` live rather than Amdahl-dead — and C3 FALSIFIED on **18 of 72 rows** by the *cycle* form of the emit-walk collapse reading **0.176007** and **0.119866** at 65³ under dual contouring while the retired-instruction form of the identical conjunct read **0.000051**: classify and emit are not cleanly separable in cycles, so every `integer_share` this phase is denominated in is a share of their **sum** (P-121, R-121)
+
+**M.** `cargo bench --bench experiment_p121`, `docs/experiments/p-121.csv`, **72 rows**, **49 columns** — four `#` comment lines plus one column header plus 72 data rows, counted from the file rather than from the brief. One block: **9 fields × {33³, 65³} × {`f32`, `f64`} × {`marching_cubes`, `dual_contouring`}** = 72, `cells` reading `32768` on 36 rows and `262144` on 36 (`(n−1)³`), `active_cells` **0 – 28,375**, `inner_reps` **1 – 195** chosen per row for a ~30 ms counter window. The ninth field is **`sphere_surface_free`** — C3's registered surface-free control, the canonical sphere sampled a long way from itself (`crates/isomesh/benches/experiment_p40.rs:84-93`, already scored on by `M-337` and `✗28`) — and it carries `active_cells` = `vertices` = `triangles` = **0 on all 8 of its rows**. It is a control and not a reference field, so it is excluded from C2's maximum by construction; that exclusion is load-bearing, because the file's overall `integer_share` maximum is **0.759249** on `sphere_surface_free 65³ f32 dual_contouring`, higher than the gate number, and on a field with no surface integer work is trivially most of what is left. `amd-ryzen-9-5900x-12-core` (Zen 3), governed `powersave`/`balance_performance`, `ghz` **4.1727 – 4.2213** across all 72 rows. Stamped **`3cb450a`** — `# commit 3cb450a on amd-ryzen-9-5900x-12-core at 2026-08-29T00:49:28Z`, no `(WORKING TREE DIRTY)` — and committed as **`8098ba4`** (`p-121.csv - re-run on a clean tree`); `git merge-base --is-ancestor 8098ba4 HEAD` passes.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the decomposition accounts for the total: `residual_share` under 5% of measured cycles on **every** row, and no stage reads zero on a fixture where it must run | `< 0.05` per row | **HELD — `residual_share` spans `0.000005` (`thin_plate 65³ f32 marching_cubes`) to `0.005195` (`thin_plate 33³ f64 marching_cubes`), median `0.000728`; `residual_share_row_worst` `0.005195`, a factor of ten inside the bar; `c1_holds` true on 72 of 72. `cycles_sample` ≥ `184439.1` and `cycles_classify` ≥ `453230.3` on every row. `cycles_solve` reads `0.0` on 36 rows and all 36 are `marching_cubes`, where the registration puts solve on the dual path only.** |
+| C2 integer work — classification plus the emit path's indexing — is at least 15% of extraction on at least one reference field at 65³ | `≥ 0.15` on ≥ 1 of 8 | **HELD — `max_reference_integer_share_at_65` = `0.724533` on all 72 rows, attained at `sphere 65³ f32 marching_cubes`: `integer_share` `0.724533` = (`cycles_classify` `4284697.4` + `cycles_emit` `522256.2`) / `cycles_total` `6634558.9`. Not marginal and not a single row — 6 of the 8 reference fields clear the bar at 65³ (`sphere` 0.7245, `torus` 0.5978, `thin_plate` 0.5869, `box_exact` 0.5741, `csg_difference` 0.4678, `gyroid` 0.2037) and 21 of 32 reference rows at 65³ do. `c2_holds` true on 72 of 72.** |
+| C3 the split is real: on a surface-free field classification still runs and the emit stage does not, and the stage cycles move in exactly those directions | `c3_classify_hold ≥ 0.5`, `c3_emit_walk_collapse < 0.05` in cycles **and** instructions, nothing emitted | **FALSIFIED — `c3_holds` false on 18 of 72 rows. C3 is scored per (resolution, scalar, extractor) group and stamped on all nine fields of the group, so 18 of 72 is 2 of 8 groups: `65³ f32 dual_contouring` and `65³ f64 dual_contouring`. Exactly one of the four conjuncts failed: `c3_emit_walk_collapse` reads `0.176007` and `0.119866` against the `0.05` ceiling. The other three held on all eight groups — `c3_classify_hold` `0.9501 – 0.9950` against a `0.5` floor, `c3_emit_walk_collapse_instructions` `0.000020 – 0.000208` (`0.000051` on the two failing groups), and `active_cells`/`vertices`/`triangles` all zero on every surface-free arm.** |
+
+> **The half that failed is the half the harness named in advance as the one that could not carry a verdict.** `experiment_p121.rs:180-187` states, before the run: *"on the surface-free arm `emit_walk` is the difference of two nearly equal windows, so its cycle ratio has an unbounded relative noise floor, while an instruction count is deterministic and cache-independent"* — and then requires both, *"which can only make the clause harder"*. It did. On the two failing groups the surface-free `cycles_emit_walk` is **27,797.6** (`f32`) and **20,673.2** (`f64`) for **25 retired instructions** — 1,112 and 827 cycles per retired instruction, against `ipc_total` of `4.1652` and `3.3372` on the same rows — and it is **0.47%** and **0.29%** of those rows' own `cycles_total` (`5944514.6`, `7216944.8`). It clears the 0.05 ceiling only because the denominator, `sphere`'s `cycles_emit_walk` under dual contouring at 65³, is itself small (`157934.5` and `172469.5`, ~2.7% of extraction). The registered clause reads *cycles*, so the falsification stands as scored; per `M-280`/`M-281` the retired-instruction form of the same ratio — **`0.000051`, a factor of 980 inside the bar** — is the form that is a count, and it says the emit walk does collapse.
+>
+> **What the false reading costs, stated because three other rows in this phase are denominated in it.** C3 is the clause that proves classify and emit are separable *at all*. With it falsified on the two 65³ dual-contouring groups, `integer_share` is not a share of classification; it is a share of `cycles_classify + cycles_emit` and the boundary between the two is only reliable in retired instructions. Any Group A ceiling quoted against `0.724533` is a ceiling on the **sum** of the two integer stages, and a mechanism that touches only classification inherits a smaller share than that number. This is a qualification on the denominator, not a retraction of it: on the gate row (`marching_cubes`) `cycles_emit` is `522256.2` against `cycles_classify` `4284697.4`, so classification alone is **0.6458** of `cycles_total` and clears the 0.15 bar by itself.
+>
+> **Several stage columns read negative, and that is prefix arithmetic, not negative work.** A stage is `cut[k] − cut[k−1]` over two counter windows (`experiment_p121.rs:108-115`), so two adjacent cuts inverting by less than the window's own reproducibility produces a negative difference. `cycles_interpolate` goes negative on 3 rows (worst **−1581.5**, `sphere_surface_free 33³ f64 dual_contouring`), `cycles_solve` on 3 (worst **−5708.5**, `sphere_surface_free 65³ f64 dual_contouring`), `cycles_emit` on 2 (worst **−638.2**, `sphere_surface_free 33³ f64 dual_contouring`) — all eight of those readings are on the surface-free control, where the stage in question genuinely does nothing and the true value is zero. `cycles_residual` goes negative on 12 rows across the reference fields, worst **−58493.0** on `fbm_terrain 65³ f32 marching_cubes`, which against that row's `cycles_total` of `245411974.0` is `residual_signed_share` **−0.000238**. The unregistered sub-split `cycles_emit_prepare` is negative on 25 of 72 rows (worst **−528553.0**, `noise_cavity 65³ f32 dual_contouring`). `M-280`'s point applies directly: on a governed CPU spanning 1.96–5.62 GHz a cycle window is a measurement with a noise floor, and at these magnitudes an inverted pair of cuts is clock and cache movement between two windows over the same function body. **C1 is the clause that bounds the damage, and it is the reason a negative reading is disclosed rather than clamped:** `residual_share` is `|residual| / total` precisely so a 3% overshoot cannot pass as a 3% shortfall (`:137-141`), and it reads at most **0.005195** — half a percent — on every row.
+>
+> **Vacuity controls, all three registered, all three fired.** (1) Every stage's cycle count non-zero on a field where it must run — asserted per row, not merely recorded. (2) `residual_share` reported **per row** rather than pooled: pooling would have hidden the `0.005195` worst case behind a `0.001043` mean. (3) The surface-free arm's emit at or near zero **with classify non-zero** — `instructions_emit` falls to **36.0** on the surface-free dual rows against a file maximum of `8596148.0`, while `cycles_classify` there reads `4477616.1` and `4713889.3`, i.e. **96.3%** and **97.1%** of `sphere`'s. Beside them, the instrument's own agreement check: `mesh_identical_to_shipped` is **true on 72 of 72** — positions, normals and indices compared as bit patterns in creation order, which is `M-279`'s rule that a new instrument's first job is to agree with the old one. `agreement_ratio` (mirror cycles over shipped cycles) spans **0.7798 – 1.0279**, so the mirror is up to 22% *cheaper* than the shipped extractor on the cheapest Marching Cubes rows even while emitting its mesh bit for bit; the shares are therefore shares of the mirror's cycle profile, and that is disclosed rather than assumed away. `residual_share_rep_worst` reads **0.166282** — the single worst repetition anywhere in the file, reported and explicitly not scored on.
+>
+> **A measurement-hygiene note that changes no verdict.** `af62b6d`'s commit message recorded `integer_share 0.7260` from a dirty-tree run; this clean-tree dataset reads **0.724533** in `max_reference_integer_share_at_65`. A **0.2%** disagreement on the phase's own gate number, in the direction of the clean run being slightly smaller. The gate opens either way, every Group A ceiling below is computed from `0.724533`, and the dirty number is not quoted anywhere in this entry.
+>
+> **No verdict here is contingent on `target_feature_popcnt` being `false` in this build.** The file contains no `count_ones` at all and one `trailing_zeros` (`:774`, the dual path's bit-packed word scan). C2's gate row is `marching_cubes`, whose `classify` is the inline `case |= 1 << c` loop over eight corners.
+
+**SHARE, recomputed.** This row *is* the share instrument: it moves nothing, claims nothing, and has no `1/(1 − share/factor)` ceiling of its own. What it produces is the denominator. `integer_share` = (`cycles_classify` + `cycles_emit`) / `cycles_total` reaches **0.724533** on a reference field at 65³, so a Group A mechanism that halves the integer stages has a whole-extraction ceiling of `1/(1 − 0.724533/2)` = **1.568×** and one that removes them entirely has `1/(1 − 0.724533)` = **3.629×**. That is the number `R-103`, `R-104` and `R-106` are scored against, and it is what the harness's own line *"Group A proceeds: P-103, P-104 and P-106 have a reachable denominator"* records. Set against `✗51`: `P-69`'s C1 asked for 2× on a stage that was **11.6%** of the marginal, ceiling `1.061×`, unreachable however well it vectorised — Group A's stage is **6.2× that share**. The gate is an existential over fields and it is not uniform: `integer_share` spans **0.011925 – 0.759249** across the file and `float_share` **0.242021 – 0.988286**, and the two sample-dominated reference fields fail the bar at 65³ (`noise_cavity` 0.1138, `fbm_terrain` 0.0237). On `fbm_terrain` the same complete removal of integer work buys `1/(1 − 0.023719)` = **1.024×**, so Group A is Amdahl-dead on expensive fields and only live on cheap ones. Every clause here reads cycles or retired instructions; `ns_per_cell` (**4.7314 – 361.2853**) and `ghz` are on the row as provenance and no clause consults either.
+
+---
+
+### 💥 ✗96 / M-435 — C1 FALSIFIED on **0 of 16** rows with `branch_miss_ratio` spanning **1.001214–1.983313** — the split *doubles* mispredictions at worst and reduces them nowhere — while C2 HELD at a worst `instruction_ratio` of **0.970606** against a bar of **1.10**, i.e. the split is *cheaper* in instructions on every row, and C3 HELD bit for bit on **32 of 32**: the control/data layout transfers, but the second traversal of the cell space costs **+0.96 to +1.01** extra mispredictions per innermost-loop exit at 129³, which is the whole difference (P-122, R-122)
+
+**M.** `cargo bench --bench experiment_p122`, `docs/experiments/p-122.csv`, **32 rows**, `f32`, `extractor = marching_cubes` on all 32, `amd-ryzen-9-5900x-12-core` (Zen 3). Four `#` comment lines plus one column header plus **32 data rows** across **55 columns** — counted from the file, not from the brief. The shape is **16 (field, resolution) pairs** — eight fields (`sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate`, `gyroid`, `fbm_terrain`, `noise_cavity`) × {65³, 129³} — each emitted **twice**, once with `arm = single_stream` and once with `arm = split_stream` (16 rows each). The paired comparison columns (`branch_miss_ratio`, `instruction_ratio`, the two ordering medians, `extra_branch_misses_per_*`) are identical on both rows of a pair; the nine columns that actually differ between the two rows of a pair are the un-suffixed per-arm ones — `branch_misses_per_cell`, `instructions_per_cell`, `cycles_per_cell`, `ns_per_cell`, `ipc`, `cache_misses_per_cell`, `l1d_read_misses_per_cell`, `ghz` — so **every clause is scored on 16 comparisons, not 32**, and `rows_total` = 16 on all 32 rows says so. `reps` = 16, `inner_reps` 4–58. Committed at **`77a9d7a`** (`p-122.csv - re-run on a clean tree`) and stamped from the tree at `8098ba4` — `# commit 8098ba4 on amd-ryzen-9-5900x-12-core at 2026-08-29T00:50:29Z`, no `(WORKING TREE DIRTY)`, and `git merge-base --is-ancestor 77a9d7a HEAD` passes; `8098ba4` is `p-121.csv`'s own commit and is an ancestor too.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 splitting the case index into a dense control stream and the payload into a second stream **reduces branch mispredictions per cell** | any reduction, per row | **FALSIFIED — `rows_reducing_branch_misses` = 0 of `rows_total` = 16 on all 32 rows; `branch_miss_ratio` 1.001214 (`gyroid` 65³, = `best_branch_miss_ratio`) to 1.983313 (`thin_plate` 129³, = `worst_branch_miss_ratio`); `branch_misses_per_cell_single` 0.008008–0.250699 against `branch_misses_per_cell_split` 0.015883–0.251252; `c1_holds` and `c1_holds_all_rows` both `false` on 32 of 32** |
+| C2 total instructions per cell rise by no more than 10% | `instruction_ratio` ≤ 1.10, worst row | **HELD — `worst_instruction_ratio` = 0.970606 on all 32 rows; per-row `instruction_ratio` 0.853904 (`thin_plate` 129³) to 0.970606 (`noise_cavity` 65³); `instructions_per_cell_single` 119.6579–306.5750 against `instructions_per_cell_split` 102.1763–297.5637; `instruction_ratio_rep_spread` = 0.000000 on 32 of 32; `c2_holds` and `c2_holds_all_rows` `true` on 32 of 32** |
+| C3 identical mesh | bit-for-bit equality | **HELD — `mesh_identical` `true` on 32 of 32 *and* `mesh_identical_to_shipped` `true` on 32 of 32: `split == single` and `single == MarchingCubes::extract`, positions, normals and indices compared as bit patterns in creation order; `c3_holds`, `c3_holds_all_rows` `true` on 32 of 32** |
+
+> **C2 holding is not the mild result it looks like: the ratio is *below* 1 on all sixteen rows, so the split is between 2.9% and 14.6% cheaper in instructions, not up to 10% dearer.** The registration bounded a cost it expected to pay and the cost came back negative. The module doc predicted the direction — the control pass is a straight loop the optimiser can do things to that it cannot do to the fused body — and named it a consequence of the split rather than a corner-gather saving. Three columns close that alternative explanation: `gather_calls_single` = `cells` (262,144 at 65³, 2,097,152 at 129³), `gather_calls_split` = `cells + emitting_cells` (264,192–2,216,037), and `gather_calls_ratio` 1.003906–1.108242 — **strictly above 1 on every row**, so the split arm gathers corners *more* often and `P-121`'s 15–24% corner-gather saving is provably not what is being credited here. `instruction_ratio_rep_spread` = 0.000000 on all 32 rows demonstrates `M-279`'s determinism rather than asserting it, which is why the instruction form of the clause is the one carrying a verdict.
+>
+> **The vacuity control fired, and the number it fired with is the finding.** `branch_misses_per_cell_single` is non-zero on all 16 single-stream rows, spanning **0.008008–0.250699** — asserted per row, not merely recorded, because a ratio against a floor of zero is not a measurement. But the floor is *low*: at `thin_plate` 129³ the shipped shape mispredicts **0.008 times per cell**, under one misprediction per 125 cells, at an `active_fraction` of 0.003906. C1's entire reachable share on that row was 0.8% of a branch per cell, and the split added 0.0079 more instead of removing any. The compact fields (0.008–0.025) are where the ratio is worst and the noisy fields (`gyroid` 0.230113, `noise_cavity` 0.250699 at 65³) are where it is nearest 1.000 — the mechanism removes nothing anywhere, and where there was most to remove it removed least.
+>
+> **Where the mispredictions went, rather than merely that they did not fall.** `extra_branch_misses_per_pass` is the signed difference (+73.2 to +16,619.6) and `extra_branch_misses_per_x_row` divides it by `x_rows`, the innermost-loop exits in one traversal (4,096 at 65³, 16,384 at 129³). The split traverses the cell space twice, so it pays `x_rows` extra loop exits — and at 129³ that column reads **0.9615–1.0144 on all eight rows**, which attributes essentially the *entire* difference to the second traversal's loop exits rather than leaving it a mystery. At 65³ it reads 0.0179–0.8690, so the accounting is only complete at the larger grid.
+>
+> **One of the sixteen rows is ordering-fragile and the harness refuses to quote it as firm.** The arms alternate order by repetition parity, and `branch_miss_ratio_single_first` / `branch_miss_ratio_split_first` are the medians *within each ordering*. On **`gyroid` 65³** they straddle unity — `1.002346` single-first against `0.999613` split-first — so whether the split reduced mispredictions on that row is decided by which arm inherited the other's cache and predictor state. That is `M-280` at row granularity: the printed summary counts it as *"rows whose verdict flips with the ordering: 1 of 16 — the two orderings' medians are columns, so a fragile row cannot be quoted as a firm one"*, and `gyroid` 65³ is exactly the row whose firm `branch_miss_ratio` of 1.001214 is the *most favourable* of all sixteen. Had C1's verdict rested on a single best row it would have rested on the one row that cannot bear it. It does not — 0 of 16 is the verdict — but the fragility is a column, not a footnote. `branch_miss_ratio_rep_best` also dips below 1 on four rows (`csg_difference` 65³ at 0.745632, `gyroid` 65³ 0.989480, `fbm_terrain` 65³ 0.999837, `noise_cavity` 65³ 0.980458) against `branch_miss_ratio_rep_worst` 1.066253–2.249289; a single lucky repetition is not a reduction either.
+>
+> **The popcount baseline, checked against the machine code rather than asserted.** `target_feature_popcnt` = `false` on all 32 rows, so `u64::count_ones` lowers to a ~12-instruction SWAR sequence in this build. **Neither arm touches that quantity**: `count_ones_calls_per_cell_single` and `count_ones_calls_per_cell_split` are both **0.0 on 32 of 32**. The control stream is one case **byte** per cell — `control_stream_bytes` = `cells` exactly (256 KiB at 65³, 2 MiB at 129³), scanned through a `payload_length_table_bytes` = 256 length table — not a bitmap, so there is no rank, no select and no word-population fold to pay for. And the harness reads its own binary: `objdump -d` on the bench greps **0** `popcnt` instructions and **0** occurrences of `0x3333333333333333`, the SWAR magic constant — no popcount in either form, hardware or emulated, anywhere in the linked binary, while the sibling row that found the build fact reports 18 of that constant in its own, so the grep discriminates. **No verdict in this row is contingent on the popcount lowering and both are invariant to `-C target-cpu=native`** — established by reading the machine code, not by reading the call graph correctly.
+>
+> **Stream VByte's headline figure is not a comparand and nothing here is scored against it.** 4 billion integers per second on a 3.4 GHz Haswell is the SIMD path (`_mm_shuffle_epi8` over sixteen bytes); this harness has no SIMD arm and `crates/isomesh/src/**` contains no `core::simd`, no intrinsics and no `unsafe`. The registration says so in its own hypothesis text. Only the layout transferred, and the layout is what was measured.
+
+**SHARE, recomputed.** **C1 is a per-cell counter ratio, not a fraction of extraction time, and C2 is a cost bound — so no time claim is made and `✗51`'s share bar does not apply.** C1's share is `branch_misses_per_cell_single`, the misprediction rate of the shipped shape, which is the entire quantity available to remove: **0.008008–0.250699 per cell**. C2's share is `instructions_per_cell_single`, **119.6579–306.5750 per cell**, the rate a 10% rise would be 10% of, scored on the worst row because dilution by an expensive field can only push a ratio toward 1.0 and never above the maximum — field sampling is deliberately outside both windows for that reason, since `P-121` measured field evaluation at 94% of extraction on `fbm_terrain` and counting it would make C2 hold by dilution. C3's share is the mesh and is an equality, not a share. `ns_per_cell` (5.095504–20.698171) and `ghz` (4.1775–4.1836) ride on every row as provenance for what clock the counts were taken at, and **no clause consults either** — the clock happened to be steady across this run, which is luck and not a licence. **Whether a misprediction reduction would have been worth anything in wall time is a question this row deliberately does not answer**, and since there was no reduction to price, it does not arise.
