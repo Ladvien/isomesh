@@ -19,6 +19,33 @@ release.** `unit_gradient` guards a zero gradient with `debug_assert!` only, so 
 with a plateau — which a grid folded through 100,000 `min`/`max` brushes has — yields a NaN normal whose
 *sign* differs between x86-64 and AArch64. It is named below, not repaired.
 
+**Phase 25 registered no source change and landed none, and that was the condition rather than the
+outcome.** Twenty pre-registered experiments over bit-packing, broadword and compressed-bitmap
+mechanisms, twenty benches, twenty committed CSVs and twenty `FINDINGS.md` entries — **sixty clauses:
+34 held, 24 falsified, 2 vacuous**, with seventeen of the twenty carrying at least one falsification
+(`✗80`–`✗96`, `M-416`–`M-435`). Every arm is a bench-local reimplementation driven through the public
+API, so **`crates/isomesh/src/` did not change apart from the twenty `Preregistration` entries
+themselves: no consumer-visible behaviour moved and not one golden hash moved.** A mechanism that earns
+landing gets its own ticket rather than a quiet commit, because a landing not registered in advance is
+`V-45`'s failure mode.
+
+**What a consumer of this crate should take from it: nothing changes, and four things are now settled
+rather than open.** The set-bit walk at `dual.rs:489-497` is between one part in ten thousand and one
+and a half parts in a thousand of an extraction, so it is not worth replacing — broadword select,
+a 2 KiB permutation table and Elias–Fano all lose to it, measured. The offset/compaction stage is at
+most **0.97%** of extraction, so Flying Edges' prefix-sum pass has nothing to buy here. Tree-Encoded
+Bitmaps, WAH and EWAH are retired together for the active-cell bitmap: TEB is the only one of the three
+that keeps O(1) random access and it costs **29× to 58×** the flat bitmap's. And `M-177`'s
+equivariance obstruction is now confirmed **structural rather than arithmetic** — with every reduction
+on the dual vertex path exact, the sign-flip half does not move.
+
+**One documented risk was quantified and it is a build-flag constraint, not a defect.** Eleven
+expressions under `crates/isomesh/src/` are FMA-contraction sensitive, two of them by a sign crossing
+where an exact `0.0` becomes `-4.44e-16`. `rustc` does not contract `a*b + c` by default and this crate
+never calls `mul_add`, so **0 of 216 golden hashes differ across `x86_64-unknown-linux-gnu` and
+`aarch64-apple-darwin`** today. A future `target-feature=+fma` build, a `-ffast-math` equivalent or one
+hand-written `mul_add` would move golden hashes at those eleven sites. `M-430` carries the list.
+
 ### Added
 
 - **`isomesh::mass` — volume, centre of mass and the inertia tensor from the surface, with no volume mesh.**

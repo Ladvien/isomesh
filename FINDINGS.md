@@ -23354,7 +23354,7 @@ Per row, five **sibling** counter windows (`scan`, `walk`, `select_literal`, `se
 
 **`target_feature_popcnt` is `false` on all 16 rows, and no verdict here is contingent on it.** The
 build sets no `target-cpu`, so `u64::count_ones` is a SWAR sequence — priced in this binary at
-`instructions_per_count_ones` **22.9–30.6**, median 29.06, on the **nine** rows where
+`instructions_per_count_ones` **22.9373–30.5689**, median **25.3264**, on the **nine** rows where
 `count_ones_price_readable` is `true` (`count_ones_price_share` ≥ 0.05); the other seven are flagged,
 not averaged, and `thin_plate`'s 149.5/150.0 readings rest on 1–2% of the pass and are the two loops'
 compilation difference rather than a price. That handicap is deliberately kept *off* the verdict:
@@ -23951,7 +23951,7 @@ and `git merge-base --is-ancestor d369458 HEAD` passes (HEAD is an ancestor-cons
 >
 > **The comparand is not a strawman and C2's win is not an artefact of an unoptimised encoding.** Both
 > of the paper's space optimisations are in: implicit tree nodes take `teb_unoptimised_bytes` down to
-> `teb_bytes` by 9.6–11.0% on the 65³ rows, and `best_prune_depth` searches all `h + 1` instances, where
+> `teb_bytes` by **9.63%–14.12%** on the eight 65³ rows, and `best_prune_depth` searches all `h + 1` instances, where
 > the *fully* pruned tree is **not** the smallest on 6 of 16 rows (`teb_bytes` < `teb_fully_pruned_bytes`
 > — `torus` 65³ 2,633 against 2,634; `gyroid` 129³ 67,177 against 67,253; `noise_cavity` 129³ 71,878
 > against 71,898; also `gyroid` 65³, `noise_cavity` 65³, `torus` 129³), with `prune_depth` 0–11.
