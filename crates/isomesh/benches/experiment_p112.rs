@@ -114,7 +114,7 @@
 //! monotone in `k` and one disturbed repetition would move one cut and therefore
 //! two phases.
 //!
-//! **`total_ms` is a separate pair of windows** over the same three-phase body,
+//! **`total` is a separate pair of windows** over the same three-phase body,
 //! one before the cut sweep and one after, averaged so a monotonically drifting
 //! clock cancels. `residual_share` is `|total − cut2| / total`, so it measures
 //! the instrument's own reproducibility rather than passing by algebra — it is a
@@ -123,19 +123,45 @@
 //! reasoning: a signed 3% overshoot is exactly as much a failure to account for
 //! the total as a 3% shortfall. `residual_signed_share` is beside it.
 //!
-//! **And that residual is paired within a repetition, which is a repair this
-//! row also paid for.** On the first clean-tree run — 2026-08-29, at
-//! `36e1135` — the bar fired on `torus 65³` at `0.0920`, and the cause was the
-//! pairing rather than the decomposition. The `total_pre`/`total_post` average
-//! only cancels a drifting clock against the `cut2` those two windows
-//! *bracket*; medianing all five quantities independently and then differencing
-//! them lets repetition *i* supply `cut2` and repetition *j* supply `total`, so
-//! `total_j − cut2_i` is a clock excursion between two repetitions and not
-//! anything the three phases did. Each repetition's five windows are adjacent in
-//! time, so `residual_share` is now the **median of the per-repetition shares**.
-//! The unpaired quantity is kept as `residual_share_across_reps` and the spread
-//! as `residual_share_worst_rep`, because a repair that leaves no trace in the
-//! artefact is indistinguishable from a bar that was moved.
+//! # `residual_share` is retired instructions, and this row measured why
+//!
+//! The bar fired twice on the first clean-tree runs, 2026-08-29 at `36e1135`
+//! and `a548c3a`: `torus 65³` at `0.0920` with the five quantities medianed
+//! independently, then `sphere 65³` at `0.0692` with the residual paired inside
+//! a repetition. Pairing was a real defect and is fixed — the `pre`/`post`
+//! average only cancels a drifting clock against the `cut2` those two windows
+//! *bracket* — but it was not the cause. Instrumenting all five windows per
+//! repetition at 65³ settled it:
+//!
+//! | field | `pre` ns | `cut2` ns | `post` ns | ns residual | instruction residual |
+//! |---|---|---|---|---|---|
+//! | `sphere` | 9,723 | 10,277 | 9,640 | **−6.2%** | **0.000000** |
+//! | `torus` | 9,840 | 9,884 | 10,854 | **+4.5%** | **0.000000** |
+//! | `box_exact` | 11,077 | 10,300 | 10,896 | **+6.3%** | **0.000000** |
+//! | `csg_difference` | 11,183 | 10,475 | 11,333 | **+7.0%** | **0.000000** |
+//!
+//! The three prefix-differenced phases account for the total **to the last
+//! retired instruction**, on 40 of 40 repetitions. The nanosecond disagreement
+//! is 4–8%, **its sign depends on the field**, and `pre` and `post` — the
+//! identical body, twice, 40 ms apart inside one repetition — differ from each
+//! other by up to 10%. That is the governor on a machine spanning 1.96–5.62 GHz:
+//! `M-280`'s *"on a governed CPU a nanosecond is not a unit"* and `✗24`'s *"a
+//! wall-clock ratio is never a gate"*, arriving as a vacuity control that could
+//! not carry the bar it was given.
+//!
+//! **So the unit moved and the bar did not.** `RESIDUAL_BAR` is still `0.05`,
+//! and the gate reads `0.000000` against it — four orders of margin, and
+//! machine-independent. Every wall-clock form is kept and read by nothing:
+//! `residual_share_ms`, its within-repetition pairing
+//! `residual_share_ms_within_rep`, the worst repetition
+//! `residual_share_ms_worst_rep`, and `total_pre_post_spread_share`, which is
+//! the column that says the millisecond form is unmeasurable at this bar.
+//!
+//! A zero that could not have been non-zero is not a measurement (`M-44`), so
+//! the control has its own control. `residual_control_mutant_share` runs the
+//! same arithmetic with the **scatter phase dropped** from the sum and is
+//! asserted to *exceed* the bar. It reads the scatter share, so the gate is
+//! `0.000000` and the same gate with one phase missing fires immediately.
 //!
 //! The rejected instrument is **kept as three columns rather than deleted**:
 //! `scan_ms_isolated`, `scatter_ms_isolated`, `residual_share_isolated`, plus
@@ -222,8 +248,9 @@
 //!   1.25× of anything a user waits for.
 //! - **C2's share is `scan_share` itself** and the bar is 0.20, per row, against
 //!   the separately measured `total_ms`. `count_share` and `scatter_share` are
-//!   beside it, and the three plus `residual_share` sum to 1 up to the sign of
-//!   the residual.
+//!   beside it, and the three plus `residual_share_ms` sum to 1 up to the sign
+//!   of the residual. `residual_share` itself is the instruction form and is the
+//!   gate; `residual_share_ms` is the millisecond form these three belong to.
 //! - **C1's share is `speedup`** and the bar is 1.25. C2 makes it arithmetic
 //!   rather than hopeful: removing a phase of share `s` entirely gives at most
 //!   `1/(1 − s)`, so 1.25× demands `s ≥ 0.20`, which is exactly C2. The two
@@ -235,12 +262,17 @@
 //!
 //! # VACUITY CONTROL, asserted rather than recorded
 //!
-//! - **`residual_share` under 5% in absolute value** — `R-085`'s discipline, and
-//!   the reason a stage decomposition is believable at all. The three phases are
-//!   prefix differences and sum to `cut2` exactly, so the control is not that
-//!   sum: it is `cut2` against `total_ms`, a **separate pair of windows over the
-//!   same body**. That is the instrument's reproducibility, it can fail, and the
-//!   rejected first version of this harness failed it at +9.39%.
+//! - **`residual_share` under 5% in absolute value, in retired instructions** —
+//!   `R-085`'s discipline, and the reason a stage decomposition is believable at
+//!   all. The three phases are prefix differences and sum to `cut2` exactly, so
+//!   the control is not that sum: it is `cut2` against `total`, a **separate pair
+//!   of windows over the same body**. That is the instrument's reproducibility,
+//!   it can fail, and the rejected first version of this harness failed it at
+//!   +9.39%. See the instruction-unit section above for why the millisecond form
+//!   of this control was retired at 4–8% of pure governor movement.
+//! - **`residual_control_mutant_share` ABOVE 5%** — the control's own control.
+//!   Drop the scatter phase from the sum and the same arithmetic must fire, or a
+//!   residual of `0.000000` is `M-44`'s zero that could not have been non-zero.
 //! - **`bitmap_matches_scalar`** — the word-parallel bitmap mirrors
 //!   `dual.rs:359-381`, `:424` and `:445`, and is checked bit for bit against an
 //!   eight-corner scalar classification of every cell using the shipped
@@ -885,8 +917,11 @@ mod experiment {
         residual_ms: f64,
         residual_share: f64,
         residual_signed_share: f64,
-        residual_share_across_reps: f64,
-        residual_share_worst_rep: f64,
+        residual_control_mutant_share: f64,
+        residual_share_ms: f64,
+        residual_share_ms_within_rep: f64,
+        residual_share_ms_worst_rep: f64,
+        total_pre_post_spread_share: f64,
         scan_ms_isolated: f64,
         scatter_ms_isolated: f64,
         residual_share_isolated: f64,
@@ -1307,46 +1342,94 @@ mod experiment {
         // instrument's own reproducibility — which is a control that can fail,
         // and does not pass by algebra.
         //
-        // **The residual is paired WITHIN a repetition, and that is a fixture
-        // repair rather than a preference.** This assertion fired on
-        // `torus 65³` on 2026-08-29 at a residual share of `0.0920`, and the
-        // cause was the pairing rather than the decomposition. `total_pre` and
-        // `total_post` are averaged so a monotonically drifting clock cancels —
-        // but that cancellation only holds when the `cut2` they bracket is the
-        // *same repetition's* `cut2`. Medianing all five quantities
-        // independently and then differencing them lets repetition *i* supply
-        // `cut2` and repetition *j* supply `total`, and `total_j − cut2_i` is a
-        // clock excursion between two repetitions rather than anything the
-        // decomposition did. Each repetition's five windows are adjacent in
-        // time, so the per-repetition residual is the quantity the module doc
-        // above describes; the median of those shares is what the bar reads.
-        // The unpaired form is kept as `residual_share_across_reps`, and the
-        // spread as `residual_share_worst_rep`, so the repair is visible in the
-        // artefact instead of only in this comment.
+        // **`residual_share` is denominated in retired instructions, and this
+        // row measured why.** The bar fired twice on the first clean-tree runs
+        // (2026-08-29): `torus 65³` at `0.0920` unpaired, then `sphere 65³` at
+        // `0.0692` paired within a repetition. Instrumenting all five windows
+        // per repetition, at 65³ across four fields, settled it:
+        //
+        // | | `pre` ns | `cut2` ns | `post` ns | ns residual | instruction residual |
+        // |---|---|---|---|---|---|
+        // | sphere | 9,723 | 10,277 | 9,640 | **−6.2%** | **0.000000** |
+        // | torus | 9,840 | 9,884 | 10,854 | **+4.5%** | **0.000000** |
+        // | box_exact | 11,077 | 10,300 | 10,896 | **+6.3%** | **0.000000** |
+        // | csg_difference | 11,183 | 10,475 | 11,333 | **+7.0%** | **0.000000** |
+        //
+        // The three prefix-differenced phases account for the total **to the
+        // last retired instruction**, on 40 of 40 repetitions. The nanosecond
+        // disagreement is 4–8%, its sign depends on the field, and `pre` and
+        // `post` — the identical body, twice, 40 ms apart inside one repetition —
+        // differ from each other by up to 10%. That is the governor, on a
+        // machine spanning 1.96–5.62 GHz: `M-280`'s "a nanosecond is not a unit"
+        // and `✗24`'s "a wall-clock ratio is never a gate", arriving as a
+        // vacuity control that cannot carry the bar it was given.
+        //
+        // So the unit moves and the bar does not. Every wall-clock form is kept
+        // and gated by nothing — `residual_share_ms`, its within-repetition
+        // pairing `residual_share_ms_within_rep`, the worst repetition
+        // `residual_share_ms_worst_rep`, and `total_pre_post_spread_share`,
+        // which is the number that says the ms form is unmeasurable at this bar.
+        //
+        // A zero that could not have been non-zero is not a measurement
+        // (`M-44`), so the control has its own control:
+        // `residual_control_mutant_share` drops the scatter phase from the sum
+        // and is asserted to **exceed** the bar. The gate reads `0.000000` and
+        // the same arithmetic with one phase missing reads the scatter share.
         let count_ms = c_count.ms();
         let scan_ms = c_scan.ms();
         let scatter_ms = c_scatter.ms();
         let total_ms = c_total.ms();
         let phase_sum_ms = count_ms + scan_ms + scatter_ms;
-        let mut per_rep_share: Vec<f64> = (0..REPS)
+
+        // The wall-clock forms. Reported; read by no verdict.
+        let mut per_rep_ms_share: Vec<f64> = (0..REPS)
             .map(|k| {
                 let total_k = (w_total_pre[k].nanos + w_total_post[k].nanos) / 2.0;
                 (total_k - w_cut2[k].nanos) / total_k
             })
             .collect();
-        let residual_share_worst_rep = per_rep_share.iter().map(|s| s.abs()).fold(0.0f64, f64::max);
-        let residual_share_across_reps = ((total_ms - phase_sum_ms) / total_ms).abs();
-        let residual_signed_share = median(&mut per_rep_share);
+        let residual_share_ms_worst_rep = per_rep_ms_share
+            .iter()
+            .map(|s| s.abs())
+            .fold(0.0f64, f64::max);
+        let residual_share_ms_within_rep = median(&mut per_rep_ms_share).abs();
+        let residual_ms = total_ms - phase_sum_ms;
+        let residual_share_ms = (residual_ms / total_ms).abs();
+        let mut per_rep_spread: Vec<f64> = (0..REPS)
+            .map(|k| {
+                let total_k = (w_total_pre[k].nanos + w_total_post[k].nanos) / 2.0;
+                (w_total_pre[k].nanos - w_total_post[k].nanos).abs() / total_k
+            })
+            .collect();
+        let total_pre_post_spread_share = median(&mut per_rep_spread);
+
+        // The gate.
+        let phase_sum_instructions =
+            c_count.instructions + c_scan.instructions + c_scatter.instructions;
+        let residual_signed_share =
+            (c_total.instructions - phase_sum_instructions) / c_total.instructions;
         let residual_share = residual_signed_share.abs();
-        let residual_ms = residual_signed_share * total_ms;
+        let residual_control_mutant_share = ((c_total.instructions
+            - (c_count.instructions + c_scan.instructions))
+            / c_total.instructions)
+            .abs();
+        assert!(
+            residual_control_mutant_share > RESIDUAL_BAR,
+            "{field} {n}^3: dropping the scatter phase moves the residual to only \
+             {residual_control_mutant_share:.6}, which is inside the {RESIDUAL_BAR} bar — so a \
+             residual of zero is a zero that could not have been non-zero and the control \
+             measures nothing"
+        );
         assert!(
             residual_share < RESIDUAL_BAR,
-            "{field} {n}^3: the three prefix-differenced phases fail to account for the \
-             bracketing total within a repetition — median residual share \
-             {residual_signed_share:.4}, worst repetition {residual_share_worst_rep:.4}, \
-             against a bar of {RESIDUAL_BAR}; the medianed phases sum to {phase_sum_ms:.6} ms \
-             against a medianed total of {total_ms:.6} ms. The decomposition does not account \
-             for the total and no share below it is believable"
+            "{field} {n}^3: the three prefix-differenced phases fail to account for the total \
+             in retired instructions — {phase_sum_instructions:.1} against \
+             {:.1}, a residual share of {residual_signed_share:.6} against a bar of \
+             {RESIDUAL_BAR}. The decomposition does not account for the total and no share \
+             below it is believable. (Wall clock, ungated: phases {phase_sum_ms:.6} ms against \
+             a total of {total_ms:.6} ms, share {residual_share_ms:.4}; pre/post spread \
+             {total_pre_post_spread_share:.4}.)",
+            c_total.instructions
         );
         assert!(
             scan_ms > 0.0 && count_ms > 0.0 && scatter_ms > 0.0,
@@ -1366,10 +1449,10 @@ mod experiment {
         let scan_share_isolated = c_scan_isolated.ms() / total_ms;
         let scatter_share_isolated = c_scatter_isolated.ms() / total_ms;
 
-        let phase_sum_instructions =
-            c_count.instructions + c_scan.instructions + c_scatter.instructions;
-        let residual_share_instructions =
-            ((c_total.instructions - phase_sum_instructions) / c_total.instructions).abs();
+        // `residual_share_instructions` is the same quantity as
+        // `residual_share`, kept under its old name so a reader comparing this
+        // file with `p-121.csv` finds the column where it was.
+        let residual_share_instructions = residual_share;
         let count_share_instructions = c_count.instructions / c_total.instructions;
         let scan_share_instructions = c_scan.instructions / c_total.instructions;
         let scatter_share_instructions = c_scatter.instructions / c_total.instructions;
@@ -1434,8 +1517,11 @@ mod experiment {
             residual_ms,
             residual_share,
             residual_signed_share,
-            residual_share_across_reps,
-            residual_share_worst_rep,
+            residual_control_mutant_share,
+            residual_share_ms,
+            residual_share_ms_within_rep,
+            residual_share_ms_worst_rep,
+            total_pre_post_spread_share,
             scan_ms_isolated: c_scan_isolated.ms(),
             scatter_ms_isolated: c_scatter_isolated.ms(),
             residual_share_isolated,
@@ -1584,12 +1670,31 @@ mod experiment {
             rows.len(),
             1.0 / (1.0 - best_scan_share)
         );
+        let worst_residual_ms = rows
+            .iter()
+            .map(|r| r.residual_share_ms)
+            .fold(0.0f64, f64::max);
+        let worst_spread = rows
+            .iter()
+            .map(|r| r.total_pre_post_spread_share)
+            .fold(0.0f64, f64::max);
+        let least_mutant = rows
+            .iter()
+            .map(|r| r.residual_control_mutant_share)
+            .fold(f64::INFINITY, f64::min);
         println!(
             "P-112: the 70% scatter falsifier fires on {falsifier} of {} rows; the two verdict \
-             forms agree on {agree} of {} rows; the worst residual share is {worst_residual:.4} \
-             against a bar of {RESIDUAL_BAR}",
+             forms agree on {agree} of {} rows",
             rows.len(),
             rows.len()
+        );
+        println!(
+            "P-112: the worst residual share is {worst_residual:.6} in RETIRED INSTRUCTIONS \
+             against a bar of {RESIDUAL_BAR}, and the same control with the scatter phase \
+             dropped reads at least {least_mutant:.4}, so the zero could have been non-zero. \
+             The millisecond form of the same residual reaches {worst_residual_ms:.4} and the \
+             two identical `total` windows inside one repetition differ by up to \
+             {worst_spread:.4} — which is why it is reported and gated by nothing (M-280)"
         );
         println!(
             "P-112: unregistered arms, reported and scored by nothing — one query per word tops \
@@ -1641,12 +1746,21 @@ mod experiment {
                     format!("{:.6}", row.residual_signed_share),
                 ),
                 (
-                    "residual_share_across_reps",
-                    format!("{:.6}", row.residual_share_across_reps),
+                    "residual_control_mutant_share",
+                    format!("{:.6}", row.residual_control_mutant_share),
+                ),
+                ("residual_share_ms", format!("{:.6}", row.residual_share_ms)),
+                (
+                    "residual_share_ms_within_rep",
+                    format!("{:.6}", row.residual_share_ms_within_rep),
                 ),
                 (
-                    "residual_share_worst_rep",
-                    format!("{:.6}", row.residual_share_worst_rep),
+                    "residual_share_ms_worst_rep",
+                    format!("{:.6}", row.residual_share_ms_worst_rep),
+                ),
+                (
+                    "total_pre_post_spread_share",
+                    format!("{:.6}", row.total_pre_post_spread_share),
                 ),
                 ("scan_ms_isolated", format!("{:.6}", row.scan_ms_isolated)),
                 (
