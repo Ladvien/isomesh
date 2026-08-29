@@ -359,6 +359,20 @@ from an abstract, which rule 5 forbids. **Registered in `experiment.rs`; the har
 be non-manifold**, so `is_manifold()` failing on a singular face is *correct behaviour* - which changes
 what the validity gate asserts. And `M-43`'s division-free, epsilon-free decider must be shown to survive,
 or the golden hashes become scalar-dependent.
+> **BLOCKED: re-checked 2026-08-29, still blocked at the door, and the corpus has acquired a trap.**
+> Routes tried this pass, all four: `distill_search` over the indexed corpus, `catalog_read` on the
+> stem, `markdown_read` on the converted text, and `paper_download` on the DOI. **The DOI now resolves
+> and downloads**, which is a change since `M-371` and is why this needs saying rather than a bare
+> "still blocked": `paper_download` returns `papers/10/10.5220_0013309800003912.html`, **279,882
+> bytes**, `sha256 02b3cac9…`, and `distill_search` returns it as a ranked hit with a `pdf_path`,
+> `chunks_indexed` **1**. `markdown_read` is what settles it — the whole converted text is the
+> **title, three topic keywords and the pagination line** *"InProceedings of the 20th International
+> Joint Conference … ,331-338,2025, Porto, Portugal"*. It is a SciTePress landing page wearing a
+> catalog entry, and a reader who trusts the search hit will think the paper is in hand. `web_search`
+> confirms no open-access route exists: dblp and the Erlangen group page both list it, both point at
+> the SciTePress paywall, and there is no preprint. **The trap is the finding.** A landing page that
+> is downloadable, cataloged, embedded and searchable is worse than an absent paper, because absence
+> is visible and this is not. Anyone re-checking this row must read the markdown, not the search hit.
 
 **R-065 — Does reduced affine arithmetic keep P-54's rejection rate in a fixed-size struct? (P-67) — BLOCKED**
 `P-54` held (`M-354`: **3.85x** more cells rejected on `gyroid`) and left a structural problem: the form
@@ -371,6 +385,20 @@ where intervals **win**, and `10.1111/j.1467-8659.2008.01189.x` has no open-acce
 Reproducing a band from a summary is `x21`'s failure. C3 is also the most informative clause, because the
 exception is a **mechanism** rather than a measurement - so a P-67 without it would measure that RAA is
 cheaper without ever testing where it is not. **Registered in `experiment.rs`; the harness waits.**
+> **BLOCKED: re-checked 2026-08-29, still blocked at the door.** Routes tried this pass:
+> `paper_get` on the DOI, `paper_download` on the DOI, `paper_search` over the six providers, and
+> `web_search`. `paper_get` resolves the record — OpenAlex `W2104615170`, six authors, 91 citations —
+> and returns **`download_urls: []`**. `paper_download` fails outright: *"No open-access PDF found for
+> DOI: 10.1111/j.1467-8659.2008.01189.x"*. `paper_search` finds the paper and eight neighbours, and
+> the 2007 precursor `10.1109/rt.2007.4342585` — *Interactive Ray Tracing of Arbitrary Implicits with
+> SIMD Interval Arithmetic* — **also** has `download_urls: []`, so the obvious substitution is closed
+> too. Three adjacent papers in the same family *are* open (`10.1016/j.cag.2010.07.003`,
+> `10.1007/s00371-006-0090-7`, Fryazinov's TR-NCCA-2009-04) and **none of them is C3's comparand**:
+> C3 is registered against Knoll's own measured 1.5–2× / 3–4× band and his superquadric inversion
+> where intervals win, and substituting a different author's revised-affine numbers for that band is
+> `✗21`'s failure in a new costume. **Splitting is still refused** for the reason already on this row:
+> C3 is the clause that tests where RAA is *not* cheaper, so a `P-67` without it would measure only
+> the half that was never in doubt.
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
