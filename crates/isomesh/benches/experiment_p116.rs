@@ -1224,12 +1224,19 @@ mod experiment {
             .count();
 
         // ── the emitted text against the compiled expansion, leaf for leaf ───
+        // `emit_node` writes the `hi` — condition-TRUE — child first, so the
+        // emitted text enumerates root-to-leaf path words in **descending**
+        // order: the first leaf in the source is the all-conditions-true path
+        // and the last is the all-false one. Walking `0..PATTERNS` upward and
+        // comparing gave the text against its own reverse, which is what made
+        // this control fire on the first clean-tree run.
         let from_text = emitted_leaf_sequence(&source);
         let from_binary: Vec<u8> = (0..PATTERNS)
-            .map(|t| {
+            .map(|i| {
+                let path = PATTERNS - 1 - i;
                 let mut pattern = 0u8;
                 for (d, &condition) in CONDITION_ORDER.iter().enumerate() {
-                    if (t >> (7 - d)) & 1 == 1 {
+                    if (path >> (7 - d)) & 1 == 1 {
                         pattern |= 1 << condition;
                     }
                 }
