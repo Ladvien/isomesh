@@ -1656,7 +1656,21 @@ fn main() {
                 f.seam_pairs,
                 collision_fraction
             );
-            if f.control.vertices_moved == 0 {
+            // **The precondition is the GAP, not merely a bit difference.**
+            // `vertices_moved` counts landings that differ in their bit
+            // pattern, which a one-ulp difference satisfies — and the welder
+            // then merges them anyway, so the seam cannot open. The control is
+            // reachable only when the two chunks' landings separate by more
+            // than the weld epsilon.
+            //
+            // Measured: `fbm_terrain` at `h = 0.5` moves 47 seam vertices and
+            // still shows a zero gap, because `cheap_direction` returns the
+            // metric's FIRST eigenvector and a heightfield's smallest
+            // eigendirection is `y` on both sides of the seam — different
+            // metrics, identical chosen direction. `box_exact` does not move
+            // at all. Both are properties of the field, both are named.
+            let weld_eps = epsilon_for(f.g.h);
+            if f.control.worst_gap <= weld_eps {
                 counter_unreachable_on.push(f.field);
                 continue;
             }
