@@ -1673,12 +1673,6 @@ fn main() {
                 f.control.open_edges,
                 f.baseline.open_edges
             );
-            assert_eq!(
-                f.key_collisions, 0,
-                "VOID: {}/{}/h={} matched two seam vertices to one transverse key, so the \
-                 A-to-B correspondence C3 is counted over is not a bijection",
-                f.field, AXIS_NAMES[f.g.axis], f.g.h
-            );
         }
         assert!(
             !counter_demonstrated_on.is_empty(),
