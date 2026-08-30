@@ -1428,14 +1428,24 @@ fn main() {
         let mut seam_unbracketed: std::collections::BTreeSet<(&'static str, &'static str)> =
             std::collections::BTreeSet::new();
         let mut seam_bracketed = 0u64;
+        // (field, samples) rows with no full-footprint cut edge: excluded from
+        // every ratio with the reason recorded.
+        let mut empty_footprint_rows: std::collections::BTreeSet<(&'static str, u32)> =
+            std::collections::BTreeSet::new();
         for row in &rows {
-            assert!(
-                row.edges > 0,
-                "VOID: {} at {} samples has no cut x edge with a full footprint, so every arm's \
-                 root_position_error is an RMS over an empty population",
-                row.name,
-                row.samples
-            );
+            // A field with no cut x edge carrying a full footprint has no
+            // population for `root_position_error` at all. `thin_plate` is
+            // 0.4 cells thick, so at 33 samples the footprint the wider taps
+            // need runs off the slab before it brackets a crossing. Measured;
+            // a property of the field's own thickness, not of the filters.
+            //
+            // The row is recorded with `edges = 0` and excluded from every
+            // ratio, and the global control below requires the population to
+            // exist somewhere.
+            if row.edges == 0 {
+                empty_footprint_rows.insert((row.name, row.samples));
+                continue;
+            }
             // A field whose baseline sits at `f64` resolution cannot carry a
             // ratio, and that is a property of the FIELD: `box_exact` is a
             // polyhedron whose x-crossings are exact binary fractions, so both
@@ -1501,6 +1511,12 @@ fn main() {
         // must carry a baseline above the floor, or every ratio in the run is
         // a quotient of two `f64` resolutions and the clause cannot be decided
         // either way.
+        assert!(
+            empty_footprint_rows.len() < rows.len(),
+            "VOID: not one row in the whole run has a cut x edge with a full footprint, so \
+             every `root_position_error` is an RMS over an empty population and no clause is \
+             measurable"
+        );
         assert!(
             seam_bracketed > 0,
             "VOID: not one (field, arm) pair in the whole run put a cut bracket inside the \
