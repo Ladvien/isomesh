@@ -124,6 +124,7 @@ pub mod lod;
 pub mod manifold_dual_contouring;
 pub mod marching_cubes;
 pub mod marching_tetrahedra;
+pub mod mass;
 pub mod normals;
 pub mod orient;
 pub mod paint;

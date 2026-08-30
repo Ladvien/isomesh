@@ -1,0 +1,35 @@
+# P-83 C2 cross-machine fixture: inertia and mesh hashes measured on the second machine.
+#
+# Produced by running `cargo bench -p isomesh --bench experiment_p83` on an Apple M5
+# (MacBook Air, aarch64-apple-darwin, rustc 1.96.1) and projecting four columns out of
+# its own docs/experiments/p-83.csv, whose provenance line reads
+#   # commit unknown on apple-m5 at 2026-08-27T23:06:02Z
+# (`unknown` because the tree was rsynced without .git). The bench reads this file to fill
+# `bit_identical_across_machines`; without it that column reads `no_peer` and C2's
+# cross-machine half is unmeasured rather than assumed.
+#
+# field,resolution,inertia_hash,mesh_hash
+sphere,17,5bd9a62080b65d18,afc09ba0f635b768
+sphere,33,b4a71a9511c2239f,7fe4e4545cc71c8c
+sphere,65,b89a5af4402d83f0,85584c29a607d1c1
+torus,17,b769a5ca496aa837,01d19fb55d8b195b
+torus,33,570ddbfea7ec4b40,08d39beb74868406
+torus,65,2bb659cbc8744967,7971e1d49d6431ea
+box_exact,17,6bb8ca989daa7bd6,14df8009f994fe6c
+box_exact,33,8bef502e93c616bf,4539fb5f1cea7cff
+box_exact,65,2426447af6cced14,383fe4bd002de1d7
+csg_difference,17,4e6a33a105827c5f,aebd38ae7c638f5e
+csg_difference,33,da94971193f77e45,641ef244304bf1de
+csg_difference,65,2d27fbacc025a18c,88e047d329214851
+thin_plate,17,18151608b7b6ba99,77727e16c1eadb89
+thin_plate,33,3bddcae3d9129f81,7c7d72e5534c44c1
+thin_plate,65,8d5d6c50eafe318f,89f7b7b6d63ec065
+gyroid,17,4f810d63a34a4e1d,449be85ad0d0b81f
+gyroid,33,a7dc0cb7fd17b228,243e7a2ce72b1e33
+gyroid,65,7e93d17fa03dc370,7cae449cdfa3bdf5
+fbm_terrain,17,5b5c4828cae607a5,bcc95263db5fa876
+fbm_terrain,33,2ddc99679e1879da,c315933a32a30aed
+fbm_terrain,65,9902df919583c8d0,b9eaa63a1f3d83a3
+noise_cavity,17,9590687dd9ccfa47,60e74cadaeb17b8b
+noise_cavity,33,ad99e32c04c18193,339ad2b4547844dc
+noise_cavity,65,f119900d6cdda391,e943e39007188da1

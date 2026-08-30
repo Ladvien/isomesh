@@ -254,6 +254,40 @@ fn main() {
          did not run"
     );
     println!("adapter subgroup size {subgroup_size}, SUBGROUP advertised {has_subgroup}\n");
+    // ── C3's instrument, which the first version of this bench did not have ──
+    //
+    // **C3 was scored HELD on nothing.** The registration asks for the fallback
+    // to be *exercised* — "a native run with SUBGROUP forced off produces the
+    // same output as the subgroup run" — and the first harness scored it from
+    // `rows.iter().any(|r| r.arm == "hillis" && r.matches_shipped)`, which the
+    // controls above have already asserted for every row. A clause whose
+    // predicate is implied by an earlier `assert!` cannot report bad news: it is
+    // `M-44`'s zero-that-could-not-have-been-non-zero, and this phase's own
+    // audit named it as the weakest thing in Phase 23.
+    //
+    // So there is a second device, opened with `Gpu::new()`, which requests
+    // `Features::empty()` — the fallback's real operating condition rather than
+    // a simulation of it. The arm that runs there is the **shipped**
+    // `PrefixScan`, because the fallback *is* the shipped path and a
+    // hillis-only copy of the WGSL would be the second definition this ledger
+    // keeps finding. What C3 now measures is whether the subgroup arm's output
+    // on a subgroup device is bit-identical to the shipped scan's output on a
+    // device that does not have the feature at all.
+    let off = isomesh_gpu::headless::Gpu::new()
+        .expect("a second device with Features::empty(); C3 has no instrument without it");
+    let off_device = off.device();
+    let off_queue = off.queue();
+    let off_has_subgroup = off_device.features().contains(wgpu::Features::SUBGROUP);
+    assert!(
+        !off_has_subgroup,
+        "VOID: the forced-off device advertises SUBGROUP, so the fallback arm is not running \
+         under the condition C3 is about"
+    );
+    let off_shipped = PrefixScan::new(off_device).expect("shipped scan on the forced-off device");
+    println!(
+        "C3's forced-off device: SUBGROUP advertised {off_has_subgroup}, adapter {}\n",
+        off.report().name
+    );
 
     let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("p70 scan a/b"),
@@ -324,6 +358,8 @@ fn main() {
 
     let shipped = PrefixScan::new(device).expect("shipped scan");
     let mut rows: Vec<Row> = Vec::new();
+    // One tuple per size: does the fallback agree, and can the comparator say no.
+    let mut forced_off: Vec<(u32, bool, bool)> = Vec::new();
 
     for n in SIZES {
         let data = counts(n);
@@ -387,6 +423,9 @@ fn main() {
             ],
         });
 
+        // The subgroup arm's own bytes, kept for C3's comparison. Declared
+        // here so the forced-off arm below compares against *this* size.
+        let mut subgroup_got: Vec<u32> = Vec::new();
         for (arm, pipeline) in [("hillis", &hillis), ("subgroup", &subgroup)] {
             // Warm, then median of REPS. One dispatch per timing so the number
             // is a block scan and not a pipeline creation.
@@ -447,7 +486,60 @@ fn main() {
                 matches_shipped,
                 matches_cpu,
             });
+            if arm == "subgroup" {
+                subgroup_got = got;
+            }
         }
+
+        // ── C3: the fallback, on a device that does not have the feature ─────
+        //
+        // `PrefixScan::scan` writes a *global* exclusive scan and both bench
+        // arms write a per-block one, so the identity is the same one the
+        // three-way anchor above uses: block-local plus the block's global base.
+        let off_input = off_device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("counts (forced-off)"),
+            size: u64::from(n) * 4,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+        off_queue.write_buffer(&off_input, 0, &bytemuck_cast(&data));
+        let off_out = off_shipped
+            .scan(off_device, off_queue, &off_input, n)
+            .expect("shipped scan on the forced-off device");
+        let off_offsets =
+            isomesh_gpu::read_buffer_u32(off_device, off_queue, &off_out.offsets, u64::from(n) * 4)
+                .expect("read forced-off offsets");
+        let agree = |sub: &[u32], off: &[u32]| -> bool {
+            let mut ok = true;
+            for b in 0..groups as usize {
+                let base = b * 256;
+                let end = (base + 256).min(n as usize);
+                for i in base..end {
+                    if sub[i] + off[base] != off[i] {
+                        ok = false;
+                    }
+                }
+            }
+            ok
+        };
+        let forced_off_matches = agree(&subgroup_got, &off_offsets);
+
+        // **The comparator's own liveness, because a bit-identity check that
+        // cannot report a difference is E-208's paint-drift readout.** One
+        // element of the fallback's answer is bumped and the same closure must
+        // refuse it. Index `base + 1` rather than `base`, because moving a
+        // block's base shifts every term in that block by the same constant and
+        // the identity would survive.
+        let mut corrupted = off_offsets.clone();
+        assert!(n as usize > 1, "the corruption control needs two elements");
+        corrupted[1] = corrupted[1].wrapping_add(1);
+        let detects_corruption = !agree(&subgroup_got, &corrupted);
+
+        println!(
+            "  forced-off n={n:>8} shipped-scan-on-no-SUBGROUP matches subgroup arm \
+             {forced_off_matches}, comparator refuses a corrupted copy {detects_corruption}"
+        );
+        forced_off.push((n, forced_off_matches, detects_corruption));
     }
 
     // ── controls ─────────────────────────────────────────────────────────────
@@ -491,12 +583,16 @@ fn main() {
     // size, which is bit-identity on the quantity being changed. The registered
     // "all eight fields" is NOT what this measures, and the entry says so.
     let c2 = rows.iter().all(|r| r.matches_shipped && r.matches_cpu);
-    // C3: the fallback is the shipped path, and it is exercised by every GPU
-    // test in the crate. What this harness adds is that a device WITH subgroups
-    // still runs the non-subgroup arm and gets the same answer.
-    let c3 = rows
-        .iter()
-        .any(|r| r.arm == "hillis" && r.matches_shipped && r.matches_cpu);
+    // C3: the fallback runs on a device that does not advertise SUBGROUP at all,
+    // and its answer is bit-identical to the subgroup arm's at every size. Three
+    // conjuncts, each of which can be false: the forced-off device must lack the
+    // feature (asserted above, and recorded), every size must agree, and the
+    // comparator must refuse a corrupted copy of the same answer.
+    let c3 = !off_has_subgroup
+        && forced_off.len() == SIZES.len()
+        && forced_off
+            .iter()
+            .all(|(_, matches, detects)| *matches && *detects);
 
     println!(
         "\nC1 129³ below 7.0 ms: a FREE scan leaves {free_scan_total:.4} ms -> {}",
@@ -507,7 +603,9 @@ fn main() {
         if c2 { "HELD" } else { "FALSIFIED" }
     );
     println!(
-        "C3 the non-subgroup arm runs and agrees on a subgroup-capable device -> {}",
+        "C3 the shipped fallback, on a device with no SUBGROUP, agrees with the subgroup arm at \
+         all {} sizes -> {}",
+        SIZES.len(),
         if c3 { "HELD" } else { "FALSIFIED" }
     );
     println!(
@@ -545,6 +643,21 @@ fn main() {
                 (
                     "reachable_total_if_scan_free",
                     format!("{free_scan_total:.6}"),
+                ),
+                ("forced_off_subgroup_feature", off_has_subgroup.to_string()),
+                (
+                    "forced_off_matches_subgroup_run",
+                    forced_off
+                        .iter()
+                        .find(|(n, _, _)| *n == r.elements)
+                        .map_or_else(|| "NA".to_string(), |(_, m, _)| m.to_string()),
+                ),
+                (
+                    "forced_off_comparator_detects_corruption",
+                    forced_off
+                        .iter()
+                        .find(|(n, _, _)| *n == r.elements)
+                        .map_or_else(|| "NA".to_string(), |(_, _, d)| d.to_string()),
                 ),
                 ("c1_holds", c1.to_string()),
                 ("c2_holds", c2.to_string()),

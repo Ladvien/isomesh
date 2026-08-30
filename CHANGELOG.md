@@ -8,6 +8,140 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+**Phase 24 registered two source changes and landed one.** `isomesh::mass` computes the volume, centre of
+mass and inertia tensor of the solid a triangle mesh bounds by integrating over the surface, with no volume
+mesh, no allocation and no new dependency. Everything else this phase produced is measurement: thirty
+pre-registered experiments, thirty benches, thirty committed CSVs and thirty `FINDINGS.md` entries, of which
+twenty-four are falsifications (`✗56`–`✗79`, `M-385`–`M-414`).
+
+**One of those measurements found a release-only defect in the shipped crate, and the fix is not in this
+release.** `unit_gradient` guards a zero gradient with `debug_assert!` only, so in a release build a field
+with a plateau — which a grid folded through 100,000 `min`/`max` brushes has — yields a NaN normal whose
+*sign* differs between x86-64 and AArch64. It is named below, not repaired.
+
+### Added
+
+- **`isomesh::mass` — volume, centre of mass and the inertia tensor from the surface, with no volume mesh.**
+  Hartmann & Ewougsi Tekeu, *Gauss divergence theorem for the calculation of the mass and area moment of
+  inertia tensors*, Acta Mechanica 236 (2025),
+  [`10.1007/s00707-025-04419-1`](https://doi.org/10.1007/s00707-025-04419-1), §5.1 with nothing added.
+  `mass_properties(&[[R; 3]], &[[u32; 3]]) -> Result<MassProperties<R>>` returns `volume`,
+  `center_of_mass`, `inertia` about the centre of mass, `inertia_about_origin`, and `asymmetry`. `no_std`,
+  generic over `Real`, arrays in every public signature, no math library in the API, **allocation-free** —
+  fourteen scalar accumulators in one pass over the triangle slice, no scratch buffer and no `&mut` output
+  parameter, because there is nothing for a caller to reuse. **No square root is evaluated anywhere in the
+  module**: `‖N‖` cancels between the area element and the unit normal in every one of the paper's
+  integrals, so a triangle's area is never formed, and the module has exactly one quadrature kernel — the
+  paper's Eq. (48) with its Table 1 folded in, with the leading factors applied once at the end rather than
+  once per triangle. Nine tests. `docs/experiments/p-83.csv`, `✗63`, `M-395`.
+
+  **`asymmetry` is public because it is a leak detector.** `Θ₀` is symmetric by definition, and the paper's
+  own Eq. (22) says the discretised form *"might be violated by discretization schemes"*. Each triangle
+  contributes a rank-one `G ⊗ N` whose antisymmetric part cancels only against the rest of a *closed*
+  surface, so on a watertight mesh the residual sits at the round-off floor of that cancellation and on a
+  mesh with a boundary edge or a flipped triangle it rises to the scale of the hole. Nothing else the
+  module returns can tell a caller that, and it cannot be recomputed from the symmetrised tensor.
+
+  **No panicking path, and an inward-wound mesh is rejected rather than flipped.** A bad index is
+  `Error::IndexOutOfRange`; a surface that bounds no positive finite volume, or a moment that overflowed,
+  is the new `Error::MassPropertiesUndefined { volume, largest_moment }`. Winding is the caller's contract
+  with every other part of this crate, and repairing it here would make an inside-out mesh
+  indistinguishable from a correct one. **This breaks nothing**: `Error` is `#[non_exhaustive]`, so a match
+  on it was never exhaustive.
+
+  **Measured, and the headline is that the integrator is not the error term (`✗63`, `M-395`).** Against a
+  dense tangent-plane voxel integration of the same clipped *field* at 256³ with boundary voxels refined
+  4³, the registered `1e-4` bar is missed by **44× to 2,275×** at 33³ on all eight reference fields — and
+  **no integrator could have passed it**, because a volume integral over the same triangles agrees with the
+  surface integral to **1.7e-13**. The whole gap is Marching Cubes. Cross-machine determinism holds on
+  **48 of 48 hashes** across Zen 3 and an Apple M5. The pre-symmetrisation asymmetry is exactly
+  **`0.000000e0`** on `box_exact` at all three resolutions, which falsifies the half of C2 that predicted it
+  non-zero. The pass is a fixed instruction count per triangle — **18.14–18.35 ns**, a **1.16%** band across
+  a **234×** range of triangle counts (`58,112/248`) — but it is not free relative to extraction: the
+  registered "under 2% of extraction" fails on **20 of 24** rows, `share` spanning **0.007338–0.154014**.
+  The paper's surface form also costs **2.14×** the classical origin-fan tetrahedron sum it was registered
+  as cheaper than.
+
+- **Thirty benches and their thirty datasets.** `crates/isomesh/benches/experiment_p73.rs` …
+  `experiment_p102.rs`, one `[[bench]]` block each, committed before their runs and each writing its
+  registration's records through `benches/common/experiment.rs` so that a dropped column is a panic rather
+  than a silence; `docs/experiments/p-73.csv` … `p-102.csv`, every one re-run on a clean tree after the
+  harnesses landed. Two dev-dependencies come with them, `meshopt = "0.6"` and `zstd = "0.13"`, each because
+  a registered control scores against a real encoder and a reimplementation of one would answer a different
+  question; **neither is visible to a consumer** — `isomesh`'s only normal dependency is still `libm`. Three
+  peer artefacts are committed as *inputs* rather than outputs, `docs/experiments/p-81-m5-digests.txt`,
+  `p-83-m5-hashes.txt` and `p-97-peer/`, all produced on the LAN's Apple M5: without them the cross-machine
+  clauses record `BLOCKED`, and a missing comparison is never a passing one.
+
+### Documentation
+
+- **Thirty `FINDINGS.md` entries, `✗56`–`✗79` and `M-385`–`M-414`**, one per registration `P-73`…`P-102`,
+  each with its clause table and the provenance line of the file it quotes, and every number in them
+  re-quoted from the committed clean-tree CSV rather than from the run that produced the first draft. The
+  falsifications that change what should be built say so in the entry, including the ones whose answer is
+  that the proposal should not be built at all.
+
+### Fixed
+
+- **Six figures this repository had already published were wrong, and are corrected against the files they
+  cite** — the phase's opening chores, `C1`–`C6`.
+  - `✗49`'s headline read *"9.2 million straddling pairs"* while its own table three lines above came to
+    5,200,000. Neither was the file's: `p-61.csv`'s eight `premeasure` rows sum to **5,800,000**, and the
+    two rows the table was missing are now in it.
+  - `✗49` gave the cut edges that moved as 7.3%. Both counts reproduce and the ratio is **8.12%** —
+    `2,285 of 28,124`. The number quoted was none of the three defensible statistics available.
+  - `✗52`'s C1 and C2 figures were a superseded run while the entry's own `M.` line named `p-71.csv`. Every
+    number is now read from the committed file, and the *"reproduced to within 0.5%"* sentence is deleted
+    because its own two cited numbers are **−5.83%** and **+4.55%**.
+  - `p-72.csv`'s `spread` column carried `gyroid`'s value on the `fbm_terrain` rows, beside two columns that
+    were always per field. It is per field now — **50.69× on `gyroid`, 47.21× on `fbm_terrain`** — and
+    `spread_max_over_fields` carries the quantity the verdicts are denominated in, so C3's falsification
+    keeps a column (**12.7×** its ceiling).
+  - `p-61.csv`'s registered `c1_rows_at_48` counted all 112 rows while the `c1_population` beside it counted
+    the 98 that can fail — a numerator and a denominator over different sets. The obvious name now carries
+    the clause's own **28 of 98** and the all-rows count moved to `rows_at_48_all_rows`. No registration is
+    amended: both names were already that experiment's.
+  - `P-70`'s C3 was a HELD whose predicate an assert five lines above it had already guaranteed. It has an
+    instrument now: a second device opened with `Features::empty()`, the shipped `PrefixScan` as the
+    fallback arm because the fallback *is* the shipped path, bit-identity against the subgroup arm at all
+    four sizes (`forced_off_matches_subgroup_run` true at 65K / 262K / 1M / 2M), and a corruption control so
+    the comparator is shown able to say no. The decision still rests on **4.37%** and **87.50%** rather than
+    on a ratio that moves between runs.
+  - Four roundings of `docs/measurements/gpu_vs_cpu.csv`'s 129 row that no longer matched it were fixed on
+    the way: upload **7.3236**, readback **0.6352**, emit **0.0253**, count **0.0197**, and the upload share
+    **87.50%**.
+
+- **`cargo clippy --workspace --all-targets -- -D warnings` was red before any of this phase's work.**
+  `experiment_p69.rs` had four `unreachable_pub` items, and the new `experiment_p94.rs` added one
+  `neg_multiply`, two `collapsible_if` and two `needless_range_loop`. All are bench-local and none moved a
+  number; the symbols `p69_asm.sh` reads are unaffected, because visibility does not change mangling.
+
+### The defect this phase found and did **not** fix
+
+- **`unit_gradient` can emit a NaN normal in a release build, and the two architectures disagree about its
+  sign (`✗77`, `M-409`).** The zero-gradient guard in `crates/isomesh/src/marching_cubes/mod.rs:739` is a
+  `debug_assert!` only, so in release `len.recip()` on a zero gradient is `+inf`, `0 * inf` is NaN, and
+  nothing shouts. Its doc comment is correct that this cannot happen for an exact distance field — and that
+  is exactly the point: an exact field has no plateau, but a grid folded through 100,000 `min`/`max` brushes
+  does, because `min` and `max` **select** an argument rather than computing one, so adjacent lattice
+  samples are frequently clamped to bit-identical values and the trilinear interpolant over such a cell has
+  an exactly zero gradient. Measured on a 10⁵-edit tape at 33³: `box_exact` and `csg_difference` each carry
+  exactly **one** such vertex, Zen 3 writes `0xfff8000000000000` in all three components and the Apple M5
+  writes `0x7ff8000000000000` — same quiet-NaN payload, opposite sign bit — for **3 differing bytes** each,
+  **6 of 2,470,824** compared bytes, with positions, indices and counts identical on all eight fields.
+  **This is a lighting bug on one machine before it is a determinism bug on two.**
+
+  **No source change landed for it in this release.** `crates/isomesh/**` is untouched by `P-97`. The
+  remedy is one branch in `unit_gradient`, it belongs in both copies of the construct
+  (`transvoxel/cell.rs:387` is the other) or the duplication becomes a divergence of its own, and whether a
+  zero gradient is an error — as the subgrid extractor already treats it — or a defined value is a
+  contract decision that this experiment deliberately did not make. Until it lands: **do not commit a
+  golden hash of a mesh over edited geometry.** `M-31`'s 216 hashes are safe only because the reference
+  fields never produce a zero gradient at a surface vertex; these two rows are the evidence, with the same
+  vertices, triangles, positions and indices hashing differently on the sign bit of a number IEEE 754
+  declines to specify.
+
+
 ## [0.0.10] — 2026-08-27
 
 **The project has a site, nine of the demos are playable in it, and the front page runs `isomesh` itself.**
@@ -175,7 +309,7 @@ lands.
   offset from the edge midpoint** (`cube::edge_offset`) rather than as a parameter from the lower corner.
   `d = ((a + b)/2)/(a − b)` is exactly antisymmetric under the simultaneous endpoint-and-sign swap by four
   IEEE 754 guarantees, which makes plain Marching Cubes bit-exactly equivariant under **all 48 octahedral
-  elements instead of 6** — 0 mismatches on 9.2 M straddling pairs against 1,035,808 for the old form.
+  elements instead of 6** — 0 mismatches on 5,800,000 straddling pairs against 1,035,808 for the old form.
   **135 of 216 golden hashes were rebaselined.** Triangle counts are unchanged, Hausdorff distance and
   self-intersection counts are identical to twelve digits, and 2,285 of 28,124 cut edges moved by at most
   268 ULP. If you hash meshes, **0.0.9's hashes will not match.** There is no second path and no flag:

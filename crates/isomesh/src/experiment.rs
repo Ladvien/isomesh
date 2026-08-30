@@ -3418,7 +3418,7 @@ pub const PREREGISTERED: &[Preregistration] = &[
         ticket: "R-076",
         hypothesis: "TRIPLANAR AND STOCHASTIC FILTERING COMPOSE MULTIPLICATIVELY AND \
             NOBODY STATES THE PRODUCT. Three planes x three stochastic taps is \
-            nine fetches per map; bevy_isomesh/examples/triplanar.wgsl already \
+            nine fetches per map; the triplanar example already \
             pays the three. Stochastic Texture Filtering (arXiv 2305.05810) and \
             Heitz-Neyret histogram-preserving blending (10.1145/3233304, 'over \
             20x faster' than procedural-noise state of the art, HARDWARE NOT \
@@ -4804,6 +4804,890 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "has_inner_hexagon_rejects",
             "arm",
             "void",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-103",
+        ticket: "R-103",
+        hypothesis: "FASTLANES' SCALAR_T64 RESULT SAYS 64-BIT SCALAR REGISTERS USED AS QUASI-SIMD \
+            BEAT NAIVE SCALAR UP TO 8x, AND THE ONE QUANTITY IN THIS CRATE THAT IS ALREADY BOOLEAN \
+            IS THE EIGHT CORNER SIGNS OF A CELL. The comparand is exact and it is not a shared \
+            classifier: marching_cubes/mod.rs:258-268 builds the index inline with 'case |= 1 << \
+            c' guarded by is_inside (cube.rs:171, 'value < 0', so an exact zero is OUTSIDE), and \
+            there are SIX INDEPENDENT COPIES of that loop -- marching_cubes/mod.rs:266, \
+            manifold_dual_contouring.rs:210, property/extraction.rs:438 and :584, \
+            marching_cubes/ambiguity/tests.rs:260, and transvoxel/cell.rs:231 which widens it to \
+            u16. There is no shared classifier anywhere in the crate, so this row proposes the \
+            first one rather than modifying an existing one, and it is bench-local. Store the sign \
+            field as eight bit-planes instead of one array of bytes and a whole u64 of case \
+            indices falls out of eight shift-and-OR pairs. (C1) The case-classification stage is \
+            at least 10% of Marching Cubes extraction, using P-121's stage decomposition as the \
+            denominator and measuring the share BEFORE claiming any speedup. (C2) Eight sign \
+            bit-planes plus eight shift-and-OR pairs produce 64 case indices in under HALF the \
+            instructions per cell of the byte path. (C3) Zero movement in the 216 golden hashes, \
+            because the case index is an integer and an integer path that changes it is wrong \
+            rather than faster. SHARE: C1 IS the share gate and it is checked first -- x51's rule \
+            applied at the top of the row rather than remembered at the bottom, since a 2x on a \
+            stage under 10% has a ceiling of 1/(1 - 0.10/2) = 1.05x and is not worth building.",
+        falsified_by: "C1 by a classify share under 10%, which closes the row on arithmetic before \
+            C2 is measured. C2 by an instruction ratio worse than 2x, which is where the byte \
+            path's single table-free increment already wins. C3 by any golden hash moving, which \
+            would mean the bit-sliced index is not the same integer. VACUITY CONTROL: \
+            cases_identical must equal cells on every row, and corrupt_control_mismatches -- the \
+            same comparison with one sign plane deliberately flipped -- must be NON-ZERO, because \
+            a comparator that cannot report a mismatch has not reported a match.",
+        records: &[
+            "field",
+            "resolution",
+            "scalar",
+            "classify_share",
+            "instructions_per_cell_byte",
+            "instructions_per_cell_bitsliced",
+            "instruction_ratio",
+            "cases_identical",
+            "cells",
+            "corrupt_control_mismatches",
+            "hashes_moved",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-104",
+        ticket: "R-104",
+        hypothesis: "THE ACTIVE-CELL BITMAP IS FASTLANES' HORIZONTAL LAYOUT, THE ONE THEY MEASURE \
+            AS THE OBSTACLE, AND TWO MEASUREMENTS IN THIS REPOSITORY ALREADY BLAME THE LAYOUT. \
+            Correction the research doc gets wrong and this registration carries: dual.rs:359-381 \
+            packs ONE BIT PER SAMPLE, 64 to a u64, ALONG X ONLY, with bit_row = \
+            size[0].div_ceil(64) -- the cell row is one shorter and is handled separately by \
+            cell_words = cells_x.div_ceil(64) at dual.rs:484 and by cell_mask at dual.rs:445. The \
+            doc and experiment.rs:3192 both say '64 cells per u64' and that is wrong by one; this \
+            row is about a SAMPLE plane relayout with a documented cell/word asymmetry underneath \
+            it. Second constraint, also from the source: dual.rs:496 walks set bits in ascending x \
+            SPECIFICALLY to keep vertex creation order, so any relayout must restore that order or \
+            C3 fails by construction -- and the restore cost is a column, resort_ns_per_vertex, \
+            not a footnote. (C1) A transposed packing -- bit k being the k-th cell of a 4x4x4 \
+            block rather than the k-th x -- brings M-287's 128 cubed tax BELOW 1.5x on M-287's own \
+            fixture. (C2) active_word's fused 'any & !all' fold survives the relayout within plus \
+            or minus 20% of its instructions per cell. (C3) The emitted mesh is bit-identical. \
+            SHARE: M-287's tax is 3.37x of cycles/sample at 128 cubed, so the quantity C1 moves is \
+            the whole traversal stage on the one grid size where it is worst; C2 and C3 are cost \
+            and correctness bounds, not speedups.",
+        falsified_by: "C1 by no improvement on the M-287 fixture, which would mean the tax is \
+            genuinely the stride and x28's conclusion needs revisiting. C2 by the fold costing \
+            more than 20% extra, which would mean the relayout buys the access pattern and sells \
+            the arithmetic. C3 by the re-sort that restores vertex creation order costing more \
+            than the layout saves. VACUITY CONTROL: tax_vs_127 measured on the UNMODIFIED layout \
+            must reproduce M-287's 3.37x to within 10%, because a harness that cannot see the tax \
+            cannot measure its removal.",
+        records: &[
+            "field",
+            "resolution",
+            "layout",
+            "cycles_per_sample",
+            "tax_vs_127",
+            "instructions_per_cell",
+            "mesh_identical",
+            "resort_ns_per_vertex",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-105",
+        ticket: "R-105",
+        hypothesis: "M-349 ESTABLISHED THAT THE BITMAP'S CLAIM WAS ALWAYS A COUNT, SO THE COUNT IS \
+            THE QUANTITY THAT MATTERS -- AND NOTHING IN THE SHIPPED CRATE POPCOUNTS THE BITMAP \
+            TODAY. dual.rs's five consumers read whole words, fold four rows, or walk set bits \
+            (dual.rs:385, :395, :424, :490); there is no counting pass at all. So C1's denominator \
+            is a bench-local naive count and this row measures a stage the crate would have to \
+            ADD, which is stated here rather than discovered later. Harley-Seal carry-save \
+            addition turns n popcounts into about n/8 using only AND, XOR and OR -- safe scalar, \
+            no intrinsics -- and it is the reduction half of the AVX2 popcount paper rather than \
+            its kernels. (C1) At least 2x on the counting pass over a 64 cubed chunk's bitmap \
+            against iter().map(count_ones).sum(). (C2) The count is BIT-EXACT on every fixture: an \
+            equality, not a ratio, which is M-349's discipline. (C3) The advantage is monotone \
+            non-decreasing in the word count across 16 cubed, 32 cubed, 64 cubed and 128 cubed. \
+            SHARE: the counting pass only, and it is a stage that does not exist yet -- so this \
+            row prices a mechanism and does not claim a share of extraction. C1's 2x is against a \
+            named bench-local baseline, which is why it is legitimate to state as a ratio.",
+        falsified_by: "C1 by under 2x at 64 cubed. C2 by one count differing by a single bit, \
+            which is the falsifier that matters because a faster wrong count is worthless. C3 by a \
+            non-monotone ratio across the four word counts, which would mean the win is a fixture \
+            size rather than a mechanism. VACUITY CONTROL: control_counts_differ -- the same \
+            comparison against a copy with one bit deliberately flipped -- must be 1 on every row, \
+            or C2's equality is being asserted by an instrument that cannot see inequality.",
+        records: &[
+            "field",
+            "resolution",
+            "words",
+            "count_naive",
+            "count_harley_seal",
+            "counts_equal",
+            "ns_per_word_naive",
+            "ns_per_word_hs",
+            "ratio",
+            "instructions_per_word_naive",
+            "instructions_per_word_hs",
+            "control_counts_differ",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-106",
+        ticket: "R-106",
+        hypothesis: "THE TWELVE CUT-EDGE FLAGS OF A CELL ARE A FIXED BOOLEAN CIRCUIT OVER ITS \
+            EIGHT SIGN BITS, SO SIXTY- FOUR CELLS' WORTH CAN BE EVALUATED IN ONE WORD EACH. \
+            Provenance correction this registration carries: Fujita's Bitwise Parallel Bulk \
+            Computation DID NOT DOWNLOAD, so the technique is registered against the acquired \
+            FastLanes and AVX2-popcount papers, and the paper's 13.4e9 cell-updates/s figure is \
+            QUOTED FROM THE RESEARCH DOC RATHER THAN FROM A PAPER IN THE CORPUS -- it is therefore \
+            not a comparand and must not be scored against. (C1) The twelve cut-edge flags for 64 \
+            cells derive from the eight sign planes in AT MOST 24 word operations. (C2) The SWAR \
+            circuit's masks equal the byte-table path's on ALL 256 sign patterns, exhaustively \
+            rather than sampled -- x50 is the incident that earns the word 'exhaustively', because \
+            there a SAMPLED bound became a release-build panic. (C3) Instructions per cell below \
+            the byte-table path's. SHARE: the same stage P-121 measures for P-103, and this row \
+            inherits P-121's gate -- if integer work is under 15% of extraction, C3's win cannot \
+            move extraction and the row closes with C1 and C2 as facts about a circuit rather than \
+            as a performance result.",
+        falsified_by: "C1 by a circuit longer than 24 word operations, which is where the \
+            byte-table path wins on instruction count alone. C2 by any one of the 256 patterns \
+            disagreeing. C3 by no instruction-count win. VACUITY CONTROL: patterns_tested must \
+            equal 256 exactly, and a deliberately broken circuit must produce \
+            mutant_pattern_mismatches greater than zero -- the 256 is only worth having if the \
+            comparison can fail.",
+        records: &[
+            "field",
+            "resolution",
+            "word_ops",
+            "masks_identical_patterns",
+            "patterns_tested",
+            "mutant_pattern_mismatches",
+            "instructions_per_cell_table",
+            "instructions_per_cell_swar",
+            "ratio",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-107",
+        ticket: "R-107",
+        hypothesis: "FLYING EDGES SPENDS A PREFIX-SUM PASS TO TURN PER-ROW COUNTS INTO OUTPUT \
+            OFFSETS; A TWO-LEVEL RANK DIRECTORY MAKES THE OFFSET A LOOKUP INSTEAD OF A PASS. The \
+            bound available BEFORE the harness, and it is why C1 is checked first: M-135's stage \
+            breakdown (docs/measurements/stage_breakdown.csv, columns contour_ms, normals_ms, \
+            weld_ms, collider_ms, mean shares 29.0 / 0.4 / 25.5 / 45.0) puts the whole CONTOUR \
+            stage at 29%, and the offset work is a fraction of that -- so 5% is reachable but not \
+            comfortably. And x54 measured the GPU scan at 4.37% of gpu_total_ms with upload at \
+            87.50%, which is the same quantity on the other path and is BELOW this clause's bar. \
+            The GPU figure is not the CPU figure: on the GPU the scan competes with a PCIe upload \
+            that dominates the frame, while on the CPU there is no upload at all and the offsets \
+            compete only with sampling, interpolation and the emit path -- so the CPU share could \
+            legitimately be several times larger, and could equally be smaller because the CPU \
+            scan is a sequential add rather than a multi-pass ladder. That is exactly why it is \
+            measured rather than inherited. (C1) The offset/compaction stage is at least 5% of CPU \
+            extraction, checked first. (C2) A two-level rank directory answers the slot query in \
+            O(1) at no more than 3.51% space overhead -- pasta's figure, cross-confirmed in two of \
+            the acquired papers -- which is about 1.1 KiB on a 64 cubed chunk's 32 KiB bitmap. \
+            (C3) The directory's answers equal the prefix sum's on EVERY cell. SHARE: C1 is the \
+            share and it gates the row; if the offset stage is under 5% this is Amdahl-dead the \
+            way x51 was, and saying so cheaply is the row's value.",
+        falsified_by: "C1 by the offset stage measuring under 5% of extraction, which makes this \
+            Amdahl-dead the way x51 was and closes the row before C2 is built. C2 by overhead \
+            above 3.51% or by a query that is not O(1) in the bitmap size. C3 by one cell's slot \
+            differing from the prefix sum's. VACUITY CONTROL: slots_equal must equal active_cells \
+            on every row, and a directory built one level short must give \
+            short_directory_mismatches greater than zero, or C3 is an equality between two names \
+            for the same computation.",
+        records: &[
+            "field",
+            "resolution",
+            "offset_share",
+            "directory_bytes",
+            "bitmap_bytes",
+            "overhead_fraction",
+            "slots_equal",
+            "active_cells",
+            "short_directory_mismatches",
+            "ns_per_query_rank",
+            "ns_per_query_scan",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-108",
+        ticket: "R-108",
+        hypothesis: "PEXT AND PDEP ARE FORECLOSED FOR THREE INDEPENDENT REASONS, AND VIGNA'S \
+            BROADWORD SELECT IS A THIRD OPTION THAT NEEDS NEITHER THEM NOR A TABLE: multiply, \
+            shift, mask and count_ones, branchless. Two things belong on the row rather than \
+            hidden. First the honest published price of the foreclosure: Pandey, Bender and \
+            Johnson measured the PDEP-plus-TZCNT select at 2 to 4 TIMES the broadword one on \
+            Haswell, so this crate's constraint is being paid at a known rate. Second the regime: \
+            M-337's measured active fractions are 1.89% at 64 cubed, 0.93% at 128 cubed and 0.46% \
+            at 256 cubed on sphere, so a '97% zeros' fixture is not an assumption -- it is the \
+            measured regime, and the row cites it rather than positing it. The incumbent is \
+            dual.rs:489-497, 'trailing_zeros' plus 'active &= active - 1'. (C1) Broadword select \
+            beats that walk on a 97%-zero bitmap. (C2) Identical visitation order and identical \
+            emitted indices, because dual.rs:496 exists to keep vertex creation order. (C3) The \
+            advantage is reported PER SET BIT rather than per word, so words skipped entirely \
+            cannot carry the ratio. SHARE: the set-bit walk inside place_vertices only, which \
+            M-337 measured as the stage the bitmap made 5.5x faster -- so the quantity is real but \
+            small, and C3 exists to stop the ratio being inflated by the 97% of words that neither \
+            arm touches.",
+        falsified_by: "C1 by not beating the current walk on a 97%-zero bitmap, where the \
+            2026-08-23 dossier already argued the cost is dominated by words skipped entirely -- \
+            this is a registered expected null. C2 by any difference in order or indices. C3 by a \
+            per-word ratio being quoted where a per-set-bit one was promised. VACUITY CONTROL: \
+            words_nonzero must be non-zero and set_bits must EXCEED words_nonzero on every row, or \
+            the per-set-bit denominator is one bit per word and the clause measures nothing.",
+        records: &[
+            "field",
+            "resolution",
+            "active_fraction",
+            "set_bits",
+            "words",
+            "words_nonzero",
+            "ns_per_set_bit_walk",
+            "ns_per_set_bit_select",
+            "ratio",
+            "order_identical",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-109",
+        ticket: "R-109",
+        hypothesis: "VIGNA'S QUASI-SUCCINCT INDICES ENCODE A MONOTONE SEQUENCE IN ABOUT 2 + \
+            CEIL(LOG(U/N)) BITS WITH O(1) ACCESS, NO HASHING AND NO GLOBAL BUILD -- AND EDGE \
+            INDICES WITHIN A CHUNK ARE MONOTONE ONCE SWEPT IN ORDER. Three corrections this \
+            registration must carry, every one against the research doc. FIRST: there is NO \
+            edge-to-vertex MAP. A grep for 'edge_to_vertex', 'edge_cache', 'EdgeKey' and 'edge_id' \
+            over crates/isomesh/src/ returns nothing. The structure is 'edge_vertices: Vec<u32>', \
+            a DENSE FLAT VEC of sample_count * 3 slots keyed by the arithmetic 'lo_sample * 3 + \
+            axis' -- marching_cubes/mod.rs:97 declares it, :250-251 clears and resizes it every \
+            extract, :604 computes the key, :606-609 probes it, :620-622 writes it, and u32::MAX \
+            is the sentinel -- with the same shape at marching_tetrahedra.rs:92 and \
+            property/extraction.rs:425. SECOND: the KEY side is already order-independent; what is \
+            discarded is the VALUE, a buffer position from a monotonic counter. M-318 already \
+            recorded that the encoding is not the obstacle, that index-is-edge-id costs 230x \
+            MEMORY (about 6.4 M slots for 27,822 vertices at 129 cubed) and that the workable \
+            shape carries state across extractions. THIRD: V-45's stop applies to a structure that \
+            PERSISTS ACROSS CALLS; one REBUILT FROM GRID AND FIELD ALONE is inside V-45's own \
+            stated reopening condition, which asks for 'a formulation where the persistent map is \
+            derivable from the inputs'. This row is the rebuilt kind and it is bench-local. (C1) \
+            The encoded map costs at most 4 bits per crossing. (C2) Access costs at most 1.5x the \
+            current direct addressing. (C3) The decoded map equals the dense array on every \
+            crossing. SHARE: this row prices an ENCODING and moves no extraction time; C2 is a \
+            cost bound and C1 a space bound, so neither is a ratio of a total and x51's bar does \
+            not apply. What it feeds is R-027a's 45x ceiling, which M-318 measured and which \
+            nothing here re-claims.",
+        falsified_by: "C1 by more than 4 bits per crossing, which is where the dense u32 array's \
+            32 bits per SLOT stops being the thing to beat. C2 by access above 1.5x. C3 by one \
+            crossing differing. VACUITY CONTROL: crossings must be non-zero on every row and \
+            values_equal must equal crossings; and a deliberately shifted low-bits width must give \
+            mutant_value_mismatches greater than zero, or the decoder is being checked against \
+            itself.",
+        records: &[
+            "field",
+            "resolution",
+            "crossings",
+            "samples",
+            "dense_bytes",
+            "ef_bytes",
+            "bits_per_crossing",
+            "ns_per_access_dense",
+            "ns_per_access_ef",
+            "access_ratio",
+            "values_equal",
+            "mutant_value_mismatches",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-110",
+        ticket: "R-110",
+        hypothesis: "PIBIRI AND KANDA'S CONTRIBUTION IS RANK/SELECT THAT SUPPORTS FLIP(I) WHILE \
+            STAYING FAST, WHICH IS THE SHAPE A STRUCTURE WRITTEN DURING A SWEEP NEEDS RATHER THAN \
+            ONE BUILT ONCE. The gate this row is scored AGAINST rather than around: \
+            validate/determinism.rs:268-300 runs the extractor three times, the third into a \
+            REUSED BUFFER, explicitly to fail when output depends on prior state -- its own doc \
+            comment says so. That gate is the reason R-027 was declined and split (V-45), and a \
+            mutable rank/select is only admissible here if its final state is a function of the \
+            flip SET and not of the flip ORDER. So order-independence is the clause, not the \
+            caveat. (C1) flip(i) plus rank stays within 2x of the static directory's rank cost. \
+            (C2) The final structure is INDEPENDENT OF THE ORDER THE FLIPS ARRIVE IN, \
+            bit-identical over a registered set of seeded permutations of one flip set. (C3) Rank \
+            answers equal the static directory's after every permutation. SHARE: no time is \
+            claimed of extraction; C1 is a cost bound against a named baseline and C2 is the \
+            property the crate's determinism gate demands. A row that passed C1 and failed C2 \
+            would be worthless here, which is why C2 is the falsifier that closes it.",
+        falsified_by: "C2 by any dependence on insertion order in the final structure, which is \
+            V-45's objection arriving again and closes the row immediately. C1 by rank costing \
+            more than 2x the static directory's. C3 by any rank answer differing after a \
+            permutation. VACUITY CONTROL: distinct_final_states must be 1 for a pass, AND a \
+            deliberately order-sensitive variant must report control_distinct_final_states greater \
+            than 1 in the same run -- the control is what proves the comparator can see disorder \
+            at all.",
+        records: &[
+            "field",
+            "resolution",
+            "flips",
+            "permutations",
+            "ns_per_flip",
+            "ns_per_rank_mutable",
+            "ns_per_rank_static",
+            "rank_ratio",
+            "final_structures_identical",
+            "distinct_final_states",
+            "control_distinct_final_states",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-111",
+        ticket: "R-111",
+        hypothesis: "SIMDJSON'S COMPACTION MECHANISM IS A 256-ENTRY TABLE MAPPING AN 8-BIT MASK TO \
+            A PERMUTATION, AND REDUCED TO SCALAR IT IS A CONST TABLE THIS CRATE CAN ACTUALLY HAVE. \
+            A '[[u8; 8]; 256]' const table giving the set-bit positions of a byte is 2 KiB, \
+            const-evaluable, safe, deterministic, and it sidesteps _pext_u64 entirely -- which \
+            matters because crates/isomesh/src/ today contains zero unsafe, zero core::simd and \
+            zero cfg(target_arch), so the constraint is structural rather than a preference. The \
+            incumbent is dual.rs:489-497's set-bit walk. (C1) The table beats that walk on a \
+            97%-zero bitmap -- M-337's measured 1.89% / 0.93% / 0.46% active fractions are the \
+            regime, not an assumption. (C2) Identical output order and identical indices. (C3) The \
+            table's L1 cost does not eat the win, measured as L1 misses per set bit from \
+            common::counters::Probe's Cache{L1D, READ, MISS} rather than argued. SHARE: the \
+            set-bit walk inside place_vertices, the same stage P-108 targets; this row's clauses \
+            are denominated per SET BIT so the 97% of words that neither arm touches cannot \
+            inflate the ratio.",
+        falsified_by: "C1 by not beating the set-bit walk. C3 by the table costing more L1 than it \
+            saves on a 97%-zero bitmap, which is the mechanism's own most likely failure and is \
+            why the counter arm is mandatory rather than nice. VACUITY CONTROL: set_bits non-zero \
+            on every row; order_identical true; and the counter arm must exit(1) on a non-Linux \
+            host rather than record a zero -- benches/common/mod.rs:26 is the single cfg(target_os \
+            = 'linux') gate and experiment_p12 is the refuse-and-exit precedent.",
+        records: &[
+            "field",
+            "resolution",
+            "active_fraction",
+            "set_bits",
+            "ns_per_set_bit_walk",
+            "ns_per_set_bit_table",
+            "ratio",
+            "l1_misses_per_set_bit_walk",
+            "l1_misses_per_set_bit_table",
+            "order_identical",
+            "table_bytes",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-112",
+        ticket: "R-112",
+        hypothesis: "BILLETER'S COUNT-SCAN-SCATTER IS THE STANDARD DECOMPOSITION AND ITS MIDDLE \
+            PHASE IS A PREFIX SUM, WHICH P-107'S O(1) RANK REPLACES -- SO THIS ROW ACQUIRES THE \
+            COMPARISON RATHER THAN THE ALGORITHM. Runs AFTER P-107, whose rank directory it \
+            consumes; that is this row's only hard dependency besides the P-121 gate. (C1) \
+            Replacing phase 2 with P-107's O(1) rank cuts the three-phase compaction total by at \
+            least 1.25x. (C2) The scan phase is at least 20% of the three-phase total, because a \
+            phase under 20% cannot yield 1.25x however completely it is removed. (C3) All three \
+            arms emit identical output. SHARE: C2 IS the share clause and it is arithmetic rather \
+            than hopeful -- removing a phase of share s entirely gives at most 1/(1 - s), so 1.25x \
+            demands s of at least 0.20, which is exactly the number C2 asserts. The two clauses \
+            are therefore consistent by construction and either can close the row.",
+        falsified_by: "The scatter phase measuring above 70% of the total, which would mean the \
+            offsets were never the cost and closes C1 and C2 together. C1 by under 1.25x. C3 by \
+            any output difference. VACUITY CONTROL: the three phase timings must sum to the \
+            measured total with residual_share under 5% -- R-085's discipline, and the reason a \
+            stage decomposition is believable at all.",
+        records: &[
+            "field",
+            "resolution",
+            "count_ms",
+            "scan_ms",
+            "scatter_ms",
+            "total_ms",
+            "residual_share",
+            "scan_share",
+            "scatter_share",
+            "rank_total_ms",
+            "speedup",
+            "output_identical",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-113",
+        ticket: "R-113",
+        hypothesis: "ROARING SWITCHES CONTAINER TYPE AT 4096 SET VALUES PER 2^16 CHUNK -- 6.25% \
+            DENSITY -- AND SAYS OUTRIGHT THAT 'when applications encounter integer sets with lower \
+            density (less than 0.1%) a bitmap is unlikely to be the proper data structure'. The \
+            correction this registration carries, and it is the row's most load-bearing content: \
+            M-306's 16.8% (gyroid, 688 of 4,096) and 95.1% (thin_plate, 3,896 of 4,096) are \
+            REJECTED-BRUSH SHARES, NOT ACTIVE-CELL DENSITIES, and they were measured at 17 cubed \
+            with SubgridMarchingTetrahedra at 16 samples per edge IN A DEBUG BUILD. The research \
+            doc's inference that 'thin_plate's active density is around 4.9%' is derived from them \
+            and MUST NOT BE QUOTED AS A MEASUREMENT; this harness measures density itself. And \
+            M-377 has moved the optimum chunk to 4 cubed, where a chunk is ONE WORD. (C1) Measured \
+            active-cell density straddles Roaring's 6.25% boundary across the eight reference \
+            fields -- at least one field below and one above -- so the representation is a \
+            decision rather than a constant. (C2) Below the threshold an array-of-indices beats \
+            the bitmap on BOTH bytes and the active-cell walk. (C3) At M-377's 4 cubed optimum a \
+            chunk is one word and the bitmap's per-chunk overhead exceeds its payload, measured as \
+            bytes per active cell. SHARE: no extraction time is claimed. This row produces a \
+            DECISION RULE and its clauses are a density span, a two-sided comparison and a \
+            bytes-per-active-cell ratio -- none of them a fraction of a total.",
+        falsified_by: "C1 by one representation winning on all eight fields, which makes it a \
+            constant rather than a decision and is the outcome that closes the row. C2 by the \
+            bitmap winning below the threshold on either bytes or walk time. C3 by the bitmap's \
+            overhead staying under its payload at 4 cubed. VACUITY CONTROL: active_cells non-zero \
+            on every row, and density must span at least one DECADE across the fixture, or the \
+            6.25% boundary is untested by construction.",
+        records: &[
+            "field",
+            "chunk_cells",
+            "active_cells",
+            "density",
+            "bitmap_bytes",
+            "array_bytes",
+            "bytes_per_active_cell_bitmap",
+            "bytes_per_active_cell_array",
+            "ns_per_walk_bitmap",
+            "ns_per_walk_array",
+            "winner",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-114",
+        ticket: "R-114",
+        hypothesis: "ONE BIT PER 64 CELLS GIVES A SECOND LEVEL AT ONE SIXTY-FOURTH THE SIZE, AND \
+            TWO LEVELS SKIP 4,096 CELLS PER TEST. What this registration must state: VDB's node \
+            bitmask plus popcount child offset is the same object one level up, it is already in \
+            the corpus (10.1145/2487228.2487235), and dual.rs:417 already cites VDB as the source \
+            of the flat bitmap's mechanism -- so this row is a RE-MEASUREMENT OF A PUBLISHED \
+            STRUCTURE at this crate's granularity rather than a new structure. (C1) At least 1.5x \
+            on the active-cell traversal of the SPARSEST FIELD AS MEASURED, with that field named \
+            in the CSV rather than assumed. (C2) Two levels skip 4,096 cells per test, reported as \
+            cells skipped per word tested. (C3) Identical mesh. SHARE: the active-cell traversal \
+            stage, which M-337 measured at 5.5x for the flat bitmap on a surface-free field -- so \
+            the stage is known to be large enough to matter and the question is only whether a \
+            second level finds anything the first did not. The sparsest field is derived from the \
+            run's own active_fraction column, never assumed: the research doc names thin_plate and \
+            this harness does not inherit that.",
+        falsified_by: "C1 by under 1.5x on the sparsest field as measured, where it must win if it \
+            wins anywhere. C2 by cells_skipped_per_test falling short of 4,096 at two levels. C3 \
+            by any mesh difference. VACUITY CONTROL: words_tested_hier must be STRICTLY LESS than \
+            words_tested_flat on at least one row, and cells_skipped_per_test must be non-zero -- \
+            a hierarchy that skips nothing is not being tested.",
+        records: &[
+            "field",
+            "resolution",
+            "active_fraction",
+            "levels",
+            "words_tested_flat",
+            "words_tested_hier",
+            "cells_skipped_per_test",
+            "ns_per_cell_flat",
+            "ns_per_cell_hier",
+            "ratio",
+            "mesh_identical",
+            "sparsest_field",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-115",
+        ticket: "R-115",
+        hypothesis: "TREE-ENCODED BITMAPS ARE THE ONLY RLE-FAMILY SCHEME THAT PRESERVES RANDOM \
+            ACCESS, WHICH IS THE PROPERTY RANK NEEDS AND THE PROPERTY WAH AND EWAH DESTROY. That \
+            is why this is a TEB row rather than a WAH row, and WAH and EWAH are foreclosed by \
+            this sweep for exactly that reason -- stated at registration so a later reader does \
+            not re-propose them. (C1) Random access costs at most 2x the flat bitmap's per access. \
+            (C2) Space saving of at least 1.5x against the flat bitmap. (C3) Identical answers on \
+            every cell. SHARE: no extraction time is claimed; C1 is a cost bound, C2 a space bound \
+            and C3 an equality, so none is a fraction of a total. What the row decides is whether \
+            a subblock-empty summary can be compressed without giving up the O(1) access P-107's \
+            directory is built on.",
+        falsified_by: "C1 by random access above 2x the flat bitmap's, which is the whole reason \
+            to prefer TEB over WAH and therefore the falsifier that closes the family rather than \
+            just the row. C2 by under 1.5x space saving. C3 by any cell answering differently. \
+            VACUITY CONTROL: answers_equal must equal cells, and a truncated tree must give \
+            truncated_tree_mismatches greater than zero.",
+        records: &[
+            "field",
+            "resolution",
+            "flat_bytes",
+            "teb_bytes",
+            "space_ratio",
+            "ns_per_access_flat",
+            "ns_per_access_teb",
+            "access_ratio",
+            "answers_equal",
+            "cells",
+            "truncated_tree_mismatches",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-116",
+        ticket: "R-116",
+        hypothesis: "GRAPHGEN TAKES A DECISION TABLE OVER BOOLEAN CONDITIONS, SYNTHESISES THE \
+            OPTIMAL DECISION TREE BY MINIMUM AVERAGE PATH LENGTH, COMPRESSES IT INTO A DRAG AND \
+            EMITS CODE -- AND A MARCHING-CUBES CASE TABLE IS A DECISION TABLE OVER EIGHT BOOLEAN \
+            CORNER CONDITIONS. The premise correction is this row's most valuable content and it \
+            contradicts the research doc's motivation: 'CASES: [McCase; 256]' at \
+            marching_cubes/table.rs:180 is ALREADY DERIVED AT COMPILE TIME by 'const fn \
+            build_cases()' at :182-194, and the transcribed Bourke tables (reference.rs:29 \
+            BOURKE_EDGE_TABLE, :53 BOURKE_TRI_TABLE) exist ONLY as a test cross-check, imported at \
+            marching_cubes/tests.rs:15. So the mistranscription risk the doc names as the \
+            motivation IS ALREADY MITIGATED IN THE SHIPPED PATH, and this row compares a \
+            synthesised decision tree against a const-fn derivation rather than against a \
+            transcription. x50 remains the real incident in this area and it was a BOUND, not a \
+            table. (C1) The synthesised decision tree, compressed to a DRAG and emitted as Rust, \
+            produces triangulations IDENTICAL TO CASES on all 256 patterns. (C2) The generated \
+            form is NOT SLOWER than the table lookup, in instructions per cell. (C3) P-64's four \
+            properties hold on the generated form, checked through the existing \
+            check_all_properties shape. SHARE: C2 is a not-slower bound rather than a speedup, so \
+            no share is claimed; the row's value is C1 and C3, which are equalities over an \
+            enumerated population of 256.",
+        falsified_by: "C2 by the generated form being slower than the current table lookup. C3 by \
+            any of P-64's four properties failing on it -- and that would be the INTERESTING \
+            outcome, because it would mean the synthesis is unsound rather than merely unhelpful. \
+            VACUITY CONTROL: patterns_tested must equal 256, plus a should_panic sabotage arm in \
+            the property checker -- proofs.rs:221's the_properties_can_fail is the precedent for \
+            the arm and experiment_p64.rs:175-188 is the precedent for asserting a non-zero check \
+            count so a vacuous SUCCESSFUL cannot pass.",
+        records: &[
+            "patterns_tested",
+            "triangulations_identical",
+            "tree_nodes",
+            "drag_nodes",
+            "average_path_len",
+            "instructions_per_cell_table",
+            "instructions_per_cell_generated",
+            "ratio",
+            "properties_held",
+            "sabotage_failed",
+            "kani_checks",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-117",
+        ticket: "R-117",
+        hypothesis: "A RISK AUDIT RATHER THAN AN OPTIMISATION, AND NOBODY HAS CHECKED IT. \
+            Shewchuk's error-free transformations are broken by FMA contraction and aarch64 fuses \
+            more eagerly than x86-64; M-31's golden hashes have held across both machines, so \
+            either nothing on the hot path is contraction-sensitive or the crate has been lucky. \
+            What this registration must state about the fixture: M-31's 216 is 8 reference fields \
+            x 9 algorithms x 3 resolutions {17, 25, 33} -- golden.rs:73 for the resolutions, :122 \
+            for Algorithm::ALL's nine, for_each_reference_field at fields/mod.rs:212 for the eight \
+            -- gated by golden_hashes_are_unchanged at golden/tests.rs:59 against \
+            crates/isomesh/golden_hashes.json. M-31's own text says 63 hashes, which was T-007's \
+            count; 216 is the CURRENT fixture count and the two must not be conflated. The gate is \
+            proven able to fire: P-61 moved 135 of the same 216. (C1) At least one expression in \
+            crates/isomesh/src/ is contraction-sensitive -- an a*b + c shape whose fused and \
+            unfused evaluations differ in the last bit on an input the crate can reach. (C2) The \
+            216 golden hashes are identical on x86_64-unknown-linux-gnu and aarch64-apple-darwin \
+            today. (C3) Any divergence found is attributed to a NAMED EXPRESSION and reproduced by \
+            an isolated probe, not merely observed at the mesh level. METHOD, fixed at \
+            registration so the implementer does not choose it: grep mul_add across \
+            crates/isomesh/src/ and record the count, since an explicit mul_add is the only way \
+            Rust REQUESTS fusion; confirm by DISASSEMBLY rather than assumption whether the \
+            aarch64 build fuses an unfused a*b + c on the extraction path, with scripts/p69_asm.sh \
+            as the precedent instrument; and run the 216-hash fixture on mac_air, committing the \
+            digest artefact as an INPUT following docs/experiments/p-81-m5-digests.txt and \
+            p-83-m5-hashes.txt. SHARE: none. This row moves no time and claims no ratio; it \
+            establishes whether a latent divergence exists.",
+        falsified_by: "C1 by finding NO contraction-sensitive expression in crates/isomesh/src/ -- \
+            which is the outcome to hope for, is worth an afternoon to establish rather than \
+            assume, and is expected because rustc does not contract a*b + c by default. If the \
+            disassembly confirms no contraction, C1 is falsified WITH A REASON and that reason is \
+            the row's deliverable. C2 by any hash differing between the two targets. C3 by a \
+            divergence observed only at the mesh level with no named expression behind it. VACUITY \
+            CONTROL: the disassembly arm must show a KNOWN-FUSED probe fusing on aarch64 -- column \
+            fmadd_in_known_fused_probe must be true on the aarch64 arm -- because a reader that \
+            cannot see an fmadd where one must exist cannot claim to see its absence elsewhere. If \
+            mac_air is unreachable, C2 is recorded BLOCKED with the reason and C1 and C3 are still \
+            delivered from the Linux arm plus the disassembly; a zero-filled peer table is what \
+            R-081 shipped and had deleted.",
+        records: &[
+            "expression_site",
+            "file",
+            "line",
+            "shape",
+            "fused_result",
+            "unfused_result",
+            "ulp_difference",
+            "reachable",
+            "target",
+            "fmadd_in_known_fused_probe",
+            "mul_add_call_sites",
+            "hashes_identical",
+            "golden_rows",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-118",
+        ticket: "R-118",
+        hypothesis: "NEAL'S SUPERACCUMULATOR IS NOT A REORDERING -- IT IS A FIXED-POINT \
+            ACCUMULATOR, 67 CHUNKS OF 64 BITS WITH 32-BIT OVERLAP, THAT IS EXACTLY \
+            ORDER-INDEPENDENT -- SO IT IS A SECOND ROUTE TO P-101'S QUESTION THAT DOES NOT DEPEND \
+            ON FINDING AN INVARIANT KEY. The bar A-016 sets and this row is denominated in: the \
+            accumulator must be reduction-order-invariant UNDER A LATTICE ROTATION, not merely \
+            more accurate, and being exactly order-independent is a STRONGER property than \
+            agreeing on two platforms. METHOD: bench-local VertexRule through the public \
+            DualContouring::with_rule (dual_contouring.rs:254; VertexRule is \
+            crate::dual::VertexRule and dual is a pub mod at lib.rs:144), comparand \
+            dual_contouring/solve.rs's solve_with -- nine accumulators across twelve EDGE_COUNT \
+            slots scattered by edge label and reduced once by sum_equivariant. NO SOURCE CHANGE. \
+            (C1) An exactly order-independent accumulator reaches elements_vertex_exact 48 of 48 \
+            on the equivariance fixture, where the shipped solve is below it. (C2) Cost under 2x \
+            simple ordered summation, which is Neal's own figure. (C3) Golden-hash movement is \
+            confined to vertices whose accumulation order changes and NO TRIANGLE COUNT MOVES. \
+            SHARE: the dual vertex solve only. M-25 puts the sharp-feature solve at 3% over \
+            Surface Nets and at 6.5% ON ZEN 3, which is the machine this phase runs on; 6.5% is \
+            the number to use, so the ceiling is 1/(1 - 0.065) = 1.070x. C1 is therefore a \
+            CORRECTNESS clause and C2 a COST BOUND, and neither is or may become a speedup claim.",
+        falsified_by: "C1 by the duals still failing 48 of 48 with an exactly order-independent \
+            accumulator, which would prove M-177's obstruction covers the octahedral case and \
+            closes both P-101 and this row together. C2 by cost above 2x ordered summation. C3 by \
+            any triangle count moving, which would mean the accumulator changed the geometry \
+            rather than its reduction order. VACUITY CONTROL: the SHIPPED rule must reproduce x79 \
+            / M-413's own elements_vertex_exact reading in the same run -- a harness that cannot \
+            reproduce the baseline cannot measure a move away from it -- reported as \
+            baseline_elements_vertex_exact beside the measured one.",
+        records: &[
+            "field",
+            "resolution",
+            "rule",
+            "elements_vertex_exact",
+            "pure_permutation_exact",
+            "pure_sign_flip_exact",
+            "baseline_elements_vertex_exact",
+            "ns_per_solve_ordered",
+            "ns_per_solve_superacc",
+            "cost_ratio",
+            "hashes_moved",
+            "triangle_counts_moved",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-119",
+        ticket: "R-119",
+        hypothesis: "PARALLEL SURFACENETS USES DOUBLE-BUFFERED SMOOTHING EXPLICITLY TO GUARANTEE \
+            DETERMINISM, AND THIS CRATE'S DETERMINISM TODAY RESTS ON THE LOOPS BEING SEQUENTIAL \
+            WITH NOTHING ENFORCING IT. P-9 already found that a chunked consumer appending chunks \
+            in a different order gets a different vertex count on noise_cavity. What this \
+            registration must state: the implicated path is Welder's first fit over NON-TRANSITIVE \
+            epsilon-closeness -- weld.rs:232 Welder, :296 weld, :338 weld_split_by, :220 \
+            epsilon_for -- which is why C1's falsifier points at the weld rather than at the \
+            traversal. And Parallel SurfaceNets' one-to-two-orders-of-magnitude figure is a \
+            PARALLEL result while this crate's loops are sequential, so it is not a comparand. \
+            (C1) Double-buffering removes P-9's vertex-count spread on noise_cavity -- 4 under \
+            dual_contouring and 2 under manifold_dual_contouring, FINDINGS.md:1641-1642 -- to \
+            exactly 0. (C2) The cost is under 1.25x the single-buffer path. (C3) The mesh is \
+            identical under every permutation of chunk append order. SHARE: C2 is a cost bound on \
+            the whole append path and C1 and C3 are determinism equalities, so no clause is a \
+            fraction of a total. The quantity at stake is a correctness property the crate \
+            currently gets by accident.",
+        falsified_by: "C1 by double-buffering not removing P-9's spread, which would mean the \
+            order-dependence is in the weld rather than the traversal and would redirect the work \
+            to weld.rs. C2 by cost above 1.25x. C3 by any permutation producing a different mesh. \
+            VACUITY CONTROL: the SINGLE-BUFFER arm must REPRODUCE THE SPREAD OF 4 AND 2 -- column \
+            baseline_spread must read 4 on the noise_cavity dual_contouring row and 2 on the \
+            noise_cavity manifold_dual_contouring row -- because a harness that cannot see P-9's \
+            defect cannot measure its removal.",
+        records: &[
+            "field",
+            "extractor",
+            "permutations",
+            "baseline_spread",
+            "double_buffered_spread",
+            "mesh_identical_across_permutations",
+            "ns_per_cell_single",
+            "ns_per_cell_double",
+            "cost_ratio",
+            "peak_bytes_single",
+            "peak_bytes_double",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-120",
+        ticket: "R-120",
+        hypothesis: "WU, OTOO AND SHOSHANI REPLACE POINTER-BASED EQUIVALENCE TREES WITH A FLAT \
+            ARRAY AND REPORT 5x TO 100x ON RANDOM BINARY IMAGES, WHICH IS AN UPPER BOUND HERE AND \
+            NOT A PREDICTION -- VOXEL ISLANDS ARE NOT RANDOM BINARY IMAGES. What this registration \
+            must state, because it is the reason the row could look like a reopening: \
+            connectivity.rs:29-46 EXPLICITLY REFUSES a union-find in favour of flat labels, \
+            because it WAS a union-find and adding fill broke it (x26) -- parent pointers encode \
+            union history rather than spatial adjacency. The three union-finds in \
+            crates/isomesh/src/ are private and each justified in prose: validate.rs:541 Dsu, \
+            validate/sealing.rs:835 UnionFind, and connectivity/world.rs:387 rebuilt from scratch \
+            on every restitch. This row is the PER-CHUNK, REBUILT-FROM-SCRATCH kind, it is \
+            bench-local, and it ANSWERS x26 rather than reopening it. (C1) At least 2x against the \
+            shipped flat-label structure on per-chunk island labelling. (C2) Final labels are \
+            CONSECUTIVE and independent of iteration order. (C3) The label sets equal the \
+            flat-label path's partition exactly. SHARE: per-chunk labelling only, which is not on \
+            the extraction path at all -- so C1's 2x is against a named structure rather than a \
+            fraction of a total, and no extraction speedup is claimed or implied.",
+        falsified_by: "C1 by under 2x against the current structure. C2 by any label depending on \
+            iteration order, which is x26's defect in a new costume and closes the row. C3 by the \
+            two partitions differing. VACUITY CONTROL: components must exceed 1 on the DUG arm -- \
+            column components_dug asserted greater than 1 -- because a labeller tested on a \
+            connected world is not being tested.",
+        records: &[
+            "field",
+            "resolution",
+            "arm",
+            "chunk_cells",
+            "components",
+            "components_dug",
+            "ns_per_cell_flat",
+            "ns_per_cell_union_find",
+            "ratio",
+            "labels_consecutive",
+            "partition_identical",
+            "order_independent",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-121",
+        ticket: "R-121",
+        hypothesis: "BEFORE ANY OF GROUP A IS BUILT, DECOMPOSE EXTRACTION INTO FLOAT WORK AND \
+            INTEGER WORK. x51's rule requires it and x51 is itself the example of what happens \
+            without it: P-69's C1 asked for 2x on the marginal extraction cost from restructuring \
+            the SAMPLE loop, and the loop is 11.6% of that marginal -- not the 11.5% the research \
+            doc says -- so its ceiling was 1/(1 - 0.116/2) = 1.061x and the clause was unreachable \
+            however well the loop vectorised. STAGES, fixed at registration: sample (field \
+            evaluation), classify (the eight-sign case index), interpolate (crossing positions and \
+            normals), solve (dual only), emit (table lookup, triangle and quad push, edge-cache \
+            indexing), residual. Float = sample + interpolate + solve. Integer = classify + emit. \
+            INSTRUMENT: stage counters via common::counters::Probe (benches/common/counters.rs:86, \
+            Linux-gated at benches/common/mod.rs:26), reporting CYCLES AND INSTRUCTIONS; the \
+            verdict reads the counter form and not the clock, per x24 and M-281. experiment_p15 is \
+            the precedent for stage attribution in this crate and experiment_p12 is the precedent \
+            for refusing to run without counters. (C1) The stage decomposition ACCOUNTS FOR THE \
+            TOTAL: residual_share under 5% of measured cycles on EVERY row. (C2) Integer work -- \
+            classification plus the emit path's indexing -- is at least 15% of extraction on at \
+            least one reference field at 65 cubed. (C3) The split is real: on a SURFACE-FREE field \
+            the classification stage still runs and the emit stage does not, and the measured \
+            stage cycles move in exactly those directions. The surface-free control already exists \
+            and is reused rather than reinvented: sphere_surface_free, the same sphere sampled a \
+            long way from itself so every cell is inactive, at \
+            crates/isomesh/benches/experiment_p40.rs:84-93 and listed in its FIELDS. M-337 and x28 \
+            both scored on it, so it is the fixture with a published baseline. SHARE: this row IS \
+            the share instrument. It moves nothing and claims nothing; it produces the denominator \
+            that P-103, P-104 and P-106 are denominated in.",
+        falsified_by: "C1 by a residual_share above 5%, or any stage reading zero on a fixture \
+            where it must run -- either means the instrument cannot see what it claims to. A C2 \
+            total under 15% on every field CLOSES P-103, P-104 and P-106 ON THE SPOT, which is a \
+            cheap and valuable outcome and is NOT a failure of this row. C3 by emit cycles staying \
+            non-trivial on the surface-free arm or classify cycles falling to zero there. VACUITY \
+            CONTROL: every stage's cycle count non-zero on a field where it must run; \
+            residual_share reported PER ROW rather than pooled; and the surface-free arm's emit \
+            cycles at or near zero WITH classify non-zero, which is what proves the two are \
+            separable at all.",
+        records: &[
+            "field",
+            "resolution",
+            "scalar",
+            "extractor",
+            "cycles_total",
+            "cycles_sample",
+            "cycles_classify",
+            "cycles_interpolate",
+            "cycles_solve",
+            "cycles_emit",
+            "cycles_residual",
+            "residual_share",
+            "float_share",
+            "integer_share",
+            "instructions_total",
+            "instructions_classify",
+            "instructions_emit",
+            "cells",
+            "active_cells",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
+    Preregistration {
+        id: "P-122",
+        ticket: "R-122",
+        hypothesis: "STREAM VBYTE KEEPS A DENSE CONTROL STREAM AND A VARIABLE-LENGTH DATA STREAM \
+            SEPARATE SO THE DECODER NEVER BRANCHES ON PAYLOAD, AND ONLY THE LAYOUT TRANSFERS HERE. \
+            What this registration must state: Stream VByte's 4 billion integers per second on a \
+            3.4 GHz Haswell is the SIMD path, so that figure is NOT A COMPARAND for a scalar arm \
+            and must not be scored against. (C1) Splitting the per-cell case index into a dense \
+            control stream and the variable-length vertex payload into a second stream REDUCES \
+            BRANCH MISPREDICTIONS PER CELL. (C2) Total instructions per cell rise by no more than \
+            10%. (C3) Identical mesh. INSTRUMENT: common::counters::Probe's BRANCH_MISSES; refuse \
+            and exit(1) off Linux, because it is the only instrument that can see the quantity C1 \
+            is about. SHARE: C1 is a per-cell counter ratio rather than a fraction of extraction \
+            time, and C2 is a cost bound -- so no time claim is made and x51's bar does not apply. \
+            Whether a misprediction reduction is worth anything in wall time is a question this \
+            row deliberately does not answer.",
+        falsified_by: "C1 by no branch-misprediction reduction, measured with counters on Linux. \
+            C2 by instructions per cell rising more than 10%, which would mean the split pays for \
+            itself in the other currency. C3 by any mesh difference. VACUITY CONTROL: \
+            branch_misses_per_cell_single must be NON-ZERO on the single-stream arm, or there is \
+            no misprediction to remove and the ratio is division by a floor.",
+        records: &[
+            "field",
+            "resolution",
+            "arm",
+            "branch_misses_per_cell_single",
+            "branch_misses_per_cell_split",
+            "branch_miss_ratio",
+            "instructions_per_cell_single",
+            "instructions_per_cell_split",
+            "instruction_ratio",
+            "mesh_identical",
             "c1_holds",
             "c2_holds",
             "c3_holds",

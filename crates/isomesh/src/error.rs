@@ -228,6 +228,30 @@ pub enum Error {
         /// `Debug` form.
         reason: &'static str,
     },
+
+    /// The triangles handed to [`mass_properties`](crate::mass::mass_properties)
+    /// bound no solid whose mass properties exist.
+    ///
+    /// Ticket: R-083. Three distinct inputs land here and they share one
+    /// remedy, which is why they share one variant: an **empty or
+    /// self-cancelling** surface (volume zero), a consistently **inward-wound**
+    /// one (volume negative), and coordinates large enough that a *third*
+    /// moment **overflowed** while the volume stayed finite. In all three the
+    /// centre of mass would be a division by something that is not a volume.
+    ///
+    /// Reported rather than repaired. Flipping an inward-wound mesh would make
+    /// it indistinguishable from a correct one — winding is the caller's
+    /// contract with every other part of this crate — and returning a zero
+    /// tensor for an empty surface is the "degraded substitute" the one-path
+    /// rule exists to forbid.
+    MassPropertiesUndefined {
+        /// The enclosed volume the surface integral produced: zero, negative,
+        /// or non-finite.
+        volume: f64,
+        /// The largest absolute second moment produced, so an overflow that
+        /// left the volume finite is still visible in the message.
+        largest_moment: f64,
+    },
 }
 
 impl fmt::Display for Error {
@@ -306,6 +330,15 @@ impl fmt::Display for Error {
                  [{}, {}, {}]: {reason}",
                 cell[0], cell[1], cell[2]
             ),
+            Self::MassPropertiesUndefined {
+                volume,
+                largest_moment,
+            } => write!(
+                f,
+                "these triangles enclose a volume of {volume} with a largest second moment of \
+                 {largest_moment}; mass properties need a finite positive volume, so check the \
+                 winding and that the surface is closed"
+            ),
         }
     }
 }
@@ -348,6 +381,13 @@ mod tests {
                     cell_size: 0.001,
                 },
                 "900",
+            ),
+            (
+                Error::MassPropertiesUndefined {
+                    volume: -3.5,
+                    largest_moment: 12.0,
+                },
+                "-3.5",
             ),
         ];
         for (error, expected) in cases {

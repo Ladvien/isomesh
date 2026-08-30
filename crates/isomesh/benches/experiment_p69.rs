@@ -145,25 +145,28 @@ mod experiment {
 
     /// The pre-R-067 loop at `Sphere<f32>`.
     #[inline(never)]
-    pub fn asm_probe_push_sphere_f32(sdf: &Sphere<f32>, out: &mut Vec<f32>) {
+    pub(crate) fn asm_probe_push_sphere_f32(sdf: &Sphere<f32>, out: &mut Vec<f32>) {
         push_loop(sdf, [17, 17, 17], [-2.0; 3], 0.25, out);
     }
 
     /// The shipped loop shape at `Sphere<f32>` — `sqrt`, so widenable.
     #[inline(never)]
-    pub fn asm_probe_row_sphere_f32(sdf: &Sphere<f32>, out: &mut Vec<f32>) {
+    pub(crate) fn asm_probe_row_sphere_f32(sdf: &Sphere<f32>, out: &mut Vec<f32>) {
         row_loop(sdf, [17, 17, 17], [-2.0; 3], 0.25, out);
     }
 
     /// The shipped loop shape at `BoxExact<f32>` — `min`/`max`, no calls.
     #[inline(never)]
-    pub fn asm_probe_row_box_f32(sdf: &BoxExact<f32>, out: &mut Vec<f32>) {
+    pub(crate) fn asm_probe_row_box_f32(sdf: &BoxExact<f32>, out: &mut Vec<f32>) {
         row_loop(sdf, [17, 17, 17], [-2.0; 3], 0.25, out);
     }
 
     /// The shipped loop shape at `CappedGyroid<f32>` — six `libm` calls.
     #[inline(never)]
-    pub fn asm_probe_row_gyroid_f32(sdf: &isomesh::fields::CappedGyroid<f32>, out: &mut Vec<f32>) {
+    pub(crate) fn asm_probe_row_gyroid_f32(
+        sdf: &isomesh::fields::CappedGyroid<f32>,
+        out: &mut Vec<f32>,
+    ) {
         row_loop(sdf, [17, 17, 17], [-2.0; 3], 0.25, out);
     }
 

@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**261 tickets archived, 102 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**292 tickets archived, 92 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -48,42 +48,47 @@ attached — read that before re-litigating a decision this project already made
 
 ---
 
-## Phase 25 — fifty registrations from eighteen fields of mathematics, each before its harness
+## Phase 26 — fifty registrations from eighteen fields of mathematics, each before its harness
 
-**Added 2026-08-29, above Phase 24 for the reason every phase goes on top: rule 1 reads top-down.**
-Nothing here supersedes Phase 17's or Phase 18's open rows, and Phase 24's thirty rows stay where they are.
+**Added 2026-08-29, above Phase 25 for the reason every phase goes on top: rule 1 reads top-down.**
+Nothing here supersedes Phase 17's or Phase 18's open rows, and Phase 25's twenty bit-packing rows stay
+where they are — they are in flight and this phase does not displace them.
 
 **Source: `docs/research/2026-08-29-fifty-experiments-from-unmined-mathematics.md`**, with the vocabulary in
 `docs/research/2026-08-29-axes-and-vocabulary-v2.md`. Eighteen mathematical areas probed against the corpus and
 the repository at once; fourteen papers acquired and converted; eight recorded as paywalled rather than cited.
 
+**Renumbered on merge.** These fifty rows were drafted `R-103`–`R-152`; Phase 25's bit-packing sweep had
+already taken that range, so the whole block moved up by twenty and lands here as `R-123`–`R-172`. Both
+source documents carry the shifted numbers; nothing else about them changed.
+
 **The phase's centre is an identity, not a paper.** `b*b - 4*a*c` in `marching_cubes/trilinear.rs:246` is
 **identically Cayley's `2×2×2` hyperdeterminant** of the eight corner values — proved symbolically, not sampled.
 It is also the discriminant of the pencil `det(A₀ + λA₁)` for **all three** axis pairings, which is the mechanism
 behind `M-206`; its sign is a `GL(2)³` invariant, so the body-saddle count **cannot depend on cell aspect ratio**;
-and it is invariant under all 48 octahedral relabellings and under negating the field. `R-103` records it,
-`R-104` and `R-105` cash the invariances, and **`R-112` exists to stop the overclaim** that the 730-subcase table
+and it is invariant under all 48 octahedral relabellings and under negating the field. `R-123` records it,
+`R-124` and `R-125` cash the invariances, and **`R-132` exists to stop the overclaim** that the 730-subcase table
 follows from it — it does not, and the registration says why in advance.
 
 **Two holes in `CLAUDE.md` close.** `χ` is asserted as unavailable on `gyroid`; it is `−8N³` per `N³` conventional
 cubic cells under periodic wrap, because the gyroid's primitive lattice is body-centred and the cubic cell holds
 two primitive cells — verified numerically at four resolutions, with Schwarz P at `−4` and Schwarz D at `−16` as
-independent checks (`R-118`, `R-119`). And Etiene et al.'s DOI, flagged unverified at
-`2026-08-26-audit-and-phase-23-registrations.md:365`, is `10.1109/tvcg.2011.109` (`R-121`).
+independent checks (`R-138`, `R-139`). And Etiene et al.'s DOI, flagged unverified at
+`2026-08-26-audit-and-phase-23-registrations.md:365`, is `10.1109/tvcg.2011.109` (`R-141`).
 
 **The largest paid-for gap is Group D.** Five papers on metric-based anisotropic mesh adaptation sit in the corpus
-at 0.70–0.71 and the repository cites none of them. `R-123` registers the honest version in advance: the
+at 0.70–0.71 and the repository cites none of them. `R-143` registers the honest version in advance: the
 convergence **rate** does not improve — the exponent is fixed by polynomial degree and dimension — and what moves
 is the **constant M-12 fits**, concentrated on features with a flat direction.
 
-**Order matters in five places and nowhere else.** `R-103` runs before the rest of Group A and `R-107` rides it.
-`R-118` runs before `R-119` and `R-121`. `R-122` runs before `R-123`, `R-125` and `R-127`. `R-131` runs before
-`R-132` and `R-133`. `R-128` runs before `R-129` and `R-130`. Everything else is independent and eleven rows are `S`.
+**Order matters in five places and nowhere else.** `R-123` runs before the rest of Group A and `R-127` rides it.
+`R-138` runs before `R-139` and `R-141`. `R-142` runs before `R-143`, `R-145` and `R-147`. `R-151` runs before
+`R-152` and `R-153`. `R-148` runs before `R-149` and `R-150`. Everything else is independent and eleven rows are `S`.
 
-**Nine rows are expected to return nulls and that is registered rather than hoped:** `R-112` (which exists to
-prevent an overclaim), `R-126`, `R-134`, `R-135` (whose null — that Marching Cubes is already order-optimal and
-only the constant is in play — is the most valuable sentence available in this phase), `R-139`, `R-142`, `R-144`,
-`R-148`, `R-150`. Phase 23's two most useful rows were `✗51` and `✗54`, both of which said *do not build this*.
+**Nine rows are expected to return nulls and that is registered rather than hoped:** `R-132` (which exists to
+prevent an overclaim), `R-146`, `R-154`, `R-155` (whose null — that Marching Cubes is already order-optimal and
+only the constant is in play — is the most valuable sentence available in this phase), `R-159`, `R-162`, `R-164`,
+`R-168`, `R-170`. Phase 23's two most useful rows were `✗51` and `✗54`, both of which said *do not build this*.
 
 **Seven candidates were killed during the probe and are recorded so nobody re-searches them:** random matrix
 theory and pseudospectra for the QEF (the matrix is normal, so pseudospectra return the singular-value threshold
@@ -95,58 +100,116 @@ is a 30-flop `3×3` adjugate).
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
-| ☐ | **R-103** | S | — |
-| ☐ | **R-104** | S | `R-103` |
-| ☐ | **R-105** | S | `R-103` |
-| ☐ | **R-106** | M | `R-103` |
-| ☐ | **R-107** | M | `R-103` |
-| ☐ | **R-108** | M | `R-103` |
-| ☐ | **R-109** | M | `R-103` |
-| ☐ | **R-110** | S | `R-103` |
-| ☐ | **R-111** | S | `R-103` |
-| ☐ | **R-112** | S | `R-103` |
-| ☐ | **R-113** | S | — |
-| ☐ | **R-114** | M | — |
-| ☐ | **R-115** | M | — |
-| ☐ | **R-116** | M | — |
-| ☐ | **R-117** | L | — |
-| ☐ | **R-118** | S | — |
-| ☐ | **R-119** | S | `R-118` |
-| ☐ | **R-120** | M | — |
-| ☐ | **R-121** | M | `R-118` |
-| ☐ | **R-122** | L | — |
-| ☐ | **R-123** | M | `R-122` |
-| ☐ | **R-124** | M | — |
-| ☐ | **R-125** | M | `R-122` |
-| ☐ | **R-126** | S | — |
-| ☐ | **R-127** | M | `R-122` |
-| ☐ | **R-128** | M | — |
-| ☐ | **R-129** | M | `R-128` |
-| ☐ | **R-130** | M | `R-128` |
-| ☐ | **R-131** | S | — |
-| ☐ | **R-132** | M | `R-131` |
-| ☐ | **R-133** | M | `R-131` |
+| ☐ | **R-123** | S | — |
+| ☐ | **R-124** | S | `R-123` |
+| ☐ | **R-125** | S | `R-123` |
+| ☐ | **R-126** | M | `R-123` |
+| ☐ | **R-127** | M | `R-123` |
+| ☐ | **R-128** | M | `R-123` |
+| ☐ | **R-129** | M | `R-123` |
+| ☐ | **R-130** | S | `R-123` |
+| ☐ | **R-131** | S | `R-123` |
+| ☐ | **R-132** | S | `R-123` |
+| ☐ | **R-133** | S | — |
 | ☐ | **R-134** | M | — |
 | ☐ | **R-135** | M | — |
 | ☐ | **R-136** | M | — |
-| ☐ | **R-137** | M | — |
-| ☐ | **R-138** | M | — |
+| ☐ | **R-137** | L | — |
+| ☐ | **R-138** | S | — |
 | ☐ | **R-139** | S | `R-138` |
-| ☐ | **R-140** | M | `R-138` |
-| ☐ | **R-141** | M | — |
-| ☐ | **R-142** | M | — |
-| ☐ | **R-143** | M | — |
-| ☐ | **R-144** | M | `R-143` |
-| ☐ | **R-145** | S | `R-143` |
+| ☐ | **R-140** | M | — |
+| ☐ | **R-141** | M | `R-138` |
+| ☐ | **R-142** | L | — |
+| ☐ | **R-143** | M | `R-142` |
+| ☐ | **R-144** | M | — |
+| ☐ | **R-145** | M | `R-142` |
 | ☐ | **R-146** | S | — |
-| ☐ | **R-147** | M | — |
+| ☐ | **R-147** | M | `R-142` |
 | ☐ | **R-148** | M | — |
-| ☐ | **R-149** | M | — |
-| ☐ | **R-150** | M | — |
-| ☐ | **R-151** | M | — |
-| ☐ | **R-152** | M | — |
+| ☐ | **R-149** | M | `R-148` |
+| ☐ | **R-150** | M | `R-148` |
+| ☐ | **R-151** | S | — |
+| ☐ | **R-152** | M | `R-151` |
+| ☐ | **R-153** | M | `R-151` |
+| ☐ | **R-154** | M | — |
+| ☐ | **R-155** | M | — |
+| ☐ | **R-156** | M | — |
+| ☐ | **R-157** | M | — |
+| ☐ | **R-158** | M | — |
+| ☐ | **R-159** | S | `R-158` |
+| ☐ | **R-160** | M | `R-158` |
+| ☐ | **R-161** | M | — |
+| ☐ | **R-162** | M | — |
+| ☐ | **R-163** | M | — |
+| ☐ | **R-164** | M | `R-163` |
+| ☐ | **R-165** | S | `R-163` |
+| ☐ | **R-166** | S | — |
+| ☐ | **R-167** | M | — |
+| ☐ | **R-168** | M | — |
+| ☐ | **R-169** | M | — |
+| ☐ | **R-170** | M | — |
+| ☐ | **R-171** | M | — |
+| ☐ | **R-172** | M | — |
 
 ---
+
+## Phase 25 — twenty registrations from the bit-packing sweep
+
+**Added 2026-08-28, above Phase 24 for the reason every phase goes on top: rule 1 reads top-down.**
+Phase 24 is closed. Nothing here supersedes Phase 17's or Phase 18's open rows, and Phase 23's two
+blocked acquisitions (`R-063`, `R-065`) and its nightly sweep (`R-072`) stay where they are.
+
+**Source: `docs/research/2026-08-28-bitpacking-simd-acquisition-and-backlog.md`.** A survey across twelve
+topics found **four corpus categories entirely absent** — broadword/SWAR, compressed and hierarchical
+bitmaps, SIMD integer codecs and bit-packing, and stream compaction without hardware `PEXT`. **All four
+are now closed and seventeen papers landed** (`M-415`), and the eight that did not are a resolver finding
+rather than a corpus one: the sweep's highest-value target, Vigna's *Broadword Implementation of
+Rank/Select Queries*, **has no DOI at all**.
+
+**Two figures in the source doc are wrong and the corrections change what gets registered.** `✗51`'s
+share is **11.6%**, not the 11.5% the doc quotes — so its ceiling was `1/(1 − 0.116/2)` = **1.061×**. And
+the active-cell bitmap packs **samples, not cells**: `dual.rs:359` sets `bit_row = size[0].div_ceil(64)`
+and the cell row is one word shorter, handled separately by `cell_words` (`dual.rs:484`) and `cell_mask`
+(`:445`). `R-104` is therefore about a **sample-plane** relayout with a documented cell/word asymmetry
+underneath it, and the doc's *"64 cells per `u64`"* — repeated in `experiment.rs:3192` — is wrong by one.
+
+**Order matters in two places and nowhere else.** `R-121` runs **first** and can close `R-103`, `R-104`
+and `R-106` before a harness exists. `R-112` consumes `R-107`'s rank directory. Everything else is
+independent, and seven rows are `S`.
+
+**Rows expected to return nulls, registered rather than hoped:** `R-108`'s C1, because the 2026-08-23
+dossier already argues the set-bit walk's cost is dominated by words skipped entirely; `R-117`'s C1,
+where the outcome to hope for is that nothing on the hot path is contraction-sensitive and rustc does
+not contract `a*b + c` by default; and `R-121`'s C2 if bit work is under 15%, which closes three more
+rows. Phase 24's two most useful rows were `✗51` and `✗54`, both of which said *do not build this*.
+
+**Every row is bench-local.** `crates/isomesh/src/**` is read-only for the whole phase apart from the
+twenty registrations themselves; unlike Phase 24 there is **no registered source change**. A mechanism
+that earns landing gets its own ticket afterwards — a landing not registered in advance is `V-45`'s
+failure mode.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-103** | M | `R-121` |
+| ☐ | **R-104** | M | `R-121` |
+| ☐ | **R-105** | S | — |
+| ☐ | **R-106** | M | `R-121` |
+| ☐ | **R-107** | M | — |
+| ☐ | **R-108** | S | — |
+| ☐ | **R-109** | M | — |
+| ☐ | **R-110** | M | — |
+| ☐ | **R-111** | S | — |
+| ☐ | **R-112** | M | `R-107` |
+| ☐ | **R-113** | S | — |
+| ☐ | **R-114** | S | — |
+| ☐ | **R-115** | S | — |
+| ☐ | **R-116** | M | — |
+| ☐ | **R-117** | M | — |
+| ☐ | **R-118** | M | — |
+| ☐ | **R-119** | M | — |
+| ☐ | **R-120** | M | — |
+| ☐ | **R-121** | M | — |
+| ☐ | **R-122** | S | — |
 
 ---
 
@@ -180,38 +243,7 @@ cost is diffuse, `R-086`'s C1 if slivers stop nobody, `R-089`'s C1 (which is the
 `R-091`'s C2, and `R-101`'s C1 if `M-177`'s obstruction covers the octahedral case too. Phase 23's two most
 useful rows were `✗51` and `✗54`, both of which said *do not build this*, and both cost a day.
 
-| | Ticket | Size | Blocked by |
-|---|---|---|---|
-| ☐ | **R-073** | S | — |
-| ☐ | **R-074** | M | — |
-| ☐ | **R-075** | M | — |
-| ☐ | **R-076** | M | — |
-| ☐ | **R-077** | M | — |
-| ☐ | **R-078** | M | — |
-| ☐ | **R-079** | M | — |
-| ☐ | **R-080** | M | — |
-| ☐ | **R-081** | M | — |
-| ☐ | **R-082** | M | — |
-| ☐ | **R-083** | S | — |
-| ☐ | **R-084** | L | — |
-| ☐ | **R-085** | S | — |
-| ☐ | **R-086** | M | — |
-| ☐ | **R-087** | M | — |
-| ☐ | **R-088** | M | — |
-| ☐ | **R-089** | S | — |
-| ☐ | **R-090** | M | — |
-| ☐ | **R-091** | M | — |
-| ☐ | **R-092** | M | — |
-| ☐ | **R-093** | M | — |
-| ☐ | **R-094** | M | — |
-| ☐ | **R-095** | M | — |
-| ☐ | **R-096** | S | — |
-| ☐ | **R-097** | M | — |
-| ☐ | **R-098** | S | — |
-| ☐ | **R-099** | M | — |
-| ☐ | **R-100** | M | — |
-| ☐ | **R-101** | M | — |
-| ☐ | **R-102** | S | — |
+**All thirty rows are closed.** They are in `BACKLOG_ARCHIVE.md` with what each one cost and what it contradicted; the prose above stays here because it is what the work was for. Twenty-four of the thirty carry a falsified clause, and six of those were registered as expected nulls before their harnesses existed.
 
 ---
 

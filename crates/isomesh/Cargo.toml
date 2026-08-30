@@ -92,6 +92,34 @@ criterion = { version = "0.7", default-features = false, features = [
 # this crate asserting against its own idea of what parry wants.
 parry3d = "0.30"
 
+# R-092 (P-92). The Rust FFI binding to zeux's own meshoptimizer C library, and
+# it is here because P-92's registration makes it the **vacuity control**: *"the
+# encoded-size arm must use a real encoder on the real triangles, not an
+# estimate, and its decode time must be measured on this machine rather than
+# quoted from the blog post."* An estimated byte count would answer a different
+# question and score it HELD, which is the one outcome that registration
+# forbids. `meshopt-rs` -- the pure-Rust reimplementation -- would not do: the
+# 1.92 ms sponza figure C1 is scored against was measured with *this* codec, and
+# a second implementation's density is a different number.
+#
+# A **dev**-dependency, so `cargo tree -p isomesh -e normal` is still
+# `isomesh + libm` and rule 3's budget is untouched. It builds the C library
+# through `cc`, which every machine this repo measures on already has.
+meshopt = "0.6"
+
+# R-094 (P-94). C3 predicts that entropy-coding the edit log beats **a
+# general-purpose compressor** by at least 2x, and there is no way to measure
+# that clause without a general-purpose compressor: an estimate of what zstd
+# would have achieved answers a different question and scores C3 on a number
+# nobody ran. `zstd` is the reference implementation of the format the claim
+# names, and the bench runs it at level 19 -- the strongest setting, so the bar
+# is not cleared by handicapping the baseline -- with level 3 on the row as well.
+#
+# A **dev**-dependency, so `cargo tree -p isomesh -e normal` is still
+# `isomesh + libm` and rule 3's budget is untouched. It builds the C library
+# through `cc`, like `meshopt` above. MSRV 1.64, under this workspace's 1.89.
+zstd = "0.13"
+
 # R-005 / P-12, and Linux only. `perf_event_open` is a Linux system call with no
 # macOS equivalent a bench can reach, and `perf` itself is not installed on the
 # machine this ran on -- so the counters come from the syscall directly. It needs
@@ -530,5 +558,256 @@ test = false
 
 [[bench]]
 name = "experiment_p68"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p89"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p98"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p99"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p85"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p100"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p102"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p86"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p75"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p77"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p93"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p90"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p97"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p87"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p79"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p96"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p80"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p78"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p73"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p92"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p74"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p94"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p101"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p95"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p82"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p83"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p88"
+harness = false
+test = false
+
+
+[[bench]]
+name = "experiment_p91"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p84"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p81"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p76"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p121"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p117"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p113"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p105"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p107"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p111"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p108"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p114"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p115"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p120"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p122"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p103"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p104"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p106"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p109"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p110"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p112"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p116"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p118"
+harness = false
+test = false
+
+[[bench]]
+name = "experiment_p119"
 harness = false
 test = false

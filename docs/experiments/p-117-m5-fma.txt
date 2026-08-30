@@ -1,0 +1,353 @@
+# P-117 C2 cross-machine fixture, and the aarch64 half of the disassembly arm.
+#
+# An INPUT, not a result. Produced by
+#   ISOMESH_P117_PEER=1 cargo bench -p isomesh --bench experiment_p117
+# on the peer machine, and read back by the same bench on the other target to fill
+# `hashes_identical`, the aarch64 `fmadd_in_known_fused_probe` and every aarch64
+# row. Without it C2 is recorded BLOCKED with the blocker named on the row -- never
+# a zero-filled peer table, which is what R-081 shipped and had deleted.
+#
+# THREE THINGS ARE IN HERE. (1) The 216 golden hashes recomputed on this machine
+# from the same source revision -- 8 reference fields x 9 algorithms x 3 resolutions
+# {17, 25, 33}, `golden.rs:73`, `:122`, `fields/mod.rs:212`. (2) The disassembly
+# reading of this machine's own bench binary, including the KNOWN-FUSED probe the
+# registered vacuity control requires to be seen fusing on aarch64. (3) The
+# per-site ULP gap between each multiply-add shape as written and the same shape
+# fused, on inputs harvested from real extraction on this machine.
+#
+# `~` stands in for a space: this file is whitespace-delimited.
+#
+# ── PROVENANCE, because "the same bench" has to be checkable rather than asserted ──
+#
+#   tree            rsync of Cargo.toml, Cargo.lock, crates/, scripts/, docs/ from
+#                   /home/ladvien/isomesh (branch phase-24-registrations, HEAD 3e2dfcc,
+#                   working tree dirty -- Phase 25 wave 1 in flight) to ~/p117_peer on
+#                   mac_air. `.git` was not copied, which is why nothing in this file
+#                   claims a commit: the peer cannot resolve one.
+#   bench source    crates/isomesh/benches/experiment_p117.rs
+#                   md5 0048dde9122d6560a9badcb3da1b08a3, verified equal on both machines
+#                   immediately before the peer build, AFTER `rustfmt` and after
+#                   `cargo clippy -- -D warnings` came back clean. This is the revision the
+#                   committed docs/experiments/p-117.csv was measured from, so the aarch64
+#                   rows and the x86-64 rows describe one program.
+#   how it was run  UNMODIFIED. The bench needs no macOS `cfg` arm and has none:
+#                   `common::counters` is never imported, `objdump` exists on both hosts,
+#                   and `HOST_TARGET` resolves from `cfg!` rather than from an argument.
+#   peer run        cold build of the whole graph 32.59 s on the first pass; this run's
+#                   incremental build plus measurement 16.4 s wall.
+#   machine slug    apple-m5   (scripts/machine.sh --slug)
+#   host            MacBook Air, Apple M5, macOS 26.5.2, aarch64-apple-darwin,
+#                   rustc 1.96.1 (31fca3adb 2026-06-26), cargo 1.96.1, objdump
+#                   Apple LLVM 21.0.0.
+#
+# WHAT THE VACUITY CONTROL DID HERE, AND WHY THIS FILE IS THE ONLY PLACE IT COULD.
+# The registration requires the KNOWN-FUSED probe to be seen fusing ON AARCH64, and this
+# is the arm where it is visible in the probe's own body: `fmadd` is baseline A64, so
+# `p117_probe_known_fused` disassembles to exactly
+#
+#     fmadd  d0, d0, d1, d2
+#     ret
+#
+# On x86-64 FMA3 is not in the baseline ISA, so the identical source tail-jumps into
+# `compiler_builtins`' runtime-dispatched `fma` and the hardware instruction sits one
+# level away in `fma_with_fma` as `vfmadd213sd`. Both are fusion -- one rounding where
+# the written form has two -- but only this arm shows it in place, which is exactly why
+# the registration put the control here. `fma_in_known_fused_probe=1` with
+# `known_fused_probe_evidence=fmadd` is the control firing.
+#
+# AND WHAT IT PROVED ABOUT THE CRATE. On the same machine, compiled by the same rustc in
+# the same binary, the plain `a * b + c` does NOT fuse:
+#
+#     __ZN15experiment_p11718p117_probe_written:
+#         fmul  d0, d0, d1
+#         fadd  d0, d0, d2
+#         ret
+#
+# and neither does `cube::place`:
+#
+#     __ZN15experiment_p11716p117_probe_place:
+#         fadd  d3, d0, d1
+#         fmov  d4, #0.50000000
+#         fmul  d3, d3, d4
+#         fsub  d0, d1, d0
+#         fmul  d0, d0, d2
+#         fadd  d0, d3, d0
+#         ret
+#
+# nor the 2x2 determinant shape `a*b - c*d` (`vec3::cross`, `Symmetric3::adjugate`):
+#
+#     __ZN15experiment_p11716p117_probe_cross:
+#         fmul  d0, d0, d1
+#         fmul  d1, d2, d3
+#         fsub  d0, d0, d1
+#         ret
+#
+# `fma_instructions_isomesh_text=0` over 96 isomesh symbols and
+# `fma_instructions_isomesh_extract=0` over 9 monomorphised extractors say the same thing
+# for the whole library rather than for three probes. The 24 counted in
+# `fma_instructions_binary_total` are all outside isomesh.
+#
+target=aarch64-apple-darwin
+machine=apple-m5
+rustc=rustc~1.96.1~(31fca3adb~2026-06-26)
+objdump=Apple~LLVM~version~21.0.0
+mul_add_call_sites=0
+mul_add_mentions=6
+golden_rows=216
+fma_in_known_fused_probe=1
+known_fused_probe_evidence=fmadd
+known_fused_dispatch_symbol=p117_probe_known_fused
+fma_instructions_binary_total=24
+isomesh_symbols_scanned=96
+fma_instructions_isomesh_text=0
+isomesh_extract_symbols_scanned=9
+fma_instructions_isomesh_extract=0
+#
+# probe <name> <hardware_fma_instructions> <evidence>
+probe p117_probe_accumulate 0 none
+probe p117_probe_cross 0 none
+probe p117_probe_dot 0 none
+probe p117_probe_dot_equivariant 0 none
+probe p117_probe_fade 0 none
+probe p117_probe_known_fused 1 fmadd
+probe p117_probe_place 0 none
+probe p117_probe_two_product_err 0 none
+probe p117_probe_two_products 0 none
+probe p117_probe_written 0 none
+#
+# site <name> <tried> <differing> <max_ulp> <written_bits> <fused_bits> <variant> <probe_reproduced> <worst_input>
+site cube::place 408276 4164 93 0x3f3db231dac27f00 0x3f3db231dac27ea3 fuse-offset-term true 0x0000000000000000;0x3fc5555555555550;0xbfdfd374b537dc42;0x0000000000000000;0x0000000000000000;0x0000000000000000
+site marching_cubes::corner_position 408276 83936 4377498837804122113 0x0000000000000000 0xbcc0000000000000 fuse-product true 0xc020000000000000;0x3fe5555555555555;0x4028000000000000;0x0000000000000000;0x0000000000000000;0x0000000000000000
+site dual::place_vertices 1216512 152064 4377498837804122113 0x0000000000000000 0xbcc0000000000000 fuse-product true 0xc020000000000000;0x3fe5555555555555;0x4028000000000000;0x0000000000000000;0x0000000000000000;0x0000000000000000
+site hermite::HermiteCell::from_corners 408276 5291 171 0xbf33e88bc4195400 0xbf33e88bc4195355 fuse-product true 0xbfc5555555555558;0x3fc5555555555555;0x3feff111972ced06;0x0000000000000000;0x0000000000000000;0x0000000000000000
+site vec3::dot 136092 23990 2 0x3ff0000000000000 0x3feffffffffffffe fuse-both-adds true 0xbfd557ff0f0dca1c;0xbfd557ff0f0dca1c;0x3fedb14199807ab5;0x3fedb14199807ab5;0x3fc557ff0f0dca14;0x3fc557ff0f0dca14
+site vec3::cross 33121 16731 4359373239303840856 0x0000000000000000 0x3c7f9add3c0ca458 fuse-first-product true 0x3fdc71c71c71c71d;0x3fec71c71c71c71c;0x3fec71c71c71c71c;0x3fdc71c71c71c71c;0x0000000000000000;0x0000000000000000
+site solve::Symmetric3::adjugate 33121 19297 64 0x3f9ee48b9a29bb80 0x3f9ee48b9a29bbc0 fuse-second-product true 0x3ffd212d236ef440;0x3ff30ac31a68bf2c;0xbff763232a07da62;0xbff763232a07da62;0x0000000000000000;0x0000000000000000
+site solve::Symmetric3::determinant 33121 0 0 0x3f5cdbba641e8200 0x3f5cdbba641e8200 fuse-product true 0xbfec08b8e52dfc1f;0x4000000000000000;0x3fdc1726c2600b60;0x0000000000000000;0x0000000000000000;0x0000000000000000
+site solve::dot_equivariant 136092 65270 8796093022208 0x39e1c00000000000 0x39e1b80000000000 fuse-into-sorted-sum true 0xbfbc71c71c71c663;0x3ce8000000000000;0xbfdc71c71c71c720;0xbcb0000000000000;0xbfec71c71c71c720;0xbcb0000000000000
+site predicates::two_product 33121 0 0 0x0000000000000000 0x0000000000000000 fuse-every-cross-product true 0xbfdad616c553001c;0xbfe8000000000000;0x0000000000000000;0x0000000000000000;0x0000000000000000;0x0000000000000000
+site noise::fade 24036 7642 8 0x3ff28fb955936b88 0x3ff28fb955936b90 fuse-inner true 0x3fee7199e1da93f7;0x0000000000000000;0x0000000000000000;0x0000000000000000;0x0000000000000000;0x0000000000000000
+site noise::perlin~value~accumulation 64096 6302 121 0x3f4c857597839500 0x3f4c857597839487 fuse-product true 0x3fc91227cd036cb2;0x3fdc83335e871c06;0xbfdc032e1ea19864;0x0000000000000000;0x0000000000000000;0x0000000000000000
+site noise::fbm~octave~accumulation 8012 0 0 0x0000000000000000 0x0000000000000000 fuse-product true 0x0000000000000000;0x3ff0000000000000;0x0000000000000000;0x0000000000000000;0x0000000000000000;0x0000000000000000
+site noise::fbm~lattice~offset 24036 133 4 0xbfc2acc969c11050 0xbfc2acc969c1104c fuse-offset true 0xbff0000000000000;0x4000000000000000;0x4008000000000000;0x3fe3c6ef372fe94f;0x0000000000000000;0x0000000000000000
+site FbmTerrain::sample 2003 0 0 0x3fe9b39051c86540 0x3fe9b39051c86540 fuse-product true 0x0000000000000000;0x4000000000000000;0x3fd9b39051c86540;0x0000000000000000;0x0000000000000000;0x0000000000000000
+site control::exact_products 64096 0 0 0x0000000000000000 0x0000000000000000 fuse-last-add true 0x3ff0000000000000;0x0000000000000000;0x3ff0000000000000;0x0000000000000000;0x0000000000000000;0x0000000000000000
+site control::searched_separator 4096 470 1 0x3fc292a17c2ec5a6 0x3fc292a17c2ec5a5 fuse true 0x3fd4450087f41ad6;0x3fd0e34af7851254;0x3faf80a10058aee0;0x0000000000000000;0x0000000000000000;0x0000000000000000
+#
+# golden <algorithm> <field> <samples> <vertices> <triangles> <hash>
+golden greedy_quads sphere 17 648 324 baeaca740ed352b0
+golden greedy_quads sphere 25 1032 516 3b048fd559cf2567
+golden greedy_quads sphere 33 2568 1284 a0791a8efefa2904
+golden marching_cubes sphere 17 270 536 fd9880ce0e75449e
+golden marching_cubes sphere 25 654 1304 41118123753cc0d8
+golden marching_cubes sphere 33 1158 2312 20af3bc66a89e1dd
+golden marching_cubes+decider sphere 17 270 536 fd9880ce0e75449e
+golden marching_cubes+decider sphere 25 654 1304 41118123753cc0d8
+golden marching_cubes+decider sphere 33 1158 2312 20af3bc66a89e1dd
+golden marching_cubes+trilinear sphere 17 270 536 fd9880ce0e75449e
+golden marching_cubes+trilinear sphere 25 654 1304 41118123753cc0d8
+golden marching_cubes+trilinear sphere 33 1158 2312 20af3bc66a89e1dd
+golden marching_tetrahedra sphere 17 830 1656 0bbd6517999d51bd
+golden marching_tetrahedra sphere 25 1994 3984 8bc43d0930442f0c
+golden marching_tetrahedra sphere 33 3518 7032 e7c82246bc4f4ea7
+golden surface_nets sphere 17 272 540 335ddfbe42885676
+golden surface_nets sphere 25 656 1308 07c7dd581e1a8398
+golden surface_nets sphere 33 1160 2316 de63965d41921fb0
+golden dual_contouring sphere 17 272 540 da067a2819ece8eb
+golden dual_contouring sphere 25 656 1308 7561dbaca38d96f7
+golden dual_contouring sphere 33 1160 2316 1eaa6febc5ace5c8
+golden manifold_dual_contouring sphere 17 272 540 da067a2819ece8eb
+golden manifold_dual_contouring sphere 25 656 1308 7561dbaca38d96f7
+golden manifold_dual_contouring sphere 33 1160 2316 1eaa6febc5ace5c8
+golden subgrid_marching_tetrahedra sphere 17 812 1620 6c63895aaf8f209d
+golden subgrid_marching_tetrahedra sphere 25 1922 3840 3eaf20052b3ac748
+golden subgrid_marching_tetrahedra sphere 33 3500 6996 7b6274865fcc1ba9
+golden greedy_quads torus 17 272 136 eba8b8609dc5d552
+golden greedy_quads torus 25 1104 552 3401aaeb768c99f3
+golden greedy_quads torus 33 1464 732 64472c24a6c70f11
+golden marching_cubes torus 17 328 656 fd0bcb617f9a0891
+golden marching_cubes torus 25 544 1088 fdc0b783df52d9d0
+golden marching_cubes torus 33 1128 2256 3a9234b52bfa7b75
+golden marching_cubes+decider torus 17 328 656 fd0bcb617f9a0891
+golden marching_cubes+decider torus 25 544 1088 fdc0b783df52d9d0
+golden marching_cubes+decider torus 33 1128 2256 3a9234b52bfa7b75
+golden marching_cubes+trilinear torus 17 328 656 fd0bcb617f9a0891
+golden marching_cubes+trilinear torus 25 544 1088 fdc0b783df52d9d0
+golden marching_cubes+trilinear torus 33 1128 2256 3a9234b52bfa7b75
+golden marching_tetrahedra torus 17 912 1824 2a45aa3b7c3773e3
+golden marching_tetrahedra torus 25 1724 3448 602025fd29b6cbac
+golden marching_tetrahedra torus 33 3424 6848 951c8aa34ae78cd3
+golden surface_nets torus 17 328 656 f1e783835748d45b
+golden surface_nets torus 25 544 1088 43e367ff634e6e5d
+golden surface_nets torus 33 1128 2256 872a5a1f95856de9
+golden dual_contouring torus 17 328 656 bb45da9d25621a0c
+golden dual_contouring torus 25 544 1088 3e08fb2b9087e75c
+golden dual_contouring torus 33 1128 2256 3eef7f6e20077c9b
+golden manifold_dual_contouring torus 17 328 656 bb45da9d25621a0c
+golden manifold_dual_contouring torus 25 544 1088 3e08fb2b9087e75c
+golden manifold_dual_contouring torus 33 1128 2256 3eef7f6e20077c9b
+golden subgrid_marching_tetrahedra torus 17 912 1824 826614d26c3a9831
+golden subgrid_marching_tetrahedra torus 25 1760 3520 74842902fcad3962
+golden subgrid_marching_tetrahedra torus 33 3464 6928 7fc2275d22b09246
+golden greedy_quads box_exact 17 24 12 6fcf0f085fd60be1
+golden greedy_quads box_exact 25 24 12 6fcf0f085fd60be1
+golden greedy_quads box_exact 33 24 12 6fcf0f085fd60be1
+golden marching_cubes box_exact 17 294 584 ebbf5abeb1b1fae4
+golden marching_cubes box_exact 25 726 1448 4bbb9781bb36feea
+golden marching_cubes box_exact 33 1350 2696 2a6595974b6e1b2b
+golden marching_cubes+decider box_exact 17 294 584 ebbf5abeb1b1fae4
+golden marching_cubes+decider box_exact 25 726 1448 4bbb9781bb36feea
+golden marching_cubes+decider box_exact 33 1350 2696 2a6595974b6e1b2b
+golden marching_cubes+trilinear box_exact 17 294 584 ebbf5abeb1b1fae4
+golden marching_cubes+trilinear box_exact 25 726 1448 4bbb9781bb36feea
+golden marching_cubes+trilinear box_exact 33 1350 2696 2a6595974b6e1b2b
+golden marching_tetrahedra box_exact 17 1094 2184 b25a4ae9e006099b
+golden marching_tetrahedra box_exact 25 2774 5544 0831d519cf9b8001
+golden marching_tetrahedra box_exact 33 5222 10440 d885f2c98d57a096
+golden surface_nets box_exact 17 296 588 543095dfaa98538f
+golden surface_nets box_exact 25 728 1452 452c5b553f4b1f8a
+golden surface_nets box_exact 33 1352 2700 8150bce95b5f472c
+golden dual_contouring box_exact 17 296 588 ac24957aa680f9e7
+golden dual_contouring box_exact 25 728 1452 5ff57d986304ffd2
+golden dual_contouring box_exact 33 1352 2700 0d2555dcc2297dac
+golden manifold_dual_contouring box_exact 17 296 588 ac24957aa680f9e7
+golden manifold_dual_contouring box_exact 25 728 1452 5ff57d986304ffd2
+golden manifold_dual_contouring box_exact 33 1352 2700 0d2555dcc2297dac
+golden subgrid_marching_tetrahedra box_exact 17 338 672 affe5e5458dad470
+golden subgrid_marching_tetrahedra box_exact 25 794 1584 8d7492a66ff19f5f
+golden subgrid_marching_tetrahedra box_exact 33 1442 2880 d3a28d6bbef102a6
+golden greedy_quads csg_difference 17 168 84 bc8944a80585dd19
+golden greedy_quads csg_difference 25 252 126 bddbf97ecdcde782
+golden greedy_quads csg_difference 33 600 300 e8b3615267a391d8
+golden marching_cubes csg_difference 17 294 584 055143dcc287fa57
+golden marching_cubes csg_difference 25 738 1472 e4b1b2ef9ae65f4c
+golden marching_cubes csg_difference 33 1386 2768 ebae7e9ec48a1c82
+golden marching_cubes+decider csg_difference 17 294 584 055143dcc287fa57
+golden marching_cubes+decider csg_difference 25 738 1472 e4b1b2ef9ae65f4c
+golden marching_cubes+decider csg_difference 33 1386 2768 ebae7e9ec48a1c82
+golden marching_cubes+trilinear csg_difference 17 294 584 055143dcc287fa57
+golden marching_cubes+trilinear csg_difference 25 738 1472 e4b1b2ef9ae65f4c
+golden marching_cubes+trilinear csg_difference 33 1386 2768 ebae7e9ec48a1c82
+golden marching_tetrahedra csg_difference 17 1094 2184 a70adfebb051c7c5
+golden marching_tetrahedra csg_difference 25 2786 5568 7a233bc8388bdafc
+golden marching_tetrahedra csg_difference 33 5288 10572 024d2c6b70fad76f
+golden surface_nets csg_difference 17 296 588 730ffd204e7a4007
+golden surface_nets csg_difference 25 740 1476 e7e9ab846648dcf7
+golden surface_nets csg_difference 33 1388 2772 15de3d1f7007153b
+golden dual_contouring csg_difference 17 296 588 df85790188419ed3
+golden dual_contouring csg_difference 25 740 1476 283d8ceb95d102af
+golden dual_contouring csg_difference 33 1388 2772 f4c522f1b15cfe57
+golden manifold_dual_contouring csg_difference 17 296 588 df85790188419ed3
+golden manifold_dual_contouring csg_difference 25 740 1476 283d8ceb95d102af
+golden manifold_dual_contouring csg_difference 33 1388 2772 f4c522f1b15cfe57
+golden subgrid_marching_tetrahedra csg_difference 17 482 960 0bfde607635a0f76
+golden subgrid_marching_tetrahedra csg_difference 25 1118 2232 9f8b2e2635afc62f
+golden subgrid_marching_tetrahedra csg_difference 33 2087 4170 2a572922ba8a43b8
+golden greedy_quads thin_plate 17 0 0 81d23fd7003c2305
+golden greedy_quads thin_plate 25 0 0 81d23fd7003c2305
+golden greedy_quads thin_plate 33 0 0 81d23fd7003c2305
+golden marching_cubes thin_plate 17 126 248 3f2aeb61c13e747b
+golden marching_cubes thin_plate 25 286 568 a2d792f07f77d5df
+golden marching_cubes thin_plate 33 510 1016 26072dde6b2b7228
+golden marching_cubes+decider thin_plate 17 126 248 3f2aeb61c13e747b
+golden marching_cubes+decider thin_plate 25 286 568 a2d792f07f77d5df
+golden marching_cubes+decider thin_plate 33 510 1016 26072dde6b2b7228
+golden marching_cubes+trilinear thin_plate 17 126 248 3f2aeb61c13e747b
+golden marching_cubes+trilinear thin_plate 25 286 568 a2d792f07f77d5df
+golden marching_cubes+trilinear thin_plate 33 510 1016 26072dde6b2b7228
+golden marching_tetrahedra thin_plate 17 446 888 a91bd9160b1c33fb
+golden marching_tetrahedra thin_plate 25 1054 2104 c49adad72e2ba380
+golden marching_tetrahedra thin_plate 33 1918 3832 dd7bd0c6253676a9
+golden surface_nets thin_plate 17 128 252 5c398b9edeebf0af
+golden surface_nets thin_plate 25 288 572 e8c64a1a044bf007
+golden surface_nets thin_plate 33 512 1020 5ef1a704e58ecb7c
+golden dual_contouring thin_plate 17 128 252 119758de2c4c250b
+golden dual_contouring thin_plate 25 288 572 d051f3ae5ae11537
+golden dual_contouring thin_plate 33 512 1020 8d65e9c7970688e8
+golden manifold_dual_contouring thin_plate 17 128 252 119758de2c4c250b
+golden manifold_dual_contouring thin_plate 25 288 572 d051f3ae5ae11537
+golden manifold_dual_contouring thin_plate 33 512 1020 8d65e9c7970688e8
+golden subgrid_marching_tetrahedra thin_plate 17 422 840 8d3ac33a245b3218
+golden subgrid_marching_tetrahedra thin_plate 25 1104 2204 b6cbfa633c989aae
+golden subgrid_marching_tetrahedra thin_plate 33 1984 3964 6e1cbca1632a64c0
+golden greedy_quads gyroid 17 2988 1494 dc29787dc6b68c1a
+golden greedy_quads gyroid 25 6888 3444 d3816ea7c6eb7cb9
+golden greedy_quads gyroid 33 12372 6186 467b89deab65296d
+golden marching_cubes gyroid 17 1260 2536 edcea646dd88e86c
+golden marching_cubes gyroid 25 2940 5884 35cffdf651926726
+golden marching_cubes gyroid 33 5292 10632 56199e90195805d5
+golden marching_cubes+decider gyroid 17 1260 2536 d98daa1ab4805ab1
+golden marching_cubes+decider gyroid 25 2946 5928 117c0abcdffc7e6d
+golden marching_cubes+decider gyroid 33 5292 10632 83263753acbbd143
+golden marching_cubes+trilinear gyroid 17 1278 2572 1edf1182853b3cc5
+golden marching_cubes+trilinear gyroid 25 2967 5970 182f138552dc32fe
+golden marching_cubes+trilinear gyroid 33 5304 10656 4a539d222544e278
+golden marching_tetrahedra gyroid 17 3514 7044 b7feb68553876798
+golden marching_tetrahedra gyroid 25 8362 16728 3daa6ad310c9ea98
+golden marching_tetrahedra gyroid 33 15196 30492 98f1decc0b7623ed
+golden surface_nets gyroid 17 1214 2520 069c267e8fba7bac
+golden surface_nets gyroid 25 2879 5880 e236ee40108846c0
+golden surface_nets gyroid 33 5240 10584 1f39ed14750027b0
+golden dual_contouring gyroid 17 1214 2520 53342a6a9d4b7356
+golden dual_contouring gyroid 25 2879 5880 75a3a92c951fb1b3
+golden dual_contouring gyroid 33 5240 10584 95560e50951d6b1d
+golden manifold_dual_contouring gyroid 17 1252 2520 6d4e320d886830b7
+golden manifold_dual_contouring gyroid 25 2938 5880 5c0cee3fe9a48879
+golden manifold_dual_contouring gyroid 33 5268 10584 8bca244eee0319b4
+golden subgrid_marching_tetrahedra gyroid 17 4014 8076 bb9b18583ffeafa2
+golden subgrid_marching_tetrahedra gyroid 25 9096 18240 539d532fe9e26f47
+golden subgrid_marching_tetrahedra gyroid 33 16158 32364 8e545f29db09d0e0
+golden greedy_quads fbm_terrain 17 1060 530 e75748bdc73183c7
+golden greedy_quads fbm_terrain 25 2288 1144 9804171e81654bce
+golden greedy_quads fbm_terrain 33 4356 2178 20a4695a007fcaea
+golden marching_cubes fbm_terrain 17 525 956 9c77932a5f4be5a2
+golden marching_cubes fbm_terrain 25 1156 2172 54f15521401c5a1c
+golden marching_cubes fbm_terrain 33 2069 3946 6e175cae91435e3c
+golden marching_cubes+decider fbm_terrain 17 525 956 00e5f54ab3a5975c
+golden marching_cubes+decider fbm_terrain 25 1156 2172 dc51bf23106bbb20
+golden marching_cubes+decider fbm_terrain 33 2069 3946 8cd8dd68a2d65d14
+golden marching_cubes+trilinear fbm_terrain 17 529 964 35e9ef40059059b1
+golden marching_cubes+trilinear fbm_terrain 25 1157 2174 6588f4f53f157d25
+golden marching_cubes+trilinear fbm_terrain 33 2079 3966 66f6b06a68e64793
+golden marching_tetrahedra fbm_terrain 17 1499 2836 a142acc370f787ba
+golden marching_tetrahedra fbm_terrain 25 3295 6352 6889f239978b01e1
+golden marching_tetrahedra fbm_terrain 33 5935 11544 3df9b8d225156e54
+golden surface_nets fbm_terrain 17 470 866 c8893b07a68a1312
+golden surface_nets fbm_terrain 25 1077 2036 5adf926b4a28c87d
+golden surface_nets fbm_terrain 33 1958 3758 0bd69352ee14d5f1
+golden dual_contouring fbm_terrain 17 470 866 ef9008a70b3d0e1f
+golden dual_contouring fbm_terrain 25 1077 2036 c9b7502fbb4fc958
+golden dual_contouring fbm_terrain 33 1958 3758 d1517ec06edb294e
+golden manifold_dual_contouring fbm_terrain 17 478 866 75c60d835280e551
+golden manifold_dual_contouring fbm_terrain 25 1086 2036 a4defa26b83bd671
+golden manifold_dual_contouring fbm_terrain 33 1973 3758 dfc384ff6a397ce0
+golden subgrid_marching_tetrahedra fbm_terrain 17 1758 3340 c4a99b70ad230cb9
+golden subgrid_marching_tetrahedra fbm_terrain 25 3730 7196 7756a0a4d2187822
+golden subgrid_marching_tetrahedra fbm_terrain 33 6537 12736 e3a2eecd76cf8910
+golden greedy_quads noise_cavity 17 3404 1702 03db2ed44d73bd2c
+golden greedy_quads noise_cavity 25 8400 4200 ed31841c053d74ea
+golden greedy_quads noise_cavity 33 14764 7382 7bc081ae95079bc3
+golden marching_cubes noise_cavity 17 1250 2560 6b1b1ace29e5a92a
+golden marching_cubes noise_cavity 25 3430 7016 d99dec0754ac39c0
+golden marching_cubes noise_cavity 33 6522 13236 94a13ab2ff033395
+golden marching_cubes+decider noise_cavity 17 1252 2380 c95be28f46cae8ad
+golden marching_cubes+decider noise_cavity 25 3439 6734 e246259726207526
+golden marching_cubes+decider noise_cavity 33 6536 13052 a20131d050e6a3ef
+golden marching_cubes+trilinear noise_cavity 17 1319 2526 5ab897661896665c
+golden marching_cubes+trilinear noise_cavity 25 3606 7084 332a60034bb6a0b3
+golden marching_cubes+trilinear noise_cavity 33 6747 13482 e5ce739c4c147d32
+golden marching_tetrahedra noise_cavity 17 3230 6488 8650b9f52375bc66
+golden marching_tetrahedra noise_cavity 25 9088 18236 465334a2bf62cc66
+golden marching_tetrahedra noise_cavity 33 17862 35832 59ad876281dbb4b5
+golden surface_nets noise_cavity 17 1123 2500 8eaad60e94125bb7
+golden surface_nets noise_cavity 25 3168 6860 55722a24614d34a5
+golden surface_nets noise_cavity 33 6176 13044 0f02c47a6ad0645c
+golden dual_contouring noise_cavity 17 1123 2500 299f1d782b6ad049
+golden dual_contouring noise_cavity 25 3168 6860 cfc73dacedd9fc78
+golden dual_contouring noise_cavity 33 6176 13044 ea0060630be7b540
+golden manifold_dual_contouring noise_cavity 17 1220 2500 3b094def7f3d81e4
+golden manifold_dual_contouring noise_cavity 25 3352 6860 f6875125072287d1
+golden manifold_dual_contouring noise_cavity 33 6426 13044 7f2bfbbdd5a830c7
+golden subgrid_marching_tetrahedra noise_cavity 17 5567 11682 c1a2ff067f53c0dc
+golden subgrid_marching_tetrahedra noise_cavity 25 12242 25088 8501c3698a9badec
+golden subgrid_marching_tetrahedra noise_cavity 33 22247 45082 1fa466877197b4c8

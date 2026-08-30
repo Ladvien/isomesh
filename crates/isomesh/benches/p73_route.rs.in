@@ -1,0 +1,383 @@
+// P-73 (R-073) cross-machine route hasher. Generated verbatim from
+// `crates/isomesh/benches/p73_route.rs.in` by `experiment_p73`.
+//
+// Single file, no dependencies, no build system: it must compile with a bare
+// `rustc --edition 2021 -C opt-level=3` on a machine that has never seen this
+// repository. That is the whole point -- C3 asks whether an *arithmetic* route
+// reproduces across architectures, and shipping a cargo workspace to answer it
+// would add a resolver, a lockfile and a registry to the list of things that
+// could have moved the answer.
+//
+// Input: one mesh file of exact IEEE bit patterns, written by the bench.
+// Output: `label hex` lines, one per hash.
+//
+// `acos_libm` is libm 0.2.16's `acos`, transcribed. Origin: FreeBSD
+// `/usr/src/lib/msun/src/e_acos.c`, (C) 1993 Sun Microsystems. Its only helper
+// is `sqrt`, which libm routes to `fsqrt` on aarch64+neon and `sqrtsd` on
+// x86-64+sse2; both are IEEE-754 correctly rounded, so `f64::sqrt` here is the
+// same function on both machines. `experiment_p73` asserts this transcription is
+// bit-identical to `libm::acos` over a 1,000,001-point sweep before it believes
+// any hash printed below.
+//
+// The gradient route's field expressions are transcribed from
+// `crates/isomesh/src/fields/mod.rs` operation for operation -- `Sphere`,
+// `Torus` and `BoxExact`, whose gradients need no transcendental at all -- and
+// the normalise from `src/normals.rs::from_field`. `program_matches_bench`
+// asserts every hash below equals the one the bench computed through the real
+// crate.
+
+use std::env;
+use std::fs;
+use std::process;
+
+// ── FNV-1a, mirroring `isomesh::validate::mesh_hash`'s hasher ───────────────
+
+struct Fnv(u64);
+
+impl Fnv {
+    fn new() -> Self {
+        Fnv(0xcbf29ce484222325)
+    }
+    fn write_u64(&mut self, v: u64) {
+        for b in v.to_le_bytes().iter() {
+            self.0 ^= *b as u64;
+            self.0 = self.0.wrapping_mul(0x100000001b3);
+        }
+    }
+    fn write_f64(&mut self, v: f64) {
+        self.write_u64(v.to_bits());
+    }
+}
+
+fn hash_normals(normals: &[[f64; 3]]) -> u64 {
+    let mut h = Fnv::new();
+    h.write_u64(normals.len() as u64);
+    for n in normals {
+        for c in n.iter() {
+            h.write_f64(*c);
+        }
+    }
+    h.0
+}
+
+const ACOS_SWEEP: u64 = 1_000_000;
+
+fn hash_acos(f: fn(f64) -> f64) -> u64 {
+    let mut h = Fnv::new();
+    for i in 0..=ACOS_SWEEP {
+        let x = -1.0 + 2.0 * (i as f64) / (ACOS_SWEEP as f64);
+        h.write_f64(f(x));
+    }
+    h.0
+}
+
+// ── libm 0.2.16 acos, transcribed ──────────────────────────────────────────
+
+const PIO2_HI: f64 = 1.57079632679489655800e+00;
+const PIO2_LO: f64 = 6.12323399573676603587e-17;
+const PS0: f64 = 1.66666666666666657415e-01;
+const PS1: f64 = -3.25565818622400915405e-01;
+const PS2: f64 = 2.01212532134862925881e-01;
+const PS3: f64 = -4.00555345006794114027e-02;
+const PS4: f64 = 7.91534994289814532176e-04;
+const PS5: f64 = 3.47933107596021167570e-05;
+const QS1: f64 = -2.40339491173441421878e+00;
+const QS2: f64 = 2.02094576023350569471e+00;
+const QS3: f64 = -6.88283971605453293030e-01;
+const QS4: f64 = 7.70381505559019352791e-02;
+
+fn acos_r(z: f64) -> f64 {
+    let p: f64 = z * (PS0 + z * (PS1 + z * (PS2 + z * (PS3 + z * (PS4 + z * PS5)))));
+    let q: f64 = 1.0 + z * (QS1 + z * (QS2 + z * (QS3 + z * QS4)));
+    p / q
+}
+
+fn acos_libm(x: f64) -> f64 {
+    let x1p_120f = f64::from_bits(0x3870000000000000);
+    let hx = (x.to_bits() >> 32) as u32;
+    let ix = hx & 0x7fffffff;
+    if ix >= 0x3ff00000 {
+        let lx = x.to_bits() as u32;
+        if ((ix - 0x3ff00000) | lx) == 0 {
+            if (hx >> 31) != 0 {
+                return 2. * PIO2_HI + x1p_120f;
+            }
+            return 0.;
+        }
+        return 0. / (x - x);
+    }
+    if ix < 0x3fe00000 {
+        if ix <= 0x3c600000 {
+            return PIO2_HI + x1p_120f;
+        }
+        return PIO2_HI - (x - (PIO2_LO - x * acos_r(x * x)));
+    }
+    if (hx >> 31) != 0 {
+        let z = (1.0 + x) * 0.5;
+        let s = z.sqrt();
+        let w = acos_r(z) * s - PIO2_LO;
+        return 2. * (PIO2_HI - (s + w));
+    }
+    let z = (1.0 - x) * 0.5;
+    let s = z.sqrt();
+    let df = f64::from_bits(s.to_bits() & 0xffffffff00000000);
+    let c = (z - df * df) / (s + df);
+    let w = acos_r(z) * s + c;
+    2. * (df + w)
+}
+
+fn acos_std(x: f64) -> f64 {
+    x.acos()
+}
+
+// ── vector helpers, mirroring `src/vec3.rs` ────────────────────────────────
+
+fn sub(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
+    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+
+fn scale(a: [f64; 3], s: f64) -> [f64; 3] {
+    [a[0] * s, a[1] * s, a[2] * s]
+}
+
+fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+
+fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
+}
+
+fn length(a: [f64; 3]) -> f64 {
+    dot(a, a).sqrt()
+}
+
+/// `src/normals.rs::from_field`'s normalise: length, then scale by its
+/// reciprocal. A degenerate sum hashes as `[0, 0, 0]` so that the array length
+/// is the vertex count on both machines.
+fn unit_or_zero(g: [f64; 3]) -> [f64; 3] {
+    let len = length(g);
+    if len > 0.0 && len.is_finite() {
+        scale(g, len.recip())
+    } else {
+        [0.0; 3]
+    }
+}
+
+fn clamp_unit(x: f64) -> f64 {
+    if x < -1.0 {
+        -1.0
+    } else if x > 1.0 {
+        1.0
+    } else {
+        x
+    }
+}
+
+// ── the six weightings ─────────────────────────────────────────────────────
+
+const AREA: usize = 3;
+
+fn weighted_sums(
+    positions: &[[f64; 3]],
+    indices: &[u32],
+    acos: fn(f64) -> f64,
+) -> Vec<Vec<[f64; 3]>> {
+    let mut acc: Vec<Vec<[f64; 3]>> = (0..6).map(|_| vec![[0.0f64; 3]; positions.len()]).collect();
+
+    let triangles = indices.len() / 3;
+    for t in 0..triangles {
+        let i = indices[3 * t] as usize;
+        let j = indices[3 * t + 1] as usize;
+        let k = indices[3 * t + 2] as usize;
+        if i >= positions.len() || j >= positions.len() || k >= positions.len() {
+            continue;
+        }
+        let a = positions[i];
+        let b = positions[j];
+        let c = positions[k];
+        let cr = cross(sub(b, a), sub(c, a));
+
+        for vertex in [i, j, k].iter() {
+            for axis in 0..3 {
+                acc[AREA][*vertex][axis] += cr[axis];
+            }
+        }
+
+        let twice_area = length(cr);
+        // `<= 0.0` is false for NaN, which `!is_finite()` then catches.
+        if twice_area <= 0.0 || !twice_area.is_finite() {
+            continue;
+        }
+        let face = scale(cr, twice_area.recip());
+
+        for corner in [(a, b, c, i), (b, c, a, j), (c, a, b, k)].iter() {
+            let (p0, p1, p2, vertex) = *corner;
+            let e1 = sub(p1, p0);
+            let e2 = sub(p2, p0);
+            let l1 = length(e1);
+            let l2 = length(e2);
+            let lprod = l1 * l2;
+            if lprod <= 0.0 || !lprod.is_finite() {
+                continue;
+            }
+            let weights = [
+                1.0,
+                acos(clamp_unit(dot(e1, e2) / lprod)),
+                (twice_area / lprod) / lprod,
+                0.0,
+                lprod.recip(),
+                lprod.sqrt().recip(),
+            ];
+            for w in [0usize, 1, 2, 4, 5].iter() {
+                for axis in 0..3 {
+                    acc[*w][vertex][axis] += weights[*w] * face[axis];
+                }
+            }
+        }
+    }
+    acc
+}
+
+// ── the gradient route, per fixture ────────────────────────────────────────
+
+fn gradient_sphere(p: [f64; 3]) -> [f64; 3] {
+    // `Sphere { center: 0, radius: 1 }`: `scale(d, length(d).recip())`.
+    let d = sub(p, [0.0; 3]);
+    let len = length(d);
+    scale(d, len.recip())
+}
+
+fn gradient_torus(p: [f64; 3]) -> [f64; 3] {
+    // `Torus { center: 0, major: 1, minor: 0.3 }`.
+    let d = sub(p, [0.0; 3]);
+    let s = (d[0] * d[0] + d[2] * d[2]).sqrt();
+    let q = [s - 1.0, d[1]];
+    let qlen = (q[0] * q[0] + q[1] * q[1]).sqrt();
+    let radial = q[0] / qlen;
+    [radial * (d[0] / s), q[1] / qlen, radial * (d[2] / s)]
+}
+
+fn gradient_box(p: [f64; 3]) -> [f64; 3] {
+    // `BoxExact::canonical()`: centre 0, half extents 1. `box_q` then
+    // `box_gradient`, transcribed.
+    let d = sub(p, [0.0; 3]);
+    let q = [d[0].abs() - 1.0, d[1].abs() - 1.0, d[2].abs() - 1.0];
+    let max_q = q[0].max(q[1]).max(q[2]);
+    if max_q > 0.0 {
+        let m = [q[0].max(0.0), q[1].max(0.0), q[2].max(0.0)];
+        let inv = length(m).recip();
+        [
+            d[0].signum() * m[0] * inv,
+            d[1].signum() * m[1] * inv,
+            d[2].signum() * m[2] * inv,
+        ]
+    } else {
+        let j = if q[0] >= q[1] && q[0] >= q[2] {
+            0
+        } else if q[1] >= q[2] {
+            1
+        } else {
+            2
+        };
+        let mut g = [0.0f64; 3];
+        g[j] = d[j].signum();
+        g
+    }
+}
+
+// ── input ──────────────────────────────────────────────────────────────────
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    if args.len() != 2 {
+        eprintln!("usage: route <mesh-file>");
+        process::exit(2);
+    }
+    let text = match fs::read_to_string(&args[1]) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("cannot read {}: {}", args[1], e);
+            process::exit(2);
+        }
+    };
+    let mut lines = text.lines();
+    let header: Vec<&str> = match lines.next() {
+        Some(h) => h.split_whitespace().collect(),
+        None => {
+            eprintln!("empty mesh file");
+            process::exit(2);
+        }
+    };
+    if header.len() != 4 {
+        eprintln!("bad header");
+        process::exit(2);
+    }
+    let field = header[0].to_string();
+    let nvert: usize = header[2].parse().expect("vertex count in the header");
+    let ntri: usize = header[3].parse().expect("triangle count in the header");
+
+    let mut positions: Vec<[f64; 3]> = Vec::with_capacity(nvert);
+    for _ in 0..nvert {
+        let line = lines.next().expect("one line per vertex");
+        let mut it = line.split_whitespace();
+        let mut p = [0.0f64; 3];
+        for axis in 0..3 {
+            let hex = it.next().expect("three bit patterns per vertex");
+            p[axis] = f64::from_bits(
+                u64::from_str_radix(hex, 16).expect("a 16-digit hex bit pattern"),
+            );
+        }
+        positions.push(p);
+    }
+    let mut indices: Vec<u32> = Vec::with_capacity(ntri * 3);
+    for _ in 0..ntri {
+        let line = lines.next().expect("one line per triangle");
+        for tok in line.split_whitespace() {
+            indices.push(tok.parse().expect("a u32 vertex index"));
+        }
+    }
+
+    let labels = [
+        "conn_equal",
+        "conn_angle",
+        "conn_sine_edge_length_recip",
+        "conn_adjacent_triangle_area",
+        "conn_edge_length_recip",
+        "conn_sqrt_edge_length_recip",
+    ];
+
+    println!("fixture {}", field);
+
+    let libm_sums = weighted_sums(&positions, &indices, acos_libm);
+    for w in 0..6 {
+        let normals: Vec<[f64; 3]> = libm_sums[w].iter().map(|s| unit_or_zero(*s)).collect();
+        println!("{} {:016x}", labels[w], hash_normals(&normals));
+    }
+
+    let std_sums = weighted_sums(&positions, &indices, acos_std);
+    let std_angle: Vec<[f64; 3]> = std_sums[1].iter().map(|s| unit_or_zero(*s)).collect();
+    println!("conn_angle_std_acos {:016x}", hash_normals(&std_angle));
+
+    let gradient: fn([f64; 3]) -> [f64; 3] = match field.as_str() {
+        "sphere" => gradient_sphere,
+        "torus" => gradient_torus,
+        "box_exact" => gradient_box,
+        other => {
+            eprintln!("no gradient transcription for {}", other);
+            process::exit(2);
+        }
+    };
+    let grad: Vec<[f64; 3]> = positions
+        .iter()
+        .map(|p| unit_or_zero(gradient(*p)))
+        .collect();
+    println!("grad {:016x}", hash_normals(&grad));
+
+    println!("acos_sweep_libm {:016x}", hash_acos(acos_libm));
+    println!("acos_sweep_std {:016x}", hash_acos(acos_std));
+}

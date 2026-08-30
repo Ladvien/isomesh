@@ -1106,7 +1106,7 @@ fn main() {
         let mut rotated = MeshBuffer::<f64>::new();
         let mut c1_population = 0usize;
         let mut c1_rows_at_48 = 0usize;
-        let mut c1_can_fail_at_48 = 0usize;
+        let mut rows_at_48_all_rows = 0usize;
         let mut fixture_columns_match = true;
         let mut c2_fixtures_with_moved_edges = 0usize;
         let mut c2_fixtures = 0usize;
@@ -1241,14 +1241,27 @@ fn main() {
                     );
                     fixture_columns_match &= matched;
 
+                    // **Two counts, and which one wears the obvious name is C5
+                    // of the 2026-08-27 audit.** C1 is denominated in
+                    // `fixture_can_fail` rows -- that is what `c1_population`
+                    // counts, and 98 of the 112 rows qualify. The count that
+                    // belongs beside that denominator is the one over the same
+                    // subset, so `c1_rows_at_48` carries it. For two commits it
+                    // carried the all-rows count instead: 36 of 112 sitting
+                    // next to a population of 98, a numerator and a denominator
+                    // over different sets, and the honestly-named
+                    // `c1_can_fail_rows_at_48` two columns further along held
+                    // the clause's own 28. A reader who grabbed the obvious
+                    // column got the wrong ratio; the obvious column is now the
+                    // right one, and the all-rows count keeps its own name.
                     if b.fixture_can_fail {
                         c1_population += 1;
                         if m.vertex_exact == GROUP_ORDER {
-                            c1_can_fail_at_48 += 1;
+                            c1_rows_at_48 += 1;
                         }
                     }
                     if m.vertex_exact == GROUP_ORDER {
-                        c1_rows_at_48 += 1;
+                        rows_at_48_all_rows += 1;
                     }
 
                     println!(
@@ -1379,7 +1392,7 @@ fn main() {
         );
 
         // ── the aggregates, and the verdicts ────────────────────────────────
-        let c1_holds = c1_can_fail_at_48 == c1_population;
+        let c1_holds = c1_rows_at_48 == c1_population;
         let c2_holds = c2_fixtures_with_moved_edges == c2_fixtures;
         let c3_holds = worst_hausdorff_ratio < 0.01 && worst_si_ratio < 0.01;
 
@@ -1407,7 +1420,7 @@ fn main() {
 
         println!(
             "\nC1 {}/{} fixture-can-fail rows at 48 -> {}",
-            c1_can_fail_at_48,
+            c1_rows_at_48,
             c1_population,
             if c1_holds { "HELD" } else { "FALSIFIED" }
         );
@@ -1431,7 +1444,7 @@ fn main() {
         let aggregates: Row = vec![
             ("c1_population", c1_population.to_string()),
             ("c1_rows_at_48", c1_rows_at_48.to_string()),
-            ("c1_can_fail_rows_at_48", c1_can_fail_at_48.to_string()),
+            ("rows_at_48_all_rows", rows_at_48_all_rows.to_string()),
             ("c1_holds", c1_holds.to_string()),
             (
                 "c2_fixtures_with_moved_edges",

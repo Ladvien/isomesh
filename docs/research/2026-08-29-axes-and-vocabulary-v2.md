@@ -294,7 +294,7 @@ denominator), *quality* (unseparated from shape, size and alignment), *fractal* 
 
 # Part 4 — the six transfers I'd rank first
 
-All are registered as `P-103`…`P-152` in
+All are registered as `P-123`…`P-172` in
 `docs/research/2026-08-29-fifty-experiments-from-unmined-mathematics.md`. Ranked by *what they change
 if they land*, not by how likely they are to land.
 

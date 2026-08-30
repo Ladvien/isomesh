@@ -1,0 +1,123 @@
+# P-81 C2 cross-machine fixture: the peer machine's contact digests.
+#
+# Produced by running `cargo bench -p isomesh --bench experiment_p81` on an Apple M5
+# (MacBook Air, `aarch64-apple-darwin`, rustc 1.96.1 (31fca3adb 2026-06-26),
+# cargo 1.96.1, macOS 26.5.2, 10 cores, 32 GiB), and reading the three
+# `P-81 c2 ...` lines the bench prints before any other arm runs. The bench was
+# built and run UNMODIFIED: `counted` already carries a
+# `cfg(not(target_os = "linux"))` arm and the `common::counters` import is
+# `cfg`-gated, so no macOS patch was needed and none was applied.
+#
+# Provenance of the binary these came from, because "the same bench" has to be
+# checkable rather than asserted:
+#
+#   tree            rsync of Cargo.toml, Cargo.lock, crates/, scripts/ from
+#                   /home/ladvien/isomesh (branch phase-24-registrations,
+#                   HEAD 63c7161, working tree dirty) to ~/p81_peer on mac_air.
+#                   `.git` was not copied, which is why the peer's own CSV
+#                   provenance line reads `# commit unknown on apple-m5`.
+#   bench source    crates/isomesh/benches/experiment_p81.rs
+#                   md5 b648e531c0a1ab0964009b020a82ed50, verified equal on both
+#                   machines immediately before the peer build. This is the
+#                   revision the committed `docs/experiments/p-81.csv` was
+#                   measured from, so the peer table and the committed row
+#                   describe one binary.
+#   peer run        finished 2026-08-28T00:09:11Z (the peer CSV's own provenance
+#                   line). Cold build of the whole graph 31.5 s; this run's
+#                   incremental rebuild 3.9 s; 44.0 s wall for the whole
+#                   invocation as observed from the driving host.
+#   machine slug    apple-m5   (scripts/machine.sh --slug)
+#
+# WHAT THIS FILE IS FOR. `experiment_p81.rs` compares its own 64 block digests
+# against `PEER_BLOCK_DIGESTS`. That constant was briefly a 64-entry table of
+# zeros, which would have scored C2 bit-identical against nothing; it was
+# replaced by `Option<[u64; 64]> = None` -- BLOCKED, with the blocker named in a
+# `c2_blocker` column -- and then by these values. No placeholder ever reached an
+# artefact: the intermediate peer CSV wrote
+# `contacts_bit_identical=BLOCKED, c2_blocker=no-peer-digest-table-committed`.
+#
+# WHAT A DIGEST IS. Sixty-four blocks of 15,625 consecutive queries out of 10^6,
+# each block reseeded to the FNV-1a-64 offset basis, folding four raw `f32` bit
+# patterns per query -- contact point x, y, z, then depth -- over each `u32`'s
+# four little-endian bytes, in the order the bench emits them.
+#
+# THE CHEAP CROSS-CHECK CAME OUT RIGHT. The peer printed `evals=22000000`,
+# exactly 10^6 * (GSS_ITERATIONS + 2) = 10^6 * 22, so the two machines walked the
+# same pose stream and spent the same fixed number of field samples on every
+# query. Without that the digest comparison would be void.
+#
+# THE RESULT, checked in three independent directions.
+#
+#   1. Whole-run and control digests, Apple M5 == Zen 3:
+#        whole-run digest  0x2be626c099a75222
+#        branchy digest    0x4067d5c9b10dcc68
+#        arch line         aarch64 rustc-target-independent evals=22000000
+#      The whole-run digest folds continuously over all 10^6 records, so
+#      agreement there is a stronger statement than the 64 blocks are.
+#
+#   2. The Zen 3 run reading THIS table: `differing_blocks 0` of 64,
+#      `differing_contacts 0` of 10^6, `contacts_bit_identical true`,
+#      `c2_blocker none` -- the committed row.
+#
+#   3. The M5 run reading THIS table, on the same source revision:
+#      `c2 true (0 blocks differ)`. So the comparison closes from both sides.
+#
+#   4. An independent Zen 3 run from a scratch copy of the tree outside the
+#      repository (`/tmp/p81_verify`, its own `target/`, its own CSV) printed all
+#      64 block digests and they diff clean against the 64 below --
+#      x86_64 against aarch64, block for block, not merely via the fold. That
+#      run also reproduced C1 independently -- separate tree, separate `target/`,
+#      separate process, both arms inside it so `M-281` holds -- at speedup
+#      8.032x and field 4.785 us/query against the committed row's 7.989x and
+#      4.876 us/query: 0.54% apart on the ratio. Its CSV went to
+#      `/tmp/p81_verify/docs/experiments/p-81.csv`; the committed file's
+#      provenance line still reads `2026-08-28T00:07:43Z`, unchanged.
+#
+# WHAT THE PEER RUN ALSO MEASURED. Not the committed row -- `M-281` says compare
+# within one build and one run -- but these are the only second-machine readings
+# of C1 and C3 that exist:
+#
+#   c1_33   3,944 tris   query_us_field 2.949046   query_us_trimesh 20.736844   speedup  7.031713
+#   c1_65  16,882 tris   query_us_field 2.967071   query_us_trimesh 64.057673   speedup 21.589533
+#   c3      seam_crossings 495  contacts_trimesh 196601  internal_edge_contacts 172315
+#           ghost_contacts_trimesh 93298  ghost_contacts_field VACUOUS
+#
+# The field arm is flat in triangle count across the two C1 arms -- 3,944 to
+# 16,882 triangles, 4.28x more geometry, moves it 2.949046 -> 2.967071 us, i.e.
+# 0.61%, while parry's BVH descent goes 20.736844 -> 64.057673 us, i.e. 3.09x --
+# which is C1's mechanism stated as two pairs of numbers rather than as a
+# ratio. `ghost_contacts_trimesh` = 93,298 and the 495 crossings reproduce the
+# Zen 3 EXACTLY, so C3's fixture and its registered vacuity control are
+# machine-independent.
+#
+# THE ONE CROSS-MACHINE DISAGREEMENT, and it is not in the digest.
+# `internal_edge_contacts` reads 172,315 on the M5 against 172,316 on the Zen 3:
+# one contact in 172,316, about 6e-6. That column is incremented from
+# `classify(&window, index, c.point2, c.normal2)` where `c` is
+# `parry3d::query::contact(capsule, triangle)`, so it is a pure function of
+# PARRY's witness point and of nothing in the GSS path. It is evidence that
+# parry 0.30's capsule-vs-triangle narrowphase -- glamx, SIMD, reassociation
+# sensitive -- is not bit-portable between x86_64 and aarch64, while the field
+# arm compared against it in the same binary on the same two machines is. One
+# contact is evidence of non-portability, not a rate. It sets the precision of
+# the C3 comparison at ~6e-6 and it cannot be read as weakening C2.
+#
+# COUNTERS ARE ABSENT OFF LINUX AND THE ROW SAYS SO. `counted` returns no
+# hardware counts on macOS, so the peer CSV writes the literal `unavailable` in
+# `ghz`, `cycles_per_query_field`, `cycles_per_query_trimesh`, `cycles_speedup`,
+# `branch_misses_per_query_field` and `branch_misses_per_query_branchy`. An
+# earlier revision wrote `0.0` and `0.0000` there instead -- a fabricated zero on
+# an otherwise real row, and the failure `P-64`'s column shift is remembered for.
+# It was found by this peer run and fixed. With no clock on the peer row its
+# absolute microseconds are not comparable to the Zen 3's; only the 7.03x and
+# 21.59x ratios are.
+
+# The 64 block digests, in emission order, eight per line -- paste-ready.
+0x60d340e2a8015da9 0xc5c5fa16ffc333e8 0x963d90b215781b8a 0x92a9a88eccc9b92e 0x43342364a40a27ab 0x4095bf5ddbd384bb 0x97e3e09ba5963e82 0xf078cedc7f89ea35
+0x04ce8b83041e3644 0x78bba7d4cfc02986 0xa649a268e9cd9a54 0x9a74f1cb22041ab0 0x545932dad1f9a55f 0xe5ab781e8f808a2c 0x8e9ad6a8092affb0 0x69bdeb66e1f9774f
+0x66b27ee59734dae9 0x72fcc009f31fa845 0xfa33cd509ff58a57 0x99ef61fed2b84a42 0x9b0c4fa2c61331ae 0x92ba97da6b20c2a8 0x9edeb0481efd8f90 0x37c43a8330ae7c5c
+0x0bdda64765f42af8 0xf0e202234d830656 0x702238011fd9498d 0xb8053270dd9b3483 0xd02f2f82d4baf999 0x28b5d8d9f1751f04 0xa423b451cafa3c20 0xc5c9b8d846f46222
+0x6823251e9ad2eda2 0x42fc44a81163ed39 0x9ec8f2baf072506f 0xf49bbd065418e291 0x94bb242f20b4cf4f 0xfd554fe6933d7e91 0xbb4a0566d84023d7 0x50610a00e569fc10
+0x353c723b1f04e2ec 0xd2697adaf5e36609 0x8e9111181f2ff89b 0xa1846c1b719e342e 0xf63210fecc4b5124 0xd9e2fe23a325768f 0x559e563567f86275 0x15b6abfabe111c06
+0x097669bd293b9b32 0x7a802bc735706309 0x22c38891da97c55a 0x4b6603eb52baef90 0x3a8838c3430ac52b 0xa30c530aeed73919 0x713b71e248cd0bca 0x44e91947efe9ba3b
+0xab1058c03aea6287 0x3eea1314228a83fa 0x38c41f7019851d7e 0xda6bafe66885b951 0x876404f496931fa3 0xd961fb0e408cae3b 0xfd42e863cce5f1ca 0x688a93e143b80c65

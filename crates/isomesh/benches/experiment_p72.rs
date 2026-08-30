@@ -601,14 +601,24 @@ fn main() {
     }
 
     // ── verdict ──────────────────────────────────────────────────────────────
-    let spread = best_per_field
+    //
+    // Two spreads, and the distinction is C4 of the 2026-08-27 audit. `spread`
+    // is **per field**, because that is what its name says and because
+    // `best_chunk_cells` and `worst_chunk_cells` beside it have always been
+    // looked up per field — a row reading `fbm_terrain` carried `gyroid`'s
+    // 51.045955 for two commits, so `M-377`'s own 47.19x was derivable from the
+    // file and not recorded in it. `spread_max_over_fields` is the quantity C1
+    // and C3 are denominated in: both clauses are about the sweep, not about one
+    // field, and a per-field column alone would leave the verdict with no
+    // column behind it (`P-70`'s C3, the other half of the same audit).
+    let spread_max = best_per_field
         .iter()
         .map(|(_, _, b, w)| w / b)
         .fold(0.0f64, f64::max);
-    let c1 = spread >= 2.0;
+    let c1 = spread_max >= 2.0;
     let optima: Vec<u32> = best_per_field.iter().map(|(_, c, _, _)| *c).collect();
     let c2 = optima.iter().any(|c| *c != optima[0]);
-    let c3 = spread < 4.0;
+    let c3 = spread_max < 4.0;
 
     for (name, best, b, w) in &best_per_field {
         println!(
@@ -617,7 +627,7 @@ fn main() {
         );
     }
     println!(
-        "\nC1 pronounced optimum (>= 2x): {spread:.4}x -> {}",
+        "\nC1 pronounced optimum (>= 2x): {spread_max:.4}x -> {}",
         if c1 { "HELD" } else { "FALSIFIED" }
     );
     println!(
@@ -625,7 +635,7 @@ fn main() {
         if c2 { "HELD" } else { "FALSIFIED" }
     );
     println!(
-        "C3 spread below GVDB's 256x and under 4x: {spread:.4}x -> {}",
+        "C3 spread below GVDB's 256x and under 4x: {spread_max:.4}x -> {}",
         if c3 { "HELD" } else { "FALSIFIED" }
     );
 
@@ -677,7 +687,18 @@ fn main() {
                 .find(|(n, _)| *n == f)
                 .map_or_else(|| "NA".to_string(), |(_, c)| c.clone())
         }));
-        row.push(("spread", format!("{spread:.6}")));
+        row.push(("spread", {
+            let f = row
+                .iter()
+                .find(|(k, _)| *k == "field")
+                .map(|(_, v)| v.clone())
+                .unwrap_or_default();
+            best_per_field
+                .iter()
+                .find(|(n, _, _, _)| *n == f)
+                .map_or_else(|| "NA".to_string(), |(_, _, b, w)| format!("{:.6}", w / b))
+        }));
+        row.push(("spread_max_over_fields", format!("{spread_max:.6}")));
         row.push(("c1_holds", c1.to_string()));
         row.push(("c2_holds", c2.to_string()));
         row.push(("c3_holds", c3.to_string()));

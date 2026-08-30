@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The symbolic check behind P-103/R-103.
+"""The symbolic check behind P-123/R-123.
 
 Claim: `b*b - 4*a*c`, built from the coefficients in
 `crates/isomesh/src/marching_cubes/trilinear.rs:200-214` and consumed at :246, is
