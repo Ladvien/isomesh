@@ -261,6 +261,10 @@
 //!   crate's `AMBIGUOUS_FACES` marks must be ambiguous by the derived table.
 
 #![allow(
+    // Each of these loops indexes several parallel arrays by the same integer,
+    // so an iterator over one of them would obscure the correspondence rather
+    // than clarify it.
+    clippy::needless_range_loop,
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
     clippy::too_many_lines
@@ -610,6 +614,10 @@ struct Digital {
     /// Samples whose sign at index `n` differs from index `0` on some axis.
     /// Periodic domains only, and it must be zero.
     wrap_sign_mismatches: u64,
+    /// Boundary pairs whose GLUED OCCUPANCY disagrees. Zero by construction of
+    /// the modular copy; asserted rather than assumed, because it is what χ is
+    /// computed from.
+    wrap_occupancy_mismatches: u64,
 }
 
 /// Digitise `{f < 0}` from a sample grid.
@@ -666,6 +674,7 @@ fn digitise(values: &[f64], samples: [usize; 3], domain: Domain) -> Digital {
     }
 
     let mut wrap_sign_mismatches = 0u64;
+    let mut wrap_occupancy_mismatches = 0u64;
     if domain == Domain::Periodic {
         // The last layer of the extended array is the first layer of the torus.
         // Written from the occupancy rather than from `values[n]`, because
@@ -685,8 +694,6 @@ fn digitise(values: &[f64], samples: [usize; 3], domain: Domain) -> Digital {
             }
         }
         for axis in 0..3 {
-            let mut far = [0usize; 3];
-            far[axis] = voxels[axis];
             for b in 0..samples[(axis + 1) % 3] {
                 for c in 0..samples[(axis + 2) % 3] {
                     let mut near = [0usize; 3];
@@ -694,12 +701,26 @@ fn digitise(values: &[f64], samples: [usize; 3], domain: Domain) -> Digital {
                     near[(axis + 2) % 3] = c;
                     let mut away = near;
                     away[axis] = voxels[axis];
+                    // The RAW SAMPLE signs, which are NOT expected to agree:
+                    // `sin(2*pi*N)` is `-2.4e-16`, not `0.0`, so a sample
+                    // sitting on the surface flips sign between the two ends
+                    // of the same period. Measured on the gyroid at N=1: 3 of
+                    // them. This is a diagnostic column, not a gate — the
+                    // occupancy above is glued modularly, so the torus is
+                    // correct regardless.
                     if sample(near[0], near[1], near[2]) != sample(away[0], away[1], away[2]) {
                         wrap_sign_mismatches += 1;
                     }
+                    // The GLUED OCCUPANCY, which must agree exactly: this is
+                    // what χ is computed from, and it is the assertion that
+                    // protects it.
+                    let ni = near[0] + extent[0] * (near[1] + extent[1] * near[2]);
+                    let ai = away[0] + extent[0] * (away[1] + extent[1] * away[2]);
+                    if occupied[ni] != occupied[ai] {
+                        wrap_occupancy_mismatches += 1;
+                    }
                 }
             }
-            let _ = far;
         }
     }
 
@@ -710,6 +731,7 @@ fn digitise(values: &[f64], samples: [usize; 3], domain: Domain) -> Digital {
         inside,
         boundary_inside,
         wrap_sign_mismatches,
+        wrap_occupancy_mismatches,
     }
 }
 
@@ -862,8 +884,14 @@ struct Oracle {
     cells: u64,
     /// Cells failing Etiene et al. §4.1's unambiguity test.
     ambiguous_cells: u64,
-    /// Periodic sign mismatches across the period; must be zero.
+    /// Periodic RAW-SAMPLE sign mismatches across the period. Expected
+    /// non-zero: `sin(2*pi*N)` is `-2.4e-16` rather than `0.0`, so a sample on
+    /// the surface flips sign between the two ends of one period (M-48's
+    /// class). A diagnostic, not a gate.
     wrap_sign_mismatches: u64,
+    /// Periodic GLUED-OCCUPANCY mismatches. Zero by construction of the
+    /// modular copy, and the assertion that protects χ.
+    wrap_occupancy_mismatches: u64,
 }
 
 /// Sample the field on the grid, digitise `{f < 0}`, and read χ off the block
@@ -901,6 +929,7 @@ fn run_oracle<S: Sdf<Scalar = f64>>(
         cells,
         ambiguous_cells,
         wrap_sign_mismatches: digital.wrap_sign_mismatches,
+        wrap_occupancy_mismatches: digital.wrap_occupancy_mismatches,
     }
 }
 
@@ -1079,11 +1108,31 @@ fn extract_and_read<S: Sdf<Scalar = f64>>(
     let counted = tpms::euler(&mesh.positions, &mesh.indices, tol);
     let cfg = ValidateConfig::from_cell_size(cell_size)
         .expect("every cell size here is finite and positive");
-    let report = validate_indexed(&mesh.positions, &mesh.indices, &cfg);
+
+    // **The cross-check must compare like with like, and the first run proved
+    // it was not.** `tpms::euler` WELDS coincident positions before counting;
+    // `validate_indexed` counts the indexed mesh as given. Marching Cubes
+    // caches one vertex per grid edge, so the two agree — except where two
+    // different grid edges produce the SAME position, which is exactly M-48's
+    // degenerate crossing (a sample landing on the isovalue). Welding merges
+    // that pair, dropping one referenced vertex and therefore χ by one:
+    // measured -175 against -174 on the wrapped gyroid, a difference of
+    // exactly one coincident pair.
+    //
+    // So the check is run on a welded copy, and the unwelded-minus-welded χ
+    // gap is recorded as its own quantity — it is the coincident-vertex count,
+    // not an instrument fault.
+    let mut welded = mesh.clone();
+    let mut welder = isomesh::weld::Welder::new();
+    welder
+        .weld(&mut welded, tol)
+        .expect("welding an extracted mesh at its own epsilon");
+    let report = validate_indexed(&welded.positions, &welded.indices, &cfg);
     assert_eq!(
         counted.chi, report.euler_characteristic,
-        "VOID: common::tpms::euler and validate_indexed disagree about V-E+F at \
-         one weld tolerance on {}, so the instrument is what failed",
+        "VOID: common::tpms::euler and validate_indexed disagree about V-E+F on \
+         the SAME welded mesh on {}, so the instrument is what failed rather \
+         than the two conventions differing",
         arm.name
     );
     (
@@ -1370,13 +1419,22 @@ fn main() {
 
         // The periodic identification is exact.
         for row in rows.iter().filter(|r| r.periods.is_some()) {
+            // The GLUED OCCUPANCY must be periodic; the raw sample signs are
+            // not expected to be. `sin(2*pi*N)` is `-2.4e-16`, not `0.0`, so a
+            // sample lying on the surface flips sign between the two ends of
+            // one period — measured: 3 on the gyroid at N=1 (M-48's class).
+            // Gating on the sample signs would have refused a correct torus
+            // for a floating-point reason the construction already handles by
+            // copying the occupancy modularly rather than resampling.
             assert!(
-                row.oracle.wrap_sign_mismatches == 0,
-                "VOID: {} signs disagree between sample 0 and sample n on \
-                 gyroid_nodal N={}, so the torus occupancy is glued to the wrong \
-                 layer and its chi is not the chi of any closed surface",
-                row.oracle.wrap_sign_mismatches,
-                opt_u64(row.periods.map(u64::from))
+                row.oracle.wrap_occupancy_mismatches == 0,
+                "VOID: {} boundary pairs of the GLUED occupancy disagree on \
+                 gyroid_nodal N={}, so the torus is glued to the wrong layer and \
+                 its chi is not the chi of any closed surface ({} raw sample \
+                 signs also disagree, which is expected and is a column)",
+                row.oracle.wrap_occupancy_mismatches,
+                opt_u64(row.periods.map(u64::from)),
+                row.oracle.wrap_sign_mismatches
             );
             assert!(
                 row.seam_pairs.unwrap_or(0) > 0,
