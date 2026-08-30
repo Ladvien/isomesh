@@ -546,20 +546,10 @@ fn main() {
              claim has no range to track"
         );
 
-        // C2: the deviation must be monotone non-decreasing in k over the
-        // positive sweep — recorded as a summary row so the verdict is one
-        // number a reader can find.
-        let positive: Vec<(f64, f64)> = deviations
-            .iter()
-            .copied()
-            .filter(|(k, _)| *k > 0.0)
-            .collect();
-        let monotone = positive.windows(2).all(|w| w[1].1 >= w[0].1);
-        let grows = positive
-            .last()
-            .zip(positive.first())
-            .is_some_and(|(last, first)| last.1 > first.1);
-        let c2 = monotone && grows;
+        // C2's verdict is computed above, before any row is emitted, because it
+        // is a statement about the SWEEP and therefore belongs on every row.
+        // The summary row below carries the whole deviation series so a reader
+        // has the evidence in one place.
 
         run.record(&[
             ("reconstruction", "smooth_min-summary".to_string()),
