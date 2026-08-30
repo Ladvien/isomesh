@@ -357,10 +357,7 @@ impl Sym3 {
              A metric from metric_lp is floored at H_FLOOR = {H_FLOOR:e} and cannot land here",
             values[0]
         );
-        Self::from_eigen(
-            [values[0].ln(), values[1].ln(), values[2].ln()],
-            vectors,
-        )
+        Self::from_eigen([values[0].ln(), values[1].ln(), values[2].ln()], vectors)
     }
 
     /// Matrix exponential via the eigendecomposition.
@@ -446,9 +443,7 @@ pub(crate) fn hessian<S: Sdf<Scalar = f64>>(sdf: &S, p: [f64; 3], h: f64) -> Sym
         "hessian needs a positive finite step; got {h}"
     );
 
-    let at = |offset: [f64; 3]| {
-        sdf.sample([p[0] + offset[0], p[1] + offset[1], p[2] + offset[2]])
-    };
+    let at = |offset: [f64; 3]| sdf.sample([p[0] + offset[0], p[1] + offset[1], p[2] + offset[2]]);
     let centre = at([0.0; 3]);
     let inv_h2 = 1.0 / (h * h);
 
@@ -469,8 +464,7 @@ pub(crate) fn hessian<S: Sdf<Scalar = f64>>(sdf: &S, p: [f64; 3], h: f64) -> Sym
             offset[j] = sj * h;
             at(offset)
         };
-        out[slot] = (corner(1.0, 1.0) - corner(1.0, -1.0) - corner(-1.0, 1.0)
-            + corner(-1.0, -1.0))
+        out[slot] = (corner(1.0, 1.0) - corner(1.0, -1.0) - corner(-1.0, 1.0) + corner(-1.0, -1.0))
             * (0.25 * inv_h2);
     }
 
@@ -572,10 +566,7 @@ pub(crate) fn interp_componentwise(a: &Sym3, b: &Sym3, t: f64) -> Sym3 {
 ///
 /// Both arguments must be positive-definite; see [`Sym3::log`].
 pub(crate) fn interp_log_euclidean(a: &Sym3, b: &Sym3, t: f64) -> Sym3 {
-    a.log()
-        .scale(1.0 - t)
-        .add(&b.log().scale(t))
-        .exp()
+    a.log().scale(1.0 - t).add(&b.log().scale(t)).exp()
 }
 
 /// max/min `|eigenvalue|` of the metric, i.e. the anisotropy of the element it
@@ -704,8 +695,8 @@ pub(crate) fn principal_curvatures<S: Sdf<Scalar = f64>>(
         gradient[slot] = (sdf.sample(plus) - sdf.sample(minus)) / (2.0 * h);
     }
 
-    let norm = (gradient[0] * gradient[0] + gradient[1] * gradient[1] + gradient[2] * gradient[2])
-        .sqrt();
+    let norm =
+        (gradient[0] * gradient[0] + gradient[1] * gradient[1] + gradient[2] * gradient[2]).sqrt();
     if !norm.is_finite() || norm <= GRAD_FLOOR {
         return None;
     }

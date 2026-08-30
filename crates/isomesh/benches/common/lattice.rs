@@ -47,7 +47,9 @@
 //! each lattice, which [`zero_set_hausdorff`] consumes without caring how it was
 //! produced.
 
-use isomesh::marching_cubes::table::{CASES, EDGE_CORNERS, corner_inside, edge_index, face_corners};
+use isomesh::marching_cubes::table::{
+    CASES, EDGE_CORNERS, corner_inside, edge_index, face_corners,
+};
 
 /// Corners of a cube.
 const CUBE_CORNERS: usize = 8;
@@ -372,7 +374,10 @@ pub(crate) fn lattice_grid(
     hi: [f64; 3],
     target_points: usize,
 ) -> LatticeGrid {
-    assert!(target_points > 0, "a lattice grid of zero points is not a grid");
+    assert!(
+        target_points > 0,
+        "a lattice grid of zero points is not a grid"
+    );
     assert!(
         hi[0] > lo[0] && hi[1] > lo[1] && hi[2] > lo[2],
         "lattice_grid needs a non-degenerate box, got {lo:?}..{hi:?}"
@@ -392,13 +397,19 @@ pub(crate) fn lattice_grid(
     while count_at(s_lo) < target_points {
         s_lo *= 0.75;
         guard += 1;
-        assert!(guard < 256, "no scale dense enough for {target_points} points");
+        assert!(
+            guard < 256,
+            "no scale dense enough for {target_points} points"
+        );
     }
     guard = 0;
     while count_at(s_hi) > target_points {
         s_hi *= 1.25;
         guard += 1;
-        assert!(guard < 256, "no scale sparse enough for {target_points} points");
+        assert!(
+            guard < 256,
+            "no scale sparse enough for {target_points} points"
+        );
     }
     for _ in 0..48 {
         let mid = 0.5 * (s_lo + s_hi);
@@ -680,8 +691,7 @@ fn cubic_case_table() -> CaseTable {
     for (case, expected) in shipped.iter().enumerate() {
         let generated = cubic_triangles_for_case(case as u8);
         assert_eq!(
-            generated,
-            *expected as usize,
+            generated, *expected as usize,
             "generated cubic case table disagrees with isomesh::marching_cubes::table::CASES \
              at case {case}: {generated} triangles against the shipped {expected}"
         );
@@ -708,19 +718,17 @@ fn cubic_triangles_for_case(case: u8) -> usize {
     // Two incident segments per cut edge, filled in as the faces are walked.
     let mut link = [[NO_LINK; 2]; CUBE_EDGES];
     let mut degree = [0usize; CUBE_EDGES];
-    let join = |a: u8,
-                b: u8,
-                link: &mut [[u8; 2]; CUBE_EDGES],
-                degree: &mut [usize; CUBE_EDGES]| {
-        assert!(
-            degree[a as usize] < 2 && degree[b as usize] < 2,
-            "a cut edge received a third segment on case {case}"
-        );
-        link[a as usize][degree[a as usize]] = b;
-        degree[a as usize] += 1;
-        link[b as usize][degree[b as usize]] = a;
-        degree[b as usize] += 1;
-    };
+    let join =
+        |a: u8, b: u8, link: &mut [[u8; 2]; CUBE_EDGES], degree: &mut [usize; CUBE_EDGES]| {
+            assert!(
+                degree[a as usize] < 2 && degree[b as usize] < 2,
+                "a cut edge received a third segment on case {case}"
+            );
+            link[a as usize][degree[a as usize]] = b;
+            degree[a as usize] += 1;
+            link[b as usize][degree[b as usize]] = a;
+            degree[b as usize] += 1;
+        };
 
     for axis in 0..3usize {
         for side in 0..2u8 {
@@ -741,14 +749,20 @@ fn cubic_triangles_for_case(case: u8) -> usize {
                 }
                 let edge = edge_index(ring[from], ring[to]);
                 if inside_to {
-                    assert!(pending.is_none(), "two entries without an exit on case {case}");
+                    assert!(
+                        pending.is_none(),
+                        "two entries without an exit on case {case}"
+                    );
                     pending = Some(edge);
                 } else {
                     let entry = pending.take().expect("an exit must follow an entry");
                     join(entry, edge, &mut link, &mut degree);
                 }
             }
-            assert!(pending.is_none(), "a face run was never closed on case {case}");
+            assert!(
+                pending.is_none(),
+                "a face run was never closed on case {case}"
+            );
         }
     }
 
@@ -1092,7 +1106,25 @@ pub(crate) fn trilinear_reconstruct(grid: &LatticeGrid, values: &[f64], p: [f64;
 }
 
 /// Newton iterations allowed when projecting a point onto a field's zero set.
-const PROJECTION_STEPS: usize = 64;
+///
+/// **1024, not 64, and the difference is a measured verdict rather than a
+/// margin.** Gradient-Newton converges linearly, not quadratically, on a CSG
+/// crease where the field is a `max` of two smooth pieces: R-162 instrumented
+/// the cap crease of `noise_cavity` at `[-1.405105, 0.0, 0.523810]`, `|p| =
+/// 1.4996` against the `r = 1.5` sphere, and measured a contraction of about
+/// `0.965` per step — 64 steps take `|f|` only from `4.48e-3` to `4.74e-4`, so
+/// the projection aborted and no CSV was produced at all. The budget was also
+/// silently dropping legitimate probes on every CSG field, which
+/// **under-reports** Hausdorff in the truth-to-reconstruction direction:
+/// `csg_difference`'s cubic Hausdorff moves `6.135e-2` to `6.570e-2` when the
+/// budget rises, and its lattice verdict flips from `-0.177 dB` to `+0.417 dB`.
+/// At 1024 the stall count falls from 240 to 86, and 80 of those 86 are the
+/// identical value `5.7180e-2` — a genuine positive local minimum of the `max`
+/// where no zero lies along any descent path, which is the legitimate drop this
+/// module documents. Verdicts are identical at 512 and 1024, so the numbers are
+/// insensitive to the budget once it is large enough, and the whole 49^3 sweep
+/// costs 37.0 s against 35.2 s — inside this host's governor noise.
+const PROJECTION_STEPS: usize = 1024;
 /// Seed for the probe stream in [`zero_set_hausdorff`]. Fixed, so the number is
 /// reproducible; changing it changes the measurement.
 const PROBE_SEED: u64 = 0x1362_A3B5_D1E7_9F11;

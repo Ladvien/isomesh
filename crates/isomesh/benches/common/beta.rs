@@ -774,11 +774,7 @@ fn normalise(v: [f64; 3]) -> [f64; 3] {
 ///
 /// Deliberately duplicated from `common::metric` — see the module header.
 fn jacobi_eigen(mut a: [[f64; 3]; 3]) -> ([f64; 3], [[f64; 3]; 3]) {
-    let mut v = [
-        [1.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.0, 0.0, 1.0],
-    ];
+    let mut v = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
     // Six sweeps of three rotations is far beyond convergence for 3x3: each
     // sweep squares the off-diagonal norm, so this terminates on the tolerance
     // long before the count, and the count only bounds a pathological input.
