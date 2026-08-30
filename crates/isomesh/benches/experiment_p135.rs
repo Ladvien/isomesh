@@ -486,7 +486,27 @@ fn main() {
                 ((delta_k - delta_base) / delta_base).abs()
             };
             deviations.push((k, deviation));
+        }
 
+        // C2 is a statement about the SWEEP, so its verdict is global and is
+        // stamped on every row. The first draft wrote `pending-sweep` into the
+        // registered `c2_holds` column on the seven sweep rows, which is a
+        // placeholder and not a verdict — the per-row quantity is
+        // `deviation_at_k`, and that is where per-row information belongs.
+        let positive: Vec<(f64, f64)> = deviations
+            .iter()
+            .copied()
+            .filter(|(k, _)| *k > 0.0)
+            .collect();
+        let monotone = positive.windows(2).all(|w| w[1].1 >= w[0].1);
+        let grows = positive
+            .last()
+            .zip(positive.first())
+            .is_some_and(|(last, first)| last.1 > first.1);
+        let c2 = monotone && grows;
+
+        for (k, deviation) in deviations.iter().copied() {
+            let delta_k = delta_f64(&smooth_min_corners(k));
             run.record(&[
                 ("reconstruction", "smooth_min".to_string()),
                 // Not multi-affine for any k > 0: inside the seam shell the
@@ -499,7 +519,7 @@ fn main() {
                 ("tricubic_degree", "1".to_string()),
                 ("cases_touched", "256".to_string()),
                 ("c1_holds", "true".to_string()),
-                ("c2_holds", "pending-sweep".to_string()),
+                ("c2_holds", c2.to_string()),
                 // ── extras (M-273) ──
                 (
                     "arm_role",
