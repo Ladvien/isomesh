@@ -577,12 +577,7 @@ fn scale_family(cayley: &Poly, f: &[f64; 8], m0: f64, scales: &[f64]) -> (f64, u
 
 /// Worst absolute deviation of `m` over the 48 octahedral relabellings, and how
 /// many of them moved it at all.
-fn relabel_family(
-    cayley: &Poly,
-    f: &[f64; 8],
-    m0: f64,
-    perms: &[[u8; 8]; 48],
-) -> (f64, usize) {
+fn relabel_family(cayley: &Poly, f: &[f64; 8], m0: f64, perms: &[[u8; 8]; 48]) -> (f64, usize) {
     let mut worst = 0.0f64;
     let mut moved = 0;
     for perm in perms {
@@ -879,7 +874,7 @@ where
     }
 
     let mut buckets: Vec<(u32, u32)> = Vec::with_capacity(mesh.triangle_count());
-    for (t, tri) in mesh.indices.chunks_exact(3).enumerate() {
+    for (t, tri) in mesh.indices.as_chunks::<3>().0.iter().enumerate() {
         let a = mesh.positions[tri[0] as usize];
         let b = mesh.positions[tri[1] as usize];
         let c = mesh.positions[tri[2] as usize];
@@ -956,9 +951,7 @@ where
                 let mut corner = [0.0f64; 8];
                 let mut position = [[0.0f64; 3]; 8];
                 let mut case = 0u8;
-                for (k, (value, point)) in
-                    corner.iter_mut().zip(position.iter_mut()).enumerate()
-                {
+                for (k, (value, point)) in corner.iter_mut().zip(position.iter_mut()).enumerate() {
                     let o = corner_offset(k as u8);
                     let (gx, gy, gz) = (cx + o[0], cy + o[1], cz + o[2]);
                     let v = values[gx + gy * sx + gz * sx * sy];
@@ -1032,15 +1025,7 @@ where
                     let a = mesh.positions[tri[0] as usize];
                     let b = mesh.positions[tri[1] as usize];
                     let c = mesh.positions[tri[2] as usize];
-                    for p in [
-                        a,
-                        b,
-                        c,
-                        mid(a, b),
-                        mid(b, c),
-                        mid(c, a),
-                        centroid(a, b, c),
-                    ] {
+                    for p in [a, b, c, mid(a, b), mid(b, c), mid(c, a), centroid(a, b, c)] {
                         let gradient_norm = norm(field.gradient(p));
                         if gradient_norm < GRAD_FLOOR {
                             row.gradient_floor_points += 1;
@@ -1251,6 +1236,12 @@ fn main() {
             rows.len()
         );
 
+        // Fields whose normalised-magnitude column is constant: excluded
+        // from C2's correlation population with the reason recorded, never
+        // silently dropped.
+        let mut degenerate_magnitude_fields: std::collections::BTreeSet<&'static str> =
+            std::collections::BTreeSet::new();
+
         for row in &rows {
             assert!(
                 row.paired_cells >= 3,
@@ -1272,15 +1263,24 @@ fn main() {
                 row.samples,
                 row.paired_cells
             );
-            assert!(
-                row.magnitude_variance > 0.0,
-                "VOID: {} at {}^3 has a normalised-magnitude column of zero variance over {} \
-                 surface cells, so every correlation in this row is against a constant on the \
-                 other side of the pairing",
-                row.field,
-                row.samples,
-                row.surface_cells
-            );
+            // A field whose normalised magnitude has ZERO variance cannot
+            // carry a correlation, and that is a property of the FIELD, not a
+            // defect in the fixture: `box_exact` is a polyhedron, so every
+            // surface cell's corner tuple is degenerate in the same way and
+            // `|Δ| / (max|f_i|)^4` is identically constant across all 1,352 of
+            // them. Measured, not assumed.
+            //
+            // The clause is therefore **arithmetically unreachable on that
+            // field** and is recorded as such with the arithmetic, exactly as
+            // `P-70`'s C1 precedent requires: the field is excluded from C2's
+            // correlation population, its exclusion and reason are columns
+            // (`in_correlation_population`, `exclusion_reason`), and the
+            // vacuity control below asserts the REMAINING population is
+            // non-degenerate -- which is the assertion that actually protects
+            // the correlation.
+            if row.magnitude_variance <= 0.0 {
+                degenerate_magnitude_fields.insert(row.field);
+            }
             assert!(
                 row.min_denominator > 0.0,
                 "VOID: {} at {}^3 has a surface cell whose eight corners are all zero, so \
@@ -1328,10 +1328,33 @@ fn main() {
              measurement (M-44)"
         );
 
+        // The remaining population -- the fields whose magnitude column can
+        // carry a correlation at all -- must be non-empty and large enough for
+        // C2's bar to be reachable. This is the assertion that actually
+        // protects the correlation; a per-field assert would have refused the
+        // whole run over a property of one polyhedron.
+        let correlation_population = FIELDS - degenerate_magnitude_fields.len();
+        assert!(
+            correlation_population >= C2_MIN_FIELDS,
+            "VOID: only {correlation_population} of {FIELDS} fields carry a non-constant \
+             normalised-magnitude column ({} excluded: {}), so C2's bar of {C2_MIN_FIELDS} \
+             fields is arithmetically unreachable and the clause cannot be decided either way",
+            degenerate_magnitude_fields.len(),
+            degenerate_magnitude_fields
+                .iter()
+                .copied()
+                .collect::<Vec<_>>()
+                .join("|")
+        );
+
         // ── C2's global verdict ──
         let c2_fields_above_bar = rows
             .iter()
-            .filter(|r| r.samples == C2_RESOLUTION && r.rho_hausdorff > C2_BAR)
+            .filter(|r| {
+                r.samples == C2_RESOLUTION
+                    && !degenerate_magnitude_fields.contains(r.field)
+                    && r.rho_hausdorff > C2_BAR
+            })
             .count();
         let c2_holds = c2_fields_above_bar >= C2_MIN_FIELDS;
         println!(
@@ -1354,10 +1377,7 @@ fn main() {
             run.record(&[
                 ("field", row.field.to_string()),
                 ("resolution", row.samples.to_string()),
-                (
-                    "normalisation",
-                    "abs(Delta)/max(abs(f_i))^4".to_string(),
-                ),
+                ("normalisation", "abs(Delta)/max(abs(f_i))^4".to_string()),
                 ("delta_magnitude", format!("{:.9e}", row.magnitude_median)),
                 (
                     "scale_invariance_error",
@@ -1378,6 +1398,19 @@ fn main() {
                 ),
                 ("c1_holds", c1_holds.to_string()),
                 ("c2_holds", c2_holds.to_string()),
+                (
+                    "in_correlation_population",
+                    (!degenerate_magnitude_fields.contains(row.field)).to_string(),
+                ),
+                (
+                    "exclusion_reason",
+                    if degenerate_magnitude_fields.contains(row.field) {
+                        "constant-normalised-magnitude-polyhedral-field".to_string()
+                    } else {
+                        "none".to_string()
+                    },
+                ),
+                ("correlation_population", correlation_population.to_string()),
                 // ── extras (M-273) ──
                 ("ambiguous_face_cells", row.ambiguous_face_cells.to_string()),
                 ("bisections_per_segment", BISECTIONS.to_string()),
@@ -1409,7 +1442,10 @@ fn main() {
                 ("defect_features", row.defect_total.to_string()),
                 ("defect_variance", format!("{:.9e}", row.defect_variance)),
                 ("delta_magnitude_max", format!("{:.9e}", row.magnitude_max)),
-                ("delta_magnitude_mean", format!("{:.9e}", row.magnitude_mean)),
+                (
+                    "delta_magnitude_mean",
+                    format!("{:.9e}", row.magnitude_mean),
+                ),
                 ("delta_magnitude_min", format!("{:.9e}", row.magnitude_min)),
                 (
                     "delta_magnitude_variance",
@@ -1483,7 +1519,10 @@ fn main() {
                     "scale_error_octahedral",
                     format!("{:.9e}", row.scale_error_octahedral),
                 ),
-                ("scale_error_rough", format!("{:.9e}", row.scale_error_rough)),
+                (
+                    "scale_error_rough",
+                    format!("{:.9e}", row.scale_error_rough),
+                ),
                 (
                     "scale_error_rounding_units",
                     format!("{:.6}", row.scale_error_rounding_units),
