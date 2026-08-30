@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-316 tickets. Line numbers are stable until something above them is edited — grep the ID if
+366 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -2997,3 +2997,403 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***What this earns, what it refuses, and what stays open.*** **It earns no follow-on ticket, and that is not a refusal under `✗51` — it is that there is no candidate.** `✗51`'s bar is about a mechanism that wins its microbenchmark and moves under 1% of an extraction; `P-126` proposes no mechanism, claims no share, has no Amdahl denominator and asks for no source change, so there is nothing to price and nothing to decline. What it earns instead is already landed: a standing nightly gate whose single implementation is the binary that produced this dataset, so a future regression is caught by the same instrument that closed the question, naming the arm, the `worst_link_components` value and the `worst_link_pattern`. `O-12` asked for *"an exhaustive search over configurations spanning more than two cells … or a proof that a cell-local cycle triangulation plus shared face segments cannot produce a non-manifold vertex"* — `M-374` gave the first for Marching Cubes' edge vertices at 2¹⁸, and this row gives **both** for the dual, on the smallest block in which a cell has all 26 neighbours, against three controls that read 2. **Two things are deliberately left open and named rather than glossed.** Exhaustivity is over signs *and* over 3-periodic fields — 2²⁷ of the 2⁶⁴ a free 4³ block admits, each configuration visited 128 times — and over no magnitudes at all; the latter is not the gap `M-374`'s four magnitude draws were, because every clause here is a function of the sign byte and the joined mask and both are swept exhaustively, but a free non-periodic field over more than 3 × 3 × 3 cells is outside this sweep and outside the nightly gate, and no clause claims it. And this row is **silent about MDC's other non-manifoldness**, which is at an *edge*, not a vertex: `M-224`/`M-225` locate it exactly — a shared ambiguous face whose four cut edges lie in one cycle on both sides puts four quads on one dual edge, predicted from the grid alone at 30, 64, 8 and 40 with zero error — and `M-234` closed it by decision rather than by code. A manifold vertex link is not a manifold mesh, the two mechanisms are independent, and nothing here weakens or reopens `M-234`'s stated limit.
 >
 > ***Verification.*** `scripts/csv_provenance.sh` passes with `docs/experiments/p-126.csv` resolving to **`1f95b95`** — `# commit 1f95b95 on amd-ryzen-9-5900x-12-core at 2026-08-29T02:43:08Z`, no `(WORKING TREE DIRTY)`, an ancestor of `HEAD`. The file itself is carried by `f28d557` (`p-126.csv - re-run on a clean tree`, one file, eleven insertions), and the stamped sha being `1f95b95` — `p-125.csv`'s commit — is the serial clean-tree loop working exactly as designed rather than a discrepancy: run *k+1* names run *k*'s commit because run *k*'s dataset was committed before run *k+1* started, which is the only way `git status --porcelain` is empty at the moment a harness stamps its header. `cargo clippy -p isomesh --bench experiment_p126 -- -D warnings` is clean — carried from `5e5ff1b`'s own preflight gate and **not** re-run for this write-up, which is stated rather than implied. Every integer above was re-read from the committed CSV **by column name**, six rows at a time, and not copied from the harness's stdout or from `5e5ff1b`'s commit message: `patterns_swept`, `active_cells`, `dual_vertices`, `dual_vertices_with_complete_link`, `worst_link_components`, `link_defective_vertices`, `max_incident_faces`, `incomplete_link_vertices`, `isolated_vertices`, `cycles_per_256_sign_bytes`, the three `expected_*` columns, the eight `replica_*` columns and all six `wall_seconds`. The closed forms were recomputed here rather than trusted — 27 × 2¹⁹ × 254 = 3,595,567,104, 27 × 2¹⁹ × 358 = 5,067,767,808, 27 × 2¹⁹ × 338 = 4,784,652,288, 27 × 2¹⁹ × 8 = 113,246,208, and 860,880,896 + 4,206,886,912 = 5,067,767,808 — and the module doc, the registration, `nightly.yml` and `M-374`'s entry were read in full for the mechanism prose. **Deliberately not claimed:** that `mdc/every_ambiguous_face_joined`'s per-case cycle counts match `mdc/separate`'s (the file carries only the 358 aggregate, and a pairing swap on an ambiguous face can merge *or* split, so per-case equality does not follow); that the two unscored `wall_seconds` observations are attributions rather than consistencies; that `expected_link_defective_vertices` exists for any arm but `control/one_vertex_per_cell`, where it is `113,246,208` and asserted, the other five reading `unavailable` because an inconsistent joined bit and an open boundary are not functions of the sign byte alone; and that anything here bears on non-periodic fields, on larger blocks, or on the edge-level defect `M-234` closed by decision.
+
+| ☑ | **R-127** | S | — |
+> **DONE 2026-08-30 — 🔬 M-440 / P-127: C1, C2 and C3 all HELD — `b*b - 4*a*c` at `marching_cubes/trilinear.rs:246` **is** Cayley's `2×2×2` hyperdeterminant of the eight corner values, `symbolic_residual_terms` **0** over 12 terms at total degree 4, all **3** axis pairings agreeing, and `max_abs_ratio_deviation` exactly `0/1` over **3,481** exact rational trials**
+> **CSV:** `docs/experiments/p-127.csv` — 3 rows × 58 columns.
+>
+> ***The identity was already known and was worth nothing, which is the part worth copying: the one artefact that proved it before this row needs `sympy`, no gate in the repository names that file, so the identity had been known for exactly as long as it had been unenforced. `M-206`'s twelve digits — two independently derived constructions agreeing to `1.1e-12` — are now the `f64` shadow of an exact identity rather than a coincidence, because all three slicings of one pencil compute the same degree-4 form.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-127.csv` stamped `# commit 8c63041 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** nothing beyond the three clauses. `f32_sign_disagreements` **14** is handed to `R-134` as a count rather than scored here, `wall_ns` is read by nothing, and landing this would change nothing in the shipped path — `trilinear.rs:246` computes the same twelve-term form after this row as before it.
+
+| ☑ | **R-128** | S | `R-127` |
+> **DONE 2026-08-30 — 🔬 M-441 / P-128: C1 and C2 both HELD on **48 of 48** rows — `count_disagreements`, `sign_disagreements` and `corner_value_mismatches` are **0** over **7,077,888** cells at cell aspect ratios 1, 4 and 8, and the `GL(2)³` weight is `(det g₁ det g₂ det g₃)²` as an exact `i128` equality on 500 of 500 trials**
+> **CSV:** `docs/experiments/p-128.csv` — 48 rows × 37 columns.
+>
+> ***`sign(Δ)` is an absolute invariant of the `GL(2)³` action because the relative-invariant weight is a perfect square, and `sign(Δ)` is exactly what `trilinear.rs:246-250` branches on — so `InteriorAmbiguity::Trilinear` resolves the same way at aspect ratio 8 as at aspect ratio 1, and the untested assumption every anisotropic-cell path in Group D was about to lean on has been tested rather than assumed.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-128.csv` stamped `# commit ca5c3bd on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** nothing beyond the two clauses. The four-conjunct wording in the harness header is stale against the three the code computes, so `csg_difference`'s four rows read `c1_holds` **true** while carrying `gl2_sign_variant_cells` 2 and 10 — both are quoted rather than collapsed into a clean zero — and `cell_size` is not an argument of any `BodySaddles` entry point, so there was never a cost for cell geometry to move.
+
+| ☑ | **R-129** | S | `R-127` |
+> **DONE 2026-08-30 — 💥 ✗99 / M-442 / P-129: C1 FALSIFIED on every conjunct at once — `speedup` **0.329** against a registered `10×` bar, so the Δ arm is **3.04× slower**, and `agreement` **false** with `sweep_disagreements` **251,011 of 291,592** cells — C2 HELD with `negation_violations` **0**, C3 FALSIFIED because neither of its two registered outcomes was available**
+> **CSV:** `docs/experiments/p-129.csv` — 1 rows × 23 columns.
+>
+> ***The registration's cost model was wrong and an integer count proved it before any clock ran: Δ-invariance under the 48-element cube group costs one evaluation per element, so `relabellings_per_delta` reads 0.980 — the algebraic check does more work per cell than the sweep it was to replace, and a ratio below 1 cannot become 10× on any host.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-129.csv` stamped `# commit 3a1b69a on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** the 10× speedup is falsified rather than deferred, and `agreement` is falsified with it, so no equivalence between the Δ check and the shipped sweep is claimed in either direction; C3's two registered outcomes were both unavailable, so nothing is claimed in its direction at all, and CI keeps the sweep.
+
+| ☑ | **R-130** | M | `R-127` |
+> **DONE 2026-08-30 — 💥 ✗100 / M-443 / P-130: C1 FALSIFIED with `delta_zero_share` reaching **1.000000** on `box_exact` against a registered bar of **0.001**, `c1_zero_bar_holds` false on **9 of 24** rows; C2 FALSIFIED and arithmetically unreachable on 24 of 24; C3 HELD on `sphere` at `rank_two_share` **1.000000****
+> **CSV:** `docs/experiments/p-130.csv` — 24 rows × 56 columns.
+>
+> ***`Δ = 0` is not a thin wall: on a piecewise-linear field it is the whole surface — every one of `box_exact`'s surface cells sits exactly on the hyperdeterminant hypersurface — and rank is genuinely not a function of the case index on 9 of 24 rows, so C2's own falsifier missed too.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-130.csv` stamped `# commit 08ce8bd on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** C2 could not have held on any fixture — `ambiguous = g(case)` makes `I(R;A) ≤ I(R;K)` a data-processing inequality, `mi_gap_bits` **0 to 0.988699** and never negative — so it is recorded unreachable with that one line rather than as a near miss. Nothing is claimed for a rank stratification as a stage: the case index already dominates rank at predicting ambiguity on every row.
+
+| ☑ | **R-131** | M | `R-127` |
+> **DONE 2026-08-30 — 🔬 M-444 / P-131: C1, C2 and C3 all HELD on **29 of 29** arms — the `discriminant == 0` branch at `marching_cubes/trilinear.rs:250` fires **143** times across `csg_difference` at 17 / 41 / 85, and of **3,858** branch hits **2,222** are true rank 3 with border rank 2**
+> **CSV:** `docs/experiments/p-131.csv` — 29 rows × 89 columns.
+>
+> ***The branch is not the tangency the comment describes: a `Det = 0` cell is generically rank 3 with border rank 2, the registered W-state fixture reaches it at `w_state_rank` 3 against `w_state_border_rank` 2, and on the eight reference fields not one of those cells reaches the trilinear emission path — so no triangle moves and what must change is the comment.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-131.csv` stamped `# commit 277ce7b on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no geometry claim: no triangle in any shipped mesh is affected, and `mesh_delta_triangles` is non-zero on exactly three synthetic arms. `branch_rank_one_total` **0** is recorded as arithmetically unreachable on that exit rather than as an empty measurement, and `exact_arithmetic` reads `false` on all 24 reference-field rows, which is disclosed rather than smoothed over.
+
+| ☑ | **R-132** | M | `R-127` |
+> **DONE 2026-08-30 — 💥 ✗101 / M-445 / P-132: C1 FALSIFIED at three of six orbit labels populated (`unpopulated_orbits` = `zero|rank1|zero-rank2`), C2 HELD hard at `chi_square` **445.967205** on `dof` **2** against `critical_value_0.05` **5.991**, C3 HELD both ways**
+> **CSV:** `docs/experiments/p-132.csv` — 3 rows × 20 columns.
+>
+> ***The row's most reusable output is what T-001's defect population on these fields actually is: zero non-manifold edges, zero non-manifold vertices, zero self-intersecting pairs, and nothing but degenerate triangles — while the decomposable `zero-rank1.1` stratum's `defect_rate_per_orbit` is exactly 0.000000000 over 58,737 cells and contributes 327.649 of the 445.967 by itself.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-132.csv` stamped `# commit 356358e on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** three orbit labels are unpopulated and are *named* rather than claimed absent by measurement, which is the clause's own registered escape hatch discharged in the same column; the row proposes nothing for the shipped path, and every rate in the file carries `cells_in_orbit` beside it so no rate is a share of a total.
+
+| ☑ | **R-133** | M | `R-127` |
+> **DONE 2026-08-30 — 💥 ✗102 / M-446 / P-133: C2 FALSIFIED on an integer before any clock is read — `naive_ops` **27** against `filter_ops` **65** is `op_count_ratio` **2.407407**, already past the registered `1.5×`, and the clocks then read `c2_aggregate_ratio` **54.435863** — C1 HELD on exactly **2** fields, C3 HELD on `fbm_terrain` alone**
+> **CSV:** `docs/experiments/p-133.csv` — 48 rows × 71 columns.
+>
+> ***A static floating-point filter cannot certify an exactly zero Δ, and three of eight fields put 84–100% of their surface cells there: `|Δ̂| > K·u·P̂` is unsatisfiable when Δ is exactly 0 no matter how cheap the filter is, so the 54× is two different failures added together and separating them is the row's most useful output.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-133.csv` stamped `# commit a7cf04b on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no speedup and no slowdown claim survives to the extraction level: `saddle_share` spans **4.2e-05 to 0.006853** with a median of **0.000346**, so the stage this could reach is at most **0.6853%** of an extraction and `✗51`'s bar bites from both ends. Two places where the file disagrees with its own header are reported rather than amended.
+
+| ☑ | **R-134** | S | `R-127` |
+> **DONE 2026-08-30 — 💥 ✗103 / M-447 / P-134: C1 HELD exactly with `scale_error_dyadic` **0.000000000e0** on 16 of 16, C2 FALSIFIED at **3 of 8** fields above the `0.50` bar against a registered **4**, decided at `c2_resolution` 65**
+> **CSV:** `docs/experiments/p-134.csv` — 16 rows × 74 columns.
+>
+> ***`box_exact`'s clause is not failed, it is arithmetically unreachable, and the row records that with its arithmetic rather than counting it as a miss: a polyhedron's `|Δ| / (max|fᵢ|)⁴` is identically 0, so `delta_magnitude_variance` reads 0.000000000e0 over its 1,352 surface cells and `correlation_population` is 7, not 8.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-134.csv` stamped `# commit 1eb925d on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no adaptivity criterion is offered, because C2 is falsified — and the arithmetic behind "none" is still worth the line: the magnitude is **46 flops on data already in the extractor's registers**, so had C2 held the criterion would have been free at the point of use and the cost would have been the refinement it triggered. `thin_plate`'s **−0.926920** is not quoted without the column beside it.
+
+| ☑ | **R-135** | S | `R-127` |
+> **DONE 2026-08-30 — 🔬 M-448 / P-135: C1 and C2 both HELD — the identity survives the trilinear control and fails *structurally* on a tricubic with `symbolic_residual_terms` **56** named non-zero terms, and the six committed `smooth_min(k)` deviations are exactly `k − (7/16)k²`**
+> **CSV:** `docs/experiments/p-135.csv` — 10 rows × 24 columns.
+>
+> ***Group A's boundary is now a number rather than an assumption: every claim in the group rests on the reconstruction being multi-affine, and the deviation from the multi-affine `Δ` tracks `k` to all nine recorded digits — 9.995625000e-4 at `k = 0.001` rising to 3.906250000e-1 at `k = 0.5`, `deviation_monotone` and `deviation_grows` both true — which is the `O(k)` seam shell the 2026-08-23 memo measured and is what joins the scope statement to `M-38`.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-135.csv` stamped `# commit 88955ec on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** nothing beyond the two clauses. This is a scope statement and it moves nothing — **zero bytes** under `crates/isomesh/src/**`, zero golden hashes, zero field samples, zero meshes extracted — so landing it would be no change to the shipped path; three column readings that are tokens rather than measurements are reported and not amended.
+
+| ☑ | **R-136** | S | `R-127` |
+> **DONE 2026-08-30 — 🧊 M-449 / P-136: C1 and C2 both HELD and the registered null came back exactly as registered — the best of all eight sign-only rules scores `population_agreement_rate` **0.985600** against a `population_base_rate` of **0.985600** for a rule that never looks, `delta_information_gain` **0.000000****
+> **CSV:** `docs/experiments/p-136.csv` — 20 rows × 42 columns.
+>
+> ***The number that carries the whole row is a difference of two identical figures: `sign(Δ)` is worth nothing on the interior test, and the reason is a group action rather than a fitted number — `delta_blind_to_face_negation` is true while that same negation moves the separated count from 225 to 4,113.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-136.csv` stamped `# commit e9bf133 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** nothing at all, which is the row's purpose: it exists to stop the overclaim that the 730-subcase table follows from the invariant. It does not, there is no mechanism here to land, and both vacuity controls fired — `joined_count` 15,400 against `separated_count` 225, so C1 could not have held for any reason but the fixture.
+
+| ☑ | **R-137** | S | — |
+> **DONE 2026-08-30 — 🔬 M-450 / P-137: C1, C2 and C3 all HELD on 25 of 25 rows — the trilinear's "at most 2" is the mixed volume `8 − 6 + 0 = 2` of three unit squares read off the partials' own supports, reproduced independently as an eliminant of degree exactly 2 in `w`, with `cells_with_three_or_more` **0** on every row**
+> **CSV:** `docs/experiments/p-137.csv` — 25 rows × 60 columns.
+>
+> ***`SADDLE_COUNT`'s 2 is a different theorem and the file exhibits the difference rather than asserting it: `grad_disc_degree` 6 against `repo_disc_degree` 4, root sets differing on 31,883 census cells and agreeing on 7 — two derivations, one number, and neither of them is Grosso's sentence.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-137.csv` stamped `# commit 00291e5 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** nothing beyond the three clauses. `SADDLE_COUNT` is right and is now *derivable* rather than transcribed, so this replaces an authority citation with a derivation and changes nothing in the shipped path; the one thing a reader must not do is carry `SADDLE_COUNT` across to `∇f = 0`, and one place the CSV disagrees with the harness header is reported rather than amended.
+
+| ☑ | **R-138** | M | — |
+> **DONE 2026-08-30 — 🔬 M-451 / P-138: C1 and C2 both HELD — tricubic `mixed_volume` **116** against the trilinear's **2** (`mv_vs_trilinear` **58.000000**, two disjoint routes agreeing on all three arms) while the case space goes `2^8` → `2^64` and `case_space_tractable` flips to **false****
+> **CSV:** `docs/experiments/p-138.csv` — 3 rows × 38 columns.
+>
+> ***The price is in the table rather than in the bound, and the sharpest sentence the row gives the roadmap is about the rung nobody registered: the unregistered triquadratic arm is the only step that has both order and a tabulable table, `mixed_volume` 29 over `2^27` = 134,217,728.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-138.csv` stamped `# commit f72384f on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** nothing — this prices a decision, it does not make one. `P-157` now argues against **116**, `2^64` and `case_space_tractable = false` instead of against a memory of a memo, and landing it would be no change to the shipped path; two places where the CSV is more honest than the harness's own header table are flagged rather than corrected.
+
+| ☑ | **R-139** | M | — |
+> **DONE 2026-08-30 — 🔬 M-452 / P-139: C1 and C3 HELD and `c2_holds` true on **4 rows of 16** — Kuhn's six tetrahedra are regular, exhibited by the lifting the LP's own back-substitution returned, `w(S) = −|S|(|S|−1)/2` with heights `0|0|0|−1|0|−1|−1|−3`, verified against all 24 inequalities *and* a 70-subset lower-hull enumeration**
+> **CSV:** `docs/experiments/p-139.csv` — 16 rows × 60 columns.
+>
+> ***The sharpest thing in the row is that Plantinga–Vegter's certificate does not bound the component count of the surface marching tetrahedra actually emits: the registered PW/PV comparison disagrees on 22,841 of 99,932 active cells in both directions, `pw_yes_pv_no` 9,923 against `pw_no_pv_yes` 12,918.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-139.csv` stamped `# commit 695933f on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no component bound is claimed from a PV certificate. C2's 12 non-holding rows are reported as a divergence between two instruments rather than as one being wrong, the two liftings the brief proposed are both measured wrong rather than quietly dropped, and what a consumer gains is a sentence worth exactly zero microseconds.
+
+| ☑ | **R-140** | M | — |
+> **DONE 2026-08-30 — 🔬 M-453 / P-140: C1 and C2 both HELD on all **560** rows — six fields with topology prescribed *by construction*, genus **1, 2, 3, 2, 3, 5** and `prescribed_chi` **{0, −2, −4, −2, −4, −8}** by two derivations sharing no algebra, and every one of **7** extractors reproduces every prescribed `χ`, all 56 pairs correct at 49³**
+> **CSV:** `docs/experiments/p-140.csv` — 560 rows × 37 columns.
+>
+> ***Sampling adequacy is a commensurability property of the lattice and the feature, not a width, and the sweep is where that is visible rather than merely arguable: `graph_cube_g5`, the highest-genus fixture, is perfect at 7³ and 11³ and meshes literally nothing at 9³ — and a correct Euler characteristic is not a manifoldness certificate, which this file demonstrates over 560 rows with `measured_genus` `none` on 10 of the 56 finest-rung pairs.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-140.csv` stamped `# commit 71e5474 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** the six fields are **bench-local** and are deliberately not added to `for_each_reference_field!`. One new reference field adds **27** rows to `crates/isomesh/golden_hashes.json` (9 algorithm labels × 3 resolutions; the file's 216 is 8 × 27) and moves `scripts/doc_facts.sh`'s `FIELDS` and `HASHES` counts, gated as prose across **twelve** documents — so the shipped suite gains nothing until `R-177` lands them with that ripple priced.
+
+| ☑ | **R-141** | L | — |
+> **DONE 2026-08-30 — 🔬 M-454 / P-141: C2 and C3 HELD and `c1_holds` true on **2,112 queries of 2,304** — z3 5.1.0 re-derived `AMBIGUOUS_FACES` entry by entry over every real corner assignment, `cases_matching_table` **1,536 of 1,536** with `cases_disagreeing` **0**, and refuted the shipped `Separate` default on **192 of 192** ambiguous faces in **1.185 s****
+> **CSV:** `docs/experiments/p-141.csv` — 2304 rows × 46 columns.
+>
+> ***The case table is machine-derivable in under seven minutes of solver time on one desktop, over every real corner assignment rather than over a sample — 399.598 s and 2,304 hash-stamped `.smt2` certificates — and the dossier's rejection of CAD as global, doubly exponential, needs arbitrary precision priced a runtime cost for something that is run once in a project's lifetime.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-141.csv` stamped `# commit eb205ed on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no witness is claimed for the **192** nested-quantifier queries that hit the 2 s cap with `terminated=false` — that is C1's registered second branch, not a defect — and C3's zero is a zero over an *empty adjudicated population*, with the arithmetic that empties it stated rather than left to be inferred. `CASES` and `AMBIGUOUS_FACES` are read, never rebuilt.
+
+| ☑ | **R-142** | S | — |
+> **DONE 2026-08-30 — 💥 ✗104 / M-455 / P-142: C1 HELD to the integer on **16 of 16** in-scope rows (`chi_measured` = `chi_predicted` = **-8 / -64 / -216** at `N = 1, 2, 3`), C2 HELD with `genus_measured` = `genus_predicted` = **5 / 33 / 109** = `1 + 4N³` on all 16, C3 FALSIFIED on **70 of 70** because the gate was not added**
+> **CSV:** `docs/experiments/p-142.csv` — 70 rows × 43 columns.
+>
+> ***`CLAUDE.md`'s assertion that `χ` is unavailable on `gyroid` closes: it is −8N³ per `N³` conventional cubic cells under periodic wrap, because the gyroid's primitive lattice is body-centred and the cubic cell holds two primitive cells — and the falsifier's own reason for C3 is too strong, because what the gate needs is a second `ValidateConfig` constructor plus one fold pass, not a change to `Extractor::extract_into`.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-142.csv` stamped `# commit 845c7a8 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** the periodic-χ gate is **not landed**, so no shipped validity check gains it and C3 is falsified on the omission rather than on the arithmetic; `voxels_per_period` is odd on purpose and `nonmanifold_edges` reading 0 on 70 of 70 is recorded as the positive statement that the choice worked, not as a manifoldness guarantee for the wrap in general.
+
+| ☑ | **R-143** | S | `R-142` |
+> **DONE 2026-08-30 — 💥 ✗105 / M-456 / P-143: C1 FALSIFIED on **1 of 10** in-scope rows — `schwarz_p` at `N = 3` reading `chi_measured` **-102** against `chi_predicted` **-108** with `non_manifold_edges` **6** and `chi_pinch_corrected` **-108** exactly — and falsified a second time by `added_as_reference_field` **false** on 36 of 36; C2 HELD as an exact `i128` polynomial identity on 36 of 36**
+> **CSV:** `docs/experiments/p-143.csv` — 36 rows × 55 columns.
+>
+> ***`primitive_lattice` reading `simple_cubic` on a surface whose space group is `Im-3m` is not an inconsistency, it is the entire content of C2 — and the falsifying row is a statement about `M-48`, not about the oracle: six non-manifold pinch edges cost exactly the six χ the prediction was missing, which `chi_pinch_corrected` settles to the integer.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-143.csv` stamped `# commit 520b57b on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** Schwarz P and D are **not** added as reference fields, so the roster does not move this phase and no shipped fixture claim follows; the divisible-by-8 family was run as a control rather than avoided on a citation, and the non-wrapped control is recognised by its boundary and deliberately not by its χ.
+
+| ☑ | **R-144** | M | — |
+> **DONE 2026-08-30 — 💥 ✗106 / M-457 / P-144: C1 FALSIFIED by the three-octave half — `resolution_convergence` reads **never** on 4 of 5 seeds and χ is still moving at 129³ — C2 HELD with `chi_variance_across_seeds` **10.240000** and `chi_span_across_seeds` **8** at the converged rung**
+> **CSV:** `docs/experiments/p-144.csv` — 140 rows × 31 columns.
+>
+> ***The falsification runs the interesting way: at one octave χ converges on 5 of 5 seeds and `oracle_exists` is true on 35 of 140 rows, so a deterministic χ oracle for a periodic value-noise solid does exist — against a registration that named no oracle available at game resolutions as the likely outcome — and the converged χ is per-seed (-8 on three, -12 on one, -16 on one), so the gate must be per-seed exactly as registered.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-144.csv` stamped `# commit ad28433 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no χ oracle is claimed for the shipped three-octave `fbm_terrain`: it is out of reach by arithmetic rather than by measurement, and one octave is the most favourable case available — an oracle unreachable there is unreachable for the terrain too — so nothing from this row goes into the validity suite.
+
+| ☑ | **R-145** | M | `R-142` |
+> **DONE 2026-08-30 — 🔬 M-458 / P-145: C1 and C2 both HELD — a digital-topology oracle reading χ off the field's own signs with no mesh involved reproduces `P-142`'s analytic gyroid **exactly** (**-8 / -64 / -216**, `disagreement_cells` **0**) and supplies a first ground-truth χ on two fields the crate declares unknowable, at `cost_ratio` **0.4746–1.0648** of the extraction it grades**
+> **CSV:** `docs/experiments/p-145.csv` — 38 rows × 47 columns.
+>
+> ***The correct treatment of `gyroid`'s topology in the test suite is no longer record whatever the mesh said: the capped gyroid has a reproducible ground truth of -24 at both 33³ and 65³, computed from the field rather than from the mesh, and `marching_cubes/tests.rs:347-349`'s position that the number "is not known analytically, so it is recorded rather than asserted" is true of the analytic route and false of this one.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-145.csv` stamped `# commit 00631a7 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** the oracle is bench-local, so no shipped `validate` query and no asserted χ lands here — that is `R-178`. On `noise_cavity` the oracle and the extractors disagree and it is reported as a result rather than resolved; and Etiene et al.'s DOI is *verified* (`10.1109/tvcg.2011.109`, TVCG **18(6), 952–965, 2012**) rather than the paper's method being adopted wholesale.
+
+| ☑ | **R-146** | L | — |
+> **DONE 2026-08-30 — 💥 ✗107 / M-459 / P-146: C1 FALSIFIED with `c1_winners` **0** of `c1_population` **4** against a bar of **3** — the metric-driven arm is never cheaper and is **2.298935×** *dearer* on `thin_plate` — C3 FALSIFIED on **40 of 40** at `metric_share` **0.332862–8.747515** against a **0.15** bar, C2 HELD on the **20** rows where it can be read and `unmeasurable` on the other **20****
+> **CSV:** `docs/experiments/p-146.csv` — 40 rows × 57 columns.
+>
+> ***This crate's reference-field roster is adversarial to global anisotropy: the one field where the mechanism demonstrably works, `fbm_terrain` at `flat_axis_aligned_fraction` 1.000000, is `Unbounded` and therefore ungradeable — so `c1_population` is 4 and not 8, and that narrowing arithmetic is why the clause could not be reached as written.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-146.csv` stamped `# commit 77e71cb on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no landing is proposed, and the Amdahl ceiling is quoted as the thing that was *not* earned: **7.25%** and **11.25%** of a frame on C1's own bar, at most **18.5%**, realised **zero** because no measurable field won. The 20 `unmeasurable` rows are recorded as unmeasurable rather than as failures, and `aspect_ratio_max` is not quotable without `at_floor_cells` beside it.
+
+| ☑ | **R-147** | M | `R-146` |
+> **DONE 2026-08-30 — 💥 ✗108 / M-460 / P-147: C1, C2 and C3 all FALSIFIED — the exponent moved by **0.352013** on `fbm_terrain` against a `0.1` bar, the fitted constant improved on **3 of 8** fields against a strict majority, and its rank correlation to the AM–GM gap is **−0.095238**, negative rather than merely under 0.7**
+> **CSV:** `docs/experiments/p-147.csv` — 8 rows × 79 columns.
+>
+> ***Both failures share one cause and it is not the theory: a per-axis global grid has three degrees of freedom, and five of the eight reference fields annihilate all three. Group D's mechanism has not been refuted — it has been shown unreachable by any bench that spends anisotropy globally, which is the only thing the shipped `extract` with its single scalar `cell_size` can express.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-147.csv` stamped `# commit 049714c on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** C3's `false` is arithmetically unreachable rather than informative and the harness says so in a column: a permutation-symmetric field annihilates all three per-axis degrees of freedom, so `csg_difference`'s `exponent_difference` is **0.000000** by construction. The one prediction that survived, `companion_regularity_deficit` **0.319404** against an expected 0.33, is reported without a landing.
+
+| ☑ | **R-148** | M | — |
+> **DONE 2026-08-30 — 🔬 M-461 / P-148: C1 HELD with component-wise determinant swell reaching **6.841331e9** against log-Euclidean's **1.771547e-7** at a 5% bar, C2 HELD on **48 of 48** geometries so three transcendentals cost `M-32` exactly nothing, and `c3_holds` split **84 true / 12 false****
+> **CSV:** `docs/experiments/p-148.csv` — 96 rows × 72 columns.
+>
+> ***The twelve `false` rows are not a failure of either interpolant and the CSV proves it rather than arguing it: they are `gyroid` under both schemes at both cell sizes, and the cause is a seam correspondence that is not injective — `seam_vertices_a` 295, `seam_vertices_b` 294, `seam_pairs` 295 — which is `M-48` again, so C3's zeros locate a defect in C3's own instrument.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-148.csv` stamped `# commit 923df1e on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no metric scheme is landed: `hashes_moved` is **0** on all 96 rows against a live golden control, and the intrinsic scheme's **249×** cost is recorded because the falsifier asked for that number, not as a proposal. C2's second half — the constraint a consumer of a metric field has to meet — is new and is not in `M-32`, and is stated rather than assumed inherited.
+
+| ☑ | **R-149** | M | `R-146` |
+> **DONE 2026-08-30 — 💥 ✗109 / M-462 / P-149: C1 FALSIFIED where it could be read at all — `torus`'s triangle saving is perfectly anti-monotone in the curvature ratio, Spearman **−1.000000** at 65³ — and C2 FALSIFIED on `fbm_terrain`, whose `umbilic` bin, the control that was supposed to show *no* saving, costs **−6.037543****
+> **CSV:** `docs/experiments/p-149.csv` — 112 rows × 43 columns.
+>
+> ***The 70 of 112 rows reading `unmeasurable:arms_identical` are the phase's central Group D fact and they are recorded as unmeasurable, not as false: five of eight fields make `P-146`'s two arms one grid, `axis_ratio` exactly 1.000000 on those rows — and the only part of the mechanism that held is the closed form, `am_gm_gap_measured` agreeing with `2√r/(1+r)` on 97 of 112 rows.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-149.csv` stamped `# commit c909961 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** what was decomposed is a **zero** — `p-146.csv`'s `c1_winners` is 0 on all 40 rows — so no feature-class saving is claimed and the zero is shown to be a *constant* rather than a cancellation; no clock is read anywhere in the file, and the 70 unmeasurable rows are not counted as evidence in either direction.
+
+| ☑ | **R-150** | S | — |
+> **DONE 2026-08-30 — 🧊 M-463 / P-150: the registered null came back null and then inverted — `anomaly_reproduced` **false** on all 384 rows, `violations_in_l1` **0** of `violations_total` **72** — `c1_holds` true on 96 rows and false on 288, C2 HELD on 384 with every violation classified and the continuous model agreeing with Cao on all 384**
+> **CSV:** `docs/experiments/p-150.csv` — 384 rows × 53 columns.
+>
+> ***Cao's `L¹` anomaly is not merely absent, it is inverted: `M_L1` wins all 96 groups in every norm, so `norm_dependent_winner_rungs` is 0 and `L¹` is the one column where the theory holds rather than the one place it fails — while the premise the whole metric rests on fails outright on two of eight fields, in a column no clause reads.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-150.csv` stamped `# commit 5d04110 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** nothing is proposed for `crates/isomesh/src/` — this is a methodology guard, and what it produces is a constraint on how Group D may be quoted plus the two columns (`det_floored_log_variance`, `continuous_agrees`) that let a reader check it. No clause reads a clock, so no verdict here is movable by a re-run.
+
+| ☑ | **R-151** | M | `R-146` |
+> **DONE 2026-08-30 — 💥 ✗110 / M-464 / P-151: C1 and C2 split **16 true / 48 false** — they hold on `torus` alone, where `gain_near` **0.244932** collapses to `gain_wide` **−0.010015** and so *is* the visibility mechanism C2 asks for — and C3 FALSIFIED at `adjoint_share` **0.144361** against a 10% bar, the whole criterion costing **0.371498–3.055830** of an extraction**
+> **CSV:** `docs/experiments/p-151.csv` — 64 rows × 61 columns.
+>
+> ***`sphere`'s goal arm is 10.655× worse at matched triangles (`gain_near` −9.655511) because it saturates at 1,280 triangles, and C3's failure is on the cheapest of three stages while the other two are worse — which is the number a reader should take away rather than the one `torus` row that worked.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-151.csv` stamped `# commit 1acfb94 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** `box_exact`'s and `thin_plate`'s C1 is arithmetically unreachable and the arithmetic is one line — `ERROR_FLOOR_PX = 1e-4`, and both fields' near-camera `screen_space_error` sits at or below it, reading **0.000000e0** exactly — so those rows are unreachable rather than failed. No per-cell adaptive extractor is proposed: every inherent `extract` takes one **scalar** `cell_size`, so that would be a source change by construction. The SHARE's own pop prediction did not come out either: `pop_magnitude_pixels` is identical between arms rather than smaller.
+
+| ☑ | **R-152** | M | — |
+> **DONE 2026-08-30 — 💥 ✗111 / M-465 / P-152: C1 FALSIFIED on **16 of 16** rows (`beta_share` **0.824659–1.693981** against a bar of `0.10`), C2 FALSIFIED at `c2_fields_above_bar` **4** of eight against a bar of six, C3 HELD on **6 rows of 16****
+> **CSV:** `docs/experiments/p-152.csv` — 16 rows × 61 columns.
+>
+> ***`β` is not a fraction of an extraction, it is one to two extractions: the SHARE sentence offered it the vertex-placement stage, which `M-25` prices at 3%, and the measurement puts the pass at 82% to 169% of a whole extraction — so C1's bar was more than an order of magnitude from the mechanism's own published cost before the run began.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-152.csv` stamped `# commit 98c5309 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no `β` pass is proposed anywhere, and the row closes the question rather than opening a ticket. The signal C3's six surviving rows carry over the residual is **3 to 176 cells a row**, reported rather than promoted; `β` earns its theorem (Azzam & Schul, `arXiv:1609.02892`) and its 73-evaluation bound is honest only in the over-reporting direction.
+
+| ☑ | **R-153** | M | `R-152` |
+> **DONE 2026-08-30 — 💥 ✗112 / M-466 / P-153: C1 FALSIFIED at `c1_fields_won` **2** of eight against a bar of five, C2 FALSIFIED at **0 of 2** named fields with `beta_beats_curvature` **false on 8 of 8****
+> **CSV:** `docs/experiments/p-153.csv` — 24 rows × 87 columns.
+>
+> ***The criterion this row was built to promote loses to the derivative it was built to discredit, on every field — and the sharper result is the one no clause asked for: curvature beats camera distance on 8 of 8 at matched budget, while costing up to 19 ms to score a 16³ grid against 0.0129 ms for a distance.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-153.csv` stamped `# commit b0289d0 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** leave `isomesh::lod` alone and do not add a `β` pass anywhere. Curvature's 8-of-8 win is explicitly **not** a landing proposal, because nobody has priced curvature at chunk-build time; `noise_cavity`'s inverted refinement ladder is reported rather than corrected, and four mid-run threshold changes are recorded as results rather than as bookkeeping.
+
+| ☑ | **R-154** | M | `R-152` |
+> **DONE 2026-08-30 — 💥 ✗113 / M-467 / P-154: C1 FALSIFIED at `c1_fields_within_bar` **1** of eight against a bar of five and **unreachable at 4**, while C2 HELD on **21 rows of 24** with `thin_plate` divergent at all three resolutions**
+> **CSV:** `docs/experiments/p-154.csv` — 24 rows × 59 columns.
+>
+> ***`M-13`'s area law, with zero fitted parameters, gets 5 fields where the `β`-sum gets one — and the gap the row was aimed at is real: `MeshSink::reserve` (`crates/isomesh/src/mesh.rs:225-232`) exists and no extractor in the crate ever calls it, while the only budget the crate owns is denominated in time. The TST sum does not fill it, at 64× to 71× the extraction's own sampling cost.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-154.csv` stamped `# commit 3975077 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** C1 was refused by arithmetic before it was refused by the fit: `max_fields_any_constant` is **4**, so no single `k` could ever have passed a bar of five, and that is recorded with its arithmetic rather than as a near miss. `S`-as-a-budget is closed rather than parked, so no reservation heuristic is proposed; two convergence readings disagree on 9 rows and both are kept in the file.
+
+| ☑ | **R-155** | S | — |
+> **DONE 2026-08-30 — 💥 ✗114 / M-468 / P-155: C1 HELD with `strang_fix_order` **2** and `measured_order` **2** on 8 of 8, both *derived* and not quoted, C2 FALSIFIED at `c2_hits` **0** against a bar of four over `c2_measurable_fields` **4****
+> **CSV:** `docs/experiments/p-155.csv` — 8 rows × 44 columns.
+>
+> ***`box_exact`'s `inf` is the sharpest sentence this experiment produces and it is a division by a measured zero rather than a defect: the fitted-to-predicted `ratio` reads 2.776811 / 2.163685 / 2.060398 on the three fields where the theory has a value, so `M-12` must be cited as an empirical `h²` law with a field-specific constant measured on the field in hand, never as an asymptotic law with a transferable one.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-155.csv` stamped `# commit 076943b on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** C2's bar equalled the entire measurable population, so it was **arithmetically unreachable** — four of *eight* fields asked, four measurable — and it is recorded with that arithmetic rather than as a near miss. Two of those four are polyhedra whose creases have no second derivative, so nothing is claimed about them; SHARE is none, and the row converts a fit into a prediction that lost.
+
+| ☑ | **R-156** | M | `R-155` |
+> **DONE 2026-08-30 — 💥 ✗115 / M-469 / P-156: C1 FALSIFIED at `c1_fields_within_5pct` **5** of a `c1_population` of **6** (`csg_difference` at **+6.80%**), C2 HELD structurally with `footprint_probe_outside` **0** on all 80 rows, C3 FALSIFIED at **one ulp****
+> **CSV:** `docs/experiments/p-156.csv` — 80 rows × 60 columns.
+>
+> ***C3's failure is not the quasi-interpolant's: the shipped `standard_trilinear` arm loses seam bit-exactness on the same six fields with the same worst delta, so the falsification is about the seam and not about compactness — keep `t = a/(a − b)`, and the registered falsifier said why in advance.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-156.csv` stamped `# commit 2181f83 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no filter change is proposed. `box_exact` leaves C1's population because the clause is arithmetically unreachable on a field the extractor reproduces exactly, and `c1_excluded_exact_baseline` names it on all 80 rows (`P-70`'s precedent); the compact filter's real advantages — `read_depth_samples` **5** against **11**, `chunk_local` **true** — are recorded without a landing, and C1's distance from 1 was supposed to fall like `h` between rungs and does not.
+
+| ☑ | **R-157** | M | `R-155` |
+> **DONE 2026-08-30 — 💥 ✗116 / M-470 / P-157: C1 FALSIFIED with `c1_hits` **0** of `c1_population` **4**, C2 HELD at `samples_per_cell_ratio` **1.383534** for **+0.254234 ms** on `M-150`'s 15.01 ms path, C3 HELD at `cases_invalidated` **256** against a registered prediction of 256**
+> **CSV:** `docs/experiments/p-157.csv` — 27 rows × 85 columns.
+>
+> ***The second order belongs to the piecewise-linear mesh and no filter can reach it: the tricubic Lagrange `4×4×4` filter is genuinely order-4 on its own zero set (3.842076 / 3.091828 / 3.741280 / 4.037091 against the trilinear's 1.837459 / 1.769023 / 1.895204 / 1.896907) and the mesh's fitted exponent still reads 1.906661 / 1.980732 / 1.766603 / 1.924567, with an infinite-order `exact_oracle` arm pinned at 1.912218 / 1.985443 / 1.754517 / 1.942273.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-157.csv` stamped `# commit 38b1de0 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no tricubic reconstruction is proposed: C1 is falsified, so the accuracy case is dead even though C2 shows the halo is affordable at **1.693767%** of the 15.01 ms path, and C3's 256 invalidated cases are the price rather than a plan. `C1`'s population is 4 because the arithmetic makes it 4, and the bar was registered at 4.
+
+| ☑ | **R-158** | M | — |
+> **DONE 2026-08-30 — 💥 ✗117 / M-471 / P-158: the null arrived exactly as registered — C1 HELD with `mixed_derivative_norm` divergent on both CSG fields (`norm_growth_exponent` **5.000000** and **5.148604**, against a Lipschitz-kink calibration arm reproducing its analytic `6/h^5` to **4.329870e-15** relative), and C2 FALSIFIED on **8 of 8** rows**
+> **CSV:** `docs/experiments/p-158.csv` — 8 rows × 39 columns.
+>
+> ***SHARE was discharged negatively by arithmetic available before any Hausdorff was read: the sparse arm saves 27,232 field evaluations and spends a 109-term Smolyak combination at every one of 274,625 points, so `break_even_reads_per_eval` is 8793.8 — a single `Sdf::sample` would have to cost more than eight thousand seven hundred memory reads before the trade is even neutral.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-158.csv` stamped `# commit 1380017 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** nothing — this row is the reason not to try. The Smolyak arm is **4.19×**, **4.94×** and **2.26×** *worse* than the full grid on the three qualifying fields while holding **4.128317×** fewer samples, and the two rows where `hausdorff_sparse < hausdorff_full` are explicitly not evidence, which is what `hausdorff_sparse_floor` exists to establish.
+
+| ☑ | **R-159** | M | — |
+> **DONE 2026-08-30 — 🧊 M-472 / P-159: C1 and C3 HELD on all 18 rows and `c2_holds` false on **10 of 18**, exactly where the ratio is not trustworthy — against `W_inf^2` Marching Cubes is **order-optimal**, `ratio` **1.020157** on `sphere` and **0.991341** on `torus`**
+> **CSV:** `docs/experiments/p-159.csv` — 18 rows × 54 columns.
+>
+> ***Only the constant is in play: `measured_error_rate` 0.680105 and 0.660894 meet a `minimal_error_rate` of 0.666667, the independent `h` fit reads 1.974952 and 1.919062 against 2.000000, and `constant_gap` bounds the remaining headroom at 7.252731 and 6.263480 — every accuracy number previously in this ledger was a numerator saying did this help, and this row is the denominator saying how much is left.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-159.csv` stamped `# commit 807ba99 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no improvement is proposed and no rate claim is made beyond the class named in every row's `class_assumptions`, including the three things the source does not contain. Two rows are recorded arithmetically unreachable with their arithmetic: `box_exact`'s `seminorm_pinned` is exactly **0.000000e0**, and `noise_cavity`'s exponent needs `N ≥ 161`, `161³ = 4,173,281` samples against the `65³ = 274,625` this bench can afford — a factor of **15.2**.
+
+| ☑ | **R-160** | M | — |
+> **DONE 2026-08-30 — 🔬 M-473 / P-160: C1, C2 and C3 all HELD — the octree-adaptive arm beats uniform on **12 of 12** measured rows with `gain` **1.230769–16.967407** while `budget_ratio` gives the uniform arm **1.009041–1.322344×** *more* evaluations, and the factor-2 cap is measured not to apply at `hypotheses_satisfied` **1 of 4****
+> **CSV:** `docs/experiments/p-160.csv` — 16 rows × 63 columns.
+>
+> ***The budget is matched in the uniform arm's favour, so a win is a win — and the win reaches 16.967407 on `sphere` at depth 7, 8.48× the theorem's cap, with the two gains under 2 both `box_exact`'s and both predicted in closed form to nine digits before the run. Gal–Micchelli/Novak is refused by a fixture per hypothesis rather than by an argument: `class_convex` false, `class_symmetric` false, `operator_linear` false, `error_worst_case` true.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-160.csv` stamped `# commit 7744cb0 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no cost saving is claimed: the budget is held fixed, so what moves is the *error at that cost* and there is no `1/(1 − share/factor)` ceiling to compute. Four fields are skipped and the skip is a row, so nothing is claimed for the non-`Exact` bounds; the reachable claim is bounded by `cell_uniform / cell_adaptive`, a column reading **2.000000–5.333333**, and one remaining instrument bias runs *against* C1.
+
+| ☑ | **R-161** | M | — |
+> **DONE 2026-08-30 — 🔬 M-474 / P-161: C1 and C2 both HELD — `s` is estimable for both refinement families on **8 of 8** fields over **2.03 decades** of field evaluations, and the answer is field-dependent: `lod_helps` **true on 3** and **false on 5****
+> **CSV:** `docs/experiments/p-161.csv` — 8 rows × 53 columns.
+>
+> ***The split is scored against the combined half-width, never against zero, and that single decision is what makes it a result rather than fitted noise: `fbm_terrain`'s `s_difference_ci` runs -0.181268 to -0.012375, strictly negative, so greedy adaptivity is measurably worse than uniform there — and the adaptive family is charged for its own error estimator, `dof_adaptive` against `dof_adaptive_corners`.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-161.csv` stamped `# commit cbaa53e on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** nothing is landed and no ratio is produced that a later row could denominate a speedup in — this predicts where a stage helps, it does not change the stage. What it changes is which fields a future octree-LOD ticket may target; `isomesh::lod` is *downsampling*, and its own module doc refuses a re-sampling variant as a second path to something that is not downsampling at all.
+
+| ☑ | **R-162** | M | — |
+> **DONE 2026-08-30 — 💥 ✗118 / M-475 / P-162: C1 FALSIFIED at `fields_improved` **3 of 8** against a bar of five, C2 FALSIFIED at `fields_in_neighbourhood` **1 of 8** with `measured_gain_db` spanning **−8.584787** to **+0.726612 dB** around a `predicted_gain_db` of **+0.257097**, C3 HELD at `case_table_size` **16** against **256****
+> **CSV:** `docs/experiments/p-162.csv` — 16 rows × 40 columns.
+>
+> ***The prediction was exact and it missed — nine and a third decibels of spread around a prediction of a quarter of one — and the single field that met it only met it because `PROJECTION_STEPS` moved 64 → 1024, which at 64 aborted the run entirely and flipped `csg_difference`'s verdict from −0.177 dB to +0.417 dB.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-162.csv` stamped `# commit 0db1c9e on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** the sampling stage did not move: `crates/isomesh/src/**` is unchanged, no reference field was added, no golden hash can move, and the eight `Z3` rows are the crate's own shipped geometry measured *beside* the alternative rather than replaced by it. C3 is quoted as a complexity cost with `extraction_ms` explicitly excluded from the clause by the harness that recorded it; what this retires is a prediction, not a lattice.
+
+| ☑ | **R-163** | S | `R-162` |
+> **DONE 2026-08-30 — 💥 ✗119 / M-476 / P-163: a null registered on purpose came back **not null** — C1 FALSIFIED at `fields_below_scatter` **1 of 8**, because `measurement_scatter_db` is exactly **0.000000** on **6 of 8** fields, so `gap_over_scatter` reads **inf****
+> **CSV:** `docs/experiments/p-163.csv` — 16 rows × 43 columns.
+>
+> ***The measured gaps do not even agree on a sign, which is the sharper way to say the prediction is irrelevant: `measured_gap_db` reaches +5.731155 dB on `noise_cavity`, 514× the registered `predicted_gap_db` of 0.011143, and the driver is the Delaunay bond length and axis choice at fixed point density rather than `G`.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-163.csv` stamped `# commit 4b5719f on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** the clause is **unreachable in the direction it was written** — `|x| < 0` is false for every real `x` once the scatter is exactly zero — and it is recorded with that arithmetic rather than as a narrow miss. The FCC-versus-BCC question is foreclosed harder than the clause did; `SHARE: none` remains correct, no reference field was added and no golden hash can move.
+
+| ☑ | **R-164** | M | `R-162` |
+> **DONE 2026-08-30 — 💥 ✗120 / M-477 / P-164: C1 HELD on `c1_fields_held` **8 of 8** with `order_gap` spanning **−0.072307** to **+0.128478** against a bar of **−0.15**, and the derivation *executed* to `affine_residual` **4.441e-16**; C2 FALSIFIED and **arithmetically unreachable****
+> **CSV:** `docs/experiments/p-164.csv` — 16 rows × 70 columns.
+>
+> ***`P-162`'s non-control arm was already BCC plus the box spline: `hausdorff` reproduces `p-162.csv` to the last digit on all 16 rows, so the bar C2 must exceed is the measurement C2 makes, and `x > x` is false whatever `x` is.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-164.csv` stamped `# commit 3af8648 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** C2 is recorded unreachable with its one line — `c2_margin_db` tops out at **0.000000478** against a required **0.001000**, because the two arms are the same arm — and nothing is claimed about composition, which C2 cannot support. The cost was measured and then disqualified from the verdict; `order_linf` rides beside every RMS fit rather than being averaged into it.
+
+| ☑ | **R-165** | M | — |
+> **DONE 2026-08-30 — 🔬 M-478 / P-165: C1, C2 and C3 all HELD on 24 of 24 rows — Eppstein's optimum `n/2 + h − g − components` reproduces exhaustive search on **33,267** components with `brute_disagreements` **0**, and the shipped mesher's worst distance from it in the whole sweep is `ratio` **1.027132****
+> **CSV:** `docs/experiments/p-165.csv` — 24 rows × 44 columns.
+>
+> ***Greedy meshing is finished: 45,620 optimal rectangles against 46,131 greedy is 1.120% over optimal, exactly optimal on 8 of the 21 rows where the ratio is defined, and computing the optimum is cheaper than running the mesher on 9 of 24 rows (`cost_ratio` down to 0.424099 against a bar of 10).***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-165.csv` stamped `# commit 2b2a765 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no source change and no headroom. `M-56` left greedy bracketed only from below; the bracket from above is **1.120%** over the whole sweep and **2.71%** at its worst single row, so the correct engineering action on the greedy-meshing stage is to **stop** — this row prices a landing and the price is not worth paying. Two further non-claims are on the row: this is not a whole-volume optimum, and `optimum_rectangles` is greedy's own problem rather than an approximation of it.
+
+| ☑ | **R-166** | M | — |
+> **DONE 2026-08-30 — 💥 ✗121 / M-479 / P-166: the registered negative HELD and the hoped-for guarantee did not — C1 HELD with `is_matroid` **false** on all 6 greedy-meshing rows, `disjoint_from_small` **0** and `augmentation_failures` **87 / 190 / 2,331**, while C2 FALSIFIED on `violating_chunks` **92 of 221** and **155 of 186** against **0 of 152** on `sphere`**
+> **CSV:** `docs/experiments/p-166.csv` — 33 rows × 75 columns.
+>
+> ***The minimal counterexample is a `2×2` block, `min_basis` 1 against `max_basis` 4, and the worst chunk's marginal returns increase at the third refinement (`2.984502e1|9.237806e0|1.598680e1`) — so no submodular `(1 − 1/e)` guarantee is available for the LOD queue, and `submodular_scan_saw_it` is false on the field the constructed witness caught.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-166.csv` stamped `# commit 8968839 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no greedy-selection guarantee is claimed. The SHARE is not zero and the number is carried rather than claimed as a saving: `share_over_distance_order` peaks at **0.720925** on `fbm_terrain@k=1`, a fraction of *error* at fixed cost rather than of time, since `M-124`/`M-125` already fix the queue's time denominator to within one chunk.
+
+| ☑ | **R-167** | M | — |
+> **DONE 2026-08-30 — 💥 ✗122 / M-480 / P-167: C1 HELD on **20 of 20** rows with the per-bit decomposition *measured* to recompose rather than assumed, C2 HELD on **5** rows and FALSIFIED on **15**, C3 FALSIFIED on **20 of 20** at `eval_ms_ratio` **953.694027** on the dense bits and **4.606356–4.736385** on the single-term ones**
+> **CSV:** `docs/experiments/p-167.csv` — 20 rows × 52 columns.
+>
+> ***The low bit of the shipped triangle count is exactly the parity of the eight corner signs, and that is the sharpest thing in the file — while the two informative bits are dense: `spectral_terms` 256 of 256 at `spectral_concentration` 0.243408203 and 0.428710938 against a 0.9 bar, which is where sparse and low-degree separate.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-167.csv` stamped `# commit 186246e on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no spectral replacement for the case table is proposed at any density the spectrum could have had: a `k`× slower classify makes extraction `1 − s + k·s`, which at `k` = 953.694027 is **18.15× to 616.44×** on `P-121`'s measured classification share, and the 256-entry table is already in L1 at `eval_ms_table` **0.235581–0.238111** ms for 2²⁰ evaluations. One disagreement is recorded and it is a citation rather than a measurement.
+
+| ☑ | **R-168** | M | `R-167` |
+> **DONE 2026-08-30 — 🧊 M-481 / P-168: the registered null came back registered — C1 HELD on **240 of 240** with `closed_form_max_gap` **0.000000000000000** and stability computable a second way to **6e-15**, and C2 held on **55** rows of `c2_rows_counted` **88****
+> **CSV:** `docs/experiments/p-168.csv` — 240 rows × 55 columns.
+>
+> ***The genuine artefact moves nothing and that is the row's first result: at `ulp_perturbation` 1 the `f32` path flips 0 corner signs on all eight reference fields, so the whole comparison lives on amplified error — and where the model does agree it agrees because the response is measure-independent (8.000000000 against a `total_influence` of 8.0 on the parity bit, 2.000000000 against 2.0 on an edge bit), while at the saturating end it over-predicts by 43.9×.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-168.csv` stamped `# commit c96119a on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** noise stability is the number to stop reaching for, and nothing lands: a robustness figure whose input is measured at **zero** where the artefact lives, and which over-predicts by up to 43.5× where it is non-zero, cannot carry a precision decision or a refinement heuristic. `box_exact`'s immunity to the entire sweep is a measurement, not a gap.
+
+| ☑ | **R-169** | S | `R-167` |
+> **DONE 2026-08-30 — 💥 ✗123 / M-482 / P-169: C1 HELD in the strongest reading the clause can have, because `symmetry_class_count` is **1** — all eight corners are a single orbit of the 48-element cube group, `influence_spread` **0.000000000** on every bit with `octahedral_violations` **0** over 12,288 (π, x) pairs — and C2 FALSIFIED on **200 of 200** at `refinement_priority_correlation` exactly **0.000000****
+> **CSV:** `docs/experiments/p-169.csv` — 200 rows × 45 columns.
+>
+> ***C1 holding is C2 failing: a table that is perfectly symmetric under the cube group cannot carry a per-corner refinement priority, and the corrupted-table control detects 2 of 4 planted corruptions by inequality while all four show `influence_shift_abs` 0.007812500 = 2/256 — exactly how much of `validate_table()` this cheap check can and cannot replace.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-169.csv` stamped `# commit b12f121 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no refinement heuristic is claimed, and the census is not proposed as a replacement for `validate_table()`: what it would catch is a corruption that changes the flip relation unevenly across corners; what it provably would **not** catch is a corruption on a bit where every neighbour already differed or none ever did, which the two undetected control arms demonstrate in the same run. The census is 2,048 table comparisons, no field evaluation and no clock.
+
+| ☑ | **R-170** | S | — |
+> **DONE 2026-08-30 — 📖 V-51 / M-483 / P-170: C1, C2 and C3 all HELD on **8 of 8** rows with `doi_verified` **true** on every one, including the registered trap — `10.1137/0722019` resolves to T. Nanda, *Differential Equations and the QR Algorithm*, SIAM J. Numer. Anal. **22(2):310-321**, the article immediately preceding Allgower & Schmidt at **322-346**, `trap_gap` **1****
+> **CSV:** `docs/experiments/p-170.csv` — 8 rows × 41 columns.
+>
+> ***The crate's PL-approximation technique has a 1984/1985 root that proves a residual bound under a full-rank hypothesis at the seed — AS85's `is_homeomorphism` is false — and the topological guarantee the crate actually relies on dates from 2004 (Plantinga–Vegter) and 2020 (Boissonnat & Wintraecken), thirty-five years later, not from the root.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-170.csv` stamped `# commit d20dde1 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no guarantee is transferred from the root to the crate, and no source change lands here — that sentence is `R-181`. The repository counts are re-taken every run and the descendant figure is allowed to drift (**21** and **4**, of which **0** survive removing the registration layer that introduced the name), because that count's only job is to be a non-vacuity witness and drift can only strengthen it.
+
+| ☑ | **R-171** | M | — |
+> **DONE 2026-08-30 — 💥 ✗124 / M-484 / P-171: C1 HELD with `c1_fields_nonzero` **6 of 8** and transversality failing measurably — `box_exact` at `non_transverse_fraction` **0.191406250 / 0.094238281 / 0.046936035** over 784 / 3,088 / 12,304 cells — C2 FALSIFIED on **24 of 24** at Jaccard **0.000000000** to **0.054123711** against a **0.10** bar, C3 HELD on all **6** rows where a defect exists**
+> **CSV:** `docs/experiments/p-171.csv` — 24 rows × 39 columns.
+>
+> ***The scaling of `exact_zero_samples` across the three grids reads off the dimension of the set on which each field exactly attains its isovalue, and that is the sharpest thing in the file: `box_exact` is not merely the worst field, it is a field whose entire mesh sits on the 0-skeleton — every one of its 5,766 cut edges at 65³ places its vertex on a grid corner, and `regular_value_violations` is a property of the grid, not of the field.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-171.csv` stamped `# commit 7220f51 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** the ambiguity problem and the transversality failure are shown to be **different** populations, so no shared cause is claimed; C2 and C3 are *unreachable* on 18 rows each, where one of the two sets is empty, and are recorded as unreachable rather than as refutation. Criterion (b) is inert on this fixture and the file says so in numbers rather than in silence; the shipped extractor's whole defect population over eight fields at 17/33/65 is degenerate triangles.
+
+| ☑ | **R-172** | M | — |
+> **DONE 2026-08-30 — 🧊 M-485 / P-172: the registered obstruction is real, is one dimension lower than the registration claimed, and does not stop Conley — `plateau_fraction` **0.500000** on `box_exact` at all three resolutions with `constant_cells` **0** on every row, yet `conley_applicable_fraction` never falls below **0.957031**; C1 HELD on 24 of 24 and C2's ranking came back reversed at `c2_holds` true on **3 of 24****
+> **CSV:** `docs/experiments/p-172.csv` — 24 rows × 28 columns.
+>
+> ***The registration says `∇f = 0` on a set of positive measure, and measured that is true in two dimensions and false in three: a constant face is not automatically an obstruction, `thin_plate` is the counterexample in the file, and `FLAT_REL` does no work at all on any row.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-172.csv` stamped `# commit 91a5e7b on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** nothing — this closes a candidate, proposes no stage, and therefore has no share to price and no `1/(1 − share/factor)` ceiling to check. The three rows where C2 holds are the three where it *could not fail*, all `fbm_terrain` at saturated equality, which the harness predicted in advance as the one vacuous way C2 could hold.
+
+| ☑ | **R-173** | M | — |
+> **DONE 2026-08-30 — 🔬 M-486 / P-173: C1 HELD on 24 of 24 — worst `curl_share` **0.008061907**, 0.81% of an extraction against a 2% ceiling — `c2_holds` true on 16 of 24 with the substance falsified, `c3_holds` true on 12 of 24**
+> **CSV:** `docs/experiments/p-173.csv` — 24 rows × 67 columns.
+>
+> ***The curl residual is free and it does not predict `M-60`'s second-vertex cells: of the nine rows with a reachable AUC only `gyroid` at 33³ clears 0.8 at 0.914640664, and `fbm_terrain` at 25³ reads 0.270443196, worse than chance — while the one genuine per-cell result is `noise_cavity`, where the per-cell `λ` cuts self-intersections from 388 to 195 at 33³.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-173.csv` stamped `# commit a8d381e on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no topology claim: the index buffer is shared byte for byte between the arms, so nothing here can move a triangle, and six of C3's twelve wins are not per-cell results, which the file says in its own columns. C1 is a ratio of two wall clocks and is the one clause `M-280`'s governor could move, so its denominator is deliberately the whole extraction rather than the `place` stage.
+
+| ☑ | **R-174** | M | — |
+> **DONE 2026-08-30 — 🧊 M-487 / P-174: the registered null held — at matched cost the normal-cycles incumbent beats discrete varifolds on mean curvature on **28 of 30** rows at `error_ratio` **1.000821–3.358471**, and the two rows where it does not are the `capsule` at 129³ at **0.998923****
+> **CSV:** `docs/experiments/p-174.csv` — 30 rows × 50 columns.
+>
+> ***How much the localisation matters is the most useful number in the file and it is 302×; the one recommendation that moves is on a quantity C1 never scored — on the `torus`'s Gaussian curvature the varifold overtakes at 47³ and is 1.59× better at 129³, exponent 1.575152 against 1.127950.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-174.csv` stamped `# commit c3cb940 on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no curvature estimator is replaced, and the 0.1% `capsule` win is explicitly not claimed as a varifold win — it sits inside a C⁰ seam that dominates both arms, which `smooth_only_mean_error` establishes. The challenger being roughly half the incumbent's cost makes the null *more* conservative rather than less, and `curvature_share` is reported rather than claimed: `estimator_ms` **0.6512–164.0902** beside `extract_ms` **0.4641–26.9357**.
+
+| ☑ | **R-175** | M | — |
+> **DONE 2026-08-30 — 💥 ✗125 / M-488 / P-175: C1 FALSIFIED on 24 of 24 rows — intrinsic Delaunay flipping raises the worst-decile minimum angle by at most **1.642437°** against a 10° bar, and by at most 5.369167° and 1.951887° under the two alternative statistics — C2 HELD on 24 of 24, C3 FALSIFIED at **0 of 8** surveyed consumers**
+> **CSV:** `docs/experiments/p-175.csv` — 24 rows × 44 columns.
+>
+> ***C2 is the result and it is a stronger statement than the hashes did not change: `vertex_positions_moved` 0, `hashes_moved` 0, `extrinsic_geometry_identical` true, against a positive control that moves the hash on all 18 rows where a flip happened — 15,391 flips reach the intrinsic Delaunay fixed point on every row, remove 1,570 of 10,678 slivers, and reach nothing the crate reads.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-175.csv` stamped `# commit 320946e on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** no quality gain is claimed at the registered magnitude and no consumer is claimed to benefit — C3's survey of the crate's own source finds **0 of 8** — so a real, measured connectivity improvement is deliberately left unlanded. No clause reads a wall clock: `flip_ms` is in the file because the registration names it and gates nothing.
+
+| ☑ | **R-176** | M | — |
+> **DONE 2026-08-30 — 🔬 M-489 / P-176: C1 HELD on 84 of 84 and C3 HELD on 84 of 84 with two instruments sharing no data structure agreeing on the component count, the air-sample count and the full sorted size multiset on every row, and C2 split **42 / 42** — caves percolate in 3D and the transition is now a number, `percolation_isovalue` **0.029340****
+> **CSV:** `docs/experiments/p-176.csv` — 84 rows × 49 columns.
+>
+> ***At `iso = 0` one component holds 0.814493 of the air against 65 isolated pockets, and the theorem's qualitative 2D/3D difference is present on `noise_cavity` (`percolation_isovalue_2d` none) and absent on `fbm_terrain`, whose 2D slices percolate too at 7.272575 — which the registration named in advance as a real risk, because `fbm_terrain` is hash-based lattice noise and not a Gaussian field.***
+>
+> ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-176.csv` stamped `# commit f24c09b on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** nothing is landed and no stage moves — this changes what a level designer may assume, not what the extractor does — and the caveat the demo must not lose is that on `fbm_terrain` the giant component is the **sky**, not a cave system. C2's split is the registered risk arriving, so the ordering is claimed only where it survives it; `row_ms` gates nothing.

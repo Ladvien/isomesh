@@ -1,12 +1,12 @@
 # isomesh — BACKLOG
 
-**Updated:** 2026-08-29
+**Updated:** 2026-08-30
 **Companions:** `CLAUDE.md` (rules), `FINDINGS.md` (what we know and how well),
 `BACKLOG_ARCHIVE.md` (completed tickets + why they changed),
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**316 tickets archived, 70 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**366 tickets archived, 25 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -48,6 +48,177 @@ attached — read that before re-litigating a decision this project already made
 
 ---
 
+## Phase 28 — what Phase 27 earned
+
+**Added 2026-08-30, above Phase 27 for the reason every phase goes on top: rule 1 reads top-down.**
+Phase 27 is closed (`M-440`–`M-489`, `✗99`–`✗125`, `V-51`) and all fifty rows are archived. **Thirteen
+of the fifty held every clause** — `R-127`, `R-128`, `R-131`, `R-135`, `R-136`, `R-137`, `R-138`,
+`R-140`, `R-145`, `R-160`, `R-161`, `R-165`, `R-170` — and **five of those thirteen earn a ticket**. The
+other eight do not, and one line each is the output rather than an omission:
+
+- **`R-127`** is a renaming plus two theorems. Its own SHARE says C1 and C2 *"move no runtime cost at
+  all"*: `trilinear.rs:246` computes the same twelve-term form after the row as before it and the exact
+  symbolic identity already stands as a committed bench, so landing it is **no change to the shipped
+  path**.
+- **`R-128`** removes an untested assumption and moves no stage — `cell_size` is not an argument of
+  `BodySaddles::of`, `::coefficients` or `::roots`, so there is nothing to land.
+- **`R-135`** is a scope statement and moves nothing: zero bytes under `crates/isomesh/src/**`.
+- **`R-136`** exists to stop an overclaim and names no mechanism, so there is nothing to land.
+- **`R-137`** replaces an authority citation with a derivation; `SADDLE_COUNT` is already right and is
+  now derivable rather than transcribed.
+- **`R-138`** prices a decision, it does not make one. What ships is the price tag `P-157` argues
+  against — `mixed_volume` **116**, `2^64`, `case_space_tractable = false`.
+- **`R-161`** predicts where a stage helps, it does not change the stage, and `lod.rs:6-16` already
+  refuses the `Downsample::Reevaluate` variant a landing would need as a second path.
+- **`R-165`** priced a landing and the price is not worth paying: greedy meshing is **1.120%** over
+  Eppstein's optimum across the whole sweep and **2.71%** at its worst single row, so the correct
+  engineering action on that stage is to stop. A ticket here would be work invented against a measured
+  absence of headroom.
+
+**Every ticket below lands against the shipped path rather than the bench-local mirror it was measured
+on, and prices its `golden_hashes.json` and `scripts/doc_facts.sh` ripple before any code.** That is
+`R-123`'s constraint in Phase 26a generalised: `dual.rs:424`'s `active_word` already took part of
+`P-106`'s measured saving, so a landing priced against the bench's own comparand double-counts a win the
+crate already has. Each row's first deliverable is a `Preregistration`, because a landing not registered
+in advance is `V-45`'s failure mode.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-177** | L | — |
+| ☐ | **R-178** | M | — |
+| ☐ | **R-179** | L | — |
+| ☐ | **R-180** | S | — |
+| ☐ | **R-181** | S | — |
+
+**R-177 — land `P-140`'s six prescribed-genus patchwork fields as reference fields, in a commit that
+does nothing else, and pay the 162-hash ripple explicitly.** Two entries name this ticket in advance:
+`M-453`, which records the fields as *"deliberate, priced, and a Phase 28 ticket rather than an
+omission"*, and `M-455`, whose closing line is that until the Phase 28 fixture ticket lands `gyroid`'s
+topology gate is still *"record whatever the mesh said"*. The six fields — `ball_drilled_g1`,
+`graph_theta_g2`, `ball_drilled_g2`, `ball_drilled_g3`, `graph_k4_g3`, `graph_cube_g5` at genus
+**1, 2, 2, 3, 3, 5** — are **bench-local**,
+so the shipped test suite has none of them and `CLAUDE.md`'s position that `χ` is unassertable outside
+`sphere` and `torus` still stands in the suite that matters. What lands is `for_each_reference_field!`
+(`crates/isomesh/src/fields/mod.rs`) growing from **8** to **14**, with the prescribed `χ` asserted
+rather than recorded, because `prescribed_chi` is arithmetic from the construction and not a reading.
+
+**The ripple is the ticket's real content and it is a repo-wide renumbering, which is why this is `L`.**
+One new reference field adds **27** rows to `crates/isomesh/golden_hashes.json` — 9 algorithm labels ×
+3 resolutions, which is why the file's 216 is 8 × 27 — so six fields take it to **378**. Both
+`scripts/doc_facts.sh` counts move with them: `FIELDS` **8 → 14** against the phrase
+`'[a-z]* ?reference fields'` and `HASHES` **216 → 378** against `'golden hashes'`, each checked across
+the **twelve** documents in that script's `DOCS` array. A measurement commit that quietly carried this
+would be a renumbering hidden inside a dataset, which is what `P-140` refused to do.
+
+**Acceptance.** (a) A `Preregistration` naming the six fields, the 378, and the `FIELDS`/`HASHES` prose
+edits, before the code. (b) The fields land in `crates/isomesh/src/fields/`, `no_std`, generic over
+`Real`, arrays in every public signature, and each carries its prescribed `χ` in its own doc comment
+with the two independent derivations `P-140` used. (c) `expected_euler()` returns `Some` for all six and
+the value is asserted, not recorded. (d) The golden fixture is regenerated in the **same** commit and
+every moved count in all twelve documents with it, so `scripts/doc_facts.sh` and
+`scripts/backlog_gate.sh` are green at that commit and not the one after. (e) `graph_cube_g5`'s
+non-monotone adequacy curve — perfect at 7³ and 11³, **nothing meshed at 9³** — is a committed test,
+because a fixture whose correctness is not monotone in resolution is exactly the one a ladder-based
+suite will get wrong. (f) The ten `measured_genus = none` pairs stay `None`: a correct `χ` is not a
+manifoldness certificate and the suite must not infer one.
+
+**R-178 — land `P-145`'s digital-topology χ oracle under `validate`, and turn `gyroid`'s recorded χ
+into an asserted one.** `M-458` reads χ off the field's own signs with no mesh involved, reproduces
+`P-142`'s analytic gyroid exactly (`disagreement_cells` **0**) and costs `cost_ratio`
+**0.4746–1.0648** of the extraction it grades — under 1.07× everywhere and half an extraction on the
+largest grid, which is affordable for a test-only instrument and is labelled one. The shipped
+consequence is named by the finding: `crates/isomesh/src/marching_cubes/tests.rs:347-349` currently says
+the capped gyroid's `χ` *"is not known analytically, so it is recorded rather than asserted"*, and that
+is true of the analytic route and **false** of this one — the ground truth is **-24** at both 33³ and
+65³, computed from the field.
+
+**What must not be landed with it, measured rather than guessed.** On `noise_cavity` the oracle produces
+a number and the extractors produce two different ones, so that field gets the query and **no**
+assertion; and the oracle is a *digital* model, so `connectivity_split_blocks` — **0** on every
+calibration and cross-check row, **487** on `noise_cavity` at 33³ — must be a reported column of the
+shipped report rather than a hidden choice between foreground-6 and foreground-26.
+
+**Acceptance.** (a) A `Preregistration` stating which fields get an assertion and which get only the
+query. (b) The query lands beside `validate::sealing` and `validate::pinch`, `no_std`, generic over
+`Real`, arrays in every public signature, and reports the 6/26 split count rather than choosing
+silently. (c) `crates/isomesh/golden_hashes.json` **unchanged**: this reads the field and emits no
+geometry, so a moved hash is a defect and not a trade. (d) `tests.rs:347-349`'s comment and its
+`expected_euler() == None` are replaced together, never one without the other. (e) A committed CSV over
+the fields the oracle applies to, carrying its cost ratio beside `P-145`'s own columns. (f) The
+`gyroid_nodal` cross-check against `P-142`'s analytic `-8N³` stays in the shipped tests as the control
+that licenses the oracle at all.
+
+**R-179 — land `P-160`'s octree-adaptive sampling as a real extraction path, priced against
+`SubgridMarchingTetrahedra` and not against uniform Marching Cubes.** `M-473`'s own closing line asks
+for it — *"what this row licenses is a Phase 28 ticket against the shipped extractor, with a number"* —
+and the number is **12 of 12** measured rows, `gain` **1.230769–16.967407**, up to **8.48×** the
+Gal–Micchelli/Novak cap, with the budget matched **in the uniform arm's favour**
+(`budget_ratio` **1.009041–1.322344×** more evaluations for uniform). It is also the phase's clearest
+`R-123` trap: the harness's refinement test **is the crate's own shipped predicate**,
+`SubgridMarchingTetrahedra::cell_is_provably_empty` (`crates/isomesh/src/subgrid/extract.rs:484`),
+negated and recursed over levels — so part of the measured gain is a saving `subgrid` already takes, and
+a landing quoted against uniform Marching Cubes double-counts it.
+
+**The scoping constraints, both measured and neither negotiable.** The win exists only where
+`field.bound()` is `Exact`: **four** of eight reference fields are skipped and the skip is a row
+(`csg_difference` `underestimate`, `gyroid` `lipschitz`, `fbm_terrain` and `noise_cavity` `unbounded`),
+so this cannot be the default path. And nothing here is a cost saving — the budget is held fixed, so
+what moves is the **error at that cost**; there is no `1/(1 − share/factor)` ceiling to compute and the
+reachable claim is bounded by `cell_uniform / cell_adaptive`, **2.000000–5.333333**, raised to the
+extractor's order, which `P-159` fixes at 2.
+
+**The ripple, priced.** A new inherent extractor moves `forward_extractor!` **7 → 8**, which
+`scripts/doc_facts.sh` gates against three separate phrases — `'extractors, side by side'`,
+`'isosurface extractors'` and `'extractors sit behind one trait'` — across its twelve documents, and
+adds **24** rows to `golden_hashes.json` (8 fields × 3 resolutions), **216 → 240**. No existing hash may
+move: this is a new path, not a change to an old one.
+
+**Acceptance.** (a) A `Preregistration` stating the share claimed **against `subgrid`**, the `Exact`-only
+scope, and the `EXTRACTORS`/`HASHES` consequence. (b) A committed CSV measuring the adaptive arm against
+**`SubgridMarchingTetrahedra`** at matched sample budget on the four `Exact` fields, beside `P-160`'s own
+uniform comparand, so the double-counted part is visible as a column rather than argued about. (c) The
+refinement predicate is the shipped `cell_is_provably_empty`, shared rather than transcribed — a second
+copy is the defect this ticket exists to avoid. (d) No existing golden hash moves; the 24 new rows land
+in the same commit as the `EXTRACTORS` prose. (e) The four skipped bounds remain skipped **as rows**, so
+a reader can see the path does not apply rather than inferring it. (f) The two `box_exact` gains under 2
+stay in the shipped tests with their closed forms, since a gain predicted to nine digits is the
+strongest available check that the tree is the tree that was measured.
+
+**R-180 — correct `trilinear.rs:250`'s `discriminant == 0` doc comment against `P-131`'s rank census.**
+`M-444` held all three clauses and its one actionable sentence is *"what must change is the comment"*.
+The branch fires **143** times across `csg_difference` on the reference fields, and of **3,858** branch
+hits **2,222** are true rank 3 with border rank 2 — so a `Det = 0` cell is **generically rank 3**, not
+the tangential touch the comment describes, and the registered W-state reaches the branch at
+`w_state_rank` **3** against `w_state_border_rank` **2**. The arithmetic that keeps this `S`: rank 1 is
+**arithmetically unreachable** on that exit (`branch_rank_one_total` **0**), so the corrected comment
+says three things and not four.
+
+**Acceptance.** (a) The doc comment at `crates/isomesh/src/marching_cubes/trilinear.rs:250` states what
+the branch's configuration actually is, cites de Silva & Lim Prop 7.3, and records that rank 1 cannot
+occur there. (b) **No behaviour change**: `roots()` keeps treating a double root as one intersection
+point — the arithmetic is right and `P-131` does not argue with it — so `golden_hashes.json` is
+unchanged and a moved hash is a defect. (c) `RUSTDOCFLAGS=-D warnings cargo doc --workspace --no-deps`
+clean, since this is a doc-only change and the doc build is the only gate that can catch it.
+
+**R-181 — record `P-170`'s priority and its limit in `validate/isotopy.rs`'s module doc, with the
+verified DOI and the trap beside it.** `V-51` / `M-483` verified **8 of 8** DOIs including the one it
+registered as a trap, and the shipped module doc at `crates/isomesh/src/validate/isotopy.rs:3-4` cites
+Plantinga–Vegter alone. What lands is one sentence and two citations: Allgower & Schmidt, *An algorithm
+for piecewise linear approximation of an implicitly defined manifold*, SIAM J. Numer. Anal.
+**22(2):322–346, 1985**, DOI **`10.1137/0722020`** — with the note that `10.1137/0722019` is T. Nanda on
+the QR algorithm at **310-321** in the same issue, `trap_gap` **1**, which is the citation error this
+row exists to prevent — and the limit that makes the priority honest: AS85's `is_homeomorphism` is
+**false**, it proves `‖H(x)‖_∞ < ε` along the constructed manifold under a full-rank hypothesis at the
+seed, so the **topological** guarantee the crate relies on is Plantinga–Vegter 2004 and Boissonnat &
+Wintraecken 2020, thirty-five years later, not the root.
+
+**Acceptance.** (a) The module doc carries the root, the trap and the limit in that order, so a reader
+cannot take the priority without the caveat. (b) No guarantee is transferred: nothing in the doc may
+read as if AS85 certifies topology. (c) Doc-only — `golden_hashes.json` unchanged, no public signature
+moves, `RUSTDOCFLAGS=-D warnings cargo doc --workspace --no-deps` clean.
+
+---
+
 ## Phase 27 — fifty registrations from eighteen fields of mathematics, each before its harness
 
 **Added 2026-08-29, above Phase 26b for the reason every phase goes on top: rule 1 reads top-down.**
@@ -86,7 +257,7 @@ at 0.70–0.71 and the repository cites none of them. `R-147` registers the hone
 convergence **rate** does not improve — the exponent is fixed by polynomial degree and dimension — and what moves
 is the **constant M-12 fits**, concentrated on features with a flat direction.
 
-**Order matters in seven places and nowhere else** — the table below is authoritative and the prose here
+**Order matters in seven places and nowhere else** — the archived rows are authoritative and the prose here
 once said *five*, omitting two clusters that the rows themselves justify. `R-127` runs before the rest of
 Group A and `R-131` rides it. `R-142` runs before `R-143` and `R-145`. `R-146` runs before `R-147`,
 `R-149` and `R-151`. `R-155` runs before `R-156` and `R-157`. `R-152` runs before `R-153` and `R-154`.
@@ -108,58 +279,10 @@ Ising/dimer limit shapes (no determinantal structure in 3D); renormalization-gro
 compressed sensing (deterministic grid, no sparsity basis); Helly-type certificates for the cell clamp (the target
 is a 30-flop `3×3` adjugate).
 
-| | Ticket | Size | Blocked by |
-|---|---|---|---|
-| ☐ | **R-127** | S | — |
-| ☐ | **R-128** | S | `R-127` |
-| ☐ | **R-129** | S | `R-127` |
-| ☐ | **R-130** | M | `R-127` |
-| ☐ | **R-131** | M | `R-127` |
-| ☐ | **R-132** | M | `R-127` |
-| ☐ | **R-133** | M | `R-127` |
-| ☐ | **R-134** | S | `R-127` |
-| ☐ | **R-135** | S | `R-127` |
-| ☐ | **R-136** | S | `R-127` |
-| ☐ | **R-137** | S | — |
-| ☐ | **R-138** | M | — |
-| ☐ | **R-139** | M | — |
-| ☐ | **R-140** | M | — |
-| ☐ | **R-141** | L | — |
-| ☐ | **R-142** | S | — |
-| ☐ | **R-143** | S | `R-142` |
-| ☐ | **R-144** | M | — |
-| ☐ | **R-145** | M | `R-142` |
-| ☐ | **R-146** | L | — |
-| ☐ | **R-147** | M | `R-146` |
-| ☐ | **R-148** | M | — |
-| ☐ | **R-149** | M | `R-146` |
-| ☐ | **R-150** | S | — |
-| ☐ | **R-151** | M | `R-146` |
-| ☐ | **R-152** | M | — |
-| ☐ | **R-153** | M | `R-152` |
-| ☐ | **R-154** | M | `R-152` |
-| ☐ | **R-155** | S | — |
-| ☐ | **R-156** | M | `R-155` |
-| ☐ | **R-157** | M | `R-155` |
-| ☐ | **R-158** | M | — |
-| ☐ | **R-159** | M | — |
-| ☐ | **R-160** | M | — |
-| ☐ | **R-161** | M | — |
-| ☐ | **R-162** | M | — |
-| ☐ | **R-163** | S | `R-162` |
-| ☐ | **R-164** | M | `R-162` |
-| ☐ | **R-165** | M | — |
-| ☐ | **R-166** | M | — |
-| ☐ | **R-167** | M | — |
-| ☐ | **R-168** | M | `R-167` |
-| ☐ | **R-169** | S | `R-167` |
-| ☐ | **R-170** | S | — |
-| ☐ | **R-171** | M | — |
-| ☐ | **R-172** | M | — |
-| ☐ | **R-173** | M | — |
-| ☐ | **R-174** | M | — |
-| ☐ | **R-175** | M | — |
-| ☐ | **R-176** | M | — |
+**All fifty rows are run, measured and archived.** `R-127`–`R-176` are checked in `BACKLOG_ARCHIVE.md`,
+each with its `M-`/`✗`/`V-` ids, its CSV shape, its one-paragraph thesis and what it deliberately did
+not claim. What the phase earned is Phase 28 above; thirteen rows held every clause and five of them
+became tickets.
 
 ---
 

@@ -8,6 +8,38 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+**Phase 27 registered no source change and landed none, and it is the largest phase on record.** Fifty
+pre-registered experiments (`P-127`–`P-176`), fifty benches, fifty committed CSVs and fifty `FINDINGS.md`
+entries across eighteen fields of mathematics — **13 rows held on every clause, 3 failed on every clause
+they could fail, 34 mixed; 27 rows carry at least one falsification** (`✗99`–`✗125`, `M-440`–`M-489`,
+`V-51`). Fifty registrations landed in `crates/isomesh/src/experiment.rs` **before any harness existed**,
+and nothing else in `crates/isomesh/src/` changed: **no consumer-visible behaviour moved and not one
+golden hash moved.** Five registered thresholds were re-derived against a measurement mid-run and the
+stories are in their entries; **no registration was amended** — `experiment.rs:26-31` forbids it once a
+run exists.
+
+**What a consumer of this crate should take from it: nothing changes, and the record now prices the
+whole landscape.** `b*b - 4*a*c` at `marching_cubes/trilinear.rs:246` is **identically Cayley's `2×2×2`
+hyperdeterminant** — the shipped expression has been a classical invariant for the crate's whole life
+without anyone knowing (M-440). Marching Cubes is **order-optimal** for the regularity its fields have,
+so only the constant is in play (M-472), and the constant cannot be improved by a better *filter*: an
+order-4 tricubic reconstruction over the same grid lands at the same mesh exponent, because **the second
+order belongs to the piecewise-linear mesh itself** (✗116). Three χ oracles now exist for periodic
+surfaces — gyroid `−8N³`, Schwarz P `−4N³`, Schwarz D `−16N³` — plus a first digital-topology ground
+truth on `gyroid` (**−24**) and `noise_cavity` (**82** and **−152**). Anisotropic metric meshing, the
+`β` criterion, goal-oriented adaptivity, BCC sampling and sparse grids are all **measured and priced
+out** on this crate's roster; greedy meshing is **1.120%** off Eppstein's optimum and the optimum is
+sometimes *cheaper* to compute than to run (M-478); and the LOD budget is **not submodular**, with
+marginal returns that increase at the third refinement on 2 of 3 fields (✗121). The 1985 ancestor
+Allgower & Schmidt is resolved, trap and all, and its guarantee is a residual bound **without a
+homeomorphism** (V-51 / M-483).
+
+**One measurement method the phase leaves behind: an unreachable clause is recorded as unreachable, with
+its arithmetic, rather than counted as a miss.** Five rows carry such a clause — P-130's
+data-processing-inequality bar, P-134's polyhedron with zero variance, P-155's bar equal to the whole
+measurable population, P-156's exact-baseline field, P-164's bar identical to its own measurement — and
+`P-70`'s precedent held for all five.
+
 **Phase 24 registered two source changes and landed one.** `isomesh::mass` computes the volume, centre of
 mass and inertia tensor of the solid a triangle mesh bounds by integrating over the surface, with no volume
 mesh, no allocation and no new dependency. Everything else this phase produced is measurement: thirty
