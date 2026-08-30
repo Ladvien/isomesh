@@ -1423,6 +1423,11 @@ fn main() {
         // silently dropped.
         let mut exact_baseline_fields: std::collections::BTreeSet<&'static str> =
             std::collections::BTreeSet::new();
+        // (field, arm) pairs whose chunk overlap holds no cut bracket, so their
+        // `seam_bit_exact` is `no-bracket` rather than a vacuous `true`.
+        let mut seam_unbracketed: std::collections::BTreeSet<(&'static str, &'static str)> =
+            std::collections::BTreeSet::new();
+        let mut seam_bracketed = 0u64;
         for row in &rows {
             assert!(
                 row.edges > 0,
@@ -1446,15 +1451,20 @@ fn main() {
             if row.arms[ARM_TRUNCATED].root_rms <= FLOOR_CELLS {
                 exact_baseline_fields.insert(row.name);
             }
+            // A field with no cut bracket inside the ten-sample overlap has no
+            // seam to be bit-exact about, which is again a property of the
+            // field: `box_exact`'s faces are axis-aligned, so at 65 samples the
+            // overlap window can sit entirely inside a face and contain no
+            // x-crossing at all. Measured. The row's `seam_bit_exact` is then
+            // recorded as `no-bracket` rather than as a vacuous `true`, and the
+            // global control below requires the mechanism to be exercised
+            // somewhere.
             for (arm, measured) in ARMS.iter().zip(row.arms.iter()) {
-                assert!(
-                    measured.seam.pairs > 0,
-                    "VOID: {} at {} samples gives {} no cut bracket in the ten-sample chunk \
-                     overlap, so seam_bit_exact is a true over an empty set",
-                    row.name,
-                    row.samples,
-                    arm.name
-                );
+                if measured.seam.pairs == 0 {
+                    seam_unbracketed.insert((row.name, arm.name));
+                } else {
+                    seam_bracketed += 1;
+                }
             }
             if row.hausdorff_skip == "none" {
                 assert!(
@@ -1491,6 +1501,14 @@ fn main() {
         // must carry a baseline above the floor, or every ratio in the run is
         // a quotient of two `f64` resolutions and the clause cannot be decided
         // either way.
+        assert!(
+            seam_bracketed > 0,
+            "VOID: not one (field, arm) pair in the whole run put a cut bracket inside the \
+             ten-sample chunk overlap ({} pairs unbracketed), so every `seam_bit_exact` is a \
+             true over an empty set and C3 is unmeasured",
+            seam_unbracketed.len()
+        );
+
         let field_count = rows
             .iter()
             .map(|row| row.name)
