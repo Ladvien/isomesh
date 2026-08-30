@@ -363,11 +363,27 @@ const C1_BAR: f64 = 0.05;
 /// A metric interpolated with itself must swell by less than this.
 ///
 /// Component-wise reaches exactly zero (`0.5x + 0.5x` is `x` in IEEE).
-/// Log-Euclidean goes through `ln`, a sum and `exp`, so it lands at round-off;
-/// `1e-9` is six orders above the `f64` round-off of a well-conditioned
-/// eigenproblem and six orders below C1's bar, so it can fail the control
-/// without touching the clause.
-const SELF_SWELL_TOLERANCE: f64 = 1e-9;
+/// Log-Euclidean goes through `ln`, a sum and `exp`, so it lands at round-off.
+///
+/// **`1e-5`, and the first draft's `1e-9` was a claim about a
+/// well-conditioned eigenproblem this row does not have.** The premise of
+/// that number was "six orders above the `f64` round-off of a
+/// well-conditioned eigenproblem" — but `common::metric` floors Hessian
+/// eigenvalues at `H_FLOOR = 1e-9` precisely so that a flat direction stays
+/// representable, which makes the metric's condition number about `1e9` on
+/// exactly the fields this row cares about. A `log`/`exp` round trip on a
+/// matrix with condition number `κ` loses about `κ · ε`, i.e. `1e9 · 2.2e-16
+/// ≈ 2e-7` — so `1e-9` was **unreachable by construction** and the control
+/// was gating on the eigensolver's accuracy rather than on the formula.
+/// Measured on the first run: `box_exact/x/log_euclidean` swells by
+/// `5.04e-7`, which is that bound to within a factor of three.
+///
+/// `1e-5` sits two orders above the measured round-off and **four orders
+/// below `C1_BAR = 0.05`**, so the control can still fail without ever
+/// touching the clause — which is the property that made `1e-9` attractive
+/// and is preserved. The measured self-swell is recorded per row
+/// (`swell_self_max`) so the margin is auditable rather than asserted.
+const SELF_SWELL_TOLERANCE: f64 = 1e-5;
 
 /// Metric-driven displacement of a seam vertex, in cells.
 ///
@@ -695,7 +711,8 @@ fn seam_metrics<F: Sdf<Scalar = f64>>(field: &F, g: &Geometry) -> SeamMetrics {
             let a_own = metric_lp(&h_a_own, P_NORM);
             let a_ghost = metric_lp(&h_a_ghost, P_NORM);
 
-            out.at_floor.push(at_floor(&h_a_own) || at_floor(&h_a_ghost));
+            out.at_floor
+                .push(at_floor(&h_a_own) || at_floor(&h_a_ghost));
             out.distance.push(log_distance(&a_own, &a_ghost));
             out.a_own.push(a_own);
             out.a_ghost.push(a_ghost);
@@ -898,8 +915,7 @@ fn seam_mesh<F: Sdf<Scalar = f64>>(field: &F, g: &Geometry) -> SeamMesh {
             let capped = raw.max(0.0).min(f64::from(g.total - 1));
             capped as usize
         };
-        clamp(p[second], g.origin[second]) * g.total as usize
-            + clamp(p[first], g.origin[first])
+        clamp(p[second], g.origin[second]) * g.total as usize + clamp(p[first], g.origin[first])
     };
 
     let mut key_collisions = 0u64;
@@ -1218,8 +1234,7 @@ where
         }
 
         for scheme in Scheme::ALL {
-            let (accumulator, count) =
-                golden_pipeline(field, lo, cell, row.samples - 1, scheme);
+            let (accumulator, count) = golden_pipeline(field, lo, cell, row.samples - 1, scheme);
             out.interpolations += count;
             assert!(
                 accumulator.is_finite(),
@@ -1537,7 +1552,9 @@ fn main() {
                  columns are unmeasured"
             );
             assert!(
-                fixtures.iter().any(|f| f.field == *name && f.seam_pairs > 0),
+                fixtures
+                    .iter()
+                    .any(|f| f.field == *name && f.seam_pairs > 0),
                 "VOID: no {name} geometry puts a shared seam vertex on its seam plane, so \
                  `seam_open_edges = 0` on every one of its rows is a zero that could not have \
                  been non-zero (M-44) and C3 says nothing about this field"
@@ -1592,9 +1609,7 @@ fn main() {
                 f.key_collisions, 0,
                 "VOID: {}/{}/h={} matched two seam vertices to one transverse key, so the \
                  A-to-B correspondence C3 is counted over is not a bijection",
-                f.field,
-                AXIS_NAMES[f.g.axis],
-                f.g.h
+                f.field, AXIS_NAMES[f.g.axis], f.g.h
             );
         }
 
@@ -1685,20 +1700,11 @@ fn main() {
                     // ── the registration's twelve, in registration order ──
                     ("interpolation_scheme", scheme.name().to_string()),
                     ("seam_axis", AXIS_NAMES[f.g.axis].to_string()),
-                    (
-                        "determinant_swell_max",
-                        format!("{:.6e}", arm.swell_max),
-                    ),
-                    (
-                        "determinant_swell_mean",
-                        format!("{:.6e}", arm.swell_mean),
-                    ),
+                    ("determinant_swell_max", format!("{:.6e}", arm.swell_max)),
+                    ("determinant_swell_mean", format!("{:.6e}", arm.swell_mean)),
                     ("seam_vertices_moved", census.vertices_moved.to_string()),
                     ("seam_open_edges", census.open_edges.to_string()),
-                    (
-                        "hashes_moved",
-                        hashes_moved(f.field, slot).to_string(),
-                    ),
+                    ("hashes_moved", hashes_moved(f.field, slot).to_string()),
                     ("bit_exact_seam", arm.bit_exact.to_string()),
                     ("cell_size_power_of_two", f.g.power_of_two.to_string()),
                     ("c1_holds", c1_holds.to_string()),
@@ -1712,22 +1718,10 @@ fn main() {
                     ("p_norm", format!("{P_NORM:.1}")),
                     ("seam_cells", f.seam_cells.to_string()),
                     // the registered vacuity control's columns
-                    (
-                        "metric_distance_max",
-                        format!("{:.6e}", f.distance_max),
-                    ),
-                    (
-                        "metric_distance_mean",
-                        format!("{:.6e}", f.distance_mean),
-                    ),
-                    (
-                        "metric_distance_min",
-                        format!("{:.6e}", f.distance_min),
-                    ),
-                    (
-                        "pairs_with_distinct_metrics",
-                        f.distinct_pairs.to_string(),
-                    ),
+                    ("metric_distance_max", format!("{:.6e}", f.distance_max)),
+                    ("metric_distance_mean", format!("{:.6e}", f.distance_mean)),
+                    ("metric_distance_min", format!("{:.6e}", f.distance_min)),
+                    ("pairs_with_distinct_metrics", f.distinct_pairs.to_string()),
                     // C1's arithmetic
                     (
                         "log_determinant_swell_max",
@@ -1765,10 +1759,7 @@ fn main() {
                     ("seam_ghost_ulps", f.ghost_ulps.to_string()),
                     ("seam_own_ulps", f.own_ulps.to_string()),
                     ("seam_plane_ulps", f.plane_ulps.to_string()),
-                    (
-                        "seam_position_delta",
-                        format!("{:.6e}", f.ghost_delta),
-                    ),
+                    ("seam_position_delta", format!("{:.6e}", f.ghost_delta)),
                     (
                         "seam_position_delta_cells",
                         format!("{:.6e}", f.ghost_delta / f.g.h),
@@ -1783,15 +1774,9 @@ fn main() {
                         "bit_exact_seam_nondyadic",
                         arm.bit_exact_nondyadic.to_string(),
                     ),
-                    (
-                        "weight_reversal_exact",
-                        weight_reversal_exact().to_string(),
-                    ),
+                    ("weight_reversal_exact", weight_reversal_exact().to_string()),
                     ("dyadic_ladder_steps", T_STEPS.to_string()),
-                    (
-                        "nondyadic_ladder_steps",
-                        NON_DYADIC_STEPS.to_string(),
-                    ),
+                    ("nondyadic_ladder_steps", NON_DYADIC_STEPS.to_string()),
                     ("c2_global_holds", c2_global_holds.to_string()),
                     // C3's arithmetic
                     ("seam_vertices_a", f.seam_a.to_string()),
@@ -1825,10 +1810,7 @@ fn main() {
                         f.baseline.boundary_total.to_string(),
                     ),
                     ("welded_away", census.welded_away.to_string()),
-                    (
-                        "control_seam_open_edges",
-                        f.control.open_edges.to_string(),
-                    ),
+                    ("control_seam_open_edges", f.control.open_edges.to_string()),
                     (
                         "control_seam_opens",
                         (f.control.open_edges > f.baseline.open_edges).to_string(),
@@ -1848,17 +1830,11 @@ fn main() {
                             .all(|(_, g)| g.control_silent == 0)
                             .to_string(),
                     ),
-                    (
-                        "golden_interpolations",
-                        golden_interpolations.to_string(),
-                    ),
+                    ("golden_interpolations", golden_interpolations.to_string()),
                     // SHARE, priced
                     ("metric_ms", format!("{:.6}", f.metric_ms)),
                     ("interp_ms", format!("{:.6}", arm.interp_ms)),
-                    (
-                        "interp_ns_per_pair",
-                        format!("{:.3}", per_scheme_ns[slot]),
-                    ),
+                    ("interp_ns_per_pair", format!("{:.3}", per_scheme_ns[slot])),
                     (
                         "interp_ns_per_pair_min",
                         format!("{:.3}", per_scheme_lo[slot]),
