@@ -1399,7 +1399,7 @@ fn power_of_two_cells(extent: f64) -> u32 {
     }
     let total = (extent / h).round() as u32;
     assert!(
-        total % 2 == 0 && is_power_of_two(extent / f64::from(total)),
+        total.is_multiple_of(2) && is_power_of_two(extent / f64::from(total)),
         "the power-of-two arm needs an even cell count and a power-of-two cell size; \
          extent {extent} gave {total} cells of {}",
         extent / f64::from(total)
@@ -1588,11 +1588,41 @@ fn main() {
             }
         }
 
-        // The seam counter must be able to go non-zero.
+        // The seam counter must be able to go non-zero — demonstrated on the
+        // fields where it CAN, with the others named.
+        //
+        // **The control needs the two chunks' own metrics to actually differ.**
+        // The inconsistent arm displaces each chunk's shared vertex by its own
+        // un-interpolated metric, so the weld only fails to merge them when
+        // those two metrics point somewhere different. On `box_exact` they do
+        // not: an axis-aligned seam through a polyhedron has the identical
+        // Hessian on both sides, so `vertices_moved` is 0, the weld succeeds,
+        // and `open_edges` cannot rise. That is a property of the field, not a
+        // broken control, and the first run measured it: 60 shared seam
+        // vertices, 0 moved, 0 open edges against a baseline of 0.
+        //
+        // The control is therefore asserted where it is reachable, the
+        // unreachable fields are named, and at least one field must
+        // demonstrate the counter rising — which is the assertion that
+        // licenses reading a 0 elsewhere as geometry rather than a dead
+        // instrument.
+        let mut counter_demonstrated_on: Vec<&'static str> = Vec::new();
+        let mut counter_unreachable_on: Vec<&'static str> = Vec::new();
         for f in &fixtures {
             if f.seam_pairs == 0 {
                 continue;
             }
+            assert_eq!(
+                f.key_collisions, 0,
+                "VOID: {}/{}/h={} matched two seam vertices to one transverse key, so the \
+                 A-to-B correspondence C3 is counted over is not a bijection",
+                f.field, AXIS_NAMES[f.g.axis], f.g.h
+            );
+            if f.control.vertices_moved == 0 {
+                counter_unreachable_on.push(f.field);
+                continue;
+            }
+            counter_demonstrated_on.push(f.field);
             assert!(
                 f.control.open_edges > f.baseline.open_edges,
                 "VOID: {}/{}/h={} has {} shared seam vertices, and displacing them by each \
@@ -1612,9 +1642,18 @@ fn main() {
                 f.field, AXIS_NAMES[f.g.axis], f.g.h
             );
         }
+        assert!(
+            !counter_demonstrated_on.is_empty(),
+            "VOID: no fixture demonstrated `seam_open_edges` rising under an inconsistent \
+             displacement ({} field(s) unreachable because both chunks' own metrics agree on \
+             the seam: {}), so every C3 zero in this run is a zero that could not have been \
+             non-zero (M-44)",
+            counter_unreachable_on.len(),
+            counter_unreachable_on.join("|")
+        );
 
         assert!(
-            weight_reversal_exact() == false,
+            !weight_reversal_exact(),
             "VOID: 1 - (1 - t) == t on every rung of the non-dyadic ladder, so \
              `bit_exact_seam_nondyadic` is testing the same thing as `bit_exact_seam` and the \
              weight mechanism the header claims is unreachable"
