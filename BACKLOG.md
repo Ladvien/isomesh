@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**316 tickets archived, 20 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**316 tickets archived, 70 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -45,6 +45,113 @@ attached — read that before re-litigating a decision this project already made
   is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
+
+---
+
+## Phase 27 — fifty registrations from eighteen fields of mathematics, each before its harness
+
+**Added 2026-08-29, above Phase 26b for the reason every phase goes on top: rule 1 reads top-down.**
+Nothing here supersedes Phase 17's or Phase 18's open rows, and Phase 25's twenty bit-packing
+rows are closed on the merged main (archived as `R-103`–`R-122`) — this phase does not displace them.
+
+**Source: `docs/research/2026-08-29-fifty-experiments-from-unmined-mathematics.md`**, with the vocabulary in
+`docs/research/2026-08-29-axes-and-vocabulary-v2.md`. Eighteen mathematical areas probed against the corpus and
+the repository at once; fourteen papers acquired and converted; eight recorded as paywalled rather than cited.
+
+**Renumbered on merge — twice.** These fifty rows were drafted `R-103`–`R-152`; Phase 25's bit-packing sweep
+had already taken that range, so the whole block moved up by twenty to `R-123`–`R-172`. The merged main's
+closed Phase 26a and 26b had in the meantime issued tickets `R-123` and `R-124` against experiments
+`P-123`–`P-126`, so this merge moves the block again, by four, and it lands as `R-127`–`R-176`. Both
+source documents carry the final numbers; nothing else about them changed.
+
+**The phase's centre is an identity, not a paper.** `b*b - 4*a*c` in `marching_cubes/trilinear.rs:246` is
+**identically Cayley's `2×2×2` hyperdeterminant** of the eight corner values — proved symbolically, not sampled.
+It is also the discriminant of the pencil `det(A₀ + λA₁)` for **all three** axis pairings, which is the mechanism
+behind `M-206`; its sign is a `GL(2)³` invariant, so the body-saddle count **cannot depend on cell aspect ratio**;
+and it is invariant under all 48 octahedral relabellings and under negating the field. `R-127` records it,
+`R-128` and `R-129` cash the invariances, and **`R-136` exists to stop the overclaim** that the 730-subcase table
+follows from it — it does not, and the registration says why in advance.
+
+**Two holes in `CLAUDE.md` close.** `χ` is asserted as unavailable on `gyroid`; it is `−8N³` per `N³` conventional
+cubic cells under periodic wrap, because the gyroid's primitive lattice is body-centred and the cubic cell holds
+two primitive cells — verified numerically at four resolutions, with Schwarz P at `−4` and Schwarz D at `−16` as
+independent checks (`R-142`, `R-143`). And Etiene et al.'s DOI, flagged unverified at
+`2026-08-26-audit-and-phase-23-registrations.md:365`, is `10.1109/tvcg.2011.109` (`R-145`).
+
+**The largest paid-for gap is Group D.** Five papers on metric-based anisotropic mesh adaptation sit in the corpus
+at 0.70–0.71 and the repository cites none of them. `R-147` registers the honest version in advance: the
+convergence **rate** does not improve — the exponent is fixed by polynomial degree and dimension — and what moves
+is the **constant M-12 fits**, concentrated on features with a flat direction.
+
+**Order matters in five places and nowhere else.** `R-127` runs before the rest of Group A and `R-131` rides it.
+`R-142` runs before `R-143` and `R-145`. `R-146` runs before `R-147`, `R-149` and `R-151`. `R-155` runs before
+`R-156` and `R-157`. `R-152` runs before `R-153` and `R-154`. Everything else is independent and eleven rows are `S`.
+
+**Nine rows are expected to return nulls and that is registered rather than hoped:** `R-136` (which exists to
+prevent an overclaim), `R-150`, `R-158`, `R-159` (whose null — that Marching Cubes is already order-optimal and
+only the constant is in play — is the most valuable sentence available in this phase), `R-163`, `R-166`, `R-168`,
+`R-172`, `R-174`. Phase 23's two most useful rows were `✗51` and `✗54`, both of which said *do not build this*.
+
+**Seven candidates were killed during the probe and are recorded so nobody re-searches them:** random matrix
+theory and pseudospectra for the QEF (the matrix is normal, so pseudospectra return the singular-value threshold
+they were meant to replace); scheduling theory (bounded per-cell output makes the span `O(1)`); geometric
+separators for chunking (an axis-aligned cube already attains the `Θ(n^{2/3})` isoperimetric optimum);
+Ising/dimer limit shapes (no determinantal structure in 3D); renormalization-group LOD (no critical point);
+compressed sensing (deterministic grid, no sparsity basis); Helly-type certificates for the cell clamp (the target
+is a 30-flop `3×3` adjugate).
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-127** | S | — |
+| ☐ | **R-128** | S | `R-127` |
+| ☐ | **R-129** | S | `R-127` |
+| ☐ | **R-130** | M | `R-127` |
+| ☐ | **R-131** | M | `R-127` |
+| ☐ | **R-132** | M | `R-127` |
+| ☐ | **R-133** | M | `R-127` |
+| ☐ | **R-134** | S | `R-127` |
+| ☐ | **R-135** | S | `R-127` |
+| ☐ | **R-136** | S | `R-127` |
+| ☐ | **R-137** | S | — |
+| ☐ | **R-138** | M | — |
+| ☐ | **R-139** | M | — |
+| ☐ | **R-140** | M | — |
+| ☐ | **R-141** | L | — |
+| ☐ | **R-142** | S | — |
+| ☐ | **R-143** | S | `R-142` |
+| ☐ | **R-144** | M | — |
+| ☐ | **R-145** | M | `R-142` |
+| ☐ | **R-146** | L | — |
+| ☐ | **R-147** | M | `R-146` |
+| ☐ | **R-148** | M | — |
+| ☐ | **R-149** | M | `R-146` |
+| ☐ | **R-150** | S | — |
+| ☐ | **R-151** | M | `R-146` |
+| ☐ | **R-152** | M | — |
+| ☐ | **R-153** | M | `R-152` |
+| ☐ | **R-154** | M | `R-152` |
+| ☐ | **R-155** | S | — |
+| ☐ | **R-156** | M | `R-155` |
+| ☐ | **R-157** | M | `R-155` |
+| ☐ | **R-158** | M | — |
+| ☐ | **R-159** | M | — |
+| ☐ | **R-160** | M | — |
+| ☐ | **R-161** | M | — |
+| ☐ | **R-162** | M | — |
+| ☐ | **R-163** | S | `R-162` |
+| ☐ | **R-164** | M | `R-162` |
+| ☐ | **R-165** | M | — |
+| ☐ | **R-166** | M | — |
+| ☐ | **R-167** | M | — |
+| ☐ | **R-168** | M | `R-167` |
+| ☐ | **R-169** | S | `R-167` |
+| ☐ | **R-170** | S | — |
+| ☐ | **R-171** | M | — |
+| ☐ | **R-172** | M | — |
+| ☐ | **R-173** | M | — |
+| ☐ | **R-174** | M | — |
+| ☐ | **R-175** | M | — |
+| ☐ | **R-176** | M | — |
 
 ---
 
