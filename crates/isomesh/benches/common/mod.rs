@@ -16,8 +16,14 @@
     reason = "compiled once per bench target, so every helper is unused in most of them"
 )]
 
+pub(crate) mod beta;
+pub(crate) mod boolean;
 pub(crate) mod experiment;
 pub(crate) mod heat;
+pub(crate) mod lattice;
+pub(crate) mod metric;
+pub(crate) mod poly;
+pub(crate) mod tpms;
 pub(crate) mod wedge;
 
 // Hardware counters come from `perf_event_open`, a Linux system call with no
