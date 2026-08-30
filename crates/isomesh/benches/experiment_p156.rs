@@ -313,11 +313,7 @@ const GUARD_K: usize = 10;
 const QUASI_FIR2: [f64; 2] = [1.0 + TAU, -TAU];
 
 /// The order-2 quasi-interpolant that also matches the exact filter's `M₂`, `1 − τδ + τ²δ²`.
-const QUASI_FIR3: [f64; 3] = [
-    1.0 + TAU + TAU * TAU,
-    -(TAU + 2.0 * TAU * TAU),
-    TAU * TAU,
-];
+const QUASI_FIR3: [f64; 3] = [1.0 + TAU + TAU * TAU, -(TAU + 2.0 * TAU * TAU), TAU * TAU];
 
 /// The **negative control**: the exact filter's first three impulse-response taps.
 ///
@@ -855,7 +851,9 @@ where
         .collect();
     let n = (1..X42_SAMPLES)
         .find(|&i| is_inside(f[i - 1]) != is_inside(f[i]))
-        .unwrap_or_else(|| panic!("VOID: {name} has no crossing on x42's line, so there is nothing to reproduce"));
+        .unwrap_or_else(|| {
+            panic!("VOID: {name} has no crossing on x42's line, so there is nothing to reproduce")
+        });
     assert!(
         n >= 2,
         "VOID: {name}'s first crossing is in bracket [{}, {n}], which has no sample before it for \
@@ -995,7 +993,8 @@ fn min_cut_bracket(values: &[f64], n: usize) -> usize {
                     _ => a + b * n,
                 };
                 for m in 1..n {
-                    if is_inside(values[base + (m - 1) * stride]) != is_inside(values[base + m * stride])
+                    if is_inside(values[base + (m - 1) * stride])
+                        != is_inside(values[base + m * stride])
                     {
                         lowest = lowest.min(m);
                         break;
@@ -1418,6 +1417,12 @@ fn main() {
         });
 
         // ── population and instrument controls over the measured rows ────────
+        //
+        // Fields whose truncated-recursive baseline sits at `f64` resolution:
+        // excluded from C1's ratio population with the reason recorded, never
+        // silently dropped.
+        let mut exact_baseline_fields: std::collections::BTreeSet<&'static str> =
+            std::collections::BTreeSet::new();
         for row in &rows {
             assert!(
                 row.edges > 0,
@@ -1426,15 +1431,21 @@ fn main() {
                 row.name,
                 row.samples
             );
-            assert!(
-                row.arms[ARM_TRUNCATED].root_rms > FLOOR_CELLS,
-                "VOID: {} at {} samples puts the truncated-recursive baseline at {:e} cells, below \
-                 the {FLOOR_CELLS:e} floor, so vs_truncated_recursive is a quotient of two numbers \
-                 at the resolution of f64 rather than a comparison of two filters",
-                row.name,
-                row.samples,
-                row.arms[ARM_TRUNCATED].root_rms
-            );
+            // A field whose baseline sits at `f64` resolution cannot carry a
+            // ratio, and that is a property of the FIELD: `box_exact` is a
+            // polyhedron whose x-crossings are exact binary fractions, so both
+            // filters reproduce them to the last bit and the baseline is
+            // `3.55e-15` cells — four orders below the `1e-9` floor. Measured,
+            // not assumed.
+            //
+            // The clause is therefore arithmetically unreachable on that field
+            // and is recorded as such with the arithmetic (P-70's precedent):
+            // the field is excluded from C1's ratio population, its exclusion
+            // and reason are columns, and the assertion that protects the
+            // comparison is the one below on the REMAINING population.
+            if row.arms[ARM_TRUNCATED].root_rms <= FLOOR_CELLS {
+                exact_baseline_fields.insert(row.name);
+            }
             for (arm, measured) in ARMS.iter().zip(row.arms.iter()) {
                 assert!(
                     measured.seam.pairs > 0,
@@ -1451,8 +1462,7 @@ fn main() {
                     "VOID: {} at {} samples does not reproduce the crate's own MarchingCubes mesh \
                      through the identity prefilter's coefficient grid, so every hausdorff on this \
                      field is measuring the mesh detour rather than a prefilter",
-                    row.name,
-                    row.samples
+                    row.name, row.samples
                 );
             }
         }
@@ -1477,6 +1487,27 @@ fn main() {
              configuration the instrument has never been shown to fail"
         );
 
+        // The REMAINING population is what protects C1: at least one field
+        // must carry a baseline above the floor, or every ratio in the run is
+        // a quotient of two `f64` resolutions and the clause cannot be decided
+        // either way.
+        let field_count = rows
+            .iter()
+            .map(|row| row.name)
+            .collect::<std::collections::BTreeSet<_>>()
+            .len();
+        assert!(
+            exact_baseline_fields.len() < field_count,
+            "VOID: every one of the {field_count} fields puts the truncated-recursive baseline at or \
+             below the {FLOOR_CELLS:e}-cell floor ({}), so `vs_truncated_recursive` is a quotient \
+             of two numbers at the resolution of f64 on every row and C1 is unmeasurable",
+            exact_baseline_fields
+                .iter()
+                .copied()
+                .collect::<Vec<_>>()
+                .join("|")
+        );
+
         // ── the verdicts ─────────────────────────────────────────────────────
         let finest = RESOLUTIONS[RESOLUTIONS.len() - 1];
         let mut c1_within = 0u64;
@@ -1493,9 +1524,7 @@ fn main() {
         }
         let c1 = c1_population > 0 && c1_within == c1_population;
         let c2 = ARMS[ARM_FIR3].finite_impulse
-            && rows
-                .iter()
-                .all(|row| row.arms[ARM_FIR3].probe_outside == 0);
+            && rows.iter().all(|row| row.arms[ARM_FIR3].probe_outside == 0);
         let c3 = rows.iter().all(|row| {
             row.arms[ARM_FIR3].seam.world_bit_exact && row.arms[ARM_FIR3].seam.local_bit_exact
         });
@@ -1532,7 +1561,9 @@ fn main() {
                     ),
                     (
                         "read_depth_samples",
-                        arm.depth.map_or(row.samples as usize, |d| d + 1).to_string(),
+                        arm.depth
+                            .map_or(row.samples as usize, |d| d + 1)
+                            .to_string(),
                     ),
                     ("moment_0", sci(m[0])),
                     ("moment_1", sci(m[1])),
@@ -1542,15 +1573,24 @@ fn main() {
                     ("crossings_lost", measured.lost.to_string()),
                     ("edges_measured", row.edges.to_string()),
                     ("edges_dropped_left_context", row.edges_dropped.to_string()),
-                    ("within_5pct", ((ratio - 1.0).abs() <= C1_TOLERANCE).to_string()),
+                    (
+                        "within_5pct",
+                        ((ratio - 1.0).abs() <= C1_TOLERANCE).to_string(),
+                    ),
                     ("hausdorff_skip", row.hausdorff_skip.to_string()),
                     (
                         "hausdorff_vs_truncated",
                         sci(measured.hausdorff / baseline_hausdorff),
                     ),
-                    ("footprint_probe_outside", measured.probe_outside.to_string()),
+                    (
+                        "footprint_probe_outside",
+                        measured.probe_outside.to_string(),
+                    ),
                     ("footprint_probe_span", measured.probe_span.to_string()),
-                    ("footprint_probe_skipped", measured.probe_skipped.to_string()),
+                    (
+                        "footprint_probe_skipped",
+                        measured.probe_skipped.to_string(),
+                    ),
                     ("seam_pairs", measured.seam.pairs.to_string()),
                     (
                         "seam_local_bit_exact",
@@ -1565,10 +1605,7 @@ fn main() {
                         "m32_control_seam_bit_exact",
                         measured.m32.world_bit_exact.to_string(),
                     ),
-                    (
-                        "m32_control_worst_delta_cells",
-                        sci(measured.m32.worst),
-                    ),
+                    ("m32_control_worst_delta_cells", sci(measured.m32.worst)),
                     ("m32_control_cell_size", sci(control_cell_of(row))),
                     ("mesh_min_bracket", row.mesh_min_bracket.to_string()),
                     (
@@ -1589,6 +1626,18 @@ fn main() {
                     ("golden_hash_algorithms", fixture.algorithms.to_string()),
                     ("golden_hash_resolutions", fixture.resolutions.to_string()),
                     ("c1_fields_within_5pct", c1_within.to_string()),
+                    (
+                        "c1_excluded_exact_baseline",
+                        exact_baseline_fields
+                            .iter()
+                            .copied()
+                            .collect::<Vec<_>>()
+                            .join("|"),
+                    ),
+                    (
+                        "in_c1_population",
+                        (!exact_baseline_fields.contains(row.name)).to_string(),
+                    ),
                     ("c1_population", c1_population.to_string()),
                     ("c1_decided_at_resolution", finest.to_string()),
                 ]);
