@@ -779,6 +779,21 @@ let trimesh = TriMesh::new(vertices, indices)?;
 
 ---
 
+## Where the caves join up
+
+![An isovalue sweep on cave terrain as the giant air component appears and takes over](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/where-the-caves-join-up.gif)
+
+`cave_percolation` turns P-176's transition into a dial a level designer can read: on `noise_cavity`
+the giant air component appears at an isovalue of **0.029340**, and at `iso = 0` one component holds
+**0.814493** of the air against 65 isolated pockets — C1 and C3 held on **84 of 84** rows, with the
+crate's own `Air` union-find agreeing with an independent one on the component count, the air-sample
+count and the full sorted size multiset on every row.
+
+The 2D slice is the theorem's actual content: 6-connectivity in 3D, 4 in 2D, and on `noise_cavity` the
+2D onset never comes. On `fbm_terrain` it does — at 7.27 — which the registration named in advance as a
+real risk, `fbm_terrain` being hash-based lattice noise and not a Gaussian field. C2's 42/42 split is
+that comparison, shown live.
+
 [← back to the README](../../README.md)
 
 ---

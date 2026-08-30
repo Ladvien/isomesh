@@ -22,7 +22,7 @@
 # one entry in `web/play.html`'s allow-list -- and `scripts/doc_facts.sh` checks
 # those two against each other, because a module built but not allow-listed is
 # 36 MB nothing can reach and one allow-listed but not built is a link to a 404.
-# Only these nine are built for the web; the other examples are untouched and
+# Only these eleven are built for the web; the other examples are untouched and
 # stay native-only.
 #
 # **`isomesh_web` is not one of them.** It is the front page's own module -- the
@@ -53,6 +53,8 @@ DEMOS=(
     game_mirror_dedup
     game_edit_tape_trim
     shifted_linear_root
+    hyperdeterminant_cells
+    tpms_euler
 )
 OUT=web/dist
 PYTHON="${PYTHON:-python3}"

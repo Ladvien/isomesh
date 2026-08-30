@@ -127,6 +127,22 @@ CLIPS=(
     "the-tape-you-keep-is-twenty-times-too-big|game_edit_tape_trim|ISOMESH_CAPTURE_FRAMES=150 ISOMESH_CAPTURE_EVERY=2 FPS=10"
     "mirrored-is-not-the-same-mesh|game_mirror_dedup|ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
     "where-the-root-falls-decides-the-gain|shifted_linear_root|ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
+
+    # -- Phase 27 -------------------------------------------------------------
+    # All five are self-driving under capture, so every row is the demo's own
+    # walk. The HUD stays on for all five because on a census or a sweep the
+    # label IS the content -- hyperdeterminant compares a live panel to
+    # P-130's partition on the same screen, anisotropic_metric's two panels are
+    # compared by the numbers beside them. hyperdeterminant's 96 frames cover
+    # its eight-field walk at twelve a field; tpms's 90 cover the nine-state
+    # cycle at ten a state; cave's 82 cover the isovalue ladder across the
+    # transition; intrinsic's 80 give four full before/after alternations at
+    # ten frames an arm.
+    "the-hyperdeterminant-in-every-cell|hyperdeterminant_cells|ISOMESH_CAPTURE_FRAMES=96 ISOMESH_CAPTURE_EVERY=2"
+    "three-periodic-surfaces-with-a-known-topology|tpms_euler|ISOMESH_CAPTURE_FRAMES=90 ISOMESH_CAPTURE_EVERY=2"
+    "the-metric-that-costs-more-than-it-saves|anisotropic_metric|ISOMESH_CAPTURE_FRAMES=96 ISOMESH_CAPTURE_EVERY=2"
+    "where-the-caves-join-up|cave_percolation|ISOMESH_FIELD=1 ISOMESH_CAPTURE_FRAMES=82 ISOMESH_CAPTURE_EVERY=2"
+    "fifteen-thousand-flips-that-move-nothing|intrinsic_flips|ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2"
 )
 
 # The filters are this script's own arguments, captured once. `want` used to

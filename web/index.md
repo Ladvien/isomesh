@@ -61,7 +61,7 @@ domain, so a closed-surface gate would be the wrong gate to hold it to.
 
 ## Play in your browser
 
-Nine of the demos are playable in your browser: real WebAssembly builds of the same examples the
+Eleven of the demos are playable in your browser: real WebAssembly builds of the same examples the
 repository ships, no video and no replay. Three of them — the Phase 21 ones — **measure their own figures
 in your browser** and then print a cross-check against the CSV they were registered with; open the
 developer console and you can read the comparison, line by line, on your own hardware. A demo whose numbers
@@ -69,7 +69,7 @@ stopped agreeing with its committed artefact would say so on screen.
 
 They need **WebGPU**. `game_dig` offers Marching Cubes on the GPU as one of its eight meshers, Cargo
 features are per-package, and `bevy_render` gives its `webgpu` feature precedence over `webgl2` on `wasm32` —
-so there is no per-example choice to make and all nine moved backend at once. The demo at the top of this
+so there is no per-example choice to make and all eleven moved backend at once. The demo at the top of this
 page is unaffected, because it is hand-written WebGL2 rather than a Bevy build.
 
 Each module is 36 MB, about 8.8 MB on the wire once the host has gzipped it, and it is cached after the
@@ -208,6 +208,41 @@ median of 1.486. The honest number is that it clears the bar on 82% of positions
 
 `✗42 / M-359` · `E-316` · cross-checked against
 [`docs/experiments/p-60.csv`](docs/experiments/p-60.csv)
+
+---
+
+### [▶ Play `hyperdeterminant_cells`](site:play.html?demo=hyperdeterminant_cells)
+
+![The normalised hyperdeterminant magnitude as a per-cell heatmap, with the Delta = 0 stratum in grey](docs/gifs/the-hyperdeterminant-in-every-cell.gif)
+
+`b*b - 4*a*c` at `trilinear.rs:246` **is** Cayley's `2×2×2` hyperdeterminant of the eight corner values —
+12 terms against 12 at degree 4, all three pencil pairings agreeing, the exact-rational deviation `0/1`
+over 3,481 trials. The heatmap colours surface cells by the scale-free magnitude `|Δ| / max|fᵢ|⁴`; grey
+is the `Δ = 0` stratum; magenta cages mark cells where the `f32` sign disagrees with the exact one. The
+panel compares the live partition to P-130's committed one and prints P-130's two falsifications beside
+the comparison.
+
+`M-440` · `E-317` · cited from
+[`docs/experiments/p-130.csv`](docs/experiments/p-130.csv) and
+[`docs/experiments/p-134.csv`](docs/experiments/p-134.csv)
+
+---
+
+### [▶ Play `tpms_euler`](site:play.html?demo=tpms_euler)
+
+![Gyroid, Schwarz P and Schwarz D at N = 1, 2, 3 with chi measured against a derived prediction](docs/gifs/three-periodic-surfaces-with-a-known-topology.gif)
+
+Three triply periodic minimal surfaces whose Euler characteristic the crate can *know*: gyroid `−8N³`,
+Schwarz P `−4N³`, Schwarz D `−16N³` (P-142's C1 held `−8 / −64 / −216` to the integer; P-143's C2 is an
+exact `i128` identity, which is why Schwarz P's lattice reads `simple_cubic` — its body-centring
+operation *negates* `F_P` rather than translating it). The prediction is derived live from a
+seven-half-shift symmetry census, not transcribed. The 32-voxel rung is a labelled degenerate control
+that misses by exactly its non-manifold edges — the `π/4` lattice where Schwarz D cancels to exactly
+zero, M-48's class.
+
+`M-455` / `M-456` · `E-318` · cited from
+[`docs/experiments/p-142.csv`](docs/experiments/p-142.csv) and
+[`docs/experiments/p-143.csv`](docs/experiments/p-143.csv)
 
 ---
 

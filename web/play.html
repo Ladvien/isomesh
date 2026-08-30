@@ -66,6 +66,31 @@
      in your browser and held against every number the CSV publishes.</p>
 </div>
 
+<div class="keys" id="notes-hyperdeterminant_cells" hidden>
+  <p><kbd>X</kbd> f32 sign disagreements ·
+     <kbd>Z</kbd> the Δ = 0 stratum ·
+     <kbd>V</kbd> hide the surface ·
+     <kbd>←</kbd> <kbd>→</kbd> which field ·
+     <kbd>↑</kbd> <kbd>↓</kbd> resolution</p>
+  <p>The panel compares this run to the committed
+     <a href="experiments/p-130.csv"><code>docs/experiments/p-130.csv</code></a> and
+     <a href="experiments/p-134.csv"><code>docs/experiments/p-134.csv</code></a> rows for the same field and
+     resolution: the (Δ &gt; 0, Δ &lt; 0, Δ = 0) partition, P-131's branch-fire counts, and the normalised
+     magnitude's range. <code>b*b − 4*a*c</code> at <code>trilinear.rs:246</code> is Cayley's 2×2×2
+     hyperdeterminant, exactly (P-127).</p>
+</div>
+
+<div class="keys" id="notes-tpms_euler" hidden>
+  <p><kbd>←</kbd> <kbd>→</kbd> which surface ·
+     <kbd>↑</kbd> <kbd>↓</kbd> periods and the voxel ladder ·
+     <kbd>P</kbd> wrap the seams or not</p>
+  <p><code>χ</code> is counted from the welded extraction; the prediction is derived on the fly from a
+     seven-half-shift symmetry census, not transcribed. The 32-voxel rung is a labelled degenerate
+     control: it samples the <code>π/4</code> lattice where Schwarz D cancels to exactly zero (M-48), and
+     <code>chi_measured − chi_predicted</code> reads its non-manifold edges exactly. The open arm is
+     judged by its boundary edges, never by χ.</p>
+</div>
+
 <div class="keys" id="notes-quickstart" hidden>
   <p>No keys and no HUD: a sphere meshed as eight chunks, on screen, and nothing
      else. It is the one example that does not share the demo harness, which is
@@ -196,7 +221,7 @@
      meshes continuously, and Bevy 0.19's <code>bevy_render</code> slab allocator
      logs <em>"Use-after-free: attempted to copy element data for an unallocated
      key"</em> once per affected mesh — 3,186 times in a 45-second run, measured
-     on the WebGL2 backend this page served before the nine demos moved to
+     on the WebGL2 backend this page served before the eleven demos moved to
      WebGPU, so read the count as the shape of the thing and not as today's
      figure. The demo streams and renders correctly through all
      of it (411 chunks resident, 229,580 triangles). It is upstream of this
@@ -224,6 +249,8 @@
     game_mirror_dedup: "E-314 — mirrored is not the same mesh",
     game_edit_tape_trim: "E-315 — the tape you keep is twenty times too big",
     shifted_linear_root: "E-316 — where the root falls decides the gain",
+    hyperdeterminant_cells: "E-317 — the hyperdeterminant in every cell",
+    tpms_euler: "E-318 — three periodic surfaces with a known topology",
   };
   // Demos the shared key list above does not describe. `quickstart` does not use
   // the demo harness at all; `game_dig` uses it but rebinds every key on that
@@ -239,7 +266,7 @@
   // `webgl2` are not mutually exclusive in `bevy`, but
   // `bevy_render-0.19.0/src/settings.rs` gives `webgpu` precedence on `wasm32`
   // and selects `Backends::BROWSER_WEBGPU`, so there is no WebGL2 build of these
-  // nine and nothing to fall back to. Data rather than a branch, like the set
+  // eleven and nothing to fall back to. Data rather than a branch, like the set
   // above, and derived from `DEMOS` rather than written out a second time so the
   // two cannot drift apart.
   const NEEDS_WEBGPU = new Set(Object.keys(DEMOS));

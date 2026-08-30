@@ -339,4 +339,20 @@ cd bevy_isomesh && cargo run --example chunk_seam_weld --release
 
 ---
 
+## Fifteen thousand flips that move nothing
+
+![Wireframe switching between marching-cubes and intrinsic Delaunay connectivity while the pinned vertices do not move](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/fifteen-thousand-flips-that-move-nothing.gif)
+
+`intrinsic_flips` closes the phase's cleanest shippable question with an instrument you can watch:
+**intrinsic Delaunay flipping reaches the fixed point on every row — 15,391 flips, 1,570 of 10,678
+slivers removed — and moves not one vertex** (P-175, `vertex_positions_moved` **0** bitwise,
+`hashes_moved` **0** against the committed `golden_hashes.json` entry). A positive control flips the
+same positions' indices and moves the hash, so the zero is not a dead instrument.
+
+What the falsified clauses add is the price tag: the worst-decile minimum angle gained at most
+**1.642437°** against a 10° bar (C1 falsified), and **0 of 8** connectivity consumers in
+`crates/isomesh/src` read anything the flips change (C3 falsified) — every one reads extrinsic
+triangles. The yellow crosses are the shared vertex set; the after arm is drawn as chords, and the
+chord-vs-geodesic gap is printed beside it: **0.000108 cell** on 282 of 1,956 edges.
+
 [← back to the README](../../README.md)

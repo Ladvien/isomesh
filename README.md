@@ -260,11 +260,11 @@ The math-library pin is the load-bearing one. Bevy 0.19 wants glam 0.32, `parry3
 
 ## Demos
 
-**[→ The demo page](bevy_isomesh/DEMOS.md)** — all 49 examples, each with an animated capture, the
+**[→ The demo page](bevy_isomesh/DEMOS.md)** — all 54 examples, each with an animated capture, the
 exact command, its controls, and the finding it demonstrates.
 
 **[→ ladvien.github.io/isomesh](https://ladvien.github.io/isomesh/)** is the same prose as a site, with
-every clip served from it rather than hotlinked. Nine of the demos are **playable in the browser** there
+every clip served from it rather than hotlinked. Eleven of the demos are **playable in the browser** there
 as WebAssembly builds, and the three Phase 21 ones each still print their cross-check against their
 committed CSV to the console. The front page carries a tenth module that is not a Bevy build: `isomesh`
 itself, with a hand-written WebGL2 renderer and the validity report recomputed live, at **133 KB against
@@ -272,7 +272,7 @@ the Bevy modules' 36 MB**.
 
 It is served over **HTTPS**, and that is load-bearing rather than hygiene: WebGPU is a
 secure-context-only API, so on an `http://` page `navigator.gpu` is `undefined` and every one of those
-nine modules refuses to start — in Chrome on a desktop exactly as on a phone.
+eleven modules refuses to start — in Chrome on a desktop exactly as on a phone.
 
 The longer write-ups live on three further pages, so this one stays short. Every figure on them came
 from a command you can run, and every number is measured on one of the two machines in

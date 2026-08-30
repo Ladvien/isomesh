@@ -1,10 +1,10 @@
 # The demos
 
-Thirty-four runnable examples. This page shows what each one looks like, what it proves, and the exact
+Thirty-nine runnable examples. This page shows what each one looks like, what it proves, and the exact
 line to run it.
 
 **[The hosted version of this page](https://ladvien.github.io/isomesh/demos.html)** carries the same clips
-in one link, if you would rather send someone a URL than a repository. Nine of the demos are playable in
+in one link, if you would rather send someone a URL than a repository. Eleven of the demos are playable in
 your browser there as WebAssembly builds, and the three Phase 21 ones each still print their cross-check
 against their committed CSV to the console:
 [`game_dig`](https://ladvien.github.io/isomesh/play.html?demo=game_dig),
@@ -15,15 +15,17 @@ against their committed CSV to the console:
 [`game_showcase`](https://ladvien.github.io/isomesh/play.html?demo=game_showcase),
 [`game_mirror_dedup`](https://ladvien.github.io/isomesh/play.html?demo=game_mirror_dedup),
 [`game_edit_tape_trim`](https://ladvien.github.io/isomesh/play.html?demo=game_edit_tape_trim),
-[`shifted_linear_root`](https://ladvien.github.io/isomesh/play.html?demo=shifted_linear_root).
+[`shifted_linear_root`](https://ladvien.github.io/isomesh/play.html?demo=shifted_linear_root),
+[`hyperdeterminant_cells`](https://ladvien.github.io/isomesh/play.html?demo=hyperdeterminant_cells),
+[`tpms_euler`](https://ladvien.github.io/isomesh/play.html?demo=tpms_euler).
 
-Those nine need **WebGPU**, not WebGL2. `game_dig` offers Marching Cubes on the GPU as one of its eight
+Those eleven need **WebGPU**, not WebGL2. `game_dig` offers Marching Cubes on the GPU as one of its eight
 mesher options, Cargo features are per-package, and `bevy_render` gives its `webgpu` feature precedence over
-`webgl2` on `wasm32` — so there is no per-example choice to make and all nine moved backend together.
+`webgl2` on `wasm32` — so there is no per-example choice to make and all eleven moved backend together.
 
 **WebGPU is also secure-context-only**, which is why those links are `https://` and why the site has no
 custom domain: `isomesh.ladvien.com` never got a certificate, so the `http://` page it served left
-`navigator.gpu` `undefined` and all nine refused to start in every browser. On iOS 25 and older, WebGPU
+`navigator.gpu` `undefined` and all eleven refused to start in every browser. On iOS 25 and older, WebGPU
 is behind Settings → Safari → Advanced → Experimental Features; iOS 26 has it on by default, and every
 iOS browser is WebKit, so Chrome on an iPhone behaves identically to Safari there.
 
@@ -289,6 +291,60 @@ extractor in the crate by a wide margin (M-98: 196× Marching Cubes), which is t
 cargo run --example subgrid_features --release        # - = thickness · [ ] resolution
 ```
 
+### The hyperdeterminant in every cell (M-440)
+
+![The normalised hyperdeterminant magnitude as a per-cell heatmap, with the Delta = 0 stratum in grey](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/the-hyperdeterminant-in-every-cell.gif)
+
+[`hyperdeterminant_cells`](https://ladvien.github.io/isomesh/play.html?demo=hyperdeterminant_cells).
+`b*b − 4*a*c` at `trilinear.rs:246` **is** Cayley's `2×2×2` hyperdeterminant — 12 terms against 12 at
+degree 4, all three pencil pairings agreeing, the exact-rational deviation `0/1` over 3,481 trials
+(P-127, all three clauses held). The heatmap colours surface cells by
+`|Δ| / max|fᵢ|⁴`, degree-4 homogeneous so it is exactly scale-free; grey is the `Δ = 0` stratum;
+magenta cages mark cells where the `f32` sign disagrees with the exact one.
+
+The panel compares the live `(Δ > 0, Δ < 0, Δ = 0)` partition to P-130's committed one on the same
+field and resolution, and P-131's branch-fire counts to the CSV — on this demo the label IS the
+content, so the HUD stays on in the clip. The run command:
+
+```bash
+cargo run --example hyperdeterminant_cells --release
+```
+
+### Three periodic surfaces with a known topology (M-455)
+
+![Gyroid, Schwarz P and Schwarz D with chi counted from the weld against a prediction derived on the fly](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/three-periodic-surfaces-with-a-known-topology.gif)
+
+[`tpms_euler`](https://ladvien.github.io/isomesh/play.html?demo=tpms_euler).
+Gyroid `χ = −8N³`, Schwarz P `−4N³`, Schwarz D `−16N³` — P-142's C1 and C2 held to the integer, and
+P-145's digital-topology oracle reproduces the gyroid exactly on the fields where the crate had no
+ground truth. The prediction is **derived on the fly** from a seven-half-shift symmetry census rather
+than transcribed, which is also why Schwarz P's lattice comes out `simple_cubic`: its body-centring
+operation *negates* `F_P` rather than translating it (P-143 C2, an exact `i128` identity on 36 of 36
+rows). The 32-voxel rung is a labelled degenerate control — it samples the `π/4` lattice where Schwarz D
+cancels to exactly zero (M-48) — and there `chi_measured − chi_predicted` reads its non-manifold edges
+exactly, which is the diagnostic that turns a wrong number into a named mechanism.
+
+```bash
+cargo run --example tpms_euler --release
+```
+
+### The metric that costs more than it saves (M-459)
+
+![Isotropic beside metric-driven sampling, with the aspect-ratio line carrying its at-floor count](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/the-metric-that-costs-more-than-it-saves.gif)
+
+`anisotropic_metric`. The negative result, shown as one: **P-146's C1 and C3 were both falsified** —
+at matched symmetric Hausdorff the metric-driven arm is never cheaper and is `2.299×` dearer on
+`thin_plate`, the most anisotropic measurable field, and the metric build costs `0.17×` of the
+extraction against a `0.15` bar. The aspect-ratio line carries its **at-floor cell count** beside
+`aspect_ratio_max`, because at a flat direction the ratio is `|λ|max / H_FLOOR ~ 1e9` and is a
+restatement of `H_FLOOR = 1e-9` rather than a measurement — `fbm_terrain` has 1,156 of 1,156 band
+cells at floor, `gyroid` 1 of 2,945 with a genuine `5.11e3`. P-147 and P-149 ride along as citation
+lines, including P-149's `70 of 112` rows where P-146's two arms come out identical.
+
+```bash
+cargo run --example anisotropic_metric --release
+```
+
 ### The rest
 
 | example | what it shows |
@@ -508,6 +564,22 @@ the worst vertex displacement at each level switch — the pop size, in cells.
 cargo run --example game_lod_flyover --release  # Space pause · T transitions · [ ] speed · R reset
 ```
 
+### Where the caves join up (M-489)
+
+![An isovalue sweep on cave terrain as the giant air component appears and takes over](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/where-the-caves-join-up.gif)
+
+`cave_percolation`. The isovalue sweep IS the capture: on `noise_cavity` the giant air component
+appears at **0.029340** and at `iso = 0` one component holds **0.814493** of the air against 65 isolated
+pockets (P-176: C1 and C3 held on 84 of 84, the crate's own `Air` union-find agreeing with an
+independent one on the component count, the air-sample count and the full sorted size multiset). The
+2D slice is the control: 6-connectivity in 3D, 4 in 2D, and on `noise_cavity` the 2D onset never comes —
+while `fbm_terrain`'s 2D slices percolate too at 7.27, which the registration named in advance as a
+real risk because `fbm_terrain` is hash-based lattice noise and not a Gaussian field.
+
+```bash
+cargo run --example cave_percolation --release      # ← → isovalue · 1/2 field · H hold the HUD
+```
+
 ### The rest
 
 | example | what it shows |
@@ -591,6 +663,22 @@ emitting a hole.
 
 ```bash
 cargo run --example marching_cubes_tunnel --release      # 1-2 configuration · H hexagon · C contours
+```
+
+### Fifteen thousand flips that move nothing (M-488)
+
+![Wireframe switching between marching-cubes and intrinsic Delaunay connectivity while the pinned vertices do not move](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/fifteen-thousand-flips-that-move-nothing.gif)
+
+`intrinsic_flips`. **Intrinsic Delaunay flipping reaches the fixed point on every row — 15,391 flips,
+1,570 of 10,678 slivers removed — and moves not one vertex.** `vertex_positions_moved` **0** bitwise,
+`hashes_moved` **0** against the committed `golden_hashes.json` entry, with a positive control that
+flips the same positions' indices and moves the hash (P-175: C2 held; C1 and C3 falsified and shown).
+The yellow crosses are the shared vertex set both arms triangulate; the after arm is drawn as chords,
+and the chord-vs-geodesic gap is printed beside it — 0.000108 cell on 282 of 1,956 edges, which is the
+whole ticket.
+
+```bash
+cargo run --example intrinsic_flips --release      # F arm · V vertices · S slivers
 ```
 
 ### The bilinear saddle, swept
