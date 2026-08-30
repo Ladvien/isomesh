@@ -560,7 +560,8 @@ fn decode(grid: &LatticeGrid, unit: f64) -> Sites {
         let at = (k[0] - origin[0]) as usize
             + dims[0] * ((k[1] - origin[1]) as usize + dims[1] * (k[2] - origin[2]) as usize);
         assert_eq!(
-            table[at], ABSENT,
+            table[at],
+            ABSENT,
             "VOID: sites {} and {i} of {} decode to the same integer coordinate {k:?}, so the \
              lookup would hide one of them and the bond count would be wrong",
             table[at],
@@ -794,15 +795,16 @@ where
     // The cubic grid is built for its realised count and then dropped. The
     // module's protocol is that the coarse-grained lattice anchors the density
     // (`benches/common/lattice.rs:341-364`), and `49³` is P-162's own target.
-    let anchor = lattice_grid(Lattice::Cubic, lo, hi, TARGET_POINTS).sites.len();
+    let anchor = lattice_grid(Lattice::Cubic, lo, hi, TARGET_POINTS)
+        .sites
+        .len();
     let bcc = lattice_grid(Lattice::Bcc, lo, hi, anchor);
     let fcc = lattice_grid(Lattice::Fcc, lo, hi, anchor);
 
     let bcc_arm = arm(field, &bcc);
     let fcc_arm = arm(field, &fcc);
 
-    let mismatch =
-        (fcc_arm.samples as f64 - bcc_arm.samples as f64).abs() / bcc_arm.samples as f64;
+    let mismatch = (fcc_arm.samples as f64 - bcc_arm.samples as f64).abs() / bcc_arm.samples as f64;
     let bond_mismatch =
         (fcc_arm.bonds_per_site - bcc_arm.bonds_per_site).abs() / bcc_arm.bonds_per_site;
 
@@ -1066,11 +1068,7 @@ fn main() {
             println!(
                 "      {:>15}  |{:+.4}| dB  vs scatter {:.4} dB  -> {}   \
                  (bond-length prediction {:+.4} dB, registered {predicted:+.6} dB)",
-                row.field,
-                row.gap_median,
-                row.scatter_db,
-                row.below,
-                row.bond_length_gap_db
+                row.field, row.gap_median, row.scatter_db, row.below, row.bond_length_gap_db
             );
         }
         println!();
@@ -1138,10 +1136,7 @@ fn main() {
                     ("rms_error", format!("{:.9}", side.rms)),
                     ("rms_gap_db", format!("{:.6}", row.rms_gap_db)),
                     ("samples", side.samples.to_string()),
-                    (
-                        "scatter_is_zero",
-                        (row.scatter_db <= 0.0).to_string(),
-                    ),
+                    ("scatter_is_zero", (row.scatter_db <= 0.0).to_string()),
                     ("target_points", TARGET_POINTS.to_string()),
                     ("worst_linear_error", format!("{:.9}", side.worst)),
                 ]);

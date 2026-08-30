@@ -1213,9 +1213,7 @@ fn main() {
         let violations_outside_l1 = violations.len() - violations_in_l1;
         let c1_global = violations.is_empty();
         let anomaly_global = violations_in_l1 > 0;
-        let c2_global = violations
-            .iter()
-            .all(|entry| entry.4 != "uncharacterised");
+        let c2_global = violations.iter().all(|entry| entry.4 != "uncharacterised");
 
         // How many rungs had the winner change with the norm. A characterisation
         // column, not a control: see the header.
@@ -1259,10 +1257,7 @@ fn main() {
                         run.record(&[
                             ("norm", group.norm.to_string()),
                             ("metric", arm.label.to_string()),
-                            (
-                                "element_count",
-                                format!("{:.0}", arm.complexity_measured),
-                            ),
+                            ("element_count", format!("{:.0}", arm.complexity_measured)),
                             ("error_measured", format!("{:.6e}", group.errors[index])),
                             ("optimal_metric_wins", group.wins.to_string()),
                             (
@@ -1336,21 +1331,12 @@ fn main() {
                             ),
                             ("groups_resolved", groups_resolved.to_string()),
                             ("groups_total", groups_total.to_string()),
-                            (
-                                "loss_margin_relative",
-                                format!("{:.6e}", group.loss_margin),
-                            ),
+                            ("loss_margin_relative", format!("{:.6e}", group.loss_margin)),
                             ("metric_exponent", format!("{}", arm.exponent)),
                             ("metric_scale", format!("{:.6e}", arm.scale)),
-                            (
-                                "norm_dependent_winner_rungs",
-                                norm_dependent.to_string(),
-                            ),
+                            ("norm_dependent_winner_rungs", norm_dependent.to_string()),
                             ("p_exponent", format!("{}", group.exponent)),
-                            (
-                                "quadratic_model_ratio",
-                                format!("{:.6e}", arm.model_ratio),
-                            ),
+                            ("quadratic_model_ratio", format!("{:.6e}", arm.model_ratio)),
                             ("ranking_resolved", group.resolved.to_string()),
                             ("resolution", rung.samples.to_string()),
                             (
@@ -1359,16 +1345,10 @@ fn main() {
                             ),
                             ("spread_in_norm", format!("{:.6}", group.spread)),
                             ("stencil_points", STENCIL_POINTS.to_string()),
-                            (
-                                "top_cell_share",
-                                format!("{:.6}", group.top_share[index]),
-                            ),
+                            ("top_cell_share", format!("{:.6}", group.top_share[index])),
                             ("violation_mechanism", group.mechanism.to_string()),
                             ("violations_in_l1", violations_in_l1.to_string()),
-                            (
-                                "violations_outside_l1",
-                                violations_outside_l1.to_string(),
-                            ),
+                            ("violations_outside_l1", violations_outside_l1.to_string()),
                             ("violations_total", violations.len().to_string()),
                             ("winner_metric", LEVELS[group.winner].1.to_string()),
                         ]);

@@ -340,7 +340,7 @@ use isomesh::marching_cubes::table::{AMBIGUOUS_FACES, is_inside};
 use isomesh::marching_cubes::trilinear::BodySaddles;
 use isomesh::marching_cubes::{FaceAmbiguity, InteriorAmbiguity, MarchingCubes};
 use isomesh::validate::{ValidateConfig, validate};
-use isomesh::{MeshBuffer, Real, RuntimeShape3, Shape3, Sdf};
+use isomesh::{MeshBuffer, Real, RuntimeShape3, Sdf, Shape3};
 
 use common::poly;
 
@@ -434,7 +434,10 @@ fn two_product(a: f64, b: f64) -> (f64, f64) {
 /// If `e` is empty — the zero expansion is written as one zero component, never
 /// as an empty slice, so an empty input means a caller lost a length.
 fn scale_expansion(e: &[f64], b: f64, h: &mut [f64]) -> usize {
-    assert!(!e.is_empty(), "scale_expansion: the zero expansion is [0.0]");
+    assert!(
+        !e.is_empty(),
+        "scale_expansion: the zero expansion is [0.0]"
+    );
     let mut written = 0usize;
     let (mut q, small) = two_product(e[0], b);
     if small != 0.0 {
@@ -615,7 +618,11 @@ impl ExactForm {
             let l1 = scale_expansion(&seed, f[idx[2]], &mut self.stage1);
             let l2 = scale_expansion(&self.stage1[..l1], f[idx[3]], &mut self.stage2);
             let l3 = scale_expansion(&self.stage2[..l2], coefficient, &mut self.stage3);
-            let merged = expansion_sum(&self.acc[..self.acc_len], &self.stage3[..l3], &mut self.next);
+            let merged = expansion_sum(
+                &self.acc[..self.acc_len],
+                &self.stage3[..l3],
+                &mut self.next,
+            );
             std::mem::swap(&mut self.acc, &mut self.next);
             self.acc_len = merged;
         }
@@ -880,7 +887,12 @@ fn spread(mut samples: Vec<f64>) -> (f64, f64, f64) {
 /// The rounding is the fixture's defining decision: it makes the corner set
 /// bit-identical in both precisions, so a sign disagreement is about arithmetic
 /// and not about representation.
-fn shared_corner_set<F>(field: &F, shape: &RuntimeShape3, origin: [f64; 3], cell_size: f64) -> Vec<f64>
+fn shared_corner_set<F>(
+    field: &F,
+    shape: &RuntimeShape3,
+    origin: [f64; 3],
+    cell_size: f64,
+) -> Vec<f64>
 where
     F: Sdf<Scalar = f64>,
 {
@@ -1210,8 +1222,7 @@ fn measure(
     let origin32: [f32; 3] = std::array::from_fn(|k| origin[k] as f32);
     let (tri32, nm32, ex32, ex32_min, ex32_max) =
         extract_arm(&values32, shape, origin32, cell_size as f32);
-    let (tri64, nm64, ex64, ex64_min, ex64_max) =
-        extract_arm(values64, shape, origin, cell_size);
+    let (tri64, nm64, ex64, ex64_min, ex64_max) = extract_arm(values64, shape, origin, cell_size);
 
     m.triangles_f32 = tri32;
     m.triangles_f64 = tri64;
@@ -1263,7 +1274,11 @@ fn measure(
 /// `(max - min) / median`, and zero when the median is zero — a stage that took
 /// no measurable time has no scatter to report.
 fn scatter(median: f64, min: f64, max: f64) -> f64 {
-    if median > 0.0 { (max - min) / median } else { 0.0 }
+    if median > 0.0 {
+        (max - min) / median
+    } else {
+        0.0
+    }
 }
 
 /// The binary exponent of a finite non-zero `f64`, for the split-safety assert.
@@ -1417,13 +1432,17 @@ fn main() {
             / measured.iter().map(|m| m.arms[1].float_ms).sum::<f64>();
         let c2 = aggregate < 1.5;
 
-        let c3 = measured.iter().any(|m| {
-            m.triangles_f32 != m.triangles_f64 || m.nonmanifold_f32 != m.nonmanifold_f64
-        });
+        let c3 = measured
+            .iter()
+            .any(|m| m.triangles_f32 != m.triangles_f64 || m.nonmanifold_f32 != m.nonmanifold_f64);
         // C3's mechanism, kept apart from C3's verdict: the mesh may move for a
         // rounding in the root *values* while every discriminant sign that could
         // reach the output agrees. That is the case C3's falsifier anticipates and
         // it is not the same claim as the clause.
+        // Recorded as a column below (`c3_reached_output_via_sign`): the
+        // distinction C3's falsifier draws is between "the mesh changed" and
+        // "the mesh changed AND a Δ sign flip on an ambiguous cell is why", and
+        // a computed-then-dropped boolean would leave the second unrecorded.
         let c3_by_sign = measured.iter().any(|m| {
             (m.triangles_f32 != m.triangles_f64 || m.nonmanifold_f32 != m.nonmanifold_f64)
                 && m.disc_sign_changed_ambiguous > 0
@@ -1457,14 +1476,8 @@ fn main() {
                     ("resolution", format!("{0}x{0}x{0}", m.samples)),
                     ("scalar", scalar.to_string()),
                     ("cells", m.cells.to_string()),
-                    (
-                        "sign_disagreements_f32",
-                        m.disagreements_f32.to_string(),
-                    ),
-                    (
-                        "sign_disagreements_f64",
-                        m.disagreements_f64.to_string(),
-                    ),
+                    ("sign_disagreements_f32", m.disagreements_f32.to_string()),
+                    ("sign_disagreements_f64", m.disagreements_f64.to_string()),
                     (
                         "disagreement_rate",
                         format!("{:.9}", own_disagreements as f64 / cells),
@@ -1482,6 +1495,18 @@ fn main() {
                     ("c2_holds", c2.to_string()),
                     ("c3_holds", c3.to_string()),
                     // ── extras (M-273) ──────────────────────────────────────
+                    // C3's falsifier distinguishes "the mesh changed" from
+                    // "the mesh changed AND a Δ sign flip on an ambiguous cell
+                    // is why". This is the second.
+                    ("c3_reached_output_via_sign", c3_by_sign.to_string()),
+                    // The machine-independent form of C2's cost claim: op
+                    // counts the clock cannot corrupt (M-280).
+                    ("filter_ops", FILTER_OPS.to_string()),
+                    ("naive_ops", NAIVE_OPS.to_string()),
+                    (
+                        "op_count_ratio",
+                        format!("{:.6}", f64::from(FILTER_OPS) / f64::from(NAIVE_OPS)),
+                    ),
                     //
                     // Per-row clause answers, so three identical global
                     // verdicts are not mistaken for three measurements.
@@ -1492,17 +1517,17 @@ fn main() {
                         "fields_disagreeing_f32",
                         fields_disagreeing.len().to_string(),
                     ),
-                    (
-                        "fields_disagreeing_names",
-                        fields_disagreeing.join("|"),
-                    ),
+                    ("fields_disagreeing_names", fields_disagreeing.join("|")),
                     ("c2_aggregate_ratio", format!("{aggregate:.6}")),
                     ("c2_aggregate_f32", format!("{aggregate32:.6}")),
                     ("c2_aggregate_f64", format!("{aggregate64:.6}")),
                     // The fixture.
                     ("samples_per_axis", m.samples.to_string()),
                     ("grid_cells", m.grid_cells.to_string()),
-                    ("surface_cell_rate", format!("{:.9}", cells / m.grid_cells as f64)),
+                    (
+                        "surface_cell_rate",
+                        format!("{:.9}", cells / m.grid_cells as f64),
+                    ),
                     ("ambiguous_cells", m.ambiguous_cells.to_string()),
                     (
                         "ambiguous_cell_rate",
@@ -1515,14 +1540,8 @@ fn main() {
                     ),
                     // The registered vacuity control, and the f64 twin that
                     // shows how much of the stratum survives a wider mantissa.
-                    (
-                        "below_f32_error_bound",
-                        m.below_f32_bound.to_string(),
-                    ),
-                    (
-                        "below_f64_error_bound",
-                        m.below_f64_bound.to_string(),
-                    ),
+                    ("below_f32_error_bound", m.below_f32_bound.to_string()),
+                    ("below_f64_error_bound", m.below_f64_bound.to_string()),
                     ("below_bound_this_scalar", below_bound.to_string()),
                     ("filter_fallbacks", arm.fallbacks.to_string()),
                     (
@@ -1546,10 +1565,7 @@ fn main() {
                         "sign_disagreements_f32_ambiguous",
                         m.disagreements_f32_ambiguous.to_string(),
                     ),
-                    (
-                        "disc_sign_cells_changed",
-                        m.disc_sign_changed.to_string(),
-                    ),
+                    ("disc_sign_cells_changed", m.disc_sign_changed.to_string()),
                     ("exact_positive", m.exact_positive.to_string()),
                     ("exact_negative", m.exact_negative.to_string()),
                     ("exact_zero", m.exact_zero.to_string()),
@@ -1590,10 +1606,7 @@ fn main() {
                         ),
                     ),
                     ("saddle_stage_ms", format!("{:.6}", arm.saddle_ms)),
-                    (
-                        "saddle_stage_scatter",
-                        format!("{:.6}", arm.saddle_scatter),
-                    ),
+                    ("saddle_stage_scatter", format!("{:.6}", arm.saddle_scatter)),
                     ("extract_ms", format!("{:.6}", arm.extract_ms)),
                     ("extract_min_ms", format!("{:.6}", arm.extract_min_ms)),
                     ("extract_max_ms", format!("{:.6}", arm.extract_max_ms)),

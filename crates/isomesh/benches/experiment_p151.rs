@@ -1536,18 +1536,14 @@ where
                         continue;
                     }
                     promoted += 1;
-                    let visible_block = proxy.blocks[k]
-                        .probes
-                        .iter()
-                        .any(|&q| camera.in_frustum(q));
+                    let visible_block =
+                        proxy.blocks[k].probes.iter().any(|&q| camera.in_frustum(q));
                     for (step, &cells) in pops[k].iter().enumerate().take(level) {
                         if cells > pop_cells {
                             pop_cells = cells;
                         }
                         if visible_block {
-                            let pixels = cells
-                                * proxy.cell_size(step)
-                                * camera.f_px
+                            let pixels = cells * proxy.cell_size(step) * camera.f_px
                                 / ranges[k].max(NEAR_PLANE);
                             if pixels > pop_pixels {
                                 pop_pixels = pixels;
@@ -1910,17 +1906,14 @@ fn main() {
                             ((share_lo < C3_BAR) == (share_hi < C3_BAR)).to_string(),
                         ),
                         ("camera", pane.camera.to_string()),
-                        (
-                            "camera_eye",
-                            {
-                                let eye = if pane.camera == "near" {
-                                    NEAR_EYE
-                                } else {
-                                    wide_eye
-                                };
-                                format!("{:.4}x{:.4}x{:.4}", eye[0], eye[1], eye[2])
-                            },
-                        ),
+                        ("camera_eye", {
+                            let eye = if pane.camera == "near" {
+                                NEAR_EYE
+                            } else {
+                                wide_eye
+                            };
+                            format!("{:.4}x{:.4}x{:.4}", eye[0], eye[1], eye[2])
+                        }),
                         ("criterion_ms", format!("{criterion_ms:.6}")),
                         (
                             "criterion_share",

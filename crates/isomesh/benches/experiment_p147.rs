@@ -1030,7 +1030,10 @@ where
              population and every zero among them a zero that could not have been non-zero (M-44)"
         );
         let hessians: Vec<Sym3> = points.iter().map(|&p| hessian(field, p, h)).collect();
-        let metrics: Vec<Sym3> = hessians.iter().map(|hess| metric_lp(hess, P_NORM)).collect();
+        let metrics: Vec<Sym3> = hessians
+            .iter()
+            .map(|hess| metric_lp(hess, P_NORM))
+            .collect();
         let census = census_of(&hessians, &metrics);
 
         // ── the isotropic arm ───────────────────────────────────────────────
@@ -1081,7 +1084,8 @@ where
         )
         .expect("accuracy over the anisotropic arm on the isotropic seed lattice");
 
-        let arm = |mesh: &MeshBuffer<f64>, report: &isomesh::validate::AccuracyReport<f64>,
+        let arm = |mesh: &MeshBuffer<f64>,
+                   report: &isomesh::validate::AccuracyReport<f64>,
                    dof: u64| Arm {
             dof,
             triangles: mesh.triangle_count() as u64,
@@ -1196,7 +1200,9 @@ fn read_p146_baseline() -> Vec<Baseline> {
         )
     });
 
-    let mut lines = text.lines().filter(|line| !line.starts_with('#') && !line.is_empty());
+    let mut lines = text
+        .lines()
+        .filter(|line| !line.starts_with('#') && !line.is_empty());
     let header: Vec<&str> = lines
         .next()
         .expect("p-146.csv has a header line after its provenance block")
@@ -1481,10 +1487,7 @@ fn main() {
             .all(|row| row.exponent_difference() < EXPONENT_BAR);
 
         let ratios: Vec<f64> = rows.iter().map(FieldRow::constant_ratio).collect();
-        let gaps_tau2: Vec<f64> = rows
-            .iter()
-            .map(|row| row.last().census.gap_tau2)
-            .collect();
+        let gaps_tau2: Vec<f64> = rows.iter().map(|row| row.last().census.gap_tau2).collect();
         let gaps_tau_inf: Vec<f64> = rows
             .iter()
             .map(|row| row.last().census.gap_tau_inf)
@@ -1588,7 +1591,10 @@ fn main() {
                     "fitted_exponent_anisotropic",
                     format!("{:.6}", row.fit_aniso.exponent),
                 ),
-                ("exponent_difference", format!("{:.6}", row.exponent_difference())),
+                (
+                    "exponent_difference",
+                    format!("{:.6}", row.exponent_difference()),
+                ),
                 (
                     "fitted_constant_isotropic",
                     format!("{:.6e}", row.fit_iso.constant),
@@ -1664,26 +1670,17 @@ fn main() {
                 ("c1_smooth", row.smooth.to_string()),
                 ("c2_improved_fields", improved.to_string()),
                 ("c2_rank_correlation", format!("{correlation:.6}")),
-                (
-                    "c2_rank_correlation_tau2",
-                    format!("{correlation_tau2:.6}"),
-                ),
+                ("c2_rank_correlation_tau2", format!("{correlation_tau2:.6}")),
                 (
                     "c2_rank_correlation_tau_inf",
                     format!("{correlation_tau_inf:.6}"),
                 ),
-                (
-                    "c2_row_improves",
-                    (row.constant_ratio() < 1.0).to_string(),
-                ),
+                ("c2_row_improves", (row.constant_ratio() < 1.0).to_string()),
                 ("c3_arms_identical", c3_arms_identical.to_string()),
                 ("c3_exponent_difference", format!("{c3_difference:.6}")),
                 ("c3_field", C3_FIELD.to_string()),
                 ("c3_reason", c3_reason.clone()),
-                (
-                    "companion_deficit_holds",
-                    companion_holds.to_string(),
-                ),
+                ("companion_deficit_holds", companion_holds.to_string()),
                 (
                     "companion_regularity_deficit",
                     format!("{companion_deficit:.6}"),
@@ -1766,10 +1763,7 @@ fn main() {
                     format!("{:.6}", row.fit_tri_iso.exponent),
                 ),
                 ("field_bound", row.bound.to_string()),
-                (
-                    "fit_r2_anisotropic",
-                    format!("{:.6}", row.fit_aniso.r2),
-                ),
+                ("fit_r2_anisotropic", format!("{:.6}", row.fit_aniso.r2)),
                 ("fit_r2_isotropic", format!("{:.6}", row.fit_iso.r2)),
                 (
                     "flat_direction_axis_aligned_fraction",
@@ -1834,8 +1828,7 @@ fn main() {
                     reproduction.mismatches.len().to_string(),
                 ),
                 ("seed_coverage_series_anisotropic", {
-                    let seeds: Vec<u64> =
-                        row.rungs.iter().map(|r| r.aniso.seed_samples).collect();
+                    let seeds: Vec<u64> = row.rungs.iter().map(|r| r.aniso.seed_samples).collect();
                     series_u64(&seeds)
                 }),
                 ("seed_coverage_series_isotropic", {

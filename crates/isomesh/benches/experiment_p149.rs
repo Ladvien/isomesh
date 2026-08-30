@@ -244,6 +244,10 @@
 //! here is a wall clock: `R-151` owns the cost question and this row is a census.
 
 #![allow(
+    // `bin_triangles` takes ten inputs because it bins over ten independent
+    // axes of the measurement; bundling them into a struct would only move the
+    // arity behind a name.
+    clippy::too_many_arguments,
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
     clippy::cast_sign_loss,
@@ -776,11 +780,9 @@ impl Group {
         let mut savings = Vec::new();
         for index in UMBILIC..=FLAT_DIRECTION {
             let bin = &self.bins[index];
-            let (Some(ratio), Some(reciprocal), Some(saving)) = (
-                median(&bin.ratios),
-                median(&bin.reciprocals),
-                bin.saving(),
-            ) else {
+            let (Some(ratio), Some(reciprocal), Some(saving)) =
+                (median(&bin.ratios), median(&bin.reciprocals), bin.saving())
+            else {
                 continue;
             };
             ratios.push(ratio);
@@ -848,7 +850,11 @@ fn nearest_vertex(point: [f64; 3], positions: &[[f64; 3]]) -> Option<f64> {
             best = d2;
         }
     }
-    if best.is_finite() { Some(best.sqrt()) } else { None }
+    if best.is_finite() {
+        Some(best.sqrt())
+    } else {
+        None
+    }
 }
 
 /// Bin one arm's triangles by the isotropic grid cell their centroid falls in,
@@ -867,7 +873,7 @@ fn bin_triangles<F>(
 ) where
     F: Sdf<Scalar = f64>,
 {
-    for triangle in mesh.indices.chunks_exact(3) {
+    for triangle in mesh.indices.as_chunks::<3>().0 {
         let a = mesh.positions[triangle[0] as usize];
         let b = mesh.positions[triangle[1] as usize];
         let c = mesh.positions[triangle[2] as usize];
@@ -1033,8 +1039,8 @@ where
     }
 
     // ── the verdicts this group decides ──────────────────────────────────────
-    let budget_ratio = (f64::from(grid[0]) * f64::from(grid[1]) * f64::from(grid[2]))
-        / f64::from(samples).powi(3);
+    let budget_ratio =
+        (f64::from(grid[0]) * f64::from(grid[1]) * f64::from(grid[2])) / f64::from(samples).powi(3);
     let axis_hi = f64::from(grid.iter().copied().max().unwrap_or(samples));
     let axis_lo = f64::from(grid.iter().copied().min().unwrap_or(samples));
     let arms_identical = grid == [samples; 3];
@@ -1115,8 +1121,10 @@ fn report(group: &Group) {
             bin.cells,
             median(&bin.ratios).map_or_else(|| String::from("-"), |r| format!("{r:.4e}")),
             median(&bin.am_gms).map_or_else(|| String::from("-"), |g| format!("{g:.5}")),
-            median(&bin.ratios)
-                .map_or_else(|| String::from("-"), |r| format!("{:.5}", am_gm_of_ratio(r))),
+            median(&bin.ratios).map_or_else(
+                || String::from("-"),
+                |r| format!("{:.5}", am_gm_of_ratio(r))
+            ),
             bin.tri_iso,
             bin.tri_aniso,
             bin.saving()
@@ -1349,10 +1357,7 @@ fn main() {
 
                 run.record(&[
                     ("feature_class", CLASS_NAMES[index].to_string()),
-                    (
-                        "principal_curvature_ratio",
-                        or_undefined(ratio_median, 6),
-                    ),
+                    ("principal_curvature_ratio", or_undefined(ratio_median, 6)),
                     ("cells", bin.cells.to_string()),
                     ("triangles_isotropic", bin.tri_iso.to_string()),
                     ("triangles_anisotropic", bin.tri_aniso.to_string()),
@@ -1367,17 +1372,19 @@ fn main() {
                     (
                         "saving_vs_curvature_ratio_correlation",
                         group.correlation.map_or_else(
-                            || format!("unmeasurable:bins={}<{C1_MIN_BINS}", group.correlation_bins),
+                            || {
+                                format!(
+                                    "unmeasurable:bins={}<{C1_MIN_BINS}",
+                                    group.correlation_bins
+                                )
+                            },
                             |r| format!("{r:.6}"),
                         ),
                     ),
                     ("c1_holds", group.c1.clone()),
                     ("c2_holds", group.c2.clone()),
                     // ── extras (M-273) ──
-                    (
-                        "am_gm_gap_measured",
-                        or_undefined(median(&bin.am_gms), 6),
-                    ),
+                    ("am_gm_gap_measured", or_undefined(median(&bin.am_gms), 6)),
                     (
                         "am_gm_gap_predicted",
                         or_undefined(ratio_median.map(am_gm_of_ratio), 6),
@@ -1397,10 +1404,7 @@ fn main() {
                     ),
                     ("cells_all_fields", class_cells[index].to_string()),
                     ("correlation_bins", group.correlation_bins.to_string()),
-                    (
-                        "curvature_ratio_mean",
-                        or_undefined(mean(&bin.ratios), 6),
-                    ),
+                    ("curvature_ratio_mean", or_undefined(mean(&bin.ratios), 6)),
                     (
                         "curvature_ratio_reciprocal",
                         or_undefined(median(&bin.reciprocals), 9),
@@ -1422,10 +1426,7 @@ fn main() {
                     ("hausdorff_anisotropic_local", hausdorff_arm(1)),
                     ("hausdorff_isotropic_local", hausdorff_arm(0)),
                     ("in_correlation", in_correlation.to_string()),
-                    (
-                        "pooled_correlation",
-                        or_undefined(pooled_rho, 6),
-                    ),
+                    ("pooled_correlation", or_undefined(pooled_rho, 6)),
                     (
                         "probe_residual_max",
                         if group.exact {
@@ -1455,7 +1456,12 @@ fn main() {
                     (
                         "saving_vs_reciprocal_correlation",
                         group.reciprocal_correlation.map_or_else(
-                            || format!("unmeasurable:bins={}<{C1_MIN_BINS}", group.correlation_bins),
+                            || {
+                                format!(
+                                    "unmeasurable:bins={}<{C1_MIN_BINS}",
+                                    group.correlation_bins
+                                )
+                            },
                             |r| format!("{r:.6}"),
                         ),
                     ),
