@@ -257,6 +257,9 @@
 //!   or `hashes_moved = 0` is a zero over an empty set.
 
 #![allow(
+    // Several loops index parallel per-arm and per-stencil arrays by the same
+    // integer; an iterator over one of them would hide the correspondence.
+    clippy::needless_range_loop,
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
     clippy::too_many_lines
