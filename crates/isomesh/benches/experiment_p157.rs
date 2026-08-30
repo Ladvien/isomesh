@@ -260,6 +260,7 @@
     // Several loops index parallel per-arm and per-stencil arrays by the same
     // integer; an iterator over one of them would hide the correspondence.
     clippy::needless_range_loop,
+    clippy::vec_init_then_push,
     clippy::cast_possible_truncation,
     clippy::cast_precision_loss,
     clippy::too_many_lines
@@ -1569,7 +1570,11 @@ fn main() {
         );
 
         // ── the nine fields ─────────────────────────────────────────────────
-        let mut fields: Vec<FieldMeasurement> = Vec::new();
+        // `vec_init_then_push` fires on the first of these, but the list is a
+        // sequence of distinct constructor calls with different fixture types,
+        // not a literal: a `vec![]` of them would need one boxed closure per
+        // entry and would read worse.
+        let mut fields: Vec<FieldMeasurement> = Vec::with_capacity(9);
         fields.push(measure(
             "sphere",
             true,
