@@ -946,3 +946,8 @@ test = false
 name = "experiment_p173"
 harness = false
 test = false
+
+[[bench]]
+name = "experiment_p174"
+harness = false
+test = false
