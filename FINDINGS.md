@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**550 entries** — 98 falsified, 363 measured, 50 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**600 entries** — 125 falsified, 385 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -137,6 +137,33 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗96` | C1 FALSIFIED on 0 of 16 rows with branch_miss_ratio spanning 1.001214–1.983313 — the split doubles mispredictions at wor… |
 | `✗97` | C2 FALSIFIED on 6 of 6 with order_only_share topping out at 0.001373626 against a 0.50 bar, C1 HELD on 6 of 6 at a worst… |
 | `✗98` | C1 HELD to the integer (516 of 17,201 pinches on bonsai, 0 of 50 on fuel), C2 HELD with distinct_censuses 1 over 128 fac… |
+| `✗99` | C1 FALSIFIED on every conjunct at once — speedup 0.329 against a registered 10× bar, so the Δ arm is 3.04× slower, and a… |
+| `✗100` | C1 FALSIFIED with delta_zero_share reaching 1.000000 on box_exact — every one of its surface cells sits exactly on the h… |
+| `✗101` | C1 FALSIFIED at three of six orbit labels populated (unpopulated_orbits = zero\|rank1\|zero-rank2), C2 HELD hard — chi_squ… |
+| `✗102` | on an integer before any clock is read |
+| `✗103` | C2 FALSIFIED at 3 of 8 fields above the 0.50 bar against a registered 4 (c2_fields_above_bar 3, c2_min_fields 4, decided… |
+| `✗104` | C1 HELD to the integer on 16 of 16 in-scope rows (chi_measured -8 / -64 / -216 against chi_predicted -8 / -64 / -216 at… |
+| `✗105` | C1 FALSIFIED on 1 of 10 in-scope rows, schwarz_p at N = 3 reading chi_measured -102 against chi_predicted -108 with non_… |
+| `✗106` | C1 FALSIFIED by the three-octave half, where resolution_convergence reads never on 4 of 5 seeds and χ is still moving at… |
+| `✗107` | C1 FALSIFIED with c1_winners 0 of c1_population 4 against a bar of 3: at matched Hausdorff the metric-driven arm is neve… |
+| `✗108` | C1, C2 and C3 all FALSIFIED: the exponent moved by 0.352013 on fbm_terrain against a 0.1 bar, the fitted constant improv… |
+| `✗109` | C1 FALSIFIED where it could be read at all: torus's triangle saving is perfectly anti-monotone in the curvature ratio, S… |
+| `✗110` | C1 and C2 split 16 true / 48 false: they hold on torus alone, where gain_near 0.244932 collapses to gain_wide −0.010015… |
+| `✗111` | C1 FALSIFIED on 16 of 16 rows (beta_share 0.824659–1.693981 against a bar of 0.10), C2 FALSIFIED at c2_fields_above_bar… |
+| `✗112` | C1 FALSIFIED at c1_fields_won 2 of eight against a bar of five, C2 FALSIFIED at 0 of 2 named fields with beta_beats_curv… |
+| `✗113` | C1 FALSIFIED at c1_fields_within_bar 1 of eight against a bar of five, and unreachable at 4 — max_fields_any_constant 4,… |
+| `✗114` | C1 HELD with strang_fix_order 2 and measured_order 2 on 8 of 8, both derived and not quoted, C2 FALSIFIED at c2_hits 0 a… |
+| `✗115` | C1 FALSIFIED at c1_fields_within_5pct 5 of a c1_population of 6 (csg_difference at +6.80%), C2 HELD structurally with fo… |
+| `✗116` | C1 FALSIFIED with c1_hits 0 of c1_population 4: the tricubic Lagrange 4x4x4 filter is genuinely order-4 on its own zero… |
+| `✗117` | the null arrived exactly as registered: C1 HELD with mixed_derivative_norm divergent on both CSG fields (norm_growth_exp… |
+| `✗118` | C1 FALSIFIED at fields_improved 3 of 8 against a bar of five and C2 FALSIFIED at fields_in_neighbourhood 1 of 8, with me… |
+| `✗119` | a null registered on purpose came back not null: C1 FALSIFIED at fields_below_scatter 1 of 8, because measurement_scatte… |
+| `✗120` | C1 HELD on c1_fields_held 8 of 8 with order_gap spanning −0.072307 to +0.128478 against a bar of −0.15, both filters ord… |
+| `✗121` | the registered negative HELD and the hoped-for guarantee did not: C1 HELD with is_matroid false on all 6 greedy-meshing… |
+| `✗122` | C1 HELD on 20 of 20 rows with the per-bit decomposition measured to recompose rather than assumed, C2 HELD on 5 rows and… |
+| `✗123` | C1 HELD in the strongest reading the clause can have, because symmetry_class_count is 1: all eight corners are a single… |
+| `✗124` | C1 HELD with c1_fields_nonzero 6 of 8 and transversality failing measurably — box_exact reads non_transverse_fraction 0.… |
+| `✗125` | C1 FALSIFIED on 24 of 24 rows: intrinsic Delaunay flipping raises the worst-decile minimum angle by at most 1.642437° ag… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -500,6 +527,28 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-432` | C1 VACUOUS on all 16 rows because the registered perturbation had nothing to move (baseline_spread 0, and buckets_of_thr… |
 | `M-437` | C1, C2 and C3 all HELD on 24 of 24 rows: on the ambient complex the predicate discriminates on 8 of 8 fields at every re… |
 | `M-439` | C1, C2 and C3 all HELD and O-12's dual half is closed by exhaustion: worst_link_components 1 on every non-control arm ov… |
+| `M-440` | C1, C2 and C3 all HELD: bb - 4ac at marching_cubes/trilinear.rs:246 is Cayley's 2×2×2 hyperdeterminant of the eight corn… |
+| `M-441` | C1 and C2 both HELD on 48 of 48 rows: count_disagreements, sign_disagreements and corner_value_mismatches are 0 over 7,0… |
+| `M-444` | C1, C2 and C3 all HELD on 29 of 29 arms: the discriminant == 0 branch at marching_cubes/trilinear.rs:250 does fire on a… |
+| `M-448` | C1 and C2 both HELD, and Group A's boundary is now a number |
+| `M-449` | the registered null came back exactly as registered: sign(Δ) is worth nothing on the interior test. |
+| `M-450` | C1, C2 and C3 all HELD on 25 of 25 rows: the trilinear's "at most 2" is the mixed volume 8 − 6 + 0 = 2 of three unit squ… |
+| `M-451` | C1 and C2 both HELD, and the price is in the table rather than in the bound: tricubic mixed_volume 116 against the trili… |
+| `M-452` | C1 and C3 HELD, C2's c2_holds true on 4 rows of 16 and false on 12: Kuhn's six tetrahedra are regular, exhibited by the… |
+| `M-453` | C1 and C2 both HELD on all 560 rows: six fields with topology prescribed by construction — genus 1, 2, 3, 2, 3, 5 and pr… |
+| `M-454` | true on 2,112 queries of 2,304 |
+| `M-458` | C1 and C2 both HELD: a digital-topology oracle reading χ off the field's own signs with no mesh involved reproduces chi_… |
+| `M-461` | C1 HELD with component-wise determinant swell reaching 6.841331e9 against log-Euclidean's 1.771547e-7 at a 5% bar, C2 HE… |
+| `M-463` | the registered null came back null and then inverted: Cao's L¹ anomaly did not reproduce — anomaly_reproduced false on a… |
+| `M-472` | the registered null came back, and it is a null with page numbers: against W_inf^2 — the class the trilinear model is se… |
+| `M-473` | C1, C2 and C3 all HELD: at matched sample budget the octree-adaptive arm beats uniform on 12 of 12 measured rows with ga… |
+| `M-474` | C1 and C2 both HELD: s is estimable for both refinement families on 8 of 8 fields over 2.03 decades of field evaluations… |
+| `M-478` | C1, C2 and C3 all HELD on 24 of 24 rows, and the sharper thing is that greedy meshing is finished: Eppstein's optimum n/… |
+| `M-481` | the registered null came back registered: C1 HELD on 240 of 240 with closed_form_max_gap 0.000000000000000 and stability… |
+| `M-485` | the registered obstruction is real, is one dimension lower than the registration claimed, and does not stop Conley: plat… |
+| `M-486` | the curl residual is free — worst curl_share 0.008061907, 0.81% of an extraction against a 2% ceiling, on 24 of 24 rows… |
+| `M-487` | the registered null held: at matched cost the normal-cycles incumbent beats discrete varifolds on mean curvature on 28 o… |
+| `M-489` | caves percolate in 3D and the transition is now a number: on noise_cavity the giant component appears at percolation_iso… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -550,6 +599,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `V-48` | wgpu 29 puts every subgroup operation in the native half of the split Features struct, so the browser backend cannot hav… |
 | `V-49` | a correction to V-23 / GPU-007: WGSL mesh shaders on Metal are unimplemented!() in naga 29, full WGSL support landed in… |
 | `V-50` | CGAL shipped an Isosurfacing package in 6.1 whose own manual pictures cracks at octree level transitions, so M-128/M-132… |
+| `V-51` | C1, C2 and C3 all HELD on 8 of 8 rows with doi_verified true on every one, including the registered trap: 10.1137/072201… |
 | `O-1` | Settled at G-002 (M-33, M-34), and confirmed live under a mouse at E-202 (M-50). |
 | `O-2` | Settled at A-009 (M-28, M-29): not entirely, and the residue names its own mechanism. |
 | `O-3` | Marching Cubes vs Surface Nets vs Dual Contouring vs MT — actual relative speed on one machine? |
@@ -25556,3 +25606,5708 @@ independent, and eleven rows are `S`.
 **Falsified by.** C1 by no giant component at any isovalue, which for a cave generator would be a design-relevant negative — it would mean the field produces isolated pockets and connectivity must be authored rather than emergent. C2 by 2D and 3D behaving alike, which would mean our fields are too far from the theorem's Gaussian hypothesis for it to describe them — and `fbm_terrain` is hash-based lattice noise, not a Gaussian field, so this is a real risk and is registered as one. C3 by disagreement with the union-find. VACUITY CONTROL: the isovalue sweep must include values producing both many-small-components and one-large-component regimes, reported as a distribution, or the transition is outside the swept range.
 
 ---
+
+### 🔬 M-440 — C1, C2 and C3 all HELD: `b*b - 4*a*c` at `marching_cubes/trilinear.rs:246` **is** Cayley's `2×2×2` hyperdeterminant of the eight corner values, `symbolic_difference_is_zero` **true** with `symbolic_residual_terms` **0** over `terms_disc` **12** against `terms_cayley` **12** at `total_degree` **4**, all **3** axis pairings agreeing (`pencil_matches` **3**, `pencil_residual_terms` **0**), and `max_abs_ratio_deviation` **exactly `0/1`** over `random_rational_trials` **3,481** — while `f32_sign_disagreements` reads **14**, which is what keeps `R-134` alive (P-127, R-127)
+
+**M.** `cargo bench --bench experiment_p127`, `docs/experiments/p-127.csv`, **3 rows** across **58
+columns** — four `#` comment lines plus one column header plus **3 data rows**, counted from the file.
+`f64`/`f32`/`i128`, `amd-ryzen-9-5900x-12-core` (Zen 3), one thread, `seed` `0x01275ad1e0c4a1e9`,
+`wall_ns` **90,341,851**. The header line reads `# commit 8c63041 on amd-ryzen-9-5900x-12-core at
+2026-08-30T09:25:19Z` with no `(WORKING TREE DIRTY)`; the dataset landed in **`845c7a8`**
+(`p-127.csv - re-run on a clean tree`) and `git merge-base --is-ancestor 845c7a8 HEAD` passes. The three
+rows are the three axis pairings and nothing else varies: `pencil_axis_pairing` and `pencil_matches` are
+the only registered columns that move, every other value is a **global** quantity carried identically on
+all three rows, and the harness header says so in advance so that three identical
+`f32_sign_disagreements` are not read as three measurements.
+
+**The expression, byte-for-byte from the `expression` column**, and `expression_cayley` is byte-identical
+with `expression_matches` **true**:
+
+```text
+f3^2*f4^2-2*f2*f3*f4*f5+f2^2*f5^2-2*f1*f3*f4*f6-2*f1*f2*f5*f6+4*f1*f2*f4*f7+f1^2*f6^2
++4*f0*f3*f5*f6-2*f0*f3*f4*f7-2*f0*f2*f5*f7-2*f0*f1*f6*f7+f0^2*f7^2
+```
+
+Twelve monomials: **four** with coefficient `+1` (the squares `f0²f7²`, `f1²f6²`, `f2²f5²`, `f3²f4²`),
+**six** with `-2`, **two** with `+4`. That is Cayley's canonical `4 / 6 / 2` shape exactly, in the
+normalisation `c1² - 4·c0·c2` with **no leading minus and no sign flip** — the normalisation de Silva &
+Lim use, so their §6 applies to the crate's own sign convention rather than to a mirrored one.
+`disc_is_multi_affine` is **false** with `degree_per_corner` `2|2|2|2|2|2|2|2`: this is a quadratic
+invariant, degree 2 in every corner, which is why `Poly::eval_ratio` clears denominators over degree 2
+and why the exact ratio is an integer pair rather than a float.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 `b*b - 4*a*c` from `BodySaddles::coefficients` is **identically** Cayley's `2×2×2` hyperdeterminant under `f[u + 2v + 4w]`: same 12 terms, total degree 4, symbolic difference exactly zero, asserted by a committed symbolic check | zero residual, 12 = 12, degree 4 | **HELD — `symbolic_difference_is_zero` true, `symbolic_residual_terms` 0, `terms_disc` 12 = `terms_cayley` 12, `total_degree` 4 = `total_degree_cayley` 4, `coefficient_f0sq_f7sq` 1. `c1_holds` true on 3 of 3** |
+| C2 the same polynomial equals `disc(det(A₀ + λA₁))` for the two opposite-face `2×2` corner matrices, for **all three** axis pairings — the mechanism behind `M-206` | 3 of 3 pairings | **HELD — `pencil_matches` runs 1, 2, 3 over the rows with `pencil_matches_here` true on each, `pencil_matches_total` 3 = `pencil_pairings_checked` 3, `pencil_residual_terms` 0 on all three, and each pencil is itself a live object: `pencil_terms` 12, `pencil_total_degree` 4. `pencil_split_axis` names them `w-slices` (`0123|4567`), `v-slices` (`0145|2367`), `u-slices` (`0246|1357`). `c2_holds` true on 3 of 3** |
+| C3 in exact rational arithmetic over at least 3,000 random 8-tuples the two expressions agree with ratio exactly 1 and zero sign disagreements; in `f32` they do **not** | ≥ 3,000 trials, ratio 1, `f32` count > 0 | **HELD both ways — `random_rational_trials` 3,481, `ratio_pairs_equal_trials` 3,481 (every trial decided), `ratio_exactly_one` true, `max_abs_ratio_deviation` `0/1` as an exact reduced pair with `max_abs_ratio_deviation_f64` `0.000000e0`, `undefined_ratio_trials` 0, `f64_sign_disagreements` 0 (`_disc` 0 and `_cayley` 0), `nonfinite_evaluations` 0 over `exact_evals` 82,663 — and `f32_sign_disagreements` **14**, non-zero, so the falsifier "zero `f32` disagreements, which would retire `P-134` before it is written" misses. `c3_holds` true on 3 of 3** |
+
+> **The `f32` count is 14 and every one of them is in the constructed near-zero stratum, which is why
+> the number means something.** `f32_disagreements_general` is **0** over `general_trials` **3,000** and
+> `f32_disagreements_near_zero` is **14** over `near_zero_trials` **481** — 2.91% of the stratum, 0% of
+> the rest. `f32_sign_disagreements_disc` and `f32_sign_disagreements_cayley` both read **14** and
+> `f32_cross_disagreements` reads **0**, which is not an independent measurement: C1 makes the two
+> polynomials the same `BTreeMap`, so `Poly::eval_f32` on them is bit-identical and the zero is a witness
+> that C1 held all the way down to the float path. **The sharp subset is
+> `f32_flush_to_zero_trials` = 10 of the 14**: an `f32` evaluation returning `±0.0` against a non-zero
+> exact value, and `trilinear.rs:250` branches on `discriminant == R::ZERO` and takes the double-root
+> path, so on those ten tuples a cell with two real body saddles is silently re-classified as a tangency.
+> That is `P-134`'s subject, handed over as a count rather than as a worry.
+>
+> **Six vacuity controls, every one of them a live number rather than a hoped-for zero (`M-44`).**
+> **(1)** Both signs are present: `positive_trials` **2,680**, `negative_trials` **789**, `zero_trials`
+> **12**, summing to `random_rational_trials` **3,481** exactly — a claim about signs over a population
+> that had signs to get wrong. **(2)** The registration's own bar, *"at least 50 within `1e-6` of
+> zero"*: `near_zero_trials` **481** against `near_zero_floor` **50** at `near_zero_threshold` `1e-6`,
+> and 481 is also `near_zero_constructed`, so **not one** general-stratum draw landed in that band — a
+> random 8-tuple with corners of size `10³` has `|Δ|` of order `10¹²`, and had the harness relied on luck
+> C3 would have read 0 for a reason with nothing to do with the arithmetic. **(3)** The stratum is
+> **constructed exactly** and the construction reports its own failures: `Δ` is a quadratic in `f7` alone,
+> so `near_zero_attempts` **800** draws yielded `near_zero_brackets_found` **481** sign changes in
+> `[-4, 4]` and 319 draws had none, which for a quadratic with complex roots is a real and uninteresting
+> outcome rather than a bisection failure; every bisection step evaluates the **exact rational**
+> discriminant, so the bracket is never lost to rounding. **(4)** `bisection_max_depth` **22** is derived,
+> not chosen: halving stops when one more step would push `|numerator|` past `f32_mantissa_limit`
+> **16,777,216** and take the trial off the grid `f32` represents exactly. **(5)**
+> `inexact_f32_inputs` **0** — every corner value is a dyadic rational that round-trips `f32 → f64`
+> exactly, checked on every trial, so a sign disagreement is the *evaluation* and not the input; without
+> it the 14 would be a restatement of `f32`'s mantissa width and `P-134` would inherit a number about
+> representation. **(6)** The predicate itself was shown able to read `false`:
+> `corrupted_control_residual_terms` **1** — Cayley with its `f0²f7²` coefficient bumped `1 → 2` differs
+> from the repo discriminant by exactly one monomial. `Poly::sub(..).is_zero()` carries C1 *and* all of
+> C2, so a predicate that answered `true` unconditionally would have passed every clause in the row; this
+> control is deliberately an assert and not a CSV row, because a row would invite being quoted as a
+> result.
+
+**What it means that this shipped for the crate's whole life without anyone knowing.** The expression at
+`trilinear.rs:246` is built from three coefficients assembled at `:199-214` out of face twists and edge
+differences, and every id the crate has ever attached to it treats it as a transcription of Grosso's
+quadratic. `M-207` defends the *root extraction* around it and says nothing about what the discriminant
+**is**. `M-214`, `M-215`, `M-216` and `M-217` all build on `BodySaddles::inside_count` without once
+asking what the sign of that discriminant is invariant under. And `M-206` is the one that could not be
+left alone: *two independently derived constructions locate the same body saddles, to `1.1e-12`* —
+`interior::SweptFaces` solving a quadratic in the sweep **height**, `trilinear::BodySaddles` solving one
+in the face **coordinate**, sharing no arithmetic, no coefficient and no parametrisation, and agreeing to
+twelve digits. C2 is the explanation: they are two of the **three** slicings of one pencil, and
+`pencil_matches` **3** with `pencil_residual_terms` **0** says all three slicings compute the same
+degree-4 form. An unexplained correct number has become a theorem, and `M-206`'s twelve digits are now
+the `f64` shadow of an exact identity rather than a coincidence.
+
+**The identity was already known and was worth nothing, which is the part worth copying.** The one
+artefact that proved it before this row is
+`docs/research/2026-08-29-phase-27-hyperdeterminant-identity.py:45-67`, which writes Cayley's canonical
+form out in `a(i,j,k)` notation and `sp.expand`s it. It needs `sympy`; `scripts/preflight.sh:98-101`
+installs `markdown` and `pymdown-extensions` into `~/.venvs/isomesh` and nothing else, and no gate in the
+repository names that file. So the identity had been *known* for exactly as long as it had been
+*unenforced*, which is zero coverage in the only sense that matters. What replaced it is
+`crates/isomesh/benches/common/poly.rs` — a degree-4 form in eight variables has at most 330 monomials,
+so exact expansion over `i128` is a hundred lines and no dependency — and this CSV is the committed
+reading of it. `expression` is byte-identical across runs because every polynomial is a `BTreeMap`, every
+exact comparison is on `i128` integers, and every float sign goes through a helper that maps both `+0.0`
+and `-0.0` to `0` because `trilinear.rs:250` does.
+
+**SHARE: zero, and zero by construction rather than by measurement.** This harness reads no field,
+extracts no mesh and proposes no change to `crates/isomesh/src/**`. Across the whole phase — from
+`bd4f8c4`, the merge that landed the fifty registrations, to `HEAD` — the only change under
+`crates/isomesh/src/` is `experiment.rs` itself (+1,710 lines, the registrations), no
+`golden_hashes.json` moved, and `trilinear.rs:246` computes the same twelve-term form after this row as
+before it. `wall_ns` is recorded because it is interesting and is read by
+nothing, which is the only safe status for a nanosecond on a host whose governor swings the same binary
+`1.45×` (`M-280`). What stands in a share's place is what the two exact clauses license downstream, each
+over an exact denominator: `symbolic_residual_terms` **0** of 12, `pencil_matches` **3** of 3, and
+`random_rational_trials - ratio_pairs_equal_trials` **0** of 3,481. Concretely they are what let `R-128`
+assert the `GL(2)³` weight is a *square* and therefore that the body-saddle count cannot depend on cell
+aspect ratio; what let `R-130` read real tensor rank off a sign the crate already computes, via de Silva
+& Lim §6; what let `R-131` treat `discriminant == 0` as `Det₂,₂,₂(A) = 0` and apply Prop 7.3 verbatim
+rather than by analogy; and what gives `R-133`'s exact sign something to be exact *about*. **A consumer
+of this crate should change nothing.** The finding is that a shipped expression has a name, a literature,
+and three equivalent derivations — and now a committed exact check standing between it and a future edit.
+
+### 🔬 M-441 — C1 and C2 both HELD on **48 of 48** rows: `count_disagreements`, `sign_disagreements` and `corner_value_mismatches` are **0** over **7,077,888** cells at cell aspect ratios **1, 4 and 8**, and the `GL(2)³` weight is `(det g₁ det g₂ det g₃)²` as an **exact `i128` equality** — `gl2_weight_check` `exact_500of500|f64max_0.000e0` — so `sign(Δ)` is an absolute invariant, the body-saddle count is a property of the eight corner values alone, and Group D may vary cell aspect ratio without re-asking whether interior ambiguity moved under it (P-128, R-128)
+
+**M.** `cargo bench --bench experiment_p128`, `docs/experiments/p-128.csv`, **48 rows** across **37
+columns** — four `#` comment lines plus one column header plus **48 data rows**, counted from the file.
+`f64` with an exact `i128` arm, `amd-ryzen-9-5900x-12-core` (Zen 3), `seed` `0x0128a15ca1e50f87`,
+`wall_ns` **1,583,274,538**. Header line `# commit ca5c3bd on amd-ryzen-9-5900x-12-core at
+2026-08-30T14:08:27Z`, no `(WORKING TREE DIRTY)`; the dataset landed in **`08ce8bd`**
+(`p-128.csv - re-run on a clean tree`) and `git merge-base --is-ancestor 08ce8bd HEAD` passes. The
+fixture is **eight reference fields × {33³, 65³} × three axis-scale triples** — `1x1x1`, `1x2x4`,
+`1x1x8`, at `cell_aspect_ratio` 1.000000 / 4.000000 / 8.000000 — so `cells` = 32,768 or 262,144 per row
+and **7,077,888** over the file, of which `cells_with_saddles` sums to **481,035** and
+`saddle_count_isotropic` to **605,895**. The `1x1x1` rows carry `is_control` **true**, sixteen of them.
+
+**The construction is the load-bearing part, because the shipped API cannot express the registered
+fixture.** `Extractor::extract` takes a single scalar `cell_size: R`
+(`crates/isomesh/src/marching_cubes/mod.rs:193-200`) — there is no per-axis cell size anywhere in the
+public surface — so "meshing with per-axis cell scales `(1, 2, 4)`" is not an argument that exists. The
+anisotropy is instead a **domain** reparametrisation: a bench-local `AxisScaled` `Sdf` samples the field
+at `(sx·x, sy·y, sz·z)`, which presents a cell of physical extent `(h·sx, h·sy, h·sz)` on a uniform
+integer grid, and the anisotropic arm reads cell `(i, j, k)`'s eight corner values back at the
+**reciprocal** grid point `P/s`. Every reference-field domain is symmetric about the origin and every
+scale in the fixture is a power of two, so `s·(P/s) == P` bit-exactly in `f64` and the two arms carry
+**byte-identical tensors while describing cells of different aspect ratio**. That round trip is measured
+rather than trusted — `corner_value_mismatches` **0** on 48 of 48 — which is what stops
+`count_disagreements = 0` from meaning "the resampling silently returned the same numbers for the wrong
+reason".
+
+| clause | registered | measured |
+|---|---|---|
+| C1 on all eight fields at `33³` and `65³`, per-axis cell scales of `(1,1,1)`, `(1,2,4)` and `(1,1,8)` produce **bit-identical** body-saddle counts per cell, zero disagreements | 0 everywhere | **HELD — `count_disagreements` **0**, `sign_disagreements` **0** and `corner_value_mismatches` **0** on 48 of 48. `saddle_count_isotropic` equals `saddle_count_anisotropic` on every row (`gyroid` 65³ **37,653**, `fbm_terrain` 65³ **59,521**, `noise_cavity` 65³ **49,458**, `torus` 65³ **15,816**), and `sign_delta_isotropic` equals `sign_delta_anisotropic` as a `neg|zero|pos` histogram on every row — `csg_difference` 65³ `371|216678|45095`, `box_exact` 65³ `0|229256|32888`, `gyroid` 65³ `16021|0|246123`. `c1_holds` true on 48 of 48** |
+| C2 for 500 random invertible `g` triples, `Δ(g·A)/Δ(A)` equals `(det g₁ det g₂ det g₃)²` to `f64` rounding | 500 trials, ratio = weight | **HELD, and stronger than registered — `gl2_exact_matches` **500 of 500** as an equality of two `i128` products, never a quotient, so "equals" means *identical integers*; `gl2_f64_max_deviation` `0.000e0` is the registered `f64` reading recorded beside it. `gl2_weight_check` carries both halves as `exact_500of500|f64max_0.000e0`, identical on all 48 rows because C2 is a property of the algebra and not of a field. `c2_holds` true on 48 of 48** |
+
+> **The clause that actually risked something is the `GL(2)³` sign census, and it is the half that is not
+> blind by signature.** C1's census compares two readings of the *same* tensor, so a disagreement there
+> would be a resampling bug; the sign census applies an explicit **unimodular** `GL(2)³` triple (each
+> determinant `1`, so the weight is exactly `1` and any drift is rounding rather than scale) to every
+> cell's tensor through `common::poly::act_gl2_cubed_f64` and asks whether `sign(Δ)` survives twelve
+> monomials of genuine cancellation. `gl2_sign_invariant_cells` reads the whole signed population on **42
+> of 48** rows — `sphere`, `torus`, `gyroid`, `fbm_terrain` and `noise_cavity` at **32,768** and
+> **262,144**, `box_exact` at **4,152** and **32,888**, `thin_plate` at **8,200** and **65,544** — with
+> `gl2_sign_variant_cells` **0**. It is non-zero on **6 of 48**, all six of `csg_difference`'s rows: **2
+> of 5,934** at 33³ with `gl2_variant_max_rel_delta` **1.316e-16** on each of its three scale triples, and
+> **10 of 45,466** at 65³ with **3.424e-16** on each of its three. Those are relative magnitudes
+> `|Δ| / max|f_i|⁴`, i.e. cells whose exact discriminant is
+> already inside one `f64` epsilon of the vanishing locus, and the exact arithmetic that would settle
+> them is C2's — 500 of 500 in `i128`. `p-130.csv` reads the **same two counts** on the same two grids
+> from a completely different comparison (`cayley_sign_disagreements` 2 at 33 samples and 10 at 65, both
+> `cayley_zero_only_cells`, over `cells` 1,388 and 6,014 that equal this file's `surface_cells`), which is
+> independent corroboration that `csg_difference` has a handful of cells sitting on the hypersurface to
+> within rounding and nothing else does.
+>
+> **Five vacuity controls, and one column doing two jobs (`M-44`).** **(1)** `vertex_positions_moved` is
+> **0 on all sixteen `1x1x1` control rows** and **non-zero on all thirty-two anisotropic rows**, spanning
+> **30** (`thin_plate` 33³ at `1x1x8`) to **16,465** (`fbm_terrain` 65³ at `1x1x8`), **77,563** over the
+> file. Both arms are extracted with `MarchingCubes` under `InteriorAmbiguity::Trilinear`, so the
+> extraction really does consume `BodySaddles`, and the column is the count of anisotropic vertex
+> positions with no bit-identical counterpart in the isotropic mesh, compared as a multiset of
+> `f64::to_bits` triples so the answer does not depend on emission order. A zero on the anisotropic rows
+> would have meant the fixture never exercised anisotropy and every `count_disagreements = 0` in the file
+> was a comparison of a thing with itself; a non-zero on the identity rows would have meant the
+> comparison was reporting noise. One column reads both ways and it reads correctly both ways.
+> **(2)** `cells_with_saddles` is non-zero over the fixture — **481,035** cells actually have a body
+> saddle, `gyroid` 65³ alone contributing **28,768** — so "bit-identical saddle counts" is not `0 == 0`
+> over seven million cells. **(3)** Both discriminant signs are present: `sign_delta_*` carries non-zero
+> `neg` and non-zero `pos` on `torus` 65³, `csg_difference`, `gyroid` and `noise_cavity`, so
+> `sign_disagreements` is a claim about signs over a population that had both. **(4)**
+> `gl2_singular_draws` **144** — singular `g` draws were rejected and counted, never repaired, against
+> `gl2_trials` **500**, and the trial set is not degenerate in the other direction either:
+> `gl2_positive_base_trials` **378**, `gl2_negative_base_trials` **120**, `gl2_zero_base_trials` **2**,
+> summing to 500, with `gl2_nontrivial_weight_trials` **500** and `gl2_max_abs_weight` **77,440,000**.
+> **(5)** `corner_value_mismatches` **0** on every row, above.
+>
+> **`Δ = 0` is not a small stratum and the census says so rather than assuming otherwise.**
+> `delta_zero_cells` sums to **2,167,656** of 7,077,888 — 30.6% of the fixture — and it is concentrated
+> exactly where the field is piecewise linear: `box_exact` **28,616 of 32,768** at 33³ and **229,256 of
+> 262,144** at 65³, `thin_plate` **24,568** and **196,600**, `csg_difference` **26,834** and **216,678**,
+> against **0** on `sphere`, `torus`, `gyroid`, `fbm_terrain` and `noise_cavity`. A linear function has no
+> body saddle and no twist, so `a`, `b` and `c` are all hard zeros there and `box_exact`'s
+> `saddle_count_isotropic` is **0** at both resolutions. The sign census is deliberately taken over the
+> cells that *have* a sign, and the excluded ones are counted rather than dropped:
+> `gl2_zero_delta_perturbed_cells` is **5,440** / **44,352** on `box_exact`, **4,864** / **39,484** on
+> `thin_plate` and **5,433** / **44,300** on `csg_difference`, i.e. cells whose exact image is also zero
+> and which any rounding at all moves off zero. Counting those as invariance failures would have reported
+> a falsification of an invariance the cell cannot state.
+
+**One place where the CSV and the harness's own header disagree, reported rather than smoothed over.**
+The header at `experiment_p128.rs:132-134` says `c1_holds` is *"zero count disagreements, zero sign
+disagreements, zero corner-value mismatches, and zero `GL(2)³` sign variants"*. The code at
+`experiment_p128.rs:601-603` computes only the first three, and `:588-600` states why in advance: the
+registered falsifier is *"any disagreement, which would mean the extractor's saddle path depends on
+geometry the invariant says it cannot — i.e. a bug"*, and a unimodular image whose `f64` discriminant
+lands on the other side of zero on a cell already within rounding of the locus is not that. The judgement
+is right and it is documented at the call site; the doc-comment four hundred lines above it is stale. The
+observable consequence is that `csg_difference`'s four rows read `c1_holds` **true** while carrying
+`gl2_sign_variant_cells` 2 and 10, so **the entry has to quote both** — which this one does — rather than
+letting a reader infer a clean zero from the verdict column.
+
+**SHARE: exactly zero nanoseconds, and it is a signature rather than a measurement.** `cell_size` is not
+an argument of `BodySaddles::of`, `BodySaddles::coefficients` or `BodySaddles::roots`, so there is no
+cost for cell geometry to move, and no change to `crates/isomesh/src/**` is proposed. Across Phase 27 the
+only change under that directory is `experiment.rs`'s registrations and no `golden_hashes.json` moved.
+`wall_ns` is in the file and is read by nothing (`M-280`: this host's governor swings the same binary
+`1.45×`). What stands in a share's place is the denominator: **7,077,888** cells, each with its saddle
+count and its discriminant sign compared across two cell aspect ratios and one unimodular tensor change.
+**What a consumer should do differently: nothing — and that is the point.** The untested assumption that
+Group D (`R-146` … `R-151`) was about to lean on has been tested. `sign(Δ)` is an absolute invariant of
+the `GL(2)³` action because the relative-invariant weight is a perfect square, measured here as an
+integer identity on 500 of 500 trials, and `sign(Δ)` is what `trilinear.rs:246-250` branches on to decide
+whether a cell has two real body saddles or none. So `InteriorAmbiguity::Trilinear` resolves the same way
+at aspect ratio 8 as at aspect ratio 1, and `M-206`'s near miss — two constructions agreeing to `1.1e-12`
+without anyone asking what the agreement was invariant under — now has its answer in a column.
+
+### 💥 ✗99 / M-442 — C1 FALSIFIED on every conjunct at once — `speedup` **0.329** against a registered `10×` bar, so the Δ arm is **3.04× slower**, and `agreement` **false** with `sweep_disagreements` **251,011 of 291,592** cells — C2 HELD with `negation_violations` **0**, C3 FALSIFIED because neither of its two registered outcomes was available; and the row's real content is that the registration assumed a Δ check costs *a constant number of polynomial evaluations per cell* when Δ-invariance under the cube group costs **one evaluation per element**, so `relabellings_per_delta` reads **0.980** and the bar was dead on an integer count before any clock ran (P-129, R-129)
+
+**M.** `cargo bench --bench experiment_p129`, `docs/experiments/p-129.csv`, **1 row** across **23
+columns** — four `#` comment lines plus one column header plus **1 data row**. `f64` and `i128`,
+`amd-ryzen-9-5900x-12-core` (Zen 3). Header line `# commit 3a1b69a on amd-ryzen-9-5900x-12-core at
+2026-08-30T13:08:18Z`, no `(WORKING TREE DIRTY)`; the dataset landed in **`74409e7`**
+(`p-129.csv - re-run on a clean tree`) and `git merge-base --is-ancestor 74409e7 HEAD` passes. One row on
+purpose: `element` reads `all-48-aggregate`, because both instruments are swept over all 48 octahedral
+elements per cell and the registered columns are run-level totals, not per-element readings. The
+population is `cells_checked` **291,592** — eight reference fields at `CELLS = 33` cells per axis
+(8 × 33³ = 287,496) plus `population_synthetic` **4,096** uniform draws — of which
+`nonzero_delta_cells` is **279,570**, 95.88%.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 a Δ-based check agrees with the 48-element sweep on every cell of every reference field — zero disagreements — while costing at least `10×` less | 0 disagreements **and** ≥ 10× | **FALSIFIED on all four conjuncts. `speedup` **0.329** (`sweep_ms` 490.565315 median against `invariant_ms` 1491.677278 — the algebraic arm is **3.0407× slower**, 30.4× short of the bar); `agreement` **false** with `sweep_disagreements` **251,011** of 291,592 cells, 86.08%; `sweep_violations` **575,076**; `invariant_violations` **11,083,184**. `c1_holds` false** |
+| C2 Δ is invariant under field negation on every cell, which `M-177` says reordering cannot buy for vertex placement | 0 negation violations | **HELD — `negation_violations` **0** over 291,592 cells, bit-exactly. `c2_holds` true** |
+| C3 the invariant check catches at least one configuration class the sweep is structurally blind to, or reports honestly that it catches none | either branch of the disjunction | **FALSIFIED — neither branch was available. The harness scores C3 as `disagreements == 0`, which is the registered "none" outcome; with 251,011 disagreements `c3_token` reads `251011-cells-sweep-invariant-verdict-disagree` instead of `none-registered-outcome`. `c3_holds` false** |
+
+> **The most valuable sentence in this row is about the harness's first draft, not about the shipped
+> code.** `experiment_p129.rs:166-171` records it in place: *"**The first condition alone is a tautology**
+> (`case_of(relabel(f))` and `relabel_case(case_of(f))` are the same function by construction, which the
+> first draft of this harness discovered by measuring zero violations on an asymmetric tuple)"*. The
+> mechanism is exact. `common::poly::relabel` is a gather — `out[i] = f[perm[i]]` (`poly.rs:641-643`) — so
+> bit `i` of `case_of(relabel(perm, f))` is `f[perm[i]] < 0`, which is bit `perm[i]` of `case_of(f)`,
+> which is exactly what `relabel_case` computes at `:112-119`. The sweep's whole subject was a function
+> being compared against itself, and the thing that caught it was the vacuity control: a deliberately
+> asymmetric corner tuple fed to the sweep returned **zero** violations, and a control that cannot report
+> bad news is the finding. That control survives in the shipped harness at `:252-263` as an
+> `assert!(violations > 0)` on `[-1, 1, 2, 4, 8, 16, 32, 64]`, and it now passes. **This is the `M-44`
+> rule catching a harness rather than a hypothesis, which is the cheapest place it can ever fire.**
+>
+> **The correction did not go far enough, and the artefact says so if you follow the same argument one
+> step further.** The shipped sweep at `:172-189` keeps two conditions: the cut-edge set comparison at
+> `:182` and, at `:183`, `CASES[moved_case].count != CASES[expected_case].count`. But `moved_case` and
+> `expected_case` are the **same integer** — that is precisely what the tautology paragraph establishes —
+> so the two `CASES` lookups are the same lookup and the triangulation-count comparison **cannot fire
+> either**. Every one of the **575,076** `sweep_violations` therefore comes from the cut-set half, and
+> that half compares an action against its own inverse: `cut_edges(relabel(perm, f))` contains edge
+> `(a, b)` exactly when edge `(perm[a], perm[b])` was cut, i.e. it is `g⁻¹·cut`, while
+> `relabel_edge(cut, perm)` at `:124-143` maps each cut edge `(a, b)` forward to `(perm[a], perm[b])`,
+> i.e. `g·cut`. Those two sets differ on any element that is not an involution on that cell's cut set,
+> which is why the count is large (575,076 of `relabellings` **13,996,416**, 4.109%) and why it is **not a
+> statement about the shipped Marching Cubes table**. `✗49`'s bit-exact octahedral equivariance is not
+> contradicted by this file and this file does not re-establish it either.
+>
+> **The verdict is unchanged by that, and it is worth saying why rather than leaving it implied.** With
+> the direction corrected, `sweep_violations` would read 0, and `sweep_disagreements` counts cells where
+> `(sweep == 0) != (invariant == 0)` — so it would become the count of cells with a non-zero invariant
+> violation, which is *larger*, not smaller. C1's `agreement` conjunct fails harder. And the `speedup`
+> conjunct is untouched by any of it: 0.329 against 10.0.
+>
+> **`invariant_violations` 11,083,184 is `f64` summation order and nothing else, and P-127 is why that is
+> knowable.** The count is out of 291,592 × 49 = 14,288,008 evaluations (48 relabellings plus one
+> negation per cell); with `negation_violations` **0**, all of it lands in the 13,996,416 relabellings —
+> **79.19%** of them. Δ is *exactly* invariant under all 48: `p-127.csv` reads
+> `symbolic_difference_is_zero` **true** with `symbolic_residual_terms` **0**, and this harness's own
+> first vacuity control (`:231-250`) re-establishes it over `i128` on `[3, -1, 4, 1, -5, 9, -2, 6]` with
+> `Δ != 0` asserted first. What moves is the arithmetic: `Poly::eval_f64` sums twelve monomials in
+> `BTreeMap` key order, and a relabelling permutes which corner value enters which product, so the same
+> exact integer arrives by a different rounding path. **The negation arm is the controlled contrast, and
+> it is the sharpest pair of numbers in the file.** Every monomial of Cayley's form has total degree 4, so
+> `f → -f` multiplies each product by `(-1)⁴ = 1` exactly, magnitudes are unchanged, the summation order
+> is unchanged, and the result is bit-identical: **0 violations**. Two symmetries, one theorem, and only
+> one of them survives `f64` — the difference is entirely whether the summation order moves.
+>
+> **So C2's zero is honest but structural, and this entry will not oversell it.** The registered falsifier
+> was *"a negation violation, which would contradict the symbolic proof and send `P-127` back"*, and that
+> falsifier misses. But by the argument above a non-zero reading was not reachable in the `f64` arm, so
+> the number is a confirmation rather than a discovery. The vacuity control that does carry weight is
+> `nonzero_delta_cells` **279,570**: on a `Δ = 0` population, negation invariance would be a comparison
+> of zeros. The other two controls held as registered — the population carries several distinct case
+> indices (asserted `>= 2` at `:315-320`), and the broken-table control fires.
+
+**The registration's cost model was wrong, and the machine-independent column is what proves it rather
+than the clock.** C1's premise, verbatim from the harness header: *"A Δ-based check costs a constant
+number of polynomial evaluations per cell where the sweep costs 48 relabellings and case recomputations
+per cell."* Δ-invariance under all 48 elements is **48 evaluations per cell**, one per element, plus one
+for negation. `relabellings_per_delta` — the sweep's relabellings divided by the invariant arm's Δ
+evaluations — reads **0.980**: the algebraic check does *more* work per cell than the sweep it was to
+replace. A ratio below 1 cannot become 10× on any host, and it is an integer count over a deterministic
+fixture, so no governor can move it. The registration's SHARE — *"C1 moves the equivariance-test stage of
+CI, currently the 48-element sweep in full"* — is **retired**, and `R-129` closes on its own falsifier.
+
+**The clock corroborates rather than deciding, and it is unusually clean for this host.** `REPEATS`
+**7** interleaved repeats with the warm-up excluded: `sweep_ms_min` 489.954371 / median 490.565315 /
+`sweep_ms_max` 491.019299 — a **0.217%** spread — against `invariant_ms_min` 1491.000295 / median
+1491.677278 / `invariant_ms_max` 1500.297046, a **0.624%** spread. `M-280`'s `1.45×` governor swing does
+not bite here, so the 3.04× is real and not an artefact of when the two arms were sampled. Even a
+best-case reading (`sweep_ms_max` over `invariant_ms_min`, 491.019 / 1491.000) is **0.329**, so the bar is
+missed by the same factor at either end of the band.
+
+**What a consumer should do: nothing changes, and CI keeps the sweep.** Nothing in
+`crates/isomesh/src/**` was touched by this row — across Phase 27 the only change under that directory is
+`experiment.rs`'s registrations, and no `golden_hashes.json` moved. What the row retires is a proposal,
+not a behaviour. The scope caveat the harness header stated in advance is the reason the proposal was
+always thin: Δ-invariance is a **necessary** condition for what the sweep tests, not the same condition —
+the sweep tests the extractor's classification output while Δ tests the input's own invariant — and a
+necessary condition that costs 48 polynomial evaluations per cell buys nothing over 48 table lookups.
+`P-127` remains exactly as strong as it was; what fails here is the attempt to spend it.
+
+### 💥 ✗100 / M-443 — C1 FALSIFIED with `delta_zero_share` reaching **1.000000** on `box_exact` — every one of its surface cells sits *exactly* on the hyperdeterminant hypersurface — against a registered bar of **0.001**, `c1_zero_bar_holds` false on **9 of 24** rows and `c1_stability_holds` false on **6 of 24** at **0.105511** against **0.05**; C2 FALSIFIED and **arithmetically unreachable** on 24 of 24 because `ambiguous = g(case)` makes `I(R;A) ≤ I(R;K)` a data-processing inequality, with `mi_gap_bits` **0 to 0.988699** and never negative; C3 HELD on `sphere` at `rank_two_share` **1.000000**; and rank is genuinely **not** a function of the case index on 9 of 24 rows, so C2's own falsifier missed too (P-130, R-130)
+
+**M.** `cargo bench --bench experiment_p130`, `docs/experiments/p-130.csv`, **24 rows** across **56
+columns** — four `#` comment lines plus one column header plus **24 data rows**. `f64`,
+`amd-ryzen-9-5900x-12-core` (Zen 3); nothing in the file is timed and there is no `Instant` in the
+harness. Header line `# commit 08ce8bd on amd-ryzen-9-5900x-12-core at 2026-08-30T14:08:32Z`, no
+`(WORKING TREE DIRTY)`; the dataset landed in **`277ce7b`** (`p-130.csv - re-run on a clean tree`) and
+`git merge-base --is-ancestor 277ce7b HEAD` passes. Fixture: **eight reference fields × 17 / 33 / 65
+samples** per axis, so `grid_cells` **4,096 / 32,768 / 262,144**; `cells` is the **surface**-cell
+population and `surface_share` runs 0.007812 (`thin_plate` at 65) to 0.296387 (`gyroid` at 17), summing to
+**104,059** surface cells over the sweep.
+
+**Which Δ this measures, because there are two `f64` routes to one polynomial.** Route 1 is the crate's:
+`BodySaddles::coefficients(&corner)` at `trilinear.rs:199-214`, then `b*b - 4.0*a*c` associated exactly
+as `trilinear.rs:246` associates it. Route 2 is `common::poly::cayley_2x2x2().eval_f64`, twelve terms over
+the expanded form. `P-127` proved these are the **same polynomial** — `p-127.csv`,
+`symbolic_difference_is_zero` **true** — and they are emphatically **not** the same `f64` computation.
+Route 1 is the measurement, because C1's subject is *"a sign the crate already computes"*; route 2 is a
+cross-check whose disagreements can only be rounding, and it disagrees in both directions:
+`crate_zero_only_cells` **96 / 252 / 1,800** on `thin_plate` (the crate returns a hard `0.0` where the
+expanded sum does not) and `cayley_zero_only_cells` **1 / 2 / 10** on `csg_difference` (the other way
+round), with `cayley_sign_disagreements` **0** on the other eighteen rows.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 across eight fields at three resolutions the `(Δ > 0, Δ < 0, Δ = 0)` partition is stable and `Δ = 0` is rare — under 0.1% of surface cells at `f64` | `delta_zero_share` < 0.001 per row, `partition_share_range` ≤ 0.05 per field | **FALSIFIED on both halves. `c1_zero_bar_holds` false on **9 of 24** rows against `c1_zero_bar` 0.001000: `box_exact` **1.000000** at 17, 33 and 65; `thin_plate` **0.937500 / 0.984375 / 0.996094**; `csg_difference` **0.831081 / 0.835735 / 0.835052**. It holds on the other 15, where `delta_zero_share` is **0.000000** exactly. `c1_stability_holds` false on **6 of 24** against `c1_stability_bar` 0.050000: `gyroid` `partition_share_range` **0.105511** and `thin_plate` **0.058594**. `c1_holds` is a global verdict and is **false** on all 24 rows** |
+| C2 mutual information between rank and "this cell is ambiguous" exceeds that between rank and the 8-bit case index by a stated margin | `I(R;A) - I(R;K)` ≥ 0.01 bits | **FALSIFIED and UNREACHABLE on 24 of 24. `c2_unreachable` **true**, `c2_holds` **false**, `c2_margin_required_bits` **0.010000**. `mutual_information` = `I(R;A)` is **exactly 0.000000 on 18 of 24 rows** and non-zero only on `gyroid` (**0.000087 / 0.000011 / 0.000443**) and `noise_cavity` (**0.007763 / 0.003361 / 0.002834**) — its maximum, 0.007763, is below the required *margin* on its own. `mi_rank_case_index_bits` = `I(R;K)` reaches **0.988699**, `mi_gap_bits` = `I(R;K) - I(R;A)` spans **0.000000 to 0.988699** and is asserted `>= 0` numerically on every row, `mi_units` `bits_log2`** |
+| C3 on `sphere`, where no cell is ambiguous, rank is 2 on essentially every surface cell | `ambiguous_cells` 0 and `rank_two_share` ≥ 0.99 on every `sphere` row | **HELD at the ceiling — `c3_scope` `sphere` on 3 rows, `ambiguous_cells` **0**, `rank_two_cells` **272 / 1,160 / 4,760** = `cells`, `rank_two_share` **1.000000** against `c3_rank_two_bar` 0.990000, `rank_three_cells` **0**, `rank_classes_present` **1**. `c3_holds` true on 24 of 24** |
+
+> **C2 could not have held on any fixture, and the arithmetic is one line.** In this crate ambiguity is a
+> *lookup on the case index*: `AMBIGUOUS_FACES[case] != 0`, `marching_cubes/table.rs:202-238`, derived
+> from the case and from nothing else. Write `A = g(K)`. The data-processing inequality then gives
+> `I(R; A) = I(R; g(K)) <= I(R; K)` for every field, every resolution and every margin, with equality
+> exactly when `g` is a sufficient statistic of `K` for `R`. **No measurement could have made C2 hold**,
+> and the harness says so before it records a row (`experiment_p130.rs:789-791` sets `c2 = false`
+> unconditionally). What it *does* measure is the inequality itself, as a check on its own code rather
+> than as a claim about the theorem: `mi_gap_bits` is asserted `>= -1e-9` on every row with a panic
+> message naming the mutual-information code as the thing that would be wrong. It never fired. This is
+> recorded as unreachable **with its arithmetic** rather than quietly narrowed, which is the rule `P-70`'s
+> C1 set.
+>
+> **C2's own falsifier missed, and that is the salvageable result in the row.** The falsifier read *"rank
+> being a function of the case index, which would make it a renaming with no new signal — the most likely
+> outcome"*. It is not: `rank_is_a_function_of_case_index` is **false on 9 of 24 rows** —
+> `csg_difference`, `gyroid` and `noise_cavity` at all three resolutions — with
+> `rank_vs_case_index_agreement` (the accuracy of the best predictor of rank from the case index,
+> `Σ_k max_r N(k,r) / cells`, which reads exactly 1.0 iff rank is a function of the case index) falling to
+> **0.820920** on `noise_cavity` at 33 and **0.864086** on `gyroid` at 17. `case_index_lift` over the
+> constant predictor reaches **0.437500** (`thin_plate` at 17) against `rank_majority_share` **0.562500**
+> there. So real tensor rank **is** information the 8-bit case index does not carry; it simply is not
+> information about *ambiguity*, which is a different question and the one the inequality forbids.
+>
+> **The registered vacuity control is half unsatisfiable, and the CSV carries the failure rather than the
+> run aborting.** The control reads *"`gyroid` and `csg_difference` must contribute a non-zero
+> ambiguous-cell count, or C2's mutual information is computed against a constant."*
+> **`csg_difference` cannot contribute one.** `vacuity_csg_difference_ambiguous_cells` is **0**,
+> `vacuity_gyroid_ambiguous_cells` is **211** (52 + 27 + 132, the half that is satisfiable),
+> `vacuity_rows_with_ambiguity` is **9**, and `vacuity_control_as_registered_holds` is **false** on all 24
+> rows. The harness header censuses it at seven resolutions — 17, 25, 33, 49, 65, 97, 129 — and
+> `csg_difference` reads **0 at every one**, as do `sphere`, `torus`, `box_exact` and `thin_plate`. The
+> mechanism is geometric and permanent, not a resolution artefact: an ambiguous face needs **two diagonal**
+> inside corners on one cell face, so the surface must cut that face into two components;
+> `csg_difference = BoxExact - Sphere` is planar on the box faces, convex on the spherical bite, and joins
+> them along a single monotone concave seam, and a curve crossing a square cuts it into two *adjacent*
+> pieces, never a diagonal pair. The three fields that carry ambiguity — `gyroid` **52 / 27 / 132**,
+> `fbm_terrain` **16 / 30 / 58**, `noise_cavity` **193 / 502 / 567** — are exactly the three whose
+> surfaces are not built from planes and spheres. Aborting would have discarded 24 rows of C1 and C3 over
+> a control whose only subject, C2, is separately and structurally unreachable.
+>
+> **What the harness enforces instead, and it is strictly sharper than the registered form (`M-44`).**
+> **(1)** Some row must have a **non-constant** ambiguity variable, `0 < ambiguous_cells < cells` — the
+> registered control's stated *purpose*, asserted directly: `vacuity_rows_with_ambiguity` **9**, and
+> `mi_against_a_constant` marks the other **15** rows per row, so a zero `mutual_information` beside
+> `entropy_ambiguous_bits` **0.000000** is never read as a fact about rank. `entropy_ambiguous_bits`
+> reaches **0.661945** on `noise_cavity` at 17, so where the variable exists it is far from degenerate.
+> **(2)** At least two distinct ranks must occur: `rank_classes_present` reads **1** on `sphere`, `torus`,
+> `box_exact` and `fbm_terrain`, **2** on `gyroid`, `noise_cavity` and `thin_plate`, and **3** on
+> `csg_difference`, with `entropy_rank_bits` up to **0.988699**. **(3)** Every row has at least one
+> surface cell — `cells` 128 at the minimum (`thin_plate` at 17). **(4)** `common::poly`'s identity is
+> re-asserted before any row is written, which is what makes the three Cayley cross-check columns
+> interpretable as *precision* rather than as an algebra difference. **(5)** `non_finite_samples` **0** on
+> every row: a `NaN` corner would make every sign comparison meaningless in a way no count would reveal.
+> **(6)** `degenerate_pairing_disagreements` **0** on 24 of 24 — the double-root test that decides the
+> `Δ = 0` stratum is taken in pairing `0` (`w`-slices) and re-decided in pairings 1 and 2 on every such
+> cell, and rank is a tensor invariant, so a disagreement would be `f64` incoherence and nothing else.
+
+**The falsifier named the consequence in advance and it is the finding: `Δ = 0` is not a thin wall, and
+on a piecewise-linear field it is the whole surface.** C1's falsifier read *"`Δ = 0` above 0.1%, the
+latter meaning the degenerate stratum is common enough that `P-131` becomes urgent rather than
+optional."* `box_exact` reads `max_abs_delta` **`0.000000e0`** and `min_abs_nonzero_delta` **`inf`** at all
+three resolutions — **there is no non-zero Δ on its surface at all** — and all **296 / 1,352 / 5,768** of
+its surface cells classify as **rank 1**. `thin_plate` is nearly the same story from the other side: its
+entire non-zero population is **8 cells** at every resolution, at a single magnitude
+(`min_abs_nonzero_delta` = `max_abs_delta` = **8.813477e-6 / 1.977539e-6 / 3.906250e-7**), so
+`delta_zero_share` rises *with* refinement, 0.937500 → 0.984375 → 0.996094, which is also why its
+`partition_share_range` **0.058594** breaks the stability half. **16,508 of 104,059** surface cells over
+the sweep are exactly on the hypersurface, 15.9%, against a registered "under 0.1%". `P-131` was
+registered as optional and is not.
+
+**Rank was computed, not renamed, and the theorem's two inequalities are visible as counts.** `Δ != 0`
+fixes rank by de Silva & Lim §6 — rank 2 on `{Det > 0}`, rank 3 on `{Det < 0}` — but `Δ = 0` does not, so
+the harness decides the stratum with exact `f64` comparisons: all corners zero → rank 0; all three
+flattenings of rank ≤ 1 → rank 1; the pencil quadratic identically zero → rank 2; otherwise the double
+root's singular slice is zero (rank 2) or not (rank 3, the tangential orbit). Over the sweep:
+**0** rank-0, **15,881** rank-1, **79,939** rank-2, **8,239** rank-3, summing to `cells` **104,059**
+exactly. Against `delta_positive` **79,314** and `delta_negative` **8,237**, that makes
+`rank_two_cells >= delta_positive` and `rank_three_cells >= delta_negative` — the inequalities the theorem
+actually gives, asserted on every row — with **625** rank-2 cells and **2** rank-3 cells found *inside*
+the `Δ = 0` wall by the classifier rather than by the sign. The two rank-3-on-the-wall cells are
+`csg_difference` at 17 samples (`rank_three_cells` **9** against `delta_negative` **7**), which is Prop
+7.3's population and `P-131`'s subject arriving unbidden in a census that was not looking for it.
+
+**SHARE: zero, discharged as registered.** *"C1 and C2 are counts, not timings, and move nothing."* No
+`Instant`, no shipped path changed, and across Phase 27 the only change under `crates/isomesh/src/` is
+`experiment.rs`'s registrations with no `golden_hashes.json` moved. **What a consumer should do
+differently: nothing in the extractor — but anyone who was about to read tensor rank as a *cheap proxy
+for ambiguity* should stop.** The census says rank carries signal the case index does not (9 of 24 rows),
+and says the case index already dominates rank at predicting ambiguity on every row by the inequality. A
+rank stratification is not worth a stage for that purpose. What it *is* worth is a warning about the
+degenerate stratum, and `P-131` is where that gets spent.
+
+### 🔬 M-444 — C1, C2 and C3 all HELD on **29 of 29** arms: the `discriminant == 0` branch at `marching_cubes/trilinear.rs:250` **does** fire on a reference field — `csg_difference` at **17 / 41 / 85** hits, `c1_reference_field_hits_total` **143** — and it is **not** the tangency the comment describes: of **3,858** branch hits, **2,222** are true rank 3 with border rank 2, two of them on `csg_difference` at 129³, `branch_rank_one_total` is **0** because rank 1 is arithmetically unreachable on that exit, and the registered W-state fixture reaches the branch with `w_state_rank` **3** against `w_state_border_rank` **2** (P-131, R-131)
+
+**M.** `cargo bench --bench experiment_p131`, `docs/experiments/p-131.csv`, **29 rows** across **89
+columns** — four `#` comment lines plus one column header plus **29 data rows**. `f64` on the reference
+arms and exact `f64`-plus-`i128` on the synthetic arms, `amd-ryzen-9-5900x-12-core` (Zen 3), `seed`
+`0x0000000000000131`, `wall_ns` **2,438,302,141**. Header line `# commit 277ce7b on
+amd-ryzen-9-5900x-12-core at 2026-08-30T14:08:40Z`, no `(WORKING TREE DIRTY)`; the dataset landed in
+**`88a16c2`** (`p-131.csv - re-run on a clean tree`) and `git merge-base --is-ancestor 88a16c2 HEAD`
+passes. Fixture: **eight reference fields × `resolutions` `33|65|129`** = 24 rows at `cells` **32,768 /
+262,144 / 2,097,152**, plus five synthetic arms carrying `resolution` **2** — `synthetic_w_state`
+(1 cell), `synthetic_w_orbit` (`w_orbit_cells` **2,816**, an exhaustive `GL(2, ℤ)³` orbit from
+`gl2_generators` **40**), `synthetic_rank_one` (2,048), `synthetic_biseparable` (6,144) and
+`synthetic_generic` (2,048), at `sampled_cells_per_stratum` **2,048**. Nothing here is a stopwatch;
+`wall_ns` is read by nothing.
+
+**The subject is four lines and a comment.** `trilinear.rs:250-257` tests `discriminant == R::ZERO` and
+returns one root at `-b / (2a)`, on the grounds that *"the two hyperbolas touch rather than cross"*.
+Because of `P-127` — `p-127.csv`, `symbolic_difference_is_zero` **true**, `terms_disc` 12, `pencil_matches`
+3 — that test is exactly `Det₂,₂,₂(A) = 0`, so de Silva & Lim's Prop 7.3 applies verbatim rather than by
+analogy: a tensor on `Det = 0` is **generically rank 3 with border rank 2**, the W-state being the
+canonical witness. A rank-3 tensor that is a limit of rank-2 tensors is not two branches touching; it is
+a Jordan block in the pencil, and the comment describes the wrong object. Nothing in the repository had
+ever counted how often the branch runs. This row is the count. `symbolic_identity_holds` **true** with
+`cayley_terms` **12** and `cayley_total_degree` **4** is carried on every row, because if that were false
+the whole framing would collapse.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the `discriminant == 0` branch fires on at least one reference field at `f64`, counted per field rather than assumed zero | ≥ 1 hit on some reference field | **HELD — `c1_any_reference_field` **true**, `c1_reference_field_hits_total` **143**, entirely `csg_difference`: `discriminant_zero_hits` **17** at 33³, **41** at 65³, **85** at 129³. Every other reference field reads **0** at every resolution. `c1_holds` true on 29 of 29 (global by construction)** |
+| C2 on the cells where it fires the true configuration is classified — rank 1, 2 or 3 — and at least one is **not** the tangential-touch case the comment describes | ≥ 1 non-tangency | **HELD — `c2_global` **true**. `branch_hits_total` **3,858** = `border_rank_two_total` **3,858**, split `branch_rank_two_total` **1,636** + `true_rank_three_total` **2,222**; `branch_rank_one_total` **0** and `branch_rank_zero_total` **0**. On a reference field: `csg_difference` at 129³ carries `true_rank_three` **2** and `w_state_like` **2** among its 85 hits, while its 33³ and 65³ hits are all rank-2 biseparable (`branch_rank_two_hits` 17 and 41, `true_rank_three` 0). `c2_holds` true on 29 of 29** |
+| C3 correcting the classification changes at least one triangle on at least one field, or provably changes none — and which is stated as the result | either limb, established | **HELD on both limbs — `c3_any_arm_changed` **true**, and `c3_holds` (which is `m2_separate_disks == 0`, i.e. *the mesh consequence is established*) is true on 29 of 29 with `m2_separate_disks` **0** on every arm. The stricter falsifier reading is carried separately and is mixed: `c3_mesh_changed` true on **3 of 29** and `c3_provably_none` true on the other **26**** |
+
+> **`mesh_delta_triangles` is non-zero on exactly three arms and zero on every reference field, and the
+> zero is *proved* rather than merely observed.** `synthetic_w_orbit` **48** (`m1_triangles` 4,936 →
+> `m2_triangles` 4,984, `hexagon_gained` **24**), `synthetic_biseparable` **88** (2,619 → 2,707,
+> `hexagon_gained` **30**), `synthetic_generic` **4** (92 → 96, `hexagon_gained` **1**). All 24
+> reference-field rows read `mesh_delta_triangles` **0** with `c3_provably_none` **true**, and the
+> derivation is in the harness header rather than in the numbers: under M2 (the double root reported with
+> multiplicity) the six mask bits arrive in pairs, so `interior_vertex`'s `total` is 0, 2 or 6 and only 6
+> is a hexagon; under M1 (shipped) only the `k = 0` bits exist, so `total` is at most 2 and `Some` needs
+> all three coordinates inside. The two models therefore differ **only** where the double root and both
+> its crossings lie in `(0, 1)` — column `hits_all_coords_inside`, which reads **32 / 30 / 1** on those
+> three synthetic arms and **0** on all 24 reference rows. `hits_trilinear_eligible` is **0** on the
+> reference rows too, so none of the 143 hits was even routed through the trilinear path
+> (`AMBIGUOUS_FACES[case] != 0` and a non-empty contour set), which means those cells could not have
+> contributed a triangle under either model. **This is a documentation-level defect on the shipped
+> reference fields and a real one on the `Det = 0` stratum**, and both halves are in the file rather than
+> one being chosen.
+>
+> **The registered vacuity fixture reached the branch, and the numbers around it are the reason C2 can
+> distinguish "no such cells exist" from "the fixture has none".** `w_state_corner`
+> **`0|1|1|0|1|0|0|0`** — under `f[u + 2v + 4w]` that is `|001⟩ + |010⟩ + |100⟩`, the canonical W-state.
+> It gives `w_state_a` **1**, `w_state_b` **-2**, `w_state_c` **1**, so `b² - 4ac = 4 - 4` and
+> `w_state_disc_f64` is **0** with `a != 0`; `w_state_branch` reads **`DiscZero`**, the branch at `:250`
+> firing. Its `Det` is exactly zero twice over, in `i128` and by two independent transcriptions:
+> `w_state_delta_i128` **0** and `w_state_repo_delta_i128` **0**. And it is really rank 3:
+> `w_state_rank` **3**, `w_state_border_rank` **2**, `w_state_local_ranks` **`2|2|2`** (no flattening of
+> rank 1), `w_state_regular_pairings` **3**. One detail worth having: `w_state_double_root` is **1**, the
+> reported root's `u` coordinate, which sits exactly *on* the boundary of `(0, 1)` — so
+> `double_root_hits` and `hits_all_coords_inside` are both **0** on that arm. The canonical W-state
+> reaches the branch and sets no mask bit; it takes the orbit to move a triangle, which is why
+> `synthetic_w_orbit` is a row and not a control.
+>
+> **Rank 1 on this branch is arithmetically unreachable, recorded with the arithmetic rather than the
+> clause being narrowed.** C2 asks for a classification into rank 1, 2 or 3. A rank-1 tensor is
+> `f[i + 2j + 4k] = x_i·y_j·z_k`, so every flattening has rank 1; in particular `f4..f7 = t·(f0..f3)`,
+> hence `twist_hi = t·twist_lo` and `du_hi = t·du_lo`, hence
+> `a = du_hi·twist_lo - du_lo·twist_hi` is **identically zero** — and `trilinear.rs:238` wins before
+> `:250` is ever reached. `branch_rank_one_total` is **0**, `rank_one_reachable_on_branch` is **false**,
+> and `synthetic_rank_one` is the demonstration rather than the assertion: **2,048** cells, `a_zero_hits`
+> **2,048**, `discriminant_zero_hits` **0**. The same algebra predicts a sharper asymmetry and the
+> extras measure it: `a` is built from `u`-direction differences, so of the three biseparable strata only
+> the one whose **`u`** flattening is rank 1 reaches the branch — `bisep_u_branch_hits` **1,493** against
+> `bisep_v_branch_hits` **0** and `bisep_w_branch_hits` **0**.
+>
+> **The `a == 0` exit dwarfs the discriminant exit, and the two partition the hypersurface exactly.**
+> `a_zero_hits` reads **28,672 / 229,376 / 1,835,008** on `box_exact`, **24,576 / 196,608 / 1,572,864** on
+> `thin_plate`, **27,206 / 218,120 / 1,746,291** on `csg_difference` and **2,028,864** on `fbm_terrain` at
+> 129³, against 143 discriminant hits in the whole file — so a cell with `a == 0` never reaches the
+> discriminant test at all, and the registered columns are pinned to *exits* rather than to predicates for
+> that reason. The identity `delta_zero_cells == discriminant_zero_hits + a_zero_no_root_hits` is asserted
+> per arm and closes everywhere: `csg_difference` 33³ **26,834 = 17 + 26,817**, 129³
+> **1,740,527 = 85 + 1,740,442**, `box_exact` 33³ **28,616 = 0 + 28,616** — and that 28,616 is the same
+> number `p-128.csv` reads for `delta_zero_cells` on the same grid, from a different harness. With
+> `a == 0` the discriminant is `b*b`, zero exactly when `b` is, so the two exits cover the hypersurface
+> and nothing falls between them.
+>
+> **Which vacuity controls fired, and the two that keep the zeros honest (`M-44`).** **(1)** The
+> registered one, above. **(2)** The strata are populated and distinct, so `border_rank_two` and
+> `true_rank_three` are not one column wearing two names: 3,858 against 2,222. **(3)** The generic arm
+> mostly **misses** — `synthetic_generic` takes the branch on **45** of 2,048 cells, so the branch test is
+> not a tautology, and those 45 split **2** rank-2 / **43** rank-3 with `w_state_like` **43**. **(4)** The
+> classifier is **two independent routes** and their agreement is the check: route A reads the three
+> `2×4` flattenings' exact-sign minors, route B counts regular pencil pairings over the three axis
+> pairings, and they share no arithmetic — `class_disagreements` **0**, `local_rank_anomalies` **0**,
+> `regular_anomalies` **0**, and on the `Det = 0` branch `w_state_like` equals `true_rank_three` on every
+> arm, which *is* the check. **(5)** `exact_sign_disagreements` **0** and `entry_bound_violations` **0**:
+> every synthetic corner is an integer with `|f_i| <= 32`, so `a`, `b`, `c` and every `2×2` minor are
+> integers below `2^28` and exact in `f64`, and Cayley's form is independently evaluated over `i128` by
+> both `cayley_2x2x2` and `repo_discriminant` with the sign compared against the `f64` discriminant on
+> every cell. **(6)** The reference-field zeros are zeros that *could* have been non-zero where it
+> matters and are structurally far from the branch where it does not: `disc_within_one_ulp` reads **2 / 6
+> / 11** on `csg_difference` and **0** everywhere else, and `closest_nonzero_disc_rel` — the smallest
+> `|disc| / max(|b*b|, |4*a*c|)` over cells with `a != 0` — is **1.282738e-16 / 1.288519e-16 /
+> 1.121993e-16** on `csg_difference`, about one `f64` epsilon, against **1.203212e0** on `box_exact`,
+> **1.158087e0**–**1.197131e0** on `thin_plate` and **4.801743e-1**–**6.113797e-1** on `sphere`. A field
+> reading 0 hits with `disc_within_one_ulp` 0 is a different fact from one reading 0 hits with eleven
+> near misses, and the file states which is which.
+
+**`roots()` is private, so it is mirrored — and the mirror is not trusted because it was copied
+carefully.** The bench transcribes `BodySaddles::roots` (`trilinear.rs:236-267`), `level_crossing`
+(`:275-280`), the inside-mask loop (`:180-187`), `inner_hexagon` (`:338-351`), `interior_vertex`'s
+`is_some()` decision (`:815-897`), `detached_ring` (`:1072-1105`) and `fan_tunnel`'s emission count
+(`:1120-1259`), and on every cell of every arm compares the mirror against the shipped public surface on
+**raw bits** (`f64::to_bits`) rather than with `==`, because `level_crossing` divides by a difference that
+can vanish and `NaN == NaN` is false — an `==` comparison would pass silently over exactly the cells this
+row is about. All five counters read **0**: `mirror_u_disagreements`, `mirror_coordinate_disagreements`,
+`mirror_mask_disagreements`, `mirror_interior_disagreements`, `mirror_hexagon_disagreements`, plus
+`fan_tunnel_disagreements` **0** over `fan_tunnel_cross_checks_total` **71**. The `fan_tunnel` mirror C3
+leans on was exercised on real six-saddle cells rather than on synthetic ones:
+`hexagon_control_attempts` **112,290** random `f64` cells yielded `hexagon_control_cells` **64** with six
+inside saddles and `hexagon_control_cross_checks` **64**. `max_patch_triangles_seen` reaches **20**,
+which is how a hexagon-bearing cell shows up in a triangle count.
+
+**`exact_arithmetic` is the disclosure column and it reads `false` on all twenty-four reference-field
+rows.** Cayley's degree-4 form in arbitrary doubles needs about 212 bits and `i128` cannot hold it, so the
+hit test on those rows is the crate's own `f64` expression — which is correct, because C1 asks whether
+*the shipped branch* fires *at `f64`*, not whether an exact hypersurface is met. What stays exact there is
+the classification's linear algebra: every `2×2` minor goes through Kahan's error-free `a*d - b*c` via
+`f64::mul_add`, one rounding of the exact value, so each minor's **sign** is exact.
+
+**SHARE: zero, and structurally so.** `mesh_delta_triangles` is accumulated inside the `DiscZero` arm and
+nowhere else, so a cell that is not one of `discriminant_zero_hits` cannot contribute to it — the
+registration's *"C3 moves only the cells C1 counts"* discharged by construction rather than by argument.
+No shipped path changed; across Phase 27 the only change under `crates/isomesh/src/` is `experiment.rs`'s
+registrations, and no `golden_hashes.json` moved. **What a consumer should do differently: on the eight
+reference fields, nothing — the branch fires 143 times, none of those cells reaches the trilinear
+emission path, and no triangle in any shipped mesh is affected. What must change is the comment.** A
+`Det = 0` cell is generically rank 3 with border rank 2, and this file measures **2,222 of 3,858** branch
+hits to be exactly that; the four-line comment at `trilinear.rs:251-254` describes a tangency, which the
+census finds on **1,636** hits and not on the rest. The arithmetic of the branch is right — `M-207`'s
+point stands, and reporting two roots there would let a zero-area hexagon claim six saddles — but the
+justification given for it is a statement about the wrong object, and the third model the harness names
+and prices (**M3, refusal**, the position `SeparateDisks` already occupies at `mod.rs:429-435`) is the one
+the geometry actually argues for. That is a documentation fix with a measured population behind it, which
+is a better thing to own than an unexamined comment.
+
+### 💥 ✗101 / M-445 — C1 FALSIFIED at **three of six** orbit labels populated (`unpopulated_orbits` = `zero|rank1|zero-rank2`), C2 HELD **hard** — `chi_square` **445.967205** on `dof` **2** against `critical_value_0.05` **5.991**, with the decomposable `zero-rank1.1` stratum's `defect_rate_per_orbit` exactly **0.000000000** over **58,737** cells and contributing **327.649** of the 445.967 by itself — C3 HELD both ways, and the row's most reusable output is what T-001's defect population on these fields actually *is*: **zero** non-manifold edges, **zero** non-manifold vertices, **zero** self-intersecting pairs, and nothing but degenerate triangles (P-132, R-132)
+
+**M.** `cargo bench --bench experiment_p132`, `docs/experiments/p-132.csv`, **3 rows** across **20 columns** — four `#` comment lines plus one column header plus three data rows, **eight lines** in the file, counted from it rather than from the brief; 14 of the 20 columns are `P-132`'s registered `records` and the other 6 are `M-273` extras. The census is **eight reference fields × three resolutions** (`RESOLUTIONS = [17, 25, 33]`, `experiment_p132.rs:84`) over **every** cell, not only surface cells: `cells_in_orbit` sums to **405,504**, which is 8 × (16³ + 24³ + 32³) exactly. `f64` throughout, `amd-ryzen-9-5900x-12-core`. `# commit 356358e on amd-ryzen-9-5900x-12-core at 2026-08-30T14:05:43Z`, with no `(WORKING TREE DIRTY)` on that line, and landed as `767febe`, *"p-132.csv - re-run on a clean tree"*, for which `git merge-base --is-ancestor 767febe HEAD` passes. The three verdict columns are **global**, identical on all three rows: `c1_holds` false, `c2_holds` true, `c3_holds` true.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 all eight real orbits are populated across the reference fields, or the unpopulated ones are named | every orbit label populated | **FALSIFIED** — `c1_holds` **false**. Three labels populated: `neg` **71,608** cells, `pos` **275,159**, `zero-rank1.1` **58,737**. `unpopulated_orbits` names the other three verbatim: **`zero`** (Δ = 0, sorted rank (0,0,0) — the all-zero tensor), **`rank1`** (sorted rank (0,0,1), any sign) and **`zero-rank2`** (Δ = 0, sorted rank (0,0,2)). The clause's registered escape hatch — *"or the unpopulated ones are named"* — is discharged in the same column, so the falsification is the narrowing it was registered to be and not a gap |
+| C2 T-001 defect rates differ significantly across orbits — chi-square against the null that defects are orbit-independent | χ² > the 0.05 critical value at the table's dof | **HELD**, and not marginally — `chi_square` **445.967205** on `dof` **2** against `critical_value_0.05` **5.991**, a factor of **74.4**. Rates: `neg` **0.004552564** (326 / 71,608), `pos` **0.007035932** (1,936 / 275,159), `zero-rank1.1` **0.000000000** (0 / 58,737). The registration's SHARE clause is satisfied by construction: each is a rate with its own denominator in the same row, never a share of a total |
+| C3 the orbit partition is not a relabelling of the 256-case index: at least one case index spans two orbits and at least one orbit spans two case indices | both directions | **HELD** in both directions — `case_spans_two_orbits` **true** and `orbit_spans_two_cases` **true** on all three rows, so neither map is a function of the other and the orbit apparatus is not a renaming of the case table |
+
+> **C2's verdict is carried almost entirely by one cell of the table, and that is the finding rather than a caveat.** Under the null the expected defect counts are `cells_in_orbit` × 2,262 / 405,504 — **399.447** for `neg`, **1,534.904** for `pos`, **327.649** for `zero-rank1.1` — and the three χ² contributions are **13.505**, **104.813** and **327.649**, summing to the recorded **445.967205** to all six digits. So **73.5% of the statistic is the `zero-rank1.1` stratum observing zero defects where the null expects 328**, and the remaining 26.5% is `pos` running high against `neg` running low. `zero-rank1.1` is `orbit_of`'s label for `(sign Δ = 0, sorted multilinear rank (1,1,1))` (`experiment_p132.rs:159`) — the decomposable stratum, where all three 2×4 flattenings have proportional rows, and where Cayley's form is identically zero. **58,737 cells, 14.5% of the census, and not one of them touches a defect.** That is an orbit class predicting the *absence* of defects, which is a stronger and more useful reading than "rates differ".
+>
+> **All three registered vacuity controls fired as assertions before the first row was written, and each of them could have aborted the run.** **(1) Non-zero defects in total** (`experiment_p132.rs:453-459`): `total_defect_cells > 0`, recorded as `defect_cells_in_orbit` **2,262** on every row — this is the run-wide figure, not a per-orbit one, and the three per-orbit counts **326 + 1,936 + 0 = 2,262** reconcile against it exactly. Without it C2 would be a chi-square on a table of zeros, which the registration names as its own failure mode. **(2) Classifier self-check** (`:214-260`): the 2×4-flattening rank function is scored against four hand-derived integer tensors before any field is sampled — `zero` → `[0,0,0]`, a single entry → `[1,1,1]`, the corner pair `f0`/`f7` → `[2,2,2]`, and face-opposites `f0`/`f5` → `[1,2,2]` — plus `cayley.eval_i128` on the corner pair asserted to be exactly **1**, the `f0·f7` diagonal term of the twelve-term form. A rank function that returned a constant would pass a census and fail here. **(3) Two-or-more orbits populated** (`:460-466`): `populations.len() >= 2`, or the chi-square has a one-row table and `dof` is 0. It read three, so `dof` is **2** and the statistic can fire.
+>
+> **The `neg` and `pos` labels are coarser than the harness's own header table, and that is a real limitation on what C1 falsified.** The `//!` header (`experiment_p132.rs:33-40`) tabulates nine signatures — `zero`, `rank1`, `rank2-sub1`, `mixed-12`, `rank2-pos`/`rank2-neg`, `rank3-pos`/`rank3-neg`. `orbit_of` (`:147-208`) emits none of those four sign-split names: every signature with a non-zero Δ from `(0,1,1)` upward collapses to plain `pos` or `neg`, and `let all = [...]` at `:471` — the list C1 is scored against — has **six** entries, not eight or nine. So the measured statement is *three of six labels reached*, and the registration's *"all eight real orbits"* was answered against a coarser partition than the header describes. **Reported, not amended** (`crates/isomesh/src/experiment.rs:27-31`), and it is the direction that matters: a finer partition could only have left *more* labels unpopulated, so C1's falsification is conservative and C3's two-way spanning is unaffected.
+
+**T-001's defect population on the eight reference fields is degenerate triangles and nothing else, and this row is where that was measured.** `validate_features` and `self_intersections` were run on every one of the 24 extractions here and returned **zero** non-manifold edges, **zero** non-manifold vertices and **zero** self-intersecting pairs on all eight fields at all three resolutions. The defect set the chi-square is taken over is therefore built from the *degenerate-triangle* population, detected with the crate's own rule — `2 · ValidateConfig::AREA_EPSILON_REL · h²` on the cross-product magnitude, so the bench calls a triangle degenerate by exactly the predicate `validate.rs:81-88` does, not by a second opinion. **This is cross-confirmed by a wave-1 row that shares no code with it**: `docs/experiments/p-171.csv` (R-171), 24 rows over 17/33/65, sums to `non_manifold_edges` **0**, `non_manifold_vertices` **0**, `self_intersecting_pairs` **0**, `inconsistent_edges` **0** and `degenerate_triangles` **208** — all 208 on `gyroid` (4 at each of 17/33/65) and `noise_cavity` (54 / 68 / 74), with `defect_cells` **227** dilating to `defect_cells_dilated` **1,263**. Two harnesses, two resolution ladders, one answer. **Any future row that quotes a T-001 defect rate on these fields is quoting a degenerate-triangle rate**, and P-132's 2,262 is that population dilated over the finer 17/25/33 ladder.
+
+**The first run of this harness measured zero defect cells on all eight fields at all three resolutions, and the vacuity control caught the instrument rather than the crate.** A Marching Cubes vertex lies on a grid **edge**, and an interior grid edge is shared by up to **four** cells, so `floor((p − lo) / h)` per axis attributes the vertex to one of those four arbitrarily — and the one it picks is, in general, not the cell whose classification produced the defect. Attributing to the single floor cell therefore intersected the surface-cell census at an empty set while `validate_features` was reporting real defects one call earlier. The fix is the **2×2×2 neighbourhood** of the floor cell, clamped at the lattice boundary (`experiment_p132.rs:377-397`) — the same up-to-four-cell sharing `R-171` works with, and the reason its own file carries both `defect_cells` and `defect_cells_dilated` as separate columns. The dilation is why 2,262 cells carry a defect population whose triangle count is two orders of magnitude smaller, and it is an honest map, not an inflation: a defect *is* ambiguous between the cells sharing its edge, and picking one of four silently is the error the first run made.
+
+**One column in this CSV does not carry what its name says, and a reader must know it before quoting the file.** `nonmanifold_edges_in_orbit` reads **326 / 1,936 / 0**. Those are **defect cells per orbit**, not non-manifold edges: `run.record` writes the orbit's defect-cell count `d` into that registered slot (`experiment_p132.rs:521`), the three values sum to `defect_cells_in_orbit` **2,262**, and each divided by its `cells_in_orbit` reproduces `defect_rate_per_orbit` exactly. The harness's own comment at `:305-325` states the intent that the registered columns be *"reported at their real values -- zero"*, and the code does not do that. The true non-manifold-edge count for every row of this file is **0**, from the same `validate_features` call and independently from `p-171.csv`. `self_intersections_in_orbit` and `orphaned_vertices_in_orbit` read the string `see column defect_cells` on all three rows, which is at least self-describing. The registration is not amended; the column is reported as mislabelled and the number is reported as what it is. Related and smaller: `multilinear_rank` reads **`0-1-1`** on the `zero-rank1.1` row, from a lookup table at `:559`, while the signature `orbit_of` actually matched is **`(0, [1,1,1])`** at `:159`. The label is the authority; the token is wrong.
+
+**What a consumer of this crate should do differently: nothing, and the row is explicit about that.** No file under `crates/isomesh/src/` was touched by R-132, no golden hash moved, and the orbit classifier is bench-local — `flattening_rank` and `multilinear_rank` exist only in `experiment_p132.rs`. The orbit class is not computable at extraction time for free either: it needs three 2×4 rank decisions in exact `i128` over the eight corner values, which is 48 minors per cell against the four operations the shipped `b*b - 4*a*c` costs. **What the row does change is what may be claimed.** `sign(Δ)` alone does not determine the orbit — the census confirms de Silva & Lim §7.2's correction on real data by populating a Δ = 0 label with 58,737 cells that a sign-only reading would have to fold into one of `pos`/`neg` — and orbit class is now known to be *statistically* related to defect rate on these fields while `P-136` records, in the same phase, that `sign(Δ)` carries **zero** information about the interior verdict. Those two results are not in tension: one is about where defects concentrate, the other about which side a tunnel opens on.
+
+**SHARE, recomputed.** **None, and the registration asked only that C2's rates carry their denominators.** Discharged literally: every row carries `cells_in_orbit` beside `defect_rate_per_orbit`, so no rate in the file is a share of a total and the three do not sum to anything. Nothing here is timed — the file contains no nanosecond, no cycle and no ratio of two clocks — so `M-280`'s **1.45×** governor swing and `✗24` cannot reach a verdict in it, and the clean-tree re-run could not have moved one. The exact `i128` arithmetic is machine-independent by construction: corner values are scaled by `SCALE = 2^24` and rounded to `i64`, and the worst |Δ| is 12 terms of `max|f|⁴` ≈ 2^111.6 against `i128`'s 2^127, an arithmetic bound rather than a margin — the first draft used 2^30 and overflowed on the gyroid's scale-8 domain, which is recorded in the constant's own doc comment (`experiment_p132.rs:86-97`). Every count in this file is an integer over an exactly enumerated population and is identical on any host.
+
+**Would be shown wrong by:** a reference field that populates `zero`, `rank1` or `zero-rank2`, which would restore C1 without touching C2 or C3 and would tell us which geometry reaches the higher-codimension strata; a finer orbit partition — the header's nine labels rather than `orbit_of`'s six — reading a chi-square below 5.991 once `pos` and `neg` are split by rank, which would say the significance lives in the sign and not in the orbit; a resolution ladder on which `zero-rank1.1` acquires a defect, which would remove three quarters of the statistic; a change to `validate`'s degeneracy rule or to `AREA_EPSILON_REL` that moved the 208-triangle population, which would move the defect set both this row and `p-171.csv` are built on; and an extraction change that made the shipped Marching Cubes emit a single non-manifold edge on any reference field, which would falsify the sentence this entry asks every later row to quote.
+
+### 💥 ✗102 / M-446 — C2 FALSIFIED, and it is falsified **on an integer before any clock is read**: `naive_ops` **27** against `filter_ops` **65** is `op_count_ratio` **2.407407**, already past the registered `1.5×`, and the clocks then read `c2_aggregate_ratio` **54.435863** because a static filter cannot certify an **exactly zero** Δ and three of eight fields put 84–100% of their surface cells there; C1 HELD on exactly **2** fields (`fields_disagreeing_names` = `csg_difference|fbm_terrain`) and C3 HELD on `fbm_terrain` alone with `c3_reached_output_via_sign` **false** on 48 of 48 (P-133, R-133)
+
+**M.** `cargo bench --bench experiment_p133`, `docs/experiments/p-133.csv`, **48 rows** across **71 columns** — four `#` comment lines plus one column header plus 48 data rows, **53 lines** in the file; 16 of the 71 columns are `P-133`'s registered `records` and the other 55 are `M-273` extras. The fixture is **eight reference fields × three resolutions (33, 65, 129 samples per axis) × two scalars**, and each `(field, resolution)` is sampled **once in `f64`** and then rounded to `f32` and widened back, so both arms see a bit-identical corner set and `case_index_disagreements` is **0** on all 48 rows by construction rather than by luck. The oracle is Shewchuk's expansion arithmetic (`10.1007/pl00009321`, the DOI `real.rs:94` has cited for the crate's entire life) over the twelve monomials of `common::poly::repo_discriminant()`; `exact_terms` reads **12** on every row. `# commit a7cf04b on amd-ryzen-9-5900x-12-core at 2026-08-30T14:29:39Z`, no `(WORKING TREE DIRTY)`, landed as `049714c`, *"p-133.csv - re-run on a clean tree"*, an ancestor of `HEAD`. All three clauses are quantified over the fixture rather than over a row — *"on at least two reference fields"*, *"in aggregate"*, *"on at least one field"* — so `c1_holds`/`c2_holds`/`c3_holds` carry the **global** verdict identically on all 48 rows and each row's own answer sits beside it as `c1_row`/`c2_row`/`c3_row`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 at `f32` the sign of `Δ` disagrees with the exact sign on a non-zero fraction of surface cells, on at least two reference fields | ≥ 2 fields | **HELD**, at exactly the bar — `fields_disagreeing_f32` **2**, `fields_disagreeing_names` **`csg_difference|fbm_terrain`**. `csg_difference` reads `sign_disagreements_f32` **4 / 14 / 33** at 33 / 65 / 129 over `cells` 1,388 / 6,014 / 24,920 (`disagreement_rate` **0.002881844 / 0.002327902 / 0.001324238** on the `f32` rows); `fbm_terrain` reads **0 / 0 / 10** over 1,958 / 8,413 / 34,540, rate **0.000289519** at 129 — which is why the ladder had to reach 129 at all, since the stratum is codimension-1 and its count grows with the surface-cell count and nothing else. `sign_disagreements_f64` is **0** on 46 of 48 rows and **1** on the two `csg_difference` 65³ rows |
+| C2 a filtered exact predicate costs under `1.5×` the naive float evaluation in aggregate | < 1.5× | **FALSIFIED**, twice over. **On the op count:** the naive predicate is 23 operations in `coefficients` (`trilinear.rs:202-213`) plus 4 in `b*b - 4*a*c` (`:246`) = `naive_ops` **27**; the permanent is 8 `abs` plus 27 arithmetic = 35, so the filtered predicate is `filter_ops` **65** and `op_count_ratio` is **2.407407** — a property of two expression trees on any machine, already **1.6×** past the bar with no clock involved. **On the clocks:** `c2_aggregate_ratio` **54.435863** = Σ`exact_ms` 101.980201 / Σ`float_ms` 1.873401 over all 48 rows, decomposing as `c2_aggregate_f32` **74.114977** and `c2_aggregate_f64` **31.998546**. `c2_row` is **false** on 48 of 48; the friendliest row in the file is `sphere` 129³ `f64` at `overhead_ratio` **3.691340** and the worst is `thin_plate` 129³ `f64` at **300.878031** |
+| C3 correcting the sign changes the mesh — a non-zero triangle delta or a non-zero change in T-001's non-manifold-edge count — on at least one field | ≥ 1 field | **HELD** on **one** field, `fbm_terrain`, and on the triangle half only — `triangles_changed` **6 / 10 / 12** at 33 / 65 / 129 (`triangles_f32` 3,970 / 16,932 / 69,172 against `triangles_f64` 3,976 / 16,942 / 69,184). `c3_row` is **true** on the six `fbm_terrain` rows and **false** on the other 42. `nonmanifold_delta` is **0** on all 48, as are `nonmanifold_edges_f32` and `nonmanifold_edges_f64` — the shipped Marching Cubes emits no non-manifold edge on any reference field, so that half of the clause could not have carried it |
+
+> **C3 held and its mechanism did not, and the harness recorded the difference rather than letting the verdict stand for both.** `c3_reached_output_via_sign` reads **false** on 48 of 48. The clause asks whether *"the mesh changed"*; the falsifier's interesting case is whether *"the mesh changed **and** a Δ sign flip on a cell the trilinear path visits is why"*, and those are separate booleans in the file (`experiment_p133.rs:1435-1449`). `sign_disagreements_f32_ambiguous` is **0** on all 48 rows: **not one** of C1's 61 `f32` sign disagreements lands on a cell that reaches the body-saddle stage. `hexagon_cells_changed` and `joined_mask_cells_changed` are **0** on all 48. What *is* non-zero is `inside_mask_cells_changed` — **361 / 1,199 / 3,235** on `fbm_terrain`, **16 / 29 / 64** on `csg_difference`, **1 / 4 / 8** on `noise_cavity`, **2** on `thin_plate` at 33 — so the two precisions do disagree about `BodySaddles::inside_mask`, and they disagree through the *root values* rather than through the discriminant's sign. **The honest reading of C3 is therefore: the mesh moves at `f32`, and correcting `Δ`'s sign is not what would move it.** That is the case C3's own falsifier anticipated (*"the sign errors fall on cells whose classification does not reach the output"*) arriving as a `true` verdict on the letter of the clause and a `false` on its spirit, and both are in the file.
+>
+> **The registration's vacuity control fired and every one of the harness's own controls read the way a sound instrument must.** **(1) The registered control** — *"at least one field must produce cells with `|Δ|` below the `f32` error bound, reported as a count"* — is `below_f32_error_bound`, and it is non-zero on **all eight fields at all three resolutions**: at 129³ it reads 8,010 / 1,798 / 23,816 / 22,324 / 8,184 / 17,060 / 1,773 / 18,314 across `sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate`, `gyroid`, `fbm_terrain`, `noise_cavity`. C1 is not measuring a problem the fixture excludes. **(2) `filter_certified_wrong` is 0 on all 48 rows** — the filter never certified a sign the exact expansion contradicts, over every cell of every field at both precisions, so the `26u` bound is measured sound and not merely derived. `filter_depth_u` **26.0** against the derived depth-12 bound `(1+u)¹² − 1 < 12.01u`, giving `filter_relative_bound` **1.549721e-6** at `f32` and **2.886580e-15** at `f64`. **(3) `case_index_disagreements` 0 on all 48**, so the two extraction arms provably saw one corner set and every triangle difference has to come from a decision downstream of the case index. **(4) `nonfinite_deltas` 0 on all 48**, with `max_abs_corner` spanning **1.732051** to **9.621357** and `min_abs_nonzero_corner` down to **1.471193e-6** — decades away from the `2^±969` window the Dekker–Veltkamp splits need, asserted rather than assumed.
+>
+> **The `f64` filter fails on exactly the exact-zero set and on nothing else, on all 48 rows.** `below_f64_error_bound == exact_zero` holds row for row: **1,352 / 5,768 / 23,816** on `box_exact`, **1,162 / 5,032 / 20,875** on `csg_difference`, **504 / 2,040 / 8,184** on `thin_plate`, and **0** on the other five fields at every resolution. This is the sharp form of the question the header sets up, and it answers cleanly: at `f64` the filter never gives up on *cancellation*, only on **exact degeneracy** — `|Δ̂| > K·u·P̂` is unsatisfiable when Δ is exactly `0`, no matter how cheap the filter is. `filtered_fallback_rate` at `f64` is therefore **0.000000000** on `sphere`, `torus`, `gyroid`, `fbm_terrain` and `noise_cavity`, and on the other three it is exactly the exact-zero share: **1.000000000** on `box_exact` at all three resolutions, **0.837175793 / 0.836714333 / 0.837680578** on `csg_difference`, **0.984375000 / 0.996093750 / 0.999023438** on `thin_plate`.
+
+**C2's 54× is two different failures added together, and separating them is the row's most useful output.** On the five fields whose Δ never vanishes, the `f64` filter succeeds on **100%** of cells and `overhead_ratio` sits in a tight band of **3.69–4.84×** — `sphere` 3.869565 / 3.791598 / 3.691340, `torus` 3.932273 / 3.776620 / 3.880032, `gyroid` 4.178988 / 3.889140 / 3.975433, `fbm_terrain` 3.898701 / 3.784531 / 3.841809, `noise_cavity` 4.385844 / 4.737671 / 4.836655. **That is the cost of a filter that always wins, and it is still 2.5× the registered bar.** The other three fields are planar or polyhedral — `box_exact`, `csg_difference` and `thin_plate` are built from planes, so a surface cell's trilinear discriminant is *identically* zero — and their `f64` overheads are **159.5–159.9×**, **131.3–135.4×** and **287.5–300.9×**, because every one of those cells takes the 192-component expansion path. `exact_zero` is 100% of `box_exact`'s cells, **83.7%** of `csg_difference`'s and **98.4–99.9%** of `thin_plate`'s. So the aggregate is not a measurement of Shewchuk's arithmetic being slow; it is a measurement of **a static filter having nothing to certify on a plane**, which is a structural fact about the predicate and not about the implementation.
+
+**The op count is what makes C2's verdict survive this machine, and that is why it is in the file.** `M-280` records this host's governor swinging the identical binary by **1.45×**, so a clock ratio near a threshold is not a gate. Here it is not near one — 54.4 against 1.5 is not a 1.45× question — but the registration named `exact_ms`, `float_ms` and `overhead_ratio` and a registration is not amended to suit the instrument (`crates/isomesh/src/experiment.rs:27-31`), so the clocks are recorded with `exact_min_ms`/`exact_max_ms`, `float_min_ms`/`float_max_ms`, `repeats` **9** and `overhead_ratio_scatter` (0.011336 to 0.322153) beside them. **The integer beside them is the durable statement**: `naive_ops` 27, `filter_ops` 65, `op_count_ratio` **2.407407** ≥ 1.5 on every machine at every clock, forever. There is nothing to share between Δ and its permanent — `twist_lo` is `(f0+f3) − (f1+f2)` while `P_tlo` is `|f0|+|f1|+|f2|+|f3|`, and the same is true of every interior node — so unlike Shewchuk's `orient2d`, whose permanent is two products the value already formed, this filter is a **second tree** rather than an annotation on the first. A cheaper filter is conceivable; a filter that costs under `0.5×` the naive predicate is not, and that is what `1.5×` demanded.
+
+**SHARE, recomputed.** The registration's SHARE is *"C2 moves the body-saddle stage only, whose share of extraction must be reported alongside"*, and it is discharged as a column on every row: `saddle_share` = `saddle_stage_ms` / `extract_ms`, spanning **4.2e-05** to **0.006853** with a median of **0.000346**. The stage this change can reach is therefore at most **0.6853%** of an extraction — `noise_cavity` at 33³ `f64`, `saddle_stage_ms` 0.013240 against `extract_ms` 1.931914 — and the Amdahl arithmetic runs the wrong way from both ends: multiplying 0.6853% by the measured 54.435863 adds **36.6%** to that extraction, while on the median row it adds **1.85%**. So `✗51`'s bar bites in both directions at once — the mechanism is far too expensive to adopt unconditionally *and* far too small a share to be worth adopting even if it were free. `extract_ms` itself is recorded with `extract_repeats` **3** and its own min/max, and no clause reads it. **What the row licenses is a narrow, correct use**: an exact-sign path is affordable *per cell on demand* — 27 versus 65 operations on one cell is nothing — and unaffordable as a blanket replacement, and `filter_certified_wrong` **0** says the cheap filter is sound whenever it answers.
+
+**Two places where the file disagrees with its own header, reported and not amended.** The `//!` header at `:251-257` names a column `disc_sign_cells_changed_ambiguous`, *"the subset of the two arms' sign disagreements that [reaches a cell the trilinear path visits]"*; the CSV has `disc_sign_cells_changed` and `sign_disagreements_f32_ambiguous` and no third column, so `c3_reached_output_via_sign`'s input is computed and recorded only as the boolean. And the header at `:161-165` names `f64_fallback_is_exactly_the_zero_set` as a recorded column; it is not in the file, though the identity it asserts is verifiable directly — `below_f64_error_bound == exact_zero` on all 48 rows, which is the stronger form since a reader can check it rather than trust a boolean.
+
+**Would be shown wrong by:** a filter whose permanent shares subexpressions with Δ, dropping `filter_ops` below 40 and making the op-count half of C2's falsification recoverable — the current tree makes that impossible, but a *different* discriminant expression need not; a reference field on which `f64`'s `filtered_fallback_rate` is non-zero while `exact_zero` is zero, which would break the exact-degeneracy-only reading and mean the filter can lose to cancellation after all; any `f32` sign disagreement landing on an ambiguous cell (`sign_disagreements_f32_ambiguous > 0`), which would let `c3_reached_output_via_sign` read true and turn C3 from a letter-of-the-clause pass into a mechanism; a third field acquiring `sign_disagreements_f32 > 0` at a resolution above 129, which would strengthen C1 past its bar and say the stratum is denser than this ladder can see; and an extraction change that made `nonmanifold_edges_f32` or `nonmanifold_edges_f64` non-zero, which would give C3's second half a population it currently does not have on any reference field.
+
+### 💥 ✗103 / M-447 — C2 FALSIFIED at **3 of 8** fields above the `0.50` bar against a registered **4** (`c2_fields_above_bar` 3, `c2_min_fields` 4, decided at `c2_resolution` 65), and `box_exact` is **arithmetically excluded rather than counted as a miss** — `delta_magnitude_variance` **0.000000000e0** over its **1,352** surface cells because a polyhedron's `|Δ| / (max|fᵢ|)⁴` is identically `0`, so `correlation_population` is **7**; C1 HELD exactly, `scale_error_dyadic` **0.000000000e0** on 16 of 16 with the non-dyadic and octahedral arms at worst **0.156802** of their rounding envelope (P-134, R-134)
+
+**M.** `cargo bench --bench experiment_p134`, `docs/experiments/p-134.csv`, **16 rows** across **74 columns** — four `#` comment lines plus one column header plus 16 data rows, **21 lines** in the file; 11 of the 74 columns are `P-134`'s registered `records` and the other 63 are `M-273` extras. **Eight reference fields × two resolutions**, `resolution` counting *samples* so `cells` is `(n − 1)³` = **32,768** and **262,144** exactly; 129³ is deliberately absent because the per-cell Hausdorff spends about 340 field samples per surface cell against a surface-cell count quadratic in the resolution, and the clause turns on a rank correlation rather than on a rate. `f64` throughout, `amd-ryzen-9-5900x-12-core`. `# commit 1eb925d on amd-ryzen-9-5900x-12-core at 2026-08-30T14:10:25Z`, no `(WORKING TREE DIRTY)`, landed as `520b57b`, *"p-134.csv - re-run on a clean tree"*, an ancestor of `HEAD`. C1 is **per-row** and reads `true` on all 16; C2 is **global** — the clause counts fields — and reads `false` on all 16, decided at the finer grid with the coarser one settled beside it.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the normalised magnitude is invariant under scaling all eight corner values, to `f64` rounding, and under the 48 octahedral elements | `scale_error_dyadic` exactly 0 **and** `scale_error_rounding_units` ≤ 1, per row, over all 60 transforms | **HELD** on 16 of 16, and the two halves answer different questions. **Dyadic:** `scale_error_dyadic` is **0.000000000e0** on every row — rescaling a binary float by an exact power of two does not touch its mantissa, so a non-zero there would have been genuine scale dependence and the registered falsifier. **Non-dyadic and octahedral:** `scale_invariance_error` peaks at **2.664535259e-15** (`gyroid` 33, `noise_cavity` 33 and 65) and `scale_error_rounding_units` — that worst disagreement divided by `ROUNDING_ENVELOPE · u · S` with `ROUNDING_ENVELOPE` **64** — peaks at **0.156802** on `fbm_terrain` at 65, i.e. **6.4× inside** a bound that is itself 1.6× of headroom over a worst case. `transforms_per_cell` **60** (4 dyadic + 8 non-dyadic spanning six decades + `octahedral_elements` **48**) on every row |
+| C2 the magnitude rank-correlates with per-cell symmetric Hausdorff error above 0.5 on at least four of eight fields | ≥ 4 fields at the bar `0.50` | **FALSIFIED** — `c2_fields_above_bar` **3** against `c2_min_fields` **4**, at `c2_resolution` **65**. Above the bar: `gyroid` **0.742686**, `csg_difference` **0.674217**, `noise_cavity` **0.599755**. Below it: `fbm_terrain` **0.249949**, `torus` **0.211601**, `sphere` **0.186149**, and `thin_plate` at **−0.926920**. `box_exact` reads **0.000000** and is not in the population at all. The coarser grid settles the same way and by a wider margin: at 33 only `gyroid` **0.689276** clears the bar, with `csg_difference` **0.491836** and `noise_cavity` **0.475842** just under it |
+
+> **`box_exact`'s clause is not failed, it is *arithmetically unreachable*, and the row records that with its arithmetic — `P-70`'s C1 precedent.** `box_exact` is a polyhedron, so every surface cell's eight corner values are samples of a piecewise-linear function whose trilinear discriminant vanishes identically; the measured column is not merely small but **exactly** constant. `delta_magnitude` (the median) **0.000000000e0**, `delta_magnitude_mean` **0.000000000e0**, `delta_magnitude_min` **0.000000000e0**, `delta_magnitude_max` **0.000000000e0**, and `delta_magnitude_variance` **0.000000000e0** — over `surface_cells` **1,352** at 33 and **5,768** at 65, with `paired_cells` **764** and **3,068** carrying triangles. **A rank correlation against a constant is not a low correlation; it is not a number.** Every one of the 1,352 cells ties, so the Spearman ranks are all equal and any value the arithmetic produces is an artefact of the tie-breaking rule. So the field is excluded, and the exclusion is columns rather than prose: `in_correlation_population` **false**, `exclusion_reason` **`constant-normalised-magnitude-polyhedral-field`**, `correlation_population` **7** on every row of the file. Three consequences worth stating. **(i) The exclusion does not rescue or change C2's verdict** — 3 of 8 and 3 of 7 both fall short of 4, so the falsification is a property of the six non-degenerate fields that scored under the bar and not of the degenerate one. **(ii) The registration's own vacuity control passes on `box_exact`** — it demands non-zero variance in the *Hausdorff* column, and `hausdorff_variance` there is **1.497206345e-3** at 33 and **2.138711097e-4** at 65 — so the degeneracy is on the side the registration did not anticipate, which is exactly why a second control had to be added rather than the first one reused. **(iii) The guard is written as a population assertion, not a per-field one** (`experiment_p134.rs:1336-1348`): `correlation_population >= C2_MIN_FIELDS`, **7 ≥ 4**. A per-field assert would have refused the whole run over a property of one polyhedron.
+>
+> **Six vacuity controls fired, every one of them an assertion ahead of the first `run.record`.** **(1) Per-row Hausdorff variance** — the registration's own words — non-zero on all 16, minimum **2.594543450e-7** (`sphere` at 65). **(2) Per-row `min_denominator > 0`**, so `(max|fᵢ|)⁴` is never a zero denominator: minimum **2.968002523e-2** (`noise_cavity` at 65). **(3) `cells_without_true_surface_points` 0 on all 16** — a cube's 12 edges connect all 8 corners, so a cell with a sign change always has a straddling segment and direction B is never empty; asserted rather than assumed. **(4) Direction B must win somewhere or the symmetric Hausdorff is direction A wearing a longer name** — `cells_where_b_dominates` sums to **49,709** run-wide and is non-zero on all 16 rows (400 to 13,420). **(5) Some transform must actually move the magnitude, or C1's zeros are `M-44` zeros** — `nonzero_transform_deviations` sums to **4,186,521**, and it reads **0** on both `box_exact` rows precisely because their magnitude is the constant `0`, which is why the control is global. **(6) Some cell must carry a validity feature, or every `rank_correlation_with_defects` is against a constant** — `defect_cells` totals **571** run-wide, all of it on `fbm_terrain` (**185** at 33, **386** at 65).
+>
+> **The defect column is live on exactly one field and it is not measuring a defect.** `nonmanifold_features` and `misoriented_features` are **0** on all 16 rows — the shipped Marching Cubes emits no non-manifold edge, no non-manifold vertex and no inconsistently-oriented edge on any reference field, which `docs/experiments/p-171.csv` reports independently over 17/33/65. `fbm_terrain`'s entire feature population is `boundary_features` **190** and **390**, and `fbm_terrain` has `closed_in_domain() == false`: those are the field leaving the box, not a defect. So `rank_correlation_with_defects` reads **0.000000** on 14 rows and **0.058808 / 0.045591** on the two `fbm_terrain` rows, and the correct reading of the whole column is *"there was almost nothing to correlate against"* rather than *"the magnitude does not predict defects"*. This is why the harness carries two further correlations beside it: `rank_correlation_with_ambiguous_faces` against the popcount of `AMBIGUOUS_FACES[case]` — a pure function of the sign pattern and therefore **not** a function of `|Δ|` — reading at most **0.216377** (`noise_cavity` at 33), and `rank_correlation_with_uncertified` against the negation of Plantinga–Vegter's `validate::cell_is_certified`, reading **0.511743 / 0.421040** on `noise_cavity`, **0.330743 / 0.284509** on `gyroid`, and **−0.066258 / −0.067052** on `csg_difference`.
+
+**`thin_plate`'s −0.926920 is the number in this file most likely to be mis-quoted, and it needs one column beside it.** `thin_plate` is a pair of planes, so its magnitude column is a hair off constant rather than constant: `delta_magnitude` (median) **4.235164736e-17** at 65, `threshold_sweep` **`1e-8:8|1e-6:8|1e-4:8|1e-2:8|1e-1:0`** — **eight** of 2,048 surface cells above `1e-8`, and the same eight all the way up to `1e-2`. Its `delta_magnitude_variance` is **1.519918442e-5**, non-zero, so it survives the exclusion test and stays in the population, and its strong negative correlation is 2,040 tied cells at machine-zero against eight outliers. Read as *"ambiguity magnitude anti-predicts error on thin plates"* it is nonsense; read with `cells_above_threshold` **8** beside it, it is the same statement `box_exact` makes, one epsilon short of triggering the exclusion. The other planar field behaves the same way and clears the bar for the same non-reason: `csg_difference`'s median magnitude is **0.000000000e0** at both resolutions with `cells_above_threshold` **181** and **616**, and its 0.674217 is a correlation carried by a small minority of live cells.
+
+**C1's threshold prediction was registered as arithmetic and came back exactly as predicted, on all 16 rows.** `f32_rounding_floor` is re-derived per row as `30 · (f32::EPSILON / 2) · cayley_l1_norm` and reads **4.291534e-5**, with `cayley_l1_norm` **24**, `cayley_terms` **12** and `cayley_total_degree` **4** read off `common::poly::cayley_2x2x2()` on every run rather than quoted. `headline_threshold` is that floor rounded up to the decade, **1e-4**, and the prediction is that above it the `f32` sign of `Δ` is determined by its inputs: `f32_disagreements_above_threshold` is **0** on **16 of 16**. So `P-127`'s fourteen `f32` sign disagreements over 3,481 dyadic trials are confirmed on real field data to be entirely a small-magnitude phenomenon, and the magnitude is the thing that makes that legible. The shipped evaluation route is checked in the same pass: `shipped_route_sign_disagreements` — `b*b - 4*a*c` from `BodySaddles::coefficients` against `Poly::eval_f64` — is **0** on 14 of the 16 rows, **5** on `csg_difference` at 65 and **1,800** on `thin_plate` at 65, and `shipped_max_normalised_gap` on those two rows is **4.915533e-16** and **4.235165e-17**. Those are not two answers; they are two spellings of zero disagreeing about which side of zero they are on, which is precisely the stratum this row exists to make visible.
+
+**Direction A's caveat is a column per field rather than a sentence, and the calibration reads clean.** Only direction A (mesh → true surface) reads field values as a length, via the first-order distance `|f(p)| / ‖∇f(p)‖`, and gotcha 15 says `|sample|` is meaningless where `field.bound()` is not `Exact`. So `field_bound` and `distance_reading_is_exact` ride on every row — `exact` on `sphere`, `torus`, `box_exact` and `thin_plate`; `underestimate` on `csg_difference`; `lipschitz` on `gyroid`; `unbounded` on `fbm_terrain` and `noise_cavity` — and `gradient_norm_median` is the size of the caveat as a number: **1.000000000** on all four `Exact` fields *and* on `csg_difference`, **1.475206736 / 1.476544118** on `gyroid`, **1.343343369 / 1.368711846** on `fbm_terrain`, **3.067584055 / 3.448662357** on `noise_cavity`. `gradient_floor_points` is **0** on all 16, so no point was dropped for a vanishing gradient. Direction B carries no caveat at all: `segments_per_cell` **28** (12 cube edges, 12 face diagonals, 4 body diagonals), `bisections_per_segment` **16**, so a crossing is pinned to `h / 65536` and its distance to the mesh is exact point-triangle geometry.
+
+**What a consumer should do differently: nothing yet, and the row narrows the next attempt rather than closing it.** No file under `crates/isomesh/src/` moved, no golden hash moved, and the magnitude itself costs **no field samples at all** — `normalised_magnitude_flops` **46** from eight corner values already in hand, which is why it was worth registering as a refinement criterion. What C2 measured is that ambiguity magnitude and geometric error are **different phenomena on five of the seven fields that can host the question**, exactly as the registration's own falsifier said was likely (*"which would say ambiguity magnitude and geometric error are different phenomena — likely, and it would close the row cleanly"*). The three fields that clear the bar — `gyroid`, `noise_cavity`, `csg_difference` — are the three with genuine sub-cell structure, and the correlation with Plantinga–Vegter's uncertified set on two of them is the more interesting surviving thread: `|Δ|`'s normalisation looks more like a *certificate proxy* than an error predictor. **A refinement criterion built on this magnitude alone would refine the wrong cells on `sphere`, `torus`, `thin_plate` and `fbm_terrain`, and would refine nothing at all on a polyhedron.**
+
+**SHARE, recomputed.** The registration says *"C2 offers a criterion for the adaptivity stage; it does not by itself move any cost"*, and C2 is falsified, so there is no criterion to offer and no cost to move. The arithmetic behind "none" is still worth the line: the magnitude is **46 flops on data already in the extractor's registers**, so had C2 held it would have been free at the point of use — the cost would have been the refinement it triggered, not the criterion. Nothing in this file is timed: there is no nanosecond, no cycle and no ratio of two clocks, so `M-280`'s 1.45× governor swing and `✗24` cannot reach any verdict here and the clean-tree re-run could not have moved one. Every scored quantity is a rank correlation over an integer-indexed population or an exact float comparison against zero, and both are identical on any host.
+
+**Would be shown wrong by:** a fourth field clearing `0.50` at a resolution this row did not run — 129³ is the obvious one, and the two fields nearest the bar at 33 rose by 0.18 and 0.12 between 33 and 65, so the trend is not obviously flat; a normalisation other than `(max|fᵢ|)⁴` — the registered one is scale-free by Cayley's degree-4 homogeneity, but scale-free is not the same as well-conditioned, and a denominator built from the corner *spread* rather than the corner maximum would not collapse to zero on a plane; any transform reading `scale_error_dyadic` non-zero, which would falsify C1 outright and mean the normalisation is wrong rather than merely unhelpful; a reference field on which `f32_disagreements_above_threshold` exceeds zero, which would put `1e-4` in the wrong place and undo the threshold's arithmetic derivation; and a field with a genuinely live defect column — every non-`fbm_terrain` `rank_correlation_with_defects` in this file is a zero over an empty population, and the registered clause about defects has still not been tested on data that could answer it.
+
+### 🔬 M-448 — **C1 and C2 both HELD, and Group A's boundary is now a number**: the identity survives the trilinear control and fails *structurally* on a tricubic with `symbolic_residual_terms` **56** named non-zero terms, and under `smooth_min(k)` the deviation from the multi-affine `Δ` tracks `k` so closely that the six committed values are exactly `k − (7/16)k²` — **9.995625000e-4** at `k = 0.001` rising to **3.906250000e-1** at `k = 0.5`, `deviation_monotone` and `deviation_grows` both **true** — which is the `O(k)` seam shell the 2026-08-23 memo measured and is what joins Group A's scope statement to `M-38` (P-135, R-135)
+
+**M.** `cargo bench --bench experiment_p135`, `docs/experiments/p-135.csv`, **10 rows** across **24 columns** — four `#` comment lines plus one column header plus ten data rows, **15 lines** in the file; 10 of the 24 columns are `P-135`'s registered `records` and the other 14 are `M-273` extras. The ten rows are four arms: **`trilinear`** (`arm_role` `control`), **`tricubic`** (`counterexample`), **seven `smooth_min` rows** — `k = 0` as a second control plus the six-rung sweep — and one **`smooth_min-summary`**. Exact `i128` symbolic algebra for C1, `f64` for the `k` sweep, `seed` **0x1350135** on every row and no other randomness. `# commit 88955ec on amd-ryzen-9-5900x-12-core at 2026-08-30T14:31:59Z`, no `(WORKING TREE DIRTY)`, landed as `dd1f221`, *"p-135.csv - re-run on a clean tree"*, an ancestor of `HEAD`. `c1_holds` and `c2_holds` are **true** on all ten rows.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the identity holds for the trilinear and fails for any reconstruction that is not multi-affine — demonstrated symbolically for a tricubic and for `smooth_min(k)` with `k > 0`, with the residual reported rather than merely asserted non-zero | a reported residual, not a non-zero assertion | **HELD**. The control: `trilinear`, `is_multi_affine` **true**, `identity_holds` **true**, `symbolic_residual_terms` **0**, `degree_x`/`degree_y`/`degree_z` **1/1/1**, `interpolant_terms` **8**, `cases_touched` **256**. The counterexample: `tricubic`, `is_multi_affine` **false**, `identity_holds` **false**, `symbolic_residual_terms` **56**, `tricubic_degree` **3** with `degree_x`/`degree_y`/`degree_z` **3/3/3**, `interpolant_terms` **58**, `cases_touched` **2^64**, `delta_from_corners` **−3.990000e2**. `residual_named_terms` carries the leading six of the 56 verbatim: **`-3x^2y^3z^3 | 3x^3y^2z^3 | x^3y^3z^2 | 2xy^3z^3 | -3x^2y^2z^3 | -x^2y^3z^2`**. The `smooth_min` arms carry the same verdict numerically — `identity_holds` **false** on all six `k > 0` rows — and say so about themselves: `symbolic_residual_terms` reads the token **`n/a-numeric-arm`** there, so C1's *structural* half is unambiguously the tricubic's and is not being double-counted |
+| C2 under `smooth_min(k)` the deviation from the multi-affine `Δ` grows with `k` and is bounded in the `O(k)` seam shell the 2026-08-23 memo measured | monotone **and** growing across the sweep | **HELD**, and far more tightly than "grows" — `deviation_monotone` **true** and `deviation_grows` **true** on the summary row, over `k_values` **`0|0.001|0.01|0.05|0.1|0.25|0.5`**. `deviation_at_k` is **0.000000000e0** at `k = 0` and then **9.995625000e-4**, **9.956250000e-3**, **4.890625000e-2**, **9.562500000e-2**, **2.226562500e-1**, **3.906250000e-1**; `delta_base` is **2.500000000e-1** and `delta_at_k` falls **2.497501094e-1 → 2.475109375e-1 → 2.377734375e-1 → 2.260937500e-1 → 1.943359375e-1 → 1.523437500e-1**. The summary row carries the same six as a token: `deviation_at_k` **`9.996e-4|9.956e-3|4.891e-2|9.563e-2|2.227e-1|3.906e-1`** |
+
+> **The six committed deviations are not merely `O(k)`; they are `k − (7/16)k²` exactly, to all nine recorded digits.** `deviation_at_k` is the relative displacement `|Δ(k) − Δ(0)| / |Δ(0)|` (`experiment_p135.rs:483-487`), and dividing each by its own `k` gives **0.9995625, 0.9956250, 0.9781250, 0.9562500, 0.8906250, 0.7812500** — which is `1 − 7k/16` on every rung. Check the ends: `0.001 − 7·10⁻⁶/16 = 0.0009995625`, the recorded value; `0.5 − 7·0.25/16 = 0.390625`, the recorded value. **So the leading coefficient is exactly 1 and the first correction is exactly `−7/16 k²`**, which is a considerably stronger statement than the registered clause asked for: the deviation is not just bounded inside an `O(k)` shell, it *is* `k` to first order with a computable quadratic term. That is the sharpest available form of *"connecting Group A's boundary to `M-38`'s smoothing result rather than leaving it a separate fact"*, and it means a caller can price the error of treating a `SmoothUnion` cell as multi-affine: **at blend parameter `k`, `Δ` is wrong by a relative `k` and no more.**
+>
+> **All three registered vacuity controls fired as assertions before the first `run.record`, and each could have aborted the run.** **(1) The trilinear control must reproduce the identity *in this harness*** (`:349-355`): `repo_discriminant().sub(&cayley_2x2x2()).is_zero()` asserted, or the tricubic and smooth-min arms have no baseline to fail against and the comparison is between two different measurement setups. It is the same identity `P-127`/`M-440` proved, re-run here rather than cited. Alongside it, `trilinear_form` of a symbolic corner tuple is asserted `is_multi_affine()` (`:362-371`), because a harness whose "trilinear" is not multi-affine is not measuring the object the crate reconstructs. **(2) The tricubic residual must have NAMED non-zero terms, not a numeric difference** — the registration's own words. Three assertions carry it (`:411-427`): the residual is not the zero polynomial, `named` is not empty, and the tricubic is not multi-affine. Without the third, a draw that happened to land multi-affine would have produced a zero residual and a passing run for the wrong reason; `tricubic_form` forces the `[3,3,3]` corner term present (`:281-283`) so the arm is genuinely degree 3 in every variable regardless of the draw. **(3) The `k` sweep must span at least a decade and include `k = 0`, whose deviation must be exactly zero.** `K_SWEEP` spans **0.001 to 0.5** — two and a half decades — and the `k = 0` row reads `deviation_at_k` **0.000000000e0** with `is_multi_affine` **true**, which is correct rather than convenient: `smooth_min(0)` *is* `min`, multi-affine on each side of the seam, so an exact zero there is the prediction and a non-zero would have indicted the arithmetic.
+>
+> **What the 56 terms mean, and why the count matters more than the residual's size.** The construction is: take an exact tricubic in `x`, `y`, `z`; restrict it to the cell's eight corners; rebuild the trilinear that interpolates *those* corners; subtract. The difference is the part of the cell the corner values **cannot see**, and it is a polynomial rather than a number. That is the whole of C1's structural claim: `BodySaddles::coefficients` reads coefficients off eight corner values, and the moment the reconstruction carries a quadratic-or-higher term in any single variable those are the *wrong* coefficients, so the discriminant of the resulting quadratic is a different polynomial. **56 non-zero terms is the size of "wrong"** — the tricubic has `interpolant_terms` **58** and the rebuilt trilinear has 8, so the residual is nearly the whole interpolant. `SpatialPoly` is a bench-local polynomial in the three *spatial* variables and is deliberately a different object from `common::poly::Poly`, which is a polynomial in the eight corner *values*: the corner-value polynomial cannot express a statement about degrees in `x`, `y`, `z` at all, which is why a second exact type had to exist here and is not a duplicate of the shared module.
+
+**The `smooth_min` fixture is two planes crossing inside the cell, so the seam shell is actually sampled rather than assumed.** `smooth_min_corners` (`experiment_p135.rs:303-314`) evaluates `a = x − 0.5 + 0.25z` and `b = 0.5 − y − 0.25z` at the eight corners of the unit cube and blends them with the crate's polynomial smooth-min, `min(a, b) − h²k/4` with `h = max(0, 1 − |a − b| / k)`. Inside the shell `|a − b| < k` that expression is **quadratic in `a − b`**, which is exactly and only why it is not multi-affine — the deviation is not a rounding artefact but the shell's own curvature, and `a − b` spans the seam over the corner set by construction. `Δ` is then read through `delta_f64` (`:317-328`), which is `trilinear.rs:202-213` plus `:246` transcribed line for line — `twist_lo`, `du_lo`, `dv_lo`, `a`, `b`, `c`, `b*b − 4ac` — so the number being deviated is the number the crate computes, not a textbook discriminant.
+
+**This is a scope statement, and the scope it states is Group A's.** `P-127` proved `b*b - 4*a*c` at `crates/isomesh/src/marching_cubes/trilinear.rs:246` is identically Cayley's `2×2×2` hyperdeterminant; `P-128` through `P-134` all lean on that, and **every one of them silently assumes the reconstruction is multi-affine**. That is a hypothesis about the filter, not a fact about the crate, and until this row it was nowhere in the ledger. It now is, with two boundaries and a rate: **the identity is exact on the trilinear, structurally false on anything with a quadratic-or-higher term in a single variable (56 named terms), and false by a relative `k` on the crate's own `SmoothUnion`.** The practical consequence for a consumer is narrow and precise. `MarchingCubes` reconstructs trilinearly, so nothing on the shipped extraction path is affected and nothing changes. **A caller who builds an SDF with `SmoothUnion` and then reasons about `Δ` — orbit class (`R-132`), ambiguity magnitude (`R-134`), tensor rank (`R-130`) — is reasoning about a quantity that is wrong by `k` near the blend seam and exact away from it**, and the `k − (7/16)k²` form is what lets that be priced instead of feared. The case-space number says the same thing from the other side: `cases_touched` is **256** on every multi-affine arm and **2^64** on the tricubic, because a tricubic's sign pattern lives on 64 control values rather than 8, so a case-table approach does not merely lose the identity — it loses the table.
+
+**Three column readings that are tokens rather than measurements, reported and not amended** (`crates/isomesh/src/experiment.rs:27-31`). **(a) `centre_residual_value` reads `0`, and it is an `M-44` zero.** It is `residual.eval(1, 1, 1)` (`:438`), and `(1,1,1)` is a **corner** of the unit cell, not its centre — the rebuilt trilinear interpolates the corners by construction, so that residual is forced to be exactly zero and could not have read otherwise. The doc comment above it calls it *"the tricubic's own value at the cell centre"*; `SpatialPoly::eval` takes `i128`, so the true centre `(½,½,½)` cannot be passed to it. The residual's non-zero-ness is established by `symbolic_residual_terms` **56** and by the named terms, both of which are real, so C1 does not depend on this column. **(b) `tricubic_degree` reads `1` on the `trilinear`, `smooth_min` and summary rows**, hard-coded at `:380`, `:519` and `:589` — there is no tricubic in those arms and the column is a placeholder, not a degree. Only the `tricubic` row's **3** is a measurement. **(c) `deviation_grows` and `deviation_monotone` are populated on the summary row alone** and are empty on the six sweep rows, which is correct — they are properties of the sweep — but a reader filtering the file to the sweep rows will find C2's two deciding booleans absent.
+
+**SHARE, recomputed.** The registration says **none — *"this is a scope statement and moves nothing"*** — and it is discharged as written rather than left blank. The arithmetic behind "none": **zero bytes** changed under `crates/isomesh/src/**`, **zero** golden hashes moved, **zero** field samples taken, **zero** meshes extracted. Every mechanism in this row is `common::poly` plus one bench-local exact polynomial type. Nothing is timed — the file contains no nanosecond, no cycle and no ratio of two clocks — so `M-280`'s 1.45× governor swing and `✗24` have nothing to move, and the clean-tree re-run could not have changed a verdict: C1 is exact `i128` polynomial algebra and C2's six deviations are `f64` values of a closed form that reproduces to nine digits on any host. What the row buys is a fence rather than a speedup, and it is the fence `P-136` puts on the other axis: `P-136` records that `Δ` does not resolve the interior test even where the reconstruction *is* multi-affine; `P-135` records where the reconstruction stops being multi-affine at all.
+
+**Would be shown wrong by:** a non-multi-affine reconstruction on which the identity survives — the registration names this as the strictly better outcome, and it would widen Group A rather than narrow it; a `smooth_min` fixture whose deviation does not track `k`, which would mean the smoothing and the invariant are unrelated and `M-38` gains nothing here — the `k − (7/16)k²` fit makes that very unlikely on *this* fixture but the coefficient is a property of the two-plane construction and a different seam geometry will have a different one; a `k` beyond `0.5`, where the shell is wide enough to cover the whole cell and the linear term should stop dominating — the sweep's top rung already shows the quadratic correction taking 22% off, so the linear reading has a stated ceiling; a `SpatialPoly` bug making `symbolic_residual_terms` an overcount, which the named-terms column exists to let a reader check by hand; and any change to `trilinear.rs:202-213` or `:246` that made `delta_f64` here stop being a transcription of the shipped expression, which would silently move both clauses' subject.
+
+### 🧊 M-449 — **the registered null came back exactly as registered: `sign(Δ)` is worth *nothing* on the interior test.** Over `M-165`'s 15,625 configurations the best of all eight sign-only rules scores `population_agreement_rate` **0.985600** against `population_base_rate` **0.985600** for a rule that never looks — `delta_information_gain` **0.000000**, `population_delta_insufficient` **225** — and the reason is a group action rather than a fitted number: `delta_blind_to_face_negation` **true** while that same negation moves the separated count from **225** to **4,113** (P-136, R-136)
+
+**M.** `cargo bench --bench experiment_p136`, `docs/experiments/p-136.csv`, **20 rows** across **42 columns** — four `#` comment lines plus one column header plus 20 data rows, **25 lines** in the file; 8 of the 42 columns are `P-136`'s registered `records` and the other 34 are `M-273` extras. **No RNG and no field sampling**: the population is a complete `5^6` product over the five magnitudes `M-165`'s own loop sweeps, enumerated in its loop order, so every count is identical on every host and every re-run. Two taxonomies share the `configuration_class` column and every row names its own in a `partition` extra — **14 `decider_mask` rows** (`case150/dm00` … `case150/dm63`, summing to `configurations` **15,625** and `separated_count` **225** exactly), **3 `delta_sign` rows**, **1 `population` row** (`case150/all`), and **2 `control` rows**. `# commit e9bf133 on amd-ryzen-9-5900x-12-core at 2026-08-30T14:09:08Z`, no `(WORKING TREE DIRTY)`, landed as `54e1b6f`, *"p-136.csv - re-run on a clean tree"*, an ancestor of `HEAD`. `c1_holds` and `c2_holds` are **true** on all 20 rows: **this row's finding is a null and the null is what was registered.**
+
+| clause | registered | measured |
+|---|---|---|
+| C1 over the configurations `M-165` identifies, `sign(Δ)` alone agrees with the correct interior verdict on **strictly fewer than all** of them, and the disagreement set is characterised | agreement < 1 and a non-empty, described disagreement set | **HELD** — `case150/all` reads `agreement_rate` **0.985600** over `configurations` **15,625**, with `population_delta_insufficient` **225**. The clause is scored on the **best of all eight** functions from `{neg, zero, pos}` to `{Joined, Separated}`, fitted on the row's own data by majority vote with ties to `joined`, so a value below 1 says **no** sign-only rule can succeed — the most generous reading available and the only honest one. The disagreement set is described in three ways in the same file: by `delta_sign` class, by decider mask, and by its overlap with Chernyaev's errors (`overlap_of_delta_wrong` **198/225**, `overlap_of_chernyaev_wrong` **198/1966**) |
+| C2 the classes where `Δ` is insufficient are named explicitly, so the boundary is in the ledger rather than in somebody's head | named, a strict subset, and the closed-form containment holds | **HELD** — `cases_where_delta_insufficient` reads **`0|31|47|63`** on all 20 rows: four decider masks out of `decider_classes_observed` **14**, so `delta_insufficient_classes` **4** is a *boundary* rather than "everywhere". The containment half: `separated_inside_endpoint_condition` **225** equals `separated_count` **225** over `endpoint_condition_population` **4,489**, so every `Separated` verdict provably satisfies `saddle(0) ≤ 0` and `saddle(1) ≤ 0` — `margin()` is a maximum over candidate points that *includes* the endpoints — which is what makes the set characterised rather than merely listed |
+
+> **The number that carries the whole row is a difference of two identical figures.** `population_agreement_rate` **0.985600** is the best sign-only rule; `population_base_rate` **0.985600** is a rule that reads nothing at all and predicts the majority verdict; `delta_information_gain` and `population_information_gain` are both **0.000000**. And the fitted rule says why in one line: `best_sign_rule` on `case150/all` is **`neg->joined|zero->joined|pos->joined`** — **the best use of `sign(Δ)` is to ignore it.** The base rate is exactly `joined_count` 15,400 / 15,625. **The geometrically natural reading is worse than ignoring it**: `natural_rule_rate` **0.893504**, nine points *below* the base rate, because "Δ > 0 means two real `u` roots, so the hyperbolas cross, so call it Joined" gets the entire `delta_neg` class wrong — 1,308 configurations, `natural_rule_rate` **0.000000** on that row, every one of them actually `Joined`. Recording both readings is what stops C1 from being a statement about a badly chosen mapping.
+>
+> **The mechanism is a proof, and the aligned control is that proof measured.** Negating the four corner values of the far face is the `GL(2)³` element `g₃ = diag(1, −1)` with `g₁ = g₂ = I`. `P-127` records the weight of that action as `(det g₁ · det g₂ · det g₃)²` = `(−1)²` = **1**, so `Δ` is *exactly* invariant under it. The interior verdict is not: `SweptFaces::numerator(1)` is a product of two negations and does not move, `SweptFaces::denominator(1)` negates, so `saddle(1)` flips sign — and `margin()` is a maximum that includes `saddle(1)`. **One operation leaves `Δ` fixed and moves the answer.** `control/aligned_no_pole` is the same 15,625-configuration sweep with exactly that negation applied, and the file asserts the two families' `Δ` values agree row for row and bit for bit: `delta_blind_to_face_negation` **true** on all 20 rows, with `delta_neg` **1,308**, `delta_pos` **14,132** and `delta_zero` **185** identical on both families. Their verdicts are not: `separated_count` **225** on the opposed family against **4,113** on the aligned one, an eighteen-fold move under an operation `Δ` cannot see. That is a reason rather than evidence about a fixture, and it is why this null is registered as permanent rather than as "not on this population".
+>
+> **Seven vacuity controls fired, every one before the first `run.record`, and each panic message opens `VOID: `.** **(1) The registration's own control, both halves.** *"The configuration set must reproduce `M-165`'s 12.6% disagreement rate as a control column, or the fixture is not the population `M-165` measured."* `chernyaev_wrong` **1,966** — the exact integer `marching_cubes/interior/tests.rs:230` pins — and `m165_rate_reproduced` **0.125824** against `m165_rate_registered` **0.126000**, `m165_rate_error` **0.000176**, inside a `5e-4` tolerance that is half of the last place the claim was quoted to. **(2) `configurations` 15,625 with no degenerate rejection** — an opposed face pair cannot have a zero bilinear denominator, so `SweptFaces::new` must accept every draw, and a rejection would silently shrink the population under a pinned disagreement count. **(3) `poled` 15,625** — `M-165`'s structural claim that every configuration has a pole inside the sweep; without a pole the corrected and numerator-only tests are provably equal (`interior.rs:392-394`) and the comparison is empty. **(4) Every configuration has `case == 150` with `AMBIGUOUS_FACES[150] == 63`** — inside corners `{1,2,4,7}` are one of the cube's two tetrahedra, so all six faces are ambiguous and this is Chernyaev's case 13, not some easier neighbourhood. **(5) Both verdicts occur** — `joined_count` 15,400 and `separated_count` 225, or every rule scores 1 and C1 could not have held for any reason but the fixture. **(6) All three `Δ` signs occur** — 1,308 / 185 / 14,132, or *"sign(Δ) alone"* has no sign to be wrong about. **(7) The instrument is shown able to read zero.** `control/aligned_no_pole` reads `chernyaev_wrong` **0** and `poled` **0** *while its verdict is not constant* (11,512 joined against 4,113 separated), so 1,966 is a property of the opposed family rather than of the comparison, and the zero is not an artefact of there being only one verdict to agree about.
+
+**The one place `Δ` carries information is a rounding error, and it is in the file rather than in a footnote.** Of the 14 decider-mask classes, exactly one has a non-zero `delta_information_gain`: `case150/dm00`, **0.006350**, over 3,937 configurations — `agreement_rate` **0.999492** against `base_rate` **0.993142**, and its `best_sign_rule` is the only non-constant one in the whole population partition, **`zero->separated|pos->joined`**. That is **0.635 percentage points**, it applies inside one class out of fourteen, and it does not survive pooling: `population_information_gain` is **0.000000**. The other three insufficient classes buy nothing at all — `dm31` (825 configurations, 50 separated, `agreement_rate` **0.939394**), `dm47` (825, 49, **0.940606**) and `dm63` (2,828, 99, **0.964993**) each read `delta_information_gain` **0.000000** because their `delta_sign` is the constant `pos` and there is no bit to read. The ten remaining classes reach `agreement_rate` **1.000000** for the uninteresting reason that their verdict is constant `joined` (`verdict_is_constant` **true**), which the file marks rather than counting as ten successes.
+
+**The `delta_sign` partition shows the failure is not concentrated where a reader would guess.** `case150/delta_neg`: **1,308** configurations, all `Joined`, `agreement_rate` **1.000000** — and `chernyaev_disagreement_rate` **1.000000**, so Chernyaev's numerator-only test is wrong on every single one of them while `Δ`'s sign is uniform across the whole class. `case150/delta_zero`: **185** configurations, 158 joined against 27 separated, `agreement_rate` **0.854054**, the worst class in the file. `case150/delta_pos`: **14,132**, 13,934 against 198, **0.985989**. Two consequences. First, the 225 mistakes split **198 in `delta_pos` + 27 in `delta_zero` + 0 in `delta_neg`**, so the exactly-degenerate `Δ = 0` stratum is where the sign rule is worst *per capita* — 14.6% wrong against 1.4%. Second, `overlap_of_delta_wrong` **198/225** says 27 of the sign rule's mistakes are **outside** Chernyaev's 1,966 entirely: those are configurations both published tests handle and a `Δ`-only rule does not. The two error sets are not nested and neither contains the other — `overlap_of_chernyaev_wrong` **198/1966** is 10.07% — which is the "characterised" that C2 asks for.
+
+**What a consumer of this crate should do differently: nothing, and that is the entire point of registering the row.** `crates/isomesh/src/**` is unchanged by `R-136` — zero bytes, zero golden hashes, no field sampled, no mesh extracted — and every mechanism here is public API (`ambiguity::joined_mask`, `interior::{SweptFaces, chernyaev_numerator_test}`, `table::{AMBIGUOUS_FACES, face_bit}`, `trilinear::BodySaddles`) plus this one bench file. **What the row buys is a fence around three of its own siblings.** `P-127`/`M-440` proved `b*b - 4*a*c` at `trilinear.rs:246` is identically Cayley's `2×2×2` hyperdeterminant, and that identity invites a false corollary — that the 730-subcase table becomes a corollary of an invariant. `R-130` reads tensor rank off `sign(Δ)`, `R-132`/`M-445` reads orbit class off it, and `R-134`/`M-447` normalises `|Δ|` into a continuous ambiguity magnitude. **None of those three may be read as resolving the interior test**, and after this row the ledger says so with a number and a group-theoretic reason instead of a caveat somebody has to remember. `M-214` had already recorded that the saddle *count* under-determines a topological question; this is the same shape of result one level down, for the saddle discriminant's *sign*.
+
+**The decider mask is the right granularity and the row argues that rather than assuming it.** The whole `M-165` sweep has a single Marching Cubes case index — **150** — so the case index is a constant column and could not characterise anything. `ambiguity::joined_mask(&corner, AMBIGUOUS_FACES[150])` is the shipped per-face resolution and `table::segment_links(case, joined)` keys the 730 subcases off exactly that mask, so the mask **is** the granularity at which *"does `Δ` make the subcase table a corollary"* is a well-posed question. The rows are named by the mask's numeric value and deliberately **not** by Chernyaev's `13.1`/`13.2`/`13.5.1` labels: transcribing a published classification from memory is guessing, and the mask needs no transcription because it comes out of the function the extractor itself calls. One reading rule rides with the file: **the `delta_insufficient` counts are not additive across partitions and must not be summed** — each row fits its own upper-bound rule, so a class that resolves internally can still contribute to the pooled mistake count, and `population_delta_insufficient` **225** is the one canonical figure, carried on every row for exactly that reason.
+
+**SHARE, recomputed.** **None, and the registration says so — *"this is a negative result registered before its positive twin can be believed"*.** A null still has a cost ledger and it is worth the three lines: change to `crates/isomesh/src/**` **zero bytes**; extraction cost moved **zero**, since no field is sampled and no mesh extracted; golden hashes moved **zero**, since nothing this harness touches is on an extraction path. No clause is timed. `wall_ns` reads **2,265,297** on every row and is **read by nothing**, which is the only safe status for a nanosecond on a host whose governor swings the same binary **1.45×** (`M-280`) — so `✗24` has nothing to bite on and the clean-tree re-run could not have moved a verdict. Every ordering in the file is on integer keys, every rate is `{:.6}`, and the only float equalities are the two intended exact ones: `Δ`'s sign against exactly zero, which is what `trilinear.rs:247-250` branches on, and the family-to-family `Δ` comparison, which is a bit-identity claim and not a tolerance.
+
+**Would be shown wrong by:** `agreement_rate` reading exactly **1.000000** on the whole population under some sign-only rule, which the registration names as *"a major and unexpected win"* that would justify reopening the A-002 interior line entirely — the `GL(2)³` argument says it cannot happen, so a `1.0` would mean the weight computation or the negation's action on `saddle(1)` is wrong; `delta_blind_to_face_negation` reading **false**, which would break the same argument at its root and force the null to be re-explained; a configuration family in which the four insufficient masks `0|31|47|63` are no longer a strict subset of the observed classes, which would turn C2's boundary into "everywhere" and mean the instrument is too coarse; a `Separated` verdict outside the endpoint condition (`separated_inside_endpoint_condition` < `separated_count`), which would break the closed-form containment and make C2 a correlation rather than a proof; and a population whose `chernyaev_wrong` drifts from **1,966**, which would say this is not the fixture `M-165` measured and would void the comparison before any clause is read.
+
+### 🔬 M-450 — C1, C2 and C3 all HELD on 25 of 25 rows: the trilinear's "at most 2" is the **mixed volume `8 − 6 + 0 = 2`** of three unit squares the harness read off the partials' own supports, reproduced independently as an eliminant of **degree exactly 2 in `w`**, with `cells_with_three_or_more` **0** on every row — and `SADDLE_COUNT`'s 2 is a **different theorem**, `grad_disc_degree` **6** against `repo_disc_degree` **4**, root sets differing on **31,883** census cells and agreeing on **7** (P-137, R-137)
+
+**M.** `cargo bench --bench experiment_p137`, `docs/experiments/p-137.csv`, **25 rows** across **60
+columns** — four `#` comment lines plus one column header plus 25 data rows, counted from the file rather
+than from the brief. The shape, also counted from the file: the **eight** reference fields ×
+{`17`, `33`, `65`} samples per axis = **24 census rows** with `is_control = false`, plus **one**
+`random_corners` row with `is_control = true`, `resolution` **0**, `control_trials` **200,000** and
+`control_seed` `0x0137013701370137`. `total_cells` sums to **2,392,064** over the census and
+`surface_cells` to **104,059**; the control's `total_cells` is `0` because it has no grid. Roots are `f64`
+from an exact rational formula, every symbolic quantity is exact `i128`, and `census_ns` (100,531,628 ns
+over the census, 23,038,236 on the control) is recorded and read by nothing. Run on a clean tree —
+`# commit 00291e5 on amd-ryzen-9-5900x-12-core at 2026-08-30T09:28:13Z`, with no `(WORKING TREE DIRTY)` on
+that line.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the mixed volume is committed as a check, and a census reports how many cells have 0, 1 or 2 **real** critical points **inside** the unit cell | `MV = 2`; falsified by any cell with three or more | **HELD** — `mixed_volume` **2** and `bernstein_bound` **2** on all 25 rows, `cells_with_three_or_more` **0** on all 25. The census: `cells_with_zero` **100,672**, `cells_with_one` **650**, `cells_with_two` **4**, `cells_positive_dimensional` **2,733**, summing to `surface_cells` **104,059** exactly on every row |
+| C2 at least one cell on at least one field has a critical point on a coordinate hyperplane, which Bernstein's count excludes by construction | falsified by no hyperplane cases | **HELD** — `on_hyperplane_count` **22** over the census on **three** fields: `csg_difference` 2 / 4 / 9, `thin_plate` 1 at 65³, `noise_cavity` 3 at 33³ and 3 at 65³. `on_cell_face_count` is **39** and `roots_at_infinity` **186** beside them. The control reports **0**, which is the right answer for 200,000 random octuples |
+| C3 the relationship to `SADDLE_COUNT` is stated as a **non-identity**, exhibited by a cell where the root sets differ | falsified by the two root sets coinciding | **HELD** — `saddle_count_relationship` `distinct-root-sets` on all 25 rows. `grad_disc_degree` **6** against `repo_disc_degree` **4**, `grad_disc_terms` **336** against `repo_disc_terms` **12**, `grad_disc_minus_repo_disc_terms` **348**. `cells_root_sets_differ` **31,883** against `cells_root_sets_agree` **7**, with a named witness |
+
+> **Two derivations, one number, and neither is Grosso's sentence.** `crates/isomesh/src/marching_cubes/trilinear.rs:128`
+> declares `pub const SADDLE_COUNT: usize = 2` and nothing in the tree said why. **Route one:** the harness
+> builds `f` symbolically over `common::poly`, differentiates it, and reads each partial's *support* off
+> the result — `newton_polytope_extents` is `0x1x1|1x0x1|1x1x0`, i.e. exactly the three unit squares in
+> `(v,w)`, `(u,w)` and `(u,v)`. A support that is exactly the four vertices of an axis-aligned unit square
+> *is* its own hull, so no floating-point hull predicate is run at all. Then inclusion–exclusion over boxes
+> in integers: `minkowski_volume_singletons_sum` **0**, `minkowski_volume_pairs_sum` **6**,
+> `minkowski_volume_all_three` **8**, giving `8 − 6 + 0 = 2`. **Route two** touches no polytope:
+> `∂f/∂u = 0` and `∂f/∂v = 0` are each linear in one unknown with the same coefficient `A(w)`, so
+> `u = −P/A`, `v = −R/A`, and substituting into `∂f/∂w = 0` gives an eliminant in `w` alone with
+> `eliminant_degree_in_w` **2**. Its factorisation is checked as an exact `i128` identity in the eight
+> corner values and holds: `eliminant_q2_is_c111_times_k` **true**, `eliminant_q1_is_two_c110_times_k`
+> **true**, `grad_disc_is_minus_four_k_du_dv` **true**.
+>
+> **Six vacuity controls fired, all before the first `run.record`, all panicking with `VOID: `.**
+> (1) `surface_cells > 0` on every row — a field with no cut cell would report zeros about nothing; the
+> smallest is `thin_plate` at 17³ with **128**. (2) `cells_with_zero > 0` over the census — **100,672**; a
+> bucket that never fired is not a distribution. (3) `cells_with_one > 0` — **650**, and it is non-zero on
+> exactly two fields (`gyroid` 19 / 25 / 60, `noise_cavity` 122 / 219 / 205), so the middle of the
+> distribution is carried by the two fields rough at the cell scale rather than by all eight.
+> (4) **`cells_with_two` is the bucket at risk and the control arm exists for it alone** — the control
+> reports `cells_with_zero` **161,927**, `cells_with_one` **35,141** and `cells_with_two` **1,355** over
+> `surface_cells` **198,423**, through *the same* solver, so the census's own **4** is a measurement rather
+> than an instrument limit. (5) `repo_roots` **150,297** over the census, so the root-set comparison is not
+> against an empty set. (6) `mirror_mismatches` **0** on all 25 rows: the compared repo coordinates come
+> from the shipped `BodySaddles::of`, and the mirror only supplies a count the crate does not expose.
+
+**The BKK bound of 2 is attained inside a grid cell on exactly one field, at exactly one rung, and
+refinement destroys it.** All four of the census's `cells_with_two` are `noise_cavity` at 17³
+(`cells_with_zero` 997, `cells_with_one` 122, `cells_with_two` 4 over `surface_cells` 1,123); at 33³ and
+65³ the same field reports **0**, and every other field reports 0 at every rung. That is the direction the
+harness predicted in advance — the quantity counted is a finite point set per cell, so refinement shrinks
+the cell around it — and it is why `17³` is the coarsest rung rather than `129³`. **Six of the eight
+fields report zero interior real critical points at every resolution** (`critical_points_in_cell` 0 on
+`sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate` and `fbm_terrain`), so the census's whole
+interior population — **658** points = 650 singletons + 2 × 4 — lives on `gyroid` and `noise_cavity`.
+
+**C3's symbolic half is a proof and its sample half is an exhibit, and the two answer different halves of
+the same question.** The repo's discriminant is `b*b - 4*a*c` at `trilinear.rs:246`, which `P-127`
+identified as Cayley's `2×2×2` hyperdeterminant — recomputed here as `repo_disc_is_cayley` **true**,
+`repo_disc_terms` **12**, `repo_disc_degree` **4**. The eliminant's discriminant `Q₁² − 4Q₂Q₀` has
+`grad_disc_degree` **6** and `grad_disc_terms` **336**: **a different total degree, so no scaling makes
+them equal**, and `grad_disc_minus_repo_disc_terms` **348** is the size of the difference. They are not
+unrelated — `repo_a_is_minus_du` **true** says the repo quadratic's own leading coefficient
+`a = du_hi*twist_lo - du_lo*twist_hi` (`trilinear.rs:209`) is identically `−Dᵤ`, one of the three quadratic
+factors of `Q₁² − 4Q₂Q₀` — which is exactly why `cells_root_sets_agree` is **7** rather than 0 (all seven
+on `csg_difference`: 1 / 1 / 5).
+
+**The exhibit, with the cell named.** `c3_witness_field` `gyroid`, `c3_witness_cell` `8x6x1`,
+`c3_witness_resolution` **17**. `c3_witness_grad_roots` is
+`-1.498092:1.148434:-0.287369 | 0.561174:0.462230:0.281783` — the second of the two is strictly inside the
+open unit cell — and `c3_witness_repo_roots` is
+`-3.247308:0.932460:-0.108235 | -0.849964:1.731322:-0.770827`, with `c3_witness_separation`
+**1.749216212**. **The sharpest single pair of numbers in the row is on that same `gyroid` 17³ row and
+needs no witness cell at all: `max_abs_f_at_repo_saddle` is `8.326673e-16` while
+`min_abs_f_at_grad_critical` is `1.915778e-2`.** The repo's roots lie *on* the zero level set to within a
+rounding error, because that is the system they solve — face-hyperbola intersections on `f = 0`; the
+gradient's critical points are, at their closest anywhere on that field, two hundredths of the field's
+value away from it. Two "at most 2"s, two theorems, one number. `cells_both_in_cell` **43** over the
+census (all `noise_cavity`: 11 / 19 / 13) and **6,037** on the control is how strong the disagreement gets
+where both sets actually put a point inside the open cell.
+
+**Which numbers are trustworthy is stated by the file rather than assumed.**
+`max_in_cell_gradient_residual` — `max|∇f|` over critical points inside the open cell — tops out at
+`2.857957e-14` on `noise_cavity` at 33³ and is asserted below `1e-9`; every bucket in the census depends on
+that column and nothing else. `max_scaled_gradient_residual` reaches `1.297222e-1` on `csg_difference` at
+17³ and is deliberately **not** asserted: near a stratum boundary `A` is tiny but not zero, `u` and `v`
+come out at `10¹⁵` (`max_root_separation` peaks at the file's own
+`40055465777643982268368913694720.000000000` on `fbm_terrain` at 33³), and such a root is
+a real root the `f64` interpolant genuinely has, nowhere near the cell, entering no bucket.
+
+**Nothing changes for a consumer of this crate.** `crates/isomesh/src/` is untouched, no golden hash moved,
+`SADDLE_COUNT` is right and is now *derivable* rather than transcribed. The one thing a reader must not do
+is carry `SADDLE_COUNT` across to `∇f = 0`: the two 2s are different theorems, and `P-137` is the row that
+says so with an exhibited cell. The two degenerate strata are the other transferable fact —
+`cells_positive_dimensional` **2,733** and `cells_stratum_degenerate` **22,456** are not rare corners but
+structural: `fbm_terrain` is exactly linear in `y` by construction, which forces `c₁₁₀ = c₁₁₁ = 0` and puts
+**every** one of its cut cells in the degenerate stratum at 65³ (`cells_stratum_degenerate` 6,603 of
+`surface_cells` 8,413 at 65³, and `cells_with_zero` = `surface_cells` on all three of its rungs, with
+`repo_non_finite_cells` 179 / 796 / 3,672); `box_exact` has `critical_points_complex` **0** at every
+resolution, so its interpolant has no isolated critical point anywhere in the sweep. **A census that solved
+the eliminant and stopped would have reported a curve of critical points on 2,733 cells and silence on
+22,456 more.**
+
+**One place the CSV disagrees with the harness's own header.** The header's stratum table
+(`experiment_p137.rs:164-168`) lists `cells_stratum_degenerate` beside `cells_with_zero` as the
+*degenerate-empty* bucket. The column is not that: `experiment_p137.rs:1100-1102` defines it as "surface
+cells with `A(w) ≡ 0`", counted independently of the four buckets, and the CSV proves the code right —
+`box_exact` at 17³ reads `cells_stratum_degenerate` **264** against `cells_with_zero` **216** over
+`surface_cells` **296**, which is impossible for a subset. The five-way sum the harness actually asserts is
+`cells_with_zero + one + two + three_or_more + positive_dimensional == surface_cells`, and that holds on
+all 25 rows.
+
+### 🔬 M-451 — C1 and C2 both HELD, and the price is in the **table** rather than in the bound: tricubic `mixed_volume` **116** against the trilinear's **2** (`mv_vs_trilinear` **58.000000**, two disjoint routes agreeing on all three arms) while the case space goes `2^8` → `2^64` and `case_space_tractable` flips to **false** — the memo's *"alive at degree ≥ 2"* prediction is confirmed on all four arguments, and the unregistered **triquadratic** arm is the only rung that has both order and a tabulable table, `mixed_volume` **29** over `2^27` = **134,217,728** (P-138, R-138)
+
+**M.** `cargo bench --bench experiment_p138`, `docs/experiments/p-138.csv`, **3 rows** across **38
+columns** — four `#` comment lines plus one column header plus three data rows, eight lines in the file,
+counted from it. One row per `reconstruction`: `trilinear` with `is_control = true`, `triquadratic` and
+`tricubic` with `is_control = false`. `instances` **2,048** on every row, drawn from
+`common::poly::Rng` (SplitMix64) seeded `SEED ^ degree` — `seed` **5778456113849643833 /
+…834 / …835** — with non-zero integer control-net entries in `[−9, 9]`. Every arithmetic path is `i128`
+and `max_exact_magnitude` (**576** / **2,359,296** / **46,438,023,168**) is asserted below `2^100`, so
+"exactly" below is checked rather than asserted by prose. No wall clock is read anywhere in the file.
+`# commit f72384f on amd-ryzen-9-5900x-12-core at 2026-08-30T09:28:17Z`, no `(WORKING TREE DIRTY)`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the mixed volume for `∇f = 0` with a tricubic reconstruction is computed and reported, giving the bound that would replace the trilinear's 2 | falsified by a mixed volume that makes the tricubic case space computationally hopeless | **HELD** — `mixed_volume` = `critical_points_bound` = `mv_permanent` **2 / 29 / 116**, `mv_routes_agree` **true** on all three rows, `newton_boxes` `0x1x1|1x0x1|1x1x0` → `1x2x2|2x1x2|2x2x1` → `2x3x3|3x2x3|3x3x2`. `c1_holds` **true**, global, identical on all three rows |
+| C2 the Bernstein-form arguments the memo killed are re-checked at degree 3 and reported alive or dead, with the specific reason | falsified by the arguments staying dead at degree 3, contradicting the memo's own prediction | **HELD** — `bernstein_route_alive` `dead` on the trilinear and `alive` on both higher degrees, with `bernstein_reason` spelling the four out: `alive|control_net_is_not_the_samples|subdivision_strictly_refines|signs_finer_than_the_case_index|sharpness_theorems_bite`. `c2_holds` **true**, global |
+
+> **The calibration is the registration's own vacuity control and it came back on the nose.** *"The
+> trilinear must be run through the same pipeline and reproduce `MV = 2`, or the tricubic number has no
+> calibration"* — `mixed_volume` **2** on the `trilinear` row, `estimated_case_count` the token `2^8` and
+> `case_count_decimal` exactly **256**. Four more controls fired before the first `run.record`, each
+> panicking with `VOID: `. (1) **Two disjoint routes must agree on every arm.** Route A is a signed sum
+> over the `2³−1` non-empty subsets of the three Newton boxes; route B is the permanent of their
+> side-length matrix, an unsigned sum over the `3!` column permutations. They share no line of code, and
+> `mv_permanent` equals `mixed_volume` on all three rows — a tricubic **116** from one route is a number,
+> from two it is a measurement. (2) **`bernstein_route_alive` must read `dead` on the trilinear arm**, and
+> it does: the same four checks, the same code, the same instance generator, reaching the *opposite*
+> verdict one degree down. Without that control an `alive` at degree 3 would be a property of the pipeline
+> rather than of the degree. (3) **All four arguments must reproduce the memo on the trilinear arm** —
+> `control_points_matching_samples` **16,384** of `control_points_total` **16,384**,
+> `subdivision_sites_matching` **131,072** of **131,072**, `hidden_edge_sign_changes` **0**,
+> `enclosure_narrowed_instances` **0**. (4) **`corner_sites_matching` must be `8 × instances` on *every*
+> arm** — it is **16,384** on all three, which is what licenses reading a mismatch at the *interior* sites
+> as a fact about the degree rather than a bug in the Bernstein→monomial conversion. `degenerate_nets` is
+> **0** everywhere, so no arm is measured on a fixture whose parent enclosure has zero width, and
+> `case_classes_lower_bound` **3** on the trilinear sits under the enumerated `trilinear_case_classes`
+> **14** under the order-`trilinear_case_group_order` **96** quotient, so the group used for the tricubic
+> floor is the one being claimed.
+
+**The hopelessness is in the table and not in the bound, and the registration did not anticipate that
+split.** The bound rises `2 → 116`, `mv_vs_trilinear` **58.000000** — a 58× rise in the root-isolation
+budget of a Plantinga–Vegter-style subdivision solver, which is expensive and is not hopeless. The case
+space is the other quantity, and it is the one that dies: the sign pattern is over the `(d+1)³` control
+values, so `net_sign_bits` is **8 / 27 / 64** and `estimated_case_count` is the token `2^8` / `2^27` /
+`2^64`. **`2^64` is recorded as a token and never as a float**; `case_count_decimal` carries the exact
+`u128` **256 / 134,217,728 / 18,446,744,073,709,551,616**. The bar is a column too:
+`case_space_tractable` is `net_sign_bits <= ram_bytes_log2` with `ram_bytes_log2` **35** — this machine's
+32 GiB at one byte per case — so the verdict is auditable from the file alone and reads **true / true /
+false**. `case_classes_lower_bound` = `⌈2^((d+1)³) / 96⌉` is **3 / 1,398,102 / 192,153,584,101,141,163**,
+labelled a floor because it is one.
+
+**The sharpest sentence this row has to give the roadmap is about the rung nobody registered.** The
+registration names two degrees; the memo's sentence is *"at degree ≥ 2 per variable"*, and degree 2 is the
+cheapest place that sentence can be tested. **The triquadratic arm is an addition, is marked
+`is_control = false`, decides neither verdict, and it is the only rung of the three that gives both order
+and a tabulable case space:** `mixed_volume` **29** with `case_count_decimal` **134,217,728** — 128 MiB at
+one byte per case, or `case_classes_lower_bound` **1,398,102** classes after the order-96 quotient, which
+fits on a laptop — against the tricubic's `2^64` = 18.4 EB. So if `P-157` wants order without abandoning a
+tabulated case analysis, **triquadratic is the rung, and this file is the arithmetic that says so.**
+
+**The Bernstein verdict, by measured integers rather than by re-reading the memo.** All four arguments the
+2026-08-23 memo killed for the trilinear are alive at both higher degrees, and `bernstein_route_alive` is
+*derived* from the four booleans so it cannot disagree with the columns beside it.
+**(1) The net is not the samples:** `control_points_matching_samples` falls from **16,384 of 16,384** to
+**17,052 of 55,296** and **16,555 of 131,072**. **(2) Subdivision is not resampling:**
+`subdivision_sites_matching` falls from **131,072 of 131,072** to **133,732 of 442,368** and **131,747 of
+1,048,576**, and `subdivision_exactness` goes `exact_resampling` → `inexact_strict_overestimate` on both.
+**(2′) The enclosure narrows, which is the certificate that the parent enclosure was a strict
+over-estimate:** `enclosure_narrowed_instances` **0 / 1,623 / 1,764** of 2,048, with
+`enclosure_shrink_ppm_max` **0 / 500,000 / 444,444** — the sharpest single narrowing takes the child union
+to **50.0%** of the parent's width at degree 2 and **44.4%** at degree 3, and `enclosure_shrink_ppm_min` is
+**0** on all three rows because most instances do not narrow at all.
+**(3) The signs are finer than the case index:** `hidden_edge_sign_changes` **0 / 6,060 / 9,223** —
+cell-edge lines whose two endpoints agree in sign but which carry a sign change between adjacent control
+values in their interior, information an 8-corner case index structurally cannot hold. `net_is_the_samples`
+and `signs_are_the_case_index` are both **true** on the trilinear and **false** on both higher degrees.
+**(4) The sharpness theorems bite:** `sharpness_theorems_vacuous` **true / false / false**, derived from
+2′ rather than measured separately, because Rivlin's linear-in-`1/degree` and Stahl's quadratic-in-box-width
+rates both bound *overestimation* — a measured overestimation of zero makes both vacuous and a measured
+non-zero one makes both bite.
+
+**Two places the CSV is more honest than the harness's own header table, and both are worth reading before
+quoting that table.** `experiment_p138.rs`'s summary table predicts `enclosure_narrowed_instances` as
+*"none | all"* for trilinear | tricubic; the measurement is **1,764 of 2,048** on the tricubic, i.e. 86.1%
+and not all — the remaining 284 instances have a parent enclosure the eight half-nets happen to reproduce
+exactly, which is a fact about `[−9, 9]` integer nets rather than about degree 3. The same table predicts
+the matching sites as *"corners only"* at degree 3; the measurement is **16,555** against a corners-only
+floor of `8 × 2,048 = 16,384`, so **171** interior control points coincide with their sample by arithmetic
+accident, and **675** sub-net coefficients likewise (131,747 against 131,072). Neither moves a verdict —
+`net_is_the_samples` is an equality over the *whole* net and is `false` — but "corners only" is a
+prediction and "corners plus 171" is the number.
+
+**Nothing changes for a consumer of this crate, and that is the row's design.** *"SHARE: none — this prices
+a decision, it does not make one."* This harness calls no extractor, samples no field, touches no
+`crates/isomesh/src/**` path and proposes no filter; `TriPoly` is bench-local and is not a second copy of
+`common::poly::Poly` — that module's variables are the eight *corner values* and this row's are the three
+*spatial* variables, where a tricubic has 64 coefficients and the corners are not variables at all. What
+ships is the price tag: `P-157` now argues against `116`, `2^64` and `case_space_tractable = false` instead
+of against a memory of a memo.
+
+### 🔬 M-452 — C1 and C3 HELD, C2's `c2_holds` **true on 4 rows of 16** and false on 12: **Kuhn's six tetrahedra are regular**, exhibited by the lifting the LP's own back-substitution returned — `w(S) = −|S|(|S|−1)/2`, heights `0|0|0|−1|0|−1|−1|−3` — verified against all 24 inequalities *and* a 70-subset lower-hull enumeration, so Viro's T-construction transfers to marching tetrahedra; and the registered PW/PV comparison disagrees on **22,841 of 99,932** active cells in **both** directions, `pw_yes_pv_no` **9,923** against `pw_no_pv_yes` **12,918** (P-139, R-139)
+
+**M.** `cargo bench --bench experiment_p139`, `docs/experiments/p-139.csv`, **16 rows** across **60
+columns** — four `#` comment lines plus one column header plus 16 data rows, counted from the file. The
+shape, also from the file: the **eight** reference fields × {`33`, `65`} samples per axis, `cells_checked`
+**32,768** / **262,144** and **2,359,296** summed, `active_cells` **99,932** summed. C1 and C3 are one
+algebraic decision each and are therefore global — every C1 and C3 column carries the same value on all 16
+rows — while C2 is per row. C1 and C3 are exact integer arithmetic throughout (`i64` geometry, `i128`
+elimination, exact rationals only in back-substitution); the sweep is `f64` with a three-way `<`/`>` sign
+test, so an exact zero is its own class and no float equality is compared anywhere. `wall_ms` **0.479 to
+50.098** is recorded and gates nothing. `# commit 695933f on amd-ryzen-9-5900x-12-core at
+2026-08-30T09:28:22Z`, no `(WORKING TREE DIRTY)`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the Kuhn triangulation of the unit cube is regular, demonstrated by exhibiting an explicit convex lifting function, or shown not to be — *"this single fact decides the whole transfer"* | falsified by non-regularity | **HELD** — `is_regular` **true**, `fm_feasible` **true**, `lifting_function` `neg_pairs_of_set_bits`, `lifting_closed_form` `w(S)=-|S|*(|S|-1)/2`, `lifting_heights` `0|0|0|-1|0|-1|-1|-3`, `hull_facets` **6**, `secondary_polytope_vertex` `6|2|2|2|2|2|2|6`. `witness_verified` **true** and `witness_matches_exhibited` **true** on all 16 rows |
+| C2 if regular, the patchworked surface's isotopy claim agrees with T-015's Plantinga–Vegter checker on every cell of every reference field | falsified by disagreement with T-015 | **`c2_holds` true on 4 rows of 16** — `torus` and `fbm_terrain` at both resolutions, where `pv_disagreements` is **0** and `isotopy_agreement` **1.000000**. False on the other 12, `isotopy_agreement` **0.063800** (`box_exact` 65³) to **0.994958** (`sphere` 65³), `pv_disagreements` **22,841** summed |
+| C3 the connection to the Lovász-extension framing is made explicit: the Lovász extension is PL interpolation over exactly this triangulation | falsified by the two framings differing, *"which would be genuinely surprising"* | **HELD** — `lovasz_mismatches` **0** over `lovasz_probes` **15,379** (7 candidates × `13³` = 2,197 exact rational probes), by two routes sharing no code. `weak_submodular_iff_convex` `7of7` and `strict_submodular_iff_kuhn` `7of7`, `farkas_certificates` **9** with `farkas_total_weight` **12**, `submodular_diamonds` **6**, `diamonds_are_regularity_rows` **true** |
+
+> **C1 is decided by a linear program in exact integers, and the reason it *can* be is worth one line: every
+> Kuhn tetrahedron is unimodular.** `kuhn_unimodular` **true** with `kuhn_normalised_volume` **6** — the six
+> tetrahedra are taken from the crate, not re-derived, through the public
+> `isomesh::marching_tetrahedra::table::{TETS, TET_EDGES}` (`table.rs:87`, `:121`), so they are bit-for-bit
+> the six `MarchingTetrahedra` marches. `|det| = 1` makes every barycentric coordinate an integer, so the
+> `6 × 4 = 24` strict inequalities in 8 unknowns (`regularity_inequalities` **24**) have coefficients in
+> `{−1, 0, 1}`. They reduce to `distinct_inequalities` **9**, Fourier–Motzkin eliminates `w₇ … w₀` with
+> `fm_stage_rows` `9|3|2|1|1|0|0|0|0` — `fm_max_stage_rows` **9**, `fm_max_coefficient` **1**, no blow-up at
+> all — and back-substitution *constructs* the witness rather than being handed it.
+>
+> **What the back-substitution returned is the interesting part.** It is told nothing about set functions
+> and comes back with `0|0|0|-1|0|-1|-1|-3`, which read as a function of the corner's popcount is
+> `w(S) = −|S|(|S|−1)/2`: **minus the number of unordered pairs in `S`**, the negated edge count of the
+> complete graph induced on `S`. The geometry is the picture — the main diagonal `0–7` is pushed lowest and
+> the six tetrahedra, all of which contain that diagonal, fan around it. `secondary_polytope_vertex`
+> `6|2|2|2|2|2|2|6` sums to `4 × 6 = 24`, and by Gel'fand–Kapranov–Zelevinsky the regular triangulations are
+> exactly the **vertices** of the secondary polytope, so `is_regular = true` is what makes that vector a
+> vertex.
+>
+> **Eight vacuity controls fired, all before the first `run.record`, all panicking with `VOID: `.**
+> (1) **The solver can say no:** the same Fourier–Motzkin on `w₀ > 0 && −w₀ > 0` reports infeasible —
+> `solver_refuses_infeasible` **true**, `control_first_violation` `t0/v2`. (2) **The witness is verified
+> twice by routes sharing no code with the solver:** against all 24 inequalities directly, and against a
+> brute-force enumeration of all **70** four-subsets of the eight corners, each tested for "every other
+> lifted corner strictly above my affine hull" — `hull_facets` **6**, and that enumeration finds simplicial
+> lower facets only, so a subdivision with a non-simplicial cell would report *fewer* than six.
+> (3) **`liftings_rejected` could not have been zero:** `liftings_tested` **7**, `liftings_accepted` **3**,
+> `liftings_rejected` **4**, `rejected_liftings`
+> `abs_squared|staircase_order|pos_pairs_of_set_bits|one_diamond_flipped`. (4) `uncertified_cells`
+> **11,174** summed over the corpus — the registration's own named control, so C2's agreement is not
+> agreement on a constant. (5) `active_cells > 0` on every row and `certified_cells` **88,758** summed.
+> (6)–(7) `fixtures_fired` **4** on all 16 rows: a `degenerate_certified` fixture forced
+> `pw = false, pv = true`, an `alternating_uncertified` fixture forced `pw = true, pv = false`, so **both**
+> disagreement directions were shown reachable by construction before the sweep ran.
+> (8) `report_matches_walk` **true**
+> on all 16 rows — `isotopy_report`'s own counts equal this harness's walk, so the two are not counting
+> different cells. `kuhn_cell_local_edges` **19** with `kuhn_edge_census` `12|6|1` is asserted against
+> `P-124`'s census exactly, and `kuhn_max_cut_edges` **13**, `kuhn_max_triangles` **12**,
+> `kuhn_max_components` **3**.
+
+**The two liftings the brief proposed are both wrong, and the harness measures that rather than asserting
+it.** `w(v) = |v|²` and the staircase `w(u,v,w) = −(u + 2v + 4w)` are **both affine on `{0,1}³`** —
+`|v|² = v₀² + v₁² + v₂² = v₀ + v₁ + v₂` when every coordinate is 0 or 1 — so all eight points are coplanar
+in `ℝ⁴`, every one of the 24 inequalities evaluates to exactly 0, and the lower hull is a single
+non-simplicial cell. Both are in `rejected_liftings`. `w(v) = |v|²` is the **Delaunay** lifting and the
+eight corners of a cube are cospherical, which is precisely its degenerate case: the classical recollection
+is right about the function and wrong about the point set. **The control that matters is
+`one_diamond_flipped`** — heights `(0,0,0,0,0,−1,−1,−3)`, still *convex*, violating exactly **one** of the
+nine and merging two tetrahedra. A checker that only detected affineness would pass it, and this one
+rejects it.
+
+**C3's identity is stated in its correct form, and the correct form is not the one usually quoted.** The 9
+distinct regularity inequalities turn out to be, on the nose, **six local strict-submodularity diamonds**
+`f(S+i) + f(S+j) > f(S+i+j) + f(S)` — `submodular_diamonds` **6**, `diamonds_are_regularity_rows` **true**,
+so the six are literally *among* the nine — plus three complementary-pair conditions, each of which is found
+by search to be the sum of exactly two of the six. Nine Farkas certificates over non-negative integer
+coefficients (`farkas_certificates` **9**, `farkas_total_weight` **12**) prove the implication in both
+directions with no second solver, so the two systems define the same open cone. Hence:
+**`w` submodular *weakly* ⟺ its Lovász extension is convex (Lovász 1983); `w` *strictly* submodular ⟺ its
+lower hull is exactly Kuhn's six tetrahedra (Viro's hypothesis).** Both equivalences hold at `7of7`, and
+the gap between weak and strict is not pedantry — it is exactly `abs_squared`, `staircase_order` and
+`one_diamond_flipped`, three liftings that are convex and submodular and induce a subdivision that is **not**
+the Kuhn triangulation.
+
+**C2's split is a statement about two instruments, not about one of them being wrong, and the CSV shows the
+divergence running in both directions.** PW is "the transfer's hypotheses hold for this cell": regularity
+(global, C1) and unimodularity (global) and *the sign distribution is defined* — no corner value exactly
+zero, because Viro's `ε_ω` lives in `{+1, −1}`, a zero is not a sign, and the T-surface then passes through
+a lattice point (`M-48`'s degenerate crossing). PV is `cell_is_certified` from T-015
+(`validate/isotopy.rs:126`). **The two clean rows are clean for opposite reasons:** `torus` at both
+resolutions has `exact_zero_corner_cells` **0** and `uncertified_cells` **0**, so both predicates are
+constantly true; `fbm_terrain` likewise, `pv_disagreements` **0** on all four. Everything else splits.
+`box_exact` is the extreme — `exact_zero_corner_cells` **1,352** and **5,768**, i.e. *every* active cell has
+a corner at exactly `0.0`, so PW is false everywhere and PV certifies 1,176 / 5,400 of them:
+`isotopy_agreement` **0.130178** and **0.063800**, all disagreement in the `pw_no_pv_yes` direction. `gyroid`
+and `noise_cavity` go the other way — `pw_yes_pv_no` **370 / 780** and **3,121 / 5,646** against
+`pw_no_pv_yes` **7 / 7** and **114 / 146** — because their failure is PV declining to certify a cell whose
+signs are perfectly well defined. **Summed over the corpus the two directions are comparable: 9,923 one way
+and 12,918 the other, so neither instrument dominates the other**, and `agreement_hypotheses_only`
+(**0.485913** to **1.000000**) carries the softer reading in which PW is the global constant, so a reader can
+see both denominators without re-running anything.
+
+**The sharpest thing in the row is that PV's certificate does not bound the component count of the surface
+marching tetrahedra actually emits.** `certified_multi_component` — PV-certified cells whose Kuhn PL surface
+has more than one connected component — is **99** summed, non-zero on `gyroid` (3 / 9), `fbm_terrain`
+(15 / 29) and `noise_cavity` (5 / 38), and `uncertified_multi_component` is **623**. It is not an accident of
+the corpus: the harness constructed the witness before the sweep. `[1, −1, −1, 1, 4, 4, 4, 4]` has
+`z`-differences `3, 5, 5, 3`, so the interval inner product is `3² − 2² − 2² = +1 > 0` and PV certifies "one
+component, isotopic to a disc", while the six tetrahedra emit two disjoint patches around corners 1 and 2 —
+and with `4` replaced by `3` the same sign mask is *not* certified, which proves the certification is a
+property of the values rather than of the mask. **So on `fbm_terrain`, where C2 holds at 1.000000 on both
+rungs, 15 and 29 cells are simultaneously PV-certified and two-component.** Agreement of the two predicates
+is not agreement about the surface.
+
+**One more price of the source document's identification, measured rather than assumed.** Viro's `ε_ω` is the
+sign of the *coefficient of the monomial* `x^ω`, not the value at the corner, and the two sign vectors are
+related by the Möbius transform (`c_ω = Σ_{v ≤ ω} (−1)^(|ω|−|v|) f_v`). They are **not** equal:
+`coeff_signs_match` is **2,164** of 99,932 active cells, i.e. the two readings of "signs at the eight lattice
+points" agree on **2.2%** of them, and `t_components_differ` **20,437** cells give T-surfaces with different
+component counts under the two readings. `coeff_zero_cells` is **32,071**. That is a fact about the phrase
+"signs at the lattice points", and it belongs beside C3's identity rather than inside it.
+
+**What a consumer of this crate gains is a sentence, and it is worth exactly zero microseconds.**
+`crates/isomesh/src/` is untouched, no golden hash moved, the whole row is one algebraic decision plus two
+read-only sweeps through the public API. What C1 buys: **for every non-degenerate sign configuration,
+marching tetrahedra's output is isotopic to a genuine real algebraic hypersurface with the cube as Newton
+polytope**, by Viro's T-construction, with a citation and an exhibited lifting behind it. What C2's split
+tells a caller who wanted more than that: the Viro hypothesis and T-015's certificate are **different
+predicates about different surfaces**, they disagree on 22.9% of active cells across this corpus, and neither
+one may be substituted for the other. `marching_tetrahedra/table.rs:15-53` already proved the six tetrahedra
+tile without alternation and `P-100 / ✗78 / M-412` measured `open_edges = 0` across a chunk seam; both are
+about *matching*. This row is the first thing in the tree about *convexity*.
+
+### 🔬 M-453 — C1 and C2 both HELD on all **560** rows: six fields with topology prescribed *by construction* — genus **1, 2, 3, 2, 3, 5** and `prescribed_chi` **{0, −2, −4, −2, −4, −8}** by two derivations that share no algebra — and every one of **7** extractors reproduces every prescribed `χ`, all 56 pairs correct at 49³; the sampling-adequacy curve is informative with `distinct_first_correct_overall` **5** over the rungs `5, 7, 9, 11, 13`, and its sharpest finding is not about genus: **`graph_cube_g5`, the highest-genus fixture, is perfect at 7³ and 11³ and meshes literally nothing at 9³** (P-140, R-140)
+
+**M.** `cargo bench --bench experiment_p140`, `docs/experiments/p-140.csv`, **560 rows** across **37
+columns** — four `#` comment lines plus one column header plus 560 data rows, counted from the file. The
+shape, also from the file: **8 fixtures × 7 extractors × 10 rungs**, `extractors_tested` **7** on every row,
+`resolution_ladder` `5|7|9|11|13|17|21|25|33|49` samples per axis over the `[−2, 2]³` domain, `cells`
+**64 … 110,592**, `cell_size` **1.000000 … 0.083333**. `is_control` **true** on the 140 `sphere` and `torus`
+rows and **false** on the 420 prescribed ones. The seven extractors are `extractor::ALL_EXTRACTORS` driven
+through `for_each_extractor!`; `GreedyQuads` is excluded by the crate for the reason at
+`extractor.rs:246-252` — its `χ` is that of a Minecraft surface, which would be a category error rather
+than a measurement. `# commit 71e5474 on amd-ryzen-9-5900x-12-core at 2026-08-30T09:28:55Z`, no
+`(WORKING TREE DIRTY)`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 at least three patchworked fields with prescribed non-trivial genus are added as fixtures, and every extractor reproduces the prescribed `χ` at sufficient resolution | falsified by any extractor failing to converge at any resolution | **HELD** — `c1_holds` **true**, global. **Six** prescribed fixtures, `converged` **true** on all 420 prescribed rows and on all 140 control rows, and `chi_agreement` **true** on **all 56** fixture × extractor pairs at the finest rung |
+| C2 the resolution at which each extractor first reproduces the prescribed `χ` is reported per extractor — a sampling-adequacy curve the crate does not have for any field of known topology beyond the sphere and torus | falsified by all extractors converging at the same resolution, *"still worth one line"* | **HELD** — `c2_holds` **true**, global. `distinct_first_correct_overall` **5**; `fixture_distinct_first_correct` **3** on `ball_drilled_g3`, **2** on `torus`, `ball_drilled_g2`, `graph_theta_g2` and `graph_k4_g3`, **1** on `sphere`, `ball_drilled_g1` and `graph_cube_g5` |
+
+> **`prescribed_chi` is arithmetic and `measured_chi` is a reading, and they are computed by code that shares
+> nothing.** The instrument is the crate's own: `MeshReport::euler_characteristic` (`validate.rs:185`) is
+> `referenced_vertices − edges + faces` and `MeshReport::genus` (`:202`) is
+> `(2 − χ − boundary_loops)/2`. **Construction A** — a ball of radius `R` with `g` `z`-parallel cylinders
+> drilled through it, `derivation` `mayer_vietoris`: the boundary is a sphere with `2g` disks removed, glued
+> along `2g` circles to `g` annuli, so `χ = (2 − 2g) + 0 − 0 = 2 − 2g`. **Construction B** — the closed
+> `t`-neighbourhood of an embedded graph, `derivation` `graph_thickening`: a regular neighbourhood of a
+> graph is a handlebody with `χ(N) = χ(G)` and `χ(∂M) = 2χ(M)`, so `χ = 2(V − E)` and `genus = E − V + 1`.
+> Two families rather than one, because a single family would leave `prescribed_chi` and the construction
+> confounded: `ball_drilled_g2` and `graph_theta_g2` both prescribe **χ = −2** through arguments sharing no
+> algebra, and `ball_drilled_g3` and `graph_k4_g3` do the same for **χ = −4**.
+>
+> **Seven vacuity controls fired, all before the first `run.record`, all prefixed `VOID: `.** (1) The ladder
+> is a ladder — ten strictly increasing rungs, so "first correct" names a well-ordered thing.
+> (2) **The registered control, *"or the fixture is a sphere in disguise"*: at least three prescribed
+> fixtures with genus above 1 — there are five** (`ball_drilled_g2`, `ball_drilled_g3`, `graph_theta_g2`,
+> `graph_k4_g3` at 2, 3, 2, 3 and `graph_cube_g5` at **5**). (3) `prescribed_chi` is not a constant — five
+> distinct values `{2, 0, −2, −4, −8}`. (4) **The prescription is sound by construction and not by
+> measurement:** `separation`, `window`, `solid_width`, `merge_headroom` and `domain_margin` all strictly
+> positive on every fixture, and `generators` equals `prescribed_genus` on all eight, cross-checked against
+> `E − V + 1` for the graphs and against the bore count for the balls, each cycle carrying its own witness —
+> its centroid checked to lie strictly *outside* the solid, so every prescribed handle demonstrably has an
+> open window. The graphs' numbers: `graph_theta_g2` `separation` **0.749307**, `window` **0.751011**,
+> `merge_headroom` **0.249869**, `domain_margin` **0.720000**; `graph_k4_g3` **0.880000 / 0.615755 /
+> 0.458234 / 0.472923**; `graph_cube_g5` **0.940000 / 0.940000 / 0.354020 / 0.420962**. The balls report
+> `separation` and `merge_headroom` `inf` because a single bore family has no pair to separate.
+> (5) **The instrument reads a known `χ`:** `sphere` and `torus` reproduce their crate-declared
+> `expected_euler` **2** and **0** on all seven extractors, `derivation` `crate_expected_euler`, which is
+> what licenses `measured_chi` at all — the calibration is deliberately **not** `common::tpms`, whose `χ` is
+> defined only after `wrap_seams` and read off `common::tpms::euler`, because a wrapped row would make
+> `measured_chi` mean two things in one column. (6) **`chi_agreement` could have read `false`** — it does, on
+> **97 of 560** rows. (7) **The sweep meshed something:** at the finest rung every fixture × extractor pair
+> produced at least one face, and `chi_agreement` is `faces > 0 && measured_chi == prescribed_chi` precisely
+> because `χ` of an empty mesh is `0 − 0 + 0 = 0` by arithmetic and both `torus` and `ball_drilled_g1`
+> prescribe **χ = 0**.
+
+**These are bench-local fixtures. They are not added to `for_each_reference_field!`, and that is deliberate,
+priced, and a Phase 28 ticket rather than an omission.** One new reference field adds **27** rows to
+`crates/isomesh/golden_hashes.json` (9 algorithms × 3 resolutions; the file's 216 is 8 fields × 27) and moves
+`scripts/doc_facts.sh`'s `FIELDS` and `HASHES` counts, which are gated as prose phrases across **twelve**
+documents. Six new fields would be a repo-wide renumbering landed inside a measurement commit, and
+`crates/isomesh/src/**` is frozen for this phase. C1's *"are added as fixtures"* is therefore discharged as
+**bench-local fixtures**, which is what made the measurement possible at all: no golden hash moved, no
+document's counted phrase moved, and nothing in `crates/isomesh/src/` was touched.
+
+**The sampling-adequacy curve, which is the first statement anywhere in this repository of how much grid an
+extractor needs before its topology is right on a field whose topology is known.** Every prior answer was
+available for genus 0 and genus 1 only.
+
+| fixture | `mc` | `mc+decider` | `mt` | `surface_nets` | `dual_contouring` | `manifold_dc` | `subgrid_mt` |
+|---|---|---|---|---|---|---|---|
+| `sphere` (control, g0) | 5 | 5 | 5 | 5 | 5 | 5 | 5 |
+| `torus` (control, g1) | 9 | **5** | 9 | 9 | 9 | 9 | **5** |
+| `ball_drilled_g1` | 5 | 5 | 5 | 5 | 5 | 5 | 5 |
+| `ball_drilled_g2` | 7 | 7 | 7 | 7 | 7 | 7 | **5** |
+| `ball_drilled_g3` | 11 | **9** | 11 | 11 | 11 | 11 | **7** |
+| `graph_theta_g2` | 11 | 11 | 11 | 11 | 11 | 11 | **9** |
+| `graph_k4_g3` | 13 | **7** | **7** | 13 | 13 | 13 | **7** |
+| `graph_cube_g5` | 7 | 7 | 7 | 7 | 7 | 7 | 7 |
+
+**Two orderings fall out of that table and neither is about genus.** `subgrid_marching_tetrahedra` is
+earliest or tied on **all eight** fixtures, which is what a 576-evaluation-per-cell extractor should buy and
+had never been demonstrated against a known `χ`. And `marching_cubes+decider` converges strictly earlier than
+bare `marching_cubes` on **three** fixtures (`torus` 5 against 9, `ball_drilled_g3` 9 against 11,
+`graph_k4_g3` **7 against 13**) and never later — the asymptotic decider is buying topological correctness at
+coarse resolutions, not just a different triangulation. On `graph_k4_g3` the two *tetrahedral* extractors
+reach `χ = −4` at 7³ while the entire dual family needs 13³, which is the widest per-fixture spread in the
+sweep after `ball_drilled_g3`'s three distinct values.
+
+**Sampling adequacy is a commensurability property of the lattice and the feature, not a width — and the
+sweep is where that is visible rather than merely arguable.** `feature_clearance` is between **0.520000** and
+**0.560000** on every one of the six prescribed fixtures and `feature_cells` between **6.240000** and
+**6.720000**, i.e. the predictor is nearly constant across them while their first-correct rungs spread over
+`5, 7, 9, 11, 13`. **`graph_cube_g5` is the proof.** Its edges lie on the lines `(t, ±0.75, ±0.75)` and
+permutations; at 9³ the cell is `h = 4/8 = 0.5`, so every sample sits at a multiple of `0.5` and
+`min |0.5k − 0.75| = 0.25`, putting every sample at least `0.25·√2 = 0.35355` from every edge axis against a
+tube of `0.28`. The whole genus-5 solid falls between the samples: **`faces` reads 0 and `mesh_components` 0
+on six of the seven extractors at 9³, and again at 5³** where `h = 1.0` gives the same `0.25` residual —
+**12 of the 18 empty-mesh rows in the file.** At 7³ and 11³ the same fixture is exactly right on all seven.
+`subgrid_marching_tetrahedra` is the one extractor that survives 9³ (`measured_chi` **−8**, `faces` **1,248**),
+because it samples *inside* the cell rather than only at its corners. The other six empty rows are
+`graph_k4_g3` at 5³, where `subgrid` again finds something — and finds it wrong, `measured_chi` **16** on 48
+faces.
+
+**The whole ladder is swept even after an extractor has converged, and that is why the file can show a
+non-monotone curve rather than hiding it behind an early exit. It has 16 of them.** The pilot's example
+reproduces exactly in the committed run: `marching_tetrahedra` on `graph_k4_g3` reads `χ = −4` at 13³,
+**`−16` at 17³**, and `−4` again at 21³ — and `subgrid_marching_tetrahedra` reads **`−16` at 17³** on the same
+fixture, so it is a property of the field at that rung and not of one extractor. More: five of the seven
+extractors read `χ = 2` or `6` on `ball_drilled_g2` at 9³ having been correct at 7³, `marching_cubes+decider`
+reads **20** on `graph_k4_g3` at 9³, and even the `torus` control is non-monotone twice —
+`marching_cubes+decider` reads `χ = 8` at 7³ after being correct at 5³, and `subgrid_marching_tetrahedra`
+reads `4` at 25³ after seven correct rungs. **`first_correct_resolution` is therefore a *first*, never a
+threshold, and the file has to be read as a curve rather than as a bound.** `never` would have meant "never
+within `[5, 49]`" and is a recorded value; it does not appear.
+
+**`chi_agreement` deliberately does not also require `mesh_components == 1` or manifoldness, and the
+consequence is the one thing a consumer must take from this row.** At the finest rung **all 56** pairs
+reproduce their prescribed `χ`, and yet `measured_genus` is `none` on **10** of them —
+`surface_nets` and `dual_contouring` on `ball_drilled_g2`, `ball_drilled_g3` and `graph_k4_g3`
+(`nonmanifold_edges` **8 / 12 / 24**, `non_manifold_vertices` **16 / 24 / 48**), and
+`subgrid_marching_tetrahedra` on `ball_drilled_g1`, `ball_drilled_g2`, `ball_drilled_g3` and `graph_k4_g3`.
+**A correct Euler characteristic is not a manifoldness certificate, and this file is a 560-row demonstration
+of it.** The subgrid rows are the sharper half: `nonmanifold_edges` **0**, `non_manifold_vertices` **0**,
+`boundary_edges` **0**, `duplicate_vertices` **0**, `mesh_components` **1** — so the term of
+`MeshReport::is_manifold()` that fails is one of the two this CSV does not carry,
+`inconsistently_oriented_edges` or a structural error (`validate.rs:342-347`, the orientation counter at
+`:780-783`). Sweep-wide, `boundary_edges` is **0** on all 560 rows and the manifoldness burden is entirely
+dual-and-subgrid: `marching_cubes`, `marching_cubes+decider`, `marching_tetrahedra` and
+`manifold_dual_contouring` report `nonmanifold_edges` **0** and `non_manifold_vertices` **0** on all 80 of
+their rows each, against `surface_nets` and `dual_contouring` at **396** non-manifold edges and **692**
+non-manifold vertices apiece over **33** non-manifold rows each, and `subgrid_marching_tetrahedra` at **90**
+and **110** over **39** rows. `manifold_dual_contouring` earning a clean sheet where its two dual siblings do
+not is the clearest thing this fixture set has to say about that extractor.
+
+**What changes for a consumer of this crate: nothing yet, and that is the registration's own SHARE line
+discharged rather than waved through.** *"SHARE: none — this adds test coverage, and its value is the
+coverage"*, and the coverage is bench-local by the phase's own rule, so the shipped test suite gains nothing
+until a Phase 28 ticket lands these as reference fields with the 27-hashes-per-field ripple priced in. What
+ships now is smaller and real: six `χ` values that are known rather than measured, and the first
+per-extractor first-correct table in the repository.
+
+### 🔬 M-454 — C2 and C3 HELD and `c1_holds` **true on 2,112 queries of 2,304**, with the **192** exceptions all in one arm and all the pre-registered outcome: z3 5.1.0 re-derived `AMBIGUOUS_FACES` **entry by entry over every real corner assignment**, `cases_matching_table` **1,536 of 1,536** and `cases_disagreeing` **0** with `control_unambiguous_refuted` **0** over the 1,344 known-correct sub-cases; it refuted the shipped `Separate` default on **192 of 192** ambiguous faces in **1.185 s**; and it **timed out at the 2 s cap on 192 of 192** nested-quantifier *witness* queries, `terminated=false`, which is C1's registered second branch and not a defect — the whole derivation cost **399.598 s** of solver time and produced **2,304** hash-stamped `.smt2` certificates (P-141, R-141)
+
+**M.** `Z3=~/.venvs/isomesh/bin/z3 cargo bench --bench experiment_p141`, `docs/experiments/p-141.csv`,
+**2,304 rows** across **46 columns** — four `#` comment lines plus one column header plus 2,304 data rows,
+counted from the file. **This is Phase 27's only row that needs an external binary**, and it is not
+optional: the solver is the executable named by the `Z3` environment variable and the harness panics
+without writing anything if it cannot be executed, because a CSV row for a solver that did not run is the
+one artefact this row must never produce. `solver` **z3-5.1.0** on all 2,304 rows, `solver_raw`
+`Z3_version_5.1.0_-_64_bit`. The shape, from the file: five arms — `ambiguity_affine` **1,536** rows
+(= 256 cases × 6 faces), then `decider_affine`, `separate_affine`, `decider_nested`, `separate_nested` at
+**192** each (the ambiguous faces only). `case_index` covers all **256** values and `face` is **384** rows
+each of `xlo`, `xhi`, `ylo`, `yhi`, `zlo`, `zhi`. `query_timeout_s` **2** on every row, handed to the
+solver as its own `-T:2` so no query can hang. `# commit eb205ed on amd-ryzen-9-5900x-12-core at
+2026-08-30T09:38:06Z`, no `(WORKING TREE DIRTY)`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 a real-quantifier-elimination engine terminates on the single-cell topology query over the 8 corner parameters within a stated budget, **or is reported as not terminating, which is itself the answer** | falsified by non-termination within budget, *"which closes the row honestly and is a real possibility"* | **`c1_holds` = `terminated`, true on 2,112 rows and false on 192.** `query_status` **unsat 1,728 / sat 384 / timeout 192**. Every one of the 192 is `separate_nested` and every one sat at the cap, `wall_clock_s` **2.002031–2.002637** against `query_timeout_s` **2**. The other four arms terminated on **2,112 of 2,112**, worst `wall_clock_s` **0.020** |
+| C2 the derived taxonomy is compared against the crate's committed table, and every disagreement is adjudicated by hand against the trilinear | **falsified by *zero* disagreements**, which would instead be a strong independent validation of `validate_table()` | **HELD** — `c2_holds` **true**, global, scored on `total_disagreeing` **192** > 0. Those 192 are `separate_affine`: `cases_derived` **192**, `cases_matching_table` **0**, `cases_disagreeing` **192**. The *derivation* arm disagrees nowhere — `ambiguity_affine` `cases_matching_table` **1,536 of 1,536** |
+| C3 any disagreement is checked against Custodio et al.'s published corrections to Chernyaev, so a machine disagreement is either a known bug or a new one | falsified by disagreements outside Custodio's set that **survive adjudication** | **HELD** — `defects_outside_custodio` **0**, `adjudicated_defects` **0**, `custodio_corrections_known` `V-24|V-25|M-165|M-352`. `custodio_disagreement_overlap` is `0_of_0` on the four arms whose refutation would be a defect and `0_of_192` on `separate_affine`, whose refutation is not one |
+
+**The query, verbatim from the certificate, because the whole point is that the solver was not handed the
+answer.** Over eight `Real` corner parameters with the case's eight sign constraints asserted
+(`fi < 0` where `cube::corner_inside` puts corner `i` inside, `fi >= 0` otherwise — an exact zero is
+*outside*, `cube.rs:171-173`), the topological question is stated without naming a formula:
+
+```text
+truth  <=>  for all p in [0,1] there is a q in [0,1] with B(p,q) < 0
+```
+
+and every query in the file has one shape, `(assert (not (= <claim> truth))) (check-sat)`, so **`unsat`
+means the claim holds for every real corner assignment in this case's sign class** and `sat` means a
+counterexample exists. There is no second assertion form and no per-arm special case. The two encodings of
+`truth`, taken from `/tmp/isomesh-p141/ambiguity_affine__case000__xlo.smt2` (992 bytes,
+`smt2_hash` `e81ffc571bcdc6fa`) and `separate_nested__case006__zlo.smt2`:
+
+```smt2
+; affine -- the inner existential discharged analytically and nothing else
+(define-fun truth () Bool
+  (forall ((p Real))
+    (=> (and (<= 0.0 p) (<= p 1.0))
+      (or (< (+ (* f0 (- 1.0 p)) (* f4 p)) 0.0)
+          (< (+ (* f2 (- 1.0 p)) (* f6 p)) 0.0)))))
+
+; nested -- `truth` verbatim
+(define-fun truth () Bool
+  (forall ((p Real))
+    (=> (and (<= 0.0 p) (<= p 1.0))
+      (exists ((q Real))
+        (and (<= 0.0 q) (<= q 1.0)
+          (< (+ (* f0 (- 1.0 p) (- 1.0 q)) (* f2 p (- 1.0 q)) (* f3 p q) (* f1 (- 1.0 p) q)) 0.0))))))
+```
+
+`B(p,·)` is **affine in `q`**, so its minimum over `[0,1]` is at an endpoint and
+`∃q ∈ [0,1] . B(p,q) < 0` is exactly `B(p,0) < 0 ∨ B(p,1) < 0` — `q = 0` is the ring edge `(v₀,v₁)` and
+`q = 1` is `(v₃,v₂)`. That is the *only* thing the affine encoding discharges; the residual formula is
+still nonlinear in the parameters and still needs real quantifier elimination.
+
+> **The 192 timeouts are one arm, one direction, and the reason the file has two encodings at all.** z3
+> *refutes* the nested `∀p ∃q` form and cannot produce a *model* of it: `decider_nested` came back `unsat`
+> on **192 of 192** in `arm_solver_s` **3.285** with a worst `wall_clock_s` of **0.020**, while
+> `separate_nested` — the arm whose correct answer is `sat`, a witness — timed out on **192 of 192** and
+> burned `arm_solver_s` **384.443** of the run's **399.598 s** doing it. Refuting an `∃∀∃` prefix reduces to
+> a universal statement nlsat handles; exhibiting a model of a quantified nonlinear formula needs the
+> elimination itself. **So a design that used only the nested form could never have returned `sat`, and an
+> instrument that can only produce one answer has not measured anything (`M-44`).** The affine encoding
+> decides both directions on the same 192 faces in **1.185 s** — `separate_affine` `sat` on 192 of 192 —
+> which is the same question answered 324× faster and, more to the point, answered at all. Both outcomes
+> were registered in advance, and `terminated=false` is reported as the answer it is rather than dropped or
+> retried at a larger cap.
+>
+> **Nine vacuity controls fired, every one before the first `run.record`, every one also a column so a
+> reader can check it without re-running.** (1) `control_table_mismatches` **0** — this harness's own
+> alternating-sign test against `AMBIGUOUS_FACES` on all 1,536 pairs, so the population being derived is the
+> table's. (2) `control_ambiguous_pairs` **192** and `control_ambiguous_cases` **120**: 192 is
+> `6 faces × 2 alternating patterns × 2⁴ free corners` and 120 is `256 − 136`, the 136 being `M-41`'s.
+> (3) `control_decider_transcription_mismatches` **0** over **12,288** assignments — the decider predicate
+> *as the SMT text states it*, evaluated in Rust, against the shipped `ambiguity::face_is_joined`; without
+> this the solver would be answering about this file's transcription instead of the crate's rule, which is
+> exactly the failure `M-219` is. (4) `control_forced_oracle_mismatches` **0** — the exact interval evaluator
+> against an *independent* oracle on all 1,344 unambiguous pairs. (5) **`control_varying_ambiguous` 192** —
+> `truth` must actually vary with the magnitudes on every ambiguous face, or the constancy question is being
+> asked of a constant and the `sat` answers are a zero that could not have been non-zero.
+> (6) `control_tangency_samples` **6,836** of `control_samples` **98,304**: the `all_unit` fixture puts
+> `d_in == d_out` exactly on every ambiguous face, so the tie the crate documents at `ambiguity.rs:45-48` is
+> reached by construction rather than by seed luck. (7) `control_numeric_disagreements` **0** — the decider
+> against the interval evaluator over the same 12,288 assignments; a finite counterexample there would make
+> the solver's `unsat` impossible. (8) **`control_unambiguous_refuted` 0 — the registration's own named
+> control:** *"the pipeline must first re-derive a known-correct sub-case the table already contains, or a
+> clean run proves nothing about the solver's fidelity."* All **1,344** of them re-derived, not one `sat`.
+> (9) Both answers seen: **1,728 unsat and 384 sat** in one run.
+
+**The derivation proper, and what it establishes that nothing in this tree established before.**
+`table::CASES` is `build_cases()` evaluated during compilation (`marching_cubes/table.rs:180-194`) and
+`AMBIGUOUS_FACES` is `build_ambiguous_faces()` (`:202-231`), so the crate already refuses to *transcribe*
+the 256-case triangulation — but *derived at compile time* is not *proved*, and both are built from the same
+eight-corner sign convention the rest of the module assumes, so what they establish is that the module
+agrees with itself. `validate_table()` (`marching_cubes/mod.rs:836`) and `validate_decider_table()` (`:857`)
+check internal consistency and **never evaluate the interpolant**; `M-40`, `M-165` and `M-220` are censuses
+over finite samples. **`ambiguity_affine` asks the question over every real corner assignment: `unsat` says
+`truth` does not depend on the magnitudes, which *is* the definition of a non-ambiguous face.** It came back
+`unsat` on the **1,344** unambiguous pairs and `sat` on the **192** ambiguous ones, spanning exactly **120**
+distinct `case_index` values — the same 120 the control asserts — in `arm_solver_s` **9.382**, worst query
+**0.014 s**. `cases_disagreeing` **0**. So `AMBIGUOUS_FACES` is now derived by quantifier elimination as
+well as by `build_ambiguous_faces()`, and the same holds for the asymptotic decider:
+`rule` `asymptotic_decider`, `agrees_with_table` **true** on all 384 `decider_*` rows, both encodings,
+`cases_matching_table` **192 of 192** each. **The transcription cost `M-207`, `M-219`, `M-221`, `✗22`,
+`M-228` and `M-231` bill for is removable, and this row is the receipt: 399.598 s of solver time, once, for
+a table entry-by-entry checked against the object it is a table *of*.**
+
+**C2 held on the arm the registration did not have in mind, and that is the one place the file's verdict
+needs reading carefully.** The registered falsifier is *"C2 by zero disagreements, which would be a strong
+independent validation of `validate_table()` and worth the whole ticket"*, and the derivation arm produced
+**exactly zero** — `ambiguity_affine` `cases_disagreeing` **0** over 1,536, `decider_affine` and
+`decider_nested` **0** over 192 each. Read against the ambiguity table alone, C2's falsifier fires and the
+prize the registration named is won. The harness scores C2 on `total_disagreeing` over *all* arms
+(`experiment_p141.rs:1272-1275`), which is **192**, from `separate_affine` refuting `FaceAmbiguity::Separate`
+— the crate's shipped default, whose own documentation says it *"agrees with the field's own bilinear
+interpolant on the face only by luck"* (`ambiguity.rs:13-14`). **Both statements are in the file and neither
+is averaged into the other:** the derived taxonomy agrees with `AMBIGUOUS_FACES` and with the decider on
+1,920 of 1,920 decided entries, and disagrees with the default pairing on 192 of 192. A reader who wants
+C2's registered reading should quote `cases_disagreeing` **0**; a reader who wants the harness's should quote
+`total_disagreeing` **192**. That is the sharpest disagreement between this CSV and its registration in the
+group.
+
+**C3's zero is a zero over an empty adjudicated population, and the arithmetic that makes it empty is worth
+stating rather than leaving to be inferred.** `defects_outside_custodio` is computed as
+`Σ (disagreeing − custodio_covered(disagreeing))` over the arms for which `refutation_is_a_defect()` is true
+(`experiment_p141.rs:1265-1270`). `refutation_is_a_defect` is **true** on `ambiguity_affine`,
+`decider_affine` and `decider_nested` and **false** on both `separate_*` arms — the adjudication, and a
+correct one: a `separate_affine` refutation indicts nothing, because the crate never claimed `Separate`
+matches the interpolant. Those three arms disagreed **0** times, so `adjudicated_defects` is **0** and
+`defects_outside_custodio` is `0 − 0 = 0` necessarily. **C3 could only have been falsified by a disagreement
+in the ambiguity or decider arms, and there were none; over the 192 disagreements that do exist it says
+nothing at all**, which is what `custodio_disagreement_overlap` `0_of_192` on that arm records. `V-24`,
+`V-25`, `M-165` and `M-352` are the corrections the overlap would have been checked against.
+
+**The certificate is per query and it is a hash rather than a committed file.**
+`machine_checkable_certificate` is `<bytes>b_<hash>` — **2,304 distinct hashes over 2,304 distinct
+`smt2_file` names**, `smt2_bytes` **985 to 1,066** summing to **2,307,128 bytes**. The `.smt2` text is
+written to `std::env::temp_dir()/isomesh-p141` (`experiment_p141.rs:1156`, 2,304 files present after the
+run) and is **not** committed to the repository; what is committed is the per-row `smt2_bytes` and
+`smt2_hash`, so any reader can regenerate the query, hash it and re-run it against their own z3. `TOTAL_BUDGET`
+is a second, whole-run bound that **panics** rather than truncating, on the principle that a short CSV which
+looks complete is worse than no CSV.
+
+**What changes for a consumer of this crate: nothing at runtime, and that was the registration's SHARE line
+before the numbers.** This harness calls no extractor, allocates no grid and touches nothing on the
+extraction path; `CASES` and `AMBIGUOUS_FACES` are read, never rebuilt, and `crates/isomesh/src/` is
+untouched. What the repository gains is a method and a price: **the case table is machine-derivable in under
+seven minutes of solver time on one desktop, over every real corner assignment rather than over a sample**,
+and the dossier's rejection of CAD as *"global, doubly exponential, needs arbitrary precision"* priced a
+runtime cost for something that is run once in a project's lifetime. The one caveat a future user of this
+route must carry is the encoding asymmetry, measured here on 2,304 queries rather than argued: **state the
+existential analytically or the solver will refute and never witness.**
+
+### 💥 ✗104 / M-455 — C1 HELD to the integer on **16 of 16** in-scope rows (`chi_measured` **-8 / -64 / -216** against `chi_predicted` **-8 / -64 / -216** at `N = 1, 2, 3`, and **-8** again at 65 and 97 voxels per period), C2 HELD with `genus_measured` = `genus_predicted` = **5 / 33 / 109** = `1 + 4N³` on all 16, C3 FALSIFIED on **70 of 70** because the gate was not added — and the falsifier's own reason for that is *too strong*: what the gate needs is a second `ValidateConfig` constructor plus one fold pass, **not** a change to `Extractor::extract_into`, and this row is the measurement that says so (P-142, R-142)
+
+**M.** `cargo bench --bench experiment_p142`, `docs/experiments/p-142.csv`, **70 rows** across **43
+columns** — four `#` comment lines plus one column header plus **70 data rows**, counted from the file
+rather than from the brief; 14 of the 43 columns are `P-142`'s registered `records` and the other 29 are
+`M-273` extras. The shape, also counted from the file: **five grids × seven extractors × two wrap
+modes**, `field` = `gyroid` on all 70, `f64`, `amd-ryzen-9-5900x-12-core` (Zen 3). The grids are
+`period_sweep` at `periods_per_axis` 1/2/3 with `voxels_per_period` **33** (`resolution` 34/67/100,
+`cells` 35,937 / 287,496 / 970,299) and `resolution_sweep` at `N = 1` with `voxels_per_period` **65** and
+**97** (`resolution` 66/98, `cells` 274,625 / 912,673). `# commit 845c7a8 on amd-ryzen-9-5900x-12-core at
+2026-08-30T09:26:52Z`, with no `(WORKING TREE DIRTY)` on that line. **`crates/isomesh/src/**` is
+unchanged by this row and no golden hash moved**; the wrap, the Euler reader and the nodal field are all
+`benches/common/tpms.rs`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 extracting the gyroid over an integer number of periods with periodic wrap gives `χ = -8N³` exactly for `N ∈ {1,2,3}`, on every extractor in the crate that produces a closed surface | integer equality, no tolerance | **HELD** — `chi_agreement` true on **16 of 16** rows with `c1_scope = in_scope`. `chi_measured` **-8** (N=1), **-64** (N=2), **-216** (N=3) against `chi_predicted` -8 / -64 / -216, and **-8** again at `voxels_per_period` 65 and 97, i.e. stable across a 3× refinement at fixed `N`. `boundary_edges` **0** and `nonmanifold_edges` **0** on all 16 |
+| C2 the genus is consistent, so the surface is closed and orientable and C1's arithmetic applies | `genus = (2 − χ)/2`, every in-scope row | **HELD** — `genus_measured` **5 / 33 / 109** = `genus_predicted` **5 / 33 / 109** = `1 + 4N³`, `genus_agreement` true on 16 of 16, and `chi_from_genus` equals `chi_measured` on all 70 rows where a genus exists. `genus_measured` reads `none` on exactly **2 of 70** rows — the *open* `subgrid_marching_tetrahedra` arms at `N = 2` and `N = 3`, where `is_manifold` is false with `nonmanifold_edges` **0**, so the failing conjunct is one of the other three in `validate.rs:342-347` rather than a non-manifold edge |
+| C3 the oracle is added to the validity suite as a gate for `gyroid` | the gate exists in `crates/isomesh/src/` | **FALSIFIED** — `c3_holds` false on **70 of 70**. It is not added, and nothing under `crates/isomesh/src/` moved |
+
+> **The single number that decides C1 is `seam_pairs_identified`, and it is why the verdict is a
+> measurement rather than a definition.** The two wrap modes come from **one** extraction: the `open`
+> reading is taken before `wrap_seams` and the `periodic` reading after it, so the arms differ in exactly
+> one operation. On the 16 in-scope rows the wrap identified **305 / 1,225 / 2,769** pairs at `N = 1/2/3`
+> under `marching_cubes`, **503 / 2,045 / 4,655** under `marching_tetrahedra`, and **593 / 905** at 65 and
+> 97 voxels per period — never zero, so `periodic` is never byte-for-byte `open`.
+>
+> **Four vacuity controls, all of them assertions rather than columns.** (1) *The `-8` is derived, not
+> assumed*: `body_centring_ok` **true** with `body_centring_residual` **1.887e-15**,
+> `primitive_cells_per_cubic_cell` **2**, `primitive_lattice` **bcc**, `space_group` **Ia-3d** and
+> `chi_per_cubic_cell` **-8** on 70 of 70 — had the `(π,π,π)` shift merely *negated* `F_G` the prediction
+> would have been `-4` and the harness would have been grading its own arithmetic. (2) *The surface
+> exists*: `faces > 0` on 70 of 70 (**9,984 to 815,508**), so no χ is `0` by vacuity (`M-44`). (3) *C1's
+> scope is non-empty and the wrap put it there*: 16 in-scope rows, every one with
+> `seam_pairs_identified > 0`. (4) **The registered control ran and failed, and it is recognised by its
+> boundary and not by its χ**: all **35** `open` rows carry `boundary_edges > 0` (564 to 8,856) and
+> **0 of 35** agree with `-8N³`. The open χ is extractor-**independent** — **-3** at every `N = 1` grid,
+> **-53** at `N = 2`, **-199** at `N = 3`, `chi_gap` **5 / 11 / 17** — so the box cuts the same number of
+> tunnels whichever algorithm cuts them, and periodicity rather than the extractor is what the wrap
+> supplies.
+>
+> One instrument cross-check rides on every row: `validate_chi` equals `chi_measured` on **70 of 70**, so
+> `common::tpms::euler` (welds, then counts) and `isomesh::validate::validate_indexed` (counts as given)
+> agree on every reading in the file.
+
+**Which extractors close under the wrap is itself a result, and it is recorded per row rather than
+filtered.** `c1_scope` splits 70 rows into **16 `in_scope`**, **35 `control_open_arm`** and **19
+`excluded_not_closed`**. `wrap_seams` is a **primal** operation — it folds a coordinate within `tol` of
+the far face onto the near one and welds — so it can only identify a vertex that lies *on* the domain
+boundary plane. `surface_nets`, `dual_contouring` and `manifold_dual_contouring` place one vertex per
+cell and emit a quad per interior grid edge: `seam_pairs_identified` is **0** on all 15 of their periodic
+rows, the wrap is a no-op, and their periodic row is numerically their open row (`chi_measured` -3 / -53 /
+-199, `boundary_edges` 564 to 5,280). **That zero is the point of recording the column** — a wrap that
+identified nothing is visible as a zero instead of being inferred from a disagreeing χ.
+`subgrid_marching_tetrahedra` is the interesting middle case: it is in scope at `N = 1, v = 33` (`χ` -8,
+`boundary_edges` 0) and excluded on its other four grids, where the wrap identified **503 / 2,042 / 4,649
+/ 980 / 1,514** pairs and still left `boundary_edges` **12 / 24 / 12 / 12** with `chi_gap` **-3 / -6 / -3 /
+-3**. Its extra sub-grid vertices do not all land on the boundary plane, so a periodic gate written against
+it would need more than the primal fold.
+
+**C3 is `false` and the useful half of the answer is naming what it would take, because the registered
+falsifier's reason is measurably wrong.** The falsifier reads *"C3 by the gate being unimplementable
+within the existing suite"*. Two things are needed and neither is that. **(1) A periodic domain on
+`ValidateConfig`.** `validate_indexed` counts `V − E + F` over the buffer it is handed and
+`ValidateConfig::from_cell_size` (`validate.rs:102`) is its only constructor — it carries a cell size and
+nothing about the box. The gate needs `(lo, hi, wrap: [bool; 3])` and a fold in front of the weld it
+already performs: a second constructor plus one pass. **It is emphatically not a change to
+`Extractor::extract_into`, whose doc states the signature *"is not negotiable"*
+(`extractor.rs:63-70`), and this row is the evidence: `wrap_seams` is a pure post-pass over `MeshBuffer`
+that needed no cooperation from any extractor and closed four primal extractors' output unmodified.**
+**(2) An uncapped, period-conforming reference field.** The shipped `gyroid` entry is `capped_gyroid()`,
+whose `expected_euler()` returns `None` with the reason *"genus depends on how many tunnels the cap
+encloses"* (`fields/mod.rs:1078`) and whose χ is not `-8N³` at all. A gate needs a new field on
+`[0, 2πN]³` with `expected_euler() = Some(-8N³)`, and one new entry in `for_each_reference_field!` adds
+**27** rows to `golden_hashes.json` (216 = 8 fields × 9 algorithms × 3 resolutions) and moves
+`doc_facts.sh`'s gated `FIELDS` and `HASHES` counts in twelve documents. So the gate is implementable in
+`validate`; what it is not is implementable inside a measurement commit. **The wave-1 summary's shorthand
+"a trait-signature change" is looser than the measurement: no trait signature has to move.**
+
+**`voxels_per_period` is odd on purpose, and `nonmanifold_edges` reading 0 on 70 of 70 is the positive
+statement that the choice worked.** The registration named *"32, 64, 96 and 128 voxels per period"*, all
+multiples of 8, and `common::tpms`'s author measured over 168 configurations that a
+multiple of 8 puts samples exactly on the `π/4` lattice where a nodal function cancels to **exactly
+`0.0`** — `M-48`'s degenerate crossing — after which one cell places coincident vertices and the weld
+turns them into a pinch. In all twelve of the module's pinching runs `chi_measured − chi_predicted`
+equalled `non_manifold_edges` exactly, which is why the column is on every row here. At 33, 65 and 97 it
+is **0** everywhere, so no sample landed on the isosurface and no part of C1's agreement is a cancelled
+pinch. `P-143` runs the divisible-by-8 family as an explicit control and reproduces the failure on
+Schwarz D.
+
+**What a consumer should do differently: nothing yet, and that is the honest answer.** `CLAUDE.md:199-203`
+and `fields/mod.rs:23-28` both state as a standing rule that the gyroid has no derivable Euler
+characteristic. **Both statements are true of the box the crate samples and false of the surface**, and
+the correction is one line long: the boundary the rule describes is an artefact of cutting the 3-torus
+open, and a periodic-conforming box plus a seam identification removes it. Until the Phase 28 fixture
+ticket lands, `gyroid`'s topology gate is still "record whatever the mesh said" — but the number to
+compare against is now known, published and reproduced on four extractors at five grids.
+
+### 💥 ✗105 / M-456 — C1 FALSIFIED on **1 of 10** in-scope rows, `schwarz_p` at `N = 3` reading `chi_measured` **-102** against `chi_predicted` **-108** with `non_manifold_edges` **6** and `chi_pinch_corrected` **-108** exactly, and falsified a second time by `added_as_reference_field` **false** on 36 of 36; C2 HELD as an exact `i128` polynomial identity on 36 of 36 with the seven half-period shifts classified **1 / 0 / 6**, **0 / 1 / 6** and **3 / 4 / 0** invariant/negated/neither — so Schwarz P's `primitive_lattice` is `simple_cubic` beside the space group `Im-3m`, and that apparent contradiction *is* the mechanism (P-143, R-143)
+
+**M.** `cargo bench --bench experiment_p143`, `docs/experiments/p-143.csv`, **36 rows** across **55
+columns** — four `#` comment lines plus one column header plus **36 data rows**, counted from the file
+rather than from the brief; 11 of the 55 columns are `P-143`'s registered `records` and the other 44 are
+`M-273` extras. The shape, also counted from the file: **three surfaces × six grids × two wrap modes**,
+`extractor` = `marching_cubes` on all 36, `f64`, `amd-ryzen-9-5900x-12-core` (Zen 3). Grids:
+`period_sweep` at `periods` 1/2/3 with `voxels_per_period` 33, `resolution_sweep` at `N = 1` with
+`voxels_per_period` 65 and 97, and one **`degenerate_grid_control`** at `voxels_per_period` **32**,
+`is_control = true`. `# commit 520b57b on amd-ryzen-9-5900x-12-core at 2026-08-30T14:10:40Z`, no
+`(WORKING TREE DIRTY)`. Schwarz P and Schwarz D are bench-local `common::tpms::NodalTpms` fixtures;
+**nothing under `crates/isomesh/src/` changed and no golden hash moved.** The gyroid arm at `N = 1,
+v = 33` is directly comparable with `p-142.csv` and reproduces it to the integer — `chi_measured` **-8**
+from `vertices` **5,284**, `edges` **15,876** and `faces` **10,584**.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 both Schwarz P and Schwarz D are added as reference fields and both reproduce `χ = N³·χ_cell` under periodic wrap | integer equality on both fields; graded by the falsifier *"C1 by either field disagreeing"* | **FALSIFIED** — `c1_holds` false, and the whole verdict turns on one row of the ten with `in_c1_verdict = true`: `schwarz_p`, `period_sweep`, `N = 3`, `resolution` 100, `chi_measured` **-102** against **-108**. The other **9 of 10** agree exactly: Schwarz P **-4 / -32** at `N = 1, 2` and **-4** at 65 and 97 voxels per period; Schwarz D **-16 / -128 / -432** at `N = 1, 2, 3` and **-16** at 65 and 97. `added_as_reference_field` is **false** on 36 of 36, which is C1's other half answered negatively and reported in its own column |
+| C2 the mechanism, asserted rather than assumed: `F_G` is invariant under the body-centring shift `(π,π,π)` while `F_P` and `F_D` are negated by it, checked as a symbolic identity and not inferred from the `χ` values it explains | exact identity, no tolerance | **HELD** — `c2_holds` true on 36 of 36. `body_centring_invariance` reads **invariant** on `gyroid`, **negated** on `schwarz_p` and **negated** on `schwarz_d`, decided by `F' − F == 0` / `F' + F == 0` in an eight-variable `i128` polynomial ring with no floating point anywhere. All **seven** non-trivial half-period shifts are classified per surface: `shifts_invariant`/`shifts_negated`/`shifts_neither` = **1 / 0 / 6** (gyroid), **0 / 1 / 6** (Schwarz P), **3 / 4 / 0** (Schwarz D), and `primitive_cells_per_cubic_cell = 1 + invariant` gives **2 / 1 / 4** with `chi_per_cubic_cell = -4 ×` that: **-8 / -4 / -16** |
+
+> **`primitive_lattice` reading `simple_cubic` on a surface whose space group is `Im-3m` is not an
+> inconsistency, it is the entire content of C2.** `Im-3m` *is* body-centred, and its body-centring
+> operation **negates** `F_P` — `nodal_expression` **`f5 + f3 + f1`**, `nodal_terms` **3**, one
+> trigonometric factor per term, so `(-1)¹ = -1` on every term. A negating shift maps the zero set to
+> itself but *exchanges the two labyrinths*: it is a symmetry of the surface and not a translation of the
+> labelled structure, so it contributes nothing to the translation lattice and P's cubic cell holds
+> **one** primitive cell. Writing `bcc` there beside `chi_per_cubic_cell` **-4** would put a
+> contradiction inside a single CSV row, because `bcc` means two primitive cells means `-8`. The gyroid
+> is the other side of the same arithmetic — `nodal_expression` **`f2*f5 + f1*f4 + f0*f3`**, two factors
+> per term, `(-1)² = +1`, invariant, **two** primitive cells, `-8`. Schwarz D needs the *face*-centring
+> half: `nodal_expression` **`f1*f3*f4 + f1*f2*f5 + f0*f3*f5 + f0*f2*f4`**, `nodal_terms` **4**, three
+> factors per term, so `(π,π,π)` negates while `(π,π,0)`, `(π,0,π)` and `(0,π,π)` are invariant —
+> `shift_classes` reads **`negated|negated|invariant|negated|invariant|invariant|negated`** over the
+> enumeration order `(x) (y) (xy) (z) (xz) (yz) (xyz)`, three invariant, `fcc`, four primitive cells,
+> **-16**.
+>
+> **Eight vacuity controls, seven of them assertions.** (1) *The registered one — three different `χ` at
+> `N = 1`*: `chi_at_n1_triple` **`-8|-4|-16`** on 36 of 36, pairwise distinct, so the suite cannot
+> confuse a correct oracle with a constant. (2) *The three predictions were three numbers to begin with*:
+> `chi_per_cubic_cell_symbolic` **-8 / -4 / -16**, computed from the shift counts in this harness rather
+> than transcribed. (3) *The lattice index discriminates*: `primitive_cells_symbolic` **2 / 1 / 4**,
+> three different integers, so one explanation is not being offered for three different numbers, and each
+> is asserted equal to the module's own `primitive_cells_per_cubic_cell`. (4) *The classifier can say all
+> three words*: over the 21 classifications, **4 invariant, 5 negated, 12 neither**. (5) *The polynomial
+> is the module's function*: `transcription_residual` **2.220e-16** (gyroid) and **4.441e-16** (P and D)
+> over a 2,197-point offset grid — a symbolic identity about a mistyped polynomial is worth nothing, and
+> this is the only thing standing between two transcriptions. (6) *The exact algebra agrees with the
+> numerics*: `body_centring_numeric_ok` true on 36 of 36 with `body_centring_residual` **1.887e-15 /
+> 1.388e-15 / 1.707e-15**, and `shift_residuals` returns **both** the invariance and the negation
+> residual so that neither is vacuous — a function that vanished on the grid would return two zeros and
+> is refused. (7) *No nodal polynomial is identically zero*: `nodal_terms` **3 / 3 / 4**, since `F = 0`
+> satisfies invariance and negation at once. (8) *Every row meshed a surface*: `faces` 6,384 to 343,224.
+>
+> **One control replaces a filter, and the swap is what makes C1 falsifiable at all.** The obvious scope
+> predicate is `MeshReport::is_closed()`, which `P-142` used. It is
+> `is_manifold() && boundary_edges == 0 && chi % 2 == 0` (`validate.rs:356`) and `is_manifold()` requires
+> `non_manifold_edges == 0` (`validate.rs:342`) — **so a pinch makes a row not closed, and scoping on it
+> silently deletes precisely the rows that can disagree with `N³·χ_cell`.** Measured on this fixture, that
+> filter drops the one Schwarz P row that disagrees and turns a false clause true: the failing row reads
+> `is_closed` **false** and `is_manifold` **false** with `boundary_edges` **0**. So closure is asserted on
+> the property the clause actually needs, `boundary_edges == 0`, which a pinch does not satisfy away, and
+> `is_closed`/`is_manifold` are recorded as columns instead of used as filters.
+
+**The falsifying row is a statement about `M-48`, not about the oracle, and the two columns beside it say
+so exactly.** `chi_pinch_corrected = chi_measured − non_manifold_edges` is **-102 − 6 = -108** on that
+row, `pinch_accounts_for_gap` is **true**, and `c1_holds_pinch_corrected` is **true** on 36 of 36.
+`common::tpms`'s author measured that in all twelve of the module's pinching runs
+`chi_measured − chi_predicted == non_manifold_edges` **exactly** — 4, 4, 7, 9, 17, 32, 135, never off by
+one — because each pinch merges two sheets and costs exactly one from χ. Both pinching rows in this file
+obey it: Schwarz P at `N = 3` (gap **6**, `non_manifold_edges` **6**) and Schwarz D on the degenerate grid
+(gap **4**, `non_manifold_edges` **4**). **So the topological prediction `N³·χ_cell` was exact, and
+marching cubes' handling of a sample that lands *on* the isosurface is the whole of the gap.** The
+registration is **not** amended (`crates/isomesh/src/experiment.rs:27-31` forbids it): it was given the
+falsifier *"C1 by either field disagreeing"*, it is graded by that falsifier, and the corrected verdict
+sits beside C1 rather than substituted for it. The grid that produced it was *known* to be a hard case
+before the run — `common::tpms` recorded "Schwarz P shows the same failure once, at `N = 3, v = 33`, from
+ordinary floating-point cancellation rather than an exact lattice" — and it was **kept in scope**, because
+dropping the one configuration a prior measurement had already flagged as failing is choosing the
+population after seeing the answer.
+
+**The divisible-by-8 family was run as a control instead of being avoided on a citation, and it
+reproduced its published failure to the integer.** `common::tpms`'s author measured that **Schwarz D reads
+the wrong χ at every `voxels_per_period` divisible by 8** — `-12` at 32 and 56, `-9` at 64, `-7` at 96,
+`+1` at 128, and only there — because a multiple of 8 puts samples on the `π/4` lattice where `F_D`'s four
+terms are equal in magnitude and cancel to **exactly `0.0`** (at `(π/4, π/4, 3π/4)`, for instance), the
+crossing parameter is 0 or 1, one cell places coincident vertices, and the weld turns them into a pinch.
+Those are exactly the four resolutions `P-142`'s registration named. The `degenerate_grid_control` arm at
+`voxels_per_period = 32` reads: gyroid **-8** (unaffected), Schwarz P **-4** (unaffected), Schwarz D
+**-12** against **-16** with `non_manifold_edges` **4**, `chi_pinch_corrected` **-16** and
+`genus_measured` `none`. **The `-12` at 32 is the module's published number, reproduced independently on
+a separate fixture in a separate binary.** The mechanism is a property of the *grid*, not of the surface,
+which is why the phase's odd choices — 33, 65, 97 — are a measurement rather than superstition.
+
+**The non-wrapped control is recognised by its boundary and deliberately not by its χ, and this file is
+where that rule earns its keep.** All **18** `open` rows carry `boundary_edges > 0` (360 to 5,346), and
+**5 of 18** nevertheless agree with the closed-surface prediction, and all five are Schwarz P's:
+`chi_measured` **-4** at `N = 1`, **-32** at `N = 2`, and **-4** at 65, 97 and 32 voxels per period, every
+one with `chi_agreement` **true**, hitting its own prediction by coincidence of the caps the box cuts. Its
+sixth open row is the pinching one and disagrees like the rest (**-102**, `non_manifold_edges` **6**).
+Gyroid's six (**-3 / -53 / -199 / -3 / -3 / -3**) and Schwarz D's six (**-11 / -117 / -415 / -11 / -11 /
+-7**) disagree throughout. **A control that compared χ would therefore have passed the wrong arm on five
+rows of eighteen**, which is why what is asserted about χ is only that *at least one* open
+row disagrees. The wrap identified **678 / 4,632 / 14,656** seam pairs on Schwarz P and **585 / 3,121 /
+8,745** on Schwarz D at `N = 1, 2, 3`, so `periodic` is never byte-for-byte `open`.
+
+**What a consumer should do differently: nothing, and the reference-field roster does not move this
+phase.** `added_as_reference_field` is **false** on every row and the reason is priced rather than vague:
+one new entry in `for_each_reference_field!` adds **27** rows to `crates/isomesh/golden_hashes.json`
+(216 = 8 fields × 9 algorithms × 3 resolutions) and moves `scripts/doc_facts.sh`'s gated `FIELDS` and
+`HASHES` counts, which appear as prose in twelve documents — a repo-wide renumbering inside a measurement
+commit. What this row does establish is that `P-142`'s single number was not a coincidence: three
+surfaces through one apparatus produce **-8**, **-4** and **-16**, and `all_three_agree_in_scope` reads
+**false** for exactly one reason — a degenerate crossing at `N = 3` on Schwarz P — with the arithmetic of
+that one reason on its own row.
+
+### 💥 ✗106 / M-457 — C1 FALSIFIED by the three-octave half, where `resolution_convergence` reads **never** on 4 of 5 seeds and χ is still moving at 129³ — but the falsification runs the *interesting* way: at **one** octave χ converges on **5 of 5** seeds and `oracle_exists` is **true on 35 of 140** rows, so a deterministic χ oracle for a periodic value-noise solid does exist, against a registration that named "no oracle available at game resolutions" as the likely outcome; C2 HELD with `chi_variance_across_seeds` **10.240000** and `chi_span_across_seeds` **8** at the converged rung, the converged χ reading **-8** on three seeds, **-12** on one and **-16** on one, so the gate must be per-seed exactly as registered (P-144, R-144)
+
+**M.** `cargo bench --bench experiment_p144`, `docs/experiments/p-144.csv`, **140 rows** across **31
+columns** — four `#` comment lines plus one column header plus **140 data rows**, counted from the file
+rather than from the brief; 11 of the 31 columns are `P-144`'s registered `records` and the other 20 are
+`M-273` extras. The shape, also counted from the file: **2 octave counts × 5 seeds × 7 resolutions × 2
+wrap modes** off **70** extractions, `field` = `periodic_value_noise` on all 140, `period` **4**, `iso`
+**0.000**, `f64`, `amd-ryzen-9-5900x-12-core` (Zen 3). The ladder is `samples_per_axis` **17 / 33 / 49 /
+65 / 81 / 97 / 129** (`cells_per_axis` 16 to 128, `cell_size` 0.250000000 down to 0.031250000). Seeds:
+`0x5eed000000000001`, `0x5eed000000000002`, `0x0badc0ffee0dd00d`, `0x123456789abcdef0`,
+`0xf00dfacecafeb0ba`. `# commit ad28433 on amd-ryzen-9-5900x-12-core at 2026-08-30T09:29:17Z`, no
+`(WORKING TREE DIRTY)`. **Nothing under `crates/isomesh/src/` changed**; the field and the wrap are
+bench-local.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 with periodic wrap and a fixed seed, measured χ converges as resolution increases and is stable to at least `65³` | falsified by *"χ still moving at the highest tested resolution"* | **FALSIFIED** — `c1_holds` false, a global verdict over both octave counts. At **1 octave** it is met on every seed: `resolution_convergence` **17 / 17 / 33 / 33 / 49**, `chi_stable` **true on 5 of 5** at `samples_per_axis` 65, and `chi_delta_from_top` **0** from the convergence rung upward. At **3 octaves** it fails: `resolution_convergence` **never** on `0x5eed000000000001`, `0x5eed000000000002`, `0x0badc0ffee0dd00d` and `0x123456789abcdef0`, and **97** on `0xf00dfacecafeb0ba`. The three-octave ladders are still moving at the top: `-4, -16, -26, -22, -26, -28, -30` and `0, 2, -2, -10, -4, -2, 0` on the two `0x5eed…` seeds |
+| C2 χ varies across seeds, so the gate must be per-seed rather than per-field | falsified by seed-independent χ | **HELD** — `c2_holds` true on 140 of 140. `chi_variance_across_seeds` is non-zero at **every** rung of **every** arm. Under periodic wrap it reads **13.760000 / 15.360000 / 10.240000** across the one-octave ladder and **160.000000 / 197.440000 / 213.760000 / 178.240000 / 207.040000 / 224.000000 / 228.160000** across the three-octave one, with `chi_span_across_seeds` **8** and **42** at the top rung; the control arm's own top-rung spans are **10** and **36** over variances **13.760000** and **184.960000**. The converged one-octave χ is **-8** on three seeds, **-12** on one and **-16** on one |
+
+> **The two clauses together are the finding, and they are not in tension.** C1 as registered is a claim
+> about every seed at once and it fails, because a three-octave field is not resolved by a `129³` grid. C2
+> says the number is per-seed and it holds. What survives is a *narrower* positive result than the
+> registration asked for and a stronger one than its falsifier expected: **at one octave, with periodic
+> wrap, the field has a definite χ that the extraction reaches by `33³` on four of five seeds and by
+> `49³` on the fifth**, and `oracle_exists` — which additionally demands `wrap_mode = periodic`,
+> convergence at or below 65, and `boundary_edges == 0` on every rung of the ladder — is **true on 35 of
+> 140** rows, i.e. on all thirty-five one-octave periodic rows and nowhere else.
+>
+> **Why three octaves cannot converge here is an integer property of the grid, not an opinion.**
+> `finest_lattice_cells_per_axis` is **4** at one octave and **16** at three, and
+> `voxels_per_finest_lattice_cell` therefore reads **4 / 8 / 12 / 16 / 20 / 24 / 32** across the
+> one-octave ladder against **1 / 2 / 3 / 4 / 5 / 6 / 8** across the three-octave one. At `129³` the
+> three-octave field is sampled at eight voxels per finest lattice cell — the resolution the one-octave
+> field reached at `33³`, where it had already converged. The ladder is not too short; the field is
+> sixteen times finer.
+>
+> **The ladder carries three rungs above the `65³` C1 names, and the file contains the row that proves
+> one would not have been enough.** At three octaves, seed `0x123456789abcdef0` reads χ **-32 at 65**,
+> **-32 at 81**, then **-36 at 97** and **-32 at 129**. A single confirming rung would have recorded that
+> ladder as converged. `chi_stable` is by construction `false` at the top rung (there is no higher rung to
+> agree with), which is why `resolution_convergence` and `chi_delta_from_top` rather than `chi_stable`
+> carry C1's evidence; `chi_stable` reads true on **54 of 140** rows.
+>
+> **Seven vacuity controls, all assertions.** (1) *The registered one — at least three seeds, and
+> distinct*: five, checked on the de-duplicated seed set rather than the array length. (2) *The seed is
+> wired in*: `min_seed_separation` **1.064370**, strictly positive, so a seed-independent χ would have
+> falsified C2 for the right reason rather than because the seed never reached the hash. (3) *The field
+> really is periodic*: `max_periodicity_residual` **1.332e-15** over 1,331 off-lattice probes and all three
+> axes, against a `1e-12` bar — if it were not, the wrap would identify faces that do not match and every
+> χ in the file would be an artefact. (4) *`octaves` is not decorative*: the two counts produce different
+> fields on the same probes. (5) *The two wrap modes are different measurements*: `boundary_edges` is
+> **0** on all 70 periodic rows and **300 to 5,034** on all 70 control rows, and `identified_pairs` is
+> **158 to 2,540** on periodic and **0** on control. (6) *Every extraction produced a surface*:
+> `triangles` **2,860 to 319,772**. (7) *The ladder can falsify C1*: 65 is on it and three rungs sit
+> above it. `non_manifold_edges` is **0 on 140 of 140**, so no χ here is a cancelled pinch.
+
+**The shipped `fbm_terrain` is out of reach by arithmetic rather than by measurement, and that is the
+first half of C1's answer.** `FbmTerrain::sample` is `p[1] − (base_height + amplitude · fbm(x, 0, z))`
+(`fields/mod.rs:1352-1362`) — **monotone in `y`**, so the sign at `y = lo` is opposite to the sign at
+`y = hi` everywhere and no identification of the top and bottom faces exists. A heightfield therefore has
+no χ on the 3-torus at any resolution, which is why `closed_in_domain()` returns `false` with the comment
+*"a heightfield exits through the sides"* (`fields/mod.rs:1384`) and `expected_euler()` returns `None`
+with *"not closed, so there is nothing to assert"* (`fields/mod.rs:1387`). What this row measures instead
+is the volumetric sibling — the same lattice value noise thresholded as a solid, the shape `noise_cavity`
+is and every cave generator in the wild actually meshes — made exactly periodic by taking the corner hash
+**modulo the lattice period**. That is the most favourable case available: an oracle unreachable there is
+unreachable for the terrain too.
+
+**The non-wrapped control converges as well, and reads a different number, which is why `oracle_exists`
+demands closure rather than convergence.** At one octave the control ladders converge on the same rungs —
+`resolution_convergence` **17 / 17 / 33 / 33 / 49**, identical to the periodic arm — yet `oracle_exists`
+is **false on all 70** control rows, because a χ counted over a surface with 300 to 5,034 boundary edges
+is a number about the sampling box and not about the field. The two arms' converged values differ on every
+seed: **-8 against -2** on `0x0badc0ffee0dd00d`, **-8 against -4** on `0x5eed000000000002`, **-16 against
+-12** on `0x123456789abcdef0`, **-12 against -4** on `0x5eed000000000001`, **-8 against -2** on
+`0xf00dfacecafeb0ba`. So the wrap does not merely tidy the boundary; it changes the invariant, which is
+the same conclusion `p-142.csv`'s open arm reached on the gyroid.
+
+**What a consumer should do differently, and what nobody should write into the suite.** Do **not** write a
+single χ constant for a noise field: at one octave the five seeds give **-12, -8, -8, -16, -8** and at
+three octaves **-30, 0, -42, -32, -40** in the seed order above, so a per-field constant is wrong by up
+to 42 on the same field.
+A per-seed gate is affordable and correct at one octave and is not available at three — and since the
+crate's noise reference fields are multi-octave, **the practical answer for `noise_cavity` and
+`fbm_terrain` remains "record, do not assert"**, now with the reason measured rather than asserted. This
+row opens no landing ticket: a positive result would open a *fixture* ticket for a ninth reference field
+with a known χ, and the one-octave field that would carry it is not the field the crate ships.
+
+### 🔬 M-458 — C1 and C2 both HELD: a digital-topology oracle reading χ off the field's own signs with no mesh involved reproduces `chi_stratified_morse` **2** on `sphere` and **0** on `torus`, reproduces `P-142`'s analytic gyroid **exactly** (**-8 / -64 / -216** against `chi_predicted_p142` -8 / -64 / -216 with `disagreement_cells` **0**), and supplies a first ground-truth χ on the two closed fields the crate declares unknowable — `gyroid` **-24** stable across 33³ and 65³, `noise_cavity` **82** and **-152** — at `cost_ratio` **0.4746 to 1.0648** of the extraction it grades; and Etiene et al. 2012's DOI, flagged unverified since Phase 23, resolves through three independent routes to **`10.1109/tvcg.2011.109`**, *Topology Verification for Isosurface Extraction*, IEEE TVCG **18(6), 952–965, 2012** (P-145, R-145)
+
+**M.** `cargo bench --bench experiment_p145`, `docs/experiments/p-145.csv`, **38 rows** across **47
+columns** — four `#` comment lines plus one column header plus **38 data rows**, counted from the file
+rather than from the brief; 11 of the 47 columns are `P-145`'s registered `records` and the other 36 are
+`M-273` extras. The shape, also counted from the file: **four arms × two extractors**, `f64`,
+`amd-ryzen-9-5900x-12-core` (Zen 3). `calibration` is the five reference fields with
+`expected_euler() == Some(χ)` at 33³ and 65³ (20 rows, `is_control = true`); `new_ground_truth` is
+`gyroid` and `noise_cavity` at the same two grids (8 rows); `out_of_scope` is `fbm_terrain` (4 rows);
+`p142_cross_check` is `gyroid_nodal` on the 3-torus at `periods` 1/2/3 with 33 voxels per period, whose
+`resolution` column reads **34 / 67 / 100** and reproduces `p-142.csv`'s exactly (6 rows). Every row is
+meshed twice, `extractor ∈ {marching_cubes, marching_cubes+trilinear}` — the crate's default and its
+ambiguity-resolving configuration. `# commit 00631a7 on amd-ryzen-9-5900x-12-core at 2026-08-30T14:14:20Z`,
+no `(WORKING TREE DIRTY)`. **Nothing under `crates/isomesh/src/` changed and no golden hash moved.**
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the method computes a ground-truth χ on at least two fields where the crate currently has none, and agrees with `P-142`'s analytic prediction on `gyroid` | two halves, both integer | **HELD** — `c1_holds` true on 38 of 38. **Two** new ground truths, `gyroid` and `noise_cavity`, both of which return `expected_euler() == None` today (`fields/mod.rs:1078`, `:1256`): `chi_stratified_morse` **-24** on `gyroid` at *both* 33³ and 65³, and **82** / **-152** on `noise_cavity`. The cross-check is exact: on all six `gyroid_nodal` rows `chi_stratified_morse` equals `chi_predicted_p142` — **-8 / -64 / -216** — with `disagreement_cells` **0** and `agreement` **true** |
+| C2 the cost is reported and the set of fields where it applies is stated | falsified only by inapplicability to every field | **HELD** — `c2_holds` true on 38 of 38. `applicable_fields` names **eight** of the nine field entries run: `box_exact\|csg_difference\|gyroid\|gyroid_nodal\|noise_cavity\|sphere\|thin_plate\|torus`, with `fbm_terrain` the sole exclusion. `method_cost_ms` is the **median of 5 repeats** after a warm-up (`method_repeats` **5**, with `method_cost_ms_min`/`max` beside it), **0.3103 to 52.6494 ms**, against `extract_cost_ms` on the same row: `cost_ratio` **0.4746** (`gyroid_nodal` at `N = 2`) to **1.0648** (`thin_plate` at 65³). **The oracle is cheaper than the extraction it grades on 34 of 38 rows** and the four exceptions are all `thin_plate`, whose mesh is tiny (1,016 to 4,088 triangles) while the oracle still visits every block |
+
+> **This is the digital-topology half of Etiene et al., not the stratified-Morse half, and the row says
+> which.** The paper gives two oracles; `oracle_method` reads `digital_topology` on all 38 rows and the
+> registered column name `chi_stratified_morse` is honoured as *"the ground-truth χ of Etiene et al.'s
+> method"* rather than renamed. The weights are **derived by enumeration** over all 256 `2×2×2` binary
+> patterns from the crate's own `marching_cubes::table::EDGE_CORNERS`, not transcribed, so the oracle
+> cannot disagree with the extractor about which corners are adjacent. χ of the digital **solid** is
+> doubled to a surface χ via `χ(∂M) = 2·χ(M)`, and the CSV carries the arithmetic: `chi_solid_26` **-4 /
+> -32 / -108** on the nodal arm against `chi_stratified_morse` **-8 / -64 / -216**. **The gyroid checks
+> that doubling independently** — its labyrinth per conventional cubic cell is the `srs` (Laves) net, 8
+> nodes and 12 edges, `χ = 8 − 12 = -4`, and `2 · (-4) = -8` is exactly `P-142`'s number, reached from
+> voxel counts rather than from genus-3-per-primitive-cell.
+>
+> **Ten vacuity controls, all assertions rather than columns.** (1) *The registered one — `sphere` must
+> return `χ = 2`*: it does, at both resolutions, on `chi_surface_26` **and** `chi_surface_6`. (2) *The
+> assigned second — `torus` must return `0`*: it does, and it is the stronger control, since a method
+> that reported `2` for everything would pass the sphere. (3) *The oracle is not a constant*: **eight**
+> distinct `chi_stratified_morse` values across the in-scope rows — `-216, -152, -64, -24, -8, 0, 2, 82`.
+> (4) *The weights are derived and checkable*: `w(0x00) == 0`, `w(0xFF) == 0`, a single occupied voxel
+> weighs exactly `1/8`, eight such blocks make the `χ = 1` of a cube. (5) *The two connectivities
+> genuinely differ*: the derived tables disagree on **96 of 256** configurations —
+> `connectivity_split_configurations` **96** on 38 of 38 — and the corner-touching pair fixture must read
+> `χ₂₆ = 1` against `χ₆ = 2`. (6) *The digital object is neither empty nor full*: `inside_samples`
+> **225 to 485,162**, strictly inside `(0, blocks)`. (7) *The mesh exists*: `mesh_triangles` ≥ **1,016**.
+> (8) *`disagreement_cells` could have been non-zero*: it is **551** and **602** on `noise_cavity`, **40**
+> and **141** on `gyroid`, **30** and **58** on `fbm_terrain`, and **0** on the calibration and
+> cross-check rows — so Theorem 4.1's hypothesis was genuinely tested. (9) *The exclusion is measured from
+> both sides and they agree*: `fbm_terrain` alone has `boundary_inside > 0` (**3,047** and **12,195**) and
+> `boundary_edges > 0` (**190** and **390**), and every in-scope row has both at zero. (10) *The DOI
+> column is the registration's DOI*: `prereg.hypothesis` is asserted to contain the string in `doi` before
+> any row is written, so what is reported is a resolution of the registered claim and not of a retyped one.
+
+**`connectivity_split_blocks` reading `0` on the calibration and the cross-check is the reason the
+cross-check is worth anything, and `487` on `noise_cavity` is the reason the column exists.** On all six
+`gyroid_nodal` rows and all twenty `calibration` rows **not a single block of the grid landed on one of the
+96 configurations where foreground-26 and foreground-6 disagree**, so `chi_surface_6` equals
+`chi_stratified_morse` there (**-8 / -64 / -216** and **2 / 0 / 2 / 2 / 2**) and `P-142`'s number is
+reproduced under *both* digital models rather than under a chosen one. On the noise fields the choice is
+everything: `noise_cavity` at 33³ has **487** split blocks and reads `chi_solid_6` **-90** against
+`chi_solid_26` **41** — a surface χ of **-180** under one model and **82** under the other, on one
+occupancy. Even the capped gyroid splits, **37** blocks at 33³ and **135** at 65³, `chi_surface_6`
+**-50** against `chi_stratified_morse` **-24**; the extraction reads **-24**, so foreground-26 is the model
+that matches the mesh and this row is the measurement that says so rather than the convention that assumed
+it.
+
+**`noise_cavity` disagrees with the extraction and that is a result, not a failed clause.** `agreement`
+reads **true on 30 rows**, **false on 4** (all `noise_cavity`) and `not_applicable` on 4 (all
+`fbm_terrain`). At 33³ the oracle says **82** while the extraction reads **-96** under the default
+`marching_cubes` and **6** under `marching_cubes+trilinear`; at 65³ the oracle says **-152** against
+**-175** and **-162**. `disagreement_cells` is **551** and **602** on those rows — cells where Etiene's
+own unambiguity test fails, so the digital reconstruction carries **no** homeomorphism guarantee and the
+extractor's face and interior rules are free to choose a different topology from the trilinear
+interpolant's. **The two extractors disagreeing with each other by 102 at 33³ on the same field, in the
+same run, is the sharper half of that observation**, and C1 was never quantified over it: the clause asks
+the method to *produce* a ground truth on two such fields and to agree with `P-142` on the gyroid, and
+both are met.
+
+**Two harness discoveries belong in the record because each one first read as an instrument fault.**
+**(1) `common::tpms::euler` welds before counting and `validate::validate_indexed` does not, so they
+legitimately differ by exactly the coincident-vertex count.** Marching cubes caches one vertex per grid
+*edge*, so the two agree except where two different grid edges produce the same position — `M-48`'s
+degenerate crossing. Welding merges that pair, dropping one referenced vertex and therefore χ by one:
+**measured -175 against -174 on the wrapped gyroid, a difference of exactly one coincident pair**
+(`experiment_p145.rs:1112-1124`). The cross-check now runs `validate_indexed` on a **welded copy**, both
+readers are asked about the same mesh, and the committed file shows the consequence:
+`chi_extracted_validate` equals `chi_extracted` on **38 of 38** rows. **(2) The raw sample signs are not
+periodic across a period, and gating on them would have refused a correct torus.** `sin(2πN)` is
+`-2.4e-16` and not `0.0` in `f64`, so a sample lying on the surface flips sign between the two ends of one
+period: `wrap_sign_mismatches` reads **3** on every `gyroid_nodal` row, at `N = 1`, `2` and `3` alike. The
+gate is therefore on the **glued occupancy**, which is periodic by construction because the occupancy is
+copied modularly rather than resampled, and `wrap_occupancy_mismatches == 0` is what is asserted
+(`experiment_p145.rs:1420-1438`); `wrap_sign_mismatches` is carried as a diagnostic column. **The
+harness's own vacuity-control bullet at `experiment_p145.rs:251-255` still says
+`wrap_sign_mismatches == 0`, and the CSV disagrees with it** — the code is right and the comment is stale.
+The wrap itself is non-vacuous on every one of those rows: `seam_pairs` **305 / 1,225 / 2,769**, the same
+three integers `p-142.csv` recorded for `marching_cubes` at the same three grids.
+
+**What a consumer should do differently.** The instrument is now available and it is affordable — under
+`1.07×` an extraction on every row, and half an extraction on the largest — so **the correct treatment of
+`gyroid`'s topology in the test suite is no longer "record whatever the mesh said"**: the capped gyroid has
+a reproducible ground truth of **-24** at both 33³ and 65³, computed from the field rather than from the
+mesh, and `marching_cubes/tests.rs`'s current position that the number *"is not known analytically, so it
+is recorded rather than asserted"* is true of the analytic route and false of this one. `noise_cavity` is
+the opposite lesson: the oracle produces a number there, the extractors produce two different numbers, and
+**551 and 602 ambiguous cells per grid say the surface is under-resolved rather than that anybody is
+wrong** — so a gate on that field would have to be a gate on `disagreement_cells`, not on χ. And the
+Phase 23 audit's `DOI unverified` flag is discharged: `doi_verified` **true** on 38 of 38, with
+`doi_resolved_title` *Topology Verification for Isosurface Extraction*, `doi_venue`
+`IEEE-TVCG-18(6)-952-965-2012` and `doi_handles` `openalex:W2086220855|pubmed:21690649` carried on the row
+so the CSV is the record rather than a comment.
+
+### 💥 ✗107 / M-459 — C1 FALSIFIED with `c1_winners` **0** of `c1_population` **4** against a bar of **3**: at matched Hausdorff the metric-driven arm is never cheaper and is **2.298935×** *dearer* on `thin_plate`, the most anisotropic measurable field; C3 FALSIFIED on **40 of 40** with `metric_share` **0.332862 to 8.747515** against a **0.15** bar and `c3_row_decisive` true on every row; C2 HELD on the **20** rows where it can be read and `unmeasurable` on the other **20**, because `validate::accuracy` is meaningless where `field.bound()` is not `Exact` — and the finding is that this crate's reference-field roster is adversarial to global anisotropy: the one field where the mechanism demonstrably works, `fbm_terrain` at `flat_axis_aligned_fraction` **1.000000**, is `Unbounded` and therefore ungradeable (P-146, R-146)
+
+**M.** `cargo bench --bench experiment_p146`, `docs/experiments/p-146.csv`, **40 rows** across **57
+columns** — four `#` comment lines plus one column header plus **40 data rows**, counted from the file
+rather than from the brief; 18 of the 57 columns are `P-146`'s registered `records` and the other 39 are
+`M-273` extras. The shape, also counted from the file: **eight reference fields × five rungs**,
+`metric` = `M_Lp_hessian` and `p_norm` = **2.0** on all 40, `f64`, `amd-ryzen-9-5900x-12-core` (Zen 3).
+The ladder is `resolution` **17 / 25 / 33 / 49 / 65** — five rungs, a factor of 4 in `h`, odd throughout
+because `M-266` proved the canonical grids' odd counts are load-bearing (`thin_plate` is centred on
+`y = 0` and loses its surface entirely on an even count). `# commit 77e71cb on
+amd-ryzen-9-5900x-12-core at 2026-08-30T09:27:05Z`, no `(WORKING TREE DIRTY)`. **`crates/isomesh/src/` is
+frozen for Phase 27 and nothing in it moved**; this row owns `benches/common/metric.rs` and is its first
+consumer.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 at matched symmetric Hausdorff error, a metric-driven mesh uses at least **25%** fewer triangles on at least **three of eight** reference fields | `ratio = triangles_aniso / triangles_iso ≤ 0.75` on ≥ 3 fields | **FALSIFIED** — `c1_winners` **0** against `c1_population` **4**. Per field: `ratio` **1.000000** (`sphere`), **1.153211** (`torus`), **1.000000** (`box_exact`), **2.298935** (`thin_plate`). `c1_field_win` is **false** on all 20 measurable rows and `unmeasurable:bound=…` on the other 20 |
+| C2 the win lands on the fields with a flat direction | per field, `predicted_win == observed_win`, predicted **before the run** | **HELD where readable** — `c2_holds` **true on 20 rows** and **`unmeasurable` on 20**. All four `Exact` fields were predicted **not** to win and did not. `c2_global_holds` is **true** on 40 of 40. The mechanism half, `c2_mechanism_holds` (predicted `flat_axis` against measured), reads **true on 21** rows and **false on 19** |
+| C3 computing the metric costs under **15%** of extraction | `metric_share ≤ 0.15` on every row | **FALSIFIED** — `c3_holds` false, `c3_row_holds` false on **40 of 40**, and `c3_row_decisive` **true on 40 of 40**: the min/max band never straddles the bar, the smallest `metric_share_lo` in the file being **0.32888**. `metric_share` spans **0.332862** (`thin_plate` at 65³) to **8.747515** (`csg_difference` at 17³) — the metric costs between a third of an extraction and **8.7 extractions** |
+
+> **C1's population is 4, not 8, and the arithmetic that narrows it is the whole reason the clause could
+> not be reached as written.** `validate::accuracy` projects by Newton along `∇f` and compares against
+> `|f|`, and `crates/isomesh/src/fields/mod.rs:83-84` states the rule on `FieldBound::Exact` in as many
+> words: *"Only this admits a Hausdorff measurement against the field's own values."* The `field_bound`
+> column splits the roster exactly: **`Exact`** on `sphere`, `torus`, `box_exact`, `thin_plate` (20 rows,
+> `c1_skip_reason` empty); **`Underestimate`** on `csg_difference`; **`Lipschitz`** on `gyroid`;
+> **`Unbounded`** on `fbm_terrain` and `noise_cavity`. **So the registered bar of "three of eight" is
+> three of four — 75% of what can be measured, not the 37.5% it reads as.** That is a narrowing and not
+> an impossibility: `3 ≤ 4`, so C1 was reachable, was run, and came back **0 of 4**. The four skipped
+> fields still emit every metric, aspect-ratio, triangle and cost column; only the four Hausdorff-derived
+> columns read `unmeasurable:bound=…`, and `c1_population` **4** and `c1_skip_reason` are on every row so
+> the denominator travels with the verdict.
+>
+> **On two of the four measurable fields the anisotropic arm was the isotropic arm, and the CSV says so
+> rather than reporting a null.** `grid_anisotropic` equals `grid_isotropic` at **65x65x65** on `sphere`
+> and `box_exact` with `axis_ratio` **1.000000**, so their `ratio` of exactly **1.000000** is a
+> construction identity and not a measured tie — the metric prescribed a uniform grid, which is precisely
+> what the pre-registered `flat_axis` prediction of `none`/`mixed` said it would do. The two fields where
+> the grid genuinely moved both got **worse**: `torus` at **63x69x63** (`axis_ratio` 1.095238) reads
+> `ratio` **1.153211**, and `thin_plate` at **21x635x21** (`axis_ratio` **30.238095**) reads
+> **2.298935**. `thin_plate` is the instructive one: at 65³ the anisotropic arm emits **536** triangles
+> against the isotropic **4,088** — a 7.6× saving — but at `hausdorff_anisotropic` **0.141556797** against
+> `hausdorff_isotropic` **0.045927933**, a 3.1× worse error, and at matched error it loses by 2.3×.
+>
+> **The two ratios that carry C1's falsification are read off an extrapolation, and the CSV says which.**
+> The matched error is `hausdorff_matched` = the *finest isotropic* reading — **0.001329268** (`sphere`),
+> **0.003976398** (`torus`), **0.072168784** (`box_exact`), **0.045927933** (`thin_plate`) — and both arms
+> are evaluated there through their own fitted `ln T` against `ln E` power law. `matched_interpolated`
+> reads **true** on `sphere` and `box_exact` and **false** on `torus` and `thin_plate`: on those two the
+> anisotropic arm never reached that error on any rung, so its triangle count at the matched error is an
+> extrapolation beyond its own span. That weakens the *magnitude* of `1.153211` and `2.298935` and not
+> their sign — at equal sample budget the anisotropic arm's error is worse on **all five** `thin_plate`
+> rungs and on the four `torus` rungs above 17³, equal on the ten `sphere`/`box_exact` rows whose grid did
+> not move, and better on exactly **one** of the twenty measurable rows (`torus` at 17³,
+> `hausdorff_anisotropic` **0.040603651** against `hausdorff_isotropic` **0.051184351**). That is why the
+> extrapolation runs in the direction it does.
+>
+> **Six vacuity controls, and the registered one needed the module author's amendment to mean anything.**
+> (1) *The registered control — `aspect_ratio_max > 3` on at least one field*: satisfied on **40 of 40**
+> rows, and that is exactly the problem. (2) *The amendment, and it is load-bearing*:
+> `benches/common/metric.rs` warns that at a flat direction `aspect_ratio` is `|λ|max / H_FLOOR ≈ 1e9`,
+> *"a number of order 1e11 that is the floor talking, not a measured anisotropy"*, so the bar is asserted
+> **again** over cells that are not at the floor — `aspect_ratio_max_off_floor > 3` on **35 of 40** rows.
+> The five that fail are all `fbm_terrain`, where `off_floor_cells` is **0** and `at_floor_fraction` is
+> **1.000000** on every rung. (3) *The anisotropic arm must be anisotropic*: `axis_ratio` **47.400000** on
+> `fbm_terrain` at 65³ against a 1.5 floor. (4) *The two arms must be on one budget*: `budget_ratio`
+> spans **0.898211 to 1.137594**, inside the required `[0.25, 4]`. (5) *The Hausdorff instrument must
+> respond to resolution*: both arms' errors must span ≥ 1.2× across the ladder or `ratio` would be read
+> off a fit through a horizontal line; all four `Exact` fields survived, with `fit_r2_isotropic`
+> **0.999693 / 0.981613 / 0.999754 / 0.999965** and `fit_r2_anisotropic` **0.999693 / 0.991829 /
+> 0.999754 / 0.986247**. (6) *The band must be non-empty*: `band_points` **279 to 21,655**.
+
+**`aspect_ratio_max` must be read with `at_floor_cells` beside it, and this file is the demonstration.**
+`benches/common/metric.rs`'s author measured the at-floor counts `box_exact` **1686/1790** cells,
+`fbm_terrain` **1156/1156** (a heightfield SDF is exactly linear in `y`) and `gyroid` **1/2945** with a
+genuine **5.11e3**, and all three reproduce here on an independent fixture. `box_exact` at 65³ carries
+`aspect_ratio_max` **2.400000e10** beside `aspect_ratio_max_off_floor` **3.824847** with `at_floor_cells`
+**18,042** of `band_points` **18,082** (`at_floor_fraction` **0.997788**) — **two numbers ten orders of
+magnitude apart on one row, and only the second one is a measurement.** `fbm_terrain` reads
+`at_floor_fraction` **1.000000** at every rung (578/578 through 8,450/8,450) with
+`aspect_ratio_max_off_floor` **0.000000e0**: there is no off-floor cell at all, because `∂²f/∂y²` is
+identically zero. And `gyroid` is the expected witness for the off-floor bar and delivers it —
+`at_floor_cells` **1** of `band_points` **1,414** at 17³ with `aspect_ratio_max` =
+`aspect_ratio_max_off_floor` = **5.110482e3**, the module's "genuine `5.11e3`" to three digits.
+
+**The registered `aspect_ratio_mean` has the same disease, and the file carries its antidote too.**
+`box_exact` at 65³ reads `aspect_ratio_mean` **1.555702e9** against `aspect_ratio_mean_off_floor`
+**3.119172e0**, so the *average* is floor-dominated as thoroughly as the maximum, and neither registered
+aspect-ratio column means anything read alone. `complexity_target` — the registration's
+`C(M) = ∫√det M` standing in for a vertex count — is recorded on every row and falls monotonically with
+resolution on **seven** of the eight fields (`sphere` **2.255462e0 → 2.487997e-1**, `gyroid`
+**4.438602e2 → 1.037636e2**). The exception is `noise_cavity`, which *rises* over the first three rungs —
+**3.510168e1 → 3.758484e1 → 3.877107e1** — before falling to **2.876359e1**, i.e. its metric is still
+finding structure at 33³ and the complexity integral is not yet resolved. No clause reads that column; it
+is recorded because `R-147` and `R-150` will.
+
+**C2's per-field prediction was written into the harness before it had ever run, and the one field it
+predicted would win is the one field C1 cannot grade.** The prediction, on `fbm_terrain`: `sample` is
+`p[1] − (base + amp·n(x, 0, z))` (`fields/mod.rs:1352-1362`), **exactly linear in `y`**, so
+`∂²f/∂y² = ∂²f/∂x∂y = ∂²f/∂y∂z ≡ 0` and `ŷ` is an exact null eigenvector at every point. Measured:
+`flat_axis` **y**, `flat_axis_aligned_fraction` **1.000000** on all five rungs, `axes_pinned` **1** (the
+`y` axis driven down to the `MIN_SAMPLES` floor of 5), `grid_anisotropic` **31x5x31** through
+**237x5x233**, `axis_ratio` **6.200000** through **47.400000**, `c2_predicted_win` **true**. **And the
+arm visibly worked there, on the only instrument that field admits**: at 65³ `mesh_residual_max_aniso` is
+**2.696938e-2** against `mesh_residual_max_iso` **2.910318e-1**, a **10.8×** reduction in `max |f(v)|/h`
+— bought with **115,174** triangles against **16,884**, so it is an accuracy win and not a budget win.
+`field_bound` is `Unbounded`, `hausdorff_isotropic` and `hausdorff_anisotropic` both read
+`unmeasurable:bound=Unbounded`, and `c1_field_win` therefore reads `unmeasurable` rather than `true`.
+That residual is explicitly **not** a Hausdorff distance and grades nothing — for a non-`Exact` field
+`|f|` is not a distance, which is the whole reason the field is out of C1's population — but it is a real
+number about a real mesh, and it is recorded so the four skipped fields are not silent.
+
+**The 19 rows where `c2_mechanism_holds` is false are all the same caveat, and the harness named it before
+the run rather than after.** `flat_axis` is a two-thirds majority *of the exploitable population*, and a
+two-thirds majority of a population of one is still a two-thirds majority. `sphere` and `torus` were
+predicted `none` and measured **mixed** — over `flat_axis_aligned_fraction` **0.002777** and
+**0.005305** at 65³, i.e. **18 of 6,482** and **32 of 6,032** band points. `noise_cavity` was predicted
+`none` and measured **y** at four rungs on a fraction of **0.000159** — **3 of 18,892** points.
+`thin_plate` was predicted `mixed` and measured **z** at 33³, 49³ and 65³, and there the fraction is
+**0.493380**, so that one is a real structural reading rather than a majority of nothing. **The label was
+not given a minimum population after its answer became visible** (`crates/isomesh/src/experiment.rs:26-31`
+— a measurement rule retuned once its answer is visible is no longer a measurement), so the correct way to
+read the column is to filter on the fraction, never on the label.
+
+**C3's falsification was predicted from scaling before the clock was read, and the crossing resolution is
+recorded rather than guessed — but the recorded crossings are estimates, not a law.** The band is a shell,
+so `band ∝ N²`; extraction is a volume, so `extract ∝ N³`; therefore `metric_share ∝ 1/N` and
+`share_times_resolution` is the scale-free constant, from which the crossing is
+`share_times_resolution / 0.15`. Read off the top rung: **`thin_plate` ≈ 144**, `fbm_terrain` ≈ 239,
+`torus` ≈ 448, `sphere` ≈ 467, `noise_cavity` ≈ 647, `box_exact` ≈ 678, `gyroid` ≈ 877,
+**`csg_difference` ≈ 1,048** samples per axis. **The `1/N` law is only approximate in the measured data
+and the file shows it**: `share_times_resolution` *rises* across the ladder on `sphere` (**47.857805 →
+70.098216**) and *falls* on `thin_plate` (**28.723999 → 21.636050**), so those crossing numbers are
+order-of-magnitude statements. One band point costs nineteen field samples plus one Jacobi
+eigendecomposition and one extraction cell costs about one field sample, which is the constant the shell/
+volume ratio has to overcome; at the ladder's resolutions it does not. Only wall-clock columns are
+machine-dependent here and only C3 reads them, which is why the median of 5 repeats is reported with
+`metric_share_lo`/`metric_share_hi` beside it rather than averaged into a pass — `M-280` measured this
+host's `amd-pstate-epp` governor swinging the same binary 1.45×, and `c3_row_decisive` **true on 40 of
+40** says that swing cannot reach the bar.
+
+**The anisotropic arm is per-axis global, not per-cell, and every verdict above is a verdict about that
+construction.** Every inherent `extract` in the crate takes a single **scalar** `cell_size`
+(`crates/isomesh/src/marching_cubes/mod.rs:193` and the six others), so a per-cell anisotropic mesher is a
+source change by construction and Phase 27's freeze forbids it. What was built instead spends the same
+total sample budget `N³` on per-axis counts proportional to the metric's per-axis densities, driven
+through the **shipped** extractor by a coordinate warp with vertices mapped back to world space before
+anything measures them. **A field whose flat direction *rotates* over the surface has per-cell anisotropy
+this arm structurally cannot spend, and it reads as a null here while a real anisotropic mesher would win
+on it** — which is exactly `sphere` (zero eigenvalue along the radial direction) and `torus` (flat
+direction azimuthal). So C1's `0 of 4` retires the *global* route and says nothing about the per-cell one.
+
+**What a consumer should do differently: nothing, and no landing is proposed.** The registration priced
+this row's SHARE as *"C1 moves the triangle budget, whose share of frame cost `M-135` puts at 29% for the
+contour and 45% for the collider check"*; the Amdahl ceiling on C1's own bar is `0.25 × 0.29 = 7.25%` and
+`0.25 × 0.45 = 11.25%`, at most **18.5%** of a frame, and the realised share is **zero** because no
+measurable field won. What this row does deliver is `common::metric` itself — measured, with its floor
+behaviour characterised — for `R-147`, `R-148`, `R-149`, `R-150` and `R-151`, and one instruction to each
+of them: **read `p-146.csv`'s own `c1_population` (4), `c1_skip_reason` and `at_floor_cells` rather than
+assuming a win**, and never quote an `aspect_ratio_max` without the at-floor count on the same row.
+
+### 💥 ✗108 / M-460 — C1, C2 and C3 all FALSIFIED: the exponent moved by **0.352013** on `fbm_terrain` against a `0.1` bar, the fitted constant improved on **3 of 8** fields against a strict majority and its rank correlation to the AM–GM gap is **−0.095238** — negative, not merely under 0.7, and under 0.7 at all three τ — and C3's `csg_difference` read `exponent_difference` **0.000000** because a permutation-symmetric field annihilates all three degrees of freedom a per-axis grid has; the one prediction that survived is the companion, `companion_regularity_deficit` **0.319404** against an expected `0.33` (P-147, R-147)
+
+**M.** `cargo bench --bench experiment_p147`, `docs/experiments/p-147.csv`, **8 rows** across **79
+columns** — four `#` comment lines plus one column header plus eight data rows, thirteen lines, counted
+from the file; 13 of the 79 columns are `P-147`'s registered `records` and the other 66 are extras. One
+row per reference field, each carrying a five-rung ladder `resolution_series` `17|25|33|49|65` in its
+series columns, `reference_dof` **274,625** = 65³, `instrument` `field_to_mesh_max` on all eight.
+`f64` throughout, one thread, no PRNG. Clean tree — `# commit 049714c on
+amd-ryzen-9-5900x-12-core at 2026-08-30T14:29:56Z`, with no `(WORKING TREE DIRTY)`. `wall_seconds` sums
+to **2.741 s** and no clause reads it. **All three verdict columns are global**: `c1_holds`, `c2_holds`
+and `c3_holds` are `false` on all eight rows, and the per-field facts sit in `c1_smooth`,
+`c1_row_holds`, `c2_row_improves` and `exponent_difference`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the fitted error exponent is statistically indistinguishable between the arms, `\|Δexponent\| < 0.1`, on every **smooth** field | `< 0.1` over the smooth population | **FALSIFIED** — `c1_population` **3** (`c1_smooth` true on `sphere`, `torus`, `fbm_terrain`), and `fbm_terrain` reads `fitted_exponent_isotropic` **0.439357** against `fitted_exponent_anisotropic` **0.791370**, `exponent_difference` **0.352013** — 3.5× the bar, and **resolved**: `exponent_difference_ci95` **0.138928** with `exponent_difference_resolved` `true`. The other two could not disagree: `sphere`'s `arms_identical` is `true` so Δ is **0.000000** exactly, and `torus`'s **0.018566** sits inside its own `exponent_difference_ci95` **0.197725** (`exponent_difference_resolved` `false`). `c1_row_holds` false on `thin_plate` (**0.108109**) and `fbm_terrain` only |
+| C2 the fitted constant improves, and its improvement tracks the AM–GM gap per field, rank correlation above 0.7 | strict majority of 8 fields **and** ρ ≥ 0.7 | **FALSIFIED on both conjuncts** — `c2_improved_fields` **3** of 8 against a strict majority of 5, and `c2_rank_correlation` **−0.095238**: not merely under 0.7 but *negative*. Neither τ rescues it — `c2_rank_correlation_tau2` **−0.119048**, `c2_rank_correlation_tau_inf` **0.214286**. `constant_ratio` reads **1.000000** on `sphere`, `box_exact`, `csg_difference`, `gyroid`, `noise_cavity`, **1.125249** on `torus`, **3.131972** on `thin_plate` and **0.114405** on `fbm_terrain` |
+| C3 a field lacking `W^{2,p}` regularity — `csg_difference` — shows an exponent difference above 0.1 | `> 0.1` on that one field | **FALSIFIED** — `c3_exponent_difference` **0.000000**, `c3_arms_identical` `true`, `c3_field` `csg_difference`, with `c3_reason` on every row reading `arms_identical:axis_ratio_max=1.000000:per_axis_grid_cannot_grade_a_permutation_symmetric_field`. Its `fitted_exponent_isotropic` and `fitted_exponent_anisotropic` are both **0.305633** and its two error series agree digit for digit at all five rungs |
+
+> **C3's `false` is arithmetically unreachable rather than informative, and the harness says so in a
+> column instead of in prose.** `BoxExact`'s half-extents are `[1, 1, 1]` and the subtracted sphere sits
+> on the `(0.6, 0.6, 0.6)` diagonal (`fields/mod.rs:917-923`), so `csg_difference` is
+> **permutation-symmetric in `(x, y, z)`**: its three per-axis metric weights are equal to rounding,
+> `anisotropic_grid` returns `[N, N, N]`, and the two arms are *one grid*. `axis_ratio_series` is
+> `1.000000|1.000000|1.000000|1.000000|1.000000` and `axes_pinned_series` is `0|0|0|0|0` on that row, so
+> `exponent_difference` **0.000000** is a zero that could not have been non-zero (`M-44`) — the same
+> shape as `P-70`'s C1. **The registration's falsifier is honoured rather than reinterpreted**: it reads
+> *"C3 by no exponent difference on the CSG field, which would say our sharp fields are smoother than
+> assumed"*, and the CSV records `false` while `c3_reason` states that the conclusion the falsifier
+> offers does **not** follow. What does follow is the companion, and it is the row's one surviving
+> prediction: `companion_regularity_deficit` **0.319404** with `companion_deficit_holds` `true` — the
+> median isotropic exponent over C1's three smooth fields (**0.625037**, `torus`'s) minus
+> `csg_difference`'s own **0.305633**, exactly `0.319404`, against an expected `0.33` derived from
+> `p-155.csv`'s `1.985` on `sphere` and `1.000` on `box_exact`. So the CSG field *is* less regular; a
+> per-axis global grid simply cannot see it.
+>
+> **Six vacuity controls fired, all as assertions before the first `record`, and two of them are what
+> make the three falsifications readable.** (1) **The registered one** — `am_gm_gap_spread`
+> **5.829144e9**, asserted `max > 2·min`, over `am_gm_gap` running `4.214619e-10` (`fbm_terrain`) to
+> `2.456762e0` (`noise_cavity`) at the registered `am_gm_gap_tau` **0.571429**; had it been flat, C2's
+> correlation would have been a correlation against a constant. The spread is honest but *lopsided*, and
+> the reason is on the row: `fbm_terrain`'s `at_floor_fraction` is **1.000000**, so its `1e-10` gap is
+> `H_FLOOR` and not a curvature — `am_gm_gap_tau2` **8.170066e-9** and `am_gm_gap_tau_inf`
+> **3.421812e-8** are the same statement at two other exponents. (2) **The anisotropic arm must be
+> anisotropic somewhere**: `axis_ratio_max` **47.400000** on `fbm_terrain` and **30.238095** on
+> `thin_plate`, against a floor of `1.5`; five of eight fields read exactly **1.000000**, which is why
+> C2 and C3 read the way they do rather than a defect in either. (3) **C1's population must contain a
+> field whose arms differ** — `c1_smooth` true on three, `arms_identical` false on `torus`,
+> `thin_plate`, `fbm_terrain`, so C1's `false` is carried by a field that was free to hold. (4) **The
+> ladder must move the instrument by ≥ 1.2× on both arms** for every field a clause reads:
+> `ladder_span_isotropic` **16.371182 / 12.872040 / 5.601517** on the smooth three and **3.998839** on
+> `csg_difference`, `ladder_span_anisotropic` **16.371182 / 9.117663 / 26.467312 / 3.998839**. (5) Every
+> rung of every arm produced a mesh, a seed and a positive error — `triangles_series_*`,
+> `seed_coverage_series_*` and `error_max_series_*` are non-zero at all forty rung-arm pairs. (6) The
+> band was non-empty everywhere: `band_points_series` runs `279|533|935|1925|3399` on `thin_plate` up to
+> `1414|3103|5449|12259|21655` on `gyroid`.
+>
+> Beside them, and a correctness gate rather than a vacuity control: **`reproduction_checks` 160 with
+> `reproduction_mismatches` 0**. Every triangle count, every `grid_anisotropic` string and every
+> recorded `hausdorff_*` in `docs/experiments/p-146.csv` was re-derived here and compared exactly, so
+> this row is measuring `P-146`'s arm and not a lookalike. (The harness header says *"120 exact
+> comparisons"*; its own table sums to 160 and the CSV agrees with the table.)
+
+**C2's `c2_improved_fields` 3 is really 1, and the CSV lets a reader prove it.** `c2_row_improves` is
+`ratio < 1.0` and reads `true` on `gyroid`, `fbm_terrain` and `noise_cavity` — but `gyroid` and
+`noise_cavity` print `constant_ratio` **1.000000** and carry `arms_identical` `true`, with
+`error_max_series_anisotropic` identical to `error_max_series_isotropic` at all five rungs and
+`fitted_constant_isotropic` = `fitted_constant_anisotropic` = **2.045145e-1** and **2.477978e-1**
+respectively. Their ratios are below one by less than the column's printed precision, i.e. by at most
+`5e-7` relative, on two fields whose two arms are *the same mesh*. **So exactly one field of eight
+improved its constant — `fbm_terrain` at 0.114405 — and it is the same field that broke C1.** That is
+the precise inverse of the registration's claim: the only real constant improvement in the file is
+carried by a field whose *exponent* moved, so it is a change of rate wearing a constant's clothes. Of
+the two fields whose arms genuinely differ and whose exponents did not resolve, both got *worse*:
+`torus` **1.125249** and `thin_plate` **3.131972**.
+
+**The theory the registration cites is not what failed; its `d` is.** `sphere`'s
+`fitted_exponent_isotropic` **0.692081** with `fit_r2_isotropic` **0.999747** reproduces Bonito–Canuto–
+Nochetto–Veeser's `N^(−2/3)` = `0.666667` to within **0.025** on the smoothest field in the roster, and
+the quoted order is the one uniform refinement actually delivers here. What C1 assumes on top of that is
+`d = 3` for every field, and `fbm_terrain`'s Hessian has an **exact** null direction, not a small one:
+`f = p_y − amp·fbm(x, 0, z)` is affine in `y`, `flat_direction_fraction` reads **1.000000** and
+`axes_pinned_series` reads `1|1|1|1|1`, so P-146's grid spends the whole budget laterally —
+`grid_series_anisotropic` runs `31x5x31 → 237x5x233`. With one direction degenerate the rate is
+`N^(−2/2)`, and **0.791370** is that rate arriving, not the theory breaking. The exponent gain the
+falsifier called *"the more interesting result"* is therefore real and is a statement about the field's
+dimension.
+
+**Against a triangle count the answer is different, and that is the second half rather than a
+contradiction.** `exponent_vs_triangles_isotropic` is **0.974539** on `sphere` — the `E ∝ T^(−1)` a
+surface mesh gives where `dof` gives `2/3` — and `exponent_difference_vs_triangles` is **0.216259** on
+`fbm_terrain`, **0.079374** on `thin_plate`, **0.053245** on `torus` and **0.000000** on the five
+identical-arm fields. A reader comparing this row to a paper must check which `N` the paper meant;
+both are in the file.
+
+**What this means for Group D, on top of `P-146`.** `P-146` measured the aggregate and its C1 and C3
+were both falsified — no triangle win at matched Hausdorff, `metric_share` never once under 15%. This
+row was the decomposition that would have said *which half* of `E = C·N^(−α)` anisotropy is allowed to
+move, and the answer is **neither, through this construction**. The exponent moved only where the
+field's own dimension dropped, and the constant moved only on that same field. Both failures share one
+cause and it is not the theory: **a per-axis global grid has three degrees of freedom, and five of the
+eight reference fields annihilate all three.** Group D's mechanism has not been refuted; it has been
+shown to be unreachable by any bench that spends anisotropy globally, which is the only thing the
+shipped `extract` — one **scalar** `cell_size` at `marching_cubes/mod.rs:193` and six other sites — can
+express. `P-149` measures the same wall from the other side and `P-150` guards how the numbers may be
+quoted.
+
+**SHARE, recomputed.** **Zero, and registered as zero** — *"none — this is `M-12`'s law, decomposed."*
+Nothing in `crates/isomesh/src/` was touched by this ticket, no golden hash moved, and the anisotropic
+arm is a bench-local sampling grid the shipped extractor cannot ask for. `wall_seconds` is the only
+machine-dependent column in the file and no clause reads it, so `M-280`'s 1.45× governor swing has
+nothing to move: every verdict here is a comparison of two least-squares slopes over exact integer
+`dof` ladders. The number that would have justified a landing is a `constant_ratio` below one on a
+field whose arms genuinely differ, and there is exactly one — `fbm_terrain`, whose grid is
+`237x5x233` and is a heightfield special case rather than a general mesh.
+
+**What a consumer should do differently: nothing, and one thing they must not do.** No shipped path
+changed. But **never read a `constant_ratio`, a `saving` or a `ratio` from a row whose
+`arms_identical` is `true`** — five of the eight rows in this file are that, and on them every
+comparison column is measuring the extractor's determinism. **Would be shown wrong by:** a per-cell
+anisotropic extractor (a source change, and Phase 28's business) reproducing `Δexponent < 0.1` with a
+`constant_ratio` below one on `sphere` and `torus`; a rank correlation above 0.7 between
+`constant_ratio` and any gap definition over a population in which more than two fields' arms differ;
+or `companion_regularity_deficit` falling near zero at a finer ladder, which would say
+`csg_difference`'s creases cost nothing in the rate after all.
+
+### 🔬 M-461 — C1 HELD with component-wise determinant swell reaching **6.841331e9** against log-Euclidean's **1.771547e-7** at a 5% bar, C2 HELD on **48 of 48** geometries so three transcendentals cost `M-32` exactly nothing, and `c3_holds` split **84 true / 12 false** — the twelve are `gyroid` under *both* schemes at *both* cell sizes, and the CSV names the cause: its seam correspondence is not injective (`seam_vertices_a` **295**, `seam_vertices_b` **294**, `seam_pairs` **295**), which is `M-48` again and not the interpolant; `hashes_moved` **0** on all 96 rows against a live golden control (P-148, R-148)
+
+**M.** `cargo bench --bench experiment_p148`, `docs/experiments/p-148.csv`, **96 rows** across **72
+columns** — four `#` comment lines plus one column header plus 96 data rows, 101 lines, counted from the
+file; 12 of the 72 columns are `P-148`'s registered `records`. The fixture, also counted from the file:
+**8 fields × 3 seam axes (`x|y|z`, 32 rows each) × 2 cell sizes × 2 schemes** — `interpolation_scheme`
+`componentwise` on 48 and `log_euclidean` on 48, `cell_size_power_of_two` `true` on 48 and `false` on 48,
+`p_norm` **2.0** on every row. `cell_size` takes six values, three genuine powers of two
+(`5.000000000000e-1`, `2.500000000000e-1`, `1.250000000000e-1`) and three off the dyadics
+(`4.705882352941e-1` = 8/17, `2.413793103448e-1` = 7/29, `1.176470588235e-1` = 2/17), over
+`cells_per_chunk` `16|17|28|29` and `seam_cells` `1024|1156|3136|3364`. `f64` throughout, one thread, no
+PRNG. Clean tree — `# commit 923df1e on amd-ryzen-9-5900x-12-core at 2026-08-30T14:19:10Z`, no
+`(WORKING TREE DIRTY)`. **The three verdicts have three different granularities and a reader who does
+not know that will misread the file**: `c1_holds` is **global** (identical on all 96), `c2_holds` is
+**per geometry** (both scheme rows of one `(field, axis, h)` carry one value), `c3_holds` is **per row**
+with `c3_row_decisive` beside it.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 component-wise interpolation swells determinants above 5% on at least one field, and log-Euclidean does not | `> 0.05` for one arm, `≤ 0.05` for the other | **HELD, by fourteen orders of margin** — `c1_componentwise_swell_max` **6.841331e9** and `c1_log_euclidean_swell_max` **1.771547e-7** on all 96 rows. The worst component-wise row is `csg_difference`/`x`/`h = 0.125` at `determinant_swell_max` **6.841331e9** with `log_determinant_swell_max` **2.264625e1** — the interpolated determinant is 6.8 **billion** times the determinant-monotone path's; the worst log-Euclidean row is `csg_difference`/`x`/`h = 2/17` at **1.771547e-7**, five orders under the bar. `c1_row_swell_above_bar` is `true` on **42 of 48** component-wise rows and `false` on **48 of 48** log-Euclidean rows |
+| C2 log-Euclidean interpolation preserves `M-32`'s power-of-two bit-exactness, or it does not, and which is stated as the result | either, stated | **HELD, and the answer is "it preserves it"** — `c2_holds` and `c2_global_holds` `true` on all 96 rows, i.e. **48 of 48** geometries. `bit_exact_seam` is `true` on **all 48** power-of-two rows and `false` on **44 of 48** non-power-of-two rows, *identically under both schemes on every geometry* — `bit_exact_pairs` equals `seam_cells` on the whole power-of-two arm. So `Sym3::log`, twelve Jacobi sweeps and `Sym3::exp` add nothing to `M-32`'s loss and take nothing from its guarantee |
+| C3 the seam remains closed under both schemes | `seam_open_edges` no higher than the undisplaced baseline | **84 of 96 rows `true`; 12 `false`.** `c3_row_decisive` is `true` on all 96 and `seam_open_edges_baseline` is **0** on all 96. The twelve are `gyroid` on all three axes at both cell sizes under both schemes: `seam_open_edges` **3** at `h = 0.25` and **11** at `h = 7/29`, with `boundary_edges_total` **5** and **16/17**. `c3_global_holds` is therefore `false` on every row. Every other field closed: `seam_open_edges` **0** on 84 rows |
+
+> **The twelve `false` rows are not a failure of either interpolant, and the CSV proves it rather than
+> arguing it.** At `h = 0.25` on `gyroid`, `bit_exact_pairs` is **3136 of 3136** `seam_cells` — chunk A's
+> interpolant and chunk B's agree **bit for bit at every dyadic rung on every seam cell**, and
+> `cheap_direction` is a pure function of those six `f64`s, so the two chunks displace along an
+> identical direction and no direction disagreement is available. Yet
+> `seam_worst_displacement_gap` reads **4.280446e-3** against `weld_epsilon` **2.500000e-5**, i.e.
+> `gap_over_weld_epsilon` **1.712178e2**, and `DISPLACE_CELLS · h` is `0.01 × 0.25` = `2.5e-3`, so the
+> gap is exactly **1.712178 × one displacement step** — `gap_over_weld_epsilon / 100` to the last digit,
+> because the step is a hundred epsilons by construction. A vertex displaced *once* cannot land 1.7 steps
+> from its partner when both use the same direction. What can is a vertex displaced **twice**, and the
+> file says which one: `seam_vertices_a` **295**, `seam_vertices_b` **294**, `seam_pairs` **295** — every
+> one of A's seam vertices found a partner, but B has one fewer, so **one of B's seam vertices is claimed
+> by two of A's**, and the census writes `b.positions[vb]` once per pair. `seam_vertices_moved` is
+> **2 of 295** on exactly those rows, which is the two pairs sharing that partner. The non-injectivity is
+> also what wraps a column: `seam_vertices_unmatched` reads **18,446,744,073,709,551,615** = `2^64 − 1`
+> on precisely these twelve rows, a `u64` subtraction of `seam_b − seam_pairs` = `294 − 295`. So the
+> honest reading is **`c3_holds`'s twelve zeros locate a defect in C3's own instrument, not in the
+> metric, the interpolant or the extractor** — and the mechanism is `M-48`'s degenerate crossing, which
+> the harness had already measured and gated for (see below) but only on the B side of the match.
+>
+> **Three measured threshold stories, and all three are load-bearing.** (1) **`SELF_SWELL_TOLERANCE`
+> moved `1e-9` → `1e-5` because the old bound was unreachable by construction.** The first draft's
+> number was justified as *"six orders above the `f64` round-off of a well-conditioned eigenproblem"* —
+> but `common::metric` floors Hessian eigenvalues at `H_FLOOR = 1e-9` precisely so a flat direction stays
+> representable, which puts the metric's condition number at about `1e9` on exactly the fields this row
+> cares about, and a `log`/`exp` round trip on a matrix of condition number κ loses about `κ·ε` = `1e9 ×
+> 2.2e-16` ≈ **`2e-7`**. `1e-9` was therefore gating on the eigensolver's accuracy rather than on the
+> formula. Measured in the committed run: `swell_self_max` **5.039778e-7** on `box_exact`/`x` and
+> `box_exact`/`y` at `h = 2/17` under `log_euclidean` — that bound to within a factor of three.
+> Component-wise reaches the low `1e-14`s (`0.5x + 0.5x` is `x` in IEEE). `1e-5` sits two orders above
+> the measured round-off and **four orders below `C1_BAR = 0.05`**, so the control can still fail without
+> ever touching the clause, which is the property that made `1e-9` attractive and is preserved.
+> (2) **A key collision is a coincident vertex pair, not a broken key.** The transverse match quantum is
+> `MATCH_QUANTUM_CELLS = 1e-6` cells (`M-377`'s choice), and every seam vertex lies *in* the seam plane,
+> so two sharing a transverse key are one geometric point reached from two different grid edges — `M-48`
+> exactly, the same mechanism `P-145`'s Euler cross-check hit. Measured: **exactly 1** on `gyroid` at
+> `h = 0.25` and 0 elsewhere, against a `KEY_COLLISION_FRACTION` gate of `0.05`, so the correspondence is
+> a bijection on **points** and a large collision share — which would mean the quantum is too coarse —
+> still aborts the run. (3) **C3's control needs the two chunks' landings to separate by more than the
+> weld epsilon, and on two fields it cannot.** `cheap_direction` returns the metric's **first**
+> eigenvector, and a heightfield's smallest eigendirection is `y` on *both* sides of any seam — different
+> metrics, identical chosen direction. So `fbm_terrain` moves its seam vertices and still shows a zero
+> gap: at `h = 0.5` its `x` seam carries `seam_pairs` **47** with `gap_over_weld_epsilon` **0.000000e0**
+> and `control_seam_opens` `false`, and `box_exact` does not move at all. Both are named field
+> properties, both are recorded: `control_seam_opens` is `true` on **64 rows** (`sphere`, `torus`,
+> `csg_difference`, `gyroid`, `noise_cavity`, and `thin_plate`'s `y` axis) with
+> `control_seam_open_edges` running **14** to **625**, and `false` on **32** (`box_exact` 12,
+> `fbm_terrain` 12, `thin_plate`'s `x` and `z` 8). `P-70`'s precedent applies: unreachable on part of the
+> population is recorded, not aborted.
+>
+> **The registered vacuity control fired on 88 rows and was unreachable on 8, and the eight are the same
+> eight that produce C2's only surprise.** `metric_distance_max` is the affine-invariant
+> `‖log A − log B‖_F` over the seam face and runs to **3.086325e1**, with `pairs_with_distinct_metrics`
+> reaching **3364**; it reads **0** on `thin_plate`'s `x` and `z` seams (`metric_distance_max`
+> **0.000000e0**, `at_floor_fraction` **1.000000**), because a slab's metric is the same on both sides of
+> a seam cut through its plane. Those are exactly the **4 non-power-of-two rows on which
+> `bit_exact_seam` reads `true`** — interpolating between two identical metrics is the same computation
+> on the same bits at any `h`, so bit-exactness there is vacuous and the vacuity column sits beside it to
+> say so. **They are also 4 of the 6 component-wise rows that stay under `C1_BAR`, and the other 2 are
+> the same story to twelve decimal places** — the six are `thin_plate`/`x` and `thin_plate`/`z` at both
+> spacings (`determinant_swell_max` **3.552714e-14** and **7.815970e-14**, `metric_distance_max` exactly
+> **0.000000e0**) and `fbm_terrain`/`y` at both (**5.151435e-14**, **7.105427e-14**, with
+> `metric_distance_max` **3.763863e-12** and **1.060250e-12** against **3.982857e0**–**5.376344e0** on
+> that same field's `x` and `z` seams). So **every geometry where the naive scheme fails to swell is a
+> geometry whose two metrics are equal, or equal to a part in `1e12`** — the swell is not optional where
+> the endpoints genuinely differ. **Four more controls**: `seam_ghost_ulps` asserted `> 0` on the
+> non-power-of-two arm and `== 0`
+> on the other, measured **30** on 42 rows and **7** on 6 against **0** on all 48 (with `seam_own_ulps`
+> **2**/**7**/**0**) — this is `M-32`'s own fixture trap, *"the non-power-of-two seam test first used
+> `h = 4/33` … it passed while proving nothing"*, and the six spacings were searched rather than guessed;
+> `seam_plane_ulps` is **0 on all 96 rows**, independently reproducing `R-004`'s finding that the seam
+> plane is the wrong unit of analysis — the plane coordinate agrees bit-for-bit even on the geometries
+> that disagree by 30 ulp about the cell *centres* where the metric is sampled; `min_metric_eigenvalue`
+> is asserted positive and runs **1.066648e-8** to **2.592641e-3**, so `ln det` is a number on every
+> interpolant; and `weight_reversal_exact` is asserted **`false`**, so the non-dyadic ladder really does
+> perturb the weight and `bit_exact_seam_nondyadic` is not a second copy of `bit_exact_seam`.
+
+**C2's second half is new, is not in `M-32`, and a consumer of a metric field has to meet it.**
+`bit_exact_seam` is measured on a **dyadic** ladder `t = k/8`, `dyadic_ladder_steps` **8**, so the weight
+reversal `1 − (1 − t)` returns `t` exactly and the column measures the cell size and nothing else.
+Run beside it on `nondyadic_ladder_steps` **10**, `bit_exact_seam_nondyadic` is **`false` on all 96
+rows — including at `h = 0.125`**, where `M-32` grants bit-exactness. The mechanism is arithmetic and not
+transcendental: `1 − (1 − 0.1)` is `0.09999999999999998`. **So "seams are bit-exact at a power-of-two
+cell size" is necessary and not sufficient once a per-vertex weight enters: the weight must be dyadic
+too.** That is a condition `M-32` does not state.
+
+**`hashes_moved` is 0 on all 96 rows, and two controls stop that zero from being free.** It is measured
+on the fixture that defines the phrase — the **24** committed `marching_cubes` rows of
+`crates/isomesh/golden_hashes.json`, `golden_rows` **24** on every row — by running the shipped
+extractor on each fixture's own grid, running the metric-interpolation pipeline over that grid's
+mid-plane seam under the row's scheme, then re-extracting and re-hashing: `golden_interpolations`
+**207,872** interpolations run in total. `golden_fixture_matches_shipped` is **`true` on 96 of 96**, so
+the baseline is the live extractor and not a stale file, and `golden_control_hash_moved` is **`true` on
+96 of 96**, so displacing one vertex by the metric's own step *does* move `mesh_hash`. The zero is
+predicted by construction — nothing here touches `crates/isomesh/src/**` and a metric field is on no
+shipped extraction path — and it is measured anyway.
+
+**The intrinsic scheme costs 249×, and the falsifier asked for that number.** C1's falsifier reads
+*"C1 by no swell, which would mean the intrinsic scheme is unnecessary here and saves the transcendental
+cost"*; the swell is real, so the cost is what a caller trades against it.
+`transcendental_cost_ratio` is **249.382581** on all 96 rows, over `timing_repeats` **5** with a median
+headline: `interp_ns_per_pair` **3.027 ns** component-wise (min **3.008**, max **3.359**) against
+**754.967 ns** log-Euclidean (min **754.889**, max **761.061**). Per-fixture, `metric_ms` runs
+**1.095259**–**20.163785** and `interp_ms` **0.971398**–**178.904454**, summing to **649.45 ms** and
+**2,526.93 ms** across the file. **No clause reads a clock** — the ratio is reported because the
+falsifier names it, not because a verdict rests on it, so `M-280`'s 1.45× governor swing cannot reach
+any of the three verdicts. Context from `p-146.csv`, recomputed rather than remembered: `metric_share`
+there runs **0.332862** to **8.747515** with `c3_holds` `false` on all 40 rows, so the stage C1 moves
+already costs between a third of extraction and nine times it, and 249× on the interpolation inside it
+is not a rounding error.
+
+**What a consumer should do differently.** **Interpolate metrics log-Euclidean, and do not treat
+`Sym3::det` as the way to see the difference.** Component-wise interpolation of two SPD matrices whose
+anisotropies point in different directions inflates `det` by up to **6.841331e9** on this roster — and
+`benches/common/metric.rs:542-548` states what that means and named this row as its referee:
+*"interpolating between two metrics whose anisotropies point in different directions swells `det`, which
+in mesh terms means the seam quietly asks for coarser elements than either side did."* The
+intrinsic scheme's worst deviation from the determinant-monotone path is **1.771547e-7**, which is
+round-off. The cost is 249× per interpolation and the metric build already dominates extraction, so the
+scheme is the cheap part of an expensive stage. Two caveats travel with it: **the seam is bit-exact only
+when the cell size is a power of two *and* the interpolation weight is dyadic**, and **a metric-driven
+displacement must match seam vertices as a bijection on points** or `M-48`'s coincident crossings will
+open a seam that neither scheme opened — `gyroid`'s 12 rows here are that, at 3 and 11 edges.
+
+**SHARE, recomputed.** The registration's SHARE is *"C1 moves the metric-construction stage, whose share
+`P-146` C3 reports"*, and that share is **0.332862 to 8.747515 of extraction, falsified against its own
+15% bar on all 40 of `p-146.csv`'s rows** — quoted from the file, not from memory. Nothing landed:
+`hashes_moved` **0**, no golden hash moved, and `crates/isomesh/src/**` was not touched. **Would be shown
+wrong by:** a log-Euclidean `determinant_swell_max` above `0.05` on any field, which would retire the
+scheme's monotonicity in practice; a power-of-two geometry reading `bit_exact_seam` `false` under
+log-Euclidean while `componentwise` reads `true`, which would put the transcendentals on `M-32`'s wrong
+side; or a `seam_open_edges` above baseline on a field whose seam correspondence *is* injective and
+whose `bit_exact_pairs` equals `seam_cells`, which is the reading the twelve `gyroid` rows do **not**
+supply.
+
+### 💥 ✗109 / M-462 — C1 FALSIFIED where it could be read at all: `torus`'s triangle saving is **perfectly anti-monotone** in the curvature ratio, Spearman **−1.000000** at 65³, and C2 FALSIFIED on `fbm_terrain`, whose `umbilic` bin — the control that was supposed to show *no* saving — costs **−6.037543**; **70 of 112 rows read `unmeasurable:arms_identical`** because five of eight fields make P-146's two arms one grid, and the only part of the mechanism that held is the closed form: `am_gm_gap_measured` agrees with `2√r/(1+r)` on **97 of 112** rows (P-149, R-149)
+
+**M.** `cargo bench --bench experiment_p149`, `docs/experiments/p-149.csv`, **112 rows** across **43
+columns** — four `#` comment lines plus one column header plus 112 data rows, 117 lines, counted from the
+file; 10 of the 43 columns are `P-149`'s registered `records`. The shape, also from the file: **8 fields
+× 2 resolutions (`33`, `65`, 56 rows each) × 7 `feature_class` bins (16 rows each)**, one row per
+(field, resolution, bin). `grid_isotropic` is `33x33x33` on 56 rows and `65x65x65` on 56;
+`grid_anisotropic` is the same on **70** of them and graded on 42 — `31x35x31`/`63x69x63` on `torus`,
+`13x191x13`/`21x635x21` on `thin_plate`, `87x5x83`/`237x5x233` on `fbm_terrain`. `f64` throughout, one
+thread, no PRNG. Clean tree — `# commit c909961 on amd-ryzen-9-5900x-12-core at 2026-08-30T14:30:08Z`,
+no `(WORKING TREE DIRTY)`. **Both verdict columns are per group** (one `(field, resolution)`), written
+identically on that group's seven bin rows, with `c1_global_holds` and `c2_global_holds` **`false` on all
+112**.
+
+**The two verdict columns are four-valued, and the split *is* the result.** Averaging either into a word
+would destroy the finding, so here is the whole distribution, counted from the file:
+
+| column | value | rows | which groups |
+|---|---|---|---|
+| `c1_holds` | `unmeasurable:arms_identical` | **70** | `sphere`, `box_exact`, `csg_difference`, `gyroid`, `noise_cavity` at both rungs |
+| | `false` | **14** | `torus` at both rungs |
+| | `true` | **14** | `fbm_terrain` at both rungs |
+| | `unmeasurable:bins=2<3` | **14** | `thin_plate` at both rungs |
+| `c2_holds` | `unmeasurable:arms_identical` | **70** | the same five fields |
+| | `unmeasurable:no_umbilic_bin` | **28** | `torus`, `thin_plate` |
+| | `false` | **14** | `fbm_terrain` |
+| | `true` | **0** | — |
+
+| clause | registered | measured |
+|---|---|---|
+| C1 binning surface cells by principal-curvature ratio, the anisotropic triangle saving is monotone in the ratio, correlation above 0.7 | monotone, ρ > 0.7 | **FALSIFIED on `torus`, and the one `true` is worse news than the `false`.** `torus` reads `saving_vs_curvature_ratio_correlation` **−0.400000** at 33³ and **−1.000000** at 65³ — at the finer rung the relationship is *perfectly reversed*: saving **1.000000** (`near_umbilic`, 16 cells, 24 → 0 triangles), **−0.021203** (`mild_anisotropy`, 2016 cells), **−0.128891** (`strong_anisotropy`, 2064), **−0.357143** (`flat_direction`, 112). `fbm_terrain` reads **1.000000** at both rungs and so scores `c1_holds` `true` — while **every one of its five ordered bins has a negative saving**: at 65³, `−6.037543 / −5.996029 / −5.896340 / −5.555359 / −5.315789`. The correlation is monotone because the anisotropic arm is uniformly about **7× more expensive** and slightly less so where the ratio is high. `c1_groups_holding` **2** of `c1_groups_measurable` **4** on all 112 rows |
+| C2 cells with ratio near 1 — spherical caps — show **no** saving, the control that says the effect is anisotropy rather than general refinement | \|saving\| small on the `umbilic` bin | **FALSIFIED on the one group where it was measurable, and by a factor of seven.** `c2_umbilic_saving` reads **0.000000** on the 70 identical-arm rows, `undefined` on the 28 rows with no populated `umbilic` bin, and **−3.322148** (`fbm_terrain` at 33³) and **−6.037543** (at 65³). At 65³ that bin holds **580 cells** at `principal_curvature_ratio` **1.134998** with `elliptic_fraction` **0.177586**, and the anisotropic arm spends **8248** triangles there against the isotropic arm's **1172**. The falsifier reads *"C2 by a saving on isotropic cells, same conclusion and more damning"* — this is a **cost** on isotropic cells, which is the same conclusion again |
+
+> **The 70 identical-arm rows are the phase's central Group D fact and they are recorded as
+> `unmeasurable`, not as `false`.** `axis_ratio` reads exactly **1.000000** on 70 of 112 rows with
+> `budget_ratio` exactly **1.000000** and `axes_pinned` **0** — `sphere`, `box_exact`,
+> `csg_difference`, `gyroid` and `noise_cavity` receive a metric-driven grid *identical* to the
+> isotropic one at both rungs, so every `saving` in those bins is `1 − T/T` and could not have been
+> anything else (`M-44`). Three of those five even carry a computed correlation of **0.000000** over
+> `correlation_bins` **5** — a Spearman through five tied zeros — which is exactly why the verdict
+> column says `unmeasurable:arms_identical` rather than reporting a falsification fitted through a
+> constant. The graded fields are `torus` (`axis_ratio` **1.129032** at 33³, **1.095238** at 65³),
+> `thin_plate` (**14.692308**, **30.238095**) and `fbm_terrain` (**17.400000**, **47.400000**,
+> `axes_pinned` **1** — `n_y` held at `MIN_SAMPLES`).
+>
+> **`thin_plate`'s `unmeasurable:bins=2<3` is unreachable with its arithmetic, not a near miss.**
+> `correlation_bins` is **2** on both its rungs: at 65³ only `near_umbilic` (8 cells, ratio 1.324449)
+> and `flat_direction` (240 cells, ratio pegged at the reported cap **1000000.000000**) are populated
+> among the five ordered classes, with `umbilic`, `mild_anisotropy` and `strong_anisotropy` all at
+> `cells` **0** and `saving` `undefined:no_isotropic_triangles`. A slab is a box: it has two curvature
+> regimes — the flat faces and the rim creases — and nothing in between, so a monotonicity over three
+> or more bins is arithmetically undefined on it. Its two populated bins both show **positive** savings
+> (`planar` **0.886667** over 1800 cells, `flat_direction` **0.733333** over 240) bought with error:
+> `hausdorff_delta` **+0.083310516** and **+0.072732432**, positive, so the triangles came out of the
+> accuracy and not out of the anisotropy. `torus` and `thin_plate` both read
+> `unmeasurable:no_umbilic_bin` on C2 because their `umbilic` bin is empty — `cells` **0** — so C2's
+> control has no population on either.
+>
+> **All five registered vacuity controls fired, and the registered one fired across the sweep rather
+> than per group.** (1) **Every ordered curvature-ratio bin non-empty on at least one field**:
+> `cells_all_fields` is **30,964** (`umbilic`), **13,647** (`near_umbilic`), **19,746**
+> (`mild_anisotropy`), **17,805** (`strong_anisotropy`) and **3,467** (`flat_direction`), beside
+> **14,303** `planar` and **5,763** `unclassified` — 105,695 binned cells, 19,945 at 33³ and 85,750 at
+> 65³, so the monotonicity is not fitted through gaps *in the population*, only through gaps in the
+> per-field grids. (2) **The anisotropic arm is anisotropic somewhere**: `axis_ratio` **47.400000** on
+> `fbm_terrain` against a floor of 1.5. (3) **The two arms are on one budget**: `budget_ratio` runs
+> **0.898211**–**1.019700** against a `[0.25, 4]` window, so no "saving" is a smaller sample count in a
+> metric's clothes. (4) **At least one group reaches three populated ordered bins**: `correlation_bins`
+> is **5** on ten groups, **4** on `torus`, **2** on `box_exact` and `thin_plate`, **1** on `sphere`.
+> (5) **The band is non-empty on every group**, and the surface→mesh probes converged:
+> `probe_residual_max` runs **0.000000e0** to **5.625000e-2** over the 56 rows where the projection is a
+> projection.
+
+**The mechanism the row was built to find *is* in the data — it is just not connected to the saving.**
+The registration's whole claim is that the AM–GM gap collapses toward zero exactly where one principal
+curvature vanishes, and in two surface dimensions that gap is `2√r/(1 + r)` and a function of the ratio
+alone. Both halves are recorded, and **they agree on 97 of 112 rows exactly as printed**:
+`am_gm_gap_measured` (the median per-cell `√\|κ₀κ₁\|/((\|κ₀\|+\|κ₁\|)/2)` inside the bin) against
+`am_gm_gap_predicted` (`2√R/(1+R)` at the bin's median ratio `R`). On `fbm_terrain` at 33³ the measured
+gap falls **0.997759 → 0.972287 → 0.857911 → 0.590343 → 0.205980** across the five ordered bins, against
+the closed form's `1.000000 / 0.993808 / 0.942809 / 0.745356 / 0.277297` at the bin edges — strictly
+decreasing, and the collapse is real. **So the physics is confirmed and the saving is not a function of
+it**: the gap knows the curvature ratio per cell, and a per-axis *global* grid has three numbers with
+which to answer. Of the 15 rows where the two disagree, seven are the `flat_direction` bin where the
+ratio is pegged at the cap `1e6` and the measured gap reads exactly **0.000000** against a predicted
+**0.002000**, and the rest differ in the third or fourth digit (`torus`/65/`near_umbilic`
+**0.946860** vs **0.946690**; the largest is `csg_difference`/33/`mild_anisotropy`, **0.862363** vs
+**0.776258**).
+
+**Two orientation and definition facts a reader needs before quoting any number here.** First,
+`principal_curvature_ratio` is the **reciprocal** of `common::metric`'s own convention: the module
+returns curvatures ascending by magnitude and documents `P-149`'s ratio as `|κ₀|/|κ₁| ∈ (0, 1]`
+(`benches/common/metric.rs:666`), while this harness records `|κ₁|/|κ₀| ≥ 1` because the registration
+pairs "monotone" with "above 0.7" and only that orientation lets a *confirmed* mechanism read positive.
+Both are on every row — `curvature_ratio_reciprocal` carries the module's, and
+`saving_vs_reciprocal_correlation` its correlation, which is the sign-flipped twin (`torus` at 65³:
+**−1.000000** registered, **+1.000000** reciprocal). Second, **the ratio is blind to sign and `gyroid`
+exploits that**: a minimal surface has `κ₁ = −κ₀` exactly, so a gyroid saddle has `r = 1` and lands in
+`umbilic` beside a sphere cap. `elliptic_fraction` is on every row for exactly this — **1** for a cap,
+**0** for a saddle — and `fbm_terrain`'s `umbilic` bin at 65³ reads **0.177586**, so C2's control
+population there is mostly saddles rather than caps.
+
+**What this means for Group D, read together with `P-146` and `P-147`.** `P-146` measured the aggregate
+and got no win (`c1_winners` 0 over `c1_population` 4). `P-147` decomposed the error law and found
+neither the exponent nor the constant moved for the reason the theory names. This row was the third
+attempt — measure the *mechanism* per feature class — and it lands on the same wall from a third
+direction: **the AM–GM gap is a per-cell quantity, and P-146's construction spends anisotropy per
+axis over the whole domain.** `pooled_correlation` over the whole sweep is **0.187131** at 33³ and
+**−0.060731** at 65³, i.e. it degrades toward zero as the grids get finer, which is the opposite of a
+mechanism sharpening. The three failures are one failure with three witnesses, and it is a failure of
+the *instrument* the shipped `extract` permits — one **scalar** `cell_size`
+(`marching_cubes/mod.rs:193`) — not of Loseille–Alauzet. The registered clause about monotonicity is
+retired **for per-axis global grids only**; nothing here narrows the per-cell claim, which needs a
+source change to ask for.
+
+**SHARE, recomputed.** The registration's SHARE is *"C1 decomposes `P-146`'s C1 saving by feature class;
+the bin populations are reported so each saving has a denominator."* Discharged twice: what was
+decomposed is a **zero** (`p-146.csv`'s `c1_winners` is 0 on all 40 rows), and this row's answer is that
+the zero is a *constant*, not a cancellation — on five of eight fields it is zero cell by cell because
+the two arms are one grid. Every row carries `cells` as its own denominator and `cells_all_fields` as the
+class's sweep-wide one. **No source change landed**, no golden hash moved, no clause reads a clock —
+there is no wall-clock column in the file at all (`R-151` owns the cost question).
+
+**What a consumer should do differently: nothing changes, and one number must stop being quoted.** No
+shipped path moved. But **`fbm_terrain`'s `c1_holds` `true` is not evidence for anisotropic
+refinement** and must never be cited as a Group D win: it is a monotone correlation over five bins each
+of which is a **6× triangle cost**, and the correct one-line summary of this row is that on the two
+fields whose grids actually graded, the anisotropic arm was either anti-monotone (`torus`) or uniformly
+more expensive (`fbm_terrain`). **Would be shown wrong by:** a per-cell anisotropic extractor
+reproducing a positive `saving` in the `strong_anisotropy` and `flat_direction` bins with
+`hausdorff_delta ≤ 0`, and a near-zero `saving` in `umbilic` on the same field and rung — which is C1
+and C2 together, and is the measurement this construction cannot make.
+
+### 🧊 M-463 — the registered null came back null and then inverted: Cao's `L¹` anomaly did **not** reproduce — `anomaly_reproduced` **false** on all 384 rows, `violations_in_l1` **0** of `violations_total` **72** — because `M_L1` wins **all 96 groups in every norm**, so `norm_dependent_winner_rungs` is **0** and `L¹` is the one column where the theory holds rather than the one place it fails; `c1_holds` true on 96 rows and false on 288, C2 HELD on 384 with every violation classified and the continuous model agreeing with Cao on all 384 (P-150, R-150)
+
+**M.** `cargo bench --bench experiment_p150`, `docs/experiments/p-150.csv`, **384 rows** across **53
+columns** — four `#` comment lines plus one column header plus 384 data rows, 389 lines, counted from the
+file; 9 of the 53 columns are `P-150`'s registered `records`. The shape, also from the file: **8 fields ×
+3 resolutions (`17`, `33`, `65`) × 4 norms × 4 metrics = 384**, i.e. **96 groups** of four
+(`group_key` = `field|resolution|norm`, `group_arms` **4**, `groups_total` **96**, `groups_resolved`
+**96**). `norm` and `metric` each take four values 96 times; `p_exponent` and `metric_exponent` carry
+`1|2|3|inf`. `stencil_points` **21** on every row, `domain_extent` **4.000000 / 14.000000 / 16.000000**. `f64`
+throughout, one thread, no PRNG, **no wall-clock column anywhere in the file**. Clean tree — `# commit
+5d04110 on amd-ryzen-9-5900x-12-core at 2026-08-30T14:30:15Z`, no `(WORKING TREE DIRTY)`. **The verdicts
+are group verdicts**, identical on a group's four rows; `error_measured`, `element_count`,
+`quadratic_model_ratio`, `element_extent_*`, `complexity_*` and `metric_scale` are per arm.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the metric optimised for a given norm wins in that norm, every comparison inside one norm | per group | **`c1_holds` `true` on 96 rows and `false` on 288** — true on the 24 `L^1` groups and false on the 72 others, so it holds on **24 of 96 groups**. `winner_metric` is **`M_L1` on all 384 rows**: `M_L1` is the `argmin` in `L^1`, in `L^2`, in `L^3` *and* in `L^inf`, at every field and every rung. `norm_dependent_winner_rungs` is **0** — there is not one rung anywhere in the file where the winner depends on the norm. `c1_global_holds` `false` on all 384 |
+| C2 any violation is characterisable, and the comparison is always reported within a norm and never across two | mechanism ≠ `uncharacterised`; grouping structural | **HELD on all 384 rows**, `c2_global_holds` `true`. `violation_mechanism` reads `none` on the 96 `L^1` rows, `element_exceeds_domain` on **144** and `hessian_floor` on **144**, and never `uncharacterised`. The split is not ragged: `hessian_floor` on every non-`L^1` group of `box_exact`, `csg_difference`, `thin_plate`, `fbm_terrain`; `element_exceeds_domain` on every non-`L^1` group of `sphere`, `torus`, `gyroid`, `noise_cavity`. The "within a norm" half is structural rather than promised — `group_key`'s third field is the norm and the winner is an `argmin` over that group and nothing else |
+| the registered null — does Cao's `L¹` anomaly reproduce on our fields? | either, reported | **NO, and the file is unanimous.** `anomaly_reproduced` and `anomaly_reproduced_global` **`false` on all 384 rows**; `cao_table_agreement` reads `theory_holds` on 96 rows (all 24 `L^1` groups) and `violation_outside_l1` on 288, never `l1_anomaly_reproduced`. `violations_total` **72**, `violations_outside_l1` **72**, `violations_in_l1` **0** |
+
+> **The null is not "nothing happened" — it is the sharpest possible inversion of the source's own
+> caveat, and it is worth stating in one sentence.** Cao writes that his theory holds *"in all the cases
+> except the `L^1`-error of quadratic interpolation"*, and the registration exists because building on
+> that column is the weakest available ground. On these eight fields, **`L^1` is the only column where
+> the theory holds at all**: `loss_margin_relative` is exactly **0.000000e0** on every one of the 96
+> `L^1` rows, and runs **1.296543e-1**–**3.929444e0** in `L^2`, **2.362076e-1**–**1.442354e1** in `L^3` and
+> **3.595569e-1**–**5.304897e2** in `L^inf`. The worst single reading is `gyroid` at 33³ in `L^inf`:
+> `loss_margin_relative` **5.304897e2** — the metric optimised for `L^inf` loses in `L^inf` to `M_L1` by
+> a factor of **531**, with `spread_in_norm` **531.489721** across the group's four arms. So the
+> registration's warning was correct in direction and wrong in location: the `L^1` column is not
+> uniquely weak here, it is uniquely sound, and **the honest reading of the whole file is that one
+> metric — the most strongly graded one — minimises every norm we can measure, which is C1 falsified in
+> the strongest form the registration admits.** That outcome was anticipated: the harness's header
+> declares `norm_dependent_winner_rungs` *deliberately not a vacuity control*, because a zero there is a
+> registered finding and aborting on it would suppress the result.
+>
+> **C2's `hessian_floor` and `element_exceeds_domain` are not labels; each carries its own column and
+> the split is explained by one number per field.** The four `hessian_floor` fields are exactly the four
+> whose band is mostly at `H_FLOOR`: `at_floor_fraction` **0.963303–0.997788** (`box_exact`),
+> **0.788321–0.893635** (`csg_difference`), **0.885305–0.990585** (`thin_plate`) and **1.000000** at all
+> three rungs (`fbm_terrain`, because a heightfield SDF is exactly linear in `y`). On those the
+> determinant `D` the exponent `−α_q` acts on is a floored `1e-9` and not a curvature, and
+> `det_floored_log_variance` reads **2.745404e2**–**6.326219e2** on those four — a handful of extreme
+> `ln D` values rather than a
+> distribution. The four `element_exceeds_domain` fields carry `at_floor_fraction` under **0.09** and
+> instead fail the other way: `element_extent_relative` — the unit-metric tetrahedron's longest edge
+> against the domain's own extent — reaches **1.084709e3** (`sphere`), **1.735163e3** (`torus`),
+> **1.348027e3** (`gyroid`) and **3.430490e3** (`noise_cavity`, at 17³ under `M_Linf`, an
+> `element_extent_max` of **1.372196e4** in a `domain_extent` of **4.000000**). An element three thousand times
+> the domain is not sampling the region its Hessian describes, which is mechanism (2) of the four the
+> header names. **Neither mechanism is a defect in the shipped crate**: both are properties of
+> `common::metric`'s floored Hessian as a mesh prescription, measured here for the first time.
+>
+> **Every registered vacuity control fired, and one of them closes a caveat in the source itself.**
+> (1) **The registered control — at least three norms must be *run***, counted from the groups that
+> exist and requiring `L^1`, `L^2` and `L^inf` by name: four norms ran, 24 groups each. (2) **At least
+> two metrics per group**: `group_arms` **4** on all 384 rows, asserted equal to the level count, so
+> "the optimal metric wins" is never a comparison against nothing. (3) **Every arm's error population
+> contains a positive error**: `error_measured` is non-zero on all 384 rows, running **5.961251e-5** to
+> **1.377310e4**. (4) **The budget must
+> actually be matched** — and this is where Cao's own table is beaten rather than quoted:
+> `cao_element_match_reference` carries his **0.014000** (1.4%) element-count agreement as a column, and
+> this file's `complexity_rel_error` is at most **4.434e-10** over all 384 arms, **seven orders
+> tighter** (the harness header claims six against a `1e-8` target; the run beat its own target), with `element_count` identical on a group's four rows by construction. (5) **At least one
+> group's ranking is resolved** past `MIN_SEPARATION = 1e-3`: `ranking_resolved` `true` on all 384 and
+> `groups_resolved` **96 of 96**, with `runner_up_margin_relative` never below **7.094655e-2**. So no
+> verdict in the file is arithmetic noise. (6) **The band is non-empty** on every field and rung:
+> `band_samples` **279**–**21,655**.
+
+**The continuous model agrees with Cao on all 384 rows, and that is the cleanest thing in the file.**
+The header derives, before any measurement, that `q = p` minimises the continuous error `Ê_p(M_q)`
+strictly — the derivative `d(ln Ê_p)/du = E_B[ln D] − E_A[ln D]` vanishes identically at `u = α_p` and is
+increasing, so the stationary point is the unique minimum unless `Var(ln D) = 0`. Measured:
+`continuous_winner_metric` is **`M_L1` on the 96 `L^1` rows, `M_L2` on the 96 `L^2` rows, `M_L3` on the
+96 `L^3` rows and `M_Linf` on the 96 `L^inf` rows** — it picks the matched metric on **384 of 384**,
+with `continuous_wins` `true` throughout and `det_floored_log_variance` never zero (min **1.295172**), so
+the ranking could always discriminate. `continuous_agrees` is `true` on 96 rows and `false` on 288:
+**exactly the same 96/288 split as `c1_holds`.** So the theory and the measurement agree in `L^1` and
+disagree in the other three, and the disagreement is entirely attributable to the four discrete effects
+the header enumerates — this is the separation of *theory on our data* from *measurement on our data*,
+and it is what makes C2's `characterisable` a claim with content rather than a shrug.
+
+**The premise the whole metric rests on fails outright on two of eight fields, and the column that says
+so is not read by any clause.** `quadratic_model_ratio` is the same 21-point maximum taken over the
+cell's *own quadratic model* rather than over `f`, divided by the measured error, median over the band —
+the direct test of "the cell's Hessian describes `f` over the element the metric prescribed". It reads
+**exactly `0.000000e0` on 64 rows**, and all 64 are `box_exact` or `csg_difference` at 33³ and 65³: on a
+grid-aligned polyhedron at those rungs the median band cell's quadratic model predicts **zero** error
+while the measured `e_K` is finite, because a face has no second derivative and the error the mesh makes
+there is tangential. Where it is not zero it runs **2.831506e-9** to **1.398914e0**, so the quadratic
+model over-predicts by up to 40% at one end and under-predicts by nine orders at the other.
+The registration names no clause over this column and it is recorded anyway;
+`P-147`'s C3 and `P-155`'s C2 are the two rows that already found the polyhedra outside `W^{2,p}`, and
+this is the same fact arriving through the metric's own premise.
+
+**Cao's headline `5.1×` is carried as a column so it cannot be quoted loose.** `cao_spread_reference` is
+**5.138122** on all 384 rows — his `2.79e-6 / 5.43e-7` — and it sits beside this file's own
+`spread_in_norm`, which is the max/min error *inside* one group and runs **1.301923** to **531.489721**.
+The point the registration was registered to make survives intact and is now measured: a spread of that
+size between two metrics is routine **and means nothing across two norms**, because `M_Linf` loses to
+`M_L1` by `spread_in_norm` **5.391872** even in `L^1` on `gyroid` at 65³ (**2.299342e0** against
+**4.264459e-1**) — a spread larger than Cao's headline, inside one norm — while being the
+metric optimised for a different question entirely. `element_count` is identical on a group's four rows,
+so there is no element-count caveat left to hide behind.
+
+**SHARE, recomputed.** *"None — this is a methodology guard"*, and the discharge is that **nothing here
+proposes a change to `crates/isomesh/src/`, and that is the finding.** No source file was touched, no
+golden hash moved, and no clause reads a clock — there is no nanosecond, cycle or wall-clock column in
+the file, so `M-280`'s 1.45× governor swing has nothing to swing and this row's verdicts are unmovable
+by a re-run: every one is an `argmin` over four `f64` errors computed from a fixed deterministic sweep.
+What the row produces is a constraint on how Group D may be quoted, plus the two columns that let a
+reader check it — `det_floored_log_variance` and `continuous_agrees`.
+
+**What a consumer should do differently.** Nothing in the crate changes. **The rule this row exists to
+ship is: an error comparison between two metrics is meaningless unless both are read in the same norm at
+the same complexity, and on our fields not even that is enough** — because the same metric, `M_L1`, wins
+every norm at every rung, so a reader who picks a metric by matching it to a norm will be beaten by the
+most graded one on 72 of 96 comparisons. And **never carry Cao's `L¹` caveat forward as though it had
+been confirmed here**: it was tested on eight fields at three resolutions and came back `false` 384
+times. **Would be shown wrong by:** a field on which `M_L1` is not the winner in some norm, which would
+put `norm_dependent_winner_rungs` above zero and restore the theory's discriminating power on real data;
+an `L^1` group reading `cao_table_agreement` `l1_anomaly_reproduced`, which would be Cao's own exception
+arriving on different data and a genuine contribution; or a violation returning
+`violation_mechanism` `uncharacterised`, which is the single way C2 can fall.
+
+### 💥 ✗110 / M-464 — C1 and C2 split **16 true / 48 false**: they hold on `torus` alone, where `gain_near` **0.244932** collapses to `gain_wide` **−0.010015** and so *is* the visibility mechanism C2 asks for, and fail on the other three — `sphere`'s goal arm is **10.655×** worse at matched triangles (`gain_near` **−9.655511**) because it saturates at 1,280 triangles, while `box_exact`'s and `thin_plate`'s near-camera clause is arithmetically unreachable at the `1e-4` px error floor; C3 FALSIFIED at `adjoint_share` **0.144361** against a 10% bar, and the whole criterion costs **0.371498–3.055830** of extraction (P-151, R-151)
+
+**M.** `cargo bench --bench experiment_p151`, `docs/experiments/p-151.csv`, **64 rows** across **61
+columns** — four `#` comment lines plus one column header plus 64 data rows, 69 lines, counted from the
+file; 12 of the 61 columns are `P-151`'s registered `records`. The shape, also from the file: **4 fields
+× 2 cameras × 2 criteria × 4 budget rungs**. The population is the four `FieldBound::Exact` fields —
+`sphere`, `torus`, `box_exact`, `thin_plate`, 16 rows each — because probe *generation* Newton-projects
+along `∇f` and only an exact distance field makes that a one-step projection worth asserting. `functional`
+is `rms_visible_pixel_displacement` on all 64, `pixels` `1920x1080`, `fov_y_deg` `38.0`, `c1_bar` `0.20`,
+`repeats` **7** interleaved. `blocks_occupied` **32** on 48 rows and **64** on `box_exact`'s 16;
+`level_histogram` is four counts over `LEVEL_CELLS = 2, 4, 8, 16` cells per block axis. `f64` throughout,
+one thread, no PRNG. Clean tree — `# commit 1acfb94 on amd-ryzen-9-5900x-12-core at
+2026-08-30T14:30:21Z`, no `(WORKING TREE DIRTY)`. **`c1_holds` and `c2_holds` are per field** (the
+near-camera verdict, written on all sixteen of that field's rows); **`c3_holds` is global** and `false`
+on all 64, with the per-row fact in `c3_row_holds`.
+
+**The screen-space error, quoted because two readings were available and the file uses one.**
+`screen_space_error` is a **world error weighted by projected pixel size, taken surface → mesh**:
+
+```text
+    E = sqrt( (1/|V|) · Σ_{q ∈ V} ( f_px · d(q, M) / z(q) )² ),   f_px = (1080/2)/tan(19°)
+```
+
+with `V` a fixed set of points **on the true surface**, generated once per field from a `33³` seed
+lattice by Newton projection and filtered to the visible ones (in frustum **and** front-facing), so `V`
+is identical for both arms and every budget; `d(q, M)` the exact point-to-triangle distance; `z(q)` the
+view-axis depth. `probes` reads **1442 / 1344 / 1538 / 289** and `visible_probes` **26 / 285 / 8 / 175**
+on the near camera against **686 / 657 / 769 / 257** on the wide one. **The direction is surface → mesh
+on purpose**: `|f(v)|` over mesh vertices is blind to a feature the mesh *omits*, and omission is exactly
+what a saturating criterion produces.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 at matched triangle count, a goal-oriented criterion beats camera-distance LOD on screen-space error by at least 20% | `gain_near ≥ 0.20` | **`c1_holds` `true` on 16 rows, `false` on 48** — `c1_fields_held` **1** of 4 on every row. `torus`: `gain_near` **0.244932**, over the bar. `sphere`: **−9.655511** — at `matched_triangles` **3212**, `screen_error_at_matched_triangles` is **3.431338e1** for the goal arm against **3.220247e0** for camera-distance, a factor of **10.655** the wrong way. `box_exact` and `thin_plate`: **0.000000** exactly, and unreachable — see below. The four fields' `matched_triangles` are **3212 / 2920 / 3800 / 1016**, each the camera-distance arm's own count at `REFERENCE_RUNG` = 2 (`budget_fraction` `0.3500`) on the **near** camera |
+| C2 the saving comes from **not refining what is off-screen or back-facing**, rather than from a general improvement | `gain_near ≥ 0.20` **and** `gain_wide < 0.5 · gain_near` | **`c2_holds` `true` on 16 rows, `false` on 48**, `c2_fields_held` **1**. On `torus` it holds cleanly and in the registered direction: `gain_near` **0.244932** against `gain_wide` **−0.010015** — move the camera back until nothing is outside the frustum and the entire advantage vanishes and turns slightly negative. On the other three the first conjunct fails, so C2 is not reached; and on two of them the *second* conjunct would have failed too, which is worth naming — `thin_plate` reads `gain_near` **0.000000** with `gain_wide` **+0.320501** and `sphere` **−9.655511** with **+0.200163**, i.e. the goal arm's advantage is **larger** with everything on-screen. Where it wins on those fields it wins on curvature, not visibility |
+| C3 the adjoint cost is under 10% of extraction | `adjoint_share < 0.10` | **FALSIFIED.** `c3_holds` `false` on all 64 rows with `c3_row_decisive` `true` on all 64; `c3_row_holds` `true` on **56** and `false` on **8**. The eight are `box_exact`/`near`, where `adjoint_share` is **0.144361** — 14.44% — with `adjoint_share_lo` **0.137235** and `adjoint_share_hi` **0.145944**, so the whole seven-repeat interval sits above the bar. Elsewhere the share runs **0.013032**–**0.039679** |
+
+> **`box_exact`'s and `thin_plate`'s C1 is arithmetically unreachable, and the arithmetic is one line.**
+> `ERROR_FLOOR_PX = 1e-4`, and on the near camera both fields' `screen_space_error` is at or below it:
+> `box_exact` reads **0.000000e0** on all eight near rows (an axis-aligned box's faces are reproduced
+> exactly by marching cubes, and only **8** of its 1538 probes are visible from an eye inside the domain
+> at `[0.30, 0.62, 1.30]`), and `thin_plate` reads **2.123138e0 → 2.018027e0 → 3.744388e-15 →
+> 3.744388e-15** across the rungs, i.e. the plate is resolved exactly once the level is fine enough.
+> `screen_error_at_matched_triangles` is therefore **1.000000e-4** for *both* arms on both fields, and
+> `gain_near` is `1 − 1e-4/1e-4` = **0.000000** — a zero that could not have been anything else
+> (`M-44`), on half the population. C1's registered content is carried entirely by `sphere` and `torus`,
+> and it is carried without vacuity there because both arms produce a real, resolved error curve on
+> both. `P-70`'s C1 is the precedent for recording that rather than scoring two more failures.
+>
+> **`sphere`'s −9.655511 is the goal criterion saturating, and the clamp that produced it is
+> conservative *against* the hypothesis by design.** The goal arm's ranking is
+> `Z_K · (κ_K h_L²/8)²`, so a block whose surface is flat has `κ_K = 0`, an honest zero gain, and the
+> greedy declines to spend triangles on it. On `sphere`/`near` that leaves **`blocks_promoted` 3 of 32**
+> at every rung against camera-distance's **31/32/32/32**, `triangles` pinned at **1280** on rungs 1, 2
+> and 3 (`budget_bound` `false` on those three rows, `matched_clamped` `true` on all four), and
+> `level_histogram` `29|0|0|3` — twenty-nine blocks left at the coarsest level because only **26** of
+> 1442 probes are visible. The read-off is then clamped to the curve's endpoint, charging the goal arm
+> the error it had at *fewer* triangles, which is larger; `matched_clamped` flags every such row (`true`
+> on 8 of 64). So the number is a genuine loss and the clamp makes it a **lower bound** on the loss, not
+> an artefact.
+>
+> **All five vacuity controls fired, and the registered one is the reason the two cameras exist.**
+> (1) **The registered control** — *"a non-trivial fraction of the scene must be off-screen"* — asserted
+> above `OFF_SCREEN_FLOOR = 0.20` on the near camera and measured `off_screen_fraction` **0.663662**
+> (`sphere`), **0.474702** (`torus`), **0.732120** (`box_exact`), **0.301038** (`thin_plate`); it is
+> asserted on the *frustum* fraction (`frustum_off_fraction` **0.715768 / 0.488854 / 0.722603 /
+> 0.258065**) and not on the registered `off_screen_triangles` union, because back-facing alone puts
+> about half of any closed surface off-screen for free — `back_facing_fraction` **0.817427 / 0.609873 /
+> 0.856164 / 0.500000** near, and still **0.473029 / 0.501592 / 0.500000 / 0.500000** wide. **(2) The C2
+> control must be a control**: the wide camera's `off_screen_fraction` is **0.000000 on all 32 wide
+> rows**, against a `WIDE_ON_SCREEN_CEIL` of 0.02 — so "everything on-screen" is literally what was run,
+> and C2's falsifier had a real instrument. Moving the camera back removes frustum invisibility and
+> **cannot** remove back-facing, so C2's verdict is a statement about the frustum half of the mechanism
+> and the row carries the residual rather than implying it. (3) **The functional has a population**:
+> `visible_probes` **8**–**769**, non-zero on every (field, camera) — the `8` on `box_exact`/`near` is
+> the tightest and is why that field's error is at the floor. (4) **The two criteria disagree**:
+> `levels_differ` `true` on all 64 rows, so no `gain` in the file is a measurement of the extractor's
+> determinism. (5) **Something is promoted**: `blocks_promoted` runs **2**–**64**, so
+> `pop_magnitude_cells` is not a zero that could not have been non-zero.
+
+**The registered column shows C2's mechanism directly, and it is the strongest single reading in the
+file.** `off_screen_triangles` — the count of extracted triangles whose centroid is outside the frustum
+**or** whose normal faces away from the eye — on `torus`/`near` at the matched rung 2:
+camera-distance emits **2920** triangles of which **2444** are off-screen (**83.7%**, with
+`frustum_off_triangles` **1727**), while the goal arm emits **3154** triangles of which **1807** are
+off-screen (**57.3%**, `frustum_off_triangles` **923**). **So at a larger total the goal arm leaves 47%
+fewer triangles outside the frustum — 1727 against 923** — and that is where its 24.5% win comes from.
+The two halves
+are recorded separately because they behave differently: over the four rungs
+`frustum_off_triangles` falls 307/858/1727/3883 → 211/401/923/1203 between the arms while
+`back_facing_triangles` falls only 383/862/1860/4099 → 272/742/1181/2005 — **moving the camera back
+removes frustum invisibility and cannot remove back-facing**, which is exactly why the `wide` control
+isolates one half of the mechanism and `gain_wide` **−0.010015** is a statement about the frustum half
+alone.
+
+**`M-121`'s pop, measured again on this ladder, and the comparison must be against the right half of
+`M-121` — but the SHARE's own falsifiable prediction did not come out.** `M-121` recorded *"a level
+change moves the surface by up to 3.14 cells, which is the pop nobody measures"* — **worst 3.136**
+cells, typically 0.6–1.6, over a full LOD flight. **That 3.136 is a two-level switch, and `R-091`
+established it: restricted to adjacent level pairs the same fixture reads 1.6177 cells, a 1.94×
+disagreement, because `game_lod_flyover::level_for` lets a block cross two `LEVEL_RANGE` boundaries
+between frames while `h` divides by the coarser cell (`FINDINGS.md:19167-19173`).** A promotion here is
+one level — it halves `h` — so **1.6177** is the figure this row is commensurable with, not 3.136, and
+quoting the larger one would repeat exactly the trap `m121_reproduced_adjacent_only` exists to keep
+visible. On this block ladder `pop_magnitude_cells` — the two-sided nearest-vertex Hausdorff distance
+between a promoted block extracted at its old and its new level, in units of the coarse level's cell size
+— runs **0.707107** to **0.752866** over all 64 rows: inside `M-121`'s *"typically 0.6–1.6"* band and
+**44–47% of the adjacent-pair worst**. The SHARE, however, is registered as a claim that a goal-oriented
+criterion *"has a comparable `pop_magnitude_cells` and a smaller `pop_magnitude_pixels`: the same pops,
+moved off the screen."* **It does not.** `pop_magnitude_pixels` = `pop_world · f_px / z_K` is
+**identical on the two criteria at every (field, camera)** — **632.149486 / 29.328897** on `sphere`
+near/wide, **625.188963 / 29.234561** on `torus`, **615.986568 / 29.078625** on `box_exact`,
+**515.071192 / 28.495007** on `thin_plate` — so the goal arm's much smaller promotion set (3 blocks
+against 31 on `sphere`/`near`) still contains a block whose worst pop sits at the same depth as the
+distance arm's. The column is a worst-over-promoted-blocks and a worst is not moved by promoting fewer;
+the 21.6× near/wide ratio in it is the camera, not the criterion. **That is the SHARE falsified on its
+own column**, which is what putting it in a column rather than in prose is for.
+
+**C3's failure is on the cheapest of three stages, and the other two are worse — which is the number a
+reader should take away.** What C3 times is `adjoint_weights` and nothing else: per proxy probe, one
+`Sdf::gradient`, one normalisation, one back-face test, one frustum test, one `f_px/z`, one accumulate,
+**with nothing cached**, because in a destructible-terrain game the field is edited between frames and a
+cached normal is stale. `adjoint_ms` runs **0.004450**–**0.017790** ms against `extract_ms`
+**0.119631**–**0.985447** ms, seven interleaved repeats after a warm-up with a median headline, and
+`adjoint_scatter` (max/min) **1.134557**–**1.261566** — so `M-280`'s 1.45× governor swing is inside the
+scatter and the interleaved schedule is what lets the *ratio* survive it. The bar is breached on exactly
+one (field, camera) pair, `box_exact`/`near`, and the mechanism is visible on the row rather than
+mysterious: that field has **64** occupied blocks against 32, so the proxy probe set is the largest in
+the file, while its near-camera extraction is the **cheapest** (`extract_ms` **0.119631**) — a large
+numerator over a small denominator. **But `adjoint_share` is not the cost of the method**, and
+`criterion_share` is: proxy sampling plus `principal_curvatures` plus the adjoint runs
+**0.371498**–**3.055830** of extraction, i.e. **37% to 306%**, over `criterion_ms`
+**0.201302**–**0.366092** ms with `proxy_ms` **0.088481**–**0.195981** and `curvature_ms`
+**0.039051**–**0.152321**. That is the same order as `p-146.csv`'s `metric_share`,
+carried here as columns `p146_metric_share_min` **0.332862**, `p146_metric_share_median` **2.008345**,
+`p146_metric_share_max` **8.747515**. **So C3 is falsified at 14.44% on the adjoint, and the honest
+verdict on the method's cost is three to thirty times worse than the clause it failed.**
+
+**One quiet corroboration of a phase-wide fact.** `degenerate_triangles` is **0 on all 64 rows**, across
+four fields, two cameras, two criteria and four levels of block LOD, including every cracked seam where
+two neighbouring blocks sit at different levels. Read from `docs/experiments/p-171.csv`:
+`non_manifold_edges`, `non_manifold_vertices` and `self_intersecting_pairs` are **0 on all 24 rows**, and
+`degenerate_triangles` is non-zero on **`gyroid` alone (4, on three rows) and `noise_cavity` alone
+(54 / 68 / 74)** — **208** in total — and **0** on `sphere`, `torus`, `box_exact`, `thin_plate`,
+`csg_difference` and `fbm_terrain`. So `T-001`'s entire defect population on these fields is degenerate
+triangles, and the two fields that carry them are not in this row's `FieldBound::Exact` population. This
+file's zero is the complementary reading: on the four fields that carry no degenerate triangles under
+uniform extraction, **block LOD with mismatched neighbour levels does not create any either**.
+
+**SHARE, recomputed.** The registration's SHARE is *"C1 moves the LOD selection stage; `M-121` measured a
+level change moving the surface by up to 3.14 cells, which is the pop this criterion is meant to spend
+better."* Discharged as two columns and **falsified on the second**: `pop_magnitude_cells`
+**0.707107–0.752866** (comparable, as predicted) and `pop_magnitude_pixels` identical between arms (not
+smaller, against the prediction). **No source change landed** — `crates/isomesh/src/` is frozen for
+Phase 27 and every inherent `extract` takes one **scalar** `cell_size` (`marching_cubes/mod.rs:193` and
+six other sites), so a per-cell adaptive extractor is a source change by construction and the block-LOD
+construction here is the one `M-121` measured. No golden hash moved.
+
+**What a consumer should do differently.** **Do not adopt a goal-oriented criterion on this evidence.**
+It beat camera-distance LOD by the registered 20% on **one field of four**, and on that field the win is
+demonstrably the frustum test (`gain_wide` **−0.010015**) rather than the DWR estimate — which means the
+cheap half of the mechanism is doing the work, and a frustum cull in front of a distance LOD gets it for
+a rounding error. Against that, the criterion's own cost is 37%–306% of extraction and its curvature
+term makes it **saturate**: on three of four fields it stops spending the budget entirely
+(`budget_bound` `false` on 12 rows), which on `sphere` costs a **10.655×** screen error at matched
+triangles. **Would be shown wrong by:** `gain_near ≥ 0.20` with `gain_wide < 0.5 · gain_near` on three
+or more fields, which is C1 and C2 together on a majority; a cached-normal adjoint bringing
+`adjoint_share` under 0.10 on `box_exact`/`near` **and** a `criterion_share` under 1.0, which would make
+the cost argument survivable; or a residual model that does not zero on a flat block, which is the
+single mechanism behind every saturation in this file.
+
+### 💥 ✗111 / M-465 — C1 FALSIFIED on **16 of 16** rows (`beta_share` **0.824659–1.693981** against a bar of `0.10`), C2 FALSIFIED at `c2_fields_above_bar` **4** of eight against a bar of six, C3 HELD on **6 rows of 16**: `β` is not a fraction of an extraction, it is one to two extractions, and the signal it carries that the residual does not is **3 to 176 cells a row** (R-152)
+
+**M.** `cargo bench --bench experiment_p152`, `docs/experiments/p-152.csv`, **16 rows × 61 columns** — eight reference fields at `resolution` **33** and **65**, counted from the file. `# commit 98c5309 on amd-ryzen-9-5900x-12-core at 2026-08-30T09:27:15Z`, no `(WORKING TREE DIRTY)` on that line. `f64` throughout, one thread, no PRNG. The `β` side is `common::beta` (R-152's own module) consumed unchanged; the residual side is the **shipped** solver — `isomesh::hermite::HermiteCell` and `isomesh::dual_contouring::solve::{LAMBDA, solve}`, both already public and already used from benches (`experiment_p52.rs:217-220`), so the residual measured is the residual of the vertex the crate actually places (`experiment_p152.rs:77-84`).
+
+| clause | registered | measured |
+|---|---|---|
+| C1 `β_∞(Q)·diam(Q)` is computable per cell at under 10% of extraction cost | `beta_share ≤ 0.10` | **FALSIFIED on 16 of 16.** `beta_share` = `beta_ms / extract_ms` runs **0.824659** (`noise_cavity` at 33) to **1.693981** (`thin_plate` at 33). `c1_bar` **0.10** is on every row; the nearest row misses it by **8.2×** and the worst by **16.9×**. `beta_share_min`/`beta_share_max` bracket the extreme repeat pairing and never cross the bar either (`thin_plate` at 33: 1.677951 / 1.921522) |
+| C2 it rank-correlates with the QEF residual above 0.7 on at least six of eight fields | `c2_fields_above_bar ≥ 6`, decided at `resolution = 65` | **FALSIFIED.** `c2_fields_above_bar` **4** on every row, at both resolutions. Clearing `c2_bar` **0.70** at 65: `torus` **0.816543**, `gyroid` **0.774640**, `noise_cavity` **0.718168**, `fbm_terrain` **0.710924**. Missing: `csg_difference` **0.697785**, `sphere` **0.380151**, and `box_exact` and `thin_plate` at **0.000000** |
+| C3 there exist cells with low residual and high `β` — where the plane fit is confidently wrong — and the count is reported | `confidently_wrong_cells > 0`, per row | **HELD on 6 rows of 16.** `fbm_terrain` **16** and `noise_cavity` **11** at 33; `sphere` **176**, `fbm_terrain` **48**, `noise_cavity` **20** and `gyroid` **3** at 65. Empty on the other ten, including every row of `box_exact`, `thin_plate`, `torus` and `csg_difference` |
+
+> **C3's surviving six rows are the only thing in this file that argues for `β`, and they are worth naming precisely.** Both sides are quantiles of that row's own surface-cell population, written into the CSV rather than fixed by the harness: `low_residual_threshold` is `p25(residual)` and `high_beta_threshold` is `p75(β·diam)` on the floored column (`experiment_p152.rs:216-220`). A `confidently_wrong` cell is therefore one whose twelve edge crossings fit a plane in the best quartile of the field **while sitting in no thin slab at all** — `sphere` at 65 has **176** of them at thresholds `7.901111851e-9` and `0.000020132`, `fbm_terrain` at 65 has **48** at `1.915251244e-5` and `0.009391222`. That is not a reparametrisation of the residual: the residual, by construction, cannot see a patch that is curved but consistently curved, because a saddle's tangent planes can agree beautifully about a point that lies on none of the surface. **What it is good for is exactly one thing — a per-cell flag that says "do not trust this vertex, keep the Hermite data or subdivide" in the cells the QEF's own objective calls its best.** What it costs is the whole row above it: to obtain `sphere`'s 176 flags you run **347,480** slab objective evaluations (`slab_fits` **4,760** × `slab_evaluations_per_patch` **73**) and pay `beta_share` **1.384397** — a whole extraction and a third — which is **1,974 objective evaluations per flagged cell**. On `gyroid` at 65 it is **1,564,536** evaluations for **3** flags: **521,512 per cell**. `noise_cavity` at 65 is 103,569; `fbm_terrain` at 33, the cheapest, is 8,933. A diagnostic at five hundred thousand evaluations per hit is a research instrument, not a stage.
+>
+> **Six vacuity controls fired, all as assertions before the first `run.record`, so a run that could not fire aborts rather than recording a pass.** (1) The registered one: `qef_residual_variance > 0` on **all 16** rows — **8.995557389e-16** at the smallest (`box_exact` at 65) and **2.552673646e-4** at the largest (`fbm_terrain` at 33) — so no `rank_correlation` in this file is a correlation against a constant, which is the failure the registration's own falsifier names. (2) `population_mismatch` **0 on 16 of 16**: `beta_per_cell`'s `Some` set and this file's `cut ≥ 3` set are the same cells, so the two statistics are of **one** point set. Had it been non-zero the whole comparison would be void rather than merely wrong, and it could have been: `HermiteCell::from_corners`' corner order lives in a private module and a permuted guess would land the crossings on different edges. (3) `three_crossing_above_floor` **0 on 16 of 16**, over `three_crossing_cells` **8** to **8,310** — three points are coplanar, so this is the coplanarity theorem re-measured on every field at every resolution, and a non-zero would mean `PLANAR_FLOOR` sits below the noise it was chosen to clear. (4) The dead band: `beta_floor_gap_decades` **8.239** to **11.557** on the twelve rows carrying cells on both sides, with `beta_max_below_floor` never above **4.511952e-16** and `beta_min_above_floor` never below **2.380555e-8**. The floor at `1e-12` is the middle of a band no cell occupies, which is what licenses it as a measurement rather than a tolerance. (5) `nonplanar_cells > 0` somewhere in the run — **19,958** at the largest — so a `rank_correlation` of `0.000000` is that row's geometry and not a dead instrument. (6) The singular strip is monotone in its threshold on every row.
+>
+> **The floor decides C2, and both readings are in the file so no reader has to take one on trust.** `rank_correlation` is computed on the floored column; `rank_correlation_unfloored` sits beside it. The two disagree most where it matters most: `thin_plate` at 65 reads **0.000000** floored and **0.995977** unfloored — over a `β` column whose `beta_infinity` and `beta_infinity_max` are both **0.000000000** and whose largest sub-floor value is **6.409876e-17**, on a field whose 2,048 surface cells are planar by construction — and `csg_difference` at 65 reads **0.697785** floored against **0.834229** unfloored, i.e. below C2's bar and above it. The unfloored reading would have returned a **different verdict on C2** and the difference would have been a result about Jacobi's last bits. This entry quotes the floored column throughout.
+
+**`spearman_ceiling` says which of C2's four failures were refused by arithmetic and which by measurement, and they split two and two.** The ceiling is the exact bound over both observed tie structures — the concordant pairing's coefficient, which by the rearrangement inequality no pairing of these two multisets can exceed (`experiment_p152.rs:283-297`). On `box_exact` and `thin_plate` it is **0.000000** at both resolutions with `spearman_ceiling_admits_bar` **false**: `planar_fraction` is **1.000000**, `nonplanar_cells` **0**, so the `β` column is a single value and *no* pairing could have produced any coefficient at all. Those two fields did not fail C2, they could not take it. On `csg_difference` the ceiling is **0.744336** at 33 and **0.769426** at 65, both above the bar and both `admits_bar` **true**, so its **0.674180** / **0.697785** is a real shortfall — `β` and the residual genuinely order those cells differently. `sphere`'s ceiling is **0.985099** at 65 against a measured **0.380151**: the widest gap in the file, and the field where the two statistics agree least.
+
+**A correction to `common::beta`'s own census, recorded in columns rather than by editing the module.** `beta.rs:89-91` states that 944 of 1,160 `sphere` cells, 888 of 1,128 `torus` cells, all 512 `thin_plate` cells and 4,101 of 6,176 `noise_cavity` cells *"carry a patch that is planar by construction"*. Those four numbers are the count of cells with **at most four** crossings, and the census's own justification — *"three points are coplanar"* — licenses the three-crossing cells and no more. Measured: on `sphere` at 33, `three_crossing_cells` **312** are all below the floor (`three_crossing_above_floor` **0**), while of `four_crossing_cells` **624** only **48** are (`four_crossing_below_floor`). On `noise_cavity` at 33 it is **43 of 2,126**; on `gyroid` at 65, **90 of 8,310**. On the piecewise-planar fields the whole four-crossing population *is* below the floor — `box_exact` **1,344 of 1,344** at 33 and **5,760 of 5,760** at 65 — which is the right answer for a field that is affine across every cell. So the census's phrase is correct on `box_exact` and `thin_plate` and overstates the planar population by roughly the four-crossing count everywhere else. `crates/isomesh/src/**` and `benches/common/**` were read-only for this row; the module keeps its header and this entry carries the correction.
+
+**The row also produces the first per-cell evaluation of `solve`'s Tikhonov constant, and it is the sharpest incidental number in the file.** `λ = 0.01` (`solve.rs:85`) is documented as the regulariser that stops an under-determined cell from flying off, and `✗12` records the removal of the rank branch that used to decide the question; the constant has therefore been a fixed answer to a question the crate never evaluated. Evaluated here by Sylvester's criterion on `M − t·I` — exact for a symmetric matrix, no eigensolver (`experiment_p152.rs:243-262`) — `singular_cells` at `t = LAMBDA` reads **4,760 of 4,760** surface cells on `sphere` at 65, **5,760 of 5,768** on `box_exact`, **6,001 of 6,014** on `csg_difference`, **16,263 of 28,375** on `noise_cavity`. **On a smooth sphere at 65³ the regulariser dominates `M` along some direction in every single surface cell**, so `λ` is not a rare rescue, it is the vertex-placement rule almost everywhere. `singular_cells_tight` at `t = 1e-9` is the strip that keeps that honest: **0** on `sphere`, and **5,760** on `box_exact` — genuinely rank-deficient there, marginal at `λ`'s scale on the sphere. A count identical at both thresholds is decided by neither, and these are not.
+
+**What a consumer should do differently: nothing, and the row closes the question rather than opening a ticket.** The SHARE sentence offered `β` the vertex-placement stage, which `M-25` prices at **3%** of an extraction; the measurement puts the pass at **82% to 169%** of one, so there is no share to fold it into and C1's bar was more than an order of magnitude from the mechanism's own published cost before the run began. `β` earns its theorem — Azzam & Schul's surface TST, `arXiv:1609.02892` — and its 73-evaluation upper bound is honest in the only safe direction, since every value here is `≥` the true `β_∞` and can only over-report roughness. But as a per-cell statistic it costs a mesh to compute, agrees with the residual on four fields of eight, and is identically zero on the two fields where a planarity statistic would be most useful to have. `M-465` is the number to cite for `β`'s cost; C3's six rows are the residue worth a Phase 28 look, and only if someone finds a way to compute `β` for less than 1,974 objective evaluations per flagged cell.
+
+### 💥 ✗112 / M-466 — C1 FALSIFIED at `c1_fields_won` **2** of eight against a bar of five, C2 FALSIFIED at **0 of 2** named fields with `beta_beats_curvature` **false on 8 of 8**: the criterion this row was built to promote loses to the derivative it was built to discredit, on every field, and `noise_cavity`'s refinement ladder is **inverted** (R-153)
+
+**M.** `cargo bench --bench experiment_p153`, `docs/experiments/p-153.csv`, **24 rows × 87 columns** — three criteria × eight reference fields, counted from the file. `# commit b0289d0 on amd-ryzen-9-5900x-12-core at 2026-08-30T12:56:38Z`, clean line. One grid ladder (`BASE_SAMPLES` 17 → refined `h/2` → `REFERENCE_SAMPLES` 65), one triangle budget per field, three orderings of the same cells. `f64`, one thread, no PRNG; grid coordinates are exact binary fractions on all eight domains, so the assembly controls are bit-level.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 at matched triangle count, `β`-driven refinement beats camera-distance refinement on symmetric Hausdorff on at least five of eight fields | `c1_fields_won ≥ 5` | **FALSIFIED at 2.** `beta_beats_camera` is true on **`torus`** (`beta_vs_camera_ratio` **0.800923**) and **`gyroid`** (**0.929633**), false on the other six: `csg_difference` **loses** at **1.023005**, and `sphere`, `box_exact`, `thin_plate`, `fbm_terrain` and `noise_cavity` read exactly **1.000000** — both arms sit on the same number, the coarse bookend. `c1_holds_at_low_budget` is **false** too, so the verdict does not turn on `BUDGET_GROWTH` |
+| C2 `β` beats curvature specifically on the sub-cell fields, `thin_plate` and `noise_cavity` named | `beta_beats_curvature` on **both** named fields | **FALSIFIED at 0 of 2, and at 0 of 8.** `c2_thin_plate_won` **false**, `c2_noise_cavity_won` **false**, `beta_beats_curvature` **false on all eight**. `beta_vs_curvature_ratio`: `thin_plate` **3.000000**, `gyroid` **2.735820**, `box_exact` **2.598076**, `csg_difference` **1.831611**, `noise_cavity` **1.262138**, `fbm_terrain` **1.128548**, `sphere` **1.065154**, `torus` **1.024600** — every one above 1 |
+
+> **The sharper result is the one no clause asked for: curvature beats camera distance on 8 of 8.** Reading `hausdorff_at_matched_triangles` across the three arms, curvature is strictly better than the shipped incumbent on every field — `sphere` **0.019777825** vs **0.021066438**, `torus` **0.043960594** vs **0.056237683**, `box_exact` **0.083333333** vs **0.216506351**, `csg_difference` **0.120924796** vs **0.216506351**, `thin_plate` **0.044194174** vs **0.132582521**, `gyroid` **0.381445370** vs **1.122556500**, `fbm_terrain` **0.591709749** vs **0.667773082**, `noise_cavity` **0.512673132** vs **0.647064302**. Two of those land the arm exactly on the all-refined bookend: `thin_plate`'s **0.044194174** and `box_exact`'s **0.083333333** *are* `hausdorff_uniform_fine`, i.e. at half the fine budget curvature bought the whole fine result. So the row's registered content is falsified and its incidental content is a clean win for the criterion it used as a foil. What that costs is in `criterion_ms`: camera distance is **0.0129 ms** on every row — it is an arithmetic expression — while curvature runs **0.6669** to **18.9701** (`fbm_terrain`), a factor of **1,470** at the worst field, and `β` runs **0.1602** to **1.7292**. A criterion that wins on eight of eight and costs 19 ms per 16³ score pass is a chunk-build-time precomputation, not a per-frame LOD decision, and that is the Phase 28 ticket this row leaves rather than claims.
+>
+> **`thin_plate` is C2's headline prediction and it failed for the opposite reason to the one registered.** The clause rests on curvature being *aliased* at cell scale where a slab fit is not. Measured: `score_distinct_values` **1** and `score_all_tied` **true** for `β` on `thin_plate` and on `box_exact` — `β` is not aliased there, it is **blind**, because a slab fit through a planar patch cannot report anything but zero, and `ThinPlate::canonical()` is two planar sheets and a `0.025`-tall rim (`fields/mod.rs:617-637`). With one distinct score `β`'s ordering degenerates to the index tie-break walking `z`-slabs, so its `rank_correlation_with_error` is **0.000000** and its Hausdorff stays at the coarse bookend **0.132582521**; curvature is zero on the sheets and large at the rim, which is exactly where the error is, and reaches **0.044194174** — the ratio **3.000000** in the table is the coarse bookend over the fine one. The harness wrote this prediction down before the run: `predicted_beta_beats_curvature` is **true** on the two named fields and **false** on the other six, and `c2_prediction_held` records the disagreement.
+>
+> **Six vacuity controls fired, every one as an assertion with a `VOID: ` message.** (1) The registered one: per field the three `worst_decile_hausdorff` values must differ, and `worst_decile_spread` runs **0.000972008** (`sphere`) to **0.222623767** (`gyroid`) — non-zero on all eight, so the three criteria are not refining the same cells. (2) `refined_overlap_with_beta` is the Jaccard index of each arm's refined set with `β`'s: **0.153153–0.284994** for camera and **0.244048–0.439759** for curvature, never **1.0**, so no two criteria are one criterion. (3) `0 < refined_cells < surface_cells` on all 24 rows, so no arm is a bookend wearing a criterion's name. (4) `population_mismatch` **0** on 24 of 24. (5) The coarse assembly **is** the whole-grid extraction: `whole_grid_triangles_coarse` equals the assembled count by `assert_eq!` on all eight fields and `whole_grid_hausdorff_gap_coarse` is **0.000000000e0** on all 24 rows, against `ASSEMBLY_TOLERANCE = 1e-12` and a first-run worst of `4.5e-16` (`experiment_p153.rs:431`, `:1997-2008`). (6) Each criterion discriminates somewhere — global, not per field, because `β`'s single distinct value on the two planar fields is the measured answer and a per-field form would abort on the finding.
+
+**Four thresholds and claims in this harness were re-derived mid-run against a measurement, and each is a result rather than bookkeeping.**
+
+**(1) `LADDER_SPAN_FLOOR` went `1.2` → `1.01` and became bidirectional, because `noise_cavity`'s ladder is INVERTED.** The control requires the two uniform bookends to separate, or there is no error for a criterion to redistribute. The first version demanded `coarse ≥ 1.2 × fine` on the guess that refinement always helps. Measured `ladder_span` over the eight fields: `torus` **3.959681**, `sphere` **3.741626**, `thin_plate` **3.000000**, `gyroid` **2.942902**, `box_exact` **2.598076**, `csg_difference` **2.313171**, `fbm_terrain` **1.128548** and **`noise_cavity` 0.964442** — `hausdorff_uniform_coarse` **0.624056160** against `hausdorff_uniform_fine` **0.647064302**, the error going **up** under refinement. That is not a fixture defect: `noise_cavity` carries noise at the `h/2` scale, so halving every cell exposes octave detail the coarse grid smooths over. **The inversion is C2's own premise — sub-cell structure a derivative estimated at cell size cannot see — arriving as a measurement of the premise rather than as a verdict on the clause.** The floor is therefore symmetric (`ladder_span ≥ 1.01` **or** `1/ladder_span ≥ 1.01`, `experiment_p153.rs:2025`) and set from the noise below it, not from the fields above it: the assembly identities run at `1e-12` relative, so 1% of span is decisive by eleven orders. The per-field spans stay columns; a floor tuned to the fields it flatters would be tuning.
+
+**(2) The fine-rung Hausdorff identity was DROPPED to a column, and the measurement is why.** The coarse bookend's per-cell assembly is the whole-grid extraction exactly — same `h`, shared samples. The fine bookend is not, and cannot be: the whole `33³` grid's cell walls sit at `h/2` while the per-cell assembly's sit at `h`, so on a field with sub-cell detail the two place surface differently. `whole_grid_hausdorff_gap_fine` is **0.000000000e0** on seven fields and **1.156280978** on `fbm_terrain` — 1.16 relative, a real geometric gap and not an instrument error. The claim was removed rather than loosened, the gap is a column, and every arm is compared against the **assembled** bookends so the comparison stays inside one instrument family. The same rung's triangle gap is `assembly_triangle_gap`: **0** on five fields, **0.009029** on `gyroid` (0.90%, the 10,536-against-10,632 the header names) and **0.055153** on `noise_cavity`.
+
+**(3) `project` gained a residual gate and a per-step band, mirroring `accuracy.rs`, and the cause was not the symptom.** The first run read `projection_step_cells_max` **1.4e-6** on `sphere` and **1.38 cells** on `noise_cavity` — a reference vertex sliding most of a base cell, which means the measured Hausdorff was the distance between two wrong points. The step cap was the symptom: `project` declared convergence on a small **step** alone, and on a field with vanishing-gradient plateaus (`noise_cavity`'s octave creases, exactly `M-48`'s class) a near-zero gradient makes the step tiny at an `|f|` far from zero, so the walk creeps sheet to sheet and stops without ever reaching the surface. The fix is the crate's own residual discipline: require **both** the step within `PROJECT_TOLERANCE_REL` of the cell size **and** `|f|` within `AccuracyConfig::RESIDUAL_TOLERANCE_REL` of zero (`experiment_p153.rs:404-421`). Reference vertices still displaced past `PROJECT_MAX_STEP_CELLS = 0.5` are now **rejected and counted**, with the share gated at `PROJECT_MAX_UNCONVERGED = 0.01` (`:2058-2070`). The residue is visible in the committed columns: `projection_step_cells_max` still reads **1.381890117** on `noise_cavity` — the walk that motivated the gate — while `projection_unconverged` is **0** on all 24 rows and `mesh_projection_unconverged` is **0** on seven fields and **38–52** on `noise_cavity`, under 1% of its 14,440 reference samples.
+
+**(4) The population is scoped to the cells `beta_per_cell` can score, and the exclusion is a column.** `meshable_cells` is `{c : fine_triangles(c) > 0}`; `base_sign_change_cells` is the subset visible at base resolution; `beta_unscored_meshable` is the difference. It is **0** on five fields and **30** on `gyroid` (1,214 of `meshable_cells` **1,244**), **21** on `fbm_terrain` (470 of 491) and **91** on `noise_cavity` (1,123 of 1,214). Those are cells whose surface flips no base corner sign, so `beta_per_cell` returns `None` and there is no patch to fit — `β` cannot rank them at all. `population_unscored` is **0** on every row, meaning the three arms score one identical population; the excluded cells are meshed by every arm and ranked by none of them, and on the three noisy fields they are between 2% and 7.5% of the meshable set. **Sub-cell structure that flips no corner sign produces no patch, so the criterion C2 promotes is structurally unable to see the phenomenon C2 says it sees.** That, and not the aliasing argument, is why C2 failed.
+
+**What a consumer should do differently: leave `isomesh::lod` alone, and do not add a `β` pass anywhere.** The shipped criterion is camera distance and it stays, on this evidence, until someone prices curvature at chunk-build time — it wins 8 of 8 at matched budget but costs up to 19 ms to score a 16³ grid, against 0.0129 ms for a distance. `β` costs **0.1603–1.7292 ms** here and **0.82×–1.69×** a whole extraction in `P-152`'s own measurement (`p-152.csv`, `beta_share`), loses to curvature on every field, and is identically zero on the two piecewise-planar fields. The SHARE sentence imagined a `β` win moving the adaptivity stage; there is no win to move, and the transition-face gap every graded assembly carries (`transition_faces` **16** to **1,212** per row) is a separate, unwired problem — `isomesh::transvoxel::cell` ships the primitive and nothing connects it to a graded grid.
+
+### 💥 ✗113 / M-467 — C1 FALSIFIED at `c1_fields_within_bar` **1** of eight against a bar of five, and **unreachable at 4** — `max_fields_any_constant` **4**, so no single `k` could ever have passed — while C2 HELD on **21 rows of 24** with `thin_plate` divergent at all three resolutions; `M-13`'s area law, with **zero** fitted parameters, gets **5** fields where the `β`-sum gets one (R-154)
+
+**M.** `cargo bench --bench experiment_p154`, `docs/experiments/p-154.csv`, **24 rows × 59 columns** — eight reference fields at `resolution` **17**, **33** and **65**, counted from the file. `# commit 3975077 on amd-ryzen-9-5900x-12-core at 2026-08-30T14:19:55Z`, clean line. Nothing is timed: no clause here is a cost clause and this host's `amd-pstate-epp` governor swings the same binary **1.45×** between runs (`M-280`), so cost is recorded as machine-independent counts — `samples_ratio` **64.361 / 68.534 / 70.778**, `slab_fits` **176** to **36,869**, at `slab_evaluations_per_patch` **73**.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the `β`-sum predicts final triangle count within 25% on at least five of eight fields at three resolutions | `c1_fields_within_bar ≥ 5`, a field passing only when one `k` puts all three of its resolutions inside `0.25` | **FALSIFIED at 1.** Only `fbm_terrain` has all three rows inside the bar (`prediction_error_ratio` **0.027197 / 0.165737 / 0.182066`). `row_within_bar` is true on **6 of 24** rows. The extremes: `noise_cavity` at 17 overpredicts at **2.950391** (10,113 predicted against 2,560 actual) and `thin_plate` at 17 underpredicts at **0.991935** (**2** predicted triangles against **248** actual) |
+| C2 the sum converges as scales are added | `increment_ratio_last < 1`, per row | **HELD on 21 rows of 24.** The three failures are `thin_plate` at all three resolutions, `increment_ratio_last` **2.050775 / 1.851035 / 1.968992** — a ratio approaching **2**, i.e. contribution ∝ `n`, i.e. the truncated sum grows without bound as scales are added |
+
+> **C1 was refused by arithmetic before it was refused by the fit, and the file says so exactly rather than leaving it to inference.** `k` is fitted **once, globally**, over all 24 rows as the geometric mean of `actual / (β-sum / h²)` — the exact minimiser of squared *log* error, which is the right loss for a clause phrased as a ratio bound: `fitted_constant` **35.457497**, `dof_spent` **1**, `fit_rows` **24**, `dof_residual` **23**. That is one degree of freedom and it is stated as one; the prediction is **not** parameter-free and this entry does not claim it is. **But `k` was deliberately not tuned to the verdict, and the question "would a luckier constant have passed?" is then answered exactly instead of dodged.** Row `i` is inside the bar iff `k ∈ [0.75·r_i, 1.25·r_i]`; a field passes iff its three intervals intersect (`field_constant_lo`, `field_constant_hi`, `field_feasible_any_constant`); and `max_fields_any_constant` is the largest number of fields any single `k` can satisfy at once, found by evaluating the count at every interval endpoint, which is where a closed-interval stabbing optimum is attained. It reads **4**, in the window `k ∈ [9.161527, 11.219131]` (`max_fields_constant_lo` / `_hi`, a span of only **1.22×**). **Four is below C1's five, so no constant whatsoever — not the honest fit, not the luckiest one — could have carried this clause.** `thin_plate` is the field that cannot be stabbed at all: its interval is `field_constant_lo` **3834.165400** against `field_constant_hi` **1745.834089**, lo above hi, `field_feasible_any_constant` **false**, so its three resolutions demand mutually exclusive constants.
+>
+> **The mechanism behind that is dimensional and was stated before the run.** `S = Σ β(Q)²·diam(Q)²` is a **bending** functional — on a smooth patch `β_∞(Q) ~ curvature·diam(Q)`, so `β²·diam² ~ curvature²·diam⁴` — while a uniform extractor's triangle count is an **area** functional. Two functionals that disagree on the sphere-versus-plane axis cannot be related by one constant, and the size of that disagreement is the column: `beta_sum_per_area` runs **0.000390999** (`thin_plate` at 17) to **0.352619618** (`noise_cavity` at 17), with `beta_sum_spread` **901.843081** on every row. A conversion factor varying by nine hundred times is not a constant, and `required_constant` — the `k` each row would need — makes it concrete: **5112.220533** on `thin_plate` at 17 against **8.975305** on `noise_cavity` at 17.
+>
+> **Seven vacuity controls fired as assertions before the first `run.record`.** (1) The registered one: `scales_used` **4 / 5 / 6** at the three resolutions, `≥ 4` on all 24 rows, so convergence is read off at least four dyadic increments. (2) Every scale carried a patch — each `per_scale` entry's sub-box count and contribution strictly positive — or `increment_ratio_last` would be a ratio over a zero. (3) `beta_sum > 0` on all 24 rows (**0.003031951** at the smallest, **182.588903859** at the largest), so a falsified C1 is a wrong prediction and not an undefined one. (4) `actual_triangles > 0` on all 24. (5) `mesh_area > 0` on all 24 (**7.754372** to **664.289692**). (6) `beta_sum_spread` **901.843081 > 2** — this is the `M-44` control for a **negative** result: a falsification that could not have been a pass is not a falsification, and here the conversion factor genuinely varies. (7) `surface_cells` computed from this file's own grid pass agrees **exactly** with `p-152.csv`'s independent `HermiteCell`/`beta_per_cell` count on all sixteen shared `(field, resolution)` pairs — 1,160 / 1,128 / 1,352 / 1,388 / 512 / 5,240 / 1,958 / 6,176 at 33³ and 4,760 / 4,208 / 5,768 / 6,014 / 2,048 / 21,432 / 8,413 / 28,375 at 65³ — which is what licenses the `M-13` cells-level column below.
+
+**The incumbent was measured on the same 24 rows rather than cited, and C1's own falsifier is confirmed by the numbers it predicted.** The falsifier says a miss *"would leave `M-13`'s area law the better predictor and close the row"*. Priced four ways:
+
+| predictor | form | fitted parameters | fields inside 25% |
+|---|---|---|---|
+| the `β`-sum | `k·β_sum/h²` | 1 | **1** (`c1_fields_within_bar`) |
+| `M-13` as published | `2·1.5·A/h²` | 0 | **5** (`m13_fields_within_bar`) |
+| `M-13` refitted | `k₁₃·A/h²`, `k₁₃` = **2.579116** | 1 | **4** (`m13_fitted_fields_within_bar`) |
+| `M-13` anisotropic | `2·mean_l1_normal·A/h²` | 0 | **6** (`m13_anisotropic_fields_within_bar`) |
+
+`M-13` as written, with no fitted parameter at all, reaches **5 of 8** where the one-parameter `β`-sum reaches 1 — `m13_error_ratio` is **0.002216** on `torus` at 33, **0.011151** on `fbm_terrain` at 33, **0.013352** on `sphere` at 65. And `M-13` sharpened is better still: the `1.5` is `M-13`'s own derivation of `E[Σ|nᵢ|]` under an isotropic normal distribution, and an axis-aligned plane has `Σ|nᵢ| = 1`, so on `box_exact` and `thin_plate` the assumed constant is 50% high **by construction**. Replacing it with the measured area-weighted `mean_l1_normal` — computed as `Σ|cross|₁ / Σ|cross|₂`, which needs no normalisation because the cross product's `L1` over its `L2` *is* the unit normal's `L1` norm — reads **1.021812** on `thin_plate` and **1.036503** on `box_exact` against **1.556108** on `noise_cavity`, and lifts the count to **6 of 8**. Refitting `M-13`'s constant globally makes it **worse** (4), which is the expected signature of a law whose published constant is already near-optimal. `triangles_per_surface_cell` re-measures `M-13`'s own cells-to-triangles conversion on every row and reads **1.937500** to **2.279608**, so the `2.0` is `M-13`'s and it is very nearly right.
+
+**`thin_plate`'s divergence was named in advance, and its content is narrower than "not rectifiable".** The plate is a slab of half-thickness `0.4·(4/64)/2 = 0.0125` (`fields/mod.rs:617-627`), so its two faces are `0.025` apart while the finest sub-box in this ladder is `4/64 = 0.0625` across. **Every sub-box in the ladder therefore contains both faces**, and the thinnest slab containing both has a half-width set by the *plate* rather than by the sub-box: `β(Q)²·diam(Q)² = (w/diam)²·diam² = w²`, a constant per box, while the number of boxes carrying that patch grows with `n`. Hence contribution ∝ `n` and `increment_ratio_last` → 2, measured at **2.050775 / 1.851035 / 1.968992**. Contrast `box_exact`, whose `β` also comes from a non-smooth feature but whose dihedral edge gives `w ∝ diam`: its increments halve, `increment_ratio_last` **0.514706 / 0.507143 / 0.503521**. The plate is of course a smooth compact rectifiable surface; what diverges is the sum **truncated above the field's own smallest length scale**, which is the honest content of the registration's phrase *"not rectifiable at the resolutions we mesh at"* — and this crate meshes `thin_plate` at a cell size 2.5× its thickness on purpose (`M-266`).
+
+**One distinction inside C2 must not be averaged away: two convergence readings disagree on 9 rows and both are in the file.** `c2_holds` is the divergence test (`increment_ratio_last < 1`) and is false on 3 rows. `sum_converges` is `common::beta::BetaSum::converges(rel_tol)`'s stricter reading at `convergence_tolerance` **0.10** and is false on **9 of 24** — `box_exact`, `csg_difference`, `thin_plate`, `fbm_terrain` and `noise_cavity` at 17, `thin_plate`, `fbm_terrain` and `noise_cavity` at 33, and `thin_plate` at 65. The clean example is `box_exact` at 17: `increment_ratio_last` **0.514706**, so the increments are halving and the sum plainly converges, but the last increment is **0.410156250** of a total **3.373697917** — **12.2%** — so the module says `false`. A row where the two disagree has not diverged, it has been **cut short**, and `scales`, `increment_last` and `scales_used` are on the row so a reader can see which. At 33 and 65 the same field reads `true` on both.
+
+**What a consumer should do differently: nothing, and this row closes `S`-as-a-budget rather than parking it.** The gap it was aimed at is real — `MeshSink::reserve` (`crates/isomesh/src/mesh.rs:225-232`) exists and **no extractor in the crate ever calls it**, `GreedyQuads` reserves a *cell* count (`greedy_quads.rs:181`) and `DualMesher` reserves against work already done (`dual.rs:638`), while the only budget the crate owns is denominated in time (`DirtySet::mesh_within_budget`, `chunk/dirty.rs:121`). The TST sum does not fill it: it is a bending functional priced against an area, no single constant reaches more than four of eight fields, and it costs **64× to 71× the extraction's own sample count** (`samples_ratio`) to compute. A caller who wants a triangle count before meshing should use `2·1.5·A/h²` when an area estimate exists — 5 of 8 within 25%, zero parameters — and nothing otherwise. SHARE is discharged as registered: no stage moves, `crates/isomesh/src/**` is untouched.
+
+### 💥 ✗114 / M-468 — C1 HELD with `strang_fix_order` **2** and `measured_order` **2** on 8 of 8, both **derived** and not quoted, C2 FALSIFIED at `c2_hits` **0** against a bar of four over `c2_measurable_fields` **4**: the bar equalled the entire measurable population, so it was **arithmetically unreachable** — and two of those four fields are polyhedra whose creases have no second derivative (R-155)
+
+**S.** `cargo bench --bench experiment_p155`, `docs/experiments/p-155.csv`, **8 rows × 44 columns** — one row per reference field, each over the resolution series `19 | 27 | 35 | 47 | 63`. `# commit 076943b on amd-ryzen-9-5900x-12-core at 2026-08-30T09:27:21Z`, clean line. Both clauses are **global**: C1 because the filter is one object, C2 because it counts fields, so the same `c1_holds` / `c2_holds` is written on every row and the per-field half of C2 is `c2_hit`.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the Strang–Fix approximation order of the tensor-product hat is 2, derived and asserted as a test, matching `M-12`'s measured exponent | `strang_fix_order == 2 == measured_order` | **HELD on 8 of 8.** `strang_fix_order` **2** from the dual-lattice zero order, `measured_order` **2** from exact polynomial reproduction. `M-12`'s own exponent is re-measured in the same harness as `m12_ratio` **4.178656** (mean error **2.716769e-3** at 32³ against **6.501537e-4** at 64³), against the ideal `((4/31)/(4/63))² = 4.13` |
+| C2 the predicted asymptotic constant reproduces `M-12`'s fitted constant within its confidence interval on at least four of eight fields | `c2_hits ≥ 4` | **FALSIFIED at 0.** `c2_hit` **false on 8 of 8**, `within_ci` **false on 8 of 8**, `c2_hits` **0**, `c2_measurable_fields` **4**. `ratio` = fitted / predicted: `sphere` **2.776811**, `torus` **2.163685**, `thin_plate` **2.060398**, `box_exact` **inf**; the other four carry `nan` with `skip_reason` **bound_not_exact** |
+
+> **C2's bar was unreachable arithmetic and the file records it with the arithmetic, not as a near miss.** The clause asks for four of **eight** fields. `hausdorff_valid` is **true on exactly four** — `sphere`, `torus`, `box_exact`, `thin_plate` — and **false on four**, whose `skip_reason` names the reason per field: `csg_difference` **bound_not_exact** (`Underestimate { q: 0.5 }`), `gyroid` **bound_not_exact** (`Lipschitz { l: 3.464… }`), `fbm_terrain` and `noise_cavity` **bound_not_exact** (`Unbounded`). `validate::accuracy` is meaningless where `field.bound()` is not `Exact`, so those four have no Hausdorff number at all and therefore no fitted constant — their `fitted_constant`, `fitted_constant_ci`, `ratio` and `ci_relative_halfwidth` are all `nan`. **So C2's bar of four equals the entire measurable population: it needed 4 of 4, with zero slack, on a clause whose falsifier speaks of "missing on five or more fields" — a count the population cannot even reach.** And of those four, **two are polyhedra**: `box_exact` and `thin_plate` both carry `analytic_constant` **0.000000**, because the closed form on the *smooth part* of a polyhedron is zero — flat faces, and the trilinear reproduces a linear field exactly — with **no second derivative at all at the creases**, which is where their entire error lives. A prediction of the form `C = (1/8)·sup|∂²f/∂xᵢ²|` has nothing to predict on those two. The fields on which C2 could have been a fair question are `sphere` and `torus`, i.e. **two**, and it misses on both by **2.78×** and **2.16×**. `P-70`'s C1 is the precedent for recording this shape.
+>
+> **Nothing here is an instrument failure, and the interval widths say so.** `sphere`'s fit is tight — `fitted_constant` **3.393342e-1** with `fitted_constant_ci` **[3.354011e-1, 3.433134e-1]**, `ci_relative_halfwidth` **1.166%**, `fitted_exponent` **1.985214** — and the prediction **1.222029e-1** sits 2.78× below it, nowhere near the interval. `torus` is looser (`ci_relative_halfwidth` **19.08%**, `fitted_exponent` **1.712362**) and still misses: fitted **8.930169e-1** against predicted **4.127297e-1**. The fitted exponents landing at 1.99 and 1.71 while the *derived* order is exactly 2 is itself the content of the negative: **`M-12`'s `h²` law is empirical at game resolutions, not asymptotic, and its constant must not be extrapolated.** That was registered as *"a genuinely useful negative"* and it is the one this row returns. `M-113` had already found the same constant reading **4.0000** in one grid alignment and **5.8564** in another; C2 now adds that it is also not the theory's constant on the two fields where the theory has one.
+>
+> **Six vacuity controls fired.** (1) The registered one: the fitted constants must differ across fields by at least **2×**, or the prediction would be matching a universal constant by accident — `fitted_spread` **14.458612**, seven times the requirement, over fitted constants **3.393342e-1** to **4.906302e0**. (2) The degree-2 row **must fail**, or the order test cannot fire: `c1_residual_deg2` **0.250000** and `c1_residual_deg3` **0.380859** against `c1_residual_deg0` and `c1_residual_deg1` at exactly **0.000000**. (3) `zero_valued_samples` **0** on all four measurable fields — an exactly-zero sample is `M-48`'s degenerate crossing and would put an `O(h)` term into a fit about an `O(h²)` one — and **5** on `gyroid`, **1** on `noise_cavity`, both skipped rows, which is precisely the boundary of the ladder argument rather than a claim quietly false on half the table. (4) `edges_dropped_finest` **0** on all eight, over `crossing_edges_finest` **2,046** to **27,190**. (5) `grad_norm_range` is **1.000000|1.000000** on the four exact fields, so the `|grad f|` denominator in the predicted constant is 1 by definition there and not by luck; it is **0.047665|10.005683** on `noise_cavity`, which is the same fact from the other side. (6) `fourier_quadrature_max_deviation` **1.930950e-11**: the Fourier arm is cross-checked against a 262,144-point trapezoid quadrature of its own defining integral.
+
+**C1's order 2 was derived constructively, in two independent instruments, and neither of them quotes Strang–Fix — that is the whole point of the row.** The theory statement is that a filter reproduces every polynomial of total degree `≤ m − 1` iff its Fourier transform has a zero of order `m` at every non-zero dual-lattice point. The harness measures both halves:
+
+- **The reproduction half, exactly and symbolically, in `common::poly`'s `i128` arithmetic.** Variables 0–2 are the local cell coordinates `(u,v,w)` and variables 3–5 are the integer cell origin `(i,j,k)`, so the residual `T_h p − p` is a polynomial in **six** variables and `Poly::is_zero()` on it is a statement about **every cell of the lattice at once**, not about one sampled cell. Over `c1_monomials_tested` **20** monomials: `c1_residual_deg0` **0.000000**, `c1_residual_deg1` **0.000000**, `c1_residual_deg2` **0.250000**, `c1_residual_deg3` **0.380859**. `measured_order` is `1 +` the largest fully reproduced degree, hence **2** — the hat reproduces constants and linears and fails on `x²`.
+- **The Fourier half numerically.** `β̂₁(ω) = sinc²(ω/2) = 2(1 − cos ω)/ω²`; `sin(ω/2)` vanishes at every `ω = 2πk` and it is **squared**, so every non-zero dual point carries a zero of order exactly 2, and the tensor product's zero at a dual point with `r` non-zero components has order `2r`, minimised at `r = 1`. Measured over all 26 dual points `k ∈ {−1,0,1}³ \ {0}`: `fourier_dual_lattice_max_value` **1.519574e-33** — the transform is numerically zero on every one of them — and `fourier_zero_order_min` **2**, read off a log-log slope at `ε = 1e-2` and `1e-3`.
+
+Two instruments agreeing on 2 is a cross-check rather than a restatement, and one real property is recorded beside it so no reader has to rediscover it: `c1_multiaffine_reproduced` **true on 8 of 8**. The trilinear reproduces the whole *multi-affine* space exactly — including `xy`, `xz`, `yz` and `xyz`, total degree 3 — but Strang–Fix order is about the **total-degree** space, where `x²` is the first failure, so the order is **2** and not 4. That is why `c1_residual_deg3` is non-zero while the multi-affine flag is true.
+
+**`box_exact`'s `inf` is the sharpest sentence this experiment produces, and it is a division by a measured zero rather than a defect.** Along any axis edge that *crosses* the box's surface the SDF is exactly linear — near the `+x` face with the other two `q` components negative, `f` is identically `x − 1` — so the hat's residual on that edge is not small, it is **zero**; and every crossing edge is such an edge, because the regions where two `q` components are positive lie strictly outside the solid and produce no sign change. `predicted_series` carries the round-off floor so the zero reads as a zero and not as a missing measurement: **4.496403e-15 | 4.690692e-15 | 8.021361e-15 | 1.468270e-14 | 0.000000e0**. `predicted_constant` is therefore **0.000000e0**, `analytic_constant` agrees at **0.000000**, and `ratio` and `predicted_stability_ratio` are both **inf** by division. Meanwhile `fitted_constant` on that field is **4.906302e0** over a Hausdorff series of **1.283001e-1 … 3.724840e-2** with `fitted_exponent` exactly **1.000000**. **Filter theory predicts no reconstruction error at all on a polyhedron, the extractor has plenty, and it falls like `h¹` — so whatever that error is, it is not reconstruction error.** What licenses the zero as a measured zero rather than an instrument that cannot report one (`M-44`) is `thin_plate`: same code path, same family of field, and it returns a non-zero supremum **2.373437e0** from its rim.
+
+**What a consumer should do differently.** Cite `M-12` as an **empirical** `h²` law with a field-specific constant measured on the field in hand, never as an asymptotic law with a transferable constant — `M-113` showed the constant moves with grid phase, and this row shows it is also 2.06×–2.78× away from the theory's value on the only two fields where the theory has one. The derived order **2** is now a fact of the filter rather than a fit, which is what `P-157` needs: its own vacuity control is *"the trilinear arm must reproduce exponent 2 in the same harness"*, and `M-468` is that baseline. SHARE is none, as registered — this row converts a fit into a prediction and the prediction lost.
+
+### 💥 ✗115 / M-469 — C1 FALSIFIED at `c1_fields_within_5pct` **5** of a `c1_population` of **6** (`csg_difference` at **+6.80%**), C2 HELD structurally with `footprint_probe_outside` **0** on all 80 rows, C3 FALSIFIED at **one ulp** — and the shipped `standard_trilinear` arm loses seam bit-exactness on the **same six fields with the same worst delta**, so C3's failure is not the quasi-interpolant's (R-156)
+
+**M.** `cargo bench --bench experiment_p156`, `docs/experiments/p-156.csv`, **80 rows × 60 columns** — five prefilter arms × eight reference fields × two resolutions (33 and 65 samples), counted from the file. `# commit 2181f83 on amd-ryzen-9-5900x-12-core at 2026-08-30T14:24:01Z`, clean line. `tau` **2.000000e-1** on every row. Every mechanism is bench-local: `crates/isomesh/src/**` is untouched and `hashes_moved` is **0 on 80 of 80** over a golden fixture asserted at **216 rows × 8 fields × 9 algorithms × 3 resolutions** before anything is recorded.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 a compactly supported quasi-interpolant matches the truncated recursive prefilter's accuracy to within 5% | `|vs_truncated_recursive − 1| ≤ 0.05` for `quasi_fir3` at the finer resolution, over every field whose baseline is above the floor | **FALSIFIED at 5 of 6.** `c1_population` **6**, `c1_fields_within_5pct` **5**, `c1_decided_at_resolution` **65**. Inside: `sphere` **9.992880e-1**, `torus` **9.957635e-1**, `gyroid` **9.980282e-1**, `noise_cavity` **1.008319**, `fbm_terrain` **1.011222**. Outside: **`csg_difference` 1.068013 — +6.80%** |
+| C2 it is exactly chunk-local — zero dependence outside the chunk, asserted structurally rather than measured | `chunk_local` structural; `footprint_probe_outside` = 0 | **HELD.** `chunk_local` **true** on all four FIR arms and **false** on `recursive_whole_line`, from the tap list rather than from any measurement; `footprint_probe_outside` **0 on 80 of 80**. `read_depth_samples` **5** for `quasi_fir3` against **11** for `recursive_truncated_k10` and **33/65** for the whole-line recursion |
+| C3 chunk seams remain bit-exact where `M-32` says they should be, and the golden hashes that move are counted | `seam_bit_exact` and `seam_local_bit_exact` true at dyadic `h`; `hashes_moved` counted | **FALSIFIED.** `quasi_fir3`'s `seam_bit_exact` is **false on six fields of eight** at both resolutions — `sphere`, `torus`, `csg_difference`, `gyroid`, `fbm_terrain`, `noise_cavity` — with `seam_worst_delta_cells` **1.776357e-15** at 33 and **7.105427e-15** at 65 and `seam_sign_disagreements` **0**. True only on `box_exact` and `thin_plate`. `hashes_moved` **0** |
+
+> **C3's falsification is real and it is not about compactness, because the shipped prefilter fails it identically.** `standard_trilinear` is the identity prefilter at `τ = 0` — the crate's own `t = a/(a − b)` — and its `seam_bit_exact` is **false on exactly the same six fields**, with `seam_worst_delta_cells` **1.776357e-15** at 33 samples and **3.552714e-15** at 65, and `seam_sign_disagreements` **0** throughout. The seam arm is `M-32`'s mechanism and not a simulation of it: each chunk samples from **its own origin** with **its own local indices** (`experiment_p156.rs:1016-1084`), and the comparison is `lo[0] + cell·u_global` against `origin_b + cell·u_local`. `M-32` measured 16 of 16 shared-plane **vertices** agreeing at `h = 0.125`, and those vertices sit at **integer** local indices, where the two expressions are equal by IEEE as well as by algebra. A *crossing* does not: `u` carries a fraction, and `h·u` reassociated across the chunk origin rounds. **So C3's result narrows `M-32` rather than retiring anything about the quasi-interpolant — a dyadic cell size buys bit-exact seams at lattice positions and does not buy them at interpolated crossings.** The two fields where it holds prove the mechanism rather than contradicting it: `box_exact` and `thin_plate` are polyhedra whose x-crossings land on exact binary fractions, so there is no fraction to round, and `seam_worst_delta_cells` is **0.000000e0** on every arm. The instrument is shown able to fail loudly as well as quietly — `m32_control_seam_bit_exact` is **false on 80 of 80** at the non-dyadic `h = 4/34` (`m32_control_cell_size` **1.176471e-1**), with `m32_control_worst_delta_cells` up to **1.451509e-5**, four orders above the dyadic residue.
+>
+> **Nine vacuity controls fired, all before the first `run.record` with `VOID: ` messages.** (1) The registered one: `✗42`'s baseline is reproduced on `✗42`'s own fixture — `x42_torus_k10_delta` **7.152528e-7** at `x42_torus_relative_error` **5.353398e-8**, and `x42_gyroid_k10_delta` **1.927142e-7** at **2.220179e-7**. Without it the comparison has no baseline. (2) The moment identities, asserted so the two FIR arms are provably different filters and not two spellings of one: `moment_0` **1.000000e0** on both, `moment_1` **−2.000000e-1** = `−τ` on both, and `moment_2` **−1.200000e-1** = `2τ² − τ` on the three-tap against **−2.000000e-1** = `−τ` on the two-tap. (3) Positive control on an exactly linear ramp: `ramp_root_error` **0.000000e0** on every arm except `recursive_truncated_k10`, whose **6.008154e-7** is its startup transient. (4) Negative control proving the moment conditions load-bearing: the exact filter's first three impulse taps `(1.25, −0.3125, 0.078125)` sum to `1.015625` and fail `M₀ = 1`; fed through the identical code path they miss the ramp's root by `sabotage_ramp_root_error` **4.615385e-2** cells — five orders worse than `quasi_fir3`'s **0.000000e0**. (5) The mesh detour is faithful: `standard_mesh_bit_identical` **true** on every row of the four `Exact` fields, so `hausdorff` measures a prefilter and not the detour. (6) `edges_measured > 0` and the baseline `root_position_error` above the floor, on the fields that carry a population. (7) The truncation residue is non-zero: `residual_vs_whole_line_cells` **0.000000e0** for the whole-line arm by definition, **4.017437e-7** to **8.272421e-7** for `recursive_truncated_k10` on the fields carrying a population — `✗42`'s bound re-measured over thousands of edges rather than eight — and genuinely different for the FIR arms, up to **3.189860e-2**, because they are different filters and not approximations of that one. (8) The locality probe can see a long-range dependence (below). (9) The golden fixture is the real one, 216 rows.
+
+**Four instrument findings, each measured and each recorded rather than papered over.**
+
+**(1) `box_exact` is excluded from C1's ratio population, with the reason and the arithmetic.** Its truncated-recursive baseline `root_position_error` is **3.552714e-15** cells at 33 samples and **7.105427e-15** at 65 — four orders below the `1e-9` floor — because its x-crossings are exact binary fractions and both filters reproduce them to the last bit. A ratio over that baseline is not a ratio: `quasi_fir3`'s `vs_truncated_recursive` on that field reads **1.250074e12** at 33 and **4.279959e11** at 65, which is `3.041093e-3 / 7.105427e-15` and nothing about accuracy. **The clause is arithmetically unreachable on that field, so the field leaves the population and `c1_excluded_exact_baseline` names it on all 80 rows** (`P-70`'s precedent). Two things ride on the same measurement and are worth stating: the three-tap does **not** reproduce `box_exact`'s crossings exactly (`root_position_error` **3.041093e-3**) even though it reproduces a linear ramp exactly, because a five-sample footprint on a box straddles the kink that a two-sample bracket does not see; and `crossings_lost` reads **1,081** for `quasi_fir2` and `quasi_fir3` on that field at 65 samples, against **0** for the shipped two-sample arm. That is compactness's real price, and it is not in the ratio.
+
+**(2) `thin_plate` has no cut x edge carrying a full footprint, at either resolution.** `edges_measured` is **0** on all ten of its rows and `root_position_error` is **0.000000e0** with `vs_truncated_recursive` **NaN**. The field is `0.4` cells thick (`THICKNESS_IN_CELLS = 0.4`, `fields/mod.rs:617-637`), so the footprint the wider taps need runs off the slab before it brackets a crossing — a property of the field's own thickness and not of the filters. The row is recorded with `edges = 0` and excluded from every ratio (`experiment_p156.rs:1436-1448`). **This is the one place where the CSV disagrees with itself and the disagreement should be read the harness's way:** `in_c1_population` is computed as `!exact_baseline_fields.contains(field)` (`:1691-1694`) and reads **true** on `thin_plate`, while the C1 verdict loop skips it for a sub-floor baseline, so `c1_population` **6** = eight fields minus `box_exact` **and** minus `thin_plate`, whereas `c1_excluded_exact_baseline` names only `box_exact`. The population that decided C1 is six and both exclusions are named here.
+
+**(3) `box_exact` at 65 samples has no cut bracket in the chunk overlap.** `seam_pairs` is **0** on all five arms of that row, because its faces are axis-aligned and the ten-sample overlap window can sit entirely inside a face. Its `seam_bit_exact` is therefore a `no-bracket` reading rather than a vacuous `true`, and the global control requires the mechanism to be exercised somewhere — it is, on **2,354** seam pairs on `noise_cavity` at 65 and **1,462** on `gyroid`. The same shape appears on `thin_plate`, whose `seam_pairs` is 0 for `quasi_fir3` at both resolutions.
+
+**(4) `footprint_probe_outside` is zero BY CONSTRUCTION for the whole-line arm, so it cannot be the locality control's quantity, and the control now uses the measured dependence SPAN.** `locality_probe` computes `floor = depth.map_or(0, |d| n.saturating_sub(d))` (`experiment_p156.rs:1095`), and the whole-line recursion declares **no** `depth` — it has no footprint — so "outside its footprint" is the **empty set** and the count is zero however far the dependence actually reaches. The first draft asserted that zero was positive, which no run could ever satisfy. The quantity that does say the probe can see a long-range dependence is `footprint_probe_span`: **12 to 30** samples for `recursive_whole_line` (30 on `gyroid` at 65, 29 on `sphere` at 65) against the widest declared FIR footprint of **11**, so the control is now *"the whole-line arm's dependence must reach wider than any FIR's declared footprint"* (`:1509-1521`). The FIR arms read `footprint_probe_span` **2 / 3 / 4 / 5** — their declared depth, measured — and `footprint_probe_outside` **0**, which is now a zero that could have been non-zero. C2's assertion stays **structural** for the reason the header gives: on an exactly linear restriction the recursion's startup transient cancels (`✗42`'s own note, `experiment_p60.rs:157-164`), so a purely *measured* locality check can pass for a non-local filter.
+
+**The quasi-interpolant's source: the primary was read, in full, from the first author's own institutional copy, and a graphics-facing restatement is named beside it — but the three-tap construction itself was derived here, in this crate's notation.** The corpus holds only the landing page for **Blu & Unser, *Approximation Error for Quasi-Interpolators and (Multi-)Wavelet Expansions*, ACHA 6, 219–251 (1999), `10.1006/acha.1998.0249`**; the paper is freely available from Thierry Blu's CUHK page and was read there (`https://www.ee.cuhk.edu.hk/~tblu/monsite/pdfs/blu9801.pdf`). Three items are used and no others: Definition 2 eq. (15), the moment conditions on the sampling distributions; Theorem 3 eq. (30), order-`L` quasi-biorthonormality ⟺ `O(T^L)` error, so the order is bought by the moments alone and exact interpolation is not required; and §III-C's paragraph after Theorem 4, which states P-156's hypothesis in the source's own words — *"it is now possible to consider compactly supported sampling functions associated with any kind of synthesis function"*, one extra moment buying the asymptotic **constant** as well as the order. The restatement named for a graphics reader is **Nehab & Hoppe, *Generalized Sampling in Computer Graphics*, MSR-TR-2011-16 / IMPA E022/2011**, whose §2.1 gives the mechanism in one sentence and records that a FIR design for `q` exists (Dalai, Leonardi & Migliorati 2005) beside Blu & Unser's IIR one. **What is not taken from either is the filter.** Writing `δ = z⁻¹ − 1` so the exact prefilter is `1/H = 1/(1 + τδ) = 1 − τδ + τ²δ² − …`, truncating that series *is* the quasi-interpolant and each term fixes one more moment; the three-tap `(1+τ+τ², −(τ+2τ²), τ²) = (1.24, −0.28, 0.04)` is the truncation that matches the exact filter's `M₂ = 2τ² − τ`, and the two-tap `(1.2, −0.2)` is the minimal order-2 one, carried beside it so the 5% bar is decided against a filter and not against a family. The derivation and its closed form `f_T(u) − g(u) = (g″/2)·[s(1−s) + M₂ − τ²]`, which reduces to `✗42`'s own `(g″/2)·[s(1−s) − τ(1−τ)]` at `M₂ = 2τ² − τ`, are written out at `experiment_p156.rs:97-140`. The taps are **not** a truncation of the impulse response, and that distinction is load-bearing: `1/H`'s first three taps `(1.25, −0.3125, 0.078125)` sum to `1.015625`, fail `M₀ = 1`, and do not even reproduce a constant — which is why they are the harness's negative control.
+
+**What a consumer should do differently: nothing. Keep `t = a/(a − b)`, and the registered falsifier says why in advance.** C1's miss is small but it is a miss on a real field — `csg_difference` at **+6.80%** against a 5% bar, at the resolution the clause was to be decided at, and the ratio's distance from 1 was supposed to *fall* like `h` between the two rungs (it goes 1.069615 at 33 to 1.068013 at 65, i.e. it does not). The falsifier's reading therefore stands: *"compactness costs accuracy and the truncated recursive filter is the better engineering answer."* The compact filter's advantages are real and measured — `read_depth_samples` **5** against **11**, `chunk_local` **true** structurally, `prefilter_ms` **2.53–2.55** against the truncated recursion's **4.65–4.67** at 65 samples, and no sequential dependence per vertex — and they are not worth a 6.8% root-position regression on a CSG field plus **1,081** lost brackets on a polyhedron. SHARE is discharged against C1 rather than with it: the vertex-interpolation stage does not move. The two findings that outlive the row are C3's narrowing of `M-32` to integer lattice positions, and `✗42`'s `7.152528e-7` reproduced over thousands of edges instead of eight.
+
+### 💥 ✗116 / M-470 — C1 FALSIFIED with `c1_hits` **0** of `c1_population` **4**: the tricubic Lagrange `4x4x4` filter *is* genuinely order-4 on its own zero set (`recon_fitted_exponent` **3.842076 / 3.091828 / 3.741280 / 4.037091** against the trilinear's **1.837459 / 1.769023 / 1.895204 / 1.896907**) and the mesh's `fitted_exponent` still reads **1.906661 / 1.980732 / 1.766603 / 1.924567**, with an infinite-order `exact_oracle` arm pinned at **1.912218 / 1.985443 / 1.754517 / 1.942273** — the second order belongs to the piecewise-linear mesh and no filter can reach it; C2 HELD at `samples_per_cell_ratio` **1.383534** for **+0.254234 ms** on `M-150`'s 15.01 ms path, C3 HELD at `cases_invalidated` **256** against a registered prediction of 256 (P-157, R-157)
+
+**M.** `cargo bench --bench experiment_p157`, `docs/experiments/p-157.csv`, **27 rows** across **85
+columns** — four `#` comment lines plus one column header plus **27 data rows**, counted from the file
+rather than from the brief; 14 of the 85 columns are `P-157`'s registered `records` and the other 71 are
+`M-273` extras. The shape, also counted from the file: **nine fields × three arms**, `filter` reading
+`trilinear` / `tricubic_lagrange_4x4x4` / `exact_oracle` with `approximation_order` `2` / `4` / `inf`,
+`is_control` **true** on the first and third and **false** on the tricubic, every row carrying the same
+`resolution_series` `17|25|35|49`. `f64` throughout, `amd-ryzen-9-5900x-12-core` (Zen 3),
+`# commit 38b1de0 on amd-ryzen-9-5900x-12-core at 2026-08-30T14:25:55Z` with no `(WORKING TREE DIRTY)` on
+that line. Cost columns are one rung — `timing_resolution` **35**, `cells_at_timing` **39,304**,
+`timing_repeats` **7** — and the crossing search is `bisections` **30** on both non-trilinear arms.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 a higher-order reconstruction gives a fitted error exponent above 3 on at least four smooth fields, against the trilinear's 2 | `fitted_exponent > 3.0` on ≥ 4 smooth fields | **FALSIFIED** — `c1_hits` **0** against `c1_population` **4**. The tricubic arm's `fitted_exponent` is **1.906661** (`sphere`), **1.980732** (`sphere_r060`), **1.766603** (`torus`), **1.924567** (`torus_fat`); the trilinear control on the same four reads **2.023133 / 2.028781 / 1.854380 / 1.998152**. Not one row of 27 exceeds 3, and the largest tricubic exponent in the file is `sphere_r060`'s 1.980732 |
+| C2 the cost is stated in field evaluations per cell and the resulting share of extraction time | both currencies on every row, and the tricubic within `2.0x` the trilinear's `samples_per_cell` on every field | **HELD** — `samples_per_cell` **1.090856** trilinear against **1.509236** tricubic on all nine fields, `samples_per_cell_ratio` **1.383534**, well inside the 2.0 bar. `eval_ms` and `eval_share` are on all 27 rows: `eval_ms` **0.092461–7.781730** trilinear, **0.127850–10.805982** tricubic; `eval_share` **0.227700–0.895177** trilinear, **0.026679–0.620328** tricubic |
+| C3 the count of A-002 cases a higher-order filter invalidates, priced at registration rather than discovered | `cases_invalidated >= 256` | **HELD** — `cases_invalidated` **256** = `cases_total` **256**, decomposed as `cases_with_geometry` **254** + `cases_empty` **2**, with `cases_decider_dependent` **120**, `cases_tunnel_capable` **152** and `cases_centroid_bearing` **0**. `hashes_moved` **0** over `hashes_checked` **24** and `fixture_rows` **216**: nothing in `crates/isomesh/src/**` moved, as predicted |
+
+> **C1 is falsified, and the file contains its own derivation of why — which is the difference between a
+> negative result and a shrug.** Three arms, one grid, and the exponents line up in a way that leaves no
+> room for the filter: the tricubic's *reconstruction* error falls at **3.842076 / 3.091828 / 3.741280 /
+> 4.037091** on the four smooth exact fields (`recon_fitted_exponent`), which is order 4 arriving exactly
+> as advertised — and the *mesh* built on that reconstruction still converges at **1.906661 / 1.980732 /
+> 1.766603 / 1.924567**. **The `exact_oracle` arm settles it: it places every crossing on the field's own
+> zero to within `2^-30` of a cell, so it has no reconstruction error at all — its `recon_zero_error` at
+> the finest rung is `3.880529e-11 / 3.485401e-11 / 3.690609e-11 / 3.872636e-11` and its
+> `recon_fitted_exponent` reads a flat `0.999998 / 0.780120 / 0.992178 / 0.825710` because it is fitting
+> arithmetic noise — and its `fitted_exponent` is still `1.912218 / 1.985443 / 1.754517 / 1.942273`.** A
+> filter of infinite order buys the same exponent 2 that a filter of order 2 buys. The second order is
+> the chord error of a flat triangle spanning a curved cell, `sup max_i |d2f/dxi^2| h^2 / 8`, and that
+> term contains no reference to the reconstruction whatsoever. So C1 could not have held on this
+> functional, and the row establishes that rather than reporting a disappointment.
+>
+> **C1's population is 4 because the arithmetic makes it 4, and the bar was registered at 4.** `smooth`
+> is true on six fields — the two spheres, the two tori, `gyroid` and `fbm_terrain` — but
+> `hausdorff_valid` is false on `gyroid` (`bound` `lipschitz`), `fbm_terrain` and `noise_cavity` (`bound`
+> `unbounded`), so `fitted_exponent` is `nan` on nine of the 27 rows and the four smooth fields with an
+> `exact` bound are the whole of C1's scope. `box_exact` and `thin_plate` are `exact` and are **not**
+> smooth: their creases have no second derivative, and the file shows exactly what that does to an
+> approximation-order measurement — `recon_fitted_exponent` **-4.311810** for the tricubic on `box_exact`
+> and **-11.028321** for the trilinear on `thin_plate`, fits through ladders that are at the `f64`
+> cancellation floor on three rungs and not on the fourth. Those two are reported and excluded, not
+> averaged in.
+>
+> **Nine vacuity controls, all of them assertions that abort with `VOID:` rather than columns that
+> record a pass.** (1) *The trilinear arm reproduces exponent 2 in this harness* — the registration's own
+> control — `fitted_exponent` **2.023133 / 2.028781 / 1.854380 / 1.998152** inside a band of 0.75 about
+> 2.0, the band taken from `p-155.csv`'s committed **1.985214** and **1.712362** rather than chosen here.
+> Had the trilinear read something other than 2, C1's comparison would have been between two measurement
+> setups. (2) *The filter really is higher order* — the tricubic's `recon_fitted_exponent` must exceed the
+> trilinear's by at least 1.0 on the smooth population, and does: **+2.004617 / +1.322805 / +1.846076 /
+> +2.140184**. Without this, "higher-order reconstruction" would be a name and C1 would measure nothing.
+> (3) *The oracle really is exact* — `recon_zero_error` below `1e-6 * h` at the finest rung, i.e. below
+> `8.333e-8` at `h = 4/48`; measured **3.485401e-11** to **1.546312e-10** across all nine fields. (4)
+> *The stencil never extrapolated* — `stencil_clamped` **0** on all 27 rows, with `halo_layers` **2**
+> covering `stencil_samples` **64** against the trilinear's **8**; a clamp would mean the reconstruction
+> measured is not the one the header describes. (5) *Every population is non-empty* — `crossings_finest`
+> **966–15,792** with `crossings_dropped` **0** on all 27 rows, and `hausdorff_coverage` **true** on all
+> 27, so no supremum is taken over an empty set (`M-44`). (6) *The empty case is genuinely invalidated* —
+> a `4x4x4` block whose middle cell has `empty_case_index` **0**, all eight corners strictly outside, and
+> whose tricubic interpolant reads `empty_case_centre_value` **-2.814453** at the cell centre while
+> `CASES[0]` emits `empty_case_triangles` **0**; `empty_case_interior_component` **true**. (7) *C1's
+> population is exactly the four named fields* — `c1_population` **4**, so the bar of four is not met by a
+> roster widened after the fact. (8) *The baselines are the committed artefacts* — `p-155.csv`'s
+> `p155_strang_fix_order` **2**, `p155_measured_order` **2**, `p155_fitted_exponent_sphere` **1.985214**
+> and `p155_fitted_exponent_torus` **1.712362**, and `p-138.csv`'s three case spaces and tractability
+> flags, are read from the files at run time and asserted. (9) *The fixture was read* — `hashes_checked`
+> **24** and `fixture_rows` **216**, so `hashes_moved = 0` is not a zero over an empty set.
+
+**A vacuity control was wrong at the first run and was replaced, and both readings are in the file.** The
+harness's own header still records the first draft's control: *"Every arm must produce an identical vertex
+and triangle count at every resolution on every field, or the exponents describe different meshes"*
+(`experiment_p157.rs:230-232`). That contradicts the row's purpose. A higher-order reconstruction **moves
+the zero set** — that is the whole mechanism under test — so the tricubic arm's vertex and triangle counts
+differ from the trilinear's by construction, and the difference *is* the effect. Measured on `sphere` at
+the first run the counts differ, and the draft control read that as a broken comparison. The control now
+asserts what actually has to be shared for the exponents to be comparable — the **grid**, which is
+structural (every arm extracts on the same `shape`, `origin` and `h` at each rung, inside one loop) — and
+that every arm produced a non-empty mesh at every rung, `arm.triangles > 0 && !arm.recon.is_empty()`
+(`experiment_p157.rs:1781-1805`). `topology_identical` stays as a **measured column** and reads **false**
+on four of the nine fields (`sphere`, `box_exact`, `thin_plate`, `noise_cavity`) and **true** on the other
+five. At the finest rung the counts differ on three: `box_exact` **6,908 / 3,456** tricubic against
+**6,344 / 3,174** trilinear, `thin_plate` **2,312 / 1,158** against **2,296 / 1,150**, `noise_cavity`
+**31,892 / 15,794** against **31,888 / 15,792**. `sphere` agrees at the finest rung and differs at a
+coarser one, which is why a per-field flag reads false where the headline counts match.
+
+**`P-138` already priced the proposal this row runs into, and the numbers are read from `p-138.csv` at run
+time rather than quoted.** `p138_case_space_trilinear` **2^8**, `p138_case_space_triquadratic` **2^27**,
+`p138_case_space_tricubic` **2^64**, with mixed volumes **2 / 29 / 116** and
+`p138_tractable_triquadratic` **true** against `p138_tractable_tricubic` **false**. The tricubic's corner
+signs are not its case index — `p138_signs_are_case_index_tricubic` **false** with
+`p138_net_sign_bits_tricubic` **64** against the trilinear's 8 — so a 256-row table is not merely
+inconvenient for a tricubic, it is the wrong object. **The sentence this row inherits is `P-138`'s:
+degree 2 is the only one of the three that gives both an order above the trilinear's and a case space
+anyone can tabulate.** This harness shipped the tricubic anyway, because C1 asks about the exponent and
+degree 3 is what an exponent lift is for; C1's answer is that the exponent lift does not reach the mesh,
+so the `2^27` alternative is named here and not benched — `P-138` benched it.
+
+**C3's 256 is a decomposition, not a slogan, and its sharpest half is the two cases with no geometry.**
+The 254 cases with geometry are invalidated because their crossing positions and their linking are
+derived from the trilinear's edge and face restrictions; `cases_decider_dependent` **120** of them also
+depend on the trilinear's own face hyperbola and `cases_tunnel_capable` **152** on the body-saddle
+algebra. Cases 0 and 255 are invalidated for a sharper reason and the harness **constructs** the
+counterexample instead of arguing for it: a cell with all eight corners strictly outside whose tricubic
+interpolant is strictly negative at the centre, `empty_case_centre_value` **-2.814453**, for which
+`CASES[0].count` emits **0** triangles — a closed component of the reconstruction's zero set inside a cell
+the shipped table calls empty. The body-saddle algebra it retires is re-measured here rather than cited:
+`b*b - 4*a*c` at `marching_cubes/trilinear.rs:246` is Cayley's `2x2x2` hyperdeterminant, and this run
+reproduces `P-127`'s identity through `common::poly` — `p127_identity_holds` **true**,
+`p127_identity_terms` **12**, `p127_identity_degree` **4**, `p127_identity_variables` **8**,
+`p127_pencil_matches` **3 of 3**, with `p127_identity_multi_affine` **false** because the discriminant is
+quadratic in each corner even though the interpolant is not.
+
+**SHARE, recomputed from the constants rather than repeated.** The registration's SHARE is *"C2 moves the
+field-evaluation stage, which `M-152` puts at 2.65 ms of an 8.40 ms upload at `129^3`"*. `m152_eval_ms`
+**2.650000** and `m152_upload_ms` **8.400000** are in the file, as is `m150_path_ms` **15.010000**. The
+`4x4x4` stencil on a cached grid is a **halo**, not an eight-fold stencil: the evaluation count grows by
+`((129 + 2*HALO)/129)^3`, and `share_growth_at_129` is **1.095938**, so the stage goes 2.65 ms to 2.90 ms
+— `share_delta_ms_at_129` **0.254234** and `share_delta_pct_at_129` **1.693767** percent of the 15.01 ms
+path. **The halo is a surface cost, so it is cheaper at the resolutions that matter: `1.383534x` at the
+`35^3` this harness times against `1.095938x` at `129^3`, and quoting only the `35^3` figure would
+overstate the price of the proposal by a factor of four.** `eval_share` is reported and is deliberately
+**not** a bar: the tricubic's share *falls* on every field (0.227700 to 0.026679 on `sphere`) because
+`total_ms` grew — `total_ratio` **8.729571–12.669701** on the smooth and CSG fields — and neither number
+is a statement about affordability, because `total_ms` compares a bench-local scalar interpolant against
+the shipped and tuned extractor. The `exact_oracle`'s cost is the one figure worth carrying out of the
+timing block: its `samples_per_cell_ratio` reaches **6.275802** on `noise_cavity`, 30 bisections of the
+field per crossing, which is the arithmetic reason it is an oracle and not a filter.
+
+**What a consumer should do differently: nothing, and that is now measured rather than assumed.** The
+shipped trilinear path is unchanged — `hashes_moved` **0** — and the reason to leave it alone is stronger
+than "the tricubic was not tried". `✗42` found the knot-shift gain was a lottery over root position; this
+row finds the *order* lever moves the reconstruction's own zero set by a factor of **295**
+(`recon_zero_error` at the finest rung falls **7.959516e-4 to 2.700651e-6** on `sphere`) and moves the
+extracted mesh's convergence rate by nothing at all. **Anyone proposing to raise the reconstruction order
+in this crate must first raise the order of the mesh, because the mesh is what the second order belongs
+to** — and the collateral for doing so is priced on this row at the whole 256-case table.
+
+### 💥 ✗117 / M-471 — the null arrived exactly as registered: C1 HELD with `mixed_derivative_norm` divergent on both CSG fields (`norm_growth_exponent` **5.000000** on `box_exact` and **5.148604** on `csg_difference`, against a Lipschitz-kink calibration arm fitting **5.000000** and reproducing its analytic `6/h^5` to **4.329870e-15** relative), and C2 FALSIFIED on **8 of 8** rows — on the three qualifying fields the Smolyak arm is **4.19x**, **4.94x** and **2.26x** *worse* than the full grid while holding **4.128317x** fewer samples, and `break_even_reads_per_eval` **8793.8** prices the mechanism out of this crate at any accuracy (P-158, R-158)
+
+**M.** `cargo bench --bench experiment_p158`, `docs/experiments/p-158.csv`, **8 rows** across **39
+columns** — four `#` comment lines plus one column header plus **8 data rows**, one per
+`for_each_reference_field!` field, counted from the file rather than from the brief; 11 of the 39 columns
+are `P-158`'s registered `records` and the other 28 are `M-273` extras. `f64` throughout,
+`amd-ryzen-9-5900x-12-core` (Zen 3), `# commit 1380017 on amd-ryzen-9-5900x-12-core at
+2026-08-30T09:29:48Z` with no `(WORKING TREE DIRTY)` on that line. The norm ladder is four odd
+resolutions `n33/n49/n65/n97` (`norm_ladder`) and the Smolyak ladder four levels
+`L5=705|L6=1649|L7=3809|L8=8705` (`sparse_points_ladder`), `sparse_level` **8**. `field_wall_seconds`
+**1.710–4.746**, read by no clause.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the mixed-derivative norm is measured on all eight reference fields and is unbounded on the CSG fields, `box_exact` and `csg_difference` | `norm_finite` false on both named fields | **HELD**, and wider than registered. `norm_finite` **false** on `box_exact` (`mixed_derivative_norm` **7.962624e6** at `n97`, `norm_growth_exponent` **5.000000**) and on `csg_difference` (**1.683440e7**, **5.148604**) — and also on `thin_plate` (**1.150517e7**, **5.213463**), `gyroid` (**9.156357e4**, **4.878970**) and `noise_cavity` (**1.424060e8**, **4.872009**). **Five of eight**, not two. `c1_holds` is global and reads **true** on all 8 rows |
+| C2 on the fields where the norm *is* bounded, a sparse grid reaches matched Hausdorff error with at least `2x` fewer samples | `hausdorff_sparse <= hausdorff_full` at `point_ratio >= 2.0`, on every qualifying field | **FALSIFIED** on **8 of 8** rows, `c2_global` **false**. On `fields_qualifying` = `sphere|torus|fbm_terrain`: `hausdorff_sparse` **2.245119e-2** against `hausdorff_full` **5.361366e-3** (4.19x worse), **6.813442e-2** against **1.378826e-2** (4.94x), **6.138858e-1** against **2.717775e-1** (2.26x). Not a budget failure — `point_ratio` **4.128317**, twice what C2 asks — and not an extraction-grid failure, since the sparse arm was meshed at `65^3` against the full arm's `33^3` |
+
+> **C2 is the expected outcome and the reason this row was registered `M` rather than `L`, and the file
+> says why in a column rather than in prose.** The band norm and the **whole-domain** norm are recorded
+> side by side, and they disagree in exactly the way the method's hypothesis needs them not to.
+> `norm_growth_exponent` is measured over the shrinking surface band `|u| <= 2h` and is **negative** on
+> the two smooth fields — **-0.772578** on `sphere`, **-1.519635** on `torus` — so their surfaces really
+> are in `H^2_mix`. **`norm_domain_exponent` is measured over the box the Smolyak interpolant is actually
+> built on, which is the quantity Bungartz & Griebel's theorem needs, and it is `5.000000` on `sphere`
+> with `norm_domain_finest` `3.117591e7`.** Every field in the roster diverges on the whole domain at
+> between **5.000000** and **6.010966**, because an SDF is singular on its **medial axis** whether or not
+> its surface is smooth: `sphere`'s medial axis is the single point `r = 0`, two units inside its surface
+> and squarely inside the interpolation domain. So the `O(h^-1 |log h|^(d-1))` point count is conditional
+> on a regularity that **no** signed distance field in this crate has over the domain a tensor-product
+> interpolant is defined on. The two columns were expected to disagree and were recorded before the
+> Hausdorffs were looked at.
+>
+> **The three qualifying fields qualify for reasons that have nothing to do with their surfaces, and one
+> of them is the roughest field in the roster.** `FbmTerrain::sample` is affine in `y`
+> (`fields/mod.rs:1352-1362`: the noise never sees `p[1]`), so `d2u/dy2` is identically zero and the
+> mixed sixth derivative is **structurally** zero — its measured `mixed_derivative_norm` **2.978418e-11**
+> sits at the finite-difference roundoff floor with `norm_over_floor_min` **4.679366e-3** and
+> `norm_regime` **at_roundoff_floor**, so its apparent `norm_growth_exponent` **6.010966** is the floor's
+> own `h^-6` and says nothing about the field. `norm_regime` reads **resolved** on the other seven with
+> `norm_over_floor_min` between **3.040622e6** and **2.669788e13**, six to thirteen orders of headroom.
+> The mirror case is `gyroid`: `Gyroid::sample` is a sum of three two-variable terms
+> (`fields/mod.rs:1022-1024`), each annihilated by the third second derivative, so the **nodal** gyroid's
+> mixed sixth derivative is also identically zero — and `capped_gyroid` reads `norm_finite` **false**
+> anyway, because what survives is the `max` against the bounding sphere (`fields/mod.rs:744-747`). Its
+> unboundedness is its **seam**, not its surface. `thin_plate` reads on this instrument exactly as
+> `box_exact` does, because `ThinPlate` is a box (`fields/mod.rs:651`), and its band norm equals its
+> domain norm to the digit (**1.150517e7** both, exponent **5.213463** both) because the plate is
+> sub-voxel and the band is the plate.
+>
+> **Seven vacuity controls, and two of them are calibration arms with closed forms rather than fits.**
+> (1) *`stencil_smooth`* must reproduce the exact `d^6/dx^2dy^2dz^2` of `x^2 y^2 z^2`, which is **8**;
+> `control_smooth_value` reads **8.000024426**. The stencil factorises on a separable input so 8 is a
+> closed form, and a miss would mean every norm in the file measures the instrument. (2) *`stencil_kink`*
+> must reproduce the exact constant of `max(x+y+z, 0)`, whose stencil sum is `15 - 12 + 3 = 6` giving
+> `6/h^5`: `control_kink_constant` is the worst **relative** deviation from that and reads
+> **4.329870e-15**, and `control_kink_exponent` fits **5.000000** against the analytic 5. Together they
+> prove the instrument returns the right number for a smooth function *and* detects a Lipschitz kink at
+> the right rate — which is precisely the dynamic range C1 needs, and it is why the five divergent fields'
+> **4.872009–5.213463** is a recognition rather than a coincidence. (3) *The registered control*:
+> `sphere` shows `norm_finite` **true**, so the CSG verdicts are the fields being rough and not the
+> measurement being broken. (4) *The band is non-empty on every field at every resolution* —
+> `band_points_finest` **13,095–98,028**; a maximum over an empty set is not a norm (`M-44`). (5) *The
+> full arm extracted something and had coverage* — `full_triangles` **1,016–13,236** and `hausdorff_full`
+> strictly positive on all 8, which is also `c2_reachable` **true** on all 8, so no row's C2 is
+> unreachable for want of a baseline. (6) *C1's qualifying set is non-empty* — `fields_qualifying` names
+> three fields, so C2 is not scored over the empty set. (7) *The headline level offers at least the `2x`
+> C2 registers* — `point_ratio` **4.128317**, so a negative C2 is a statement about the method and not
+> about this harness's budget.
+
+**SHARE was discharged negatively by arithmetic available before any Hausdorff was read, and that number
+is the finding a reader should carry away.** The sparse arm saves `35,937 - 8,705 = 27,232` field
+evaluations. To spend them it evaluates a **109**-term Smolyak combination (`sparse_terms`) at every one
+of the `65^3 = 274,625` points of its extraction grid, each term one trilinear interpolation of eight
+array reads — `sparse_reads_per_sample` **872** — so `8 * 109 * 274,625 = 239,473,000` reads against
+27,232 saved evaluations. **`break_even_reads_per_eval` is 8793.8: a single `Sdf::sample` would have to
+cost more than eight thousand seven hundred memory reads before the trade is even neutral, and the most
+expensive field in this roster is a four-octave lattice-hash fbm that evaluates no transcendental at all
+(`fields/mod.rs:1294-1295`).** Sparse grids are for problems whose function evaluation is a PDE solve. An
+SDF is not one, and no accuracy target changes that ratio.
+
+**The convergence rate is the second half of the negative, and it is measured against theory rather than
+against the other arm.** `sparse_rate_theory` is **-2.000000** on every row — the rate a multilinear
+Smolyak reconstruction should show against its own point count. Measured `sparse_rate_exponent`:
+**-0.921708** on `sphere`, **-0.542523** on `torus`, **-0.497986** on `fbm_terrain`, and **+0.113535** on
+`noise_cavity`, where the error *rises* with level and `sparse_unconverged` reads **1,748** probes. Less
+than half the theoretical rate on the best-behaved field in the roster. `sparse_coverage` is **true** on
+all 8 rows, so none of these is the trap where a lost surface produces zero samples in both directions and
+`symmetric_hausdorff` reads `0.0` — no coverage is recorded as `inf`, never as zero.
+
+**Two rows read `hausdorff_sparse < hausdorff_full` and neither is evidence, which is what
+`hausdorff_sparse_floor` exists to establish.** `box_exact` reads **2.083333e-2** sparse against
+**1.443376e-1** full and `thin_plate` **1.243828e-2** against **8.926786e-2** — apparent wins of 6.9x and
+7.2x on two fields C1 has already excluded. The discriminator is the `extraction_floor` arm, the **true**
+field extracted on the sparse arm's own `65^3` grid: `hausdorff_sparse_floor` **7.216878e-2** and
+**4.592793e-2**. Both sparse readings are *below* their floors, so the reconstruction is beating the field
+it approximates — which is a statement about `validate::accuracy`'s mesh-to-field direction near a sharp
+seam (`validate/accuracy.rs:59-63`, where the Newton flow can land further away than the true nearest
+point), not about Smolyak. `bound_exact` is recorded on every row (**true** on `sphere`, `torus`,
+`box_exact`, `thin_plate`; **false** on `csg_difference`, `gyroid`, `fbm_terrain`, `noise_cavity`) so that
+where the number is a residual rather than a distance the reader can see it; both arms of a row use the
+identical instrument on the identical grid, so C2's *comparison* is still the comparison C2 asks for.
+
+**What a consumer should do differently: nothing, and this row is the reason not to try.** No shipped code
+path was touched and none is proposed. What the row buys is a closed direction with a number attached:
+Smolyak sparse grids do not reach signed distance fields, they fail on the **hypothesis** rather than on
+the implementation, and the hypothesis fails on the whole-domain norm for **every** field in this roster
+including the sphere. The repository previously contained no measurement of `H^2_mix` at all — no bench,
+test or document held the words `Smolyak`, `H^2_mix` or `mixed derivative` — and the corpus audit had
+recorded the field as *"ABSENT (0.597) | 0 | Registered expecting a null"* (`FINDINGS.md:25051`). It came
+back null, with the eight norms, the two calibration constants and the break-even read count that make it
+a null rather than an absence.
+
+### 🧊 M-472 — the registered null came back, and it is a null with page numbers: against `W_inf^2` — the class the trilinear model is second-order exact for, and the one C3 names — Marching Cubes is **order-optimal**, `ratio` **1.020157** on `sphere` and **0.991341** on `torus`, where `measured_error_rate` **0.680105** and **0.660894** meet a `minimal_error_rate` of **0.666667** (`g_n ≍ n^(-s/3)` at `s = 2`, i.e. `Θ(h²)`, and the independent `h` fit reads `measured_h_exponent` **1.974952** and **1.919062** against `minimal_h_exponent` **2.000000**), so only the constant is in play and `constant_gap` bounds it at **7.252731** and **6.263480**; C1 and C3 HELD on all 18 rows, `c2_holds` `false` on **10 of 18** exactly where the ratio is not trustworthy, and three things the source does **not** contain are carried in every row's `class_assumptions` rather than glossed (P-159, R-159)
+
+**M.** `cargo bench --bench experiment_p159`, `docs/experiments/p-159.csv`, **18 rows** across **54
+columns** — four `#` comment lines plus one column header plus **18 data rows**, counted from the file
+rather than from the brief; 12 of the 54 columns are `P-159`'s registered `records` and the other 42 are
+`M-273` extras. The shape, also counted from the file: **nine fields × two arms**, `arm` reading
+`pinned_w2` and `measured_max`, the eight `for_each_reference_field!` fields plus `lens_control` with
+`is_control` **true** on its two rows and **false** on the other sixteen. `resolutions` `17|25|33|49|65`
+and `n_samples_ladder` `4913|15625|35937|117649|274625` identical on all 18, `n_samples` **274,625** —
+five rungs rather than the house three, because `measured_error_rate` is a fitted exponent and a
+three-point fit has no residual. `extractor` `marching_cubes_defaults_refinement_0` on all 18: shipped
+defaults, `set_crossing_refinement` untouched at 0, because this row denominates the shipped
+configuration. `f64`, `amd-ryzen-9-5900x-12-core` (Zen 3), `# commit 807ba99 on
+amd-ryzen-9-5900x-12-core at 2026-08-30T09:30:00Z`. `wall_seconds` **0.009147–0.493597**, read by nothing.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the `n`-th minimal error rate for a stated regularity class is established from the literature and written down with **all** its hypotheses, and the class our fields plausibly belong to is named | a rate, its hypotheses, and a named class | **HELD**, global on all 18 rows. `field_class` reads `W_inf^2_unit_ball_on_bounded_convex_D_in_R3`, `W_inf^4_…` and `W_inf^1_…`; `minimal_error_rate` **0.666667 / 1.333333 / 0.333333** = `s/d` at `d = 3`, i.e. `g_n ≍ n^(-s/3) = Θ(h^s)`. Every hypothesis is a token in `class_assumptions`: `s_integer=true`, `s_gt_d_over_q=true`, `d=3`, `p=inf`, `q=inf`, `domain=bounded_convex`, `information=n_function_values`, `adaptive=no_by_thm9.3` |
+| C2 the measured extractor error is compared against it and the answer is stated as a ratio | a computable ratio per row | **HELD on 8 rows, `false` on 10**, per row, and `false` exactly where the registration's own falsifier bites — *"a ratio that is not computable because the class assumptions are unverifiable"*: either `fit_r2` is below the 0.90 floor or the measured regularity does not reach the arm's pinned `s`. The eight are `sphere` and `torus` on both arms, and `box_exact`, `csg_difference`, `gyroid` and `fbm_terrain` on `measured_max` |
+| C3 IF the minimal rate is already `Θ(h²)`, Marching Cubes is order-optimal and only the constant is in play — a branch, and both branches recorded | not falsifiable; both legs present | **HELD**, global. `order_optimal` takes **both** values across the 18 rows — **true** on 5 (`sphere`/`W^2`, `torus`/`W^2`, `box_exact`/`W^1`, `csg_difference`/`W^1`, `gyroid`/`W^1`) and **false** on 13 — so neither leg is missing and a later reader can score the branch either way from the file |
+
+> **The single sentence this row was registered to produce, and the numbers that carry it.** Against
+> `F_inf^2` — the class Marching Cubes' own trilinear model is second-order exact for — the minimal error
+> rate is `n^(-2/3)`, which is `Θ(h²)` at `h ≍ n^(-1/3)`. Two fits are recorded, one in each currency.
+> In evaluations, `minimal_error_rate` **0.666667** against `measured_error_rate` **0.680105** on `sphere`
+> and **0.660894** on `torus`, which is the `ratio` column: **1.020157** and **0.991341**, against an
+> `ORDER_OPTIMAL_TOLERANCE` of 0.15. In grid spacing, `minimal_h_exponent` **2.000000** against
+> `measured_h_exponent` **1.974952** and **1.919062**, at `fit_r2_h` **0.999743** and **0.997765**.
+> **Marching Cubes is order-optimal for that
+> class: no algorithm reading `n` function values can do better in rate, however the points and the
+> reconstruction are chosen, and therefore the whole of Group D's ambition against a `W^2` target is
+> capped at a better *constant*.** `P-157` is the row that pays that cap in the same phase: it raised the
+> reconstruction to order 4, measured `recon_fitted_exponent` up to **4.037091** on the reconstruction's
+> own zero set, and still read a mesh exponent of **1.906661–1.980732** — with an infinite-order oracle
+> arm pinned at the same 2. The two rows agree from opposite directions, one by theorem and one by
+> construction.
+>
+> **What is left is the constant, and the file bounds it — in the direction that is honest.**
+> `constant_gap` is **7.252731** on `sphere` and **6.263480** on `torus` at the finest rung
+> (`constant_gap_coarsest` **6.856280** and **5.358074**, so it is not a fitting artefact of one
+> resolution). It is **not** measured against Krieg & Ullrich's implied constant, because there is no such
+> constant in the source; it is measured against an explicit floor built here by their own
+> fooling-function method, `f_0(x) = A·sin(pi x_1/h)·sin(pi x_2/h)·sin(pi x_3/h)`, which vanishes on all
+> of `h·Z^3` so that no algorithm reading only the grid can distinguish `f_0` from `−f_0`. Both
+> sloppinesses in that floor run the same way: `seminorm_pinned` (**9.994508e-1** on `sphere`,
+> **3.301270e0** on `torus`) is estimated from **pure axis derivatives only** while the true seminorm also
+> ranges over mixed ones, and `grad_max` is a maximum rather than a typical value. Both shrink the floor
+> and therefore *inflate* the gap. **So 7.252731 is an upper bound on the room remaining, not a target —
+> and if this column had come back small, that would have been a real result.**
+>
+> **Seven vacuity controls, every one an assertion whose panic starts `VOID:`.** (1) *The literature is
+> transcribed faithfully* — the general-`d` rate must reproduce Proposition 2.4's independently printed
+> `d = 1` form (p. 16), the `s = 1` multivariate form `n^(-1/d)` proved from scratch on p. 121, and
+> Theorem 6.10's `p >= q` covering-radius exponent as literally printed (p. 93), to `1e-12`. A general-`d`
+> formula is exactly the kind of thing that gets a `d` in the wrong place, and `minimal_error_rate` is the
+> column that would carry the error. (2) *Regularity exists and is finite for every field* — the
+> registration's own control, verbatim: `regularity` **1.038326–4.049774** on all nine fields. (3) *The
+> regularity estimator discriminates* — `lens_control` measures **1.038326** against the smoothest field
+> on the roster at **4.049774** (`torus`), a spread of **3.011448** against a required 0.5. Scored against
+> the *smoothest* deliberately: `box_exact` is genuinely creased along twelve edges and measures
+> **1.317836**, about as rough as the control, so the roughest-field form of this clause would fire on a
+> correct measurement. (4) *The probes are on the surface and measurably closer to it than a random
+> point* — `probe_max_distance` **0.000000e0–1.488369e-1** against `scatter_median_distance`
+> **3.593906e0–1.182921e1**, a comparative clause needing no constant chosen after seeing the data. (5)
+> *The gradient does not vanish on the band* — `grad_max` **1.000000e0–9.798867e0** with
+> `grad_floor_vertices` **0** on all 18 rows, or the level-set reduction divides by zero; and the probe
+> set is non-empty, `probe_count` **2,046–28,882**. (6) *The instrument sees a falling error on at least
+> five fields* — `error_falls` **true on 8 of 9**, with `ladder_points` **5** and every recorded error
+> strictly positive. (7) *Both C3 branches are present* — `order_optimal` true on 5 rows and false on 13,
+> so the file cannot be written with one leg missing.
+
+**What was verified, from where, and what could NOT be — this is the entry's integrity and it is carried
+in every row rather than in this paragraph.** The rate comes from **Krieg & Ullrich, `arXiv:2602.02066`,
+*Approximation of Functions: Optimal Sampling and Complexity*** — in the corpus at
+`10.48550/arXiv.2602.02066`, downloaded, converted and embedded — and `class_assumptions` names the
+places read, by page: `gn_def_p13` (the `n`-th minimal error / sampling number
+`g_n(F, Y) = inf sup ‖f − Φ(f(x_1),…,f(x_n))‖`, with Remark 2.2 that this is the non-adaptive quantity),
+`thm6.10_p93` (the load-bearing one, attributed to Krieg & Sonnleitner, on a bounded **convex** domain),
+`prop6.11_p94` (`inf_{P_n} ‖dist(·,P_n)‖_{L_γ} ≍ n^(-1/d)`, which composed with Theorem 6.10 *is* the
+rate), `prop2.4_p16` (the independently stated `d = 1` case, a transcription check), and
+`adaptive=no_by_thm9.3`. A second source is named as a **cross-check and as a different theorem**, not as
+corroboration:
+`crosscheck=BonitoCanutoNochettoVeeser_10.1017-s0962492924000011_p67`, whose p. 67 says the maximal
+convergence order under uniform refinement is capped by the **polynomial degree** of the reconstruction
+space rather than by the function's smoothness, which is why this harness carries two class arms instead
+of one. **Three things could not be verified and are flagged in every row's `class_assumptions` with the
+word `UNVERIFIED` in them:** `UNVERIFIED_implied_constants_absent_from_source` — Theorem 6.10 and
+Proposition 6.11 are order statements whose constants depend on `d, s, p, q, D` and are evaluated nowhere
+in the paper, so `explicit_floor=own_fooling_function_sin_product` records what the gap is actually
+measured against; `UNVERIFIED_error_is_Lp_of_f_not_of_level_set` — IBC bounds `‖f − f̃‖_{L_p}` and an
+extractor emits `{f̃ = 0}`, so `level_set_reduction=derived_here_not_in_source`; and
+`regularity_at_benched_h_only` with `regularity_probed_to_order=4` — no asymptotic class membership is
+claimed anywhere. A fourth flag, `seminorm=pure_axis_derivatives_only_so_underestimated`, is the one that
+makes `constant_gap` an over-estimate rather than an estimate.
+
+**Class membership is argued from a measured property of each field, which was the registration's own
+vacuity control, and it is what splits C2.** For `f` with `s` bounded derivatives the centred `m`-th
+finite difference obeys `Δ^m_t f = t^m f^(m)(ξ)` exactly, so `log ‖Δ^m_t f‖_inf` against `log t` has slope
+`min(m, s)` and probing orders 1 to 4 reads `s` off as the order-4 slope. On `sphere` the ladder is
+`slope_order1` **1.000000**, `slope_order2` **1.990151**, `slope_order3` **2.984040**, `slope_order4`
+**3.906886** — a consistency ladder that could not look like that by accident. `regularity` per field:
+`sphere` **3.906886**, `torus` **4.049774**, `csg_difference` **1.387688**, `fbm_terrain` **1.345032**,
+`box_exact` **1.317836**, `noise_cavity` **1.259763**, `thin_plate` **1.198559**, `gyroid` **1.094014**,
+`lens_control` **1.038326**. `field_in_pinned_class` then decides the arm: the two smooth fields are in
+`F_inf^2` and the other seven are **not** — so on the rough fields `W^2` is the wrong class and the class
+they measurably inhabit is `W^1`, where the minimal rate is `n^(-1/3) = Θ(h)` and on **three** of them
+Marching Cubes hits it: `ratio` **1.033062** on `box_exact` and on `csg_difference`, **0.955441** on
+`gyroid`. `fbm_terrain` overshoots at **1.181764** and `thin_plate` and `noise_cavity` are the two rows
+whose ratios are not rates at all, both discussed below. **Both reductions of
+the difference norm are recorded because a max over probes is one probe's opinion, and the two disagree
+where it matters**: `regularity_median` reads **4.406408** on `gyroid` against a max of **1.094014**, and
+**4.068110** on `lens_control` against **1.038326** — the seam and the crease are single features, and the
+`q = inf` sup norm the theory needs is the max. On `box_exact`, `csg_difference` and `thin_plate` the
+median is `NaN` because the median difference sits below the cancellation floor on four of the five rungs
+(`difference_ladder_below_floor_median` `[false|true|true|true|true]`); the two reductions are floored
+independently for exactly that reason.
+
+**Two rows are arithmetically unreachable and are recorded as unreachable with their arithmetic, which is
+`P-70`-C1's precedent.** *`box_exact` on the `pinned_w2` arm*: `constant_gap` **NaN** and
+`constant_gap_coarsest` **NaN**, because `seminorm_pinned` is **0.000000e0** — the `W^2` seminorm
+estimated from pure axis derivatives is exactly zero on an exact box distance, which is linear along each
+axis over the probe set, `slope_order2` correspondingly reads
+**NaN**, and the fooling-function floor `A = M_s (h/pi)^s` has no value to be built from. There is no
+`W^2` floor for a field with no `W^2` seminorm, so there is nothing for the gap to be a gap against; the
+row's `W^1` twin reads **4.188790e0** and is the number that means something. *`thin_plate` on both arms*:
+`errors` reads **1.250000e-2** at all five rungs, `error_falls` **false**, `error_span` **1.000000**,
+`fit_r2` **0.000000**, `measured_h_exponent` **0.000000** and `measured_error_rate` **-0.000000**. It is
+`ThinPlate::for_cell_size(4/64)` at `THICKNESS_IN_CELLS = 0.4`, so its half-thickness is exactly `0.0125`
+and the plate is sub-voxel at **every** rung by construction (`M-266`, `M-72`): the mesh bridges its two
+sheets inside one cell, an edge midpoint lands on the mid-plane where `|f|` is the half-thickness, and the
+error is pinned independently of `h`. **It cannot fall before `h < 0.025`, i.e. `N >= 161`, and `161^3 =
+4,173,281` samples per pass against the `65^3 = 274,625` this bench can afford — a factor of 15.2, so the
+exponent is unreachable rather than unmeasured.** `noise_cavity` fails C2 for a different and weaker
+reason worth separating: `fit_r2` **0.307752** with an `errors` ladder that is not monotone
+(`8.017133e-1|1.559421e0|4.385014e-1|5.205939e-1|5.443099e-1`), below the 0.90 floor, so its ratios
+**0.264701** and **0.529403** are not rates.
+
+**The error functional had to be changed during development, and `box_exact` is the surviving proof — the
+column is still in the file.** `error_functional` is
+`max_abs_f_over_grad_norm_on_vertices_edge_midpoints_centroids`: `|f(x)| / ‖∇f(x)‖` over every vertex,
+**every edge midpoint and every triangle centroid**. Sampling the vertices alone read **identically zero
+on `box_exact` at all five resolutions**, and `probe_max_abs_value` **0.000000e0** with
+`probe_max_distance` **0.000000e0** on that field is the same fact still recorded: its half-extents are 1,
+every ladder spacing `h = 4/(N−1)` divides 3, so every box face lands on a grid plane, the field is
+exactly linear along every cut grid edge and Marching Cubes finds those roots exactly. The error is not
+zero — `M-250` measured `box_exact`'s symmetric Hausdorff at `1.443e-1` both before and after crossing
+refinement — because the mesh **truncates** every box edge with a chord whose midpoint sits about `h/2`
+inside the solid, and only a functional that looks between the vertices can see it. With the midpoints in,
+`box_exact` reads `measured_h_exponent` **1.000000** at `fit_r2` **0.999957**: the `Θ(h)` its own measured
+regularity predicts, from an unfittable zero. `csg_difference`'s ladder is byte-identical to it
+(**1.666667e-1** down to **4.166667e-2** on both, `error_span` **4.000000** on both), which is what a
+box-cornered worst point looks like on two fields that share one. `validate::accuracy` is deliberately not
+the instrument here: only four of the eight reference fields have `bound() == Exact`, and a functional
+meaningless on half the roster cannot carry a rate fit across it. Two further instrument candidates were
+tried and removed and are named in the harness rather than forgotten — striding the regularity probes to a
+cap (whether a crease gets sampled then depends on the stride rather than on the field) and a raw `|f|`
+bar for control 4 (`capped_gyroid` is `Lipschitz { l: 3.464 }` and `noise_cavity` is `Unbounded`, so a
+field value is not a length on this roster).
+
+**The roughness control took three attempts and the two failures are why the shipped one is centred at
+`(0.11, 0.07, 0.13)`.** `lens_control` is two unit spheres 1.0 apart, intersected, centred **off-lattice**
+— curved faces and one circular crease, so its regularity must measure near 1 where a sphere measures near
+4 *and* its error must still be a fittable `Θ(h)`; it reads `regularity` **1.038326** and
+`measured_h_exponent` **1.277221**. The `L^1` ball `‖x‖_1 − 1` measured `s = 1.000000` exactly and was
+useless, because Marching Cubes reproduces a piecewise-linear field *exactly* and its error sat at the
+`f64` floor with no exponent to fit. An origin-centred lens was worse: it put its crease at `x = 0`, a
+grid plane at **every** ladder resolution, so no triangle spanned the kink and the control measured
+`Θ(h²)` like a sphere. Both failures are the same failure `M-266` names — a fixture whose feature is
+lattice-aligned measures the lattice — and the off-lattice offset is the fix.
+
+**SHARE is none, discharged literally, and no consumer action follows from this row — which is the point
+of a denominator.** The registration says `SHARE: none -- this is a denominator, not a saving`, and this
+harness configures nothing, proposes nothing and moves nothing: `MarchingCubes::new()` at every default,
+no landing, no golden hash, nothing written into `crates/isomesh/src/**`. What changes is what a future
+registration is allowed to claim. **Every accuracy number previously in this ledger was a numerator —
+`M-12`'s `h²` at ratio 4.179, `F-007`/`M-250`'s 13–15%, `✗42`/`M-359`'s root-position lottery — each
+saying *did this help* and none saying *how much is left*.** This row supplies the denominator in the
+currency actually spent, and the answer on the class the extractor is built for is: the rate is already
+optimal, the remaining room is a constant, and that constant is at most about **7x** by a floor
+constructed to over-state it.
+
+### 🔬 M-473 — C1, C2 and C3 all HELD: at matched sample budget the octree-adaptive arm beats uniform on **12 of 12** measured rows with `gain` **1.230769–16.967407** while `budget_ratio` gives the uniform arm **1.009041–1.322344x** *more* evaluations, `gain_exceeds_two` is true on **10 of 12**, and the Gal-Micchelli/Novak factor-2 cap is measured not to apply rather than argued away — `class_convex` **false** at `convex_midpoint_min_value` **0.200000000** for `convex_midpoint_triangles` **0**, `class_symmetric` **false** at `symmetry_signed_volume` **4.179064172** against **-4.179064155**, `operator_linear` **false** at `linear_scaled_positions_equal` **true**, `error_worst_case` **true**, `hypotheses_satisfied` **1 of 4** (P-160, R-160)
+
+**M.** `cargo bench --bench experiment_p160`, `docs/experiments/p-160.csv`, **16 rows** across **63
+columns** — four `#` comment lines plus one column header plus **16 data rows**, counted from the file
+rather than from the brief; 12 of the 63 columns are `P-160`'s registered `records` and the other 51 are
+`M-273` extras. The shape, also counted from the file: **four `Exact`-bound fields × three octree depths**
+with `measured` **true** — `sphere`, `torus`, `box_exact`, `thin_plate` at `max_level` **5, 6, 7** — plus
+**four skip rows** with `measured` **false**, one per non-`Exact` field, `bound` naming which kind
+(`csg_difference` `underestimate`, `gyroid` `lipschitz`, `fbm_terrain` and `noise_cavity` `unbounded`).
+`f64`, `amd-ryzen-9-5900x-12-core` (Zen 3), `# commit 7744cb0 on amd-ryzen-9-5900x-12-core at
+2026-08-30T09:30:07Z`. `reference_cells` **64** on every measured row and `cells_tested`
+**777–33,225**. No RNG, no wall clock, and no clause on a timing.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 at matched sample budget, octree-adaptive sampling beats uniform on symmetric Hausdorff error, and the gain is reported per field | `hausdorff_adaptive < hausdorff_uniform` on every measured row | **HELD**, global. `c1_row` **true** on all **12** measured rows and false on the four skips. `gain` = `hausdorff_uniform / hausdorff_adaptive`: `sphere` **6.727178 / 10.529887 / 16.967407**, `torus` **8.920239 / 9.281417 / 16.340285**, `box_exact` **2.000000 / 1.230769 / 3.200000**, `thin_plate` **2.644104 / 3.087377 / 4.668109**. `gain_defined` **true** on all 12 |
+| C2 the gain exceeds 2 on at least one field, which is the concrete demonstration that the factor-2 result does not apply here | `gain_exceeds_two` on ≥ 1 measured row | **HELD**, global, and not marginally: `gain_exceeds_two` **true on 10 of 12** rows, reaching **16.967407** on `sphere` at depth 7 — **8.48x the theorem's cap**. The two `false` rows are `box_exact` at depths 5 and 6, for a lattice-phase reason derived before the run and bounded by two |
+| C3 the four hypotheses are each checked against our setting and recorded as a row of booleans, so no future reader re-imports the bound | four booleans, each decided rather than asserted | **HELD** — `hypotheses_satisfied` **1**, so `c3_holds` (`< 4`) is **true**: the theorem needs all four and one fails. `class_convex` **false**, `class_symmetric` **false**, `operator_linear` **false**, `error_worst_case` **true**. The falsifier's strict reading is recorded separately rather than reinterpreted: `c3_strict_holds` (`== 0`) is **false**, and the hypothesis that does it is named |
+
+> **The four hypotheses, each answered by a fixture that runs in this bench and reports its own
+> evidence — booleans that are only asserted are prose in a numeric column.**
+>
+> **(1) `class_convex` = false.** Two unit spheres at `±(1.2, 0, 0)`; both are members, exact distance
+> fields with a closed non-empty surface, and `convex_endpoint_triangles_min` **6,160** proves so (and is
+> asserted `> 0`, or the midpoint's zero triangles would be `M-44`'s vacuous zero). Their **midpoint**
+> `(f + g)/2` is not a member, and not marginally: `min(|p+c| + |p−c|) = 2·1.2 = 2.4` along the segment
+> between the centres, so the average is `(2.4 − 2)/2 = 0.2` there and larger everywhere else — the
+> midpoint field **has no zero set at all**. `convex_midpoint_min_value` reads **0.200000000** over a
+> `65^3` grid whose origin is a lattice point, exactly the predicted value, and
+> `convex_midpoint_triangles` reads **0**.
+>
+> **(2) `class_symmetric` = false.** Symmetric means `f ∈ F ⟹ −f ∈ F`. The unit sphere and its negation
+> are both extracted over `[-2, 2]^3` at `65^3`. The surfaces coincide; the **winding** does not, because
+> the crate's convention is negative-inside with normals away from the solid (`lib.rs:56-67`), so `−f`
+> describes the unbounded complement. `symmetry_signed_volume` **4.179064172** against
+> `symmetry_signed_volume_negated` **-4.179064155** — the divergence-theorem volumes of the two meshes,
+> `±4π/3 = ±4.1887902` to the discretisation — and **a member of a class of bounded solids cannot enclose
+> a negative volume**. `symmetry_hash_differs` **true** proves the two extractions are genuinely different
+> artefacts and not one computation reported twice.
+>
+> **(3) `operator_linear` = false**, decided by positive homogeneity, which is the cheapest half of
+> linearity and fails exactly. Marching Cubes' crossing is `t = a/(a − b)`, invariant under scaling the
+> field by a positive constant, and doubling is exact in IEEE-754 — so `S(2f)` is the mesh `S(f)` **bit for
+> bit** while a linear operator would have to produce `2·S(f)`. `linear_scaled_positions_equal` **true**,
+> comparing the two position arrays by raw bit pattern, with `linear_max_abs_position` **1.000000000**
+> asserted `> 0` because `S(f) = 2·S(f)` would otherwise be satisfiable by a mesh at the origin. The word
+> *continuous* is answered beside it and does not feed the verdict, one mechanism per column: two unit
+> spheres at `±(1, 0, 0)`, touching at the origin, offset by `continuity_epsilon` **0.080000000**. At `+ε`
+> the level set is the boundary of two overlapping balls, one component; at `−ε` it is two disjoint balls,
+> two. `continuity_components_grown` **1** and `continuity_components_shrunk` **2**: two fields
+> `2ε = 0.16` apart in the sup norm whose solution's component count is not the same number.
+>
+> **(4) `error_worst_case` = true, and saying so is the point.** Symmetric Hausdorff is a sup-norm
+> criterion and every number in the distance columns is a maximum, not a mean; `mae_uniform`
+> **0.001249024–0.044001088** and `mae_adaptive` **0.000156266–0.004354597** sit beside them so the
+> distinction is visible. So one of the theorem's four hypotheses **is** satisfied in this setting, and
+> the registration's falsifier read literally — *"C3 by any hypothesis being arguably satisfied"* — is
+> falsified by it. That is why `c3_strict_holds` is a separate column reading **false**: both readings are
+> on the row, neither is hidden, and a later reader can score C3 either way without re-running anything.
+>
+> **Seven vacuity controls, each naming the column that proves its fixture could have failed.** (1) *The
+> registered control — the adaptive arm must actually vary its sample density*: `density_ratio` is
+> `8^(deepest leaf level − shallowest)` and reads **64.000000–32768.000000** across the twelve rows
+> (`64` and `512` and `4096` on `box_exact`, whose `coarsest_leaf_level` is **3** against **2** on the
+> other three fields). A ratio of 1 would mean the octree refined everything to one level and *both arms
+> are uniform grids*, at which point every gain on the row measures the harness. (2) *Both arms produced a
+> surface* — `adaptive_triangles` **1,016–47,624**, `uniform_triangles` **136–4,328**. (3) *Both arms were
+> measured in both directions* — `reverse_samples_adaptive` **equals** `reverse_samples_uniform` on every
+> measured row (**6,482** on `sphere`, **6,032** on `torus`, **18,082** on `box_exact`, **3,399** on
+> `thin_plate`), so the field→mesh direction is sampled identically for both and neither Hausdorff is a
+> zero that could not have been non-zero (`M-44`). (4) *At least one field was measurable at all* — four
+> were. (5) *The convexity fixture's endpoints have surfaces* — **6,160**. (6) *The homogeneity fixture's
+> mesh is not at the origin* — **1.000000000**. (7) *The discontinuity fixture produced two meshes* — 1
+> and 2, not two absences.
+
+**The budget is matched in the uniform arm's favour, so a win is a win.** `sample_budget` is the number of
+**distinct field-evaluation positions** the adaptive arm needed — the miss count of a cache keyed on the
+deepest lattice, so exact dedup with no hashing and no float comparison — and the uniform arm is then
+given the smallest **odd** `n` with `n^3 >= sample_budget`. It therefore receives *at least* the adaptive
+arm's information and usually more: `budget_ratio` **1.009041–1.322344**, and a 1.32 budget advantage is at
+most a 1.10 cell-size advantage against gains this row reports in the single and double digits.
+`evaluations_uncached` **12,800–787,456** records what the harness actually spent against `cache_lookups`
+**6,993–299,025**, so the difference between the *information* and the *implementation* is visible rather
+than implied. **Odd is load-bearing and a first run proved it**: with `n` free to be even, `thin_plate` at
+`max_level = 6` drew a uniform arm of `n = 20` whose vertical grid edges all straddle the 0.025-thick plate
+without either endpoint entering it, and classic Marching Cubes correctly emitted **nothing at all** — 0
+triangles against the adaptive arm's 4,088. That is a registered property of the field
+(`fields/mod.rs:579-583`, `M-266` at `:606-617`), not a discovery, and an infinite gain from it would have
+been a measurement of lattice phase wearing adaptivity's clothes. Every `uniform_samples_per_axis` in the
+file is odd: **13, 21, 33** on `sphere`, **13, 21, 31** on `torus`, **17, 27, 41** on `box_exact`, **13,
+19, 25** on `thin_plate`.
+
+**The two gains under 2 are `box_exact`'s, and both were predicted in closed form before the run — to nine
+digits.** When the cube's face `x = 1` lands on a sample plane, `f` is exactly 0 at those corners,
+`is_inside` (`cube.rs:171`, `v < 0`) calls them outside, the three crossings all interpolate to `t = 1`,
+and the cube's own vertex sits `2h/sqrt(3)` off the emitted triangle; when the face does not land on a
+sample plane the truncation is half as deep, `h/sqrt(3)`. The adaptive arm is **always** in the first case,
+because `x = 1` sits at lattice index `3·2^(L−2)` of the octree's `2^L + 1` points, an integer at every
+depth here — so `hausdorff_adaptive` on `box_exact` should read exactly `2·cell_adaptive/sqrt(3)`, and it
+reads **0.144337567 / 0.072168784 / 0.036084392** against `cell_adaptive` **0.125 / 0.0625 / 0.03125**.
+The uniform arm alternates with `n`: at `n = 17` (`h = 0.25`) and `n = 41` (`h = 0.1`) it is in phase and
+`hausdorff_uniform` reads `2h/sqrt(3)` = **0.288675135** and **0.115470054**; at `n = 27`
+(`h = 4/26`) it is out of phase and reads `h/sqrt(3)` = **0.088823118**. So `gain` reads `cell_ratio`
+**2.000000** and **3.200000** at depths 5 and 7 and `cell_ratio/2` = **1.230769** at depth 6, which is also
+why `hausdorff_uniform` is **non-monotone** in the budget on that field. **The phase term is a property of
+the fixture, it is bounded by two, and `box_exact` is the only one of the four fields it touches.** The
+other three follow the laws derived before the numbers: on a smooth field the error is the linear
+interpolation error on a curved surface, `O(h²)`, so `gain ≈ cell_ratio²` — `sphere` at `cell_ratio`
+**2.666667 / 3.200000 / 4.000000** gives **6.727178 / 10.529887 / 16.967407** against squares of 7.11 /
+10.24 / 16.00; on a polyhedral field the error is in the corners and is `O(h)`, so `gain ≈ cell_ratio` —
+`thin_plate` at **2.666667 / 3.555556 / 5.333333** gives **2.644104 / 3.087377 / 4.668109**.
+
+**There are no cracks at the level transitions, no dilation and no 2:1 balancing are used, and the witness
+column only became one after the first run forced a correction.** The refinement test is the crate's own
+shipped predicate — `SubgridMarchingTetrahedra::cell_is_provably_empty` (`subgrid/extract.rs:494-508`),
+negated and recursed over levels: a cell is subdivided iff its corner signs disagree **or**
+`|f(centre)| <= l_field · edge · 0.5 · sqrt(3)`, with `l_field = field.bound().lipschitz()` rather than a
+tuning knob. For an `l_field`-Lipschitz field a pruned cell contains no zero of the field, boundary faces
+included, so a coarse leaf has nothing for a finer neighbour to disagree with and no transition geometry is
+needed. Two columns measure that argument instead of trusting it: **`active_by_sign_only` is 0** on every
+row — the centre term subsumes the sign term, as predicted — and **`corner_range_over_diagonal_max`
+maxes at 0.500000000** — exactly that on `sphere` and `box_exact`, **0.499024116** on `torus` at depths 5
+and 6 and **0.499648709** at depth 7, **0.499982421** on `thin_plate` — asserted
+`<= l_field + 1e-9`, which is the pruning proof's only assumption. That column is also the answer to the
+registration's literal wording: a *range-over-diagonal* variation test is bounded above by 1 **by
+definition** for a 1-Lipschitz field, so a slack `>= 1` can never fire and a slack `< 1` fires on any cell
+whose diagonal lies along the gradient — neither follows a surface, and the criterion used is the crate's.
+**`adaptive_boundary_edges` is 0 on all twelve measured rows, and so is `uniform_boundary_edges`, so
+neither is reported alone** — with `adaptive_components` and `uniform_components` both **1** everywhere.
+That column read **358,360 across these rows on the first run**, and it was not measuring cracks:
+`validate_indexed` keys its edges on vertex *index*, the per-leaf extraction emits every shared vertex once
+per leaf, so on the raw buffer every triangle is an island and the number is a measurement of
+**unweldedness**. Both arms now go through the crate's own `Welder` at its own `epsilon_for` first — one
+instrument, applied identically — and `adaptive_vertices_removed` says what each arm had to lose:
+**1,530–71,442** on the adaptive arm against **0 or 48** on the uniform arm, which Marching Cubes already
+welds per grid edge inside one `extract`. `adaptive_triangles_collapsed` is **0** on all twelve, so the
+weld destroyed no sliver on that arm; `uniform_triangles_collapsed` is **96** with
+`uniform_vertices_removed` **48** on `sphere` at 13³ and 21³ and **0** everywhere else — the same pair
+`M-48` recorded for `Welder::weld` on `sphere`.
+
+**Four rows are skipped and the skip is a row, which is the failure mode this apparatus exists to
+prevent.** `validate::accuracy` reads the SDF as a distance oracle, and only four of the eight reference
+fields have `bound() == Exact`. On the other four a Hausdorff number would be a fiction, so
+`csg_difference`, `gyroid`, `fbm_terrain` and `noise_cavity` carry `measured` **false**, `gain_defined`
+**false**, `c1_row` **false**, `bound` naming which of the four kinds it is, and zeros in the distance
+columns. They are excluded from C1 and C2 and from nothing else — the four global hypothesis booleans,
+`c3_holds`, `c3_strict_holds` and `hypotheses_satisfied` are written identically onto all sixteen rows.
+**The same gate is load-bearing twice over: the octree's pruning *is* the Lipschitz certificate, so a field
+with no declared constant has no sound octree either. The two exclusions have one cause.**
+
+**One bias remains in the instrument and it runs against C1, which is why the mean columns are there.**
+`symmetric_hausdorff` is `max(mesh→field, field→mesh)` from the crate's own report; the forward direction
+dominates and is independent of the lattice, projecting every referenced vertex and every triangle centroid
+onto the zero set by Newton. The adaptive mesh has several times as many vertices as the uniform mesh at
+matched budget — `adaptive_vertices` **510–23,814** against `uniform_vertices` **70–2,166** — so it has
+several times as many chances to find its own worst point, and it wins anyway. `mae_adaptive` beats
+`mae_uniform` by **2.36x to 17.85x** across the twelve rows, in the same direction and by comparable
+factors, so the maxima are not one lucky projection.
+
+**SHARE, recomputed rather than repeated, and no consumer action follows yet.** The registration's SHARE is
+*"C1 moves the field-evaluation stage at fixed budget"*, and what C1 moves is not the **cost** of that
+stage — the budget is held fixed, so the stage costs the same by construction — it is the **error at that
+cost**. There is no `1/(1 − share/factor)` ceiling to compute because the denominator is not a time. The
+reachable claim is bounded instead by `cell_uniform / cell_adaptive`, which is a column
+(**2.000000–5.333333**), and no error ratio can exceed that ratio raised to the extractor's order —
+`P-159` is the row that fixes the order, and this row records the ratio it would be raised to rather than
+assuming one. Nothing in `crates/isomesh/src/**` was touched: `isomesh::lod` is a *downsampling* module
+(`lod.rs:13-15`) and refines nothing, `cell_is_provably_empty` prunes one fixed 16³ subgrid and is never
+recursed, and `P-48`'s registration already records that this crate has no balanced octree
+(`experiment.rs:2386`). **What a consumer should do differently today: nothing. What this row licenses is a
+Phase 28 ticket against the shipped extractor, with a number — up to 16.967407x less Hausdorff error for
+the same field evaluations — and with the factor-2 objection permanently closed by four measured booleans
+instead of re-argued.**
+
+### 🔬 M-474 — C1 and C2 both HELD: `s` is estimable for both refinement families on **8 of 8** fields over **2.03 decades** of field evaluations, and the answer is field-dependent — `lod_helps` **true on 3** (`box_exact` `s_difference` **+0.322893**, `csg_difference` **+0.172500**, `thin_plate` **+0.609051**, each clearing its own combined half-width) and **false on 5**, with `fbm_terrain`'s `s_difference_ci` running **-0.181268 to -0.012375**, strictly negative, so greedy adaptivity is measurably *worse* than uniform there; the DOF are **field evaluations** and the adaptive family is charged for its own error estimator, `dof_adaptive` **4915|15629|35939|117661|274635|531449** against `dof_adaptive_corners` **2800|8544|19173|62101|145568|276438** (P-161, R-161)
+
+**M.** `cargo bench --bench experiment_p161`, `docs/experiments/p-161.csv`, **8 rows** across **53
+columns** — four `#` comment lines plus one column header plus **8 data rows**, one per
+`for_each_reference_field!` field, counted from the file rather than from the brief; 9 of the 53 columns
+are `P-161`'s registered `records` and the other 44 are `M-273` extras. `resolutions` **6** and
+`fit_points_uniform` = `fit_points_adaptive` = **6** on all eight rows — the three golden resolutions
+17/25/33 (`golden.rs:72`) plus 49, 65 and 81, so `dof_uniform` is
+`4913|15625|35937|117649|274625|531441` on every row, a `ln N` window of **2.03 decades** leaving four
+degrees of freedom per fit and a 95% quantile of `t = 2.776` rather than the `12.706` a two-point slope
+carries. `PROBES` **4096** per field, drawn once and reused by every arm at every resolution. `f64`,
+`amd-ryzen-9-5900x-12-core` (Zen 3), `# commit cbaa53e on amd-ryzen-9-5900x-12-core at
+2026-08-30T09:30:18Z`. `wall_ns` **354,000,352–499,864,698**, read by no clause.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 `s` is estimated for both refinement strategies on all eight fields | both fits exist, both intervals clear of zero, on 8 of 8 | **HELD** — `c1_field` **true** on all eight rows and `c1_holds` **true** globally. `s_uniform` **0.410671–0.694371**, `s_adaptive` **0.365667–1.019722**, every one carrying a finite confidence interval. No row reads `class_membership = unfitted`, which is the registered form of C1's own falsifier |
+| C2 the fields split: at least one has `s_adaptive > s_uniform` and at least one does not | `lod_helps` true on ≥ 1 and false on ≥ 1 | **HELD** — `fields_gaining` **3**, `fields_not_gaining` **5**, on every row. Gaining: `box_exact` (`A^0.84` adaptive against `A^0.52` uniform), `csg_difference` (`A^0.68` / `A^0.51`), `thin_plate` (`A^1.02` / `A^0.41`). Not gaining: `sphere` (`A^0.81` / `A^0.69`), `torus` (`A^0.83` / `A^0.69`), `gyroid` (`A^0.50` / `A^0.52`), `fbm_terrain` (`A^0.37` / `A^0.46`), `noise_cavity` (`A^0.38` / `A^0.45`) |
+
+> **The split is scored against the *combined half-width*, never against zero, and that single decision is
+> what makes C2 a result rather than fitted noise.** `lod_helps` is `s_difference > sqrt(hw_u² + hw_a²)`,
+> which is `s_difference_ci` lying strictly above zero. Read the two smooth fields to see the clause
+> declining rather than claiming: **`sphere`'s `s_difference` is +0.127424 and its `s_difference_ci` is
+> `-0.115695|0.370543`, so the point estimate is positive and the interval is not — `lod_helps` false.**
+> `torus` is the same shape, `+0.137592` over `-0.005791|0.280975`, missing by six thousandths. The three
+> gainers clear it outright: `box_exact` `+0.322893` over `0.185978|0.459807`, `csg_difference` `+0.172500`
+> over `0.104970|0.240031`, `thin_plate` `+0.609051` over `0.358982|0.859120`. And one field clears it in
+> the *other* direction: `fbm_terrain` `-0.096821` over `-0.181268|-0.012375`, an interval entirely below
+> zero, so on the roughest field in the roster the greedy octree is not merely no better but significantly
+> worse. `gyroid` (`-0.017396` over `-0.121565|0.086774`) and `noise_cavity` (`-0.074950` over
+> `-0.165442|0.015542`) straddle zero and are recorded as not gaining, which is the honest reading of an
+> interval that contains no answer.
+>
+> **The exponents restated in the currency a caller spends, which is what `lod_asymptotic_gain` is.** It
+> is `10^(1/s_uniform − 1/s_adaptive)` — the degrees of freedom the adaptive family saves per decade of
+> error reduction — and is exactly **1.0** when `s_difference` is 0, i.e. the registration's *"octree LOD
+> provably buys nothing asymptotically on that field"*. Measured: **28.469559** on `thin_plate`,
+> **5.585177** on `box_exact`, **3.135707** on `csg_difference`; **1.730516** on `torus` and **1.692382**
+> on `sphere` (positive point estimates whose intervals do not exclude 1); and **below one** on the three
+> rough fields — **0.859125** on `gyroid`, **0.365603** on `noise_cavity`, **0.267601** on `fbm_terrain`.
+> `n_term_decay` is `2^(-s_adaptive)`, the factor the best-N-term error falls by when the evaluation
+> budget doubles: **0.493211** on `thin_plate` at best and **0.776110** on `fbm_terrain` at worst — a
+> doubling of the budget buys a 22% error reduction on the terrain and a 51% one on the plate.
+>
+> **Seven vacuity controls, every panic starting `VOID:`.** (1) *Eight fields* — `rows == 8`, or the "all
+> eight fields" in C1 is a claim about a subset. (2) *Six resolutions per family per field*, never fewer
+> than the registered four, with a `ln N` window of at least one decade: `resolutions` **6**,
+> `fit_points_uniform` and `fit_points_adaptive` **6** on all eight. Without a window there is no slope,
+> and C1's registered failure mode — `s` not estimable from the achievable range — could not be
+> distinguished from a short sweep. (3) *A confidence interval on every fit that exists* — `s_uniform_ci`
+> and `s_adaptive_ci` on all eight, and the split scored against the combined half-width in
+> `s_difference_ci`. A missing fit is **not** asserted away: an unfitted field would be recorded as
+> `class_membership = unfitted` with `c1_field = false`, which is C1's own falsifier, and no row is.
+> (4) *The probe set is full and fixed* — `probes` **4096** on every field, so no field is scored on a thin
+> population; `band_volume_fraction` is the acceptance rate that filled it, **0.020690–0.166065**.
+> (5) *The adaptive arm actually varies its density* — `adaptive_max_depth` **5, 6 or 7** against a floor of
+> 3, i.e. somewhere at least 8x finer than its own root grid, which is `P-160`'s density control in this
+> row's currency, with `adaptive_truncated` **false** on all eight so no series is measured against the
+> depth cap. `adaptive_leaves` **208,860–255,011**. (6) *Every probe lands in a leaf the criterion was
+> willing to refine* — `probes_in_inactive_leaves` **0** on all eight, or `s_adaptive` would be a property
+> of the activity test rather than of the field. (7) *Matched budgets* — every adaptive snapshot at or just
+> past its uniform budget and within 5%: `dof_adaptive` **4915|15629|35939|117661|274635|531449** on
+> `sphere` against `dof_uniform` **4913|15625|35937|117649|274625|531441**, and the worst overshoot
+> anywhere in the file is `csg_difference`'s **4929 against 4913**, **+0.33%**, or the two slopes are
+> fitted over different windows and their difference is an artefact of the ladder.
+
+**The degrees of freedom are field evaluations and nothing else, and the adaptive family is charged for its
+own error estimator — which is the choice that makes the split trustworthy.** `N` is the number of
+**distinct points at which the field was evaluated to build the reconstruction**: exactly `n³` for the
+uniform family, and for the adaptive family the size of the sample cache, **every corner *and* every
+cell-centre the refinement indicator asked for**. So the adaptive arm gets no free oracle:
+`dof_adaptive_corners` — the reconstruction corners alone — is **2800|8544|19173|62101|145568|276438** on
+`sphere`, so roughly **43–48% of the adaptive arm's evaluations are spent on the indicator rather than on
+the reconstruction**, and it is charged for all of them. That costs it a constant and therefore **cannot
+move the slope**, because a constant factor in `N` is an intercept shift in `ln N`. Triangles were the
+other candidate and were rejected: `thin_plate` is 0.4 cells thick, so three of the eight fields have no
+triangle count worth comparing at coarse `h`, and `P-159`'s point is that evaluations are the currency
+actually spent. **`M-12` is this row's exponent in the wrong currency and is re-denominated rather than
+re-measured**: `M-12` recorded Marching Cubes' error falling like `h²` (mean `2.7168e-3` at 32³ against
+`6.5015e-4` at 64³, ratio 4.179 against an ideal 4.13); with `N ~ h^(-3)`, `h²` **is** `N^(-2/3)`, so
+`M-12`'s law is the statement `A^(2/3)` for the uniform family — a number never previously written as an
+exponent in `N`, and whose adaptive counterpart had never been measured at all.
+
+**The smooth fields land near the theory's `2/3` and not on it, and the interval says so.** With the band
+held **fixed** as `h → 0` both families are volumetric inside it, so the
+Bonito–Canuto–Nochetto–Veeser sentence `P-146` already quotes — for `W^{2,p}` regularity, uniform
+refinement gives `O(N^(-2/3))` in 3D and the optimal graded mesh gives `O(N^(-2/3))`, *the same exponent*,
+and that order **"cannot be improved upon assuming either higher regularity … or a graded mesh"** — predicts
+`s_uniform = s_adaptive = 2/3` on a smooth field and a **constant** rather than a rate from adaptivity.
+Measured, `s_uniform` is **0.685767** on `sphere` with `s_uniform_ci` `0.680730|0.690804` and **0.694371**
+on `torus` with `0.682114|0.706629`: both about 3–4% above `0.666667`, and **both intervals exclude it**.
+That is recorded rather than rounded to agreement — a fixed band over a finite window is not an asymptote,
+and the excess is the size of effect a 2.03-decade fit can resolve. **A band shrinking with `h` would have
+handed the adaptive family the surface's codimension for free and made every field "gain", measuring the
+functional rather than the field**; `band_half_width` is `span/32` and reads **0.125000** on six fields,
+**0.437500** on `gyroid` and **0.500000** on `fbm_terrain`, where the span itself is larger.
+
+**Two independent controls separate the criterion from the tree and the split from the norm.** The
+`random` arm is the **same octree** marking a uniformly random active leaf instead of the largest
+indicator, and it collapses: `s_random` **0.038153–0.109407** across the eight fields against
+`s_uniform` **0.410671–0.694371** — **6.2x to 12.8x** below the uniform family's exponent on the same
+field — with `err_random` on
+`sphere` falling only `9.2776e-2 → 6.4133e-2` over the whole 2.03 decades while `err_uniform` falls
+`1.0772e-2 → 4.3247e-4`. **So the adaptive gain, where it exists, is the `defect × h` criterion and not the
+mere existence of a tree**, and `random_truncated` **false** confirms the random arm was not cut short.
+The `sup_norm` arm rescores both families in `L∞` instead of the discrete `L²`: `s_uniform_sup` /
+`s_adaptive_sup` read **0.684528 / 0.887644** on `sphere`, **0.706351 / 0.782220** on `torus`,
+**0.410355 / 0.632963** on `box_exact`, **0.350661 / 0.656578** on `thin_plate`, **0.363145 / 0.143959**
+on `gyroid`, **0.447688 / 0.135633** on `fbm_terrain` and **0.469994 / 0.184252** on `noise_cavity` —
+**the sign of the difference survives the change of norm on seven of the eight fields**. The one that
+flips is `csg_difference`, **0.401493 / 0.391143**, a sup-norm difference of **-0.010350** against a
+primary-instrument `s_difference` of **+0.172500**: of the three gaining fields it is the only one whose
+gain is norm-dependent, and a reader should treat it as the weakest of the three rather than as a fourth
+pattern.
+`fit_r2_uniform` is **0.979155–0.999972**
+and `fit_r2_adaptive` **0.955680–0.996145**, and neither is consulted by a clause.
+
+**The one way this instrument can lie is named in advance, and the two columns that make it visible are
+deliberately read by nothing.** The adaptive family earns a **constant** before it earns a rate: its root
+grid covers the whole domain and its refinement concentrates into the band, so at fixed `N` it eventually
+holds a factor of roughly `band_volume_fraction^(-s)` over uniform — and a constant *being earned* across
+the fitted window is indistinguishable, in a six-point log-log slope, from a higher rate. `s_adaptive` is
+therefore an **effective** exponent over the achievable range and not an asymptote, which is exactly C1's
+registered failure mode arriving as a widened interval rather than as an absence: `sphere`'s
+`s_adaptive_ci` spans **0.570125|1.056258**, nearly half a unit, against a `s_uniform_ci` span of
+**0.010074**. `s_adaptive_tail` — the slope over the last three budgets alone — is the curvature witness:
+**0.877565** against `s_adaptive` 0.813192 on `sphere` and **0.890058** against 0.831963 on `torus`, so
+the adaptive slope is still steepening at the end of the window on the two fields whose intervals declined.
+**That is the conservative direction: a transient inflates `s_adaptive` and widens its interval at the same
+time, so scoring against the combined half-width makes the clause decline rather than claim** — which is
+why `sphere` and `torus` are recorded as not gaining despite positive point estimates and gains of about
+1.7x per decade.
+
+**A second, wholly independent instrument cross-checks `s_uniform` on the four fields where a Hausdorff
+means anything, and it reproduces `M-12`.** The `mesh_uniform` control is `MarchingCubes` plus
+`validate::accuracy`'s symmetric Hausdorff against triangle count over four resolutions:
+`mesh_s_uniform` **0.975480** on `sphere` with `mesh_s_uniform_ci` `0.905412|1.045547` — an interval that
+**contains 1.0**, which is `h²` in the mesh's own currency since `T ~ h^(-2)` — and **0.956925** on `torus`
+(`0.414619|1.499230`, wide because a four-point fit leaves two degrees of freedom). `box_exact`
+**0.460604** and
+`thin_plate` **0.485038** are about half that, the `O(h)` a polyhedral surface gives. The four non-`Exact`
+fields are skipped and the skip is a column, not a silence: `mesh_accuracy_skipped` **true** with
+`mesh_accuracy_skip_reason` **bound=Underestimate** on `csg_difference`, **bound=Lipschitz** on `gyroid`
+and **bound=Unbounded** on `fbm_terrain` and `noise_cavity`, `mesh_s_uniform` `NaN` and
+`mesh_s_uniform_ci` `NaN|NaN`. **The primary instrument is deliberately not a mesh Hausdorff**: it is the
+discrete `L²` defect of the piecewise-trilinear reconstruction of the field itself, band-defined by field
+**value** rather than distance, which is the only definition available on four of the eight fields
+(`fields/mod.rs:104-109` says plainly that for `Unbounded` "no accuracy figure against `|sample|` means
+anything"). For the same reason there is no crack question in this row's primary measurement and no
+boundary-edge column to answer one: **the reconstruction is per-leaf trilinear on that leaf's own eight
+corners, discontinuous across a level boundary exactly as an LOD octree is, and the error functional does
+not care.** The crack-free witness for this phase's bench-local octree is `P-160`'s
+`adaptive_boundary_edges`, which reads **0** on all twelve of its measured rows with no dilation, no 2:1
+balancing and no transition cells.
+
+**SHARE is none and is discharged in the strong sense; what this row changes is which fields a future
+octree-LOD ticket is allowed to target.** The registration says *"SHARE: none — this predicts where a stage
+helps, it does not change the stage"*. This harness reads no shipped code path other than `MarchingCubes`
+and `validate::accuracy` in a control arm, changes nothing in `crates/isomesh/src/**`, and produces no
+ratio a later row could denominate a speedup in — `isomesh::lod` is *downsampling*, and its own module doc
+says re-sampling *"needs no API: the caller already knows how to sample a field, so adding a
+`Downsample::Reevaluate` variant would be a second path to something that is not downsampling at all"*
+(`lod.rs:6-16`). **What a consumer should do differently: on `sphere`, `torus`, `gyroid`, `fbm_terrain` and
+`noise_cavity`, no octree scheme can beat uniform sampling asymptotically, however well implemented — the
+number that says so is `s_difference_ci` and on `fbm_terrain` it says worse, not merely equal. The three
+fields LOD is for are the CSG ones and the thin plate, i.e. the fields with a feature to grade toward, and
+`thin_plate`'s 28.469559 is the largest `lod_asymptotic_gain` in the file.**
+The theory this rests on was already in the corpus and had never been pointed at a field: `Stevenson` is
+cited in this repository *only* for the newest-vertex-bisection closure bound
+(`docs/research/2026-08-13-adjacent-field-acquisition.md:91-94`,
+`docs/research/2026-08-12-axes-and-vocabulary.md:68,75-77`), never for the approximation-class theory in
+the same PDFs.
+
+### 💥 ✗118 / M-475 — C1 FALSIFIED at `fields_improved` **3 of 8** against a bar of five and C2 FALSIFIED at `fields_in_neighbourhood` **1 of 8**, with `measured_gain_db` spanning **−8.584787** to **+0.726612 dB** around a `predicted_gain_db` of **+0.257097**, C3 HELD at `case_table_size` **16** against **256** — and the single field that met the prediction only met it because `PROJECTION_STEPS` moved **64 → 1024**, which at 64 aborted the run entirely and flipped `csg_difference`'s verdict from **−0.177 dB** to **+0.417 dB** (P-162, R-162)
+
+**M.** `cargo bench --bench experiment_p162`, `docs/experiments/p-162.csv`, **16 rows** across **40
+columns** — three `#` comment lines plus one column header plus 16 data rows, counted from the file.
+`# commit 0db1c9e on amd-ryzen-9-5900x-12-core at 2026-08-30T09:27:54Z`, with no `(WORKING TREE DIRTY)`
+on that line. `(field, lattice)` is the primary key: eight reference fields × two arms, the cubic arm
+`Z3` carrying `is_control` **true** and the BCC arm `A3*` **false**. `crates/isomesh/src/**` is
+untouched — every mechanism is in `benches/common/lattice.rs`, which this ticket owns.
+
+**The prediction was exact and it missed.** `G` is recorded as **0.083333333** on every `Z3` row and
+**0.078543281** on every `A3*` row, and `predicted_gain_db` is **0.257097** on all sixteen —
+`10·log₁₀(G(Z³)/G(A₃*))` with nothing fitted. `Lattice::g` re-asserts both decimals against their closed
+forms `1/12` and `19/(192·∛2)` on every call, residuals `2.17e-10` and `3.82e-10`
+(`benches/common/lattice.rs:239-250`), so a transposed digit could not have become a published
+prediction. What the surface did instead, `measured_gain_db` per field on the `A3*` row:
+
+| field | `hausdorff` `Z3` | `hausdorff` `A3*` | `measured_gain_db` | `rms_gain_db` | `prediction_holds` |
+|---|---|---|---|---|---|
+| `sphere` | 0.058482783 | 0.058029606 | **+0.067568** | +2.321109 | false |
+| `torus` | 0.054633042 | 0.054799054 | −0.026354 | −0.337701 | false |
+| `box_exact` | 0.052354857 | 0.052354857 | 0.000000 | −53.775083 | false |
+| `csg_difference` | 0.065699639 | 0.062619113 | **+0.417121** | −6.890294 | **true** |
+| `thin_plate` | 0.052445265 | 0.140911234 | **−8.584787** | −13.914655 | false |
+| `gyroid` | 0.412209432 | 0.379129261 | **+0.726612** | +1.433022 | false |
+| `fbm_terrain` | 1.023108760 | 1.052521843 | −0.246186 | +1.170820 | false |
+| `noise_cavity` | 0.277435157 | 0.647500519 | **−7.361573** | +0.091786 | false |
+
+**Nine and a third decibels of spread around a prediction of a quarter of one.** `c1_holds` **false**,
+`c2_holds` **false**, `c3_holds` **true** on all 16 rows.
+
+> **Per-clause accounting.**
+>
+> **C1 — FALSIFIED, and by the integer the falsifier names.** The clause is *"improves symmetric
+> Hausdorff error over the cubic grid on at least five of eight fields"*; `fields_improved` is **3** on
+> every row — `sphere`, `csg_difference` and `gyroid`, the three with `hausdorff_ratio` above 1
+> (1.007809, 1.049195, 1.087253). The falsifier is *"C1 by under five fields"* and three is under five.
+> The two losses are not marginal and are the interesting half: `thin_plate`'s `hausdorff_ratio` is
+> **0.372187** and `noise_cavity`'s **0.428471**, i.e. BCC is **2.7×** and **2.3×** *worse* in the max
+> norm on the two fields whose features are thinnest relative to the sample spacing.
+>
+> **C2 — FALSIFIED, and its registered escape clause was measured rather than argued.** C2 allows the
+> deviation to be *explained*, and the harness fixed in advance the only reading of "explained" it would
+> accept: Hausdorff is a **maximum** and `G` predicts a **mean square**, so if the max form misses and
+> the mean-square form lands, the deviation is *located* rather than excused
+> (`benches/experiment_p162.rs:130-146`). It does not land. `fields_in_neighbourhood` is **1** —
+> `csg_difference` alone, the only row with `prediction_holds` **true** — and
+> `fields_rms_in_neighbourhood` is **0**. The escape clause is therefore closed by measurement in the
+> *harder* direction: `rms_gain_db` ranges from **−53.775083** (`box_exact`) to **+2.321109**
+> (`sphere`), wider than the max form, not narrower. **`G` is not the figure of merit for surface
+> extraction, and that is now a measurement rather than a suspicion.**
+>
+> **C3 — HELD, with the cost stated in full rather than flattered.** `case_table_size` **16** against
+> **256**, `distinct_up_to_symmetry` **5** against **22**, `max_triangles_per_case` **2** against **5**,
+> `total_triangles` **20** against **820**, `reconstruction_stencil` **4** against **8**. A case count
+> alone would flatter BCC, so the row also carries the trade: `cells_per_site` **6** against **1** and
+> `corner_reads_per_site` **24** against **8**. BCC pays **three times** the corner reads against a
+> table **sixteen times** smaller. That is the complexity cost the registration asked to have stated,
+> and the falsifier — *"a case table large enough to be impractical"* — is not met by 16 entries.
+>
+> **Vacuity controls.** (1) **Matched point density, the registration's own control.** `samples`
+> **117,649** on the cubic arm against **114,191** on BCC, `density_mismatch` **0.029393** against a 5%
+> bar, on all eight fields. Without it *"the comparison is a resolution change wearing a lattice's
+> name"* — and the direction matters: BCC has **fewer** sites, so a BCC win could not have been bought
+> with resolution. (2) **The prediction under test is the registered one**, `predicted_gain_db`
+> **0.257097** on 16 of 16 against the `0.2571` in `experiment.rs`. (3) **Both arms measured a real
+> surface**: `points` runs **1,134**–**17,926** across the sixteen rows and `probes` is **5,000** on
+> every one, so no Hausdorff here is a maximum over a handful of samples (`M-44`). (4) **The two arms
+> differ in the lattice and its filter and in nothing else**: `eval_samples` **49**, `refine_steps`
+> **14**, `probes` **5,000** and `inset` identical across each field's two rows. (5)
+> **`extraction_ms_max`/`min` bracket the median on all 16 rows** over `extraction_repeats` **5**,
+> because `M-280` measured this host's governor swinging one binary 1.45×.
+
+**The load-bearing story of this row is a threshold, and it is a verdict rather than a margin.**
+`common::lattice`'s `PROJECTION_STEPS` is **1024**, not 64 (`benches/common/lattice.rs:1108-1127`).
+Gradient-Newton converges **linearly, not quadratically**, on a CSG crease where the field is a `max` of
+two smooth pieces: the harness instrumented `noise_cavity`'s cap crease at `[-1.405105, 0.0, 0.523810]`,
+`|p| = 1.4996` against the `r = 1.5` sphere, and measured a contraction of about **0.965 per step** — 64
+steps move `|f|` only from `4.48e-3` to `4.74e-4`. Three consequences, in ascending order of how badly
+they would have been missed:
+
+- **At 64 the projection aborted and no CSV was produced at all.** There is no version of this row with
+  the smaller budget; the artefact of record exists because the budget moved.
+- **The budget was silently under-reporting Hausdorff** in the truth-to-reconstruction direction, by
+  dropping legitimate probes on every CSG field. `csg_difference`'s cubic Hausdorff moves `6.135e-2` to
+  the committed **0.065699639** when the budget rises.
+- **`csg_difference`'s lattice verdict flipped from `−0.177 dB` to `+0.417121 dB`.** That single flip is
+  worth two of this row's four integers: it is one of `fields_improved`'s **3**, and it is the *only*
+  member of `fields_in_neighbourhood`'s **1**. At 64 steps C1 would have read 2 of 8 and C2 would have
+  read **0 of 8** — both still falsified, but falsified by an instrument artefact instead of by the
+  lattice.
+
+At 1024 the stall count falls **240 → 86**, and **80 of those 86 are the identical value `5.7180e-2`** —
+a genuine positive local minimum of the `max` where no zero lies along any descent path, which is the
+legitimate drop the module documents rather than a budget failure. **Verdicts are identical at 512 and
+1024**, so the numbers are insensitive to the budget once it is large enough, and the whole 49³ sweep
+costs 37.0 s against 35.2 s, inside this host's governor noise. A threshold that changes a verdict is a
+threshold that has to be reported with both of its numbers, and this one changed two clauses' integers.
+
+**What `extraction_ms` is not.** BCC is the faster arm on every field — `sphere` **178.7981 ms** against
+**295.3903**, `noise_cavity` **360.7360** against **585.0305** — and none of that is evidence about
+either lattice. This harness's per-evaluation cost is dominated by `LatticeGrid::find`, an
+`O(log sites)` binary search per stencil tap (`benches/common/lattice.rs:298-315`), and the BCC arm pays
+it **four** times per evaluation against the cubic arm's **eight**. A shipped extractor with a linear
+index space would pay none of it. The column is recorded because the registration names it, and C3 is
+scored on `case_table_size` and `corner_reads_per_site`, which are integers.
+
+**What a consumer of this crate should do differently: nothing, and now for a measured reason.** The
+crate samples on `Z³` and has for its entire life — every extractor's `extract` takes the same
+`(sdf, shape, origin, cell_size, out)` signature and `Shape3`'s strides are `[1, sx, sx·sy]`
+(`shape.rs:11-22`). Before this row, "BCC would be 0.257 dB better" was a citable prediction from Barnes
+& Sloane (`10.1137/0604005`) with nothing in this repository able to say whether it applied. It does not
+apply to *this* error measure: **3 of 8 fields improved and 1 of 8 landed within a factor of two**, with
+`thin_plate` and `noise_cavity` more than twice as bad. **A BCC landing ticket is not registered by this
+row, and the reason is now arithmetic rather than caution.** What C1 would have needed to buy — a site
+enumerator, a BCC reconstruction filter, a tetrahedral extractor over the BCC Delaunay complex, and
+every consumer of `Shape3`'s cubic index space rewritten — is priced against a win that showed up on
+three fields out of eight and reversed on two.
+
+**SHARE, recomputed.** The registration's SHARE is *"C1 moves the whole sampling stage; C3 is a
+complexity cost, not a runtime one."* Discharged in both halves. The sampling stage did not move:
+`crates/isomesh/src/**` is unchanged, no reference field was added, no golden hash can move, and
+`is_control` **true** on the eight `Z3` rows is the crate's own shipped geometry measured beside the
+alternative rather than replaced by it. And C3 is quoted as a complexity cost — `case_table_size`,
+`cells_per_site`, `corner_reads_per_site`, `distinct_up_to_symmetry` — with `extraction_ms` explicitly
+excluded from the clause by the harness that recorded it. What this row retires is a *prediction*, not a
+lattice: `A₃*` remains optimal among three-dimensional lattices for the second moment, exactly as Barnes
+& Sloane prove, and this row measures that the second moment is not what an isosurface extractor's
+Hausdorff error is made of. R-163 asks the same question of FCC against BCC from the other side.
+
+### 💥 ✗119 / M-476 — a null registered on purpose came back **not null**: C1 FALSIFIED at `fields_below_scatter` **1 of 8**, because `measurement_scatter_db` is **exactly 0.000000** on **6 of 8** fields — a deterministic computation has no scatter, so `gap_over_scatter` reads **inf** and the clause is *arithmetically* false rather than narrowly missed — against `measured_gap_db` reaching **+5.731155 dB** on `noise_cavity`, **514×** the registered `predicted_gap_db` of **0.011143** (P-163, R-163)
+
+**M.** `cargo bench --bench experiment_p163`, `docs/experiments/p-163.csv`, **16 rows** across **43
+columns** — three `#` comment lines plus one column header plus 16 data rows, counted from the file.
+`# commit 4b5719f on amd-ryzen-9-5900x-12-core at 2026-08-30T14:30:31Z`, clean tree. `(field, lattice)`
+is the primary key: eight fields × two arms, `A3*` (BCC) carrying `is_control` **true** and `D3` (FCC)
+**false**. No reconstruction filter is evaluated anywhere — each lattice is contoured on **its own
+Delaunay bond graph** — and `crates/isomesh/src/**` is untouched.
+
+**This row was registered so that a null would be on the record before somebody spent a week
+distinguishing FCC from BCC. The week is still not worth spending, and the reason is the opposite of the
+registered one.** `G` reads **0.078543281** on the `A3*` rows and **0.078745066** on the `D3` rows,
+`predicted_gap_db` **0.011143** on all sixteen. C1 claimed that gap sits *below the harness's own
+measurement scatter*. `c1_holds` is **false** on 16 of 16, and both branches of the registration's
+falsifier fired at once.
+
+**Branch one: the harness is more precise than expected — infinitely so, on three quarters of the
+fields.** `scatter_is_zero` is **true** on `box_exact`, `csg_difference`, `thin_plate`, `gyroid`,
+`fbm_terrain` and `noise_cavity`, i.e. **6 of 8** fields, and `arm_scatter_db` is **0.000000** on **14 of
+16** arm rows. On those rows `measurement_scatter_db` is **0.000000** and `gap_over_scatter` is
+literally **`inf`**. C1 is not "close" on them; `|x| < 0` is false for every real `x`, and the clause is
+**unreachable in the direction it was written**, with the arithmetic naming why.
+
+That outcome was foreseen and deliberately not asserted against. `zero_set_hausdorff` is a symmetric
+maximum over two directions, and only the truth-to-reconstruction one depends on the probe stream; the
+recon-to-truth direction is probe-independent, so *"if it ever dominated the maximum the scatter would be
+exactly zero"* (`benches/experiment_p163.rs:171-175`). It dominates on six fields. The column
+`scatter_is_zero` exists precisely so a zero there is *"a registered outcome and not a broken fixture"*.
+
+> **Per-clause accounting. There is one clause; the registration has no C2 and no C3.**
+>
+> **C1 — FALSIFIED on the conjunction, `fields_below_scatter` 1 of `fields_measured` 8.** The decision
+> rule was fixed before the run: C1 claims the difference is *unresolvable*, so one field on which it
+> resolves is one field on which somebody could distinguish the lattices, and `c1_holds` is the
+> conjunction (`benches/experiment_p163.rs:204-210`). `gap_below_scatter` is **true** on `sphere` alone:
+> `measured_gap_db` **−0.102675** against `measurement_scatter_db` **0.292921**, `gap_over_scatter`
+> **0.350522**. Every other field resolves, and most of them are not close:
+>
+> | field | `measured_gap_db` | `measurement_scatter_db` | `gap_over_scatter` | `scatter_is_zero` | `below` |
+> |---|---|---|---|---|---|
+> | `sphere` | −0.102675 | 0.292921 | 0.350522 | false | **true** |
+> | `torus` | +0.853780 | 0.120066 | 7.110924 | false | false |
+> | `box_exact` | +0.531513 | 0.000000 | **inf** | true | false |
+> | `csg_difference` | +2.325768 | 0.000000 | **inf** | true | false |
+> | `thin_plate` | −0.591560 | 0.000000 | **inf** | true | false |
+> | `gyroid` | −0.113864 | 0.000000 | **inf** | true | false |
+> | `fbm_terrain` | −0.035058 | 0.000000 | **inf** | true | false |
+> | `noise_cavity` | **+5.731155** | 0.000000 | **inf** | true | false |
+>
+> **Six vacuity controls, all assertions with `VOID: ` messages, all fired.** (1) **The registration's
+> own control — at least five repeated runs of the same lattice.** `repeats` **5** with `probe_counts`
+> **2600|2800|3000|3200|3400**, strictly increasing, identical schedule on both arms, and
+> `hausdorff_by_probes` carries all five values per row so "below scatter" has a visible denominator.
+> Without it the phrase has none. (2) **The prediction under test is the registered one**:
+> `predicted_gap_db` **0.011143** against the registered `0.011 dB` to `5e-4`, so C1 is not scored
+> against a number nobody registered. (3) **Matched point density**: `samples` **114,191** on `A3*`
+> against **113,491** on `D3` from a common `target_points` **117,649**, `density_mismatch` **0.006130**
+> against P-162's own 5% bar. (4) **Matched bond density**, the control that stops a covering-radius
+> comparison being won by whichever arm got more crossings: seven positive-half offsets on both
+> lattices as an integer equality, and the *realised* `bonds_per_site` **6.766330** against **6.772079**
+> over `bonds` **772,654** against **768,570**, `bond_mismatch` **0.000850**. (5) **Both arms measured a
+> real surface**: `points` runs **3,686**–**45,318** over the sixteen rows, every `hausdorff` and
+> `rms_error` strictly positive and finite (`M-44`). (6) **The lattices are the lattices they claim to
+> be**: `coord_residual` **7.105e-15** on `A3*` and **3.553e-15** on `D3`.
+
+**Branch two: Hausdorff error responds to something `G` does not capture, and this row names it — the
+Delaunay bond length at fixed point density.** The harness wrote the alternative prediction down before
+the run. At matched point density and matched bond count the two bond sets do **not** have matched bond
+*lengths*: `mean_bond_length` is **0.094712112** on `A3*` against **0.096638538** on `D3`, from
+`lattice_unit` **0.051282051** against **0.064516129**. FCC's mean Delaunay bond is **2.03% longer** on
+the realised grids, and the reported Hausdorff is dominated by its truth-to-reconstruction direction —
+the covering radius of the crossing set on the true surface, which scales with bond length. So
+`bond_length_gap_db` reads **0.174897**, which is **15.7×** the registered `0.011143` and in the *same*
+direction. **A quantity nobody registered predicts this measurement fifteen times better than the
+quantity that was registered**, which is exactly what the falsifier said a resolvable difference would
+mean: *"P-162 C2's question answered from the other side"*.
+
+**The CSV disagrees with the harness header here and the CSV wins.** The header derives `+0.1873 dB` from
+the *ideal* mean bond lengths, `(4·√3 + 3·2)/7/∛4 = 1.16355·scale` against
+`(6·√2 + 1·2)/7/∛2 = 1.18894·scale` (`benches/experiment_p163.rs:240-256`). The committed column is
+**0.174897**, computed from the realised `mean_bond_length` pair after the box clipped the sites —
+`20·log₁₀(0.096638538 / 0.094712112)`. The ideal figure is 2.18% and the realised one 2.03%; the
+difference is the clipping, and the realised number is the one this entry quotes.
+
+**The measured gaps do not even agree on a sign, which is the sharper way to say the prediction is
+irrelevant.** `measured_gap_db` is positive — BCC better, the direction both predictions are written in —
+on `torus`, `box_exact`, `csg_difference` and `noise_cavity`, and negative on `sphere`, `thin_plate`,
+`gyroid` and `fbm_terrain`. **Four each.** A 0.011 dB effect is invisible not because the instrument is
+noisy but because the field-to-field variation of a *max*-norm geometric error is two to five hundred
+times larger and does not have a consistent sign. `noise_cavity`'s **+5.731155 dB** is the extreme:
+`hausdorff` **0.224324518** on BCC against **0.433944798** on FCC, `hausdorff_ratio` **1.934451** — the
+one axis choice the FCC arm makes, splitting each octahedron of its honeycomb along a fixed body
+diagonal (`benches/common/lattice.rs:638-648`), is a genuine anisotropy and this is the field that
+punishes it.
+
+**The mean-square form is exactly reproducible and the max form is not, and that contrast is the
+instrument fact worth keeping.** `rms_gap_db` carries no scatter column by construction, because it does
+not depend on the probe stream, and it reads from **−0.122351** (`torus`) to **+11.652151**
+(`box_exact`) — wider than the max form, not narrower. So the choice of norm, not the choice of lattice,
+is where this family of measurements gets its variance. Any future comparison of two sampling lattices in
+this crate should be scored on a mean-square error over a fixed probe set, where the arithmetic is
+deterministic, and should not expect a sub-0.02 dB prediction to survive a max-norm reading at all.
+
+**What a consumer of this crate should do differently: nothing, and the null holds even though the
+clause did not.** The registration's purpose was to foreclose the FCC-versus-BCC question, and the
+measurement forecloses it harder than the clause did. C1 asked whether `0.011 dB` is *too small to see*;
+the answer is that the question is malformed, because on six of eight fields the harness resolves an
+arbitrarily small difference exactly and still measures gaps between **0.035** and **5.731 dB** driven by
+bond length and axis choice rather than by `G`. **`SHARE: none` is correct and remains correct**:
+`crates/isomesh/src/**` is unchanged, no reference field was added, no golden hash can move, and there is
+no landing ticket from either verdict — a positive C1 lands nothing by construction, and this negative
+C1 lands nothing either, because what it reports is a fact about `zero_set_hausdorff` and about Delaunay
+bond geometry, not about the crate. Nobody should spend a week distinguishing `A₃*` from `D₃` on this
+evidence; what the evidence says is that they were never going to be distinguished by `G`.
+
+### 💥 ✗120 / M-477 — C1 HELD on `c1_fields_held` **8 of 8** with `order_gap` spanning **−0.072307** to **+0.128478** against a bar of **−0.15**, both filters order 2 and the derivation *executed* to `affine_residual` **4.441e-16**; C2 FALSIFIED and **arithmetically unreachable**, `c2_margin_db` topping out at **0.000000478** against `c2_margin_required_db` **0.001000**, because `P-162`'s non-control arm was **already** BCC plus the box spline — `hausdorff` reproduces `p-162.csv` to the last digit on all 16 rows, so the bar C2 must exceed *is* the measurement C2 makes, and `x > x` is false whatever `x` is (P-164, R-164)
+
+**M.** `cargo bench --bench experiment_p164`, `docs/experiments/p-164.csv`, **16 rows** across **70
+columns** — three `#` comment lines plus one column header plus 16 data rows, counted from the file.
+`# commit 3af8648 on amd-ryzen-9-5900x-12-core at 2026-08-30T14:27:36Z`, clean tree. `(field, filter)`
+is the primary key: eight fields × two arms, `trilinear` on `Z3` with `is_control` **true** and
+`bcc_box_spline` on `A3*` with **false**. The two crossed arms do not exist and are not faked —
+`bcc_reconstruct` asserts a BCC grid and `trilinear_reconstruct` a cubic one
+(`benches/common/lattice.rs:980-985`, `:1053-1058`). `crates/isomesh/src/**` is untouched.
+
+**C1 held with equality rather than by exceeding, which is what the derivation predicted.** Entezari, Van
+De Ville & Möller (`10.1109/tvcg.2007.70429`) gives the linear BCC box spline `s − d = 1`, total degree
+**1** on a `BCC_BOX_SPLINE_STENCIL` of **4** sites; the trilinear read as a box spline is
+`Ξ = [e₁ e₁ e₂ e₂ e₃ e₃]`, total degree **3** on a stencil of **8**. Both reproduce affine functions
+exactly and neither reproduces a quadratic, so **both are order exactly 2** — same order, three times
+less degree, half the stencil. `order_derived` is **2** and `support_size` is **8** on the control rows
+against **4** on the BCC rows.
+
+**The derivation is not left as prose: the fifth vacuity control runs it.** `affine_residual` is
+**8.882e-16** on every `trilinear` row and **4.441e-16** on every `bcc_box_spline` row — each filter's
+weights summed against `1` and against an affine functional at eight generic points, exact to a rounding
+unit, and required to *fail* against `x²`. Then the order is measured independently by fitting
+`err = C·h^p` over the five-rung ladder `order_ladder` **29|35|41|49|65**:
+
+| field | `approximation_order` cubic | BCC | `order_gap` | `order_drop` cubic / BCC | `order_r2` BCC |
+|---|---|---|---|---|---|
+| `sphere` | 1.989459 | **2.001385** | +0.011926 | 4.988024 / 5.115780 | 0.999936 |
+| `torus` | 1.938142 | 1.944033 | +0.005891 | 4.689548 / 4.912465 | 0.997642 |
+| `box_exact` | 1.672027 | 1.800505 | **+0.128478** | 3.922381 / 4.407020 | 0.999268 |
+| `csg_difference` | 1.475140 | 1.501436 | +0.026295 | 3.299392 / 3.548880 | 0.985985 |
+| `thin_plate` | 1.888830 | 1.816523 | **−0.072307** | 4.659355 / 4.476425 | 0.996292 |
+| `gyroid` | 1.616701 | 1.564986 | −0.051715 | 3.647093 / 3.506470 | 0.997488 |
+| `fbm_terrain` | 1.434014 | 1.515663 | +0.081649 | 3.129358 / 3.435796 | 0.995688 |
+| `noise_cavity` | 1.550416 | 1.591909 | +0.041493 | 3.529171 / 3.670089 | 0.999587 |
+
+`c1_holds` **true** on 16 of 16 with `c1_fields_held` **8**.
+
+> **Per-clause accounting.**
+>
+> **C1 — HELD on 8 of 8, and the split inside it is reported rather than averaged.** The clause is *"at
+> least the trilinear's approximation order"* and the falsifier is *"a lower order"* — a whole integer.
+> `c1` is scored as `order_gap >= -ORDER_TOLERANCE` with `ORDER_TOLERANCE` **0.15**, 15% of a genuine
+> order loss (`benches/experiment_p164.rs:346-353`, `:1343`). The worst gap in the file is
+> `thin_plate`'s **−0.072307**, under half the tolerance and inside the fits' own scatter
+> (`order_se` **0.036712** and **0.063978** on that field's two arms). **`order_gap_nonnegative` is
+> nevertheless `false` on `thin_plate` and `gyroid`** — 2 of 8 fields where the BCC fit came out
+> *below* the control's — and that column is in the file so the split can be read straight off it
+> rather than inferred from a verdict. `order_derived_agrees` is a second split worth naming: **true**
+> on `sphere` and `torus` on both arms and on `thin_plate`'s control, **false** on the other eleven
+> rows, because the fitted exponent falls away from 2 on the rough fields. That is the fields, not the
+> filters: `csg_difference` fits **1.475140** and **1.501436**, and a `max` of two smooth pieces has a
+> codimension-1 crease where the classical order simply is not 2 for either filter.
+> `order_linf` rides beside every RMS fit — from **0.967954** to **2.228334** — and the two norms
+> disagreeing is information, since a crease gives `L∞ ~ h` and `RMS ~ h^1.5`.
+>
+> **C2 — FALSIFIED, and recorded as arithmetically UNREACHABLE with the arithmetic, `P-70` C1 being the
+> precedent.** `c2_reachable` **false** and `c2_blocker` **`p162_arm_was_already_bcc_plus_box_spline`**
+> on 16 of 16. C2 asks whether BCC-plus-box-spline beats cubic-plus-trilinear *"by more than the lattice
+> change alone does in P-162"*. There is no such measurement to exceed: `P-162`'s `reconstruct`
+> dispatches on the lattice and returns `bcc_reconstruct` for `A3*`
+> (`benches/experiment_p162.rs:378-386`), so `p-162.csv`'s `measured_gain_db` **is** the gain of the
+> combination. **The lattice change alone was never measured by anything in this phase.** The bar is
+> therefore the identical measurement, and the file says so as an equality:
+> `vs_trilinear_on_cubic` equals `c2_bar_db` on every row — `+0.067568` on `sphere`, `−0.026354` on
+> `torus`, `0.000000` on `box_exact`, `+0.417121` on `csg_difference`, `−8.584787` on `thin_plate`,
+> `+0.726612` on `gyroid`, `−0.246186` on `fbm_terrain`, `−7.361573` on `noise_cavity` — with
+> `c2_margin_db` reading **0.000000209**, **0.000000393**, **0.000000000**, **0.000000387**,
+> **0.000000362**, **0.000000408**, **−0.000000286** and **0.000000478** against a required
+> **0.001000**. Largest margin in the file: **0.000000478 dB** on `noise_cavity`, over two thousand
+> times under the bar, and one field (`box_exact`) reads an exact **0.000000000**.
+> `c2_fields_held` **0**.
+>
+> **The verdict fires and the registered reason is wrong, which is the part worth writing down.** The
+> falsifier reads *"C2 by no improvement over P-162 alone, which would mean they do not compose and the
+> filter is doing nothing"*. The filter is not doing nothing. **It was already inside the baseline.**
+>
+> **Vacuity controls.** (1) **The registration's own: P-162 must have completed and its per-field
+> numbers must be the reported baseline.** They are, and *read from the committed CSV at run time
+> rather than hard-coded* — which is exactly what the control forbids. `p162_commit` is **`0db1c9e`** on
+> all sixteen rows, matching `p-162.csv`'s own `# commit` line; `p162_hausdorff` equals this row's
+> `hausdorff` **to the last digit on 16 of 16** (`0.058482783`/`0.058029606`, `0.052445265`/`0.140911234`,
+> `0.647500519`, …), which is a *measured* replication rather than an inference from reading source, the
+> harness having deliberately reproduced `TARGET_POINTS = 49³`, `EVAL_SAMPLES` **49**, `refine_steps`
+> **14**, `probes` **5,000** and `INSET_SCALES` 2.5. (2) **The baseline's verdict travels with the
+> number**: `p162_c1_holds` **false**, `p162_c2_holds` **false**, `p162_fields_improved` **3**, stamped
+> on every row so nobody reads this row's C1 as an endorsement of the lattice. (3) **The ladder
+> separates order 1 from order 2**: `order_lever` **2.241379** on the cubic ladder and **2.260870** on
+> BCC's, so an order-1 filter would drop error `2.24×` across the ladder and an order-2 filter
+> `2.241379² = 5.024×`; measured `order_drop` runs **3.129358–5.115780**, and the levers are what make
+> the fit able to tell the two apart at all. (4) **Matched point density at the headline**,
+> `density_mismatch` **0.029393** against `DENSITY_TOLERANCE` 0.05, over `order_samples`
+> **24389|42875|68921|117649|274625** cubic against **22815|41635|68705|114191|273259** BCC. (5) **The
+> derivation executed**, `affine_residual` above. (6) **The ladder's probe set is shared**:
+> `order_probes` **4,096** at one inset for all five rungs and both arms, so the error comparison is at
+> identical points and `f(p)` is sampled once.
+
+**The threshold that moved, with both of its numbers.** `LADDER_DENSITY_TOLERANCE` is **0.08**, not
+**0.05** (`benches/experiment_p164.rs:321-338`), and the reason is **quantisation, not
+tolerance-shopping.** A lattice grid holds an integer number of sites, and **BCC's count moves in steps
+of two per axis-pair against the cubic grid's one**, so a rung's realised counts cannot be dialled to
+arbitrary precision: `lattice_grid` solves for the scale that comes *closest* to the target, and at the
+coarse end of the ladder — **29 sites per axis**, where the step is largest relative to the total — the
+residual is **irreducible**. Measured on the first run, `sphere`'s worst rung is **6.454%**, and the
+committed file agrees: `order_density_mismatch_max` reads **0.064537** on seven fields and **0.050269**
+on `gyroid`, against a headline `density_mismatch` of **0.029393** — *"well under 1%"* being the
+headline's own achievable match once the grid is chosen once. **The reason 8% is not a loosened bar is
+that it is nowhere near the factor the fit resolves:** an order-1 filter drops error `2.24×` across this
+ladder and an order-2 filter `5.02×`, so an 8% density wobble cannot be mistaken for either, and the
+per-rung gap is recorded (`order_density_mismatch_max`) so the margin is auditable rather than asserted.
+*(The threshold's own doc-comment says "an order-1 filter drops error `2.51×` per rung"; that figure
+reconciles with neither `order_lever` **2.241379** nor its square, and is a slip in the comment. The
+argument does not depend on it — 8% is two orders of magnitude below either reading.)*
+
+**What the row can honestly say about composition, since C2 cannot.** Both filters being order 2, the
+combination **cannot move the rate** and can only move the **constant** — so the harness measured the
+constant over five resolutions instead of guessing at one. `constant_ratio_db = 20·log₁₀(C_cubic /
+C_bcc)` is **positive on 8 of 8 fields**: `box_exact` **3.527125**, `csg_difference` **2.107581**,
+`sphere` **1.741309**, `torus` **1.700542**, `gyroid` **1.606900**, `thin_plate` **1.332996**,
+`fbm_terrain` **0.565886**, `noise_cavity` **0.145839**. The BCC box spline has the **smaller
+prefactor** everywhere, and `order_rms_errors` shows it rung by rung — on `sphere`,
+`2.1090e-3|1.4356e-3|1.0295e-3|7.4112e-4|4.1225e-4` against the trilinear's
+`2.6301e-3|1.8128e-3|1.3520e-3|9.3616e-4|5.2728e-4`, lower at **all five** resolutions. **That is the
+composition result C2 was reaching for and could not express: same order, uniformly better constant,
+between 0.15 and 3.53 dB of it, on half the stencil.** It is also *not* a landing argument, and the
+harness says so before the numbers: order 2 equal to the incumbent's is a reason to land only if the
+value error is what a caller pays for, and `P-162` measured that the *geometric* error moves the other
+way on `thin_plate` and `noise_cavity`.
+
+**The cost, measured and then disqualified from the verdict.** `filter_evals` runs **133,525**–**368,613**
+over `eval_calls` **20,000** and `eval_cells` **110,592**, and the BCC arm is faster on every field:
+`eval_ns_per_call` **1425.92–1431.92** against the trilinear's **2320.54–2333.71**, `eval_ms` about
+**28.5** against **46.5**, over `eval_repeats` **5** with `eval_scatter` **0.002529–0.029161**. That is
+the four-tap stencil against eight taps and it is a real property of the filter — but in *this* harness
+each tap is an `O(log sites)` binary search, so the ratio is about `LatticeGrid::find` and not about a
+shipped extractor's index arithmetic. No clause is scored on it.
+
+**What a consumer of this crate should do differently: nothing, and the reason is now two-sided.** C1's
+positive is a statement about a filter's **order**, not about a win: order 2 equal to the incumbent's is
+what was derived and what was measured. The uniformly better constant is real and is the first thing in
+this repository to say that the BCC box spline buys anything at all — but it buys it in the **value**
+norm, on a lattice `P-162` measured as *not better* in the geometric max norm on 5 of 8 fields — strictly
+worse on four (`torus`, `thin_plate`, `fbm_terrain`, `noise_cavity`) and identical on `box_exact`. **A shipped
+BCC arm still needs a site enumerator, a BCC reconstruction filter, a tetrahedral extractor over the BCC
+Delaunay complex, and every consumer of `Shape3`'s `[1, sx, sx·sy]` strides (`shape.rs:11-22`) to stop
+assuming a cubic index space, and nothing in this row or in `P-162` pays for that.** No golden hash
+moved, no reference field was added, and the filter lives in `benches/common/lattice.rs`. `V-45`'s
+failure mode is a landing that happens quietly inside a measurement commit; there is none here.
+
+### 🔬 M-478 — C1, C2 and C3 all HELD on 24 of 24 rows, and the sharper thing is that greedy meshing is **finished**: Eppstein's optimum `n/2 + h − g − components` reproduces exhaustive search on **33,267** components with `brute_disagreements` **0**, and the shipped mesher's worst distance from it in the whole sweep is `ratio` **1.027132** — **45,620** optimal rectangles against **46,131** greedy, **1.120%** over optimal, exactly optimal on 8 of the 21 rows where the ratio is defined, while `cost_ratio` tops out at **1.511744** against a bar of 10 and drops to **0.424099**, i.e. computing the optimum is *cheaper* than running the mesher on 9 of 24 rows (P-165, R-165)
+
+**M.** `cargo bench --bench experiment_p165`, `docs/experiments/p-165.csv`, **24 rows** across **44
+columns** — three `#` comment lines plus one column header plus 24 data rows, counted from the file.
+`# commit 2b2a765 on amd-ryzen-9-5900x-12-core at 2026-08-30T09:30:27Z`, clean tree. `(field,
+resolution)` is the primary key: eight reference fields × **17, 33, 65** samples. `repeats` **5** on
+every row. `crates/isomesh/src/**` is untouched; the shipped `GreedyQuads` is reached through the public
+API and its output is counted, not modified.
+
+**`M-56` (`FINDINGS.md:1172`) bracketed greedy meshing from below and nobody had ever bracketed it from
+above.** `M-56` measured `Merge::Greedy` against `Merge::Off` — a ratio against a *worse* algorithm,
+`1.70×` to `256×`, and called it a property of the scene. This row asks the other direction on the very
+same masks, and the answer has been polynomial-time computable since 1979. For a rectilinear region the
+minimum number of rectangles in a partition is `K_min = n/2 + h − g − 1`, with `n` the boundary vertex
+count, `h` the holes and `g` the maximum number of pairwise-disjoint **good diagonals**; Eppstein,
+*Graph-Theoretic Solutions to Computational Geometry Problems* (`arXiv:0908.3916`), supplies the
+reduction that makes `g` cheap — the intersection graph of horizontal against vertical chords is
+**bipartite**, so a maximum independent set of chords is `(#chords) − (maximum matching)` by
+König–Gallai.
+
+**The formula is summed over 4-connected components rather than applied to a polygon, so the committed
+identity is `optimum_rectangles = vertices_n/2 + holes_h − good_diagonals_g − components`, and it closes
+on all 24 rows.** The largest instance, `noise_cavity` at 65: `vertices_n` **53,088**, `holes_h` **13**,
+`good_diagonals_g` **2,062**, `components` **10,234** — `26,544 + 13 − 2,062 − 10,234 = 14,261`, which
+is `optimum_rectangles` exactly, against `greedy_rectangles` **14,435**.
+
+| field | res | `vertices_n` | `holes_h` | `good_diagonals_g` | `components` | `optimum` | `greedy` | `ratio` | `cost_ratio` |
+|---|---|---|---|---|---|---|---|---|---|
+| `sphere` | 17 | 600 | 6 | 36 | 108 | 162 | 162 | **1.000000** | 1.428376 |
+| `sphere` | 33 | 2,472 | 12 | 156 | 450 | 642 | 642 | **1.000000** | 1.370735 |
+| `sphere` | 65 | 8,232 | 18 | 408 | 1,608 | 2,118 | 2,124 | 1.002833 | 1.343397 |
+| `torus` | 33 | 1,440 | 2 | 68 | 290 | 364 | 366 | 1.005495 | 1.283966 |
+| `torus` | 65 | 6,960 | 10 | 360 | 1,346 | 1,784 | 1,808 | 1.013453 | 1.351957 |
+| `box_exact` | 65 | 24 | 0 | 0 | 6 | 6 | 6 | **1.000000** | **0.872309** |
+| `csg_difference` | 65 | 1,626 | 3 | 75 | 303 | 438 | 441 | 1.006849 | 1.000178 |
+| `thin_plate` | 33 | 0 | 0 | 0 | 0 | 0 | 0 | undefined | 0.835426 |
+| `gyroid` | 33 | 11,406 | 0 | 354 | 2,304 | 3,045 | 3,093 | 1.015764 | 1.371571 |
+| `gyroid` | 65 | 44,094 | 3 | 1,446 | 9,111 | 11,493 | 11,622 | 1.011224 | 1.249934 |
+| `fbm_terrain` | 17 | 984 | 5 | 56 | 183 | 258 | 265 | **1.027132** | **0.461796** |
+| `fbm_terrain` | 65 | 16,786 | 14 | 683 | 3,268 | 4,456 | 4,517 | 1.013689 | **0.424099** |
+| `noise_cavity` | 65 | 53,088 | 13 | 2,062 | 10,234 | 14,261 | 14,435 | 1.012201 | 1.078443 |
+
+`c1_holds`, `c2_holds` and `c3_holds` all **true** on 24 of 24.
+
+> **Per-clause accounting.**
+>
+> **C1 — HELD: the reduction applies, and it was checked against ground truth rather than cited.** The
+> falsifier is *"the reduction not applying — for instance if the merged regions have holes the formula's
+> `h` does not model"*, which is the **checkerboard-vertex** hazard: two diagonally opposite cells set,
+> the boundary passing through one point twice, and the region not locally a disc. It is common —
+> `pinch_vertices` totals **13,698** run-wide, **1,176** on `gyroid` at 33 alone (the exact figure the
+> prototype that sized this harness recorded) and **5,196** at 65 — and it is resolved by construction
+> and then *measured*: **`identity_failures` is 0 on 24 of 24**, the turning identity `n/2 + h − 1 ==
+> r − h + 1` closing over `vertices_n`, `holes_h` from the boundary walk and `reflex_r` from an
+> independent right-turn tally (`reflex_r` **0**–**6,102**). And **`brute_disagreements` is 0 over
+> `brute_checked` 33,267 components**, of which **`brute_nonrectangular` 3,868** were genuinely
+> non-rectangular — a memoised branch-and-bound that knows nothing about Eppstein, agreeing on every
+> component small enough to enumerate. `optimum_le_greedy` **true** on 24 of 24 is the third, cheapest
+> consistency check: a formula returning more rectangles than an actual partition would be wrong on its
+> face.
+>
+> **C2 — HELD: greedy does *not* already achieve the optimum on every field.** The falsifier is *"greedy
+> already achieving the optimum on every field, which would close `M-56`'s question with the best
+> possible answer"*, and the measurement narrowly declines to hand that answer over. Greedy is **exactly
+> optimal on 8** of the 21 rows with `ratio_defined` **true** — `sphere` at 17 and 33, `torus` at 17,
+> `box_exact` at all three resolutions, `csg_difference` at 17 and 33 — and above 1 on the other 13.
+> **The worst gap in the entire sweep is `ratio` 1.027132, `fbm_terrain` at 17: 265 rectangles against
+> an optimum of 258, seven rectangles.** Summed over all 24 rows the file reads **45,620** optimal
+> against **46,131** greedy, **1.120% over optimal**. So C2 held on the letter and its spirit is the
+> opposite of a reprieve: **the headroom above the shipped merge is one part in ninety, and the
+> engineering conclusion is to stop working on it.**
+>
+> **C3 — HELD on every row, with room the falsifier never came near.** `c3_holds` is per row,
+> `cost_ratio = optimum_ms / greedy_ms < 10`. Worst in the file: **1.511744** (`gyroid` at 17), with
+> `cost_ratio_worst` — the same ratio taken in the direction that makes C3 hardest — topping out at
+> **1.568382** on the same row. `total_cost_ratio` therefore never exceeds **2.511744**. **On 9 of 24
+> rows the ratio is below 1, i.e. computing the exact optimum is cheaper than running the shipped
+> mesher**: `fbm_terrain` **0.461796 / 0.434781 / 0.424099**, `thin_plate` **0.838227 / 0.835426 /
+> 0.830593**, `box_exact` **0.963370 / 0.921477 / 0.872309**. The König reduction is not where the time
+> goes — `matching_ms` runs **0.000000–0.067600** against `optimum_ms` **0.167161–27.940842**, so
+> Hopcroft–Karp is a rounding error on the boundary walk.
+>
+> **Vacuity controls, five of them, every one fired.** (1) **At least one field with
+> `good_diagonals_g > 0`** — otherwise the formula degenerates to `n/2 + h − 1`, the bipartite reduction
+> that is the actual contribution is never exercised, and the matching code could be deleted without
+> changing a number. Measured: `good_diagonals_g` up to **2,062**, with `chords_horizontal`/
+> `chords_vertical` up to **1,498/1,497** and `matching_pairs` up to **933**. (2) **At least one field
+> with `holes_h > 0`** — the term C1's falsifier names by name — asserted separately from `g` because a
+> fixture can easily have chords and no holes; measured up to **18** on `sphere` at 65, and `gyroid` at
+> 17 and 33 is the converse case, `g` **99**/**354** with `h` **0**. (3) **At least one field with
+> `pinch_vertices > 0`**, or every word of the degeneracy argument is untested and the leftmost-turn rule
+> cannot differ from the naive one: **13,698** run-wide. (4) **At least one non-rectangular component
+> reaching the exhaustive oracle**, since a brute force that only ever saw rectangles would agree with
+> any formula returning 1 for a rectangle: **3,868**. (5) **`culled_faces` must exceed
+> `greedy_rectangles` on at least one field**, or `merge_saving` is 1 everywhere and the control is not
+> reproducing `M-56`: it exceeds on **21 of 24** rows, the three exceptions being `thin_plate`'s empty
+> rows.
+
+**The masks analysed here *are* the masks the shipped extractor partitioned, and that is measured three
+independent ways rather than read off the source.** `GreedyQuads` is not an isosurface extractor: it
+classifies cells by the sign at the **cell centre** and merges per 2D slice, `6·(n−1)` masks per field
+(`greedy_quads.rs:178-193`, `:214-272`), and `masks` reads **96 / 192 / 384** at 17 / 33 / 65 exactly.
+So the optimum is computed per mask and summed, and the comparison is exact rather than analogical.
+(1) The shipped mesh's own arithmetic: `greedy_vertices` is `2 ×` `greedy_triangles` on all 24 rows
+(**46,488** and **23,244** on `gyroid` at 65), so `triangle_count()/2` is the quad count. (2) **The
+load-bearing one — `mask_quads_agree` true on 24 of 24**: this file's independent re-walk of the same
+masks with the same merge equals `triangle_count()/2`, down to the occupancy sample points. (3) The
+committed golden fixture: `golden_check` reads **`match` on 16 rows** (17 and 33, where
+`golden_hashes.json` carries `greedy_quads` rows) and **`absent` on the 8 rows at 65**, which is the only
+check independent of this run.
+
+**`M-56` is re-derived in the same line that measures the distance to the optimum, and it reproduces
+exactly.** `merge_saving = culled_faces / greedy_rectangles` at 33: `box_exact` **256.000000**,
+`csg_difference` **10.640000**, `fbm_terrain` **4.604224**, `torus` **2.688525**, `sphere` **1.943925**,
+`noise_cavity` **1.798429**, `gyroid` **1.697381** — `M-56`'s published `256×`, `10.64×`, `4.60×`,
+`2.69×`, `1.94×` and `1.70×`, on all six fields it quoted. `box_exact`'s saving is also the clearest
+demonstration that the saving is a property of the scene: **64.000000 / 256.000000 / 1024.000000** at
+17 / 33 / 65, quadrupling with resolution while `optimum_rectangles` and `greedy_rectangles` both stay
+at **6**. A cube's six faces need six rectangles at any resolution, and greedy finds all six.
+
+**The eighth field is the one that explains why the registration says seven, which is a better outcome
+than dropping it.** The registration reads *"the optimum is computed on all **seven** fields"*;
+`for_each_reference_field!` has **eight** (`fields/mod.rs:211-256`). The registration cannot be amended,
+so **the eighth field is surplus rather than a violation and all eight were run.** The missing one is
+`thin_plate`, and the discrepancy is inherited from `M-56`, whose sweep is also *"seven reference
+fields"*: `thin_plate` is a slab of half-thickness `0.0125` centred on `y = 0`
+(`fields/mod.rs:617-637`), the grid is `n` odd samples over `[−2, 2]`, and a cell centre at
+`−2 + h·j + h/2` equals `0` only for half-integer `j`. **No cell centre is ever inside the plate, at any
+odd resolution.** The file says so in six columns at once: `vertices_n` **0**, `holes_h` **0**,
+`good_diagonals_g` **0**, `components` **0**, `greedy_rectangles` **0**, `culled_faces` **0** and
+`ratio_defined` **false** on all three `thin_plate` rows — and the committed fixture agrees, reading
+`"vertices":0,"triangles":0` at 17, 25 and 33. It is `M-266`'s sub-voxel aliasing seen through a
+centre-sampled mesher, and the three rows are recorded as undefined rather than folded into the ratio.
+
+**What a consumer of this crate should do differently: nothing, and that is now a measured conclusion
+rather than an absence of evidence.** `M-56` left greedy's quality bracketed only from below and
+unbounded from above, so any future work on the merge could claim an arbitrary headroom. **The headroom
+is 1.120% over the whole sweep and 2.71% at its worst single row.** The correct engineering action on
+the greedy-meshing stage is to stop — which is a change to the plan for that stage, and the only kind of
+change a measurement is entitled to make. This row proposes no source change; it prices one, and the
+price is not worth paying.
+
+**Two deliberate non-claims, stated because the numbers invite both errors.** First, **this is not a
+whole-volume optimum.** *"The minimum number of axis-aligned quads needed to represent this occupancy
+grid's surface"* is a different and harder problem that would let a quad span what greedy calls two
+sweeps; what is measured is *"the minimum number of rectangles in a partition of each of the `6·(n−1)`
+masks greedy actually partitions"*, which is greedy's problem and not an approximation of it — the
+shipped mesher can never merge across two masks, because two masks are two planes with two normals and a
+shared vertex there would have to average them (`greedy_quads.rs:36-49`). Second, **`optimum_ms` is the
+cost of the optimal *count*, not of an optimal *partition*.** A shippable optimal mesher would
+additionally have to construct one, which is not measured here and must not be read out of that column.
+`SHARE` is discharged in the same direction: what C2 moves is the **expectation** for that stage, not the
+code.
+
+### 💥 ✗121 / M-479 — the registered negative HELD and the hoped-for guarantee did not: C1 HELD with `is_matroid` **false** on all 6 greedy-meshing rows, `disjoint_from_small` **0** and `augmentation_failures` **87 / 190 / 2,331** on the exhaustively scanned fixtures — the minimal counterexample being a `2×2` block, `min_basis` **1** against `max_basis` **4** — while C2 FALSIFIED on `violating_chunks` **92 of 221** on `capped_gyroid` and **155 of 186** on `fbm_terrain` against **0 of 152** on `sphere`, the worst chunk's gains reading `2.984502e1|9.237806e0|1.598680e1`, marginal returns that **increase** at the third refinement, and `submodular_scan_saw_it` **false** on the field the constructed witness caught (P-166, R-166)
+
+**M.** `cargo bench --bench experiment_p166`, `docs/experiments/p-166.csv`, **33 rows** across **75
+columns** — three `#` comment lines plus one column header plus 33 data rows, counted from the file.
+`# commit 8968839 on amd-ryzen-9-5900x-12-core at 2026-08-30T09:30:31Z`, clean tree. `problem` is the
+primary key and `arm_kind` splits the file: **4** `c1_fixture`, **2** `c1_shipped`, **2** `c1_control`,
+**18** `c2_budget`, **3** `c2_worst_chunk`, **4** `c2_control`. `c1_holds` **true** and `c2_holds`
+**false** on all 33; the per-arm reading is `arm_verdict`. `rng_seed` **179109546** run-wide.
+`crates/isomesh/src/**` is untouched.
+
+**The `(1 − 1/e)` statement was sourced, and the source was found.** The registration requires it from
+*"a freely available restatement"* because Nemhauser, Wolsey & Fisher is paywalled twice over —
+`10.1007/BF01588971` (*Mathematical Programming* **14**, 265–294, 1978, Part I) and
+`10.1007/BFb0121195` (*Mathematical Programming Studies* **8**, 73–87, 1978, Part II) — and the local
+corpus holds neither. The restatement actually read, in full, is **Shamak Dutta, Bahman Gharesifard and
+Stephen L. Smith, *Submodular Optimization with Applications to Decision and Control*,
+arXiv:2606.10192v1 [math.OC], 8 June 2026** — open access, with proofs. Four of its statements are
+load-bearing: **Definition 3.1** (independence systems, and the **augmentation property** (3) that C1
+hunts a counterexample to), **Example 3.5** (the uniform matroid `I = {A : |A| ≤ k}`, *"the augmentation
+property is immediate"*, which is why `is_matroid` reads **true** on every `lod_budget` row),
+**Theorem 4.2** (`f(S_G)/f(S*) ≥ 1 − 1/e`; `one_minus_1_over_e` is recorded as **0.632121** on 26 rows)
+and **Proposition 2.3** (submodular **iff** diminishing returns). Two further statements are named and
+used but decide nothing: **Section 3.3**'s knapsack failure, reproduced verbatim as a negative control,
+and **Section 3.4**'s `p`-system, whose basis-size spread is recorded as `p_system_lower_bound`. **What
+the restatement does not cover is said plainly**: it scopes itself to *maximisation*, and greedy meshing
+is a **minimisation** of cardinality, whose classical home is Wolsey's submodular set-covering line
+(`10.1007/BF02579435`, 1982) — **named, not read, and no constant is quoted from it.**
+
+> **Per-clause accounting.**
+>
+> **C1 — HELD: greedy meshing is not a matroid problem, and the counterexample is exhibited rather than
+> argued.** The set system is forced by the algorithm: ground set `X` is every axis-aligned rectangle
+> inside a slice's face mask, `I` every family of **pairwise-disjoint** rectangles. `empty_independent`
+> and `downward_closed` are **true**, so `(X, I)` is an independence system by Definition 3.1(1)(2) —
+> and the single observation that kills (3) is that **a maximal member of `I` is exactly a rectangle
+> partition of the mask** (leave a cell uncovered and its `1×1` rectangle is in `X` and disjoint from
+> everything chosen). Different bases therefore have different cardinalities, which Definition 3.1(3)
+> forbids. The four hand fixtures, with the CSV's own `fixture_art` (`/` between rows, a value may not
+> contain a newline):
+>
+> ```text
+>                          square_2x2         plus    staircase         ring
+> fixture_art                   ##/##  .#./###/.#.  #../##./###  ###/#.#/###
+>
+>                                 # #        . # .        # . .        # # #
+>                                 # #        # # #        # # .        # . #
+>                                            . # .        # # #        # # #
+>
+> fixture_cells                     4            5            6            8
+> ground_rectangles                 9           11           15           20
+> independent_sets                 35           72          216    uncounted
+> bases_enumerated                  8            7           21           81
+> min_basis                         1            3            3            4
+> max_basis                         4            5            6            8
+> basis_size_ratio           4.000000     1.666667     2.000000     2.000000
+> augmentation_failures            87          190         2331  certificate
+> axioms                   exhaustive   exhaustive   exhaustive      witness
+> disjoint_from_small               0            0            0            0
+> ```
+>
+> **`square_2x2` is the minimal counterexample and the CSV carries its certificate.** `min_basis_rects`
+> is **`2x2@0+0`** — one `2×2` quad — against the all-unit-cells basis of four, so `4 > 1`, and
+> **`disjoint_from_small` is 0**: not one of the nine rectangles in `X` is disjoint from the minimum
+> partition, because that partition covers every cell. Nothing smaller than a `2×2` block can fail, a
+> one-cell region having exactly one partition. `ring` carries a **hole** — the case `R-165`'s formula
+> models with its `h` term — and its `ground_rectangles` **20** exceeds the exhaustive gate, so `axioms`
+> reads **`witness`** and `augmentation_failures` reads **`certificate`** rather than a count. The file
+> says which method certified each row rather than leaving it to prose.
+>
+> **The shipped mesher is the fifth witness and it needs no fixture.** `Merge::Off` emits one quad per
+> visible cell face — the all-unit-cells basis — and `Merge::Greedy` emits the merged one; both are
+> maximal in the same system over the same occupancy in the same binary
+> (`greedy_quads.rs:98-104`). `quads_merge_off` **1,536** against `quads_merge_greedy` **6** on
+> `box_exact` at 33, and **1,248** against **642** on `sphere` at 33, are therefore **measured
+> violations of equicardinality** — `M-56`'s number re-read as an algebraic fact rather than as a
+> saving. `p_system_lower_bound` on those two rows is **256.000000** and **1.943925**.
+>
+> **The sharpest thing C1 measures is that failing the exchange property costs greedy nothing here.**
+> `greedy_ratio` is **1.000000** on all six greedy-meshing rows, and `min_basis_exact` is **true** on
+> the four fixtures. **A system can fail Definition 3.1(3) while greedy still attains its minimum**, and
+> these six rows are that case. `bound_applies` is **false** on every one of them, and the reason is
+> structural rather than a technicality: Theorem 4.2 needs a monotone submodular objective *maximised*
+> under a cardinality constraint, and greedy meshing *minimises* cardinality subject to *covering*.
+> **Two of the theorem's hypotheses fail, so the `(1 − 1/e)` guarantee is not weak here — it is
+> inapplicable**, which is exactly what C1 was registered to say. `is_submodular` is **true** on those
+> rows and `marginal_returns_monotone` **true**, and neither is a mistake: the objective is `|S|`, which
+> is *modular*, hence submodular with *constant* marginals. **Submodularity is not what greedy meshing is
+> missing.**
+>
+> **C2 — FALSIFIED, on the falsifier the experiment was designed to hunt.** The clause asks for the
+> marginal screen-space-error reduction to be **diminishing** per chunk, *"or a chunk with increasing
+> marginal returns is exhibited"* — and the falsifier is *"C2 by increasing marginal returns, which
+> closes the guarantee — and finding one such chunk is cheaper than proving none exists, so the
+> experiment is designed to look for it"*. It found them in bulk:
+>
+> | field | `chunks_per_axis` | `chunks_visited` | `curve_chunks` | `violating_chunks` | `_material` | `arm_verdict` |
+> |---|---|---|---|---|---|---|
+> | `sphere` | 12 | 1,728 | **152** | **0** | 0 | true |
+> | `capped_gyroid` | 7 | 343 | **221** | **92** | 92 | false |
+> | `fbm_terrain` | 10 | 1,000 | **186** | **155** | 153 | false |
+>
+> `levels_spanned` **4** and `refinement_steps` **3** on every `c2` row, spacings `h, 2h, 4h, 8h` from
+> `ChunkLayout::at_lod` (`chunk.rs:137-144`) with `downsample_op` **`decimate`**. So **559 surface
+> chunks were curved across four LOD levels, and 247 of them have increasing marginal returns** — the
+> registration asked for at least 50 chunks spanning at least two levels, and each field alone clears
+> that three times over.
+>
+> **The extremal witness, quoted from the `c2_worst_chunk` rows.** `worst_chunk_gains` is the chunk's
+> three marginal gains in order:
+>
+> - `sphere` — `3.164945e0|9.049330e-1|3.270063e-1` at `worst_chunk_coords` **3|3|5**,
+>   `worst_chunk_distance` **5.990734**. **Strictly diminishing**, falling by roughly `3.5×` then
+>   `2.8×`; `witness_sees_violation` **false**.
+> - `capped_gyroid` — `2.984502e1|9.237806e0|1.598680e1` at **5|5|5**, distance **9.526279**.
+>   **`gain[2]` 15.99 exceeds `gain[1]` 9.24 by a factor of 1.73** — an increasing marginal return, and
+>   `witness_sees_violation` **true**.
+> - `fbm_terrain` — `1.922011e0|8.965218e0|4.682462e0` at **0|5|7**, distance **22.328457**.
+>   **`gain[1]` 8.97 exceeds `gain[0]` 1.92 by a factor of 4.66**, the worst inversion in the file;
+>   `witness_sees_violation` **true**.
+>
+> **The mechanism was named before the numbers and the numbers match it.** For a smooth field the
+> trilinear error goes as `s²` and `s` doubles per level, so the three gains should fall as `48C : 12C :
+> 4C` — `sphere`'s ladder does exactly that. What breaks it is **saturation**: a chunk carrying an
+> oscillation shorter than `8h` is undersampled at the coarsest levels, its max residual pins near the
+> field's own amplitude and the top gain collapses. `capped_gyroid`'s `worst_chunk_geometric`
+> `0.000000e0|1.628286e-1|2.569173e-1|5.608944e-1` is that curve flattening between levels 2 and 3
+> where `sphere`'s `0.000000e0|2.094507e-3|7.890689e-3|2.816246e-2` keeps quadrupling. **So the
+> falsification is a statement about which fields admit the guarantee, not that none does** — the fields
+> were chosen to straddle the regime on purpose, and `violating_chunks` is per field so this entry can
+> say which.
+>
+> **The two instruments disagreed exactly where the harness said they would, which is why the assertion
+> was never put on the scan.** `submodular_scan_saw_it` is **false** on `sphere` *and on
+> `capped_gyroid`*, and **true** only on `fbm_terrain`. Definition 2.1 sampled on random subset pairs is
+> a **whole-world** question — `f(A) + f(B) − f(A∪B) − f(A∩B)` sums one slack per chunk, so a minority
+> of violating chunks is hidden by the concave majority's positive slack. **On `capped_gyroid` 92 of 221
+> chunks violate diminishing returns and the random-pair scan reported nothing.** The verdict rests
+> instead on the deterministic constructed pair at the chunk with the largest `gain[j+1] − gain[j]`,
+> where (2.1) collapses to `2·value(j+1) ≥ value(j+2) + value(j)`, i.e. Proposition 2.3 and nothing
+> else. **A harness that had scored C2 on the random scan would have published "diminishing" for
+> `capped_gyroid` and been wrong about 92 chunks.**
+>
+> **Vacuity controls, six, all asserted with `VOID: ` messages and all written to the file.** (1)
+> **`is_matroid = false` on the meshing rows is licensed from above**: `control/uniform_matroid_U3_8`
+> reports the augmentation property **holding** — `is_matroid` **true**, `augmentation_failures`
+> **0** over `independent_sets` **93**, `arm_verdict` **true**. Example 3.5 *proves* `U(3,8)` is a
+> matroid, so a failure there would be a tester bug and every meshing `false` would be worthless. (2)
+> **And from below**: `control/knapsack_B2_w211` reproduces Section 3.3's published witness —
+> `is_matroid` **false**, `augmentation_failures` **1** over `independent_sets` **5**, `arm_verdict`
+> **false**, `min_basis`/`max_basis` **1|2** and **0**. The tester is right about a case it did not
+> choose. (3) **`disjoint_from_small = 0` is not "no larger basis exists"**: `max_basis > min_basis` on
+> every fixture — `4 > 1`, `5 > 3`, `6 > 3`, `8 > 4` — and `bases_complete` **true** on the three
+> exhaustive ones. (4) **The shipped witness is not inert**: `quads_merge_off` **1,536** and **1,248**
+> against `quads_merge_greedy` **6** and **642**; had merging emitted the same count, `Merge` would
+> witness nothing. (5) **Greedy is shown able to miss on a `lod_budget`-shaped instance**:
+> `control/lod_convex_synthetic`, `curve_chunks` **2** at `budget_k` **3**, its convex chunk's
+> `worst_chunk_gains` reading **`1.000000e0|1.000000e0|1.000000e1`** against a second chunk of `(2,0,0)`
+> (`benches/experiment_p166.rs`, arms table), reads
+> `f_greedy` **4.000000e0** against `f_optimal` **1.200000e1**, `greedy_ratio` **0.333333** and
+> `ratio_meets_nwf_bound` **false** — below `one_minus_1_over_e` **0.632121**, which is the only row in
+> the file where that column is false. **Without it, `greedy_is_optimal` reading true on 11 of the 18
+> `c2_budget` rows would be a zero that could not have been non-zero (`M-44`).** (6) **The measured
+> ladders are shown able to violate**: the three `control/lod_reversed_<field>` rows reverse each
+> chunk's gains and read `greedy_ratio` **0.993500**, **0.877375** and **0.912685** with
+> `violating_chunks` **152**, **209** and **155** — every chunk, by construction.
+
+**The optimum is exact, so `greedy_is_optimal` is a proof and not an estimate.** `f(S*)` under `|S| ≤ k`
+is a bounded knapsack over the per-chunk value tables, one `O(chunks · k · 4)` DP pass yielding the
+optimum for every budget at once. So `greedy_is_optimal` **true** means greedy attained the optimum, and
+it reads that on **11 of the 18** `c2_budget` rows; where it does not, the shortfall is small and named —
+`fbm_terrain@k=279` `greedy_ratio` **0.979824** (`f_greedy` 1.724960e3 against `f_optimal` 1.760480e3),
+`fbm_terrain@k=139` **0.992255**, `fbm_terrain@k=69` **0.999922**, `capped_gyroid@k=331` **0.997331**,
+`capped_gyroid@k=165` **0.998927**. **The two columns disagree on two rows and the boolean is the one to
+read**: `sphere@k=57` and `capped_gyroid@k=82` both print `greedy_ratio` **1.000000** with
+`greedy_is_optimal` **false**, because the boolean is computed on the raw `f64` (`g_ratio >= 1.0`,
+`benches/experiment_p166.rs:2085`) while the column is formatted to six decimals. A ratio printed as
+`1.000000` in this file is therefore *not* by itself a proof of optimality; `greedy_is_optimal` is.
+Every one of those shortfalls still clears `1 − 1/e`: `ratio_meets_nwf_bound` is **true** on **21 of the
+22** rows that carry it, the exception being the synthetic control. **So the guarantee's hypotheses fail
+on two of three fields and its conclusion holds anyway on every measured budget** — which is the honest
+shape of this result, and the reason `bound_applies` and `ratio_meets_nwf_bound` are two columns rather
+than one.
+`fbm_terrain` fails a second hypothesis outright: `monotone` reads **false** on its six `c2_budget` rows,
+where `sphere` and `capped_gyroid` read **true**. `normalized` is **true** everywhere, by construction —
+`geometric(c, 0) = 0` exactly, level 0 *being* the fine grid.
+
+**The SHARE is not zero and the file carries the number.** The registration's SHARE is *"C2 governs the
+LOD selection stage, whose amortised cost `M-124` tracks to within one chunk."* `M-124`/`M-125` fix the
+denominator in *time* — the queue lands within one chunk, ≈0.072 ms, of its budget. What C2 governs is
+**which chunks the budget is spent on**, so the share is a fraction of *error* at fixed cost:
+`share_over_distance_order = (f_greedy − f_distance_order) / f_optimal`, measured by running the
+distance-only ordering a streamer's load radius already implies over the same ladders. It peaks at
+**0.720925** on `fbm_terrain@k=1`, **0.561316** on `capped_gyroid@k=41` and **0.554600** on
+`sphere@k=28`, and is **0.000000** at every field's full budget, where every ordering ends in the same
+place. **Ordering refinements by marginal gain instead of by distance is worth up to 72% of the most any
+budget of that size could buy** — `distance_order_ratio` bottoming out at **0.279075** — and that is the
+number the SHARE sentence should be quoted from, not a fraction of a frame.
+
+**What a consumer of this crate should do differently.** For meshing, **nothing, and now with the
+structural reason**: no matroid guarantee is available for `GreedyQuads` and none is needed, because
+`greedy_ratio` **1.000000** on all six rows here and `R-165`'s **1.120%** whole-sweep gap say greedy is
+already at or beside the minimum. Any future claim of an approximation *guarantee* for the merge must
+cite the submodular set-covering line and not Theorem 4.2, whose hypotheses this row measures as failing
+twice. For LOD budgeting, **do not rely on diminishing returns for a field with structure near `8h`**:
+on `capped_gyroid` and `fbm_terrain` a refinement's marginal gain can be up to **4.66×** the previous
+one, so the `(1 − 1/e)` bound is not licensed even though greedy happened to clear it on every budget
+measured — and a random-pair submodularity check will not tell you, having missed 92 violating chunks in
+this very file. Two named simplifications remain, stated rather than hidden: **each level-0 chunk picks
+its own level independently** (a real quadtree cut would force eight siblings to share one), and the
+value residual is divided by a measured local Lipschitz constant, which is *"the standard proxy and is
+not a certified Hausdorff bound"* — inert for C2, since a per-chunk positive constant cannot move the
+sign of a second difference, and load-bearing only for `greedy_ratio`.
+
+### 💥 ✗122 / M-480 — C1 HELD on **20 of 20** rows with the per-bit decomposition *measured* to recompose rather than assumed, C2 HELD on **5** rows and FALSIFIED on **15**, and C3 FALSIFIED on **20 of 20** at `eval_ms_ratio` **953.694027** on the dense bits and **4.606356–4.736385** on the single-term ones: the two informative bits of the shipped table are *dense* — `spectral_terms` **256 of 256**, `spectral_concentration` **0.243408203** and **0.428710938** against a **0.9** bar — while its twelve edge bits are each one degree-2 coefficient, and the registration's own guess about C3 was right, a 256-entry table is already in L1 (P-167, R-167)
+
+**M.** `cargo bench --bench experiment_p167`, `docs/experiments/p-167.csv`, **20 rows across 52
+columns** — four `#` comment lines plus one column header plus 20 data rows, counted from the file
+rather than from the brief. `# commit 186246e on amd-ryzen-9-5900x-12-core at 2026-08-30T09:28:04Z`,
+with no `(WORKING TREE DIRTY)` on that line. One row per (reading, output bit) over the three readings
+`common::boolean` exposes of `pub static CASES: [McCase; 256]`
+(`crates/isomesh/src/marching_cubes/table.rs:180`, whose `corner_inside` is literally
+`case & (1 << corner) != 0`): `triangle_counts.bit0`–`.bit3`, `edge_masks.bit0`–`.bit12`,
+`centroid_counts.bit0`, plus the two `is_control = true` rows `calibration.parity` and
+`calibration.majority`. Timing is `std::time::Instant` over `workload_evaluations` **1,048,576** case
+indices from `workload_seed` **0x2545f4914f6cdd1d**, `timed_repeats` **7**, the two paths interleaved;
+`eval_scatter_table` **1.004586–1.028855** and `eval_scatter_spectral` **1.000859–1.069213** say the
+repeats agreed, so `M-280`'s `amd-pstate-epp` swing is not hiding inside the ratio.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the Walsh–Hadamard spectrum of the table is computed and its weight distribution by degree reported | Parseval, per-bit truth table reproduced, the reading's integer recomposed | **HELD on 20 of 20.** `weight_sum` **1.000000000000** on every row, `bit_reconstruction_exact` and `reading_reconstruction_exact` true on every row. C1's registered falsifier was the transform not being well defined for a vector-valued output; the answer is the `output_bit` column, and the claim that the per-bit family *is* the vector-valued function is a measurement, not a framing choice |
+| C2 the spectrum is **not** concentrated on low degrees, with `anf_terms` reported so the negative is quantitative | `spectral_concentration` (weight at or below degree 2) below `WEIGHT_TARGET` 0.9 | **HELD on 5, FALSIFIED on 15.** True on `triangle_counts.bit0`/`.bit1`/`.bit2` and on both calibration rows; false on the thirteen `edge_masks` bits, on `triangle_counts.bit3` and on `centroid_counts.bit0`. Three of the fifteen carry `is_degenerate = true` (the constants), so the substantive falsification is the **twelve** edge-mask bits, whose spectrum was known in closed form before it was computed |
+| C3 if C2 is falsified and the spectrum is sparse, a branchless spectral evaluation is benchmarked against the table lookup | `c3_holds` = `eval_ms_spectral <= eval_ms_table` | **FALSIFIED on 20 of 20.** `c3_reachable` (`concentrated && sparse`) is true on exactly the 15 rows C2 failed on, and the spectral path loses on every one of them at **4.606356–4.736385**; on the three dense rows it loses at **953.694027**, **944.158838** and **953.050146**. `branchless_feasible` is **false on 20 of 20** |
+
+> **The 15 rows that falsify C2 are the calibration arriving, not a surprise about the triangulation
+> decisions.** An edge bit is `x_a xor x_b`, the two-corner parity of that edge's own endpoints,
+> so its spectrum is one coefficient at degree 2 and nothing else, and that is exactly what the file
+> says: `fourier_weight_by_degree` is `0|0|1|0|0|0|0|0|0` on all twelve of `edge_masks.bit0`–`.bit11`,
+> with `max_degree` **2**, `anf_terms` **2**, `anf_degree` **1**, `spectral_terms` **1** and
+> `spectral_concentration` **1.000000000** on every one of them. Three more rows are constants — `triangle_counts.bit3`
+> (`truth_table_ones` **0**, because the maximum triangle count is 5 and bit 3 is never set) and
+> `edge_masks.bit12` and `centroid_counts.bit0` (both **0**, twelve edges and an all-separate table
+> that never needs an interior vertex) — and a constant's concentration is 1 by arithmetic. **On the
+> primary reading, which is the reading to quote, C2 held on every non-degenerate bit.**
+> `degree_for_90pct_weight` is **6** for `bit1` and **8** for `bit2`, so there is no low-degree
+> approximation at any threshold, not merely at 0.9.
+>
+> **Four vacuity controls, and each one could have come out the other way.** (1) *The instrument, on
+> two functions with known spectra.* `calibration_parity_weight_degree8` **1.000000000000**,
+> `calibration_majority_weight_degree1` **0.598144531250** and
+> `calibration_majority_total_influence` **2.187500000000** — that is `common::boolean::self_check()`'s
+> `(1.0, 0.59814453125, 2.1875)`, asserted against `1`, `8·(70/256)²` and `8·35/128` computed in the
+> harness rather than against transcribed decimals. A transform that could not tell a degree-8 function
+> from a degree-1-heavy one would report a plausible spectrum for both. (2) *The separation is visible
+> in the file, not only in an assert*: `calibration.parity` reads `spectral_concentration`
+> **0.000000000** and `calibration.majority` **0.715637207**, a gap of 0.7156 against a required
+> `CALIBRATION_SEPARATION` of 0.5. (3) *`sparse` is a measurement and not a constant column* (`M-44`):
+> `control_sparse_rows` **17** and `control_dense_rows` **3**. (4) *The primary reading is
+> non-constant*, or C2's concentration would be computed against a fixture that cannot falsify it —
+> `truth_table_ones` **128 / 130 / 108 / 0** on the four `triangle_counts` bits.
+
+**The low bit of the shipped triangle count is exactly the parity of the eight corner signs, and that
+is the sharpest thing in the file.** `triangle_counts.bit0` reads `role` **parity**,
+`fourier_weight_by_degree` `0|0|0|0|0|0|0|0|1` — all of the unit mass at degree 8 —
+`spectral_terms` **1**, `anf_terms` **8**, `anf_degree` **1**, `total_influence` **8.000000000** and
+`influence_by_corner` **1.0** on all eight corners, byte for byte the same row `calibration.parity`
+produces. So the shipped table emits an odd number of triangles exactly when an odd number of corners
+is inside, and flipping *any* corner changes that parity: the property is maximally high-degree and
+maximally symmetric at the same time.
+
+**`sparse` and *low-degree* are different properties, and this is the row where they separate.**
+Parity has one non-negligible Fourier coefficient and it sits at degree 8, so it is `sparse = true`
+with `concentrated = false` and `spectral_concentration = 0`; the edge bits are sparse *and*
+concentrated; `bit1` and `bit2` are neither. The registration asked for the ANF count so the negative
+would be quantitative, and it is: `anf_terms` **34** at `anf_degree` **4** for `bit1` and **100** at
+`anf_degree` **7** for `bit2`, against **8** at degree 1 for parity and **2** at degree 1 for an edge
+bit. Note that ANF degree and Fourier degree are different numbers — an edge bit is ANF degree 1 and
+Fourier degree 2 — which is why both are columns.
+
+**C3 lost by three orders of magnitude and the SHARE it discharges is negative at every density the
+spectrum could have had.** `eval_ms_table` is **0.235581–0.238111** ms for 2²⁰ evaluations on all
+twenty rows — the table is in L1 and the row measures it rather than assuming it — while
+`eval_ms_spectral` is **224.711294** ms on `bit1`, **224.814605** on `bit2` and **224.797844** on
+`calibration.majority`, and **1.087708–1.116328** ms on the seventeen single-term rows. Carried
+through `P-121`'s measured classification share for `marching_cubes` at 65³ (`s` between **0.018** and
+**0.646**), a replacement `k`× slower makes extraction `1 − s + k·s`: at `k` = 953.694027 that is
+**18.15× to 616.44×** slower extraction, and even the single-coefficient best case at `k` = 4.736385
+is **1.07× to 3.41×** slower. The direction agrees with `V-12`'s independently measured 2.8–3.4× loss
+for moving classification to irregular GPU dispatch, which is worth noting precisely because the two
+arrive at it from unrelated evidence. **Nothing moves: a caller should keep the lookup.**
+
+**One disagreement to record, and it is a citation rather than a measurement.**
+`experiment_p168.rs`'s own header quotes this row as *"the branchless spectral evaluation loses to the
+lookup by `886×` on the dense bits"*. The committed `p-167.csv` says **953.694027** on `bit1`,
+**944.158838** on `bit2` and **953.050146** on `calibration.majority`, from the run stamped
+`186246e`; 886 is a superseded first-run figure and the CSV is authoritative. The verdict is
+unaffected — both figures falsify C3 in the same direction by the same three orders of magnitude — but
+`P-168`'s header should be read as prose about a run that is not the one in the file.
+
+**Nothing in `crates/isomesh/src/**` changed and nothing should.** The whole mechanism is
+`benches/common/boolean.rs`, which this ticket owns and `R-168` and `R-169` consume unchanged, and no
+golden hash moved. What a consumer gets from this row is a negative to stop re-deriving:
+`validate_table()` (`marching_cubes/mod.rs:836`) audits the table combinatorially, `P-116` asked about
+patterns, `P-121` asked what classification costs, and this row asks what the function *is* — the
+answer is a dense, high-degree Boolean function whose cheapest evaluation is the 256-entry table
+already in the binary.
+
+### 🧊 M-481 — the registered null came back registered: C1 HELD on **240 of 240** with `closed_form_max_gap` **0.000000000000000** and stability computable a second way to **6e-15**, and C2 — *"the prediction is tested against the wrong noise model on purpose, and said so"* — held on **55** rows, `c2_rows_disagreeing` **55** of `c2_rows_counted` **88**; the genuine artefact at `ulp_perturbation` **1** flips **0** corner signs on all eight fields so the whole comparison lives on amplified error, and where the model *does* agree it agrees for a nameable reason — `measured_response_per_corner_flip` **8.000000000** against `total_influence` **8.0** on the parity bit and **2.000000000** against **2.0** on an edge bit — while at the saturating end it over-predicts by **43.9×** (`response_ratio` **0.022795687**) (P-168, R-168)
+
+**M.** `cargo bench --bench experiment_p168`, `docs/experiments/p-168.csv`, **240 rows across 55
+columns** — four `#` comment lines plus one column header plus 240 data rows, counted from the file.
+`# commit c96119a on amd-ryzen-9-5900x-12-core at 2026-08-30T14:21:01Z`, no `(WORKING TREE DIRTY)`.
+One row per (output bit, reference field, `k`): 5 × 8 × 6, at `resolution` **65**, `cells` **262,144**,
+`corner_slots` **2,097,152**. The five bits are `P-167`'s — `triangle_counts.bit0`–`.bit3` and
+`edge_masks.bit0` — and three of them are controls with a closed-form stability the harness computes
+independently: `closed_form` reads `rho^8` on parity, `rho^2` on the edge bit, `rho^0` on the constant
+and `none` on the two informative bits. **This is a registered null and it returned as registered**,
+which is why it carries no `✗`: C2's registered expectation was *disagreement*, and disagreement is
+what the file contains.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 noise stability is computed for the case table and its predicted case-flip rate at a given `rho` is stated | `Stab_rho = sum_S rho^\|S\| fhat(S)^2`, and `predicted_flip_rate = (1 - Stab_rho)/2` | **HELD on 240 of 240.** `rho_grid` `0.99\|0.95\|0.90\|0.80\|0.50\|0.20\|0.00` with `stability_at_rho_grid` and `predicted_at_rho_grid` on every row, so the a-priori curve is stated independently of what the measurement did. `closed_form_max_gap` **0.000000000000000** and `stability_gap_vs_combinatorial` at most **0.000000000000006** — the spectral sum against an exact recomputation over all 65,536 input pairs that contains no transform at all, which is C1's falsifier answered rather than assumed |
+| C2 the predicted and measured flip rates are **expected to disagree**, and the size of the disagreement measures how far the independent-noise model is from this crate's reality | relative gap `agreement` above `agreement_relative_bar` **0.25** | **HELD on 55 of 240 rows**, which is **55 of the 88** where either rate is non-zero (`c2_rows_counted` **88**, `c2_rows_disagreeing` **55**). The other 152 rows have `measured_flip_rate_f32` and `predicted_flip_rate` both identically **0** and are outside the population, not agreements. Of the 88 measurable rows **33 agreed**, and the agreement is structural rather than lucky — see below |
+
+> **`agreement` is a *gap*, not a score, and the column name is the one trap in this file.** It is the
+> relative distance between `predicted_flip_rate` and `measured_flip_rate_f32`; C2 holds when it
+> exceeds `agreement_relative_bar` **0.25**, and that rule reproduces `c2_holds` on **88 of 88**
+> measurable rows exactly. It runs from **0.000015259** (`csg_difference`, `k` = 10⁴,
+> `edge_masks.bit0`) to **1.000000000** (`csg_difference`, `k` = 10⁴, `triangle_counts.bit2`, where the
+> model predicts 0.0000534026 flips and the measurement produced exactly none).
+>
+> **Seven vacuity controls fired, and the first two are the registration's own.** (1) *The measured
+> flip rate must be non-zero at some perturbation magnitude*: `vacuity_max_measured_flip_rate`
+> **0.424926757812**, on `noise_cavity` at `k` = 10⁷. (2) *And so must the per-corner rate*, or `rho`
+> is identically 1 and C2 compares two zeros: `noise_rate` reaches **0.239023208618**, `rho` falls to
+> **0.521953582764**. (3) *The `f32` error field must be non-zero on every field*, or `k` sweeps
+> nothing: `err_nonzero_points` is **128,456–274,625** and the upper figure is 65³ exactly, so on
+> `torus` and `fbm_terrain` every single grid sample differs between the precisions. (4) *The grid
+> points must be the same real points at both precisions*: `grid_point_cast_exact` **true** on all 240
+> rows, so the measured error is evaluation precision and not a relocated sample. (5) *Rounding the
+> value cannot flip its sign, measured rather than asserted*: `f32_roundtrip_sign_flips` **0** on all
+> 240 rows — a sweep over ULP-multiples of the *result* would have been eight orders of magnitude of
+> exactly zero, which is the vacuous comparison the registration forbids. (6) *The cells must not be
+> uniformly empty*: `empty_case_share` **0.891757965–0.992187500**, non-trivially below 1 on all eight
+> fields. (7) *`common::boolean::self_check()`* against `1`, `8·(70/256)²` and `8·35/128` computed in
+> the harness, matching `P-167`'s control — `1.000000000000`, `0.598144531250`, `2.187500000000`.
+
+**The genuine artefact moves nothing, and that is the row's first result.** `ulp_perturbation` **1**
+is the value a caller running the crate at `f32` actually receives, and at `k` = 1 `corner_sign_flips`
+is **0** and `topology_changes` is **0** on all eight fields; the same is true at `k` = 100. Two of
+the six magnitudes in the sweep are therefore entirely inert, and `noise_rate` is **0.000000000000**
+with `rho` **1.000000000000** on **130 of the 240** rows — 26 of the 48 (field, `k`) pairs. Those 130
+plus the 22 `triangle_counts.bit3` rows whose constant output can never flip are exactly the **152**
+rows carrying `is_degenerate = true`, which is the complement of C2's population of 88.
+The error itself is everywhere —
+`perturbation_max_abs` at `k` = 1 is **5.898564281459e-8** to **1.726317120143e-6** and
+`err_nonzero_points` is in the hundreds of thousands — it simply never reaches a sign, because a flip
+needs `k·|e| > |v|` and `err_min_abs_value_where_nonzero` is **1.497041141080e-6** at the smallest.
+**So every non-vacuous row in this file is a row about amplified error**, and the `k > 1` arms are
+amplifications of the real error field's shape rather than a noise model of their own. The sweep first
+bites at `k` = 10⁴ and then on only four of eight fields (`torus` 128 flips, `csg_difference` 32,
+`fbm_terrain` 196, `noise_cavity` 704); `gyroid` joins at 10⁵, `sphere` at 10⁶ and `thin_plate` only
+at 10⁷, and `box_exact` never joins at all.
+
+**`box_exact` is immune to the entire sweep and that is a measurement, not a gap.**
+`corner_sign_flips` **0** at every `k` up to 10⁷, where `perturbation_max_abs` is already
+**5.898564281459e-1**. Its `err_nonzero_points` is **128,456** — the lowest of the eight, under half
+of 274,625 — and its `err_min_abs_value_where_nonzero` is **8.838834764832e-2**, the largest of the
+eight by three orders of magnitude. So where an exact polyhedral distance on a dyadic grid differs
+between the precisions at all, it differs where the field is far from zero; near its own faces both
+precisions return the same bits and `k·e` is exactly zero however large `k` gets.
+
+**Where the model agrees, it agrees because the response is measure-independent — and that is the
+finding, not an exception to it.** Seven of the 88 measurable rows land inside a relative gap of
+**1e-3**, and every one of them is either the parity bit or the edge bit in the single-flip regime:
+`torus` at `k` = 10⁴ reads `measured_response_per_corner_flip` **8.000000000** against
+`total_influence` **8.0** with a gap of **0.000427142**, and the five `edge_masks.bit0` rows read
+**2.000000000** against **2.0** with gaps of **0.000015259–0.000335693**. The first-order model is
+`predicted_flip_rate ≈ eps · I(f)`, so a function whose per-case response is *constant* — a `xor` of
+corner signs — is predicted exactly no matter how the cases are distributed. The two informative bits
+have a per-case response that varies, and they disagree at the very smallest non-zero perturbation:
+at `torus`, `k` = 10⁴, `bit1` measures **3.000000000** flips per corner flip against an influence of
+**4.0** and `bit2` measures **1.000000000** against **3.5**. **The disagreement is present before any
+saturation and it is the case measure, not the correlation.**
+
+**Both causes are separated in the file, and neither correction rescues the model.** *Distribution*:
+`predicted_flip_rate_case_weighted` re-runs the same independent-flip model with the input drawn from
+the field's measured case histogram instead of uniformly over 256 cases. It reduces the gap on **12**
+of the 88 measurable rows, enlarges it on **31** and leaves **45** unchanged (the rows whose response
+is measure-independent), and the mean relative gap *rises* from **0.419829** to **0.503282** — so
+removing the distributional mismatch does not leave a working model behind it. *Amplitude*:
+`eps_needed_for_measured` inverts the model curve and `eps_needed_ratio` reports it against the
+measured per-corner rate. It spans **0.023010 to 1.020505** over the 88 rows, so at the saturating end
+independent noise needs only **2.3%** of the flip rate correlated rounding actually delivered to
+predict the same output flip rate — the linear model over-predicts by **43.5×** there. `response_ratio`
+tells the same story from the other side, **0.022795687 to 1.020408163**, and it falls sharply as
+`noise_rate` rises — `gyroid` on parity reads **0.956766917** at `k` = 10⁵, **0.344280122** at 10⁶ and
+**0.232160875** at 10⁷ — though not monotonically on every series: **6 of the 30** (field, bit) series
+with at least two non-zero-noise points carry a local rise, so the saturation is a trend and not a law.
+`model_saturated` is **false** on all 240 rows, so none of this is the instrument running out of range.
+
+**What a consumer should do differently: nothing, and the number to stop reaching for is noise
+stability.** The registered SHARE was *none* and the arithmetic is the discharge. The independent-flip
+prediction is `eps · I(f)` with `I` = 4.0 on the bit that matters, and the `eps` the `f32` path
+actually delivers on a 65³ grid is **0** on all eight reference fields. A robustness number whose input
+is measured at zero where the artefact lives, and which over-predicts by up to 43.5× where it is
+non-zero, cannot carry a precision decision or a refinement heuristic. `f32` rounding in this crate is
+a deterministic, spatially correlated perturbation, exactly as the registration said before any number
+existed, and the size of the gap is now on the record instead of being assumed. Nothing in
+`crates/isomesh/src/**` changed: `common::boolean` is `R-167`'s module, consumed unchanged.
+
+### 💥 ✗123 / M-482 — C1 HELD in the strongest reading the clause can have, because `symmetry_class_count` is **1**: all eight corners are a single orbit of the 48-element cube group, so *"equal within each octahedral symmetry class"* means all eight equal, and `influence_spread` is **0.000000000** on every bit of `triangle_counts` with `octahedral_violations` **0** over 12,288 (π, x) pairs; C2 FALSIFIED on **200 of 200** at `refinement_priority_correlation` **exactly 0.000000** against an `informative_correlation` bar of **0.50** — C1 holding *is* C2 failing — and the corrupted-table control detects **2 of 4** planted corruptions by inequality while all four show `influence_shift_abs` **0.007812500** = 2/256, which is exactly how much of `validate_table()` this cheap check can and cannot replace (P-169, R-169)
+
+**M.** `cargo bench --bench experiment_p169`, `docs/experiments/p-169.csv`, **200 rows across 45
+columns** — four `#` comment lines plus one column header plus 200 data rows, counted from the file.
+`# commit b12f121 on amd-ryzen-9-5900x-12-core at 2026-08-30T14:21:06Z`, no `(WORKING TREE DIRTY)`.
+Twenty-five arms at eight rows each, one row per corner, so `corner_index` is the row key and every
+per-corner column is a real per-row value: the four `triangle_counts` bits plus their `aggregate`, the
+thirteen `edge_masks` bits plus their `aggregate`, `centroid_counts.bit0` and its `aggregate`, and four
+`is_control = true` corruption arms. **No clock is read** — the registration names no ratio on time, so
+every column is an exact rational or an integer count, and there is no timing column in the file at
+all. The field scans are the crate's own deterministic grids at 33³ and 65³ over all eight reference
+fields: `scanned_cells` **2,359,296** with `scanned_cut_cells` **99,932**.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 all eight corner influences are computed and are **equal within each octahedral symmetry class**, making this a cheap independent check on `validate_table()` | equality, on the primary reading's non-degenerate bits plus its aggregate | **HELD.** `c1_holds` true on 200 of 200. `influence` is **1.000000000 / 0.500000000 / 0.437500000 / 0.000000000** on `triangle_counts.bit0`–`.bit3` and **1.937500000** on the aggregate, identical on all eight corners of each, with `influence_spread` **0.000000000** and `total_influence` **8.0 / 4.0 / 3.5 / 0.0 / 15.5**. `influence_agrees_combinatorial` true on 200 of 200 — two independent computations of the same rational number |
+| C2 total influence is reported and compared against the average sensitivity a refinement heuristic would need | `\|refinement_priority_correlation\| >= 0.50` on the primary reading | **FALSIFIED on 200 of 200**, in both of the two ways the number could have been useful. `refinement_priority_correlation` is **0.000000** on every primary arm, and separately the uniform-measure figure is the wrong magnitude: `empirical_total_influence` is **0.141688453** against **4.0** on `bit1` and **0.076633453** against **3.5** on `bit2`, `uniform_minus_empirical` **3.858311547** and **3.423366547** |
+
+> **The zero in C2 is exact and it is a consequence of C1, not noise.**
+> `common::beta::rank_correlation` returns `0.0` when either sample has no rank variance
+> (`beta.rs:854-874`, a zero denominator). C1 holding means the primary reading's eight influences are
+> *equal*, so that sample has no rank variance and the Spearman correlation against any priority vector
+> whatsoever is **exactly** zero. **The table's octahedral correctness is precisely what makes
+> per-corner influence useless as a refinement signal.** The priority side is controlled so the zero is
+> attributable to the influence side and nothing else: `refinement_priority_distinct` **8** against a
+> required 3, `control_correlation_self` **1.000000000** and `control_correlation_negated`
+> **−1.000000000** through the same function, and the same correlation is measurably non-zero on the
+> twelve labelled edge bits — **±0.125988, ±0.251976, ±0.503953, ±0.629941, ±0.755929** — so the
+> instrument can produce a number and twelve arms of this run prove it.
+>
+> **The corrupted-table control is the row's most useful negative, and it detects half of what it was
+> built for.** `common::boolean::corrupt` flips one case entry. On `corrupt.bit1@case37`
+> (`control_delta` **2**) and `corrupt.bit2@case7` (`control_delta` **4**) the eight influences split —
+> **0.507812500 / 0.492187500** and **0.445312500 / 0.429687500**, `influence_spread` **0.015625000** on
+> both — and `control_detected` is **true**. On `corrupt.bit0@case37` (`control_delta` **1**) and
+> `corrupt.bit3@case37` (`control_delta` **8**) the corruption lands and moves *every* corner by the
+> same amount — all eight to **0.992187500** and all eight to **0.007812500**, `influence_spread`
+> **0.000000000** — and `control_detected` is **false**. The blind spot is a property of the sign
+> pattern, not of the corruption failing to apply, and that distinction is measured rather than argued:
+> **`influence_shift_abs` is `0.007812500` = 2/256 on every corner of all four control arms**, because a
+> single-case flip touches exactly the pair `(x₀, x₀ xor e_i)` for each `i`. Bit 0 is parity, so every
+> neighbour always differed and all eight influences fall together; bit 3 is the constant zero, so none
+> ever differed and all eight rise together. Without that column, *"still equal"* could have meant
+> *"`corrupt` did nothing"*.
+>
+> **Six more vacuity controls.** (1) The primary reading is octahedrally invariant:
+> `octahedral_violations` **0** over all 48 × 256 = 12,288 (relabelling, input) pairs, without which an
+> unequal influence would localise nothing and C1 would be a coincidence rather than a check. (2) The
+> primary reading is non-degenerate — `is_degenerate` false on `bit0`–`bit2` and the aggregate — so
+> C1's equality is not an equality of zeros (`M-44`). (3) `influence_equal_within_class` can come out
+> both ways over the census: **true** on the primary reading and its aggregates, **false** on **112 of
+> 200** rows — the 96 rows of `edge_masks.bit0`–`.bit11` plus the 16 rows of the two detected corruption
+> arms. (4) The edge-mask aggregate reproduces a closed form through the
+> same instrument: **3.000000000** on all eight corners for `total_influence` **24.000000000** = 2 × 12
+> edges = 8 × `CUBE_VERTEX_DEGREE` 3. (5) Every scanned grid contains a cut cell, `scanned_cut_cells`
+> **99,932**. (6) The per-bit totals reproduce `p-167.csv`'s committed **8.0 / 4.0 / 3.5 / 0.0**
+> exactly — two Phase 27 CSVs measure the same quantity through the same module and agreeing was not
+> optional.
+
+**`c1_holds` is `true` on rows whose own `influence_equal_within_class` is `false`, and that is correct
+rather than a bookkeeping error.** The 96 `edge_masks.bit0`–`.bit11` rows read
+`influence_equal_within_class` **false** with `influence_spread` **1.000000000** and an
+`influence_by_corner` that is `1` on two named corners and `0` on the other six. C1's verdict is a
+**global** one taken over the primary reading's non-degenerate bit arms plus its aggregate, so those
+rows carry the per-arm equality as data and do not vote. **The edge-mask inequality is not a table
+defect, and reading C1 against it would have been a false positive.** A cube symmetry π relabels corner
+signs and maps edges to edges, so `mask(x') = σ(mask(x))`: the mask is *equivariant*, the group acts on
+the twelve edge **labels**, and a single edge bit is `x_a xor x_b` attached to two named corners — its
+influence vector is `1, 1, 0, 0, 0, 0, 0, 0` up to relabelling under any measure. Only the multiset
+over bits is invariant. Both halves are measured, using `common::poly::octahedral_relabellings()` as an
+independently generated copy of the same group: **`edge_mask_labelled_violations` is 10,944 of 12,288
+(89.06%)** while **`edge_mask_equivariant_violations` is 0** — the failure is exactly the edge
+relabelling and nothing else — and the multiset statement holds at the level the group actually acts
+on, the `edge_masks.aggregate` arm's 3.0 per corner.
+
+**The second half of C2's falsification is independent of the first and is the one a heuristic author
+should read.** Influence is defined under the uniform measure on {0,1}⁸; a refinement heuristic runs on
+real cells, whose case histogram is dominated by the empty and full cases. `empirical_influence`
+re-weights the same flip count by the measured histogram of all eight reference fields at both
+resolutions, and `empirical_agrees_with_uniform` is **true** exactly on the measure-independent
+functions — parity (`8.000000000` both ways), every edge bit (`2.000000000` both ways) and the
+constants — and **false** on the two informative bits and the primary aggregate, the only arms C2 could
+have used. The uniform figure overstates what a heuristic would actually see by **28.2×** on `bit1`
+(4.0 against 0.141688453), **45.7×** on `bit2` (3.5 against 0.076633453) and **1.89×** on the aggregate
+(15.5 against 8.218321906). So the quantity is doubly uninformative: it does not rank the corners, and
+it is not even the right magnitude for the cells a caller has.
+
+**One result hiding in the control, which the harness's own header records as a first reading it had to
+correct.** The refinement priority is nearly corner-symmetric by construction — the same sample plays
+all eight corner roles in the eight cells meeting it — and the residual looked like a boundary-layer
+effect that would shrink like 1/N. It does not: the harness measures the spread as a share of the
+vector's own mean at **1.52% at 33³** and **2.68% at 65³**, *growing*, while the pooled
+`refinement_priority_spread` in the file is **0.005782371** over per-corner priorities of
+**0.124649179–0.125371976** — 0.58% of the mean, the two grids' asymmetries partly cancelling. So the
+near-degeneracy is a property of the eight fields rather than of the grid's edge, and a finer grid does
+not buy a ranking.
+
+**What this is worth as a gate, exactly.** The influence census is exhaustive over 256 cases × 8
+corners — **2,048 table comparisons, no field evaluation, no clock** — against `validate_table()`'s
+combinatorial audit at `crates/isomesh/src/marching_cubes/mod.rs:836`, and it is a *quantitative*
+question that audit never asks. What it would catch is a corruption that changes the flip relation
+unevenly across corners, localised to a corner index; what it provably would not catch is a corruption
+on a bit where every neighbour already differed or none ever did, which the two undetected control arms
+demonstrate in the same run. **So the honest recommendation is that it belongs beside
+`validate_table()` and not instead of any part of it**, and the `influence_shift_abs` column is the
+piece with teeth — all four planted corruptions moved it by 2/256 while only two moved the equality.
+Nothing in `crates/isomesh/src/**` changed, no golden hash moved, and the registered `SHARE: none`
+stands: a passing check moves no stage, and its value is that it could have failed.
+
+### 📖 V-51 / M-483 — C1, C2 and C3 all HELD on **8 of 8** rows with `doi_verified` **true** on every one, **including the registered trap**: `10.1137/0722019` resolves to T. Nanda, *Differential Equations and the QR Algorithm*, SIAM J. Numer. Anal. **22(2):310-321** — the article immediately preceding Allgower & Schmidt at **322-346**, `trap_gap` **1** — and AS85's `is_homeomorphism` is **false**, it constructs a PL manifold along which ‖H(x)‖_∞ < ε under a full-rank hypothesis at the seed, so the file's only `true` is Boissonnat & Wintraecken 2020, thirty-five years later; the repository counts are re-taken every run and read `descendant_citations_in_repo` **21** and `root_citations_in_repo` **4**, of which **0** survive removing the registration layer that introduced the name (P-170, R-170)
+
+**M.** `cargo bench --bench experiment_p170`, `docs/experiments/p-170.csv`, **8 rows across 41
+columns** — four `#` comment lines plus one column header plus 8 data rows, counted from the file.
+`# commit d20dde1 on amd-ryzen-9-5900x-12-core at 2026-08-30T09:30:35Z`, no `(WORKING TREE DIRTY)`.
+**This is the phase's only desk-work row**, and it is desk work because the gap is bibliographic
+rather than numerical: it carries `V-51` because its result is a reading of primary sources, and
+`M-483` because two of its columns are counts re-measured from the working tree on every run. Nothing
+is timed. One row per source, two of them `is_control = true`.
+
+| row | year | DOI | title, venue | `claim_type` | `is_homeomorphism` |
+|---|---|---|---|---|---|
+| `allgower_schmidt_1984` | 1984 | `10.1007/978-3-642-45567-4_26` | *Piecewise Linear Approximation of Solution Manifolds for Nonlinear Systems of Equations*, Lecture Notes in Econom. and Math. Systems **226**, 339-347 | `residual_bound` | false |
+| `allgower_schmidt_1985` | 1985 | `10.1137/0722020` | *An Algorithm for Piecewise-Linear Approximation of an Implicitly Defined Manifold*, SIAM J. Numer. Anal. **22(2)**, 322-346 | `residual_bound` | false |
+| `nanda_1985_trap` **(control)** | 1985 | `10.1137/0722019` | *Differential Equations and the $QR$ Algorithm*, SIAM J. Numer. Anal. **22(2)**, 310-321 | `unrelated_work_trap` | false |
+| `allgower_gnutzmann_1987` | 1987 | `10.1137/0724033` | *An Algorithm for Piecewise Linear Approximation of Implicitly Defined Two-Dimensional Surfaces*, SIAM J. Numer. Anal. **24(2)**, 452-469 | `residual_bound_2d_surfaces` | false |
+| `lorensen_cline_1987` **(control)** | 1987 | `10.1145/37402.37422` | *Marching cubes: A high resolution 3D surface construction algorithm*, SIGGRAPH Comput. Graph. **21(4)**, 163-169 | `no_correctness_claim` | false |
+| `dobkin_levy_thurston_wilks_1990` | 1990 | `10.1145/88560.88575` | *Contour tracing by piecewise linear approximations*, ACM Trans. Graph. **9(4)**, 389-423 | `robustness_and_loop_detection` | false |
+| `allgower_georg_1990_ncm` | 1990 | `10.1007/978-3-642-61257-2` | *Numerical Continuation Methods*, Springer Series in Computational Mathematics **13** | `manifoldness_under_strong_conditions` | false |
+| `boissonnat_wintraecken_2020` | 2020 | `10.4230/LIPIcs.SoCG.2020.20` | *The Topological Correctness of PL-Approximations of Isomanifolds*, LIPIcs (SoCG 2020) **164**, 20:1-20:18 | `isotopy` | **true** |
+
+> **C1 held and the vacuity control is the whole point of the row: *each DOI must be resolved and its
+> title recorded in the finding, not merely quoted from this document*.** `doi_verified` is **true** on
+> 8 of 8, every row carries a non-empty `title` and a non-empty `resolved_via`, and the eight titles
+> are distinct — a copy-pasted title would have made the table look resolved while carrying one answer
+> eight times. Precedence is arithmetic off the `year` column rather than prose: 1984 < 1985 < 1987,
+> with `predates_marching_cubes` **true** on the three 1984/1985 rows. That column compares *years*, so
+> Allgower & Gnutzmann's April 1987 reads **false** against Lorensen & Cline's August 1987; the
+> four-month precedence is in the issue dates and not in this column, and the column should not be
+> quoted for it.
+>
+> **The trap is the row that makes the verification real, and it is computed rather than asserted.**
+> `trap_gap` **1**: the two SIAM article numbers parse to integers differing by exactly one, on the
+> same venue, volume, issue and year, with different titles — `0722019` is Nanda on isospectral flows
+> and the symmetric eigenvalue problem, ending at page 321, and `0722020` is Allgower & Schmidt,
+> beginning at page 322. A one-digit slip in the DOI returns a paper on the QR algorithm, and if it did
+> not, `doi_verified` would be measuring nothing. The trap already costs something in this repository:
+> `this_source_citations_in_repo` reads **3** on the Nanda row, because the registration that named the
+> trap put its DOI into the tree.
+>
+> **Two more controls.** `homeomorphism_column_is_not_constant` — at least one row `true` and at least
+> one `false`, satisfied by **1 true and 7 false**; eight `false` rows would be a column that could not
+> have been true, which is not a measurement (`M-44`). And `scanner_finds_the_named_file`:
+> `marching_tetrahedra/table.rs` is among the Kuhn matches and the descendant count is non-zero, both
+> from the same walk that reports the root count, so a zero root count is not a scanner that finds
+> nothing.
+
+**What could and could not be read in full, exactly.** `full_text_read` is **true on exactly one of
+the eight rows** — `boissonnat_wintraecken_2020`, whose `evidence` is
+`full_text_read_p20_1_to_20_18`, open access at Dagstuhl. Everything else was read at abstract depth or
+shallower, and the `evidence` column says which: six rows read `abstract_verbatim_crossref`;
+`allgower_schmidt_1984` reads **`title_and_venue_only_no_abstract_deposited`**, the weakest evidence in
+the file, because no abstract was deposited for it at all; and `allgower_georg_1990_ncm` reads
+**`boissonnat_wintraecken_socg_2020_p20_3_verbatim`** — its Theorem 15.4.1 is quoted at second hand,
+through B&W's own text, and the row says so rather than implying a reading of the textbook. **AS85
+itself is paywalled and was not read**: `paper_download` found no open-access PDF for
+`10.1137/0722020` and Crossref lists only an `epubs.siam.org` link marked for similarity checking, so
+`full_text_read` is **false** on the row that carries C1 and C2, and the reading is of its abstract
+plus two corroborating primary sources.
+
+**What AS85 actually proves, which is C2 and is the reason the precedence must be stated with its
+limit.** The row's `hypothesis` column reads *"H: R^(N+K) -> R^N smooth; the seed x0 lies in H^-1(0)
+and DH(x0) has full rank"* and its `guarantee` reads *"for any eps > 0 a PL manifold is constructed
+along which ||H(x)||_inf < eps"*. That is a **residual bound with a regularity condition at a single
+point**, `claim_type` `residual_bound`, and neither the title nor the abstract contains *homeomorphic*,
+*isotopic* or *topologically equivalent*. The nearest thing the older line proves is on the
+`allgower_georg_1990_ncm` row — Theorem 15.4.1, *"the zero set of f_PL is a manifold — explicitly
+without a homeomorphism with the zero set of f"* — and the guarantee the crate actually leans on is
+`boissonnat_wintraecken_2020`'s Theorem 20, *"the zero set of f_PL is a manifold isotopic to the zero
+set of f; plus a Frechet bound"*, under *"0 a regular value of f; longest edge D small enough at
+bounded simplex thickness T"*. So: **the technique is 1984/1985 and the topological guarantee is 2020,
+and quoting the first as if it delivered the second is exactly the overclaim C2 exists to prevent.**
+
+**One correction to the registration, which sharpens it rather than weakening it.** The registration
+attributes the *"without a homeomorphism"* quote to AS85. It is verbatim in Boissonnat & Wintraecken
+and it is about the Allgower line, but B&W's `[3]` is Allgower & Georg's *Numerical Continuation
+Methods* — and **AS85 is not in B&W's bibliography at all**. The quote is therefore a fact about the
+textbook of the line, not about AS85, and it is recorded on the `allgower_georg_1990_ncm` row where it
+belongs. AS85's own non-homeomorphism status rests on its own abstract, which is stronger evidence than
+a third party's remark about a different paper. The registration is **not amended**
+(`crates/isomesh/src/experiment.rs:27-31` forbids it) and C2 is answered from two independent primary
+sources with the attribution corrected.
+
+**C3 held: DLTW traces curves.** Its `guarantee` column is *"traces a curve without failing at high
+curvature; accumulates essentially no round-off error; has a well-defined integer test for detecting a
+loop"* — `claim_type` `robustness_and_loop_detection`, no topological-correctness claim, and the object
+is a curve rather than a surface. The descent into graphics is documented by the graphics paper itself:
+`cited_by_dltw` is **true on exactly one row of eight**, `allgower_schmidt_1985`, whose full citation
+appears in DLTW's own deposited reference list. That single boolean is the lineage evidence, and it is
+in the metadata rather than inferred from a resemblance.
+
+**Two rows the registration did not name are in the table anyway, and both were found inside reference
+lists of sources it did name.** `allgower_gnutzmann_1987` is the **two-dimensional surface** case —
+which is the case Marching Cubes solves — and its Crossref reference `R2` is `10.1137/0722020`, so the
+1985 → 1987 link is publisher-asserted rather than inferred. `allgower_schmidt_1984` was found as
+reference `R3` of that 1987 paper and is **three years** before Lorensen & Cline, the earliest member
+of the line this repository can name. Neither is a new clause: both are evidence for C1's existing
+precedence clause. Neither is cited anywhere in the tree — `this_source_citations_in_repo` **0** on
+both, as it is on `allgower_georg_1990_ncm`.
+
+**The two counts, and what corpus they are over.** `descendant_citations_in_repo` **21** and
+`root_citations_in_repo` **4** are raw file counts over one declared corpus — `files_scanned` **531**,
+every text-extension file under the workspace root minus build/VCS directories, minus
+`docs/experiments/` (generated output, including this bench's own CSV, so the measurement stays
+idempotent) and minus `experiment_p170.rs` itself. They are global to the run and identical on all
+eight rows. The needles are declared: `plantinga` for the descendant, `allgower` **or**
+`10.1137/0722020` for the root — and the pattern choice is justified by data rather than taste, because
+bare `schmidt` also matches two files that say *Gram-Schmidt* and `naive_schmidt_files` records the
+over-match at **6** against the root's 4. Two further cuts are reported because the registration's
+preamble numbers turn out not to have been counted the same way:
+
+| claim in the registration | raw | excl. phase-27 docs | excl. registration layer | `*_reproduced` |
+|---|---|---|---|---|
+| Plantinga–Vegter in **18** files | **21** | **20** | **17** | `doc_claim_descendant_reproduced` **false** |
+| Freudenthal/Kuhn in **6** files | **12** | **10** | **8** | `doc_claim_kuhn_reproduced` **false** |
+| the parent theory in **none** | **4** | **2** | **0** | `doc_claim_root_reproduced` **true** |
+
+**The descendant figure drifted exactly as the harness predicted it would, and the drift is the
+measurement working.** `phase27_harnesses_in_corpus` is **25** — half of Phase 27's fifty harnesses had
+landed at `d20dde1` — and some of them cite Plantinga–Vegter in their own headers, so the descendant
+count rises as the phase proceeds. The harness header records **19 / 18 / 15** measured while authoring
+over a 507-file corpus with none of the harnesses landed; the committed CSV reads **21 / 20 / 17** over
+531 files, so the claim that was exact under cut A when it was written now reads `false`. **No clause
+depends on it**: the descendant count's only job is to be non-zero, as the scanner's non-vacuity
+witness, and drift can only strengthen that. The reading that carries the thesis — *"cites the parent
+theory in none"* — is `root_citations_excl_registration`, and it is **0**, because the only files in
+the tree that name the root are `FINDINGS.md`, `BACKLOG.md` and `experiment.rs`: the registration layer
+that introduced the name. The Freudenthal/Kuhn figure is wrong under every cut, off by at least two and
+at most six, and narrowing the needle does not rescue it.
+
+**Nothing changes for a consumer of this crate, and that is the deliverable rather than a shortfall.**
+`crates/isomesh/src/**` is untouched, no golden hash moved, the registered `SHARE` was *none — this is
+a citation repair and a scope statement*, and it is discharged as registered. What lands is the table
+above and one sentence a reader of `validate/isotopy.rs:3` should have: **the crate's PL-approximation
+technique has a 1984/1985 root that proves a residual bound under a regularity hypothesis, and the
+topological guarantee the crate actually relies on dates from 2004 (Plantinga–Vegter) and 2020
+(Boissonnat & Wintraecken), not from the root.** `P-171` is the row that then asks how often the
+regularity hypothesis those theorems need actually fails.
+
+### 💥 ✗124 / M-484 — C1 HELD with `c1_fields_nonzero` **6 of 8** and transversality failing measurably — `box_exact` reads `non_transverse_fraction` **0.191406250 / 0.094238281 / 0.046936035** over **784 / 3,088 / 12,304** cells, and every one of its **5,766** cut edges at 65³ places its vertex on a grid corner (`edges_at_half_offset` = `cut_grid_edges` = `mesh_vertices`, `max_abs_edge_offset` **0.500000000**); C2 FALSIFIED on **24 of 24** — Jaccard **0.000000000** on `gyroid` and **0.054123711 → 0.007722008** on `noise_cavity` against a **0.10** bar, and *unreachable* on **18** rows where one of the two sets is empty; C3 HELD on **all 6** rows where a defect exists at `overlap_with_defects` **0.661290323–0.750000000** and unreachable on the other 18 — and the shipped extractor's entire defect population on eight fields at 17/33/65 is degenerate triangles, with `non_manifold_edges`, `non_manifold_vertices`, `self_intersecting_pairs` and `inconsistent_edges` all **0 on 24 of 24** (P-171, R-171)
+
+**M.** `cargo bench --bench experiment_p171`, `docs/experiments/p-171.csv`, **24 rows across 39
+columns** — four `#` comment lines plus one column header plus 24 data rows, counted from the file.
+`# commit 7220f51 on amd-ryzen-9-5900x-12-core at 2026-08-30T09:30:42Z`, no `(WORKING TREE DIRTY)`.
+Eight reference fields × three grids at `resolution` **17 / 33 / 65**, so `cells` **4,096 / 32,768 /
+262,144** for **2,392,064** cells and **104,059** active cells over the census, `wall_ms`
+**0.448–144.692**. The mesh is the default `MarchingCubes` mesh and `crates/isomesh/src/**` is
+untouched.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the non-transverse fraction is measured per field per resolution and is non-zero on at least two fields | `c1_fields_nonzero >= 2` | **HELD on 24 of 24** at **6 of 8** fields: `sphere` **48** cells at every resolution, `box_exact` **784 / 3,088 / 12,304**, `csg_difference` **716 / 2,774 / 10,964**, `thin_plate` **128 / 256 / 512**, `gyroid` **8**, `noise_cavity` **216**; zero on `torus` and `fbm_terrain`. `regular_value_violations` equals `non_transverse_cells` on **24 of 24** rows — every failure in this census is criterion (a), an exactly-attained isovalue, and none is criterion (b) |
+| C2 the non-transverse cells **overlap** the ambiguous cells substantially, which would say the ambiguity problem and the transversality failure are the same problem seen twice | Jaccard `>= C2_JACCARD_FLOOR` **0.10** | **FALSIFIED on 24 of 24**, and *unreachable* on 18 of them. `c2_reachable` (`\|N\| > 0 && \|A\| > 0`) is true only on the six `gyroid` and `noise_cavity` rows; there the Jaccard is **0.000000000** on all three `gyroid` rows (`non_transverse_and_ambiguous` **0** against `ambiguous_cells` 52 / 27 / 132) and **0.054123711 / 0.018439716 / 0.007722008** on `noise_cavity` (**21 / 13 / 6** cells). They are different populations |
+| C3 they also overlap T-001's defect cells, or they do not, and which is stated | containment `\|N ∩ D\| / \|D\|`, reported | **HELD on 6 of 6 rows where `D` is non-empty**, unreachable on the other 18. `overlap_with_defects` **0.750000000** on `gyroid` (3 of 4) at all three resolutions and **0.661290323 / 0.697368421 / 0.662337662** on `noise_cavity` (41 of 62, 53 of 76, 51 of 77). Two thirds of the shipped extractor's defect cells are non-transverse |
+
+> **C2's and C3's `false` on 18 rows is unreachability and must not be read as refutation — here is the
+> arithmetic.** For C2, `ambiguous_cells` is **0** on all three rows of `sphere`, `box_exact`,
+> `csg_difference` and `thin_plate` (15 rows), and `non_transverse_cells` is **0** on all three rows of
+> `torus` and `fbm_terrain` (6 rows, one of which, `fbm_terrain`, does have 16 / 30 / 58 ambiguous
+> cells) — 18 rows in which one of the two sets the Jaccard is taken over is empty. For C3,
+> `defect_cells` is **0** on **18 of 24** rows: the shipped extractor produces no defect at all on
+> `sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate` or `fbm_terrain` at any of the three
+> resolutions, so C3's containment has an empty denominator there and its zero could not have been
+> non-zero (`M-44`). **`c3_reachable` equals `c3_holds` on 24 of 24 rows**: wherever C3 could be asked,
+> it held. `P-70`'s C1 is the precedent for recording that as a result rather than as a pass.
+>
+> **Three of C2's four zero-ambiguity fields are zero by geometry rather than by luck, and the fourth
+> is a measurement the harness did not predict.** `AMBIGUOUS_FACES[case] != 0`
+> (`marching_cubes/table.rs:196-231`) requires a cube face whose four corner signs alternate around the
+> ring, i.e. the two inside corners are diagonal. A box's inside is a product of open intervals, so if
+> a diagonal pair passes all four interval tests then so does the other pair — no alternating face
+> exists, which covers `box_exact` and `thin_plate`. For a ball, either diagonal pair of a square sums
+> to `2|c − O|² + 2m²` from any point, so the two sums are equal and the alternation is impossible —
+> which covers `sphere`. **`csg_difference` is not covered by either argument — the harness header names
+> it, `gyroid`, `fbm_terrain` and `noise_cavity` as the four fields on which C2 *can* be asked, twelve
+> rows — and measured, its `ambiguous_cells` is 0 on all three of its rows.** That is the one place the
+> file disagrees with its own harness's expectation. With `fbm_terrain`'s three rows failing on the
+> other side (ambiguous cells but no non-transverse cell), C2's population is **six** rows rather than
+> twelve.
+>
+> **`ambiguous_lift` is the right column to ask whether a small Jaccard means indifference, and on
+> this fixture it can only be read on two rows.** The column is `|N ∩ A| · cells / (|N| · |A|)`, the
+> observed overlap over what independence would give, and the denominator is what limits it here.
+> `gyroid` reads **0.000000** on all three rows — but its expected overlap under independence is
+> 8 × 52 / 4,096 = **0.102** cells at 17³ and **0.0040** cells at 65³, so a zero there is what chance
+> predicts and says nothing about avoidance. `noise_cavity` reads **2.063328 / 3.928582 / 12.842642**,
+> and only its first two rows rest on an expectation worth dividing by: **21** observed against
+> 216 × 193 / 4,096 = **10.18** expected at 17³, and **13** against **3.31** at 33³. The headline
+> **12.842642** at 65³ is 6 cells against **0.47** expected — a large ratio on a small expectation, and
+> it should be quoted as such. **So the honest reading is that the two populations are genuinely
+> different, with a real but modest enrichment on the one field where both are large** — which is the
+> difference between "no overlap" and "not substantial overlap", and it is why the lift rises while the
+> Jaccard falls from 0.054123711 to 0.007722008: `ambiguous_cells` grows with the surface while
+> `non_transverse_cells` stays pinned at 216.
+>
+> **Seven vacuity controls fired.** (1) *`box_exact` is in the census*, the registration's own named
+> control, because its faces have exactly-equal samples; excluding it would have excluded the
+> phenomenon. (2) *Every resolution can land a sample on a box face*: `box_exact` spans [−1, 1]³ inside
+> [−2, 2]³ so its faces sit at sample index (n−1)/4 and 3(n−1)/4, and 17, 33, 65 give 16, 32, 64 — the
+> arithmetic is asserted rather than the constants trusted, because at `(n − 1) % 4 != 0` the violation
+> count would read zero *by the choice of resolution*. (3) *`box_exact` reports a non-zero violation
+> count at every resolution*, **784 / 3,088 / 12,304** — the assert that would fire if the sign rule,
+> the sampler or the exact comparison were wrong. (4) *Something in the fixture is ambiguous*,
+> `ambiguous_cells` summing to **1,577**. (5) *Every row has an active surface*, `active_cells`
+> **128–28,375**. (6) *This bench's grid is the extractor's grid*: `mesh_vertices` equals
+> `cut_grid_edges` on **24 of 24** rows, which plain Marching Cubes guarantees at one vertex per crossed
+> grid edge (`table.rs:128-131`, `x1 / M-2 / M-22`'s `V_mc = C`) — a disagreement would have meant every
+> number here was about a fixture the crate never saw. (7) *The located degenerate triangles are the
+> crate's own*, `degenerate_triangles` asserted equal to `SelfIntersectionReport::degenerate_triangles`.
+
+**`box_exact` is not merely the worst field, it is a field whose entire mesh sits on the 0-skeleton.**
+`edges_at_half_offset` reads **294 / 1,350 / 5,766** and `cut_grid_edges` and `mesh_vertices` read the
+same three numbers, so **every** cut edge of `box_exact` at every resolution has `|d| = 1/2` and places
+its vertex exactly on a grid corner. `edge_offset` (`cube.rs:216-225`) returns `d = ((a + b)/2)/(a − b)`,
+a signed offset from the edge *midpoint*, so `|d| = 1/2` is the maximal transversality failure against
+the cell's 0-skeleton and `d = 0` is maximally transverse; `max_abs_edge_offset` is **0.500000000** on
+that field and `exact_zero_samples` is **386 / 1,538 / 6,146**. Nowhere else is it total:
+`csg_difference` reads **249 of 294**, **1,167 of 1,386** and **5,031 of 6,012** (83.68% at 65³),
+`thin_plate` **28 / 60 / 124** of 126 / 510 / 2,046, `sphere` **6** of 4,758, `noise_cavity` **56 / 61 /
+65** of up to 28,882, `gyroid` **3** of 21,534. And the two fields that read zero read it with room to
+spare rather than through a coarse instrument: `torus`'s `max_abs_edge_offset` climbs
+**0.452010322 → 0.485094524 → 0.496493621** and `fbm_terrain`'s reaches **0.499994012** without ever
+attaining ½, which is what makes `non_transverse_cells` **0** on those six rows a measurement.
+
+**The scaling of `exact_zero_samples` across the three grids reads off the *dimension* of the set on
+which each field exactly attains its isovalue, and that is the sharpest thing in the file.** The grids
+double, so a count that is constant means a 0-dimensional zero set, ×2 means 1-dimensional and ×4 means
+2-dimensional:
+
+- **0-dimensional** — `sphere` **6 / 6 / 6** (the six axis poles), `gyroid` **1 / 1 / 1**,
+  `noise_cavity` **27 / 27 / 27**. `non_transverse_cells` is constant too (**48 / 8 / 216**, and
+  sphere's 48 is exactly 6 × 8, one isolated zero touching eight cells), so
+  `non_transverse_fraction` falls by exactly **8.0** per refinement — like 1/n³.
+- **1-dimensional** — `thin_plate` **32 / 64 / 128**, and its fraction falls by exactly **4.0**
+  (0.031250000 → 0.007812500 → 0.001953125), like 1/n².
+- **2-dimensional** — `box_exact` **386 / 1,538 / 6,146** and `csg_difference` **337 / 1,354 / 5,422**,
+  both ×4 to three digits, and their fractions fall by **2.0311 / 2.0078** and **2.0649 / 2.0241** —
+  like 1/n, which is the only one of the three that matches the harness header's prediction for a
+  numerator counting cells that touch a *surface*.
+
+So the transversality failure is a face plane on the two box-derived fields, a line on the plate and a
+handful of isolated points on the curved and procedural ones, and **refining the grid one step buys a
+factor of 8 on `sphere` and only a factor of 2 on `box_exact`** — the field most likely to violate
+transversality is also the field that refinement helps least.
+
+**Criterion (b) is inert on this fixture and the file says so in numbers rather than in silence.**
+`non_transverse_gradient_cells` is **0 on 24 of 24**: no cell fails transversality through a vanishing
+gradient. The arithmetic is `gradient_norm_min` against `gradient_floor` **1.000000e-6** —
+`gradient_norm_min` is **1.000000e0** on six fields, *above* 1 on `fbm_terrain`
+(**1.000394e0 / 1.000078e0 / 1.000038e0**) and lowest on `noise_cavity`, where it falls
+**9.221979e-1 → 3.345362e-1 → 1.787447e-1** with refinement. So `gradient_margin` spans
+**1.787447e5 to 1.000394e6**: the closest any field comes to a critical point is still **178,744×**
+above the floor. That is a reported result and not a hidden guard — `P-124` and `x36 / M-351` are the
+standing reason both columns exist — and a reader can re-threshold from `gradient_norm_min` without
+re-running anything. `noise_cavity` is the only field whose minimum gradient norm is falling, and it
+would need to fall another five orders of magnitude to make criterion (b) fire.
+
+**This is where the phase's defect-population fact belongs in full, and it is a clean bill of health for
+the shipped extractor.** On eight reference fields at 17, 33 and 65 samples, `non_manifold_edges` is
+**0**, `non_manifold_vertices` is **0**, `self_intersecting_pairs` is **0** and `inconsistent_edges` is
+**0** — on **24 of 24** rows, from the shipped validators rather than a re-derivation
+(`validate::validate_features` at `validate.rs:653` and `validate::self_intersections` at
+`validate/self_intersection.rs:153`). **The entire defect population is degenerate
+triangles**: `defect_cells` sums to **227** over the census, `degenerate_triangles` to **208** —
+`gyroid` **4 + 4 + 4** and `noise_cavity` **54 + 68 + 74**, and nothing on the other six fields —
+with `near_degenerate_triangles` at **243** and `defect_cells_dilated` at **1,263**. `boundary_edges` is
+deliberately excluded from `D`, because `validate.rs:605-607` states it is not a defect on an open field
+and `fbm_terrain` is open; counting it would have made one field's whole surface a defect. **So any
+statement about this crate's Marching Cubes defect rate on these fields is a statement about zero-area
+triangles and nothing else.**
+
+**`p-132.csv` corroborates those zeros, and reading it requires knowing one thing about a registered
+column name.** `R-132` ran the same two shipped validators over its own census of the same eight fields
+at 17, 25 and 33, and `experiment_p132.rs:308-325` records the result in as many words — *"the shipped
+Marching Cubes emits ZERO non-manifold edges, zero non-manifold vertices and zero self-intersecting
+pairs on all eight reference fields at every resolution"* — citing this row, and it therefore takes its
+chi-square over the zero-area triangle set instead. **But its committed `nonmanifold_edges_in_orbit`
+column reads 326 / 1,936 / 0, which is not a count of non-manifold edges**: the column carries that
+orbit's defect-cell count (`experiment_p132.rs:514`, `:526`), summing to `defect_cells_in_orbit`
+**2,262**, while `self_intersections_in_orbit` and `orphaned_vertices_in_orbit` hold the literal string
+`see column defect_cells`. The registered record name could not be amended, so the two files agree on
+the measurement and a reader taking that column at its name would conclude the exact opposite. The
+2,262 is also not comparable with the **227** here: `R-132` dilates every defect vertex to its full
+2×2×2 neighbourhood and includes a resolution this census does not, which is what `defect_cells_dilated`
+**1,263** is the local analogue of.
+
+**C3 held for the reason the harness predicted before it ran, and the mechanism closes the loop back to
+C1.** A corner sample of exactly zero forces `d = ±1/2` on *every* cut edge ending at that corner, so
+all of those crossings are placed on the same point — the grid vertex itself — and a triangle holding
+two of them has zero area. A degenerate triangle is therefore the mechanical consequence of a
+regular-value violation, which is why it is the one defect C3 had a *reason* to expect, and the
+containment is what that prediction looks like when measured: **154 of the 227 defect cells across the
+census are non-transverse**, 3 of 4 on `gyroid` and 41 / 53 / 51 of 62 / 76 / 77 on `noise_cavity`. The
+dilated form is reported beside it as the check that the containment is not produced by counting a
+neighbourhood as a defect: against `defect_cells_dilated` **20** on `gyroid` and **334 / 424 / 445** on
+`noise_cavity`, `overlap_with_defects_dilated` reads **0.400000000** and **0.431137725 / 0.377358491 /
+0.359550562** — *lower* rather than higher, so the 66–75% is a property of the tight defect set.
+
+**What a consumer should do differently, and the one thing that is actionable later.** Nothing changes
+in the extractor: the `a - b` denominator on a cut edge is strictly non-zero precisely *because*
+`is_inside(0.0)` is `false` (`cube.rs:157-173`, after Lengyel), that choice removes the interpolation's
+division guard entirely, and this row does not argue with it. What the row produces is a partition that
+did not exist — which cells are inside the theory `P-170`'s sources state and which are outside it —
+and the observation that **`regular_value_violations` is a property of the *grid*, not of the field**. A
+half-cell shift of the origin removes every exactly-equal corner sample on a lattice-aligned feature,
+which is already recorded as the remedy for the thin plate at `fields/mod.rs:614-616`, where shifting by
+half a cell removes the surface entirely. Whether the extractor should ever be told to do that is a
+Phase 28 question and is not asked here. The registered `SHARE` was *none* and stands: no source change,
+no nanosecond moved, no golden hash touched, and the only write is the CSV.
+
+### 🧊 M-485 — **the registered obstruction is real, is one dimension lower than the registration claimed, and does not stop Conley: `plateau_fraction` 0.500000 on `box_exact` at all three resolutions with `constant_cells` 0 on every row, yet `conley_applicable_fraction` never falls below 0.957031** — C1 HELD on 24 of 24, and C2's ranking came back **reversed**: `c2_holds` true on only **3 of 24** rows, all three `fbm_terrain` at saturated equality, which the harness predicted in advance as the one vacuous way C2 could hold (P-172, R-172)
+
+**M.** `cargo bench --bench experiment_p172`, `docs/experiments/p-172.csv`, **24 rows** across **28
+columns** — four `#` comment lines plus one column header plus 24 data rows, 29 lines in the file,
+counted from it rather than from the brief. Nine of the 28 columns are the registered `records` and the
+other 19 are `M-273` extras. The shape, also counted from the file: **eight reference fields × {17, 33,
+65}**, `cells` reading `4096` on 8 rows, `32768` on 8 and `262144` on 8, i.e. `(n−1)³` exactly. Those
+three resolutions are `P-58` / `R-056`'s own, and the harness says why in advance
+(`experiment_p172.rs:132-138`): `vs_discrete_morse_applicable` then sits on the same grids as
+`p-58.csv`'s tie census and the two files read against each other without a rerun. Provenance line:
+`# commit 91a5e7b on amd-ryzen-9-5900x-12-core at 2026-08-30T09:30:46Z`, with no `(WORKING TREE DIRTY)`.
+**No source change: `crates/isomesh/src/**` is untouched by this row and both criteria are bench-local,
+driven through the public API**, so no golden hash moved and there is nothing to rebaseline.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the plateau fraction is measured per field, quantifying the obstruction rather than asserting it; falsified by *"negligible plateaus on every field"* | some field over `NEGLIGIBLE_PERCENT` = 1% of its cells, scored as the integer comparison `plateau_cells · 100 ≥ cells` | **HELD** — `c1_holds` true on **24 of 24** (it is a clause about the sweep, so the global verdict is stamped on every row). `plateau_fraction` **0.500000** on `box_exact` at 17/33/65 (`plateau_cells` **2,048 / 16,384 / 131,072**), **0.465088 / 0.461243 / 0.460121** on `csg_difference` (**1,905 / 15,114 / 120,618**) and **0.250000** on `thin_plate` (**1,024 / 8,192 / 65,536**). `row_plateau_is_negligible` is **false on 9 rows and true on 15**, so the clause is carried by three fields and refused by five, which is the per-field shape the clause asked for rather than a sweep-wide average |
+| C2 the fraction of cells admitting an isolating neighbourhood is reported and compared against the fraction where discrete Morse theory applies; falsified by *"Conley applying more widely than discrete Morse, which would reverse the ranking"* | `conley_applicable_fraction ≤ vs_discrete_morse_applicable`, scored as `isolating_cells ≤ discrete_morse_applicable_cells` (shared denominator, so exact integers) | **REVERSED** — `c2_holds` true on **3 of 24**, and the three are `fbm_terrain` at 17/33/65 where **both** fractions read `1.000000` and `conley_minus_morse_fraction` is exactly **0.000000**. On the other **21** rows `conley_minus_morse_fraction` is strictly positive — **0.910156 / 0.895508 / 0.885986** on `box_exact`, **0.901367 / 0.875977 / 0.855946** on `csg_difference`, **0.812500 / 0.781250 / 0.765625** on `thin_plate`, down to **0.033142** on `torus` at 65³ — so Conley's requirement is the *wider* one everywhere it can be strictly compared. `c2_global_holds` is **false** on all 24 |
+
+> **The three rows on which C2 holds are the three on which it could not fail, and that was written down
+> before the run.** `experiment_p172.rs:244-251` names the case: *"`fbm_terrain` is generic — a
+> four-octave value-noise heightfield has no exactly-tied corner pair — so its discrete-Morse fraction
+> is `1` by construction, and if its Conley fraction is `1` too then C2 holds there vacuously."* The
+> artefact agrees to the integer: `p-58.csv` reports `distinct_values` **4,913 / 35,937 / 274,625**
+> against `voxels` **4,913 / 35,937 / 274,625** and `tied_voxels` **0** on `fbm_terrain`, so every one of
+> its cells has eight pairwise-distinct corners and `discrete_morse_applicable_cells` **must** equal
+> `cells`. The column that separates a strict ranking from a saturated tie is
+> `conley_minus_morse_fraction`, and it reads exactly `0.000000` on those three rows and nowhere else.
+> **So of the 21 rows where C2's ordering is decidable, it goes the wrong way on 21.**
+>
+> **Five vacuity controls, all assertions before the first `run.record`, and every one of them
+> reachable.** (1) *The registered control:* `box_exact` must report `plateau_cells > 0` — **2,048 /
+> 16,384 / 131,072**, so the obstruction this row is built on exists in the fixture and the whole entry
+> is not about an empty set. (2) *The plateau criterion must be able to read zero:* `plateau_cells` is
+> **0** on 15 rows (`sphere`, `torus`, `gyroid`, `fbm_terrain`, `noise_cavity`, all resolutions). Without
+> it a criterion firing on every cell would also print `0.500000` on `box_exact` and mean nothing —
+> `M-44` read backwards. (3) *The isolation test must be able to fail:* `conley_applicable_fraction < 1`
+> on 7 rows, minimum **0.957031**. (4) *And to pass:* `isolating_neighbourhood_exists` true on 17 rows,
+> with `isolating_cells == cells` compared as integers so no float equality decides it. (5) *The
+> discrete-Morse column must be non-trivial:* `vs_discrete_morse_applicable` is `> 0` on all 24 and `< 1`
+> on 21, spanning **0.046875** (`box_exact` 17³, 192 of 4,096 cells) to **1.000000**, so C2 is not a
+> comparison against a constant.
+
+**The registration says `∇f = 0` on a set of positive measure, and measured that is true in two
+dimensions and false in three.** `constant_faces` — numerically constant cell faces — reads **4,128 /
+32,832 / 262,272** on `box_exact`, **3,696 / 29,718 / 239,178** on `csg_difference` and **1,992 / 16,264
+/ 130,824** on `thin_plate`. `constant_cells`, cells whose **eight** corners agree and on which the
+interpolant is genuinely constant, reads **0 on every one of the 24 rows**. The arithmetic is short and
+the harness gives it (`experiment_p172.rs:153-161`): `box_exact`'s analytic gradient has unit length
+everywhere, so the field is nowhere locally constant in 3D and no cell can carry eight equal corners. A
+plateau living on `∂Q` rather than in `int Q` is if anything *worse* for Conley — `∂Q` is exactly where
+the theory forbids invariant behaviour — but it is not what the sentence said, and the row records the
+correction rather than smoothing it.
+
+**A constant face is not automatically an obstruction, and `thin_plate` is the counterexample in the
+file.** It reports `plateau_fraction` **0.250000** at every resolution, `plateau_and_isolating` equal to
+its whole plateau population (**1,024 / 8,192 / 65,536**), `conley_applicable_fraction` **1.000000** and
+`isolating_neighbourhood_exists` **true**. The mechanism is the second of the boundary test's three
+exhaustive cases (`experiment_p172.rs:94-101`): on a constant face every point is tangentially critical, so the face
+carries a critical point *unless the normal partial is strictly one-signed over it*, and a bilinear's
+range over `[0,1]²` is the range over its four corners, so the test is exact and needs no sampling.
+`thin_plate`'s plateaus are the slab's own faces, where the normal derivative never changes sign. What
+actually kills the isolating neighbourhood is the **medial axis**, where the `max` in `box_exact`'s
+formula switches argmax — and the column that decides mechanism versus correlate is
+`boundary_critical_without_plateau`, which reads **0 / 0 / 0** on `box_exact`: every non-isolating cell
+there is a plateau cell (`boundary_critical_cells` **176 / 736 / 3,008**, and `plateau_cells −
+plateau_and_isolating` = 2,048 − 1,872 = **176** exactly). On `csg_difference` it reads **3 / 3 / 18**,
+and on `noise_cavity` at 65³ it reads **1** with `plateau_cells` **0** — a single cell in 262,144 whose
+boundary carries `∇f = 0` with no flat face anywhere near it, which is case 1 of the test firing on its
+own.
+
+**`FLAT_REL` does no work at all, and the file says so on every row.** `plateau_cells_exact` — the same
+scan with the tolerance replaced by `f64::total_cmp` equality — equals `plateau_cells` on **24 of 24**
+rows (2,048 = 2,048; 1,905 = 1,905; 120,618 = 120,618; and 0 = 0 on the fifteen clean rows). The ties in
+this crate's fields are **bit-exact**, which is `M-352` / `P-53`'s finding arriving from a new direction.
+The tolerance is still the right construction and its scaling is visible in
+`flat_absolute_tolerance`: `FLAT_REL · cell_size` gives **2.500e-10 / 1.250e-10 / 6.250e-11** on the six
+fields whose cell is 0.25 at 17³, **8.750e-10 / 4.375e-10 / 2.188e-10** on `gyroid` and **1.000e-9 /
+5.000e-10 / 2.500e-10** on `fbm_terrain`. So the criterion is a dimensionless **slope** floor whose
+absolute form halves with the cell at every rung, and it therefore means the same thing at 17³ and at
+65³ — which a fixed absolute tolerance would not.
+
+**C2's verdict is decided by which denominator "discrete Morse theory applies" means, and the harness
+fixed the choice before the run and carried the other reading as a column.** The registered column takes
+Algorithm 1's **raw** requirement — pairwise-distinct corner values under `f64::total_cmp` — because the
+clause says *"the fraction where discrete Morse theory, already registered, applies"*, and `P-58`'s
+chunk-local total order on `(value, linear_index)` is this repository's repair, not the paper's
+hypothesis. Against that raw denominator Conley wins everywhere:
+`discrete_morse_applicable_cells` is **192 of 4,096** on `box_exact` at 17³ against `isolating_cells`
+**3,920**, and `p-58.csv` explains the 192 exactly — **36 distinct values among 4,913 voxels**, against
+`sphere`'s 116 and `torus`'s 325. Against the **repaired** denominator, which is `1` by construction
+because a total order always exists, the ranking the registration predicted is the one that holds:
+`conley_minus_repaired_morse_fraction` is strictly negative on exactly **7 rows** — `box_exact`
+**−0.042969 / −0.022461 / −0.011475**, `csg_difference` **−0.041016 / −0.019226 / −0.010014**,
+`noise_cavity` 65³ **−0.000004** — and exactly `0.000000` on the other 17. **Both requirements fail on
+this crate's data, and the difference that matters is that discrete Morse's failure is repairable by
+relabelling and Conley's is not: one is a statement about labels, the other about the geometry of an
+interpolant.** That is the sentence this null exists to license.
+
+**What a consumer should do: nothing, and that is the point of the row.** Conley index theory is not
+proposed, not adopted and not needed; what the row produces is a **quantified refusal**. A future ticket
+proposing it for ambiguity resolution now has to explain `box_exact`'s **0.500000** plateau fraction and
+the **176 / 736 / 3,008** cells with no isolating neighbourhood, rather than argue past them — and it
+also has to explain why its own applicability fraction is *wider* than discrete Morse's, which is not the
+direction the registration expected and is now on the record. `ns_per_cell` (**26.170** on `thin_plate`
+at 65³ to **80.968** on `gyroid` at 17³) is provenance and gates nothing: `M-280` and `M-348` are the
+incidents, and a census is a count.
+
+**SHARE, recomputed. None, and it was registered as none.** *"None — this closes a candidate."* Nothing
+here proposes to move a stage, so there is no share to price and no `1/(1 − share/factor)` ceiling to
+check. Every scored column is an integer over a denominator fixed by construction — C1 is
+`plateau_cells · 100 ≥ cells` and C2 is `isolating_cells ≤ discrete_morse_applicable_cells` — so this
+host's governor cannot move a verdict and `✗51`'s bar has nothing to apply to.
+
+**Would be shown wrong by:** a field on which `constant_cells` is non-zero, which would restore the
+registration's positive-measure claim in three dimensions and would have to explain a locally constant
+SDF; a corrected reading of the isolating-neighbourhood criterion that admits fewer cells than
+`P-58`'s raw distinctness test on `box_exact`, which would un-reverse C2 — the criterion here is the
+exact four-value sign test on each face's bilinear over three exhaustive cases, so a disagreement would
+be a bug in the case analysis and locatable; or a resolution at which `plateau_cells_exact` and
+`plateau_cells` diverge, which would mean the ties stopped being bit-exact and would move `M-352`'s
+finding, not this one.
+
+### 🔬 M-486 — **the curl residual is free — worst `curl_share` 0.008061907, 0.81% of an extraction against a 2% ceiling, on 24 of 24 rows — and it does not predict `M-60`'s second-vertex cells: of the nine rows with a reachable AUC only `gyroid` at 33³ clears 0.8 at 0.914640664, and `fbm_terrain` at 25³ reads 0.270443196, worse than chance** — C1 HELD on 24 of 24, `c2_holds` true on 16 of 24 (15 of them control rows discharging their half), `c3_holds` true on 12 of 24 with the per-cell `λ` cutting `noise_cavity`'s self-intersections from 388 to 195 at 33³ (P-173, R-173)
+
+**M.** `cargo bench --bench experiment_p173`, `docs/experiments/p-173.csv`, **24 rows** across **67
+columns** — four `#` comment lines plus one column header plus 24 data rows, 29 lines in the file,
+counted from it rather than from the brief. Seventeen of the 67 columns are the registered `records`; the
+other 50 are `M-273` extras. The shape, counted from the file: **eight reference fields × {17³, 25³,
+33³}**, `cells` (active cells, not grid cells) spanning **128** on `thin_plate` at 17³ to **6,176** on
+`noise_cavity` at 33³, `dc_vertices == cells` on all 24 rows. Those three grids are `M-60`'s own, so C2's
+population is the population `M-60` counted. `# commit a8d381e on amd-ryzen-9-5900x-12-core at
+2026-08-30T09:31:01Z`, no `(WORKING TREE DIRTY)`. **No source change**: the residual, the per-cell `λ`
+map and the substitution driver are bench-local, and every solve they call is the shipped one, so no
+golden hash moved.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 the curl residual costs under 2% of extraction; falsified by above 2% | `curl_share = curl_ms / extract_ms` < `cost_ceiling` 0.02 | **HELD on 24 of 24.** Worst `curl_share` **0.008061907** (`box_exact` 17³), best **0.000988233** (`fbm_terrain` 33³) — a factor of 2.5 to 20 inside the ceiling, against whole-extraction wall clock, which is the largest honest denominator, so it is under 2% of any stage inside it. `curl_ms` **0.000670–0.033730 ms** against `extract_ms` **0.100681–11.602284 ms**, median of five repeats after a warm-up, `curl_ms_min`/`_max` beside them. `c1_holds_global` **true**, `c1_rows_held` **24** |
+| C2 it separates the cells `M-60` says need a second vertex from those that do not — AUC above 0.8 — on `gyroid` and `fbm_terrain`; falsified by AUC below 0.8 | `separation_auc` > `auc_bar` 0.8 on rows with positives; near-zero residual on the five zero-second-vertex fields | **SPLIT, and the substance is falsified.** `c2_holds` true on **16 of 24**, but **15** of those are the control rows discharging their half of the vacuity control (`curl_residual_normalised` < `control_ceiling` 0.25 on `sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate`, all three resolutions, where `separation_auc` reads `unreachable` and `separation_auc_reachable` is `false`). Of the **9** rows with a reachable AUC, **one** clears the bar: `gyroid` 33³ at **0.914640664**. The other eight fail — `gyroid` **0.711415753 / 0.714855412** at 17³/25³, `fbm_terrain` **0.491883117 / 0.270443196 / 0.492674558**, `noise_cavity` **0.581949666 / 0.583103052 / 0.599750463**. `c2_holds_global` **false**, `c2_rows_held` **16** |
+| C3 a per-cell `λ` from the residual beats the global constant on QEF residual or sharpness without losing on self-intersections; falsified by the per-cell `λ` losing on either axis | strict win on one axis, no loss on the other; every `_delta` is per-cell minus global | **SPLIT 12 / 12.** `c3_holds` true on `box_exact` ×3, `thin_plate` ×3, `gyroid` 17³, `fbm_terrain` 17³ and 25³, `noise_cavity` ×3; false on `sphere` ×3, `torus` ×3, `csg_difference` ×3, `gyroid` 25³ and 33³, `fbm_terrain` 33³. `c3_holds_global` **false**, `c3_rows_held` **12** |
+
+> **C2 fails for a reason the file names rather than leaves open, and it is not "the residual is noise".**
+> `mean_residual_second_vertex` against `mean_residual_single_vertex` is the diagnostic. On `gyroid` the
+> two populations separate and widen with resolution — **0.070368607 vs 0.041118375** at 17³,
+> **0.080208327 vs 0.028474982** at 25³, **0.122768135 vs 0.020930493** at 33³, a **5.9×** gap at the
+> finest rung — which is exactly why its AUC climbs 0.711 → 0.715 → **0.915**. On `fbm_terrain` the two
+> populations have the *same* mean: **0.082913383 vs 0.082874595** at 17³ and **0.052583730 vs
+> 0.052632743** at 33³, within **0.05%** and **0.10%** of each other, so the score carries no information
+> about the label and the AUC sits at
+> chance; at 25³ the positives are *quieter* than the negatives (**0.046602577 vs 0.066714909**) and the
+> AUC falls to **0.270443196**, i.e. the residual ranks them backwards. `noise_cavity` is in between —
+> **0.155794063 vs 0.131437158** at 17³, a real but small gap, AUC **0.582**. **So inconsistency and
+> multi-sheet-ness are the same phenomenon on `gyroid` at fine resolution and different phenomena on
+> `fbm_terrain` at every resolution**, which is the falsifier's own wording arriving as a per-field
+> answer rather than a sweep-wide one.
+>
+> **Eight vacuity controls, all asserted before the first `run.record`, and the label is the crate's own
+> rather than a proxy.** (1) *The normalising bound is the bound:* `RESIDUAL_SCALE` asserted equal to
+> `4√6` — `reversal_floor` reads **0.408248290** on every row, which is `1/√6`. (2) *The mirror is the
+> shipped path:* `mirror_vertices == dc_vertices` and `mirror_mismatches` **0** on all 24 rows, compared
+> as IEEE bit patterns, so the three `_delta` columns are differences against `DualContouring`'s own
+> output and not against a re-derived solve. (3) *The cycle count is the crate's:*
+> `extra_vertices_measured == extra_vertices_predicted` on all 24 — **38 / 59 / 28** on `gyroid`, **8 / 9
+> / 15** on `fbm_terrain`, **97 / 184 / 250** on `noise_cavity`, 0 elsewhere — the first from running
+> `ManifoldDualContouring` and `DualContouring` live and differencing their vertex counts, the second from
+> `segment_links` / `joined_mask` on each cell. (4) *`M-60`'s five zero fields are still zero:*
+> `second_vertex_cells` **0** on `sphere`, `torus`, `box_exact`, `csg_difference`, `thin_plate` at all
+> three resolutions, 15 rows. (5) *Those five report a near-zero residual:*
+> `curl_residual_normalised` **0.000000000** on `box_exact` and `thin_plate` and **0.000032453–0.022845151**
+> on the other three, every one under the 0.25 ceiling that sits below `reversal_floor`, so passing it
+> *means* no cell in the mean carries a full normal reversal on any face. (6) *`M-60`'s two non-zero
+> fields have positives and negatives:* `second_vertex_cells` **34 / 49 / 28** on `gyroid` and **8 / 9 /
+> 15** on `fbm_terrain` against `cells` of 1,214–5,240 and 470–1,958. (7) *The instrument fires:*
+> `residual_max` reaches **0.397862469** (`noise_cavity` 17³), well above the 0.25 ceiling the previous
+> control certifies the five clean fields *below*, so those zeros are zeros that could have been non-zero
+> (`M-44`); `reversal_floor_cells` is **0** on all 24 and is reported rather than asserted, because
+> reaching `4√6`'s single-face extremum needs two exactly axis-aligned, exactly opposed normals and no
+> smooth field produces them. (8) *The per-cell `λ` is not the global one:* `lambda_cell_max` reaches the
+> bracket's top **0.100000000** on **13 rows** and `lambda_cell_max / lambda_cell_min` is **exactly
+> 100.0** on **7** of them (`csg_difference` ×3, `gyroid` 33³, `noise_cavity` ×3), against a control bar
+> of 2, so C3 is not comparing 0.01 against 0.01.
+
+**The residual is defined on the six faces and not the three axis components, and that is the choice that
+makes it a per-cell signal.** Twelve unit gradients at the twelve edge **midpoints**; each of the six
+faces is a closed loop through four of them, traversed counter-clockwise as seen from `+w`, so
+`C(w, side) = n_bottom[u] − n_top[u] + n_right[v] − n_left[v]` with the common edge length divided out and
+the normals unit, hence dimensionless; `r_cell` is the Euclidean norm of that six-vector. A gradient
+field has zero circulation around any closed loop, so `r_cell` is the amount by which these normals fail
+to come from one smooth sheet. The three-component form would average the two faces normal to each axis,
+and *a second sheet entering through one face and not its opposite is precisely the signature averaging
+destroys*. Two normalisations are recorded: `curl_residual_normalised` divides by the extremal bound
+`4√6 = 9.797958971132712`, and the `λ` map reads `s = min(‖C‖₂ / UNIT_CIRCULATION, 1)` with
+`lambda_unit_circulation` **1** — one whole unit vector's worth of failure to cancel around one loop. The
+AUC cannot see the difference, being computed on ranks with ties taking average ranks, which is what keeps
+`box_exact`'s exactly-zero plateau of residuals from inflating it.
+
+**All twelve midpoints are sampled because a partial loop is not a loop, and `complete_faces_mean`
+measures how badly the alternative would have failed.** It reads **0.000000** on all fifteen rows of the
+five control fields — not one face of one cell there has all four of its edges cut — and only
+**0.005725–0.054366** on `gyroid`, **0.015322–0.034043** on `fbm_terrain` and **0.096179–0.233304** on
+`noise_cavity`. A residual built on the crossings the crate already has would therefore have had **no
+closed loop at all on fifteen of the twenty-four rows**, and at most 23.3% of faces to work with on any
+row anywhere — so it would have been silently vacuous on exactly the five fields the vacuity control uses
+as its negatives.
+
+**The cost of the diagnostic depends entirely on which reading you buy, and both numbers are in the file
+with neither hidden behind the other.** `curl_share` is the registered reading — the residual arithmetic
+over normals already in memory, the *"few dozen flops on a struct the crate already builds"* the
+registration names — and it carries `c1_holds`. `curl_share_sampled` pays for its own twelve
+`Sdf::gradient` calls per active cell and reads **0.121373053** (`sphere` 33³) to **0.596246390**
+(`fbm_terrain` 17³), so `c1_holds_sampled` is **false on 24 of 24**. **Here the CSV corrects the
+harness's own header**, which reasoned from 72 samples per active cell that the sampled share would be
+*"greater than one, not 0.02"*: measured, it is 12% to 60% of an extraction — **6× to 30× the registered
+2% ceiling**, expensive, and never above one. A consumer who wants this diagnostic at zero
+marginal sampling cost needs a residual built on the crossings, which is a different construction and is
+not what was registered.
+
+**C3 is driven through the shipped solve, and the only per-cell thing about it is the `λ` argument.**
+`DualContouring::set_lambda` (`dual_contouring.rs:223`) sets one `λ` for a whole grid, so a per-cell
+regularizer cannot be driven through the shipped extractor at all — but `solve::solve_with(cell, lambda)`
+(`solve.rs:272`) is public and takes the regularizer explicitly, and `dual_contouring.rs:163-168` shows
+those are exactly the calls `Qef::place` makes. So the per-cell arm is the **shipped normal equations**
+called once per cell with a varying `λ`, and the only copied code is `apply_clamp`'s twelve lines under
+`Clamp::ToCell` — verified rather than trusted, by `mirror_mismatches` **0** bit for bit on every row.
+Both arms share one index buffer, which is exact rather than convenient: a dual method's topology is one
+quad per sign-changing grid edge and depends only on the corner signs, so moving a vertex cannot change an
+index, and the substitution is a positions-only swap. The map is
+`λ(s) = 0.001 · 100^s`, fixed before the run, whose geometric mean `√(0.001 · 0.1) = 0.01` is **exactly**
+`solve::LAMBDA` (`solve.rs:85`) — the shipped constant moved one decade down where the Hermite data is
+consistent and one decade up where it is not, with `s = 1/2` the crossover.
+
+**Six of C3's twelve wins are not per-cell results and the file says so in its own columns.** On
+`box_exact` and `thin_plate` the residual is **0.000000000** at every resolution, so `lambda_cell_min` and
+`lambda_cell_max` are both **0.001000000** and `over_shipped_lambda_share` is **0.000000**: the map has
+degenerated into a *global* decrease of `λ` by one decade, which cannot answer a clause asking whether a
+per-cell regularizer beats a global one. Those six rows are still a finding, just a different one —
+`sharpness_delta` **−0.000704698 / −0.000434066 / −0.000313172** on `box_exact` and **−0.000060502 /
+−0.000058982 / −0.000058222** on `thin_plate`, with `self_intersections_delta` **0**, so `λ = 0.001` is
+simply better than `λ = 0.01` on a field whose normals are exactly consistent. And the same global
+decrease *loses* on `sphere` (`sharpness_delta` **+0.000304765 / +0.000230766 / +0.000290344**), which is
+why C3's own falsifier is worth having.
+
+**The genuine per-cell result is `noise_cavity`, and it is the largest effect in the file.** With
+`over_shipped_lambda_share` **0.832591 / 0.784722 / 0.734780** — most cells landing above the shipped
+constant — the per-cell `λ` improves every axis at every resolution: `self_intersections_delta` **−47 /
+−95 / −193** (388 → **195** at 33³, a 49.7% cut), `sharpness_delta` **−0.019059024 / −0.031181368 /
+−0.032149685**, `qef_residual_delta` **−0.021269562 / −0.024624400 / −0.016925036**. `fbm_terrain` wins at
+17³ and 25³ (`self_intersections_delta` **−8 / −6**) and loses at 33³ (**+5**), and `gyroid` shows the
+clause's asymmetry: at 25³ and 33³ it cuts self-intersections by **−9** and **−18** while sharpness
+worsens by **+0.001627561** and **+0.003082213**, and *"beats on at least one without losing on the
+other"* scores that as a fail. **So what a consumer should take from C3 is narrow and real: on
+`noise_cavity`-like fields — CSG-intersected value noise, the closest fixture to a dug voxel world — a
+residual-driven `λ` in `[0.001, 0.1]` halves self-intersections and sharpens the vertex at the same
+time, and on smooth analytic fields it does nothing worth the code.**
+
+**SHARE, recomputed. `curl_share` is the share, and it is at most 0.81%.** *"C1 moves the
+vertex-placement stage; C3 moves the same stage's quality, not its cost."* Both halves are about
+`place_vertices` and neither touches topology, and the harness makes that visibly true by sharing the
+index buffer byte for byte between the arms — nothing this row proposes can move a triangle. C1's
+denominator is whole-extraction wall clock rather than the `place` stage `P-121` measured, deliberately:
+it is the conservative choice, so a share under 2% of it is under 2% of any stage inside it. **C1 is a
+ratio of two wall clocks and is therefore the one clause on this row `M-280` could move**: both clocks are
+taken in the same run, five measured repeats after one warm-up with the median as the headline, and the
+margin is 2.5× at worst (`curl_share` 0.008061907 against `cost_ceiling` 0.02) against the 1.45× swing
+`M-280` measured on this host. C2 and C3 read no clock at all.
+
+**Would be shown wrong by:** a field on which the second-vertex population and the residual separate at
+AUC above 0.8 at *every* resolution rather than only at `gyroid`'s finest, which would revive C2 as a
+predictor rather than as a `gyroid`-33³ observation; a crossings-based residual that reaches
+`curl_share_sampled` under 0.02, which would make the diagnostic free in the sampled reading too and is
+the one construction this row did not measure; `mirror_mismatches` ever reading non-zero, which would mean
+the `_delta` columns were never measured against the shipped path; or a `noise_cavity` run at 65³ where
+`self_intersections_delta` turns positive, which would confine C3's only real win to coarse grids.
+
+### 🧊 M-487 — **the registered null held: at matched cost the normal-cycles incumbent beats discrete varifolds on mean curvature on 28 of 30 rows, `error_ratio` 1.000821 to 3.358471, and the two rows where it does not are the `capsule` at 129³ at `error_ratio` 0.998923 — a 0.1% win inside a C⁰ seam that dominates both arms** — C1 held on 28 of 30, `c2_holds` true on 10 of 30 (the `torus`, at 6.039637σ) and false on 20, and the one recommendation that does move is on a quantity C1 never scored: on the `torus`'s **Gaussian** curvature the varifold overtakes at 47³ and is 1.59× better at 129³ with exponent 1.575152 against 1.127950 (P-174, R-174)
+
+**M.** `cargo bench --bench experiment_p174`, `docs/experiments/p-174.csv`, **30 rows** across **50
+columns** — four `#` comment lines plus one column header plus 30 data rows, 35 lines in the file,
+counted from it rather than from the brief. Eleven of the 50 columns are the registered `records`; the
+other 39 are `M-273` extras. The shape, counted from the file: **two estimators × three fixtures × five
+resolutions** — `normal_cycles` and `varifold` on `sphere`, `torus` and `capsule` at 33 / 47 / 65 / 91 /
+129 samples per axis, `vertices` **518** (`capsule` 33³) to **19,230** (`sphere` 129³), `triangles`
+**1,032** to **38,456**, `used_vertices == vertices` on all 30. `# commit c3cb940 on
+amd-ryzen-9-5900x-12-core at 2026-08-30T09:31:11Z`, no `(WORKING TREE DIRTY)`. **No source change**: both
+estimators consume a finished `MeshBuffer` from the shipped `MarchingCubes<f64>` at its shipped defaults,
+neither re-samples the field, and nothing under `crates/isomesh/src/` moved.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 varifold mean curvature is compared against the normal-cycle estimator at matched cost on the analytic fields, where exact curvature is known; falsified by varifolds winning | `error_ratio = varifold H error / normal_cycles H error` ≥ 1, written on both rows of each pair | **HELD on 28 of 30 rows.** `sphere`: **2.004659 / 2.620924 / 2.570974 / 3.358471 / 2.662591** — the incumbent is 2.0× to 3.4× more accurate at every rung. `torus`: **1.214081 / 1.523058 / 1.730780 / 2.101892 / 2.448632**, the gap *widening* with resolution. `capsule`: **1.038899 / 1.052396 / 1.000821 / 1.028691 / 0.998923**, the last of which is below one, so `c1_holds` is **false on the two 129³ `capsule` rows** and the registered null is falsified there by **0.1%**. `c1_holds_global` **false** |
+| C2 the convergence exponent is fitted for both, since a method that is worse at our resolutions but converges faster is a different recommendation from one that is simply worse; falsified by indistinguishable exponents | `c2_holds = abs(exponent_gap) > 2√(se_nc² + se_var²)`, a two-sigma separation of two least-squares slopes, per field | **SPLIT 10 / 20 — the `torus` separates and the other two fixtures do not.** `torus`: `convergence_exponent` **1.470860** (`normal_cycles`) against **0.969586** (`varifold`), `exponent_gap` **0.501274**, `exponent_stderr` **0.048097** and **0.067641**, `exponent_gap_sigma` **6.039637** → `c2_holds` **true** on all ten `torus` rows. `sphere`: **1.669604** against **1.432439**, gap **0.237165**, stderrs **0.055422** / **0.113593**, σ **1.876429** — **it fails by 0.12σ**, which is the honest reading and is why the instrument is the fit rather than a round number. `capsule`: **0.173820** against **0.203049**, gap **0.029229**, σ **0.322316**: neither arm converges there at all. `c2_holds_global` **false** |
+
+> **The `capsule`'s near-tie is not a varifold win, and the column that says so is
+> `smooth_only_mean_error`.** At 129³ the headline errors are **7.114255e-2** (`normal_cycles`) and
+> **7.106592e-2** (`varifold`), hence `error_ratio` 0.998923. Restricted to the smooth part of the
+> surface — excluding the band `| |y| − half | ≤ eps` around the two seam circles — the same two arms read
+> **1.692471e-3** and **7.383666e-3**, so **where the surface is C¹ the incumbent is still 4.4× more
+> accurate, and the tie at the finest rung is two mollified estimators both being beaten by the same C⁰
+> curvature discontinuity.** The penalty is priced rather than hidden: the headline stays unfiltered and
+> the filtered reading sits beside it on every row. That is also why both `capsule` exponents are near
+> zero (**0.173820** and **0.203049**) — a fixed-radius mollifier over a fixed-size discontinuity does not
+> converge, and the file shows that rather than fitting a slope through it and calling it a rate.
+>
+> **Eight vacuity controls, every one asserted before the first `run.record`, and one of them changed the
+> ladder.** (1) *The ladder is the regime the bounds are stated in:* `eps` strictly decreasing
+> **0.282842712 / 0.235907130 / 0.200000000 / 0.168654809 / 0.141421356** and `eps_over_h` strictly
+> increasing **2.262742 / 2.712932 / 3.200000 / 3.794733 / 4.525483**, so the fitted exponent runs through
+> one regime rather than splicing two. (2) *The mesh is a closed manifold:* `boundary_edges`,
+> `non_manifold_edges` and `zero_length_sides` all **0** on all 30 rows — a boundary vertex's defect is
+> `π − α_v` rather than `2π − α_v` and a zero-length side costs the per-face `Σα = π` identity, so either
+> one would calibrate the incumbent against the wrong reference. (3) *The incumbent reproduces the
+> analytic curvature globally:* `global_int_h_rel_error` **1.801237e-3 → 1.120375e-4** on the `sphere`
+> across the ladder and **2.676230e-5 → 6.153966e-6** on the `torus`, against a 0.02 bar, with
+> `global_int_h_measured` **12.564962710** against `global_int_h_exact` **12.566370614** = `4πr` at 129³
+> and **19.739330277** against **19.739208802** = `2π²R`; `global_defect_measured` **12.566370614** =
+> `2πχ` with χ = 2 on `sphere` and `capsule` and **−0.000000000** on the `torus`, well inside the 1e-6
+> bar. (4) *Both arms reproduce it pointwise at the finest rung:* `mean_curvature_error`
+> **1.009572e-3** and **2.688077e-3** on the `sphere`, **4.664466e-3** and **1.142156e-2** on the `torus`,
+> all far under the 0.25 bar, so `error_ratio` is not a ratio of two noises. (5) *The reference is not a
+> constant zero:* `h_exact_rms` **1.000000** on the `sphere`, **1.703672–1.706267** on the `torus`,
+> **1.604786–1.643975** on the `capsule`, and `k_exact_rms` **1.000000 / 2.441842–2.443510 /
+> 2.951860–3.079275**, with all sixty fitted error values strictly positive and finite. (6) *The `torus`
+> really changes the sign of `K`:* `k_positive_vertices` **692 / 1,348 / 2,540 / 5,116 / 10,484** against
+> `k_negative_vertices` **428 / 940 / 1,660 / 3,412 / 6,940**. (7) *The `capsule` really carries a zero-`K`
+> region:* `k_zero_exact_vertices` **252 / 572 / 1,140 / 2,100 / 4,588** beside `k_positive_vertices`
+> **266 / 554 / 1,002 / 2,162 / 4,178** and `k_negative_vertices` **0** — the one regime `sphere` and
+> `torus` cannot test, since an estimator that manufactures curvature out of mesh noise is invisible where
+> the true value is 1 and obvious where it is 0. (8) *The mollifier is a convolution and not a handful of
+> terms:* `support_triangles_mean` **43.672** to **194.102** against a bar of 8, so the varifold arm is
+> not being blamed for its neighbour count.
+
+**The comparison is fair because one radius and one neighbour search serve both arms, and that is the
+whole design.** The mollifier is `ρ_eps(z) = ξ(|z|/eps)` with `ξ(t) = (1 − t²)³` on `[0,1]` and zero
+outside; `ξ(1) = ξ'(1) = ξ''(1) = 0`, so it is C² across the support boundary — the regularity
+Buet–Leonardi–Masnou's first-variation estimate asks for — and `ξ'(0) = 0`, so `∇ρ_eps` vanishes at the
+centre and the `z/|z|` factor never divides by zero. Its normalising constant is omitted because every
+quantity is a ratio of two `ρ`-weighted sums, and the surviving `1/eps` in `∇ρ_eps` is the `1/length`
+that curvature has. **`eps = 0.8·√h`** is Buet–Leonardi–Masnou's own balance: their error is `O(eps) +
+O(h/eps)`, so `eps ~ √h` sends both terms to zero together and is the only scaling under which the
+challenger converges at its best rate — the ladder's `eps` and `eps_over_h` columns are that scaling made
+checkable rather than promised. Without a shared radius the comparison would be rigged: a mollified
+estimator at radius `eps` averages `O((eps/h)²)` triangles and a vertex-star estimator averages six, so
+putting those against each other measures the radius and not the formalism.
+
+**How much the localisation matters is the most useful number in the file, and it is 302×.**
+`nc_star_mean_error` carries the tight vertex-star form of the same Sun & Morvan measure —
+`0.25 Σ_{e∋v} lβ / A_v` with `A_v` the barycentric third — and it reads **2.685504e-1 to 4.022359e-1**
+across all 30 rows, essentially flat in resolution, against the ball-localised incumbent's
+**1.009572e-3** on the `sphere` at 129³: a factor of **302**, with `nc_star_gaussian_error`
+**3.629433e-1 to 6.967358e-1** telling the same story. **So choosing the wrong localisation of one
+measure costs 302×, while choosing the wrong formalism at a fixed localisation costs at most 3.4×** —
+which is why the vertex-star form is not benched as an arm, and why a reader should not take "normal
+cycles beat varifolds" as an argument about normal cycles. It is an argument about a ball.
+
+**The one place the challenger genuinely wins is the `torus`'s Gaussian curvature, and C1 does not score
+it.** `error_ratio` is defined on `mean_curvature_error` alone. Taking the same ratio on
+`gaussian_curvature_error` gives, on the `torus`, **1.163404 / 0.886893 / 0.829138 / 0.647606 /
+0.630859** — the varifold overtakes the incumbent at 47³ and is **1.59× more accurate at 129³**
+(**8.423614e-3** against **1.335260e-2**) — and its `gaussian_exponent` there is **1.575152** against the
+incumbent's **1.127950**, the one exponent pair in the file where the challenger's slope is the steeper
+one. On the `capsule` the same ratio is **0.996858** and **0.997935** at 91³ and 129³, a marginal win, and
+on the `sphere` the varifold loses by **2.56× to 3.10×** at every rung. The mechanism is structural rather
+than lucky: Gaussian curvature comes from the varifold's second-order data — the analytic tangential
+derivative of its own mollified normal, `S_ij = t_i·(∇n_eps·t_j)`, `K = det S` — so there is no
+finite-difference step and no second length scale, while the incumbent's `K` is an angle defect at a
+vertex and the `torus` is the fixture whose curvature actually varies. **A method that is worse now and
+converges faster is a different recommendation from one that is simply worse, and this is where that
+distinction cashes: if the crate ever wants a pointwise `K` on a varying-curvature surface at high
+resolution, the varifold is the arm to reach for; for `H`, on this evidence, it is not.**
+
+**The challenger is roughly half the incumbent's cost, and that makes the null more conservative rather
+than less.** `cost_ratio = varifold_ms / normal_cycles_ms` reads **0.471439 to 0.574754** across the
+fifteen pairs, rising monotonically with resolution, and `cost_matched` is **false on the six 33³ rows**
+because those three ratios (0.482274, 0.471439, 0.494540) sit just below the `[0.5, 2]` band and **true
+on the other 24**. The direction is the structural expectation: the varifold needs one gather over
+triangle centroids (19 scalar accumulators), while normal cycles needs three — over centroids, edge
+midpoints and vertices — because its measures live on three different supports. `cost_matched` gates
+nothing, and the reason is worth stating: a `cost_ratio` **below** 0.5 means the challenger was handed at
+least as much budget as the incumbent and still lost on error, so only a ratio *above* the band would
+weaken C1. `estimator_ms` is the median of five repeats after a warm-up with `estimator_ms_scatter`
+**1.000472–1.075137** beside it, and extraction sits outside both clocks. `curvature_share` —
+`estimator_ms / (extract_ms + estimator_ms)` — is **0.472132 to 0.889551**, so this is the stage a change
+of estimator can move, and it is most of the post-extraction pipeline.
+
+**The ladder is 33 / 47 / 65 / 91 / 129 because a vacuity control refused 49³ during development, and the
+measurement that refused it belongs in the record.** The naive geometric fill-in is 49 and 97; both are
+`4t + 1`, and `144 = 4² + 8² + 8²` and `576 = 8² + 16² + 16²` put a grid corner *exactly on* the unit
+sphere at `(2/3, 2/3, 1/3)` — `M-352` / `P-53`'s `=`-corner case, transversal, so several incident edges
+are cut and Marching Cubes' per-edge vertex cache emits coincident vertices. The harness header records
+what that cost when measured (`experiment_p174.rs:211-246`): **40 zero-length sides at 49³**, and the
+localised normal-cycle mean-curvature error jumping from **1.02e-2** at 33³ to **8.78e-1** — an 87-fold
+blow-up on a rung between two clean ones — while the varifold arm barely noticed at **1.34e-2**, because
+it reads only centroids, normals and areas and never a vertex angle. `47 = 4(11) + 3` and `91 = 4(22) + 3`
+are transversal by residue alone and sit at the geometric midpoints of `[33, 65]` and `[65, 129]`, giving
+`cell_size` **0.125 / 0.086956522 / 0.0625 / 0.044444444 / 0.03125** — near-uniform in `ln h`, which is
+what a least-squares slope wants. The `capsule`'s radius is **0.47** and not 0.5 for the same reason:
+`a² + b² = r²/h²` has no integer solution for any `h` in the ladder. **This is the clearest case in the
+phase of an angle-defect estimator being resolution-fragile in a way a centroid-based one is not, and it
+is the incumbent that is fragile.**
+
+**Two supporting cross-checks read as they should, so neither arm is doing work off the books.**
+`normal_alignment` — the mollified normal against `∇f/|∇f|` — is **0.999833250 to 0.999999992** on all 30
+rows, so the projection `P_n = I − n⊗n` in the varifold's first variation is not carrying the result; and
+`varifold_h_shape_error`, the disagreement between `0.5 tr S` and the first-variation `H` (two different
+formulas for one quantity), falls **2.306688e-2 → 2.408622e-3** on the `sphere` and **3.538154e-2 →
+4.609448e-3** on the `torus`, converging, while on the `capsule` it wanders between **7.103320e-2** and
+**9.237177e-2** with no trend — the seam again, seen by a third instrument.
+
+**SHARE, recomputed. `curvature_share`, and it is reported rather than claimed.** *"C1 moves the
+curvature stage only, whose share must be reported."* Discharged as two columns per row — `extract_ms`
+**0.4641–26.9357 ms** for the marching-cubes stage and `estimator_ms` **0.6512–164.0902 ms** for the
+curvature stage — with the ratio on every row. Nothing else in the pipeline is touched by either arm.
+There is no speedup claim anywhere in the row, so `✗51`'s bar has nothing to divide; `M-280`'s 1.45×
+governor scatter is handled by medians and by the fact that C1 and C2 are both scored on **errors**, not
+on clocks.
+
+**What a consumer should do: nothing changes.** `P-42` and `P-45`'s normal-cycles line stands for mean
+curvature, and the crate has no pointwise curvature API to reconsider. What the row adds is three things
+worth knowing before anyone builds one: a pointwise estimator must be localised over a **ball** and not a
+vertex star (302×); the incumbent's accuracy depends on grid transversality in a way a centroid-based
+estimator's does not (87× at 49³); and on a C⁰ crease both formalisms stop converging entirely
+(`convergence_exponent` 0.17 and 0.20), so a crease-aware estimator, not a better formalism, is what that
+regime needs.
+
+**Would be shown wrong by:** a varifold `error_ratio` below one on `sphere` or `torus`, which would put
+the challenger ahead on smooth analytic data where the incumbent is calibrated to 1.1e-4 and would
+genuinely redirect the `P-42`/`P-45` line; a `sphere` re-run whose `exponent_gap_sigma` crosses 2 — it is
+at **1.876429**, so one more rung or a slightly tighter fit decides C2 there and the row is explicitly not
+claiming otherwise; a crease-band-excluded `capsule` reading in which the varifold wins, which would mean
+the seam was masking a real advantage rather than a real tie; or an `eps` scaling other than `0.8√h` under
+which the varifold's mean-curvature exponent exceeds the incumbent's, since the exponents fitted here are
+properties of this ladder and this balance and the row claims them for no other.
+
+### 💥 ✗125 / M-488 — **C1 FALSIFIED on 24 of 24 rows: intrinsic Delaunay flipping raises the worst-decile minimum angle by at most 1.642437° against a 10° bar, and by at most 5.369167° and 1.951887° under the two alternative statistics recorded beside it. C2 HELD on 24 of 24 and it is the result: `vertex_positions_moved` 0, `hashes_moved` 0, `extrinsic_geometry_identical` true, against a positive control that moves the hash on all 18 rows where a flip happened. C3 FALSIFIED at 0 of 8 surveyed consumers** — 15,391 flips reach the intrinsic Delaunay fixed point on every row, remove 1,570 of 10,678 slivers, and reach nothing the crate reads (P-175, R-175)
+
+**M.** `cargo bench --bench experiment_p175`, `docs/experiments/p-175.csv`, **24 rows** across **44
+columns** — four `#` comment lines plus one column header plus 24 data rows, 29 lines in the file,
+counted from it rather than from the brief. Fourteen of the 44 columns are the registered `records`; the
+other 30 are `M-273` extras. The shape, counted from the file: **eight reference fields × {17, 25, 33}**
+samples per axis, `vertices` **126** to **6,522**, `triangles` **248** to **13,236**, `interior_edges`
+**372** to **19,854**. Those three resolutions are not the house default and could not be: `hashes_moved`
+is a comparison against `crates/isomesh/golden_hashes.json`, the fixture exists at no other resolution,
+and the extractor is plain `marching_cubes` for the same reason — **its 24 rows are the only ones of the
+committed 216 this harness runs**, and claiming the other 192 would be claiming a measurement nobody took.
+`# commit 320946e on amd-ryzen-9-5900x-12-core at 2026-08-30T09:31:18Z`, no `(WORKING TREE DIRTY)`.
+**No source change**: the Δ-complex, the flip loop and the write-back are bench-local, and the row's whole
+point is that nothing in `crates/isomesh/src/` *could* have needed changing.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 intrinsic Delaunay flipping raises the minimum triangle angle materially — at least 10° on the worst decile — on at least four fields; falsified by under 10° | `min_angle_after − min_angle_before` ≥ 10°, on ≥ 4 fields at every resolution | **FALSIFIED on 24 of 24.** `min_angle_gain` — the mean of the worst decile of per-triangle minimum angles, in degrees, carried in the file's own `min_angle_statistic` column as `worst_decile_mean_degrees` — tops out at **1.642437°** (`torus` 17³, 9.519333° → 11.161770°), followed by **1.580372°** (`sphere` 25³), **1.566885°** (`noise_cavity` 17³) and **1.448880°** (`torus` 25³). `c1_fields` **0** and `c1_run` **false** on every row. The bar is missed by a factor of **6.1** at best |
+| C2 zero vertex positions move and zero position hashes move, asserted rather than assumed; falsified by any hash movement, which would mean the implementation is not intrinsic | `vertex_positions_moved` = 0, `hashes_moved` = 0, three integer equalities | **HELD on 24 of 24, and with a positive control that fires.** `vertex_positions_moved` **0** and `hashes_moved` **0** on every row, `extrinsic_geometry_identical` **true** on every row, measured against the committed `golden_hashes.json` — which yields exactly **24** `marching_cubes` rows over the eight fields × {17, 25, 33}, of 216 entries across nine algorithms. `control_hash_moved` is **true on all 18 rows where `flips > 0`** and false on the six zero-flip rows, so the zero is a zero that *could* have been non-zero (`M-44`) |
+| C3 the honest falsifier, stated at registration: if every downstream consumer reads extrinsic triangles, nothing measurable changes; falsified by no consumer benefiting | ≥ 1 of the surveyed consumers benefits | **FALSIFIED.** `c3_consumers_benefiting` **0** of `c3_consumers_surveyed` **8** on every row. One of the eight reads triangle angles at all, and it reads them extrinsically |
+
+> **C1 is falsified under all three statistics, which is why three were recorded.** The clause names the
+> worst decile and the harness carries the 10th-percentile value and the global minimum beside it so the
+> verdict cannot rest on one instrument. Best `p10_min_angle` gain: **+5.369167°** on `sphere` 25³
+> (10.550573° → 15.919740°), then **+3.701091°** on `torus` 25³ and **+2.693805°** on `noise_cavity` 17³.
+> Best `global_min_angle` gain: **+1.951887°** on `sphere` 17³ (13.261947° → 15.213834°), then
+> **+0.725188°** on `torus` 17³. **Every one of the eighteen flipping rows misses 10° on every statistic**,
+> so C1 is not a near miss on the wrong instrument.
+>
+> **One row went backwards on the registered statistic while going forwards on the global minimum, and
+> both numbers are in the file.** `csg_difference` at 17³: `min_angle_gain` **−0.053590°** (25.571386° →
+> 25.517796°) while `global_min_angle_before` **11.127419°** rose to `global_min_angle_after`
+> **11.130121°**. Twenty-three flips raised the smallest angle in the mesh by 0.0027° and redistributed
+> the worst decile downward. A locally Delaunay triangulation of a *polyhedral surface* carries no
+> global max-min-angle guarantee — that is a planar theorem — and this row is the measurement of it.
+>
+> **Six vacuity controls, all before the first `run.record`.** (1) *The registered one:* the worst-decile
+> angle before flipping must be under 15° on some field — it is under 15° on **15 of 24** rows, minimum
+> **3.189870°** (`gyroid` 25³), so there were slivers to fix. (2) *Something was flippable:*
+> `non_delaunay_before` sums to **12,826** over the sweep, **0** on `box_exact` and `thin_plate` and
+> **2,858** at most (`noise_cavity` 33³). (3) *Flips happened:* `flips` sums to **15,391**. (4) *The hash
+> instrument can report movement:* `control_hash_moved` **true** on all 18 rows with flips, which is the
+> arm that writes the flipped connectivity back beside the untouched positions and re-hashes — without it,
+> `hashes_moved` 0 would be equally consistent with a `mesh_hash` blind to connectivity or with a flipper
+> that silently did nothing. (5) *The baseline is the committed fixture:* the scanner must find exactly 24
+> `marching_cubes` rows in `golden_hashes.json`, or `hashes_moved` is measured against something that
+> matched nothing. (6) *The fixed point was reached:* `flip_budget_exhausted` **false** and
+> `non_delaunay_after` **0** on all 24 rows, against `flip_budget` = 64 · `interior_edges` (**23,808** to
+> **1,270,656**), so the "after" arm is *the* intrinsic Delaunay triangulation and not a partial run.
+> `flips_rejected` is **0** on all 24: the numerical guard on the convexity theorem never fired.
+
+**C2 is the finding, and it is a stronger statement than "the hashes did not change".** The mechanism is
+that no position is ever *read* after the first build. The flip criterion is the cotangent sum
+`cot α + cot β ≥ 0` with `cot = (b² + c² − a²)/(4A)` and `A` from Heron in Kahan's stable ordering, so it
+is a function of edge lengths alone and no angle is evaluated to decide a flip. The length update is the
+part that earns the word *intrinsic*: the two triangles are unfolded into the plane along their shared
+edge and the new edge's length is `|cd|` **in that unfolded layout** — the length of a geodesic across the
+surface, not the chord between those two vertices in `R³`. Take the chord and the result is an ordinary
+extrinsic remesh of a *different* surface. The data structure is a **Δ-complex**, not a simplicial
+complex: corner slots carry a vertex, a halfedge length and a twin, so a flip producing a self-edge or a
+second edge between an already-joined pair is legal and needs no special case, which is what refusing
+those flips would have cost — the result would no longer be the intrinsic Delaunay triangulation. The loop
+is Lawson's, and an empty queue is a **proved** fixed point rather than a hope: on each flip all six
+corner slots of the two modified triangles are re-queued, and that is exactly the set of edges whose
+cotangent sum can have changed.
+
+**The connectivity does improve, measurably, and by less than the registration hoped.** Over the sweep
+`slivers_before` **10,678** falls to `slivers_after` **9,108** — **1,570 removed, 14.7%** — for 15,391
+flips. The extremes: `sphere` 17³ clears every one of its **24 → 0**; `sphere` 25³ **170 → 93**;
+`noise_cavity` 17³ **435 → 313**; `gyroid` 33³ **2,410 → 2,181**; `noise_cavity` 33³ **2,334 → 1,990**;
+`csg_difference` 25³ **39 → 39**, no net change from 67 flips. And **1,380 of the 9,108 survivors are
+`short_edge_slivers_after`** — slivers whose shortest side is under 5% of the cell size, i.e. a
+near-duplicate vertex pair — which no flip can repair because the defect is a *position*, not a diagonal.
+That is `M-48`'s mechanism, and `shortest_edge_over_cell` names the fields it owns: **0.000000** on
+`gyroid` at all three resolutions, on `noise_cavity` at all three, and on `sphere` at 25³, against
+**1.000000** on `box_exact` and `thin_plate`. **So a connectivity-only repair provably cannot reach
+1,380 of the 9,108 surviving slivers — 45.2% of them on `sphere` at 25³ (42 of 93), 26.2% on `gyroid` at
+17³ (99 of 378) and 25.2% on `noise_cavity` at 25³ (247 of 981) — because their defect is a position and
+not a diagonal.**
+
+**The two zero-flip fields are the control that makes the other numbers mean something.** `box_exact` and
+`thin_plate` report `non_delaunay_before` **0**, `flips` **0**, `min_angle_gain` **0.000000** and
+`control_hash_moved` **false** at every resolution, with `min_angle_before` = `min_angle_after` =
+`p10_min_angle_*` = `global_min_angle_*` = **35.264390°** and **44.964235° / 44.919654° / 44.857473°**
+respectively. Marching Cubes' output on those two fields is *already* intrinsically Delaunay — every
+triangle is one of the case table's few shapes on an axis-aligned plateau — so the flipper correctly does
+nothing, and a row on which it had "improved" something would have been the instrument inventing work.
+
+**C3's answer is a survey of the crate's own source, printed in full beside the numbers rather than
+asserted.** All eight consumers of triangle connectivity in `crates/isomesh/src/**`, with
+`reads_angles` / `benefits`: `mass::mass_properties` (`mass.rs:198`) — a divergence theorem over
+triangles, invariant under retriangulation of a fixed polyhedron, and an intrinsic edge is a geodesic, so
+feeding it this connectivity would integrate over a solid that does not exist; `normals::recompute` /
+`AreaWeightedFaces` (`normals.rs:77`, `:114`) — weights by **area**, not angle, and the angle-weighted
+variant that would care is not implemented; `validate::MeshReport::mean_ratio` (`validate.rs:257`,
+`:903-943`) — **the one consumer that reads angles**, and it computes them from the extrinsic cross
+product and edge lengths at `validate.rs:917-939`, which no intrinsic flip can move;
+`collider::readiness` (`collider.rs:183`, `:168`) — counts boundary, non-manifold and duplicate features,
+none of which a flip changes; `surface_nets::set_smoothing_passes` (`surface_nets.rs:154` via
+`dual.rs:550`) — a **uniform** Laplacian over the face-adjacent *cell* graph that runs before any triangle
+exists; `orient::orient` (`orient.rs:148`) — purely combinatorial and already exact;
+`validate::self_intersections` (`validate/self_intersection.rs:153`) — an intrinsic triangle is not a
+subset of `R³` and cannot be handed to it; `validate::pinch_census` (`validate/pinch.rs:417`) —
+coincident-vertex grouping over positions, so every count is identical before and after. **0 of 8.** The
+harness also records why: `grep -E 'cotangent|cot_|laplacian|geodesic'` over `crates/isomesh/src` returns
+four doc comments and one registration string and **no implementation** — there is no cotangent Laplacian,
+no geodesic solver and no parameterisation in this crate, and those three are the operators an intrinsic
+triangulation exists to serve.
+
+**What a consumer should do, and why this is the phase's cleanest shippable result even with two clauses
+falsified.** Nothing changes today, and that is C3's honest answer. What C2 buys is a **standing
+licence**: a connectivity-only quality pass on this crate's meshes is provably free of every risk that
+normally kills a remesh. Positions are bit-identical, so the **24** `marching_cubes` hashes hold as
+measured — and since a flip cannot move a position, `P-61`'s 135-of-216 movement cannot recur by
+construction, on the other 192 as well, though this harness measured only the 24;
+the extrinsic triangle set the collider and `self_intersections` read is
+unchanged, so there is no physics, tunnelling or clearance risk; nothing that syncs or replicates a
+position moves, so there is no network risk; and the cost is `flip_ms` **0.011831 ms** to **1.684563 ms**
+(median of 7 repeats, every repeat's flip count asserted equal to the first, so the repeats are a
+determinism check as well as a timing one). **So the moment this crate acquires a consumer that actually
+reads angles — an angle-weighted normal pass for shading, or a cotangent Laplacian — intrinsic Delaunay
+flipping is the one remesh that can be handed to it with no gameplay, collision, hash or replication
+consequence at all.** The measured gain on the angle statistics is small (1.6° on the worst decile) and
+the ceiling is set by coincident vertices, so the value of the ticket is the *risk profile*, not the
+magnitude — and a future ticket proposing it now has both numbers instead of one.
+
+**SHARE, recomputed. None, and no clause reads a wall clock.** *"C1 moves mesh quality, not cost; C3
+decides whether that quality reaches anything."* C1 is a difference of two angles in degrees, C2 is three
+integer equalities, and C3 is a count over a source survey. `flip_ms` is in the file because the
+registration names it and is read by nothing — `P-126`'s rule for `wall_seconds` exactly — so `M-280` /
+`✗24`'s 1.45× governor scatter has nothing here to bite on, and every repeat rebuilds the triangulation
+outside the timed region so `flip_ms` is the flipping loop rather than the build.
+
+**Would be shown wrong by:** a field whose worst-decile angle gains 10° from flipping alone, which would
+revive C1 — on this evidence it would have to be a field with few coincident vertices and many
+non-Delaunay diagonals, and the two fields here with no coincident vertices have no non-Delaunay diagonals
+either; any `hashes_moved` above zero, which would mean the length update read a chord somewhere and the
+implementation is not intrinsic; a ninth consumer, or an angle-weighted normal pass or cotangent
+Laplacian landing in `crates/isomesh/src/`, which would flip C3 to held without any new measurement of
+C1 or C2; or `non_delaunay_after` above zero on some future field, which would mean the Lawson queue's
+re-queue set is incomplete and the "after" arm was never the fixed point.
+
+### 🔬 M-489 — **caves percolate in 3D and the transition is now a number: on `noise_cavity` the giant component appears at `percolation_isovalue` 0.029340, bracketed by the rungs 0.036372 and 0.019098, and at `iso = 0` one component holds 0.814493 of the air against 65 isolated pockets** — C1 HELD on 84 of 84, C3 HELD on 84 of 84 with two instruments sharing no data structure agreeing on the component count, the air-sample count and the full sorted size multiset on every row, and C2 split 42 / 42: the theorem's qualitative 2D/3D difference is present on `noise_cavity` (`percolation_isovalue_2d` **none**) and absent on `fbm_terrain`, whose 2D slices percolate too at **7.272575**, which the registration named in advance as a real risk because `fbm_terrain` is hash-based lattice noise and not a Gaussian field (P-176, R-176)
+
+**M.** `cargo bench --bench experiment_p176`, `docs/experiments/p-176.csv`, **84 rows** across **49
+columns** — four `#` comment lines plus one column header plus 84 data rows, 89 lines in the file,
+counted from it rather than from the brief. Twelve of the 49 columns are the registered `records`; the
+other 37 are `M-273` extras. The shape, counted from the file: **two fields × 42 isovalues** at a single
+`resolution` **97** — 912,673 samples — `sweep_rungs` **42** on every row (41 rungs spanning each field's
+own sampled value range, plus `iso = 0.0` inserted because the registration's own sentence is about it),
+`sweep_hi` / `sweep_lo` **9.419853 / −9.599993** on `fbm_terrain` at `sweep_step` **0.475496** and
+**0.640978 / −0.050000** on `noise_cavity` at **0.017274**. One resolution rather than three because
+percolation is a property of the field's feature count and not of the sampling rate: refining the grid
+resolves the same blobs better and does not add blobs. `# commit f24c09b on amd-ryzen-9-5900x-12-core at
+2026-08-30T09:31:23Z`, no `(WORKING TREE DIRTY)`. **No source change**: `Air::build(values − l)` **is**
+`{f ≥ l}` with no reinterpretation, because `Air` takes air to be `value >= 0`
+(`connectivity.rs:218-219`), so the whole sweep is the shipped API asked 84 questions.
+
+| clause | registered | measured |
+|---|---|---|
+| C1 sweeping the isovalue on `fbm_terrain` and `noise_cavity`, a giant component appears — one component holding above 50% of the air volume — and the isovalue at which it appears is reported; falsified by no giant component at any isovalue | a persistent onset exists **and** the sweep also contains a fragmented rung, per field | **HELD on 84 of 84.** `percolation_isovalue` **0.029340** on `noise_cavity` (`percolation_rung_fragmented` **0.036372** → `percolation_rung_giant` **0.019098**, then 14 bisections) and **8.187580** on `fbm_terrain` (**8.468861** → **7.993365**). `giant_at_zero` **true** on both, with `largest_component_fraction_at_zero` **0.814493** and **1.000000**. The onset is the **persistent** one — the highest swept isovalue at or below which the giant component never disappears again — because a one-voxel top rung also satisfies "above 50%" |
+| C2 the 3D behaviour differs qualitatively from a 2D slice of the same field; falsified by 2D and 3D behaving alike, and `fbm_terrain` being hash-based lattice noise rather than a Gaussian field makes that a real risk | 3D has a persistent giant phase **and** the 2D slice has none anywhere in the swept range | **SPLIT 42 / 42.** `c2_holds` **true** on all 42 `noise_cavity` rows: `percolation_isovalue_2d` reads **none**, `giant_component_2d` is true on exactly **1** of its 42 rungs (`iso` 0.416410, where the slice holds a single air pixel), and `largest_component_fraction_2d` never exceeds **0.500000** anywhere else. `c2_holds` **false** on all 42 `fbm_terrain` rows: its slices percolate too, `percolation_isovalue_2d` **7.272575**, `giant_component_2d` true on **39** of 42 rungs |
+| C3 instrument B's component count, air-sample count and sorted size multiset all equal instrument A's, and `label_count() == components()`; falsified by disagreement with the union-find | three equalities plus the label check, per row | **HELD on 84 of 84.** `air_union_find_agreement` and `air_uf_sizes_match` **true** on every row; `air_uf_components == components`, `air_uf_air_samples == air_samples` and `air_uf_labels == air_uf_components` on every row, with no exceptions to enumerate |
+
+> **The two instruments share the six-neighbour adjacency and the `value >= 0` test and nothing else, so
+> C3's agreement is evidence rather than a tautology.** Instrument A is a three-forward-edge union-find
+> with union by size and path halving — deliberately **the retired algorithm**, the one `M-311`'s own text
+> describes. Instrument B is `Air::build` read through `components()`, `air_samples()`, `label_count()` and
+> `component_size(l)`, and since `✗26` that is a **flat label array filled by breadth-first flood**
+> (`connectivity.rs:29-46`, `flood` at `:708`): no parent pointers, no merge rule, no shared traversal
+> order. The comparison is the full sorted multiset of component sizes and not merely the count, because
+> two labellings can agree on how many components there are and disagree about which samples are in them.
+> The air test is written `values[i] - iso >= 0.0` in A, and B is handed an array whose entry is that same
+> subtraction already performed, so the two compare the same `f64` and cannot disagree through rounding.
+>
+> **Connectivity is 6 in 3D and 4 in 2D, and that is not this bench's choice.** `Air::neighbours`
+> (`connectivity.rs:610-646`) is the six axis-aligned neighbours, so instrument A must use six or C3 would
+> be comparing two different graphs; the 2D control takes the same rule restricted to the plane
+> `slice_plane` **z=48**, which is 4. Both are columns — `connectivity_3d` **6** and `connectivity_2d`
+> **4** on all 84 rows — so no reader has to take a paragraph's word for it.
+>
+> **Five vacuity controls, all before the first `run.record`, and (4) is the one that decides whether this
+> row measures the field or the sampling box.** (1) *Both
+> regimes are inside the swept range,* per field, which is the registration's own control verbatim:
+> `fragmented_rows` (rungs with ≥ 8 components and no giant) **28** on `noise_cavity` and **1** on
+> `fbm_terrain`, against `giant_rows_with_real_air` (a giant component over ≥ 5% air) **6** and **37**. The
+> air-share floor is what stops the ladder's one-voxel top rung from answering for the whole
+> one-large-component regime. (2) *The 2D control is populated:* `slice_populated_rows` (≥ 100 air pixels)
+> **18** and **38**, so C2 is not comparing a 3D census against an empty plane. (3) *The cap cannot make
+> air:* `cap_max_sdf` **−0.050024**, strictly below `sweep_lo` **−0.050000**, so inside `noise_cavity`'s
+> mask `sphere_sdf < iso` everywhere and `{max(noise, sphere) ≥ iso}` is exactly `{noise ≥ iso}`. (4)
+> *The mask is necessary:* over the **unmasked** domain at `iso = 0`, `outer_shell_air_fraction`
+> **0.825811** in `outer_shell_components` **12** whose `outer_shell_largest_fraction` is **0.999874** —
+> C1 would have been true by the sampling box rather than by the field, which is `M-44`'s failure mode
+> exactly, so those three numbers ride on all 84 rows. (5) *Every sampled value is finite,* because
+> `fbm_terrain` declares `FieldBound::Unbounded` and a NaN would make `v - iso >= 0.0` false everywhere
+> and read as a cleanly empty air set.
+
+**The per-isovalue rows, which are what the `cave_percolation` demo consumes.** `largest_component_fraction`
+is the giant-component fraction **of the air volume, not of the domain**; `air_fraction_of_region` is the
+air share of the measured region (`region_samples` **176,909** for `noise_cavity`'s cap and **912,673** for
+`fbm_terrain`'s full domain); the last column is `components_2d` / `largest_component_fraction_2d` on the
+matched slice. The sweep runs **top down**, so read the table downward to watch the transition happen.
+
+**`noise_cavity`, region = the field's own cap `{p : sphere_sdf(p) < −0.05}`, all 42 rungs:**
+
+| `isovalue` | `components` | `largest_component_fraction` | `air_fraction_of_region` | `air_samples` | `giant_component_exists` | 2D: `components_2d` / fraction |
+|---|---|---|---|---|---|---|
+| `0.640978` | 1 | **1.000000** | 0.000006 | 1 | true | 0 / 0.000000 |
+| `0.623703` | 3 | **0.571429** | 0.000040 | 7 | true | 0 / 0.000000 |
+| `0.606429` | 3 | **0.454545** | 0.000062 | 11 | false | 0 / 0.000000 |
+| `0.589155` | 4 | **0.437500** | 0.000090 | 16 | false | 0 / 0.000000 |
+| `0.571880` | 4 | **0.500000** | 0.000113 | 20 | false | 0 / 0.000000 |
+| `0.554606` | 6 | **0.413793** | 0.000164 | 29 | false | 0 / 0.000000 |
+| `0.537331` | 5 | **0.395833** | 0.000271 | 48 | false | 0 / 0.000000 |
+| `0.520057` | 7 | **0.397059** | 0.000384 | 68 | false | 0 / 0.000000 |
+| `0.502782` | 9 | **0.352273** | 0.000497 | 88 | false | 0 / 0.000000 |
+| `0.485508` | 14 | **0.300000** | 0.000678 | 120 | false | 0 / 0.000000 |
+| `0.468233` | 20 | **0.247126** | 0.000984 | 174 | false | 0 / 0.000000 |
+| `0.450959` | 21 | **0.217054** | 0.001458 | 258 | false | 0 / 0.000000 |
+| `0.433685` | 28 | **0.182635** | 0.001888 | 334 | false | 0 / 0.000000 |
+| `0.416410` | 43 | **0.157205** | 0.002589 | 458 | false | 1 / 1.000000 |
+| `0.399136` | 53 | **0.133884** | 0.003420 | 605 | false | 2 / 0.500000 |
+| `0.381861` | 56 | **0.163975** | 0.004550 | 805 | false | 3 / 0.400000 |
+| `0.364587` | 66 | **0.150376** | 0.006014 | 1,064 | false | 3 / 0.375000 |
+| `0.347312` | 80 | **0.127410** | 0.008208 | 1,452 | false | 5 / 0.333333 |
+| `0.330038` | 94 | **0.105699** | 0.010910 | 1,930 | false | 6 / 0.277778 |
+| `0.312763` | 103 | **0.099415** | 0.013532 | 2,394 | false | 7 / 0.280000 |
+| `0.295489` | 120 | **0.089945** | 0.016528 | 2,924 | false | 10 / 0.257143 |
+| `0.278215` | 119 | **0.079555** | 0.019824 | 3,507 | false | 11 / 0.250000 |
+| `0.260940` | 125 | **0.071944** | 0.023492 | 4,156 | false | 11 / 0.232143 |
+| `0.243666` | 167 | **0.065680** | 0.028659 | 5,070 | false | 12 / 0.202899 |
+| `0.226391` | 171 | **0.075748** | 0.035521 | 6,284 | false | 14 / 0.302752 |
+| `0.209117` | 153 | **0.070088** | 0.043067 | 7,619 | false | 14 / 0.269231 |
+| `0.191842` | 150 | **0.078703** | 0.050563 | 8,945 | false | 13 / 0.244898 |
+| `0.174568` | 146 | **0.077707** | 0.058776 | 10,398 | false | 16 / 0.233129 |
+| `0.157293` | 146 | **0.075158** | 0.067238 | 11,895 | false | 16 / 0.214286 |
+| `0.140019` | 137 | **0.074135** | 0.075638 | 13,381 | false | 19 / 0.199029 |
+| `0.122744` | 135 | **0.075378** | 0.084439 | 14,938 | false | 20 / 0.177419 |
+| `0.105470` | 131 | **0.084981** | 0.095185 | 16,839 | false | 21 / 0.183824 |
+| `0.088196` | 138 | **0.133533** | 0.107818 | 19,074 | false | 25 / 0.211656 |
+| `0.070921` | 127 | **0.179270** | 0.121616 | 21,515 | false | 29 / 0.190860 |
+| `0.053647` | 111 | **0.226191** | 0.135623 | 23,993 | false | 34 / 0.175234 |
+| `0.036372` | 100 | **0.360519** | 0.149845 | 26,509 | false | 31 / 0.162393 |
+| `0.019098` | 81 | **0.521363** | 0.165373 | 29,256 | true | 29 / 0.146617 |
+| `0.001823` | 69 | **0.814620** | 0.183105 | 32,393 | true | 30 / 0.135823 |
+| `0.000000` | 66 | **0.814493** | 0.185265 | 32,775 | true | 29 / 0.133111 |
+| `-0.015451` | 71 | **0.839921** | 0.201946 | 35,726 | true | 23 / 0.126677 |
+| `-0.032726` | 66 | **0.842058** | 0.220820 | 39,065 | true | 22 / 0.168464 |
+| `-0.050000` | 70 | **0.850013** | 0.238863 | 42,257 | true | 20 / 0.161728 |
+
+**`fbm_terrain`, region = its own `[-8, 8]³` unmasked, the six rungs where anything happens:**
+
+| `isovalue` | `components` | `largest_component_fraction` | `air_fraction_of_region` | `air_samples` | `giant_component_exists` | 2D: `components_2d` / fraction |
+|---|---|---|---|---|---|---|
+| `9.419853` | 1 | **1.000000** | 0.000001 | 1 | true | 0 / 0.000000 |
+| `8.944357` | 11 | **0.583832** | 0.000366 | 334 | true | 0 / 0.000000 |
+| `8.468861` | 20 | **0.340507** | 0.002851 | 2,602 | false | 1 / 1.000000 |
+| `7.993365` | 18 | **0.858262** | 0.011333 | 10,343 | true | 4 / 0.509804 |
+| `7.517869` | 6 | **0.996981** | 0.029030 | 26,495 | true | 4 / 0.457711 |
+| `7.042372` | 2 | **0.999980** | 0.054459 | 49,703 | true | 3 / 0.569476 |
+| `6.566876` | 1 | **1.000000** | 0.083406 | 76,122 | true | 1 / 1.000000 |
+
+The remaining **36** rungs, from `iso` 6.091380 down to −9.599993, all read `components` **1** and
+`largest_component_fraction` **1.000000** — `single_component_rows` is **37** on `fbm_terrain` against
+**1** on `noise_cavity`, and that one number is the whole difference between the two fields.
+`component_size_distribution` carries the shape on every row as `{count}c|{top five sizes}|+{the
+rest}`: at `iso = 0` `noise_cavity` reads `66c|26695|2885|854|626|448|+61` and `fbm_terrain` reads
+`1c|446840`.
+
+**A caveat the demo must not lose: on `fbm_terrain` the giant component is the sky, not a cave system.**
+`largest_component_span_fraction` — the component's index extent over the region's own extent, worst axis
+— is **0.587629** for `fbm_terrain` at `iso = 0`, so its single component holding 100% of 446,840 air
+samples reaches only 57 of 97 planes on its narrowest axis, which is exactly what "everything above a
+heightfield" looks like. At the top of its sweep the same column reads **0.010309 / 0.030928 / 0.061856 /
+0.092784**, rising one grid plane at a time. `noise_cavity`'s giant component at `iso = 0` spans
+**0.927536** of the cap on its worst axis while 65 pockets sit around it. **So the cave-relevant
+percolation number in this file is `noise_cavity`'s 0.029340, and `fbm_terrain`'s 8.187580 is a
+measurement of a heightfield's open air**, which is why its 2D slices percolate as well and why C2 reads
+false there.
+
+**C2's falsification is the registered risk arriving, and the ordering survives it.** The theorem is about
+smooth Gaussian fields, and `fbm_terrain` is four-octave hash-based lattice noise; the registration says
+so in advance and calls a null there *"a real risk … registered as one"*. What the sweep measures is that
+`fbm_terrain`'s 3D onset **8.187580** does sit strictly above its 2D onset **7.272575** — a gap of
+**0.915005** in the field's own units, and `dimension_gap_rows` (a giant in 3D and none in 2D on a
+populated slice) reads **1** there against **6** on `noise_cavity`. So the *ordering* `ℓ_c(3) > ℓ_c(2)` is
+reproduced on both fields; what fails on `fbm_terrain` is the qualitative claim `ℓ_c(2) = 0`, because a
+2D slice of a heightfield is not a 2D nodal set of anything — it is a sublevel set of a 1D-dominated
+function and it connects trivially. **`noise_cavity` is the field where the theorem's shape is actually
+measured: `ℓ_c(3) = 0.029340 > 0` with no 2D onset anywhere down to −0.050000, which is
+`ℓ_c(3) > 0 ≥ ℓ_c(2)` in the crate's own units.**
+
+**What a consumer should do, stated for a level designer rather than for a mathematician.** At the shipped
+`iso = 0` a `noise_cavity`-style field generates **one connected cave holding 81.4% of the excavated
+volume plus 65 isolated pockets** over a 97³ cap — so cave connectivity is *emergent and does not need to
+be authored*, and the pockets are what needs authoring (or a `components()` filter). The margin
+is not large, and the table gives it exactly: the giant component's share is **0.814493** at `iso = 0`,
+**0.521363** one rung up at 0.019098, **0.360519** at 0.036372 across 100 components and **0.226191** at
+0.053647 across 111 — so **raising the isovalue by 0.036372 in these units turns one cave holding four
+fifths of the air into a hundred components whose largest holds a third of it.** Below zero the field is
+generous — **0.850013** of the air in one component at `iso = −0.050000`. `M-311`'s union-find is still
+the instrument for *"is this cave sealed?"*; what this row adds is what the answer looks like before
+anyone digs.
+
+**SHARE, recomputed. None, and it was registered as none.** *"This predicts a property of generated
+worlds, and `M-311`'s union-find is the instrument."* Nothing here proposes a source change or moves a
+stage's time; it changes what a level designer may assume, not what the extractor does. `row_ms` sits
+beside the verdicts and gates nothing — **3.3 to 33.3 ms** per rung, **955.4 ms** summed over all 84 — and
+every clause is an integer count or a comparison of two integer counts, so this host's governor cannot
+move a verdict. Determinism: no RNG, both fields are deterministic hash noise, the ladder is arithmetic on
+the sampled range, and every sort is on integer keys or `f64::total_cmp`.
+
+**Would be shown wrong by:** a resolution above 97³ at which `noise_cavity`'s onset moves materially,
+which would mean percolation here is a sampling artefact rather than a property of the field's features —
+the row asserts one resolution and claims no other; a 2D slice of `noise_cavity` on a different plane that
+does percolate, which would retire C2's `noise_cavity` half (the control is `z=48` and only `z=48`); any
+row on which `air_union_find_agreement` reads false, which would put the shipped flood labelling and the
+retired union-find in conflict and would be a `connectivity.rs` bug rather than a finding about caves; or
+an unmasked `noise_cavity` sweep quoted as a cave measurement, which the `outer_shell_*` columns exist to
+refuse.
