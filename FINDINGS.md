@@ -24967,7 +24967,7 @@ only as an upper bound, and `pinch.rs:113-124` says so in the shipped documentat
 
 **Date:** 2026-08-29 · **Repo state:** `466dd07`, 482 findings entries, 52 open tickets
 **Corpus:** home-still, 9,537 documents, 291,094 chunks, both scribe instances healthy
-**Companion:** `docs/research/2026-08-29-axes-and-vocabulary-v2.md` (the words)
+**Companion:** `docs/research/2026-08-29-phase-27-axes-and-vocabulary-v2.md` (the words)
 
 **Numbering.** Drafted as `P-103`–`P-152`, shifted **by twenty** to `P-123`–`P-172` on the source branch
 because Phase 25's bit-packing sweep had already registered `P-103`–`P-122` in `crates/isomesh/src/experiment.rs`,

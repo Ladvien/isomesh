@@ -10,7 +10,7 @@ sweep** rather than found in a paper.
 **How to read the tiers.** Vocabulary is stable and safe. Claims marked **[proved here]** were checked
 symbolically in this session and the check is reproducible. Claims marked **[verified]** were traced to
 a primary source and the settling sentence is quoted in
-`docs/research/2026-08-29-fifty-experiments-from-unmined-mathematics.md`. Everything marked **[F]** is
+`docs/research/2026-08-29-phase-27-fifty-experiments-from-unmined-mathematics.md`. Everything marked **[F]** is
 a hypothesis in `FINDINGS.md` terms — no better than an opinion until someone measures it.
 
 ---
@@ -295,7 +295,7 @@ denominator), *quality* (unseparated from shape, size and alignment), *fractal* 
 # Part 4 — the six transfers I'd rank first
 
 All are registered as `P-127`…`P-176` in
-`docs/research/2026-08-29-fifty-experiments-from-unmined-mathematics.md`. Ranked by *what they change
+`docs/research/2026-08-29-phase-27-fifty-experiments-from-unmined-mathematics.md`. Ranked by *what they change
 if they land*, not by how likely they are to land.
 
 | # | Transfer | From | The move | Falsified by |

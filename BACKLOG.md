@@ -54,9 +54,12 @@ attached — read that before re-litigating a decision this project already made
 Nothing here supersedes Phase 17's or Phase 18's open rows, and Phase 25's twenty bit-packing
 rows are closed on the merged main (archived as `R-103`–`R-122`) — this phase does not displace them.
 
-**Source: `docs/research/2026-08-29-fifty-experiments-from-unmined-mathematics.md`**, with the vocabulary in
-`docs/research/2026-08-29-axes-and-vocabulary-v2.md`. Eighteen mathematical areas probed against the corpus and
-the repository at once; fourteen papers acquired and converted; eight recorded as paywalled rather than cited.
+**Source: `docs/research/2026-08-29-phase-27-fifty-experiments-from-unmined-mathematics.md`**, with the vocabulary in
+`docs/research/2026-08-29-phase-27-axes-and-vocabulary-v2.md`. Eighteen mathematical areas probed against the corpus and
+the repository at once; fourteen papers acquired and converted; nine recorded as paywalled rather than
+cited — the nine DOIs listed at
+`docs/research/2026-08-29-phase-27-fifty-experiments-from-unmined-mathematics.md:117-124`, against which
+that document's own prose says "six" and this line said "eight". Both were wrong; `M-440` records it.
 
 **Renumbered on merge — twice.** These fifty rows were drafted `R-103`–`R-152`; Phase 25's bit-packing sweep
 had already taken that range, so the whole block moved up by twenty to `R-123`–`R-172`. The merged main's
@@ -83,9 +86,14 @@ at 0.70–0.71 and the repository cites none of them. `R-147` registers the hone
 convergence **rate** does not improve — the exponent is fixed by polynomial degree and dimension — and what moves
 is the **constant M-12 fits**, concentrated on features with a flat direction.
 
-**Order matters in five places and nowhere else.** `R-127` runs before the rest of Group A and `R-131` rides it.
-`R-142` runs before `R-143` and `R-145`. `R-146` runs before `R-147`, `R-149` and `R-151`. `R-155` runs before
-`R-156` and `R-157`. `R-152` runs before `R-153` and `R-154`. Everything else is independent and eleven rows are `S`.
+**Order matters in seven places and nowhere else** — the table below is authoritative and the prose here
+once said *five*, omitting two clusters that the rows themselves justify. `R-127` runs before the rest of
+Group A and `R-131` rides it. `R-142` runs before `R-143` and `R-145`. `R-146` runs before `R-147`,
+`R-149` and `R-151`. `R-155` runs before `R-156` and `R-157`. `R-152` runs before `R-153` and `R-154`.
+`R-162` runs before `R-163` and `R-164`. `R-167` runs before `R-168` and `R-169`. Everything else is
+independent and **fourteen** rows are `S` — `R-127`, `R-128`, `R-129`, `R-134`, `R-135`, `R-136`,
+`R-137`, `R-142`, `R-143`, `R-150`, `R-155`, `R-163`, `R-169`, `R-170`, which with 34 `M` and 2 `L`
+accounts for all fifty. The prose said *eleven*; `M-440` records the correction.
 
 **Nine rows are expected to return nulls and that is registered rather than hoped:** `R-136` (which exists to
 prevent an overclaim), `R-150`, `R-158`, `R-159` (whose null — that Marching Cubes is already order-optimal and
