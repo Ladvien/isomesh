@@ -1493,11 +1493,31 @@ fn main() {
              field, so 'bounded rather than exact' is unmeasured and x42's own C3 result is not \
              reproduced over this wider population"
         );
+        // **`probe_outside` is zero BY CONSTRUCTION for the whole-line arm,
+        // so it cannot be this control's quantity.** `locality_probe` computes
+        // `floor = depth.map_or(0, ...)`, and the whole-line recursion declares
+        // no `depth` — it has no footprint, so "outside its footprint" is the
+        // empty set and the count is zero however far the dependence reaches.
+        // The first draft asserted that zero was positive, which no run could
+        // ever satisfy.
+        //
+        // The quantity that says the probe can see a long-range dependence is
+        // the measured SPAN: the whole-line arm's dependence must reach wider
+        // than the widest declared FIR footprint, or the zeros the probe
+        // reports on the FIR arms are zeros that could not have been non-zero
+        // (M-44).
+        let widest_fir = ARMS
+            .iter()
+            .filter_map(|arm| arm.depth)
+            .max()
+            .expect("at least one arm declares a finite footprint");
         assert!(
-            rows.iter().any(|row| row.arms[ARM_WHOLE].probe_outside > 0),
-            "VOID: the locality probe finds no dependence outside any declared footprint even for \
-             the whole-line recursion, so the zeros it reports on the FIR arms are zeros that could \
-             not have been non-zero (M-44)"
+            rows.iter()
+                .any(|row| row.arms[ARM_WHOLE].probe_span as usize > widest_fir),
+            "VOID: the locality probe never finds the whole-line recursion depending on more \
+             than {widest_fir} samples -- the widest declared FIR footprint -- so it cannot \
+             distinguish a long-range dependence from a local one and the zeros it reports on \
+             the FIR arms are zeros that could not have been non-zero (M-44)"
         );
         assert!(
             rows.iter()
