@@ -92,7 +92,7 @@ score against the calibration in `home-still-bridge`: present ≈ 0.65–0.72 wi
 **d. Extract the transfer.** Write the hypothesis in the registration form the Phase 30 document uses —
 title as a claim, ticket size (`S`/`M`/`L`), records, numbered clauses with thresholds, SHARE line for
 every ratio-of-total, `Falsified by` naming what each failure *means*, VACUITY CONTROL naming the column or
-run that proves the fixture could have failed. It must pass all four gates or it is not registered:
+run that proves the fixture could have failed. It must pass all five gates or it is not registered:
 
 1. **Hook.** It names an existing measured number (`P-`, `M-`, `✗`) that its result would change or explain.
 2. **Governs.** A result in either direction changes a sentence in `what-governs.md`. If only one direction
@@ -102,6 +102,13 @@ run that proves the fixture could have failed. It must pass all four gates or it
    instrument that does not exist is a *second* hypothesis, registered separately.
 4. **Not a tune.** It is not a parameter sweep of an existing mechanism and not a re-run of an existing
    instrument at another resolution. Those are `BACKLOG.md` chores, not hypotheses.
+5. **Control satisfiable.** Before registering, evaluate the VACUITY CONTROL's predicate on a synthetic case
+   or symbolically, and confirm two things: (i) there is an input on which the right and wrong answers
+   *differ* — a control that names a rung where the prediction is independent of the parameter it is meant
+   to catch (`✗126`: `(u² − 1) = 0` at `u = ±1` for every `λ`) cannot fail; (ii) every field the control
+   names satisfies the theorem's stated hypothesis — a control that calibrates a positive-reach theorem on a
+   zero-reach field (`✗127`: `box_exact` under Theorem 3.4's `τ > 0`) cannot pass. Write the synthetic case
+   into the registration's VACUITY CONTROL text, as `P-181` did with a 90° wedge and a `0.05` fillet.
 
 Prefer, in order: a theorem that applies to the crate's own construction (a proof beats a measurement); a
 field with a *denominator* (a floor or an optimum the crate can be graded against); a field with a
@@ -125,7 +132,9 @@ c. Run at the registered fields and resolutions. Timings are the **minimum** ove
    count and CSV hash recorded. Size budgets: `S` ≤ 20 min, `M` ≤ 2 h, `L` ≤ 8 h; over budget → stop, record
    what finished, mark `PARTIAL`.
 d. Evaluate the clauses exactly as registered. No moved thresholds, no added clauses. A failed VACUITY
-   CONTROL makes the tier `V` regardless of the clauses.
+   CONTROL makes the row **VACUOUS** regardless of the clauses; record it as `FINDINGS.md` does (`✗81`,
+   `✗126`, `✗127`): a falsified entry that says VACUOUS and why. This file's `V` is *verified from a primary
+   source* and is never used for vacuous.
 e. Write the `FINDINGS.md` entry: tier, each clause with its number, SHARE, and — for every failed clause —
    *which* of the falsifier's stated meanings applies, in one sentence. Then the two lines that make this a
    discovery loop rather than a test suite:
@@ -146,7 +155,7 @@ g. Check the `BACKLOG.md` box. Commit: `experiment: P-NNN <tier> — <one line>`
 - +2 if falsification would retire or re-tier an existing `M`/`V` entry
 - +1 if it grades one of the four fields `✗107` called ungradeable
 - +1 if it is `S`-sized
-- +1 if it was raised by an `F` or `V` entry
+- +1 if it was raised by a falsified (`✗`) or VACUOUS entry
 - −3 if any clause is only informative in one direction and it is not registered as a null
 - −5 if it depends on an instrument that does not exist (it should have been `BLOCKED` at registration)
 
