@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**602 entries** — 127 falsified, 385 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**603 entries** — 128 falsified, 385 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -166,6 +166,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗125` | C1 FALSIFIED on 24 of 24 rows: intrinsic Delaunay flipping raises the worst-decile minimum angle by at most 1.642437° ag… |
 | `✗126` | VACUOUS as registered, and the reason is the formula's own algebra: at u = ±1 the Gaussian kinematic formula's (u² − 1)… |
 | `✗127` | VACUOUS as registered on one field of four, and that field is the finding: box_exact's reach is 0 and this estimator rea… |
+| `✗128` | the detector works, and it says the opposite of what was registered: C2 HELD on |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -31564,3 +31565,74 @@ positive-reach theorem covers them, and the instrument built here reads a confid
 rather than refusing. A detector that answers *"this surface has a sharp feature, so τ = 0 and every
 sampling theorem is inapplicable"* would be the precondition for any future use of this family.
 Logged as `Q9`.
+
+### 💥 ✗128 / M-492 — **the detector works, and it says the opposite of what was registered: C2 HELD on **4 of 4** closed forms — `box_exact` flagged, `sphere`, `torus`, `capsule` not — with the control separating a 90° crease from a `0.05` fillet and recovering the fillet's curvature as **19.927397** against **20** (0.36%). C1 FALSIFIED on its sharp half: `thin_plate` has the registered limiting spread of **90.000°** but a finest-rung ratio of **0.50000**, below the **0.8** bar. C3 FALSIFIED, which is the consequential direction the registration named: `gyroid` (**0.99012**) and `noise_cavity` (**0.99990**) come back **flagged**, so `M-491`'s `τ` of **0.000709069** and **0.000145884** are floors rather than quantities** (P-181, R-186)
+
+**M.** `cargo bench --bench experiment_p181`, `docs/experiments/p-181.csv`, **55 rows** across **15
+columns** — nine reference fields plus two synthetic controls, five probe radii each. Radii
+**0.1 / 0.05 / 0.025 / 0.0125 / 0.00625**, **48** Fibonacci directions per ball, gradients differenced
+at **1e-5**, `f64`, `amd-ryzen-9-5900x-12-core`, no RNG. **`crates/isomesh/src/` did not move.** The
+third EXPERIMENT move of the discovery loop; `P-181` carried `expected_information` **8**.
+
+**The vacuity control separated, and this is the first row of the loop where it did.** The quarter-space
+`max(x, y)` reads **90.00°** at every radius — ratio **1.000000**, flagged. The same wedge filleted at
+**0.05** reads **90.00 / 90.00 / 59.21 / 28.70 / 14.27°**: sharp while the ball is wider than the
+blend, converging once it is not, ratio **0.497268**, unflagged. Its curvature read off the spread's
+own slope, `κ ≈ spread / 2r` with no Hessian anywhere, is **19.927397** against `1/0.05 = 20` —
+**0.36%**. A detector that could not tell those two apart would have voided the row.
+
+> **One implementation defect, found by the control and fixed before any verdict was read.** The first
+> version took the ratio as the **maximum** over every rung. That flagged the fillet, whose ratio is
+> **1.000** across `r = 0.1 → 0.05` — both at or above the blend radius, where a fillet genuinely does
+> look sharp. The registration's words are that a crease's ratio *"stays above 0.8 **down the
+> ladder**"*, and down the ladder is the fine end, so the statistic is the finest rung's ratio. **The
+> bar was not moved**; the quantity was made the one the sentence names. The full ladders are in the
+> CSV, five rows per field, so any reader can recompute either statistic.
+
+| field | ladder (degrees) | finest ratio | flagged | `tau_known` |
+|---|---|---|---|---|
+| `sphere` | 11.48 / 5.72 / 2.86 / 1.43 / 0.71 | **0.49969** | false | 1.0 |
+| `torus` | 38.90 / 19.12 / 9.55 / 4.77 / 2.38 | **0.49930** | false | 0.3 |
+| `capsule` | 33.20 / 16.42 / 8.19 / 4.09 / 2.05 | **0.49976** | false | 0.35 |
+| `box_exact` | 90.00 × 5 | **1.00000** | **true** | 0.0 |
+| `csg_difference` | 129.04 / 125.54 / 123.85 / 123.04 / 122.63 | **0.99672** | **true** | — |
+| `thin_plate` | 180.00 × 4 / 90.00 | **0.50000** | false | — |
+| `gyroid` | 145.18 / 145.97 / 140.35 / 137.59 / 136.23 | **0.99012** | **true** | — |
+| `fbm_terrain` | 94.01 / 61.73 / 33.98 / 17.47 / 8.80 | **0.50362** | false | — |
+| `noise_cavity` | 179.75 / 179.89 / 179.99 / 179.99 / 179.97 | **0.99990** | **true** | — |
+
+**C2 — HELD on 4 of 4, which is the result worth keeping.** The verdict agrees with every closed form:
+flagged exactly where `τ = 0` and unflagged on all three positive-reach fields, whose ratios cluster at
+**0.4993–0.4998** — the `O(r)` decay a `C²` surface must show. `M-491` could not do this: its
+estimator returned a confident **1.000000000** on `box_exact`. **There is now an instrument in this
+repository that says when a sampling theorem does not apply.**
+
+**C1 — FALSIFIED on its sharp half.** `thin_plate` clears the limiting-spread bar at **90.000°** and
+misses the ratio bar at **0.50000**, because its ladder is **180° at four rungs and 90° at the
+fifth**: the probe found the plate's *two faces* — antiparallel normals, spread `π` — long before it
+found the rim, and the collapse to 90° at the finest radius is the ball stopping straddling the plate.
+The registered falsifier's meaning applies in a narrowed form: the angular spread **is** the signal,
+but it is the signal for *"not `C²`-simple at scale `r`"*, which covers a crease **and** two sheets
+closer than `r`. On a field that is both, the thicker feature wins the search.
+
+**C3 — FALSIFIED, on the falsifier the registration called the most consequential available.**
+`gyroid` at **0.99012** and `noise_cavity` at **0.99990** are flagged; only `fbm_terrain` at
+**0.50362** is not. The registered meaning: *"those fields have reach exactly zero rather than merely
+small, and `M-491`'s C2 spread of 2468.025804 was measuring a floor rather than a quantity."* That is
+now the reading of `✗127`'s `τ` on those two fields — **0.000709069** and **0.000145884** are what a
+grid-limited search returns on a surface that has no positive reach, not measurements of one. With
+`box_exact`, `csg_difference` and `thin_plate` (flagged by its 180° rungs even though its finest ratio
+is not), **five of this crate's eight reference fields are outside every positive-reach theorem's
+hypothesis**, and `fbm_terrain` at ratio 0.50362 is the one rough field that is not.
+
+**Surprise:** Axis 14's new paragraph said reach is not the denominator for resolution because `h*/τ`
+spans three orders of magnitude. The reason is now sharper and worse: on two of the three fields
+driving that spread, **`τ` is not a small number but an absent one**. The paragraph is edited in this
+commit.
+
+**Raises:** `fbm_terrain` is the only rough field the detector clears — ratio **0.50362**, clean `O(r)`
+decay — and it is also the only field with **no bottleneck at all** (`✗127`, `bottleneck_pairs` **0**)
+and the one that landed **inside** the Gaussian kinematic band (`✗126`, 0.25σ). Three independent
+instruments single out the same field. Is `fbm_terrain` the roster's only field that satisfies the
+regularity hypotheses this crate's theorems are written against — and if so, is a heightfield the only
+shape the ledger can currently prove anything about? Logged as `Q10`.

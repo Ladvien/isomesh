@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-368 tickets. Line numbers are stable until something above them is edited — grep the ID if
+369 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -3417,3 +3417,13 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***The instrument's own lesson, recorded because it changed the numbers by 4×.*** Differencing the Hessian at the **grid** spacing caps measurable curvature at `O(1/h)` and put a floor of `4h` under every reach — the first run read `tau` **0.25** on a field whose reach is **0**. These SDFs are analytic and queryable at any scale, so the instrument differences at **1e-3** and carries `max_abs_curvature_grid_step` beside `max_abs_curvature` (**0.000000000** against **4.000000000** on `box_exact`).
 >
 > ***Verification.*** `cargo clippy -p isomesh --bench experiment_p177 -- -D warnings` clean; three of the four closed forms reproduce within `2h` before any other number is read; `scripts/csv_provenance.sh` passes with `docs/experiments/p-177.csv` stamped on a clean tree.
+
+| ☑ | **R-186** | S | — |
+> **DONE 2026-09-12 — 💥 ✗128 / M-492 / P-181: the detector works and says the opposite of what was registered. C2 HELD on **4 of 4** closed forms — `box_exact` flagged, `sphere`/`torus`/`capsule` not, their ratios clustering at **0.4993–0.4998** — with the control separating a 90° crease from a `0.05` fillet and recovering the fillet's curvature as **19.927397** against **20**. C1 FALSIFIED on `thin_plate` (ratio **0.50000**, the probe finding the plate's two faces before its rim). C3 FALSIFIED: `gyroid` **0.99012** and `noise_cavity` **0.99990** flagged.**
+> **CSV:** `docs/experiments/p-181.csv` — 55 rows × 15 columns.
+>
+> ***What lands is an instrument, not a change: this repository can now say when a sampling theorem does not apply.*** `crates/isomesh/src/` did not move; the row owns `benches/experiment_p181.rs` and its `[[bench]]` entry. SHARE is none.
+>
+> ***The consequence for `✗127`.*** `M-491`'s `τ` of **0.000709069** on `gyroid` and **0.000145884** on `noise_cavity` are floors of a grid-limited search on surfaces with no positive reach, not measurements of one — so five of the eight reference fields are outside every positive-reach theorem's hypothesis, `fbm_terrain` being the only rough one that is not.
+>
+> ***Verification.*** `cargo clippy -p isomesh --bench experiment_p181 -- -D warnings` clean; the vacuity control is scored before any reference field is read and separates; the full five-rung ladder is in the CSV per field, so either ratio statistic can be recomputed by a reader.

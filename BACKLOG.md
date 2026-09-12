@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**368 tickets archived, 28 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**369 tickets archived, 27 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -60,7 +60,6 @@ that writes the `FINDINGS.md` entry — never before.
 |---|---|---|---|
 | ☐ | **R-184** | S | — |
 | ☐ | **R-185** | S | — |
-| ☐ | **R-186** | S | — |
 
 **R-184 — grade the four fields that have no accuracy grade, with a distance that needs no exact
 bound.** `P-179`, a FORCED-EXPLORE row: the field (optimal transport) was named before the hook was
@@ -83,15 +82,6 @@ the sphere's inscribed cube (half-side **0.866025404**), skewness and excess kur
 `fbm_terrain`'s own sub-box as the control that the restriction does not manufacture agreement. The
 vacuity control is asserted at `u = 0` **only**, which is `M-490`'s lesson paid forward. Nothing under
 `crates/isomesh/src/` moves; the SHARE is none.
-
-**R-186 — build the instrument that certifies a reach of zero, which this repository does not have.**
-`P-181`. `M-491` read `tau` **1.000000000** on `box_exact`, whose reach is **0**: a sharp edge is a
-one-dimensional subset of the surface and both halves of Theorem 3.4 stepped over it. At a crease the
-gradient's *direction* is discontinuous while `|∇f|` is not, so the angular spread of the unit
-gradient over a shrinking ball converges to the dihedral angle instead of to zero. The deliverable is
-`crates/isomesh/benches/experiment_p181.rs` writing `docs/experiments/p-181.csv`, with a synthetic
-90° wedge and a `0.05`-radius fillet as the vacuity control — a detector that cannot separate those
-two certifies nothing. Nothing under `crates/isomesh/src/` moves; the SHARE is none.
 
 ## Phase 28 — what Phase 27 earned
 

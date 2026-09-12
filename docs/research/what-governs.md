@@ -163,6 +163,14 @@ field's reach is minute at the scale it is actually smooth (`gyroid` **0.0007090
 **0.000145884**) while its topology settles hundreds of times coarser. **The denominator for accuracy
 is still unclaimed, and reach is not it for resolution.**
 
+**And on two of the three fields driving that spread, `τ` is not small but *absent* — `✗128 / M-492`,
+2026-09-12.** A gradient-direction detector that agrees with all four closed-form reaches (`box_exact`
+flagged, `sphere`, `torus`, `capsule` not, their ratios clustering at **0.4993–0.4998**) flags `gyroid`
+at **0.99012** and `noise_cavity` at **0.99990**. So `✗127`'s **0.000709069** and **0.000145884** are
+what a grid-limited search returns on a surface with no positive reach, not measurements of one.
+**Five of the eight reference fields are outside every positive-reach theorem's hypothesis**, and the
+instrument that says so is now in the repository.
+
 ---
 
 ## Instruments the loop grades with
