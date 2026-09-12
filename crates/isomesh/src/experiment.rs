@@ -7646,6 +7646,72 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "c3_holds",
         ],
     },
+    Preregistration {
+        id: "P-177",
+        ticket: "R-182",
+        hypothesis: "Aamari, Kim, Chazal, Michel, Rinaldo & Wasserman (10.1214/19-ejs1551, in the \
+            corpus and converted, 43 pp.), Theorem 3.4: for a compact submanifold with reach tau > \
+            0, at least one of (Global Case) a bottleneck -- a reach-attaining pair with \
+            ||q1 - q2|| = 2*tau -- and (Local Case) a point q0 with an arc-length geodesic \
+            satisfying ||gamma''(0)|| = 1/tau holds, and the two are not mutually exclusive. That \
+            theorem licenses computing this crate's reach WITHOUT a medial axis, which is the only \
+            route open here: the falsified entry 'an exactly-zero SDF gradient detects the medial \
+            axis' closed the direct one, and M-325's discrete medial score converges only O(h). No \
+            entry in FINDINGS.md states the reach of a single reference field, so every resolution \
+            rung in this repository is chosen by convenience, and the sampling hypothesis V-51 \
+            sorted out -- Boissonnat & Wintraecken 2020 being the corpus's only is_homeomorphism \
+            true -- has never been checked against a number. (C1) The decomposition is not \
+            decorative on this roster: at least two of the eight reference fields are \
+            bottleneck-bound (tau_global < tau_local) and at least two curvature-bound \
+            (tau_local < tau_global). (C2) Reach is the denominator for resolution: over the \
+            fields with tau > 0, h_star / tau -- h_star being the coarsest spacing whose extracted \
+            topology (component count and Euler characteristic) matches the finest rung's and \
+            keeps matching at every finer rung -- spans a factor below 2, max over min <= 2. (C3) \
+            The global half locates what M-486's curl residual could not: on gyroid and \
+            fbm_terrain the cells M-60 says need a second vertex sit nearer a bottleneck axis than \
+            the other surface cells, Mann-Whitney AUC >= 0.8 on the statistic P-173's harness \
+            already computes. SHARE: none -- tau is an offline grading instrument and nothing in \
+            the extraction path calls it.",
+        falsified_by: "C1 by all eight fields binding on the same half, which is a statement about \
+            the roster rather than about the theorem -- the same defect M-459 recorded when it \
+            found this roster adversarial to global anisotropy. C2 by a spread of 2x or more, \
+            which would say the reach is NOT what sets resolution here and obliges the entry to \
+            name the field at each end; a spread inside 2x gives Axis 7 the denominator this \
+            ledger has never had, every accuracy number in FINDINGS.md being a numerator. C3 by an \
+            AUC below 0.8, which taken with M-486's 0.270443196 on fbm_terrain at 25^3 would say \
+            the second-vertex cells are a local combinatorial fact of the trilinear that no \
+            geometric predictor, neither local (curl) nor global (bottleneck), will find -- and \
+            would retire that search rather than extend it. VACUITY CONTROL: the estimator is \
+            calibrated against four closed forms before any of the eight numbers is read -- sphere \
+            tau = R, torus tau = min(minor radius, major minus minor), capsule tau = its radius, \
+            and box_exact tau = 0 because a sharp edge has no reach. tau_analytic and tau_measured \
+            are both columns; the four must agree within 2h at the finest rung and box_exact must \
+            report tau_measured <= 2h, or the row is vacuous and the other four fields' numbers \
+            mean nothing. C2's h_star is recorded as unreachable rather than scored on any field \
+            whose topology never stabilises inside the ladder.",
+        records: &[
+            "field",
+            "resolution",
+            "tau_local",
+            "tau_global",
+            "tau",
+            "binding_half",
+            "tau_analytic",
+            "calibration_gap_h",
+            "bottleneck_pairs",
+            "max_abs_curvature",
+            "h_star",
+            "h_star_over_tau",
+            "h_star_reachable",
+            "topology_components",
+            "euler_characteristic",
+            "second_vertex_cells",
+            "bottleneck_distance_auc",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

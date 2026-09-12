@@ -1,12 +1,12 @@
 # isomesh — BACKLOG
 
-**Updated:** 2026-08-30
+**Updated:** 2026-09-12
 **Companions:** `CLAUDE.md` (rules), `FINDINGS.md` (what we know and how well),
 `BACKLOG_ARCHIVE.md` (completed tickets + why they changed),
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**366 tickets archived, 25 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**366 tickets archived, 26 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -47,6 +47,31 @@ attached — read that before re-litigating a decision this project already made
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
 
 ---
+
+## Discovery loop — registrations minted by `scripts/discovery-loop.sh`
+
+Not a numbered phase. These rows are minted one at a time by the loop in
+`docs/research/2026-09-12-discovery-loop-prompt.md`, whose state lives in `docs/research/questions.md`
+and whose beliefs live in `docs/research/what-governs.md`. A row appears here in the same commit that
+adds its `Preregistration` to `crates/isomesh/src/experiment.rs`, and its box is checked in the commit
+that writes the `FINDINGS.md` entry — never before.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-182** | M | — |
+
+**R-182 — measure this crate's reach, both halves of it, and find out whether it is the denominator
+for resolution.** `P-177`. Aamari et al.'s Theorem 3.4 (`10.1214/19-ejs1551`, converted, 43 pp.) says
+the reach is realised either by a **bottleneck** — a pair at distance exactly `2*tau` — or by a
+**curvature-attaining point**, and that the two cases are not exclusive. Both halves are computable
+from what this crate already emits, which matters because the medial-axis route is closed here: the
+falsified entry *"an exactly-zero SDF gradient detects the medial axis"* killed the cheap detector and
+`M-325`'s discrete medial score converges only `O(h)`. **No entry in `FINDINGS.md` states the reach of
+a single reference field.** The deliverable is `crates/isomesh/benches/experiment_p177.rs` writing
+`docs/experiments/p-177.csv`, the calibration columns first: `sphere`, `torus`, `capsule` and
+`box_exact` have closed-form reaches and `box_exact`'s is **0**, so a `tau_measured` above `2h` there
+is the instrument failing rather than the field surprising anyone. Nothing under `crates/isomesh/src/`
+moves; the SHARE is none, because `tau` grades the extractor and is not a stage of it.
 
 ## Phase 28 — what Phase 27 earned
 
