@@ -100,9 +100,9 @@
 
 mod common;
 
+use isomesh::Sdf;
 use isomesh::fields::{FbmTerrain, ReferenceField, Sphere, Torus, noise_cavity};
 use isomesh::marching_cubes::table::is_inside;
-use isomesh::Sdf;
 
 use common::poly::Rng;
 
@@ -747,8 +747,8 @@ fn main() {
             lambda_seen += lambda_central_difference(&values, SAMPLES, 1.0 / (SAMPLES - 1) as f64);
             for (index, u) in RUNGS.iter().enumerate() {
                 let occupied: Vec<bool> = values.iter().map(|v| *v > *u).collect();
-                per_rung[index].push(chi_solid(&occupied, SAMPLES, Domain::Periodic, &weights)
-                    as f64);
+                per_rung[index]
+                    .push(chi_solid(&occupied, SAMPLES, Domain::Periodic, &weights) as f64);
             }
         }
         variance_seen /= REALISATIONS as f64;
@@ -871,9 +871,11 @@ fn main() {
             }
             let n = matched.len() as f64;
             let matched_mean = matched.iter().sum::<f64>() / n;
-            let matched_var =
-                matched.iter().map(|c| (c - matched_mean) * (c - matched_mean)).sum::<f64>()
-                    / (n - 1.0);
+            let matched_var = matched
+                .iter()
+                .map(|c| (c - matched_mean) * (c - matched_mean))
+                .sum::<f64>()
+                / (n - 1.0);
             let sigma = matched_var.sqrt();
             let matched_predicted = expected_chi(lk, matched_lambda, 0.0);
             rows.push(Row {
@@ -1050,7 +1052,10 @@ fn main() {
                 ("band_rejects_wrong_lambda", row.rejects_wrong.clone()),
                 ("chi_fixed_realisation", row.fixed.clone()),
                 ("chi_convergence_gap", row.convergence_gap.clone()),
-                ("rungs_within_band", format!("{rungs_within}of{}", RUNGS.len())),
+                (
+                    "rungs_within_band",
+                    format!("{rungs_within}of{}", RUNGS.len()),
+                ),
                 ("calibration_chi_sphere", chi_sphere.to_string()),
                 ("calibration_chi_torus", chi_torus.to_string()),
                 ("c1_holds", c1.to_string()),
