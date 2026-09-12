@@ -7840,6 +7840,64 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "c3_holds",
         ],
     },
+    Preregistration {
+        id: "P-180",
+        ticket: "R-185",
+        hypothesis: "M-490 measured fbm_terrain inside the Gaussian kinematic formula's matched \
+            two-sigma band at 0.25 sigma and noise_cavity outside it at 6.77 sigma, with the SIGN \
+            of chi wrong -- 15.000000000 measured against -6.602285203 predicted. Both are hash \
+            noise, so Gaussianity alone does not separate them. The formula's hypothesis has a \
+            second half: it is stated for a field that is STATIONARY over the set it is integrated \
+            over, and noise_cavity is Intersection(NoiseVolume, Sphere(radius 1.5)) on \
+            cube_domain(2.0), so outside radius 1.5 the sampled field is the SPHERE'S distance \
+            function and not noise at all. The inscribed cube of that sphere has half-side \
+            1.5/sqrt(3) = 0.866025404, and inside it the cap term is at most -0.633974596 and is \
+            dominated by the noise. (C1) Censused on that inscribed cap-free sub-box, with the \
+            sub-box's own lambda and Lipschitz-Killing curvatures and a matched Gaussian ensemble \
+            on the same sub-box, noise_cavity lands INSIDE its two-sigma band. (C2) The same \
+            samples are Gaussian to third and fourth order: absolute skewness at most 0.1 and \
+            absolute excess kurtosis at most 0.2. C1 and C2 are separate instruments on one \
+            question and are allowed to disagree, which is the informative case. (C3) The \
+            restriction does not manufacture agreement: fbm_terrain, already inside on the full \
+            box, is still inside on its own inscribed sub-box, and the full-box noise_cavity row \
+            reproduces M-490's miss. SHARE: none -- this decides what the validity gate may assert \
+            and on which region, not what the extractor does.",
+        falsified_by: "C1 by the sub-box missing the band too, which moves the blame from \
+            stationarity to Gaussianity: the crate's hash noise would then be non-Gaussian in a way \
+            the formula cannot grade anywhere, and C2's two moments are the measurement that says \
+            how. C2 by skewness or kurtosis outside the bars while C1 HOLDS, which would be the \
+            more interesting failure -- the formula surviving a field that is measurably not \
+            Gaussian would say the Euler characteristic is insensitive to the moments the bars are \
+            written on, and the bars would be the wrong instrument rather than the field being the \
+            wrong shape. C3 by fbm_terrain falling OUT on its sub-box, which would mean the \
+            restriction changes the answer by itself and C1's hold, if any, proves nothing. \
+            VACUITY CONTROL: the sub-box band must reject a prediction built from 4*lambda AT \
+            u = 0, and only at u = 0. M-490 is why the rung is named: at u = +/-1 the formula's \
+            (u^2 - 1) factor is zero for every lambda, so a control asserted over a ladder \
+            including those rungs is unsatisfiable by construction, which is exactly how M-490 \
+            came out vacuous. If the 4*lambda prediction at u = 0 also lands inside the band, the \
+            comparison cannot discriminate and this row is vacuous whatever the clauses say.",
+        records: &[
+            "field",
+            "region",
+            "resolution",
+            "isovalue",
+            "realisations",
+            "lambda_spectral",
+            "chi_digital",
+            "chi_gkf_predicted",
+            "band_sigma",
+            "gkf_within_band",
+            "sigma_distance",
+            "skewness",
+            "excess_kurtosis",
+            "cap_dominated_share",
+            "band_rejects_wrong_lambda",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

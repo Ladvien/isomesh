@@ -5,12 +5,12 @@ The state of `docs/research/2026-09-12-discovery-loop-prompt.md`. One row per qu
 first, every iteration.
 
 ```
-research_moves: 3
+research_moves: 4
 experiment_moves: 1
-fields_mined: [{geometric inference / reach estimation, 1, P-177}, {random fields / integral geometry, 2, P-178}, {optimal transport, 3, P-179, FORCED-EXPLORE}]
+fields_mined: [{geometric inference / reach estimation, 1, P-177}, {random fields / integral geometry, 2, P-178}, {optimal transport, 3, P-179, FORCED-EXPLORE}, {random fields — stationarity, 5, P-180}]
 last_governs_edit: 4        # iteration 4 — ✗126 / M-490 edited the Instruments section
-next_p: 180
-next_r: 185
+next_p: 181
+next_r: 186
 forced_explore_due: 6       # §1 — every third RESEARCH move; move 3 was one
 ```
 
@@ -23,4 +23,4 @@ forced_explore_due: 6       # §1 — every third RESEARCH move; move 3 was one
 | Q5 | Does curvature error measured against an analytic curvature assume normal convergence the mesh never proved — the Schwarz lantern's objection applied to `M-487`? | M-487 | geometric measure theory (varifold convergence) | `normal convergence`, `Schwarz lantern`, `varifold` | not probed this move | — | OPEN | — | — | candidate 2 of 3. Kept open deliberately: it is the next question if `P-178` lands, and it shares `M-487`'s instrument |
 | Q6 | Is the isovalue sweep in `M-489` measuring the field or the sampler — does the percolation threshold move with resolution? | M-489 | percolation theory | `critical level`, `finite-size scaling` | not probed this move | — | OPEN | — | — | candidate 3 of 3. Closest to a tune (a re-run of an existing instrument at other resolutions), which §2d gate 4 rejects, so it is parked rather than registered |
 | Q7 | Does "accuracy" in this repository assume an exact distance oracle, when the object being graded is a measure and a transport distance needs only samples? | ✗107 / M-459 | optimal transport (FORCED-EXPLORE: named before the hook) | `sliced Wasserstein`, `optimal transport`, `1-D projections` | present, 0.721 on the targeted query, Peyré & Cuturi §10.4 the top hit; `Wasserstein`, `earth mover` and `Sinkhorn` are **0** in the repo and optimal transport appears only in research prose as *"uncited, in corpus"* | `10.48550_arXiv.1803.00567` | REGISTERED | P-179 | 5 | the three registered rows now exceed §1's threshold, so the next move is an EXPERIMENT and it takes `P-178` at 8 |
-| Q8 | Why does `fbm_terrain` land inside the Gaussian kinematic band at 0.25σ while `noise_cavity` misses by 6.77σ with the sign of χ wrong, when both are hash noise? | ✗126 / M-490 | random fields — **stationarity**, not Gaussianity | `stationary random field`, `non-stationary excursion set`, `local isotropy` | not probed | — | OPEN | — | — | raised by the EXPERIMENT move of iteration 4. First candidate: `noise_cavity` carries a spherical cap of radius 1.5, and a stationary-field theorem integrated over the box does not allow one |
+| Q8 | Why does `fbm_terrain` land inside the Gaussian kinematic band at 0.25σ while `noise_cavity` misses by 6.77σ with the sign of χ wrong, when both are hash noise? | ✗126 / M-490 | random fields — **stationarity**, not Gaussianity | `stationary random field`, `non-stationary excursion set`, `local isotropy` | no new source needed — the question is about this crate's own construction, and `fields/mod.rs:1237` answers half of it | `10.1214_009117905000000594` (already read) | REGISTERED | P-180 | 6 | registered at iteration 5. The vacuity control names `u = 0` **only**, which is `M-490`'s own failure paid forward |
