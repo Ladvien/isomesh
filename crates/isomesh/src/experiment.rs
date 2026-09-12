@@ -7779,6 +7779,67 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "c3_holds",
         ],
     },
+    Preregistration {
+        id: "P-179",
+        ticket: "R-184",
+        hypothesis: "FORCED-EXPLORE move: the field was named before the hook was looked for, and \
+            it is optimal transport -- the mathematics of comparing two measures by the cheapest \
+            way to move one onto the other. Peyre & Cuturi (10.48550/arXiv.1803.00567, in the \
+            corpus and converted) section 10.4 defines the sliced Wasserstein distance \
+            SW(a,b)^2 = integral over the unit sphere of W2(P_theta#a, P_theta#b)^2 d(theta), and \
+            for two equal-weight n-point clouds it 'is achieved by simply sorting points'. The \
+            assumption it tests is this crate's: that accuracy needs an exact distance oracle. \
+            M-459 records validate::accuracy as UNMEASURABLE on 20 of its 40 rows because the \
+            instrument is meaningless where field.bound() is not Exact, which leaves four of the \
+            eight reference fields with no numeric accuracy grade at all. A transport distance \
+            needs no oracle -- only samples from each measure -- and a dense root-set on the true \
+            zero level is samplable on every field. (C1) On the four Exact fields, SW between the \
+            area-weighted surface measure of the extracted mesh and the reference root-set falls \
+            monotonically across the whole resolution ladder AND ranks the rungs exactly as \
+            validate::accuracy's mesh-to-field mean does, rank_agreement 4 of 4. (C2) It measures \
+            geometry rather than the triangle-area distribution: the fitted exponent in \
+            SW proportional to h^p lies in [1.5, 2.5] on those four fields, M-12 having measured \
+            this crate's order as 2. (C3) It grades what nothing else can: on gyroid, \
+            capped_gyroid, fbm_terrain and noise_cavity, SW decreases across every rung and \
+            exceeds the self-noise floor by at least 4x on every one. SHARE: none -- this is a \
+            grader, not a stage.",
+        falsified_by: "C1 by non-monotonicity or by a ranking that disagrees with the incumbent, \
+            which would say SW and Hausdorff are measuring different things and the entry must say \
+            which one the game cares about rather than declaring a winner. C2 by an exponent near \
+            1, which is the specific way this instrument can lie: SW is sensitive to how MASS is \
+            distributed over the surface, so a mesh whose triangle areas are badly non-uniform can \
+            score badly while sitting in exactly the right place -- an exponent near 1 would mean \
+            the number is dominated by area distribution and it must not be reported as an \
+            accuracy. C3 by SW failing to separate rungs on the ungradeable four, which would \
+            close the only route this ledger has to grading them and send the question back to \
+            landing an exact bound. VACUITY CONTROL: two of them, because a distance that cannot \
+            say 'wrong' cannot say 'right'. First, a displaced arm -- the same mesh translated by \
+            h/2 -- must read at least 2x the undisplaced SW on every row. Second, sw_self, the SW \
+            between two independent reference samplings of the SAME surface, is the noise floor \
+            and must be at most a quarter of the smallest measured SW; if it is not, the metric \
+            cannot resolve what it is being asked to rank and the row is vacuous whatever the \
+            clauses say.",
+        records: &[
+            "field",
+            "bound_kind",
+            "resolution",
+            "h",
+            "arm",
+            "projections",
+            "sample_points",
+            "sw",
+            "sw_self",
+            "sw_displaced",
+            "displacement_ratio",
+            "hausdorff_mesh_to_field",
+            "rank_agreement",
+            "fitted_exponent",
+            "monotone",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.

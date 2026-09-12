@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**366 tickets archived, 27 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**366 tickets archived, 28 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -60,6 +60,7 @@ that writes the `FINDINGS.md` entry — never before.
 |---|---|---|---|
 | ☐ | **R-182** | M | — |
 | ☐ | **R-183** | M | — |
+| ☐ | **R-184** | S | — |
 
 **R-182 — measure this crate's reach, both halves of it, and find out whether it is the denominator
 for resolution.** `P-177`. Aamari et al.'s Theorem 3.4 (`10.1214/19-ejs1551`, converted, 43 pp.) says
@@ -84,6 +85,17 @@ deliverable is `crates/isomesh/benches/experiment_p178.rs` writing `docs/experim
 the exactly-Gaussian Fourier-synthesis fixture as C1's calibration and a deliberately wrong `4λ`
 prediction as the vacuity control — a band that cannot reject `4λ` cannot confirm `λ` either. Nothing
 under `crates/isomesh/src/` moves; the SHARE is none.
+
+**R-184 — grade the four fields that have no accuracy grade, with a distance that needs no exact
+bound.** `P-179`, a FORCED-EXPLORE row: the field (optimal transport) was named before the hook was
+looked for. `M-459` reports `validate::accuracy` `unmeasurable` on **20 of 40** rows because it is
+meaningless where `field.bound()` is not `Exact`; the sliced Wasserstein distance of Peyré & Cuturi
+§10.4 (`10.48550/arXiv.1803.00567`, converted) needs only samples from each measure, and *"is achieved
+by simply sorting points"*. The deliverable is `crates/isomesh/benches/experiment_p179.rs` writing
+`docs/experiments/p-179.csv`, with two vacuity controls that must both fire before any number is read:
+a mesh displaced by `h/2` reading **≥ 2×** the undisplaced distance, and a self-distance between two
+independent samplings of the same surface at **≤ ¼** of the smallest measured one. Nothing under
+`crates/isomesh/src/` moves; the SHARE is none.
 
 ## Phase 28 — what Phase 27 earned
 
