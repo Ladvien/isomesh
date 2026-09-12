@@ -5,12 +5,12 @@ The state of `docs/research/2026-09-12-discovery-loop-prompt.md`. One row per qu
 first, every iteration.
 
 ```
-research_moves: 4
+research_moves: 5
 experiment_moves: 2
-fields_mined: [{geometric inference / reach estimation, 1, P-177}, {random fields / integral geometry, 2, P-178}, {optimal transport, 3, P-179, FORCED-EXPLORE}, {random fields — stationarity, 5, P-180}]
+fields_mined: [{geometric inference / reach estimation, 1, P-177}, {random fields / integral geometry, 2, P-178}, {optimal transport, 3, P-179, FORCED-EXPLORE}, {random fields — stationarity, 5, P-180}, {geometric measure theory — sets of positive reach, 7, P-181}]
 last_governs_edit: 6        # iteration 6 — ✗127 / M-491 edited Axis 1 and Axis 14
-next_p: 181
-next_r: 186
+next_p: 182
+next_r: 187
 forced_explore_due: 6       # §1 — every third RESEARCH move; move 3 was one
 ```
 
@@ -24,4 +24,4 @@ forced_explore_due: 6       # §1 — every third RESEARCH move; move 3 was one
 | Q6 | Is the isovalue sweep in `M-489` measuring the field or the sampler — does the percolation threshold move with resolution? | M-489 | percolation theory | `critical level`, `finite-size scaling` | not probed this move | — | OPEN | — | — | candidate 3 of 3. Closest to a tune (a re-run of an existing instrument at other resolutions), which §2d gate 4 rejects, so it is parked rather than registered |
 | Q7 | Does "accuracy" in this repository assume an exact distance oracle, when the object being graded is a measure and a transport distance needs only samples? | ✗107 / M-459 | optimal transport (FORCED-EXPLORE: named before the hook) | `sliced Wasserstein`, `optimal transport`, `1-D projections` | present, 0.721 on the targeted query, Peyré & Cuturi §10.4 the top hit; `Wasserstein`, `earth mover` and `Sinkhorn` are **0** in the repo and optimal transport appears only in research prose as *"uncited, in corpus"* | `10.48550_arXiv.1803.00567` | REGISTERED | P-179 | 5 | the three registered rows now exceed §1's threshold, so the next move is an EXPERIMENT and it takes `P-178` at 8 |
 | Q8 | Why does `fbm_terrain` land inside the Gaussian kinematic band at 0.25σ while `noise_cavity` misses by 6.77σ with the sign of χ wrong, when both are hash noise? | ✗126 / M-490 | random fields — **stationarity**, not Gaussianity | `stationary random field`, `non-stationary excursion set`, `local isotropy` | no new source needed — the question is about this crate's own construction, and `fields/mod.rs:1237` answers half of it | `10.1214_009117905000000594` (already read) | REGISTERED | P-180 | 6 | registered at iteration 5. The vacuity control names `u = 0` **only**, which is `M-490`'s own failure paid forward |
-| Q9 | What certifies a reach of **zero**? Three reference fields have sharp features, so no positive-reach theorem covers them, and `✗127`'s instrument returns a confident wrong number instead of refusing. | ✗127 / M-491 | geometric measure theory / sets of positive reach | `sets of positive reach`, `sharp feature detection`, `dihedral angle` | not probed | — | OPEN | — | — | raised by the EXPERIMENT move of iteration 6. It is the precondition for any further use of the sampling-theorem family on this roster |
+| Q9 | What certifies a reach of **zero**? Three reference fields have sharp features, so no positive-reach theorem covers them, and `✗127`'s instrument returns a confident wrong number instead of refusing. | ✗127 / M-491 | geometric measure theory / sets of positive reach | `sets of positive reach`, `sharp feature detection`, `dihedral angle` | not probed | — | REGISTERED | P-181 | 8 | registered at iteration 7. The detector is gradient-direction convergence, so it needs no mesh and no medial axis — the two things ✗127 showed step over a crease |
