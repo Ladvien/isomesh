@@ -30,7 +30,7 @@ fn the_field_names_are_the_registry_in_order() {
     let mut registry = Vec::new();
     for_each_reference_field!(f32, |name, field| {
         // `field` is bound by the macro and every arm must use it, or the
-        // expansion warns on eight unused bindings.
+        // expansion warns on fourteen unused bindings.
         let _ = field.domain();
         registry.push(name);
     });

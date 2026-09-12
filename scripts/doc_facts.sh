@@ -69,8 +69,8 @@ DOCS=(
     web/index.md
 )
 
-WORDS='zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve'
-WORD=(zero one two three four five six seven eight nine ten eleven twelve)
+WORDS='zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen'
+WORD=(zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen)
 
 # `$1` the true count, `$2` what it counts, `$3` the regex that must follow the
 # number for this to be a claim about the total.

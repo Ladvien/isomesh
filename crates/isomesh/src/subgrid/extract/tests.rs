@@ -410,7 +410,7 @@ fn the_validity_suite_over_every_reference_field() {
     // the resolution that decided which defects this project believed it had.
     const RESOLUTIONS: [u32; 3] = [17, 25, 33];
     #[rustfmt::skip]
-    let expected: [(&str, u32, u64, u64, u64); 24] = [
+    let expected: [(&str, u32, u64, u64, u64); 42] = [
         ("sphere",         17, 0, 0,   0), ("torus",       17, 0, 0,   0),
         ("box_exact",      17, 0, 0,   0), ("csg_difference", 17, 3, 6, 6),
         ("thin_plate",     17, 0, 0,   0), ("gyroid",      17, 0, 0, 138),
@@ -427,6 +427,25 @@ fn the_validity_suite_over_every_reference_field() {
         ("fbm_terrain",    33, 8, 12, 53),
         ("noise_cavity", 17, 288, 392, 1630), ("noise_cavity", 25, 314, 435, 1595),
         ("noise_cavity", 33, 258, 355, 1477),
+
+        // **R-177's six prescribed-genus fields, pinned at landing.** In the
+        // macro's order: `ball_drilled_g1`, `graph_theta_g2`, `ball_drilled_g2`,
+        // `ball_drilled_g3`, `graph_k4_g3`, `graph_cube_g5`. Every one is
+        // edge- and vertex-manifold at all three resolutions; what they carry is
+        // the `inconsistently_oriented` column, which is this suite's
+        // pre-A-014f measurement and is highest where a drill line or a tube
+        // junction puts a C¹ seam through a tetrahedron.
+        ("ball_drilled_g1", 17, 0, 0,  0), ("graph_theta_g2",  17, 0, 0, 17),
+        ("ball_drilled_g2", 17, 0, 0, 27), ("ball_drilled_g3", 17, 0, 0, 25),
+        ("graph_k4_g3",     17, 0, 0, 42), ("graph_cube_g5",   17, 0, 0,  0),
+
+        ("ball_drilled_g1", 25, 0, 0,  0), ("graph_theta_g2",  25, 0, 0,  6),
+        ("ball_drilled_g2", 25, 0, 0, 35), ("ball_drilled_g3", 25, 0, 0, 44),
+        ("graph_k4_g3",     25, 0, 0,  0), ("graph_cube_g5",   25, 0, 0,  0),
+
+        ("ball_drilled_g1", 33, 0, 0, 56), ("graph_theta_g2",  33, 0, 0,  6),
+        ("ball_drilled_g2", 33, 0, 0, 60), ("ball_drilled_g3", 33, 0, 0, 92),
+        ("graph_k4_g3",     33, 0, 0,  0), ("graph_cube_g5",   33, 0, 0,  0),
     ];
 
     let mut checked = 0;
@@ -492,7 +511,7 @@ fn the_validity_suite_over_every_reference_field() {
         });
     }
     assert_eq!(
-        checked, 24,
+        checked, 42,
         "the sweep did not reach every field at every size"
     );
 }
@@ -656,7 +675,7 @@ fn which_polygons_coincide_across_a_shared_face() {
 
     // field -> (coincident, pairs inside one cell, polygons with foreign edge
     // users, foreign edge users, of those in another cell)
-    let expected: [(&str, u64, u64, u64, u64, u64); 8] = [
+    let expected: [(&str, u64, u64, u64, u64, u64); 14] = [
         ("sphere", 0, 0, 0, 0, 0),
         ("torus", 0, 0, 0, 0, 0),
         ("box_exact", 0, 0, 0, 0, 0),
@@ -665,6 +684,15 @@ fn which_polygons_coincide_across_a_shared_face() {
         ("gyroid", 0, 0, 0, 0, 0),
         ("fbm_terrain", 4, 4, 0, 0, 0),
         ("noise_cavity", 213, 140, 124, 226, 106),
+        // **R-177's six prescribed-genus fields, pinned at landing.** None of
+        // them coincides anywhere: a drilled bore and a thickened tube put no
+        // two tetrahedra on the same polygon at 17³.
+        ("ball_drilled_g1", 0, 0, 0, 0, 0),
+        ("graph_theta_g2", 0, 0, 0, 0, 0),
+        ("ball_drilled_g2", 0, 0, 0, 0, 0),
+        ("ball_drilled_g3", 0, 0, 0, 0, 0),
+        ("graph_k4_g3", 0, 0, 0, 0, 0),
+        ("graph_cube_g5", 0, 0, 0, 0, 0),
     ];
 
     let mut rows = 0;
@@ -817,7 +845,7 @@ fn which_polygons_coincide_across_a_shared_face() {
         );
         rows += 1;
     });
-    assert_eq!(rows, 8, "the sweep did not reach every field");
+    assert_eq!(rows, 14, "the sweep did not reach every field");
 
     // **The answer to A-014d's blocking question, as the table above now records
     // it.** An earlier version of this comment described 33 coincident polygons
@@ -984,7 +1012,7 @@ fn which_polygon_types_coincide_across_a_shared_face() {
         std::println!("{name:<15} coincident by (kind, chords, edges): {shape:?}");
         rows += 1;
     });
-    assert_eq!(rows, 8, "the sweep did not reach every field");
+    assert_eq!(rows, 14, "the sweep did not reach every field");
     std::println!("all fields: {totals:?}");
 }
 
@@ -1011,7 +1039,7 @@ fn the_defects_traced_back_to_the_tetrahedra_that_made_them() {
 
     // field -> (bad edges, of those duplication-only, three distinct polygons,
     // collapsed triangles)
-    let expected: [(&str, u64, u64, u64, u64); 8] = [
+    let expected: [(&str, u64, u64, u64, u64); 14] = [
         ("sphere", 0, 0, 0, 0),
         ("torus", 0, 0, 0, 0),
         ("box_exact", 0, 0, 0, 0),
@@ -1020,6 +1048,15 @@ fn the_defects_traced_back_to_the_tetrahedra_that_made_them() {
         ("gyroid", 0, 0, 0, 0),
         ("fbm_terrain", 4, 2, 2, 0),
         ("noise_cavity", 288, 126, 162, 0),
+        // **R-177's six prescribed-genus fields, pinned at landing.** No bad
+        // edge and no collapsed triangle on any of them at 17³, which is the
+        // clean end of this census rather than a new defect class.
+        ("ball_drilled_g1", 0, 0, 0, 0),
+        ("graph_theta_g2", 0, 0, 0, 0),
+        ("ball_drilled_g2", 0, 0, 0, 0),
+        ("ball_drilled_g3", 0, 0, 0, 0),
+        ("graph_k4_g3", 0, 0, 0, 0),
+        ("graph_cube_g5", 0, 0, 0, 0),
     ];
 
     let mut rows = 0;
@@ -1109,7 +1146,7 @@ fn the_defects_traced_back_to_the_tetrahedra_that_made_them() {
         );
         rows += 1;
     });
-    assert_eq!(rows, 8, "the sweep did not reach every field");
+    assert_eq!(rows, 14, "the sweep did not reach every field");
 
     // **`box_exact` is the result that re-aims the ticket.** It carries the most
     // coincident polygons of any field -- 30, with 348 triangles standing on
@@ -1427,7 +1464,7 @@ fn which_fill_cases_the_reference_fields_reach() {
         assert_eq!(cases[5], 0, "{name}: subdivision fired");
         rows += 1;
     });
-    assert_eq!(rows, 8, "the sweep did not reach every field");
+    assert_eq!(rows, 14, "the sweep did not reach every field");
 }
 
 /// **How complete the shared vertex table is, against a positional weld — and
@@ -1460,7 +1497,7 @@ fn how_complete_the_shared_table_is_against_a_positional_weld() {
     use crate::validate::{ValidateConfig, validate_indexed};
 
     // field -> (raw vertices, welded vertices, vertices on a grid sample point)
-    let expected: [(&str, usize, usize, usize); 8] = [
+    let expected: [(&str, usize, usize, usize); 14] = [
         ("sphere", 812, 812, 6),
         ("torus", 912, 912, 0),
         ("box_exact", 338, 338, 338),
@@ -1469,6 +1506,16 @@ fn how_complete_the_shared_table_is_against_a_positional_weld() {
         ("gyroid", 4014, 4014, 1),
         ("fbm_terrain", 1758, 1758, 0),
         ("noise_cavity", 5567, 5566, 27),
+        // **R-177's six prescribed-genus fields, pinned at landing.** Identity
+        // sharing is complete on all six -- raw equals welded -- and only
+        // `graph_k4_g3` puts anything on a grid sample point at all, 30 of its
+        // 1070 vertices, which the weld still leaves alone.
+        ("ball_drilled_g1", 2596, 2596, 0),
+        ("graph_theta_g2", 962, 962, 0),
+        ("ball_drilled_g2", 2854, 2854, 0),
+        ("ball_drilled_g3", 3020, 3020, 0),
+        ("graph_k4_g3", 1070, 1070, 30),
+        ("graph_cube_g5", 2080, 2080, 0),
     ];
 
     let mut rows = 0;
@@ -1580,7 +1627,7 @@ fn how_complete_the_shared_table_is_against_a_positional_weld() {
         }
         rows += 1;
     });
-    assert_eq!(rows, 8, "the sweep did not reach every field");
+    assert_eq!(rows, 14, "the sweep did not reach every field");
 }
 
 /// **What A-014h can actually reach, measured before designing it (M-180).**
@@ -1606,7 +1653,7 @@ fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
     use std::collections::HashSet;
 
     // field -> (raw, distinct by bit pattern, welded at crate::weld::epsilon_for(cell))
-    let expected: [(&str, usize, usize, usize); 8] = [
+    let expected: [(&str, usize, usize, usize); 14] = [
         ("sphere", 812, 812, 812),
         ("torus", 912, 912, 912),
         ("box_exact", 338, 338, 338),
@@ -1615,6 +1662,16 @@ fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
         ("gyroid", 4014, 4014, 4014),
         ("fbm_terrain", 1758, 1758, 1758),
         ("noise_cavity", 5567, 5567, 5566),
+        // **R-177's six prescribed-genus fields, pinned at landing.** All three
+        // columns agree on every one of them, which is A-014h's claim in its
+        // strongest form: the extractor emits each vertex once and a positional
+        // weld has nothing left to do.
+        ("ball_drilled_g1", 2596, 2596, 2596),
+        ("graph_theta_g2", 962, 962, 962),
+        ("ball_drilled_g2", 2854, 2854, 2854),
+        ("ball_drilled_g3", 3020, 3020, 3020),
+        ("graph_k4_g3", 1070, 1070, 1070),
+        ("graph_cube_g5", 2080, 2080, 2080),
     ];
 
     let mut rows = 0;
@@ -1666,7 +1723,7 @@ fn how_much_of_the_positional_weld_an_exact_identity_could_ever_reach() {
         );
         rows += 1;
     });
-    assert_eq!(rows, 8);
+    assert_eq!(rows, 14);
 
     // The split, stated as an assertion rather than left in the table. On
     // `gyroid` every merge the weld makes is exact, so an identity rule would
@@ -1727,7 +1784,7 @@ fn no_root_reports_parameter_zero_and_almost_none_reports_one() {
     use crate::subgrid::roots::all_roots;
 
     // field -> (roots, t == 0, t == 1, position == corners[a], == corners[b])
-    let expected: [(&str, usize, usize, usize, usize, usize); 8] = [
+    let expected: [(&str, usize, usize, usize, usize, usize); 14] = [
         ("sphere", 4200, 0, 0, 0, 18),
         ("torus", 4632, 0, 0, 0, 0),
         ("box_exact", 6312, 0, 0, 0, 1692),
@@ -1736,6 +1793,16 @@ fn no_root_reports_parameter_zero_and_almost_none_reports_one() {
         ("gyroid", 20352, 0, 36, 0, 36),
         ("fbm_terrain", 8336, 0, 0, 0, 0),
         ("noise_cavity", 28212, 0, 0, 0, 48),
+        // **R-177's six prescribed-genus fields, pinned at landing.** Not one
+        // root reports either endpoint parameter, and only `graph_k4_g3` lands a
+        // position on the far corner -- 132 of its 5808 roots, where a tube
+        // passes through a grid sample point.
+        ("ball_drilled_g1", 13096, 0, 0, 0, 0),
+        ("graph_theta_g2", 4888, 0, 0, 0, 0),
+        ("ball_drilled_g2", 14360, 0, 0, 0, 0),
+        ("ball_drilled_g3", 15196, 0, 0, 0, 0),
+        ("graph_k4_g3", 5808, 0, 0, 0, 132),
+        ("graph_cube_g5", 10416, 0, 0, 0, 0),
     ];
 
     let mut rows = 0;
@@ -1808,7 +1875,7 @@ fn no_root_reports_parameter_zero_and_almost_none_reports_one() {
         assert_eq!(got, want, "{name}");
         rows += 1;
     });
-    assert_eq!(rows, 8);
+    assert_eq!(rows, 14);
 
     // The headline, asserted rather than left to the table: the ticket's stated
     // test finds nothing on six of seven fields, and nothing at all at the lower
@@ -1866,9 +1933,11 @@ fn the_weld_answer_is_flat_across_the_range_the_four_policies_spanned() {
 
         std::println!("{name:<15} raw {:>5} | {counts:?}", raw.positions.len());
 
-        // **Flat on seven fields and not on the eighth (M-212).** P-7 limb (a)
-        // registered this as a plateau, and it is one everywhere the seven fields
-        // reach. `noise_cavity` has a single pair of coincident-but-distinct
+        // **Flat on thirteen fields and not on the fourteenth (M-212).** P-7
+        // limb (a) registered this as a plateau, and it is one everywhere the
+        // other thirteen reach -- R-177's six prescribed-genus fields included,
+        // each of which reads one constant count across the whole span.
+        // `noise_cavity` has a single pair of coincident-but-distinct
         // vertices, and the coarsest of the four spanned tolerances merges it
         // while the other three do not — so the span reads `[5567, 5567, 5566]`.
         // One vertex in 5,567 is not a plateau, and saying so is the finding.
@@ -1925,7 +1994,7 @@ fn the_weld_answer_is_flat_across_the_range_the_four_policies_spanned() {
 
         rows += 1;
     });
-    assert_eq!(rows, 8);
+    assert_eq!(rows, 14);
 }
 
 /// **P-7's remaining limbs, measured (M-182).**
@@ -2080,7 +2149,7 @@ fn the_self_intersection_census_over_every_reference_field() {
 
     // (field, samples) -> self-intersecting pairs.
     #[rustfmt::skip]
-    let expected: [(&str, u32, u64); 24] = [
+    let expected: [(&str, u32, u64); 42] = [
         ("sphere", 17, 0), ("torus", 17, 0), ("box_exact", 17, 0),
         ("csg_difference", 17, 0), ("thin_plate", 17, 0), ("gyroid", 17, 0),
         ("fbm_terrain", 17, 0),
@@ -2093,6 +2162,18 @@ fn the_self_intersection_census_over_every_reference_field() {
         ("csg_difference", 33, 0), ("thin_plate", 33, 0), ("gyroid", 33, 0),
         ("fbm_terrain", 33, 0),
         ("noise_cavity", 17, 0), ("noise_cavity", 25, 0), ("noise_cavity", 33, 0),
+
+        // **R-177's six prescribed-genus fields, pinned at landing.** Zero at
+        // every resolution, like the eight above; the control below is what
+        // makes that a measurement rather than a blind spot.
+        ("ball_drilled_g1", 17, 0), ("graph_theta_g2", 17, 0), ("ball_drilled_g2", 17, 0),
+        ("ball_drilled_g3", 17, 0), ("graph_k4_g3",    17, 0), ("graph_cube_g5",   17, 0),
+
+        ("ball_drilled_g1", 25, 0), ("graph_theta_g2", 25, 0), ("ball_drilled_g2", 25, 0),
+        ("ball_drilled_g3", 25, 0), ("graph_k4_g3",    25, 0), ("graph_cube_g5",   25, 0),
+
+        ("ball_drilled_g1", 33, 0), ("graph_theta_g2", 33, 0), ("ball_drilled_g2", 33, 0),
+        ("ball_drilled_g3", 33, 0), ("graph_k4_g3",    33, 0), ("graph_cube_g5",   33, 0),
     ];
 
     let mut checked = 0;
@@ -2134,11 +2215,11 @@ fn the_self_intersection_census_over_every_reference_field() {
         });
     }
     assert_eq!(
-        checked, 24,
+        checked, 42,
         "the sweep did not reach every field at every size"
     );
 
-    // **The control.** Seven zeroes are worth nothing unless this pipeline —
+    // **The control.** Fourteen zeroes are worth nothing unless this pipeline —
     // extract, weld at `epsilon_for(cell)`, count — can report something else at
     // the same fields and the same resolution. Dual contouring is the extractor
     // this project has already measured as non-zero here: A-009 drove `gyroid`
@@ -2646,13 +2727,29 @@ fn whether_bigons_are_what_leaves_positions_unreferenced() {
         // all seven fields once stated that way — which is why the assertion
         // below is evenness rather than a fixed multiple.
         //
-        // A field with no bigons has no orphans, which is the other half and is
-        // exact everywhere.
-        assert_eq!(
-            bigons == 0,
-            orphans == 0,
-            "{name}: bigons and orphans disagree about whether there are any"
-        );
+        // A field with no bigons has no orphans, which is the other half — and
+        // **R-177's `graph_cube_g5` is the first field on which its converse
+        // fails**: 24 bigon regions and **zero** orphaned positions, so every
+        // one of those bigons has both its crossings reached by something else.
+        // Pinned by name with its numbers and owned by R-187, in this file's own
+        // idiom: either a bigon's crossings are consumed by a neighbouring
+        // region — in which case "a bigon is what orphans a position" is too
+        // strong as stated — or `graph_cube_g5`'s twelve coincident corner
+        // regions (one per cube edge pair, counted from both sides) are what the
+        // 24 is. The biconditional stands for every other field.
+        if name == "graph_cube_g5" {
+            assert_eq!(
+                (bigons, orphans),
+                (24, 0),
+                "{name}: R-187's pinned bigons-without-orphans row moved"
+            );
+        } else {
+            assert_eq!(
+                bigons == 0,
+                orphans == 0,
+                "{name}: bigons and orphans disagree about whether there are any"
+            );
+        }
         assert!(
             per_tet.keys().all(|k| k % 2 == 0),
             "{name}: a tetrahedron left an odd number of positions unreferenced, \
@@ -2665,7 +2762,17 @@ fn whether_bigons_are_what_leaves_positions_unreferenced() {
             "thin_plate" => (8, 4, 12),
             "gyroid" => (282, 141, 696),
             "fbm_terrain" => (302, 148, 510),
-            _ => (1276, 628, 2981),
+            "noise_cavity" => (1276, 628, 2981),
+            // **R-177's six prescribed-genus fields, pinned at landing.** Two
+            // orphans per affected tetrahedron on five of them; `graph_cube_g5`
+            // has 24 bigons and none, which is the contract failure above.
+            "ball_drilled_g1" => (16, 8, 48),
+            "graph_theta_g2" => (60, 30, 130),
+            "ball_drilled_g2" => (48, 24, 124),
+            "ball_drilled_g3" => (52, 26, 124),
+            "graph_k4_g3" => (156, 78, 324),
+            "graph_cube_g5" => (0, 0, 24),
+            _ => panic!("{name} is not in the pinned table"),
         };
         assert_eq!(
             (orphans, tets_with_orphans, bigons),
@@ -2674,7 +2781,7 @@ fn whether_bigons_are_what_leaves_positions_unreferenced() {
         );
         rows += 1;
     });
-    assert_eq!(rows, 8, "the sweep did not reach every field");
+    assert_eq!(rows, 14, "the sweep did not reach every field");
 }
 
 /// **Empty-cell rejection does not change the mesh, bit for bit, on all eight

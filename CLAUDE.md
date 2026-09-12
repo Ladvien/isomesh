@@ -169,9 +169,11 @@ It is used **unconditionally** rather than behind a `std` feature switch, for tw
   platform-specific and CI would disagree with the dev machine. `libm` is pure Rust and
   bit-reproducible everywhere.
 
-  **Verified at T-007, not merely argued (M-31):** the 216 golden hashes are generated on
-  macOS/arm64 and pass unchanged on Linux/x86-64 in CI — every position, normal and index
-  bit-for-bit equal across both.
+  **Verified at T-007, not merely argued (M-31):** the 378 golden hashes are generated on one
+  platform and pass unchanged on the other in CI — every position, normal and index bit-for-bit
+  equal across both. The original 216 were generated on macOS/arm64 and verified on Linux/x86-64;
+  the 162 added by R-177 on 2026-09-12 were generated on Linux/x86-64 and are verified on macOS by
+  the same CI job.
 
 It costs nothing at run time: `libm::sqrtf` compiles to `fsqrt` on aarch64+neon and `sqrtss` on
 x86-64+sse2 (verified in `libm-0.2.16/src/math/arch/{aarch64,x86}.rs`). `libm` itself has zero

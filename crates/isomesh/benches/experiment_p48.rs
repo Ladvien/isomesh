@@ -159,8 +159,8 @@ use std::ops::{Add, AddAssign, Mul, Neg, Sub};
 
 use common::experiment::Run;
 use isomesh::fields::{
-    BoxExact, Difference, FbmTerrain, Gyroid, Intersection, NoiseVolume, ReferenceField, Sphere,
-    ThinPlate, Torus, Union,
+    BoxExact, Difference, DrilledBall, FbmTerrain, Gyroid, Intersection, NoiseVolume,
+    ReferenceField, Sphere, ThickenedGraph, ThinPlate, Torus, Union,
 };
 use isomesh::validate::isotopy_report;
 use isomesh::{RuntimeShape3, Sdf};
@@ -504,6 +504,67 @@ impl Enclose for Torus<f64> {
         let q0 = s - Iv::point(self.major);
         let q1 = d[1];
         ((q0.sqr() + q1.sqr()).sqrt() - Iv::point(self.minor)).impl_slack()
+    }
+}
+
+/// R-177's construction A: `max(|p| − R, −min_i(|(p_x, p_y) − c_i| − r))`,
+/// each operand an exact distance and the composition by `max`/`min`, so the
+/// enclosure is the operands' enclosures composed the same way — `csg_max`, as
+/// [`Intersection`]'s is.
+impl<const G: usize> Enclose for DrilledBall<f64, G> {
+    const KIND: &'static str = "csg_max";
+
+    fn enclose(&self, b: &[Iv; 3]) -> Iv {
+        let ball = norm_iv(*b) - Iv::point(self.radius);
+        let mut drilled = Iv::point(f64::INFINITY);
+        for c in &self.bores {
+            let dx = b[0] - Iv::point(c[0]);
+            let dy = b[1] - Iv::point(c[1]);
+            drilled = drilled.imin((dx.sqr() + dy.sqr()).sqrt() - Iv::point(self.bore));
+        }
+        ball.imax(-drilled).impl_slack()
+    }
+}
+
+/// R-177's construction B: `min_e dist(p, e) − t` over closed segments. The
+/// segment parameter `t = clamp((p − a)·(b − a) / |b − a|², 0, 1)` is enclosed
+/// with the clamp taken endpoint-wise (clamping is monotone, so that is exact)
+/// and the offset `p − a − t·(b − a)` then carries the dependency between `t`
+/// and `p` unresolved — a valid enclosure, not a tight one, which is what this
+/// row measures. `csg_min`, as [`Union`]'s is.
+impl<const G: usize> Enclose for ThickenedGraph<f64, G> {
+    const KIND: &'static str = "csg_min";
+
+    fn enclose(&self, b: &[Iv; 3]) -> Iv {
+        let zero = Iv::point(0.0);
+        let one = Iv::point(1.0);
+        let mut nearest = Iv::point(f64::INFINITY);
+        for e in &self.edges {
+            let (Some(p), Some(q)) = (self.nodes.get(e[0]), self.nodes.get(e[1])) else {
+                continue;
+            };
+            let ab = [q[0] - p[0], q[1] - p[1], q[2] - p[2]];
+            let len2 = ab[0] * ab[0] + ab[1] * ab[1] + ab[2] * ab[2];
+            let ap = [
+                b[0] - Iv::point(p[0]),
+                b[1] - Iv::point(p[1]),
+                b[2] - Iv::point(p[2]),
+            ];
+            let t = if len2 > 0.0 {
+                let dot =
+                    ap[0] * Iv::point(ab[0]) + ap[1] * Iv::point(ab[1]) + ap[2] * Iv::point(ab[2]);
+                (dot * Iv::point(1.0 / len2)).imax(zero).imin(one)
+            } else {
+                zero
+            };
+            let offset = [
+                ap[0] - t * Iv::point(ab[0]),
+                ap[1] - t * Iv::point(ab[1]),
+                ap[2] - t * Iv::point(ab[2]),
+            ];
+            nearest = nearest.imin(norm_iv(offset));
+        }
+        (nearest - Iv::point(self.tube)).impl_slack()
     }
 }
 

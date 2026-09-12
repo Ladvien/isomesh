@@ -506,15 +506,17 @@ fn the_gate_is_chosen_by_the_field_not_by_the_test() {
         }
         if let Some(chi) = field.expected_euler() {
             // The stand-in is a sphere, so only the genus-0 fields can match it;
-            // what matters is that the expectation comes from the field.
+            // what matters is that the expectation comes from the field, and
+            // that it is the χ of some closed orientable surface: `2 − 2g`,
+            // even and at most 2 (R-177's six declare −2, −4 and −8).
             assert!(
-                chi == 2 || chi == 0,
-                "{name}: unexpected declared chi {chi}"
+                chi <= 2 && chi % 2 == 0,
+                "{name}: declared chi {chi} is not 2 - 2g for any genus"
             );
         }
         checked += 1;
     });
-    assert_eq!(checked, 8);
+    assert_eq!(checked, 14);
 }
 
 /// Freezes the rendered block. It is the thing a golden-hash regression will

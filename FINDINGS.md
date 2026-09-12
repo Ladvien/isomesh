@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**604 entries** — 129 falsified, 385 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**605 entries** — 129 falsified, 386 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -553,6 +553,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `M-486` | the curl residual is free — worst curl_share 0.008061907, 0.81% of an extraction against a 2% ceiling, on 24 of 24 rows… |
 | `M-487` | the registered null held: at matched cost the normal-cycles incumbent beats discrete varifolds on mean curvature on 28 o… |
 | `M-489` | caves percolate in 3D and the transition is now a number: on noise_cavity the giant component appears at percolation_iso… |
+| `M-494` | all three clauses HELD, and the landing cost what the ticket said it would plus five contracts nobody had priced. C1: th… |
 | `V-1` | wgpu / wgpu-types / naga 29.0.3, glam 0.32.0, encase 0.12 |
 | `V-2` | Bevy 0.19 removed RenderGraph; passes are systems in ECS schedules; non-camera work targets the RenderGraph schedule |
 | `V-3` | Marching Cubes peak: 5.42 G voxel/s, 330 M tri/s (RTX 2080 Ti). DMC costs 1.52–3.50×; FlexiCubes 2.77–3.92× |
@@ -31754,3 +31755,89 @@ rungs: if `skewness` **0.149388749** and `excess_kurtosis` **−0.315140997** pe
 noise is non-Gaussian in its own right and the formula's miss is the field's; if they fall inside the
 bars, the 12% clamp produced C2 and the remaining miss is the unconverged `λ` and χ above. Logged as
 `Q11`.
+
+### 🔬 M-494 — **all three clauses HELD, and the landing cost what the ticket said it would plus five contracts nobody had priced. C1: the six prescribed-genus fields read their construction's χ under Marching Cubes at 17³, 25³ and 33³ — **0 / −2 / −2 / −4 / −4 / −8** for `ball_drilled_g1`, `graph_theta_g2`, `ball_drilled_g2`, `ball_drilled_g3`, `graph_k4_g3`, `graph_cube_g5` — on closed meshes, with `sphere` and `torus` reading **2** and **0** through the same helper. C2: `golden_hashes.json` **216 → 378**, **162 entries added, 0 hashes changed** (163 lines in, 1 out: the old last entry re-emitted with a trailing comma). C3: `graph_cube_g5` reads χ **−8** at 7³, **0 triangles** at 9³, **−8** at 11³ — `p-140.csv`'s row, now a shipped test. **The roster is fourteen, and the first full run of the suite over it failed 21 tests: 16 were counts and pinned tables, 5 were contracts the eight-field roster had let stand — pinned with their numbers and owned by `R-187`** (P-182, R-177)
+
+**M.** A landing, so there is no CSV; the evidence is `cargo test -p isomesh --lib` on the landing
+commit (**730 tests**, all green after the pins below), the golden diff, and `scripts/doc_facts.sh`
+reading **14 fields, 378 golden hashes** from the tree. `crates/isomesh/src/fields/prescribed.rs` is
+new; `for_each_reference_field!` grew from 8 to 14 blocks; `isomesh_web`'s registry from 8 to 14
+entries; six `bevy_isomesh` examples and ~100 benches iterate fourteen fields without a line changed.
+`f64`, `amd-ryzen-9-5900x-12-core`. The thirteen registered records:
+
+| `field` | `prescribed_genus` | `prescribed_chi` | `measured_chi_17` | `measured_chi_25` | `measured_chi_33` | MC triangles 17 / 25 / 33 |
+|---|---|---|---|---|---|---|
+| `ball_drilled_g1` | 1 | **0** | 0 | 0 | 0 | 1,712 / 3,744 / 6,720 |
+| `graph_theta_g2` | 2 | **−2** | −2 | −2 | −2 | 688 / 1,416 / 2,640 |
+| `ball_drilled_g2` | 2 | **−2** | −2 | −2 | −2 | 1,864 / 4,120 / 7,208 |
+| `ball_drilled_g3` | 3 | **−4** | −4 | −4 | −4 | 1,936 / 4,328 / 7,928 |
+| `graph_k4_g3` | 3 | **−4** | −4 | −4 | −4 | 752 / 1,712 / 3,296 |
+| `graph_cube_g5` | 5 | **−8** | −8 | −8 | −8 | 1,408 / 2,800 / 4,672 |
+
+`golden_entries_before` **216**, `golden_entries_after` **378**, `existing_hashes_changed` **0**,
+`g5_triangles_9` **0**, `c1_holds` / `c2_holds` / `c3_holds` **true / true / true**.
+
+**What landed, and how the genus is carried.** `DrilledBall<R, const G: usize>` (construction A, a ball
+of radius `1.55` with `G` `z`-parallel bores of radius `0.28`; `χ = 2 − 2G` by Mayer–Vietoris) and
+`ThickenedGraph<R, const G: usize>` (construction B, the `0.28`-neighbourhood of an embedded graph with
+`b₁ = G`; `χ = 2·(V − E)` by graph thickening) — `no_std`, generic over `Real`, arrays in every public
+signature, analytic gradients, one dependency still. The genus is a **type parameter** because
+`ReferenceField::NAME` is one constant per type and is the golden fixture's key, so six fields need six
+types; `expected_euler()` is `Some(2 − 2·G)` with no runtime field to drift, and `experiment_p80.rs`'s
+`name == F::NAME` invariant survives. Each constructor's doc carries both derivations `P-140` used.
+`bound()` is `Lipschitz { l: 1.0 }` on all six, and not by default: the fields are `min`/`max`
+compositions of exact distances, so they are 1-Lipschitz and *underestimate* everywhere — but no
+positive `q` exists for `Underestimate`, because at an off-centre bore's rim or a tube junction the
+nearest wall point the formula measures to is outside the solid and `|f| / d → 0`.
+
+**The vacuity controls — one satisfied, one misworded and satisfied in substance.** `sphere` and `torus`
+go through `chi_at` beside the six and read **2** and **0**. The registration's second control said
+`scripts/doc_facts.sh` *"fails at the parent of the landing commit and passes at it"* — which cannot
+happen: the parent is self-consistent (eight blocks, 216 entries, prose saying so) and the gate passes
+there. What the control meant, and what was run, is the gate against the **mixed** state the landing
+passes through: with the macro at fourteen and the prose untouched it **failed on seven sites**
+(`README.md` ×2, `DEMOS.md`, `algorithms.md` ×2, `correctness.md`, `experiments.md`), and with the
+fixture blessed it would have flagged the three `216 golden hashes` sites beside them; at the landing
+it passes on **14 fields, 378 golden hashes**. Seven of the ten sites were renumbered; the three that
+quote a historical measurement were dated instead — *"five of the eight fields the roster held when
+this was measured (M-40)"* is true and *"five of the fourteen"* would not be. Gate 5 of the loop
+prompt, added this morning for `✗126` and `✗127`, is the rule this control broke: its predicate was
+never evaluated on a synthetic case before registration.
+
+**Five contracts the eight-field roster let stand, each pinned by name with its number (`R-187`).** The
+first `cargo test -p isomesh --lib` over fourteen fields failed **21** tests. Sixteen were the ripple
+the ticket priced — `checked == 8` / `rows == 8` / `24` counts, the golden fixture, and the subgrid
+suite's nine name-keyed tables, extended with **eighteen** measured rows each in the file's own
+*"pinned rather than asserted to zero"* idiom. Five were contracts:
+
+| # | test | contract | what the roster read | pinned as |
+|---|---|---|---|---|
+| 1 | `marching_tetrahedra::every_closed_reference_field_meshes_cleanly` | every closed field reads its χ at 17³ and 33³ | `graph_k4_g3` at 17³: χ **−16** against −4, on a closed manifold mesh; −4 at 33³; Marching Cubes −4 at 17³. `P-140`'s number exactly | `("graph_k4_g3", 17, −16)` |
+| 2 | `trilinear::how_often_a_face_is_singular` | `(0, 0)` — *"a continuous field essentially never does"* (M-220) | **72**: `graph_theta_g2` **24 of 32** and `graph_k4_g3` **48 of 96** ambiguous faces at 17³, zero at 33³ and 65³, zero on 400,000 random cells | `(72, 0)` |
+| 3 | `field_bound::tightening_a_declaration_by_one_step_is_caught` | claiming `Exact` on a `Lipschitz` field is caught | not caught on any of the six: `‖∇f‖ = 1` a.e. — `M-245`'s blind spot, on `Lipschitz` rows for the first time | `unrefutable == 6`, asserted *not* caught |
+| 4 | `dual_contouring::the_clamp_measured_on_every_reference_field` | the A-009 clamp never increases λ | `ball_drilled_g1` at 33³: **4 → 8** intersecting pairs over 6,720 triangles (0.595 → 1.190 per 1,000) | `(4, 8, 6720)` |
+| 5 | `subgrid::whether_bigons_are_what_leaves_positions_unreferenced` | `bigons == 0 ⇔ orphans == 0` | `graph_cube_g5`: **24** bigon regions, **0** orphans; the other thirteen fields hold it at exactly two orphans per affected tetrahedron | `(24, 0)` |
+
+Row 2 is the one that rewrites a sentence: `README.md`'s *Not yet* table said the singular face is one
+*"quantised input reaches and continuous `f64` does not"*. It does — whenever the field's mirror
+symmetry is the grid's. The theta graph's poles sit on grid vertices at `h = 0.25` and both graphs are
+symmetric through grid planes, so a face straddling a symmetry plane has `v₀ = v₃` and `v₁ = v₂` to the
+bit and the diagonal products tie. The decider resolves those 72 faces to *separated*, which Grosso
+2017's Definition 3.2 calls topologically incorrect, and `P-140` says χ survives it at 17³ on both.
+
+**Not claimed.** Manifoldness. `P-140`'s ten `measured_genus = none` pairs stay `None`; the subgrid
+suite's eighteen new rows carry **no** non-manifold edge or vertex on any of the six at any of the three
+rungs, and their flipped-edge column (**17 / 27 / 25 / 42** at 17³ on four of them) goes to **0** under
+`orient` on every row, so the orientation law held without a pin. Dual contouring, surface nets and the
+subgrid extractor are non-manifold on many of these pairs in `p-140.csv`, and nothing in the suite now
+says otherwise.
+
+**Surprise:** two. `what-governs.md`'s Axis 1 called the roster nine fields and Axis 6 said χ is known
+exactly on *"the one field"* — it is fourteen, and χ is asserted on eight closed fields; both paragraphs
+are edited in this commit. And A-002i's premise, that the singular face needs quantised input, is
+false on symmetric continuous data — Axis 6 carries that too.
+
+**Raises:** do the six clear `✗128`'s crease detector? They are unions of balls, cylinders and tubes with
+`C¹` seams at the drill lines and tube junctions — gradient direction continuous across a seam,
+curvature not — and their reach is not known in closed form. One run of `experiment_p181`'s ladder over
+them decides whether `✗127`'s split gains six smooth closed prescribed-χ fields. Logged as `Q12`.

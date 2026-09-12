@@ -436,7 +436,7 @@ whole content of this demo. On the capped gyroid at 33³:
 | manifold dual contouring | 41.383 | **5.669** |
 
 Pairs per 1,000 triangles. The clamp removes **95.6%** of them and leaves 3.118 — and what it leaves is
-not a smaller version of the same problem. Five of the eight reference fields go to *exactly* zero;
+not a smaller version of the same problem. Five of the eight fields measured (the roster before R-177) go to *exactly* zero;
 `torus` reads 2.66 → 0. The two that don't are `gyroid` and `fbm_terrain`, which are precisely the
 fields with cells carrying two sheets of surface. That residue is a **connectivity** defect, and no
 constraint on where a vertex sits can reach it.
@@ -567,7 +567,7 @@ This is the crate's actual pitch. Not "the meshes look right" — a wrong mesh l
 ![The normalised hyperdeterminant magnitude as a per-cell heatmap over gyroid and six more fields](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/the-hyperdeterminant-in-every-cell.gif)
 
 [`hyperdeterminant_cells`](https://ladvien.github.io/isomesh/play.html?demo=hyperdeterminant_cells)
-walks eight reference fields and shows the phase's headline as a picture: `b*b - 4*a*c` at
+walks fourteen reference fields and shows the phase's headline as a picture: `b*b - 4*a*c` at
 `trilinear.rs:246` is **identically Cayley's `2×2×2` hyperdeterminant** (P-127, all three clauses held
 — `symbolic_difference_is_zero` true, 12 terms against 12, all three pencil pairings agreeing, exact
 deviation `0/1` over 3,481 trials). Colour is the scale-free magnitude `|Δ| / max|fᵢ|⁴`; grey is the

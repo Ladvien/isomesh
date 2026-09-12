@@ -263,7 +263,7 @@ The catalog originally specified this example as "holes on the left, closed on t
 
 ![The same comparison on a sphere, where the two meshes are byte-identical](../screenshots/e102-ambiguity-sphere-identical.png)
 
-*Press `3`. On a sphere there is **not one ambiguous face in 1,160 surface cells**, and the two meshes are byte-identical — which the committed golden fixture also pins. Five of the eight reference fields behave this way; only the gyroid (0.515% of cells) and `fbm_terrain` (1.532%) reach the configuration at all. An example that only ever showed the interesting case would misrepresent how often the interesting case arrives.*
+*Press `3`. On a sphere there is **not one ambiguous face in 1,160 surface cells**, and the two meshes are byte-identical — which the committed golden fixture also pins. Five of the eight fields the roster held when this was measured (M-40) behave this way; only the gyroid (0.515% of cells) and `fbm_terrain` (1.532%) reach the configuration at all. An example that only ever showed the interesting case would misrepresent how often the interesting case arrives.*
 
 ```bash
 cd bevy_isomesh && cargo run --example marching_cubes_ambiguity --release

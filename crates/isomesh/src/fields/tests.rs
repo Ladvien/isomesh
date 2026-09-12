@@ -1,8 +1,10 @@
 //! Tests for the reference fields.
 //!
-//! Three sweeps run over all seven fields through
+//! The sweeps run over all fourteen fields through
 //! [`for_each_reference_field!`](crate::for_each_reference_field), plus one
-//! explicit sign test per field with hand-computed values.
+//! explicit sign test per field with hand-computed values, and — for the six
+//! prescribed-genus fields — an extraction whose χ is asserted against the
+//! construction's arithmetic.
 
 // The sign tests compare against values computed by hand, exactly. An
 // approximate comparison would not be a weaker test, it would be a different one.
@@ -276,7 +278,7 @@ fn reference_field_names_match_the_sweep() {
         count += 1;
         assert!(!name.is_empty());
     });
-    assert_eq!(count, 8);
+    assert_eq!(count, 14);
 
     assert_eq!(Sphere::<f64>::NAME, "sphere");
     assert_eq!(Torus::<f64>::NAME, "torus");
@@ -286,11 +288,19 @@ fn reference_field_names_match_the_sweep() {
     assert_eq!(CappedGyroid::<f64>::NAME, "gyroid");
     assert_eq!(FbmTerrain::<f64>::NAME, "fbm_terrain");
     assert_eq!(<NoiseCavity<f64> as ReferenceField>::NAME, "noise_cavity");
+    assert_eq!(DrilledBall::<f64, 1>::NAME, "ball_drilled_g1");
+    assert_eq!(ThickenedGraph::<f64, 2>::NAME, "graph_theta_g2");
+    assert_eq!(DrilledBall::<f64, 2>::NAME, "ball_drilled_g2");
+    assert_eq!(DrilledBall::<f64, 3>::NAME, "ball_drilled_g3");
+    assert_eq!(ThickenedGraph::<f64, 3>::NAME, "graph_k4_g3");
+    assert_eq!(ThickenedGraph::<f64, 5>::NAME, "graph_cube_g5");
 }
 
 /// Two fields have no analytically known Euler characteristic, and saying so is
 /// the point -- inventing one would be exactly the kind of guess the project
-/// rules forbid.
+/// rules forbid. The six prescribed fields declare theirs from the construction
+/// (R-177), and `every_prescribed_field_extracts_its_prescribed_chi` is what
+/// makes that a claim rather than a label.
 #[test]
 fn only_the_analytically_known_euler_characteristics_are_declared() {
     assert_eq!(Sphere::<f64>::canonical().expected_euler(), Some(2));
@@ -300,6 +310,86 @@ fn only_the_analytically_known_euler_characteristics_are_declared() {
     assert_eq!(csg_difference::<f64>().expected_euler(), Some(2));
     assert_eq!(capped_gyroid::<f64>().expected_euler(), None);
     assert_eq!(FbmTerrain::<f64>::canonical().expected_euler(), None);
+    assert_eq!(ball_drilled_g1::<f64>().expected_euler(), Some(0)); // genus 1
+    assert_eq!(graph_theta_g2::<f64>().expected_euler(), Some(-2)); // genus 2
+    assert_eq!(ball_drilled_g2::<f64>().expected_euler(), Some(-2)); // genus 2
+    assert_eq!(ball_drilled_g3::<f64>().expected_euler(), Some(-4)); // genus 3
+    assert_eq!(graph_k4_g3::<f64>().expected_euler(), Some(-4)); // genus 3
+    assert_eq!(graph_cube_g5::<f64>().expected_euler(), Some(-8)); // genus 5
+}
+
+// ─── the prescribed-genus fields (R-177) ────────────────────────────────────
+
+/// `(euler_characteristic, triangle_count)` of a Marching Cubes extraction at
+/// `samples³` over the field's own domain.
+///
+/// Marching Cubes and nothing else: `P-182`'s C1 names it, and it is the one
+/// extractor `P-140` measured correct and manifold on all six fields at every
+/// rung from 17³ up.
+fn chi_at<S: ReferenceField<Scalar = f64>>(field: &S, samples: u32) -> (i64, usize) {
+    use crate::marching_cubes::MarchingCubes;
+    use crate::validate::{ValidateConfig, validate_indexed};
+    use crate::{MeshBuffer, RuntimeShape3};
+
+    let (lo, hi) = field.domain();
+    let h = (hi[0] - lo[0]) / f64::from(samples - 1);
+    let shape = RuntimeShape3::new([samples; 3]).expect("test grids fit u32");
+    let mut mesh = MeshBuffer::<f64>::new();
+    MarchingCubes::<f64>::new()
+        .extract(field, &shape, lo, h, &mut mesh)
+        .expect("test grids are extractable");
+    let config = ValidateConfig::from_cell_size(h).expect("positive spacing");
+    let report = validate_indexed(&mesh.positions, &mesh.indices, &config);
+    (report.euler_characteristic, mesh.triangle_count())
+}
+
+/// **P-182 C1.** Each prescribed field's extracted χ equals the χ its
+/// construction derives, at three resolutions, on a closed mesh.
+///
+/// `sphere` and `torus` run through the same helper as the vacuity control: a
+/// `chi_at` that returned the declaration instead of a measurement would pass
+/// the six and fail nothing — so the two fields whose χ this suite has always
+/// asserted are asserted here too, through this path.
+#[test]
+fn every_prescribed_field_extracts_its_prescribed_chi() {
+    fn check<S: ReferenceField<Scalar = f64>>(name: &str, field: &S) {
+        let Some(chi) = field.expected_euler() else {
+            panic!("{name} declares no chi, so it cannot be in this test");
+        };
+        for samples in [17u32, 25, 33] {
+            let (measured, triangles) = chi_at(field, samples);
+            assert!(triangles > 0, "{name} at {samples}^3 meshed nothing");
+            assert_eq!(
+                measured, chi,
+                "{name} at {samples}^3: chi {measured}, prescribed {chi}"
+            );
+        }
+    }
+    check("sphere", &Sphere::<f64>::canonical());
+    check("torus", &Torus::<f64>::canonical());
+    check("ball_drilled_g1", &ball_drilled_g1::<f64>());
+    check("graph_theta_g2", &graph_theta_g2::<f64>());
+    check("ball_drilled_g2", &ball_drilled_g2::<f64>());
+    check("ball_drilled_g3", &ball_drilled_g3::<f64>());
+    check("graph_k4_g3", &graph_k4_g3::<f64>());
+    check("graph_cube_g5", &graph_cube_g5::<f64>());
+}
+
+/// **P-182 C3.** `graph_cube_g5`'s adequacy is not monotone in resolution:
+/// χ **−8** at 7³ and at 11³, and **nothing meshed** at 9³.
+///
+/// This is `docs/experiments/p-140.csv`'s row (`measured_chi` −8 / 0 / −8,
+/// `chi_agreement` true / false / true, `faces` 160 / 0 / 352 under
+/// `marching_cubes`), and the reason a ladder-based suite that assumed
+/// "correct at `n` implies correct above `n`" would call this field broken.
+/// At 9³ the cell is exactly `0.5`, so every tube axis at `±0.75` lies midway
+/// between two grid planes and no sample falls inside a tube of radius `0.28`.
+#[test]
+fn graph_cube_g5_is_perfect_at_7_and_11_and_absent_at_9() {
+    let field = graph_cube_g5::<f64>();
+    assert_eq!(chi_at(&field, 7).0, -8, "7^3");
+    assert_eq!(chi_at(&field, 9).1, 0, "9^3 must mesh nothing");
+    assert_eq!(chi_at(&field, 11).0, -8, "11^3");
 }
 
 /// A field defined by `canonical()` and nothing else is a field that cannot

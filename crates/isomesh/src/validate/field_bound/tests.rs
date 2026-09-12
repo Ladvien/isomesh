@@ -31,7 +31,7 @@ fn every_reference_field_meets_its_declared_bound() {
         );
         rows.push((name, report));
     });
-    assert_eq!(rows.len(), 8, "the reference field set changed");
+    assert_eq!(rows.len(), 14, "the reference field set changed");
 
     for (name, r) in &rows {
         std::println!(
@@ -83,7 +83,8 @@ fn every_reference_field_meets_its_declared_bound() {
     );
 }
 
-/// **Tightening a declaration by one step is caught (F-002's acceptance).**
+/// **Tightening a declaration by one step is caught (F-002's acceptance) — where
+/// this instrument can see it, and the six rows where it cannot are pinned.**
 ///
 /// A checker that has never rejected anything is not evidence about the
 /// declarations, so this makes it reject. Each field's *real* bound is replaced
@@ -96,10 +97,22 @@ fn every_reference_field_meets_its_declared_bound() {
 ///
 /// `Exact` fields have nothing tighter to claim and are skipped, which the test
 /// asserts rather than passes over silently.
+///
+/// **The blind spot, pinned (R-187).** R-177's six fields are `min`/`max`
+/// compositions of exact distances: 1-Lipschitz, with `‖∇f‖ = 1` almost
+/// everywhere, and *not* distances — near an off-centre bore's rim or a tube
+/// junction `|f|` falls arbitrarily far below the true distance, which is also
+/// why they cannot declare `Underestimate { q }` for any positive `q`. Their one
+/// step tighter is `Exact`, and `‖∇f‖` cannot refute it: this is M-245's
+/// observation about `csg_difference` — the eikonal fraction cannot tell an
+/// underestimate from a distance — arriving on six `Lipschitz` rows. Asserted as
+/// **not caught** and counted, so an instrument that starts seeing it, or a
+/// seventh such field, fails here.
 #[test]
 fn tightening_a_declaration_by_one_step_is_caught() {
     let mut tightened = 0usize;
     let mut already_tightest = 0usize;
+    let mut unrefutable = 0usize;
 
     crate::for_each_reference_field!(f64, |name, field| {
         let real = field_bound_report(&field, N);
@@ -109,6 +122,21 @@ fn tightening_a_declaration_by_one_step_is_caught() {
             }
             FieldBound::Underestimate { .. } => {
                 already_tightest += 1;
+            }
+            FieldBound::Lipschitz { l } if l <= 1.0 => {
+                // The one step tighter is Exact, and a unit-gradient composite
+                // cannot be told from a distance by its gradient (M-245, R-187).
+                let claimed = FieldBoundReport {
+                    declared: FieldBound::Exact,
+                    ..real
+                };
+                assert!(
+                    !claimed.violates(0.05),
+                    "{name}: claiming Exact was caught at ‖∇f‖ {:.4}, so the instrument \
+                     now sees past the eikonal equation and R-187's pin is stale",
+                    real.sup
+                );
+                unrefutable += 1;
             }
             FieldBound::Lipschitz { .. } | FieldBound::Unbounded => {
                 // The one step tighter: claim to be an exact distance.
@@ -125,6 +153,11 @@ fn tightening_a_declaration_by_one_step_is_caught() {
             }
         }
     });
+
+    assert_eq!(
+        unrefutable, 6,
+        "R-187 pins six unit-gradient Lipschitz fields the eikonal instrument cannot refute"
+    );
 
     assert!(
         tightened >= 3,

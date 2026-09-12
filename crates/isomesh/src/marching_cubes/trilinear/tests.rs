@@ -1381,7 +1381,8 @@ fn the_worst_case_tunnel_triangle_count_is_pinned() {
     );
 }
 
-/// How often the asymptotic decider has no answer: never, on continuous data.
+/// How often the asymptotic decider has no answer: never on the original eight
+/// fields and on random cells — and **72 times** on two of R-177's six.
 ///
 /// **A-002i's reachability, measured before it was implemented (M-220).** A face
 /// is *singular* when its bilinear saddle sits exactly on the level set — the two
@@ -1390,14 +1391,21 @@ fn the_worst_case_tunnel_triangle_count_is_pinned() {
 /// passes through the saddle. Grosso 2017 exists for this case and counts **8, 58
 /// and 20** of them per 512²×~700 CT volume.
 ///
-/// Here it is **zero**, on every reference field and on 400,000 random cells. The
-/// reason is the data, not the code: a singular face needs `v₀·v₂` and `v₁·v₃` to
-/// be *bit-identical* `f64`s, which quantised CT voxels collide into readily and
-/// a continuous field essentially never does.
+/// On the eight-field roster it was **zero**, on every field and on 400,000 random
+/// cells, and the reason given was the data: a singular face needs `v₀·v₂` and
+/// `v₁·v₃` to be *bit-identical* `f64`s, which quantised CT voxels collide into
+/// readily and a continuous field essentially never does. **R-177 falsified the
+/// "never" (R-187):** `graph_theta_g2` reads **24 of 32** ambiguous faces singular
+/// at 17³ and `graph_k4_g3` **48 of 96**, and zero at 33³ and 65³. Both are tube
+/// neighbourhoods of graphs with mirror symmetry through grid planes — the theta's
+/// poles sit *on* grid vertices at `h = 0.25` — so a face straddling a symmetry
+/// plane has `v₀ = v₃` and `v₁ = v₂` to the bit, and the diagonal products tie
+/// exactly. Continuous data reaches the singular face whenever the field's
+/// symmetry is the grid's.
 ///
-/// Recorded rather than gated — a zero here is a fact about the fields. What is
-/// asserted is that ambiguous faces were reached at all, so the zero cannot be an
-/// empty loop reported as a result.
+/// Pinned rather than gated at zero — the count is a fact about the fields. What
+/// is asserted beside it is that ambiguous faces were reached at all, so a zero
+/// cannot be an empty loop reported as a result.
 #[test]
 fn how_often_a_face_is_singular() {
     use crate::cube::{face_corners, is_inside as inside};
@@ -1468,7 +1476,7 @@ fn how_often_a_face_is_singular() {
         }
     });
     std::println!(
-        "measured: {singular_count} singular of {ambiguous} ambiguous faces, eight fields"
+        "measured: {singular_count} singular of {ambiguous} ambiguous faces, fourteen fields"
     );
 
     // And over random cells, where a tie is far likelier than on a smooth field.
@@ -1511,8 +1519,9 @@ fn how_often_a_face_is_singular() {
     );
     assert_eq!(
         (singular_count, rsing),
-        (0, 0),
-        "a singular face appeared — A-002i's premise has changed and it is now reachable"
+        (72, 0),
+        "the singular-face census moved: R-187 pins 24 on graph_theta_g2 and 48 on \
+         graph_k4_g3 at 17^3, zero elsewhere, and zero on random cells"
     );
 }
 

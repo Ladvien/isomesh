@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**370 tickets archived, 26 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**371 tickets archived, 26 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -107,43 +107,11 @@ in advance is `V-45`'s failure mode.
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
-| ☐ | **R-177** | L | — |
 | ☐ | **R-178** | M | — |
 | ☐ | **R-179** | L | — |
 | ☐ | **R-180** | S | — |
 | ☐ | **R-181** | S | — |
-
-**R-177 — land `P-140`'s six prescribed-genus patchwork fields as reference fields, in a commit that
-does nothing else, and pay the 162-hash ripple explicitly.** Two entries name this ticket in advance:
-`M-453`, which records the fields as *"deliberate, priced, and a Phase 28 ticket rather than an
-omission"*, and `M-455`, whose closing line is that until the Phase 28 fixture ticket lands `gyroid`'s
-topology gate is still *"record whatever the mesh said"*. The six fields — `ball_drilled_g1`,
-`graph_theta_g2`, `ball_drilled_g2`, `ball_drilled_g3`, `graph_k4_g3`, `graph_cube_g5` at genus
-**1, 2, 2, 3, 3, 5** — are **bench-local**,
-so the shipped test suite has none of them and `CLAUDE.md`'s position that `χ` is unassertable outside
-`sphere` and `torus` still stands in the suite that matters. What lands is `for_each_reference_field!`
-(`crates/isomesh/src/fields/mod.rs`) growing from **8** to **14**, with the prescribed `χ` asserted
-rather than recorded, because `prescribed_chi` is arithmetic from the construction and not a reading.
-
-**The ripple is the ticket's real content and it is a repo-wide renumbering, which is why this is `L`.**
-One new reference field adds **27** rows to `crates/isomesh/golden_hashes.json` — 9 algorithm labels ×
-3 resolutions, which is why the file's 216 is 8 × 27 — so six fields take it to **378**. Both
-`scripts/doc_facts.sh` counts move with them: `FIELDS` **8 → 14** against the phrase
-`'[a-z]* ?reference fields'` and `HASHES` **216 → 378** against `'golden hashes'`, each checked across
-the **twelve** documents in that script's `DOCS` array. A measurement commit that quietly carried this
-would be a renumbering hidden inside a dataset, which is what `P-140` refused to do.
-
-**Acceptance.** (a) A `Preregistration` naming the six fields, the 378, and the `FIELDS`/`HASHES` prose
-edits, before the code. (b) The fields land in `crates/isomesh/src/fields/`, `no_std`, generic over
-`Real`, arrays in every public signature, and each carries its prescribed `χ` in its own doc comment
-with the two independent derivations `P-140` used. (c) `expected_euler()` returns `Some` for all six and
-the value is asserted, not recorded. (d) The golden fixture is regenerated in the **same** commit and
-every moved count in all twelve documents with it, so `scripts/doc_facts.sh` and
-`scripts/backlog_gate.sh` are green at that commit and not the one after. (e) `graph_cube_g5`'s
-non-monotone adequacy curve — perfect at 7³ and 11³, **nothing meshed at 9³** — is a committed test,
-because a fixture whose correctness is not monotone in resolution is exactly the one a ladder-based
-suite will get wrong. (f) The ten `measured_genus = none` pairs stay `None`: a correct `χ` is not a
-manifoldness certificate and the suite must not infer one.
+| ☐ | **R-187** | M | — |
 
 **R-178 — land `P-145`'s digital-topology χ oracle under `validate`, and turn `gyroid`'s recorded χ
 into an asserted one.** `M-458` reads χ off the field's own signs with no mesh involved, reproduces
@@ -239,6 +207,39 @@ Wintraecken 2020, thirty-five years later, not the root.
 cannot take the priority without the caveat. (b) No guarantee is transferred: nothing in the doc may
 read as if AS85 certifies topology. (c) Doc-only — `golden_hashes.json` unchanged, no public signature
 moves, `RUSTDOCFLAGS=-D warnings cargo doc --workspace --no-deps` clean.
+
+**R-187 — the five suite contracts the fourteen-field roster falsified, each pinned at `R-177`'s
+landing with its number: decide, per row, whether it is a defect to fix or a contract to restate.**
+`M-494` recorded them; the pins are `match`es on a field name with the measured value beside them, in
+the subgrid suite's own idiom (*"a known defect with a number and a ticket that owns it satisfies this
+gate"*), and this is the ticket. (1) `marching_tetrahedra/tests.rs`'s sweep reads χ **−16** on
+`graph_k4_g3` at 17³ against a prescribed **−4**, on a closed manifold mesh, while Marching Cubes reads
+−4 at the same rung and this extractor reads −4 at 33³: the six-tetrahedra split's `0.43` body
+diagonals straddle a `0.28` tube at `h = 0.25`. Is a per-extractor adequacy floor a property a
+reference field should publish, or is this MT's defect? (2) `trilinear/tests.rs`'s singular-face census
+reads **72** — `graph_theta_g2` **24 of 32** and `graph_k4_g3` **48 of 96** ambiguous faces at 17³ —
+where A-002i's premise was that continuous `f64` never reaches one; it does wherever the field's mirror
+symmetry is the grid's. The decider resolves those faces to *separated*, which Grosso 2017's Definition
+3.2 calls topologically incorrect, and `P-140` says χ survives it on both fields at 17³. What does the
+local topology do? (3) `validate/field_bound/tests.rs`'s tightening check cannot refute an `Exact`
+claim on the six new fields: they are `min`/`max` of exact distances, `‖∇f‖ = 1` almost everywhere,
+not distances (`|f|/d → 0` at an off-centre bore's rim), and no positive `q` exists for
+`Underestimate`. `M-245`'s blind spot, now on six `Lipschitz` rows: the instrument needs a second
+statistic or the declaration needs a fifth variant. (4) `dual_contouring/tests.rs`'s A-009 clamp takes
+`ball_drilled_g1` at 33³ from **4 to 8** intersecting pairs over 6,720 triangles — the guarantee
+*"never worse on any field"* was measured on eight fields and the ninth falsified it. Which vertices
+did the clamp move into each other? (5) `subgrid/extract/tests.rs`'s bigon law — *a bigon is what
+leaves a position unreferenced*, asserted as `bigons == 0 ⇔ orphans == 0` — fails in one direction on
+`graph_cube_g5`: **24** two-arc inside regions and **0** orphaned positions, where the other thirteen
+fields hold the law exactly at two orphans per affected tetrahedron. The same field reports **12**
+coincident corner regions, one per cube edge pair; is 24 twelve bigons counted from both sides of a
+shared face, or twelve bigons whose crossings a neighbour consumes?
+
+**Acceptance.** (a) Each of the five pins is either retired by a fix (the test's plain contract holds
+again and the `match` arm is deleted) or replaced by a restated contract with the reason in the test's
+doc comment — never by widening a threshold. (b) Every number quoted above is re-read from the
+committed tree at the time, not from this paragraph. (c) One `FINDINGS.md` entry per row that changes
+a belief in `docs/research/what-governs.md`.
 
 ---
 

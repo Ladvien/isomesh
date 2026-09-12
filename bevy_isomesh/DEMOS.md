@@ -637,10 +637,10 @@ cargo run --example critical_cells --release   # 1-5 field · F fly to the clust
 Plain Marching Cubes on the left, the asymptotic decider on the right, and every cell with an ambiguous
 face boxed: **amber** where the decider agreed, **magenta** where it disagreed and joined the corners.
 
-Magenta is rare, and the rarity is the finding. On five of the eight reference fields the ambiguous
-face **never occurs at all** — so Marching Cubes 33 and plain Marching Cubes are bit-identical on them
-at every resolution tested (M-40). Only `gyroid` (0.515% of surface cells) and `fbm_terrain` (1.532%)
-reach it.
+Magenta is rare, and the rarity is the finding. On five of the eight fields the roster held when this
+was measured (M-40), the ambiguous face **never occurs at all** — so Marching Cubes 33 and plain
+Marching Cubes are bit-identical on them at every resolution tested. Only `gyroid` (0.515% of surface
+cells) and `fbm_terrain` (1.532%) reach it.
 
 ```bash
 cargo run --example marching_cubes_ambiguity --release   # 1-3 field · A cell markers · [ ] resolution

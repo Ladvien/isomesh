@@ -1,4 +1,4 @@
-//! The wasm module behind the front page's interactive demo: eight reference
+//! The wasm module behind the front page's interactive demo: fourteen reference
 //! fields, five extractors, and the validity report, in about 100 KB.
 //!
 //! # Why this crate exists at all
@@ -39,8 +39,9 @@ use std::sync::Mutex;
 
 use isomesh::dual_contouring::DualContouring;
 use isomesh::fields::{
-    BoxExact, CappedGyroid, CsgDifference, FbmTerrain, NoiseCavity, ReferenceField, Sphere,
-    ThinPlate, Torus, capped_gyroid, csg_difference, noise_cavity,
+    BoxExact, CappedGyroid, CsgDifference, DrilledBall, FbmTerrain, NoiseCavity, ReferenceField,
+    Sphere, ThickenedGraph, ThinPlate, Torus, ball_drilled_g1, ball_drilled_g2, ball_drilled_g3,
+    capped_gyroid, csg_difference, graph_cube_g5, graph_k4_g3, graph_theta_g2, noise_cavity,
 };
 use isomesh::manifold_dual_contouring::ManifoldDualContouring;
 use isomesh::marching_cubes::MarchingCubes;
@@ -49,11 +50,11 @@ use isomesh::surface_nets::SurfaceNets;
 use isomesh::validate::{ValidateConfig, validate};
 use isomesh::{MeshBuffer, RuntimeShape3, Sdf};
 
-/// A boxed field, which is what lets one extractor instantiation serve all eight.
+/// A boxed field, which is what lets one extractor instantiation serve all fourteen.
 ///
 /// `crates/isomesh/src/sdf.rs`'s blanket `impl<S: Sdf + ?Sized> Sdf for Box<S>`
-/// is what makes this work: `extract` is generic over the field, so eight
-/// concrete types would monomorphise every extractor eight times -- five copies
+/// is what makes this work: `extract` is generic over the field, so fourteen
+/// concrete types would monomorphise every extractor fourteen times -- five copies
 /// of Marching Cubes becomes forty, in a module whose whole point is its size.
 /// One virtual call per sample is the price, and this demo is not the benchmark;
 /// `crates/isomesh/benches` is, and it uses concrete types for exactly that
@@ -66,7 +67,7 @@ type BoxedField = Box<dyn Sdf<Scalar = f32>>;
 /// disagree with the crate about what a field is called.
 /// `the_field_names_are_the_registry_in_order` holds this against
 /// `for_each_reference_field!`.
-const FIELD_NAMES: [&str; 8] = [
+const FIELD_NAMES: [&str; 14] = [
     <Sphere<f32> as ReferenceField>::NAME,
     <Torus<f32> as ReferenceField>::NAME,
     <BoxExact<f32> as ReferenceField>::NAME,
@@ -75,6 +76,12 @@ const FIELD_NAMES: [&str; 8] = [
     <CappedGyroid<f32> as ReferenceField>::NAME,
     <FbmTerrain<f32> as ReferenceField>::NAME,
     <NoiseCavity<f32> as ReferenceField>::NAME,
+    <DrilledBall<f32, 1> as ReferenceField>::NAME,
+    <ThickenedGraph<f32, 2> as ReferenceField>::NAME,
+    <DrilledBall<f32, 2> as ReferenceField>::NAME,
+    <DrilledBall<f32, 3> as ReferenceField>::NAME,
+    <ThickenedGraph<f32, 3> as ReferenceField>::NAME,
+    <ThickenedGraph<f32, 5> as ReferenceField>::NAME,
 ];
 
 /// The dropdown labels for the extractors, in the order [`extract_into`] matches.
@@ -223,7 +230,7 @@ fn counter(n: u64) -> u32 {
     u32::try_from(n).unwrap_or(u32::MAX)
 }
 
-/// One of the eight reference fields, boxed, with the domain it is meant to be
+/// One of the fourteen reference fields, boxed, with the domain it is meant to be
 /// sampled over.
 ///
 /// The domain is read from the concrete type *before* boxing, because
@@ -247,6 +254,12 @@ fn resolve_field(index: u32) -> Option<(BoxedField, [f32; 3], [f32; 3])> {
         5 => boxed(capped_gyroid::<f32>()),
         6 => boxed(FbmTerrain::<f32>::canonical()),
         7 => boxed(noise_cavity::<f32>()),
+        8 => boxed(ball_drilled_g1::<f32>()),
+        9 => boxed(graph_theta_g2::<f32>()),
+        10 => boxed(ball_drilled_g2::<f32>()),
+        11 => boxed(ball_drilled_g3::<f32>()),
+        12 => boxed(graph_k4_g3::<f32>()),
+        13 => boxed(graph_cube_g5::<f32>()),
         _ => return None,
     })
 }

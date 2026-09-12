@@ -288,7 +288,7 @@ fn every_reference_field_comes_out_coherently_oriented() {
             rows += 1;
         });
     }
-    assert_eq!(rows, 24);
+    assert_eq!(rows, 42, "three resolutions over fourteen fields");
 
     // **The law is now unconditional, and A-019 is what made it so (M-227).**
     // M-187 stated it with a caveat: orientation drives the count to zero on
@@ -345,6 +345,13 @@ fn every_reference_field_comes_out_coherently_oriented() {
             ("gyroid", 17, 138, 0),
             ("fbm_terrain", 17, 19, 0),
             ("noise_cavity", 17, 1629, 0),
+            // R-177's six prescribed-genus fields, pinned at landing.
+            ("ball_drilled_g1", 17, 0, 0),
+            ("graph_theta_g2", 17, 17, 0),
+            ("ball_drilled_g2", 17, 27, 0),
+            ("ball_drilled_g3", 17, 25, 0),
+            ("graph_k4_g3", 17, 42, 0),
+            ("graph_cube_g5", 17, 0, 0),
             ("sphere", 25, 0, 0),
             ("torus", 25, 6, 0),
             ("box_exact", 25, 0, 0),
@@ -353,6 +360,12 @@ fn every_reference_field_comes_out_coherently_oriented() {
             ("gyroid", 25, 150, 0),
             ("fbm_terrain", 25, 29, 0),
             ("noise_cavity", 25, 1580, 0),
+            ("ball_drilled_g1", 25, 0, 0),
+            ("graph_theta_g2", 25, 6, 0),
+            ("ball_drilled_g2", 25, 35, 0),
+            ("ball_drilled_g3", 25, 44, 0),
+            ("graph_k4_g3", 25, 0, 0),
+            ("graph_cube_g5", 25, 0, 0),
             ("sphere", 33, 0, 0),
             ("torus", 33, 0, 0),
             ("box_exact", 33, 0, 0),
@@ -361,6 +374,12 @@ fn every_reference_field_comes_out_coherently_oriented() {
             ("gyroid", 33, 330, 0),
             ("fbm_terrain", 33, 53, 0),
             ("noise_cavity", 33, 1477, 0),
+            ("ball_drilled_g1", 33, 56, 0),
+            ("graph_theta_g2", 33, 6, 0),
+            ("ball_drilled_g2", 33, 60, 0),
+            ("ball_drilled_g3", 33, 92, 0),
+            ("graph_k4_g3", 33, 0, 0),
+            ("graph_cube_g5", 33, 0, 0),
         ],
         "the flipped-edge census moved"
     );

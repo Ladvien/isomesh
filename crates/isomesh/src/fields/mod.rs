@@ -1,4 +1,4 @@
-//! The eight reference fields.
+//! The fourteen reference fields.
 //!
 //! One definition, shared by tests, benchmarks and every example, so that
 //! comparisons between algorithms are actually comparisons between algorithms.
@@ -16,7 +16,7 @@
 //! anti-drift mechanism**: nothing anywhere hard-codes a radius or a half-extent,
 //! so changing a parameter changes it everywhere at once. Use
 //! [`for_each_reference_field!`](crate::for_each_reference_field) to sweep all
-//! eight without dynamic dispatch.
+//! fourteen without dynamic dispatch.
 //!
 //! # Not all of them are closed, and not all of them are distances
 //!
@@ -28,6 +28,12 @@
 //! discovering the problem later.
 
 pub(crate) mod noise;
+pub mod prescribed;
+
+pub use prescribed::{
+    DrilledBall, ThickenedGraph, ball_drilled_g1, ball_drilled_g2, ball_drilled_g3, graph_cube_g5,
+    graph_k4_g3, graph_theta_g2,
+};
 
 use crate::vec3::{length, scale, sub};
 use crate::{Real, Sdf};
@@ -192,13 +198,13 @@ pub trait ReferenceField: Sdf {
 ///     let _ = field.sample(lo);
 ///     n += 1;
 /// });
-/// assert_eq!(n, 8);
+/// assert_eq!(n, 14);
 /// ```
 ///
 /// # It looks like a closure and it is not
 ///
 /// The `|name, field|` is syntax, not a closure: the body is **inlined once per
-/// field**, because the eight fields are eight different types and no single
+/// field**, because the fourteen fields are fourteen different types and no single
 /// closure can take all of them. So a `return` in the body returns from the
 /// **enclosing function**, not from one iteration — a test that skips fields
 /// with `if name != "…" { return; }` exits on `sphere` and silently stops,
@@ -251,14 +257,44 @@ macro_rules! for_each_reference_field {
             let $field = $crate::fields::noise_cavity::<$scalar>();
             $body
         }
+        {
+            let $name = "ball_drilled_g1";
+            let $field = $crate::fields::ball_drilled_g1::<$scalar>();
+            $body
+        }
+        {
+            let $name = "graph_theta_g2";
+            let $field = $crate::fields::graph_theta_g2::<$scalar>();
+            $body
+        }
+        {
+            let $name = "ball_drilled_g2";
+            let $field = $crate::fields::ball_drilled_g2::<$scalar>();
+            $body
+        }
+        {
+            let $name = "ball_drilled_g3";
+            let $field = $crate::fields::ball_drilled_g3::<$scalar>();
+            $body
+        }
+        {
+            let $name = "graph_k4_g3";
+            let $field = $crate::fields::graph_k4_g3::<$scalar>();
+            $body
+        }
+        {
+            let $name = "graph_cube_g5";
+            let $field = $crate::fields::graph_cube_g5::<$scalar>();
+            $body
+        }
     }};
 }
 
-/// The domain half-extent shared by the five compact fields.
-const COMPACT_DOMAIN: f64 = 2.0;
+/// The domain half-extent shared by the compact fields.
+pub(super) const COMPACT_DOMAIN: f64 = 2.0;
 
 #[inline]
-fn cube_domain<R: Real>(half: f64) -> ([R; 3], [R; 3]) {
+pub(super) fn cube_domain<R: Real>(half: f64) -> ([R; 3], [R; 3]) {
     let h = R::from_f64(half);
     ([-h, -h, -h], [h, h, h])
 }

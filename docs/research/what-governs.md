@@ -27,7 +27,11 @@ statement about what the fields would reward a different partition for. And `✗
 nine fields **6 bottleneck-bound / 3 curvature-bound** by Theorem 3.4's two cases — the split is
 exactly smooth-versus-rough, `fbm_terrain` having **no bottleneck at all** (`bottleneck_pairs` **0**)
 where `noise_cavity` has **1,857,461**. A partition experiment that ignores that split would measure
-one half of its roster.
+one half of its roster. **The roster is fourteen since `M-494`**: `R-177` landed `P-140`'s six
+prescribed-genus solids — `ball_drilled_g1/g2/g3` (genus 1, 2, 3) and `graph_theta_g2`, `graph_k4_g3`,
+`graph_cube_g5` (genus 2, 3, 5) — closed, 1-Lipschitz, with `C¹` seams at the drill lines and tube
+junctions and no closed-form reach, so whichever side of `✗127`'s split they fall on is not yet
+measured (`Q12`).
 
 ## Axis 2 — Sign inference and the underlying field
 
@@ -81,7 +85,11 @@ Wintraecken 2020, thirty-five years later — with `descendant_citations_in_repo
 this crate's own fixtures: `box_exact` reads `non_transverse_fraction` **0.191406250 / 0.094238281 /
 0.046936035** over 784 / 3,088 / 12,304 cells. `✗15` and `✗19` retired the two unconditional-manifoldness
 claims. The standing belief: **soundness here is conditional, the condition is transversality, and the
-condition is violated on the one field whose answer is known exactly.**
+condition is violated on the one field whose answer is known exactly.** Since `M-494` the answer is
+known exactly on **eight** closed fields rather than two: χ is *asserted* on `sphere`, `torus` and the
+six prescribed-genus solids, and the landing paid for it with four falsified contracts (`R-187`) —
+among them that continuous `f64` reaches the singular face after all, **72** times on two fields whose
+mirror symmetry is the grid's.
 
 ## Axis 7 — Adaptivity and multiresolution
 
