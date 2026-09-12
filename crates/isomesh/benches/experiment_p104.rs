@@ -196,6 +196,18 @@
 //! measuring work rather than layout. C2's verdict, by contrast, reads the
 //! instruction form, which is the reproducible one.
 
+// Off Linux `main` refuses before reaching `mod experiment`, so the fixture
+// constants below are unreachable there. `common/mod.rs` carries the same
+// blanket allow for the same reason: the alternative is one `#[cfg]` per item,
+// nine times, saying one thing.
+#![cfg_attr(
+    not(target_os = "linux"),
+    allow(
+        dead_code,
+        reason = "main refuses off Linux, so the whole harness is unreachable there"
+    )
+)]
+
 mod common;
 
 /// `M-287`'s own fixture — 127³, 128³, 129³ — plus 64³.

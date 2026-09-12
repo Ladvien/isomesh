@@ -9,8 +9,8 @@ research_moves: 5
 experiment_moves: 4
 fields_mined: [{geometric inference / reach estimation, 1, P-177}, {random fields / integral geometry, 2, P-178}, {optimal transport, 3, P-179, FORCED-EXPLORE}, {random fields — stationarity, 5, P-180}, {geometric measure theory — sets of positive reach, 7, P-181}]
 last_governs_edit: 10       # iteration 10 — M-494 edited Axis 1 and Axis 6
-next_p: 183
-next_r: 188
+next_p: 233
+next_r: 238
 forced_explore_due: 6       # §1 — every third RESEARCH move; move 3 was one
 ```
 

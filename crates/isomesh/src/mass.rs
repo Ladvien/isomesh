@@ -288,7 +288,7 @@ pub fn mass_properties<R: Real>(
         }
     }
 
-    if !(volume.is_finite() && volume > R::ZERO) || !largest.is_finite() {
+    if !(volume.is_finite() && volume > R::ZERO && largest.is_finite()) {
         return Err(Error::MassPropertiesUndefined {
             volume: volume.as_f64(),
             largest_moment: largest.as_f64(),

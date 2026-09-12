@@ -300,6 +300,17 @@
     clippy::too_many_arguments,
     clippy::too_many_lines
 )]
+// Off Linux `main` refuses before reaching the harness (see the `Probe` gate
+// below), so every fixture constant and helper in this file is unreachable
+// there. `common/mod.rs` carries the same blanket allow for the same reason:
+// the alternative is one `#[cfg]` per item, forty times, saying one thing.
+#![cfg_attr(
+    not(target_os = "linux"),
+    allow(
+        dead_code,
+        reason = "main refuses off Linux, so the whole harness is unreachable there"
+    )
+)]
 
 mod common;
 
@@ -309,6 +320,12 @@ use isomesh::Sdf;
 use isomesh::brush::{Brush, BrushOp, Capsule, apply};
 use isomesh::fields::{BoxExact, FbmTerrain, Gyroid, Sphere};
 
+// Hardware counters are `perf_event_open`, which is Linux-only — the same gate
+// `common/counters.rs` carries and the other twenty-nine counter-using benches
+// apply. C1 and C3 read cycles through it, so off Linux this bench refuses in
+// `main` rather than recording a fabricated zero (`experiment_p104`'s
+// precedent).
+#[cfg(target_os = "linux")]
 use crate::common::counters::{MIN_TIME_RATIO, Probe};
 
 /// Brushes in `M-36`'s fixture.
@@ -2333,6 +2350,7 @@ struct C13 {
     dop: usize,
 }
 
+#[cfg(target_os = "linux")]
 fn run_c13(a: &C13, planes: Planes, threads: usize, probe: &mut Probe) -> Row {
     let ds = dirs(a.dop);
     let h = a.chunk.cell_size();
@@ -2732,7 +2750,27 @@ fn main() {
     if !std::env::args().any(|a| a == "--bench") {
         return;
     }
-    common::experiment::run(isomesh::experiment!("P-84"), |run| {
+
+    let prereg = isomesh::experiment!("P-84");
+
+    // `experiment_p104`'s precedent. C1 and C3 read cycles through
+    // `common::counters::Probe`, which is `perf_event_open`, and the
+    // multiplexing assert on `MIN_TIME_RATIO` is what licenses `ghz` as a
+    // reading rather than an extrapolation. Off Linux there is no counter to
+    // open and a recorded zero would be a fabricated measurement, so the bench
+    // refuses instead of degrading.
+    #[cfg(not(target_os = "linux"))]
+    {
+        eprintln!(
+            "{} scores fracture cost in cycles per fragment, which needs \
+             `perf_event_open` and which this platform does not have.",
+            prereg.id
+        );
+        std::process::exit(1);
+    }
+
+    #[cfg(target_os = "linux")]
+    common::experiment::run(prereg, |run| {
         let threads = std::thread::available_parallelism()
             .map_or(1, std::num::NonZeroUsize::get)
             .min(MAX_THREADS);

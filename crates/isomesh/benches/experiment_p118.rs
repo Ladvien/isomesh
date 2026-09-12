@@ -198,6 +198,16 @@
 
 // Exact comparisons on purpose: every clause here is stated in bits.
 #![allow(clippy::float_cmp)]
+// Off Linux `main` refuses before the harness runs, so every clause constant
+// and helper below is unreachable there. `common/mod.rs` carries the same
+// blanket allow for the same reason.
+#![cfg_attr(
+    not(target_os = "linux"),
+    allow(
+        dead_code,
+        reason = "main refuses off Linux, so the whole harness is unreachable there"
+    )
+)]
 
 mod common;
 
@@ -210,15 +220,22 @@ use std::time::Instant;
 use isomesh::dual::{CellVertices, VertexRule};
 use isomesh::dual_contouring::solve::{LAMBDA, dot_equivariant};
 use isomesh::dual_contouring::{CLAMP_EPSILON, DualContouring};
+#[cfg(target_os = "linux")]
 use isomesh::fields::ReferenceField;
 use isomesh::manifold_dual_contouring::ManifoldDualContouring;
 use isomesh::marching_cubes::ambiguity::joined_mask;
 use isomesh::marching_cubes::table::{
     EDGE_CORNERS, EDGE_COUNT, NO_EDGE, edge_offset, is_inside, segment_links,
 };
-use isomesh::validate::{AccuracyConfig, accuracy, mesh_hash};
+#[cfg(target_os = "linux")]
+use isomesh::validate::mesh_hash;
+use isomesh::validate::{AccuracyConfig, accuracy};
 use isomesh::{MeshBuffer, RuntimeShape3, Sdf};
 
+// `perf_event_open`, hence Linux-only — the gate `common/counters.rs` carries
+// and the other counter-using benches apply. C2 is denominated in retired
+// instructions, so off Linux `main` refuses rather than record a zero.
+#[cfg(target_os = "linux")]
 use crate::common::counters::{MIN_TIME_RATIO, Probe};
 
 // ─── clause constants ───────────────────────────────────────────────────────
@@ -1875,6 +1892,7 @@ fn solve_pass(corpus: &[CellCrossings], cfg: Config) -> usize {
     solved
 }
 
+#[cfg(target_os = "linux")]
 fn measure_cost(probe: &mut Probe, corpus: &[CellCrossings], cfg: Config) -> (Counted, usize) {
     let started = Instant::now();
     let solved = solve_pass(corpus, cfg);
@@ -2075,15 +2093,19 @@ fn main() {
     if !std::env::args().any(|arg| arg == "--bench") {
         return;
     }
+    let prereg = isomesh::experiment!("P-118");
+
     #[cfg(not(target_os = "linux"))]
     {
         eprintln!(
-            "P-118 scores C2 in retired instructions from perf_event_open, which is Linux \
-             only. Refusing rather than recording a zero for a column that was not measured."
+            "{} scores C2 in retired instructions from perf_event_open, which is Linux \
+             only. Refusing rather than recording a zero for a column that was not measured.",
+            prereg.id
         );
         std::process::exit(1);
     }
-    let prereg = isomesh::experiment!("P-118");
+
+    #[cfg(target_os = "linux")]
     common::experiment::run(prereg, |run| {
         // ── the accumulator's own battery, before anything is measured ───────
         let battery = self_test();
