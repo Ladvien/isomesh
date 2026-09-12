@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**605 entries** — 129 falsified, 386 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**606 entries** — 130 falsified, 386 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -168,6 +168,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗127` | VACUOUS as registered on one field of four, and that field is the finding: box_exact's reach is 0 and this estimator rea… |
 | `✗128` | the detector works, and it says the opposite of what was registered: C2 HELD on |
 | `✗129` | the cap was the sign, and it was not the gap. On the sphere's inscribed cube noise_cavity flips from χ |
+| `✗130` | M-31's cross-platform guarantee broke on the first push of M-494: macOS read |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -1888,6 +1889,7 @@ Rules with no incident behind them get ignored. These all have one.
 | **Run every step of a CI job locally, not the ones you remember it having.** Name them in the definition of done so the list is not held in memory | A-002 — a public doc comment linked to a `pub(crate)` item, which `cargo doc` under `-D warnings` rejects and which clippy and fmt both pass. Two of the lint job's three steps were run locally and the third was not, so a green local run pushed a red CI. Same shape as E-111's missing `fmt` on the excluded workspace: the gap is always the step nobody thinks of as linting |
 | **Implement the expensive fix, measure it, and only then look for the cheap one.** The measurement is what tells you a cheap one is worth hunting | A-015 — the ticket was written expecting to re-baseline ✗1, M-2, M-22 and all 84 golden hashes, and the naive centroid fix duly cost +73% vertices. That number was so much worse than the "a vertex and two triangles per long cycle" estimate that it forced the question "which chords can *actually* collide?", whose answer is local and made the fix free. Estimating the cost instead of measuring it would have shipped the expensive version or abandoned the ticket |
 | **Record the margin, not just the verdict.** "It did not happen" and "it came within an ulp of happening" are the same count | M-44 — zero seam decisions flipped, but the number that makes that trustworthy is the closest observed margin, `1.535e-2`, against a perturbation of `~1e-16`. Without it, the zero could have been luck |
+| **In a `no_std` crate that links `std` under `#[cfg(test)]`, never call a float method on a concrete `f32`/`f64` — go through `Real` or name `libm::` — because under test the inherent std method shadows the trait and the *platform's* libm leaks into whatever the test writes down** | ✗130 — `prescribed.rs`'s `ring()` computed a bore ring with `a.cos()` on an `f64`; golden hashes blessed under test on Linux/glibc, and macOS read **48 of 378** differing in the last ULP of `cos(2π/3)` and `sin(4π/3)` — every combination of the two three-point-ring fields. glibc, Apple's libm and pure-Rust `libm` each gave a different value; naming `libm::cos` made both platforms use the third. `M-31`'s 216 cross-platform hashes had held only because no earlier field put a trig call on a concrete float |
 
 ---
 
@@ -31841,6 +31843,37 @@ false on symmetric continuous data — Axis 6 carries that too.
 `C¹` seams at the drill lines and tube junctions — gradient direction continuous across a seam,
 curvature not — and their reach is not known in closed form. One run of `experiment_p181`'s ladder over
 them decides whether `✗127`'s split gains six smooth closed prescribed-χ fields. Logged as `Q12`.
+
+### 💥 ✗130 / M-495 — **`M-31`'s cross-platform guarantee broke on the first push of `M-494`: macOS read **48 of 378** golden hashes drifted — every algorithm at every resolution on `graph_theta_g2` and `ball_drilled_g3`, and nothing else — with vertex and triangle counts identical and hashes differing in the last ULP. The cause was two tokens in the new module: `ring()` computed its three-point ring with `a.cos()` on a concrete `f64`, which under `#[cfg(test)] extern crate std` resolves to the **platform's** libm rather than `Real::cos`. Fixed by naming `libm::cos`/`libm::sin`; on Linux the re-bless moved exactly those 48 rows and no other, and the new values match neither glibc's nor Apple's — three backends, three roundings, and now one** (R-177, follow-up to P-182)
+
+**M.** `gh run 34712346655`, `test (macos-latest)` job `103603257989`: `golden_hashes_are_unchanged`
+and `the_committed_fixture_is_canonically_formatted` failed, **728 of 730** passed; `test (ubuntu-latest)`
+green on the same commit. The drift list from the CI log, tallied: **24** combinations on
+`graph_theta_g2` and **24** on `ball_drilled_g3` — 8 algorithm rows × 3 resolutions each — and **0** on the
+other twelve fields; **48 of 48** with unchanged `vertices` and `triangles`. Locally, after the fix,
+`ISOMESH_BLESS=1` moved **48** hashes, the same set to the row, and none of the other **330**.
+
+**The mechanism, and why 216 hashes never saw it.** `lib.rs` is `#![no_std]` and links `std` only under
+`#[cfg(test)]` (`lib.rs:103`). Every existing field computes through the generic `R: Real`, whose
+`sin`/`cos`/`sqrt` are `libm`'s pure-Rust functions on both scalar types, so their values are
+bit-reproducible — which is the whole argument for `libm` in `CLAUDE.md`, and `M-31` measured it holding
+on 216 hashes across macOS and Linux. `ring()` broke the pattern: it built the ring's `(x, y)` in plain
+`f64` *before* `R::from_f64`, and on a concrete `f64` an inherent method wins over a trait method — so
+under test `a.cos()` was `f64::cos`, the platform's libm, and the fixture blessed on glibc carried glibc's
+`cos(2π/3)`. `ball_drilled_g2`'s ring is at angles `0` and `π`, where every backend agrees to the bit;
+`ball_drilled_g1`, `graph_k4_g3` and `graph_cube_g5` use no trig at all. So the leak landed on exactly the
+two fields with a three-point ring, and on every mesh of each.
+
+**Three backends, three answers.** The 48 new Linux hashes equal the macOS run's values on **0** rows: glibc,
+Apple's libm and pure-Rust `libm` round `cos(2π/3)` and `sin(4π/3)` three different ways in the last bit,
+and the fixture now carries the third on both platforms. `M-31`'s sentence stands as written — the 378 are
+generated on one platform and verified on the other — but the reason it held for 216 was narrower than the
+prose implied: no earlier field had put a trig call on a concrete float.
+
+**Surprise:** none in `what-governs.md`; the belief that `libm` makes the fixtures reproducible is right, and
+what was wrong was a method-resolution trap in one new function. **Rule added to Part 5**, with this incident.
+
+**Raises:** none — the fix is the rule, and the macOS re-run on the fixed commit is its test.
 
 ## Phase 29 — fifty registrations from twenty-six fields of mathematics, each before its harness
 

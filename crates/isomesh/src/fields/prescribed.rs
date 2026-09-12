@@ -205,13 +205,26 @@ impl<R: Real, const G: usize> BoundedSdf for DrilledBall<R, G> {
 
 /// `G` points on the circle of radius `rho` in the `z = 0` plane, the first on
 /// the `+x` axis.
+///
+/// **`libm::cos` and `libm::sin` by name, not `a.cos()`.** This crate is
+/// `no_std`, but `lib.rs` links `std` under `#[cfg(test)]`, and on a concrete
+/// `f64` the inherent `f64::cos` — the *platform's* libm — then shadows
+/// [`Real::cos`]. The first version of this function called `a.cos()`; the golden
+/// fixture was blessed under test on Linux/glibc, and macOS read 48 of 378 hashes
+/// differing in the last ULP of `cos(2π/3)` and `sin(4π/3)` — every combination
+/// of `graph_theta_g2` and `ball_drilled_g3`, the two fields with a three-point
+/// ring (`✗130`). Naming the function keeps one float backend on every platform,
+/// which is the whole reason `libm` is the dependency.
 fn ring<R: Real, const G: usize>(rho: f64) -> [[R; 2]; G] {
     core::array::from_fn(|k| {
         // `k < G`, and `G` is 1, 2 or 3 here; the conversion is exact for any
         // bore count a solid could have.
         #[allow(clippy::cast_precision_loss)]
         let a = core::f64::consts::TAU * (k as f64) / (G as f64);
-        [R::from_f64(rho * a.cos()), R::from_f64(rho * a.sin())]
+        [
+            R::from_f64(rho * libm::cos(a)),
+            R::from_f64(rho * libm::sin(a)),
+        ]
     })
 }
 
