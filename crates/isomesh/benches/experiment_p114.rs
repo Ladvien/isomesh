@@ -170,6 +170,18 @@
 //! the reproducible one**: a re-run that moves `ratio` but not
 //! `ratio_instructions` has moved the clock, not the mechanism.
 
+// Off Linux `main` refuses before reaching `mod experiment`, so the fixture
+// constants below are unreachable there. `common/mod.rs` carries the same
+// blanket allow for the same reason: the alternative is one `#[cfg]` per item
+// saying one thing four times.
+#![cfg_attr(
+    not(target_os = "linux"),
+    allow(
+        dead_code,
+        reason = "main refuses off Linux, so the whole harness is unreachable there"
+    )
+)]
+
 mod common;
 
 /// Samples per axis. `n` samples span `n − 1` cells, `common::grid`'s
