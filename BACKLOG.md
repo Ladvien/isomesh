@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**366 tickets archived, 26 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**366 tickets archived, 27 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -59,6 +59,7 @@ that writes the `FINDINGS.md` entry — never before.
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
 | ☐ | **R-182** | M | — |
+| ☐ | **R-183** | M | — |
 
 **R-182 — measure this crate's reach, both halves of it, and find out whether it is the denominator
 for resolution.** `P-177`. Aamari et al.'s Theorem 3.4 (`10.1214/19-ejs1551`, converted, 43 pp.) says
@@ -72,6 +73,17 @@ a single reference field.** The deliverable is `crates/isomesh/benches/experimen
 `box_exact` have closed-form reaches and `box_exact`'s is **0**, so a `tau_measured` above `2h` there
 is the instrument failing rather than the field surprising anyone. Nothing under `crates/isomesh/src/`
 moves; the SHARE is none, because `tau` grades the extractor and is not a stage of it.
+
+**R-183 — give an excursion set an expected χ, and find out whether `M-458`'s `noise_cavity` numbers
+are ground truth or two samplings of an unconverged quantity.** `P-178`. Taylor's Gaussian kinematic
+formula (`10.1214/009117905000000594`, converted) predicts `E[χ]` of `{f ≥ u}` from the Hermite
+integrals and the box's Lipschitz–Killing curvatures scaled by `λ^(j/2)`. `M-458` supplies the
+mesh-free digital-topology oracle this grades against, and reports `noise_cavity` at **82** (33³) and
+**−152** (65³) — a gap of **234** that the formula either explains as sampling or does not. The
+deliverable is `crates/isomesh/benches/experiment_p178.rs` writing `docs/experiments/p-178.csv`, with
+the exactly-Gaussian Fourier-synthesis fixture as C1's calibration and a deliberately wrong `4λ`
+prediction as the vacuity control — a band that cannot reject `4λ` cannot confirm `λ` either. Nothing
+under `crates/isomesh/src/` moves; the SHARE is none.
 
 ## Phase 28 — what Phase 27 earned
 

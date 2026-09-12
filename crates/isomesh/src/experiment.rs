@@ -7712,6 +7712,73 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "c3_holds",
         ],
     },
+    Preregistration {
+        id: "P-178",
+        ticket: "R-183",
+        hypothesis: "Taylor's Gaussian kinematic formula (10.1214/009117905000000594, in the corpus \
+            and converted) gives, for a real-valued zero-mean unit-variance Gaussian field, \
+            E[chi(M intersect f^-1[u, inf))] = sum over j of L_j(M) * rho_j(u) with \
+            rho_j(u) = (2*pi)^(-(j+1)/2) * integral from u to infinity of H_j(x) * exp(-x^2/2) dx, \
+            H_j the jth Hermite polynomial, and L_j taken in the metric the field induces -- so for \
+            an isotropic field on a box the Lipschitz-Killing curvatures are the box's Euclidean \
+            ones scaled by lambda^(j/2), lambda being mu_2, the variance of a first-order partial \
+            derivative. That is an ANALYTIC EXPECTATION FOR chi OF AN EXCURSION SET, which is \
+            exactly the oracle M-458 did not have: it reports noise_cavity's chi as 82 at 33^3 and \
+            -152 at 65^3 and calls both ground truth, and CLAUDE.md's validity gate records chi \
+            rather than asserting it on every field whose expected_euler() is None. The four \
+            rho_j are DERIVED IN THE HARNESS from the Hermite integrals and checked against the \
+            j = 0 case (the Gaussian tail), not transcribed. (C1) On an exactly-Gaussian fixture -- \
+            random-phase Fourier synthesis with i.i.d. normal coefficients, whose lambda is a \
+            closed-form sum over the mode set -- the mesh-free digital-topology chi of M-458's \
+            oracle, averaged over at least 32 independent realisations, agrees with the prediction \
+            within two standard errors on at least 4 of 5 isovalue rungs. (C2) The shipped noise \
+            fields obey the same formula with lambda estimated from their own sampled derivatives: \
+            noise_cavity and fbm_terrain at the finest rung land inside the two-sigma band. (C3) \
+            chi of a FIXED realisation has converged by the finest rung: between the two finest \
+            rungs the relative change is at most 0.10 on noise_cavity. SHARE: none -- this is an \
+            oracle for the validity gate, not a stage of extraction.",
+        falsified_by: "C1 by the fixture missing its own prediction, which means the harness's \
+            Hermite derivation or the induced-metric scaling is wrong and nothing else in the row \
+            may be read. C2 by a band miss, which is the interesting direction: it would say the \
+            crate's hash-based lattice noise is far enough from Gaussian that the formula cannot \
+            grade it, and the entry must carry relative_departure as the number saying how far -- \
+            P-176's C2 already found fbm_terrain's 2D slices percolating where the Gaussian theorem \
+            says they should not, so this is a real risk and is registered as one. A band HIT is \
+            equally informative and is the whole point: it would hand the validity gate an analytic \
+            expected chi for two of the four fields M-459 found ungradeable. C3 by a relative \
+            change above 0.10, which would re-tier M-458: its noise_cavity numbers 82 and -152 \
+            would be two samplings of an unconverged quantity rather than two ground truths, and \
+            the 234 between them would be the evidence. VACUITY CONTROL: the band must be able to \
+            reject something. The same run predicts with a deliberately wrong spectral moment, \
+            4*lambda, and records band_rejects_wrong_lambda; if the wrong prediction also lands \
+            inside the band the comparison cannot discriminate and the row is vacuous whatever the \
+            clauses say. M-458's calibration is re-taken in the same run -- chi 2 on sphere and 0 \
+            on torus from the same oracle -- or the oracle itself is not the one that entry \
+            measured.",
+        records: &[
+            "arm",
+            "field",
+            "resolution",
+            "isovalue",
+            "realisations",
+            "lambda_spectral",
+            "lambda_source",
+            "chi_digital_mean",
+            "chi_digital_sem",
+            "chi_gkf_predicted",
+            "gkf_within_band",
+            "relative_departure",
+            "band_rejects_wrong_lambda",
+            "chi_fixed_realisation",
+            "chi_convergence_gap",
+            "rungs_within_band",
+            "calibration_chi_sphere",
+            "calibration_chi_torus",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
