@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-366 tickets. Line numbers are stable until something above them is edited — grep the ID if
+367 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -3397,3 +3397,13 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***At `iso = 0` one component holds 0.814493 of the air against 65 isolated pockets, and the theorem's qualitative 2D/3D difference is present on `noise_cavity` (`percolation_isovalue_2d` none) and absent on `fbm_terrain`, whose 2D slices percolate too at 7.272575 — which the registration named in advance as a real risk, because `fbm_terrain` is hash-based lattice noise and not a Gaussian field.***
 >
 > ***Verification.*** `scripts/csv_provenance.sh` passes — all fifty Phase 27 datasets resolve to commits in history — with `docs/experiments/p-176.csv` stamped `# commit f24c09b on amd-ryzen-9-5900x-12-core`, no `(WORKING TREE DIRTY)`. `cargo clippy -p isomesh --all-targets -- -D warnings` is clean. **Deliberately not claimed:** nothing is landed and no stage moves — this changes what a level designer may assume, not what the extractor does — and the caveat the demo must not lose is that on `fbm_terrain` the giant component is the **sky**, not a cave system. C2's split is the registered risk arriving, so the ordering is claimed only where it survives it; `row_ms` gates nothing.
+
+| ☑ | **R-183** | M | — |
+> **DONE 2026-09-12 — 💥 ✗126 / M-490 / P-178: VACUOUS as registered — `band_rejects_wrong_lambda` **3 of 5**, because at `u = ±1` the Gaussian kinematic formula's `(u² − 1)` factor is zero for *any* `λ` and the `4λ` control is unsatisfiable there. C1 HELD on **5 of 5** at `relative_departure` **0.004342748 / 0.010112782 / 0.004829332**; C2 split, `fbm_terrain` inside its matched band at **0.25σ** and `noise_cavity` outside at **6.77σ** with the sign of χ wrong; C3 FALSIFIED at `chi_convergence_gap` **2.853658537** against a **0.10** bar.**
+> **CSV:** `docs/experiments/p-178.csv` — 22 rows × 21 columns.
+>
+> ***No source change landed and none was asked for: `crates/isomesh/src/` did not move, the row owns `benches/experiment_p178.rs` and its `[[bench]]` entry, and the SHARE is none because `τ`-style graders are not stages.*** The first EXPERIMENT move of the discovery loop (`docs/research/2026-09-12-discovery-loop-prompt.md`), taken because `P-178` carried the highest `expected_information` of the three registered rows.
+>
+> ***The result that changes something: `M-458`'s `noise_cavity` χ is not a ground truth.*** This row's copy of that oracle reproduces **82** at 33³ and **−152** at 65³ exactly — and then reads **−186** at 129³, so the two numbers `M-458` published are two samplings of a quantity that had not converged. `docs/research/what-governs.md` gained the rule in the same commit: a random field's χ must be quoted with the resolution it was read at and must not be called ground truth without a convergence column.
+>
+> ***Verification.*** `cargo clippy -p isomesh --bench experiment_p178 -- -D warnings` is clean; the calibration arm reads `calibration_chi_sphere` **2** and `calibration_chi_torus` **0** from the same code, and the digitisation predicate is asserted sample-by-sample equal to the crate's own `marching_cubes::table::is_inside`. The four `ρ_j` are derived twice — Simpson quadrature of the paper's integral and the closed form — and asserted equal to `1e-10` before any row is written.

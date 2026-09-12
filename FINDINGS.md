@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**600 entries** — 125 falsified, 385 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**601 entries** — 126 falsified, 385 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -164,6 +164,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗123` | C1 HELD in the strongest reading the clause can have, because symmetry_class_count is 1: all eight corners are a single… |
 | `✗124` | C1 HELD with c1_fields_nonzero 6 of 8 and transversality failing measurably — box_exact reads non_transverse_fraction 0.… |
 | `✗125` | C1 FALSIFIED on 24 of 24 rows: intrinsic Delaunay flipping raises the worst-decile minimum angle by at most 1.642437° ag… |
+| `✗126` | VACUOUS as registered, and the reason is the formula's own algebra: at u = ±1 the Gaussian kinematic formula's (u² − 1)… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -31343,3 +31344,120 @@ row on which `air_union_find_agreement` reads false, which would put the shipped
 retired union-find in conflict and would be a `connectivity.rs` bug rather than a finding about caves; or
 an unmasked `noise_cavity` sweep quoted as a cave measurement, which the `outer_shell_*` columns exist to
 refuse.
+
+---
+
+# Discovery loop — results
+
+One entry per EXPERIMENT move of `docs/research/2026-09-12-discovery-loop-prompt.md`. Each carries two
+lines the older entries do not: `Surprise:`, naming what the result contradicts in
+`docs/research/what-governs.md`, and `Raises:`, the question it hands back to the ledger.
+
+**On the word *vacuous*.** The loop prompt calls a row whose vacuity control fails *tier V*. This file
+already uses `V` for *verified from a primary source* (`V-51`), so a vacuous row is recorded here the way
+`✗81` was — a falsified entry that says `VACUOUS` and why. The loop's `V` and this file's `V` are not the
+same letter twice.
+
+### 💥 ✗126 / M-490 — **VACUOUS as registered, and the reason is the formula's own algebra: at `u = ±1` the Gaussian kinematic formula's `(u² − 1)` factor is zero for *any* `λ`, so the `4λ` control cannot be rejected on 2 of its 5 rungs — `band_rejects_wrong_lambda` **3 of 5**. Beneath that control the measurements are sharp: C1 HELD on **5 of 5** rungs at `relative_departure` **0.004342748 / 0.010112782 / 0.004829332** on the three `λ`-bearing rungs; C2 split, `fbm_terrain` inside its band at **0.25σ** and `noise_cavity` outside it at **6.77σ**; and C3 FALSIFIED at `chi_convergence_gap` **2.853658537** against a **0.10** bar, with the oracle reproducing `M-458`'s own `noise_cavity` numbers **82** and **−152** exactly and then reading **−186** at 129³** (P-178, R-183)
+
+**M.** `cargo bench --bench experiment_p178`, `docs/experiments/p-178.csv`, **22 rows** across **21
+columns** — four `#` comment lines plus one column header plus 22 data rows, counted from the file. Six
+arms, `f64`, `amd-ryzen-9-5900x-12-core` (Zen 3), one thread, seed `0x0178_9d5e_c43a_1f07`,
+`REALISATIONS` **32**, `SAMPLES` **65**, rungs `−2, −1, 0, 1, 2` in standard deviations.
+**`crates/isomesh/src/` did not move**; this row owns `benches/experiment_p178.rs` and its `[[bench]]`
+entry and nothing else. The first EXPERIMENT move of the discovery loop, taken because `P-178` carried
+the highest `expected_information` (**8**) of the three registered rows.
+
+> **The vacuity control failed, and what it failed against is a fact about the theorem rather than
+> about the fixture.** The registration reads: *"the same run predicts with a deliberately wrong
+> spectral moment, `4λ` … if the wrong prediction also lands inside the band the comparison cannot
+> discriminate and the row is vacuous whatever the clauses say."* On the 3-torus the prediction is the
+> single term `λ^(3/2) · Vol · (2π)^(−2) (u² − 1) e^(−u²/2)`, so at `u = ±1` it is **exactly zero for
+> every `λ`** — `chi_gkf_predicted` **0.000000000** on both the `gaussian_periodic` and the
+> `wrong_lambda` rows there. Right and wrong predictions are the same number, no band can separate
+> them, and *"on every rung"* was therefore unsatisfiable the moment `±1` entered the ladder. The
+> control was written without noticing that two of its five rungs are `λ`-blind. **The threshold was
+> not moved and the clause was not rewritten**: the row is recorded vacuous as registered, the
+> harness prints why instead of aborting (an abort would have deleted the CSV that is the evidence),
+> and `band_rejects_wrong_lambda` carries **true** on `u = −2, 0, 2` — where `4λ` predicts
+> **109.026525269 / −268.534370494 / 109.026525269** against measurements of **13.687500000 /
+> −33.906250000 / 13.562500000** — and **false** on `u = ±1`.
+
+**C1 — HELD on 5 of 5, and the two hardest rungs are the parameter-free ones.** The fixture is an
+exactly Gaussian field on the unit 3-torus: `f = N^(−1/2) Σ_j [ξ_j cos(2π k_j·x) + η_j sin(2π k_j·x)]`
+over the mode shell `1 ≤ |k|² ≤ 14`, `ξ, η` i.i.d. standard normal by Box–Muller on the shared
+SplitMix64. Its `lambda_spectral` is **120.646044199** in closed form, checked against the sampled
+central differences and against a unit sample variance before any row is written. Measured against
+prediction:
+
+| `u` | `chi_digital_mean` | `chi_digital_sem` | `chi_gkf_predicted` | `relative_departure` |
+|---|---|---|---|---|
+| −2 | **13.687500000** | 0.492765198 | **13.628315659** | **0.004342748** |
+| −1 | **0.406250000** | 0.764456605 | **0.000000000** | — |
+| 0 | **−33.906250000** | 0.554234751 | **−33.566796312** | **0.010112782** |
+| 1 | **0.031250000** | 0.656057960 | **0.000000000** | — |
+| 2 | **13.562500000** | 0.403955992 | **13.628315659** | **0.004829332** |
+
+The `λ`-blind rungs are useless as a control and are the sharpest *check*: the theorem says the
+expected Euler characteristic is **exactly zero** one standard deviation either side of the mean,
+with no scale to hide behind, and 32 draws give **0.031250000** and **0.406250000** against standard
+errors of **0.656057960** and **0.764456605**. Nothing in the derivation is transcribed — the four
+`ρ_j` are computed by Simpson quadrature of the paper's `∫_u^∞ H_j(x) e^(−x²/2) dx` **and** by the
+closed form that follows from `d/dx[H_{j−1} e^(−x²/2)] = −H_j e^(−x²/2)`, and the two are asserted
+equal to `1e-10` before the run proceeds; the box's Lipschitz–Killing curvatures are fitted from the
+Steiner tube polynomial and asserted against the box's own geometry.
+
+**C2 — split, and the split is the result.** With `λ` estimated from each shipped field's own sampled
+derivatives and the band taken from a matched Gaussian ensemble on the *same* box at the *same*
+resolution through the *same* bounded digitisation:
+
+| field | `lambda_spectral` | `chi_digital_mean` | `chi_gkf_predicted` | band `σ` | `gkf_within_band` | `relative_departure` |
+|---|---|---|---|---|---|---|
+| `fbm_terrain` | 0.025259313 | **1.000000000** | **1.297632628** | 1.177322687 | **true** (0.25σ) | **0.229365864** |
+| `noise_cavity` | 3.514897286 | **15.000000000** | **−6.602285203** | 3.190206789 | **false** (6.77σ) | **3.271940629** |
+
+The band is not a formality: both matched ensembles land inside their own predictions —
+`noise_cavity_matched_ksq6` **−7.375000000** against **−6.606939848** (`relative_departure`
+**0.116250514**) and `fbm_terrain_matched_ksq1` **1.031250000** against **1.022851231**
+(**0.008211134**) — so the construction that produces the band reproduces the formula on a field that
+really is Gaussian, at the same box, resolution and digitisation the shipped row uses. `noise_cavity`
+misses it by **21.602285203** in χ, and the sign is the loud part: the formula predicts a *negative*
+Euler characteristic at the mean level, the field delivers a *positive* one. The registration's
+falsifier names the meaning that applies: *"this crate's hash-based lattice noise is far enough from
+Gaussian that the formula cannot grade it"* — for `noise_cavity`, and for `noise_cavity` only. One
+caveat is carried rather than hidden: `fbm_terrain`'s matched shell is the coarsest available
+(`|k|² ≤ 1`) and its closed-form `λ` **0.051404190** is about twice the field's measured
+**0.025259313**, so that band is wider than a perfectly matched one would be and its `true` is the
+weaker of the two verdicts.
+
+**C3 — FALSIFIED, and it re-tiers `M-458`.** The clause asks whether χ of a fixed realisation has
+converged by the finest rung. Measured on `{f < 0}` — the crate's own inside test, which is exactly
+the solid `M-458` read — as surface χ, `2 · χ(solid)`:
+
+| resolution | surface χ | `chi_convergence_gap` |
+|---|---|---|
+| 33³ | **82** | — |
+| 65³ | **−152** | **2.853658537** |
+| 129³ | **−186** | **0.223684211** |
+
+**The first two numbers are `M-458`'s, exactly**, which is this row's strongest single check: a
+copied oracle that had drifted could not reproduce `82` and `−152` on the nose, and the calibration
+arm independently reads `calibration_chi_sphere` **2** and `calibration_chi_torus` **0**. Both gaps
+exceed the **0.10** bar, the second by more than twentyfold. So `M-458`'s *"first ground-truth χ on
+the two closed fields the crate declares unknowable — `noise_cavity` **82** and **−152**"* is not two
+ground truths; it is **two samplings of a quantity that had not converged**, and the third rung at
+**−186** shows it still moving. The registration named this outcome and what it would mean, and that
+is what applies. At the standardised level the same fixed field reads **−2 / 15 / 21** with gaps
+**8.500000000** and **0.400000000** — a different set, recorded beside it so the two levels cannot be
+confused.
+
+**Surprise:** `docs/research/what-governs.md`'s *Instruments* paragraph treated the digital-topology
+oracle's outputs as ground truth. They are ground truth **about the sampled grid**, not about the
+field: on `noise_cavity` the same oracle returns `82`, `−152` and `−186` at three rungs of one fixed
+realisation. The paragraph is edited in this commit.
+
+**Raises:** why does `fbm_terrain` land inside the Gaussian band and `noise_cavity` miss it by 6.77σ,
+when both are hash noise? The first candidate is stationarity rather than Gaussianity —
+`noise_cavity` carries a spherical cap (`fields/mod.rs`, radius **1.5**, the one `P-176` had to mask
+around), and the Gaussian kinematic formula's hypothesis is a *stationary* field on the box it is
+integrated over. Logged as `Q8`.

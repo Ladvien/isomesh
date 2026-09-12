@@ -163,3 +163,22 @@ to a Conley-index instrument real but one dimension lower than claimed — `plat
 `percolation_isovalue` **0.029340**, and at `iso = 0` one component holds **0.814493** of the air against
 **65** isolated pockets — with the theorem's qualitative 2D/3D difference present on `noise_cavity` and
 **absent** on `fbm_terrain`, whose 2D slices percolate too at **7.272575**.
+
+**A digital-topology χ is ground truth about the sampled grid, not about the field — `✗126 / M-490`,
+2026-09-12.** `M-458`'s mesh-free oracle is exact and reproducible: `✗126` re-implemented it, reproduced
+`M-458`'s `noise_cavity` surface χ of **82** at 33³ and **−152** at 65³ *on the nose*, and read **2** on
+`sphere` and **0** on `torus` from the same code. What does not follow is that any of those numbers is the
+field's χ. On one fixed realisation of `noise_cavity` the three rungs read **82 / −152 / −186**, still
+moving at 129³ (`chi_convergence_gap` **2.853658537** then **0.223684211**). **Any entry quoting a random
+field's χ must quote the resolution it was read at, and must not call it ground truth without a
+convergence column.**
+
+**There is now an analytic expectation to grade a random field's χ against, and it works — on a field
+that is actually Gaussian.** Taylor's Gaussian kinematic formula, instantiated on the flat 3-torus as
+`λ^(3/2)·Vol·(2π)^(−2)(u² − 1)e^(−u²/2)`, matched an exactly-Gaussian fixture on **5 of 5** rungs at
+`relative_departure` **0.004342748 / 0.010112782 / 0.004829332**, including the two rungs where it predicts
+**exactly zero** for any `λ`. Of the shipped noise fields, `fbm_terrain` lands inside a matched band at
+**0.25σ** and `noise_cavity` misses by **6.77σ** with the *sign* of χ wrong (**15.000000000** measured
+against **−6.602285203** predicted). So the formula is an oracle for `fbm_terrain` and is not one for
+`noise_cavity`, and the open question is whether the difference is Gaussianity or **stationarity** — the
+cap `noise_cavity` carries is not something a stationary-field theorem allows.
