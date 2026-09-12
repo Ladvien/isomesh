@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**601 entries** — 126 falsified, 385 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**602 entries** — 127 falsified, 385 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -165,6 +165,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗124` | C1 HELD with c1_fields_nonzero 6 of 8 and transversality failing measurably — box_exact reads non_transverse_fraction 0.… |
 | `✗125` | C1 FALSIFIED on 24 of 24 rows: intrinsic Delaunay flipping raises the worst-decile minimum angle by at most 1.642437° ag… |
 | `✗126` | VACUOUS as registered, and the reason is the formula's own algebra: at u = ±1 the Gaussian kinematic formula's (u² − 1)… |
+| `✗127` | VACUOUS as registered on one field of four, and that field is the finding: box_exact's reach is 0 and this estimator rea… |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -31469,3 +31470,89 @@ when both are hash noise? The first candidate is stationarity rather than Gaussi
 `noise_cavity` carries a spherical cap (`fields/mod.rs`, radius **1.5**, the one `P-176` had to mask
 around), and the Gaussian kinematic formula's hypothesis is a *stationary* field on the box it is
 integrated over. Logged as `Q8`.
+
+### 💥 ✗127 / M-491 — **VACUOUS as registered on one field of four, and that field is the finding: `box_exact`'s reach is `0` and this estimator reads `1.000000000`, because a measure-zero sharp edge is invisible to *both* halves of Theorem 3.4 — which presupposes `τ > 0` and so never covered it. The other three closed forms land: `sphere` **0.979703496** against **1.0**, `torus` **0.293412800** against **0.3**, `capsule` **0.342375900** against **0.35**, gaps of **0.32h / 0.11h / 0.12h**. C1 HELD at **6** bottleneck-bound and **3** curvature-bound of 9; C2 FALSIFIED at an `h*/τ` spread of **2468.025804** against a **2.0** bar — and **3.339** across the four smooth fields alone; C3 FALSIFIED at `bottleneck_distance_auc` **0.793001727** on `gyroid`, **0.007** short of its bar, and *unreachable* on `fbm_terrain`, which has no bottleneck at all** (P-177, R-182)
+
+**M.** `cargo bench --bench experiment_p177`, `docs/experiments/p-177.csv`, **9 rows** across **23
+columns** — four `#` comment lines plus one column header plus 9 data rows, counted from the file.
+Nine fields (the eight reference fields plus the `capsule` the registration's calibration names, which
+is `brush::Capsule` and not a reference field), ladder **17 / 25 / 33 / 49 / 65**, `f64`,
+`amd-ryzen-9-5900x-12-core` (Zen 3), no RNG. **`crates/isomesh/src/` did not move.** The second
+EXPERIMENT move of the discovery loop; `P-177` carried `expected_information` **7**.
+
+> **Where the reach is measured from matters more than how, and the first run of this harness proved
+> it.** Differencing the field's Hessian at the **grid** spacing caps the measurable curvature at
+> `O(1/h)` and so puts a floor of several cells under any reach: that run read `tau` **0.25** on
+> `box_exact` at `h` **0.0625** — exactly `4h`, a number about the grid and not about the box. Every
+> field here is an **analytic function** that can be sampled at any scale, so the instrument
+> differences at `CURVATURE_STEP` **1e-3** instead, and `max_abs_curvature_grid_step` is carried
+> beside `max_abs_curvature` so the gap is visible in the CSV: **0.000000000 against 4.000000000** on
+> `box_exact`, **1410.300459162 against 21.643862515** on `gyroid`, **6854.775391056 against
+> 169.232428002** on `noise_cavity`. The grid-stepped column is not a worse measurement of the same
+> thing; it is a measurement of a different thing — the curvature of what the mesh can represent.
+
+**The vacuity control — three of four, and the fourth is a category error in the registration.** The
+control asserts four closed forms before any other number is read. Three hold comfortably:
+
+| field | `tau_analytic` | `tau` | `calibration_gap_h` |
+|---|---|---|---|
+| `sphere` | 1.0 | **0.979703496** | **0.324744072** |
+| `torus` | 0.3 | **0.293412800** | **0.105395203** |
+| `capsule` | 0.35 | **0.342375900** | **0.121985608** |
+| `box_exact` | **0.0** | **1.000000000** | **16.000000000** |
+
+`box_exact` fails, and the reason is not a bug. Its reach is zero **because of its edges**, and an
+edge is a one-dimensional subset of the surface: no vertex of a marching-cubes mesh is required to
+land on one, and none did — `max_abs_curvature` reads **0.000000000**, so the Local Case saw a set of
+perfectly flat faces. The Global Case then returned the box's genuine bottleneck, **1.000000000**,
+half the distance between opposite faces. Both halves answered correctly *for a positive-reach
+manifold*, and `box_exact` is not one: **Theorem 3.4 opens with *"let `M` be a compact submanifold
+with reach `τ_M > 0`"***, so the registration put a field outside the theorem's hypothesis into the
+control that anchors the theorem's use. The row is recorded vacuous as registered — no threshold
+moved, no clause rewritten — and the harness prints the failure rather than aborting, which is
+`✗126 / M-490`'s lesson applied. `thin_plate` shows the same signature without being in the control:
+`tau_local` **unbounded**, `tau_global` **1.000000000**, `max_abs_curvature_grid_step`
+**24.000000000**.
+
+**C1 — HELD, 6 bottleneck-bound and 3 curvature-bound.** The decomposition is not decorative on this
+roster: `sphere`, `torus`, `box_exact`, `capsule`, `csg_difference` and `thin_plate` are **global**,
+and `gyroid`, `fbm_terrain` and `noise_cavity` are **local**. The split is exactly the smooth/rough
+one, and `fbm_terrain` is the clean case of a field with **no bottleneck at all** —
+`bottleneck_pairs` **0**, `tau_global` **unbounded** — which is correct for a heightfield: nothing
+faces anything across a gap. `noise_cavity` is the opposite extreme at **1,857,461** qualifying
+pairs.
+
+**C2 — FALSIFIED, and the falsification is informative in the direction the registration named.**
+`h*/τ` over the nine fields spans **0.250000000** (`box_exact`, whose `τ` is wrong) to
+**617.006450883** (`gyroid`), a spread of **2468.025804** against a bar of **2.0**. The reason is
+structural rather than noisy: for a rough field the reach *at the scale the field is actually smooth*
+is minute — `gyroid` **0.000709069**, `noise_cavity` **0.000145884** — while the extraction settles
+its topology at a spacing four to six hundred times larger. **Reach is therefore not the denominator
+for resolution on this roster.** The sharper statement, which the file should carry because it is the
+usable half: across the four smooth fields whose `τ` the calibration validates or nearly does —
+`sphere` **0.255179247**, `capsule` **0.730191583**, `torus` **0.852041902**, `csg_difference`
+**0.587657905** — the spread is **3.339**, still above the bar but within one order of magnitude, and
+those four are the fields for which the theorem's hypothesis holds.
+
+**C3 — FALSIFIED by 0.007, and unreachable on the second of its two fields.** On `gyroid` the cells
+needing a second vertex (**28** of them at 33³) do sit nearer a bottleneck axis than the rest —
+`bottleneck_distance_auc` **0.793001727** — but the registered bar is **0.8** and the clause is
+scored as written. On `fbm_terrain` the AUC is **unreachable**: there are no bottleneck axes to
+measure a distance to, `bottleneck_pairs` **0**. Taken with `M-486`'s curl residual reading
+**0.270443196** on that same field, the registration's stated meaning applies —
+*"the second-vertex cells are a local combinatorial fact of the trilinear that no geometric
+predictor, neither local nor global, will find"* — with the qualification that on `gyroid` the global
+predictor came within **0.007** of the bar, which is not nothing and is not a pass.
+
+**Surprise:** Axis 14's paragraph said the missing denominator was accuracy and named
+information-based complexity as the unregistered route. It is now measured that **reach is not the
+missing denominator for resolution either** — the spread is three orders of magnitude — and Axis 1's
+*"unmeasured"* is partly answered: the roster splits 6/3 into bottleneck-bound and curvature-bound
+fields. Both paragraphs are edited in this commit.
+
+**Raises:** what certifies a reach of **zero**? Three of this crate's eight reference fields
+(`box_exact`, `thin_plate`, and `csg_difference` at its cut) have sharp features, so no
+positive-reach theorem covers them, and the instrument built here reads a confident wrong number
+rather than refusing. A detector that answers *"this surface has a sharp feature, so τ = 0 and every
+sampling theorem is inapplicable"* would be the precondition for any future use of this family.
+Logged as `Q9`.

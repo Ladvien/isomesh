@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**367 tickets archived, 28 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**368 tickets archived, 27 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -58,22 +58,8 @@ that writes the `FINDINGS.md` entry — never before.
 
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
-| ☐ | **R-182** | M | — |
 | ☐ | **R-184** | S | — |
 | ☐ | **R-185** | S | — |
-
-**R-182 — measure this crate's reach, both halves of it, and find out whether it is the denominator
-for resolution.** `P-177`. Aamari et al.'s Theorem 3.4 (`10.1214/19-ejs1551`, converted, 43 pp.) says
-the reach is realised either by a **bottleneck** — a pair at distance exactly `2*tau` — or by a
-**curvature-attaining point**, and that the two cases are not exclusive. Both halves are computable
-from what this crate already emits, which matters because the medial-axis route is closed here: the
-falsified entry *"an exactly-zero SDF gradient detects the medial axis"* killed the cheap detector and
-`M-325`'s discrete medial score converges only `O(h)`. **No entry in `FINDINGS.md` states the reach of
-a single reference field.** The deliverable is `crates/isomesh/benches/experiment_p177.rs` writing
-`docs/experiments/p-177.csv`, the calibration columns first: `sphere`, `torus`, `capsule` and
-`box_exact` have closed-form reaches and `box_exact`'s is **0**, so a `tau_measured` above `2h` there
-is the instrument failing rather than the field surprising anyone. Nothing under `crates/isomesh/src/`
-moves; the SHARE is none, because `tau` grades the extractor and is not a stage of it.
 
 **R-184 — grade the four fields that have no accuracy grade, with a distance that needs no exact
 bound.** `P-179`, a FORCED-EXPLORE row: the field (optimal transport) was named before the hook was

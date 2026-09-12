@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-367 tickets. Line numbers are stable until something above them is edited — grep the ID if
+368 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -3407,3 +3407,13 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***The result that changes something: `M-458`'s `noise_cavity` χ is not a ground truth.*** This row's copy of that oracle reproduces **82** at 33³ and **−152** at 65³ exactly — and then reads **−186** at 129³, so the two numbers `M-458` published are two samplings of a quantity that had not converged. `docs/research/what-governs.md` gained the rule in the same commit: a random field's χ must be quoted with the resolution it was read at and must not be called ground truth without a convergence column.
 >
 > ***Verification.*** `cargo clippy -p isomesh --bench experiment_p178 -- -D warnings` is clean; the calibration arm reads `calibration_chi_sphere` **2** and `calibration_chi_torus` **0** from the same code, and the digitisation predicate is asserted sample-by-sample equal to the crate's own `marching_cubes::table::is_inside`. The four `ρ_j` are derived twice — Simpson quadrature of the paper's integral and the closed form — and asserted equal to `1e-10` before any row is written.
+
+| ☑ | **R-182** | M | — |
+> **DONE 2026-09-12 — 💥 ✗127 / M-491 / P-177: VACUOUS as registered on one closed form of four — `box_exact`'s reach is **0** and the estimator reads **1.000000000**, because a measure-zero sharp edge is invisible to both halves of Theorem 3.4, which presupposes `τ > 0`. The other three land: `sphere` **0.979703496**, `torus` **0.293412800**, `capsule` **0.342375900**, gaps of **0.32h / 0.11h / 0.12h**. C1 HELD at **6** bottleneck-bound and **3** curvature-bound; C2 FALSIFIED at an `h*/τ` spread of **2468.025804** against a **2.0** bar (**3.339** across the four smooth fields); C3 FALSIFIED at AUC **0.793001727** on `gyroid`, **0.007** short, and unreachable on `fbm_terrain`, which has no bottleneck.**
+> **CSV:** `docs/experiments/p-177.csv` — 9 rows × 23 columns.
+>
+> ***No source change landed and none was asked for.*** `crates/isomesh/src/` did not move; the row owns `benches/experiment_p177.rs` and its `[[bench]]` entry. SHARE is none: `τ` grades the extractor rather than being a stage of it.
+>
+> ***The instrument's own lesson, recorded because it changed the numbers by 4×.*** Differencing the Hessian at the **grid** spacing caps measurable curvature at `O(1/h)` and put a floor of `4h` under every reach — the first run read `tau` **0.25** on a field whose reach is **0**. These SDFs are analytic and queryable at any scale, so the instrument differences at **1e-3** and carries `max_abs_curvature_grid_step` beside `max_abs_curvature` (**0.000000000** against **4.000000000** on `box_exact`).
+>
+> ***Verification.*** `cargo clippy -p isomesh --bench experiment_p177 -- -D warnings` clean; three of the four closed forms reproduce within `2h` before any other number is read; `scripts/csv_provenance.sh` passes with `docs/experiments/p-177.csv` stamped on a clean tree.

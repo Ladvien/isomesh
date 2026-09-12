@@ -19,19 +19,24 @@ Every number below is quoted from a `FINDINGS.md` entry; nothing here is a new m
 
 ## Axis 1 — Domain decomposition
 
-**Governed by: nothing measured. Every cell in this crate is a cube, and that has never been the variable.**
-The axis has vocabulary (`✗1`, `✗14`, `✗25` all compare *algorithms* over a fixed cubic partition) but no
-entry in which the partition itself moves. The nearest thing to a governing result is negative and belongs
-to Axis 13: `✗107 / M-459` found the reference-field roster *adversarial to global anisotropy*, which is a
-statement about what the fields would reward a different partition for, not about the partition. Unmeasured.
+**Governed by: nothing measured — every cell in this crate is a cube, and that has never been the
+variable.** The axis has vocabulary (`✗1`, `✗14`, `✗25` all compare *algorithms* over a fixed cubic
+partition) but no entry in which the partition itself moves. Two results bear on it without governing
+it. `✗107 / M-459` found the reference-field roster *adversarial to global anisotropy*, which is a
+statement about what the fields would reward a different partition for. And `✗127 / M-491` splits the
+nine fields **6 bottleneck-bound / 3 curvature-bound** by Theorem 3.4's two cases — the split is
+exactly smooth-versus-rough, `fbm_terrain` having **no bottleneck at all** (`bottleneck_pairs` **0**)
+where `noise_cavity` has **1,857,461**. A partition experiment that ignores that split would measure
+one half of its roster.
 
 ## Axis 2 — Sign inference and the underlying field
 
-**Governed by: the field's own regularity, not the sampler's cleverness.** `M-250` refines the edge crossing
-on the real field and gets **13–15%** on curved fields and **nothing at all** on the CSG one; `M-247` finds
-repeated CSG destroys the worst case and leaves the typical case untouched. `✗42`'s C1 falsification is the
-sharpest version: a reconstruction gain quoted in dB does not transfer to a mesh error, because the mesh
-error is dominated by where the surface is, not by how well the samples are interpolated between.
+**Governed by: the field's own regularity, not the sampler's cleverness.** `M-250` refines the edge
+crossing on the real field and gets **13–15%** on curved fields and **nothing at all** on the CSG one;
+`M-247` finds repeated CSG destroys the worst case and leaves the typical case untouched. `✗42`'s C1
+falsification is the sharpest version: a reconstruction gain quoted in dB does not transfer to a mesh
+error, because the mesh error is dominated by where the surface is, not by how well the samples are
+interpolated between.
 
 ## Axis 3 — Ambiguity resolution
 
@@ -147,6 +152,16 @@ ratio is defined, while computing the optimum is *cheaper* than running the mesh
 states an `n`-th minimal error for this crate's field class, so every accuracy number in `FINDINGS.md` is a
 numerator. Information-based complexity was ranked #5 of the six transfers in axes-v2 Part 4 and **was never
 registered here** — Phases 28–30 did not land on this machine (`P-176` is the highest registered `P-`).
+
+**Reach is not the missing denominator for resolution either — `✗127 / M-491`, 2026-09-12.** The
+first candidate for Axis 7's and Axis 14's missing denominator was the reach, on the strength of the
+sampling theorems `V-51` sorted out. Measured, `h*/τ` — the coarsest spacing whose extracted topology
+matches the finest rung's, over the reach — spans **0.250000000** to **617.006450883** across the
+roster, a spread of **2468.025804** against a registered bar of **2.0**. Across the four *smooth*
+fields alone it is **3.339**, which is the usable half of the result. The mechanism is that a rough
+field's reach is minute at the scale it is actually smooth (`gyroid` **0.000709069**, `noise_cavity`
+**0.000145884**) while its topology settles hundreds of times coarser. **The denominator for accuracy
+is still unclaimed, and reach is not it for resolution.**
 
 ---
 
