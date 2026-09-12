@@ -35,7 +35,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 
 <!-- BEGIN GENERATED INDEX -- scripts/findings_index.sh -->
 
-**603 entries** — 128 falsified, 385 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
+**604 entries** — 129 falsified, 385 measured, 51 verified, 18 open, 21 experiments. Regenerate with `scripts/findings_index.sh`; CI fails if this is stale.
 
 | # | Claim |
 |---|---|
@@ -167,6 +167,7 @@ which (the README and demo pages lean on this block by reference; added at D-003
 | `✗126` | VACUOUS as registered, and the reason is the formula's own algebra: at u = ±1 the Gaussian kinematic formula's (u² − 1)… |
 | `✗127` | VACUOUS as registered on one field of four, and that field is the finding: box_exact's reach is 0 and this estimator rea… |
 | `✗128` | the detector works, and it says the opposite of what was registered: C2 HELD on |
+| `✗129` | the cap was the sign, and it was not the gap. On the sphere's inscribed cube noise_cavity flips from χ |
 | `M-1` | surface cells = crossed edges + χ |
 | `M-2` | V_sn = V_mc + χ, F_sn = F_mc + 2χ |
 | `M-3` | Surface Nets max vertex degree 10; Marching Cubes 9 |
@@ -31636,3 +31637,112 @@ and the one that landed **inside** the Gaussian kinematic band (`✗126`, 0.25σ
 instruments single out the same field. Is `fbm_terrain` the roster's only field that satisfies the
 regularity hypotheses this crate's theorems are written against — and if so, is a heightfield the only
 shape the ledger can currently prove anything about? Logged as `Q10`.
+
+### 💥 ✗129 / M-493 — **the cap was the sign, and it was not the gap. On the sphere's inscribed cube `noise_cavity` flips from χ **15** against **−6.602285203** to χ **−67** against **−89.439644587** — right sign, **2.94σ**, still outside the band: C1 FALSIFIED. C2 FALSIFIED beside it, skewness **0.149388749** against a **0.1** bar and excess kurtosis **−0.315140997** against **0.2** — the consistent pair the registration named. C3 HELD: `fbm_terrain` inside on its own sub-box at **0.25σ / 0.26σ** and the full-box `noise_cavity` row reproducing `M-490`'s miss at **6.57σ**. The vacuity control **passes** (`4λ` predicts **−776.378808583** against an ensemble of **−91.5625 ± 7.628205302**). And the premise was wrong by arithmetic: the inscribed cube is cap-free in *sign* and not in *value* — `cap_dominated_share` **0.121813382** where the registration said the noise dominates, because the cube's corners lie *on* the sphere, where the cap term is **0** and not **−0.633974596**** (P-180, R-185)
+
+**M.** `cargo bench --bench experiment_p180`, `docs/experiments/p-180.csv`, **8 rows** across **24
+columns** — four `#` comment lines plus one column header plus 8 data rows, counted from the file; 18
+registered records and six extra columns (`arm`, `matched_ksq`, `matched_lambda`, `matched_chi_mean`,
+`matched_chi_predicted`, `wrong_lambda_predicted`) that make the band's provenance readable. Three
+arms, `f64`, `amd-ryzen-9-5900x-12-core` (Zen 3), one thread, seed `0x0180_5f2a_9c1d_7e43`,
+`REALISATIONS` **32** per band, `FULL_SAMPLES` **65**, sub-box at **29** (`h`-matched: side `1.732` at
+the full box's `h = 0.0625` is 28 cells) and **65** (finest). **`crates/isomesh/src/` did not move**;
+this row owns `benches/experiment_p180.rs` and its `[[bench]]` entry and nothing else. The fourth
+EXPERIMENT move of the discovery loop, and the first taken on a question the loop itself raised (`Q8`,
+from `✗126`).
+
+**The instrument is `M-490`'s, and it proves it before any verdict is read.** Every function from the
+block census to the central-difference `μ₂` is `experiment_p178.rs`'s verbatim (`rho_quadrature` and
+its assert are the one omission — `M-490` already asserted the closed form against it to `1e-10` on
+these rungs). Two `VOID:` asserts stand in front of the clauses: the calibration arm reads surface χ
+**2** on `sphere` and **0** on `torus`, and the full-box arm must reproduce `M-490`'s own rows. It
+does, to the digit: `noise_cavity` `chi_digital` **15**, `chi_gkf_predicted` **−6.602285203**,
+`lambda_spectral` **3.514897286**; `fbm_terrain` **1**, **1.297632628**, **0.025259313**. Only the band
+differs, because the seed does: `band_sigma` **3.286703418** against `M-490`'s **3.190206789**, so the
+same miss reads **6.57σ** here and **6.77σ** there.
+
+**C1 — FALSIFIED, and the sign is the part that moved.** On the inscribed cube, half-side
+**0.866025404**, with the cube's own Lipschitz–Killing curvatures and a matched ensemble drawn on the
+cube:
+
+| region | `n` | `lambda_spectral` | `chi_digital` | `chi_gkf_predicted` | `band_sigma` | `sigma_distance` | `gkf_within_band` | `cap_dominated_share` |
+|---|---|---|---|---|---|---|---|---|
+| full | 65 | 3.514897286 | **15** | **−6.602285203** | 3.286703418 | **6.572629915** | false | **0.861374602** |
+| inscribed | 29 | 66.970843691 | **−99** | **−64.868032207** | 6.860064422 | **4.975458785** | false | **0.133912830** |
+| inscribed | 65 | 81.824833503 | **−67** | **−89.439644587** | 7.628205302 | **2.941667627** | false | **0.121813382** |
+
+Three things are in that table. First, **`M-490` was grading a sphere**: on the full box **86.1%** of
+samples take the cap's value rather than the noise's, the standardised field's `λ` is **3.51** — the
+sphere's unit gradient over a cap-dominated standard deviation — and the noise's own `λ` on the cube
+is **67–82**, twenty times larger. The full-box comparison in `✗126` was never a comparison between
+the formula and a noise field. Second, the sign is now right: negative χ predicted, negative χ
+measured, at both rungs. Third, the gap is not closed: **4.98σ** at the `h`-matched rung and **2.94σ**
+at the finest, both outside the registered 2σ band. The band is not a formality here either — the
+matched Gaussian ensembles land inside their own predictions at **0.37σ** (`−64.8125` against
+`−62.247676475`, `|k|² ≤ 25`) and **0.08σ** (`−91.5625` against `−90.969323723`, `|k|² ≤ 30`), with
+the shells matched to within **2.5%** and **1.1%** of the field's `λ`, far better than `M-490`'s full-box
+shells could. So the construction reproduces the formula on a field that is Gaussian, at this box,
+resolution and digitisation, and `noise_cavity` misses it. The registration's falsifier names the
+meaning that applies: *"the sub-box missing the band too … moves the blame from stationarity to
+Gaussianity: the crate's hash noise would then be non-Gaussian in a way the formula cannot grade
+anywhere, and C2's two moments are the measurement that says how"* — subject to the confound below.
+
+**C2 — FALSIFIED, in the direction a clamp produces.** On the finest inscribed grid, standardised,
+population moments over all **274,625** samples: `skewness` **0.149388749** (bar **0.1**),
+`excess_kurtosis` **−0.315140997** (bar **0.2**). Both outside. C1 and C2 fail *together*, which is the
+registration's consistent case — not the *"more interesting failure"* of the formula surviving a field
+that is measurably non-Gaussian. But the two signs are exactly what a floor under the lower tail does
+to a symmetric distribution: cut the left tail and the skew goes positive and the kurtosis goes
+negative. Whether that floor is the Perlin noise's own bounded range or the cap's **12.2%** of samples
+cannot be told from this row, and the entry does not pretend otherwise.
+
+**C3 — HELD, both halves.** `fbm_terrain` on its own sub-box (half-side **3.464101616**, the same
+**0.433012702** share of its half-extent) reads χ **1** against **1.297453083** at 29³ and **1** against
+**1.294003447** at 65³, `sigma_distance` **0.250029215 / 0.256037977** — inside, and unmoved from the
+full box's **0.31σ**. The full-box `noise_cavity` row is `M-490`'s. The restriction did not manufacture
+agreement on the field that already had it, and did not remove the miss on the field that did not.
+`fbm_terrain`'s caveat carries over unchanged from `✗126`: its matched shell is the coarsest available
+(`|k|² ≤ 1`, `λ` **0.274155678** against a measured **0.125960462 / 0.146086512**), so its band is
+wider than a perfectly matched one would be.
+
+> **The vacuity control passed, and the way it was written is why.** Scored at `u = 0` **only**, on the
+> finest inscribed `noise_cavity` band, as registered: the `4λ` prediction is **−776.378808583** against
+> an ensemble mean of **−91.5625** with `σ` **7.628205302** — rejected by ninety standard deviations.
+> `band_rejects_wrong_lambda` is **true** on all four inscribed rows and `na` on the full-box rows, where
+> it is not scored. This is the second row of the loop whose control separated, and the first of the
+> three Gaussian-kinematic rows.
+
+> **The registered premise was wrong, and the registered record caught it.** The hypothesis says of the
+> inscribed cube: *"inside it the cap term is at most −0.633974596 and is dominated by the noise."*
+> `−0.633974596` is `0.866025404 − 1.5`, the cap's value at the cube's **face centres**. The cube's
+> **corners** are at `0.866025404·√3 = 1.5` — on the sphere — where the cap term is **0**, and it is at
+> most `−0.633974596` only inside the cube's inscribed *ball*. So the intersection's `max` picks the
+> cap on **13.4%** of the `h`-matched grid and **12.2%** of the finest one, all near the corners, and
+> the pre-run expectation of `< 0.01` was off by an order of magnitude. What survives: the cap is
+> **strictly negative** everywhere inside the cube except the eight corners, so `max(noise − 0.25, cap) > 0`
+> exactly when `noise − 0.25 > 0` — the *raw sign* on the cube is the noise's, and the cube is cap-free
+> in the sense that decides occupancy at the field's own zero. What does not survive: the census is
+> taken at the *standardised* zero, `v > mean(v)`, and `mean(v)`, `λ`, and both moments are computed
+> from **values**, 12% of which are the sphere's. No threshold was moved and no clause rewritten; the
+> confound is recorded on every `noise_cavity` row as `cap_dominated_share`, which is why the
+> registration listed it.
+
+**One more number that was not predicted.** Between the two sub-box rungs, `chi_digital` moves **−99 →
+−67** and `chi_gkf_predicted` moves **−64.87 → −89.44** — in *opposite* directions. The digital χ is
+`✗126`'s C3 again (a random field's χ has not converged at these rungs); the prediction moves because
+`λ` from central differences rises **66.97 → 81.82** as `h` halves, the noise having gradient energy
+below `h = 0.0625`. Neither side of the comparison is a converged quantity at 65³, and the `sigma_distance`
+column should be read with that in front of it.
+
+**Surprise:** `docs/research/what-governs.md`'s *Instruments* paragraph left *"whether the difference
+is Gaussianity or stationarity"* open. It is no longer open in the form it was asked: the cap set the
+**sign** (and 86% of `M-490`'s full-box field), and once the cap is out of the sign the formula still
+misses by 2.94σ on a grid whose third and fourth moments are outside the Gaussian bars. The paragraph
+is edited in this commit.
+
+**Raises:** are the moments the noise's or the clamp's? `NoiseVolume::canonical()` *alone* — no
+intersection, `cap_dominated_share` **0** by construction — on the same inscribed cube at the same two
+rungs: if `skewness` **0.149388749** and `excess_kurtosis` **−0.315140997** persist, the crate's Perlin
+noise is non-Gaussian in its own right and the formula's miss is the field's; if they fall inside the
+bars, the 12% clamp produced C2 and the remaining miss is the unconverged `λ` and χ above. Logged as
+`Q11`.

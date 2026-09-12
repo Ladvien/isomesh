@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-369 tickets. Line numbers are stable until something above them is edited — grep the ID if
+370 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -3427,3 +3427,13 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***The consequence for `✗127`.*** `M-491`'s `τ` of **0.000709069** on `gyroid` and **0.000145884** on `noise_cavity` are floors of a grid-limited search on surfaces with no positive reach, not measurements of one — so five of the eight reference fields are outside every positive-reach theorem's hypothesis, `fbm_terrain` being the only rough one that is not.
 >
 > ***Verification.*** `cargo clippy -p isomesh --bench experiment_p181 -- -D warnings` clean; the vacuity control is scored before any reference field is read and separates; the full five-rung ladder is in the CSV per field, so either ratio statistic can be recomputed by a reader.
+
+| ☑ | **R-185** | S | — |
+> **DONE 2026-09-12 — 💥 ✗129 / M-493 / P-180: the cap was the sign and not the gap. On the sphere's inscribed cube `noise_cavity` flips from χ **15** against **−6.602285203** to χ **−67** against **−89.439644587** — right sign, **2.94σ**, still outside: C1 FALSIFIED. C2 FALSIFIED beside it, skewness **0.149388749** and excess kurtosis **−0.315140997** against bars of **0.1 / 0.2**. C3 HELD: `fbm_terrain` inside on its own sub-box at **0.25σ / 0.26σ**, the full-box `noise_cavity` row reproducing `M-490`'s miss at **6.57σ**. The vacuity control passed — `4λ` rejected by ninety standard deviations at `u = 0`.**
+> **CSV:** `docs/experiments/p-180.csv` — 8 rows × 24 columns.
+>
+> ***No source change landed and none was asked for.*** `crates/isomesh/src/` did not move; the row owns `benches/experiment_p180.rs` and its `[[bench]]` entry. SHARE is none. The fourth EXPERIMENT move of the discovery loop, and the first on a question the loop raised itself (`Q8`).
+>
+> ***The premise was wrong by arithmetic, and the registered record caught it.*** The hypothesis put the cap term at *"at most −0.633974596"* inside the inscribed cube; that is its value at the face centres, and the cube's corners lie **on** the sphere where it is **0**. `cap_dominated_share` reads **0.121813382** on the cube against a pre-run expectation of `< 0.01` — the cube is cap-free in *sign* (the cap is strictly negative inside it, so occupancy at the raw zero is the noise's) and not in *value*, which is what `λ`, the standardised level and both moments are computed from. Positive skew and negative kurtosis are what a lower clamp produces, so C2 is confounded and `Q11` (the bare `NoiseVolume` on the same cube) is the deconfounding run. On the full box **86.1%** of samples were the cap's: `✗126`'s full-box comparison was grading a sphere's distance function.
+>
+> ***Verification.*** `cargo clippy -p isomesh --bench experiment_p180 -- -D warnings` clean. Two `VOID:` asserts precede every verdict: the calibration arm reads surface χ **2** / **0** on `sphere` / `torus`, and the full-box arm reproduces `M-490`'s `chi_digital` **15** / **1**, `chi_gkf_predicted` **−6.602285203** / **1.297632628** and `lambda_spectral` **3.514897286** / **0.025259313** to the digit. The matched Gaussian ensembles on the cube land inside their own predictions at **0.37σ** and **0.08σ** with shells within **2.5%** and **1.1%** of the field's `λ`.

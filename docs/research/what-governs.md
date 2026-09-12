@@ -203,5 +203,12 @@ that is actually Gaussian.** Taylor's Gaussian kinematic formula, instantiated o
 **exactly zero** for any `λ`. Of the shipped noise fields, `fbm_terrain` lands inside a matched band at
 **0.25σ** and `noise_cavity` misses by **6.77σ** with the *sign* of χ wrong (**15.000000000** measured
 against **−6.602285203** predicted). So the formula is an oracle for `fbm_terrain` and is not one for
-`noise_cavity`, and the open question is whether the difference is Gaussianity or **stationarity** — the
-cap `noise_cavity` carries is not something a stationary-field theorem allows.
+`noise_cavity`. **The sign was the cap, and the gap was not (`✗129 / M-493`):** on the full box **86.1%** of
+`noise_cavity`'s samples take the sphere's value, so `✗126` was grading a distance function; on the
+sphere's inscribed cube the formula predicts **−89.439644587** and the census reads **−67** — right sign,
+**2.94σ**, still outside — on a grid whose skewness (**0.149388749**) and excess kurtosis (**−0.315140997**)
+are outside the Gaussian bars. Two caveats travel with that: the cube is cap-free in *sign* but **12.2%**
+of its *values* are still the cap's, in the direction that produces exactly those two moments, and
+neither the digital χ nor the central-difference `λ` has converged at 65³ — they move in opposite
+directions between rungs. The formula grades `noise_cavity`'s sign now and nothing finer, until `Q11`
+says whether the moments are the noise's or the clamp's.

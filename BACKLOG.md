@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**369 tickets archived, 27 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**370 tickets archived, 26 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -59,7 +59,6 @@ that writes the `FINDINGS.md` entry — never before.
 | | Ticket | Size | Blocked by |
 |---|---|---|---|
 | ☐ | **R-184** | S | — |
-| ☐ | **R-185** | S | — |
 
 **R-184 — grade the four fields that have no accuracy grade, with a distance that needs no exact
 bound.** `P-179`, a FORCED-EXPLORE row: the field (optimal transport) was named before the hook was
@@ -70,17 +69,6 @@ by simply sorting points"*. The deliverable is `crates/isomesh/benches/experimen
 `docs/experiments/p-179.csv`, with two vacuity controls that must both fire before any number is read:
 a mesh displaced by `h/2` reading **≥ 2×** the undisplaced distance, and a self-distance between two
 independent samplings of the same surface at **≤ ¼** of the smallest measured one. Nothing under
-`crates/isomesh/src/` moves; the SHARE is none.
-
-**R-185 — find out whether the Gaussian kinematic formula misses `noise_cavity` because of the cap
-or because of the noise.** `P-180`. `M-490` has `fbm_terrain` inside its band at **0.25σ** and
-`noise_cavity` outside at **6.77σ** with the sign of χ wrong, and `noise_cavity` is
-`Intersection(NoiseVolume, Sphere(1.5))` on `cube_domain(2.0)` — outside radius 1.5 the sampled field
-is the sphere's distance function, which no stationary-field theorem covers. The deliverable is
-`crates/isomesh/benches/experiment_p180.rs` writing `docs/experiments/p-180.csv`: the same census on
-the sphere's inscribed cube (half-side **0.866025404**), skewness and excess kurtosis beside it, and
-`fbm_terrain`'s own sub-box as the control that the restriction does not manufacture agreement. The
-vacuity control is asserted at `u = 0` **only**, which is `M-490`'s lesson paid forward. Nothing under
 `crates/isomesh/src/` moves; the SHARE is none.
 
 ## Phase 28 — what Phase 27 earned
