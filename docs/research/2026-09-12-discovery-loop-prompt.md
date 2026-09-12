@@ -108,7 +108,10 @@ run that proves the fixture could have failed. It must pass all five gates or it
    to catch (`✗126`: `(u² − 1) = 0` at `u = ±1` for every `λ`) cannot fail; (ii) every field the control
    names satisfies the theorem's stated hypothesis — a control that calibrates a positive-reach theorem on a
    zero-reach field (`✗127`: `box_exact` under Theorem 3.4's `τ > 0`) cannot pass. Write the synthetic case
-   into the registration's VACUITY CONTROL text, as `P-181` did with a 90° wedge and a `0.05` fillet.
+   into the registration's VACUITY CONTROL text, as `P-181` did with a 90° wedge and a `0.05` fillet. This is
+   `M-44`'s rule — *a measurement that comes back zero has to prove it could have come back non-zero* —
+   moved to registration time; `P-182`'s second control was written the morning this gate was and broke
+   it (`M-494`).
 
 Prefer, in order: a theorem that applies to the crate's own construction (a proof beats a measurement); a
 field with a *denominator* (a floor or an optimum the crate can be graded against); a field with a

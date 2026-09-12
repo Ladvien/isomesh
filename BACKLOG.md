@@ -383,13 +383,18 @@ not distances (`|f|/d → 0` at an off-centre bore's rim), and no positive `q` e
 `Underestimate`. `M-245`'s blind spot, now on six `Lipschitz` rows: the instrument needs a second
 statistic or the declaration needs a fifth variant. (4) `dual_contouring/tests.rs`'s A-009 clamp takes
 `ball_drilled_g1` at 33³ from **4 to 8** intersecting pairs over 6,720 triangles — the guarantee
-*"never worse on any field"* was measured on eight fields and the ninth falsified it. Which vertices
-did the clamp move into each other? (5) `subgrid/extract/tests.rs`'s bigon law — *a bigon is what
-leaves a position unreferenced*, asserted as `bigons == 0 ⇔ orphans == 0` — fails in one direction on
-`graph_cube_g5`: **24** two-arc inside regions and **0** orphaned positions, where the other thirteen
-fields hold the law exactly at two orphans per affected tetrahedron. The same field reports **12**
-coincident corner regions, one per cube edge pair; is 24 twelve bigons counted from both sides of a
-shared face, or twelve bigons whose crossings a neighbour consumes?
+*"never worse on any field"* was measured on eight fields and the ninth falsified it. Sweep the rung
+before asking anything else: `M-109` records the clamped-against-split ordering reversing three times
+across nine resolutions on `gyroid`, so a doubling of four pairs at one rung is a 33³ fact until
+17³–49³ says otherwise. Then: which vertices did the clamp move into each other? (5)
+`subgrid/extract/tests.rs`'s bigon law — *a bigon is what leaves a position unreferenced*, asserted
+as `bigons == 0 ⇔ orphans == 0` — fails in one direction on `graph_cube_g5`: **24** two-arc inside
+regions and **0** orphaned positions, where the other thirteen fields hold the law exactly at two
+orphans per affected tetrahedron. The same field reports **12** coincident corner regions, one per
+cube edge pair; is 24 twelve bigons counted from both sides of a shared face, or twelve bigons whose
+crossings a neighbour consumes? The second alternative is `M-205`'s own qualifier — *"one pair per
+bigon **nothing else reaches**"* — so the law the ledger holds is one-directional and only the test's
+`⇔` was falsified; unless the 24 is double-counted, this row is acceptance (a)'s restatement, not a fix.
 
 **Acceptance.** (a) Each of the five pins is either retired by a fix (the test's plain contract holds
 again and the `match` arm is deleted) or replaced by a restated contract with the reason in the test's
