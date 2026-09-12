@@ -1,12 +1,12 @@
 # isomesh — BACKLOG
 
-**Updated:** 2026-08-30
+**Updated:** 2026-09-04
 **Companions:** `CLAUDE.md` (rules), `FINDINGS.md` (what we know and how well),
 `BACKLOG_ARCHIVE.md` (completed tickets + why they changed),
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**366 tickets archived, 25 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**366 tickets archived, 75 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -45,6 +45,160 @@ attached — read that before re-litigating a decision this project already made
   is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
+
+---
+
+## Phase 29 — fifty registrations from twenty-six fields of mathematics, each before its harness
+
+**Added 2026-09-04, above Phase 28 for the reason every phase goes on top: rule 1 reads top-down.**
+Nothing here supersedes Phase 28's five landings (`R-177`–`R-181`); as with Phase 27 above Phase 26b, the
+block sits on top by convention and the landings keep their own order below it.
+
+**Source: `docs/research/2026-09-04-phase-29-fifty-experiments-from-twenty-six-fields.md`**, with the
+vocabulary in `docs/research/2026-09-04-phase-29-axes-and-vocabulary-v3.md`. Twenty-six mathematical
+areas probed against the corpus and the repository at once, each chosen by reading a Phase 27 *result*
+(`M-440`–`M-489`) rather than a registration; 23 papers acquired and converting; 27 recorded as
+paywalled or unreachable rather than cited; 2 acquired under a wrong DOI and flagged for removal from the
+corpus (§1 of the source document).
+
+**Drafted as `P-177`–`P-226` / `R-182`–`R-231` on the `mac-air` checkout at `31ac0b8`.** Phase 27 was
+renumbered twice on merge. If `big`'s `experiment.rs` has moved past `P-176`, or its backlog past `R-181`,
+shift the block and record the shift in `FINDINGS.md` as `M-440` did — nothing else about the rows changes.
+
+**The phase's centre is a sum, not a paper.** The extractor already indexes every surface cell by its
+`2×2×2` sign configuration; Ziegel & Kiderlen prove a weighted sum over those configuration counts
+estimates surface area with a worst-case asymptotic error under 4%, and that no local weighting does
+better. Legland et al.'s 13-direction lattice Crofton estimator carries an explicit directional bound of
+`−7.33%`/`+2.27%`, read in full. `R-182` lands the instrument; it grades the four reference fields
+`validate::accuracy` cannot (`✗107`), and `R-183`, `R-184`, `R-185`, `R-211`, `R-222`, `R-223` and
+`R-229` use it.
+
+**Four other things Phase 27 measured and this phase explains, bounds or replaces.** `✗116`'s
+*"no filter can reach"* order 2 is a statement about the output representation, and Group D (`R-193`–
+`R-196`) measures vertex order apart from surface order before spending `L` on curved patches. `M-472`'s
+constant gap of 6.3–7.3× gets a three-factor decomposition (`R-227`). `M-459`'s *"roster is adversarial"*
+becomes a designed experiment (`R-222`). `P-144`'s per-seed χ variance and `P-176`'s non-Gaussianity get a
+Gaussian random field fixture with a closed-form `E[χ]`, `E[Area]` and `E[#critical points]` (`R-186`–
+`R-189`, `R-228`).
+
+**Order matters in nine places and nowhere else.** `R-182` runs before `R-185` and `R-221`. `R-186` runs
+before `R-187`, `R-188`, `R-189` and `R-228`. `R-193` runs before `R-194`, `R-195` and `R-196`. `R-197`
+runs before `R-198` and `R-199`. `R-203` runs before `R-204` and `R-205`. `R-217` runs before `R-218`.
+`R-185` runs before `R-231`. Everything else is independent. **23 rows are `S`, 22 `M`, 5 `L`** (`R-186`,
+`R-194`, `R-206`, `R-217`, `R-222`).
+
+**Sixteen rows are expected to return nulls and that is registered rather than hoped:** `R-189`, `R-196`,
+`R-202`, `R-205`, `R-208`, `R-209`, `R-212`, `R-214`, `R-216`, `R-218`, `R-221`, `R-224`, `R-225`,
+`R-226`, `R-228`, `R-230`. Two more (`R-203`, `R-227`) are denominators whose most valuable outcome is
+that the numerator is already close.
+
+**Every row's first deliverable is its `Preregistration` in `crates/isomesh/src/experiment.rs`**, and that
+registration commit precedes every harness, as Phase 27's did. No row proposes a change to the shipped path;
+every cost clause is a price.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-182** | M | — |
+| ☐ | **R-183** | S | — |
+| ☐ | **R-184** | M | — |
+| ☐ | **R-185** | S | `R-182` |
+| ☐ | **R-186** | L | — |
+| ☐ | **R-187** | M | `R-186` |
+| ☐ | **R-188** | S | `R-186` |
+| ☐ | **R-189** | M | `R-186` |
+| ☐ | **R-190** | M | — |
+| ☐ | **R-191** | S | — |
+| ☐ | **R-192** | M | — |
+| ☐ | **R-193** | S | — |
+| ☐ | **R-194** | L | `R-193` |
+| ☐ | **R-195** | M | `R-193` |
+| ☐ | **R-196** | S | `R-193` |
+| ☐ | **R-197** | S | — |
+| ☐ | **R-198** | M | `R-197` |
+| ☐ | **R-199** | M | `R-197` |
+| ☐ | **R-200** | M | — |
+| ☐ | **R-201** | S | — |
+| ☐ | **R-202** | M | — |
+| ☐ | **R-203** | S | — |
+| ☐ | **R-204** | S | `R-203` |
+| ☐ | **R-205** | M | `R-203` |
+| ☐ | **R-206** | L | — |
+| ☐ | **R-207** | M | — |
+| ☐ | **R-208** | M | — |
+| ☐ | **R-209** | M | — |
+| ☐ | **R-210** | M | — |
+| ☐ | **R-211** | M | — |
+| ☐ | **R-212** | M | — |
+| ☐ | **R-213** | M | — |
+| ☐ | **R-214** | S | — |
+| ☐ | **R-215** | S | — |
+| ☐ | **R-216** | S | — |
+| ☐ | **R-217** | L | — |
+| ☐ | **R-218** | S | `R-217` |
+| ☐ | **R-219** | S | — |
+| ☐ | **R-220** | M | — |
+| ☐ | **R-221** | S | `R-182` |
+| ☐ | **R-222** | L | — |
+| ☐ | **R-223** | S | — |
+| ☐ | **R-224** | M | — |
+| ☐ | **R-225** | S | — |
+| ☐ | **R-226** | S | — |
+| ☐ | **R-227** | S | — |
+| ☐ | **R-228** | S | `R-186` |
+| ☐ | **R-229** | S | — |
+| ☐ | **R-230** | S | — |
+| ☐ | **R-231** | M | `R-185` |
+
+- **R-182 — P-177.** The case table already carries a ≤4% area estimator, and no field is ungradeable
+- **R-183 — P-178.** The 6/26 split is an adjacency-pair choice, and the theorem says which pairs are consistent
+- **R-184 — P-179.** Integrated mean curvature from the sign grid, as a third instrument against normal cycles
+- **R-185 — P-180.** The error has a Wulff plot, and the plot is where BCC and cubic actually differ
+- **R-186 — P-181.** A Gaussian random field fixture, and the closed-form χ that comes with it
+- **R-187 — P-182.** Kac–Rice predicts the ambiguous-cell census from two numbers, before any mesh exists
+- **R-188 — P-183.** The expected area of a Gaussian level set is `2√λ₂/π` per unit volume, and `M-13`'s constant should be it
+- **R-189 — P-184.** A null registered on purpose — the value-noise percolation threshold is not the Gaussian one
+- **R-190 — P-185.** Greedy meshing is finished only for axis-aligned planes, and digital plane recognition finishes the rest
+- **R-191 — P-186.** The staircase has a period, and the period is a continued fraction
+- **R-192 — P-187.** The normal estimator has a multigrid-convergence order, and it is the order DC's QEF inherits
+- **R-193 — P-189.** Vertex error and surface error have different orders, and nobody has measured them apart
+- **R-194 — P-188.** Curved PN triangles from the Hermite data DC already has, and the order they buy
+- **R-195 — P-190.** The triquadratic's isosurface is a rational-quadratic patch per cell, and the table is tabulable
+- **R-196 — P-191.** A null registered on purpose — Richardson extrapolation of vertex positions across two resolutions
+- **R-197 — P-193.** The reach of an SDF is where its tube polynomial breaks, and that is a measurement not a lookup
+- **R-198 — P-192.** `graph_cube_g5`'s hole at 9³ is a sampling-density event, and the reach predicts it
+- **R-199 — P-194.** A topology certificate computed before extraction, from the reach and the grid spacing
+- **R-200 — P-195.** The Besov index of the field predicts `M-474`'s `s`, from Haar coefficients alone
+- **R-201 — P-196.** The word *fractal* pays its exponent — `fbm_terrain`'s triangle count scales as `h^{−(3−H)}`
+- **R-202 — P-197.** A null registered on purpose — the octree's tree constraint costs a constant, not a rate
+- **R-203 — P-198.** The case-index stream has an entropy rate, and no bit-packing beats it
+- **R-204 — P-199.** Adjacent cells share four corners, so the case-index transition is a walk on a 16-out graph and its entropy is at most 4 bits
+- **R-205 — P-200.** A null registered on purpose — the mesh is far above the metric-entropy floor of the surface class, and by how much
+- **R-206 — P-201.** A sliding brush is a kinetic problem, and the number of certificate failures per frame is the incremental cost
+- **R-207 — P-202.** Topology changes at discrete times, and the sealing check need only run at them
+- **R-208 — P-203.** A null registered on purpose — sliced Wasserstein between mesh and surface measures, against Hausdorff
+- **R-209 — P-204.** A null registered on purpose — displacement interpolation between LOD levels
+- **R-210 — P-205.** A Huber QEF and a 2-means split on normals, against the `λ` the curl residual could not replace
+- **R-211 — P-206.** Conformal prediction grades the four fields `validate::accuracy` cannot
+- **R-212 — P-207.** A null registered on purpose — a W-class entanglement monotone on the cells where `|Δ|` is blind
+- **R-213 — P-208.** Discrete Morse on the cubical complex is a third χ oracle, and its critical cells should be the body saddles
+- **R-214 — P-209.** A null registered on purpose — a regular isovalue by Sard, located with the chemists' grid algorithm
+- **R-215 — P-210.** A translating sphere's triangle count flickers with the sphere-problem exponent
+- **R-216 — P-211.** A null registered on purpose — the gyroid's χ converges at integer cells-per-period and jitters otherwise, and that is Landau's rational/irrational dichotomy
+- **R-217 — P-212.** Mesh one asymmetric unit of a symmetric field and replicate it, bit-identically, at `1/|G|` of the cost
+- **R-218 — P-213.** A null registered on purpose — seams on mirror planes cannot crack
+- **R-219 — P-214.** The shape derivative of area predicts a CSG edit's triangle delta before the remesh
+- **R-220 — P-215.** A jittered grid kills the axis-aligned grain, and the Wulff plot says by how much
+- **R-221 — P-216.** A null registered on purpose — dithering the isovalue does not unbias the mesh area
+- **R-222 — P-217.** A space-filling roster of reference fields, so that no future mechanism is judged by a roster accident
+- **R-223 — P-218.** The backward error of an extraction, and the condition number that turns it into Hausdorff
+- **R-224 — P-219.** A null registered on purpose — extended revised affine arithmetic on `gyroid`'s rejected share
+- **R-225 — P-220.** A null registered on purpose — solid and air have dual Betti numbers, and the split blocks are where the duality fails
+- **R-226 — P-221.** A null registered on purpose — the flat norm sees a missing sheet that Hausdorff sees too, and costs an LP
+- **R-227 — P-222.** `M-472`'s constant gap decomposes into a filter constant, a representation constant and a placement constant, and the ledger should say which is 5 of the 7
+- **R-228 — P-223.** A null registered on purpose — ambiguous cells are Poisson at large correlation length
+- **R-229 — P-224.** Area from the coarea integral and volume from the divergence theorem, as the tie-breaker for Group A
+- **R-230 — P-225.** A null registered on purpose — eight Sobol points per coarse cell against eight corners
+- **R-231 — P-226.** The mesh error's power spectrum peaks at the reciprocal lattice, and BCC moves the peaks
 
 ---
 
