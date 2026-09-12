@@ -7955,6 +7955,60 @@ pub const PREREGISTERED: &[Preregistration] = &[
             "c3_holds",
         ],
     },
+    Preregistration {
+        id: "P-182",
+        ticket: "R-177",
+        hypothesis: "P-140 built six closed solids whose boundary genus is fixed by their \
+            construction and derived twice -- ball_drilled_g1 (genus 1, chi 0), graph_theta_g2 \
+            (2, -2), ball_drilled_g2 (2, -2), ball_drilled_g3 (3, -4), graph_k4_g3 (3, -4), \
+            graph_cube_g5 (5, -8) -- and M-453 recorded them as bench-local on purpose, priced at \
+            a 162-hash ripple. This row pays it: the six fields move from benches/experiment_p140.rs \
+            into crates/isomesh/src/fields/ as no_std code generic over Real, join \
+            for_each_reference_field! as its 9th to 14th entries, and their chi is ASSERTED by \
+            expected_euler() rather than recorded. The ripple is named in advance: \
+            golden_hashes.json grows from 216 to 378 entries (8 x 27 to 14 x 27, nine algorithm \
+            labels by three resolutions per field); scripts/doc_facts.sh's FIELDS count moves 8 to \
+            14 and its HASHES count 216 to 378; and ten prose sites across the twelve documents \
+            that script reads change with them -- README.md at three sites, CLAUDE.md, \
+            the examples workspace's DEMOS.md, docs/demos/algorithms.md at two, docs/demos/correctness.md, \
+            docs/experiments.md at two. (C1) expected_euler() returns Some(2 - 2g) on all six, and \
+            validate_indexed on a MarchingCubes extraction at 17, 25 and 33 samples per axis over \
+            each field's own domain reports exactly that chi, asserted in the shipped test suite. \
+            (C2) golden_hashes.json grows from 216 to exactly 378 entries with NO existing line \
+            changed: the diff is additions only. (C3) graph_cube_g5's adequacy is non-monotone and \
+            pinned by a shipped test: chi -8 at 7^3 and at 11^3, and 0 triangles at 9^3 -- the \
+            values docs/experiments/p-140.csv records as measured_chi -8 / 0 / -8 with \
+            chi_agreement true / false / true. SHARE: none -- this changes what the validity gate \
+            asserts, not what the extractor does.",
+        falsified_by: "C1 by any field whose extracted chi disagrees with its construction, which \
+            would mean P-140's bench-local fixtures do not survive the move to no_std generic code \
+            -- a transcription defect in the port, since the derivations are one line each and \
+            were checked three ways in P-140. C2 by any pre-existing hash moving, which would mean \
+            the six additions perturbed an existing field's extraction; that is impossible by \
+            construction, since the macro appends and touches nothing above, and so would be a bug \
+            in the port and not a property of the fields. C3 by 9^3 meshing something, which would \
+            say docs/experiments/p-140.csv is wrong about the one row this ticket exists to pin. \
+            VACUITY CONTROL: sphere and torus keep asserting 2 and 0 through the same suite -- a \
+            chi_at helper that returned the prescribed value regardless of the field would pass C1 \
+            and fail them -- and scripts/doc_facts.sh FAILS at the parent of the landing commit \
+            and passes at it, run once each way, so the prose counts are shown to be gated and not \
+            merely edited.",
+        records: &[
+            "field",
+            "prescribed_genus",
+            "prescribed_chi",
+            "measured_chi_17",
+            "measured_chi_25",
+            "measured_chi_33",
+            "golden_entries_before",
+            "golden_entries_after",
+            "existing_hashes_changed",
+            "g5_triangles_9",
+            "c1_holds",
+            "c2_holds",
+            "c3_holds",
+        ],
+    },
 ];
 
 /// `a == b`, in a const context.
