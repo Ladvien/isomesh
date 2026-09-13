@@ -6,7 +6,7 @@
 `docs/2026-08-11-implementation-brief.md` (the how),
 `docs/2026-08-11-bevy-examples-catalog.md` (example detail), `docs/research/` (the why).
 
-**371 tickets archived, 76 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
+**371 tickets archived, 106 open.** Completed rows move to `BACKLOG_ARCHIVE.md` with their amendments
 attached — read that before re-litigating a decision this project already made.
 
 ---
@@ -45,6 +45,112 @@ attached — read that before re-litigating a decision this project already made
   is not retrievable six weeks later.
 
 **Size key:** `S` ≈ one sitting · `M` ≈ a day · `L` ≈ multi-day, consider splitting.
+
+---
+
+## Phase 31 — thirty registrations for game features and performance, each before its harness
+
+**Added 2026-09-12, above Phase 29 for the reason every phase goes on top: rule 1 reads top-down.** Nothing
+here supersedes Phase 29's fifty rows; the block sits on top by convention. **Phase 30 is not on `main`** —
+it was drafted on `mac-air` and will sit above this block when it lands.
+
+**Source: `docs/research/2026-09-12-phase-31-thirty-registrations-for-game-features-and-performance.md`.**
+Fourteen mathematical areas probed against the corpus and the repository at landing: six present, eight
+absent, one paper acquired and ten recorded as paywalled or unreachable by the resolver rather than cited
+(§1 of the source document). Two groups are re-scoped against what the repo already measures — `F`
+(determinism: `M-32`, `M-175`, `M-31`'s 378 golden hashes) and `I` (mesh ↔ field: S-006, S-007, `M-262`,
+`M-299`, `M-303`) — and every row is tagged `[feature]`, `[perf]`, or both. Phases 27–29 were grades and
+guarantees — how to know a mesh is right; this phase is the other half, features a game would notice and
+speed it would feel, each from a field the ledger has not touched and each falsifiable on the crate's own
+roster.
+
+**Drafted as `P-277`–`P-306` / `R-282`–`R-311` on the `mac-air` checkout, after a Phase 30 drafted there and
+not landed here, then shifted by −44 to `P-233`–`P-262` / `R-238`–`R-267` at the 2026-09-12 landing.** Landed
+numbers never move; the arriving block did, as `M-440`'s phase did twice and Phase 29 did once. The draft's
+eleven cross-references to Phase 30 rows are carried **by title and carry no number**, because seven of those
+numbers now belong to this phase's own rows; back-linking them is Phase 30's landing's job.
+
+**Order matters in these places and nowhere else.** `R-238` runs before `R-239`; `R-239` before `R-240`.
+`R-241` runs before `R-242` and `R-243`. `R-244` runs before `R-245` and `R-246`. `R-247` runs before `R-248`
+and `R-266`. `R-249` runs before `R-250`. `R-251` runs before `R-252`. `R-253` runs before `R-254`. `R-255`
+runs before `R-256`. `R-257` runs before `R-258`. `R-259` runs before `R-260`. `R-261` runs before `R-262`.
+`R-264` runs before `R-265`. `R-266` runs before `R-267`. Four open rows from earlier phases run first:
+`R-178` before `R-242` and `R-246`, `R-190` before `R-248`, `R-209` before `R-259`, `R-235` before `R-264`.
+**Seven rows additionally wait on Phase 30 rows that are not on `main` and therefore cannot be named as
+ids:** `R-238` (its tetrahedron-thickness instrument), `R-249` (signed defect), `R-250` (local thickness),
+`R-255` (cotan Laplacian), `R-256` (digital Laplace–Beltrami), `R-263` (memory-traffic floor and the L2
+reading), `R-267` (smoothness indicator). **15 rows are `S`, 14 `M`, 1 `L`** (`R-253`).
+
+**Eight rows are expected to return nulls and that is registered rather than hoped:** `R-240`, `R-243`,
+`R-248`, `R-251`, `R-254`, `R-259`, `R-261`, `R-266`.
+
+**Every row's first deliverable is its `Preregistration` in `crates/isomesh/src/experiment.rs`**, and that
+registration commit precedes every harness, as Phase 27's and Phase 29's did. No row proposes a change to the
+shipped path; every cost clause is a price.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **R-238** | S | — |
+| ☐ | **R-239** | M | `R-238` |
+| ☐ | **R-240** | S | `R-239` |
+| ☐ | **R-241** | S | — |
+| ☐ | **R-242** | M | `R-241`, `R-178` |
+| ☐ | **R-243** | S | `R-241` |
+| ☐ | **R-244** | S | — |
+| ☐ | **R-245** | M | `R-244` |
+| ☐ | **R-246** | M | `R-244`, `R-178` |
+| ☐ | **R-247** | M | — |
+| ☐ | **R-248** | S | `R-247`, `R-190` |
+| ☐ | **R-249** | M | — |
+| ☐ | **R-250** | S | `R-249` |
+| ☐ | **R-251** | S | — |
+| ☐ | **R-252** | M | `R-251` |
+| ☐ | **R-253** | L | — |
+| ☐ | **R-254** | S | `R-253` |
+| ☐ | **R-255** | M | — |
+| ☐ | **R-256** | M | `R-255` |
+| ☐ | **R-257** | M | — |
+| ☐ | **R-258** | S | `R-257` |
+| ☐ | **R-259** | M | `R-209` |
+| ☐ | **R-260** | S | `R-259` |
+| ☐ | **R-261** | S | — |
+| ☐ | **R-262** | M | `R-261` |
+| ☐ | **R-263** | S | — |
+| ☐ | **R-264** | M | `R-235` |
+| ☐ | **R-265** | S | `R-264` |
+| ☐ | **R-266** | M | `R-247` |
+| ☐ | **R-267** | S | `R-266` |
+
+- **R-238 — P-233.** Bey refinement of the crate's six-tet cell stays in a bounded congruence class set, so needle ratio does not grow with LOD depth
+- **R-239 — P-234.** Conforming Kuhn refinement replaces the LOD transition table, with no cracks and no special cases
+- **R-240 — P-235.** A null registered on purpose — conforming refinement costs more triangles than Transvoxel at the transition, and the ratio is bounded by the closure depth
+- **R-241 — P-236.** The multi-label configuration count under `O_h × S_k` is small enough to table for `k ≤ 4`, and Burnside gives the number before enumeration
+- **R-242 — P-237.** Material seams are closed curves on the mesh, and the mesh-free `χ` of each material's solid grades them
+- **R-243 — P-238.** A null registered on purpose — multi-material extraction costs under 1.3× single-material on the same grid
+- **R-244 — P-239.** Case indices are invariant under the cubed-sphere warp, so topology on the planet equals topology in the parameter cube
+- **R-245 — P-240.** Hausdorff error on the planet scales with the chart's Jacobian, and is worst at the cube's corners by the gnomonic distortion factor
+- **R-246 — P-241.** Chart seams are conforming if the six charts share their edge samples, and the seam's crack count is zero without any stitching code
+- **R-247 — P-242.** The contour generator is the zero set of `∇f·v` on the surface, extractable by the same machinery as a curve, and its cusp count matches Whitney's genericity
+- **R-248 — P-243.** A null registered on purpose — Koenderink's sign theorem holds on the mesh's silhouette only where `P-185`'s Gaussian curvature estimate has a sign
+- **R-249 — P-244.** The `−Lε` isosurface is a conservative occluder — inside the true solid everywhere — and the `+Lε` one a conservative hull, verified by the oracle
+- **R-250 — P-245.** The occluder needs fewer triangles than the render mesh at the same resolution, because erosion removes features smaller than `ε`
+- **R-251 — P-246.** A null registered on purpose — with a canonical (Morton) emission order the mesh hash is invariant across thread counts on one machine
+- **R-252 — P-247.** Across `mac-air` (arm64) and `big` (x86-64) the hashes differ, and forbidding FMA contraction plus a fixed reduction order makes them equal at under 5% cost
+- **R-253 — P-248.** A per-chunk discrete conformal flattening of the extracted mesh has median dilatation under 1.2 and is computed at under 3× extraction cost
+- **R-254 — P-249.** A null registered on purpose — one-sample atlas texturing and three-sample tri-planar differ by under 10% in fragment cost on the render path
+- **R-255 — P-250.** Heat-method geodesics on the extracted mesh are within 3% of true geodesics on `sphere` and `torus`, and a prefactored chunk answers a query in under 1 ms
+- **R-256 — P-251.** Geodesic distance from the *field* — the heat method on the digital surface — agrees with the mesh's, so navigation needs no mesh either
+- **R-257 — P-252.** The round trip `field → mesh → winding number → field → mesh` closes to within `2h` Hausdorff and preserves `χ`
+- **R-258 — P-253.** The Barnes–Hut winding number voxelises a 100k-triangle prop into a 65³ chunk in under 50 ms, against seconds for the exact sum
+- **R-259 — P-254.** A null registered on purpose — the DAG compresses the sign grid to within 4× of the entropy-rate floor on smooth fields and cannot approach it on noise
+- **R-260 — P-255.** In-place surface-cell enumeration on the DAG is faster than the bit-packed scan at 257³ because it skips merged empty subtrees
+- **R-261 — P-256.** A null registered on purpose — 16-bit `t` is below the extractor's own error at every resolution on the roster
+- **R-262 — P-257.** The 6-byte vertex halves vertex-buffer bandwidth and does not slow the vertex stage
+- **R-263 — P-258.** Hilbert order reduces cache-line runs per chunk by the Moon et al. constant and wall time by less than 5%
+- **R-264 — P-259.** Fragment volumes are controllable to 2% by power-diagram weights, and each fragment's mesh is the solid clipped by the cell
+- **R-265 — P-260.** The clipped-fragment extraction costs under 2× the unfragmented mesh for 8 fragments, because each cell's planes touch few grid cells
+- **R-266 — P-261.** A null registered on purpose — Perona–Malik on `fbm_terrain` removes octave-3 noise triangles and does not move the ridge lines
+- **R-267 — P-262.** On `box_exact` the diffused field's creases are sharper than the tricubic's, measured by Phase 30's smoothness indicator
 
 ---
 
