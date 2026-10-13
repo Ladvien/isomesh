@@ -8,6 +8,8 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+**Bevy 0.20, wgpu 30.** `bevy_isomesh` and `isomesh-gpu` move to Bevy 0.20, wgpu 30.0.1 and glam 0.33 together, with no version bump. `isomesh-gpu` adapts to wgpu 30's fallible `BufferSlice::get_mapped_range` and `RequestAdapterOptions::apply_limit_buckets`; the examples follow the 0.20 migration guides (`bevy_shape` for the primitives, `ui_widgets::Button` with `Pressed`, `ExtractResource<RenderApp>`, `ViewDepthStencilTexture`). `game_destruction` and `game_capsule_walk` now need `--features avian-demos` because no `avian3d` release targets Bevy 0.20 (B-020). `rust-version` of `bevy_isomesh` is 1.97.1.
+
 **Phase 27 registered no source change and landed none, and it is the largest phase on record.** Fifty
 pre-registered experiments (`P-127`–`P-176`), fifty benches, fifty committed CSVs and fifty `FINDINGS.md`
 entries across eighteen fields of mathematics — **13 rows held on every clause, 3 failed on every clause

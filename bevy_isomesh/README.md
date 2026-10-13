@@ -4,7 +4,7 @@
 
 [![crates.io](https://img.shields.io/crates/v/bevy_isomesh.svg)](https://crates.io/crates/bevy_isomesh) [![docs.rs](https://img.shields.io/docsrs/bevy_isomesh)](https://docs.rs/bevy_isomesh) [![CI](https://github.com/ladvien/isomesh/actions/workflows/ci.yml/badge.svg)](https://github.com/ladvien/isomesh/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/ladvien/isomesh/blob/main/LICENSE-MIT)
 
-**Bevy 0.19 integration for [`isomesh`](https://crates.io/crates/isomesh): signed distance field in, `Mesh` asset out.** The core crates stay engine-agnostic — this is the one place Bevy types appear.
+**Bevy 0.20 integration for [`isomesh`](https://crates.io/crates/isomesh): signed distance field in, `Mesh` asset out.** The core crates stay engine-agnostic — this is the one place Bevy types appear.
 
 ![Flying through caves and arches meshed from a signed distance field](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/flying-through-the-rock.gif)
 
@@ -14,9 +14,10 @@
 
 | `bevy_isomesh` | `bevy` | `wgpu` |
 |---|---|---|
+| main (unreleased) | 0.20 | 30.x |
 | 0.0.x | 0.19 | 29.x |
 
-Bevy 0.19 pins `wgpu` 29.0.3 and `glam` 0.32, and those move together or not at all: Cargo resolves two `wgpu` majors side by side with no error, and the failure surfaces much later as `expected TextureFormat, found a different TextureFormat`.
+Bevy 0.20 pins `wgpu` 30.0.1 and `glam` 0.33 (Bevy 0.19 pinned 29.0.3 and 0.32), and those move together or not at all: Cargo resolves two `wgpu` majors side by side with no error, and the failure surfaces much later as `expected TextureFormat, found a different TextureFormat`.
 
 ## Quickstart
 
@@ -177,7 +178,7 @@ The full inventory, with a clip of each, is **[the demo page](DEMOS.md)**; the s
 
 ## Requirements
 
-Rust 1.95 (Bevy 0.19's own floor), edition 2024.
+Rust 1.97.1 (Bevy 0.20's own floor), edition 2024.
 
 ## License
 

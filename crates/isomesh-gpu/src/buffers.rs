@@ -485,9 +485,9 @@ impl Readback {
         };
 
         let view = staging
-        .slice(..)
-        .get_mapped_range()
-        .map_err(|_| Error::MapFailed)?;
+            .slice(..)
+            .get_mapped_range()
+            .map_err(|_| Error::MapFailed)?;
         let mut out = Vec::with_capacity(self.spans.len());
         let mut at = 0usize;
         for len in &self.spans {

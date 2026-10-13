@@ -62,14 +62,14 @@ reasons certain designs were rejected. Do not re-derive from memory.
 
 ## Hard version pins — get these wrong and nothing links
 
-Bevy 0.19 pins these exactly. A mismatch does **not** produce a resolution error; Cargo silently
+Bevy 0.20 pins these exactly. A mismatch does **not** produce a resolution error; Cargo silently
 compiles two copies and you get `expected TextureFormat, found a different TextureFormat` much later.
 
 | Crate | Version | Why |
 |---|---|---|
-| `bevy` | **0.19** | target |
-| `wgpu` / `wgpu-types` / `naga` | **29.x — whatever Bevy 0.19's requirement resolves to** (both lockfiles are at 29.0.4) | patch releases float by design; the major/minor is what `bevy_render` 0.19 pins |
-| `glam` | **0.32** | exactly what Bevy 0.19 pins |
+| `bevy` | **0.20** | target |
+| `wgpu` / `wgpu-types` / `naga` | **30.x — whatever Bevy 0.20's requirement resolves to** (`wgpu` 30.0.1; the port was checked on 2026-10-13) | patch releases float by design; the major/minor is what `bevy_render` 0.20 pins |
+| `glam` | **0.33** | exactly what Bevy 0.20 pins |
 | `encase` | **0.12** | same |
 | edition | **2024** | |
 
@@ -112,7 +112,7 @@ isomesh/
                         lives in bevy_isomesh/, so CI compiles it.
                         Deps: libm. Only libm — see ✗16; glam cannot serve a crate
                         generic over f32 and f64.
-    isomesh-gpu/        + wgpu 29.x. API takes &wgpu::Device / &Queue / &mut CommandEncoder.
+    isomesh-gpu/        + wgpu 30.x. API takes &wgpu::Device / &Queue / &mut CommandEncoder.
   bevy_isomesh/         EXCLUDED from the root workspace. Own Cargo.lock. ALL Bevy examples here.
   docs/research/        the papers-derived research. Read-only unless asked.
 ```
@@ -127,7 +127,7 @@ pristine. The cost is no `cargo test --workspace` across the boundary — run bo
 ## Hard rules
 
 1. **No math library in a public signature.** `[f32; 3]`, `[u32; 3]`. glam is an internal
-   implementation detail. Reason: Bevy 0.19 wants glam 0.32, `parry3d` wants 0.33, `fast-surface-nets`
+   implementation detail. Reason: Bevy 0.20 wants glam 0.33 (0.19 wanted 0.32), `parry3d` wants 0.33, `fast-surface-nets`
    wants 0.29 — a consumer using two of those compiles incompatible `Vec3` types. Arrays are the only
    thing that survives. Offer `From`/`Into` behind optional features, never in the core API.
 2. **No Bevy dependency and no Bevy in code under `crates/`.** Not in `[dependencies]`, not in
