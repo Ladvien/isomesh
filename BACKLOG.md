@@ -154,6 +154,16 @@ shipped path; every cost clause is a price.
 
 ---
 
+## Bevy 0.20 port
+
+**Added 2026-10-13.** `bevy_isomesh` and `isomesh-gpu` moved to Bevy 0.20 and wgpu 30 (glam 0.33) with Sanctuary as the first consumer; the port itself landed with this ticket's commit, so only the avian follow-up is open.
+
+| | Ticket | Size | Blocked by |
+|---|---|---|---|
+| ☐ | **B-020** Re-enable the avian demos on Bevy 0.20: `game_destruction` and `game_capsule_walk` sit behind `required-features = ["avian-demos"]` because no `avian3d` release targets Bevy 0.20 (crates.io's latest is 0.7.0 and avian `main` pins Bevy 0.19.0). When one ships, re-add the `avian3d` dev-dependency, port the two examples, drop the feature and the `[[example]]` entries. | S | an `avian3d` release for Bevy 0.20 |
+
+---
+
 ## Phase 29 — fifty registrations from twenty-six fields of mathematics, each before its harness
 
 **Added 2026-09-04, above Phase 28 for the reason every phase goes on top: rule 1 reads top-down.**
