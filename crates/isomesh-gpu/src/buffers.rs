@@ -315,7 +315,10 @@ pub fn read_bytes_many(
         Err(_) => return Err(Error::DeviceLost),
     }
 
-    let view = staging.slice(..).get_mapped_range();
+    let view = staging
+        .slice(..)
+        .get_mapped_range()
+        .map_err(|_| Error::MapFailed)?;
     let mut out = Vec::with_capacity(requests.len());
     let mut at = 0usize;
     for (_, bytes) in requests {
@@ -481,7 +484,10 @@ impl Readback {
             return Ok(Vec::new());
         };
 
-        let view = staging.slice(..).get_mapped_range();
+        let view = staging
+        .slice(..)
+        .get_mapped_range()
+        .map_err(|_| Error::MapFailed)?;
         let mut out = Vec::with_capacity(self.spans.len());
         let mut at = 0usize;
         for len in &self.spans {

@@ -836,7 +836,7 @@ fn main() {
             module: &module,
             entry_point: Some("gbuf_vs"),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
-            buffers: &[wgpu::VertexBufferLayout {
+            buffers: &[Some(wgpu::VertexBufferLayout {
                 array_stride: 28,
                 step_mode: wgpu::VertexStepMode::Vertex,
                 attributes: &[
@@ -856,7 +856,7 @@ fn main() {
                         shader_location: 2,
                     },
                 ],
-            }],
+            })],
         },
         primitive: wgpu::PrimitiveState {
             topology: wgpu::PrimitiveTopology::TriangleList,

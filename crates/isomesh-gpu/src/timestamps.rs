@@ -235,7 +235,11 @@ impl StageTimestamps {
         }
 
         let ticks: Vec<u64> = {
-            let view = self.readback.slice(..bytes).get_mapped_range();
+            let view = self
+                .readback
+                .slice(..bytes)
+                .get_mapped_range()
+                .map_err(|_| Error::MapFailed)?;
             view.as_chunks::<8>()
                 .0
                 .iter()

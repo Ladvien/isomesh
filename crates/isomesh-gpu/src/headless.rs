@@ -150,6 +150,7 @@ impl Gpu {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 force_fallback_adapter: false,
                 compatible_surface: None,
+                apply_limit_buckets: false,
             }))
             .map_err(|_| Error::NoAdapter)?;
 

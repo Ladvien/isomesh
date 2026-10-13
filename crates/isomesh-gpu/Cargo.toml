@@ -46,7 +46,7 @@ isomesh = { path = "../isomesh", version = "0.0.10" }
 # leaves `wgpu-core` unlinked, the crate compiles with **zero** backends, and
 # the first `request_adapter` at run time returns nothing with no compile-time
 # hint of why.
-wgpu = { version = "29.0.3", default-features = false, features = [
+wgpu = { version = "30.0.1", default-features = false, features = [
   "wgsl",
   "dx12",
   "metal",
@@ -65,7 +65,7 @@ web-time = "1.1"
 # GPU-003's validation sweep. Same version as the naga wgpu carries, for the
 # same reason wgpu itself is pinned -- validating with a different naga than the
 # one that will compile the shader checks the wrong compiler.
-naga = { version = "29.0.3", features = ["wgsl-in"] }
+naga = { version = "30.0.1", features = ["wgsl-in"] }
 
 [lints]
 workspace = true

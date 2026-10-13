@@ -58,7 +58,7 @@ proptest = "1.11"
 # Cargo permits (`isomesh-gpu` depends on `isomesh` normally), and it is
 # invisible to `cargo tree -e normal`, which is what rule 3's gate reads.
 isomesh-gpu = { path = "../isomesh-gpu" }
-wgpu = "29"
+wgpu = "30"
 
 # T-006. Held at 0.7 when this workspace promised 1.85 and criterion 0.8's
 # floor was 1.86; the workspace now promises 1.89, so that reason has expired

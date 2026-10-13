@@ -3,9 +3,9 @@ name = "bevy_isomesh"
 description = "Bevy integration for isomesh: signed distance field in, Bevy Mesh out."
 version = "0.0.10"
 edition = "2024"
-# Bevy 0.19's own crates declare 1.95.0, and this crate cannot compile without
+# Bevy 0.20's own crates declare 1.97.1, and this crate cannot compile without
 # them, so claiming less would be a floor nothing can stand on.
-rust-version = "1.95"
+rust-version = "1.97.1"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/ladvien/isomesh"
 authors = ["C. Thomas Brittain <cthomasbrittain@yahoo.com>"]
@@ -35,13 +35,13 @@ all-features = true
 # what a crates.io consumer resolves.
 isomesh = { path = "../crates/isomesh", version = "0.0.10" }
 
-# Leaf crates, never the `bevy` umbrella. Bevy 0.17-0.19 carved `bevy_camera`,
+# Leaf crates, never the `bevy` umbrella. Bevy 0.17-0.20 carved `bevy_camera`,
 # `bevy_light`, `bevy_shader`, `bevy_mesh` and `bevy_material` out of
 # `bevy_render` precisely so an integration like this one can exist without
 # dragging in the renderer. A consumer doing CPU-only meshing into a `Mesh`
 # asset never compiles it.
-bevy_asset = "0.19"
-bevy_mesh = "0.19"
+bevy_asset = "0.20"
+bevy_mesh = "0.20"
 
 # B-003's plugin. All four are already in the tree transitively through
 # `bevy_asset`, so naming them directly costs nothing new -- and a Bevy
@@ -50,16 +50,16 @@ bevy_mesh = "0.19"
 # `bevy_render` is still absent, deliberately. The plugin produces a
 # `Handle<Mesh>` and stops; attaching `Mesh3d` is the application's line to
 # write, which is what keeps a CPU-only consumer from compiling the renderer.
-bevy_app = "0.19"
-bevy_ecs = "0.19"
-bevy_tasks = "0.19"
+bevy_app = "0.20"
+bevy_ecs = "0.20"
+bevy_tasks = "0.20"
 
 # The clock. `std::time::Instant::now()` compiles on wasm32-unknown-unknown and
 # then panics, which made `IsomeshPlugin` -- this crate's whole surface -- unusable
 # in a browser, and the frame-budget system is where it fired (`apply_finished_meshes`).
 # `bevy_platform::time::Instant` is `std`'s on native and `web_time`'s on the web,
 # and it is Bevy's own re-export rather than a second clock crate of our choosing.
-bevy_platform = "0.19"
+bevy_platform = "0.20"
 
 # The one loud channel for a failed extraction. Already in the tree
 # transitively -- `bevy_asset` logs through it -- and Bevy's `LogPlugin` is
@@ -72,7 +72,7 @@ tracing = { version = "0.1", default-features = false }
 # of the dev-dependency tables further down: the panic it removes is in the
 # library, so a consumer's own wasm build needs the feature too.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-bevy_platform = { version = "0.19", features = ["web"] }
+bevy_platform = { version = "0.20", features = ["web"] }
 
 # Examples only. Dev-dependencies are not propagated to consumers, so nothing
 # here reaches anyone depending on this crate.
@@ -80,7 +80,7 @@ bevy_platform = { version = "0.19", features = ["web"] }
 # Note the absence of "x11": that is a Linux windowing backend and this project
 # targets macOS/Metal, where `bevy_winit` needs no extra feature flag.
 [dev-dependencies]
-bevy = "0.19"
+bevy = "0.20"
 
 # `game_dig` offers Marching Cubes on the GPU as its eighth mesher key, and
 # `game_dig` is the first entry in `scripts/build_web.sh`'s `DEMOS` array -- so
@@ -94,8 +94,8 @@ bevy = "0.19"
 # trap -- wasm32 then links *zero* backends and there is no compile error,
 # because `build.rs` simply leaves `wgpu-core` out.
 #
-# The wgpu pin is what makes this safe. `isomesh-gpu` asks for 29.0.3 and Bevy
-# 0.19 asks for 29.0.3, so Cargo unifies them onto one copy -- the failure mode
+# The wgpu pin is what makes this safe. `isomesh-gpu` asks for 30.0.1 and Bevy
+# 0.20 asks for 30.0.1, so Cargo unifies them onto one copy -- the failure mode
 # is two silently coexisting majors and a type error about `TextureFormat` not
 # matching itself. Version alongside the path: cargo strips path-only
 # dev-dependencies from the published manifest, which would leave the packaged
@@ -105,7 +105,7 @@ isomesh-gpu = { path = "../crates/isomesh-gpu", version = "0.0.10" }
 
 # E-303's example talks to wgpu directly -- a render pass, buffer descriptors --
 # because that is what `isomesh-gpu`'s API takes.
-wgpu = { version = "29.0.3", default-features = false }
+wgpu = { version = "30.0.1", default-features = false }
 
 # B-012's tests and doctest only. `Cuboid` is the fixture the ticket's
 # acceptance names -- 24 vertices, not 8 -- and it lives in `bevy_math`. Named
@@ -113,7 +113,7 @@ wgpu = { version = "29.0.3", default-features = false }
 # reason the real dependencies are: this crate's whole argument is that you do
 # not need the umbrella. Already in the tree through `bevy_mesh`, so it adds
 # nothing to the resolved graph.
-bevy_math = "0.19"
+bevy_math = "0.20"
 
 # Two features, both additive, and Cargo unifies this with the unconditional
 # `bevy` above -- so both are on for wasm and off for native.
@@ -142,7 +142,7 @@ bevy_math = "0.19"
 # `web/play.html` checks `navigator.gpu` for every one of them because of this
 # line.
 [target.'cfg(target_arch = "wasm32")'.dev-dependencies]
-bevy = { version = "0.19", features = ["web", "webgpu"] }
+bevy = { version = "0.20", features = ["web", "webgpu"] }
 
 # Native-only, both for the same reason: neither is reachable from any example
 # that gets a web build, and the examples that use them are simply not built for
