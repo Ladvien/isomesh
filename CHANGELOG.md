@@ -104,6 +104,12 @@ shows it.
 
 ### Added
 
+- **`bevy_isomesh::IsomeshSystems`, `VoxelVolume::replace_field` and `mark_changed_chunks` (D-028).**
+  `IsomeshSystems` is a public `SystemSet` around the meshing systems, so a plugin that edits a field
+  orders itself `.before(IsomeshSystems)` and is re-meshed the same frame. `replace_field` swaps the
+  field and returns the old one; `mark_changed_chunks` compares two fields over the volume's spawned
+  chunks and inserts `NeedsRemesh` on exactly the chunks whose surface moved. No version bump.
+
 - **`isomesh::validate::pinch_census` — is it safe to weld this mesh, asked before the weld runs.**
   Welding coincident vertices is required and destructive (`M-59`, `M-99`, `M-96`), and until now the
   crate had no way to ask which it would be on a given mesh. `pinch_census(&[[R; 3]], &[u32],
