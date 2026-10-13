@@ -62,7 +62,7 @@ fn main() {
 ///
 /// `keys` empty means the unconditional position weld.
 fn welded(keys_from: Option<WeldKeyConfig>) -> (Mesh, String) {
-    let source = Mesh::from(bevy_math::primitives::Cuboid::new(SIDE, SIDE, SIDE));
+    let source = Mesh::from(bevy_shape::Cuboid::new(SIDE, SIDE, SIDE));
     let (positions, indices) = match from_bevy_mesh(&source) {
         Ok(pair) => pair,
         // A cuboid is a triangle list with positions and indices, so this arm is

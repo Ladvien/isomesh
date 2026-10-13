@@ -102,6 +102,7 @@ use bevy::render::mesh::{Indices, PrimitiveTopology};
 use bevy::render::render_resource::AsBindGroup;
 use bevy::render::renderer::{RenderDevice, RenderQueue};
 use bevy::shader::{Shader, ShaderRef};
+use bevy::ui::Pressed;
 use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
 use bevy_isomesh::MeshBuilder;
 use common::{Capture, CommonPlugin, DemoStats, OrbitCamera, ViewFlags};
@@ -1016,7 +1017,7 @@ fn setup(
     // default `Ico { subdivisions: 5 }` is 20,480, which is a lot of
     // alpha-blended fill for a cursor.
     let ghost_mesh = meshes.add(
-        bevy::math::primitives::Sphere::new(1.0)
+        bevy::shape::Sphere::new(1.0)
             .mesh()
             .ico(3)
             .expect("3 subdivisions is far below the 80-subdivision cap"),
@@ -1119,9 +1120,10 @@ fn setup(
     // exactly as it did and a phone is not asked to guess that the left third of
     // the screen walks.
     //
-    // `Interaction` is the hit test: `bevy_ui`'s focus system already reads
-    // `Touches`, so a tap on one of these is reported without this file doing
-    // any rectangle arithmetic. These are the first `Button`s anywhere under
+    // `Pressed` is the hit test: `bevy_ui_widgets`' `Button` observers insert it
+    // from picking, which already reads `Touches`, so a tap on one of these is
+    // reported without this file doing any rectangle arithmetic. These are the
+    // first `Button`s anywhere under
     // `examples/`; the HUD palette is reused so they read as part of it.
     //
     // `GlobalZIndex(5)` is above the tree's `4` banner layer and below the
@@ -1137,7 +1139,7 @@ fn setup(
     ] {
         commands
             .spawn((
-                Button,
+                bevy::ui_widgets::Button,
                 Node {
                     display: Display::None,
                     position_type: PositionType::Absolute,
@@ -2186,7 +2188,7 @@ fn switch_algorithm(keys: Res<ButtonInput<KeyCode>>, mut world: ResMut<World>) {
 fn touch_input(
     touches: Res<Touches>,
     windows: Query<&Window, With<PrimaryWindow>>,
-    presses: Query<(Ref<Interaction>, &TouchButton)>,
+    presses: Query<(Option<Ref<Pressed>>, &TouchButton)>,
     mut nodes: Query<&mut Node, With<TouchButton>>,
     mut touch: ResMut<TouchIntent>,
     mut world: ResMut<World>,
@@ -2221,20 +2223,19 @@ fn touch_input(
             touch.look += t.delta();
         }
     }
-    for (interaction, button) in &presses {
-        if *interaction != Interaction::Pressed {
+    for (pressed, button) in &presses {
+        let Some(pressed) = pressed else {
             continue;
-        }
+        };
         match button {
             // Level-triggered, exactly like a held mouse button: `dig`'s own
             // pacing decides the rate.
             TouchButton::Dig => touch.dig = true,
             TouchButton::Fill => touch.fill = true,
-            // Edge-triggered. `bevy_ui`'s focus system assigns `Pressed` only on
-            // the transition into it, so `Ref::is_changed` is the press edge --
-            // and without it a thumb left on the button bunny-hops, which
-            // `Space` held does not do.
-            TouchButton::Jump => touch.jump |= interaction.is_changed(),
+            // Edge-triggered. `Pressed` is inserted only on the transition into
+            // it, so `Ref::is_added` is the press edge -- and without it a thumb
+            // left on the button bunny-hops, which `Space` held does not do.
+            TouchButton::Jump => touch.jump |= pressed.is_added(),
         }
     }
     if touches.any_just_pressed() && !touch.seen {

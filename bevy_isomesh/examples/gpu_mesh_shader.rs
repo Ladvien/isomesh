@@ -53,7 +53,7 @@ use bevy::render::render_resource::{
     CompareFunction, DepthBiasState, DepthStencilState, StencilState, StoreOp,
 };
 use bevy::render::renderer::{RenderContext, RenderDevice, RenderQueue, ViewQuery};
-use bevy::render::view::{ExtractedView, ViewDepthTexture, ViewTarget};
+use bevy::render::view::{ExtractedView, ViewDepthStencilTexture, ViewTarget};
 use common::{CommonPlugin, DemoStats, OrbitCamera};
 use isomesh_gpu::{
     FieldSampler, GpuBrush, GpuField, GpuOp, GpuShape, GridParams, MarchingCubesGpu,
@@ -75,7 +75,7 @@ struct Scene {
     probe: bool,
 }
 
-impl ExtractResource for Scene {
+impl ExtractResource<RenderApp> for Scene {
     type Source = Self;
     fn extract_resource(source: &Self) -> Self {
         source.clone()
@@ -90,7 +90,7 @@ impl ExtractResource for Scene {
 #[derive(Resource, Clone, Default)]
 struct Readout(Arc<Mutex<Stats>>);
 
-impl ExtractResource for Readout {
+impl ExtractResource<RenderApp> for Readout {
     type Source = Self;
     fn extract_resource(source: &Self) -> Self {
         source.clone()
@@ -286,7 +286,7 @@ fn brushes(time: f32) -> [GpuBrush; 3] {
 
 /// Evaluate, extract and draw — the whole pipeline, once per frame.
 fn draw_isosurface(
-    view: ViewQuery<(&ExtractedView, &ViewTarget, &ViewDepthTexture)>,
+    view: ViewQuery<(&ExtractedView, &ViewTarget, &ViewDepthStencilTexture)>,
     kit: Option<ResMut<Kit>>,
     scene: Option<Res<Scene>>,
     readout: Option<Res<Readout>>,
@@ -332,7 +332,7 @@ fn draw_isosurface(
             // The view's sample count, read from the depth texture rather than
             // assumed: Bevy defaults to 4x MSAA and a pipeline built for 1
             // fails the draw outright rather than looking worse.
-            depth.texture.sample_count(),
+            depth.texture().sample_count(),
         )
         .ok();
     }

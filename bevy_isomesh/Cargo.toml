@@ -108,12 +108,12 @@ isomesh-gpu = { path = "../crates/isomesh-gpu", version = "0.0.10" }
 wgpu = { version = "30.0.1", default-features = false }
 
 # B-012's tests and doctest only. `Cuboid` is the fixture the ticket's
-# acceptance names -- 24 vertices, not 8 -- and it lives in `bevy_math`. Named
+# acceptance names -- 24 vertices, not 8 -- and it lives in `bevy_shape` (moved out of `bevy_math` in Bevy 0.20). Named
 # as a leaf rather than reached through the `bevy` umbrella above, for the same
 # reason the real dependencies are: this crate's whole argument is that you do
 # not need the umbrella. Already in the tree through `bevy_mesh`, so it adds
 # nothing to the resolved graph.
-bevy_math = "0.20"
+bevy_shape = "0.20"
 
 # Two features, both additive, and Cargo unifies this with the unconditional
 # `bevy` above -- so both are on for wasm and off for native.

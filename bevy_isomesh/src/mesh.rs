@@ -377,7 +377,7 @@ impl core::error::Error for SoupError {}
 ///
 /// ```
 /// use bevy_isomesh::from_bevy_mesh;
-/// use bevy_math::primitives::Cuboid;
+/// use bevy_shape::Cuboid;
 /// use bevy_mesh::Mesh;
 ///
 /// let mesh = Mesh::from(Cuboid::new(1.0, 1.0, 1.0));
@@ -517,7 +517,7 @@ fn fnv1a(bytes: &[u8]) -> u64 {
 ///
 /// ```
 /// use bevy_isomesh::{WeldKeyConfig, weld_keys};
-/// use bevy_math::primitives::Cuboid;
+/// use bevy_shape::Cuboid;
 /// use bevy_mesh::Mesh;
 ///
 /// let mesh = Mesh::from(Cuboid::new(1.0, 1.0, 1.0));
@@ -594,7 +594,7 @@ mod tests {
         builder
     }
 
-    use bevy_math::primitives::Cuboid;
+    use bevy_shape::Cuboid;
 
     // ── B-014: the attribute key ────────────────────────────────────────────
 

@@ -92,7 +92,7 @@ assert!(mesh.count_vertices() > 0);
 
 ```rust
 use bevy_isomesh::from_bevy_mesh;
-use bevy_math::primitives::Cuboid;
+use bevy_shape::Cuboid;
 use bevy_mesh::Mesh;
 
 let mesh = Mesh::from(Cuboid::new(1.0, 1.0, 1.0));
@@ -108,7 +108,7 @@ Position-only welding turns a cube into eight corners and loses every crease. `w
 
 ```rust
 use bevy_isomesh::{WeldKeyConfig, weld_keys};
-use bevy_math::primitives::Cuboid;
+use bevy_shape::Cuboid;
 use bevy_mesh::Mesh;
 
 let mesh = Mesh::from(Cuboid::new(1.0, 1.0, 1.0));
