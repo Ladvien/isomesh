@@ -11,7 +11,7 @@ entry and this file carries what the ticket did about it.
 
 ## Index
 
-371 tickets. Line numbers are stable until something above them is edited — grep the ID if
+372 tickets. Line numbers are stable until something above them is edited — grep the ID if
 they drift. **Read the annotation, not the checkmark**: the rows worth revisiting are the ones where
 implementation contradicted the ticket.
 
@@ -3449,3 +3449,6 @@ owner's; the script's own header says so instead of leaving it to be discovered.
 > ***Verification.*** `cargo test -p isomesh --lib` green on the landing commit; `cargo tree -p isomesh -e normal` still `isomesh` + `libm`; `cargo test -p isomesh-gpu` **85** passed; `cd isomesh_web && cargo test` green; `cd bevy_isomesh && cargo check --all-targets` clean; `./scripts/doc_facts.sh` and `./scripts/backlog_gate.sh` green at this commit; the golden diff has one removed line and it is the old final entry re-emitted with a trailing comma. The 162 new hashes were generated on Linux/x86-64; the macOS CI job is the cross-platform check, as `CLAUDE.md`'s `M-31` paragraph now says.
 >
 > ***Amended 2026-09-12, same day (💥 ✗130 / M-495).*** The macOS job failed that check on the first push: **48 of 378** hashes — every combination of `graph_theta_g2` and `ball_drilled_g3` — differed in the last ULP because `prescribed.rs`'s `ring()` called `a.cos()` on a concrete `f64`, which under `#[cfg(test)] extern crate std` is the platform's libm rather than `Real::cos`. Fixed by naming `libm::cos`/`libm::sin`; the Linux re-bless moved exactly those 48 rows and no other. Rule added to `FINDINGS.md` Part 5.
+
+| ☑ | **D-028** | S | — |
+> **DONE 2026-10-13 — `bevy_elements`' voxel snow needs three things from `bevy_isomesh` that did not exist, and they landed without a version bump.** `IsomeshSystems` is a public `SystemSet` around `(spawn_meshing_tasks, apply_finished_meshes)`, so a plugin that edits a field orders itself `.before(IsomeshSystems)` and is re-meshed the same frame. `VoxelVolume::replace_field(impl VolumeField) -> Arc<dyn VolumeField>` swaps the field and returns the old one. `mark_changed_chunks(commands, volume_entity, volume, chunks, before, after) -> isomesh::Result<EditReport>` runs `chunk::dirty::mark_edit` over the cell bounding box of the volume's spawned chunks and inserts `NeedsRemesh` on the chunk entities whose surface moved. Eight tests in `bevy_isomesh/src/plugin/tests.rs`, the two ordering ones paired so each could fail; the README gains a section with a compiled example. Ported from an earlier branch of the Bevy 0.20 migration onto the owner's port; `main` stays 0.0.10 and the release is the owner's call.

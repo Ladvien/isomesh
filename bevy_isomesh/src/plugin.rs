@@ -2,7 +2,7 @@
 //!
 //! Ticket: B-003.
 //!
-//! [`mesh`](crate::mesh) turns one extraction into one [`Mesh`](bevy_mesh::Mesh).
+//! [`crate::mesh`] turns one extraction into one [`Mesh`](bevy_mesh::Mesh).
 //! This turns a
 //! field and a chunk layout into a stream of them, on the task pool, under a
 //! frame budget.
@@ -47,6 +47,7 @@
 //! CPU-only meshing never compiles the renderer. One line in the consumer buys
 //! that, and the examples show it.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -58,6 +59,7 @@ use bevy_platform::time::Instant;
 use bevy_tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future};
 use tracing::error;
 
+use isomesh::chunk::dirty::{DirtySet, EditReport, mark_edit};
 use isomesh::chunk::{ChunkId, ChunkLayout};
 use isomesh::{RuntimeShape3, Sdf};
 
@@ -212,6 +214,17 @@ impl VoxelVolume {
         self.extractor = extractor;
         self
     }
+
+    /// Swap in a new field and hand back the old one.
+    ///
+    /// Chunks already meshed keep their old meshes, and chunks whose tasks are
+    /// already running finish against the old field (each task holds its own
+    /// [`Arc`] to it), so nothing here marks anything for re-meshing. Call
+    /// [`mark_changed_chunks`] with the returned field as `before` and the new
+    /// one as `after` to mark exactly the chunks the swap changed.
+    pub fn replace_field(&mut self, field: impl VolumeField) -> Arc<dyn VolumeField> {
+        std::mem::replace(&mut self.field, Arc::new(field))
+    }
 }
 
 /// A chunk of a volume. Lives on its own entity, with the volume as its parent.
@@ -292,6 +305,17 @@ pub struct MeshStats {
 type WaitingChunks<'w, 's> =
     Query<'w, 's, (Entity, &'static VoxelChunk), (With<NeedsRemesh>, Without<MeshingTask>)>;
 
+/// The system set holding the plugin's meshing systems:
+/// `(spawn_meshing_tasks, apply_finished_meshes)`, in that order.
+///
+/// A downstream plugin that edits a volume's field or marks chunks
+/// [`NeedsRemesh`] orders itself `.before(IsomeshSystems)` so its edit is
+/// queued the same frame; one that consumes [`ChunkMesh`] orders itself
+/// `.after(IsomeshSystems)`. Both systems run in
+/// [`Update`].
+#[derive(SystemSet, Clone, Debug, PartialEq, Eq, Hash)]
+pub struct IsomeshSystems;
+
 /// Registers the meshing systems.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct IsomeshPlugin;
@@ -325,8 +349,84 @@ impl Plugin for IsomeshPlugin {
             // `spawn` then `apply`, chained: a task spawned this frame cannot
             // have finished, so running them the other way round would simply
             // add a frame of latency to every chunk.
-            .add_systems(Update, (spawn_meshing_tasks, apply_finished_meshes).chain());
+            .add_systems(
+                Update,
+                (spawn_meshing_tasks, apply_finished_meshes)
+                    .chain()
+                    .in_set(IsomeshSystems),
+            );
     }
+}
+
+/// Mark every chunk of `volume` that the edit from `before` to `after`
+/// changed, by inserting [`NeedsRemesh`] on it.
+///
+/// This is the system-side wrapper of
+/// [`isomesh::chunk::dirty::mark_edit`], whose rules it inherits: a chunk is
+/// marked only if some cell whose corners moved is, before or after, a surface
+/// cell, so an edit deep inside solid or empty space marks nothing.
+///
+/// # The region
+///
+/// The compared region is the cell bounding box of the volume's **existing
+/// chunk entities** (those with a [`VoxelChunk`] whose `volume` is
+/// `volume_entity`), so the cost is `(box + 1)³` evaluations of each field and
+/// edits outside every spawned chunk are ignored: there is no entity to mark.
+/// A volume with no chunks costs nothing and reports nothing.
+///
+/// `before` is typically the field returned by
+/// [`VoxelVolume::replace_field`]: pass `&*old`.
+///
+/// # Errors
+///
+/// [`isomesh::Error::IndexSpaceExhausted`] if the bounding box's corner grid
+/// exceeds the `u32` sample space; nothing is marked then.
+pub fn mark_changed_chunks(
+    commands: &mut Commands,
+    volume_entity: Entity,
+    volume: &VoxelVolume,
+    chunks: &Query<(Entity, &VoxelChunk)>,
+    before: &dyn VolumeField,
+    after: &dyn VolumeField,
+) -> isomesh::Result<EditReport> {
+    let n = i64::from(volume.layout.cells());
+    let mut by_id: HashMap<ChunkId, Entity> = HashMap::new();
+    let mut bounds: Option<([i64; 3], [i64; 3])> = None;
+    for (entity, chunk) in chunks {
+        if chunk.volume != volume_entity {
+            continue;
+        }
+        by_id.insert(chunk.id, entity);
+        // A chunk owns cells `base ..= base + n - 1` per axis.
+        let lo = volume.layout.base_sample(chunk.id);
+        let hi = [lo[0] + n - 1, lo[1] + n - 1, lo[2] + n - 1];
+        bounds = Some(match bounds {
+            None => (lo, hi),
+            Some((min, max)) => (
+                [lo[0].min(min[0]), lo[1].min(min[1]), lo[2].min(min[2])],
+                [hi[0].max(max[0]), hi[1].max(max[1]), hi[2].max(max[2])],
+            ),
+        });
+    }
+    let Some((min_cell, max_cell)) = bounds else {
+        return Ok(EditReport::default());
+    };
+
+    let mut dirty = DirtySet::new();
+    let report = mark_edit(
+        &volume.layout,
+        &before,
+        &after,
+        min_cell,
+        max_cell,
+        &mut dirty,
+    )?;
+    for id in dirty.iter() {
+        if let Some(&entity) = by_id.get(&id) {
+            commands.entity(entity).try_insert(NeedsRemesh);
+        }
+    }
+    Ok(report)
 }
 
 /// Queue extractions for chunks that need them.

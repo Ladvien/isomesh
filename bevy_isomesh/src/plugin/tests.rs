@@ -525,3 +525,229 @@ fn the_quickstart_layout_meshes_every_chunk() {
     );
     std::println!("measured: quickstart chunks meshed to {counts:?} triangles");
 }
+
+// ── `IsomeshSystems`, `replace_field`, `mark_changed_chunks` ────────────────
+//
+// Added for downstream plugins that edit a volume's field (bevy_elements' snow
+// does) and need to order against the meshing systems and learn which chunks
+// an edit invalidated.
+
+use bevy_ecs::system::RunSystemOnce;
+
+/// Four chunks in a row along x, none marked, over a small sphere that sits
+/// wholly inside chunk 0: chunk `[x, 0, 0]` covers world x in `[2x, 2x + 2)`.
+fn edit_app() -> (App, Entity) {
+    let mut app = App::new();
+    app.add_plugins((TaskPoolPlugin::default(), AssetPlugin::default()))
+        .add_plugins(IsomeshPlugin);
+    let layout = ChunkLayout::new(8, 0.25, [0.0; 3]).expect("a valid layout");
+    let volume = app
+        .world_mut()
+        .spawn(VoxelVolume::new(
+            layout,
+            Sphere::<f32> {
+                center: [1.0, 1.0, 1.0],
+                radius: 0.5,
+            },
+        ))
+        .id();
+    for x in 0..4 {
+        app.world_mut().spawn(VoxelChunk {
+            id: ChunkId::new([x, 0, 0]),
+            volume,
+        });
+    }
+    (app, volume)
+}
+
+fn marked(app: &mut App) -> Vec<ChunkId> {
+    let mut ids: Vec<ChunkId> = app
+        .world_mut()
+        .query_filtered::<&VoxelChunk, With<NeedsRemesh>>()
+        .iter(app.world())
+        .map(|c| c.id)
+        .collect();
+    ids.sort();
+    ids
+}
+
+/// Swap `volume`'s field for `field` and run `mark_changed_chunks` over the
+/// change, as a downstream system would.
+fn edit(
+    app: &mut App,
+    volume: Entity,
+    field: impl VolumeField,
+) -> isomesh::chunk::dirty::EditReport {
+    let old = app
+        .world_mut()
+        .get_mut::<VoxelVolume>(volume)
+        .expect("the volume exists")
+        .replace_field(field);
+    app.world_mut()
+        .run_system_once(
+            move |mut commands: Commands,
+                  volumes: Query<&VoxelVolume>,
+                  chunks: Query<(Entity, &VoxelChunk)>| {
+                let v = volumes.get(volume).expect("the volume exists");
+                mark_changed_chunks(&mut commands, volume, v, &chunks, &*old, &*v.field)
+            },
+        )
+        .expect("the system ran")
+        .expect("the region is far below the sample-space bound")
+}
+
+#[test]
+fn replace_field_returns_the_old_field_and_installs_the_new_one() {
+    let layout = ChunkLayout::new(8, 0.25, [0.0; 3]).expect("a valid layout");
+    let mut volume = VoxelVolume::new(layout, Sphere::<f32>::canonical());
+    // The canonical sphere has radius 1 about the origin, so (0, 0, 0.5) is
+    // inside it and outside the replacement's tiny radius.
+    let probe = [0.0, 0.0, 0.5];
+    let before = volume.field.sample(probe);
+    assert!(before < 0.0, "the probe should be inside the old field");
+
+    let old = volume.replace_field(Sphere::<f32> {
+        center: [0.0; 3],
+        radius: 0.1,
+    });
+    assert_eq!(old.sample(probe), before, "the old field came back intact");
+    assert!(
+        volume.field.sample(probe) > 0.0,
+        "the volume now holds the new field"
+    );
+    // Layout and extractor are untouched.
+    assert_eq!(volume.layout, layout);
+    assert_eq!(volume.extractor, Extractor::default());
+}
+
+#[test]
+fn mark_changed_chunks_marks_exactly_the_chunks_the_edit_touched() {
+    let (mut app, volume) = edit_app();
+    assert!(marked(&mut app).is_empty());
+
+    // Grow the sphere in place. Still wholly inside chunk 0, so chunks 1..4
+    // saw no change at all and must not be re-meshed.
+    let report = edit(
+        &mut app,
+        volume,
+        Sphere::<f32> {
+            center: [1.0, 1.0, 1.0],
+            radius: 0.6,
+        },
+    );
+    assert_eq!(marked(&mut app), vec![ChunkId::new([0, 0, 0])]);
+    assert_eq!(report.dirty_chunks, 1);
+    assert!(report.output_changed_cells > 0);
+}
+
+#[test]
+fn mark_changed_chunks_marks_the_chunk_a_surface_left_and_the_one_it_entered() {
+    let (mut app, volume) = edit_app();
+    // Move the sphere from chunk 0 into chunk 2: both gained or lost surface.
+    edit(
+        &mut app,
+        volume,
+        Sphere::<f32> {
+            center: [5.0, 1.0, 1.0],
+            radius: 0.5,
+        },
+    );
+    assert_eq!(
+        marked(&mut app),
+        vec![ChunkId::new([0, 0, 0]), ChunkId::new([2, 0, 0])]
+    );
+}
+
+#[test]
+fn mark_changed_chunks_marks_nothing_for_an_identical_field() {
+    let (mut app, volume) = edit_app();
+    let report = edit(
+        &mut app,
+        volume,
+        Sphere::<f32> {
+            center: [1.0, 1.0, 1.0],
+            radius: 0.5,
+        },
+    );
+    assert!(marked(&mut app).is_empty());
+    assert_eq!(report.dirty_chunks, 0);
+    assert_eq!(report.value_changed_cells, 0);
+}
+
+#[test]
+fn mark_changed_chunks_leaves_another_volumes_chunks_alone() {
+    let (mut app, volume) = edit_app();
+    // A second volume with a chunk at the same id as the one being edited.
+    let layout = ChunkLayout::new(8, 0.25, [0.0; 3]).expect("a valid layout");
+    let other = app
+        .world_mut()
+        .spawn(VoxelVolume::new(layout, Sphere::<f32>::canonical()))
+        .id();
+    let bystander = app
+        .world_mut()
+        .spawn(VoxelChunk {
+            id: ChunkId::new([0, 0, 0]),
+            volume: other,
+        })
+        .id();
+
+    edit(
+        &mut app,
+        volume,
+        Sphere::<f32> {
+            center: [1.0, 1.0, 1.0],
+            radius: 0.6,
+        },
+    );
+    assert_eq!(marked(&mut app), vec![ChunkId::new([0, 0, 0])]);
+    assert!(
+        app.world().get::<NeedsRemesh>(bystander).is_none(),
+        "the other volume's chunk was marked"
+    );
+}
+
+#[test]
+fn mark_changed_chunks_on_a_volume_with_no_chunks_reports_nothing() {
+    let mut app = App::new();
+    app.add_plugins((TaskPoolPlugin::default(), AssetPlugin::default()))
+        .add_plugins(IsomeshPlugin);
+    let layout = ChunkLayout::new(8, 0.25, [0.0; 3]).expect("a valid layout");
+    let volume = app
+        .world_mut()
+        .spawn(VoxelVolume::new(layout, Sphere::<f32>::canonical()))
+        .id();
+    let report = edit(&mut app, volume, Sphere::<f32>::default());
+    assert_eq!(report, isomesh::chunk::dirty::EditReport::default());
+}
+
+/// Marks every chunk. Ordered by the caller relative to [`IsomeshSystems`].
+fn mark_every_chunk(mut commands: Commands, chunks: Query<Entity, With<VoxelChunk>>) {
+    for entity in &chunks {
+        commands.entity(entity).insert(NeedsRemesh);
+    }
+}
+
+#[test]
+fn a_system_before_isomesh_systems_is_meshed_the_same_frame() {
+    let (mut app, _) = edit_app();
+    app.add_systems(Update, mark_every_chunk.before(IsomeshSystems));
+    app.update();
+    let stats = *app.world().resource::<MeshStats>();
+    assert_eq!(stats.spawned, 4, "the marks were not seen this frame");
+    assert!(marked(&mut app).is_empty(), "NeedsRemesh was not consumed");
+}
+
+#[test]
+fn a_system_after_isomesh_systems_waits_for_the_next_frame() {
+    // The companion: proves the test above is sensitive to which side of the
+    // set the marking system is on, rather than passing whatever the order.
+    let (mut app, _) = edit_app();
+    app.add_systems(Update, mark_every_chunk.after(IsomeshSystems));
+    app.update();
+    let stats = *app.world().resource::<MeshStats>();
+    assert_eq!(stats.spawned, 0, "the marks were seen the same frame");
+    assert_eq!(marked(&mut app).len(), 4);
+    app.update();
+    let stats = *app.world().resource::<MeshStats>();
+    assert_eq!(stats.spawned, 4, "and the next frame picks them up");
+}

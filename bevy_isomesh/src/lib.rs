@@ -12,6 +12,6 @@ pub mod plugin;
 
 pub use mesh::{MeshBuilder, SoupError, WeldKeyConfig, from_bevy_mesh, to_bevy_mesh, weld_keys};
 pub use plugin::{
-    ChunkMesh, ChunkSeams, Extractor, IsomeshPlugin, MeshBudget, MeshStats, NeedsRemesh,
-    VolumeField, VoxelChunk, VoxelVolume,
+    ChunkMesh, ChunkSeams, Extractor, IsomeshPlugin, IsomeshSystems, MeshBudget, MeshStats,
+    NeedsRemesh, VolumeField, VoxelChunk, VoxelVolume, mark_changed_chunks,
 };

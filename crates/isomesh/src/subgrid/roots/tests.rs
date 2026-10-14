@@ -156,7 +156,7 @@ fn the_same_call_twice_is_bit_identical() {
 
 // The sentinel is compared exactly on purpose: the point is that `all_roots`
 // left it *untouched*, which is bit-equality and not approximation.
-#[expect(clippy::float_cmp, reason = "asserting a value was not written to")]
+#[allow(clippy::float_cmp, reason = "asserting a value was not written to")]
 #[test]
 fn results_append_rather_than_replace() {
     // The buffer is caller-provided and reused per edge, per CLAUDE.md rule 6.

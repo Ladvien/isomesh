@@ -66,6 +66,40 @@ fn attach(meshes: Query<(Entity, &ChunkMesh), Without<Mesh3d>>, mut commands: Co
 
 Extraction runs on the `AsyncComputeTaskPool`, never in a system; what the frame budget bounds is turning finished extractions into assets. Editing a chunk mid-extraction re-queues it rather than swallowing the edit — the headless behavioral tests state these as claims (`spawning_the_work_does_not_do_the_work`, `an_edit_during_extraction_is_requeued_rather_than_swallowed`).
 
+## Editing a field, and ordering against the plugin
+
+`VoxelVolume::replace_field` swaps in a new field and hands back the old one. `mark_changed_chunks` compares the two over the volume's existing chunk entities and inserts `NeedsRemesh` on exactly the chunks whose surface moved — an edit deep inside solid or empty space marks nothing. The meshing systems sit in the public `IsomeshSystems` set, so a plugin that edits the field orders itself `.before(IsomeshSystems)` and the re-mesh is queued the same frame:
+
+```rust,no_run
+use bevy::prelude::*;
+use bevy_isomesh::{IsomeshPlugin, IsomeshSystems, VoxelChunk, VoxelVolume, mark_changed_chunks};
+use isomesh::fields::Sphere;
+
+fn grow(
+    mut commands: Commands,
+    mut volumes: Query<(Entity, &mut VoxelVolume)>,
+    chunks: Query<(Entity, &VoxelChunk)>,
+) {
+    for (entity, mut volume) in &mut volumes {
+        let before = volume.replace_field(Sphere::<f32> { center: [0.0; 3], radius: 1.5 });
+        if let Err(error) = mark_changed_chunks(
+            &mut commands, entity, &volume, &chunks, &*before, &*volume.field,
+        ) {
+            error!("could not mark the edit: {error}");
+        }
+    }
+}
+
+fn main() {
+    App::new()
+        .add_plugins((DefaultPlugins, IsomeshPlugin))
+        .add_systems(Update, grow.before(IsomeshSystems))
+        .run();
+}
+```
+
+The compared region is the cell bounding box of the volume's spawned chunks, so the cost is one field evaluation of each field per corner sample of that box; an edit outside every spawned chunk has nothing to mark.
+
 ## Two layers — use either
 
 **`MeshBuilder`** is a `MeshSink` whose buffers are exactly the arrays a Bevy `Mesh` wants, so `into_mesh()` hands the `Vec`s over by move — no copy on the way into the asset. This one runs, and does, on every `cargo test`:
