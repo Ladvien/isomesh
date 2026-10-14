@@ -164,17 +164,25 @@ impl StageTimestamps {
     /// to protect a measurement.
     pub fn writes(&self, label: &'static str) -> Option<wgpu::ComputePassTimestampWrites<'_>> {
         use core::sync::atomic::Ordering;
-        // `fetch_update` rather than a load-then-store: two threads recording
+        // A compare-exchange loop rather than a load-then-store: two threads recording
         // passes on one extractor would otherwise hand out the same slot pair
         // and neither would know. The extraction path is single-threaded today
         // and this costs nothing; a silently shared slot would cost a wrong
-        // number that looks like a right one.
-        let at = self
-            .next
-            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |at| {
-                (at + 2 <= MAX_PASSES * 2).then_some(at + 2)
-            })
-            .ok()?;
+        // number that looks like a right one. (`fetch_update` / `try_update` are
+        // deprecated/1.95 and this crate's MSRV is 1.89.)
+        let mut at = self.next.load(Ordering::SeqCst);
+        loop {
+            if at + 2 > MAX_PASSES * 2 {
+                return None;
+            }
+            match self
+                .next
+                .compare_exchange(at, at + 2, Ordering::SeqCst, Ordering::SeqCst)
+            {
+                Ok(_) => break,
+                Err(seen) => at = seen,
+            }
+        }
         self.labels.lock().expect("timestamp labels").push(label);
         Some(wgpu::ComputePassTimestampWrites {
             query_set: &self.set,

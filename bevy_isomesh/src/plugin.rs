@@ -2,7 +2,7 @@
 //!
 //! Ticket: B-003.
 //!
-//! [`mesh`](crate::mesh) turns one extraction into one [`Mesh`](bevy_mesh::Mesh).
+//! [`crate::mesh`] turns one extraction into one [`Mesh`](bevy_mesh::Mesh).
 //! This turns a
 //! field and a chunk layout into a stream of them, on the task pool, under a
 //! frame budget.
