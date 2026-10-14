@@ -32,7 +32,7 @@ fn the_band_must_have_width() {
 // not measurements of it. Zero inside the box has to be exactly zero, or a
 // camera standing in a chunk would fail a `<= radius` test at any radius, and 3
 // and 5 are integers a `sqrt` of 9 and 25 must land on exactly.
-#[expect(clippy::float_cmp, reason = "these are definitions, not measurements")]
+#[allow(clippy::float_cmp, reason = "these are definitions, not measurements")]
 #[test]
 fn distance_is_to_the_box_and_is_zero_inside_it() {
     let layout = layout();
