@@ -4,14 +4,14 @@ version = 4
 
 [[package]]
 name = "isomesh"
-version = "0.0.10"
+version = "0.0.11"
 dependencies = [
  "libm",
 ]
 
 [[package]]
 name = "isomesh_web"
-version = "0.0.10"
+version = "0.0.11"
 dependencies = [
  "isomesh",
 ]
