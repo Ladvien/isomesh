@@ -113,6 +113,11 @@ rustup target add wasm32-unknown-unknown
 rm -rf "$OUT"
 mkdir -p "$OUT/play/pkg"
 
+# Where cargo put the artifacts, asked of cargo. CI sets CARGO_TARGET_DIR, which
+# moves them out of each crate's own `target/`.
+web_target=$(cd isomesh_web && cargo metadata --format-version 1 --no-deps | "$PYTHON" -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])')
+bevy_target=$(cd bevy_isomesh && cargo metadata --format-version 1 --no-deps | "$PYTHON" -c 'import json,sys; print(json.load(sys.stdin)["target_directory"])')
+
 echo "==> isomesh_web (the front page's module)"
 (cd isomesh_web && cargo build --release --target wasm32-unknown-unknown)
 # Copied rather than piped through `wasm-opt`, and that is a measurement rather
@@ -123,7 +128,7 @@ echo "==> isomesh_web (the front page's module)"
 # raw, 8,729,859 to **9,314,752** gzipped, 6.7% the wrong way, at 23 s per
 # module -- so there is no `wasm-opt` anywhere in this script and no `binaryen`
 # in CI. Each crate's own `[profile.release]` is doing this work already.
-cp isomesh_web/target/wasm32-unknown-unknown/release/isomesh_web.wasm \
+cp "$web_target/wasm32-unknown-unknown/release/isomesh_web.wasm" \
     "$OUT/isomesh_web.wasm"
 
 for demo in "${DEMOS[@]}"; do
@@ -134,7 +139,7 @@ for demo in "${DEMOS[@]}"; do
     wasm-bindgen --target web --no-typescript \
         --remove-name-section --remove-producers-section \
         --out-dir "$OUT/play/pkg/$demo" --out-name "$demo" \
-        "bevy_isomesh/target/wasm32-unknown-unknown/wasm-release/examples/$demo.wasm"
+        "$bevy_target/wasm32-unknown-unknown/wasm-release/examples/$demo.wasm"
 done
 
 echo "==> prose and assets"

@@ -24,7 +24,7 @@ permissions:
 jobs:
   lint:
     name: fmt, clippy, docs, dependency gates
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, big]
     steps:
       - uses: actions/checkout@v7
 
@@ -121,19 +121,20 @@ jobs:
     #
     # The GPU crate's behavioural tests need a real adapter, and headless.rs
     # refuses software rasterisers by design (GPU-009, M-147) -- there is no
-    # fallback to fall to. GitHub's ubuntu runners expose no GPU at all, so
-    # every isomesh-gpu device test panicked there on every push since GPU-001
-    # and this job was red for the whole GPU series. macOS runners expose
-    # Metal, so that leg runs the full workspace; the ubuntu leg runs the CPU
-    # crate, which is the one the cross-OS golden-hash claim is about. The GPU
-    # crate still compiles on ubuntu under the lint job's clippy step, its
-    # doctests (all device-free) run on both legs below, and its full suite
-    # runs on macOS here and on Linux/Vulkan locally (M-167).
+    # fallback to fall to. GitHub's ubuntu runners expose no GPU at all, and the
+    # big runner container gets none either, so every isomesh-gpu device test
+    # panicked on the hosted ubuntu runners on every push since GPU-001, and this
+    # job was red for the whole GPU series. macOS runners expose Metal, so that
+    # leg runs the full workspace; the Linux leg (big) runs the CPU crate, which
+    # is the one the cross-OS golden-hash claim is about. The GPU crate still
+    # compiles on Linux under the lint job's clippy step, its doctests (all
+    # device-free) run on both legs below, and its full suite runs on macOS here
+    # and on Linux/Vulkan locally (M-167).
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+        os: [big, macos-latest]
+    runs-on: ${{ matrix.os == 'big' && fromJSON('["self-hosted","big"]') || matrix.os }}
     steps:
       - uses: actions/checkout@v7
       # `--lib --tests`, not `--all-targets`, because `--all-targets` pulls in the
@@ -175,18 +176,13 @@ jobs:
 
   bevy:
     name: bevy_isomesh (separate workspace)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, big]
     steps:
       - uses: actions/checkout@v7
       # Bevy 0.19 enables Wayland by default on Linux, so `wayland-sys`'s build
       # script needs the dev packages even though CI only type-checks and never
-      # opens a window. None of these exist on macOS, which is why a local
-      # verification could not have caught it.
-      - name: system deps for bevy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+      # opens a window. The runner image provides them. None of these exist on
+      # macOS, which is why a local verification could not have caught it.
       # This job is the whole reason the examples live in this crate rather than
       # in a separate one nothing ever builds. `block-mesh`'s examples are pinned
       # to bevy 0.13 and `fast-surface-nets`' to bevy 0.7, both because no CI
@@ -246,7 +242,7 @@ jobs:
 
   msrv:
     name: msrv (rust-version in Cargo.toml)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, big]
     steps:
       - uses: actions/checkout@v7
       # `rust-version` is a claim the manifest makes to consumers. Nothing
@@ -275,13 +271,9 @@ jobs:
       # this directory, and "it is excluded" is not one.
       # Bevy 0.19 enables Wayland by default on Linux, so `wayland-sys`'s build
       # script needs the dev packages even to *type-check*. The `bevy` job has
-      # carried this step for the same reason; needing it a second time here is
+      # the same need for the same reason; the runner image provides them, so
+      # this job needs no install step. Needing them a second time here is
       # I-007's own finding happening to I-007 (M-192).
-      - name: system deps for bevy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
       - name: read bevy_isomesh's declared MSRV
         id: bevy_msrv
         working-directory: bevy_isomesh
@@ -306,7 +298,7 @@ jobs:
   # the package directory and is therefore never shipped.
   package:
     name: package (dry run)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, big]
     steps:
       - uses: actions/checkout@v7
       - name: dry run
@@ -328,7 +320,7 @@ jobs:
     name: publish to crates.io
     needs: [lint, test, bevy, msrv, package]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, big]
     # Serialised against itself, and never cancelled. The default
     # `cancel-in-progress` above would be free to kill this between the two
     # crates, leaving isomesh published and isomesh-gpu not -- which is
@@ -354,18 +346,14 @@ jobs:
   # nothing, which makes this job the repository's link checker as well.
   site:
     name: pages site (docs + wasm demos)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, big]
     steps:
       - uses: actions/checkout@v7
-      # The same packages the `bevy` job installs. Nothing in the wasm graph
-      # needs them -- winit's x11/wayland deps and `cpal` are target-gated away
-      # -- but host build scripts of shared dependencies still run, and this is
-      # the cheapest way to not care which.
-      - name: system deps for bevy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+      # The same packages the `bevy` job needs, provided by the runner image.
+      # Nothing in the wasm graph needs them -- winit's x11/wayland deps and
+      # `cpal` are target-gated away -- but host build scripts of shared
+      # dependencies still run, and having them present is the cheapest way to
+      # not care which.
       - name: wasm target
         run: rustup target add wasm32-unknown-unknown
       # The version comes out of the lockfile, never a literal here: a
