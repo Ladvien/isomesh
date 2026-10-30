@@ -751,3 +751,140 @@ fn a_system_after_isomesh_systems_waits_for_the_next_frame() {
     let stats = *app.world().resource::<MeshStats>();
     assert_eq!(stats.spawned, 4, "and the next frame picks them up");
 }
+
+// ── Issue #10: an empty chunk is published, not rendered ────────────────────
+//
+// Sanctuary's wall: 102 of 856 chunks mesh to nothing, and each was a
+// `contains no vertices` warning from Bevy's mesh allocator, because the empty
+// asset was extracted to the render world. The chunk still finishes -- it keeps
+// its `ChunkMesh` -- but its mesh stays in the main world.
+
+use bevy_asset::{AssetId, RenderAssetUsages};
+
+/// One published chunk: its id, its mesh's asset id, vertex count and usages.
+type Published = (ChunkId, AssetId<Mesh>, usize, RenderAssetUsages);
+
+/// Every chunk's published mesh, sorted by chunk id.
+///
+/// Returns asset *ids*, not handles: a test that kept a strong handle would
+/// keep the asset alive and could not see it freed.
+fn published(app: &mut App) -> Vec<Published> {
+    let handles: Vec<(ChunkId, Handle<Mesh>)> = app
+        .world_mut()
+        .query::<(&VoxelChunk, &ChunkMesh)>()
+        .iter(app.world())
+        .map(|(chunk, mesh)| (chunk.id, mesh.0.clone()))
+        .collect();
+    let meshes = app.world().resource::<Assets<Mesh>>();
+    let mut rows: Vec<Published> = handles
+        .iter()
+        .map(|(id, handle)| {
+            let mesh = meshes
+                .get(handle)
+                .expect("a published handle names a live asset");
+            (*id, handle.id(), mesh.count_vertices(), mesh.asset_usage)
+        })
+        .collect();
+    rows.sort_by_key(|row| row.0);
+    rows
+}
+
+/// [`edit_app`] with every chunk meshed once: chunk 0 holds the sphere, chunks
+/// 1, 2 and 3 hold nothing.
+fn meshed_edit_app() -> (App, Entity) {
+    let (mut app, volume) = edit_app();
+    let chunks: Vec<Entity> = app
+        .world_mut()
+        .query_filtered::<Entity, With<VoxelChunk>>()
+        .iter(app.world())
+        .collect();
+    for chunk in chunks {
+        app.world_mut().entity_mut(chunk).insert(NeedsRemesh);
+    }
+    drain_until(&mut app, |app| meshed(app) == 4);
+    assert_eq!(meshed(&mut app), 4, "the queue never drained");
+    (app, volume)
+}
+
+#[test]
+fn an_empty_chunk_keeps_its_chunk_mesh_but_not_the_render_world() {
+    let (mut app, _) = meshed_edit_app();
+    let rows = published(&mut app);
+
+    let ids: Vec<ChunkId> = rows.iter().map(|row| row.0).collect();
+    assert_eq!(
+        ids,
+        (0..4).map(|x| ChunkId::new([x, 0, 0])).collect::<Vec<_>>(),
+        "every finished chunk has a ChunkMesh, the empty ones included"
+    );
+
+    let (_, _, vertices, usage) = rows[0];
+    assert!(vertices > 0, "chunk 0 holds the sphere");
+    assert_eq!(
+        usage,
+        RenderAssetUsages::default(),
+        "a chunk with a surface is still drawn and still readable"
+    );
+    for &(id, _, vertices, usage) in &rows[1..] {
+        assert_eq!(vertices, 0, "{id:?} should be empty");
+        assert_eq!(
+            usage,
+            RenderAssetUsages::MAIN_WORLD,
+            "{id:?} has no vertices, so the render world must not get it: Bevy's \
+             mesh allocator warns `contains no vertices` for every one it is handed"
+        );
+    }
+}
+
+#[test]
+fn a_chunk_that_gains_or_loses_its_surface_gets_a_fresh_mesh_with_the_matching_usage() {
+    let (mut app, volume) = meshed_edit_app();
+    let before = published(&mut app);
+
+    // Move the sphere from chunk 0 into chunk 2: 0 loses its surface, 2 gains one.
+    edit(
+        &mut app,
+        volume,
+        Sphere::<f32> {
+            center: [5.0, 1.0, 1.0],
+            radius: 0.5,
+        },
+    );
+    drain_until(&mut app, |app| {
+        let rows = published(app);
+        rows[0].1 != before[0].1 && rows[2].1 != before[2].1
+    });
+    let after = published(&mut app);
+
+    assert_ne!(after[0].1, before[0].1, "chunk 0 was never re-published");
+    assert_ne!(after[2].1, before[2].1, "chunk 2 was never re-published");
+    assert_eq!(
+        (after[0].2, after[0].3),
+        (0, RenderAssetUsages::MAIN_WORLD),
+        "the chunk the surface left"
+    );
+    assert!(after[2].2 > 0, "the chunk the surface entered has vertices");
+    assert_eq!(
+        after[2].3,
+        RenderAssetUsages::default(),
+        "the chunk the surface entered"
+    );
+    assert_eq!(
+        (after[1].1, after[3].1),
+        (before[1].1, before[3].1),
+        "chunks the edit never touched keep their assets"
+    );
+
+    // The replaced assets go once their last handle drops: the old ChunkMesh
+    // components were the only holders.
+    let replaced = [before[0].1, before[2].1];
+    let live = |app: &App| {
+        let meshes = app.world().resource::<Assets<Mesh>>();
+        replaced
+            .iter()
+            .filter(|&&id| meshes.get(id).is_some())
+            .count()
+    };
+    drain_until(&mut app, |app| live(app) == 0);
+    assert_eq!(live(&app), 0, "a replaced mesh outlived its handle");
+}
