@@ -8,6 +8,12 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+### Fixed
+
+- **An empty chunk's mesh no longer reaches the render world** (issue #10). `MeshBuilder::into_mesh` and `to_bevy_mesh` create a mesh with zero vertices as `RenderAssetUsages::MAIN_WORLD`; every other mesh keeps `RenderAssetUsages::default()`. Bevy 0.20 extracts only assets carrying `RENDER_WORLD`, and its mesh allocator logged `WARN … Mesh … contains no vertices.` once for every zero-vertex mesh it was handed: 102 lines per world build in Sanctuary, whose destructible wall has 102 empty chunks of 856. Every finished chunk still gets its `ChunkMesh`, empty ones included, and the empty mesh still reads (`count_vertices()` is 0, `try_attributes()` is `Ok`, `from_bevy_mesh` returns two empty vectors). A chunk that gains or loses its surface after an edit gets a fresh asset with the matching usage, and the old one is freed when its handle drops. An entity whose `Mesh3d` names an empty mesh draws nothing, quietly. One way to defeat it, now documented on both constructors: filling an empty mesh in place leaves it `MAIN_WORLD` only, so replace the whole `Mesh` instead.
+
+## [0.0.11] — 2026-10-14
+
 **isomesh 0.0.11.** The three APIs bevy_elements' voxel snow needs are public on this line: `IsomeshSystems` (a `SystemSet` around `(spawn_meshing_tasks, apply_finished_meshes)`), `VoxelVolume::replace_field` (swap a volume's field, returns the old one) and `mark_changed_chunks` (the system-side wrapper of `chunk::dirty::mark_edit`). Six versions in six manifest sites. `isomesh-gpu`'s slot allocator is a compare-exchange loop (`Atomic::fetch_update` was deprecated in Rust 1.99; the crate's MSRV is 1.89). The `bevy_isomesh` doc link to `crate::mesh` is plain-text.
 
 **Bevy 0.20, wgpu 30.** `bevy_isomesh` and `isomesh-gpu` move to Bevy 0.20, wgpu 30.0.1 and glam 0.33 together, with no version bump. `isomesh-gpu` adapts to wgpu 30's fallible `BufferSlice::get_mapped_range` and `RequestAdapterOptions::apply_limit_buckets`; the examples follow the 0.20 migration guides (`bevy_shape` for the primitives, `ui_widgets::Button` with `Pressed`, `ExtractResource<RenderApp>`, `ViewDepthStencilTexture`). `game_destruction` and `game_capsule_walk` now need `--features avian-demos` because no `avian3d` release targets Bevy 0.20 (B-020). `rust-version` of `bevy_isomesh` is 1.97.1.
