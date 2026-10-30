@@ -19,6 +19,7 @@ The longer, older reading notes are the dated files beside this one (`2026-08-10
 - `10.48550_arXiv.2604.00157`: *Dual Contouring of Signed Distance Data* (2026).
 - `10.1111_j.1467-8659.2005.00879.x`: *Cubical Marching Squares* (2005).
 - `10.48550_arxiv.2308.05371`: *FlexiCubes* (2023).
+- `10.48550_arxiv.2202.01999`: *Neural Dual Contouring* (2022); added from `catalog_recent`, iteration 2.
 
 ## Surface Nets
 
@@ -37,6 +38,7 @@ The longer, older reading notes are the dated files beside this one (`2026-08-10
 - `10.1145_3730845`: *Sphere Carving: Bounding Volumes for Signed Distance Fields* (2025).
 - `10.1016_j.cag.2010.07.003`: *Fast reliable interrogation of procedurally defined implicit surfaces using extended revised affine arithmetic* (2010).
 - `10.1016_j.gmod.2021.101098`: *Hybrid Function Representation for Heterogeneous Objects* (2021).
+- `10.48550_arxiv.2205.14151`: *Interactive and Robust Mesh Booleans* (2022); mesh-side CSG with exact predicates, the alternative to field-side CSG. Added iteration 2.
 
 ## Voxel, cave and destructible terrain in games
 
@@ -44,6 +46,9 @@ The longer, older reading notes are the dated files beside this one (`2026-08-10
 - `10.1145_3102163.3102216`: *Procedural feature generation for volumetric terrains* (2017).
 - `10.48550_arXiv.2505.02017`: *Aokana: A GPU-Driven Voxel Rendering Framework for Open World Games* (2025); describes Minecraft's chunking.
 - `s2025-advances-materials`: SIGGRAPH 2025 *Advances in Real-Time Rendering in Games* course.
+- `10.48550_arxiv.2306.09310`: *Infinite Photorealistic Worlds using Procedural Generation* (Infinigen, 2023); SDF terrain with caves, meshed per view. Added iteration 2.
+- `10.48550_arxiv.2210.11463`: *Breaking Bad: A Dataset for Geometric Fracture and Reassembly* (2022); fracture of meshes, the destructible-object side. Added iteration 2.
+- `10.48550_arxiv.2205.02961`: *Approximate Convex Decomposition for 3D Meshes with Collision-Aware Concavity and Tree Search* (2022); collider meshes from a surface. Added iteration 2.
 
 ## Mesh validity and repair
 
