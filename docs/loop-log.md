@@ -14,8 +14,6 @@ By the owner's session, not a loop pass. Added `.omp/commands/build-loop.md` (fr
 
 **Found while setting up, for the owner (listed, not touched):** `0001-docs-research-2026-08-18-sweep.patch` (98 KB) and `_to_delete/git-index.lock` are tracked at the repository root. `.gitignore` ignores `.omp/*`, so the command file was added with `git add -f`; it is tracked from here on.
 
-**Found while setting up, for the owner (listed, not touched):** an untracked-looking `0001-docs-research-2026-08-18-sweep.patch` (98 KB) and `_to_delete/git-index.lock` are committed at the repository root.
-
 ### Ranked backlog
 
 1. **#10 — an empty chunk's mesh is extracted to the render world** (Sanctuary: 102 `contains no vertices` warnings per world build, 102 of 856 chunks). A documented-behaviour bug filed by a consumer, so it ranks first. The issue's own proposal: `MeshBuilder::into_mesh` (`bevy_isomesh/src/mesh.rs`) gives a zero-vertex mesh `RenderAssetUsages::MAIN_WORLD` only, and every finished chunk keeps its `ChunkMesh`. Measurable by its acceptance 1-4: no published `ChunkMesh` has zero vertices and `RENDER_WORLD`; the existing "chunk never finished" test passes unchanged; an empty mesh's `count_vertices()` is 0 and `try_attributes()` is `Ok`; a chunk that gains or loses its surface after an edit flips usages and drops the old asset.
