@@ -246,6 +246,15 @@ pub struct NeedsRemesh;
 
 /// The finished mesh for a chunk.
 ///
+/// Every chunk that finishes meshing gets one, including a chunk the surface
+/// does not cross: its mesh has no vertices and is
+/// [`RenderAssetUsages::MAIN_WORLD`](bevy_asset::RenderAssetUsages::MAIN_WORLD)
+/// only, so it is readable (`count_vertices()` is `0`) and never extracted to
+/// the render world (issue #10; the rule is
+/// [`MeshBuilder::into_mesh`](crate::MeshBuilder::into_mesh)'s). A chunk that
+/// gains or loses its surface after an edit gets a new mesh with the matching
+/// usages, and the old asset is freed when its last handle drops.
+///
 /// Attaching a render component to this is the application's job — see the
 /// module docs.
 #[derive(Component, Clone, Debug)]
