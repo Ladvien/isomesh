@@ -183,6 +183,40 @@ impl MeshBuilder {
     /// vertex range. That is silently corrupted rendering far from the cause,
     /// so the mismatch is refused here, at the door.
     ///
+    /// # An empty mesh stays out of the render world
+    ///
+    /// A builder that received no vertices — a chunk the surface does not
+    /// cross — becomes a mesh with [`RenderAssetUsages::MAIN_WORLD`] only; any
+    /// other becomes [`RenderAssetUsages::default()`], main **and** render
+    /// world. [`to_bevy_mesh`] applies the same rule.
+    ///
+    /// Issue #10. Bevy extracts a mesh to the render world only when its
+    /// usages contain `RENDER_WORLD` (`bevy_render` 0.20, `render_asset.rs:350`),
+    /// and its mesh allocator logs `WARN … Mesh … contains no vertices.` for
+    /// every extracted mesh whose vertex buffer is empty, then allocates
+    /// nothing for it (`mesh/allocator.rs:433`). Empty chunks are common — 102
+    /// of the 856 chunks of one shipped destructible wall — so handing them to
+    /// the renderer cost a warning per empty chunk per remesh, and an
+    /// extraction that could never draw.
+    ///
+    /// The split follows Lengyel's rule for voxel terrain: every block an edit
+    /// touches is regenerated, but only a block the surface intersects "becomes
+    /// an individually renderable and individually cullable geometry node" (E.
+    /// Lengyel, *Voxel-Based Terrain for Real-Time Virtual Simulations*, UC
+    /// Davis 2010, p. 28). Being meshed is the block's; being drawn is the
+    /// result's.
+    ///
+    /// Both kinds keep the main world, because a collider baker, a validity
+    /// check or [`from_bevy_mesh`] reads the attributes back on the CPU: an
+    /// empty mesh's `count_vertices()` is `0` and its `try_attributes()` is
+    /// `Ok`. An entity whose `Mesh3d` names a main-world-only mesh is skipped
+    /// by the renderer, not refused.
+    ///
+    /// **Filling an empty mesh in place defeats this.** `Assets::get_mut`
+    /// followed by `insert_attribute` keeps the usages it was built with, so
+    /// the filled mesh never reaches the renderer. Build a new `Mesh` and
+    /// replace the whole asset instead.
+    ///
     /// # Panics
     ///
     /// If colours were written but not one per vertex — shade after the last
@@ -199,10 +233,7 @@ impl MeshBuilder {
         );
         let mut mesh = Mesh::new(
             PrimitiveTopology::TriangleList,
-            // The default: the asset stays in main memory as well as being
-            // uploaded, which is what a collider baker or a validity check
-            // needs. Drop MAIN_WORLD once nothing reads it back.
-            RenderAssetUsages::default(),
+            usages_for(self.positions.len()),
         );
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.positions);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals);
@@ -276,6 +307,17 @@ fn triplanar_uv(position: [f32; 3], normal: [f32; 3], scale: f32) -> [f32; 2] {
     [u / scale, v / scale]
 }
 
+/// The usages a mesh built here gets: main world only when it has no vertices,
+/// main and render world otherwise. One rule for both constructors; the why is
+/// on [`MeshBuilder::into_mesh`] (issue #10; Lengyel 2010, p. 28).
+fn usages_for(vertices: usize) -> RenderAssetUsages {
+    if vertices == 0 {
+        RenderAssetUsages::MAIN_WORLD
+    } else {
+        RenderAssetUsages::default()
+    }
+}
+
 /// Copy an [`isomesh::MeshBuffer`] into a Bevy [`Mesh`].
 ///
 /// This **copies**, because the buffer is the thing you are reusing across
@@ -287,11 +329,15 @@ fn triplanar_uv(position: [f32; 3], normal: [f32; 3], scale: f32) -> [f32; 2] {
 /// there is no correct
 /// answer, and note that a buffer carries no information this function could
 /// use to invent one.
+///
+/// An empty buffer becomes a mesh with [`RenderAssetUsages::MAIN_WORLD`] only,
+/// any other [`RenderAssetUsages::default()`]: the same rule as
+/// [`MeshBuilder::into_mesh`], whose docs say why and the one way to defeat it.
 #[must_use]
 pub fn to_bevy_mesh(buffer: &MeshBuffer<f32>) -> Mesh {
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
-        RenderAssetUsages::default(),
+        usages_for(buffer.positions.len()),
     );
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, buffer.positions.clone());
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, buffer.normals.clone());
@@ -963,6 +1009,76 @@ mod tests {
         assert_eq!(
             mesh.indices().map(bevy_mesh::Indices::len),
             Some(buffer.indices.len())
+        );
+    }
+
+    // ── Issue #10: an empty mesh is not handed to the renderer ──────────────
+
+    /// Extract a region the canonical sphere never reaches.
+    fn extract_nothing<S: MeshSink<Scalar = f32>>(sink: &mut S) {
+        let shape = RuntimeShape3::new([17; 3]).expect("valid shape");
+        MarchingCubes::<f32>::new()
+            .extract(
+                &Sphere::<f32>::canonical(),
+                &shape,
+                [10.0; 3],
+                4.0 / 16.0,
+                sink,
+            )
+            .expect("extraction");
+    }
+
+    #[test]
+    fn into_mesh_keeps_an_empty_mesh_out_of_the_render_world_and_readable() {
+        let mut builder = MeshBuilder::new();
+        extract_nothing(&mut builder);
+        assert_eq!(builder.vertex_count(), 0, "the sphere is not in this region");
+
+        let empty = builder.into_mesh();
+        assert_eq!(
+            empty.asset_usage,
+            RenderAssetUsages::MAIN_WORLD,
+            "Bevy's mesh allocator warns for every zero-vertex mesh it is handed"
+        );
+        assert_eq!(empty.count_vertices(), 0);
+        assert!(empty.try_attributes().is_ok(), "the main world still reads it");
+        assert_eq!(from_bevy_mesh(&empty), Ok((Vec::new(), Vec::new())));
+
+        let surface = sphere_builder().into_mesh();
+        assert!(surface.count_vertices() > 0);
+        assert_eq!(
+            surface.asset_usage,
+            RenderAssetUsages::default(),
+            "a mesh with vertices is drawn and still readable"
+        );
+    }
+
+    #[test]
+    fn to_bevy_mesh_keeps_an_empty_mesh_out_of_the_render_world_and_readable() {
+        let mut empty = MeshBuffer::<f32>::new();
+        extract_nothing(&mut empty);
+        assert_eq!(empty.vertex_count(), 0, "the sphere is not in this region");
+
+        let mesh = to_bevy_mesh(&empty);
+        assert_eq!(mesh.asset_usage, RenderAssetUsages::MAIN_WORLD);
+        assert_eq!(mesh.count_vertices(), 0);
+        assert!(mesh.try_attributes().is_ok(), "the main world still reads it");
+        assert_eq!(from_bevy_mesh(&mesh), Ok((Vec::new(), Vec::new())));
+
+        let mut surface = MeshBuffer::<f32>::new();
+        MarchingCubes::<f32>::new()
+            .extract(
+                &Sphere::<f32>::canonical(),
+                &RuntimeShape3::new([17; 3]).expect("valid shape"),
+                [-2.0; 3],
+                4.0 / 16.0,
+                &mut surface,
+            )
+            .expect("extraction");
+        assert!(surface.vertex_count() > 0);
+        assert_eq!(
+            to_bevy_mesh(&surface).asset_usage,
+            RenderAssetUsages::default()
         );
     }
 
