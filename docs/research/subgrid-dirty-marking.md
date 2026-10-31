@@ -52,7 +52,7 @@ The tempting middle, "skip a cell if it is provably empty", needs a bound on the
 
 `mark_changed_chunks` picks the function from `volume.extractor`: `Subgrid { samples }` takes the new one, everything else keeps `mark_edit`. The extractor decides the rule, so a caller cannot pair the wrong one.
 
-Probe positions use the extractor's own expression, `from + (to - from) * t` with `t = i / samples`, shared with `all_roots` through one function so the two cannot drift. Corner positions are `ChunkLayout::world_of_sample` of the global index, as in `mark_edit`.
+Interior probe positions use the extractor's own expressions, `from + (to - from) * t` with `t = i * (1 / samples)`, shared with `all_roots` through `edge_point` and `sample_parameter` so the two cannot drift. The two end points of an edge are the lattice points, `ChunkLayout::world_of_sample` of the global index, evaluated once and shared by every edge that meets there, as in `mark_edit`. The extractor evaluates an edge's end as `from + (to - from) * 1`, which can differ from `to` in the last place, so the end probes are an ulp-level approximation of what it reads (listed under Deviations).
 
 Memory is one layer at a time (two lattice planes and the slab between them, packed one byte per probe), so a whole-volume region does not allocate a volume-sized probe grid.
 
@@ -81,7 +81,7 @@ A game that carves a Subgrid volume, or snows on it, sees the mesh change on the
 ## Deviations
 
 - The rule is exact with respect to the probe values, **not** to everything the extractor reads. Roots are refined by bisection, and vertex normals come from the field's gradient at each root, and neither is a probe. An edit that lies strictly between two probes, moves no probe value, and moves a root only by sub-sample-spacing, is invisible to marking. The extractor has the same aliasing (`roots.rs`: "a pair of roots closer together than the sample spacing is invisible"), and the paper prices it the same way (§1.3). Marked as a design default and documented on the function.
-- Sample positions come from `world_of_sample` (one expression from the global index), where the extractor computes `origin + cell_size * local`. The two are bit-equal for a power-of-two cell size and can differ in the last ulp otherwise (M-32). Only a probe within an ulp of a zero could land on the other side; the same caveat `mark_edit` already carries.
+- Sample positions come from `world_of_sample` (one expression from the global index), where the extractor computes `origin + cell_size * local`, and an edge's two ends are the shared lattice points where the extractor computes `from + (to - from) * t` (`t = 0` and `t = 1`). The expressions are bit-equal for a power-of-two cell size and can differ in the last ulp otherwise (M-32). Only a probe within an ulp of a zero could land on the other side; the same caveat `mark_edit` already carries, and a design default here.
 - Not examined here: Dual Contouring reads the field's gradient at each crossing (`hermite.rs`: one `Sdf::gradient` per crossing), which is not a corner, so the corner rule may not be exact for it either. #11 is about Subgrid and this pass leaves Dual Contouring and Surface Nets on `mark_edit`. Logged as a candidate.
 
 ## Pending index

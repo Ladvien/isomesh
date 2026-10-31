@@ -8,6 +8,14 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+### Added
+
+- **`isomesh::chunk::dirty::mark_edit_subgrid`**, the counterpart of `mark_edit` for Subgrid Marching Tetrahedra. It compares the two fields at the points that extractor reads (`samples` cuts along each of a cell's 19 tetrahedron edges) instead of at the eight corners, so a plate thinner than a cell, or a crack no corner sees, dirties the chunk that meshes it. `samples == 1` is `mark_edit`'s rule exactly. Costs `1 + 7 (samples - 1)` field evaluations per cell per field, each point evaluated once (M-497).
+
+### Fixed
+
+- **`mark_changed_chunks` re-meshes a Subgrid chunk whose sub-cell geometry an edit adds or removes** (issue #11). It decided "surface cell" from the signs of a cell's eight corners, which is all Marching Cubes reads and less than Subgrid does, so on a `Extractor::Subgrid` volume a thin wall that was cut stayed on screen and in the collider, and one that was added never appeared, with `EditReport::output_changed_cells == 0` and no error. The rule now follows the volume's extractor, through a `match` with no wildcard. Over 8 edits the corner rule missed the changed chunk on 4 and the new rule on none (M-497). Marching Cubes, Surface Nets and Dual Contouring volumes mark exactly what they marked. The cost of an edit on a Subgrid volume grows to `1 + 7 (samples - 1)` evaluations per cell of the volume's box, which is documented on `mark_changed_chunks`.
+
 ## [0.0.12] — 2026-10-30
 
 **isomesh 0.0.12.** One `bevy_isomesh` fix: an empty chunk's mesh is published to the game and withheld from the renderer. `isomesh` and `isomesh-gpu` change no library code (two test attributes in `isomesh` moved from `expect` to `allow` for clippy 1.99); they ship at the shared version.
