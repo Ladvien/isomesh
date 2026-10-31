@@ -456,15 +456,21 @@ pub fn mark_changed_chunks_in(
     mark_region(commands, volume, &by_id, before, after, region)
 }
 
+/// An inclusive range of global cell indices, `(min_cell, max_cell)`.
+type CellBox = ([i64; 3], [i64; 3]);
+
+/// A volume's existing chunk entities by id.
+type ChunksById = HashMap<ChunkId, Entity>;
+
 /// The volume's existing chunk entities by id, and the cell box they cover.
 fn volume_chunks(
     volume_entity: Entity,
     volume: &VoxelVolume,
     chunks: &Query<(Entity, &VoxelChunk)>,
-) -> (HashMap<ChunkId, Entity>, Option<([i64; 3], [i64; 3])>) {
+) -> (ChunksById, Option<CellBox>) {
     let n = i64::from(volume.layout.cells());
-    let mut by_id: HashMap<ChunkId, Entity> = HashMap::new();
-    let mut bounds: Option<([i64; 3], [i64; 3])> = None;
+    let mut by_id = ChunksById::new();
+    let mut bounds: Option<CellBox> = None;
     for (entity, chunk) in chunks {
         if chunk.volume != volume_entity {
             continue;
@@ -489,10 +495,10 @@ fn volume_chunks(
 fn mark_region(
     commands: &mut Commands,
     volume: &VoxelVolume,
-    by_id: &HashMap<ChunkId, Entity>,
+    by_id: &ChunksById,
     before: &dyn VolumeField,
     after: &dyn VolumeField,
-    (min_cell, max_cell): ([i64; 3], [i64; 3]),
+    (min_cell, max_cell): CellBox,
 ) -> isomesh::Result<EditReport> {
     let mut dirty = DirtySet::new();
     // The rule belongs to the extractor, because it is a statement about which
