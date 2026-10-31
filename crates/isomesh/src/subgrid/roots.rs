@@ -74,6 +74,46 @@ const REFINEMENTS: u32 = 80;
 /// **The caller is responsible for calling this with identical endpoints** from
 /// both sides. M-32 is the precedent: `origin + h·i` and `(origin + h·c·n) + h·i`
 /// are equal by algebra and not by IEEE.
+/// The point at parameter `t` along the edge `from → to`.
+///
+/// The one expression every sample along an edge is positioned by. The extractor
+/// reads the field here, and
+/// [`mark_edit_subgrid`](crate::chunk::dirty::mark_edit_subgrid) asks what an
+/// edit changed *at the points the extractor reads*, so the two share this
+/// function rather than agree by algebra: M-32 is the reminder that two
+/// expressions equal on paper are not equal in IEEE.
+#[inline]
+pub(crate) fn edge_point<R: Real>(from: [R; 3], to: [R; 3], t: R) -> [R; 3] {
+    [
+        from[0] + (to[0] - from[0]) * t,
+        from[1] + (to[1] - from[1]) * t,
+        from[2] + (to[2] - from[2]) * t,
+    ]
+}
+
+/// The spacing of the sample parameters on an edge cut into `samples` intervals.
+///
+/// `samples` must be at least 1.
+#[inline]
+pub(crate) fn edge_step<R: Real>(samples: u32) -> R {
+    R::ONE / R::from_f64(f64::from(samples))
+}
+
+/// The parameter of sample point `i` on an edge cut into `samples` intervals,
+/// for `i` in `1..=samples` (point `0` is parameter zero).
+///
+/// The last point is exactly `1`, which an accumulating sum would only
+/// approximate. `step` is [`edge_step`] for the same `samples`, passed in so a
+/// loop pays for the division once.
+#[inline]
+pub(crate) fn sample_parameter<R: Real>(i: u32, samples: u32, step: R) -> R {
+    if i == samples {
+        R::ONE
+    } else {
+        R::from_f64(f64::from(i)) * step
+    }
+}
+
 pub fn all_roots<R: Real, S: Sdf<Scalar = R>>(
     from: [R; 3],
     to: [R; 3],
@@ -85,28 +125,18 @@ pub fn all_roots<R: Real, S: Sdf<Scalar = R>>(
         return;
     }
 
-    let at = |t: R| -> R {
-        sdf.sample([
-            from[0] + (to[0] - from[0]) * t,
-            from[1] + (to[1] - from[1]) * t,
-            from[2] + (to[2] - from[2]) * t,
-        ])
-    };
+    let at = |t: R| -> R { sdf.sample(edge_point(from, to, t)) };
     // Inside is `f < 0`; a sample of exactly zero is outside.
     let inside = |v: R| v < R::ZERO;
 
-    let step = R::ONE / R::from_f64(f64::from(samples));
+    let step = edge_step::<R>(samples);
     let mut low = R::ZERO;
     let mut low_inside = inside(at(low));
 
     for i in 1..=samples {
         // `i * step` rather than an accumulating add: the running sum would
         // drift, and the last value would not be exactly 1.
-        let high = if i == samples {
-            R::ONE
-        } else {
-            R::from_f64(f64::from(i)) * step
-        };
+        let high = sample_parameter(i, samples, step);
         let high_inside = inside(at(high));
 
         if high_inside != low_inside {
