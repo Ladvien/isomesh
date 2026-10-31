@@ -12,7 +12,7 @@ different set swapped in without guessing.
 The bytes are committed rather than fetched at build time. The Open SciVis
 volumes `.gitignore` excludes (M-006) have a public URL to fetch from; these
 sets do not, and the repository already tracks comparable binaries — the largest
-tracked file is `docs/gifs/flying-through-the-rock.gif` at 7.4 MB.
+tracked file is `docs/media/flying-through-the-rock.gif` at 7.4 MB.
 
 ## The four layers, and why in this order
 

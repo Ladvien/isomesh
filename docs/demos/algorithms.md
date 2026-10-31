@@ -13,7 +13,7 @@ finding — `FINDINGS.md` records which source to distrust and why.
 
 ## Where the root falls decides the whole gain, and the curve is closed-form
 
-![A grid line through a field, the standard piecewise-linear reconstruction against the shifted one with its knots visibly offset, the measured error ratio riding a closed-form curve down to exactly zero and back up to exactly one as the crossing slides, with the guard-band panel showing k = 5 above the bar and k = 10 below it](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/where-the-root-falls-decides-the-gain.gif)
+![A grid line through a field, the standard piecewise-linear reconstruction against the shifted one with its knots visibly offset, the measured error ratio riding a closed-form curve down to exactly zero and back up to exactly one as the crossing slides, with the guard-band panel showing k = 5 above the bar and k = 10 below it](../media/where-the-root-falls-decides-the-gain.gif)
 
 *`shifted_linear_root` — one grid line, 65 samples, no extractor called anywhere. The samples are fixed
 markers; the **field slides along the line** so the crossing sweeps its cell, which is what a mesher
@@ -99,7 +99,7 @@ R-058).
 
 ## Proving a cell empty when the Lipschitz ball cannot
 
-![A gyroid with amber cages marking cells only the affine bound rejects, vanishing when the field changes to a box](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/affine-rejects-where-lipschitz-cannot.gif)
+![A gyroid with amber cages marking cells only the affine bound rejects, vanishing when the field changes to a box](../media/affine-rejects-where-lipschitz-cannot.gif)
 
 *`affine_rejection` — one slab of a 17³ grid at a time. **Slate blue** cages are cells both bounds reject;
 **amber** cages are the ones only the affine form rejects, and they are the finding: **1,959 of 4,096** on
@@ -140,7 +140,7 @@ cd bevy_isomesh && cargo run --example affine_rejection --release
 
 ## The spheres a mesh never touches
 
-![Wireframe spheres around SDF samples, most unlit because no vertex reaches them, flipping colour when the extractor changes](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/untouched-tangency-spheres.gif)
+![Wireframe spheres around SDF samples, most unlit because no vertex reaches them, flipping colour when the extractor changes](../media/untouched-tangency-spheres.gif)
 
 *`untouched_spheres` — every SDF sample drawn as the sphere of radius `|d|` it actually asserts. Coloured
 by whether any mesh vertex reaches tangency with it. On `thin_plate` under Marching Cubes, **717 per
@@ -179,7 +179,7 @@ cd bevy_isomesh && cargo run --example untouched_spheres --release
 
 ## Ninety-nine percent of a voxel grid is not surface
 
-![A thin shell of active cells inside a full grid, the active fraction falling as resolution climbs](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/active-cells-ninety-nine-percent-skipped.gif)
+![A thin shell of active cells inside a full grid, the active fraction falling as resolution climbs](../media/active-cells-ninety-nine-percent-skipped.gif)
 
 *`active_cells` — the cells a dual mesher must actually look at, drawn against the grid it must not. On
 `sphere` the active fraction falls **3.54% → 1.89% → 0.93%** as the grid goes 33 → 64 → 128, while the
@@ -214,7 +214,7 @@ cd bevy_isomesh && cargo run --example active_cells --release
 
 ## Marching Cubes, resolution sweeping
 
-![Marching Cubes on a sphere, sweeping resolution](../gifs/marching-cubes-sphere-resolution-sweep.gif)
+![Marching Cubes on a sphere, sweeping resolution](../media/marching-cubes-sphere-resolution-sweep.gif)
 
 *Marching Cubes over a sphere SDF, resolution sweeping from 9³ to 81³. The readout is not decoration —
 it is the crate's own validity harness, re-run on the mesh being displayed every time it changes.
@@ -248,7 +248,7 @@ Anything implementing `Sdf` works as input; anything implementing `MeshSink` wor
 
 ## Two algorithms, side by side
 
-![Surface Nets against Marching Cubes on a box](../gifs/surface-nets-vs-marching-cubes-box.gif)
+![Surface Nets against Marching Cubes on a box](../media/surface-nets-vs-marching-cubes-box.gif)
 
 *Marching Cubes (grey) and Surface Nets (tan) on the same box SDF at the same resolution, sweeping 9³ to 57³.*
 
@@ -269,9 +269,9 @@ Surface Nets loses, and it loses on both machines — **run on two, not one**. W
 
 So both halves of the usual case for Surface Nets — fewer triangles, lower cost — are falsified by measurement in this repository. What it actually buys is quad connectivity and one vertex per cell.
 
-![Surface Nets against Dual Contouring on a box](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/dual-contouring-vs-surface-nets.gif)
+![Surface Nets against Dual Contouring on a box](../media/dual-contouring-vs-surface-nets.gif)
 
-*`dual_contouring_cube` — the same box, the same 19³ grid, the same edge crossings. Surface Nets on the left, Dual Contouring on the right. The only difference between the two meshes is one function: where a cell's vertex goes. Both emit **972 triangles** with identical connectivity. On [`csg_difference`](../screenshots/e104-dual-contouring-csg.png) the concave seam holds too.*
+*`dual_contouring_cube` — the same box, the same 19³ grid, the same edge crossings. Surface Nets on the left, Dual Contouring on the right. The only difference between the two meshes is one function: where a cell's vertex goes. Both emit **972 triangles** with identical connectivity. On [`csg_difference`](../media/e104-dual-contouring-csg.png) the concave seam holds too.*
 
 The corners are the real difference, and dual contouring is what closes them. Measured on `box_exact` at 27³ — a resolution deliberately **not** aligned to the box faces, since on an aligned grid this measures the sign-classification rule rather than the algorithm:
 
@@ -290,13 +290,13 @@ It costs about **3%** over Surface Nets to do it, and the two meshes are otherwi
 
 ## Letters thinner than a voxel
 
-![The word ISO meshed by two extractors as the letters are thinned; the marching cubes panel loses them entirely while the subgrid panel holds](../gifs/subgrid-letters-thinner-than-a-voxel.gif)
+![The word ISO meshed by two extractors as the letters are thinned; the marching cubes panel loses them entirely while the subgrid panel holds](../media/subgrid-letters-thinner-than-a-voxel.gif)
 
 *One field, one grid, two extractors, and a sweep driving the letters from 1.6 voxels thick down to 0.2.
 On the left, Marching Cubes: first a holey remnant, then **nothing at all**. On the right, subgrid
 Marching Tetrahedra, unchanged.*
 
-![The word ISO meshed by subgrid marching tetrahedra on the right, with the marching cubes panel on the left completely empty](../screenshots/e108-subgrid-features.png)
+![The word ISO meshed by subgrid marching tetrahedra on the right, with the marching cubes panel on the left completely empty](../media/e108-subgrid-features.png)
 
 *The same thing standing still, with the numbers. The letters are **0.35 voxels thick**. Marching Cubes returns **0 triangles**; subgrid marching tetrahedra returns **1,340**.*
 
@@ -338,7 +338,7 @@ Correctness is unaffected — that is what "not one triangle changed" means — 
 
 Three of the four corners of that 2×2 are occupied, and **the crude baseline holds the good one**. What Dual Contouring buys instead is accuracy exactly where the features are sharp — symmetric Hausdorff at 65³ against Marching Cubes: `box_exact` **101×** better, `thin_plate` **77.9×**, against `sphere` **1.2×** and `torus` **1.6×**. Two orders of magnitude on a corner and nothing at all on a sphere.
 
-![The same sphere wireframed under Marching Cubes and Marching Tetrahedra](../screenshots/e105-marching-tetrahedra-sphere.png)
+![The same sphere wireframed under Marching Cubes and Marching Tetrahedra](../media/e105-marching-tetrahedra-sphere.png)
 
 *`marching_tetrahedra` — one sphere, one 17³ grid, two algorithms. 270 vertices against 830, 536 triangles against 1,656. The wireframe is on by default because that is the only place the difference lives.*
 
@@ -352,7 +352,7 @@ cargo bench --bench shootout        # writes docs/measurements/shootout.csv
 
 ## The blocky path, and a published number that is one scene's
 
-![Blocky terrain meshed twice: every cell face, then merged into large quads](../screenshots/e106-greedy-quads-terrain.png)
+![Blocky terrain meshed twice: every cell face, then merged into large quads](../media/e106-greedy-quads-terrain.png)
 
 *`greedy_quads` — the same fBm terrain and the same occupancy, meshed twice. Left, one quad per visible cell face: **5,014 quads**. Right, coplanar runs merged: **1,089**, and that side wall is two triangles. The wireframe is the demo, because the two surfaces are identical.*
 
@@ -378,7 +378,7 @@ cd bevy_isomesh && cargo run --example greedy_quads --release
 
 ## The sharpness knob, and what it costs at both ends
 
-![Dual Contouring on a capped gyroid with the lambda slider, showing the runaway and rounding measurements in the HUD](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/sharp-features-lambda-sweep.gif)
+![Dual Contouring on a capped gyroid with the lambda slider, showing the runaway and rounding measurements in the HUD](../media/sharp-features-lambda-sweep.gif)
 
 *`sharp_features` — one model, a live slider on **λ**, the Tikhonov regularizer in the vertex solve. It
 is the whole sharpness/stability trade in one number, and it was a compile-time constant until this
@@ -422,7 +422,7 @@ cd bevy_isomesh && cargo run --example sharp_features --release
 
 ## What the clamp removes, and the half it cannot reach
 
-![The capped gyroid with the clamp off, offending triangles outlined in red](../screenshots/e110-qef-clamp-gyroid-off.png)
+![The capped gyroid with the clamp off, offending triangles outlined in red](../media/e110-qef-clamp-gyroid-off.png)
 
 *Every red outline is a triangle the self-intersection counter caught folding through another one. Same
 mesh, same λ; the only thing that changes below is whether each vertex is confined to its own cell.*
@@ -469,7 +469,7 @@ cd bevy_isomesh && cargo run --example qef_clamp --release
 
 ## Two failures, two laws, and neither one is where you would guess
 
-![The same sphere at an offset of 2^20, meshed in f32 and f64](../screenshots/e112-precision-sphere-blurred.png)
+![The same sphere at an offset of 2^20, meshed in f32 and f64](../media/e112-precision-sphere-blurred.png)
 
 *The same unit sphere, the same grid, the same code — `f32` on the left, `f64` on the right, both
 translated to `2²⁰ ≈ 1.05e6` and moved back for display. Identical topology: 1,160 vertices, 2,316
@@ -487,7 +487,7 @@ offset, halving `h` **exactly doubles** the error in cells — 3.1010 → 6.2020
 **Topology is absolute.** Push out to `2²³ = 8,388,608`, where one representable step reaches a whole
 world unit, and the mesh tears:
 
-![The same sphere at 2^23, where f32 collapses](../screenshots/e112-precision-sphere-cracked.png)
+![The same sphere at 2^23, where f32 collapses](../media/e112-precision-sphere-cracked.png)
 
 `χ` drops 2 → 1, the vertex count collapses 1,160 → 475, and **42 boundary edges** appear — real
 holes. That threshold **does not move when the cell size does**, which is what makes it a different
@@ -513,7 +513,7 @@ cd bevy_isomesh && cargo run --example precision_f32_vs_f64 --release
 
 ## What the vertex solve actually sees
 
-![One cell of box_exact, with its crossings, normals and solved vertex drawn](../screenshots/e114-hermite-debug-box.png)
+![One cell of box_exact, with its crossings, normals and solved vertex drawn](../media/e114-hermite-debug-box.png)
 
 *One cell at a corner of `box_exact`. Three amber dots are the edge crossings, the amber lines are the
 surface normal at each, the green dot is where the QEF put the vertex — exactly on the box corner — and
@@ -548,7 +548,7 @@ Arrows move the cell in x/y · `,` `.` in z · `-` `=` λ · `[` `]` resolution 
 
 ## Where an algorithm breaks, measured rather than described
 
-![Surface Nets against Marching Cubes on a capped gyroid](../gifs/surface-nets-vs-marching-cubes-gyroid.gif)
+![Surface Nets against Marching Cubes on a capped gyroid](../media/surface-nets-vs-marching-cubes-gyroid.gif)
 
 *The capped gyroid — triply periodic, high genus. Marching Cubes stays manifold here; Surface Nets does not.*
 
@@ -564,9 +564,9 @@ This is the crate's actual pitch. Not "the meshes look right" — a wrong mesh l
 
 ## The hyperdeterminant in every cell
 
-![The normalised hyperdeterminant magnitude as a per-cell heatmap over gyroid and six more fields](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-hyperdeterminant-in-every-cell.gif)
+![The normalised hyperdeterminant magnitude as a per-cell heatmap over gyroid and six more fields](../media/the-hyperdeterminant-in-every-cell.gif)
 
-[`hyperdeterminant_cells`](https://ladvien.github.io/isomesh/play.html?demo=hyperdeterminant_cells)
+[`hyperdeterminant_cells`](https://bevy-coven.github.io/isomesh/play.html?demo=hyperdeterminant_cells)
 walks fourteen reference fields and shows the phase's headline as a picture: `b*b - 4*a*c` at
 `trilinear.rs:246` is **identically Cayley's `2×2×2` hyperdeterminant** (P-127, all three clauses held
 — `symbolic_difference_is_zero` true, 12 terms against 12, all three pencil pairings agreeing, exact
@@ -581,9 +581,9 @@ information is unreachable because `ambiguous = g(case)` makes it a data-process
 
 ## Three periodic surfaces with a known topology
 
-![Gyroid, Schwarz P and Schwarz D at N = 1, 2, 3 with chi measured against a derived prediction](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/three-periodic-surfaces-with-a-known-topology.gif)
+![Gyroid, Schwarz P and Schwarz D at N = 1, 2, 3 with chi measured against a derived prediction](../media/three-periodic-surfaces-with-a-known-topology.gif)
 
-[`tpms_euler`](https://ladvien.github.io/isomesh/play.html?demo=tpms_euler)
+[`tpms_euler`](https://bevy-coven.github.io/isomesh/play.html?demo=tpms_euler)
 shows the phase's three χ oracles: gyroid `−8N³`, Schwarz P `−4N³`, Schwarz D `−16N³`, counted from the
 welded extraction and compared against a prediction **derived live from a seven-half-shift symmetry
 census** — which is also why Schwarz P's lattice reads `simple_cubic`: its body-centring operation
@@ -595,7 +595,7 @@ boundary edges, never by χ.
 
 ## The metric that costs more than it saves
 
-![Isotropic beside metric-driven sampling, both graded by the same Hausdorff instrument](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-metric-that-costs-more-than-it-saves.gif)
+![Isotropic beside metric-driven sampling, both graded by the same Hausdorff instrument](../media/the-metric-that-costs-more-than-it-saves.gif)
 
 `anisotropic_metric` is the negative result, shown as one: **P-146's C1 and C3 were both falsified** —
 no triangle saving at matched Hausdorff (`2.299×` dearer on `thin_plate`), and the metric build costs

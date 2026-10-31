@@ -27,7 +27,7 @@ cd "$(dirname "$0")/.."
 : "${DISPLAY:=:1}"
 export DISPLAY
 
-OUT=docs/gifs
+OUT=docs/media
 mkdir -p "$OUT"
 
 # Every clip: output stem, example, then the environment it needs.

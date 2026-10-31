@@ -1,9 +1,6 @@
 # isomesh
 
-> ⚠️ **Vibe Coded.** This crate was written by an AI agent working from a research corpus and a ticket
-> queue. Every number below is produced by a test in this repository and every algorithm cites its
-> source, but it has not been through human code review. Read the tests before trusting it with anything
-> that matters.
+> ⚠️ **Vibe Coded.** Written by AI agents working from a human's direction, covered by tests rather than a line-by-line human review. Read the code before you rely on it for something you care about.
 
 [![crates.io](https://img.shields.io/crates/v/isomesh.svg)](https://crates.io/crates/isomesh) [![docs.rs](https://img.shields.io/docsrs/isomesh)](https://docs.rs/isomesh) [![CI](https://github.com/bevy-coven/isomesh/actions/workflows/ci.yml/badge.svg)](https://github.com/bevy-coven/isomesh/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/bevy-coven/isomesh/blob/main/LICENSE-MIT)
 
@@ -16,7 +13,7 @@ and reusable, the scalar type is generic over `f32` and `f64`, and the crate has
 
 `no_std` + `alloc`, unconditionally.
 
-![A ball walking across streamed terrain, chunks loading continuously around it](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/walking-the-seams.gif)
+![A ball walking across streamed terrain, chunks loading continuously around it](../../docs/media/walking-the-seams.gif)
 
 *Nothing there is pre-baked. Every chunk under that ball was extracted while the camera flew toward it,
 on a background thread, under a frame budget — and the ball is standing on the **triangles**, not on the
@@ -27,6 +24,9 @@ actually *meet* is decided by the overlap the chunk layout chose; get it wrong a
 through the world at a boundary. Measured over **495 seam crossings: 0 holes**, worst vertical step
 across a seam **0.412 cells** against **0.539 cells** within a single chunk — the joins are smoother than
 the terrain they join.
+
+
+**Status:** experimental · no Bevy dependency · MSRV 1.89
 
 ## And one thing nothing else here can do
 
@@ -188,6 +188,12 @@ Full README: <https://github.com/bevy-coven/isomesh>
 
 Rust 1.89, edition 2024.
 
-## License
+## Part of the Coven
+
+`isomesh` is one of the [Bevy Coven](https://github.com/bevy-coven) crates, built in [the isomesh repository](https://github.com/bevy-coven/isomesh). Grimoire, the Coven's editor, uses it for caves, overhangs and carving: see [use it in Grimoire](https://bevy-coven.github.io/crates/isomesh.html#use-it-in-grimoire).
+
+## Who and licence
+
+Maintained by [@Ladvien](https://github.com/Ladvien). Issues go to [github.com/bevy-coven/isomesh/issues](https://github.com/bevy-coven/isomesh/issues); contributions follow the org's [CONTRIBUTING.md](https://github.com/bevy-coven/.github/blob/main/CONTRIBUTING.md).
 
 MIT OR Apache-2.0.

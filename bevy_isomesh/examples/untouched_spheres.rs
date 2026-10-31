@@ -22,7 +22,7 @@
 //! can be regenerated from a command line rather than by holding a key down.
 //!
 //! ```bash
-//! ISOMESH_WINDOW=1280x720 ./scripts/record_gif.sh untouched_spheres docs/gifs/e309.gif
+//! ISOMESH_WINDOW=1280x720 ./scripts/record_gif.sh untouched_spheres docs/media/e309.gif
 //! ```
 //!
 //! Demonstrates **M-355 / P-51 clause C3**.

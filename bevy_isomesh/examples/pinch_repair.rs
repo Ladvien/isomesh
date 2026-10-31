@@ -27,7 +27,7 @@
 //! # whole argument is the numbers in the corner, so the HUD sets the
 //! # capture size rather than the other way round.
 //! ISOMESH_WINDOW=1024x576 ISOMESH_SPIN=0.003 \
-//!   ./scripts/record_gif.sh pinch_repair docs/gifs/e310.gif
+//!   ./scripts/record_gif.sh pinch_repair docs/media/e310.gif
 //! ```
 //!
 //! Nothing but the camera moves between frames — the meshes are prebuilt and the

@@ -24,7 +24,7 @@
 //! # for a sweep with seven ledger stops in it, and the numbers are the demo.
 //! # The camera never moves and only the wedge and the bar do, which is what a
 //! # GIF's inter-frame compression wants.
-//! FPS=12 ./scripts/record_gif.sh seam_normal_bound docs/gifs/e311.gif
+//! FPS=12 ./scripts/record_gif.sh seam_normal_bound docs/media/e311.gif
 //! ```
 //!
 //! Demonstrates **M-350 / P-56** (`docs/experiments/p-56.csv`).

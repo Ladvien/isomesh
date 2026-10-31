@@ -16,7 +16,7 @@
 //! along from the variable.
 //!
 //! ```bash
-//! FPS=10 ./scripts/record_gif.sh game_carve_seams docs/gifs/e312.gif
+//! FPS=10 ./scripts/record_gif.sh game_carve_seams docs/media/e312.gif
 //! ```
 //!
 //! Demonstrates **M-350 / P-56** (`docs/experiments/p-56.csv`) as a player meets

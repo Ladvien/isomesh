@@ -20,7 +20,7 @@
 //! ```bash
 //! ISOMESH_VIEW=nogrid ISOMESH_CAPTURE_FRAMES=120 ISOMESH_CAPTURE_EVERY=2 \
 //!   FPS=10 WIDTH=1000 DISPLAY=:77 \
-//!   ./scripts/record_gif.sh game_mirror_dedup docs/gifs/mirrored-is-not-the-same-mesh.gif
+//!   ./scripts/record_gif.sh game_mirror_dedup docs/media/mirrored-is-not-the-same-mesh.gif
 //! ```
 //!
 //! Demonstrates **✗39 / M-356 / P-57** (`docs/experiments/p-57.csv`) as a studio

@@ -25,7 +25,7 @@
 //! # The clip size is not measured here: this host has no display, so the
 //! # orchestrator records it. Every counting/comparing clip keeps its HUD,
 //! # which is the whole evidence in this one.
-//! ISOMESH_SPIN=0.003 scripts/record_gif.sh hyperdeterminant_cells docs/gifs/e317.gif
+//! ISOMESH_SPIN=0.003 scripts/record_gif.sh hyperdeterminant_cells docs/media/e317.gif
 //! ```
 //!
 //! # The identity, which is P-127 and is the phase's headline

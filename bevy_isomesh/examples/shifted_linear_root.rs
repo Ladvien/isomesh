@@ -19,7 +19,7 @@
 //! ```bash
 //! DISPLAY=:77 ISOMESH_CAPTURE_FRAMES=110 ISOMESH_CAPTURE_EVERY=2 FPS=14 \
 //!   ./scripts/record_gif.sh shifted_linear_root \
-//!   docs/gifs/where-the-root-falls-decides-the-gain.gif
+//!   docs/media/where-the-root-falls-decides-the-gain.gif
 //! ```
 //!
 //! Demonstrates **M-359 / ✗42 (P-60, R-058)** — `docs/experiments/p-60.csv`,

@@ -22,7 +22,7 @@
 //! # the inter-frame compression a GIF relies on: 4.73 MB against 6.34 MB at the
 //! # default 256, and the palette here is a dark grey, three saturated gizmo
 //! # colours and white text, so 64 costs nothing visible.
-//! ISOMESH_SPIN=0.004 COLORS=64 scripts/record_gif.sh critical_cells docs/gifs/e304.gif
+//! ISOMESH_SPIN=0.004 COLORS=64 scripts/record_gif.sh critical_cells docs/media/e304.gif
 //! ```
 //!
 //! # What is on screen

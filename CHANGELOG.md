@@ -8,6 +8,10 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+### Changed
+
+- **The repository moved to the [bevy-coven](https://github.com/bevy-coven) org, and its docs follow the org's [documentation guide](https://github.com/bevy-coven/.github/blob/main/DOCUMENTATION.md).** The root README is 100 lines (was 427): the org's Vibe Coded banner, badges, a Status and a Why line, the doctested quick start, Try it, seven "What you can do" bullets and the Coven links. Every section it carried moved unchanged into `docs/guide/` (eight pages and an index), with two stale Bevy versions corrected to 0.20. Every GIF and still moved from `docs/gifs/` and `docs/screenshots/` to `docs/media/`, which now has a `README.md` naming each file's command, capture date and version; `scripts/doc_facts.sh` checks the guide pages too, and the site is `bevy-coven.github.io/isomesh`.
+
 ### Fixed
 
 - **`EditReport::dirty_chunks` counts this edit's chunks, not the caller's queue** (issue #13). `mark_edit` counted the region's chunks that were found in the `DirtySet` the caller passed, so a queue the frame budget had not drained (`DirtySet::mesh_within_budget` keeps what it did not reach) was reported as work the next edit did: an edit that changed nothing reported one dirty chunk for each chunk of its region already waiting, and `dirty_chunk_fraction()` was inflated the same way. It also scanned the whole queue once per region chunk. `mark_edit` now collects the owners of its own output-changed cells in a local set, as `mark_edit_subgrid` already did, and both close through one private function, so the queue ends as the union of what it held and what the edit dirtied and the report is a function of the two fields and the region alone. `dirty_chunks` is smaller than before for a caller that passes a non-empty queue, and equal for one that passes an empty one. Three tests in `chunk/dirty/tests.rs` fail against the old rule (1 against 0, 8 against 0, and 9 against 8 for a real edit) and so does the Subgrid marker's existing queue test; see `FINDINGS.md` M-499.

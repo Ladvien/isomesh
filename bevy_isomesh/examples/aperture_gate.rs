@@ -24,7 +24,7 @@
 //! # default palette and error-diffusion dither rather than needing the cheap
 //! # ordered one. `COLORS=64` takes it to 0.93 MB if a smaller file is wanted.
 //! ISOMESH_CAPTURE_FRAMES=90 ISOMESH_CAPTURE_EVERY=3 ISOMESH_WINDOW=1280x720 \
-//!   FPS=15 ./scripts/record_gif.sh aperture_gate docs/gifs/e306.gif
+//!   FPS=15 ./scripts/record_gif.sh aperture_gate docs/media/e306.gif
 //! ```
 //!
 //! **1280x720 rather than smaller.** Every HUD line is kept inside 76 characters

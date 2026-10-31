@@ -346,3 +346,5 @@ something is wrong with the algorithm.
   its claims are corrections of things that "everyone knows" and are wrong.
 - Prefer adding an example over adding prose. This project's output is demonstrable behavior.
 - If something is blocked or ambiguous, stop and say so. Do not paper over it with a plausible guess.
+
+README and docs follow https://github.com/bevy-coven/.github/blob/main/DOCUMENTATION.md; a feature is not done until its README line and, if visible, its GIF exist.

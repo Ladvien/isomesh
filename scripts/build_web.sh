@@ -70,12 +70,12 @@ PYTHON="${PYTHON:-python3}"
 # Route 53, with `github.io`'s CAA permitting `letsencrypt.org`.
 #
 # The consequence was not cosmetic. **WebGPU is a secure-context-only API**, and
-# `https://ladvien.github.io/isomesh/` 301-redirected to
+# `https://bevy-coven.github.io/isomesh/` 301-redirected to
 # `http://isomesh.ladvien.com/`, so `navigator.gpu` was `undefined` and
 # `web/play.html`'s gate fired in every browser -- Chrome on a desktop included.
 # Every demo on this site needs WebGPU, so the pretty URL cost the whole site.
 #
-# The site now serves at `https://ladvien.github.io/isomesh/` under GitHub's own
+# The site now serves at `https://bevy-coven.github.io/isomesh/` under GitHub's own
 # `*.github.io` certificate, which is valid. Do not re-add the domain here: a
 # `CNAME` file in the artifact *re-sets* the custom domain on every deploy, so a
 # line here silently undoes the removal on the next push.

@@ -78,7 +78,7 @@ the demo at the top of this page is the same library without it, at 130 KB.
 
 ### [▶ Play `game_dig`](site:play.html?demo=game_dig)
 
-![A first-person camera carving tunnels through chunked terrain](docs/gifs/digging-a-tunnel.gif)
+![A first-person camera carving tunnels through chunked terrain](docs/media/digging-a-tunnel.gif)
 
 A 16×8×16-unit sandbox of cracked concrete, 256 chunks, and the mesh is rebuilt **while you are holding the
 mouse down**. You start **walking** on it — <kbd>WASD</kbd> moves, the mouse looks, <kbd>Space</kbd> jumps a
@@ -117,7 +117,7 @@ back
 
 ### [▶ Play `game_showcase`](site:play.html?demo=game_showcase)
 
-![Flying through a landscape riddled with caves, arches and tunnels](docs/gifs/flying-through-the-rock.gif)
+![Flying through a landscape riddled with caves, arches and tunnels](docs/media/flying-through-the-rock.gif)
 
 Every other gameplay demo runs on a heightfield, which is exactly the case you do *not* need a voxel mesher
 for. This one is fBm terrain **intersected** with a thickened gyroid, so the camera flies through arches and
@@ -129,7 +129,7 @@ plane against Surface Nets' 5 and Dual Contouring's 4**
 
 ### [▶ Play `dual_contouring_cube`](site:play.html?demo=dual_contouring_cube)
 
-![Surface Nets rounding a box corner beside Dual Contouring holding it, across a resolution sweep](docs/gifs/dual-contouring-vs-surface-nets.gif)
+![Surface Nets rounding a box corner beside Dual Contouring holding it, across a resolution sweep](docs/media/dual-contouring-vs-surface-nets.gif)
 
 The same field, the same grid, the same crossings, and one function different between the two meshes: where
 a cell's vertex goes. Distance from the true corner to the nearest vertex, recomputed live on every
@@ -141,7 +141,7 @@ crosses an aligned resolution
 
 ### [▶ Play `surface_nets_vs_marching_cubes`](site:play.html?demo=surface_nets_vs_marching_cubes)
 
-![The same box meshed by Marching Cubes and Surface Nets side by side](docs/gifs/surface-nets-vs-marching-cubes-box.gif)
+![The same box meshed by Marching Cubes and Surface Nets side by side](docs/media/surface-nets-vs-marching-cubes-box.gif)
 
 The catalog used to bill this as "the triangle counts differ". They do not, and the reason is better than
 the claim: both methods are pinned to the number of crossed grid edges, so on every closed field
@@ -152,7 +152,7 @@ resolution and watch it hold.
 
 ### [▶ Play `marching_cubes_tunnel`](site:play.html?demo=marching_cubes_tunnel)
 
-![One cell meshed as two separate discs and as a single tunnel](docs/gifs/the-tunnel-meshed-as-a-tunnel.gif)
+![One cell meshed as two separate discs and as a single tunnel](docs/media/the-tunnel-meshed-as-a-tunnel.gif)
 
 One cell, meshed twice. The face rule alone gives two separate discs; adding the interior rule gives one
 cylinder passing through the cell, which is what the trilinear interpolant actually does there. A tunnel is
@@ -174,7 +174,7 @@ working app, and the file to copy.
 
 ### [▶ Play `game_mirror_dedup`](site:play.html?demo=game_mirror_dedup)
 
-![The same carved chunk rotated and mirrored, the mirrored copy speckled with markers on every moved vertex](docs/gifs/mirrored-is-not-the-same-mesh.gif)
+![The same carved chunk rotated and mirrored, the mirrored copy speckled with markers on every moved vertex](docs/media/mirrored-is-not-the-same-mesh.gif)
 
 Of the 48 ways to reorient a chunk on the cubic lattice, exactly **six** give a bit-identical mesh, and they
 are precisely the six that never negate a coordinate. So mirroring an asset to reuse it silently misses on
@@ -185,7 +185,7 @@ anything keyed to a content hash — instancing, collider caches, network deltas
 
 ### [▶ Play `game_edit_tape_trim`](site:play.html?demo=game_edit_tape_trim)
 
-![A chunked destructible world, brush gizmos emptying from the frame while the rock does not move](docs/gifs/the-tape-you-keep-is-twenty-times-too-big.gif)
+![A chunked destructible world, brush gizmos emptying from the frame while the rock does not move](docs/media/the-tape-you-keep-is-twenty-times-too-big.gif)
 
 A destructible world is a tape of brush edits folded over a base field, and a Lipschitz bound already cuts a
 64-brush tape to a median of 19. **Of the 1,507 brushes that survive that bound world-wide, 1,434 can be
@@ -199,7 +199,7 @@ costs are the point: this is headroom, not a shippable pruner.
 
 ### [▶ Play `shifted_linear_root`](site:play.html?demo=shifted_linear_root)
 
-![A grid line with standard and shifted reconstructions, the error ratio tracing a closed-form curve as the crossing slides](docs/gifs/where-the-root-falls-decides-the-gain.gif)
+![A grid line with standard and shifted reconstructions, the error ratio tracing a closed-form curve as the crossing slides](docs/media/where-the-root-falls-decides-the-gain.gif)
 
 Blu, Thévenaz & Unser buy *"about 8 dB asymptotically"* from linear interpolation by shifting the sampling
 knots. Does that move the **root** a mesher actually uses? It does, by exactly `|σ − 2τ| / σ` — so the gain
@@ -213,7 +213,7 @@ median of 1.486. The honest number is that it clears the bar on 82% of positions
 
 ### [▶ Play `hyperdeterminant_cells`](site:play.html?demo=hyperdeterminant_cells)
 
-![The normalised hyperdeterminant magnitude as a per-cell heatmap, with the Delta = 0 stratum in grey](docs/gifs/the-hyperdeterminant-in-every-cell.gif)
+![The normalised hyperdeterminant magnitude as a per-cell heatmap, with the Delta = 0 stratum in grey](docs/media/the-hyperdeterminant-in-every-cell.gif)
 
 `b*b - 4*a*c` at `trilinear.rs:246` **is** Cayley's `2×2×2` hyperdeterminant of the eight corner values —
 12 terms against 12 at degree 4, all three pencil pairings agreeing, the exact-rational deviation `0/1`
@@ -230,7 +230,7 @@ the comparison.
 
 ### [▶ Play `tpms_euler`](site:play.html?demo=tpms_euler)
 
-![Gyroid, Schwarz P and Schwarz D at N = 1, 2, 3 with chi measured against a derived prediction](docs/gifs/three-periodic-surfaces-with-a-known-topology.gif)
+![Gyroid, Schwarz P and Schwarz D at N = 1, 2, 3 with chi measured against a derived prediction](docs/media/three-periodic-surfaces-with-a-known-topology.gif)
 
 Three triply periodic minimal surfaces whose Euler characteristic the crate can *know*: gyroid `−8N³`,
 Schwarz P `−4N³`, Schwarz D `−16N³` (P-142's C1 held `−8 / −64 / −216` to the integer; P-143's C2 is an

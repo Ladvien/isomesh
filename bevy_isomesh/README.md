@@ -1,14 +1,17 @@
 # bevy_isomesh
 
-> ⚠️ **Vibe Coded.** This crate was written by an AI agent working from a research corpus and a ticket queue. Every number below is produced by a test in this repository and every algorithm cites its source, but it has not been through human code review. Read the tests before trusting it with anything that matters.
+> ⚠️ **Vibe Coded.** Written by AI agents working from a human's direction, covered by tests rather than a line-by-line human review. Read the code before you rely on it for something you care about.
 
 [![crates.io](https://img.shields.io/crates/v/bevy_isomesh.svg)](https://crates.io/crates/bevy_isomesh) [![docs.rs](https://img.shields.io/docsrs/bevy_isomesh)](https://docs.rs/bevy_isomesh) [![CI](https://github.com/bevy-coven/isomesh/actions/workflows/ci.yml/badge.svg)](https://github.com/bevy-coven/isomesh/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/bevy-coven/isomesh/blob/main/LICENSE-MIT)
 
 **Bevy 0.20 integration for [`isomesh`](https://crates.io/crates/isomesh): signed distance field in, `Mesh` asset out.** The core crates stay engine-agnostic — this is the one place Bevy types appear.
 
-![Flying through caves and arches meshed from a signed distance field](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/flying-through-the-rock.gif)
+![Flying through caves and arches meshed from a signed distance field](../docs/media/flying-through-the-rock.gif)
 
 *Caves, arches and a roof over your head, from a nine-line field — the whole world is `max(heightfield, |gyroid| − thickness)`, streamed and meshed off the main thread while the camera flies through it. `cargo run --example game_showcase --release`.*
+
+
+**Status:** experimental · Bevy 0.20 · MSRV 1.97.1
 
 ## Compatibility
 
@@ -191,17 +194,17 @@ claim in the header; a taste, with what each one proves:
 
 | Example | The claim it makes | Evidence |
 |---|---|---|
-| `sdf_authoring` | **building** a field rather than meshing one — four primitives, three operators, one asset, and the blend radius on a key | [clip](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/building-a-field.gif) |
+| `sdf_authoring` | **building** a field rather than meshing one — four primitives, three operators, one asset, and the blend radius on a key | [clip](../docs/media/building-a-field.gif) |
 | `quickstart` | **the shortest path from an SDF to a mesh on screen** — under 60 lines including the prose, and its exact chunk layout is asserted to mesh all eight chunks | [`examples/quickstart.rs`](https://github.com/bevy-coven/isomesh/blob/main/bevy_isomesh/examples/quickstart.rs) |
-| `game_showcase` | caves and arches a heightfield cannot represent, flown through at 60 fps | [clip](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/flying-through-the-rock.gif) |
-| `game_walk` | 495 chunk-seam crossings walked, 0 holes — the ball stands on the triangles, not the field | [clip](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/walking-the-seams.gif) |
-| `game_dig` | carving tunnels re-meshes only the chunks the brush touched | [clip](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/digging-a-tunnel.gif) |
-| `game_destruction` | the debris *is* the removed geometry — one boolean, two meshes | [clip](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-debris-is-the-boolean.gif) |
-| `game_lod_flyover` | an LOD ladder with 0 open seam edges, and 71–111 with transitions off | [clip](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/lod-flyover.gif) |
-| `game_paint` | graffiti survives the wall being blown open, drift exactly zero | [clip](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/paint-that-survives-the-wall.gif) |
-| `game_budget` | every chunk dirtied at once, drained under a frame budget that holds | [screenshot](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/screenshots/e206-budget.png) |
-| `gpu_compute_mc` | GPU Marching Cubes agrees with the CPU vertex-for-vertex, worst case one ULP | [screenshot](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/screenshots/e301-gpu-compute-mc.png) |
-| `marching_cubes_tunnel` | the same cell meshed twice — two discs under the face rule, one cylinder under the interior rule; components 2 → 1, χ 2 → 0, boundary edges unchanged | [clip](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-tunnel-meshed-as-a-tunnel.gif) |
+| `game_showcase` | caves and arches a heightfield cannot represent, flown through at 60 fps | [clip](../docs/media/flying-through-the-rock.gif) |
+| `game_walk` | 495 chunk-seam crossings walked, 0 holes — the ball stands on the triangles, not the field | [clip](../docs/media/walking-the-seams.gif) |
+| `game_dig` | carving tunnels re-meshes only the chunks the brush touched | [clip](../docs/media/digging-a-tunnel.gif) |
+| `game_destruction` | the debris *is* the removed geometry — one boolean, two meshes | [clip](../docs/media/the-debris-is-the-boolean.gif) |
+| `game_lod_flyover` | an LOD ladder with 0 open seam edges, and 71–111 with transitions off | [clip](../docs/media/lod-flyover.gif) |
+| `game_paint` | graffiti survives the wall being blown open, drift exactly zero | [clip](../docs/media/paint-that-survives-the-wall.gif) |
+| `game_budget` | every chunk dirtied at once, drained under a frame budget that holds | [screenshot](../docs/media/e206-budget.png) |
+| `gpu_compute_mc` | GPU Marching Cubes agrees with the CPU vertex-for-vertex, worst case one ULP | [screenshot](../docs/media/e301-gpu-compute-mc.png) |
+| `marching_cubes_tunnel` | the same cell meshed twice — two discs under the face rule, one cylinder under the interior rule; components 2 → 1, χ 2 → 0, boundary edges unchanged | [clip](../docs/media/the-tunnel-meshed-as-a-tunnel.gif) |
 
 ```bash
 cd bevy_isomesh
@@ -216,6 +219,12 @@ The full inventory, with a clip of each, is **[the demo page](DEMOS.md)**; the s
 
 Rust 1.97.1 (Bevy 0.20's own floor), edition 2024.
 
-## License
+## Part of the Coven
+
+`bevy_isomesh` is one of the [Bevy Coven](https://github.com/bevy-coven) crates, built in [the isomesh repository](https://github.com/bevy-coven/isomesh). Grimoire, the Coven's editor, uses it for caves, overhangs and carving: see [use it in Grimoire](https://bevy-coven.github.io/crates/isomesh.html#use-it-in-grimoire).
+
+## Who and licence
+
+Maintained by [@Ladvien](https://github.com/Ladvien). Issues go to [github.com/bevy-coven/isomesh/issues](https://github.com/bevy-coven/isomesh/issues); contributions follow the org's [CONTRIBUTING.md](https://github.com/bevy-coven/.github/blob/main/CONTRIBUTING.md).
 
 MIT OR Apache-2.0, at your option.

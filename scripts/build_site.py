@@ -43,7 +43,7 @@ OUT = ROOT / "web" / "dist"
 #
 # `link_base` is the directory a page's relative links resolve against, and it is
 # the column an implementer is most likely to assume away: `docs/demos/*.md`
-# spell their screenshots `../screenshots/…`, 26 distinct files of them, and
+# spell their screenshots `../media/…`, 26 distinct files of them, and
 # treating those as repo-root-relative breaks every one silently.
 PAGES = [
     ("web/index.md", "index.html", "Home", ""),
@@ -57,11 +57,15 @@ PAGES = [
 ]
 
 # Copied wholesale rather than filtered to the referenced files. Every GIF is
-# referenced from `DEMOS.md` anyway, and for screenshots the gap is 26 referenced
+# referenced from `DEMOS.md` anyway, and for the stills the gap is 26 referenced
 # of 51 -- 18 MB of a 200 MB site, which is not worth a filter that can be wrong.
+#
+# GIFs and stills share `docs/media/`, which is where the org's guide puts them,
+# so they share one destination too. A source may name `../media/x.png` from
+# `docs/demos/` or `docs/media/x.png` from the root; both resolve to the same
+# repository path before this table is consulted.
 ASSET_DIRS = [
-    ("docs/gifs", "gifs"),
-    ("docs/screenshots", "screenshots"),
+    ("docs/media", "media"),
     ("docs/experiments", "experiments"),
 ]
 
@@ -124,7 +128,7 @@ def rewrite(target: str, source: str, link_base: str) -> str:
         # Repo-root-relative, not `link_base`-relative: the prefix already spelled
         # the whole path from the root. `DEMOS.md` hotlinks 34 GIFs and resolves
         # its own relative links against `bevy_isomesh/`, so conflating the two
-        # turns every hotlink into `bevy_isomesh/docs/gifs/…` and loses all 55.
+        # turns every hotlink into `bevy_isomesh/docs/media/…` and loses all 55.
         path = path.removeprefix(RAW)
         link_base = ""
     elif path.startswith(("http://", "https://", "mailto:")):

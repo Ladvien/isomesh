@@ -29,9 +29,9 @@
 //! # Size not measured here: this host has no display. `record_gif.sh` warns
 //! # outside 0.7-4.8 MB.
 //! ISOMESH_FIELD=1 ISOMESH_CAPTURE_FRAMES=82 ISOMESH_CAPTURE_EVERY=2 \
-//!   scripts/record_gif.sh cave_percolation docs/gifs/e320.gif
+//!   scripts/record_gif.sh cave_percolation docs/media/e320.gif
 //! ISOMESH_FIELD=0 ISOMESH_CAPTURE_FRAMES=82 ISOMESH_CAPTURE_EVERY=2 \
-//!   scripts/record_gif.sh cave_percolation docs/gifs/e320-terrain.gif
+//!   scripts/record_gif.sh cave_percolation docs/media/e320-terrain.gif
 //! ```
 //!
 //! Demonstrates **P-176**, and demonstrates the half of it that was falsified as

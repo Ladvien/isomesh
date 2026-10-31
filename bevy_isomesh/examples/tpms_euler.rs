@@ -19,10 +19,10 @@
 //! ```bash
 //! # Nine states, ten captured frames each: exactly one cycle, so the GIF loops.
 //! ISOMESH_CAPTURE_FRAMES=90 ISOMESH_CAPTURE_EVERY=2 \
-//!   scripts/record_gif.sh tpms_euler docs/gifs/e318.gif
+//!   scripts/record_gif.sh tpms_euler docs/media/e318.gif
 //! # The same cycle on the degenerate grid, where Schwarz D misses by its pinches.
 //! ISOMESH_VOXELS=32 ISOMESH_CAPTURE_FRAMES=90 ISOMESH_CAPTURE_EVERY=2 \
-//!   scripts/record_gif.sh tpms_euler docs/gifs/e318-degenerate.gif
+//!   scripts/record_gif.sh tpms_euler docs/media/e318-degenerate.gif
 //! ```
 //!
 //! # What is on screen

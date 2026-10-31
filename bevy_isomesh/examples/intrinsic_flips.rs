@@ -23,7 +23,7 @@
 //!
 //! ```bash
 //! ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2 \
-//!   scripts/record_gif.sh intrinsic_flips docs/gifs/e321.gif
+//!   scripts/record_gif.sh intrinsic_flips docs/media/e321.gif
 //! ```
 //!
 //! # What is on screen

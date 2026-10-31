@@ -18,7 +18,7 @@
 //!
 //! ```bash
 //! ISOMESH_CAPTURE_FRAMES=90 ISOMESH_CAPTURE_EVERY=2 ISOMESH_WINDOW=1280x720 \
-//!   FPS=15 ./scripts/record_gif.sh affine_rejection docs/gifs/e308.gif
+//!   FPS=15 ./scripts/record_gif.sh affine_rejection docs/media/e308.gif
 //! ```
 //!
 //! Demonstrates **M-354 / P-54** (`docs/experiments/p-54.csv`).

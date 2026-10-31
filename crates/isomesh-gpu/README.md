@@ -1,16 +1,19 @@
 # isomesh-gpu
 
-> ⚠️ **Vibe Coded.** This crate was written by an AI agent working from a research corpus and a ticket queue. Every number below is produced by a test in this repository and every algorithm cites its source, but it has not been through human code review. Read the tests before trusting it with anything that matters.
+> ⚠️ **Vibe Coded.** Written by AI agents working from a human's direction, covered by tests rather than a line-by-line human review. Read the code before you rely on it for something you care about.
 
 [![crates.io](https://img.shields.io/crates/v/isomesh-gpu.svg)](https://crates.io/crates/isomesh-gpu) [![docs.rs](https://img.shields.io/docsrs/isomesh-gpu)](https://docs.rs/isomesh-gpu) [![CI](https://github.com/bevy-coven/isomesh/actions/workflows/ci.yml/badge.svg)](https://github.com/bevy-coven/isomesh/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/bevy-coven/isomesh/blob/main/LICENSE-MIT)
 
 GPU isosurface extraction for [`isomesh`](https://crates.io/crates/isomesh), on raw `wgpu`. No engine
 types anywhere in the public API.
 
-![The whole pipeline on the GPU: field evaluation, Marching Cubes, prefix scan and the draw](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/screenshots/e303-gpu-mesh-shader.png)
+![The whole pipeline on the GPU: field evaluation, Marching Cubes, prefix scan and the draw](../../docs/media/e303-gpu-mesh-shader.png)
 
 *E-303: field to pixels without the geometry ever crossing the bus — four bytes come home per frame.
 The timings table below is the compute half of the same story.*
+
+
+**Status:** experimental · no Bevy dependency · MSRV 1.89
 
 ## The rule
 
@@ -207,6 +210,12 @@ is only supported on vulkan; on other platforms you will have to use passthrough
 shaders are a fork in the shader pipeline, not a flag on it. **Metal is still unmeasured** — run the
 probe there.
 
-## License
+## Part of the Coven
+
+`isomesh-gpu` is one of the [Bevy Coven](https://github.com/bevy-coven) crates, built in [the isomesh repository](https://github.com/bevy-coven/isomesh). Grimoire, the Coven's editor, uses it for caves, overhangs and carving: see [use it in Grimoire](https://bevy-coven.github.io/crates/isomesh.html#use-it-in-grimoire).
+
+## Who and licence
+
+Maintained by [@Ladvien](https://github.com/Ladvien). Issues go to [github.com/bevy-coven/isomesh/issues](https://github.com/bevy-coven/isomesh/issues); contributions follow the org's [CONTRIBUTING.md](https://github.com/bevy-coven/.github/blob/main/CONTRIBUTING.md).
 
 MIT OR Apache-2.0, at your option.

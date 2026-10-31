@@ -65,6 +65,15 @@ DOCS=(
     docs/demos/correctness.md
     docs/demos/gameplay.md
     docs/experiments.md
+    docs/guide/README.md
+    docs/guide/checks.md
+    docs/guide/demos.md
+    docs/guide/design.md
+    docs/guide/experiments.md
+    docs/guide/fit.md
+    docs/guide/running.md
+    docs/guide/showcase.md
+    docs/guide/why.md
     docs/measurements/README.md
     web/index.md
 )

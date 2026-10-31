@@ -371,7 +371,7 @@ Start only after section 7 passes. Then release (the "Release" block at the end 
    `README.md`, `crates/*/README.md`, `bevy_isomesh/README.md` and `DEMOS.md`, as each applies), the
    research note's `Deviations` and `Pending index`, and an entry under `## [Unreleased]` in
    `CHANGELOG.md` (`Added`, `Changed`, `Fixed`, `Removed`).
-2. Regenerate the GIF or still under `docs/gifs/` or `docs/screenshots/` that shows the changed
+2. Regenerate the GIF or still under `docs/media/` that shows the changed
    behaviour when it has moved, with `./scripts/record_gif.sh` or the example's `ISOMESH_CAPTURE` knob.
 3. Log: append `## Iteration N — <date> — <title>` to `docs/loop-log.md`:
    - what changed and why it ranked first (and the runner-up)
@@ -458,3 +458,5 @@ made this pass, and list what earlier passes left.
 - No feature ships without a written critique, a GREAT verdict and a clean performance check.
 - If blocked, log the blocker and pick the next item. A failed gate or a visible defect is not a
   blocker: fix it. A failed push or merge is: log the exact error and stop. Never force-push.
+
+README and docs follow https://github.com/bevy-coven/.github/blob/main/DOCUMENTATION.md; a feature is not done until its README line and, if visible, its GIF exist.

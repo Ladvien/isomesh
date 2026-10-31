@@ -12,7 +12,7 @@ page. A physics engine forgives none of them.
 
 ## Mirroring an asset breaks mesh-hash dedup, and rotating it does not
 
-![The same carved chunk shown three times — original, rotated, mirrored — with the mirrored copy speckled with markers on every vertex that moved, then the field switched to box_exact where the speckles vanish](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/mirrored-is-not-the-same-mesh.gif)
+![The same carved chunk shown three times — original, rotated, mirrored — with the mirrored copy speckled with markers on every vertex that moved, then the field switched to box_exact where the speckles vanish](../media/mirrored-is-not-the-same-mesh.gif)
 
 *`game_mirror_dedup` — one chunk, `marching_cubes`, 33³ on the field's own symmetric domain. The scene
 steps through all **48** signed coordinate permutations of the cubic lattice and, for each, re-meshes the
@@ -86,7 +86,7 @@ invariant, which is a second mechanism entirely.
 
 ## The repair that fixes every triangle and welds 520 things shut
 
-![A bonsai CT scan under magenta pinch markers, switching to a fuel injection scan where none appear](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/pinch-repair-welds-520-components.gif)
+![A bonsai CT scan under magenta pinch markers, switching to a fuel injection scan where none appear](../media/pinch-repair-welds-520-components.gif)
 
 *`pinch_repair` — real `uint8` CT volumes at an integer isovalue. **Amber** marks a collapse group that is
 a fold being flattened; **magenta** marks a **pinch** — two sheets of surface that merely meet at one
@@ -123,7 +123,7 @@ cd bevy_isomesh && cargo run --example pinch_repair --release
 
 ## An error bound that is not just respected but reached
 
-![Two spheres cut apart, normal ray pairs fanning at the crease, a meter tracking the predicted bound as the angle sweeps](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/seam-normal-bound-is-attained.gif)
+![Two spheres cut apart, normal ray pairs fanning at the crease, a meter tracking the predicted bound as the angle sweeps](../media/seam-normal-bound-is-attained.gif)
 
 *`seam_normal_bound` — a CSG `Difference` with the crease angle `θ` sweeping 30° → 175°. At each vertex
 whose six-sample stencil crosses the seam, the central-difference normal and the analytic normal are drawn
@@ -158,9 +158,9 @@ cd bevy_isomesh && cargo run --example seam_normal_bound --release
 
 ## Where a mesh stops being a manifold
 
-![Marching Cubes and Surface Nets on the capped gyroid, non-manifold features marked](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/manifold-check-resolution.gif)
+![Marching Cubes and Surface Nets on the capped gyroid, non-manifold features marked](../media/manifold-check-resolution.gif)
 
-*`manifold_check` — the capped gyroid at 19³ under Surface Nets. Every red sphere is a non-manifold vertex and every red line a non-manifold edge, drawn where the validator found them: 39 edges and 61 vertices, clustered around the tunnel mouths where two sheets of surface share a cell. The same field and grid under Marching Cubes reports `0` on every counter and `MANIFOLD, CLOSED` ([screenshot](../screenshots/e111-manifold-check-gyroid-marching-cubes.png)).*
+*`manifold_check` — the capped gyroid at 19³ under Surface Nets. Every red sphere is a non-manifold vertex and every red line a non-manifold edge, drawn where the validator found them: 39 edges and 61 vertices, clustered around the tunnel mouths where two sheets of surface share a cell. The same field and grid under Marching Cubes reports `0` on every counter and `MANIFOLD, CLOSED` ([screenshot](../media/e111-manifold-check-gyroid-marching-cubes.png)).*
 
 A count tells you a mesh is broken without telling you where, and the two most useful findings in this project were both about *where*. The marks come from `validate_features`, which returns the offending edges and vertices from the **same pass** that produced the numbers beside them — so the picture and the caption cannot drift apart.
 
@@ -174,7 +174,7 @@ cd bevy_isomesh && cargo run --example manifold_check --release
 
 ## Counting the defects before the mesh exists
 
-![noise_cavity at 65³ under Dual Contouring, cyan cages on critical cells with a yellow dot inside each](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/critical-cells-count-the-defects.gif)
+![noise_cavity at 65³ under Dual Contouring, cyan cages on critical cells with a yellow dot inside each](../media/critical-cells-count-the-defects.gif)
 
 *`critical_cells` — `noise_cavity` at 65³. Cyan cages are 2D-critical cells, magenta are 3D-critical, yellow dots are the non-manifold vertices Dual Contouring actually produced. **567 + 35 = 602 critical cells, 602 non-manifold vertices, 602 critical cells hosting one, 100% co-location.** Cycle to `sphere` and every one of those numbers is zero.*
 
@@ -203,9 +203,9 @@ cd bevy_isomesh && cargo run --example critical_cells --release
 
 ## Splitting the vertex, and what it costs
 
-![The capped gyroid under Dual Contouring, covered in red non-manifold marks](../screenshots/e111-manifold-check-gyroid-dual-contouring.png)
+![The capped gyroid under Dual Contouring, covered in red non-manifold marks](../media/e111-manifold-check-gyroid-dual-contouring.png)
 
-![The same field and grid under Manifold Dual Contouring, with no marks at all](../screenshots/e111-manifold-check-gyroid-manifold-dual-contouring.png)
+![The same field and grid under Manifold Dual Contouring, with no marks at all](../media/e111-manifold-check-gyroid-manifold-dual-contouring.png)
 
 *The same field, the same 19³ grid, one algorithm apart. **Dual Contouring: 39 non-manifold edges, 61 non-manifold vertices, `χ = -10`, one component.** **Manifold Dual Contouring: zero, zero, `χ = -2`, seven components** — and the same 3,276 triangles. Press `A` in `manifold_check` to switch between them.*
 
@@ -237,7 +237,7 @@ Differencing at the cell size — the case a game without an analytic field is s
 
 Successive ratios 3.76 and 3.92, so `h²`, asserted as a range rather than admired in a log.
 
-![The same CSG solid shaded three ways: crisp, slightly softened, and smeared](../screenshots/e113-normal-estimation-csg.png)
+![The same CSG solid shaded three ways: crisp, slightly softened, and smeared](../media/e113-normal-estimation-csg.png)
 
 *`normal_estimation` — a sphere bitten out of a box at 41³. **All three panels are the same 2,244 vertices and 4,484 triangles**; only the normal buffer differs. Left, the field's gradient keeps the bite's rim crisp and its staircase legible. Right, area-weighted normals smear that rim and round the steps into blobs — 46.426° off at the worst. The middle is differencing the field at the cell size, which is what a sampled voxel buffer can offer: 17.974° worst, and 0.450° on average.*
 
@@ -255,13 +255,13 @@ The third strategy is where it gets interesting. Area-weighted normals track the
 
 ## An ambiguous face, and how rarely one turns up
 
-![Marching Cubes beside the asymptotic decider on a capped gyroid, ambiguous cells marked](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/ambiguous-faces-are-rare.gif)
+![Marching Cubes beside the asymptotic decider on a capped gyroid, ambiguous cells marked](../media/ambiguous-faces-are-rare.gif)
 
 *`marching_cubes_ambiguity` — plain Marching Cubes on the left, the same extraction with `FaceAmbiguity::AsymptoticDecider` on the right. Every box is a cell with an ambiguous face: **amber where the decider agreed and separated the corners, magenta where it disagreed and joined them.** Magenta is the only place the two meshes can differ, and on the gyroid at 33³ there are nine such cells out of 5,240.*
 
 The catalog originally specified this example as "holes on the left, closed on the right". **That cannot be shown, because it does not happen** — this crate's case table is derived at compile time by walking each face counter-clockwise, so two cells sharing a face cannot disagree about it and neither side ever holes. What the decider changes is *which* surface gets built on an ambiguous face, which the HUD reads off as a difference in Euler characteristic.
 
-![The same comparison on a sphere, where the two meshes are byte-identical](../screenshots/e102-ambiguity-sphere-identical.png)
+![The same comparison on a sphere, where the two meshes are byte-identical](../media/e102-ambiguity-sphere-identical.png)
 
 *Press `3`. On a sphere there is **not one ambiguous face in 1,160 surface cells**, and the two meshes are byte-identical — which the committed golden fixture also pins. Five of the eight fields the roster held when this was measured (M-40) behave this way; only the gyroid (0.515% of cells) and `fbm_terrain` (1.532%) reach the configuration at all. An example that only ever showed the interesting case would misrepresent how often the interesting case arrives.*
 
@@ -319,11 +319,11 @@ moves tells you which kind of refusal you built.
 
 ## A crack between two chunks, and welding it shut
 
-![Two chunks of a torus, meshed independently, with the open seam marked in red](../screenshots/e115-chunk-seam-unwelded.png)
+![Two chunks of a torus, meshed independently, with the open seam marked in red](../media/e115-chunk-seam-unwelded.png)
 
 *`chunk_seam_weld` — one torus, two chunks, meshed **independently**, exactly as a game does when an edit dirties only the chunks it touches. Every red line is a boundary edge on the shared plane: a triangle with no neighbour. `80` of them, and `40` duplicated vertices. The surface looks continuous and is not.*
 
-![The same two chunks after welding, with no seam](../screenshots/e115-chunk-seam-welded.png)
+![The same two chunks after welding, with no seam](../media/e115-chunk-seam-welded.png)
 
 *The same two chunks after `V`. **`1328 → 1288` vertices, 40 merged, 0 triangles collapsed, and the seam carries no boundary at all.** χ stays `0` — it is a torus either way; what changed is that it is now one surface.*
 
@@ -341,7 +341,7 @@ cd bevy_isomesh && cargo run --example chunk_seam_weld --release
 
 ## Fifteen thousand flips that move nothing
 
-![Wireframe switching between marching-cubes and intrinsic Delaunay connectivity while the pinned vertices do not move](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/fifteen-thousand-flips-that-move-nothing.gif)
+![Wireframe switching between marching-cubes and intrinsic Delaunay connectivity while the pinned vertices do not move](../media/fifteen-thousand-flips-that-move-nothing.gif)
 
 `intrinsic_flips` closes the phase's cleanest shippable question with an instrument you can watch:
 **intrinsic Delaunay flipping reaches the fixed point on every row — 15,391 flips, 1,570 of 10,678

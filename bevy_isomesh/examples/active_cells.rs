@@ -23,7 +23,7 @@
 //! # 90 frames is 30 per rung, so the clip is exactly one pass up the ladder.
 //! # Measured at 1280x720 scaled to 900px: 0.81 MB.
 //! ISOMESH_CAPTURE_FRAMES=90 ISOMESH_CAPTURE_EVERY=2 \
-//!   scripts/record_gif.sh active_cells docs/gifs/e307.gif
+//!   scripts/record_gif.sh active_cells docs/media/e307.gif
 //! ```
 //!
 //! The camera is still, so the only things moving are the strip, the highlighted

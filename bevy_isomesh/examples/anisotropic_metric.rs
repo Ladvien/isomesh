@@ -16,7 +16,7 @@
 //! `ISOMESH_SAMPLES` pins the shown rung and must name one of `17`, `25`, `33`.
 //!
 //! ```bash
-//! scripts/record_gif.sh anisotropic_metric docs/gifs/e319.gif
+//! scripts/record_gif.sh anisotropic_metric docs/media/e319.gif
 //! ```
 //!
 //! No clip size is quoted above because none was measured — this file was

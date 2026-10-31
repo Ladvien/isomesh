@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Rebuild `docs/gifs/kitchen-sink.gif` — the README's banner, several examples
+# Rebuild `docs/media/kitchen-sink.gif` — the README's banner, several examples
 # running at once.
 #
 #   scripts/record_kitchen_sink.sh [output.gif]
@@ -27,7 +27,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-OUTPUT="${1:-docs/gifs/kitchen-sink.gif}"
+OUTPUT="${1:-docs/media/kitchen-sink.gif}"
 
 : "${DISPLAY:=:0}"
 : "${PANEL_W:=320}"

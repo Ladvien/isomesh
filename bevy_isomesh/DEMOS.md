@@ -3,21 +3,21 @@
 Thirty-nine runnable examples. This page shows what each one looks like, what it proves, and the exact
 line to run it.
 
-**[The hosted version of this page](https://ladvien.github.io/isomesh/demos.html)** carries the same clips
+**[The hosted version of this page](https://bevy-coven.github.io/isomesh/demos.html)** carries the same clips
 in one link, if you would rather send someone a URL than a repository. Eleven of the demos are playable in
 your browser there as WebAssembly builds, and the three Phase 21 ones each still print their cross-check
 against their committed CSV to the console:
-[`game_dig`](https://ladvien.github.io/isomesh/play.html?demo=game_dig),
-[`quickstart`](https://ladvien.github.io/isomesh/play.html?demo=quickstart),
-[`marching_cubes_tunnel`](https://ladvien.github.io/isomesh/play.html?demo=marching_cubes_tunnel),
-[`dual_contouring_cube`](https://ladvien.github.io/isomesh/play.html?demo=dual_contouring_cube),
-[`surface_nets_vs_marching_cubes`](https://ladvien.github.io/isomesh/play.html?demo=surface_nets_vs_marching_cubes),
-[`game_showcase`](https://ladvien.github.io/isomesh/play.html?demo=game_showcase),
-[`game_mirror_dedup`](https://ladvien.github.io/isomesh/play.html?demo=game_mirror_dedup),
-[`game_edit_tape_trim`](https://ladvien.github.io/isomesh/play.html?demo=game_edit_tape_trim),
-[`shifted_linear_root`](https://ladvien.github.io/isomesh/play.html?demo=shifted_linear_root),
-[`hyperdeterminant_cells`](https://ladvien.github.io/isomesh/play.html?demo=hyperdeterminant_cells),
-[`tpms_euler`](https://ladvien.github.io/isomesh/play.html?demo=tpms_euler).
+[`game_dig`](https://bevy-coven.github.io/isomesh/play.html?demo=game_dig),
+[`quickstart`](https://bevy-coven.github.io/isomesh/play.html?demo=quickstart),
+[`marching_cubes_tunnel`](https://bevy-coven.github.io/isomesh/play.html?demo=marching_cubes_tunnel),
+[`dual_contouring_cube`](https://bevy-coven.github.io/isomesh/play.html?demo=dual_contouring_cube),
+[`surface_nets_vs_marching_cubes`](https://bevy-coven.github.io/isomesh/play.html?demo=surface_nets_vs_marching_cubes),
+[`game_showcase`](https://bevy-coven.github.io/isomesh/play.html?demo=game_showcase),
+[`game_mirror_dedup`](https://bevy-coven.github.io/isomesh/play.html?demo=game_mirror_dedup),
+[`game_edit_tape_trim`](https://bevy-coven.github.io/isomesh/play.html?demo=game_edit_tape_trim),
+[`shifted_linear_root`](https://bevy-coven.github.io/isomesh/play.html?demo=shifted_linear_root),
+[`hyperdeterminant_cells`](https://bevy-coven.github.io/isomesh/play.html?demo=hyperdeterminant_cells),
+[`tpms_euler`](https://bevy-coven.github.io/isomesh/play.html?demo=tpms_euler).
 
 Those eleven need **WebGPU**, not WebGL2. `game_dig` offers Marching Cubes on the GPU as one of its eight
 mesher options, Cargo features are per-package, and `bevy_render` gives its `webgpu` feature precedence over
@@ -63,7 +63,7 @@ milliseconds, frame time and FPS.
 
 ### A world with a roof over your head
 
-![Flying through a landscape riddled with caves, arches and tunnels](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/flying-through-the-rock.gif)
+![Flying through a landscape riddled with caves, arches and tunnels](../docs/media/flying-through-the-rock.gif)
 
 A camera flying **through** rock — under arches, into tunnels, out the far side. The field is nine
 lines and nothing in it is authored:
@@ -84,7 +84,7 @@ cargo run --example game_showcase --release     # Space pause · [ ] fly speed �
 
 ### A world that streams past you
 
-![Endless fBm terrain streaming past a flying camera, chunks appearing at the frontier](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/terrain-streaming.gif)
+![Endless fBm terrain streaming past a flying camera, chunks appearing at the frontier](../docs/media/terrain-streaming.gif)
 
 `fbm_terrain` sampled without bound. It is a function, so there is no edge to reach — fly long enough
 and every chunk you can see was meshed while you were watching. The number to watch is `ms/frame`
@@ -96,7 +96,7 @@ cargo run --example game_terrain_stream --release   # Space pause · [ ] view di
 
 ### Walking every seam
 
-![A ball walking across streamed terrain, chunks loading continuously around it](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/walking-the-seams.gif)
+![A ball walking across streamed terrain, chunks loading continuously around it](../docs/media/walking-the-seams.gif)
 
 The acid test, and it is designed to fail: walk every chunk seam, ray-cast down at every step, count
 what happens. **495 crossings, zero fall-throughs** (M-106).
@@ -107,7 +107,7 @@ cargo run --example game_walk --release         # Space pause the walk · [ ] vi
 
 ### Building the field, not meshing it
 
-![Four SDF primitives on a shelf and a mushroom assembled from them by smooth union and difference](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/building-a-field.gif)
+![Four SDF primitives on a shelf and a mushroom assembled from them by smooth union and difference](../docs/media/building-a-field.gif)
 
 The only example with no meshing content at all — the extractor is the default and the resolution is
 fixed. The only thing that changes is the expression.
@@ -136,7 +136,7 @@ cargo run --example quickstart --release
 
 ### Proving a cell empty when the ball cannot (M-354)
 
-![A gyroid with amber cages on cells only the affine bound rejects](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/affine-rejects-where-lipschitz-cannot.gif)
+![A gyroid with amber cages on cells only the affine bound rejects](../docs/media/affine-rejects-where-lipschitz-cannot.gif)
 
 Hart's Lipschitz test answers "can the surface pass through this cell?" with a **ball**, and a ball throws
 away everything but one number. A **revised affine form** — five `f64`, fixed size, no heap — bounds the
@@ -156,7 +156,7 @@ cargo run --example affine_rejection --release
 
 ### Where the root falls decides the whole gain (M-359)
 
-![A grid line with standard and shifted reconstructions, the error ratio tracing a closed-form curve as the crossing slides](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/where-the-root-falls-decides-the-gain.gif)
+![A grid line with standard and shifted reconstructions, the error ratio tracing a closed-form curve as the crossing slides](../docs/media/where-the-root-falls-decides-the-gain.gif)
 
 Blu, Thévenaz & Unser get *"about 8 dB asymptotically"* out of standard linear interpolation by shifting
 the sampling knots by a fixed `τ` and enforcing the interpolation property. At `τ = 1/5` the prefilter is
@@ -180,7 +180,7 @@ cargo run --example shifted_linear_root --release
 
 ### The spheres a mesh never touches (M-355)
 
-![Wireframe spheres around SDF samples, most never reached by the mesh](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/untouched-tangency-spheres.gif)
+![Wireframe spheres around SDF samples, most never reached by the mesh](../docs/media/untouched-tangency-spheres.gif)
 
 A distance sample asserts a sphere the surface must **touch**. Nothing in this crate checks that. Between
 **3.13% and 80.47%** of samples have a sphere no vertex ever reaches — and on `thin_plate` switching
@@ -195,7 +195,7 @@ cargo run --example untouched_spheres --release
 
 ### The repair that welds 520 things shut (M-352)
 
-![A bonsai CT scan covered in magenta pinch markers](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/pinch-repair-welds-520-components.gif)
+![A bonsai CT scan covered in magenta pinch markers](../docs/media/pinch-repair-welds-520-components.gif)
 
 Integer CT data puts samples exactly on the isovalue, and **every** degenerate triangle in the mesh comes
 from one — 58,097 of 58,097 on `bonsai`. The repair removes all of them and **moves no geometry at all**.
@@ -210,7 +210,7 @@ cargo run --example pinch_repair --release
 
 ### An error bound that is reached, not merely respected (M-350)
 
-![Normal ray pairs fanning at a CSG crease, with a meter tracking the predicted bound](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/seam-normal-bound-is-attained.gif)
+![Normal ray pairs fanning at a CSG crease, with a meter tracking the predicted bound](../docs/media/seam-normal-bound-is-attained.gif)
 
 A central difference across a CSG seam averages two gradients, so its error is at most **half the crease
 angle** — provable, because the difference returns `u − Λw` for a diagonal `Λ` with entries `≤ ½`.
@@ -225,7 +225,7 @@ cargo run --example seam_normal_bound --release
 
 ### The corner, and the 101× (M-54)
 
-![Surface Nets rounding a box corner beside Dual Contouring holding it, across a resolution sweep](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/dual-contouring-vs-surface-nets.gif)
+![Surface Nets rounding a box corner beside Dual Contouring holding it, across a resolution sweep](../docs/media/dual-contouring-vs-surface-nets.gif)
 
 Same field, same grid, same edge crossings. The only difference between these two meshes is one
 function: **where a cell's vertex goes.** Surface Nets takes the centroid of the crossings; Dual
@@ -243,7 +243,7 @@ cargo run --example dual_contouring_cube --release    # [ ] resolution · C cell
 
 ### Marching Cubes, refining
 
-![A sphere meshed by Marching Cubes as resolution sweeps up and back down](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/marching-cubes-sphere-resolution-sweep.gif)
+![A sphere meshed by Marching Cubes as resolution sweeps up and back down](../docs/media/marching-cubes-sphere-resolution-sweep.gif)
 
 The baseline, and the first thing in this project you can look at. The HUD recomputes the Euler
 characteristic and manifoldness on every re-mesh, so you can watch χ stay at 2 while the mesh changes
@@ -255,7 +255,7 @@ cargo run --example marching_cubes_sphere --release   # [ ] resolution, 5 to 129
 
 ### Surface Nets against Marching Cubes
 
-![The same box meshed by Marching Cubes and Surface Nets side by side](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/surface-nets-vs-marching-cubes-box.gif)
+![The same box meshed by Marching Cubes and Surface Nets side by side](../docs/media/surface-nets-vs-marching-cubes-box.gif)
 
 Marching Cubes grey on the left, Surface Nets tan on the right. The HUD computes `F_sn − F_mc` live and
 compares it against `2χ`, so you watch ✗1's identity hold at every resolution:
@@ -267,7 +267,7 @@ V_sn = V_mc + χ        F_sn = F_mc + 2χ
 Exactly — not approximately. Folklore says Surface Nets produces "substantially fewer triangles". It
 produces `2χ` fewer, which on a sphere is four.
 
-![The same comparison on a capped gyroid, a high-genus field](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/surface-nets-vs-marching-cubes-gyroid.gif)
+![The same comparison on a capped gyroid, a high-genus field](../docs/media/surface-nets-vs-marching-cubes-gyroid.gif)
 
 On the gyroid the same identity holds with χ far from 2, which is the version worth trusting.
 
@@ -277,7 +277,7 @@ cargo run --example surface_nets_vs_marching_cubes --release   # 1-5 field · [ 
 
 ### Letters thinner than a voxel
 
-![The word ISO meshed by two extractors as the letters thin; the Marching Cubes panel loses them entirely](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/subgrid-letters-thinner-than-a-voxel.gif)
+![The word ISO meshed by two extractors as the letters thin; the Marching Cubes panel loses them entirely](../docs/media/subgrid-letters-thinner-than-a-voxel.gif)
 
 One field, one grid, two extractors, and a sweep driving the letters from 1.6 voxels thick down to 0.2.
 
@@ -293,9 +293,9 @@ cargo run --example subgrid_features --release        # - = thickness · [ ] res
 
 ### The hyperdeterminant in every cell (M-440)
 
-![The normalised hyperdeterminant magnitude as a per-cell heatmap, with the Delta = 0 stratum in grey](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-hyperdeterminant-in-every-cell.gif)
+![The normalised hyperdeterminant magnitude as a per-cell heatmap, with the Delta = 0 stratum in grey](../docs/media/the-hyperdeterminant-in-every-cell.gif)
 
-[`hyperdeterminant_cells`](https://ladvien.github.io/isomesh/play.html?demo=hyperdeterminant_cells).
+[`hyperdeterminant_cells`](https://bevy-coven.github.io/isomesh/play.html?demo=hyperdeterminant_cells).
 `b*b − 4*a*c` at `trilinear.rs:246` **is** Cayley's `2×2×2` hyperdeterminant — 12 terms against 12 at
 degree 4, all three pencil pairings agreeing, the exact-rational deviation `0/1` over 3,481 trials
 (P-127, all three clauses held). The heatmap colours surface cells by
@@ -312,9 +312,9 @@ cargo run --example hyperdeterminant_cells --release
 
 ### Three periodic surfaces with a known topology (M-455)
 
-![Gyroid, Schwarz P and Schwarz D with chi counted from the weld against a prediction derived on the fly](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/three-periodic-surfaces-with-a-known-topology.gif)
+![Gyroid, Schwarz P and Schwarz D with chi counted from the weld against a prediction derived on the fly](../docs/media/three-periodic-surfaces-with-a-known-topology.gif)
 
-[`tpms_euler`](https://ladvien.github.io/isomesh/play.html?demo=tpms_euler).
+[`tpms_euler`](https://bevy-coven.github.io/isomesh/play.html?demo=tpms_euler).
 Gyroid `χ = −8N³`, Schwarz P `−4N³`, Schwarz D `−16N³` — P-142's C1 and C2 held to the integer, and
 P-145's digital-topology oracle reproduces the gyroid exactly on the fields where the crate had no
 ground truth. The prediction is **derived on the fly** from a seven-half-shift symmetry census rather
@@ -330,7 +330,7 @@ cargo run --example tpms_euler --release
 
 ### The metric that costs more than it saves (M-459)
 
-![Isotropic beside metric-driven sampling, with the aspect-ratio line carrying its at-floor count](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-metric-that-costs-more-than-it-saves.gif)
+![Isotropic beside metric-driven sampling, with the aspect-ratio line carrying its at-floor count](../docs/media/the-metric-that-costs-more-than-it-saves.gif)
 
 `anisotropic_metric`. The negative result, shown as one: **P-146's C1 and C3 were both falsified** —
 at matched symmetric Hausdorff the metric-driven arm is never cheaper and is `2.299×` dearer on
@@ -360,7 +360,7 @@ cargo run --example anisotropic_metric --release
 
 ### The rim of your own tunnel is lit wrong (M-350)
 
-![A shaft bored into rock, its rim glowing red with normal error](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/carve-seam-lit-wrong.gif)
+![A shaft bored into rock, its rim glowing red with normal error](../docs/media/carve-seam-lit-wrong.gif)
 
 Dig a tunnel and the rim is a CSG crease. A central difference across it averages two gradients, so the
 normal can be **44.3° wrong** at a right-angled rim — a bright arc exactly where the player just dug.
@@ -376,7 +376,7 @@ cargo run --example game_carve_seams --release
 
 ### The chunk knows it is losing detail (M-355)
 
-![Terrain of spires and boulders under a chunk heat map, cycling LOD strategies](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/detail-oracle-half-the-triangles.gif)
+![Terrain of spires and boulders under a chunk heat map, cycling LOD strategies](../docs/media/detail-oracle-half-the-triangles.gif)
 
 Camera distance does not know what is *in* a chunk. At 10 px/cell it spends 33³ on plain rolling ground and
 drops the chunks holding thin spires to 17³ — **24,076 triangles and 9 of 16 chunks still losing detail**,
@@ -393,7 +393,7 @@ cargo run --example game_lod_oracle --release
 
 ### The tape you keep is twenty times too big (M-358)
 
-![A chunked destructible world, brush gizmos emptying from the frame while the rock does not move](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-tape-you-keep-is-twenty-times-too-big.gif)
+![A chunked destructible world, brush gizmos emptying from the frame while the rock does not move](../docs/media/the-tape-you-keep-is-twenty-times-too-big.gif)
 
 A destructible world is a **tape** of brush edits folded over a base field. A Lipschitz interval bound
 deletes the brushes that provably cannot win in a chunk, taking a 64-brush tape to a median of **19**
@@ -413,7 +413,7 @@ cargo run --example game_edit_tape_trim --release
 
 ### Mirroring an asset breaks mesh-hash dedup; rotating it does not (M-356)
 
-![The same carved chunk rotated and mirrored, the mirrored copy speckled with markers on every moved vertex](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/mirrored-is-not-the-same-mesh.gif)
+![The same carved chunk rotated and mirrored, the mirrored copy speckled with markers on every moved vertex](../docs/media/mirrored-is-not-the-same-mesh.gif)
 
 Of the **48** ways to reorient a chunk on the cubic lattice, exactly **six** give a bit-identical mesh —
 and they are precisely the six that never negate a coordinate. Negate any axis and the mesh moves, because
@@ -433,7 +433,7 @@ cargo run --example game_mirror_dedup --release
 
 ### Digging, the way a game does it
 
-![A first-person camera carving tunnels through chunked terrain](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/digging-a-tunnel.gif)
+![A first-person camera carving tunnels through chunked terrain](../docs/media/digging-a-tunnel.gif)
 
 `WASD` walks, mouse looks, `Space` jumps a full chunk, `Shift` runs and `F` switches to the fly mode this
 demo used to open in, where gravity is off and `Q`/`E` go straight up and down. Walking is gravity, ground
@@ -477,7 +477,7 @@ cargo run --example game_dig --release      # WASD walk · Space jump · F fly �
 
 ### Sixty-four edits deep, and the mesher only looks at twenty-one
 
-![A 64-brush sculpting stroke where the pruned per-chunk cost climbs at a third of the full tape's rate](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/tape-pruning-the-tape-shrinks.gif)
+![A 64-brush sculpting stroke where the pruned per-chunk cost climbs at a third of the full tape's rate](../docs/media/tape-pruning-the-tape-shrinks.gif)
 
 Every sample of every chunk evaluates every brush, so an edit history is a tax the mesher pays forever.
 Bound each brush over the chunk box — one sample per brush, `f(c) ± l·r` — and drop the ones that
@@ -497,7 +497,7 @@ cargo run --example tape_pruning --release   # P prune · H heat · C chunk boxe
 
 ### The debris is the boolean
 
-![A hollow shell being shot, cratering, with debris falling away](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-debris-is-the-boolean.gif)
+![A hollow shell being shot, cratering, with debris falling away](../docs/media/the-debris-is-the-boolean.gif)
 
 A shot appends `Brush::subtract(sphere)` to crater the target, *and* meshes the **intersection** of the
 pre-shot solid with that same sphere as the debris. Nothing is authored: the crater and the fragment
@@ -511,7 +511,7 @@ cargo run --example game_destruction --release  # Space fire · 1-3 target (wall
 
 ### Paint that survives the wall it was sprayed on
 
-![Graffiti sprayed on a wall, then a hole blown through it, the surviving paint exactly where it was](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/paint-that-survives-the-wall.gif)
+![Graffiti sprayed on a wall, then a hole blown through it, the surviving paint exactly where it was](../docs/media/paint-that-survives-the-wall.gif)
 
 Spray, then blow a hole through the wall. The paint on what remains is exactly where you put it — not
 smeared, not reset. The drift readout is **continuously zero**, because paint lives in the edit log and
@@ -523,7 +523,7 @@ cargo run --example game_paint --release        # click spray · right click car
 
 ### Undo without a snapshot
 
-![A CSG solid morphing backwards and forwards as an edit log cursor moves](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/undo-is-a-refold.gif)
+![A CSG solid morphing backwards and forwards as an edit log cursor moves](../docs/media/undo-is-a-refold.gif)
 
 The edits are a **log**, and the field is a fold of that log over a base. Undo moves the cursor back by
 one and re-folds. Nothing is stored and nothing is copied.
@@ -539,7 +539,7 @@ cargo run --example game_editor --release       # Z undo · Y redo · E edit · 
 
 ### A concave edge, moving, measured every frame
 
-![A CSG solid whose cutter orbits, re-meshed every frame](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/a-boolean-remeshed-every-frame.gif)
+![A CSG solid whose cutter orbits, re-meshed every frame](../docs/media/a-boolean-remeshed-every-frame.gif)
 
 A **concave** edge is where a CAD tool lives, and it is the case where the vertex solve wants to sit
 outside the cell that produced it. Here it also moves: the cutter orbits on a slow ellipse, sweeping
@@ -554,7 +554,7 @@ cargo run --example game_csg_props --release    # Space pause · A extractor · 
 
 ### Two levels of detail, and the crack between them
 
-![A camera flying along an LOD ladder, blocks changing level as it passes](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/lod-flyover.gif)
+![A camera flying along an LOD ladder, blocks changing level as it passes](../docs/media/lod-flyover.gif)
 
 Slabs at descending resolutions, and a camera flying out and back so coarse blocks end up on both
 sides. `T` toggles transition cells; the HUD counts seam-plane boundary edges **per side** and reports
@@ -566,7 +566,7 @@ cargo run --example game_lod_flyover --release  # Space pause · T transitions �
 
 ### Where the caves join up (M-489)
 
-![An isovalue sweep on cave terrain as the giant air component appears and takes over](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/where-the-caves-join-up.gif)
+![An isovalue sweep on cave terrain as the giant air component appears and takes over](../docs/media/where-the-caves-join-up.gif)
 
 `cave_percolation`. The isovalue sweep IS the capture: on `noise_cavity` the giant air component
 appears at **0.029340** and at `iso = 0` one component holds **0.814493** of the air against 65 isolated
@@ -593,7 +593,7 @@ cargo run --example cave_percolation --release      # ← → isovalue · 1/2 fi
 
 ### Where a mesh stops being a manifold
 
-![Non-manifold edges drawn in red on a gyroid mesh, appearing and vanishing as resolution changes](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/manifold-check-resolution.gif)
+![Non-manifold edges drawn in red on a gyroid mesh, appearing and vanishing as resolution changes](../docs/media/manifold-check-resolution.gif)
 
 Non-manifold edges as thick red lines, non-manifold vertices as red spheres, boundary edges in amber —
 drawn **in place on the mesh**, not counted in a corner.
@@ -611,7 +611,7 @@ cargo run --example manifold_check --release    # A algorithm · 1-7 field · B 
 
 ### Counting the defects before the mesh exists
 
-![noise_cavity at 65 cubed, cyan cages on critical cells with one yellow non-manifold vertex inside each](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/critical-cells-count-the-defects.gif)
+![noise_cavity at 65 cubed, cyan cages on critical cells with one yellow non-manifold vertex inside each](../docs/media/critical-cells-count-the-defects.gif)
 
 Cyan cages are **2D-critical** cells, magenta are **3D-critical**, yellow dots are the non-manifold
 vertices Dual Contouring produced. Look at the cluster: one dot per cage, no strays, no empty cages.
@@ -632,7 +632,7 @@ cargo run --example critical_cells --release   # 1-5 field · F fly to the clust
 
 ### An ambiguous face, and how rarely one turns up
 
-![Cells with ambiguous faces boxed in amber and magenta, changing as resolution steps](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/ambiguous-faces-are-rare.gif)
+![Cells with ambiguous faces boxed in amber and magenta, changing as resolution steps](../docs/media/ambiguous-faces-are-rare.gif)
 
 Plain Marching Cubes on the left, the asymptotic decider on the right, and every cell with an ambiguous
 face boxed: **amber** where the decider agreed, **magenta** where it disagreed and joined the corners.
@@ -648,7 +648,7 @@ cargo run --example marching_cubes_ambiguity --release   # 1-3 field · A cell m
 
 ### One cell, meshed twice
 
-![One cell meshed as two separate discs and as a single tunnel](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-tunnel-meshed-as-a-tunnel.gif)
+![One cell meshed as two separate discs and as a single tunnel](../docs/media/the-tunnel-meshed-as-a-tunnel.gif)
 
 Left, the face rule alone: two separate discs. Right, the same cell with the interior rule: one
 cylinder passing through. Plus the closed gold ring of six body saddles — the inner hexagon — that
@@ -667,7 +667,7 @@ cargo run --example marching_cubes_tunnel --release      # 1-2 configuration · 
 
 ### Fifteen thousand flips that move nothing (M-488)
 
-![Wireframe switching between marching-cubes and intrinsic Delaunay connectivity while the pinned vertices do not move](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/fifteen-thousand-flips-that-move-nothing.gif)
+![Wireframe switching between marching-cubes and intrinsic Delaunay connectivity while the pinned vertices do not move](../docs/media/fifteen-thousand-flips-that-move-nothing.gif)
 
 `intrinsic_flips`. **Intrinsic Delaunay flipping reaches the fixed point on every row — 15,391 flips,
 1,570 of 10,678 slivers removed — and moves not one vertex.** `vertex_positions_moved` **0** bitwise,
@@ -683,7 +683,7 @@ cargo run --example intrinsic_flips --release      # F arm · V vertices · S sl
 
 ### The bilinear saddle, swept
 
-![A plane sweeping through one cell while a dot traces a hyperbola to infinity and back](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-interior-decider-sweep.gif)
+![A plane sweeping through one cell while a dot traces a hyperbola to infinity and back](../docs/media/the-interior-decider-sweep.gif)
 
 No mesh at all — one wire cell, a plane sweeping bottom to top, and a white dot tracking the bilinear
 saddle. The dot's trail draws a hyperbola: it runs off to infinity and returns from the other side at
@@ -698,7 +698,7 @@ cargo run --example marching_cubes_interior --release    # Space pause · [ ] sc
 
 ### The sharpness knob, at both ends
 
-![A box with a sphere bitten out of it, its edges rounding over and snapping back as lambda sweeps](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/sharp-features-lambda-sweep.gif)
+![A box with a sphere bitten out of it, its edges rounding over and snapping back as lambda sweeps](../docs/media/sharp-features-lambda-sweep.gif)
 
 What trades sharpness against stability is **λ, the Tikhonov regularizer** in the vertex solve — a
 number that was a compile-time constant until this example needed to turn it.
@@ -713,7 +713,7 @@ cargo run --example sharp_features --release    # - = lambda · C cell clamp · 
 
 ### What the clamp removes, and the half it cannot reach
 
-![A gyroid with self-intersecting triangles highlighted in red, appearing and vanishing as the clamp toggles](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/qef-clamp-self-intersections.gif)
+![A gyroid with self-intersecting triangles highlighted in red, appearing and vanishing as the clamp toggles](../docs/media/qef-clamp-self-intersections.gif)
 
 `I` draws self-intersecting triangles in red. Toggle the clamp and on five of the eight fields they go
 to **exactly zero**.
@@ -728,7 +728,7 @@ cargo run --example qef_clamp --release         # C clamp · A algorithm · I hi
 
 ### Where `f32` blurs, and where it tears
 
-![The same field at a large coordinate offset in f32 and f64, blurring and then tearing open](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/precision-f32-tears.gif)
+![The same field at a large coordinate offset in f32 and f64, blurring and then tearing open](../docs/media/precision-f32-tears.gif)
 
 Two failures, two laws, and neither is where you would guess. At 10⁶ `f32` does not crack — what moves
 is accuracy. The crack is an order of magnitude further out, and at **2²³** it tears: χ drops from 2 to
@@ -754,7 +754,7 @@ cargo run --example precision_f32_vs_f64 --release   # - = offset exponent · 1-
 
 ### The whole pipeline, and the bus is never touched
 
-![A field with three brushes moving through it, extracted and drawn entirely on the GPU](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/gpu-resident-mesh-shader.gif)
+![A field with three brushes moving through it, extracted and drawn entirely on the GPU](../docs/media/gpu-resident-mesh-shader.gif)
 
 Field evaluation, extraction and draw, all on the GPU. Per frame the CPU sends a camera matrix and
 three brushes, and waits. There is no vertex buffer, no index buffer, and **zero `Mesh3d` entities** —

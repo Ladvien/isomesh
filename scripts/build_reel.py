@@ -19,15 +19,15 @@ inside a README and a WebP does not always.
 
 Regenerate the WebP set first:
 
-    for f in docs/gifs/*.gif; do
+    for f in docs/media/*.gif; do
       ffmpeg -y -i "$f" -vf "fps=14,scale=620:-1:flags=lanczos" \
-        -c:v libwebp_anim -q:v 74 -loop 0 -an "docs/gifs/web/$(basename "$f" .gif).webp"
+        -c:v libwebp_anim -q:v 74 -loop 0 -an "docs/media/web/$(basename "$f" .gif).webp"
     done
 """
 import base64, pathlib, html, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-WEB = ROOT / "docs" / "gifs" / "web"
+WEB = ROOT / "docs" / "media" / "web"
 OUT = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "target" / "isomesh-reel.html"
 
 

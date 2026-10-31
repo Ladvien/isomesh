@@ -18,7 +18,7 @@
 //! ```bash
 //! ISOMESH_CAPTURE_FRAMES=150 ISOMESH_CAPTURE_EVERY=2 FPS=10 \
 //!   ./scripts/record_gif.sh game_edit_tape_trim \
-//!   docs/gifs/the-tape-you-keep-is-twenty-times-too-big.gif
+//!   docs/media/the-tape-you-keep-is-twenty-times-too-big.gif
 //! ```
 //!
 //! **150 frames is a floor, not a preference.** The tour is five chunks × three

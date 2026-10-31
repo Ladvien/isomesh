@@ -12,7 +12,7 @@ Every figure here came from a command you can run, and the command is under each
 
 ## The edit tape you keep is twenty times bigger than the one you need
 
-![A chunked destructible world; brush gizmos empty out of the frame as the tape steps from 64 to survivors to necessary, while the rock itself never changes and four hashes on the HUD stay equal](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-tape-you-keep-is-twenty-times-too-big.gif)
+![A chunked destructible world; brush gizmos empty out of the frame as the tape steps from 64 to survivors to necessary, while the rock itself never changes and four hashes on the HUD stay equal](../media/the-tape-you-keep-is-twenty-times-too-big.gif)
 
 *`game_edit_tape_trim` — P-39's fixture, brush for brush: a 64-brush tape of spheres, capsules and smooth
 adds folded over a base sphere, meshed in 64 chunks. **Cyan** brushes are necessary; **amber** survive the
@@ -83,7 +83,7 @@ fraction of 0.3281 against the committed 0.2969 — it could not have reproduced
 
 ## The rim of your own tunnel is lit wrong, and a finer mesh will not fix it
 
-![A shaft bored into a rock face, its rim glowing red with normal error, triangles climbing while the error refuses to fall, then the rim fixed at the cheapest resolution](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/carve-seam-lit-wrong.gif)
+![A shaft bored into a rock face, its rim glowing red with normal error, triangles climbing while the error refuses to fall, then the rim fixed at the cheapest resolution](../media/carve-seam-lit-wrong.gif)
 
 *`game_carve_seams` — a capsule brush bores a shaft into a rock face. The rim is a **90° crease**, and its
 normals are **44.3° wrong**. The red tint is the per-vertex angular error. Then the resolution ladder runs,
@@ -128,7 +128,7 @@ cd bevy_isomesh && cargo run --example game_carve_seams --release
 
 ## The chunk knows it is losing detail, so stop guessing from camera distance
 
-![A terrain of spires and boulders under a chunk heat map, cycling uniform, range-based and oracle-driven LOD with a triangle scoreboard](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/detail-oracle-half-the-triangles.gif)
+![A terrain of spires and boulders under a chunk heat map, cycling uniform, range-based and oracle-driven LOD with a triangle scoreboard](../media/detail-oracle-half-the-triangles.gif)
 
 *`game_lod_oracle` — 16 chunks, four resolution rungs. The heat map is each chunk's own answer to *am I
 losing detail?* Same visual quality, **1.81× fewer triangles** than distance-based LOD.*
@@ -172,7 +172,7 @@ cd bevy_isomesh && cargo run --example game_lod_oracle --release
 
 ## A world with a roof over your head
 
-![Flying through caves and arches](../screenshots/e210-showcase-hero.png)
+![Flying through caves and arches](../media/e210-showcase-hero.png)
 
 *Streamed, meshed while the camera moves, and flown **through** rather than over. 440,000 triangles,
 376 chunks, 60 fps.*
@@ -218,7 +218,7 @@ cd bevy_isomesh && cargo run --example game_showcase --release
 
 ## A body that slides, not a ray that hits
 
-![A capsule walking across streamed terrain under a physics engine](../screenshots/e206b-capsule-walk.png)
+![A capsule walking across streamed terrain under a physics engine](../media/e206b-capsule-walk.png)
 
 *The same streamed `fbm_terrain` `game_walk` crosses, with an actual rigid body on it. 154 chunks
 resident, 77,492 triangles, 60 fps, and the collider handed to the physics engine is built from the very
@@ -258,7 +258,7 @@ cd bevy_isomesh && cargo run --example game_capsule_walk --release
 
 ## Shoot it, and the debris is the boolean
 
-![A hollow shell shot open, with the fragment resting on it](../screenshots/e204-destruction-shell.png)
+![A hollow shell shot open, with the fragment resting on it](../media/e204-destruction-shell.png)
 
 *A hollow shell with a hole blown in it. The orange fragment is not a prop — it is the **intersection**
 of the shell with the charge, meshed. The crater and the fragment are two views of one boolean, and you
@@ -300,7 +300,7 @@ cd bevy_isomesh && cargo run --example game_destruction --release
 
 ## Flying an LOD ladder, and counting what opens up
 
-![An LOD ladder with transition cells closing every seam](../screenshots/e205-lod-flyover-stitched.png)
+![An LOD ladder with transition cells closing every seam](../media/e205-lod-flyover-stitched.png)
 
 *Twelve blocks stacked along `x`, each meshed at its own spacing — levels 0, 1 and 2, so 0.25, 0.5 and
 1.0 world units — with the camera flying out along the ladder and back. Every 2:1 seam is bridged by
@@ -324,7 +324,7 @@ The zero is also only worth something because it can fail. With transitions off 
 the cracks sit exactly on the seam plane, where the old and new counters agree — and the same worlds
 report **71 open edges on the low side and 102–111 on the high side**:
 
-![The same ladder with transitions off, seams open](../screenshots/e205-lod-flyover-cracked.png)
+![The same ladder with transitions off, seams open](../media/e205-lod-flyover-cracked.png)
 
 **"No popping" is the wrong claim.** A coarser mesh genuinely *is* a different surface, so the honest
 deliverable is the size of the jump, not a denial that it happens. Meshing a block at both its old and
@@ -350,7 +350,7 @@ cd bevy_isomesh && cargo run --example game_lod_flyover --release
 
 ## Connected is not the same as passable
 
-![A bore widening through rock while a body-sized ball waits outside, the aperture readout counting up and flipping green](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/aperture-can-the-player-fit.gif)
+![A bore widening through rock while a body-sized ball waits outside, the aperture readout counting up and flipping green](../media/aperture-can-the-player-fit.gif)
 
 *`aperture_gate` — a capsule bored through a slab at 65³, radius sweeping up. At the frame shown the
 **aperture is 3.50 cells and the body is 4.00**: the faces are connected, the ball does not fit, and the
@@ -384,7 +384,7 @@ cd bevy_isomesh && cargo run --example aperture_gate --release
 
 ## Sixty-four edits deep, and the mesher only looks at twenty-one
 
-![A sculpting stroke building a 64-brush tape while the pruned per-chunk cost climbs at a third of the rate](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/tape-pruning-the-tape-shrinks.gif)
+![A sculpting stroke building a 64-brush tape while the pruned per-chunk cost climbs at a third of the rate](../media/tape-pruning-the-tape-shrinks.gif)
 
 *`tape_pruning` — 4×4×4 chunks of 33 samples, a 64-brush stroke arriving one edit at a time. At the end:
 **median 21 of 64 brushes survive**, a chunk re-meshes in **6.46 ms pruned against 15.84 ms whole**, the
@@ -421,7 +421,7 @@ cd bevy_isomesh && cargo run --example tape_pruning --release
 
 ## 288 chunks re-meshed, without missing a frame
 
-![An overloaded edit queue draining under a 2 ms frame budget](../screenshots/e206-budget.png)
+![An overloaded edit queue draining under a 2 ms frame budget](../media/e206-budget.png)
 
 *Every chunk in the world dirty at once, and the queue re-fills the instant it empties. 28.6 chunks a
 frame at a 2 ms budget, 60 fps throughout.*
@@ -467,7 +467,7 @@ cd bevy_isomesh && cargo run --example game_budget --release
 
 ## Undo without a snapshot, and an order that is load-bearing
 
-![A carved block with the edit log and the commutation audit on the HUD](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/undo-is-a-refold.gif)
+![A carved block with the edit log and the commutation audit on the HUD](../media/undo-is-a-refold.gif)
 
 *Eight brushes folded over a block. The field **is** the log — `BrushStack { base, brushes: &log[..cursor] }`
 — and undo moves the cursor back by one.*
@@ -510,7 +510,7 @@ cd bevy_isomesh && cargo run --example game_editor --release
 
 ## The whole pipeline on the GPU, and the bus is never touched
 
-![A carved sphere resting on a slab, drawn entirely by a mesh shader](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/gpu-resident-mesh-shader.gif)
+![A carved sphere resting on a slab, drawn entirely by a mesh shader](../media/gpu-resident-mesh-shader.gif)
 
 *16,436 triangles at 65³, extracted and drawn in **0.41 ms**, 60 fps. Per frame the CPU sends a camera
 matrix and three brushes. Nothing else crosses the bus in either direction.*
@@ -546,7 +546,7 @@ cd bevy_isomesh && cargo run --example gpu_mesh_shader --release
 
 ## Graffiti that survives the wall it was sprayed on
 
-![Coloured paint on a wall with two holes blown through it, the paint intact and the rims bare](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/paint-that-survives-the-wall.gif)
+![Coloured paint on a wall with two holes blown through it, the paint intact and the rims bare](../media/paint-that-survives-the-wall.gif)
 
 *Twelve sprays, then two holes blown through patches that were definitely painted. The paint around
 each hole has not moved, and the freshly exposed rim is bare — paint reaches a fixed depth from the
@@ -602,7 +602,7 @@ cd bevy_isomesh && cargo run --example game_paint --release
 
 ## A concave edge, moving, measured every frame
 
-![An L-shaped notch cut from a block, with the edge distance for four extractors](../screenshots/e209-csg-props.png)
+![An L-shaped notch cut from a block, with the edge distance for four extractors](../media/e209-csg-props.png)
 
 *`solid(p) = max(box(p), min(p.x − cx, p.y − cy))` — a quarter-space subtracted from a block, leaving a
 reflex dihedral at exactly `(cx, cy)`. The cutter orbits, so the edge sweeps the grid, and all four
@@ -651,12 +651,12 @@ cd bevy_isomesh && cargo run --example game_csg_props --release
 
 ## A world that streams past you
 
-![Terrain streaming past a flying camera](../gifs/terrain-streaming.gif)
+![Terrain streaming past a flying camera](../media/terrain-streaming.gif)
 
 *Chunks loading and unloading continuously as the camera flies. Nothing here is pre-baked — every chunk
 in frame was extracted while you were watching.*
 
-![Unbroken fBm terrain to the horizon, with a HUD reading 234 chunks resident, 0 waiting, 60 fps](../screenshots/e201-terrain-stream.png)
+![Unbroken fBm terrain to the horizon, with a HUD reading 234 chunks resident, 0 waiting, 60 fps](../media/e201-terrain-stream.png)
 
 *`game_terrain_stream` — 234 chunks resident, 117,792 triangles, 3.2 MB, **60 fps at 16.65 ms/frame** while the camera flies and chunks load and unload continuously.*
 
@@ -678,7 +678,7 @@ cd bevy_isomesh && cargo run --example game_terrain_stream --release
 
 ## Walking every seam
 
-![Terrain with a walker on it and a HUD reading 495 seam crossings, 0 holes, seam lip 0.412 cells against terrain roughness 0.539](../screenshots/e203-game-walk.png)
+![Terrain with a walker on it and a HUD reading 495 seam crossings, 0 holes, seam lip 0.412 cells against terrain roughness 0.539](../media/e203-game-walk.png)
 
 *`game_walk` — **495 seam crossings tested, 0 holes.** The worst vertical discontinuity at a seam is **0.412 cells**, against **0.539 cells** within a single chunk: the joins are smoother than the terrain they join.*
 
@@ -700,7 +700,7 @@ cd bevy_isomesh && cargo run --example game_walk --release
 
 ## Digging, with the numbers a game actually cares about
 
-![Carving a tunnel into terrain, with the re-meshed chunks outlined](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/digging-a-tunnel.gif)
+![Carving a tunnel into terrain, with the re-meshed chunks outlined](../media/digging-a-tunnel.gif)
 
 *`game_dig` — first person, left click to carve. The blue boxes are the chunks the **last edit** re-meshed: 3 of them, in `0.41 ms`. Nine chunks are resident; the other six were not touched and were not looked at.*
 
@@ -729,9 +729,9 @@ cd bevy_isomesh && cargo run --example game_dig --release
 
 ## Two levels of detail, and the crack between them
 
-![A gyroid meshed at two resolutions with a jagged gap down the seam](../screenshots/e107-transvoxel-seam-cracked.png)
+![A gyroid meshed at two resolutions with a jagged gap down the seam](../media/e107-transvoxel-seam-cracked.png)
 
-![The same pair with transition cells bridging the seam in orange](../screenshots/e107-transvoxel-seam-stitched.png)
+![The same pair with transition cells bridging the seam in orange](../media/e107-transvoxel-seam-stitched.png)
 
 *`transvoxel_seams` — one field, two blocks, the left at full resolution and the right at half. Meshed independently they do not meet: **184 unmatched boundary edges** lie in the seam plane and you can see straight through them. Transition cells take that to **0**, and the orange band is the 310 triangles doing it.*
 
@@ -781,7 +781,7 @@ let trimesh = TriMesh::new(vertices, indices)?;
 
 ## Where the caves join up
 
-![An isovalue sweep on cave terrain as the giant air component appears and takes over](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/where-the-caves-join-up.gif)
+![An isovalue sweep on cave terrain as the giant air component appears and takes over](../media/where-the-caves-join-up.gif)
 
 `cave_percolation` turns P-176's transition into a dial a level designer can read: on `noise_cavity`
 the giant air component appears at an isovalue of **0.029340**, and at `iso = 0` one component holds

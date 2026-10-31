@@ -16,7 +16,7 @@
 //! four beats come off the captured-frame counter.
 //!
 //! ```bash
-//! ISOMESH_WINDOW=1280x720 ./scripts/record_gif.sh game_lod_oracle docs/gifs/e313.gif
+//! ISOMESH_WINDOW=1280x720 ./scripts/record_gif.sh game_lod_oracle docs/media/e313.gif
 //! ```
 //!
 //! # The idea
