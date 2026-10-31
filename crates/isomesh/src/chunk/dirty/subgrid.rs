@@ -17,7 +17,7 @@
 
 use alloc::vec::Vec;
 
-use super::{DirtySet, EditReport, tally};
+use super::{DirtySet, EditReport, commit, tally};
 use crate::chunk::ChunkLayout;
 use crate::cube::{corner_offset, is_inside};
 use crate::marching_tetrahedra::table::{TET_COUNT, TET_EDGE_COUNT, tet_edge_corners};
@@ -427,11 +427,7 @@ where
         core::mem::swap(&mut low, &mut high);
     }
 
-    report.region_chunks = region_chunks.len() as u64;
-    report.dirty_chunks = dirtied.len() as u64;
-    for id in dirtied.iter() {
-        dirty.insert(id);
-    }
+    commit(&mut report, &region_chunks, &dirtied, dirty);
     Ok(report)
 }
 
