@@ -100,6 +100,8 @@ fn main() {
 
 The compared region is the cell bounding box of the volume's spawned chunks, so the cost is one field evaluation of each field per corner sample of that box; an edit outside every spawned chunk has nothing to mark.
 
+The rule follows the volume's extractor, because it is a statement about which points of the field the extractor reads. `Extractor::Subgrid { samples }` meshes features thinner than a cell that no lattice corner sees, so its volumes are compared at the points the extractor reads (`isomesh::chunk::dirty::mark_edit_subgrid`): `1 + 7 (samples - 1)` evaluations of each field per cell instead of one. A thin wall added to or cut from a Subgrid volume re-meshes its chunk; on a Marching Cubes volume, which cannot mesh it, the same edit marks nothing.
+
 ## Two layers — use either
 
 **`MeshBuilder`** is a `MeshSink` whose buffers are exactly the arrays a Bevy `Mesh` wants, so `into_mesh()` hands the `Vec`s over by move — no copy on the way into the asset. This one runs, and does, on every `cargo test`:
