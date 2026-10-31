@@ -38,10 +38,10 @@ C4 (Lengyel, p. 99) shipped destructible voxel terrain on this contract, and the
 
 No change to the plugin. The contract is already as above, and the issue's reading of the code is right: the swallow is one line, and the existing assertions do not see it. The change is to the test, so that it observes the extraction and the data, not only the end state:
 
-1. **Count the extractions after the re-mark.** `MeshStats::spawned` resets every frame, so the test sums it over the frames it drives. Exactly one spawn follows the re-mark: zero is the swallow, two would be a duplicate queued behind `WaitingChunks`' `Without<MeshingTask>`.
+1. **Count the extractions after the re-mark.** `MeshStats::spawned` resets every frame, so the test sums it over the frames it drives. Exactly one spawn follows the re-mark: zero is the swallow. The count does not see a duplicate queued while the first task runs (`WaitingChunks`' `Without<MeshingTask>` removed): the second spawn replaces the first task's component and cancels it, still one spawn, which is why the data assertions below are not optional.
 2. **Check the data, not only the count.** The field is replaced (`VoxelVolume::replace_field`) between the two extractions, as a game does, and the test compares each mesh the app shows with a direct `extract_chunk` of the field it should have been built from: the first mesh equals the **old** field's extraction (a running task finishes against the field it was spawned with, `replace_field`'s documented promise), the final mesh equals the **new** field's.
 3. **Show the fixture can tell them apart.** The old and new reference meshes are both non-empty and differ, asserted in the test, so a field swap that changes nothing in this chunk cannot make assertion 2 vacuous. (M-107, M-112, M-113, M-115, M-117, M-119, M-120 and M-127 are the eight earlier instances of a fixture that could not exhibit the property it was chosen for.)
-4. **Prove it can fail** by running the test against the mutation the issue gives, and against a second one that stales the data and not the count (the second extraction is spawned and reads the first extraction's field). Saha and Kanewala's measure: "mutants are a proxy to the real faults for comparing testing techniques", which is the standard under which a test that kills no mutant has not been shown to test anything. Both outputs go in FINDINGS.
+4. **Prove it can fail** by running the test against the mutation the issue gives, against a second one that stales the data and not the count (the second extraction is spawned and reads the first extraction's field), and against a third that removes `Without<MeshingTask>` from `WaitingChunks`. Saha and Kanewala's measure: "mutants are a proxy to the real faults for comparing testing techniques", which is the standard under which a test that kills no mutant has not been shown to test anything. The outputs go in FINDINGS.
 
 The sequence the test relies on is fixed by the schedule and not by timing: the re-mark lands while the task component is on the entity, `apply_finished_meshes` only runs inside `App::update`, so the first task cannot land before the test's next `update` however fast the worker is; `spawn_meshing_tasks` then sees the chunk without a task and spawns the second in the following frame. The only clock is `drain_until`'s 10 s deadline.
 
@@ -55,8 +55,8 @@ The sequence the test relies on is fixed by the schedule and not by timing: the 
 
 - V1: the strengthened test passes on today's plugin.
 - V2: it fails on the issue's mutation (`.remove::<NeedsRemesh>()` in the `Ok` arm), with the assertion that names the missing second extraction.
-- V3: it fails on a mutation that spawns the second extraction against the first extraction's field, with the assertion that names the data.
-- V4: it does not depend on wall time: three consecutive full runs of the plugin test module pass, and the mutations fail every time.
+- V3: it fails on a mutation that spawns the second extraction against the first extraction's field, with the assertion that names the data, and on one that lets a re-marked chunk spawn over its running task, with the assertion that the running extraction finishes against the old field.
+- V4: it does not depend on wall time: the plugin test module passes three runs in a row and the new test 40 of 40 on a host at load 10-12; each mutation is run once, against the new test and against the old one.
 - V5: the other plugin tests are unchanged and still pass.
 
 ## What great looks like
