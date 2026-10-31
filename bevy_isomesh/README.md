@@ -98,7 +98,9 @@ fn main() {
 }
 ```
 
-The compared region is the cell bounding box of the volume's spawned chunks, so the cost is one field evaluation of each field per corner sample of that box; an edit outside every spawned chunk has nothing to mark.
+The compared region is the cell bounding box of the volume's spawned chunks, so the cost is one field evaluation of each field per corner sample of that box; an edit outside every spawned chunk has nothing to mark. A game that knows where its edit is (a brush's bounds, through `ChunkLayout::cell_of`, widened by a cell) passes that box to `mark_changed_chunks_in` and pays for the box instead of the volume.
+
+The rule follows the volume's extractor, because it is a statement about which points of the field the extractor reads. `Extractor::Subgrid { samples }` meshes features thinner than a cell that no lattice corner sees, so its volumes are compared at the points the extractor reads (`isomesh::chunk::dirty::mark_edit_subgrid`): `1 + 7 (samples - 1)` evaluations of each field per cell instead of one. A thin wall added to or cut from a Subgrid volume re-meshes its chunk; on a Marching Cubes volume, which cannot mesh it, the same edit marks nothing.
 
 ## Two layers — use either
 

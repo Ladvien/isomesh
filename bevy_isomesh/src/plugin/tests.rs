@@ -38,8 +38,8 @@ impl Sdf for SlowSphere {
     }
 }
 
-/// The deliberately slow field's spin count, shared so the reference extraction
-/// in `spawning_the_work_does_not_do_the_work` is timing the same work the app is.
+/// The deliberately slow field's spin count: tens of milliseconds per extraction
+/// in a debug build, so twelve of them are still running when a frame returns.
 const SPIN: u32 = 4_000;
 
 fn app(spin: u32, chunks: i32) -> App {
@@ -130,56 +130,38 @@ fn every_chunk_eventually_gets_a_mesh() {
 
 #[test]
 fn spawning_the_work_does_not_do_the_work() {
-    // The acceptance property. One update spawns twelve extractions of a
-    // deliberately slow field; if any of that ran on the main thread, the update
-    // could not come back in a fraction of the time the extractions take.
+    // The acceptance property, stated without a clock. One update queues twelve
+    // extractions of a deliberately slow field, and `apply_finished_meshes` runs
+    // in that same update, right after `spawn_meshing_tasks`. If any extraction
+    // ran on the main thread -- inline, or blocked on at the spawn -- it would
+    // be finished and applied by the time `update` returns. So an `update` that
+    // returns with every task still running and nothing meshed did its work
+    // somewhere else.
+    //
+    // This replaces a comparison of the frame's wall time against one
+    // extraction timed on the main thread. On a debug build the frame's own
+    // bookkeeping is of the same order as the extraction it was supposed to be
+    // a quarter of, and on a busy CI runner the ratio is noise: it failed three
+    // runs in a row (11.6-21.9 ms of frame against 25-31 ms of extraction) on a
+    // change that touched neither system.
     let mut app = app(SPIN, 12);
-
-    let spawn_frame = Instant::now();
     app.update();
-    let spawn_cost = spawn_frame.elapsed();
 
+    let running = app
+        .world_mut()
+        .query_filtered::<(), With<MeshingTask>>()
+        .iter(app.world())
+        .count();
+    assert_eq!(
+        (meshed(&mut app), running),
+        (0, 12),
+        "the update that queued twelve extractions returned with some of them \
+         already done: that is work that ran on the main thread"
+    );
+
+    // And the queue does drain, so the twelve tasks were real work, off-thread.
     drain_until(&mut app, |app| meshed(app) == 12);
     assert_eq!(meshed(&mut app), 12, "the queue never drained");
-
-    // What one of those extractions actually costs, done here on the main
-    // thread. **This, not the drain loop's wall time, is the denominator.**
-    //
-    // The original compared `spawn_cost` against how long the drain took, which
-    // made the assertion a hostage to scheduling twice over: it flaked on a fast
-    // machine, and any fix that let the loop wait would have padded the total
-    // with sleep and made a main-thread implementation pass. Timing one
-    // extraction directly removes the loop from the question entirely -- the
-    // claim is "queuing twelve of these cost far less than doing one", which is
-    // a statement about *where the work ran*.
-    let layout = ChunkLayout::new(8, 0.25, [0.0; 3]).expect("a valid layout");
-    let field = SlowSphere {
-        inner: Sphere::<f32>::canonical(),
-        spin: SPIN,
-    };
-    let one = Instant::now();
-    let built = extract_chunk(
-        &field,
-        &layout,
-        ChunkId::new([0, 0, 0]),
-        Extractor::default(),
-    )
-    .expect("the reference extraction failed");
-    let one_extraction = one.elapsed();
-
-    // The negative control: if the field were free to sample, the comparison
-    // below would pass for any implementation at all.
-    assert!(
-        built.triangle_count() > 0,
-        "the reference extraction produced nothing, so it timed no work"
-    );
-
-    assert!(
-        spawn_cost * 4 < one_extraction,
-        "the frame that queued twelve extractions took {spawn_cost:?}, against \
-         {one_extraction:?} to perform ONE of them here -- that is not the profile \
-         of work that happened on another thread"
-    );
 }
 
 #[test]
@@ -672,6 +654,156 @@ fn mark_changed_chunks_marks_nothing_for_an_identical_field() {
     assert!(marked(&mut app).is_empty());
     assert_eq!(report.dirty_chunks, 0);
     assert_eq!(report.value_changed_cells, 0);
+}
+
+/// `edit_app`'s sphere plus a plate 0.6 cells thick inside cell x = 16 (chunk
+/// `[2, 0, 0]`). Every corner of that cell is outside, before and after.
+struct SphereAndPlate;
+
+impl Sdf for SphereAndPlate {
+    type Scalar = f32;
+    fn sample(&self, p: [f32; 3]) -> f32 {
+        let sphere = Sphere::<f32> {
+            center: [1.0, 1.0, 1.0],
+            radius: 0.5,
+        }
+        .sample(p);
+        sphere.min((p[0] - 4.125).abs() - 0.075)
+    }
+}
+
+fn the_edit_app_with(extractor: Extractor) -> (App, Entity) {
+    let (mut app, volume) = edit_app();
+    app.world_mut()
+        .get_mut::<VoxelVolume>(volume)
+        .expect("the volume exists")
+        .extractor = extractor;
+    (app, volume)
+}
+
+/// Issue #11. Subgrid meshes a plate thinner than a cell that no corner sees, so
+/// the chunk that holds it must be re-meshed when the plate appears, and again
+/// when it goes.
+#[test]
+fn mark_changed_chunks_marks_a_subgrid_feature_thinner_than_a_cell() {
+    let extractor = Extractor::Subgrid { samples: 4 };
+    let (mut app, volume) = the_edit_app_with(extractor);
+    let layout = app
+        .world()
+        .get::<VoxelVolume>(volume)
+        .expect("the volume exists")
+        .layout;
+    let chunk_2 = ChunkId::new([2, 0, 0]);
+
+    // Precondition: Subgrid really does mesh the plate in chunk 2.
+    let built = extract_chunk(&SphereAndPlate, &layout, chunk_2, extractor).expect("extracts");
+    assert!(built.triangle_count() > 0, "the plate is not in the mesh");
+
+    edit(&mut app, volume, SphereAndPlate);
+    assert!(
+        marked(&mut app).contains(&chunk_2),
+        "chunk 2's Subgrid mesh changed and the chunk was not marked"
+    );
+
+    // The mirror: from the plate back to the sphere alone.
+    for chunk in marked(&mut app) {
+        let entity = app
+            .world_mut()
+            .query::<(Entity, &VoxelChunk)>()
+            .iter(app.world())
+            .find(|(_, c)| c.id == chunk)
+            .map(|(e, _)| e)
+            .expect("the chunk exists");
+        app.world_mut().entity_mut(entity).remove::<NeedsRemesh>();
+    }
+    assert!(marked(&mut app).is_empty());
+    edit(
+        &mut app,
+        volume,
+        Sphere::<f32> {
+            center: [1.0, 1.0, 1.0],
+            radius: 0.5,
+        },
+    );
+    assert!(
+        marked(&mut app).contains(&chunk_2),
+        "the plate left chunk 2's mesh and the chunk was not marked"
+    );
+}
+
+/// The rule belongs to the extractor: Marching Cubes cannot mesh that plate, so
+/// its volume has nothing to re-mesh, and the corner rule says so.
+#[test]
+fn mark_changed_chunks_leaves_a_marching_cubes_volume_on_the_corner_rule() {
+    let (mut app, volume) = edit_app();
+    edit(&mut app, volume, SphereAndPlate);
+    assert!(
+        marked(&mut app).is_empty(),
+        "marching cubes meshes nothing of the plate: {:?}",
+        marked(&mut app)
+    );
+}
+
+/// `edit`, over a box the caller chose.
+fn edit_in(
+    app: &mut App,
+    volume: Entity,
+    field: impl VolumeField,
+    region: ([i64; 3], [i64; 3]),
+) -> isomesh::chunk::dirty::EditReport {
+    let old = app
+        .world_mut()
+        .get_mut::<VoxelVolume>(volume)
+        .expect("the volume exists")
+        .replace_field(field);
+    app.world_mut()
+        .run_system_once(
+            move |mut commands: Commands,
+                  volumes: Query<&VoxelVolume>,
+                  chunks: Query<(Entity, &VoxelChunk)>| {
+                let v = volumes.get(volume).expect("the volume exists");
+                mark_changed_chunks_in(&mut commands, volume, v, &chunks, &*old, &*v.field, region)
+            },
+        )
+        .expect("the system ran")
+        .expect("the region is far below the sample-space bound")
+}
+
+/// The box is what is compared, and so what is paid for: a sphere moves from
+/// chunk 0 to chunk 2, and a box over chunk 2's cells sees chunk 2 only.
+#[test]
+fn mark_changed_chunks_in_compares_only_its_box() {
+    let moved = || Sphere::<f32> {
+        center: [5.0, 1.0, 1.0],
+        radius: 0.5,
+    };
+    let (mut app, volume) = edit_app();
+    // Chunk 2 owns cells x in 16..24.
+    let report = edit_in(&mut app, volume, moved(), ([16, 0, 0], [23, 7, 7]));
+    assert_eq!(marked(&mut app), vec![ChunkId::new([2, 0, 0])]);
+    assert_eq!(report.region_cells, 8 * 8 * 8, "the cost follows the box");
+
+    // A box the edit never reached marks nothing.
+    let (mut app, volume) = edit_app();
+    let report = edit_in(&mut app, volume, moved(), ([24, 0, 0], [31, 7, 7]));
+    assert!(marked(&mut app).is_empty());
+    assert_eq!(report.dirty_chunks, 0);
+
+    // An inverted box is nothing to compare.
+    let (mut app, volume) = edit_app();
+    let report = edit_in(&mut app, volume, moved(), ([5, 5, 5], [4, 5, 5]));
+    assert!(marked(&mut app).is_empty());
+    assert_eq!(report, isomesh::chunk::dirty::EditReport::default());
+}
+
+/// The same bound for a Subgrid volume, where it matters most: the plate in
+/// chunk 2 is found by a box over chunk 2 alone, at 4 samples.
+#[test]
+fn mark_changed_chunks_in_bounds_a_subgrid_volumes_cost() {
+    let (mut app, volume) = the_edit_app_with(Extractor::Subgrid { samples: 4 });
+    let report = edit_in(&mut app, volume, SphereAndPlate, ([16, 0, 0], [23, 7, 7]));
+    assert_eq!(marked(&mut app), vec![ChunkId::new([2, 0, 0])]);
+    assert_eq!(report.region_cells, 8 * 8 * 8);
 }
 
 #[test]

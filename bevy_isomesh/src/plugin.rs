@@ -59,7 +59,7 @@ use bevy_platform::time::Instant;
 use bevy_tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future};
 use tracing::error;
 
-use isomesh::chunk::dirty::{DirtySet, EditReport, mark_edit};
+use isomesh::chunk::dirty::{DirtySet, EditReport, mark_edit, mark_edit_subgrid};
 use isomesh::chunk::{ChunkId, ChunkLayout};
 use isomesh::{RuntimeShape3, Sdf};
 
@@ -370,10 +370,21 @@ impl Plugin for IsomeshPlugin {
 /// Mark every chunk of `volume` that the edit from `before` to `after`
 /// changed, by inserting [`NeedsRemesh`] on it.
 ///
-/// This is the system-side wrapper of
-/// [`isomesh::chunk::dirty::mark_edit`], whose rules it inherits: a chunk is
-/// marked only if some cell whose corners moved is, before or after, a surface
-/// cell, so an edit deep inside solid or empty space marks nothing.
+/// This is the system-side wrapper of [`isomesh::chunk::dirty::mark_edit`], whose
+/// rules it inherits: a chunk is marked only if some cell whose corners moved
+/// is, before or after, a surface cell, so an edit deep inside solid or empty
+/// space marks nothing.
+///
+/// # The rule follows the volume's extractor
+///
+/// For [`Extractor::Subgrid`] that rule would be wrong: the extractor reads the
+/// field along every tetrahedron edge, so a feature thinner than a cell changes
+/// its mesh while every corner stays on one side. Such a volume is marked with
+/// [`isomesh::chunk::dirty::mark_edit_subgrid`] at the extractor's own
+/// `samples`, which compares the fields at the points the extractor reads. It
+/// costs `1 + 7 (samples - 1)` evaluations of each field per cell instead of
+/// one, over the region below, so on a Subgrid volume an edit's cost grows with
+/// the volume's size at that rate.
 ///
 /// # The region
 ///
@@ -382,6 +393,11 @@ impl Plugin for IsomeshPlugin {
 /// `volume_entity`), so the cost is `(box + 1)³` evaluations of each field and
 /// edits outside every spawned chunk are ignored: there is no entity to mark.
 /// A volume with no chunks costs nothing and reports nothing.
+///
+/// The box is the whole volume's, not the edit's, because this function is told
+/// two fields and not where they differ. A caller that knows where the edit
+/// is (a brush's bounds, through [`ChunkLayout::cell_of`]) bounds the cost with
+/// [`mark_changed_chunks_in`], which compares only the box it is given.
 ///
 /// `before` is typically the field returned by
 /// [`VoxelVolume::replace_field`]: pass `&*old`.
@@ -398,9 +414,63 @@ pub fn mark_changed_chunks(
     before: &dyn VolumeField,
     after: &dyn VolumeField,
 ) -> isomesh::Result<EditReport> {
+    let (by_id, bounds) = volume_chunks(volume_entity, volume, chunks);
+    let Some(region) = bounds else {
+        return Ok(EditReport::default());
+    };
+    mark_region(commands, volume, &by_id, before, after, region)
+}
+
+/// [`mark_changed_chunks`] over a box the caller chose, so the cost follows the
+/// edit and not the volume.
+///
+/// `region` is `(min_cell, max_cell)`, an inclusive range of **global cell
+/// indices**, which is what [`mark_edit`] takes and what a brush's bounding box
+/// converts to with [`ChunkLayout::cell_of`]: convert the box's two corners and
+/// widen by a cell, since a vertex can sit a cell outside the brush. The cost is
+/// `(region + 1)³` evaluations of each field (`1 + 7 (samples - 1)` times that
+/// per cell on a Subgrid volume), however many chunks the volume has. Chunks
+/// that overlap the box and have no entity are skipped, as in
+/// [`mark_changed_chunks`]; a box outside every chunk marks nothing, and an
+/// inverted box (`max < min` on some axis) reports nothing.
+///
+/// **The box must hold the whole edit.** Cells outside it are not compared, so
+/// a chunk the edit changed only outside the box is not marked.
+///
+/// # Errors
+///
+/// [`isomesh::Error::IndexSpaceExhausted`] if the box's sample grid exceeds the
+/// `u32` sample space; nothing is marked then. A Subgrid volume whose
+/// `samples` is `0` gets [`isomesh::Error::InvalidCellSize`], as its extractor
+/// does.
+pub fn mark_changed_chunks_in(
+    commands: &mut Commands,
+    volume_entity: Entity,
+    volume: &VoxelVolume,
+    chunks: &Query<(Entity, &VoxelChunk)>,
+    before: &dyn VolumeField,
+    after: &dyn VolumeField,
+    region: ([i64; 3], [i64; 3]),
+) -> isomesh::Result<EditReport> {
+    let (by_id, _) = volume_chunks(volume_entity, volume, chunks);
+    mark_region(commands, volume, &by_id, before, after, region)
+}
+
+/// An inclusive range of global cell indices, `(min_cell, max_cell)`.
+type CellBox = ([i64; 3], [i64; 3]);
+
+/// A volume's existing chunk entities by id.
+type ChunksById = HashMap<ChunkId, Entity>;
+
+/// The volume's existing chunk entities by id, and the cell box they cover.
+fn volume_chunks(
+    volume_entity: Entity,
+    volume: &VoxelVolume,
+    chunks: &Query<(Entity, &VoxelChunk)>,
+) -> (ChunksById, Option<CellBox>) {
     let n = i64::from(volume.layout.cells());
-    let mut by_id: HashMap<ChunkId, Entity> = HashMap::new();
-    let mut bounds: Option<([i64; 3], [i64; 3])> = None;
+    let mut by_id = ChunksById::new();
+    let mut bounds: Option<CellBox> = None;
     for (entity, chunk) in chunks {
         if chunk.volume != volume_entity {
             continue;
@@ -417,19 +487,42 @@ pub fn mark_changed_chunks(
             ),
         });
     }
-    let Some((min_cell, max_cell)) = bounds else {
-        return Ok(EditReport::default());
-    };
+    (by_id, bounds)
+}
 
+/// Compare the fields over `region` with the volume's extractor's rule, and mark
+/// the chunks that changed.
+fn mark_region(
+    commands: &mut Commands,
+    volume: &VoxelVolume,
+    by_id: &ChunksById,
+    before: &dyn VolumeField,
+    after: &dyn VolumeField,
+    (min_cell, max_cell): CellBox,
+) -> isomesh::Result<EditReport> {
     let mut dirty = DirtySet::new();
-    let report = mark_edit(
-        &volume.layout,
-        &before,
-        &after,
-        min_cell,
-        max_cell,
-        &mut dirty,
-    )?;
+    // The rule belongs to the extractor, because it is a statement about which
+    // points of the field the extractor reads. Spelled out variant by variant,
+    // with no wildcard, so a new extractor has to say what it reads.
+    let report = match volume.extractor {
+        Extractor::Subgrid { samples } => mark_edit_subgrid(
+            &volume.layout,
+            &before,
+            &after,
+            min_cell,
+            max_cell,
+            samples,
+            &mut dirty,
+        )?,
+        Extractor::MarchingCubes | Extractor::SurfaceNets | Extractor::DualContouring => mark_edit(
+            &volume.layout,
+            &before,
+            &after,
+            min_cell,
+            max_cell,
+            &mut dirty,
+        )?,
+    };
     for id in dirty.iter() {
         if let Some(&entity) = by_id.get(&id) {
             commands.entity(entity).try_insert(NeedsRemesh);
