@@ -8,6 +8,10 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+### Fixed
+
+- **`an_edit_during_extraction_is_requeued_rather_than_swallowed` can now fail** (issue #12). It asserted the end state (a `ChunkMesh`, no `NeedsRemesh`, no `MeshingTask`), which an implementation that clears the re-mark when the first mesh lands also leaves, so it passed with the edit dropped. It now swaps the field and marks the chunk through `mark_changed_chunks` while the first extraction is running, counts the extractions that follow (exactly one), and compares what the chunk shows with a direct extraction of each field: the old field's mesh first, the new field's last. The three mutations it is meant to catch (the one-line swallow in `apply_finished_meshes`, a second extraction that reads the first one's field, and a re-marked chunk that spawns over its running task) each fail it, and the old test passed all three. A test change only: no library code moves.
+
 ## [0.0.13] — 2026-10-31
 
 **isomesh 0.0.13.** Marking the chunks an edit changed is now right for Subgrid volumes: `mark_changed_chunks` re-meshes a chunk whose thin wall or crack was cut or added, where it used to keep the stale mesh with no error (issue #11), and `mark_changed_chunks_in` lets a game pay for the edit's box and not the volume. `isomesh` adds `chunk::dirty::mark_edit_subgrid` (no breaking change: `cargo semver-checks check-release --release-type minor` passes 202 checks). `isomesh-gpu` changes no code and ships at the shared version. **`bevy_isomesh` 0.0.12 was never published**: that release stopped after `isomesh` and `isomesh-gpu`, so 0.0.13 is the `bevy_isomesh` release that carries the empty-chunk fix of 0.0.12 as well. One CI test, `spawning_the_work_does_not_do_the_work`, now asserts structure and not a wall-clock ratio.

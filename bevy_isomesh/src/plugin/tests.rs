@@ -237,6 +237,20 @@ fn queueing_is_capped_so_memory_does_not_run_ahead_of_the_frame() {
     assert!(stats.waiting > 0, "nothing was held back by the cap");
 }
 
+/// The vertex positions of the mesh `chunk` is showing, if it has one.
+fn shown(app: &App, chunk: Entity) -> Option<Vec<[f32; 3]>> {
+    let handle = &app.world().entity(chunk).get::<ChunkMesh>()?.0;
+    let mesh = app.world().resource::<Assets<Mesh>>().get(handle)?;
+    let positions = mesh
+        .attribute(Mesh::ATTRIBUTE_POSITION)
+        .and_then(|values| values.as_float3())?;
+    Some(positions.to_vec())
+}
+
+/// Issue #12. The first version asserted the end state (a `ChunkMesh`, no
+/// `NeedsRemesh`, no `MeshingTask`), which the swallowing implementation also
+/// leaves, so it passed with the edit dropped. This one observes the two things
+/// a swallow changes: whether a second extraction ran, and which field it read.
 #[test]
 fn an_edit_during_extraction_is_requeued_rather_than_swallowed() {
     // NeedsRemesh comes off when the task is *spawned*, so re-marking a chunk
@@ -252,6 +266,12 @@ fn an_edit_during_extraction_is_requeued_rather_than_swallowed() {
         .iter(app.world())
         .next()
         .expect("one chunk");
+    let volume = app
+        .world_mut()
+        .query_filtered::<Entity, With<VoxelVolume>>()
+        .iter(app.world())
+        .next()
+        .expect("one volume");
     assert!(
         app.world().entity(chunk).contains::<MeshingTask>(),
         "the chunk should be extracting"
@@ -261,9 +281,47 @@ fn an_edit_during_extraction_is_requeued_rather_than_swallowed() {
         "NeedsRemesh should come off at spawn"
     );
 
-    // The edit arrives while the first extraction is still running.
-    app.world_mut().entity_mut(chunk).insert(NeedsRemesh);
+    // What each field should make of this chunk, extracted directly. The two
+    // must differ here, or the comparisons below could not tell a stale mesh
+    // from a fresh one.
+    let layout = ChunkLayout::new(8, 0.25, [0.0; 3]).expect("a valid layout");
+    let id = ChunkId::new([0, 0, 0]);
+    let old_field = SlowSphere {
+        inner: Sphere::<f32>::canonical(),
+        spin: 2_000,
+    };
+    let new_field = Sphere::<f32> {
+        center: [0.0; 3],
+        radius: 1.5,
+    };
+    let positions_of = |field: &dyn VolumeField| {
+        extract_chunk(field, &layout, id, Extractor::default())
+            .expect("the reference extraction")
+            .positions()
+            .to_vec()
+    };
+    let (old_mesh, new_mesh) = (positions_of(&old_field), positions_of(&new_field));
+    assert!(
+        !old_mesh.is_empty() && !new_mesh.is_empty() && old_mesh != new_mesh,
+        "the two fields must mesh this chunk differently ({} and {} vertices)",
+        old_mesh.len(),
+        new_mesh.len()
+    );
+
+    // The edit arrives while the first extraction is still running: the field
+    // is swapped and the chunk marked the way a game does it.
+    edit(&mut app, volume, new_field);
+    assert_eq!(marked(&mut app), vec![id], "the edit should mark the chunk");
+
+    let mut respawned = 0;
+    let mut first_shown = None;
     drain_until(&mut app, |app| {
+        // `spawned` resets every frame, so the extractions after the mark are
+        // the sum over the frames driven here.
+        respawned += app.world().resource::<MeshStats>().spawned;
+        if first_shown.is_none() {
+            first_shown = shown(app, chunk);
+        }
         !app.world().entity(chunk).contains::<NeedsRemesh>()
             && !app.world().entity(chunk).contains::<MeshingTask>()
     });
@@ -274,6 +332,28 @@ fn an_edit_during_extraction_is_requeued_rather_than_swallowed() {
     assert!(
         !app.world().entity(chunk).contains::<NeedsRemesh>(),
         "the re-mark was never serviced"
+    );
+    assert_eq!(
+        respawned, 1,
+        "the edit that arrived mid-extraction was extracted {respawned} times after the mark, not once"
+    );
+
+    // `replace_field` promises that a running task finishes against the field
+    // it was spawned with; the re-extraction must read the one swapped in.
+    let last = shown(&app, chunk);
+    assert!(
+        first_shown.as_deref() == Some(old_mesh.as_slice()),
+        "the extraction already running should have finished against the old field \
+         ({} vertices shown, {} expected)",
+        first_shown.as_ref().map_or(0, Vec::len),
+        old_mesh.len()
+    );
+    assert!(
+        last.as_deref() == Some(new_mesh.as_slice()),
+        "the chunk ended up showing a mesh the edited field did not make \
+         ({} vertices shown, {} expected)",
+        last.as_ref().map_or(0, Vec::len),
+        new_mesh.len()
     );
 }
 
