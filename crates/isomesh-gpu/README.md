@@ -7,7 +7,7 @@
 GPU isosurface extraction for [`isomesh`](https://crates.io/crates/isomesh), on raw `wgpu`. No engine
 types anywhere in the public API.
 
-![The whole pipeline on the GPU: field evaluation, Marching Cubes, prefix scan and the draw](../../docs/media/e303-gpu-mesh-shader.png)
+![The whole pipeline on the GPU: field evaluation, Marching Cubes, prefix scan and the draw](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/media/e303-gpu-mesh-shader.png)
 
 *E-303: field to pixels without the geometry ever crossing the bus — four bytes come home per frame.
 The timings table below is the compute half of the same story.*

@@ -13,7 +13,7 @@ and reusable, the scalar type is generic over `f32` and `f64`, and the crate has
 
 `no_std` + `alloc`, unconditionally.
 
-![A ball walking across streamed terrain, chunks loading continuously around it](../../docs/media/walking-the-seams.gif)
+![A ball walking across streamed terrain, chunks loading continuously around it](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/media/walking-the-seams.gif)
 
 *Nothing there is pre-baked. Every chunk under that ball was extracted while the camera flew toward it,
 on a background thread, under a frame budget — and the ball is standing on the **triangles**, not on the

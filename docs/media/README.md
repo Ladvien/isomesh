@@ -96,3 +96,7 @@ Every GIF and still in this repository, the command that regenerates it, the dat
 | `walking-the-seams.gif` | `scripts/record_all_gifs.sh walking-the-seams` (example `game_walk`, `ISOMESH_CAPTURE_FRAMES=48 ISOMESH_CAPTURE_EVERY=2 WIDTH=640`) | 2026-08-13 | bevy_isomesh 0.0.0 |
 | `where-the-caves-join-up.gif` | `scripts/record_all_gifs.sh where-the-caves-join-up` (example `cave_percolation`, `ISOMESH_FIELD=1 ISOMESH_CAPTURE_FRAMES=82 ISOMESH_CAPTURE_EVERY=2`) | 2026-08-30 | bevy_isomesh 0.0.10 |
 | `where-the-root-falls-decides-the-gain.gif` | `scripts/record_all_gifs.sh where-the-root-falls-decides-the-gain` (example `shifted_linear_root`, `ISOMESH_CAPTURE_FRAMES=80 ISOMESH_CAPTURE_EVERY=2`) | 2026-08-24 | bevy_isomesh 0.0.9 |
+
+## Copies at the old paths
+
+Until 2026-10-31 GIFs lived in `docs/gifs/` and stills in `docs/screenshots/`. The READMEs of the releases published before then (`isomesh` 0.0.14, `bevy_isomesh` 0.0.13, `isomesh-gpu` 0.0.13) name three of them by those paths, and a published README never changes, so those three also stay at their old paths as identical copies (git stores the same content once): `docs/gifs/walking-the-seams.gif`, `docs/gifs/flying-through-the-rock.gif` and `docs/screenshots/e303-gpu-mesh-shader.png`. **Do not delete them as duplicates.** New references use `docs/media/`; the org's rule is in [DOCUMENTATION.md](https://github.com/bevy-coven/.github/blob/main/DOCUMENTATION.md#image-and-link-urls-in-a-readme).
