@@ -395,11 +395,9 @@ impl Plugin for IsomeshPlugin {
 /// A volume with no chunks costs nothing and reports nothing.
 ///
 /// The box is the whole volume's, not the edit's, because this function is told
-/// two fields and not where they differ. A caller that knows the edit's own
-/// cell box (a brush's bounds, through [`ChunkLayout::cell_of`]) bounds the cost
-/// by calling [`isomesh::chunk::dirty::mark_edit`], or
-/// [`mark_edit_subgrid`] for a Subgrid volume, with that box, and inserting
-/// [`NeedsRemesh`] on the chunks of the [`DirtySet`] it fills.
+/// two fields and not where they differ. A caller that knows where the edit
+/// is (a brush's bounds, through [`ChunkLayout::cell_of`]) bounds the cost with
+/// [`mark_changed_chunks_in`], which compares only the box it is given.
 ///
 /// `before` is typically the field returned by
 /// [`VoxelVolume::replace_field`]: pass `&*old`.
@@ -416,6 +414,54 @@ pub fn mark_changed_chunks(
     before: &dyn VolumeField,
     after: &dyn VolumeField,
 ) -> isomesh::Result<EditReport> {
+    let (by_id, bounds) = volume_chunks(volume_entity, volume, chunks);
+    let Some(region) = bounds else {
+        return Ok(EditReport::default());
+    };
+    mark_region(commands, volume, &by_id, before, after, region)
+}
+
+/// [`mark_changed_chunks`] over a box the caller chose, so the cost follows the
+/// edit and not the volume.
+///
+/// `region` is `(min_cell, max_cell)`, an inclusive range of **global cell
+/// indices**, which is what [`mark_edit`] takes and what a brush's bounding box
+/// converts to with [`ChunkLayout::cell_of`]: convert the box's two corners and
+/// widen by a cell, since a vertex can sit a cell outside the brush. The cost is
+/// `(region + 1)³` evaluations of each field (`1 + 7 (samples - 1)` times that
+/// per cell on a Subgrid volume), however many chunks the volume has. Chunks
+/// that overlap the box and have no entity are skipped, as in
+/// [`mark_changed_chunks`]; a box outside every chunk marks nothing, and an
+/// inverted box (`max < min` on some axis) reports nothing.
+///
+/// **The box must hold the whole edit.** Cells outside it are not compared, so
+/// a chunk the edit changed only outside the box is not marked.
+///
+/// # Errors
+///
+/// [`isomesh::Error::IndexSpaceExhausted`] if the box's sample grid exceeds the
+/// `u32` sample space; nothing is marked then. A Subgrid volume whose
+/// `samples` is `0` gets [`isomesh::Error::InvalidCellSize`], as its extractor
+/// does.
+pub fn mark_changed_chunks_in(
+    commands: &mut Commands,
+    volume_entity: Entity,
+    volume: &VoxelVolume,
+    chunks: &Query<(Entity, &VoxelChunk)>,
+    before: &dyn VolumeField,
+    after: &dyn VolumeField,
+    region: ([i64; 3], [i64; 3]),
+) -> isomesh::Result<EditReport> {
+    let (by_id, _) = volume_chunks(volume_entity, volume, chunks);
+    mark_region(commands, volume, &by_id, before, after, region)
+}
+
+/// The volume's existing chunk entities by id, and the cell box they cover.
+fn volume_chunks(
+    volume_entity: Entity,
+    volume: &VoxelVolume,
+    chunks: &Query<(Entity, &VoxelChunk)>,
+) -> (HashMap<ChunkId, Entity>, Option<([i64; 3], [i64; 3])>) {
     let n = i64::from(volume.layout.cells());
     let mut by_id: HashMap<ChunkId, Entity> = HashMap::new();
     let mut bounds: Option<([i64; 3], [i64; 3])> = None;
@@ -435,10 +481,19 @@ pub fn mark_changed_chunks(
             ),
         });
     }
-    let Some((min_cell, max_cell)) = bounds else {
-        return Ok(EditReport::default());
-    };
+    (by_id, bounds)
+}
 
+/// Compare the fields over `region` with the volume's extractor's rule, and mark
+/// the chunks that changed.
+fn mark_region(
+    commands: &mut Commands,
+    volume: &VoxelVolume,
+    by_id: &HashMap<ChunkId, Entity>,
+    before: &dyn VolumeField,
+    after: &dyn VolumeField,
+    (min_cell, max_cell): ([i64; 3], [i64; 3]),
+) -> isomesh::Result<EditReport> {
     let mut dirty = DirtySet::new();
     // The rule belongs to the extractor, because it is a statement about which
     // points of the field the extractor reads. Spelled out variant by variant,

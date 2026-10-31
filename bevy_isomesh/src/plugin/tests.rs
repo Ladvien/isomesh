@@ -744,6 +744,68 @@ fn mark_changed_chunks_leaves_a_marching_cubes_volume_on_the_corner_rule() {
     );
 }
 
+/// `edit`, over a box the caller chose.
+fn edit_in(
+    app: &mut App,
+    volume: Entity,
+    field: impl VolumeField,
+    region: ([i64; 3], [i64; 3]),
+) -> isomesh::chunk::dirty::EditReport {
+    let old = app
+        .world_mut()
+        .get_mut::<VoxelVolume>(volume)
+        .expect("the volume exists")
+        .replace_field(field);
+    app.world_mut()
+        .run_system_once(
+            move |mut commands: Commands,
+                  volumes: Query<&VoxelVolume>,
+                  chunks: Query<(Entity, &VoxelChunk)>| {
+                let v = volumes.get(volume).expect("the volume exists");
+                mark_changed_chunks_in(&mut commands, volume, v, &chunks, &*old, &*v.field, region)
+            },
+        )
+        .expect("the system ran")
+        .expect("the region is far below the sample-space bound")
+}
+
+/// The box is what is compared, and so what is paid for: a sphere moves from
+/// chunk 0 to chunk 2, and a box over chunk 2's cells sees chunk 2 only.
+#[test]
+fn mark_changed_chunks_in_compares_only_its_box() {
+    let moved = || Sphere::<f32> {
+        center: [5.0, 1.0, 1.0],
+        radius: 0.5,
+    };
+    let (mut app, volume) = edit_app();
+    // Chunk 2 owns cells x in 16..24.
+    let report = edit_in(&mut app, volume, moved(), ([16, 0, 0], [23, 7, 7]));
+    assert_eq!(marked(&mut app), vec![ChunkId::new([2, 0, 0])]);
+    assert_eq!(report.region_cells, 8 * 8 * 8, "the cost follows the box");
+
+    // A box the edit never reached marks nothing.
+    let (mut app, volume) = edit_app();
+    let report = edit_in(&mut app, volume, moved(), ([24, 0, 0], [31, 7, 7]));
+    assert!(marked(&mut app).is_empty());
+    assert_eq!(report.dirty_chunks, 0);
+
+    // An inverted box is nothing to compare.
+    let (mut app, volume) = edit_app();
+    let report = edit_in(&mut app, volume, moved(), ([5, 5, 5], [4, 5, 5]));
+    assert!(marked(&mut app).is_empty());
+    assert_eq!(report, isomesh::chunk::dirty::EditReport::default());
+}
+
+/// The same bound for a Subgrid volume, where it matters most: the plate in
+/// chunk 2 is found by a box over chunk 2 alone, at 4 samples.
+#[test]
+fn mark_changed_chunks_in_bounds_a_subgrid_volumes_cost() {
+    let (mut app, volume) = the_edit_app_with(Extractor::Subgrid { samples: 4 });
+    let report = edit_in(&mut app, volume, SphereAndPlate, ([16, 0, 0], [23, 7, 7]));
+    assert_eq!(marked(&mut app), vec![ChunkId::new([2, 0, 0])]);
+    assert_eq!(report.region_cells, 8 * 8 * 8);
+}
+
 #[test]
 fn mark_changed_chunks_leaves_another_volumes_chunks_alone() {
     let (mut app, volume) = edit_app();

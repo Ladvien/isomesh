@@ -11,6 +11,7 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 ### Added
 
 - **`isomesh::chunk::dirty::mark_edit_subgrid`**, the counterpart of `mark_edit` for Subgrid Marching Tetrahedra. It compares the two fields at the points that extractor reads (`samples` cuts along each of a cell's 19 tetrahedron edges) instead of at the eight corners, so a plate thinner than a cell, or a crack no corner sees, dirties the chunk that meshes it. `samples == 1` is `mark_edit`'s rule exactly. Costs `1 + 7 (samples - 1)` field evaluations per cell per field, each point evaluated once (M-497).
+- **`bevy_isomesh::mark_changed_chunks_in`**, `mark_changed_chunks` over a cell box the caller passes (a brush's bounds, through `ChunkLayout::cell_of`). `mark_changed_chunks` compares the whole volume's box because it is told two fields and not where they differ, which on a Subgrid volume is now `1 + 7 (samples - 1)` evaluations per cell; this one costs the box and not the volume. `mark_changed_chunks` is `mark_changed_chunks_in` over the spawned chunks' box. Assumed decision (owner may override): the region is an inclusive `(min_cell, max_cell)` pair of global cell indices, as `mark_edit` takes it.
 
 ### Fixed
 
