@@ -39,6 +39,9 @@ The longer, older reading notes are the dated files beside this one (`2026-08-10
 - `10.1016_j.cag.2010.07.003`: *Fast reliable interrogation of procedurally defined implicit surfaces using extended revised affine arithmetic* (2010).
 - `10.1016_j.gmod.2021.101098`: *Hybrid Function Representation for Heterogeneous Objects* (2021).
 - `10.48550_arxiv.2205.14151`: *Interactive and Robust Mesh Booleans* (2022); mesh-side CSG with exact predicates, the alternative to field-side CSG. Added iteration 2.
+- `sig2024_A_Heat_Method_for_Generalized_Signed_Distance`: SIGGRAPH 2024, a heat-method SDF for non-watertight inputs; a field-construction route. Added iteration 3.
+- `sig2026_Points_as_Tori_Fast_Pointwise_Signed_Distance_for_Point_Clouds`: SIGGRAPH 2026, pointwise signed distance from a point cloud. Added iteration 3.
+- `sig2026_The_Antipodal_Method_Fast_Accurate_and_Robust_3D_Generalized_Winding_Numbers`: SIGGRAPH 2026, inside tests for open or soup input. Added iteration 3.
 
 ## Voxel, cave and destructible terrain in games
 
@@ -49,6 +52,8 @@ The longer, older reading notes are the dated files beside this one (`2026-08-10
 - `10.48550_arxiv.2306.09310`: *Infinite Photorealistic Worlds using Procedural Generation* (Infinigen, 2023); SDF terrain with caves, meshed per view. Added iteration 2.
 - `10.48550_arxiv.2210.11463`: *Breaking Bad: A Dataset for Geometric Fracture and Reassembly* (2022); fracture of meshes, the destructible-object side. Added iteration 2.
 - `10.48550_arxiv.2205.02961`: *Approximate Convex Decomposition for 3D Meshes with Collision-Aware Concavity and Tree Search* (2022); collider meshes from a surface. Added iteration 2.
+- `sig2026_InfiniteDiffusion_Bridging_Learned_Fidelity_and_Procedural_Utility_for_Open-Worl`: SIGGRAPH 2026, open-world terrain generation with procedural control. Added iteration 3.
+- `sig2024_Navigation-Driven_Approximate_Convex_Decomposition`: SIGGRAPH 2024, convex decomposition for game collision. Added iteration 3.
 
 ## Mesh validity and repair
 
@@ -56,6 +61,7 @@ The longer, older reading notes are the dated files beside this one (`2026-08-10
 - `10.1145_2431211.2431214`: *Polygon Mesh Repairing: An Application Perspective* (2013).
 - `10.1007_s00371-010-0416-3`: *A lightweight approach to repairing digitized polygon meshes* (2010).
 - `10.1109_tvcg.2003.1196006`: *Simplification and repair of polygonal models using volumetric techniques* (2003).
+- `sig2024_Multi-Material_Mesh-Based_Surface_Tracking_with_Implicit_Topology_Changes`: SIGGRAPH 2024, a mesh kept manifold through topology changes. Added iteration 3.
 - `sig2026_Subgrid_Marching_Tetrahedra`: *Subgrid Marching Tetrahedra* (2026).
 
 ## GPU meshing and the render path
