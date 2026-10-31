@@ -10,7 +10,7 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ### Fixed
 
-- **`an_edit_during_extraction_is_requeued_rather_than_swallowed` can now fail** (issue #12). It asserted the end state (a `ChunkMesh`, no `NeedsRemesh`, no `MeshingTask`), which an implementation that clears the re-mark when the first mesh lands also leaves, so it passed with the edit dropped. It now swaps the field and marks the chunk through `mark_changed_chunks` while the first extraction is running, counts the extractions that follow (exactly one), and compares what the chunk shows with a direct extraction of each field: the old field's mesh first, the new field's last. Both mutations it is meant to catch (the one-line swallow in `apply_finished_meshes`, and a second extraction that reads the first one's field) fail it. A test change only: no library code moves.
+- **`an_edit_during_extraction_is_requeued_rather_than_swallowed` can now fail** (issue #12). It asserted the end state (a `ChunkMesh`, no `NeedsRemesh`, no `MeshingTask`), which an implementation that clears the re-mark when the first mesh lands also leaves, so it passed with the edit dropped. It now swaps the field and marks the chunk through `mark_changed_chunks` while the first extraction is running, counts the extractions that follow (exactly one), and compares what the chunk shows with a direct extraction of each field: the old field's mesh first, the new field's last. The three mutations it is meant to catch (the one-line swallow in `apply_finished_meshes`, a second extraction that reads the first one's field, and a re-marked chunk that spawns over its running task) each fail it, and the old test passed all three. A test change only: no library code moves.
 
 ## [0.0.13] — 2026-10-31
 
