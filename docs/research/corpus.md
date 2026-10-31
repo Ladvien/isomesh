@@ -42,6 +42,8 @@ The longer, older reading notes are the dated files beside this one (`2026-08-10
 - `sig2024_A_Heat_Method_for_Generalized_Signed_Distance`: SIGGRAPH 2024, a heat-method SDF for non-watertight inputs; a field-construction route. Added iteration 3.
 - `sig2026_Points_as_Tori_Fast_Pointwise_Signed_Distance_for_Point_Clouds`: SIGGRAPH 2026, pointwise signed distance from a point cloud. Added iteration 3.
 - `sig2026_The_Antipodal_Method_Fast_Accurate_and_Robust_3D_Generalized_Winding_Numbers`: SIGGRAPH 2026, inside tests for open or soup input. Added iteration 3.
+- `sig2026_Uncertainty-aware_geometry_processing_on_Gaussian_Process_Implicit_Surfaces`: SIGGRAPH 2026, geometry processing on an implicit surface known only up to a confidence; the field-side counterpart of a mesh with error bars. Added iteration 4.
+- `sig2026_Bounding_Stratified_Bernoulli_Impulses_for_Ray_Marching_Gaussian_Process_Implici`: SIGGRAPH 2026, conservative bounds for ray marching a Gaussian-process implicit surface. Added iteration 4.
 
 ## Voxel, cave and destructible terrain in games
 
@@ -51,6 +53,7 @@ The longer, older reading notes are the dated files beside this one (`2026-08-10
 - `s2025-advances-materials`: SIGGRAPH 2025 *Advances in Real-Time Rendering in Games* course.
 - `10.48550_arxiv.2306.09310`: *Infinite Photorealistic Worlds using Procedural Generation* (Infinigen, 2023); SDF terrain with caves, meshed per view. Added iteration 2.
 - `10.48550_arxiv.2210.11463`: *Breaking Bad: A Dataset for Geometric Fracture and Reassembly* (2022); fracture of meshes, the destructible-object side. Added iteration 2.
+- `10.1109_visual.2001.964533`: Lindstrom and Pascucci 2001, *Visualization of Large Terrains Made Easy*; §3.1 describes the refinement thread supplying the render thread a display list reused "until a newly refined mesh is obtained", the asynchronous remesh pattern `bevy_isomesh`'s plugin follows. Added iteration 4.
 - `10.48550_arxiv.2205.02961`: *Approximate Convex Decomposition for 3D Meshes with Collision-Aware Concavity and Tree Search* (2022); collider meshes from a surface. Added iteration 2.
 - `sig2026_InfiniteDiffusion_Bridging_Learned_Fidelity_and_Procedural_Utility_for_Open-Worl`: SIGGRAPH 2026, open-world terrain generation with procedural control. Added iteration 3.
 - `sig2024_Navigation-Driven_Approximate_Convex_Decomposition`: SIGGRAPH 2024, convex decomposition for game collision. Added iteration 3.
@@ -69,3 +72,7 @@ The longer, older reading notes are the dated files beside this one (`2026-08-10
 - `10.1007_s13173-012-0097-z`: *Marching cubes technique for volumetric visualization accelerated with graphics processing units* (2012).
 - `book_real_time_rendering_4th_akenine`: *Real-Time Rendering*, 4th ed.; pp. 816-818 on draw-call and state-change overhead.
 - `WebGPU_Sourcebook`: *The WebGPU Sourcebook* (2024).
+
+## Testing the tests
+
+- `10.1109_aitest.2019.00019`: Saha and Kanewala 2019, *Fault Detection Effectiveness of Metamorphic Relations Developed for Testing Supervised Classifiers*; mutation analysis as the measure of whether a check can fail (mutants "a proxy to the real faults"), and how the kill rate moves with the mutant set. Added iteration 4.
