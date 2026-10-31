@@ -44,6 +44,9 @@ The longer, older reading notes are the dated files beside this one (`2026-08-10
 - `sig2026_The_Antipodal_Method_Fast_Accurate_and_Robust_3D_Generalized_Winding_Numbers`: SIGGRAPH 2026, inside tests for open or soup input. Added iteration 3.
 - `sig2026_Uncertainty-aware_geometry_processing_on_Gaussian_Process_Implicit_Surfaces`: SIGGRAPH 2026, geometry processing on an implicit surface known only up to a confidence; the field-side counterpart of a mesh with error bars. Added iteration 4.
 - `sig2026_Bounding_Stratified_Bernoulli_Impulses_for_Ray_Marching_Gaussian_Process_Implici`: SIGGRAPH 2026, conservative bounds for ray marching a Gaussian-process implicit surface. Added iteration 4.
+- `10.48550_arXiv.2304.09673`: Zanni 2023, *Synchronized-tracing of implicit surfaces*; an SDF construction tree with smooth blends of bounded range, so a primitive's support is finite ("range of interest"). Added iteration 5.
+- `sig2024_CNS-Edit_3D_Shape_Editing_via_Coupled_Neural_Shape_Optimization`: SIGGRAPH 2024, shape editing on an implicit representation. Listed, not read. Added iteration 5.
+- `sig2026_Implicit_Minimal_Surfaces_for_Bijective_Correspondences`: SIGGRAPH 2026, implicit surfaces. Listed, not read. Added iteration 5.
 
 ## Voxel, cave and destructible terrain in games
 
@@ -57,6 +60,8 @@ The longer, older reading notes are the dated files beside this one (`2026-08-10
 - `10.48550_arxiv.2205.02961`: *Approximate Convex Decomposition for 3D Meshes with Collision-Aware Concavity and Tree Search* (2022); collider meshes from a surface. Added iteration 2.
 - `sig2026_InfiniteDiffusion_Bridging_Learned_Fidelity_and_Procedural_Utility_for_Open-Worl`: SIGGRAPH 2026, open-world terrain generation with procedural control. Added iteration 3.
 - `sig2024_Navigation-Driven_Approximate_Convex_Decomposition`: SIGGRAPH 2024, convex decomposition for game collision. Added iteration 3.
+- `s2015-advances-pdf-230-mb`, `s2015-advances-compressed-34mb-version-also-availablehere`: Evans 2015, *Learning from Failure* (Media Molecule's *Dreams*), SIGGRAPH 2015 Advances course notes; p. 25 keeps a list of the edits that could overlap each voxel and p. 36 counts the edits that touch each leaf. Added iteration 5.
+- `10.1145_2508363.2508374`: Nießner et al. 2013, *Real-time 3D reconstruction at scale using voxel hashing*; §6 selects the voxel blocks inside the view frustum with a flag array and a parallel prefix-sum compaction. Added iteration 5.
 
 ## Mesh validity and repair
 
@@ -76,3 +81,7 @@ The longer, older reading notes are the dated files beside this one (`2026-08-10
 ## Testing the tests
 
 - `10.1109_aitest.2019.00019`: Saha and Kanewala 2019, *Fault Detection Effectiveness of Metamorphic Relations Developed for Testing Supervised Classifiers*; mutation analysis as the measure of whether a check can fail (mutants "a proxy to the real faults"), and how the kill rate moves with the mutant set. Added iteration 4.
+
+## Data structures and queues
+
+- `10.1017_cbo9780511809071`: Manning, Raghavan and Schütze 2008, *Introduction to Information Retrieval*; the end of §1.2 weighs a linked list against a contiguous variable-length array for a sorted in-memory list, the shape of `DirtySet`. Added iteration 5.

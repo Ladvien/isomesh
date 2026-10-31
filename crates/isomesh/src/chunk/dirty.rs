@@ -262,8 +262,13 @@ pub struct EditReport {
     pub swept_cells: u64,
     /// Chunks the region overlaps.
     pub region_chunks: u64,
-    /// Chunks containing at least one output-changed cell — what actually goes on
-    /// the dirty queue.
+    /// Chunks owning at least one output-changed cell of **this** edit: the
+    /// chunks it made stale, and the chunks it adds to the dirty queue.
+    ///
+    /// A function of the two fields and the region alone. It does not count
+    /// chunks that were already waiting in the queue the caller passed, inside
+    /// the region or not (issue #13), so the queue grows by at most this many
+    /// chunks and by fewer when some of them were already waiting.
     pub dirty_chunks: u64,
 }
 
@@ -337,6 +342,14 @@ impl EditReport {
 /// this function's counts. For it, use [`mark_edit_subgrid`], whose rule is this
 /// one at `samples == 1`. Surface Nets and Dual Contouring are not examined
 /// here.
+///
+/// # The queue
+///
+/// `dirty` is the caller's queue and may already hold chunks from earlier
+/// edits (see [`DirtySet::mesh_within_budget`], which keeps what its budget did
+/// not reach). The edit's chunks are added to it, each once, and the report
+/// describes the edit alone: [`EditReport::dirty_chunks`] does not count what
+/// was already waiting, and the queue is never scanned to produce it.
 ///
 /// # Errors
 ///
@@ -413,6 +426,9 @@ where
         }
     }
 
+    // Distinct owners this call dirtied, so `dirty_chunks` is this edit's and
+    // not the caller's whole queue.
+    let mut dirtied = DirtySet::new();
     let mut region_chunks = DirtySet::new();
     for cz in 0..extent[2] - 1 {
         for cy in 0..extent[1] - 1 {
@@ -447,17 +463,13 @@ where
                 region_chunks.insert(owner);
 
                 if tally(&mut report, any_value, any_sign, was_surface, is_surface) {
-                    dirty.insert(owner);
+                    dirtied.insert(owner);
                 }
             }
         }
     }
 
-    report.region_chunks = region_chunks.len() as u64;
-    report.dirty_chunks = region_chunks
-        .iter()
-        .filter(|id| dirty.iter().any(|d| d == *id))
-        .count() as u64;
+    commit(&mut report, &region_chunks, &dirtied, dirty);
     Ok(report)
 }
 
@@ -493,6 +505,28 @@ fn tally(
         }
     }
     output_changed
+}
+
+/// Close an edit: record how many chunks its region overlapped and how many it
+/// dirtied, then hand the dirtied ones to the caller's queue.
+///
+/// The one place `region_chunks` and `dirty_chunks` are defined, shared by
+/// [`mark_edit`] and [`mark_edit_subgrid`] for the reason [`tally`] is. Both
+/// counts come from sets this call built, so neither depends on what `dirty`
+/// already holds: the old `dirty_chunks` counted the region's chunks found in
+/// the caller's whole queue and scanned it once per region chunk (issue #13).
+/// `dirty` is only inserted into, never scanned.
+fn commit(
+    report: &mut EditReport,
+    region_chunks: &DirtySet,
+    dirtied: &DirtySet,
+    dirty: &mut DirtySet,
+) {
+    report.region_chunks = region_chunks.len() as u64;
+    report.dirty_chunks = dirtied.len() as u64;
+    for id in dirtied.iter() {
+        dirty.insert(id);
+    }
 }
 
 #[cfg(test)]
