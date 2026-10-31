@@ -39,6 +39,7 @@ An empty chunk handed to the render world is exactly an object the application s
 - `mesh/allocator.rs:431-436`: for each extracted mesh, `if vertex_buffer_size == 0 { warn!("Mesh {:?} contains no vertices.", mesh_id); continue; }`. The warning's condition is **zero vertices**, not zero triangles.
 - `bevy_pbr` `material.rs:1097` (`let Some(mesh) = render_meshes.get(..) else { continue }`) and `render/mesh.rs:4705-4710` (`RenderCommandResult::Skip` when the mesh or its vertex slice is absent): an entity whose `Mesh3d` names a mesh that was never extracted is skipped quietly. This answers the issue's open edge case ("a consumer that attaches `Mesh3d` to every `ChunkMesh` regardless") from source; the smoke run below confirms it on Metal.
 - `bevy_mesh` `mesh.rs:44,703-711,985-1008`: `count_vertices()` and `try_attributes()` read the main-world attribute map, which a mesh keeps exactly when `MAIN_WORLD` is set. `mesh.rs:244`: `asset_usage` is a public field.
+- `render_asset.rs:325-340` and `mesh/allocator.rs:627-655` (added iteration 2): the case pass 1 did not cover, **a drawn mesh replaced in place by an empty one** (`*meshes.get_mut(h) = to_bevy_mesh(&empty)`, the pattern `tape_pruning`, `aperture_gate` and `game_edit_tape_trim` use for re-meshing). Its usages drop `RENDER_WORLD`, so the `Modified` event puts it in `needs_extracting` and `modified` but the extraction loop skips it, and `RenderAssets` only evicts on `Unused` — so the stale `RenderMesh` stays. What stops it drawing is the allocator: `free_meshes` frees every id in `removed`, `modified` **or** `added`, and its own test says why (`free_meshes_releases_modified_meshes_that_were_not_reextracted`, allocator.rs:885-913: *"A mesh flagged `modified` must be freed even when it isn't re-extracted"*). With its vertex slice gone, `render/mesh.rs:4709` returns `Skip`. So the old surface vanishes rather than lingering; the smoke run checks that on Metal (validation target 7).
 
 ## Model adopted
 
@@ -68,6 +69,7 @@ None. The condition is Bevy's own (`vertex_buffer_size == 0`), so there is no th
 4. A chunk that gains its surface gets a mesh with vertices and `RENDER_WORLD`; one that loses it gets an empty `MAIN_WORLD`-only mesh; the old asset is gone from `Assets<Mesh>` once its handle drops (acceptance 4).
 5. On Metal, an example that streams chunks with empty ones among them and attaches `Mesh3d` to every `ChunkMesh` logs **0** `contains no vertices` lines after the change against a counted number before, and its frame shows the same terrain.
 6. `crates/` is untouched, so the 378 golden hashes, the extract medians and the shootout are unchanged by construction; measured anyway.
+7. On Metal, a drawn mesh replaced in place by an empty one from either constructor disappears from the next frames: no stale geometry, and no warning.
 
 ## What great looks like
 
@@ -76,7 +78,7 @@ A world build's log carries no allocator warning caused by this crate, so the wa
 ## Deviations
 
 - **Empty meshes are `MAIN_WORLD` only**, against `RenderAssetUsages::default()` everywhere else. Justified by the allocator's condition (`bevy_render-0.20.0/src/mesh/allocator.rs:433`) and Lengyel p. 28. Non-empty meshes are unchanged.
-- **Filling an empty mesh in place** (`Assets::get_mut` then `insert_attribute`) leaves it `MAIN_WORLD` only, so it will not draw. Replacing the whole `Mesh` with a new `into_mesh()` or `to_bevy_mesh()` result re-derives the usage. This is stated in both constructors' rustdoc rather than worked around: the crate cannot see a later in-place edit. Checked: no example adds vertices to an empty mesh from either constructor. `game_destruction` overwrites a fragment's positions with re-centred ones of the same length and returns early on an empty fragment (`examples/game_destruction.rs:497`), and the two examples that replace a mesh in place (`tape_pruning`, `game_edit_tape_trim`) assign a whole new `Mesh`.
+- **Filling an empty mesh in place** (`Assets::get_mut` then `insert_attribute`) leaves it `MAIN_WORLD` only, so it will not draw. Replacing the whole `Mesh` with a new `into_mesh()` or `to_bevy_mesh()` result re-derives the usage, in either direction (target 7 covers the non-empty to empty direction). This is stated on `MeshBuilder::into_mesh`, which `to_bevy_mesh`'s rustdoc points to, rather than worked around: the crate cannot see a later in-place edit. Checked: no example adds vertices to an empty mesh from either constructor. `game_destruction` overwrites a fragment's positions with re-centred ones of the same length and returns early on an empty fragment (`examples/game_destruction.rs:497`), and the examples that replace a mesh in place (`tape_pruning`, `aperture_gate`, `game_edit_tape_trim`) assign a whole new `Mesh`.
 
 ## Pending index
 
