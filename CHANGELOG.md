@@ -8,6 +8,10 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+## [0.0.12] — 2026-10-30
+
+**isomesh 0.0.12.** One `bevy_isomesh` fix: an empty chunk's mesh is published to the game and withheld from the renderer. `isomesh` and `isomesh-gpu` change no library code (two test attributes in `isomesh` moved from `expect` to `allow` for clippy 1.99); they ship at the shared version.
+
 ### Fixed
 
 - **An empty chunk's mesh no longer reaches the render world** (issue #10). `MeshBuilder::into_mesh` and `to_bevy_mesh` create a mesh with zero vertices as `RenderAssetUsages::MAIN_WORLD`; every other mesh keeps `RenderAssetUsages::default()`. Bevy 0.20 extracts only assets carrying `RENDER_WORLD`, and its mesh allocator logged `WARN … Mesh … contains no vertices.` once for every zero-vertex mesh it was handed: 102 lines per world build in Sanctuary, whose destructible wall has 102 empty chunks of 856. Measured on Metal (M-496): a three-path smoke went from 10 warnings to 0 and `game_budget` from 836 to 0 over 120 frames, and the smoke's two rendered frames are pixel-identical before and after. Every finished chunk still gets its `ChunkMesh`, empty ones included, and the empty mesh still reads (`count_vertices()` is 0, `try_attributes()` is `Ok`, `from_bevy_mesh` returns two empty vectors). A chunk that gains or loses its surface after an edit gets a fresh asset with the matching usage, and the old one is freed when its handle drops. An entity whose `Mesh3d` names an empty mesh draws nothing, quietly, and a drawn mesh overwritten in place by an empty one stops drawing, because Bevy's allocator frees a modified mesh it does not re-extract (V-52). The one way to defeat the rule, documented on `MeshBuilder::into_mesh`: filling an empty mesh in place with `insert_attribute` keeps it `MAIN_WORLD` only, so replace the whole `Mesh` instead.
