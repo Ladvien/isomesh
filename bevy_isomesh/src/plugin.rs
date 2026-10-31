@@ -59,7 +59,7 @@ use bevy_platform::time::Instant;
 use bevy_tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future};
 use tracing::error;
 
-use isomesh::chunk::dirty::{DirtySet, EditReport, mark_edit};
+use isomesh::chunk::dirty::{DirtySet, EditReport, mark_edit, mark_edit_subgrid};
 use isomesh::chunk::{ChunkId, ChunkLayout};
 use isomesh::{RuntimeShape3, Sdf};
 
@@ -370,10 +370,21 @@ impl Plugin for IsomeshPlugin {
 /// Mark every chunk of `volume` that the edit from `before` to `after`
 /// changed, by inserting [`NeedsRemesh`] on it.
 ///
-/// This is the system-side wrapper of
-/// [`isomesh::chunk::dirty::mark_edit`], whose rules it inherits: a chunk is
-/// marked only if some cell whose corners moved is, before or after, a surface
-/// cell, so an edit deep inside solid or empty space marks nothing.
+/// This is the system-side wrapper of [`isomesh::chunk::dirty::mark_edit`], whose
+/// rules it inherits: a chunk is marked only if some cell whose corners moved
+/// is, before or after, a surface cell, so an edit deep inside solid or empty
+/// space marks nothing.
+///
+/// # The rule follows the volume's extractor
+///
+/// For [`Extractor::Subgrid`] that rule would be wrong: the extractor reads the
+/// field along every tetrahedron edge, so a feature thinner than a cell changes
+/// its mesh while every corner stays on one side. Such a volume is marked with
+/// [`isomesh::chunk::dirty::mark_edit_subgrid`] at the extractor's own
+/// `samples`, which compares the fields at the points the extractor reads. It
+/// costs `1 + 7 (samples - 1)` evaluations of each field per cell instead of
+/// one, over the region below, so on a Subgrid volume an edit's cost grows with
+/// the volume's size at that rate.
 ///
 /// # The region
 ///
@@ -422,14 +433,30 @@ pub fn mark_changed_chunks(
     };
 
     let mut dirty = DirtySet::new();
-    let report = mark_edit(
-        &volume.layout,
-        &before,
-        &after,
-        min_cell,
-        max_cell,
-        &mut dirty,
-    )?;
+    // The rule belongs to the extractor, because it is a statement about which
+    // points of the field the extractor reads. Spelled out variant by variant,
+    // with no wildcard, so a new extractor has to say what it reads.
+    let report = match volume.extractor {
+        Extractor::Subgrid { samples } => mark_edit_subgrid(
+            &volume.layout,
+            &before,
+            &after,
+            min_cell,
+            max_cell,
+            samples,
+            &mut dirty,
+        )?,
+        Extractor::MarchingCubes | Extractor::SurfaceNets | Extractor::DualContouring => {
+            mark_edit(
+                &volume.layout,
+                &before,
+                &after,
+                min_cell,
+                max_cell,
+                &mut dirty,
+            )?
+        }
+    };
     for id in dirty.iter() {
         if let Some(&entity) = by_id.get(&id) {
             commands.entity(entity).try_insert(NeedsRemesh);
