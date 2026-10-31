@@ -324,12 +324,12 @@ fn a_queue_holding_the_whole_region_is_still_not_the_edits_work() {
 /// it does not touch, and one far outside it; and it leaves the queue holding
 /// the union of the two, each id once.
 ///
-/// Both halves matter. Equal reports say the count is the edit's, not the
-/// queue's, and the idle chunk inside the region is what tells the two apart (a
-/// queued chunk the edit dirties is counted either way). The union says the
-/// edit lost nothing to a chunk that was already waiting and queued nothing it
-/// did not dirty (a marker that counted but did not queue would pass the first
-/// half).
+/// Equal reports say the count is the edit's, not the queue's. Two wrong rules
+/// fail it, and they fail it differently: counting the region's chunks found
+/// in the queue (the old rule) reports one more, because of the idle chunk;
+/// counting only the chunks this call newly queued reports fewer, because some
+/// of the edit's chunks were already waiting. The union says the queue kept
+/// what it held and gained what the edit dirtied, each id once.
 #[test]
 fn the_report_does_not_depend_on_what_is_already_queued() {
     let l = layout();
