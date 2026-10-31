@@ -344,11 +344,11 @@ footer {{
     queue. Every number here is produced by a test in the repository and every algorithm cites its
     source, but none of it has been through human code review. Read the tests first.</p>
     <nav class="foot-links">
-      <a href="https://github.com/ladvien/isomesh">github</a>
+      <a href="https://github.com/bevy-coven/isomesh">github</a>
       <a href="https://crates.io/crates/isomesh">crates.io</a>
       <a href="https://docs.rs/isomesh">docs.rs</a>
-      <a href="https://github.com/ladvien/isomesh/blob/main/docs/experiments.md">the experiments</a>
-      <a href="https://github.com/ladvien/isomesh/blob/main/FINDINGS.md">the ledger</a>
+      <a href="https://github.com/bevy-coven/isomesh/blob/main/docs/experiments.md">the experiments</a>
+      <a href="https://github.com/bevy-coven/isomesh/blob/main/FINDINGS.md">the ledger</a>
     </nav>
   </div>
 </footer>

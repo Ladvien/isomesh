@@ -12,7 +12,7 @@ page. A physics engine forgives none of them.
 
 ## Mirroring an asset breaks mesh-hash dedup, and rotating it does not
 
-![The same carved chunk shown three times — original, rotated, mirrored — with the mirrored copy speckled with markers on every vertex that moved, then the field switched to box_exact where the speckles vanish](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/mirrored-is-not-the-same-mesh.gif)
+![The same carved chunk shown three times — original, rotated, mirrored — with the mirrored copy speckled with markers on every vertex that moved, then the field switched to box_exact where the speckles vanish](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/mirrored-is-not-the-same-mesh.gif)
 
 *`game_mirror_dedup` — one chunk, `marching_cubes`, 33³ on the field's own symmetric domain. The scene
 steps through all **48** signed coordinate permutations of the cubic lattice and, for each, re-meshes the
@@ -86,7 +86,7 @@ invariant, which is a second mechanism entirely.
 
 ## The repair that fixes every triangle and welds 520 things shut
 
-![A bonsai CT scan under magenta pinch markers, switching to a fuel injection scan where none appear](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/pinch-repair-welds-520-components.gif)
+![A bonsai CT scan under magenta pinch markers, switching to a fuel injection scan where none appear](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/pinch-repair-welds-520-components.gif)
 
 *`pinch_repair` — real `uint8` CT volumes at an integer isovalue. **Amber** marks a collapse group that is
 a fold being flattened; **magenta** marks a **pinch** — two sheets of surface that merely meet at one
@@ -123,7 +123,7 @@ cd bevy_isomesh && cargo run --example pinch_repair --release
 
 ## An error bound that is not just respected but reached
 
-![Two spheres cut apart, normal ray pairs fanning at the crease, a meter tracking the predicted bound as the angle sweeps](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/seam-normal-bound-is-attained.gif)
+![Two spheres cut apart, normal ray pairs fanning at the crease, a meter tracking the predicted bound as the angle sweeps](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/seam-normal-bound-is-attained.gif)
 
 *`seam_normal_bound` — a CSG `Difference` with the crease angle `θ` sweeping 30° → 175°. At each vertex
 whose six-sample stencil crosses the seam, the central-difference normal and the analytic normal are drawn
@@ -158,7 +158,7 @@ cd bevy_isomesh && cargo run --example seam_normal_bound --release
 
 ## Where a mesh stops being a manifold
 
-![Marching Cubes and Surface Nets on the capped gyroid, non-manifold features marked](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/manifold-check-resolution.gif)
+![Marching Cubes and Surface Nets on the capped gyroid, non-manifold features marked](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/manifold-check-resolution.gif)
 
 *`manifold_check` — the capped gyroid at 19³ under Surface Nets. Every red sphere is a non-manifold vertex and every red line a non-manifold edge, drawn where the validator found them: 39 edges and 61 vertices, clustered around the tunnel mouths where two sheets of surface share a cell. The same field and grid under Marching Cubes reports `0` on every counter and `MANIFOLD, CLOSED` ([screenshot](../screenshots/e111-manifold-check-gyroid-marching-cubes.png)).*
 
@@ -174,7 +174,7 @@ cd bevy_isomesh && cargo run --example manifold_check --release
 
 ## Counting the defects before the mesh exists
 
-![noise_cavity at 65³ under Dual Contouring, cyan cages on critical cells with a yellow dot inside each](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/critical-cells-count-the-defects.gif)
+![noise_cavity at 65³ under Dual Contouring, cyan cages on critical cells with a yellow dot inside each](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/critical-cells-count-the-defects.gif)
 
 *`critical_cells` — `noise_cavity` at 65³. Cyan cages are 2D-critical cells, magenta are 3D-critical, yellow dots are the non-manifold vertices Dual Contouring actually produced. **567 + 35 = 602 critical cells, 602 non-manifold vertices, 602 critical cells hosting one, 100% co-location.** Cycle to `sphere` and every one of those numbers is zero.*
 
@@ -255,7 +255,7 @@ The third strategy is where it gets interesting. Area-weighted normals track the
 
 ## An ambiguous face, and how rarely one turns up
 
-![Marching Cubes beside the asymptotic decider on a capped gyroid, ambiguous cells marked](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/ambiguous-faces-are-rare.gif)
+![Marching Cubes beside the asymptotic decider on a capped gyroid, ambiguous cells marked](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/ambiguous-faces-are-rare.gif)
 
 *`marching_cubes_ambiguity` — plain Marching Cubes on the left, the same extraction with `FaceAmbiguity::AsymptoticDecider` on the right. Every box is a cell with an ambiguous face: **amber where the decider agreed and separated the corners, magenta where it disagreed and joined them.** Magenta is the only place the two meshes can differ, and on the gyroid at 33³ there are nine such cells out of 5,240.*
 
@@ -341,7 +341,7 @@ cd bevy_isomesh && cargo run --example chunk_seam_weld --release
 
 ## Fifteen thousand flips that move nothing
 
-![Wireframe switching between marching-cubes and intrinsic Delaunay connectivity while the pinned vertices do not move](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/fifteen-thousand-flips-that-move-nothing.gif)
+![Wireframe switching between marching-cubes and intrinsic Delaunay connectivity while the pinned vertices do not move](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/fifteen-thousand-flips-that-move-nothing.gif)
 
 `intrinsic_flips` closes the phase's cleanest shippable question with an instrument you can watch:
 **intrinsic Delaunay flipping reaches the fixed point on every row — 15,391 flips, 1,570 of 10,678

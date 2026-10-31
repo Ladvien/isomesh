@@ -65,8 +65,8 @@ ASSET_DIRS = [
     ("docs/experiments", "experiments"),
 ]
 
-REPO = "https://github.com/ladvien/isomesh"
-RAW = "https://raw.githubusercontent.com/ladvien/isomesh/main/"
+REPO = "https://github.com/bevy-coven/isomesh"
+RAW = "https://raw.githubusercontent.com/bevy-coven/isomesh/main/"
 
 # `extra` supplies tables, fenced code, attribute lists, footnotes and definition
 # lists; `toc` supplies heading ids, which one link in `docs/experiments.md`

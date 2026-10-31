@@ -7,7 +7,7 @@ edition = "2024"
 # them, so claiming less would be a floor nothing can stand on.
 rust-version = "1.97.1"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/ladvien/isomesh"
+repository = "https://github.com/bevy-coven/isomesh"
 authors = ["C. Thomas Brittain <cthomasbrittain@yahoo.com>"]
 documentation = "https://docs.rs/bevy_isomesh"
 readme = "README.md"

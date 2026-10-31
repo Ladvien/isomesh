@@ -26,7 +26,7 @@ edition = "2024"
 # --workspace --all-targets` is clean.
 rust-version = "1.89"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/ladvien/isomesh"
+repository = "https://github.com/bevy-coven/isomesh"
 authors = ["C. Thomas Brittain <cthomasbrittain@yahoo.com>"]
 categories = ["graphics", "game-development", "no-std", "rendering", "mathematics"]
 keywords = ["isosurface", "voxel", "marching-cubes", "dual-contouring", "sdf"]

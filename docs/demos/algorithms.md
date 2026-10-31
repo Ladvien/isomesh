@@ -13,7 +13,7 @@ finding — `FINDINGS.md` records which source to distrust and why.
 
 ## Where the root falls decides the whole gain, and the curve is closed-form
 
-![A grid line through a field, the standard piecewise-linear reconstruction against the shifted one with its knots visibly offset, the measured error ratio riding a closed-form curve down to exactly zero and back up to exactly one as the crossing slides, with the guard-band panel showing k = 5 above the bar and k = 10 below it](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/where-the-root-falls-decides-the-gain.gif)
+![A grid line through a field, the standard piecewise-linear reconstruction against the shifted one with its knots visibly offset, the measured error ratio riding a closed-form curve down to exactly zero and back up to exactly one as the crossing slides, with the guard-band panel showing k = 5 above the bar and k = 10 below it](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/where-the-root-falls-decides-the-gain.gif)
 
 *`shifted_linear_root` — one grid line, 65 samples, no extractor called anywhere. The samples are fixed
 markers; the **field slides along the line** so the crossing sweeps its cell, which is what a mesher
@@ -99,7 +99,7 @@ R-058).
 
 ## Proving a cell empty when the Lipschitz ball cannot
 
-![A gyroid with amber cages marking cells only the affine bound rejects, vanishing when the field changes to a box](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/affine-rejects-where-lipschitz-cannot.gif)
+![A gyroid with amber cages marking cells only the affine bound rejects, vanishing when the field changes to a box](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/affine-rejects-where-lipschitz-cannot.gif)
 
 *`affine_rejection` — one slab of a 17³ grid at a time. **Slate blue** cages are cells both bounds reject;
 **amber** cages are the ones only the affine form rejects, and they are the finding: **1,959 of 4,096** on
@@ -140,7 +140,7 @@ cd bevy_isomesh && cargo run --example affine_rejection --release
 
 ## The spheres a mesh never touches
 
-![Wireframe spheres around SDF samples, most unlit because no vertex reaches them, flipping colour when the extractor changes](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/untouched-tangency-spheres.gif)
+![Wireframe spheres around SDF samples, most unlit because no vertex reaches them, flipping colour when the extractor changes](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/untouched-tangency-spheres.gif)
 
 *`untouched_spheres` — every SDF sample drawn as the sphere of radius `|d|` it actually asserts. Coloured
 by whether any mesh vertex reaches tangency with it. On `thin_plate` under Marching Cubes, **717 per
@@ -179,7 +179,7 @@ cd bevy_isomesh && cargo run --example untouched_spheres --release
 
 ## Ninety-nine percent of a voxel grid is not surface
 
-![A thin shell of active cells inside a full grid, the active fraction falling as resolution climbs](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/active-cells-ninety-nine-percent-skipped.gif)
+![A thin shell of active cells inside a full grid, the active fraction falling as resolution climbs](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/active-cells-ninety-nine-percent-skipped.gif)
 
 *`active_cells` — the cells a dual mesher must actually look at, drawn against the grid it must not. On
 `sphere` the active fraction falls **3.54% → 1.89% → 0.93%** as the grid goes 33 → 64 → 128, while the
@@ -269,7 +269,7 @@ Surface Nets loses, and it loses on both machines — **run on two, not one**. W
 
 So both halves of the usual case for Surface Nets — fewer triangles, lower cost — are falsified by measurement in this repository. What it actually buys is quad connectivity and one vertex per cell.
 
-![Surface Nets against Dual Contouring on a box](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/dual-contouring-vs-surface-nets.gif)
+![Surface Nets against Dual Contouring on a box](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/dual-contouring-vs-surface-nets.gif)
 
 *`dual_contouring_cube` — the same box, the same 19³ grid, the same edge crossings. Surface Nets on the left, Dual Contouring on the right. The only difference between the two meshes is one function: where a cell's vertex goes. Both emit **972 triangles** with identical connectivity. On [`csg_difference`](../screenshots/e104-dual-contouring-csg.png) the concave seam holds too.*
 
@@ -378,7 +378,7 @@ cd bevy_isomesh && cargo run --example greedy_quads --release
 
 ## The sharpness knob, and what it costs at both ends
 
-![Dual Contouring on a capped gyroid with the lambda slider, showing the runaway and rounding measurements in the HUD](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/sharp-features-lambda-sweep.gif)
+![Dual Contouring on a capped gyroid with the lambda slider, showing the runaway and rounding measurements in the HUD](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/sharp-features-lambda-sweep.gif)
 
 *`sharp_features` — one model, a live slider on **λ**, the Tikhonov regularizer in the vertex solve. It
 is the whole sharpness/stability trade in one number, and it was a compile-time constant until this
@@ -564,7 +564,7 @@ This is the crate's actual pitch. Not "the meshes look right" — a wrong mesh l
 
 ## The hyperdeterminant in every cell
 
-![The normalised hyperdeterminant magnitude as a per-cell heatmap over gyroid and six more fields](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/the-hyperdeterminant-in-every-cell.gif)
+![The normalised hyperdeterminant magnitude as a per-cell heatmap over gyroid and six more fields](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-hyperdeterminant-in-every-cell.gif)
 
 [`hyperdeterminant_cells`](https://ladvien.github.io/isomesh/play.html?demo=hyperdeterminant_cells)
 walks fourteen reference fields and shows the phase's headline as a picture: `b*b - 4*a*c` at
@@ -581,7 +581,7 @@ information is unreachable because `ambiguous = g(case)` makes it a data-process
 
 ## Three periodic surfaces with a known topology
 
-![Gyroid, Schwarz P and Schwarz D at N = 1, 2, 3 with chi measured against a derived prediction](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/three-periodic-surfaces-with-a-known-topology.gif)
+![Gyroid, Schwarz P and Schwarz D at N = 1, 2, 3 with chi measured against a derived prediction](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/three-periodic-surfaces-with-a-known-topology.gif)
 
 [`tpms_euler`](https://ladvien.github.io/isomesh/play.html?demo=tpms_euler)
 shows the phase's three χ oracles: gyroid `−8N³`, Schwarz P `−4N³`, Schwarz D `−16N³`, counted from the
@@ -595,7 +595,7 @@ boundary edges, never by χ.
 
 ## The metric that costs more than it saves
 
-![Isotropic beside metric-driven sampling, both graded by the same Hausdorff instrument](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/the-metric-that-costs-more-than-it-saves.gif)
+![Isotropic beside metric-driven sampling, both graded by the same Hausdorff instrument](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/the-metric-that-costs-more-than-it-saves.gif)
 
 `anisotropic_metric` is the negative result, shown as one: **P-146's C1 and C3 were both falsified** —
 no triangle saving at matched Hausdorff (`2.299×` dearer on `thin_plate`), and the metric build costs

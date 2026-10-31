@@ -2,12 +2,12 @@
 
 > ⚠️ **Vibe Coded.** This crate was written by an AI agent working from a research corpus and a ticket queue. Every number below is produced by a test in this repository and every algorithm cites its source, but it has not been through human code review. Read the tests before trusting it with anything that matters.
 
-[![crates.io](https://img.shields.io/crates/v/isomesh-gpu.svg)](https://crates.io/crates/isomesh-gpu) [![docs.rs](https://img.shields.io/docsrs/isomesh-gpu)](https://docs.rs/isomesh-gpu) [![CI](https://github.com/ladvien/isomesh/actions/workflows/ci.yml/badge.svg)](https://github.com/ladvien/isomesh/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/ladvien/isomesh/blob/main/LICENSE-MIT)
+[![crates.io](https://img.shields.io/crates/v/isomesh-gpu.svg)](https://crates.io/crates/isomesh-gpu) [![docs.rs](https://img.shields.io/docsrs/isomesh-gpu)](https://docs.rs/isomesh-gpu) [![CI](https://github.com/bevy-coven/isomesh/actions/workflows/ci.yml/badge.svg)](https://github.com/bevy-coven/isomesh/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/bevy-coven/isomesh/blob/main/LICENSE-MIT)
 
 GPU isosurface extraction for [`isomesh`](https://crates.io/crates/isomesh), on raw `wgpu`. No engine
 types anywhere in the public API.
 
-![The whole pipeline on the GPU: field evaluation, Marching Cubes, prefix scan and the draw](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/screenshots/e303-gpu-mesh-shader.png)
+![The whole pipeline on the GPU: field evaluation, Marching Cubes, prefix scan and the draw](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/screenshots/e303-gpu-mesh-shader.png)
 
 *E-303: field to pixels without the geometry ever crossing the bus — four bytes come home per frame.
 The timings table below is the compute half of the same story.*

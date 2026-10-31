@@ -6,7 +6,7 @@
 everything about it: no math library appears in a public signature, output buffers are caller-provided and
 reusable, the scalar type is generic over `f32` and `f64`, the core crate is `no_std` with exactly one
 dependency, and seven extractors sit behind one trait. Every number on this site was produced by a command
-in [the repository](https://github.com/ladvien/isomesh), on a machine named in
+in [the repository](https://github.com/bevy-coven/isomesh), on a machine named in
 [`FINDINGS.md`](FINDINGS.md)'s header, rather than quoted from a paper.
 
 > ⚠️ **Vibe Coded.** This crate was written by an AI agent working from a research corpus and a ticket
@@ -21,7 +21,7 @@ in [the repository](https://github.com/ladvien/isomesh), on a machine named in
 This is `isomesh` itself, compiled to WebAssembly, meshing in your browser at whatever resolution you drag
 the slider to. **About 130 KB**, because the core crate is `no_std` with one dependency and the renderer
 below it is 300 lines of hand-written WebGL2 rather than a game engine. Every counter in the panel comes
-from [`isomesh::validate`](https://github.com/ladvien/isomesh/blob/main/crates/isomesh/src/validate.rs) —
+from [`isomesh::validate`](https://github.com/bevy-coven/isomesh/blob/main/crates/isomesh/src/validate.rs) —
 the same report that gates every test in the repository — recomputed on your machine on every re-mesh.
 
 Two of them are worth watching rather than reading. **χ** is the Euler characteristic: `2` for a sphere,
@@ -165,7 +165,7 @@ nothing else**.
 
 A sphere meshed as eight chunks and put on screen, in one file, with no HUD and nothing to filter out. There
 is no animation of it here because there is nothing to animate: the artefact is
-[the source](https://github.com/ladvien/isomesh/blob/main/bevy_isomesh/examples/quickstart.rs), which is
+[the source](https://github.com/bevy-coven/isomesh/blob/main/bevy_isomesh/examples/quickstart.rs), which is
 108 lines of which 59 are code. What it demonstrates is that the eight chunks are meshed independently and
 the result is still watertight.
 

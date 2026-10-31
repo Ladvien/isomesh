@@ -5,7 +5,7 @@
 > source, but it has not been through human code review. Read the tests before trusting it with anything
 > that matters.
 
-[![crates.io](https://img.shields.io/crates/v/isomesh.svg)](https://crates.io/crates/isomesh) [![docs.rs](https://img.shields.io/docsrs/isomesh)](https://docs.rs/isomesh) [![CI](https://github.com/ladvien/isomesh/actions/workflows/ci.yml/badge.svg)](https://github.com/ladvien/isomesh/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/ladvien/isomesh/blob/main/LICENSE-MIT)
+[![crates.io](https://img.shields.io/crates/v/isomesh.svg)](https://crates.io/crates/isomesh) [![docs.rs](https://img.shields.io/docsrs/isomesh)](https://docs.rs/isomesh) [![CI](https://github.com/bevy-coven/isomesh/actions/workflows/ci.yml/badge.svg)](https://github.com/bevy-coven/isomesh/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](https://github.com/bevy-coven/isomesh/blob/main/LICENSE-MIT)
 
 **Engine-agnostic isosurface extraction in Rust. Signed distance field in, triangles out.**
 
@@ -16,7 +16,7 @@ and reusable, the scalar type is generic over `f32` and `f64`, and the crate has
 
 `no_std` + `alloc`, unconditionally.
 
-![A ball walking across streamed terrain, chunks loading continuously around it](https://raw.githubusercontent.com/ladvien/isomesh/main/docs/gifs/walking-the-seams.gif)
+![A ball walking across streamed terrain, chunks loading continuously around it](https://raw.githubusercontent.com/bevy-coven/isomesh/main/docs/gifs/walking-the-seams.gif)
 
 *Nothing there is pre-baked. Every chunk under that ball was extracted while the camera flew toward it,
 on a background thread, under a frame budget — and the ball is standing on the **triangles**, not on the
@@ -120,7 +120,7 @@ For a chunked world the seam column decides: use `MarchingCubes` or `SubgridMarc
 — two optimisations took Surface Nets at 256³ from 693.8 ms to **162.7 ms** with its IPC going 1.20 to
 **4.09**, and not one triangle changed. Below 32³ Surface Nets is now the *faster* of the two. If you
 ruled out a dual method on speed before that, the reason is gone; see
-[the experiments page](https://github.com/ladvien/isomesh/blob/main/docs/experiments.md).
+[the experiments page](https://github.com/bevy-coven/isomesh/blob/main/docs/experiments.md).
 
 ## Verification
 
@@ -151,7 +151,7 @@ assert!(report.satisfies(SurfaceGate::Closed));   // a solid
 Picking a predicate by intuition instead is how a correct mesh comes to read as broken — which happened
 to a downstream consumer of this crate before the rule was reachable from outside it.
 
-The repository keeps a [`FINDINGS.md`](https://github.com/ladvien/isomesh/blob/main/FINDINGS.md) recording what is known and how well — measured here, verified from
+The repository keeps a [`FINDINGS.md`](https://github.com/bevy-coven/isomesh/blob/main/FINDINGS.md) recording what is known and how well — measured here, verified from
 a primary source, reported, or folklore — including the published figures that failed verification.
 Falsified entries are never deleted, because which *sources* to distrust is worth more than the
 individual fact.
@@ -170,19 +170,19 @@ individual fact.
 
 The demos are worth looking at before the API:
 
-- **[Gameplay](https://github.com/ladvien/isomesh/blob/main/docs/demos/gameplay.md)** — streaming a
+- **[Gameplay](https://github.com/bevy-coven/isomesh/blob/main/docs/demos/gameplay.md)** — streaming a
   world past a camera, walking every chunk seam, digging tunnels, LOD cracks and the transition cells
   that close them
-- **[Algorithms](https://github.com/ladvien/isomesh/blob/main/docs/demos/algorithms.md)** — the
+- **[Algorithms](https://github.com/bevy-coven/isomesh/blob/main/docs/demos/algorithms.md)** — the
   extractors side by side, in one process, on the same grids
-- **[Correctness](https://github.com/ladvien/isomesh/blob/main/docs/demos/correctness.md)** — where a
+- **[Correctness](https://github.com/bevy-coven/isomesh/blob/main/docs/demos/correctness.md)** — where a
   mesh stops being a manifold, and what each repair costs
 
 Bevy integration lives in
-[`bevy_isomesh`](https://github.com/ladvien/isomesh/tree/main/bevy_isomesh), in its own workspace so
+[`bevy_isomesh`](https://github.com/bevy-coven/isomesh/tree/main/bevy_isomesh), in its own workspace so
 that Cargo's feature unification cannot leak Bevy's feature choices into this crate's lockfile.
 
-Full README: <https://github.com/ladvien/isomesh>
+Full README: <https://github.com/bevy-coven/isomesh>
 
 ## Requirements
 
