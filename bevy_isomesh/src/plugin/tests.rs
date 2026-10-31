@@ -38,8 +38,8 @@ impl Sdf for SlowSphere {
     }
 }
 
-/// The deliberately slow field's spin count, shared so the reference extraction
-/// in `spawning_the_work_does_not_do_the_work` is timing the same work the app is.
+/// The deliberately slow field's spin count: tens of milliseconds per extraction
+/// in a debug build, so twelve of them are still running when a frame returns.
 const SPIN: u32 = 4_000;
 
 fn app(spin: u32, chunks: i32) -> App {
@@ -130,56 +130,38 @@ fn every_chunk_eventually_gets_a_mesh() {
 
 #[test]
 fn spawning_the_work_does_not_do_the_work() {
-    // The acceptance property. One update spawns twelve extractions of a
-    // deliberately slow field; if any of that ran on the main thread, the update
-    // could not come back in a fraction of the time the extractions take.
+    // The acceptance property, stated without a clock. One update queues twelve
+    // extractions of a deliberately slow field, and `apply_finished_meshes` runs
+    // in that same update, right after `spawn_meshing_tasks`. If any extraction
+    // ran on the main thread -- inline, or blocked on at the spawn -- it would
+    // be finished and applied by the time `update` returns. So an `update` that
+    // returns with every task still running and nothing meshed did its work
+    // somewhere else.
+    //
+    // This replaces a comparison of the frame's wall time against one
+    // extraction timed on the main thread. On a debug build the frame's own
+    // bookkeeping is of the same order as the extraction it was supposed to be
+    // a quarter of, and on a busy CI runner the ratio is noise: it failed three
+    // runs in a row (11.6-21.9 ms of frame against 25-31 ms of extraction) on a
+    // change that touched neither system.
     let mut app = app(SPIN, 12);
-
-    let spawn_frame = Instant::now();
     app.update();
-    let spawn_cost = spawn_frame.elapsed();
 
+    let running = app
+        .world_mut()
+        .query_filtered::<(), With<MeshingTask>>()
+        .iter(app.world())
+        .count();
+    assert_eq!(
+        (meshed(&mut app), running),
+        (0, 12),
+        "the update that queued twelve extractions returned with some of them \
+         already done: that is work that ran on the main thread"
+    );
+
+    // And the queue does drain, so the twelve tasks were real work, off-thread.
     drain_until(&mut app, |app| meshed(app) == 12);
     assert_eq!(meshed(&mut app), 12, "the queue never drained");
-
-    // What one of those extractions actually costs, done here on the main
-    // thread. **This, not the drain loop's wall time, is the denominator.**
-    //
-    // The original compared `spawn_cost` against how long the drain took, which
-    // made the assertion a hostage to scheduling twice over: it flaked on a fast
-    // machine, and any fix that let the loop wait would have padded the total
-    // with sleep and made a main-thread implementation pass. Timing one
-    // extraction directly removes the loop from the question entirely -- the
-    // claim is "queuing twelve of these cost far less than doing one", which is
-    // a statement about *where the work ran*.
-    let layout = ChunkLayout::new(8, 0.25, [0.0; 3]).expect("a valid layout");
-    let field = SlowSphere {
-        inner: Sphere::<f32>::canonical(),
-        spin: SPIN,
-    };
-    let one = Instant::now();
-    let built = extract_chunk(
-        &field,
-        &layout,
-        ChunkId::new([0, 0, 0]),
-        Extractor::default(),
-    )
-    .expect("the reference extraction failed");
-    let one_extraction = one.elapsed();
-
-    // The negative control: if the field were free to sample, the comparison
-    // below would pass for any implementation at all.
-    assert!(
-        built.triangle_count() > 0,
-        "the reference extraction produced nothing, so it timed no work"
-    );
-
-    assert!(
-        spawn_cost * 4 < one_extraction,
-        "the frame that queued twelve extractions took {spawn_cost:?}, against \
-         {one_extraction:?} to perform ONE of them here -- that is not the profile \
-         of work that happened on another thread"
-    );
 }
 
 #[test]
