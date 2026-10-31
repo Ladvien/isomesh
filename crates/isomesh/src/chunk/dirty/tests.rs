@@ -251,6 +251,128 @@ fn dirtied_chunks_overlap_the_region() {
     assert_eq!(dirty.len() as u64, report.dirty_chunks);
 }
 
+// ─── the report is the edit's, not the queue's (issue #13) ──────────────────
+
+/// `dirty_chunks` is documented as the chunks **this edit** dirtied. A queue
+/// the caller already holds (`DirtySet::mesh_within_budget` keeps whatever the
+/// budget did not reach) is not something the edit did.
+///
+/// The edit here changes nothing, so it dirties nothing, and the one chunk
+/// already waiting must not be reported as its work.
+#[test]
+fn dirty_chunks_counts_this_edit_not_the_backlog() {
+    let l = layout();
+    let centre = [0.1, 0.2, -0.15];
+    let field = carved(0.5, centre);
+    let (min, max) = brush_region(&l, centre, 0.63);
+
+    // A chunk an earlier edit queued and the budget has not drained yet.
+    let mut dirty = DirtySet::new();
+    dirty.insert(l.local_sample(min).0);
+
+    let r = mark_edit(&l, &field, &field, min, max, &mut dirty).expect("a region in bounds");
+    assert_eq!(r.output_changed_cells, 0);
+    assert_eq!(
+        r.dirty_chunks, 0,
+        "an edit that changed nothing reported {} dirty chunks",
+        r.dirty_chunks
+    );
+    assert_eq!(r.dirty_chunk_fraction(), 0.0);
+    assert_eq!(dirty.len(), 1, "the caller's queue is kept, not consumed");
+}
+
+/// The generalisation of the test above: with **every** chunk the region
+/// overlaps already queued, a no-op edit still reports no dirty chunk.
+///
+/// This is the worst case for the old rule, which counted each region chunk
+/// found in the queue, so it is the case where the count was farthest from the
+/// truth (`region_chunks` against 0).
+#[test]
+fn a_queue_holding_the_whole_region_is_still_not_the_edits_work() {
+    let l = layout();
+    let centre = [0.1, 0.2, -0.15];
+    let field = carved(0.5, centre);
+    let (min, max) = brush_region(&l, centre, 0.63);
+
+    let lo = l.local_sample(min).0.coords;
+    let hi = l.local_sample(max).0.coords;
+    let mut dirty = DirtySet::new();
+    for x in lo[0]..=hi[0] {
+        for y in lo[1]..=hi[1] {
+            for z in lo[2]..=hi[2] {
+                dirty.insert(ChunkId::new([x, y, z]));
+            }
+        }
+    }
+    let queued = dirty.len();
+
+    let r = mark_edit(&l, &field, &field, min, max, &mut dirty).expect("a region in bounds");
+    assert!(
+        r.region_chunks > 1,
+        "the region must span several chunks for this to say anything"
+    );
+    assert_eq!(
+        r.region_chunks, queued as u64,
+        "the queue was built to be exactly the region's chunks"
+    );
+    assert_eq!(r.dirty_chunks, 0);
+    assert_eq!(dirty.len(), queued);
+}
+
+/// The same edit gives the same report into an empty queue and into one that
+/// already holds some of the chunks it dirties plus one far outside its region,
+/// and leaves the queue holding the union of the two.
+///
+/// Both halves matter. Equal reports say the count is the edit's, not the
+/// queue's. The union says the edit lost nothing to a chunk that was already
+/// waiting (a marker that counted but did not queue would pass the first half)
+/// and queued nothing it did not dirty.
+#[test]
+fn the_report_does_not_depend_on_what_is_already_queued() {
+    let l = layout();
+    let centre = [0.1, 0.2, -0.15];
+    let before = carved(0.5, centre);
+    let after = carved(0.5 + l.cell_size() * 2.0, centre);
+    let (min, max) = brush_region(&l, centre, 0.63);
+
+    let mut alone_queue = DirtySet::new();
+    let alone =
+        mark_edit(&l, &before, &after, min, max, &mut alone_queue).expect("a region in bounds");
+    assert!(
+        alone.dirty_chunks > 0,
+        "the edit changed nothing, so it cannot tell its chunks from a queue's"
+    );
+
+    // Some of what the edit will dirty is already waiting, and so is a chunk
+    // the edit cannot reach.
+    let mut backlog = DirtySet::new();
+    for id in alone_queue.iter().take(alone_queue.len() / 2 + 1) {
+        backlog.insert(id);
+    }
+    let far = ChunkId::new([40, 40, 40]);
+    backlog.insert(far);
+
+    let mut union = backlog.clone();
+    for id in alone_queue.iter() {
+        union.insert(id);
+    }
+    assert!(
+        union.len() > backlog.len() && union.len() > alone_queue.len(),
+        "the backlog must overlap the edit and differ from it"
+    );
+
+    let report =
+        mark_edit(&l, &before, &after, min, max, &mut backlog).expect("a region in bounds");
+    assert_eq!(
+        report, alone,
+        "the same edit reported differently because of what was already queued"
+    );
+    assert_eq!(
+        backlog, union,
+        "the queue must hold the backlog and the edit's chunks, each once"
+    );
+}
+
 // ─── G-006: the frame budget ────────────────────────────────────────────────
 
 /// Nearest first, and the order is a pure function of the contents and the
