@@ -159,9 +159,9 @@ Feed `keys` to `weld_split_by` and the cuboid keeps all 24 vertices; weld withou
 
 The contract, stated rather than implied:
 
-- **Components** — `VoxelVolume` (a `ChunkLayout` + an `Arc<dyn VolumeField>` + an `Extractor`, default `MarchingCubes`), `VoxelChunk { id, volume }`, `NeedsRemesh` (marker; insert it to request work), `ChunkMesh(pub Handle<Mesh>)` (the result; yours to render).
+- **Components** — `VoxelVolume` (a `ChunkLayout` + an `Arc<dyn VolumeField>` + an `Extractor`, default `MarchingCubes`), `VoxelChunk { id, volume }`, `NeedsRemesh` (marker; insert it to request work), `ChunkMesh(pub Handle<Mesh>)` (the result; yours to render). Every finished chunk gets a `ChunkMesh`, including one the surface does not cross: that mesh has no vertices and is `RenderAssetUsages::MAIN_WORLD` only, so it reads (`count_vertices()` is 0) but is never sent to the renderer, and Bevy's mesh allocator has nothing to warn about. A `Mesh3d` pointing at it draws nothing.
 - **Resources** — `MeshBudget` (default: 4 ms of asset-application per frame, at most 2× the task-pool parallelism in flight), `MeshStats` (spawned / applied / in-flight / waiting counters).
-- **Systems** — `(spawn_meshing_tasks, apply_finished_meshes).chain()` in `Update`, both private. There is no public `SystemSet` yet; if you need to order against the plugin, that is a missing feature to request, not an omission to work around.
+- **Systems** — `(spawn_meshing_tasks, apply_finished_meshes).chain()` in `Update`, both private, in the public `IsomeshSystems` set: a system ordered `.before(IsomeshSystems)` has its `NeedsRemesh` picked up the same frame, one ordered `.after` the next.
 - **Traits** — `VolumeField`: any `isomesh::Sdf<Scalar = f32> + Send + Sync + 'static`, blanket-implemented.
 - **Cargo features** — none.
 
