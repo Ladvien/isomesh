@@ -600,7 +600,7 @@ dependencies = [
 
 [[package]]
 name = "isomesh"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "criterion",
  "isomesh-gpu",
@@ -615,7 +615,7 @@ dependencies = [
 
 [[package]]
 name = "isomesh-gpu"
-version = "0.0.12"
+version = "0.0.13"
 dependencies = [
  "isomesh",
  "naga",

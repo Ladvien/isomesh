@@ -8,6 +8,10 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+## [0.0.13] — 2026-10-31
+
+**isomesh 0.0.13.** Marking the chunks an edit changed is now right for Subgrid volumes: `mark_changed_chunks` re-meshes a chunk whose thin wall or crack was cut or added, where it used to keep the stale mesh with no error (issue #11), and `mark_changed_chunks_in` lets a game pay for the edit's box and not the volume. `isomesh` adds `chunk::dirty::mark_edit_subgrid` (no breaking change: `cargo semver-checks check-release --release-type minor` passes 202 checks). `isomesh-gpu` changes no code and ships at the shared version. **`bevy_isomesh` 0.0.12 was never published**: that release stopped after `isomesh` and `isomesh-gpu`, so 0.0.13 is the `bevy_isomesh` release that carries the empty-chunk fix of 0.0.12 as well. One CI test, `spawning_the_work_does_not_do_the_work`, now asserts structure and not a wall-clock ratio.
+
 ### Added
 
 - **`isomesh::chunk::dirty::mark_edit_subgrid`**, the counterpart of `mark_edit` for Subgrid Marching Tetrahedra. It compares the two fields at the points that extractor reads (`samples` cuts along each of a cell's 19 tetrahedron edges) instead of at the eight corners, so a plate thinner than a cell, or a crack no corner sees, dirties the chunk that meshes it. `samples == 1` is `mark_edit`'s rule exactly. Costs `1 + 7 (samples - 1)` field evaluations per cell per field, each point evaluated once (M-497).
