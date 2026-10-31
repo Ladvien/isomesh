@@ -8,6 +8,10 @@ bump landing on `main` is the release (`scripts/publish.sh`, version-driven).
 
 ## [Unreleased]
 
+## [0.0.14] — 2026-10-31
+
+**isomesh 0.0.14.** One fix in `isomesh`: `EditReport::dirty_chunks` is the edit's own count and no longer includes chunks already waiting in the caller's queue (issue #13). No API change (`cargo semver-checks check-release -p isomesh --release-type patch`: 229 checks pass, no semver update required), so PATCH. `isomesh-gpu` changes no code and ships at the shared version; `bevy_isomesh`'s only change since 0.0.13 is a test (issue #12).
+
 ### Fixed
 
 - **`EditReport::dirty_chunks` counts this edit's chunks, not the caller's queue** (issue #13). `mark_edit` counted the region's chunks that were found in the `DirtySet` the caller passed, so a queue the frame budget had not drained (`DirtySet::mesh_within_budget` keeps what it did not reach) was reported as work the next edit did: an edit that changed nothing reported one dirty chunk for each chunk of its region already waiting, and `dirty_chunk_fraction()` was inflated the same way. It also scanned the whole queue once per region chunk. `mark_edit` now collects the owners of its own output-changed cells in a local set, as `mark_edit_subgrid` already did, and both close through one private function, so the queue ends as the union of what it held and what the edit dirtied and the report is a function of the two fields and the region alone. `dirty_chunks` is smaller than before for a caller that passes a non-empty queue, and equal for one that passes an empty one. Three tests in `chunk/dirty/tests.rs` fail against the old rule (1 against 0, 8 against 0, and 9 against 8 for a real edit) and so does the Subgrid marker's existing queue test; see `FINDINGS.md` M-499.
