@@ -178,3 +178,52 @@ The first draft of the note said a duplicate queue would show as a count of 2. M
 5. **A storable edit list for bevy_emerge's F5** (the Volume tool: a volume as a list of SDF primitives and operations, one undo step per carve). Read `gh issue view 101 -R Ladvien/bevy_emerge` and Sanctuary's `isowall` for what each writes by hand before building the general form.
 
 Then iteration 0's items: B-020 avian demos, the Metal mesh-shader probe, this machine's regression baseline. **Release:** due after 2026-10-31 09:01 -05:00; it will carry this pass's test change and whatever the next bug fixes change.
+
+## Iteration 5 — 2026-10-31 — `EditReport::dirty_chunks` counts this edit's chunks, not the caller's queue (#13)
+
+**Why #13.** Triage: three open issues, all bugs (#13, #14, #16), none labelled `consumer`, no enhancement. The command takes the oldest bug that reproduces, and #13 does: the issue's own test fails against `main` (1 reported, 0 expected), run here. Runner-up and skipped, workable, in this order: #14 (`CLAUDE.md` hard rule 3 names `glam`; one line and a `doc_facts.sh` check), #16 (the README's `Without<Mesh3d>` attach never refreshes a re-meshed chunk; the only open bug that changes what a game draws, third only because the command orders bugs oldest first). No parked branch: `git branch --list 'wiggum/parked-*'` is empty, and the one `parked` commit (`5c47ca7`) was consumed by iteration 2.
+
+**What changed.** `isomesh::chunk::dirty` only (no extraction expression, no `bevy_isomesh` code).
+
+- `mark_edit` collects the owners of its own output-changed cells in a local `dirtied` set, as `mark_edit_subgrid` already did, instead of counting the region's chunks found in the caller's whole queue. Both markers now close through one private `commit(report, region_chunks, dirtied, dirty)`, which sets `region_chunks` and `dirty_chunks` from sets the call built and inserts `dirtied` into the caller's queue, so the definition cannot part a second time. The `region × queue` scan is gone: the queue is only inserted into.
+- `EditReport::dirty_chunks` and `mark_edit` ("# The queue") say what the number is and is not.
+- Three tests in `chunk/dirty/tests.rs`: the issue's own (`dirty_chunks_counts_this_edit_not_the_backlog`), the worst case of the old rule (`a_queue_holding_the_whole_region_is_still_not_the_edits_work`) and a differential (`the_report_does_not_depend_on_what_is_already_queued`: one real edit into an empty queue and into a queue holding half of its chunks, one idle chunk of its region and one far chunk; equal reports, queue the union). `FINDINGS.md` M-499 and a Part 5 rule (a counter documented as an operation's own must be computed from what the operation built, and its test must call it with the shared object non-empty).
+- No owner decision was open: the issue names the definition, the field's documentation says it and the Subgrid marker does it. The one alternative (chunks newly added to the queue) is in the note and rejected there.
+
+**Sources.** Algorithm: `transvoxel_dissertation_lengyel2010` p. 28 (re-read from distill this pass: the regeneration set is a function of the edited region). Shipping game: `s2015-advances-pdf-230-mb` p. 25 and `s2015-advances-compressed-34mb-version-also-availablehere` p. 36 (Evans, *Dreams*: edits listed and counted per voxel, against the edit list). Technical: `10.1017_cbo9780511809071` (Manning et al., end of §1.2: a sorted contiguous array). Note: `docs/research/edit-report-accounting.md`. Corpus: five stems added (`f8fa9ba`): Zanni 2023 (`10.48550_arXiv.2304.09673`), two SIGGRAPH implicit-surface papers listed but not read, Nießner 2013 voxel hashing, and Manning 2008; the rescan of `catalog_recent` (limit 200, 184 distinct stems) found nothing else in the domain that the corpus did not list.
+
+**Home-still, live.** MCP `system_status`: two scribes healthy (4 converting each, 8 of 18 slots free on one), distill healthy on CUDA and idle, qdrant 1.20.0, 18,481 catalog entries, 780 conversions queued. `catalog_recent` and `distill_search` worked; the generic queries returned off-domain noise (a clinical review, an animation-system chapter), and the two precise ones found the C4 passage and the Manning passage. `Pending index`: no source defines the statistics of a re-mesh queue, and Manning §1.3's postings-list merge was not read; neither is needed for this fix.
+
+**The host.** Load 5.6-10.6 at nice 10, 14 GB free at the end (26 GB at the start). Debug `isomesh` lib test build 7 min 40 s cold and 1-2 min incremental; `clippy --workspace --all-targets` 1 min 54 s; `cargo test --release golden` 191 s. The first gate script hit its 3600 s timeout inside `cargo test -p isomesh --lib golden` in the debug profile (the filter reaches the slow Subgrid experiment tests, as iteration 3 found); it was rerun in release, and the full suites ran on CI as PR #19.
+
+**Evidence.**
+
+| Check | Before (`2c16ed8`) | After |
+|---|---|---|
+| Issue's fixture, no-op edit, one chunk of its region queued | `dirty_chunks == 1`, expected 0 | 0; `dirty_chunk_fraction()` 0; the queue keeps its chunk |
+| Whole region queued (8 chunks), no-op edit | reported 8 | 0 |
+| Real edit (radius 0.5 carved 2 cells deeper, 64-chunk region, 3,112 output-changed cells of 148,877), one idle region chunk queued | reported 9 (8 into an empty queue) | 8, report equal to the empty-queue report field by field; queue = union |
+| `chunk::dirty` tests | 3 new fail, plus the Subgrid marker's `dirty_chunks_counts_this_edit_and_not_the_queue` under the same mutation | 25 of 25 |
+| Mutant "count only chunks newly queued" | n/a | fails only the differential test (3 reported against 8) |
+| Mutant "count but do not queue" | n/a | fails 7 tests (the new differential and six older ones) |
+| Drain-under-budget smoke (14 synthetic edits, 2 chunks drained per edit, persistent queue; `/tmp/i5/smoke_i5.rs`, throwaway) | the old rule emulated outside the crate: edit 5 says 6 where 4 chunks were dirtied, edit 8 says 2 where the edit changed nothing | report equal to the same edit into an empty queue on all 14; 8 edits met a backlog |
+| Golden hashes (`cargo test --release -p isomesh --lib golden`) | 5 tests, 378 hashes | pass, unchanged |
+| `bevy_isomesh` lib tests (release) | 46 | 46 of 46 |
+
+**Mesh checklist.** `git diff main -- crates/` is `chunk/dirty.rs`, `chunk/dirty/subgrid.rs` (two lines) and `chunk/dirty/tests.rs`. No extraction expression moved, so validity by field, orientation, the link walk, index bounds, seams, NaN and the golden hashes are unchanged by construction; the goldens were also run (above). Refusals are unchanged (the size gate and the inverted region return before any queue is touched). `cargo tree -p isomesh -e normal` is `isomesh` and `libm 0.2.16`; the root graph has 0 `bevy` packages.
+
+**Bench.** None run, on purpose: `extract`, `shootout` and `edit_trace` never call `mark_edit` (`grep` of `benches/`), so their binaries are the same code before and after, and a timing from this host under load 6-10 would be noise with a number on it. The cost claim is structural (the scan removed was `region_chunks × queue length` equality tests per edit) and is labelled not timed in M-499. No bench of marking with a backlog exists; item 3 below is it.
+
+**Critique and verdict.** Written before the verdict (`/tmp/i5/critique.md`, removed with the scratch): no time is measured; the smoke is 14 synthetic edits with an old-rule emulation, not `game_dig` (not built: hours on this host); `mark_edit` still allocates three `extent³` buffers and two sets per call and binary-searches per cell; `DirtySet::insert` is a `Vec` insert; `game_dig`'s outline gizmo still reads the whole queue by its own comment; three mutants are not a census. **GREAT** for #13: the acceptance is the issue's test plus its generalisations, every wrong rule I could name fails a test, and nothing but the report and the order of queue inserts moved.
+
+**Gate.** PR #19 on `big` and `macos-latest`, every job green: `fmt, clippy, docs, dependency gates` 1m14s, `msrv` 50s, `package (dry run)` 33s, `bevy_isomesh (separate workspace)` 20m45s, `pages site` 12m40s, `test (big)` 16m44s, `test (macos-latest)` 39m9s. Locally: fmt in all three workspaces, `clippy --workspace --all-targets -D warnings`, root rustdoc `-D warnings`, `backlog_gate.sh` (107 open, 372 archived), `findings_index.sh --check` (611 entries), `doc_facts.sh`, `version_gate.sh` (0.0.13 at all six sites), `csv_provenance.sh`, `readme_sync.sh`.
+
+### Ranked backlog
+
+1. **#16 — the README and quickstart attach `Mesh3d` with `Without<Mesh3d>`, so a re-meshed chunk keeps drawing its first mesh.** Confirm with a test (a re-meshed chunk's `ChunkMesh` change is visible through `Changed<ChunkMesh>`), then attach on `Changed<ChunkMesh>` in the README and the five examples that copy it. The only open bug that changes what a game draws.
+2. **#14 — `CLAUDE.md` hard rule 3 names `glam`; the manifest, the rest of `CLAUDE.md` and `preflight.sh` say `libm`.** One line plus the `doc_facts.sh` check the issue gives.
+3. **A bench and a caller-provided scratch for marking** (iteration 3's item 3, and this pass's residual): `mark_edit` against `mark_edit_subgrid` at samples 1, 2, 4, with and without a 300-chunk backlog, so the cost has a time, and a scratch (the three `extent³` buffers and the two sets) so a drag that edits every frame allocates nothing.
+4. **Is the corner rule exact for Dual Contouring and Surface Nets?** DC reads `Sdf::gradient` at each crossing, which is not a corner. The extract-before-and-after oracle exists (iteration 3); point it at both.
+5. **A storable edit list for bevy_emerge's F5** (the Volume tool: a volume as a list of SDF primitives and operations, one undo step per carve); read `gh issue view 101 -R Ladvien/bevy_emerge` and Sanctuary's `isowall` first.
+
+Then iteration 0's items: B-020 avian demos, the Metal mesh-shader probe, this machine's regression baseline. **Release:** the window (6 h after `v0.0.13`, 03:01:52 -05:00) opens at 09:01 -05:00.
