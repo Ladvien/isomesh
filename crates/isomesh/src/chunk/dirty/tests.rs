@@ -277,7 +277,7 @@ fn dirty_chunks_counts_this_edit_not_the_backlog() {
         "an edit that changed nothing reported {} dirty chunks",
         r.dirty_chunks
     );
-    assert_eq!(r.dirty_chunk_fraction(), 0.0);
+    assert_eq!(r.dirty_chunk_fraction().to_bits(), 0f64.to_bits());
     assert_eq!(dirty.len(), 1, "the caller's queue is kept, not consumed");
 }
 
