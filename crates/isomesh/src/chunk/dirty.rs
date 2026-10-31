@@ -31,6 +31,10 @@
 //! before and an after, and neither has to adopt a storage type from this crate
 //! to be measured.
 
+mod subgrid;
+
+pub use subgrid::mark_edit_subgrid;
+
 use alloc::vec::Vec;
 
 use super::{ChunkId, ChunkLayout};
@@ -216,6 +220,10 @@ impl BudgetReport {
 ///
 /// Counts are over **cells**, not samples: a cell is the unit of meshing work,
 /// and it is what an incremental scheme would avoid.
+///
+/// Every description below says "corner", which is what [`mark_edit`] compares.
+/// [`mark_edit_subgrid`] fills the same fields from the points Subgrid Marching
+/// Tetrahedra reads along a cell's edges, and there "corner" reads "probe point".
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct EditReport {
     /// Cells inside the marked region — the work a naive "re-mesh the brush's
@@ -316,6 +324,20 @@ impl EditReport {
 /// grid once and reuses each sample across the eight cells that share it, rather
 /// than evaluating eight times per cell.
 ///
+/// # Which extractors this is exact for
+///
+/// The rule compares the two fields at the **eight corners** of each cell and
+/// decides "surface cell" from the corner signs. That is the whole input of
+/// Marching Cubes, and a cell whose corners all sit on one side emits nothing
+/// there. It is **not** the whole input of
+/// [`SubgridMarchingTetrahedra`](crate::subgrid::extract::SubgridMarchingTetrahedra),
+/// which reads the field along every tetrahedron edge and so finds a feature
+/// thinner than a cell that no corner sees: a plate 0.6 cells thick inside a
+/// cell with eight outside corners changes that extractor's mesh and none of
+/// this function's counts. For it, use [`mark_edit_subgrid`], whose rule is this
+/// one at `samples == 1`. Surface Nets and Dual Contouring are not examined
+/// here.
+///
 /// # Errors
 ///
 /// [`Error::IndexSpaceExhausted`](crate::Error::IndexSpaceExhausted) if the
@@ -395,8 +417,6 @@ where
     for cz in 0..extent[2] - 1 {
         for cy in 0..extent[1] - 1 {
             for cx in 0..extent[0] - 1 {
-                report.region_cells += 1;
-
                 let mut any_value = false;
                 let mut any_sign = false;
                 let mut inside_count_before = 0u32;
@@ -426,18 +446,8 @@ where
                 let (owner, _) = layout.local_sample(cell);
                 region_chunks.insert(owner);
 
-                if any_value {
-                    report.value_changed_cells += 1;
-                }
-                if any_value && (was_surface || is_surface) {
-                    report.output_changed_cells += 1;
+                if tally(&mut report, any_value, any_sign, was_surface, is_surface) {
                     dirty.insert(owner);
-                }
-                if any_sign {
-                    report.sign_changed_cells += 1;
-                    if !was_surface && !is_surface {
-                        report.swept_cells += 1;
-                    }
                 }
             }
         }
@@ -449,6 +459,40 @@ where
         .filter(|id| dirty.iter().any(|d| d == *id))
         .count() as u64;
     Ok(report)
+}
+
+/// Fold one cell's classification into `report`, and say whether the cell's
+/// output changed (so its owner chunk is dirty).
+///
+/// The one place the counters are defined, shared by [`mark_edit`] and
+/// [`mark_edit_subgrid`]: they differ in *what a cell's samples are*, not in what
+/// the counters mean.
+///
+/// - `any_value`: some sample of the cell differs between the fields;
+/// - `any_sign`: some sample's inside/outside classification differs;
+/// - `was_surface` / `is_surface`: the cell emits triangles before / after.
+fn tally(
+    report: &mut EditReport,
+    any_value: bool,
+    any_sign: bool,
+    was_surface: bool,
+    is_surface: bool,
+) -> bool {
+    report.region_cells += 1;
+    if any_value {
+        report.value_changed_cells += 1;
+    }
+    let output_changed = any_value && (was_surface || is_surface);
+    if output_changed {
+        report.output_changed_cells += 1;
+    }
+    if any_sign {
+        report.sign_changed_cells += 1;
+        if !was_surface && !is_surface {
+            report.swept_cells += 1;
+        }
+    }
+    output_changed
 }
 
 #[cfg(test)]

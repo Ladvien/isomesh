@@ -674,6 +674,94 @@ fn mark_changed_chunks_marks_nothing_for_an_identical_field() {
     assert_eq!(report.value_changed_cells, 0);
 }
 
+/// `edit_app`'s sphere plus a plate 0.6 cells thick inside cell x = 16 (chunk
+/// `[2, 0, 0]`). Every corner of that cell is outside, before and after.
+struct SphereAndPlate;
+
+impl Sdf for SphereAndPlate {
+    type Scalar = f32;
+    fn sample(&self, p: [f32; 3]) -> f32 {
+        let sphere = Sphere::<f32> {
+            center: [1.0, 1.0, 1.0],
+            radius: 0.5,
+        }
+        .sample(p);
+        sphere.min((p[0] - 4.125).abs() - 0.075)
+    }
+}
+
+fn the_edit_app_with(extractor: Extractor) -> (App, Entity) {
+    let (mut app, volume) = edit_app();
+    app.world_mut()
+        .get_mut::<VoxelVolume>(volume)
+        .expect("the volume exists")
+        .extractor = extractor;
+    (app, volume)
+}
+
+/// Issue #11. Subgrid meshes a plate thinner than a cell that no corner sees, so
+/// the chunk that holds it must be re-meshed when the plate appears, and again
+/// when it goes.
+#[test]
+fn mark_changed_chunks_marks_a_subgrid_feature_thinner_than_a_cell() {
+    let extractor = Extractor::Subgrid { samples: 4 };
+    let (mut app, volume) = the_edit_app_with(extractor);
+    let layout = app
+        .world()
+        .get::<VoxelVolume>(volume)
+        .expect("the volume exists")
+        .layout;
+    let chunk_2 = ChunkId::new([2, 0, 0]);
+
+    // Precondition: Subgrid really does mesh the plate in chunk 2.
+    let built = extract_chunk(&SphereAndPlate, &layout, chunk_2, extractor).expect("extracts");
+    assert!(built.triangle_count() > 0, "the plate is not in the mesh");
+
+    edit(&mut app, volume, SphereAndPlate);
+    assert!(
+        marked(&mut app).contains(&chunk_2),
+        "chunk 2's Subgrid mesh changed and the chunk was not marked"
+    );
+
+    // The mirror: from the plate back to the sphere alone.
+    for chunk in marked(&mut app) {
+        let entity = app
+            .world_mut()
+            .query::<(Entity, &VoxelChunk)>()
+            .iter(app.world())
+            .find(|(_, c)| c.id == chunk)
+            .map(|(e, _)| e)
+            .expect("the chunk exists");
+        app.world_mut().entity_mut(entity).remove::<NeedsRemesh>();
+    }
+    assert!(marked(&mut app).is_empty());
+    edit(
+        &mut app,
+        volume,
+        Sphere::<f32> {
+            center: [1.0, 1.0, 1.0],
+            radius: 0.5,
+        },
+    );
+    assert!(
+        marked(&mut app).contains(&chunk_2),
+        "the plate left chunk 2's mesh and the chunk was not marked"
+    );
+}
+
+/// The rule belongs to the extractor: Marching Cubes cannot mesh that plate, so
+/// its volume has nothing to re-mesh, and the corner rule says so.
+#[test]
+fn mark_changed_chunks_leaves_a_marching_cubes_volume_on_the_corner_rule() {
+    let (mut app, volume) = edit_app();
+    edit(&mut app, volume, SphereAndPlate);
+    assert!(
+        marked(&mut app).is_empty(),
+        "marching cubes meshes nothing of the plate: {:?}",
+        marked(&mut app)
+    );
+}
+
 #[test]
 fn mark_changed_chunks_leaves_another_volumes_chunks_alone() {
     let (mut app, volume) = edit_app();
