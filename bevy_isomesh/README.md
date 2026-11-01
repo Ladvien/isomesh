@@ -221,7 +221,7 @@ Rust 1.97.1 (Bevy 0.20's own floor), edition 2024.
 
 ## Part of the Coven
 
-`bevy_isomesh` is one of the [Bevy Coven](https://github.com/bevy-coven) crates, built in [the isomesh repository](https://github.com/bevy-coven/isomesh). Grimoire, the Coven's editor, uses it for caves, overhangs and carving: see [use it in Grimoire](https://bevy-coven.github.io/crates/isomesh.html#use-it-in-grimoire).
+`bevy_isomesh` is one of the [Bevy Coven](https://github.com/bevy-coven) crates, built in [the isomesh repository](https://github.com/bevy-coven/isomesh). The Cauldron, the Coven's editor, uses it for caves, overhangs and carving: see [use it in the Cauldron](https://bevy-coven.github.io/crates/isomesh.html#use-it-in-the-cauldron).
 
 ## Who and licence
 

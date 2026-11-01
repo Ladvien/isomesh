@@ -74,7 +74,7 @@ It flies a camera through caves and arches that are meshed while it moves. Alway
 
 ## Part of the Coven
 
-`isomesh` is one of the [Bevy Coven](https://github.com/bevy-coven) crates: the family table there says what each crate gives a game. Grimoire, the Coven's editor, takes `bevy_isomesh` for caves, overhangs and carving: see [use it in Grimoire](https://bevy-coven.github.io/crates/isomesh.html#use-it-in-grimoire).
+`isomesh` is one of the [Bevy Coven](https://github.com/bevy-coven) crates: the family table there says what each crate gives a game. The Cauldron, the Coven's editor, takes `bevy_isomesh` for caves, overhangs and carving: see [use it in the Cauldron](https://bevy-coven.github.io/crates/isomesh.html#use-it-in-the-cauldron).
 
 ## Bevy compatibility
 
